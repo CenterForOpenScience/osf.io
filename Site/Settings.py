@@ -11,5 +11,5 @@ cacheDirectory = "./Site/Cache"
 siteDown = False
 database = 'osf20120530' # Mongo
 cookieDomain = '.openscienceframework.org' # Beaker
-static = '%s/static' % os.path.dirname(os.path.abspath(__file__))
+static = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 local = True
