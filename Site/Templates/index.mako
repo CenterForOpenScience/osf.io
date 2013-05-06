@@ -4,7 +4,7 @@
     <div class="hero-unit">
         <h1>OSF launches public beta!</h1>
         <p style="margin-top: 6px;">
-            % if not Site.Settings.local:
+            % if Site.Settings.use_cdn_for_client_libs:
                 <iframe width="853" height="480" src="http://www.youtube.com/embed/c6lCJFSnMcg" frameborder="0" allowfullscreen></iframe>
             %else:
                 <img src="/static/youtube.png" width="853" height="480" />
@@ -55,7 +55,7 @@
         <a href="http://facebook.com/openscienceframework">Open Science Framework on Facebook</a>
         	      <div class="fb-like" data-href="http://www.facebook.com/OpenScienceFramework" data-send="false" data-width="275" data-show-faces="false"></div></li>
                   <a href="https://twitter.com/OSFramework" class="twitter-follow-button" data-show-count="false" data-size="large">Follow @OSFramework</a>
-                  % if not Site.Settings.local:
+                  % if Site.Settings.use_cdn_for_client_libs:
                   <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
                   %endif
       </p>

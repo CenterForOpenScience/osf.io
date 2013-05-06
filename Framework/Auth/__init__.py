@@ -97,9 +97,6 @@ def hash_password(password):
     return Bcrypt.generate_password_hash(password.strip())
 
 def register(username, password, fullname=None):
-    # tag: database
-    #if not Settings.emailOnRegister:
-    #    is_registered = True
     username = username.strip().lower()
     fullname = fullname.strip()
 

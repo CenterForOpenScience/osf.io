@@ -9,13 +9,15 @@ import random
 from yORM import *
 
 import Site.Settings
+from urlparse import urlsplit
 
 ObjectId = ObjectId
 DBRef = DBRef
-connect = Connection('localhost', 20771)
+connect = Connection(Site.Settings.mongo_uri)
 
-db = connect[Site.Settings.database]
-db.authenticate('osf', 'osfosfosfosf0$f')
+collection = urlsplit(Site.Settings.mongo_uri).path[1:] # Slices off the leading slash of the path (collection name)
+
+db = connect[collection]
 
 class MongoObject(Object):
     @property

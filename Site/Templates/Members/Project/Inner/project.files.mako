@@ -137,7 +137,7 @@ $(function () {
 </script>
 
 <script src="/static/js/vendor/jquery.ui.widget.js"></script>
-%if not Site.Settings.local:
+%if Site.Settings.use_cdn_for_client_libs:
 <script src="http://blueimp.github.com/JavaScript-Templates/tmpl.min.js"></script>
 <script src="http://blueimp.github.com/JavaScript-Load-Image/load-image.min.js"></script>
 <script src="http://blueimp.github.com/JavaScript-Canvas-to-Blob/canvas-to-blob.min.js"></script>

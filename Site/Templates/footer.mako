@@ -46,7 +46,7 @@
             </div>
         </div>
 
-        %if not Site.Settings.local:
+        %if Site.Settings.use_cdn_for_client_libs:
             <div id="fb-root"></div>
             <script>(function(d, s, id) {
               var js, fjs = d.getElementsByTagName(s)[0];

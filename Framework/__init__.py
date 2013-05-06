@@ -1,5 +1,3 @@
-import Site.Settings as Settings
-
 from Framework.Flask import send_file, secure_filename, app, route, get, post, redirect, request, url_for, send_from_directory, set_static_folder, Blueprint, render_template, render_template_string, jsonify
 
 ##### Template
@@ -20,7 +18,7 @@ from Framework.Auth import getCurrentUsername, getCurrentUserId, getUser, getCur
 
 ##### Form
 
-import Framework.Forms as Forms
+import Forms
 Form = Forms.Form
 PasswordField = Forms.PasswordField
 BooleanField = Forms.BooleanField

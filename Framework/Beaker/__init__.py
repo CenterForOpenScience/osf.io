@@ -9,8 +9,8 @@ options = {
     "session.type": "file",
     'session.cookie_expires': False,
     'session.auto': True,
-    'session.data_dir': Settings.cacheDirectory,
-    'session.domain': Settings.cookieDomain,
+    'session.data_dir': Settings.cache_path,
+    'session.domain': Settings.cookie_domain,
 }
 
 def set(x, y=None):

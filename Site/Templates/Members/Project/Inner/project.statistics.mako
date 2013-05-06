@@ -35,7 +35,7 @@
 ##]
 
 
-%if not Site.Settings.local:
+%if Site.Settings.use_cdn_for_client_libs:
 <script src="http://d3js.org/d3.v2.js"></script>
 %else:
 <script src="/static/d3.v2.js"></script>

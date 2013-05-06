@@ -48,8 +48,7 @@ def forgot_password():
             Email.sendEmail(
                 to=form.email.data, 
                 subject="Reset Password", 
-                message="http://{domain}/resetpassword/{key}".format(
-                    domain=Site.Settings.domain,
+                message="/resetpassword/{key}".format(
                     key=user_obj.verification_key,
                 )
             )
@@ -113,7 +112,7 @@ def auth_register():
 
 @Framework.post("/register")
 def auth_register_post():
-    if Site.Settings.registrationDisabled:
+    if not Site.Settings.allow_registration:
         Status.pushStatusMessage('We are currently in beta development and \
             registration is only available to those with beta invitations. If you \
             would like to be added to the invitation list, please email \
@@ -129,7 +128,7 @@ def auth_register_post():
         if form.validate():
             u = register(form.username.data, form.password.data, form.fullname.data)
             if u:
-                if Site.Settings.emailOnRegister:
+                if Site.Settings.confirm_registrations_by_email:
                     sendRegistration(u)
                     Status.pushStatusMessage('Registration successful. Please \
                         check %s to confirm your email address, %s.' % 

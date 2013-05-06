@@ -1,15 +1,20 @@
 import os
 
-settings = {}
-domain = 'localhost:8080'
-framework = 'flask'
-debug = False
-clearOnLoad = False
-emailOnRegister = False
-registrationDisabled = False
-cacheDirectory = "./Site/Cache"
-siteDown = False
-database = 'osf20120530' # Mongo
-cookieDomain = '.openscienceframework.org' # Beaker
-static = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
-local = True
+base_path = str(os.path.dirname(os.path.abspath(__file__)))
+
+# User management & registration
+confirm_registrations_by_email = False
+allow_registration = True
+allow_login = True
+
+# External services
+use_cdn_for_client_libs = False
+
+# Application paths
+cache_path = os.path.join(base_path, 'Cache')
+static_path = os.path.join(base_path, 'static')
+mongo_uri = 'mongodb://osf:osf@localhost:20771/osf_test'
+# mongo_uri = 'mongodb://osf:osfosfosfosf0$f@localhost:20771/osf_test'
+
+#TODO: Configuration should not change between deploys - this should be dynamic.
+cookie_domain = '.openscienceframework.org' # Beaker

@@ -17,7 +17,7 @@
     <![endif]-->
 
     <!-- Le styles -->
-    %if not Site.Settings.local:
+    %if Site.Settings.use_cdn_for_client_libs:
         <link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1/themes/flick/jquery-ui.css">
     %else:
         <link rel="stylesheet" type="text/css" href="/static/jquery-ui.css">
@@ -42,7 +42,7 @@
       }
     </style>
     
-    %if not Site.Settings.local:
+    %if Site.Settings.use_cdn_for_client_libs:
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
         <script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.3.3/underscore-min.js"></script>
         <script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.2/backbone-min.js"></script>
@@ -123,7 +123,7 @@
                     <li><a rel="tooltip" title="Settings" href="/settings"><img src="/static/TokenGear.png" style="width:20px;" /> </a></li>
                     <li><a rel="tooltip" title="Logout" href="/logout"><img height="20px" src="/static/TokenPower.png" style="width:20px;" /></a></li>
                     %else:
-                        %if not Site.Settings.siteDown:
+                        %if Site.Settings.allow_login:
                         <li><a class="btn btn-primary" href="/account" style="color:white;padding:5px 9px;font-size: 11px; line-height: 16px;">Create an Account or Sign-In</a></li>
                         %else:
                         %endif

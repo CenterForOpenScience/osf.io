@@ -2,7 +2,7 @@ import Framework
 import Helper
 import Site.Settings
 
-static_folder = Site.Settings.static
+static_folder = Site.Settings.static_path
 
 ###############################################################################
 # Routes
@@ -78,4 +78,4 @@ if __name__ == '__main__':
             'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
     import Site.Settings as Settings
-    app.run(port=80, debug=True)
+    app.run(port=5000, debug=True)
