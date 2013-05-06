@@ -8,6 +8,7 @@
 Icon?
 ehthumbs.db
 Thumbs.db
+*.swp
 
 # R
 #######################
@@ -39,3 +40,8 @@ nosetests.xml
 .idea
 .hg
 .hgignore
+
+
+# OSF-specific 
+#######################
+Site/Cache/*
