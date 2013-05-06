@@ -1,0 +1,12 @@
+flask
+pymongo
+mako
+beaker
+decorator
+wtforms
+wtforms-recaptcha
+topia.termextract
+BeautifulSoup
+py-bcrypt
+Markdown
+pytz

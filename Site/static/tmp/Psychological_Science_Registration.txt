@@ -1,0 +1,45 @@
+<script>
+	Template.set('getJson', function() {
+	        return JSON.stringify(this.getProperties("looked", "datacompletion", "comments"));
+	    });
+
+	Template.set('yesno2', Ember.Object.create({
+		content:["No", "Yes"],
+	}));
+</script>
+
+<script type="text/x-handlebars">
+	<div class="control-group">
+	<label class="control-label">Is data collection for this project underway or complete?</label>
+	<div class="controls">
+    {{view Ember.Select
+       contentBinding="Template.yesno2.content"
+       optionLabelPath="content"
+       optionValuePath="content"
+       selectionBinding="Template.datacompletion"
+       prompt="Please Select"}}
+    </div>
+    </div>
+
+    <div class="control-group">
+	<label class="control-label">Have you looked at the data?</label>
+	<div class="controls">
+    {{view Ember.Select
+       contentBinding="Template.yesno2.content"
+       optionLabelPath="content"
+       optionValuePath="content"
+       selectionBinding="Template.looked"
+       prompt="Please Select"}}
+    </div>
+    </div>
+
+    <div class="control-group">
+	<label class="control-label">Other Comments</label>
+	<div class="controls">
+    {{view Ember.TextArea
+    	valueBinding="Template.comments" rows="10"
+    }}
+    </div>
+    </div>
+
+</script>

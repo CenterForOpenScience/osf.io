@@ -1,0 +1,139 @@
+<script>
+	Template.set('getJson', function() {
+	        return JSON.stringify(this.getProperties("name", "position", "affiliation", "contactemailaddress","projecttitle", "authors", "background", "hypotheses", "hypotheseswhat",
+          "yesno1", "yesno2", "yesno3", "yesno4"));
+	    });
+
+	Template.set('yesnoother', Ember.Object.create({
+		content:["No", "Yes", "Other"],
+	}));
+</script>
+
+<script type="text/x-handlebars">
+	<div class="control-group">
+	<label class="control-label">Name</label>
+	<div class="controls">
+    {{view Ember.TextField
+       valueBinding="Template.name"}}
+    </div>
+  </div>
+
+  <div class="control-group">
+  <label class="control-label">Position</label>
+  <div class="controls">
+    {{view Ember.TextField
+       valueBinding="Template.position"}}
+    </div>
+  </div>
+
+  <div class="control-group">
+  <label class="control-label">Affiliation</label>
+  <div class="controls">
+    {{view Ember.TextField
+       valueBinding="Template.affiliation"}}
+    </div>
+  </div>
+
+  <div class="control-group">
+  <label class="control-label">Contact email address</label>
+  <div class="controls">
+    {{view Ember.TextField
+       valueBinding="Template.contactemailaddress"}}
+    </div>
+  </div>
+
+  <div class="control-group">
+  <label class="control-label">Title of Project</label>
+  <div class="controls">
+    {{view Ember.TextField
+       valueBinding="Template.projecttitle"}}
+    </div>
+  </div>
+
+  <div class="control-group">
+  <label class="control-label">Authors</label>
+  <div class="controls">
+    {{view Ember.TextField
+       valueBinding="Template.authors"}}
+    </div>
+  </div>
+
+    <div class="control-group">
+	<label class="control-label">Background and explanation of rationale.</label>
+	<div class="controls">
+    {{view Ember.TextArea
+    	valueBinding="Template.background" rows="10"
+    }}
+    <span class="help-inline">Brief description of goals of project</span>
+    </div>
+    </div>
+
+    <div class="control-group">
+  <label class="control-label">What are the hypotheses to be tested?</label>
+  <div class="controls">
+    {{view Ember.TextArea
+      valueBinding="Template.hypotheseswhat" rows="10"
+    }}
+    <span class="help-inline">Please list the hypotheses including hypotheses on heterogeneous effects.</span>
+    </div>
+    </div>
+
+    <div class="control-group">
+  <label class="control-label">How will these hypotheses be tested?</label>
+  <div class="controls">
+    {{view Ember.TextArea
+      valueBinding="Template.hypotheses" rows="10"
+    }}
+    <span class="help-inline">Describe formal tests</span>
+    </div>
+    </div>
+
+    <div class="control-group">
+  <label class="control-label">Has this research received Insitutional Review Board (IRB) or ethics committee approval?</label>
+  <div class="controls">
+    {{view Ember.Select
+       contentBinding="Template.yesnoother.content"
+       optionLabelPath="content"
+       optionValuePath="content"
+       selectionBinding="Template.yesno1"
+       prompt="Please Select"}}
+    </div>
+    </div>
+
+     <div class="control-group">
+  <label class="control-label">Was a power analysis conducted prior to data collection?</label>
+  <div class="controls">
+    {{view Ember.Select
+       contentBinding="Template.yesnoother.content"
+       optionLabelPath="content"
+       optionValuePath="content"
+       selectionBinding="Template.yesno2"
+       prompt="Please Select"}}
+    </div>
+    </div>
+
+     <div class="control-group">
+  <label class="control-label">Did any of the research team receive remuneration from the implementing agency for taking part in this research?</label>
+  <div class="controls">
+    {{view Ember.Select
+       contentBinding="Template.yesnoother.content"
+       optionLabelPath="content"
+       optionValuePath="content"
+       selectionBinding="Template.yesno3"
+       prompt="Please Select"}}
+    </div>
+    </div>
+    
+         <div class="control-group">
+  <label class="control-label">If relevant, is there an advance agreement with the implementation group that all results can be published?</label>
+  <div class="controls">
+    {{view Ember.Select
+       contentBinding="Template.yesnoother.content"
+       optionLabelPath="content"
+       optionValuePath="content"
+       selectionBinding="Template.yesno4"
+       prompt="Please Select"}}
+    </div>
+    </div>
+
+</script>

@@ -1,0 +1,16 @@
+<script>
+	Template.set('getJson', function() {
+	        return JSON.stringify(this.getProperties("summary"));
+	    });
+</script>
+
+<script type="text/x-handlebars">
+    <div class="control-group">
+	<label class="control-label">Provide a narrative summary of what is contained in this registration, or how it differs from prior registrations.</label>
+	<div class="controls">
+    {{view Ember.TextArea
+    	valueBinding="Template.summary" rows="30"
+    }}
+    </div>
+    </div>
+</script>
