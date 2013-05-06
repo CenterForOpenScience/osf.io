@@ -1,3 +1,5 @@
+import os
+
 settings = {}
 domain = 'localhost:8080'
 framework = 'flask'
@@ -9,5 +11,5 @@ cacheDirectory = "./Site/Cache"
 siteDown = False
 database = 'osf20120530' # Mongo
 cookieDomain = '.openscienceframework.org' # Beaker
-static = '/Users/jspies/Projects/OSF/Site/static'
+static = '%s/static' % os.path.dirname(os.path.abspath(__file__))
 local = True
