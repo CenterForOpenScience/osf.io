@@ -676,7 +676,7 @@ def upload_file_public(*args, **kwargs):
         node_to_use = project
 
     uploaded_file = request.files.get('files[]')
-    uploaded_file_content = uploaded_file.r)ead(
+    uploaded_file_content = uploaded_file.read()
     uploaded_file.seek(0, os.SEEK_END)
     uploaded_file_size = uploaded_file.tell()
     uploaded_file_content_type = uploaded_file.content_type
