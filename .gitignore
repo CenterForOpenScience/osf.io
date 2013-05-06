@@ -37,3 +37,5 @@ pip-log.txt
 nosetests.xml
 *.mo
 .idea
+.hg
+.hgignore
