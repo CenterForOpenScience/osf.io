@@ -13,8 +13,7 @@ import Site.Settings
 ObjectId = ObjectId
 DBRef = DBRef
 connect = Connection('localhost', 20771)
-# admin / osf
-# adminpassword / osfosfosfosf0$f
+
 db = connect[Site.Settings.database]
 db.authenticate('osf', 'osfosfosfosf0$f')
 
