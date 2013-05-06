@@ -10,3 +10,5 @@ BeautifulSoup
 py-bcrypt
 Markdown
 pytz
+dulwich
+scrubber
