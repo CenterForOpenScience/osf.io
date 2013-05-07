@@ -387,6 +387,8 @@ def project_statistics(*args, **kwargs):
 # Make Public
 ###############################################################################
 
+
+#TODO: project_makepublic and project_makeprivate should be refactored into a single function to conform to DRY.
 @get('/project/<pid>/makepublic')
 @get('/project/<pid>/node/<nid>/makepublic')
 @mustBeLoggedIn # returns user
@@ -406,6 +408,28 @@ def project_makepublic(*args, **kwargs):
 
     if not node_to_use.is_public:             # if not already public
         node_to_use.makePublic(user)
+
+    return redirect(url)
+
+@get('/project/<pid>/makeprivate')
+@get('/project/<pid>/node/<nid>/makeprivate')
+@mustBeLoggedIn # returns user
+@must_be_valid_project # returns project
+@must_be_contributor # returns user, project
+def project_makeprivate(*args, **kwargs):
+    project = kwargs['project']
+    node = kwargs['node']
+    user = kwargs['user']
+
+    if node:
+        node_to_use = node
+        url = '/project/{pid}/node/{nid}'.format(pid=project.id, nid=node.id)
+    else:
+        node_to_use = project
+        url = '/project/{pid}'.format(pid=project.id)
+
+    if node_to_use.is_public:
+        node_to_use.makePrivate(user)
 
     return redirect(url)
 

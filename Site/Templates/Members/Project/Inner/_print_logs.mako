@@ -53,6 +53,14 @@
                         project <a href="/project/${params['node']}">${getNode(params['node']).title}</a>
                     %endif
                     public
+                %elif action == 'made_private':
+                    made
+                    %if params['project']:
+                        node <a href="/project/${params['project']}/node/${params['node']}">${getNode(params['node']).title}</a>
+                    %else:
+                        project <a href="/project/${params['node']}">${getNode(params['node']).title}</a>
+                    %endif
+                    private
                 %elif action == 'remove_contributor':
                     removed 
                     <% 
