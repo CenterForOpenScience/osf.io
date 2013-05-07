@@ -57,8 +57,8 @@ function generateConfirmModal(args) {
                 '<p></p>',
             '</div>',
             '<div class="modal-footer">',
-                '<button href="#" data-dismiss="modal" class="btn modal-deny">Yes</button>',
-                '<button href="#" data-dismiss="modal" class="btn btn-primary modal-confirm">No</button>',
+                '<button href="#" data-dismiss="modal" class="btn modal-deny">No</button>',
+                '<button href="#" data-dismiss="modal" class="btn btn-primary modal-confirm">Yes</button>',
             '</div>',
         '</div>'
     ].join('');
