@@ -1,6 +1,10 @@
 <%
     import Framework, Site.Settings
     username = Framework.getCurrentUsername()
+    if len(username) > 22:
+        display_name = '%s...%s' % (username[:9],username[-10:])
+    else:
+        display_name = username
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -118,8 +122,8 @@
                     <input type="text" class="search-query" placeholder="Search" name="q">
                 </form>
                 <ul class="nav pull-right">
-                    %if username:
-                    <li><a href="/profile">${username}</a></li>
+                    %if username and display_name:
+                    <li><a href="/profile">${display_name}</a></li>
                     <li><a rel="tooltip" title="Settings" href="/settings"><img src="/static/TokenGear.png" style="width:20px;" /> </a></li>
                     <li><a rel="tooltip" title="Logout" href="/logout"><img height="20px" src="/static/TokenPower.png" style="width:20px;" /></a></li>
                     %else:
