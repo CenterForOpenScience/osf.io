@@ -43,6 +43,8 @@
     if node:
         remove_url += "node/" + node.id + "/"
     remove_url += "removecontributors"
+
+    make_public_warning = 'Making a project public cannot be undone. Are you absolutely sure you would like to continue?'
 %>
 
 <script>
@@ -67,9 +69,9 @@
         %if not node_to_use.is_public:
             % if is_contributor:
                 %if node:
-                    <a class="btn" href="/project/${project.id}/node/${node.id}/makepublic">Make public</a>
+                    <a class="btn" href="/project/${project.id}/node/${node.id}/makepublic" data-confirm="${make_public_warning}">Make public</a>
                 %else:
-                    <a class="btn" href="/project/${project.id}/makepublic">Make public</a>
+                    <a class="btn" href="/project/${project.id}/makepublic" data-confirm="${make_public_warning}">Make public</a>
                 %endif
             % endif
         %else:
