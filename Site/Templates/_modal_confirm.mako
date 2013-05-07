@@ -40,10 +40,10 @@ function generateConfirmModal(args) {
         params.message = args
     } else if(typeof(args) == 'object') {
         // An object was passed, use it to override defaults
-        for(var key in params) {
-            if(typeof(args[key]) !== 'undefined') {
+        for(var i = 0; i<params.length; i++) {
+            if(typeof(args[params[i]]) !== 'undefined') {
                 // If the param was passed, override the default
-                params[key] = args[key]
+                params[params[i]] = args[params[i]]
             }
         }
     }
