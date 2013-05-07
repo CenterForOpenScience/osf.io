@@ -32,12 +32,9 @@ data-confirm-no:
 
  */
 function generateConfirmModal(args) {
-    var params = {
-        message: '',
-        title: 'Are you sure?',
-        confirm_text: 'Yes',
-        deny_text: 'No'
-    }
+    // Supported parameters
+    var params = ['message','title','confirm_text','deny_text'];
+
     if(typeof(args) == 'string') {
         // A single string was passed, assume it was a message body
         params.message = args
@@ -54,14 +51,14 @@ function generateConfirmModal(args) {
         '<div class="modal hide fade">',
             '<div class="modal-header">',
                 '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>',
-                '<h3>{{ header }}</h3>',
+                '<h3>Are you sure?</h3>',
             '</div>',
             '<div class="modal-body">',
-                '<p>{{ text }}</p>',
+                '<p></p>',
             '</div>',
             '<div class="modal-footer">',
-                '<button href="#" data-dismiss="modal" class="btn modal-deny">{{ deny_text }}</button>',
-                '<button href="#" data-dismiss="modal" class="btn btn-primary modal-confirm">{{ confirm_text }}</button>',
+                '<button href="#" data-dismiss="modal" class="btn modal-deny">Yes</button>',
+                '<button href="#" data-dismiss="modal" class="btn btn-primary modal-confirm">No</button>',
             '</div>',
         '</div>'
     ].join('');
@@ -73,6 +70,7 @@ function generateConfirmModal(args) {
 
     params.id = 'modal_' + document.modals.length.toString()
 
+    // Apply passed params to the template
     var modal = $(template).attr('id', params.id);
     modal.find('h3').text(params.title);
     modal.find('.modal-body > p').text(params.message);
@@ -80,6 +78,7 @@ function generateConfirmModal(args) {
     modal.find('.modal-confirm').text(params.confirm_text);
 
 
+    // Store which button is clicked so a callback can find it.
     $(modal).find('.modal-confirm, .modal-deny').on('click', function(){
        if( $(this).hasClass('modal-confirm') ) {
            $(this).parents('.modal').attr('data-result', 1);
@@ -94,6 +93,7 @@ function generateConfirmModal(args) {
 };
 
 $(function(){
+    // map HTML attributes to JS params
     var data_params = [
         ['data-confirm','message'],
         ['data-confirm-title', 'title'],
@@ -102,8 +102,10 @@ $(function(){
     ];
 
     $('[data-confirm]').each(function(index) {
+        // for each modal-enabled link
         var modal_args = {};
 
+        // build param list
         for(var i = 0; i < data_params.length; i++ ){
 
             var key = data_params[i];
@@ -116,10 +118,15 @@ $(function(){
 
         };
 
+
         var modal_id = generateConfirmModal(modal_args);
+
+        // Attach the modal's ID
         $(this).attr('data-modal', modal_id);
+
         $(this).on('click', function() {
             var href = $(this).attr('href');
+            // Set up the callback
             $(modal_id).one('hidden', function() {
                 var result = $(this).attr('data-result');
                 $(this).removeAttr('data-result');
@@ -127,7 +134,11 @@ $(function(){
                     window.location = href;
                 };
             });
+
+            // Show the modal
             $(modal_id).modal('show');
+
+            // Suppress the default link behavior
             return false;
         });
 
