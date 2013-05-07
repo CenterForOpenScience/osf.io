@@ -48,8 +48,9 @@ def forgot_password():
             Email.sendEmail(
                 to=form.email.data, 
                 subject="Reset Password", 
-                message="/resetpassword/{key}".format(
+                message="http://{domain}/resetpassword/{key}".format(
                     key=user_obj.verification_key,
+                    domain=Site.Settings.canonical_domain
                 )
             )
             Status.pushStatusMessage('Reset email sent')

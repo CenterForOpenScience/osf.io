@@ -17,4 +17,5 @@ mongo_uri = 'mongodb://osf:osf@localhost:20771/osf_test'
 # mongo_uri = 'mongodb://osf:osfosfosfosf0$f@localhost:20771/osf_test'
 
 #TODO: Configuration should not change between deploys - this should be dynamic.
+canonical_domain = 'openscienceframework.org'
 cookie_domain = '.openscienceframework.org' # Beaker
