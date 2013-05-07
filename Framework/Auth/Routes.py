@@ -130,6 +130,8 @@ def auth_register_post():
             u = register(form.username.data, form.password.data, form.fullname.data)
             if u:
                 if Site.Settings.confirm_registrations_by_email:
+                    #TODO: The sendRegistration method does not exist, this block will fail if email confirmation is on.
+                    raise NotImplementedError('Registration confirmation by email has not been fully implemented.')
                     sendRegistration(u)
                     Status.pushStatusMessage('Registration successful. Please \
                         check %s to confirm your email address, %s.' % 

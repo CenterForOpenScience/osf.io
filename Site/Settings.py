@@ -3,7 +3,7 @@ import os
 base_path = str(os.path.dirname(os.path.abspath(__file__)))
 
 # User management & registration
-confirm_registrations_by_email = False
+confirm_registrations_by_email = False # Not fully implemented
 allow_registration = True
 allow_login = True
 
