@@ -732,11 +732,10 @@ def view_file(*args, **kwargs):
     file_name = kwargs['fid']
 
     current_version = len(node_to_use.files_versions[file_name.replace('.', '_')])
-    root = '/var/www/openscienceframeworkorg_uploads'
 
     renderer = 'default'
 
-    file_path = os.path.join(root, node_to_use.id, file_name)
+    file_path = os.path.join(Site.Settings.uploads_path, node_to_use.id, file_name)
     if file_path.lower().endswith('.zip'):
         zf = zipfile.ZipFile(file_path, 'r')
         file_contents = 'This archive contains the following files:\n'
@@ -829,8 +828,7 @@ def download_file_by_version(*args, **kwargs):
 
     current_version = len(node_to_use.files_versions[filename.replace('.', '_')])
     if version_number == current_version:
-        root = '/var/www/openscienceframeworkorg_uploads'
-        file_path = os.path.join(root, node_to_use.id, filename)
+        file_path = os.path.join(Site.Settings.uploads_path, node_to_use.id, filename)
         return send_file(file_path)
 
     content, content_type = node_to_use.get_file(filename, version=version_number)

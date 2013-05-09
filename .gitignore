@@ -45,3 +45,4 @@ nosetests.xml
 # OSF-specific 
 #######################
 Site/Cache/*
+Site/Uploads/*

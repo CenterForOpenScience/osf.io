@@ -4,6 +4,8 @@ from Framework.Debug import *
 from Framework.Analytics import *
 from Framework.Search import Keyword, generateKeywords
 
+import Site.Settings
+
 import hashlib
 import datetime
 import markdown
@@ -153,8 +155,7 @@ class Node(MongoObject):
         if not (self.is_contributor(user) or self.is_public):
             return
 
-        root = '/var/www/openscienceframeworkorg_uploads'
-        folder_old = os.path.join(root, self.id)
+        folder_old = os.path.join(Site.Settings.uploads_path, self.id)
 
         when = datetime.datetime.utcnow()
 
@@ -162,7 +163,7 @@ class Node(MongoObject):
         self.optimistic_insert()
 
         if os.path.exists(folder_old):
-            folder_new = os.path.join(root, self.id)
+            folder_new = os.path.join(Site.Settings.uploads_path, self.id)
             Repo(folder_old).clone(folder_new)
         
         # TODO empty lists
@@ -202,8 +203,7 @@ class Node(MongoObject):
         return self
 
     def register_node(self, user, template, data):
-        root = '/var/www/openscienceframeworkorg_uploads'
-        folder_old = os.path.join(root, self.id)
+        folder_old = os.path.join(Site.Settings.uploads_path, self.id)
 
         when = datetime.datetime.utcnow()
 
@@ -211,7 +211,7 @@ class Node(MongoObject):
         self.optimistic_insert()
 
         if os.path.exists(folder_old):
-            folder_new = os.path.join(root, self.id)
+            folder_new = os.path.join(Site.Settings.uploads_path, self.id)
             Repo(folder_old).clone(folder_new)
         
         while len(self.nodes) > 0:
@@ -219,12 +219,12 @@ class Node(MongoObject):
 
         for i, node_contained in enumerate(original.nodes.objects()):
             original_node = self.load(node_contained.id)
-            folder_old = os.path.join(root, node_contained.id)
+            folder_old = os.path.join(Site.Settings.uploads_path, node_contained.id)
 
             node_contained.optimistic_insert()
 
             if os.path.exists(folder_old):
-                folder_new = os.path.join(root, node_contained.id)
+                folder_new = os.path.join(Site.Settings.uploads_path, node_contained.id)
                 Repo(folder_old).clone(folder_new)
 
             node_contained.is_registration = True
@@ -290,8 +290,7 @@ class Node(MongoObject):
 
     def get_file(self, path, version=None):
         if not version == None:
-            root = '/var/www/openscienceframeworkorg_uploads'
-            folder_name = os.path.join(root, self.id)
+            folder_name = os.path.join(Site.Settings.uploads_path, self.id)
             if os.path.exists(os.path.join(folder_name, ".git")):
                 file_object =  NodeFile.load(self.files_versions[path.replace('.', '_')][version])
                 repo = Repo(folder_name)
@@ -308,8 +307,13 @@ class Node(MongoObject):
             del self.files_versions[file_name_key]
 
     def add_file(self, user, file_name, content, size, content_type):
-        root = '/var/www/openscienceframeworkorg_uploads'
-        folder_name = os.path.join(root, self.id)
+        folder_name = os.path.join(Site.Settings.uploads_path, self.id)
+
+        # TODO: This should be part of the build phase, not here.
+        # verify the upload root exists
+        if not os.path.isdir(Site.Settings.uploads_path):
+            os.mkdir(Site.Settings.uploads_path)
+
         if os.path.exists(folder_name):
             if os.path.exists(os.path.join(folder_name, ".git")):
                 repo = Repo(folder_name)

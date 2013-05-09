@@ -13,6 +13,9 @@ use_cdn_for_client_libs = False
 # Application paths
 cache_path = os.path.join(base_path, 'Cache')
 static_path = os.path.join(base_path, 'static')
+# These settings should be overridden by envvars or another method.
+uploads_path = os.path.join(base_path, 'Uploads')
+# uploads_path = '/var/www/openscienceframeworkorg_uploads'
 mongo_uri = 'mongodb://osf:osf@localhost:20771/osf_test'
 # mongo_uri = 'mongodb://osf:osfosfosfosf0$f@localhost:20771/osf_test'
 
