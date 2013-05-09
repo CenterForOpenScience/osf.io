@@ -12,3 +12,4 @@ Markdown
 pytz
 dulwich
 scrubber
+pygments
