@@ -15,9 +15,9 @@ ObjectId = ObjectId
 DBRef = DBRef
 connect = Connection(Site.Settings.mongo_uri)
 
-collection = urlsplit(Site.Settings.mongo_uri).path[1:] # Slices off the leading slash of the path (collection name)
+db_name = urlsplit(Site.Settings.mongo_uri).path[1:] # Slices off the leading slash of the path (database name)
 
-db = connect[collection]
+db = connect[db_name]
 
 class MongoObject(Object):
     @property

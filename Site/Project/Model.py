@@ -5,6 +5,7 @@ from Framework.Analytics import *
 from Framework.Search import Keyword, generateKeywords
 
 import Site.Settings
+from Framework.Mongo import db as mongodb
 
 import hashlib
 import datetime
@@ -12,9 +13,12 @@ import markdown
 import calendar
 import os
 import copy
+import pymongo
 
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
+
+import subprocess
 
 def utc_datetime_to_timestamp(dt):
     return float(
@@ -299,12 +303,57 @@ class Node(MongoObject):
                 return repo[sha].data, file_object.content_type
         return None,None
 
-    def remove_file(self, path, is_sure=False):
+    def remove_file(self, user, path):
+        '''Removes a file from the filesystem, NodeFile collection, and does a git delete ('git rm <file>')
+
+        :param user:
+        :param path:
+
+        :return: True on success, False on failure
+        '''
+
+        #FIXME: encoding the filename this way is flawed. For instance - foo.bar resolves to the same string as foo_bar.
         file_name_key = path.replace('.', '_')
-        if file_name_key in self.files_current:
-            del self.files_current[file_name_key]
-        if file_name_key in self.files_versions:
-            del self.files_versions[file_name_key]
+
+        repo_path = os.path.join(Site.Settings.uploads_path, self.id)
+
+
+
+        # Do a git delete, which also removes from working filesystem.
+        try:
+            subprocess.check_output(
+                ['git', 'rm', path],
+                cwd=repo_path,
+                shell=False
+            )
+
+            repo = Repo(repo_path)
+
+            commit_id = repo.do_commit(
+                '%s deleted' % path,
+                '%s <user-%s@openscienceframework.org>' % (user.fullname, user.id)
+            )
+
+        except subprocess.CalledProcessError:
+            return False
+
+        # Get the current NodeFile for the file
+        result = NodeFile.storage.find(filename=path).sort('date_modified', pymongo.DESCENDING)[0]
+
+
+        nf = NodeFile.load(result['_id'])
+
+        del nf['_id']
+        nf.is_deleted = True
+        nf.git_commit = commit_id
+        nf.date_modified = datetime.datetime.now()
+        nf.save()
+
+        self.files_current[file_name_key] = nf.id
+        self.files_versions[file_name_key].append(nf.id)
+        self.save()
+
+        return True
 
     def add_file(self, user, file_name, content, size, content_type):
         folder_name = os.path.join(Site.Settings.uploads_path, self.id)
@@ -350,6 +399,7 @@ class Node(MongoObject):
         node_file.uploader = user
         node_file.git_commit = commit_id
         node_file.content_type = content_type
+        node_file.is_deleted = False
         node_file.save()
 
         file_name_key = file_name.replace('.', '_')

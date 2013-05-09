@@ -100,6 +100,13 @@
             <td class="size"><span>{%=o.formatFileSize(file.size)%}</span></td>
             <td>{%=file.downloads%}</td>
             <td><a href="{%=file.download_url%}" download="{%=file.name%}"><i class="icon-download-alt"></i></a></td>
+            <td><form style='margin:0' method='post' action='${node_to_use.url() + '/files/delete/{%=file.name%}'}'>
+                <button type="submit" class="btn btn-danger delete">
+                    <i class="icon-trash icon-white"></i>
+                    <span>Delete</span>
+                </button>
+                </form>
+            </td>
         {% } %}
         ##<td class="delete">
         ##    <button class="btn btn-danger" data-type="{%=file.delete_type%}" data-url="{%=file.delete_url%}">

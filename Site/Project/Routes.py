@@ -643,21 +643,23 @@ def upload_file_get(*args, **kwargs):
         node_to_use = project
 
     file_infos = []
-    for i,v in node_to_use.files_current.items():
+    for i, v in node_to_use.files_current.items():
         v = NodeFile.load(v)
-        unique, total = getBasicCounters('download:' + node_to_use.id + ':' + v.path.replace('.', '_') )
-        loggerDebug('hi', (unique, total))
-        file_infos.append({
-            "name":v.path,
-            "size":v.size,
-            "url":node_to_use.url() + "/files/" + v.path,
-            "type":v.content_type,
-            "download_url": node_to_use.url() + "/files/download/" + v.path,
-            "date_uploaded": v.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
-            "downloads": str(total) if total else str(0),
-            "user_id": None,
-            "user_fullname":None,
-        })
+        if not v.is_deleted:
+            unique, total = getBasicCounters('download:' + node_to_use.id + ':' + v.path.replace('.', '_') )
+            loggerDebug('hi', (unique, total))
+            file_infos.append({
+                "name":v.path,
+                "size":v.size,
+                "url":node_to_use.url() + "/files/" + v.path,
+                "type":v.content_type,
+                "download_url": node_to_use.url() + "/files/download/" + v.path,
+                "date_uploaded": v.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
+                "downloads": str(total) if total else str(0),
+                "user_id": None,
+                "user_fullname":None,
+                "delete": v.is_deleted
+            })
     return jsonify(files=file_infos)
 
 @post('/project/<pid>/files/upload')
@@ -838,14 +840,23 @@ def download_file_by_version(*args, **kwargs):
     return resp
 
 
-@get('/project/<pid>/files/delete/<fid>')
-@get('/project/<pid>/node/<nid>/files/delete/<fid>')
+#TODO: These should be DELETEs, not POSTs
+@post('/project/<pid>/files/delete/<fid>')
+@post('/project/<pid>/node/<nid>/files/delete/<fid>')
 @mustBeLoggedIn
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
 def delete_file(*args, **kwargs):
-    pass
+    project, node, user, filename = kwargs['project'], kwargs['node'], kwargs['user'], kwargs['fid']
+
+    node_to_use = node or project
+
+    if node_to_use.remove_file(user, filename):
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': False})
+
 
 
 ###############################################################################
