@@ -44,7 +44,8 @@
         remove_url += "node/" + node.id + "/"
     remove_url += "removecontributors"
 
-    make_public_warning = 'Making a project public cannot be undone. Are you absolutely sure you would like to continue?'
+    make_public_warning = 'Once a project is made public, there is no way to guarantee that access to the data it contains can be complete prevented. Users should assume that once a project is made public, it will always be public. Are you absolutely sure you would like to continue?'
+    make_private_warning = 'Making a project will prevent users from viewing it on this site, but will have no impact on external sites, including Google\'s cache. Would you like to continue?'
 %>
 
 <script>
@@ -68,6 +69,7 @@
         <div class="btn-group">
         %if not node_to_use.is_public:
             % if is_contributor:
+                <button class='btn disabled'>Private</button>
                 %if node:
                     <a class="btn" href="/project/${project.id}/node/${node.id}/makepublic" data-confirm="${make_public_warning}">Make public</a>
                 %else:
@@ -75,6 +77,13 @@
                 %endif
             % endif
         %else:
+            % if is_contributor:
+                %if node:
+                    <a class="btn" href="/project/${project.id}/node/${node.id}/makeprivate" data-confirm="${make_private_warning}">Make private</a>
+                %else:
+                    <a class="btn" href="/project/${project.id}/makeprivate" data-confirm="${make_private_warning}">Make private</a>
+                %endif
+            % endif
             <button class="btn disabled">Public</button>
         %endif
         </div>

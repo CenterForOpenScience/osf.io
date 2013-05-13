@@ -523,7 +523,20 @@ class Node(MongoObject):
                 user=user,
             )
         return True
-    
+
+    def makePrivate(self, user):
+        if self.is_public:
+            self.is_public = False
+            self.save()
+            self.add_log('made_private',
+                params={
+                    'project':self.node_parent.id if self.node_parent else None,
+                    'node':self.id,
+                },
+                user=user,
+            )
+        return True
+
     def get_wiki_page(self, page, version=None):
         # len(wiki_pages_versions) == 1, version 1
         # len() == 2, version 1, 2
