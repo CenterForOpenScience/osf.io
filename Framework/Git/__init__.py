@@ -1,6 +1,8 @@
 import os
 import subprocess
 
+import Site.Settings
+
 def init(path):
 	try:
 		os.mkdir(path)
@@ -16,9 +18,8 @@ def init(path):
     ).communicate()
 
 def branch_orphan_pull(old, new, user):
-    root = '/var/www/openscienceframeworkorg_uploads'
-    folder_old = os.path.join(root, old)
-    folder_new = os.path.join(root, new)
+    folder_old = os.path.join(Site.Settings.uploads_path, old)
+    folder_new = os.path.join(Site.Settings.uploads_path, new)
 
     p1 = subprocess.Popen(["git","checkout","--orphan", str(new)],
         cwd=folder_old,

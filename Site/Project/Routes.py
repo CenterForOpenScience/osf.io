@@ -387,6 +387,8 @@ def project_statistics(*args, **kwargs):
 # Make Public
 ###############################################################################
 
+
+#TODO: project_makepublic and project_makeprivate should be refactored into a single function to conform to DRY.
 @get('/project/<pid>/makepublic')
 @get('/project/<pid>/node/<nid>/makepublic')
 @mustBeLoggedIn # returns user
@@ -406,6 +408,28 @@ def project_makepublic(*args, **kwargs):
 
     if not node_to_use.is_public:             # if not already public
         node_to_use.makePublic(user)
+
+    return redirect(url)
+
+@get('/project/<pid>/makeprivate')
+@get('/project/<pid>/node/<nid>/makeprivate')
+@mustBeLoggedIn # returns user
+@must_be_valid_project # returns project
+@must_be_contributor # returns user, project
+def project_makeprivate(*args, **kwargs):
+    project = kwargs['project']
+    node = kwargs['node']
+    user = kwargs['user']
+
+    if node:
+        node_to_use = node
+        url = '/project/{pid}/node/{nid}'.format(pid=project.id, nid=node.id)
+    else:
+        node_to_use = project
+        url = '/project/{pid}'.format(pid=project.id)
+
+    if node_to_use.is_public:
+        node_to_use.makePrivate(user)
 
     return redirect(url)
 
@@ -643,21 +667,23 @@ def upload_file_get(*args, **kwargs):
         node_to_use = project
 
     file_infos = []
-    for i,v in node_to_use.files_current.items():
+    for i, v in node_to_use.files_current.items():
         v = NodeFile.load(v)
-        unique, total = getBasicCounters('download:' + node_to_use.id + ':' + v.path.replace('.', '_') )
-        loggerDebug('hi', (unique, total))
-        file_infos.append({
-            "name":v.path,
-            "size":v.size,
-            "url":node_to_use.url() + "/files/" + v.path,
-            "type":v.content_type,
-            "download_url": node_to_use.url() + "/files/download/" + v.path,
-            "date_uploaded": v.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
-            "downloads": str(total) if total else str(0),
-            "user_id": None,
-            "user_fullname":None,
-        })
+        if not v.is_deleted:
+            unique, total = getBasicCounters('download:' + node_to_use.id + ':' + v.path.replace('.', '_') )
+            loggerDebug('hi', (unique, total))
+            file_infos.append({
+                "name":v.path,
+                "size":v.size,
+                "url":node_to_use.url() + "/files/" + v.path,
+                "type":v.content_type,
+                "download_url": node_to_use.url() + "/files/download/" + v.path,
+                "date_uploaded": v.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
+                "downloads": str(total) if total else str(0),
+                "user_id": None,
+                "user_fullname":None,
+                "delete": v.is_deleted
+            })
     return jsonify(files=file_infos)
 
 @post('/project/<pid>/files/upload')
@@ -732,11 +758,10 @@ def view_file(*args, **kwargs):
     file_name = kwargs['fid']
 
     current_version = len(node_to_use.files_versions[file_name.replace('.', '_')])
-    root = '/var/www/openscienceframeworkorg_uploads'
 
     renderer = 'default'
 
-    file_path = os.path.join(root, node_to_use.id, file_name)
+    file_path = os.path.join(Site.Settings.uploads_path, node_to_use.id, file_name)
     if file_path.lower().endswith('.zip'):
         zf = zipfile.ZipFile(file_path, 'r')
         file_contents = 'This archive contains the following files:\n'
@@ -829,8 +854,7 @@ def download_file_by_version(*args, **kwargs):
 
     current_version = len(node_to_use.files_versions[filename.replace('.', '_')])
     if version_number == current_version:
-        root = '/var/www/openscienceframeworkorg_uploads'
-        file_path = os.path.join(root, node_to_use.id, filename)
+        file_path = os.path.join(Site.Settings.uploads_path, node_to_use.id, filename)
         return send_file(file_path)
 
     content, content_type = node_to_use.get_file(filename, version=version_number)
@@ -840,14 +864,23 @@ def download_file_by_version(*args, **kwargs):
     return resp
 
 
-@get('/project/<pid>/files/delete/<fid>')
-@get('/project/<pid>/node/<nid>/files/delete/<fid>')
+#TODO: These should be DELETEs, not POSTs
+@post('/project/<pid>/files/delete/<fid>')
+@post('/project/<pid>/node/<nid>/files/delete/<fid>')
 @mustBeLoggedIn
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
 def delete_file(*args, **kwargs):
-    pass
+    project, node, user, filename = kwargs['project'], kwargs['node'], kwargs['user'], kwargs['fid']
+
+    node_to_use = node or project
+
+    if node_to_use.remove_file(user, filename):
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': False})
+
 
 
 ###############################################################################

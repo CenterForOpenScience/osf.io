@@ -4,15 +4,21 @@ from Framework.Debug import *
 from Framework.Analytics import *
 from Framework.Search import Keyword, generateKeywords
 
+import Site.Settings
+from Framework.Mongo import db as mongodb
+
 import hashlib
 import datetime
 import markdown
 import calendar
 import os
 import copy
+import pymongo
 
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
+
+import subprocess
 
 def utc_datetime_to_timestamp(dt):
     return float(
@@ -153,8 +159,7 @@ class Node(MongoObject):
         if not (self.is_contributor(user) or self.is_public):
             return
 
-        root = '/var/www/openscienceframeworkorg_uploads'
-        folder_old = os.path.join(root, self.id)
+        folder_old = os.path.join(Site.Settings.uploads_path, self.id)
 
         when = datetime.datetime.utcnow()
 
@@ -162,7 +167,7 @@ class Node(MongoObject):
         self.optimistic_insert()
 
         if os.path.exists(folder_old):
-            folder_new = os.path.join(root, self.id)
+            folder_new = os.path.join(Site.Settings.uploads_path, self.id)
             Repo(folder_old).clone(folder_new)
         
         # TODO empty lists
@@ -202,8 +207,7 @@ class Node(MongoObject):
         return self
 
     def register_node(self, user, template, data):
-        root = '/var/www/openscienceframeworkorg_uploads'
-        folder_old = os.path.join(root, self.id)
+        folder_old = os.path.join(Site.Settings.uploads_path, self.id)
 
         when = datetime.datetime.utcnow()
 
@@ -211,7 +215,7 @@ class Node(MongoObject):
         self.optimistic_insert()
 
         if os.path.exists(folder_old):
-            folder_new = os.path.join(root, self.id)
+            folder_new = os.path.join(Site.Settings.uploads_path, self.id)
             Repo(folder_old).clone(folder_new)
         
         while len(self.nodes) > 0:
@@ -219,12 +223,12 @@ class Node(MongoObject):
 
         for i, node_contained in enumerate(original.nodes.objects()):
             original_node = self.load(node_contained.id)
-            folder_old = os.path.join(root, node_contained.id)
+            folder_old = os.path.join(Site.Settings.uploads_path, node_contained.id)
 
             node_contained.optimistic_insert()
 
             if os.path.exists(folder_old):
-                folder_new = os.path.join(root, node_contained.id)
+                folder_new = os.path.join(Site.Settings.uploads_path, node_contained.id)
                 Repo(folder_old).clone(folder_new)
 
             node_contained.is_registration = True
@@ -290,8 +294,7 @@ class Node(MongoObject):
 
     def get_file(self, path, version=None):
         if not version == None:
-            root = '/var/www/openscienceframeworkorg_uploads'
-            folder_name = os.path.join(root, self.id)
+            folder_name = os.path.join(Site.Settings.uploads_path, self.id)
             if os.path.exists(os.path.join(folder_name, ".git")):
                 file_object =  NodeFile.load(self.files_versions[path.replace('.', '_')][version])
                 repo = Repo(folder_name)
@@ -300,16 +303,66 @@ class Node(MongoObject):
                 return repo[sha].data, file_object.content_type
         return None,None
 
-    def remove_file(self, path, is_sure=False):
+    def remove_file(self, user, path):
+        '''Removes a file from the filesystem, NodeFile collection, and does a git delete ('git rm <file>')
+
+        :param user:
+        :param path:
+
+        :return: True on success, False on failure
+        '''
+
+        #FIXME: encoding the filename this way is flawed. For instance - foo.bar resolves to the same string as foo_bar.
         file_name_key = path.replace('.', '_')
-        if file_name_key in self.files_current:
-            del self.files_current[file_name_key]
-        if file_name_key in self.files_versions:
-            del self.files_versions[file_name_key]
+
+        repo_path = os.path.join(Site.Settings.uploads_path, self.id)
+
+
+
+        # Do a git delete, which also removes from working filesystem.
+        try:
+            subprocess.check_output(
+                ['git', 'rm', path],
+                cwd=repo_path,
+                shell=False
+            )
+
+            repo = Repo(repo_path)
+
+            commit_id = repo.do_commit(
+                '%s deleted' % path,
+                '%s <user-%s@openscienceframework.org>' % (user.fullname, user.id)
+            )
+
+        except subprocess.CalledProcessError:
+            return False
+
+        # Get the current NodeFile for the file
+        result = NodeFile.storage.find(filename=path).sort('date_modified', pymongo.DESCENDING)[0]
+
+
+        nf = NodeFile.load(result['_id'])
+
+        del nf['_id']
+        nf.is_deleted = True
+        nf.git_commit = commit_id
+        nf.date_modified = datetime.datetime.now()
+        nf.save()
+
+        self.files_current[file_name_key] = nf.id
+        self.files_versions[file_name_key].append(nf.id)
+        self.save()
+
+        return True
 
     def add_file(self, user, file_name, content, size, content_type):
-        root = '/var/www/openscienceframeworkorg_uploads'
-        folder_name = os.path.join(root, self.id)
+        folder_name = os.path.join(Site.Settings.uploads_path, self.id)
+
+        # TODO: This should be part of the build phase, not here.
+        # verify the upload root exists
+        if not os.path.isdir(Site.Settings.uploads_path):
+            os.mkdir(Site.Settings.uploads_path)
+
         if os.path.exists(folder_name):
             if os.path.exists(os.path.join(folder_name, ".git")):
                 repo = Repo(folder_name)
@@ -346,6 +399,7 @@ class Node(MongoObject):
         node_file.uploader = user
         node_file.git_commit = commit_id
         node_file.content_type = content_type
+        node_file.is_deleted = False
         node_file.save()
 
         file_name_key = file_name.replace('.', '_')
@@ -469,7 +523,20 @@ class Node(MongoObject):
                 user=user,
             )
         return True
-    
+
+    def makePrivate(self, user):
+        if self.is_public:
+            self.is_public = False
+            self.save()
+            self.add_log('made_private',
+                params={
+                    'project':self.node_parent.id if self.node_parent else None,
+                    'node':self.id,
+                },
+                user=user,
+            )
+        return True
+
     def get_wiki_page(self, page, version=None):
         # len(wiki_pages_versions) == 1, version 1
         # len() == 2, version 1, 2

@@ -295,3 +295,9 @@ h1#node-title, h1#node-title-editable {
 .editable:hover{
   background-color:#F3F3F3;
 }
+
+/* File list tables */
+
+table tbody.files td {
+    vertical-align:middle;
+}
