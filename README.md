@@ -8,7 +8,7 @@ We plan to publish our codebase by the last day of [SciPy 2013](http://conferenc
 Issue Tracking (Bug Reports)
 ----------------------------
 
-If you believe you've found a bug in the Framework, please document it using this repository's [Issue Tracker](/CenterForOpenScience/openscienceframework.org/issues). We'll work with you to make sure it gets resolved.
+If you believe you've found a bug in asdfasdfsasdfthe Framework, please document it using this repository's [Issue Tracker](/CenterForOpenScience/openscienceframework.org/issues). We'll work with you to make sure it gets resolved.
 
 Getting Support
 ---------------
