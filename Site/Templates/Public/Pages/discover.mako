@@ -5,6 +5,9 @@
 %>
 
 <style type='text/css'>
+    ul.project-list {
+        margin-left:0
+    }
     ul.project-list td ul {
         margin:0
     }
@@ -14,28 +17,54 @@
     ul.project-list table.table {
         margin-bottom:0;
     }
+    ul.project-list table.table th {
+        width:100px;
+    }
 </style>
 
-<div class='span6'>
-<h2>Newest Public Projects</h2>
-    <hr>
-<ul class='project-list' style='margin-left:0;'>
-    ${node_list(recent_public)}
-</ul>
+<div class='row'>
+    <div class='span6'>
+    <h2>Newest Public Projects</h2>
+        <hr>
+    <ul class='project-list'>
+        ${node_list(recent_public, prefix='newest_public')}
+    </ul>
+    </div>
+
+    <div class='span6'>
+        <h2>Most Viewed Projects</h2>
+        <hr>
+        <ul class='project-list'>
+            ${node_list(most_viewed, prefix='most_viewed')}
+        </ul>
+    </div>
 </div>
 
-<%def name="node_list(nodes, default=0)">
-%for node in recent_public:
-    <li id="projects-widget" class="project" style="display: list-item;">
+<%def name="node_list(nodes, default=0, prefix='')">
+%for node in nodes:
+    <%
+        import locale
+        locale.setlocale(locale.LC_ALL, 'en_US')
+        unique_hits, hits = node.get_stats()
+    %>
+    <li class="project" style="display: list-item;">
         <h3 style="line-height:18px;">
                 <a href="${node.url()}" style="display:inline-block; width:400px">
                     ${node.title}
                 </a>
-            <i style="float:right;" id="icon-${node.id}" class="icon-plus" onclick="openCloseNode('${node.id}');"></i>
+            <i style="float:right;" id="icon-${prefix}${node.id}" class="icon-plus" onclick="openCloseNode('${prefix}${node.id}');"></i>
         </h3>
 
-        <div class="body hide" id="body-${node.id}" style="overflow:hidden;">
+        <div class="body hide" id="body-${prefix}${node.id}" style="overflow:hidden;">
               <table class='table'>
+                  <tr>
+                      <th>Description</th>
+                      <td>${node.description or '<em>(No Description Set)</em>'}</td>
+                  </tr>
+                  <tr>
+                      <th>Views</th>
+                      <td>${ locale.format('%d', hits, grouping=True)} (${ locale.format('%d', unique_hits, grouping=True)} unique)</td>
+                  </tr>
                   <tr>
                       <th>Creator</th>
                       <td>${print_user(node.creator.id)}</td>

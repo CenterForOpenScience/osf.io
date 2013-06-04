@@ -603,6 +603,14 @@ class Node(MongoObject):
             log_date=v.date
         )
 
+    def get_stats(self, detailed=False):
+        if detailed:
+            raise NotImplementedError(
+                'Detailed stats exist, but are not yet implemented.'
+            )
+        else:
+            return getBasicCounters('node:%s' % self.id)
+
 Node.schema['forked_from'] = {'type':Node, 'backref':['forked']}
 Node.schema['nodes'] = {'type':[Node], 'backref':'parent'}
 Node.schema['registered_from'] = {'type':Node, 'backref':['registrations']}
