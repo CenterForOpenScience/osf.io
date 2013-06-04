@@ -111,7 +111,7 @@
                 <ul class="nav">
                     %if username:
                     <li><a rel="tooltip" title="My Dashboard" href="/dashboard">Dashboard</a></li>
-                    <li><a href="/explore">Explore</a></li>
+                    <li><a href="/discover">Discover</a></li>
                     <li><a href="/faq">FAQ</a></li>
                     %else:
                     <li><a href="/explore">Explore</a></li>

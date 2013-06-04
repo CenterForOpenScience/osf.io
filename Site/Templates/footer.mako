@@ -17,6 +17,7 @@
                     <div class="span2">
                         <h4>OSF</h4>
                         <ul>
+                            <li><a href="/explore">Explore</a></li>
                             <li><a href="/project/4znZP/wiki/home">About</a></li>
                             <li><a href="/faq">FAQ</a></li>
                         </ul>
