@@ -301,3 +301,9 @@ h1#node-title, h1#node-title-editable {
 table tbody.files td {
     vertical-align:middle;
 }
+
+/* Custom icons */
+
+.icon-fork {
+    background-position: 0 -144px;
+}
