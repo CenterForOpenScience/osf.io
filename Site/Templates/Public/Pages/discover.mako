@@ -27,7 +27,12 @@
     <h2>Newest Public Projects</h2>
         <hr>
     <ul class='project-list'>
-        ${node_list(recent_public, prefix='newest_public')}
+        ${node_list(recent_public_projects, prefix='newest_public')}
+    </ul>
+    <h2>Newest Public Registrations</h2>
+        <hr>
+    <ul class='project-list'>
+        ${node_list(recent_public_registrations, prefix='newest_public')}
     </ul>
     </div>
 
@@ -35,7 +40,12 @@
         <h2>Most Viewed Projects</h2>
         <hr>
         <ul class='project-list'>
-            ${node_list(most_viewed, prefix='most_viewed')}
+            ${node_list(most_viewed_projects, prefix='most_viewed')}
+        </ul>
+        <h2>Most Viewed Registrations</h2>
+        <hr>
+        <ul class='project-list'>
+            ${node_list(most_viewed_registrations, prefix='most_viewed')}
         </ul>
     </div>
 </div>
@@ -63,7 +73,7 @@
                   </tr>
                   <tr>
                       <th>Views</th>
-                      <td>${ locale.format('%d', hits, grouping=True)} (${ locale.format('%d', unique_hits, grouping=True)} unique)</td>
+                      <td>${ locale.format('%d', hits, grouping=True) if hits else 0} (${ locale.format('%d', unique_hits, grouping=True) if unique_hits else 0} unique)</td>
                   </tr>
                   <tr>
                       <th>Creator</th>
