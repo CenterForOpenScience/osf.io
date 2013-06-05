@@ -102,6 +102,13 @@
                     %else:
                         project <a href="/project/${params['node']}">${getNode(params['node']).title}</a>
                     %endif
+                %elif action == 'file_removed':
+                    removed file ${params['path']} from
+                    %if params['project']:
+                        node <a href="/project/${params['project']}/node/${params['node']}">${getNode(params['node']).title}</a>
+                    %else:
+                        project <a href="/project/${params['node']}">${getNode(params['node']).title}</a>
+                    %endif
                 %elif action == 'file_updated':
                     updated file ${params['path']} in
                     %if params['project']:

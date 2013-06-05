@@ -317,8 +317,7 @@ class Node(MongoObject):
 
         repo_path = os.path.join(Site.Settings.uploads_path, self.id)
 
-
-
+        # TODO make sure it all works, otherwise rollback as needed
         # Do a git delete, which also removes from working filesystem.
         try:
             subprocess.check_output(
@@ -337,22 +336,30 @@ class Node(MongoObject):
         except subprocess.CalledProcessError:
             return False
 
-        # Get the current NodeFile for the file
-        result = NodeFile.storage.find(filename=path).sort('date_modified', pymongo.DESCENDING)[0]
+        date_modified = datetime.datetime.now()
 
+        if file_name_key in self.files_current:
+            nf = NodeFile.load(self.files_current[file_name_key])
+            nf.is_deleted = True
+            nf.date_modified = date_modified
+            nf.save()
+            self.files_current.pop(file_name_key, None)
 
-        nf = NodeFile.load(result['_id'])
+        if file_name_key in self.files_versions:
+            for i in self.files_versions[file_name_key]:
+                nf = NodeFile.load(i)
+                nf.is_deleted = True
+                nf.date_modified = date_modified
+                nf.save()
+            self.files_versions.pop(file_name_key)
 
-        del nf['_id']
-        nf.is_deleted = True
-        nf.git_commit = commit_id
-        nf.date_modified = datetime.datetime.now()
-        nf.save()
+        self.add_log('file_removed', {
+                'project':self.node_parent.id if self.node_parent else None,
+                'node':self.id,
+                'path':path
+            }, user, log_date=date_modified)
 
-        self.files_current[file_name_key] = nf.id
-        self.files_versions[file_name_key].append(nf.id)
         self.save()
-
         return True
 
     def add_file(self, user, file_name, content, size, content_type):
