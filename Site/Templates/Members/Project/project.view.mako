@@ -102,7 +102,7 @@
                url:   '${node_to_use.url()}/edit',  
                title: 'Edit Title',
                placement: 'bottom',
-               value: '${node_to_use.title}',
+               value: '${ '\\\''.join(node_to_use.title.split('\'')) }',
                success: function(data){
                     document.location.reload(true);
                }
