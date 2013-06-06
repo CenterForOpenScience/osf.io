@@ -13,6 +13,7 @@
         node_to_use = project
 
     is_contributor = node_to_use.is_contributor(user)
+    is_registration = node_to_use.is_registration
 
     for contributor in node_to_use.contributor_list:
         if "id" in contributor:
@@ -93,6 +94,7 @@
           <a rel="tooltip" title="Number of times this node has been forked (copied)" class="btn" href="#" onclick="forkNode();"><i class="icon-random"></i>&nbsp;${len(node_to_use.node_forked) if node_to_use.node_forked else 0}</a>
         </div>
     </div>
+    %if is_contributor and not is_registration:
     <script>
         $(function() {
             $('#node-title-editable').editable({
@@ -109,6 +111,8 @@
             });
         });
     </script>
+
+    %endif
     %if not node:
     <h1 id="${'node-title-editable' if node_to_use.is_contributor else 'node-title'}" style="display:inline-block">${project.title}</h1>
     %else:
