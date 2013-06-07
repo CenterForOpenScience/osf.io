@@ -1,4 +1,13 @@
-<%page args="form, name, actionString=None, methodString='post', formClass='form-stacked', submitString='Create Account', htmlReplacements=None" />
+<%page args="
+    form,
+    name,
+    actionString=None,
+    methodString='post',
+    formClass='form-stacked',
+    submitString='Create Account',
+    htmlReplacements=None,
+    fieldNamePrefix='',
+" />
 <form name="${name}" method="${methodString}" ${"action=\""+actionString+"\"" if actionString else ""} class="${formClass}">
     <fieldset>
         % for field in form:
@@ -8,7 +17,7 @@
                     % if htmlReplacements and (field.id in htmlReplacements):
                         ${htmlReplacements[field.id]}
                     % else:
-                        ${field}     
+                        ${field}
                     % endif
                 </div>
             </div>
