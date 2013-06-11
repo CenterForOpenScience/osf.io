@@ -18,6 +18,7 @@ import difflib
 import httplib as http
 from markdown.extensions.wikilinks import WikiLinkExtension
 import pygments
+from cStringIO import StringIO
 
 mod = Blueprint('project', __name__, template_folder='templates')
 
@@ -860,10 +861,12 @@ def download_file_by_version(*args, **kwargs):
         return send_file(file_path)
 
     content, content_type = node_to_use.get_file(filename, version=version_number)
-    resp = make_response(content)
-    resp.headers['Content-Type'] = content_type
-    resp = Response(content, status=200, mimetype=content_type)
-    return resp
+    return send_file(
+        StringIO(content),
+        mimetype=content_type,
+        as_attachment=True,
+        attachment_filename=filename,
+    )
 
 
 #TODO: These should be DELETEs, not POSTs
