@@ -15,7 +15,9 @@ import re
 import scrubber
 import markdown
 import difflib
+import httplib as http
 from markdown.extensions.wikilinks import WikiLinkExtension
+import pygments
 
 mod = Blueprint('project', __name__, template_folder='templates')
 
@@ -757,8 +759,6 @@ def view_file(*args, **kwargs):
 
     file_name = kwargs['fid']
 
-    current_version = len(node_to_use.files_versions[file_name.replace('.', '_')])
-
     renderer = 'default'
 
     file_path = os.path.join(Site.Settings.uploads_path, node_to_use.id, file_name)
@@ -786,14 +786,16 @@ def view_file(*args, **kwargs):
         renderer = 'pygments'
     else:
         renderer = 'pygments'
-        file_contents = open(file_path, 'r').read()
+        try:
+            file_contents = open(file_path, 'r').read()
+        except IOError:
+            abort(http.NOT_FOUND)
 
     if renderer == 'pygments':
         try:
             rendered = highlight(file_contents,guess_lexer_for_filename(file_path, file_contents), HtmlFormatter())
         except pygments.util.ClassNotFound:
             rendered = 'This type of file cannot be rendered online.  Please download the file to view it locally.'
-    
 
     #if not file_path.endswith('.txt'):
     #    renderer = 'prettify'
