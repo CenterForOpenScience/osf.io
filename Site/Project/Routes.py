@@ -791,7 +791,7 @@ def view_file(*args, **kwargs):
     if renderer == 'pygments':
         try:
             rendered = highlight(file_contents,guess_lexer_for_filename(file_path, file_contents), HtmlFormatter())
-        except:
+        except pygments.util.ClassNotFound:
             rendered = 'This type of file cannot be rendered online.  Please download the file to view it locally.'
     
 
