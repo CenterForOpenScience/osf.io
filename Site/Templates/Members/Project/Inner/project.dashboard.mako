@@ -40,30 +40,32 @@
       <section id="Nodes">
           
           <div class="page-header">
-              <div style="float:right;"><a class="btn" data-toggle="modal" href="#newNode" >New Node</a></div>
+              <div style="float:right;"><a class="btn" data-toggle="modal" href="#newComponent" >Add Component</a></div>
               <h1>Components</h1>
           </div>
-          <div class="modal hide fade" id="newNode">
+          <div class="modal hide fade" id="newComponent">
+          <form class="form-horizontal form-horizontal-narrow" action="/project/${project.id}/newnode" method="post">
             <div class="modal-header">
-              <h3><img src="/static/add_48.png" width="30px" style="vertical-align:middle;"/>Add Node</h3>
+              <h3 class='img-add'>Add Component</h3>
             </div>
-            <form class="well form-inline" action="/project/${project.id}/newnode" method="post">
             <div class="modal-body">
-              
-                Node title <input name="title" type="text"><br />
-                <label>
-                    Category
-                </label>
-                <select id="select01" name="category">
-                <option>Category</option>
-                %for i in ["Project", "Hypothesis", "Methods and Measures", "Procedure", "Instrumentation", "Data", "Analysis", "Communication", "Other"]:
-                <option>${i}</option>
-                %endfor
-                </select>
+                    <div class='control-group'>
+                        <label for='title' class='control-label'>Title</label>
+                        <input name="title" type="text" class='controls'>
+                    </div>
+                    <div class='control-group'>
+                        <label for='category' class='control-label'>Category</label>
+                        <select id="category" name="category" class='controls'>
+                            <option disabled selected value=''>-- Choose--</option>
+                            %for i in ["Project", "Hypothesis", "Methods and Measures", "Procedure", "Instrumentation", "Data", "Analysis", "Communication", "Other"]:
+                            <option>${i}</option>
+                            %endfor
+                        </select>
+                    </div>
             </div>
                 <div class="modal-footer">
                    <a href="#" class="btn" data-dismiss="modal">Close</a>
-                  <button type="submit" class="btn">Create Node</button>
+                  <button type="submit" class="btn btn-primary">OK</button>
                 </div>
             </form>
             </div>

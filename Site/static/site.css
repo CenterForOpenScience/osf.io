@@ -307,3 +307,24 @@ table tbody.files td {
 .icon-fork {
     background-position: 0 -144px;
 }
+
+/* Modal forms */
+div.modal form {
+    margin:0;
+}
+
+div.modal div.modal-header h3.img-add {
+    height:30px;
+    padding-left:40px;
+    background: url(/static/add_48.png) no-repeat;
+    background-size: 30px;
+    line-height:30px;
+}
+
+form.form-horizontal.form-horizontal-narrow .controls {
+    margin-left: 50px;
+}
+
+form.form-horizontal.form-horizontal-narrow .control-group {
+    padding-left:55px;
+}
