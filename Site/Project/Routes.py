@@ -184,7 +184,7 @@ def node_register_page(*args, **kwargs):
     )
 
 @get('/project/<pid>/register/<template>')
-@get('/project/<pid>/node/<nid>/<template>')
+@get('/project/<pid>/node/<nid>/register/<template>')
 @must_be_valid_project
 @must_be_contributor # returns user, project
 def node_register_tempate_page(*args, **kwargs):
