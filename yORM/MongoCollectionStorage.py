@@ -33,7 +33,7 @@ class MongoCollectionStorage(yORM.Storage):
         return True
     
     def getRef(self, obj):
-        return str(obj._id) # DBRef(self.collection, obj._id, database=self.db.database.name) #str(obj._id) #
+        return unicode(obj._id) # DBRef(self.collection, obj._id, database=self.db.database.name) #str(obj._id) #
     
     #def getFromRef(self, parentClass, ref):
     #    return parentClass.load(ref)
