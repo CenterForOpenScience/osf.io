@@ -711,13 +711,24 @@ def upload_file_public(*args, **kwargs):
     uploaded_file_content_type = uploaded_file.content_type
     uploaded_filename = secure_filename(uploaded_file.filename)
     
-    file_object = node_to_use.add_file(
-        user,
-        uploaded_filename,
-        uploaded_file_content,
-        uploaded_file_size,
-        uploaded_file_content_type
-    )
+    try:
+        file_object = node_to_use.add_file(
+            user,
+            uploaded_filename,
+            uploaded_file_content,
+            uploaded_file_size,
+            uploaded_file_content_type
+        )
+    except FileNotModified as e:
+        return Response(
+            json.dumps([{
+                'action_taken': None,
+                'message': e.message,
+                'name': uploaded_filename,
+            }]),
+            status=200,
+            mimetype='application/json'
+        )
 
     unique, total = getBasicCounters('download:' + node_to_use.id + ':' + file_object.path.replace('.', '_') )
 

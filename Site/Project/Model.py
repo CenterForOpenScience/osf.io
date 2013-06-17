@@ -3,6 +3,7 @@ from Framework.Auth import *
 from Framework.Debug import *
 from Framework.Analytics import *
 from Framework.Search import Keyword, generateKeywords
+from Framework.Git.exceptions import FileNotModified
 
 import Site.Settings
 from Framework.Mongo import db as mongodb
@@ -363,6 +364,13 @@ class Node(MongoObject):
         return True
 
     def add_file(self, user, file_name, content, size, content_type):
+        """
+        Instantiates a new NodeFile object, and adds it to the current Node as
+        necessary.
+        """
+        # TODO: Reading the whole file into memory is not scalable. Fix this.
+
+        # This node's folder
         folder_name = os.path.join(Site.Settings.uploads_path, self.id)
 
         # TODO: This should be part of the build phase, not here.
@@ -370,34 +378,56 @@ class Node(MongoObject):
         if not os.path.isdir(Site.Settings.uploads_path):
             os.mkdir(Site.Settings.uploads_path)
 
+        # Make sure the upload directory contains a git repo.
         if os.path.exists(folder_name):
             if os.path.exists(os.path.join(folder_name, ".git")):
                 repo = Repo(folder_name)
             else:
+                # ... or create one
                 repo = Repo.init(folder_name)
         else:
+            # if the Node's folder isn't there, create it.
             os.mkdir(folder_name)
             repo = Repo.init(folder_name)
 
-        if os.path.exists(os.path.join(folder_name, file_name)):
-            file_new = True
-        else:
-            file_new = False
+        # Is this a new file, or are we updating an existing one?
+        file_is_new = not os.path.exists(os.path.join(folder_name, file_name))
 
+        if not file_is_new:
+            # Get the hash of the old file
+            old_file_hash = hashlib.md5()
+            with open(os.path.join(folder_name, file_name), 'rb') as f:
+                for chunk in iter(
+                        lambda: f.read(128 * old_file_hash.block_size),
+                        b''
+                ):
+                    old_file_hash.update(chunk)
+
+            # If the file hasn't changed
+            if old_file_hash.digest() == hashlib.md5(content).digest():
+                raise FileNotModified()
+
+        # Write the content of the temp file into a new file
         with open(os.path.join(folder_name, file_name), 'wb') as f:
             f.write(content)
 
+        # Deal with git
         repo.stage([file_name])
+        committer = u'{name} <user-{id}@openscienceframework.org>'.format(
+            name=user.fullname,
+            id=user.id,
+        )
 
-        if file_new:
-            commit_message = file_name + ' added'
-        else:
-            commit_message = file_name + ' updated'
+        commit_id = repo.do_commit(
+            message=unicode(file_name +
+                            (' added' if file_is_new else ' updated')),
+            committer=committer,
+        )
 
-        committer = user.fullname + ' <user-' + str(user.id) + '@openscienceframework.org>'
+        # Deal with logs
         loggerDebug('add_file', committer)
-        commit_id = repo.do_commit(commit_message, committer)
 
+        # Deal with creating a NodeFile in the database
         node_file = NodeFile()
         node_file.path = file_name
         node_file.filename = file_name
@@ -409,26 +439,35 @@ class Node(MongoObject):
         node_file.is_deleted = False
         node_file.save()
 
+        # Add references to the NodeFile to the Node object
         file_name_key = file_name.replace('.', '_')
+
+        # Reference the current file version
         self.files_current[file_name_key] = node_file.id
+
+        # Create a version history if necessary
         if not file_name_key in self.files_versions:
             self.files_versions[file_name_key] = []
+
+        # Add reference to the version history
         self.files_versions[file_name_key].append(node_file.id)
+
+        # Save the Node
         self.save()
 
-        if file_new:
+        if file_is_new:
             self.add_log('file_added', {
-                'project':self.node_parent.id if self.node_parent else None,
-                'node':self.id,
-                'path':node_file.path,
-                'version':len(self.files_versions)
+                'project': self.node_parent.id if self.node_parent else None,
+                'node': self.id,
+                'path': node_file.path,
+                'version': len(self.files_versions)
             }, user, log_date=node_file.date_uploaded)
         else:
             self.add_log('file_updated', {
-                'project':self.node_parent.id if self.node_parent else None,
-                'node':self.id,
-                'path':node_file.path,
-                'version':len(self.files_versions)
+                'project': self.node_parent.id if self.node_parent else None,
+                'node': self.id,
+                'path': node_file.path,
+                'version': len(self.files_versions)
             }, user, log_date=node_file.date_uploaded)
 
         return node_file

@@ -57,7 +57,7 @@
         {% if (file.error) { %}
             <td class="error" colspan="2"><span class="label label-important">{%=locale.fileupload.error%}</span> {%=locale.fileupload.errors[file.error] || file.error%}</td>
         {% } else if (o.files.valid && !i) { %}
-            <td>
+            <td colspan="2">
                 <div class="progress progress-success progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="bar" style="width:0%;"></div></div>
             </td>
             <td class="start">{% if (!o.options.autoUpload) { %}
@@ -83,14 +83,19 @@
 {% for (var i=0, file; file=o.files[i]; i++) { %}
     <tr class="template-download fade">
         {% if (file.error) { %}
-            <td></td>
             <td class="name"><span>{%=file.name%}</span></td>
+            <td></td>
             <td class="size"><span>{%=o.formatFileSize(file.size)%}</span></td>
-            <td class="error" colspan="2"><span class="label label-important">{%=locale.fileupload.error%}</span> {%=locale.fileupload.errors[file.error] || file.error%}</td>
+            <td class="error" colspan="3"><span class="label label-important">{%=locale.fileupload.error%}</span> {%=locale.fileupload.errors[file.error] || file.error%}</td>
         {% } else { %}
             <td class="name">
                 <a href="{%=file.url%}" title="{%=file.name%}">{%=file.name%}</a>
             </td>
+            {% if (file.hasOwnProperty('action_taken') && file.action_taken === null) { %}
+                    <td colspan=5>
+                        <span class='label label-info'>No Action Taken</span> {%= file.message %}
+                    </td>
+            {% } else { %}
             <td>{%=file.date_uploaded%}</td>
             <td class="size"><span>{%=o.formatFileSize(file.size)%}</span></td>
             <td>{%=file.downloads%}</td>
@@ -102,6 +107,7 @@
                 </button>
                 </form>
             </td>
+            {% } %}
         {% } %}
         ##<td class="delete">
         ##    <button class="btn btn-danger" data-type="{%=file.delete_type%}" data-url="{%=file.delete_url%}">
@@ -131,10 +137,10 @@ $(function () {
     // Initialize the jQuery File Upload widget:
     $('#fileupload').fileupload();
     $('#fileupload').fileupload('option',{
-    	url: '${node_to_use.url() + '/files/upload'}',
-    	acceptFileTypes: /(\.|\/)(.*)$/i,
-    	maxFileSize: 250000000,
-	});
+        url: '${node_to_use.url() + '/files/upload'}',
+        acceptFileTypes: /(\.|\/)(.*)$/i,
+        maxFileSize: 250000000
+    });
 
      // Load existing files:
      $('#fileupload').each(function () {
