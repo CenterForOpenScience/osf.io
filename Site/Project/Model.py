@@ -126,7 +126,7 @@ class Node(MongoObject):
         #    return False
 
         for node in node_objects:
-            #if not node.is_contributor(user):
+            #if not node.user_is_contributor(user):
             #    return False
             
             if not node.category == 'project':
