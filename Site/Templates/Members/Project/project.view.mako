@@ -91,7 +91,19 @@
 
         <div class="btn-group">
           <a rel="tooltip" title="Number of users watching this node" class="btn" href="#"><i class="icon-eye-open"></i>&nbsp;${len(node_to_use.watchingUsers) if node_to_use.watchingUsers else 0}</a>
-          <a rel="tooltip" title="Number of times this node has been forked (copied)" class="btn" href="#" onclick="forkNode();"><i class="icon-fork"></i>&nbsp;${len(node_to_use.node_forked) if node_to_use.node_forked else 0}</a>
+          <a
+              href="#"
+              rel="tooltip"
+              title="Number of times this node has been forked (copied)"
+              % if is_registration:
+              class="btn disabled"
+              % else:
+              class="btn"
+              onclick="forkNode();"
+              % endif
+          >
+              <i class="icon-fork"></i>&nbsp;${len(node_to_use.node_forked) if node_to_use.node_forked else 0}
+          </a>
         </div>
     </div>
     %if is_contributor and not is_registration:
