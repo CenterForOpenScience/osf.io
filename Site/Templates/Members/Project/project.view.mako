@@ -9,17 +9,21 @@
 
     if node:
         node_to_use = node
+        is_node = True
+        is_project = False
     else:
         node_to_use = project
+        is_node = False
+        is_project = True
 
-    is_contributor = node_to_use.is_contributor(user)
-    is_registration = node_to_use.is_registration
+    user_is_contributor = node_to_use.is_contributor(user)
+
 
     for contributor in node_to_use.contributor_list:
         if "id" in contributor:
             contributor = Framework.getUser(contributor["id"])
             txt = '<a href="/profile/%s"' % contributor.id
-            if is_contributor:
+            if user_is_contributor:
                 txt += ' class="user-quickedit" data-userid="%s" data-fullname="%s"' % (contributor.id, contributor.fullname)
             txt += '>%s</a>' % contributor.fullname
             contributors_ids.append(contributor.id)
@@ -32,13 +36,6 @@
     contributors_text = ', '.join(contributors_text)
     counterUnique, counterTotal = Framework.getBasicCounters(
         '/project/%s/' % project.id)
-
-    if node:
-        is_node = True
-        is_project = False
-    else:
-        is_node = False
-        is_project = True
 
     remove_url = "/project/" + project.id + "/"
     if node:
@@ -69,7 +66,7 @@
     <div class="btn-toolbar" style="float:right;">
         <div class="btn-group">
         %if not node_to_use.is_public:
-            % if is_contributor:
+            % if user_is_contributor:
                 <button class='btn disabled'>Private</button>
                 %if node:
                     <a class="btn" href="/project/${project.id}/node/${node.id}/makepublic" data-confirm="${make_public_warning}">Make public</a>
@@ -78,7 +75,7 @@
                 %endif
             % endif
         %else:
-            % if is_contributor:
+            % if user_is_contributor:
                 %if node:
                     <a class="btn" href="/project/${project.id}/node/${node.id}/makeprivate" data-confirm="${make_private_warning}">Make private</a>
                 %else:
@@ -91,10 +88,22 @@
 
         <div class="btn-group">
           <a rel="tooltip" title="Number of users watching this node" class="btn" href="#"><i class="icon-eye-open"></i>&nbsp;${len(node_to_use.watchingUsers) if node_to_use.watchingUsers else 0}</a>
-          <a rel="tooltip" title="Number of times this node has been forked (copied)" class="btn" href="#" onclick="forkNode();"><i class="icon-fork"></i>&nbsp;${len(node_to_use.node_forked) if node_to_use.node_forked else 0}</a>
+          <a
+              href="#"
+              rel="tooltip"
+              title="Number of times this node has been forked (copied)"
+              % if is_project:
+              class="btn"
+              % else:
+              class="btn disabled"
+              onclick="forkNode();"
+              % endif
+          >
+              <i class="icon-fork"></i>&nbsp;${len(node_to_use.node_forked) if node_to_use.node_forked else 0}
+          </a>
         </div>
     </div>
-    %if is_contributor and not is_registration:
+    %if user_is_contributor and not node_to_use.is_registration:
     <script>
         $(function() {
             $('#node-title-editable').editable({
@@ -119,7 +128,7 @@
     <h1 id="node-title" style="display:inline-block"><a href="/project/${project.id}/">${project.title}</a> / </h1> <h1 id="${'node-title-editable' if node_to_use.is_contributor else 'node-title'}" style="display:inline-block">${node.title}</h1> 
     %endif
     <p id="contributors">Contributors: ${contributors_text} 
-    % if is_contributor:
+    % if user_is_contributor:
         | <a href="#addContributors" data-toggle="modal">add</a>
     %endif
     % if node_to_use.is_fork:
@@ -157,7 +166,7 @@
             <li><a href="${node_to_use.url()}/files">Files</a></li>
             <li><a href="${node_to_use.url()}/registrations">Registrations</a></li>
             <li><a href="${node_to_use.url()}/forks">Forks</a></li>
-            % if is_contributor:
+            % if user_is_contributor:
             <li><a href="${node_to_use.url()}/settings">Settings</a></li>
             %endif
         </ul>
