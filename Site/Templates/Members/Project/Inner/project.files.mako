@@ -23,7 +23,7 @@
             <!-- The global progress information -->
             <div class="span5 fileupload-progress fade">
                 <!-- The global progress bar -->
-                <div class="progress progress-success progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+                <div style='margin-bottom:0' class="progress progress-success progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100">
                     <div class="bar" style="width:0%;"></div>
                 </div>
                 <!-- The extended global progress information -->
@@ -34,7 +34,10 @@
         <div class="fileupload-loading"></div>
         <br>
         <!-- The table listing the files available for upload/download -->
-        <table role="presentation" class="table table-striped">
+        <div id='fileWidgetLoadingIndicator' class="progress progress-striped active">
+            <div class="bar" style="width: 100%;">Loading...</div>
+        </div>
+        <table id='filesTable' role="presentation" class="table table-striped" style='display:none'>
             <thead>
                 <tr>
                     <th>Filename</th>
@@ -150,6 +153,10 @@ $(function () {
                  $(that).fileupload('option', 'done')
                      .call(that, null, {result: result.files});
              }
+             $('#fileWidgetLoadingIndicator').fadeOut(400, function() {
+                $('#filesTable').fadeIn(400)
+             })
+
          });
      });
  });
