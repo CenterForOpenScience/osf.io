@@ -291,7 +291,6 @@ class Node(MongoObject):
                 'tag':tag,
             }, user)
 
-
     def get_file(self, path, version=None):
         if not version == None:
             folder_name = os.path.join(Site.Settings.uploads_path, self.id)
@@ -302,6 +301,14 @@ class Node(MongoObject):
                 (mode,sha) = tree_lookup_path(repo.get_object,tree,path)
                 return repo[sha].data, file_object.content_type
         return None,None
+
+    def get_file_object(self, path, version=None):
+        if version is not None:
+            directory = os.path.join(Site.Settings.uploads_path, self.id)
+            if os.path.exists(os.path.join(directory, '.git')):
+                return NodeFile.load(self.files_versions[path.replace('.', '_')][version])
+            # TODO: Raise exception here
+        return None, None # TODO: Raise exception here
 
     def remove_file(self, user, path):
         '''Removes a file from the filesystem, NodeFile collection, and does a git delete ('git rm <file>')

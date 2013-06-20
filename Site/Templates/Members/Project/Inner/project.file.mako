@@ -53,7 +53,7 @@
 					${str(total) if total else str(0)}
 				</td>
 				<td>
-					<a href="${node_to_use.url()}/files/download/${file_name}/version/${version_number}" download="${ base + '_' + version.date_uploaded.strftime('%Y%m%d%H%M%S') + ext if i > 0 else file_name}"><i class="icon-download-alt"></i></a>
+					<a href="${node_to_use.url()}/files/download/${file_name}/version/${version_number}"><i class="icon-download-alt"></i></a>
 				</td>
 			</tr>
 			%endfor

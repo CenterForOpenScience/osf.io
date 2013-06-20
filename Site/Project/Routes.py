@@ -865,11 +865,19 @@ def download_file_by_version(*args, **kwargs):
         return send_file(file_path)
 
     content, content_type = node_to_use.get_file(filename, version=version_number)
+    file_object = node_to_use.get_file_object(filename, version=version_number)
+    filename_base, file_extension = os.path.splitext(file_object.path)
+    returned_filename = '{base}_{tmstp}{ext}'.format(
+        base=filename_base,
+        ext=file_extension,
+        tmstp=file_object.date_uploaded.strftime('%Y%m%d%H%M%S')
+    )
+    print returned_filename
     return send_file(
         StringIO(content),
         mimetype=content_type,
         as_attachment=True,
-        attachment_filename=filename,
+        attachment_filename=returned_filename,
     )
 
 
