@@ -111,13 +111,23 @@
                 <ul class="nav">
                     %if username:
                     <li><a rel="tooltip" title="My Dashboard" href="/dashboard">Dashboard</a></li>
-                    <li><a href="/explore">Explore</a></li>
-                    <li><a href="/faq">FAQ</a></li>
-                    %else:
-                    <li><a href="/explore">Explore</a></li>
-                    <li><a href="/faq">FAQ</a></li>
-                    <li><a href="/project/4znZP/wiki/home">About</a></li>
                     %endif
+                    <li class='dropdown'>
+                        <a href="#" class='dropdown-toggle' data-toggle='dropdown'>
+                            Explore
+                            <b class='caret'></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/explore">Collaborator Network</a></li>
+                            <li><a href="/explore/activity">Public Activity</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="/faq">FAQ</a></li>
+                    %if not username:
+                        <li><a href="/project/4znZP/wiki/home">About</a></li>
+                    %endif
+
+
                 </ul>
                 <form class="navbar-search pull-left" action="/search/" method="get">
                     <input type="text" class="search-query" placeholder="Search" name="q">

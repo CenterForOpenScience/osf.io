@@ -23,6 +23,43 @@ class User(MongoObject):
         'version':1,
     }
 
+    @property
+    def surname(self):
+        """
+        The user's preferred surname or family name, as they would prefer it to
+        appear in print.
+        e.g.: "Jeffrey Spies" would be "Spies".
+        """
+        # TODO: Give users the ability to specify this via their profile
+        return self.fullname.split(' ')[-1]
+
+    @property
+    def given_name(self):
+        """
+        The user's preferred given name, as they would be addressed personally.
+        e.g.: "Jeffrey Spies" would be "Jeffrey" (or "Jeff")
+        """
+        # TODO: Give users the ability to specify this via their profile
+        return self.fullname.split(' ')[0]
+
+    @property
+    def given_name_initial(self):
+        """
+        The user's preferred initialization of their given name.
+
+        Some users with common names may choose to distinguish themselves from
+        their colleagues in this way. For instance, there could be two
+        well-known researchers in a single field named "Robert Walker".
+        "Walker, R" could then refer to either of them. "Walker, R.H." could
+        provide easy disambiguation.
+
+        NOTE: The internal representation for this should never end with a
+              period. "R" and "R.H" would be correct in the prior case, but
+              "R.H." would not.
+        """
+        #TODO: Give users the ability to specify this via their profile.
+        return self.given_name[0]
+
     @classmethod
     def search(cls, terms):
         keywords = terms.lower().split(' ')
