@@ -763,6 +763,10 @@ def view_file(*args, **kwargs):
     renderer = 'default'
 
     file_path = os.path.join(Site.Settings.uploads_path, node_to_use.id, file_name)
+
+    if not os.path.isfile(file_path):
+        abort(http.NOT_FOUND)
+
     if file_path.lower().endswith('.zip'):
         zf = zipfile.ZipFile(file_path, 'r')
         file_contents = 'This archive contains the following files:\n'
