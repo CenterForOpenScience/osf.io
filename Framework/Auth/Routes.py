@@ -124,7 +124,11 @@ def auth_register_post():
 
     # Process form
     if form.validate():
-        u = register(form.username.data, form.password.data, form.fullname.data)
+        try:
+            u = register(form.username.data, form.password.data, form.fullname.data)
+        except DuplicateEmailError:
+            Status.pushStatusMessage('The email <em>%s</em> has already been registered.' % form.username.data)
+            return auth_login(registration_form=form)
         if u:
             if Site.Settings.confirm_registrations_by_email:
                 # TODO: The sendRegistration method does not exist, this block

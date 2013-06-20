@@ -96,6 +96,11 @@ def addUnclaimedUser(email, fullname):
 def hash_password(password):
     return Bcrypt.generate_password_hash(password.strip())
 
+
+class DuplicateEmailError(BaseException):
+    pass
+
+
 def register(username, password, fullname=None):
     username = username.strip().lower()
     fullname = fullname.strip()
@@ -116,7 +121,7 @@ def register(username, password, fullname=None):
         newUser.generate_keywords()
         return newUser
     else:
-        return False
+        raise DuplicateEmailError
 
 ###############################################################################
 
