@@ -5,8 +5,8 @@ from Site.Project import Node
 from pymongo import DESCENDING
 
 
-@Framework.get('/discover/')
-def discover():
+@Framework.get('/explore/activity/')
+def activity():
     # Projects
 
     recent_public_projects = Node.storage.db.find(
@@ -82,7 +82,7 @@ def discover():
             most_viewed_registrations.append(node)
 
     return Framework.render(
-        'discover.mako',
+        'active_nodes.mako',
         recent_public_projects=[Node.load(x['_id'])
                                 for x in recent_public_projects],
         most_viewed_projects=most_viewed_projects,
