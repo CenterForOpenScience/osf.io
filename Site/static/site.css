@@ -6,6 +6,11 @@ body {
   background-color: #fff;
 }
 
+/* Navbar */
+.navbar .search-query {
+    width:190px
+}
+
 /* Subnav */
 .subnav {
   width: 100%;
