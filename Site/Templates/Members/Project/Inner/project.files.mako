@@ -163,19 +163,19 @@ $(function () {
 </script>
 
 <script src="/static/js/vendor/jquery.ui.widget.js"></script>
-%if Site.Settings.use_cdn_for_client_libs:
-<script src="http://blueimp.github.com/JavaScript-Templates/tmpl.min.js"></script>
-<script src="http://blueimp.github.com/JavaScript-Load-Image/load-image.min.js"></script>
-<script src="http://blueimp.github.com/JavaScript-Canvas-to-Blob/canvas-to-blob.min.js"></script>
-<script src="http://blueimp.github.com/cdn/js/bootstrap.min.js"></script>
-<script src="http://blueimp.github.com/Bootstrap-Image-Gallery/js/bootstrap-image-gallery.min.js"></script>
-%else:
+##%if Site.Settings.use_cdn_for_client_libs:
+##<script src="http://blueimp.github.com/JavaScript-Templates/tmpl.min.js"></script>
+##<script src="http://blueimp.github.com/JavaScript-Load-Image/load-image.min.js"></script>
+##<script src="http://blueimp.github.com/JavaScript-Canvas-to-Blob/canvas-to-blob.min.js"></script>
+##<script src="http://blueimp.github.com/cdn/js/bootstrap.min.js"></script>
+##<script src="http://blueimp.github.com/Bootstrap-Image-Gallery/js/bootstrap-image-gallery.min.js"></script>
+##%else:
     <script src="/static/tmpl.min.js"></script>
     <script src="/static/load-image.min.js"></script>
     <script src="/static/canvas-to-blob.min.js"></script>
     <script src="/static/bootstrap.min.js"></script>
     <script src="/static/bootstrap-image-gallery.min.js"></script>
-%endif
+##%endif
 <script src="/static/js/jquery.iframe-transport.js"></script>
 <script src="/static/js/jquery.fileupload.js"></script>
 <script src="/static/js/jquery.fileupload-fp.js"></script>
