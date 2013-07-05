@@ -335,6 +335,10 @@ def project_view(*args, **kwargs):
     else:
         node_to_use = project
 
+    # If the node is a project, redirect to the project's page at the top level.
+    if node and node_to_use.category == 'project':
+        return redirect('/project/{}/'.format(node.id))
+
     #import pdb; pdb.set_trace()
 
     pw = node_to_use.get_wiki_page('home')
