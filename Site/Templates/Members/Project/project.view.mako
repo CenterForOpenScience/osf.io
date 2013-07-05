@@ -94,9 +94,9 @@
               title="Number of times this node has been forked (copied)"
               % if is_project:
               class="btn"
+              onclick="forkNode();"
               % else:
               class="btn disabled"
-              onclick="forkNode();"
               % endif
           >
               <i class="icon-fork"></i>&nbsp;${len(node_to_use.node_forked) if node_to_use.node_forked else 0}
