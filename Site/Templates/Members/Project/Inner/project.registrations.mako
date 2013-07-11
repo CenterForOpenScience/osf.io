@@ -8,5 +8,5 @@
 % if node_to_use.node_registrations:
 	${node_list(node_to_use.node_registrations.objects())}
 %else:
-	There have been no registrations.
+	There have been no registrations of this specific project. For a list of the most viewed and most recent public registrations on the Open Science Framework, click <a href="/explore/activity/">here</a>.
 %endif
