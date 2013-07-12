@@ -35,6 +35,10 @@ def reproducibility():
 def faq():
     return Framework.render(filename="faq.mako")
 
+@Framework.get('/getting-started/')
+def getting_started():
+    return Framework.render(filename="getting_started.mako")
+
 @Framework.get('/explore/')
 def explore():
     return Framework.render(filename="explore.mako")
