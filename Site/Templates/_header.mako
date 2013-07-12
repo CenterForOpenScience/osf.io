@@ -104,6 +104,20 @@
     <%include file='_modal_confirm.mako' />
 </head>
 <body>
+    % if Site.Settings.dev_mode:
+    <style>
+        #devmode {
+            position:fixed;
+            bottom:0;
+            left:0;
+            border-top-right-radius:8px;
+            background-color:red;
+            color:white;
+            padding:.5em;
+        }
+    </style>
+    <div id='devmode'><strong>WARNING</strong>: This site is running in development mode.</div>
+    % endif
     <div class="navbar navbar-fixed-top">
         <div class="navbar-inner">
             <div class="container">
