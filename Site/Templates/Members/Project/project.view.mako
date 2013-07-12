@@ -3,6 +3,7 @@
 <%
     import Framework
     import hashlib
+    from Site.Project.Model import Node
     url = Framework.request.url
     contributors_text = []
     contributors_ids = []
@@ -17,6 +18,11 @@
         is_project = True
 
     user_is_contributor = node_to_use.is_contributor(user)
+
+    # If a parent project exists, put it here so the title can be displayed.
+    parent_project = None
+    if node_to_use._b_node_parent:
+        parent_project = Node.load(node_to_use._b_node_parent)
 
 
     for contributor in node_to_use.contributor_list:
@@ -53,7 +59,7 @@
 
 
 % if node_to_use.is_registration:
-<span class="label label-important" style="font-size:1.1em;margin-bottom:30px;">This node is a registration of <a href="${node_to_use.registered_from.url()}">this node</a>; the conent of the node has been frozen and cannot be edited.</span>
+<span class="label label-important" style="font-size:1.1em;margin-bottom:30px;">This node is a registration of <a href="${node_to_use.registered_from.url()}">this node</a>; the content of the node has been frozen and cannot be edited.</span>
     <style type="text/css">
 .watermarked {
   background-image:url('/static/read-only.png');
@@ -122,10 +128,10 @@
     </script>
 
     %endif
-    %if not node:
-    <h1 id="${'node-title-editable' if node_to_use.is_contributor else 'node-title'}" style="display:inline-block">${project.title}</h1>
+    %if parent_project:
+        <h1 id="node-title" style="display:inline-block"><a href="/project/${parent_project.id}/">${parent_project.title}</a> / </h1> <h1 id="${'node-title-editable' if node_to_use.is_contributor else 'node-title'}" style="display:inline-block">${node_to_use.title}</h1>
     %else:
-    <h1 id="node-title" style="display:inline-block"><a href="/project/${project.id}/">${project.title}</a> / </h1> <h1 id="${'node-title-editable' if node_to_use.is_contributor else 'node-title'}" style="display:inline-block">${node.title}</h1> 
+        <h1 id="${'node-title-editable' if node_to_use.is_contributor else 'node-title'}" style="display:inline-block">${project.title}</h1>
     %endif
     <p id="contributors">Contributors: ${contributors_text} 
     % if user_is_contributor:
@@ -277,7 +283,7 @@
     </div>
     <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal">Cancel</a> 
-        <button onclick="App.SearchController.add()" class="btn primary">Add</button>        
+        <button onclick="App.SearchController.add()" class="btn primary">Add</button>
     </div>
 </div>
 ${next.body()}
