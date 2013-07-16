@@ -1,7 +1,7 @@
 <%inherit file="project.view.mako" />
 <%
     import Site.Settings
-    import Framework.Analytics as Analytics
+    import framework.Analytics as Analytics
     if node:
         counters = Analytics.get_day_total_list('node:{0}'.format(node.id))
     else:

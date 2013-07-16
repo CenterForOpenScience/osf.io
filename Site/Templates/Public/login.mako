@@ -1,5 +1,5 @@
 <%inherit file="contentContainer.mako" />
-<% import Framework %>
+<% import framework %>
 <div class="page-header">
     <h1>Create an Account or Sign-In</h1>
 </div>

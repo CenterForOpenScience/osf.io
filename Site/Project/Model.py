@@ -1,12 +1,12 @@
-from Framework.Mongo import *
-from Framework.Auth import *
-from Framework.Debug import *
-from Framework.Analytics import *
-from Framework.Search import Keyword, generateKeywords
-from Framework.Git.exceptions import FileNotModified
+from framework.Mongo import *
+from framework.Auth import *
+from framework.Debug import *
+from framework.Analytics import *
+from framework.Search import Keyword, generateKeywords
+from framework.Git.exceptions import FileNotModified
 
 import Site.Settings
-from Framework.Mongo import db as mongodb
+from framework.Mongo import db as mongodb
 
 import hashlib
 import datetime

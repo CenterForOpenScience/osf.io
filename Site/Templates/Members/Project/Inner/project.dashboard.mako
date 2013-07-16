@@ -1,5 +1,5 @@
 <% 
-  from Framework import getUser 
+  from framework import getUser
   is_contributor = node_to_use.is_contributor(user)
 %>
 <%inherit file="project.view.mako" />

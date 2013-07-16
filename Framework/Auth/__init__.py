@@ -1,9 +1,9 @@
-import Framework.Beaker as Session
-import Framework.Mongo as Database
-import Framework.Status as Status
-import Framework.Flask as Web
-import Framework.Bcrypt as Bcrypt
-import Framework.Debug as Debug
+import framework.Beaker as Session
+import framework.Mongo as Database
+import framework.Status as Status
+import framework.Flask as Web
+import framework.Bcrypt as Bcrypt
+import framework.Debug as Debug
 
 import Helper
 

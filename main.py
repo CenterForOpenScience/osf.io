@@ -1,4 +1,4 @@
-import Framework
+import framework
 import Helper
 import Site.Settings
 
@@ -8,45 +8,45 @@ static_folder = Site.Settings.static_path
 # Routes
 ###############################################################################
 
-@Framework.route('/')
+@framework.route('/')
 def index():
-    return Framework.render(filename='index.mako')
+    return framework.render(filename='index.mako')
 
-@Framework.route('/dashboard')
-@Framework.mustBeLoggedIn
+@framework.route('/dashboard')
+@framework.mustBeLoggedIn
 def dashboard(*args, **kwargs):
     user = kwargs['user']
-    return Framework.render(
+    return framework.render(
         filename='membersIndex.mako', user=user)
 
-@Framework.get('/about/')
+@framework.get('/about/')
 def about():
-    return Framework.render(filename="about.mako")
+    return framework.render(filename="about.mako")
 
-@Framework.get('/howosfworks/')
+@framework.get('/howosfworks/')
 def howosfworks():
-    return Framework.render(filename="howosfworks.mako")
+    return framework.render(filename="howosfworks.mako")
 
-@Framework.get('/reproducibility/')
+@framework.get('/reproducibility/')
 def reproducibility():
-    return Framework.redirect('/project/EZcUj/wiki')
+    return framework.redirect('/project/EZcUj/wiki')
 
-@Framework.get('/faq/')
+@framework.get('/faq/')
 def faq():
-    return Framework.render(filename="faq.mako")
+    return framework.render(filename="faq.mako")
 
-@Framework.get('/getting-started/')
+@framework.get('/getting-started/')
 def getting_started():
-    return Framework.render(filename="getting_started.mako")
+    return framework.render(filename="getting_started.mako")
 
-@Framework.get('/explore/')
+@framework.get('/explore/')
 def explore():
-    return Framework.render(filename="explore.mako")
+    return framework.render(filename="explore.mako")
 
-@Framework.get('/messages/')
-@Framework.get('/help/')
+@framework.get('/messages/')
+@framework.get('/help/')
 def soon():
-    return Framework.render(filename="comingsoon.mako")
+    return framework.render(filename="comingsoon.mako")
 
 import Site.Settings as Settings
 
@@ -54,30 +54,30 @@ import Site.Settings as Settings
 # Session
 ###############################################################################
 
-import Framework.Beaker as Session
-app = Framework.app
+import framework.Beaker as Session
+app = framework.app
 app.wsgi_app = Session.Middleware(app.wsgi_app, Session.options)
 
 ###############################################################################
 # Load models and routes
 ###############################################################################
 
-Helper.importFiles('Framework', 'Model.py')
+Helper.importFiles('framework', 'Model.py')
 Helper.importFiles('Site', 'Model.py')
 
-Helper.importFiles('Framework', 'Routes.py')
+Helper.importFiles('framework', 'Routes.py')
 Helper.importFiles('Site', 'Routes.py')
 
 if __name__ == '__main__':
 
-    Framework.set_static_folder(
+    framework.set_static_folder(
         static_url_path="/static", 
         static_folder=static_folder
     )
 
-    @Framework.route('/favicon.ico')
+    @framework.route('/favicon.ico')
     def favicon():
-        return Framework.send_from_directory(
+        return framework.send_from_directory(
             static_folder,
             'favicon.ico', mimetype='image/vnd.microsoft.icon')
 

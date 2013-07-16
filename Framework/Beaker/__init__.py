@@ -1,6 +1,6 @@
 import Site.Settings as Settings
 
-import Framework.Flask as Web
+import framework.Flask as Web
 
 import beaker.middleware
 Middleware = beaker.middleware.SessionMiddleware

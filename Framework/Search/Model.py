@@ -1,4 +1,4 @@
-from Framework.Mongo import *
+from framework.Mongo import *
 
 import datetime
 

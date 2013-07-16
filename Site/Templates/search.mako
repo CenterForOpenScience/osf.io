@@ -1,7 +1,7 @@
 <%inherit file="contentContainer.mako" />
 <%namespace file="_node_list.mako" import="node_list"/>
 <%
-    import Framework
+    import framework
 %>
 <section id="Search">
     <div class="page-header">

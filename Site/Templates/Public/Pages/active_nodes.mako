@@ -1,7 +1,7 @@
 <%inherit file="contentContainer.mako" />
 
 <%
-    from Framework import getUser
+    from framework import getUser
 %>
 
 <style type='text/css'>

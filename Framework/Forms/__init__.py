@@ -1,4 +1,4 @@
-import Framework.Status as Status
+import framework.Status as Status
 
 from wtforms import fields, Form, PasswordField, BooleanField, IntegerField, DateField, DateTimeField, FileField, HiddenField, RadioField, SelectField, SelectMultipleField, SubmitField, TextAreaField, TextField, FieldList, validators
 from wtforms.widgets import TextInput

@@ -1,20 +1,20 @@
-from Framework.Flask import send_file, secure_filename, app, route, get, post, redirect, request, url_for, send_from_directory, set_static_folder, Blueprint, render_template, render_template_string, jsonify, abort
+from framework.Flask import send_file, secure_filename, app, route, get, post, redirect, request, url_for, send_from_directory, set_static_folder, Blueprint, render_template, render_template_string, jsonify, abort
 
 ##### Template
 
-from Framework.Mako import render
+from framework.Mako import render
 
 ###### Session
 
-from Framework.Beaker import setPreviousUrl, goback, sessionSet, sessionGet
+from framework.Beaker import setPreviousUrl, goback, sessionSet, sessionGet
 
 ###### Mongo
 
-from Framework.Mongo import db, MongoObject
+from framework.Mongo import db, MongoObject
 
 ###### Auth
 
-from Framework.Auth import getCurrentUsername, getCurrentUserId, getUser, getCurrentUser, mustBeLoggedIn
+from framework.Auth import getCurrentUsername, getCurrentUserId, getUser, getCurrentUser, mustBeLoggedIn
 
 ##### Form
 
@@ -40,21 +40,21 @@ FieldList = Forms.FieldList
 
 ##### Search
 
-from Framework.Search import generateKeywords, search
+from framework.Search import generateKeywords, search
 
 ##### Email
-from Framework.Email import sendEmail
+from framework.Email import sendEmail
 
 ##### Debug
-from Framework.Debug import loggerDebug
+from framework.Debug import loggerDebug
 
 ##### Status
 
-from Framework.Status import pushStatusMessage
+from framework.Status import pushStatusMessage
 
 ##### Analytics
 
-from Framework.Analytics import updateCounters, getBasicCounters
+from framework.Analytics import updateCounters, getBasicCounters
 
 import pytz
 
