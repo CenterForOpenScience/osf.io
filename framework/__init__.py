@@ -14,7 +14,7 @@ from framework.Mongo import db, MongoObject
 
 ###### Auth
 
-from framework.Auth import getCurrentUsername, getCurrentUserId, getUser, getCurrentUser, mustBeLoggedIn
+from framework.Auth import getCurrentUsername, getCurrentUserId, getUser, getCurrentUser, must_be_logged_in
 
 ##### Form
 

@@ -24,7 +24,7 @@ mod = Blueprint('project', __name__, template_folder='templates')
 
 @post('/project/<pid>/edit')
 @post('/project/<pid>/node/<nid>/edit')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -94,14 +94,14 @@ def project_tag(tag):
 ##############################################################################
 
 @get('/project/new')
-@mustBeLoggedIn
+@must_be_logged_in
 def project_new(*args, **kwargs):
     user = kwargs['user']
     form = NewProjectForm()    
     return render(filename='project.new.mako', form=form)
 
 @post('/project/new')
-@mustBeLoggedIn
+@must_be_logged_in
 def project_new_post(*args, **kwargs):
     user = kwargs['user']
     form = NewProjectForm(request.form)
@@ -117,7 +117,7 @@ def project_new_post(*args, **kwargs):
 ##############################################################################
 
 @post('/project/<pid>/newnode')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -398,7 +398,7 @@ def project_statistics(*args, **kwargs):
 #TODO: project_makepublic and project_makeprivate should be refactored into a single function to conform to DRY.
 @get('/project/<pid>/makepublic')
 @get('/project/<pid>/node/<nid>/makepublic')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 def project_makepublic(*args, **kwargs):
@@ -420,7 +420,7 @@ def project_makepublic(*args, **kwargs):
 
 @get('/project/<pid>/makeprivate')
 @get('/project/<pid>/node/<nid>/makeprivate')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 def project_makeprivate(*args, **kwargs):
@@ -441,7 +441,7 @@ def project_makeprivate(*args, **kwargs):
     return redirect(url)
 
 @get('/project/<pid>/watch')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_not_be_registration
 def project_watch(*args, **kwargs):
@@ -452,7 +452,7 @@ def project_watch(*args, **kwargs):
 
 @get('/project/<pid>/addtag/<tag>')
 @get('/project/<pid>/node/<nid>/addtag/<tag>')
-@mustBeLoggedIn
+@must_be_logged_in
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -473,7 +473,7 @@ def project_addtag(*args, **kwargs):
 
 @get('/project/<pid>/removetag/<tag>')
 @get('/project/<pid>/node/<nid>/removetag/<tag>')
-@mustBeLoggedIn
+@must_be_logged_in
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -494,7 +494,7 @@ def project_removetag(*args, **kwargs):
 
 @post('/project/<pid>/remove')
 @post('/project/<pid>/node/<nid>/remove')
-@mustBeLoggedIn
+@must_be_logged_in
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -519,7 +519,7 @@ def component_remove(*args, **kwargs):
 ###############################################################################
 @post('/project/<pid>/removecontributors')
 @post('/project/<pid>/node/<nid>/removecontributors')
-@mustBeLoggedIn
+@must_be_logged_in
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -540,7 +540,7 @@ def project_removecontributor(*args, **kwargs):
 
 @post('/project/<pid>/addcontributor')
 @post('/project/<pid>/node/<nid>/addcontributor')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -593,7 +593,7 @@ def project_addcontributor_post(*args, **kwargs):
 
 @post('/project/<pid>/addcontributors')
 @post('/project/<pid>/node/<nid>/addcontributors')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -695,7 +695,7 @@ def upload_file_get(*args, **kwargs):
 
 @post('/project/<pid>/files/upload')
 @post('/project/<pid>/node/<nid>/files/upload')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor  # returns user, project
 @must_not_be_registration
@@ -899,7 +899,7 @@ def download_file_by_version(*args, **kwargs):
 #TODO: These should be DELETEs, not POSTs
 @post('/project/<pid>/files/delete/<fid>')
 @post('/project/<pid>/node/<nid>/files/delete/<fid>')
-@mustBeLoggedIn
+@must_be_logged_in
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -1069,7 +1069,7 @@ def project_wiki_page(*args, **kwargs):
 
 @get('/project/<pid>/wiki/<wid>/edit')
 @get('/project/<pid>/node/<nid>/wiki/<wid>/edit')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -1109,7 +1109,7 @@ def project_wiki_edit(*args, **kwargs):
 
 @post('/project/<pid>/wiki/<wid>/edit')
 @post('/project/<pid>/node/<nid>/wiki/<wid>/edit')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
