@@ -1,6 +1,6 @@
 <%inherit file="project.view.mako" />
 <% 
-	from framework.Analytics import getBasicCounters
+	from framework.analytics import getBasicCounters
 	from Site.Project.Model import NodeFile
 	import os
 %>

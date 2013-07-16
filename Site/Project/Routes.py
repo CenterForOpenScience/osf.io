@@ -4,7 +4,7 @@ from .decorators import *
 from .forms import *
 from .Model import *
 
-from framework.Analytics import getBasicCounters
+from framework.analytics import getBasicCounters
 
 from flask import Response, make_response
 
