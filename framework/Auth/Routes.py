@@ -3,7 +3,7 @@ import framework.Email as Email
 import framework.Beaker as Session
 import framework.Mako as Template
 import framework.Status as Status
-import framework.Forms as Forms
+import framework.forms as forms
 
 import Site.Settings
 import Settings
@@ -59,7 +59,7 @@ def forgot_password():
         else:
             Status.pushStatusMessage('Email {email} not found'.format(email=form.email.data))
 
-    Forms.pushErrorsToStatus(form.errors)
+    forms.pushErrorsToStatus(form.errors)
     return auth_login(forgot_password_form=form)
 
 
@@ -93,7 +93,7 @@ def auth_login(
                 Status.pushStatusMessage('''Log-in failed. Please try again or
                     reset your password''')
     
-        Forms.pushErrorsToStatus(form.errors)
+        forms.pushErrorsToStatus(form.errors)
     
     return Template.render(
         filename=Settings.auth_tpl_register, form_registration=formr, 
@@ -146,7 +146,7 @@ def auth_register_post():
             return framework.redirect('/')
 
     else:
-        Forms.pushErrorsToStatus(form.errors)
+        forms.pushErrorsToStatus(form.errors)
 
         return auth_login(registration_form=form)
 

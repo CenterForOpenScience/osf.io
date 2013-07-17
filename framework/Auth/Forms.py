@@ -1,4 +1,4 @@
-from framework.Forms import *
+from framework.forms import *
 
 class ResetPasswordForm(Form):
     password    = PasswordField('Password', [
