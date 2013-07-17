@@ -10,10 +10,12 @@ from framework.Mongo import db as mongodb
 import hashlib
 import datetime
 import markdown
+from markdown.extensions import wikilinks
 import calendar
 import os
 import copy
 import pymongo
+import scrubber
 
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
@@ -681,5 +683,21 @@ class NodeWikiPage(MongoObject):
         'name':'nodewikipage',
         'version':1,
     }
+
+    @property
+    def html(self):
+        """The cleaned HTML of the page"""
+        wiki_scrubber = scrubber.Scrubber(autolink=False)
+
+        html_output = markdown.markdown(
+            self.content,
+            extensions=[
+                wikilinks.WikiLinkExtension(
+                    configs=[('base_url', ''), ('end_url', '')]
+                )
+            ]
+        )
+
+        return wiki_scrubber.scrub(html_output)
 
 NodeWikiPage.setStorage(MongoCollectionStorage(db, 'nodewikipage'))

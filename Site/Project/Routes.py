@@ -343,9 +343,7 @@ def project_view(*args, **kwargs):
 
     pw = node_to_use.get_wiki_page('home')
     if pw:
-        wiki_home = scrubber.Scrubber().scrub(markdown.markdown(pw.content,
-                extensions=[WikiLinkExtension(
-                configs=[("base_url",""), ("end_url", "")])]))
+        wiki_home = pw.html
         wiki_home = BeautifulSoup(wiki_home[0:500] + '...')
     else:
         wiki_home="<p>No content</p>"
@@ -994,19 +992,15 @@ def project_wiki_version(*args, **kwargs):
     pw = node_to_use.get_wiki_page(wid, version=vid)
 
     if pw:
-        is_current = pw.is_current
-        content = scrubber.Scrubber().scrub(markdown.markdown(pw.content,
-        extensions=[WikiLinkExtension(
-        configs=[("base_url",""), ("end_url", "")])]))
         return render(
             filename='project.wiki.mako', 
             project=project, 
             node=node, 
             user=user, 
             pageName=wid, 
-            content=content,
+            content=pw.html,
             version=pw.version, 
-            is_current=is_current, 
+            is_current=pw.is_current,
             is_edit=False)
 
     pushStatusMessage('Not a valid version') 
@@ -1045,9 +1039,7 @@ def project_wiki_page(*args, **kwargs):
     if pw:
         version = pw.version
         is_current = pw.is_current
-        content = scrubber.Scrubber().scrub(markdown.markdown(pw.content,
-            extensions=[WikiLinkExtension(
-            configs=[("base_url",""), ("end_url", "")])]))
+        content = pw.html
     else:
         version = 'NA'
         is_current = False
