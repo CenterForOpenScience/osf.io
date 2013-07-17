@@ -678,7 +678,6 @@ def upload_file_get(*args, **kwargs):
         v = NodeFile.load(v)
         if not v.is_deleted:
             unique, total = getBasicCounters('download:' + node_to_use.id + ':' + v.path.replace('.', '_') )
-            loggerDebug('hi', (unique, total))
             file_infos.append({
                 "name":v.path,
                 "size":v.size,
@@ -868,7 +867,7 @@ def download_file_by_version(*args, **kwargs):
     user = kwargs['user']
     filename = kwargs['fid']
     version_number = int(kwargs['vid']) - 1
-    loggerDebug('by version', version_number)
+
     if node:
         node_to_use = node
     else:

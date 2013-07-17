@@ -45,9 +45,6 @@ from framework.Search import generateKeywords, search
 ##### Email
 from framework.Email import sendEmail
 
-##### Debug
-from framework.Debug import loggerDebug
-
 ##### Status
 
 from framework.Status import pushStatusMessage
