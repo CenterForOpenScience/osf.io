@@ -13,7 +13,7 @@
       % endfor
       % endif
       
-      % for tnode in project.nodes.objects():
+      % for tnode in [x for x in project.nodes.objects() if not x.is_deleted]:
       
       <li class="nav-header">
           <a href="/project/${project.id}/node/${tnode.id}/wiki/home">${tnode.title} (${tnode.category})</a>
