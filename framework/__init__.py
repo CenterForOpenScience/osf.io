@@ -6,6 +6,10 @@ from framework.Flask import send_file, secure_filename, app, route, get, post,\
 
 from framework.Mako import render
 
+###### Celery
+
+from framework.celery import celery
+
 ###### Session
 
 from framework.Beaker import setPreviousUrl, goback, sessionSet, sessionGet
@@ -30,7 +34,7 @@ from framework.forms import Form, PasswordField, BooleanField, IntegerField, \
 from framework.Search import generateKeywords, search
 
 ##### Email
-from framework.Email import sendEmail
+from framework.Email.email_tasks import send_email
 
 ##### Status
 
