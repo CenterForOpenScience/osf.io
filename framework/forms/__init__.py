@@ -1,4 +1,4 @@
-import framework.Status as Status
+import framework.status as status
 
 from wtforms import fields, Form, PasswordField, BooleanField, IntegerField, \
     DateField, DateTimeField, FileField, HiddenField, RadioField, SelectField, \
@@ -26,4 +26,4 @@ def pushErrorsToStatus(errors):
     if errors:
         for field, throwaway in errors.items():
             for error in errors[field]:
-                Status.pushStatusMessage(error)
+                status.push_status_message(error)

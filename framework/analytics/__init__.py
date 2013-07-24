@@ -1,6 +1,6 @@
 from framework import *
 
-import framework.Beaker as Session
+import framework.beaker as session
 
 from decorator import decorator
 from datetime import datetime
@@ -31,7 +31,7 @@ def get_total_activity_count(user_id):
 		return result['total']
 	return None
 
-def updateCounters(rex):
+def update_counters(rex):
 	def wrapped(func, *args, **kwargs):
 		date = datetime.utcnow()
 		date = date.strftime('%Y/%m/%d')
@@ -43,7 +43,7 @@ def updateCounters(rex):
 
 		d = {'$inc':{}}
 		
-		visitedByDate = Session.get('visitedByDate')
+		visitedByDate = session.get('visitedByDate')
 		if not visitedByDate:
 			visitedByDate = {'date':date, 'pages':[]}
 		
@@ -51,29 +51,29 @@ def updateCounters(rex):
 			if page not in visitedByDate['pages']:
 				d['$inc']['date.%s.unique'%date] = 1
 				visitedByDate['pages'].append(page)
-				Session.set('visitedByDate', visitedByDate)
+				session.set('visitedByDate', visitedByDate)
 		else:
 			visitedByDate['date'] = date
 			visitedByDate['pages'] = []
 			d['$inc']['date.%s.unique'%date] = 1
 			visitedByDate['pages'].append(page)
-			Session.set('visitedByDate', visitedByDate)
+			session.set('visitedByDate', visitedByDate)
 
 		d['$inc']['date.%s.total'%date] = 1
 
-		visited = Session.get('visited') # '/project/x/, project/y/'
+		visited = session.get('visited') # '/project/x/, project/y/'
 		if not visited:
 			visited = []
 		if page not in visited:
 			d['$inc']['unique'] = 1
 			visited.append(page)
-			Session.set('visited', visited)
+			session.set('visited', visited)
 		d['$inc']['total'] = 1
 		collection.update({'_id':page}, d, True, False)
 		return func(*args, **kwargs)
 	return decorator(wrapped)
 
-def getBasicCounters(page):
+def get_basic_counters(page):
 	unique = 0
 	total = 0
 	result = collection.find_one(
@@ -88,7 +88,7 @@ def getBasicCounters(page):
 	else:
 		return (None, None)
 
-def getDaysCounters(page):
+def get_days_counters(page):
 	result = collection.find_one(
 		{'_id':page}, {'date':1}
 	)

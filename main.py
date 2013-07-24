@@ -1,8 +1,8 @@
 import framework
-import Helper
-import Site.Settings
+import helper
+import website.settings
 
-static_folder = Site.Settings.static_path
+static_folder = website.settings.static_path
 
 ###############################################################################
 # Routes
@@ -48,25 +48,25 @@ def explore():
 def soon():
     return framework.render(filename="comingsoon.mako")
 
-import Site.Settings as Settings
+import website.settings as settings
 
 ###############################################################################
 # Session
 ###############################################################################
 
-import framework.Beaker as Session
+import framework.beaker as session
 app = framework.app
-app.wsgi_app = Session.Middleware(app.wsgi_app, Session.options)
+app.wsgi_app = session.middleware(app.wsgi_app, session.options)
 
 ###############################################################################
 # Load models and routes
 ###############################################################################
 
-Helper.importFiles('framework', 'Model.py')
-Helper.importFiles('Site', 'Model.py')
+helper.import_files('framework', 'model.py')
+helper.import_files('website', 'model.py')
 
-Helper.importFiles('framework', 'Routes.py')
-Helper.importFiles('Site', 'Routes.py')
+helper.import_files('framework', 'routes.py')
+helper.import_files('website', 'routes.py')
 
 if __name__ == '__main__':
 
@@ -81,5 +81,5 @@ if __name__ == '__main__':
             static_folder,
             'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
-    import Site.Settings as Settings
+    import website.settings as settings
     app.run(port=5000, debug=True)
