@@ -13,3 +13,4 @@ pytz
 dulwich
 scrubber
 pygments
+celery==3.0.21

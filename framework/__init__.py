@@ -34,7 +34,7 @@ from framework.forms import Form, PasswordField, BooleanField, IntegerField, \
 from framework.search import generate_keywords, search
 
 ##### Email
-from framework.email import send_email
+from framework.email.tasks import send_email
 
 ##### Status
 
