@@ -1,10 +1,10 @@
 <%inherit file="contentContainer.mako"/>
 
 <%
-    import Framework
+    import framework
     import hashlib
     from Site.Project.Model import Node
-    url = Framework.request.url
+    url = framework.request.url
     contributors_text = []
     contributors_ids = []
 
@@ -27,7 +27,7 @@
 
     for contributor in node_to_use.contributor_list:
         if "id" in contributor:
-            contributor = Framework.getUser(contributor["id"])
+            contributor = framework.getUser(contributor["id"])
             txt = '<a href="/profile/%s"' % contributor.id
             if user_is_contributor:
                 txt += ' class="user-quickedit" data-userid="%s" data-fullname="%s"' % (contributor.id, contributor.fullname)
@@ -40,7 +40,7 @@
         contributors_text.append(txt)
 
     contributors_text = ', '.join(contributors_text)
-    counterUnique, counterTotal = Framework.getBasicCounters(
+    counterUnique, counterTotal = framework.getBasicCounters(
         '/project/%s/' % project.id)
 
     remove_url = "/project/" + project.id + "/"

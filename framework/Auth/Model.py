@@ -1,5 +1,5 @@
-from Framework.Mongo import *
-from Framework.Search import Keyword
+from framework.Mongo import *
+from framework.Search import Keyword
 
 import datetime
 

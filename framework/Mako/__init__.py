@@ -1,6 +1,6 @@
 import Helper
 
-import Framework.Status as Status
+import framework.Status as Status
 from mako.template import Template
 from mako.lookup import TemplateLookup
 

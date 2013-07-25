@@ -1,7 +1,7 @@
-from Framework import *
+from framework import *
 
 @get('/profile')
-@mustBeLoggedIn
+@must_be_logged_in
 def profile_view(*args, **kwargs):
     user = kwargs['user']
     return render(filename="profile.mako", profile=user, user=user)
@@ -13,7 +13,7 @@ def profile_view_id(id):
     return render(filename="profile.mako", profile=profile, user=user)
 
 @post('/profile/<id>/edit')
-@mustBeLoggedIn
+@must_be_logged_in
 def edit_profile(*args, **kwargs):
     user = kwargs['user']
     
@@ -27,7 +27,7 @@ def edit_profile(*args, **kwargs):
     return jsonify({'response': 'success'})
 
 @get('/settings')
-@mustBeLoggedIn
+@must_be_logged_in
 def settings(*args, **kwargs):
 	user = kwargs['user']
 	return render(filename="settings.mako",user=user,prettify=True)

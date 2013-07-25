@@ -1,10 +1,10 @@
-from Framework import *
+from framework import *
 from . import *
 from .decorators import *
 from .forms import *
 from .Model import *
 
-from Framework.Analytics import getBasicCounters
+from framework.analytics import getBasicCounters
 
 from flask import Response, make_response
 
@@ -24,7 +24,7 @@ mod = Blueprint('project', __name__, template_folder='templates')
 
 @post('/project/<pid>/edit')
 @post('/project/<pid>/node/<nid>/edit')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -94,14 +94,14 @@ def project_tag(tag):
 ##############################################################################
 
 @get('/project/new')
-@mustBeLoggedIn
+@must_be_logged_in
 def project_new(*args, **kwargs):
     user = kwargs['user']
     form = NewProjectForm()    
     return render(filename='project.new.mako', form=form)
 
 @post('/project/new')
-@mustBeLoggedIn
+@must_be_logged_in
 def project_new_post(*args, **kwargs):
     user = kwargs['user']
     form = NewProjectForm(request.form)
@@ -117,7 +117,7 @@ def project_new_post(*args, **kwargs):
 ##############################################################################
 
 @post('/project/<pid>/newnode')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -343,9 +343,7 @@ def project_view(*args, **kwargs):
 
     pw = node_to_use.get_wiki_page('home')
     if pw:
-        wiki_home = scrubber.Scrubber().scrub(markdown.markdown(pw.content,
-                extensions=[WikiLinkExtension(
-                configs=[("base_url",""), ("end_url", "")])]))
+        wiki_home = pw.html
         wiki_home = BeautifulSoup(wiki_home[0:500] + '...')
     else:
         wiki_home="<p>No content</p>"
@@ -398,7 +396,7 @@ def project_statistics(*args, **kwargs):
 #TODO: project_makepublic and project_makeprivate should be refactored into a single function to conform to DRY.
 @get('/project/<pid>/makepublic')
 @get('/project/<pid>/node/<nid>/makepublic')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 def project_makepublic(*args, **kwargs):
@@ -420,7 +418,7 @@ def project_makepublic(*args, **kwargs):
 
 @get('/project/<pid>/makeprivate')
 @get('/project/<pid>/node/<nid>/makeprivate')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 def project_makeprivate(*args, **kwargs):
@@ -441,7 +439,7 @@ def project_makeprivate(*args, **kwargs):
     return redirect(url)
 
 @get('/project/<pid>/watch')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_not_be_registration
 def project_watch(*args, **kwargs):
@@ -452,7 +450,7 @@ def project_watch(*args, **kwargs):
 
 @get('/project/<pid>/addtag/<tag>')
 @get('/project/<pid>/node/<nid>/addtag/<tag>')
-@mustBeLoggedIn
+@must_be_logged_in
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -473,7 +471,7 @@ def project_addtag(*args, **kwargs):
 
 @get('/project/<pid>/removetag/<tag>')
 @get('/project/<pid>/node/<nid>/removetag/<tag>')
-@mustBeLoggedIn
+@must_be_logged_in
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -494,7 +492,7 @@ def project_removetag(*args, **kwargs):
 
 @post('/project/<pid>/remove')
 @post('/project/<pid>/node/<nid>/remove')
-@mustBeLoggedIn
+@must_be_logged_in
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -519,7 +517,7 @@ def component_remove(*args, **kwargs):
 ###############################################################################
 @post('/project/<pid>/removecontributors')
 @post('/project/<pid>/node/<nid>/removecontributors')
-@mustBeLoggedIn
+@must_be_logged_in
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -540,7 +538,7 @@ def project_removecontributor(*args, **kwargs):
 
 @post('/project/<pid>/addcontributor')
 @post('/project/<pid>/node/<nid>/addcontributor')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -593,7 +591,7 @@ def project_addcontributor_post(*args, **kwargs):
 
 @post('/project/<pid>/addcontributors')
 @post('/project/<pid>/node/<nid>/addcontributors')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -678,7 +676,6 @@ def upload_file_get(*args, **kwargs):
         v = NodeFile.load(v)
         if not v.is_deleted:
             unique, total = getBasicCounters('download:' + node_to_use.id + ':' + v.path.replace('.', '_') )
-            loggerDebug('hi', (unique, total))
             file_infos.append({
                 "name":v.path,
                 "size":v.size,
@@ -695,7 +692,7 @@ def upload_file_get(*args, **kwargs):
 
 @post('/project/<pid>/files/upload')
 @post('/project/<pid>/node/<nid>/files/upload')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor  # returns user, project
 @must_not_be_registration
@@ -868,7 +865,7 @@ def download_file_by_version(*args, **kwargs):
     user = kwargs['user']
     filename = kwargs['fid']
     version_number = int(kwargs['vid']) - 1
-    loggerDebug('by version', version_number)
+
     if node:
         node_to_use = node
     else:
@@ -899,7 +896,7 @@ def download_file_by_version(*args, **kwargs):
 #TODO: These should be DELETEs, not POSTs
 @post('/project/<pid>/files/delete/<fid>')
 @post('/project/<pid>/node/<nid>/files/delete/<fid>')
-@mustBeLoggedIn
+@must_be_logged_in
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -995,19 +992,15 @@ def project_wiki_version(*args, **kwargs):
     pw = node_to_use.get_wiki_page(wid, version=vid)
 
     if pw:
-        is_current = pw.is_current
-        content = scrubber.Scrubber().scrub(markdown.markdown(pw.content,
-        extensions=[WikiLinkExtension(
-        configs=[("base_url",""), ("end_url", "")])]))
         return render(
             filename='project.wiki.mako', 
             project=project, 
             node=node, 
             user=user, 
             pageName=wid, 
-            content=content,
+            content=pw.html,
             version=pw.version, 
-            is_current=is_current, 
+            is_current=pw.is_current,
             is_edit=False)
 
     pushStatusMessage('Not a valid version') 
@@ -1046,9 +1039,7 @@ def project_wiki_page(*args, **kwargs):
     if pw:
         version = pw.version
         is_current = pw.is_current
-        content = scrubber.Scrubber().scrub(markdown.markdown(pw.content,
-            extensions=[WikiLinkExtension(
-            configs=[("base_url",""), ("end_url", "")])]))
+        content = pw.html
     else:
         version = 'NA'
         is_current = False
@@ -1069,7 +1060,7 @@ def project_wiki_page(*args, **kwargs):
 
 @get('/project/<pid>/wiki/<wid>/edit')
 @get('/project/<pid>/node/<nid>/wiki/<wid>/edit')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -1109,7 +1100,7 @@ def project_wiki_edit(*args, **kwargs):
 
 @post('/project/<pid>/wiki/<wid>/edit')
 @post('/project/<pid>/node/<nid>/wiki/<wid>/edit')
-@mustBeLoggedIn # returns user
+@must_be_logged_in # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration

@@ -1,9 +1,8 @@
-import Framework.Beaker as Session
-import Framework.Mongo as Database
-import Framework.Status as Status
-import Framework.Flask as Web
-import Framework.Bcrypt as Bcrypt
-import Framework.Debug as Debug
+import framework.Beaker as Session
+import framework.Mongo as Database
+import framework.Status as Status
+import framework.Flask as Web
+import framework.Bcrypt as Bcrypt
 
 import Helper
 
@@ -125,7 +124,7 @@ def register(username, password, fullname=None):
 
 ###############################################################################
 
-def mustBeLoggedIn(fn):
+def must_be_logged_in(fn):
     def wrapped(func, *args, **kwargs):
         user = getCurrentUser()
         if user:

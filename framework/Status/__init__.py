@@ -1,4 +1,4 @@
-import Framework.Beaker as Session
+import framework.Beaker as Session
 
 def pushStatusMessage(message, level=0):
     statuses = Session.get('status')

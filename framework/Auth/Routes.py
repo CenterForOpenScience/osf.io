@@ -1,23 +1,23 @@
-import Framework
-import Framework.Email as Email
-import Framework.Beaker as Session
-import Framework.Mako as Template
-import Framework.Status as Status
-import Framework.Forms as Forms
+import framework
+import framework.Email as Email
+import framework.Beaker as Session
+import framework.Mako as Template
+import framework.Status as Status
+import framework.forms as forms
 
 import Site.Settings
 import Settings
 
 import Helper
 
-from Framework.Auth import *
-from Framework.Auth.Forms import *
+from framework.Auth import *
+from framework.Auth.Forms import *
 
-@Framework.get('/resetpassword/<verification_key>')
-@Framework.post('/resetpassword/<verification_key>')
+@framework.get('/resetpassword/<verification_key>')
+@framework.post('/resetpassword/<verification_key>')
 def reset_password(*args, **kwargs):
     verification_key = kwargs['verification_key']
-    form = ResetPasswordForm(Framework.request.form)
+    form = ResetPasswordForm(framework.request.form)
 
     if form.validate():
         user_obj = getUser(verification_key=verification_key)
@@ -26,7 +26,7 @@ def reset_password(*args, **kwargs):
             user_obj.password = hash_password(form.password.data)
             user_obj.save()
             Status.pushStatusMessage('Password reset')
-            return Framework.redirect('/account')
+            return framework.redirect('/account')
 
     return Template.render(
         filename='resetpassword.mako',
@@ -34,9 +34,9 @@ def reset_password(*args, **kwargs):
         verification_key = verification_key,
     )
 
-@Framework.post('/forgotpassword')
+@framework.post('/forgotpassword')
 def forgot_password():
-    form = ForgotPasswordForm(Framework.request.form, prefix='forgot_password')
+    form = ForgotPasswordForm(framework.request.form, prefix='forgot_password')
 
     if form.validate():
         user_obj = getUser(username=form.email.data)
@@ -47,39 +47,39 @@ def forgot_password():
                 to=form.email.data, 
                 subject="Reset Password", 
                 message="http://%s%s" % (
-                    Framework.request.host,
-                    Framework.url_for(
+                    framework.request.host,
+                    framework.url_for(
                         'reset_password',
                         verification_key=user_obj.verification_key
                     )
                 )
             )
             Status.pushStatusMessage('Reset email sent')
-            return Framework.redirect('/')
+            return framework.redirect('/')
         else:
             Status.pushStatusMessage('Email {email} not found'.format(email=form.email.data))
 
-    Forms.pushErrorsToStatus(form.errors)
+    forms.pushErrorsToStatus(form.errors)
     return auth_login(forgot_password_form=form)
 
 
 ###############################################################################
 # Log in
 ###############################################################################
-@Framework.get("/login") #todo fix
-@Framework.get("/account")
-@Framework.post("/login")
+@framework.get("/login") #todo fix
+@framework.get("/account")
+@framework.post("/login")
 def auth_login(
         registration_form=None,
         forgot_password_form=None
 ):
-    form = SignInForm(Framework.request.form)
+    form = SignInForm(framework.request.form)
     formr = registration_form or RegistrationForm(prefix='register')
     formf = forgot_password_form or ForgotPasswordForm(prefix='forgot_password')
 
     direct_call = True if registration_form or forgot_password_form else False
 
-    if Framework.request.method == 'POST' and not direct_call:
+    if framework.request.method == 'POST' and not direct_call:
         if form.validate():
             user = login(form.username.data, form.password.data)
             if user:
@@ -88,37 +88,37 @@ def auth_login(
                         folder) and click the verification link before logging
                         in.''')
                     return Session.goback()
-                return Framework.redirect('/dashboard')
+                return framework.redirect('/dashboard')
             else:
                 Status.pushStatusMessage('''Log-in failed. Please try again or
                     reset your password''')
     
-        Forms.pushErrorsToStatus(form.errors)
+        forms.pushErrorsToStatus(form.errors)
     
     return Template.render(
         filename=Settings.auth_tpl_register, form_registration=formr, 
         form_forgotpassword=formf, form_signin=form, prettify=True)
 
-@Framework.get('/logout')
+@framework.get('/logout')
 def auth_logout():
     logout()
     Status.pushStatusMessage('You have successfully logged out.')
-    return Framework.redirect('/')
+    return framework.redirect('/')
 
-@Framework.post("/register")
+@framework.post("/register")
 def auth_register_post():
     if not Site.Settings.allow_registration:
         Status.pushStatusMessage('We are currently in beta development and \
             registration is only available to those with beta invitations. If you \
             would like to be added to the invitation list, please email \
             beta@openscienceframework.org.')
-        return Framework.redirect('/')
+        return framework.redirect('/')
 
-    form = RegistrationForm(Framework.request.form, prefix='register')
+    form = RegistrationForm(framework.request.form, prefix='register')
 
     if not Settings.registrationEnabled:
         Status.pushStatusMessage('Registration is currently disabled')
-        return Framework.redirect(Framework.url_for('auth_login'))
+        return framework.redirect(framework.url_for('auth_login'))
 
     Session.setPreviousUrl()
 
@@ -143,17 +143,17 @@ def auth_register_post():
                     (str(u.username), str(u.fullname)))
             else:
                 Status.pushStatusMessage('You may now login')
-            return Framework.redirect('/')
+            return framework.redirect('/')
 
     else:
-        Forms.pushErrorsToStatus(form.errors)
+        forms.pushErrorsToStatus(form.errors)
 
         return auth_login(registration_form=form)
 
 
-@Framework.get("/midas")
-@Framework.get("/summit")
-@Framework.get("/accountbeta")
-@Framework.get("/decline")
+@framework.get("/midas")
+@framework.get("/summit")
+@framework.get("/accountbeta")
+@framework.get("/decline")
 def auth_registerbeta():
-    return Framework.redirect('/account')
+    return framework.redirect('/account')

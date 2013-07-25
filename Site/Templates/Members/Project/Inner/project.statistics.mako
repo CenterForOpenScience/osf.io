@@ -1,11 +1,11 @@
 <%inherit file="project.view.mako" />
 <%
     import Site.Settings
-    import Framework.Analytics as Analytics
+    import framework.analytics as analytics
     if node:
-        counters = Analytics.get_day_total_list('node:{0}'.format(node.id))
+        counters = analytics.get_day_total_list('node:{0}'.format(node.id))
     else:
-        counters = Analytics.get_day_total_list('node:{0}'.format(project.id))
+        counters = analytics.get_day_total_list('node:{0}'.format(project.id))
 
     csv = "date,price\\n"
     for i in counters:

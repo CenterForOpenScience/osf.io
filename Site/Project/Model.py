@@ -1,20 +1,21 @@
-from Framework.Mongo import *
-from Framework.Auth import *
-from Framework.Debug import *
-from Framework.Analytics import *
-from Framework.Search import Keyword, generateKeywords
-from Framework.Git.exceptions import FileNotModified
+from framework.Mongo import *
+from framework.Auth import *
+from framework.analytics import *
+from framework.Search import Keyword, generateKeywords
+from framework.Git.exceptions import FileNotModified
 
 import Site.Settings
-from Framework.Mongo import db as mongodb
+from framework.Mongo import db as mongodb
 
 import hashlib
 import datetime
 import markdown
+from markdown.extensions import wikilinks
 import calendar
 import os
 import copy
 import pymongo
+import scrubber
 
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
@@ -431,9 +432,6 @@ class Node(MongoObject):
             committer=committer,
         )
 
-        # Deal with logs
-        loggerDebug('add_file', committer)
-
         # Deal with creating a NodeFile in the database
         node_file = NodeFile()
         node_file.path = file_name
@@ -685,5 +683,21 @@ class NodeWikiPage(MongoObject):
         'name':'nodewikipage',
         'version':1,
     }
+
+    @property
+    def html(self):
+        """The cleaned HTML of the page"""
+        wiki_scrubber = scrubber.Scrubber(autolink=False)
+
+        html_output = markdown.markdown(
+            self.content,
+            extensions=[
+                wikilinks.WikiLinkExtension(
+                    configs=[('base_url', ''), ('end_url', '')]
+                )
+            ]
+        )
+
+        return wiki_scrubber.scrub(html_output)
 
 NodeWikiPage.setStorage(MongoCollectionStorage(db, 'nodewikipage'))
