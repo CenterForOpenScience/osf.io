@@ -106,3 +106,8 @@ def get_file_tree(node_to_use, user):
             tree.append(v)
 
     return (node_to_use, tree)
+
+def prune_file_list(file_list, max_depth):
+    if max_depth is None:
+        return file_list
+    return [file for file in file_list if len([c for c in file if c == '/']) <= max_depth]
