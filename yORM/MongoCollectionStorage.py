@@ -23,7 +23,7 @@ class MongoCollectionStorage(yORM.Storage):
     def find(self, **kwargs):
         result = self.db.find(kwargs)
         return result
-    
+
     def get(self, pkey):
         #if not isinstance(pkey, ObjectId):
         #    pkey = ObjectId(str(pkey))
@@ -32,13 +32,13 @@ class MongoCollectionStorage(yORM.Storage):
     def remove(self, pkey):
         return True
     
-    def getRef(self, obj):
+    def get_ref(self, obj):
         return unicode(obj._id) # DBRef(self.collection, obj._id, database=self.db.database.name) #str(obj._id) #
     
-    #def getFromRef(self, parentClass, ref):
+    #def get_from_ref(self, parentClass, ref):
     #    return parentClass.load(ref)
     
-    def getFromRef(self, ref):
+    def get_from_ref(self, ref):
         return self.db.find_one({'_id':ref._id})
     
     def keys(self):

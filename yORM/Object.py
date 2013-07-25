@@ -66,7 +66,7 @@ class Object(dict):
     
     @property
     def ref(self):
-        return self.storage.getRef(self)
+        return self.storage.get_ref(self)
     
     def makeBackRefName(self, name):
         return '_b_' + self.getClassName() + '_' + name
