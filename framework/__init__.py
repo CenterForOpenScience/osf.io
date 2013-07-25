@@ -6,6 +6,10 @@ from framework.flask import send_file, secure_filename, app, route, get, post,\
 
 from framework.mako import render
 
+###### Celery
+
+from framework.celery import celery
+
 ###### Session
 
 from framework.beaker import set_previous_url, goback, session_set, session_get
