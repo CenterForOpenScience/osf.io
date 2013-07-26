@@ -193,6 +193,12 @@
     value: "",
   });
 
+  App.Gravatar = Ember.View.extend({
+    classNames: ['ember-gravatar'],
+    tagName: "img",
+    attributeBindings: ['src'],
+  });
+
   App.SearchController = Ember.Object.create({
     has_started: false,
     is_email: null,
@@ -260,6 +266,8 @@
             {{#each App.SearchController.content}}
                 {{#view App.RadioButton value=id fullname=fullname}}
                     {{fullname}}
+                {{/view}}
+                {{#view App.Gravatar src=gravatar}}
                 {{/view}}
                 <br />
                 ##<input type="radio" name="id" value="{{id}}">&nbsp;{{fullname}}<br />
