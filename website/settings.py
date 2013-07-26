@@ -24,6 +24,10 @@ mongo_uri = 'mongodb://localhost:20771/osf20120530'
 canonical_domain = 'openscienceframework.org'
 cookie_domain = '.openscienceframework.org' # Beaker
 
+# Gravatar options #################
+gravatar_size_profile = 120
+gravatar_size_add_contributor = 80
+
 try:
     os.environ['OSF_PRODUCTION']
     dev_mode = False
