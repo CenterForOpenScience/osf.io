@@ -4,6 +4,9 @@ from .decorators import *
 from .forms import *
 from .model import *
 
+from website import settings
+from website import filters
+
 from framework.analytics import get_basic_counters
 
 from flask import Response, make_response
@@ -77,7 +80,13 @@ def search_user(*args, **kwargs):
 
     return json.dumps({
         'is_email':is_email, 
-        'results':[{'fullname':item['fullname'], 'id':item['_id']} for item in result]
+        'results':[
+            {
+                'fullname' : item['fullname'],
+                'gravatar' : filters.gravatar(item['username'], size=settings.gravatar_size_add_contributor),
+                'id' : item['_id'],
+            } for item in result
+        ]
     })
 
 @get('/tag/<tag>')
