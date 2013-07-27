@@ -11,7 +11,7 @@ class ResetPasswordForm(Form):
 
 class RegistrationForm(Form):
     fullname = TextField('Full Name', [
-        validators.Required(message=u'Full name i required')
+        validators.Required(message=u'Full name is required')
     ])
     username    = TextField('Email Address', [
         validators.Required(message=u'Email address is required'),
