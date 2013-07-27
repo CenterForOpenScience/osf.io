@@ -22,7 +22,7 @@ RecaptchaField = RecaptchaField
 
 validators = validators
 
-def pushErrorsToStatus(errors):
+def push_errors_to_status(errors):
     if errors:
         for field, throwaway in errors.items():
             for error in errors[field]:

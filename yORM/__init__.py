@@ -1,3 +1,3 @@
-from Storage import *
-from Object import *
-from MongoCollectionStorage import *
+from Storage import Storage
+from Object import Object
+from MongoCollectionStorage import MongoCollectionStorage
