@@ -99,10 +99,11 @@ $(function(){
     <%
         import locale
         locale.setlocale(locale.LC_ALL, 'en_US')
-        unique_hits, hits = [
-            locale.format('%d', val, grouping=True)
+        unique_hits, hits = (
+            locale.format('%d', val, grouping=True) if val else
+            locale.format(0, val, grouping=True)
             for val in node.get_stats()
-        ]
+	    )
         explicit_date = '{month} {dt.day} {dt.year}'.format(
             dt=node.date_created.date(),
             month=node.date_created.date().strftime('%B')
