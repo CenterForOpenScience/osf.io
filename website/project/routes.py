@@ -4,6 +4,8 @@ from .decorators import *
 from .forms import *
 from .model import *
 
+from website import settings
+
 from framework.analytics import get_basic_counters
 
 from flask import Response, make_response
@@ -779,26 +781,42 @@ def view_file(*args, **kwargs):
     if not os.path.isfile(file_path):
         abort(http.NOT_FOUND)
 
-    if file_path.lower().endswith('.zip'):
-        zf = zipfile.ZipFile(file_path, 'r')
-        file_contents = 'This archive contains the following files:\n'
-        for info in zf.infolist():
-            file_contents += '\n' + str(info.filename)
-            file_contents += '\n\tComment:\t' + str(info.comment)
-            file_contents += '\n\tModified:\t'+ str(datetime.datetime(*info.date_time))
-            file_contents += '\n\tSystem:\t\t'+ str(info.create_system) + ' (0 = Windows, 3 = Unix)'
-            file_contents += '\n\tZIP version:\t'+ str(info.create_version)
-            file_contents += '\n\tCompressed:\t'+ str(info.compress_size) + ' bytes'
-            file_contents += '\n\tUncompressed:\t' + str(info.file_size) + ' bytes'
+    file_size = os.stat(file_path).st_size
+    if file_size > settings.max_render_size:
+
+        return render(
+            filename='project.file.mako',
+            project=project,
+            node=node,
+            user=user,
+            node_to_use=node_to_use,
+            file_name=file_name,
+            rendered='This file is too large to be rendered online. Please download the file to view it locally.',
+            renderer=renderer
+        ).encode('utf-8', 'replace')
+
+    _, file_ext = os.path.splitext(file_path.lower())
+
+    is_img = False
+    for fmt in settings.img_fmts:
+        fmt_ptn = '^.{0}$'.format(fmt)
+        if re.search(fmt_ptn, file_ext):
+            is_img = True
+            break
+
+    # todo: add bzip, etc
+    if is_img:
+        rendered="<img src='{node_url}/files/download/{fid}' />".format(node_url=node_to_use.url(), fid=file_name)
+    elif file_ext == '.zip':
+        archive = zipfile.ZipFile(file_path)
+        archive_files = prune_file_list(archive.namelist(), settings.archive_depth)
+        file_contents = '\n'.join(['This archive contains the following files:'] + archive_files)
         file_path = 'temp.txt'
         renderer = 'pygments'
-    elif file_path.lower().endswith('.jpg'):
-        rendered="<img src='{node_url}/files/download/{fid}' />".format(node_url=node_to_use.url(), fid=file_name)
     elif file_path.lower().endswith('.tar') or file_path.endswith('.tar.gz'):
-        archive= tarfile.open(file_path, "r" )
-        file_contents = 'This archive contains the following files:\n'
-        for mem in archive.getmembers():
-            file_contents += '\n' + str(mem.name)
+        archive = tarfile.open(file_path)
+        archive_files = prune_file_list(archive.getnames(), settings.archive_depth)
+        file_contents = '\n'.join(['This archive contains the following files:'] + archive_files)
         file_path = 'temp.txt'
         renderer = 'pygments'
     else:
@@ -825,9 +843,9 @@ def view_file(*args, **kwargs):
         node=node,
         user=user,
         node_to_use=node_to_use,
-        file_name = file_name,
-        rendered = rendered,
-        renderer = renderer,
+        file_name=file_name,
+        rendered=rendered,
+        renderer=renderer,
     ).encode('utf-8', 'replace')
 
 @get('/project/<pid>/files/download/<fid>')

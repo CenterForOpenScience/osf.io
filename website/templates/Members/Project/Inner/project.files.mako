@@ -142,7 +142,7 @@ $(function () {
     $('#fileupload').fileupload('option',{
         url: '${node_to_use.url() + '/files/upload'}',
         acceptFileTypes: /(\.|\/)(.*)$/i,
-        maxFileSize: 250000000
+        maxFileSize: ${website.settings.max_upload_size}
     });
 
      // Load existing files:
