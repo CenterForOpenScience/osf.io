@@ -177,7 +177,9 @@ class Node(MongoObject):
             self.nodes.pop()
 
         for i, node_contained in enumerate(original.nodes.objects()):
-            self.nodes.append(node_contained.fork_node(user, title=''))
+            forked_node = node_contained.fork_node(user, title='')
+            if forked_node is not None:
+                self.nodes.append(forked_node)
 
         self.title = title + self.title
         self.is_fork = True
