@@ -24,9 +24,19 @@ mongo_uri = 'mongodb://localhost:20771/osf20120530'
 canonical_domain = 'openscienceframework.org'
 cookie_domain = '.openscienceframework.org' # Beaker
 
-# Gravatar options #################
+# Gravatar options
 gravatar_size_profile = 120
 gravatar_size_add_contributor = 80
+
+# File upload options
+max_upload_size = 250000000     # In bytes
+
+# File render options
+max_render_size = 250000000     # In bytes
+img_fmts = ['jpe?g', 'tiff?', 'png', 'gif', 'bmp', 'svg', 'ico']
+render_zip = True
+render_tar = True
+archive_depth = 2               # Set to None for unlimited depth
 
 try:
     os.environ['OSF_PRODUCTION']
