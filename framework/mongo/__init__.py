@@ -5,7 +5,6 @@ from bson.objectid import ObjectId
 from bson.dbref import DBRef
 
 import random
-import string
 
 from yORM import Object, MongoCollectionStorage
 
@@ -37,8 +36,10 @@ class MongoObject(Object):
             return None
 
     def generate_random_id(self):
-        chars = string.letters + string.digits[2:]
-        return ''.join(random.sample(chars, 5))
+        NUMBERS = '23456789'
+        LOWERS = 'abcdefghijkmnpqrstuvwxyz'
+        UPPERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
+        return ''.join(random.sample(NUMBERS+LOWERS+UPPERS, 5))
 
     def optimistic_insert(self):
         while True:
