@@ -3,6 +3,8 @@ import helper
 import framework.status as status
 from mako.template import Template
 from mako.lookup import TemplateLookup
+from website import settings
+from website import filters
 
 makolookup = TemplateLookup(directories=helper.get_directories(['./website']))
 
@@ -34,6 +36,9 @@ def render(filename, **kwargs):
         kwargs['includejs'] = []
     
     kwargs['status'] = status.pop_status_messages()
+
+    kwargs['settings'] = settings
+    kwargs['filters'] = filters
 
     t = makolookup.get_template(filename).render(**kwargs)
 
