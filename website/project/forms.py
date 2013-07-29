@@ -1,5 +1,4 @@
-from framework import *
-from . import *
+from framework import Form, TextField, TextAreaField, validators
 
 ###############################################################################
 # Forms

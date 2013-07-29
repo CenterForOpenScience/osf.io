@@ -1,4 +1,4 @@
-from framework import *
+from framework import db
 
 import framework.beaker as session
 

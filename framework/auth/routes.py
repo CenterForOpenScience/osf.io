@@ -10,8 +10,8 @@ import settings
 
 import helper
 
-from framework.auth import *
-from framework.auth.forms import *
+from framework.auth import register, login, logout, DuplicateEmailError
+from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm
 
 @framework.get('/resetpassword/<verification_key>')
 @framework.post('/resetpassword/<verification_key>')
@@ -59,7 +59,7 @@ def forgot_password():
         else:
             status.push_status_message('Email {email} not found'.format(email=form.email.data))
 
-    forms.pushErrorsToStatus(form.errors)
+    forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
 
 
@@ -93,7 +93,7 @@ def auth_login(
                 status.push_status_message('''Log-in failed. Please try again or
                     reset your password''')
     
-        forms.pushErrorsToStatus(form.errors)
+        forms.push_errors_to_status(form.errors)
     
     return template.render(
         filename=settings.auth_tpl_register, form_registration=formr,
@@ -146,7 +146,7 @@ def auth_register_post():
             return framework.redirect('/')
 
     else:
-        forms.pushErrorsToStatus(form.errors)
+        forms.push_errors_to_status(form.errors)
 
         return auth_login(registration_form=form)
 

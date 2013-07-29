@@ -1,23 +1,22 @@
 ###############################################################################
 
-from pymongo import Connection
+from pymongo import MongoClient
 from bson.objectid import ObjectId
 from bson.dbref import DBRef
 
 import random
+import string
 
-from yORM import *
+from yORM import Object, MongoCollectionStorage
 
-import website.settings
+from website import settings
 from urlparse import urlsplit
 
-ObjectId = ObjectId
-DBRef = DBRef
-connect = Connection(website.settings.mongo_uri)
+client = MongoClient(settings.mongo_uri)
 
-db_name = urlsplit(website.settings.mongo_uri).path[1:] # Slices off the leading slash of the path (database name)
+db_name = urlsplit(settings.mongo_uri).path[1:] # Slices off the leading slash of the path (database name)
 
-db = connect[db_name]
+db = client[db_name]
 
 class MongoObject(Object):
     @property
@@ -38,10 +37,8 @@ class MongoObject(Object):
             return None
 
     def generate_random_id(self):
-        NUMBERS = '23456789'
-        LOWERS = 'abcdefghijkmnpqrstuvwxyz'
-        UPPERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
-        return ''.join(random.sample(NUMBERS+LOWERS+UPPERS, 5))
+        chars = string.letters + string.digits[2:]
+        return ''.join(random.sample(chars, 5))
 
     def optimistic_insert(self):
         while True:

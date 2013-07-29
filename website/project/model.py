@@ -1,11 +1,10 @@
-from framework.mongo import *
-from framework.auth import *
-from framework.analytics import *
+from framework.mongo import MongoCollectionStorage, MongoObject, ObjectId, db
+from framework.auth import User, get_user
+from framework.analytics import get_basic_counters, increment_user_activity_counters
 from framework.search import Keyword, generate_keywords
 from framework.git.exceptions import FileNotModified
 
-import website.settings
-from framework.mongo import db as mongodb
+from website import settings
 
 import hashlib
 import datetime
@@ -161,7 +160,7 @@ class Node(MongoObject):
         if not (self.is_contributor(user) or self.is_public):
             return
 
-        folder_old = os.path.join(website.settings.uploads_path, self.id)
+        folder_old = os.path.join(settings.uploads_path, self.id)
 
         when = datetime.datetime.utcnow()
 
@@ -169,7 +168,7 @@ class Node(MongoObject):
         self.optimistic_insert()
 
         if os.path.exists(folder_old):
-            folder_new = os.path.join(website.settings.uploads_path, self.id)
+            folder_new = os.path.join(settings.uploads_path, self.id)
             Repo(folder_old).clone(folder_new)
         
         # TODO empty lists
@@ -211,7 +210,7 @@ class Node(MongoObject):
         return self
 
     def register_node(self, user, template, data):
-        folder_old = os.path.join(website.settings.uploads_path, self.id)
+        folder_old = os.path.join(settings.uploads_path, self.id)
 
         when = datetime.datetime.utcnow()
 
@@ -219,7 +218,7 @@ class Node(MongoObject):
         self.optimistic_insert()
 
         if os.path.exists(folder_old):
-            folder_new = os.path.join(website.settings.uploads_path, self.id)
+            folder_new = os.path.join(settings.uploads_path, self.id)
             Repo(folder_old).clone(folder_new)
         
         while len(self.nodes) > 0:
@@ -227,12 +226,12 @@ class Node(MongoObject):
 
         for i, node_contained in enumerate(original.nodes.objects()):
             original_node = self.load(node_contained.id)
-            folder_old = os.path.join(website.settings.uploads_path, node_contained.id)
+            folder_old = os.path.join(settings.uploads_path, node_contained.id)
 
             node_contained.optimistic_insert()
 
             if os.path.exists(folder_old):
-                folder_new = os.path.join(website.settings.uploads_path, node_contained.id)
+                folder_new = os.path.join(settings.uploads_path, node_contained.id)
                 Repo(folder_old).clone(folder_new)
 
             node_contained.is_registration = True
@@ -297,7 +296,7 @@ class Node(MongoObject):
 
     def get_file(self, path, version=None):
         if not version == None:
-            folder_name = os.path.join(website.settings.uploads_path, self.id)
+            folder_name = os.path.join(settings.uploads_path, self.id)
             if os.path.exists(os.path.join(folder_name, ".git")):
                 file_object =  NodeFile.load(self.files_versions[path.replace('.', '_')][version])
                 repo = Repo(folder_name)
@@ -308,7 +307,7 @@ class Node(MongoObject):
 
     def get_file_object(self, path, version=None):
         if version is not None:
-            directory = os.path.join(website.settings.uploads_path, self.id)
+            directory = os.path.join(settings.uploads_path, self.id)
             if os.path.exists(os.path.join(directory, '.git')):
                 return NodeFile.load(self.files_versions[path.replace('.', '_')][version])
             # TODO: Raise exception here
@@ -326,7 +325,7 @@ class Node(MongoObject):
         #FIXME: encoding the filename this way is flawed. For instance - foo.bar resolves to the same string as foo_bar.
         file_name_key = path.replace('.', '_')
 
-        repo_path = os.path.join(website.settings.uploads_path, self.id)
+        repo_path = os.path.join(settings.uploads_path, self.id)
 
         # TODO make sure it all works, otherwise rollback as needed
         # Do a git delete, which also removes from working filesystem.
@@ -381,12 +380,12 @@ class Node(MongoObject):
         # TODO: Reading the whole file into memory is not scalable. Fix this.
 
         # This node's folder
-        folder_name = os.path.join(website.settings.uploads_path, self.id)
+        folder_name = os.path.join(settings.uploads_path, self.id)
 
         # TODO: This should be part of the build phase, not here.
         # verify the upload root exists
-        if not os.path.isdir(website.settings.uploads_path):
-            os.mkdir(website.settings.uploads_path)
+        if not os.path.isdir(settings.uploads_path):
+            os.mkdir(settings.uploads_path)
 
         # Make sure the upload directory contains a git repo.
         if os.path.exists(folder_name):

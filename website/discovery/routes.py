@@ -1,5 +1,6 @@
 import framework
-from framework.analytics import db as analytics
+# from framework.analytics import db as analytics
+from framework import db as analytics
 
 from website.project import Node
 from pymongo import DESCENDING

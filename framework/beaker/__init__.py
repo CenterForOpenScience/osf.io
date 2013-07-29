@@ -1,6 +1,6 @@
 import website.settings as settings
 
-import framework.flask as Web
+import framework.flask as web
 
 import beaker.middleware
 middleware = beaker.middleware.SessionMiddleware
@@ -20,7 +20,7 @@ def set(x, y=None):
        set((key, value))
        set([(key1, value1), (key2, value2)])
     """
-    session = Web.request.environ['beaker.session']
+    session = web.request.environ['beaker.session']
     if not isinstance(x, list):
         if y:
             x = [(x, y)]
@@ -31,7 +31,7 @@ def set(x, y=None):
     session.save()
 
 def get(x):
-    session = Web.request.environ['beaker.session']
+    session = web.request.environ['beaker.session']
     if isinstance(x, list):
         temp_list = []
         for i in x:
@@ -49,15 +49,15 @@ def get(x):
         return temp_value
 
 def invalidate():
-    session = Web.request.environ['beaker.session']
+    session = web.request.environ['beaker.session']
     session.invalidate()
 
 def delete():
-    session = Web.request.environ['beaker.session']
+    session = web.request.environ['beaker.session']
     session.delete()
 
 def unset(name):
-    session = Web.request.environ['beaker.session']
+    session = web.request.environ['beaker.session']
     if not isinstance(name, list):
         name = [name]
     for i in name:
@@ -67,14 +67,14 @@ def unset(name):
 
 def set_previous_url(url=None):
     if url is None:
-        url = Web.request.referrer
+        url = web.request.referrer
     set('url_previous', url)
 
 def goback():
     url_previous = get('url_previous')
     if url_previous:
         unset('url_previous')
-        return Web.redirect(url_previous)
+        return web.redirect(url_previous)
 
 session_set = set
 session_get = get

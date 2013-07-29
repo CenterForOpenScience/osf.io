@@ -1,14 +1,18 @@
-from framework import *
-from . import *
-from .decorators import *
-from .forms import *
-from .model import *
+from framework import get, post, request, redirect, must_be_logged_in, push_status_message, push_errors_to_status, \
+    app, render, Blueprint, get_user, get_current_user, secure_filename, jsonify, update_counters
+from . import new_node, new_project, get_node, show_diff, get_file_tree
+from .decorators import must_not_be_registration, must_be_valid_project, \
+    must_be_contributor, must_be_contributor_or_public
+from .forms import NewProjectForm, NewNodeForm
+from .model import User, Tag, NodeFile, NodeWikiPage
 
 from website import settings
 
 from framework.analytics import get_basic_counters
 
 from flask import Response, make_response
+
+from website import settings
 
 from BeautifulSoup import BeautifulSoup
 import json
@@ -111,7 +115,7 @@ def project_new_post(*args, **kwargs):
         project = new_project(form.title.data, form.description.data, user)
         return redirect('/project/' + str(project.id))
     else:
-        pushErrorsToStatus(form.errors)
+        push_errors_to_status(form.errors)
     return render(filename='project.new.mako', form=form)
 
 ##############################################################################
@@ -776,7 +780,7 @@ def view_file(*args, **kwargs):
 
     renderer = 'default'
 
-    file_path = os.path.join(website.settings.uploads_path, node_to_use.id, file_name)
+    file_path = os.path.join(settings.uploads_path, node_to_use.id, file_name)
 
     if not os.path.isfile(file_path):
         abort(http.NOT_FOUND)
@@ -891,7 +895,7 @@ def download_file_by_version(*args, **kwargs):
 
     current_version = len(node_to_use.files_versions[filename.replace('.', '_')])
     if version_number == current_version:
-        file_path = os.path.join(website.settings.uploads_path, node_to_use.id, filename)
+        file_path = os.path.join(settings.uploads_path, node_to_use.id, filename)
         return send_file(file_path)
 
     content, content_type = node_to_use.get_file(filename, version=version_number)
