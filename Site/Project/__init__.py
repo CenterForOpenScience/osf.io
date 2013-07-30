@@ -47,14 +47,11 @@ def new_node(category, title, user, description=None, project=None):
     new_node.title=title
     new_node.description=description
     new_node.is_public=False
-    new_node.generate_keywords()
-    
+
     new_node.creator = user
     new_node.optimistic_insert()
     new_node.contributors.append(user)
     new_node.contributor_list.append({'id':user.id})
-    new_node.save()
-
     if project:
         project.nodes.append(new_node)
         project.save()
@@ -66,7 +63,8 @@ def new_node(category, title, user, description=None, project=None):
             user=user,
             log_date=new_node.date_created
         )
-
+    new_node.generate_keywords()
+    new_node.save()
     return new_node
 
 def get_wiki_page(project, node, wid):

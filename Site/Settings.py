@@ -16,7 +16,7 @@ static_path = os.path.join(base_path, 'static')
 # These settings should be overridden by envvars or another method.
 uploads_path = os.path.join(base_path, 'Uploads')
 # uploads_path = '/var/www/openscienceframeworkorg_uploads'
-mongo_uri = 'mongodb://osf:osf@localhost:20771/osf_test'
+mongo_uri = 'mongodb://localhost:20771/osf20120530'
 # mongo_uri = 'mongodb://osf:osfosfosfosf0$f@localhost:20771/osf_test'
 
 #TODO: Configuration should not change between deploys - this should be dynamic.
