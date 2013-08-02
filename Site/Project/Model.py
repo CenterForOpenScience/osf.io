@@ -22,7 +22,7 @@ from dulwich.object_store import tree_lookup_path
 
 import subprocess
 
-from Solr import update_solr, delete_solr_doc
+from Solr import update_solr, delete_solr_doc, migrate_user
 
 def utc_datetime_to_timestamp(dt):
     return float(
@@ -86,56 +86,67 @@ Tag.setStorage(MongoCollectionStorage(db, 'tag'))
 class Node(MongoObject):
 
     def save(self):
-
+        # function to overrwrite the save method so
+        # that we can send relevant info to solr
         super(Node, self).save()
         contributors = []
         contributors_url= []
         for contributor in self['contributors']:
             user = User.find(_id=contributor)
             if user is not None:
+                # puts users in solr
+                migrate_user({
+                    'id':contributor,
+                    'user':user['fullname'],
+                    'public':True,
+                })
                 contributors.append(user['fullname'])
                 contributors_url.append('/profile/'+contributor)
+        # public project defautls to false
+        public_project = False
+        # find out if the root id of our node
         if self['category'] == 'project':
             id = self['_id']
         else:
             id = self['_b_node_parent']
-        url = self.get_url(self['_id'])
+        # get the url
+        url = self.url()
+        # if deleting, we remove from solr
         if self.is_deleted:
             delete_solr_doc({
-                '_id' : self['_id'],
+                'root_id' : id,
+                '_id':self['_id']
             })
         else:
-            args = {
-                'id':id,
-                self['_id']+'_title':self['title'],
-                self['_id']+'_category':self['category'],
-                self['_id']+'_public':self['is_public'],
-                self['_id']+'_tags':self['tags'],
-                self['_id']+'_description':self['description'],
-                self['_id']+'_url':url,
-                'contributors':contributors,
-                'contributors_url':contributors_url,
-            }
+            # if its a project
+            if self['category'] == 'Project':
+                args = {
+                    'id':id,
+                    'public':public_project,
+                    self['_id']+'_title':self['title'],
+                    self['_id']+'_category':self['category'],
+                    'public_project': self['is_public'],
+                    self['_id']+'_public':self['is_public'],
+                    self['_id']+'_tags':self['tags'],
+                    self['_id']+'_description':self['description'],
+                    self['_id']+'_url':url,
+                    self['_id']+'_contributors':contributors,
+                    self['_id']+'_contributors_url':contributors_url,
+                }
+            # for all other nodes
+            else:
+                args = {
+                    'id':id,
+                    self['_id']+'_title':self['title'],
+                    self['_id']+'_category':self['category'],
+                    self['_id']+'_public':self['is_public'],
+                    self['_id']+'_tags':self['tags'],
+                    self['_id']+'_description':self['description'],
+                    self['_id']+'_url':url,
+                    self['_id']+'_contributors':contributors,
+                    self['_id']+'_contributors_url':contributors_url,
+                }
             update_solr(args)
-
-    def get_url(self, id):
-        """
-        returns the url for the node
-        """
-        return self.url()
-
-    # def find_root_id(self, id):
-    #     """
-    #     returns the root project id
-    #     """
-    #     node = Node.find(_id=id)
-    #     if node is not None and '_b_node_parent' in node:
-    #         print 'were going'
-    #         return self.find_root_id(Node.find(_id=node['_b_node_parent'])['_id'])
-    #     else:
-    #         print 'and now are ending'
-    #         print  id
-    #         return id
 
 
     schema = {
@@ -709,13 +720,13 @@ class Node(MongoObject):
             user=user,
             log_date=v.date
         )
+        # find the root id
         id = self.find_root_id(self.id)
-        url = self.get_url(self.id)
         document = {
             'id': id,
-            self.id+'_wiki': content,
-            self.id+'_url': url,
+            self.id+'__'+page_name+'__wiki': content,
         }
+        # add to solr
         update_solr(document)
 
 
