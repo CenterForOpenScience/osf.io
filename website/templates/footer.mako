@@ -1,3 +1,18 @@
+<style>
+    h4 {
+        padding-right:40px;
+        padding-bottom: 10px;
+    }
+
+    .social img {
+        padding: 0px 0px 10px 0px;
+    }
+
+    .social {
+        padding-right: 60px;
+    }
+</style>
+
  <% import website.settings %>
         </div>
     </div>
@@ -20,7 +35,7 @@
                         <ul>
                             <li><a href="https://centerforopenscience.org">Home</a></li>
                             <li><a href="http://centerforopenscience.org/#contact">Contact</a></li>
-                            <li><a href="/project/EZcUj/wiki/home" </li>
+                            <li><a href="/project/EZcUj/wiki/home">Reproducibility Project</a></li>
                         </ul>
                     </div>
                     <div class="span2">
@@ -32,12 +47,14 @@
                     </div>
                     <div class="span2">
                         <h4>Socialize</h4>
-                        <ul>
-                            <li><a href="https://groups.google.com/forum/#!forum/openscienceframework">Google Group</a></li>
-                            <li><a href="http://facebook.com/openscienceframework">Facebook</a></li>
-                            <li><a href="http://twitter.com/osframework">Twitter</a></li>
-                        </ul>
-                    </div>
+                        <div class="social">
+                            <a href="http://twitter.com/OSFramework"><img src="/static/img/twitter_alt.png" alt="Twitter" height="24" width="24"></a>
+                            <a href="https://www.facebook.com/OpenScienceFramework"><img src="/static/img/facebook.png" alt="Facebook" height="24" width="24"></a>
+                            <a href="https://groups.google.com/forum/#!forum/openscienceframework"><img src="/static/img/google.png" alt="Google Group" height="24" width="24"></a>
+                            <a href="https://www.github.com/centerforopenscience"><img src="/static/img/github_alt.png" alt="GitHub" height="24" width="24"></a>
+                            <a href="https://plus.google.com/103557785986281627994" rel="publisher"><img src="/static/img/googleplus.png" alt="Google Plus" height="24" width="24"></a>
+                        </div>
+                    </div> <!-- column -->
                 </div>
             </div>
         </div>
