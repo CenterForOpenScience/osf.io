@@ -9,6 +9,7 @@ from framework.mako import render
 ###### Celery
 
 from framework.celery import celery
+from framework.celery.tasks import error_handler
 
 ###### Session
 
