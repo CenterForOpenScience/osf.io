@@ -1,5 +1,8 @@
-from framework import get, post, request, redirect, must_be_logged_in, push_status_message, push_errors_to_status, \
-    app, render, Blueprint, get_user, get_current_user, secure_filename, jsonify, update_counters
+from framework import (
+    get, post, request, redirect, must_be_logged_in, push_status_message,
+    push_errors_to_status, app, render, Blueprint, get_user, get_current_user,
+    secure_filename, jsonify, update_counters, send_file
+)
 from . import new_node, new_project, get_node, show_diff, get_file_tree
 from .decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
