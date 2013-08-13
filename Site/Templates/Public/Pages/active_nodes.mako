@@ -97,12 +97,14 @@ $(function(){
 <%def name="node_list(nodes, default=0, prefix='', metric='hits')">
 %for node in nodes:
     <%
-        import locale
-        locale.setlocale(locale.LC_ALL, 'en_US')
-        unique_hits, hits = [
-            locale.format('%d', val, grouping=True)
+        #import locale
+        #locale.setlocale(locale.LC_ALL, 'en_US')
+        unique_hits, hits = (
+             #locale.format('%d', val, grouping=True) if val else
+             #locale.format(0, val, grouping=True)
+            val if val else 0
             for val in node.get_stats()
-        ]
+        )
         explicit_date = '{month} {dt.day} {dt.year}'.format(
             dt=node.date_created.date(),
             month=node.date_created.date().strftime('%B')
