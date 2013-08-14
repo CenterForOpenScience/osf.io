@@ -27,6 +27,10 @@ def utc_datetime_to_timestamp(dt):
         str(calendar.timegm(dt.utcnow().utctimetuple())) + '.' + str(dt.microsecond)
     )
 
+def normalize_unicode(ustr):
+    return unicodedata.normalize('NFKD', ustr)\
+        .encode('ascii', 'ignore')
+
 class NodeLog(MongoObject):
     schema = {
         '_id':{'type': ObjectId, 'default':lambda: ObjectId()},
@@ -339,10 +343,13 @@ class Node(MongoObject):
 
             repo = Repo(repo_path)
 
-            commit_id = repo.do_commit(
-                '%s deleted' % path,
-                '%s <user-%s@openscienceframework.org>' % (user.fullname, user.id)
+            message = '{path} deleted'.format(path=path)
+            committer = u'{fullname} <user-{id}@openscienceframework.org>'.format(
+                fullname=user.fullname,
+                id=user.id
             )
+            ascii_committer = normalize_unicode(committer)
+            commit_id = repo.do_commit(message, ascii_committer)
 
         except subprocess.CalledProcessError:
             return False
@@ -427,9 +434,7 @@ class Node(MongoObject):
             name=user.fullname,
             id=user.id,
         )
-        ascii_committer = unicodedata.normalize('NFKD', committer).encode(
-            'ascii', 'ignore'
-        )
+        ascii_committer = normalize_unicode(committer)
 
         commit_id = repo.do_commit(
             message=unicode(file_name +
