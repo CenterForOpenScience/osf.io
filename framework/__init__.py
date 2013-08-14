@@ -6,6 +6,10 @@ from framework.flask import send_file, secure_filename, app, route, get, post,\
 
 from framework.mako import render
 
+###### Celery
+
+from framework.celery import celery
+
 ###### Session
 
 from framework.beaker import set_previous_url, goback, session_set, session_get
@@ -30,7 +34,8 @@ from framework.forms import Form, PasswordField, BooleanField, IntegerField, \
 from framework.search import generate_keywords, search
 
 ##### Email
-from framework.email import send_email
+
+from framework.Email.email_tasks import send_email
 
 ##### Status
 
