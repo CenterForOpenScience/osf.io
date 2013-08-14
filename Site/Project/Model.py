@@ -431,9 +431,6 @@ class Node(MongoObject):
             committer=committer,
         )
 
-        # Deal with logs
-        loggerDebug('add_file', committer)
-
         # Deal with creating a NodeFile in the database
         node_file = NodeFile()
         node_file.path = file_name
