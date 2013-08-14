@@ -1,5 +1,5 @@
-from framework import *
-from website.project import *
+from framework import get_current_user, push_status_message, redirect
+from website.project import get_node
 
 ###############################################################################
 # Decorators

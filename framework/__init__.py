@@ -20,14 +20,15 @@ from framework.mongo import db, MongoObject
 
 ###### Auth
 
-from framework.auth import get_current_username, get_current_user_id, get_user, get_current_user, must_be_logged_in
+from framework.auth import get_current_username, get_current_user_id, get_user, \
+    get_current_user, must_be_logged_in, User
 
 ##### Form
 
 from framework.forms import Form, PasswordField, BooleanField, IntegerField, \
     DateField, DateTimeField, FileField, HiddenField, RadioField, SelectField,\
     SelectMultipleField, SubmitField, TextAreaField, TextField, validators, \
-    pushErrorsToStatus, MyTextInput, FieldList
+    push_errors_to_status, MyTextInput, FieldList
 
 ##### Search
 

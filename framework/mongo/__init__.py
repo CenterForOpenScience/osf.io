@@ -6,16 +6,16 @@ from bson.dbref import DBRef
 
 import random
 
-from yORM import *
+from yORM import Object, MongoCollectionStorage
 
-import website.settings
+from website import settings
 from urlparse import urlsplit
 
 ObjectId = ObjectId
 DBRef = DBRef
-connect = Connection(website.settings.mongo_uri)
+connect = Connection(settings.mongo_uri)
 
-db_name = urlsplit(website.settings.mongo_uri).path[1:] # Slices off the leading slash of the path (database name)
+db_name = urlsplit(settings.mongo_uri).path[1:] # Slices off the leading slash of the path (database name)
 
 db = connect[db_name]
 

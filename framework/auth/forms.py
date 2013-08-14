@@ -1,4 +1,4 @@
-from framework.forms import *
+from framework.forms import Form, TextField, PasswordField, validators
 
 class ResetPasswordForm(Form):
     password    = PasswordField('Password', [
@@ -11,7 +11,7 @@ class ResetPasswordForm(Form):
 
 class RegistrationForm(Form):
     fullname = TextField('Full Name', [
-        validators.Required(message=u'Full name is required')
+        validators.Required(message=u'Full name i required')
     ])
     username    = TextField('Email Address', [
         validators.Required(message=u'Email address is required'),

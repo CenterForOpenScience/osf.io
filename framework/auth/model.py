@@ -1,4 +1,4 @@
-from framework.mongo import *
+from framework.mongo import MongoCollectionStorage, MongoObject, db
 from framework.search import Keyword
 
 import datetime

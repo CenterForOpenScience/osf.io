@@ -1,14 +1,14 @@
 import framework.beaker as Session
 import framework.mongo as Database
 import framework.status as status
-import framework.flask as Web
+import framework.flask as web
 import framework.bcrypt as bcrypt
 
 import helper
 
 #import website.settings as settings
 
-from model import *
+from model import User
 
 from decorator import decorator
 import datetime
@@ -132,5 +132,5 @@ def must_be_logged_in(fn):
             return func(*args, **kwargs)
         else:
             status.push_status_message('You are not logged in')
-            return Web.redirect('/account')
+            return web.redirect('/account')
     return decorator(wrapped, fn)
