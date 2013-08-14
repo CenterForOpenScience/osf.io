@@ -1,6 +1,6 @@
-from Framework import *
+from framework import *
 
-import Framework.Beaker as Session
+import framework.Beaker as Session
 
 from decorator import decorator
 from datetime import datetime

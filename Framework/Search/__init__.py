@@ -1,4 +1,4 @@
-from Framework.Search.Model import Keyword
+from framework.Search.Model import Keyword
 
 from topia.termextract import extract
 

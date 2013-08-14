@@ -1,11 +1,11 @@
-import Framework
-from Framework.Analytics import db as analytics
+import framework
+from framework.Analytics import db as analytics
 
 from Site.Project import Node
 from pymongo import DESCENDING
 
 
-@Framework.get('/explore/activity/')
+@framework.get('/explore/activity/')
 def activity():
     # Projects
 
@@ -81,7 +81,7 @@ def activity():
         ):
             most_viewed_registrations.append(node)
 
-    return Framework.render(
+    return framework.render(
         'active_nodes.mako',
         recent_public_projects=[Node.load(x['_id'])
                                 for x in recent_public_projects],

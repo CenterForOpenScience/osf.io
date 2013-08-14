@@ -1,10 +1,10 @@
-from Framework import *
+from framework import *
 from . import *
 from .decorators import *
 from .forms import *
 from .Model import *
 
-from Framework.Analytics import getBasicCounters
+from framework.Analytics import getBasicCounters
 
 from flask import Response, make_response
 

@@ -1,6 +1,6 @@
 <%def name="print_logs(logs, n=None)">
     <% 
-        from Framework import getUser 
+        from framework import getUser
         from Site.Project import getNode
 
     %>

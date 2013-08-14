@@ -1,6 +1,6 @@
 <%
-    import Framework, Site.Settings
-    username = Framework.getCurrentUsername()
+    import framework, Site.Settings
+    username = framework.getCurrentUsername()
     if username:
         if len(username) > 22:
             display_name = '%s...%s' % (username[:9],username[-10:])

@@ -1,4 +1,4 @@
-from Framework import *
+from framework import *
 from . import *
 
 ###############################################################################
