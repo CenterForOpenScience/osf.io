@@ -39,7 +39,7 @@
                                 else:
                                     c = get_user(c)
                                     if c:
-                                        contributors.append('<a href="/profile/{id}">{fullname}</a>'.format(id=c.id, fullname=c.fullname))
+                                        contributors.append(u'<a href="/profile/{id}">{fullname}</a>'.format(id=c.id, fullname=c.fullname))
 
                     %>
                     ${', '.join(contributors)} as contributor${'s' if len(contributors) > 1 else ''} on 
@@ -71,7 +71,7 @@
                         else:
                             u = get_user(c)
                             if u:
-                                contributor = '<a href="/profile/{id}">{fullname}</a>'.format(id=u.id, fullname=u.fullname)
+                                contributor = u'<a href="/profile/{id}">{fullname}</a>'.format(id=u.id, fullname=u.fullname)
 
                     %>
                     ${contributor} as a contributor from
