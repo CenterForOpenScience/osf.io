@@ -141,7 +141,7 @@
         <br />Forked from <a href="${node_to_use.forked_from.url()}">${node_to_use.forked_from.url()}</a> on ${node_to_use.forked_date.strftime('%Y/%m/%d %I:%M %p')}
     %endif
     % if node_to_use.is_registration and node_to_use.registered_meta:
-        <br />Registration Supplement: ${', '. join(['<a href="{url}/register/{k}">{kf}</a>'.format(url=node_to_use.url(), k=k.replace('.txt', ''), kf=str(k.replace('.txt', '').replace('_', ' '))) for k in node_to_use.registered_meta])}
+        <br />Registration Supplement: ${', '. join([u'<a href="{url}/register/{k}">{kf}</a>'.format(url=node_to_use.url(), k=k.replace('.txt', ''), kf=str(k.replace('.txt', '').replace('_', ' '))) for k in node_to_use.registered_meta])}
     %endif
     <br />Date Created: 
     %if not node:
