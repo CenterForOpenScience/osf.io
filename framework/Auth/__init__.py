@@ -3,7 +3,6 @@ import framework.Mongo as Database
 import framework.Status as Status
 import framework.Flask as Web
 import framework.Bcrypt as Bcrypt
-import framework.Debug as Debug
 
 import Helper
 
