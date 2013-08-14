@@ -1,4 +1,6 @@
-from framework.Flask import send_file, secure_filename, app, route, get, post, redirect, request, url_for, send_from_directory, set_static_folder, Blueprint, render_template, render_template_string, jsonify, abort
+from framework.Flask import send_file, secure_filename, app, route, get, post,\
+    redirect, request, url_for, send_from_directory, set_static_folder, \
+    Blueprint, render_template, render_template_string, jsonify, abort
 
 ##### Template
 
@@ -18,25 +20,10 @@ from framework.Auth import getCurrentUsername, getCurrentUserId, getUser, getCur
 
 ##### Form
 
-import Forms
-Form = Forms.Form
-PasswordField = Forms.PasswordField
-BooleanField = Forms.BooleanField
-IntegerField = Forms.IntegerField
-DateField = Forms.DateField
-DateTimeField = Forms.DateTimeField
-FileField = Forms.FileField
-HiddenField = Forms.HiddenField
-RadioField = Forms.RadioField
-SelectField = Forms.SelectField
-SelectMultipleField = Forms.SelectMultipleField
-SubmitField = Forms.SubmitField
-TextAreaField = Forms.TextAreaField
-TextField = Forms.TextField
-validators = Forms.validators
-pushErrorsToStatus = Forms.pushErrorsToStatus
-MyTextInput = Forms.MyTextInput
-FieldList = Forms.FieldList
+from framework.forms import Form, PasswordField, BooleanField, IntegerField, \
+    DateField, DateTimeField, FileField, HiddenField, RadioField, SelectField,\
+    SelectMultipleField, SubmitField, TextAreaField, TextField, validators, \
+    pushErrorsToStatus, MyTextInput, FieldList
 
 ##### Search
 
