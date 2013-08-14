@@ -4,34 +4,35 @@
         <div class="footer">
             <div class="container">
                 <div class="row">
-                    <div class="span2">
+                    <div class="span1">
                         &nbsp;
                     </div>
-                    <div class="span4">
-                        <h4>Open Science Collaboration Projects</h4>
-                        <ul>
-                            <li><a href="/">Open Science Framework</a></li>
-                            <li><a href="/reproducibility">Reproducibility Project</a></li>
-                        </ul>
-                    </div>
-                    <div class="span2">
+                     <div class="span2">
                         <h4>OSF</h4>
                         <ul>
-                            <li><a href="/explore">Explore</a></li>
                             <li><a href="/project/4znZP/wiki/home">About</a></li>
                             <li><a href="/faq">FAQ</a></li>
+                            <li><a href="/explore">Explore</a></li>
+                        </ul>
+                    </div>
+                    <div class="span3">
+                        <h4>Center for Open Science</h4>
+                        <ul>
+                            <li><a href="https://centerforopenscience.org">Home</a></li>
+                            <li><a href="http://centerforopenscience.org/#contact">Contact</a></li>
                         </ul>
                     </div>
                     <div class="span2">
                         <h4>Documentation</h4>
                         <ul>
-                            <li>Help</li>
+                            <li><a href="/getting-started">Getting Started</a></li>
                             <li>Developer API</li>
                         </ul>
                     </div>
                     <div class="span2">
                         <h4>Socialize</h4>
                         <ul>
+                            <li><a href="https://groups.google.com/forum/#!forum/openscienceframework">Google Group</a></li>
                             <li><a href="http://facebook.com/openscienceframework">Facebook</a></li>
                             <li><a href="http://twitter.com/osframework">Twitter</a></li>
                         </ul>
@@ -42,7 +43,7 @@
         <div class="container copyright">
             <div class="row">
                 <div class="span12">
-                <p>Copyright &copy; 2011-2012 <a href="http://openscienceframework.org">OpenScienceFramework.org</a> - Terms of Service | Privacy | Security</p>
+                <p>Copyright &copy; 2011-2013 <a href="http://centerforopenscience.org">CenterforOpenScience.org</a> - Terms of Service | Privacy | Security</p>
                 </div>
             </div>
         </div>

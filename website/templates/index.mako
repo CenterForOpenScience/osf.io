@@ -21,40 +21,24 @@
     </div>
 </div>
 
+</div>
+<div class="container" style="margin-top: 40px;">
 <div class="row">
     <div class="span4">
-        <h2>OSF Features</h2>
-            <p>
-                <ol>
-                    <li>Document and archive studies
-                    <li>Share and find materials, scripts, data
-                    <li>Detail individual contributions
-                    <li>Increase transparency
-                    <li>Time-stamp materials
-                </ol>
-            </p>
-            <p><a class="btn" href="/project/4znZP/wiki/home">Learn More</a></p>
+        <h1>Scientists</h1>
+            <iframe style="padding-top: 20px;padding-right: 0px;padding-left: 0px;padding-bottom: 20px;" width="277" height="156" src="//www.youtube.com/embed/c6lCJFSnMcg" frameborder="0" allowfullscreen></iframe>
+        <p>Scientists can use OSF for free to archive, share, find, register research materials and data. Watch the videos, get <a href="http://openscienceframework.org/project/4znZP/wiki/home">background info</a>, get <a href="/getting-started">help</a>, or just <a href="http://openscienceframework.org/account">register</a> to get started.</p>
     </div>
     <div class="span4">
-        <h2>Find Projects and Data</h2>
-        <p>
-            <p>Find background, materials and data for public projects.  Use search or see, for example, the <a href="/project/EZcUj/wiki/home">Reproducibility Project</a>&mdash;a large-scale, open collaboration investigating reproducibility of published findings.</p>
-        </p>
+        <h1>Journals, Funders, and Societies</h1>
+            <p style="padding-top: 25px;">Journals, funders and scientific societies can use the OSF as back-end infrastructure for preregistration, data and materials archiving, and other administrative functions. Email contact@centerforopenscience.org.</p>
+        <a href="http://openscienceframework.org/explore/activity/"><img style="padding-top: 20px; padding-bottom:36px;" src="/static/img/activity.png" alt="public activity screenshot"></a>
     </div>
     <div class="span4">
-      <h2>Get Involved</h2>
-      <p>Scientists and developers can contribute.  Read more about OSF, join a project, subscribe to the discussion group, or just be a fan.</p>
-      <p>
-            <form action="http://groups.google.com/group/openscienceframework/boxsubscribe">
-            <input type=hidden name="hl" value="en">
-            <input class="span3" id="" name="email" type="text" placeholder="Join our email list" /><button type="submit" class="btn primary small">Join</button>
-            </form>
-            <a href="http://groups.google.com/group/openscienceframework?hl=en">Or visit our group</a>
-            
-        <br />
-        <a href="http://facebook.com/openscienceframework">Open Science Framework on Facebook</a>
-        	      <div class="fb-like" data-href="http://www.facebook.com/OpenScienceFramework" data-send="false" data-width="275" data-show-faces="false"></div></li>
-                  <a href="https://twitter.com/OSFramework" class="twitter-follow-button" data-show-count="false" data-size="large">Follow @OSFramework</a>
+      <h1>Developers</h1>
+        <iframe style="padding-top: 20px;padding-right: 0px;padding-left: 0px;padding-bottom: 20px;" width="277" height="156" src="//www.youtube.com/embed/WRadGRdkAIQ" frameborder="0" allowfullscreen></iframe>
+      <p>Developers can contribute to OSF and other open-source projects, or connect their projects to OSF via API. Watch the above video from SciPy, visit our <a href="https://github.com/centerforopenscience">GitHub page</a>, or contact developer@centerforopenscience.org.</p>
+        </div>
                   % if website.settings.use_cdn_for_client_libs:
                   <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
                   %endif

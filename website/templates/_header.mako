@@ -121,7 +121,7 @@
     <div class="navbar navbar-fixed-top">
         <div class="navbar-inner">
             <div class="container">
-                <a class="brand" href="/">Open Science Framework</a>
+                <a class="brand" style="padding-left: 10px; padding-right: 10px;" href="/">Open Science Framework<span style="font-size: 8px;"> BETA</span></a>
                 <ul class="nav">
                     %if username:
                     <li><a rel="tooltip" title="My Dashboard" href="/dashboard">Dashboard</a></li>
