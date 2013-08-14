@@ -11,6 +11,10 @@ body {
     width:190px
 }
 
+#navbar-icons span.icon-white {
+    margin-top:1px;
+}
+
 /* Subnav */
 .subnav {
   width: 100%;
