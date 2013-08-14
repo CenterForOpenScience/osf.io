@@ -15,6 +15,7 @@ import os
 import copy
 import pymongo
 import scrubber
+import unicodedata
 
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
@@ -426,11 +427,14 @@ class Node(MongoObject):
             name=user.fullname,
             id=user.id,
         )
+        ascii_committer = unicodedata.normalize('NFKD', committer).encode(
+            'ascii', 'ignore'
+        )
 
         commit_id = repo.do_commit(
             message=unicode(file_name +
                             (' added' if file_is_new else ' updated')),
-            committer=committer,
+            committer=ascii_committer,
         )
 
         # Deal with creating a NodeFile in the database
