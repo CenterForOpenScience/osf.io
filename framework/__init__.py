@@ -1,22 +1,22 @@
-from framework.Flask import send_file, secure_filename, app, route, get, post,\
+from framework.flask import send_file, secure_filename, app, route, get, post,\
     redirect, request, url_for, send_from_directory, set_static_folder, \
     Blueprint, render_template, render_template_string, jsonify, abort
 
 ##### Template
 
-from framework.Mako import render
+from framework.mako import render
 
 ###### Session
 
-from framework.Beaker import setPreviousUrl, goback, sessionSet, sessionGet
+from framework.beaker import set_previous_url, goback, session_set, session_get
 
 ###### Mongo
 
-from framework.Mongo import db, MongoObject
+from framework.mongo import db, MongoObject
 
 ###### Auth
 
-from framework.Auth import getCurrentUsername, getCurrentUserId, getUser, getCurrentUser, must_be_logged_in
+from framework.auth import get_current_username, get_current_user_id, get_user, get_current_user, must_be_logged_in
 
 ##### Form
 
@@ -27,18 +27,18 @@ from framework.forms import Form, PasswordField, BooleanField, IntegerField, \
 
 ##### Search
 
-from framework.Search import generateKeywords, search
+from framework.search import generate_keywords, search
 
 ##### Email
-from framework.Email import sendEmail
+from framework.email import send_email
 
 ##### Status
 
-from framework.Status import pushStatusMessage
+from framework.status import push_status_message
 
 ##### Analytics
 
-from framework.analytics import updateCounters, getBasicCounters
+from framework.analytics import update_counters, get_basic_counters
 
 import pytz
 
