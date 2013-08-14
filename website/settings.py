@@ -14,12 +14,15 @@ try:
 except KeyError:
     use_cdn_for_client_libs = False
 
-# Application paths
-cache_path = os.path.join(base_path, 'cache')
 static_path = os.path.join(base_path, 'static')
-# These settings should be overridden by envvars or another method.
-uploads_path = os.path.join(base_path, 'uploads')
-# uploads_path = '/var/www/openscienceframeworkorg_uploads'
+
+try:
+    os.environ['OSF_PRODUCTION']
+    cache_path = '/opt/data/osf_cache'
+    uploads_path = '/opt/data/uploads'
+except:
+    cache_path = os.path.join(base_path, 'cache')
+    uploads_path = os.path.join(base_path, 'uploads')
 
 try:
     os.environ['OSF_PRODUCTION']
