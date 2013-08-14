@@ -111,4 +111,3 @@ def prune_file_list(file_list, max_depth):
         return file_list
     return [file for file in file_list if len([c for c in file if c == '/']) <= max_depth]
 
-
