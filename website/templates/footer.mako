@@ -20,6 +20,7 @@
                         <ul>
                             <li><a href="https://centerforopenscience.org">Home</a></li>
                             <li><a href="http://centerforopenscience.org/#contact">Contact</a></li>
+                            <li><a href="/project/EZcUj/wiki/home" </li>
                         </ul>
                     </div>
                     <div class="span2">
