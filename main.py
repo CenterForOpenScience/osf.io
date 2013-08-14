@@ -13,7 +13,7 @@ def index():
     return framework.render(filename='index.mako')
 
 @framework.route('/dashboard')
-@framework.mustBeLoggedIn
+@framework.must_be_logged_in
 def dashboard(*args, **kwargs):
     user = kwargs['user']
     return framework.render(

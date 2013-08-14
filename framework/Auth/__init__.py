@@ -125,7 +125,7 @@ def register(username, password, fullname=None):
 
 ###############################################################################
 
-def mustBeLoggedIn(fn):
+def must_be_logged_in(fn):
     def wrapped(func, *args, **kwargs):
         user = getCurrentUser()
         if user:
