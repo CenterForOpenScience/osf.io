@@ -41,6 +41,10 @@ render_zip = True
 render_tar = True
 archive_depth = 2               # Set to None for unlimited depth
 
+# Gravatar options #################
+gravatar_size_profile = 120
+gravatar_size_add_contributor = 80
+
 try:
     os.environ['OSF_PRODUCTION']
     dev_mode = False
