@@ -1,6 +1,6 @@
 import framework
-import framework.email as email
 import framework.beaker as Session
+from framework.email.tasks import send_email
 import framework.mako as template
 import framework.status as status
 import framework.forms as forms
@@ -10,7 +10,7 @@ import settings
 
 import helper
 
-from framework.auth import register, login, logout, DuplicateEmailError
+from framework.auth import register, login, logout, DuplicateEmailError, get_user, hash_password
 from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm
 
 @framework.get('/resetpassword/<verification_key>')
@@ -43,7 +43,7 @@ def forgot_password():
         if user_obj:
             user_obj.verification_key = helper.random_string(20)
             user_obj.save()
-            email.send_email(
+            send_email(
                 to=form.email.data, 
                 subject="Reset Password", 
                 message="http://%s%s" % (
