@@ -35,7 +35,7 @@ from framework.search import generate_keywords, search
 
 ##### Email
 
-from framework.Email.email_tasks import send_email
+from framework.email import send_email
 
 ##### Status
 
