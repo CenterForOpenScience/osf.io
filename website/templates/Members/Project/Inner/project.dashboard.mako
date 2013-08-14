@@ -27,6 +27,12 @@
             },
         });
     });
+
+    function checkListChange(list){
+        console.log(list);
+        console.log("Project dashboard");
+        return true;
+    }
 </script>
   <div class="row">
     <div class="span7">

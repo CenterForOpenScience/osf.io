@@ -18,3 +18,10 @@
          </div>
      </div>
 </div>
+<script>
+    function checkListChange(list){
+        console.log(list);
+        console.log("User dashboard");
+        return true;
+    }
+</script>
