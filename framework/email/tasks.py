@@ -13,7 +13,7 @@ def send_email(to=None, subject=None, message=None):
 
     :return: True if successful
     """
-    fro="openscienceframework-noreply@openscienceframework.org"
+    fro = "openscienceframework-noreply@openscienceframework.org"
     msg = MIMEText(message)
     msg['Subject'] = subject
     msg['From'] = fro 
