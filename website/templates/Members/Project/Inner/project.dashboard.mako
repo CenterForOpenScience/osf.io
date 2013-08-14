@@ -74,7 +74,7 @@
             //$('#addContributor').modal('hide')
           </script>
           % if project.nodes:
-            ${node_list(project.nodes.objects())}
+            ${node_list(project.nodes.objects(), default="project_dash", node_id=project._id)}
           %else:
             <p>No components have been added to this project.</p>
           %endif
