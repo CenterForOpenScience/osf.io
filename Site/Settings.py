@@ -36,4 +36,3 @@ try:
     dev_mode = False
 except KeyError:
     dev_mode = True
-

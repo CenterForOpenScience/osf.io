@@ -159,7 +159,7 @@
                     <li><a rel="tooltip" title="Logout" href="/logout"><img height="20px" src="/static/TokenPower.png" style="width:20px;" /></a></li>
                     %else:
                         %if Site.Settings.allow_login:
-                        <li><a class="btn btn-primary" href="/account" style="color:white;padding:5px 9px;font-size: 11px; line-height: 16px;">Create an Account or Sign-In</a></li>
+                        <li><a class="btn btn-primary" href="/account" style="background-color:rgb(0, 85, 204);;color:white;padding:5px 9px;font-size: 11px; line-height: 16px;">Create an Account or Sign-In</a></li>
                         %else:
                         %endif
                     %endif
