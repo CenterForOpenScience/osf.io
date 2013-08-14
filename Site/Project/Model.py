@@ -1,7 +1,7 @@
 from framework.Mongo import *
 from framework.Auth import *
 from framework.Debug import *
-from framework.Analytics import *
+from framework.analytics import *
 from framework.Search import Keyword, generateKeywords
 from framework.Git.exceptions import FileNotModified
 

@@ -54,7 +54,7 @@ from framework.Status import pushStatusMessage
 
 ##### Analytics
 
-from framework.Analytics import updateCounters, getBasicCounters
+from framework.analytics import updateCounters, getBasicCounters
 
 import pytz
 

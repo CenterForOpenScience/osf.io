@@ -1,7 +1,7 @@
 ###############################################################################
 
 <%
-    from framework.Analytics import get_total_activity_count
+    from framework.analytics import get_total_activity_count
 
 
     public_projects = [p for p in profile.node_contributed.objects() if p.category=='project' and p.is_public and not p.is_deleted] if profile.node_contributed else []
