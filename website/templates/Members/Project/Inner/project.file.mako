@@ -4,7 +4,7 @@
 	from website.project.model import NodeFile
 	import os
 %>
-<div class="row">
+<div id='file-container' class="row">
     <div class="span8">
       	<section>
           	<div class="page-header">
@@ -26,7 +26,7 @@
   			%endif
   			<li class="active">${file_name}</li>	
 		</ul>
-		<table class="table table-striped">
+		<table class="table table-striped" id='file-version-history'>
 			<thead>
 				<tr>
 					<th>version</th>

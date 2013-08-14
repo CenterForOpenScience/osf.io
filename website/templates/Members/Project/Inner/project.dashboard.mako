@@ -95,7 +95,7 @@
         <div style="margin-right:12px;">
         <input name="node-tags" id="node-tags" value="${','.join(node_to_use.tags) if node_to_use.tags else ''}" />
         </div>
-            <div>
+            <div id='main-log'>
                 ${print_logs(reversed(node_to_use.logs.objects()), n=10)}
             </div>
             <div class="paginate" style="float:right;">more</div>

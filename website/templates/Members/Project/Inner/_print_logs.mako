@@ -4,7 +4,7 @@
         from website.project import get_node
 
     %>
-    <dl class="dl-horizontal">
+    <dl class="dl-horizontal activity-log">
     % for i, log in enumerate(logs):
         <% if n and i >= n:break %>
                 <% 
