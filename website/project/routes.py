@@ -339,6 +339,33 @@ def node_setting(*args, **kwargs):
 # View Project
 ##############################################################################
 
+@post('/api/v1/reorder_components/<pid>')
+@must_be_valid_project
+@must_be_contributor # returns user, project
+def project_reorder_components(*args, **kwargs):
+    project = kwargs['project']
+    user = get_current_user()
+
+    node_to_use = project
+    print node_to_use.nodes
+    old_list = node_to_use.nodes
+    new_list = json.loads(request.form['new_list'])
+
+    if len(set(old_list).intersection(set(new_list))) == len(old_list):
+        from yORM.Object import Object
+        node_to_use.nodes = Object.ObjectList(
+            node_to_use.nodes.parent,
+            node_to_use.nodes.name,
+            node_to_use.nodes.type,
+            new_list
+        )
+
+        if node_to_use.save():
+            print node_to_use.nodes
+            return jsonify({'success':'true'})
+
+    return jsonify({'success':'false'})
+
 @get('/project/<pid>/')
 @get('/project/<pid>/node/<nid>/')
 @must_be_valid_project
