@@ -348,7 +348,7 @@ def project_reorder_components(*args, **kwargs):
 
     node_to_use = project
     print node_to_use.nodes
-    old_list = node_to_use.nodes
+    old_list = [i._id for i in node_to_use.nodes.objects() if not i.is_deleted]
     new_list = json.loads(request.form['new_list'])
 
     if len(set(old_list).intersection(set(new_list))) == len(old_list):
