@@ -29,7 +29,7 @@
     });
 </script>
   <div class="row">
-    <div class="span7">
+    <div class="span7" id='containment'>
       <section id="Wiki Home">
         <div>
         ${wiki_home}
@@ -74,7 +74,7 @@
             //$('#addContributor').modal('hide')
           </script>
           % if project.nodes:
-            ${node_list(project.nodes.objects(), default="project_dash", node_id=project._id)}
+            ${node_list(project.nodes.objects(), default="project_dash", node_id=project._id, is_contributor=is_contributor)}
           %else:
             <p>No components have been added to this project.</p>
           %endif
