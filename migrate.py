@@ -1,3 +1,8 @@
+"""
+Migrate schemas from yORM to ODM. For the moment, copies data from the database
+defined in website/settings.py to a database managed by a Mongo daemon running
+on port 27017. Data are migrated to a database called "migrate".
+"""
 
 import pymongo
 import logging
