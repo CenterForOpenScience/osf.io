@@ -33,7 +33,7 @@
             });
         });
     </script>
-    <img src="${filters.gravatar(user, size=settings.gravatar_size_profile)}" />
+    <img src="${filters.gravatar(profile, size=settings.gravatar_size_profile)}" />
     <h1 id="${'profile-dfullname' if user and user.id==profile.id else ''}" style="display:inline-block">${profile.fullname}</h1>
     %if not profile.username:
    <p>This profile is currently unclaimed; others have added this person as a contributor by inputting their name and email. If you'd like to claim this profile, click here, and we'll send the address on file an email with a verification link. Once verified, you'll be able to connect a registered account to this name.</p>
