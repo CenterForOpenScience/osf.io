@@ -1,4 +1,4 @@
-from framework import get, post, request, must_be_logged_in, get_user, get_current_user, render, jsonify
+from framework import get, post, request, must_be_logged_in, get_user, get_current_user, render, jsonify, abort
 
 @get('/profile')
 @must_be_logged_in
@@ -10,7 +10,9 @@ def profile_view(*args, **kwargs):
 def profile_view_id(id):
     profile = get_user(id=id)
     user = get_current_user()
-    return render(filename="profile.mako", profile=profile, user=user)
+    if profile:
+        return render(filename="profile.mako", profile=profile, user=user)
+    return abort(404)
 
 @post('/profile/<id>/edit')
 @must_be_logged_in
