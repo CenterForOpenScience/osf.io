@@ -4,13 +4,13 @@
 <ul class="list-group ${'sortable' if default=="project_dash" and is_contributor else ''}" node_class="${default}" style="margin-left: 0px;">
 
 %for node in nodes:
-    % if node.id is None or node.is_deleted:
+    % if node._primary_key is None or node.is_deleted:
         <% continue %>
     % endif
-    <li id="projects-widget" node_id="${node.id}" class="project list-group-item" style="display: list-item;">
+    <li id="projects-widget" node_id="${node._primary_key}" class="project list-group-item" style="display: list-item;">
 		<h3 style="line-height:18px;">
 			<span style="display:inline-block; width: 400px">
-			%if not node.node_parent:
+			%if not node.node__parent:
 			    <a href="${node.url()}">${node.title}</a>
 			%else:
 				<a href="${node.url()}">${node.title}</a>
@@ -19,13 +19,13 @@
 				| registered: ${node.registered_date.strftime('%Y/%m/%d %I:%M %p')}
 			% endif
 			</span>
-			<i style="float:right;" id="icon-${node.id}" class="icon-plus" onclick="openCloseNode('${node.id}');"></i>
+			<i style="float:right;" id="icon-${node._primary_key}" class="icon-plus" onclick="openCloseNode('${node._primary_key}');"></i>
 		</h3>
 		
-		<div class="body hide" id="body-${node.id}" style="overflow:hidden;">
+		<div class="body hide" id="body-${node._primary_key}" style="overflow:hidden;">
 		      Recent Activity
 		      %if node.logs:
-		      	${print_logs(reversed(node.logs.objects()), n=3)}
+		      	${print_logs(reversed(node.logs), n=3)}
 		      %endif
 		</div>
 	</li>

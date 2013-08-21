@@ -60,8 +60,8 @@ def edit_node(*args, **kwargs):
 
         node_to_use.add_log('edit_title', 
             params={
-                'project':node_to_use.node_parent.id if node_to_use.node_parent else None,
-                'node':node_to_use.id,
+                'project':node_to_use.node_parent._primary_key if node_to_use.node_parent else None,
+                'node':node_to_use._primary_key,
                 'title_new':node_to_use.title,
                 'title_original':original_title,
             }, 
@@ -127,7 +127,7 @@ def project_new_post(*args, **kwargs):
     form = NewProjectForm(request.form)
     if form.validate():
         project = new_project(form.title.data, form.description.data, user)
-        return redirect('/project/' + str(project.id))
+        return redirect('/project/' + str(project._primary_key))
     else:
         push_errors_to_status(form.errors)
     return render(filename='project.new.mako', form=form)
@@ -152,10 +152,10 @@ def project_new_node(*args, **kwargs):
             category=form.category.data,
             project = project,
         )
-        return redirect('/project/' + str(project.id))
+        return redirect('/project/' + str(project._primary_key))
     else:
         pushErrorsToStatus(form.errors)
-    return redirect('/project/' + str(project.id))
+    return redirect('/project/' + str(project._primary_key))
 
 @post('/project/<pid>/fork')
 @post('/project/<pid>/node/<nid>/fork')
@@ -384,7 +384,7 @@ def project_view(*args, **kwargs):
 
     # If the node is a project, redirect to the project's page at the top level.
     if node and node_to_use.category == 'project':
-        return redirect('/project/{}/'.format(node.id))
+        return redirect('/project/{}/'.format(node._primary_key))
 
     #import pdb; pdb.set_trace()
 
@@ -453,10 +453,10 @@ def project_makepublic(*args, **kwargs):
 
     if node:
         node_to_use = node
-        url = '/project/{pid}/node/{nid}'.format(pid=project.id, nid=node.id)
+        url = '/project/{pid}/node/{nid}'.format(pid=project._primary_key, nid=node._primary_key)
     else:
         node_to_use = project
-        url = '/project/{pid}'.format(pid=project.id)
+        url = '/project/{pid}'.format(pid=project._primary_key)
 
     if not node_to_use.is_public:             # if not already public
         node_to_use.makePublic(user)
@@ -475,10 +475,10 @@ def project_makeprivate(*args, **kwargs):
 
     if node:
         node_to_use = node
-        url = '/project/{pid}/node/{nid}'.format(pid=project.id, nid=node.id)
+        url = '/project/{pid}/node/{nid}'.format(pid=project._primary_key, nid=node._primary_key)
     else:
         node_to_use = project
-        url = '/project/{pid}'.format(pid=project.id)
+        url = '/project/{pid}'.format(pid=project._primary_key)
 
     if node_to_use.is_public:
         node_to_use.makePrivate(user)
@@ -493,7 +493,7 @@ def project_watch(*args, **kwargs):
     project = kwargs['project']
     user = kwargs['user']
     project.watch(user)
-    return redirect('/project/'+str(project.id))
+    return redirect('/project/'+str(project._primary_key))
 
 @get('/project/<pid>/addtag/<tag>')
 @get('/project/<pid>/node/<nid>/addtag/<tag>')
@@ -605,14 +605,14 @@ def project_addcontributor_post(*args, **kwargs):
         if added_user:
             if user_id not in node_to_use.contributors:
                 node_to_use.contributors.append(added_user)
-                node_to_use.contributor_list.append({'id':added_user.id})
+                node_to_use.contributor_list.append({'id':added_user._primary_key})
                 node_to_use.save()
 
                 node_to_use.add_log('contributor_added', 
                     params={
-                        'project':get_node(node_to_use.node_parent).id if node_to_use.node_parent else None,
-                        'node':node_to_use.id,
-                        'contributors':[added_user.id],
+                        'project':get_node(node_to_use.node_parent)._primary_key if node_to_use.node_parent else None,
+                        'node':node_to_use._primary_key,
+                        'contributors':[added_user._primary_key],
                     }, 
                     user=user,
                 )
@@ -625,8 +625,8 @@ def project_addcontributor_post(*args, **kwargs):
 
         node_to_use.add_log('contributor_added', 
             params={
-                'project':get_node(node_to_use.node_parent).id if node_to_use.node_parent else None,
-                'node':node_to_use.id,
+                'project':get_node(node_to_use.node_parent)._primary_key if node_to_use.node_parent else None,
+                'node':node_to_use._primary_key,
                 'contributors':[{"nr_name":fullname, "nr_email":email}],
             }, 
             user=user,
@@ -660,23 +660,23 @@ def project_addcontributors_post(*args, **kwargs):
         email = elements[1]
         fullname = elements[0]
         temp_user = add_unclaimed_user(email, fullname)
-        if temp_user.id not in node_to_use.contributors:
-            users.append(temp_user.id)
+        if temp_user._primary_key not in node_to_use.contributors:
+            users.append(temp_user._primary_key)
             node_to_use.contributors.append(temp_user)
     node_to_use.save()
     node_to_use.add_log('contributor_added', 
         params={
-            'project':get_node(node_to_use.node_parent).id if node_to_use.node_parent else None,
-            'node':node_to_use.id,
+            'project':get_node(node_to_use.node_parent)._primary_key if node_to_use.node_parent else None,
+            'node':node_to_use._primary_key,
             'contributors':users,
         }, 
         user=user,
     )
 
     if node:
-        return redirect('/project/{pid}/node/{nid}'.format(pid=project.id, nid=node.id))
+        return redirect('/project/{pid}/node/{nid}'.format(pid=project._primary_key, nid=node._primary_key))
     else:
-        return redirect('/project/{pid}'.format(pid=project.id))
+        return redirect('/project/{pid}'.format(pid=project._primary_key))
 
 ###############################################################################
 # Files
@@ -722,7 +722,7 @@ def upload_file_get(*args, **kwargs):
     for i, v in node_to_use.files_current.items():
         v = NodeFile.load(v)
         if not v.is_deleted:
-            unique, total = get_basic_counters('download:' + node_to_use.id + ':' + v.path.replace('.', '_') )
+            unique, total = get_basic_counters('download:' + node_to_use._primary_key + ':' + v.path.replace('.', '_') )
             file_infos.append({
                 "name":v.path,
                 "size":v.size,
@@ -778,7 +778,7 @@ def upload_file_public(*args, **kwargs):
             mimetype='application/json'
         )
 
-    unique, total = get_basic_counters('download:' + node_to_use.id + ':' + file_object.path.replace('.', '_') )
+    unique, total = get_basic_counters('download:' + node_to_use._primary_key + ':' + file_object.path.replace('.', '_') )
 
     file_infos = []
     file_info = {
@@ -821,7 +821,7 @@ def view_file(*args, **kwargs):
 
     renderer = 'default'
 
-    file_path = os.path.join(settings.uploads_path, node_to_use.id, file_name)
+    file_path = os.path.join(settings.uploads_path, node_to_use._primary_key, file_name)
 
     if not os.path.isfile(file_path):
         abort(http.NOT_FOUND)
@@ -936,7 +936,7 @@ def download_file_by_version(*args, **kwargs):
 
     current_version = len(node_to_use.files_versions[filename.replace('.', '_')])
     if version_number == current_version:
-        file_path = os.path.join(settings.uploads_path, node_to_use.id, filename)
+        file_path = os.path.join(settings.uploads_path, node_to_use._primary_key, filename)
         return send_file(file_path)
 
     content, content_type = node_to_use.get_file(filename, version=version_number)
@@ -1030,9 +1030,9 @@ def project_wiki_compare(*args, **kwargs):
             )
     push_status_message('Not a valid version')
     if node:
-        return redirect('/project/{pid}/node/{nid}/wiki/{wid}'.format(pid=project.id, nid=node.id, wid=wid))
+        return redirect('/project/{pid}/node/{nid}/wiki/{wid}'.format(pid=project._primary_key, nid=node._primary_key, wid=wid))
     else:
-        return redirect('/project/{pid}/wiki/{wid}'.format(pid=project.id, wid=wid))
+        return redirect('/project/{pid}/wiki/{wid}'.format(pid=project._primary_key, wid=wid))
 
 @get('/project/<pid>/wiki/<wid>/version/<vid>')
 @get('/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>')
@@ -1068,9 +1068,9 @@ def project_wiki_version(*args, **kwargs):
 
     push_status_message('Not a valid version')
     if node:
-        return redirect('/project/{pid}/node/{nid}/wiki/{wid}'.format(pid=project.id, nid=node.id, wid=wid))
+        return redirect('/project/{pid}/node/{nid}/wiki/{wid}'.format(pid=project._primary_key, nid=node._primary_key, wid=wid))
     else:
-        return redirect('/project/{pid}/wiki/{wid}'.format(pid=project.id, wid=wid))
+        return redirect('/project/{pid}/wiki/{wid}'.format(pid=project._primary_key, wid=wid))
 
 @get('/project/<pid>/wiki/<wid>')
 @get('/project/<pid>/node/<nid>/wiki/<wid>')
@@ -1181,8 +1181,8 @@ def project_wiki_edit_post(*args, **kwargs):
     node_to_use.updateNodeWikiPage(wid, request.form['content'], user)
 
     if node:
-        return redirect('/project/{pid}/node/{nid}/wiki/{wid}'.format(pid=project.id, nid=node.id, wid=wid))
+        return redirect('/project/{pid}/node/{nid}/wiki/{wid}'.format(pid=project._primary_key, nid=node._primary_key, wid=wid))
     else:
-        return redirect('/project/{pid}/wiki/{wid}'.format(pid=project.id, wid=wid))
+        return redirect('/project/{pid}/wiki/{wid}'.format(pid=project._primary_key, wid=wid))
 
 app.register_blueprint(mod)

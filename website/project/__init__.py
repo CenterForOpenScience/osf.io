@@ -95,7 +95,7 @@ def watch_node(id, uid):
 
 def get_file_tree(node_to_use, user):
     tree = []
-    for node in node_to_use.nodes.objects():
+    for node in node_to_use.nodes:
         if not node.is_deleted:
             tree.append(get_file_tree(node, user))
 

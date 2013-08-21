@@ -6,7 +6,7 @@
 	<h1>Registrations</h1>
 </div>
 % if node_to_use.node_registrations:
-	${node_list(node_to_use.node_registrations.objects())}
+	${node_list(node_to_use.node_registrations)}
 %else:
 	There have been no registrations of this specific project. For a list of the most viewed and most recent public registrations on the Open Science Framework, click <a href="/explore/activity/">here</a>.
 %endif

@@ -21,18 +21,18 @@
 
     # If a parent project exists, put it here so the title can be displayed.
     parent_project = None
-    if node_to_use._b_node_parent:
-        parent_project = Node.load(node_to_use._b_node_parent)
+    if node_to_use.node__parent:
+        parent_project = Node.load(node_to_use.node__parent)
 
 
     for contributor in node_to_use.contributor_list:
         if "id" in contributor:
             contributor = framework.get_user(contributor["id"])
-            txt = '<a href="/profile/%s"' % contributor.id
+            txt = '<a href="/profile/%s"' % contributor._primary_key
             if user_is_contributor:
-                txt += ' class="user-quickedit" data-userid="%s" data-fullname="%s"' % (contributor.id, contributor.fullname)
+                txt += ' class="user-quickedit" data-userid="%s" data-fullname="%s"' % (contributor._primary_key, contributor.fullname)
             txt += '>%s</a>' % contributor.fullname
-            contributors_ids.append(contributor.id)
+            contributors_ids.append(contributor._primary_key)
         else:
             if "nr_name" in contributor:
                 txt = '<span class="user-quickedit" data-userid="nr-' + hashlib.md5(contributor["nr_email"]).hexdigest() + '" data-fullname="' + contributor["nr_name"] + '">' + contributor["nr_name"] + '</span>'
@@ -41,11 +41,11 @@
 
     contributors_text = ', '.join(contributors_text)
     counterUnique, counterTotal = framework.get_basic_counters(
-        '/project/%s/' % project.id)
+        '/project/%s/' % project._primary_key)
 
-    remove_url = "/project/" + project.id + "/"
+    remove_url = "/project/" + project._primary_key + "/"
     if node:
-        remove_url += "node/" + node.id + "/"
+        remove_url += "node/" + node._primary_key + "/"
     remove_url += "removecontributors"
 
     make_public_warning = 'Once a project is made public, there is no way to guarantee that access to the data it contains can be complete prevented. Users should assume that once a project is made public, it will always be public. Are you absolutely sure you would like to continue?'
@@ -75,17 +75,17 @@
             % if user_is_contributor:
                 <button class='btn disabled'>Private</button>
                 %if node:
-                    <a class="btn" href="/project/${project.id}/node/${node.id}/makepublic" data-confirm="${make_public_warning}">Make public</a>
+                    <a class="btn" href="/project/${project._primary_key}/node/${node._primary_key}/makepublic" data-confirm="${make_public_warning}">Make public</a>
                 %else:
-                    <a class="btn" href="/project/${project.id}/makepublic" data-confirm="${make_public_warning}">Make public</a>
+                    <a class="btn" href="/project/${project._primary_key}/makepublic" data-confirm="${make_public_warning}">Make public</a>
                 %endif
             % endif
         %else:
             % if user_is_contributor:
                 %if node:
-                    <a class="btn" href="/project/${project.id}/node/${node.id}/makeprivate" data-confirm="${make_private_warning}">Make private</a>
+                    <a class="btn" href="/project/${project._primary_key}/node/${node._primary_key}/makeprivate" data-confirm="${make_private_warning}">Make private</a>
                 %else:
-                    <a class="btn" href="/project/${project.id}/makeprivate" data-confirm="${make_private_warning}">Make private</a>
+                    <a class="btn" href="/project/${project._primary_key}/makeprivate" data-confirm="${make_private_warning}">Make private</a>
                 %endif
             % endif
             <button class="btn disabled">Public</button>
@@ -93,7 +93,8 @@
         </div>
 
         <div class="btn-group">
-          <a rel="tooltip" title="Number of users watching this node" class="btn" href="#"><i class="icon-eye-open"></i>&nbsp;${len(node_to_use.watchingUsers) if node_to_use.watchingUsers else 0}</a>
+          <a rel="tooltip" title="Number of users watching this node" class="btn" href="#"><i class="icon-eye-open"></i>&nbsp;0}</a>
+##          <a rel="tooltip" title="Number of users watching this node" class="btn" href="#"><i class="icon-eye-open"></i>&nbsp;${len(node_to_use.watchingUsers) if node_to_use.watchingUsers else 0}</a>
           <a
               href="#"
               rel="tooltip"
@@ -105,7 +106,7 @@
               class="btn disabled"
               % endif
           >
-              <i class="icon-fork"></i>&nbsp;${len(node_to_use.node_forked) if node_to_use.node_forked else 0}
+              <i class="icon-fork"></i>&nbsp;${len(node_to_use.node__forked) if node_to_use.node__forked else 0}
           </a>
         </div>
     </div>
@@ -114,7 +115,7 @@
         $(function() {
             $('#node-title-editable').editable({
                type:  'text',
-               pk:    '${node_to_use.id}',
+               pk:    '${node_to_use._primary_key}',
                name:  'title',
                url:   '${node_to_use.url()}/edit',  
                title: 'Edit Title',
@@ -129,7 +130,7 @@
 
     %endif
     %if parent_project:
-        <h1 id="node-title" style="display:inline-block"><a href="/project/${parent_project.id}/">${parent_project.title}</a> / </h1> <h1 id="${'node-title-editable' if node_to_use.is_contributor else 'node-title'}" style="display:inline-block">${node_to_use.title}</h1>
+        <h1 id="node-title" style="display:inline-block"><a href="/project/${parent_project._primary_key}/">${parent_project.title}</a> / </h1> <h1 id="${'node-title-editable' if node_to_use.is_contributor else 'node-title'}" style="display:inline-block">${node_to_use.title}</h1>
     %else:
         <h1 id="${'node-title-editable' if node_to_use.is_contributor else 'node-title'}" style="display:inline-block">${project.title}</h1>
     %endif
@@ -151,9 +152,9 @@
     %endif
     | Last Updated: 
     %if not node:
-        <span class="date">${project.logs.object(len(project.logs)-1).date.strftime('%Y/%m/%d %I:%M %p')}</span>
+        <span class="date">${project.logs[-1].date.strftime('%Y/%m/%d %I:%M %p')}</span>
     %else:
-        <span class="date">${node.logs.object(len(node.logs)-1).date.strftime('%Y/%m/%d %I:%M %p')}</span>
+        <span class="date">${node.logs[-1].date.strftime('%Y/%m/%d %I:%M %p')}</span>
     %endif
     
     %if node:

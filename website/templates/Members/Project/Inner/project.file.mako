@@ -40,7 +40,7 @@
 				version = NodeFile.load(version) 
 				base, ext = os.path.splitext(file_name)
 				version_number = len(node_to_use.files_versions[file_name.replace('.', '_')])-i
-				unique, total = get_basic_counters('download:' + node_to_use.id + ':' + file_name.replace('.', '_') + ':' + str(version_number))
+				unique, total = get_basic_counters('download:' + node_to_use._primary_key + ':' + file_name.replace('.', '_') + ':' + str(version_number))
 			%>
 			<tr>
 				<td>

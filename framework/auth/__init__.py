@@ -4,6 +4,8 @@ import framework.status as status
 import framework.flask as web
 import framework.bcrypt as bcrypt
 
+from modularodm.query.querydialect import DefaultQueryDialect as Q
+
 import helper
 
 #import website.settings as settings
@@ -32,22 +34,25 @@ def check_password(actualPassword, givenPassword):
 
 def get_user(id=None, username=None, password=None, verification_key=None):
     # tag: database
-    query = {}
+    query = []
     if id:
-        query['_id'] = id
+        query.append(Q('_id', 'eq', id))
+        # query['_id'] = id
     if username:
         username = username.strip().lower()
-        query['username'] = username
+        query.append(Q('username', 'eq', username))
+        # query['username'] = username
     if password:
         password = password.strip()
-        user = User.find(**query)
+        user = User.find_one(*query)
+        # user = User.find(**query)
         if user and not check_password(user.password, password):
             return False
-        else:
-            return user
+        return user
     if verification_key:
-        query['verification_key'] = verification_key
-    return User.find(**query)
+        query.append(Q('verification_key', 'eq', verification_key))
+        # query['verification_key'] = verification_key
+    return User.find_one(*query)
 
 def login(username, password):
     username = username.strip().lower()

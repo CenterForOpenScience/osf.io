@@ -14,13 +14,14 @@ from modularodm import fields
 from modularodm import storage
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
-from framework.search.model import Keyword as Keyword_YORM
-from framework.auth.model import User as User_YORM
-from website.project.model import Tag as Tag_YORM
-from website.project.model import NodeWikiPage as NodeWikiPage_YORM
-from website.project.model import NodeLog as NodeLog_YORM
-from website.project.model import NodeFile as NodeFile_YORM
-from website.project.model import Node as Node_YORM
+# from framework.search.model import Keyword as Keyword_YORM
+# from framework.auth.model import User as User_YORM
+# from website.project.model import Tag as Tag_YORM
+# from website.project.model import NodeWikiPage as NodeWikiPage_YORM
+# from website.project.model import NodeLog as NodeLog_YORM
+# from website.project.model import NodeFile as NodeFile_YORM
+# from website.project.model import Node as Node_YORM
+import schema_yorm
 
 client = pymongo.MongoClient()
 database = client['migrate']
@@ -29,13 +30,13 @@ database = client['migrate']
 # could be implemented using some kind of dependency tracking, but is
 # done by hand for now.
 migrate_order = [
-    'Keyword',
-    'User',
-    'Tag',
-    'NodeLog',
-    'NodeFile',
+    # 'Keyword',
+    # 'User',
+    # 'Tag',
+    # 'NodeLog',
+    # 'NodeFile',
     'Node',
-    'NodeWikiPage',
+    # 'NodeWikiPage',
 ]
 
 # Schema definitions
@@ -126,6 +127,9 @@ class Node(StoredObject):
 
     _id = fields.StringField(primary=True)
 
+    date_created = fields.DateTimeField()
+    is_public = fields.BooleanField()
+
     is_deleted = fields.BooleanField(default=False)
     deleted_date = fields.DateTimeField()
 
@@ -140,6 +144,8 @@ class Node(StoredObject):
     category = fields.StringField()
 
     _terms = fields.DictionaryField(list=True)
+    registered_meta = fields.DictionaryField()
+
     files_current = fields.DictionaryField()
     files_versions = fields.DictionaryField()
     wiki_pages_current = fields.DictionaryField()
@@ -153,12 +159,17 @@ class Node(StoredObject):
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
     tags = fields.ForeignField('tag', list=True, backref='tagged')
 
+    nodes = fields.ForeignField('node', list=True, backref='parent')
+    forked_from = fields.ForeignField('node', backref='forked')
+    registered_from = fields.ForeignField('node', backref='registrations')
+
 Node.set_storage(storage.MongoStorage(database, 'node'))
 
 # Migration
 
 def migrate(YORM, ODM):
 
+    print YORM, ODM
     yorms = YORM.find()
 
     for yorm in yorms:
@@ -174,6 +185,8 @@ def migrate(YORM, ODM):
                 continue
             setattr(odm, key, val)
 
+        # if 'nodes' in yorm:#odm.nodes:
+        #     import pdb; pdb.set_trace()
         # Skip records with missing PK
         if isinstance(odm._primary_key, odm._primary_type):
             odm.save()
@@ -184,14 +197,17 @@ t0_all = time.time()
 
 for schema in migrate_order:
 
-    schema_yorm = globals()['%s_YORM' % (schema)]
-    schema_odm = globals()[schema]
+    # schema_yorm = globals()['%s_YORM' % (schema)]
+    _schema_yorm = getattr(schema_yorm, schema)
+    _schema_odm = globals()[schema]
 
     t0_schema = time.time()
-    migrate(schema_yorm, schema_odm)
+    migrate(_schema_yorm, _schema_odm)
     migrate_time[schema] = time.time() - t0_schema
 
 migrate_time['ALL'] = time.time() - t0_all
+
+# todo: parallel examples for yORM, ODM
 
 brian = User.find_one(Q('fullname', 'contains', 'Nosek'))
 

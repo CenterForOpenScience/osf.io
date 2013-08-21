@@ -44,7 +44,7 @@
               <h1>Components</h1>
           </div>
           <div class="modal hide fade" id="newComponent">
-          <form class="form-horizontal form-horizontal-narrow" action="/project/${project.id}/newnode" method="post">
+          <form class="form-horizontal form-horizontal-narrow" action="/project/${project._primary_key}/newnode" method="post">
             <div class="modal-header">
               <h3 class='img-add'>Add Component</h3>
             </div>
@@ -74,7 +74,7 @@
             //$('#addContributor').modal('hide')
           </script>
           % if project.nodes:
-            ${node_list(project.nodes.objects(), default="project_dash", node_id=project._id, is_contributor=is_contributor)}
+            ${node_list(project.nodes, default="project_dash", node_id=project._primary_key, is_contributor=is_contributor)}
           %else:
             <p>No components have been added to this project.</p>
           %endif
@@ -96,7 +96,7 @@
         <input name="node-tags" id="node-tags" value="${','.join(node_to_use.tags) if node_to_use.tags else ''}" />
         </div>
             <div id='main-log'>
-                ${print_logs(reversed(node_to_use.logs.objects()), n=10)}
+                ${print_logs(reversed(node_to_use.logs), n=10)}
             </div>
             <div class="paginate" style="float:right;">more</div>
         </section>

@@ -1,27 +1,47 @@
 from framework.mongo import MongoCollectionStorage, MongoObject, db
 from framework.search import Keyword
 
+from modularodm import StoredObject
+from modularodm import fields
+from modularodm import storage
+
 import datetime
 
-class User(MongoObject):
-    schema = {
-        '_id':{},
-        "username":{},
-        "password":{},
-        "fullname":{},
-        "is_registered":{},
-        "is_claimed":{},
-        "verification_key":{},
-        "emails":{'type':[str]},
-        "email_verifications":{'type':lambda: dict()},
-        "aka":{'type':[str]},
-        "date_registered":{'default':lambda: datetime.datetime.utcnow()},
-        "keywords":{'type':[Keyword], 'backref':['keyworded']},
-    }
-    _doc = {
-        'name':'user',
-        'version':1,
-    }
+# class User(MongoObject):
+class User(StoredObject):
+    # schema = {
+    #     '_id':{},
+    #     "username":{},
+    #     "password":{},
+    #     "fullname":{},
+    #     "is_registered":{},
+    #     "is_claimed":{},
+    #     "verification_key":{},
+    #     "emails":{'type':[str]},
+    #     "email_verifications":{'type':lambda: dict()},
+    #     "aka":{'type':[str]},
+    #     "date_registered":{'default':lambda: datetime.datetime.utcnow()},
+    #     "keywords":{'type':[Keyword], 'backref':['keyworded']},
+    # }
+    # _doc = {
+    #     'name':'user',
+    #     'version':1,
+    # }
+
+    _id = fields.StringField(primary=True)
+
+    username = fields.StringField()
+    password = fields.StringField()
+    fullname = fields.StringField()
+    is_registered = fields.BooleanField()
+    is_claimed = fields.BooleanField()
+    verification_key = fields.StringField()
+    emails = fields.StringField(list=True)
+    email_verifications = fields.DictionaryField()
+    aka = fields.StringField(list=True)
+    date_registered = fields.DateTimeField()#auto_now_add=True)
+
+    keywords = fields.ForeignField('keyword', list=True, backref='keyworded')
 
     @property
     def surname(self):
@@ -101,4 +121,5 @@ class User(MongoObject):
         if save:
             self.save()
 
-User.setStorage(MongoCollectionStorage(db, 'user'))
+# User.setStorage(MongoCollectionStorage(db, 'user'))
+User.set_storage(storage.MongoStorage(db, 'user'))
