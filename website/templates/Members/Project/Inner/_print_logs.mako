@@ -17,7 +17,7 @@
                     break
                 %>
                 <dt><span class="date">${date.strftime('%m/%d/%y %I:%M %p')}</span></dt>
-                <dd ><a href="/profile/${tuser._primary_key}">${tuser.fullname}</a>
+                <dd ><a href="/profile/${tuser._primary_key}">${tuser.fullname}</a> 
                 %if action == 'project_created':
                     created <a href='/project/${params['project']}'>project</a>
                 %elif action == 'node_created':
