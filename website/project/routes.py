@@ -61,7 +61,7 @@ def edit_node(*args, **kwargs):
 
         node_to_use.add_log('edit_title', 
             params={
-                'project':node_to_use.node_parent._primary_key if node_to_use.node_parent else None,
+                'project':node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
                 'node':node_to_use._primary_key,
                 'title_new':node_to_use.title,
                 'title_original':original_title,
@@ -103,9 +103,9 @@ def search_user(*args, **kwargs):
 
 @get('/tag/<tag>')
 def project_tag(tag):
-    backs = Tag.load(tag).node_tagged
+    backs = Tag.load(tag).node__tagged
     if backs:
-        nodes = [obj for obj in backs.objects() if obj.is_public]
+        nodes = [obj for obj in backs if obj.is_public]
     else:
         nodes = None
     return render(filename='tags.mako', tag=tag, nodes=nodes)
@@ -349,7 +349,7 @@ def project_reorder_components(*args, **kwargs):
 
     node_to_use = project
     print node_to_use.nodes
-    old_list = [i._id for i in node_to_use.nodes.objects() if not i.is_deleted]
+    old_list = [i._id for i in node_to_use.nodes if not i.is_deleted]
     new_list = json.loads(request.form['new_list'])
 
     if len(set(old_list).intersection(set(new_list))) == len(old_list):

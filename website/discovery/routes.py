@@ -5,29 +5,32 @@ from framework import db as analytics
 from website.project import Node
 from pymongo import DESCENDING
 
+from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 @framework.get('/explore/activity/')
 def activity():
     # Projects
 
-    recent_public_projects = Node.storage.db.find(
-        {
-            'category': 'project',
-            'is_public': True,
-            'is_deleted': False,
-            'is_registration': False
-        }
+    recent_query = (
+        Q('category', 'eq', 'project') &
+        Q('is_public', 'eq', True) &
+        Q('is_deleted', 'eq', False)
+    )
+
+    recent_public_projects = Node.find(
+        recent_query &
+        Q('is_registration', 'eq', False)
     ).sort(
-        'date_created',
-        direction=DESCENDING
-    )[:10]
+        '-date_created'
+    ).limit(10)
 
     most_viewed_project_ids = analytics['pagecounters'].find(
         {
             '_id': {
                 '$regex': '^node:'
             }
-        }
+        },
+        {'_id' : 1}
     ).sort(
         'total',
         direction=DESCENDING
@@ -35,7 +38,10 @@ def activity():
 
     most_viewed_projects = []
     while len(most_viewed_projects) < 10:
-        node_id = next(most_viewed_project_ids)['_id']
+        try:
+            node_id = next(most_viewed_project_ids)['_id']
+        except StopIteration:
+            break
         node = Node.load(node_id.split(':')[1])
         if (
             node.is_public and
@@ -46,18 +52,12 @@ def activity():
             most_viewed_projects.append(node)
 
     # Registrations
-
-    recent_public_registrations = Node.storage.db.find(
-        {
-            'category': 'project',
-            'is_public': True,
-            'is_deleted': False,
-            'is_registration': True
-        }
+    recent_public_registrations = Node.find(
+        recent_query &
+        Q('is_registration', 'eq', True)
     ).sort(
-        'date_created',
-        direction=DESCENDING
-    )[:10]
+        '-date_created'
+    ).limit(10)
 
     most_viewed_registration_ids = analytics['pagecounters'].find(
         {
@@ -72,7 +72,10 @@ def activity():
 
     most_viewed_registrations = []
     while len(most_viewed_registrations) < 10:
-        node_id = next(most_viewed_registration_ids)['_id']
+        try:
+            node_id = next(most_viewed_registration_ids)['_id']
+        except StopIteration:
+            break
         node = Node.load(node_id.split(':')[1])
         if (
             node.is_public and
@@ -84,10 +87,8 @@ def activity():
 
     return framework.render(
         'active_nodes.mako',
-        recent_public_projects=[Node.load(x['_id'])
-                                for x in recent_public_projects],
+        recent_public_projects=recent_public_projects,
         most_viewed_projects=most_viewed_projects,
-        recent_public_registrations=[Node.load(x['_id'])
-                                     for x in recent_public_registrations],
+        recent_public_registrations=recent_public_registrations,
         most_viewed_registrations=most_viewed_registrations,
     )

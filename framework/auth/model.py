@@ -43,6 +43,8 @@ class User(StoredObject):
 
     keywords = fields.ForeignField('keyword', list=True, backref='keyworded')
 
+    _meta = {'optimistic' : True}
+
     @property
     def surname(self):
         """

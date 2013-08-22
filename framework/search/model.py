@@ -20,5 +20,7 @@ class Keyword(StoredObject):
     _id = fields.StringField(primary=True)
     type = fields.DictionaryField()
 
+    _meta = {'optimistic' : True}
+
 # Keyword.setStorage(MongoCollectionStorage(db, 'keyword'))
 Keyword.set_storage(storage.MongoStorage(db, 'keyword'))

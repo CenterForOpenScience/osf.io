@@ -93,7 +93,7 @@
     </div>
     <div class="span5">
         <div style="margin-right:12px;">
-        <input name="node-tags" id="node-tags" value="${','.join(node_to_use.tags) if node_to_use.tags else ''}" />
+        <input name="node-tags" id="node-tags" value="${','.join([tag._id for tag in node_to_use.tags]) if node_to_use.tags else ''}" />
         </div>
             <div id='main-log'>
                 ${print_logs(reversed(node_to_use.logs), n=10)}

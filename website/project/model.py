@@ -20,6 +20,7 @@ import copy
 import pymongo
 import scrubber
 import unicodedata
+from bson import ObjectId
 
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
@@ -49,9 +50,9 @@ class NodeLog(StoredObject):
     #     'version':1,
     # }
 
-    _id = fields.ObjectIdField(primary=True)
+    _id = fields.ObjectIdField(primary=True, default=ObjectId)
 
-    date = fields.DateTimeField()#auto_now=True)
+    date = fields.DateTimeField(default=datetime.datetime.utcnow)#auto_now=True)
     action = fields.StringField()
     params = fields.DictionaryField()
 
@@ -62,7 +63,6 @@ NodeLog.set_storage(storage.MongoStorage(db, 'nodelog'))
 
 # class NodeFile(MongoObject):
 class NodeFile(StoredObject):
-
     # schema = {
     #     '_id':{'type': ObjectId, 'default':lambda: ObjectId()},
     #     "path":{},
@@ -86,7 +86,7 @@ class NodeFile(StoredObject):
     #     'version':1,
     # }
 
-    _id = fields.ObjectIdField(primary=True)
+    _id = fields.ObjectIdField(primary=True, default=ObjectId)
 
     path = fields.StringField()
     filename = fields.StringField()
@@ -98,9 +98,9 @@ class NodeFile(StoredObject):
     git_commit = fields.StringField()
     is_deleted = fields.BooleanField()
 
-    date_created = fields.DateTimeField()#auto_now_add=True)
-    date_modified = fields.DateTimeField()#auto_now=True)
-    date_uploaded = fields.DateTimeField()
+    date_created = fields.DateTimeField(default=datetime.datetime.utcnow())#auto_now_add=True)
+    date_modified = fields.DateTimeField(default=datetime.datetime.utcnow())#auto_now=True)
+    date_uploaded = fields.DateTimeField(default=datetime.datetime.utcnow())
 
     uploader = fields.ForeignField('user', backref='uploads')
 
@@ -164,7 +164,7 @@ class Node(StoredObject):
 
     _id = fields.StringField(primary=True)
 
-    date_created = fields.DateTimeField()
+    date_created = fields.DateTimeField(default=datetime.datetime.utcnow)
     is_public = fields.BooleanField()
 
     is_deleted = fields.BooleanField(default=False)
@@ -200,6 +200,8 @@ class Node(StoredObject):
     forked_from = fields.ForeignField('node', backref='forked')
     registered_from = fields.ForeignField('node', backref='registrations')
 
+    _meta = {'optimistic' : True}
+
     def remove_node(self, user, date=None):
         if not date:
             date = datetime.datetime.utcnow()
@@ -207,7 +209,7 @@ class Node(StoredObject):
         node_objects = []
  
         if self.nodes and len(self.nodes) > 0:
-            node_objects = self.nodes.objects()
+            node_objects = self.nodes
 
         #if self.node_registations and len(self.node_registrations) > 0:
         #    return False
@@ -234,7 +236,7 @@ class Node(StoredObject):
             page = NodeWikiPage.load(v)
             source.append(page.content)
         for t in self.tags:
-            source.append(t)
+            source.append(t._id)
         self._terms = []
         # TODO force tags, add users, files
         self._terms = generate_keywords(source)
@@ -251,49 +253,44 @@ class Node(StoredObject):
         when = datetime.datetime.utcnow()
 
         original = self.load(self._primary_key)
-        self.optimistic_insert()
+        forked = original.clone()
+
+        # forked.save()
+        forked._optimistic_insert()
 
         if os.path.exists(folder_old):
-            folder_new = os.path.join(settings.uploads_path, self._primary_key)
+            folder_new = os.path.join(settings.uploads_path, forked._primary_key)
             Repo(folder_old).clone(folder_new)
-        
-        # TODO empty lists
-        while len(self.nodes) > 0:
-            self.nodes.pop()
 
-        for i, node_contained in enumerate(original.nodes.objects()):
+        forked.nodes = []
+
+        for i, node_contained in enumerate(original.nodes):
             forked_node = node_contained.fork_node(user, title='')
             if forked_node is not None:
-                self.nodes.append(forked_node)
+                forked.nodes.append(forked_node)
 
-        self.title = title + self.title
-        self.is_fork = True
-        self.forked_date = when
-        self.forked_from = original
-        self.is_public = False
-        if self.node_forked:
-            while len(self.node_forked) > 0:
-                self.node_forked.pop()
+        forked.title = title + forked.title
+        forked.is_fork = True
+        forked.forked_date = when
+        forked.forked_from = original
+        forked.is_public = False
 
-        # TODO empty lists
-        while len(self.contributors) > 0:
-            self.contributors.pop()
-        while len(self.contributor_list) > 0:
-            self.contributor_list.pop()
-        self.add_contributor(user, log=False, save=False)
-        self.save()
+        forked.contributors = []
+        forked.contributor_list = []
+        forked.add_contributor(user, log=False, save=False)
+        forked.save()
 
-        self.add_log('node_forked', 
+        forked.add_log('node_forked',
             params={
-                'project':original.node__parent._primary_key if original.node__parent else None,
+                'project':original.node__parent[0]._primary_key if original.node__parent else None,
                 'node':original._primary_key,
-                'registration':self._primary_key,
+                'registration':forked._primary_key,
             }, 
             user=user,
             log_date=when
         )
 
-        return self
+        return forked#self
 
     def register_node(self, user, template, data):
         folder_old = os.path.join(settings.uploads_path, self._primary_key)
@@ -301,20 +298,22 @@ class Node(StoredObject):
         when = datetime.datetime.utcnow()
 
         original = self.load(self._primary_key)
-        self.optimistic_insert()
+        registered = original.clone()
+        registered._optimistic_insert()
 
         if os.path.exists(folder_old):
-            folder_new = os.path.join(settings.uploads_path, self._primary_key)
+            folder_new = os.path.join(settings.uploads_path, registered._primary_key)
             Repo(folder_old).clone(folder_new)
-        
-        while len(self.nodes) > 0:
-            self.nodes.pop()
 
-        for i, node_contained in enumerate(original.nodes.objects()):
+        self.nodes = []
+        # while len(self.nodes) > 0:
+        #     self.nodes.pop()
+
+        for i, node_contained in enumerate(original.nodes):
             original_node = self.load(node_contained._primary_key)
             folder_old = os.path.join(settings.uploads_path, node_contained._primary_key)
 
-            node_contained.optimistic_insert()
+            node_contained._optimistic_insert()
 
             if os.path.exists(folder_old):
                 folder_new = os.path.join(settings.uploads_path, node_contained._primary_key)
@@ -328,33 +327,31 @@ class Node(StoredObject):
             node_contained.registered_meta[template] = data
             node_contained.save()
 
-            self.nodes.append(node_contained)
+            registered.nodes.append(node_contained)
 
-        self.is_registration = True
-        self.registered_date = when
-        self.registered_from = original
-        if not self.registered_meta:
-            self.registered_meta = {}
-        self.registered_meta[template] = data
-        self.save()
+        registered.is_registration = True
+        registered.registered_date = when
+        registered.registered_from = original
+        if not registered.registered_meta:
+            registered.registered_meta = {}
+        registered.registered_meta[template] = data
+        registered.save()
 
         original.add_log('project_registered', 
             params={
                 'project':original.node__parent._primary_key if original.node__parent else None,
                 'node':original._primary_key,
-                'registration':self._primary_key,
+                'registration':registered._primary_key,
             }, 
             user=user,
             log_date=when
         )
 
-        return self
+        return registered
 
     def remove_tag(self, tag, user):
         if tag in self.tags:
             new_tag = Tag.load(tag)
-            new_tag._b_node_tagged.remove(self._primary_key)
-            new_tag.save()
             self.tags.remove(tag)
             self.save()
             self.add_log('tag_removed', {
@@ -580,7 +577,7 @@ class Node(StoredObject):
         self.save()
         increment_user_activity_counters(user._primary_key, action, log.date)
         if self.node__parent:
-            parent = self.node__parent
+            parent = self.node__parent[0]
             parent.logs.append(log)
             parent.save()
 
@@ -588,8 +585,8 @@ class Node(StoredObject):
         if self.category == 'project':
             return '/project/' + self._primary_key
         else:
-            if self.node__parent and self.node__parent.category == 'project':
-                return '/project/' + self.node__parent._primary_key + '/node/' + self._primary_key # todo just get this directly
+            if self.node__parent and self.node__parent[0].category == 'project':
+                return '/project/' + self.node__parent[0]._primary_key + '/node/' + self._primary_key # todo just get this directly
 
 
     def is_contributor(self, user):
@@ -619,14 +616,14 @@ class Node(StoredObject):
             self.contributors.remove(user_id_to_be_removed)
             self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != user_id_to_be_removed]
             self.save()
-            # todo allow backref mechanism to handle this; not implemented
+            # # todo allow backref mechanism to handle this; not implemented
             removed_user = get_user(user_id_to_be_removed)
-            removed_user._b_node_contributed.remove(self._primary_key)
-            removed_user.save()
+            # removed_user._b_node_contributed.remove(self._primary_key)
+            # removed_user.save()
 
             self.add_log('remove_contributor', 
                 params={
-                    'project':self.node__parent._primary_key if self.node__parent else None,
+                    'project':self.node__parent[0]._primary_key if self.node__parent else None,
                     'node':self._primary_key,
                     'contributor':removed_user._primary_key,
                 }, 
@@ -727,8 +724,8 @@ class Node(StoredObject):
 
         if page not in self.wiki_pages_versions:
             self.wiki_pages_versions[page] = []
-        self.wiki_pages_versions[page].append(v.ref)
-        self.wiki_pages_current[page] = v.ref
+        self.wiki_pages_versions[page].append(v._primary_key)
+        self.wiki_pages_current[page] = v._primary_key
 
         self.generate_keywords(save=False)
 
@@ -777,7 +774,7 @@ class NodeWikiPage(StoredObject):
     #     'version':1,
     # }
 
-    _id = fields.StringField(primary=True)
+    _id = fields.ObjectIdField(primary=True, default=ObjectId)
     page_name = fields.StringField()
     version = fields.IntegerField()
     date = fields.DateTimeField()#auto_now_add=True)
@@ -786,6 +783,8 @@ class NodeWikiPage(StoredObject):
 
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')
+
+    _meta = {'optimistic' : True}
 
     @property
     def html(self):

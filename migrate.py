@@ -5,6 +5,7 @@ on port 27017. Data are migrated to a database called "migrate".
 """
 
 import pymongo
+from bson import ObjectId
 import logging
 import pprint
 import time
@@ -14,13 +15,14 @@ from modularodm import fields
 from modularodm import storage
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
-# from framework.search.model import Keyword as Keyword_YORM
-# from framework.auth.model import User as User_YORM
-# from website.project.model import Tag as Tag_YORM
-# from website.project.model import NodeWikiPage as NodeWikiPage_YORM
-# from website.project.model import NodeLog as NodeLog_YORM
-# from website.project.model import NodeFile as NodeFile_YORM
-# from website.project.model import Node as Node_YORM
+from framework.search.model import Keyword
+from framework.auth.model import User
+from website.project.model import Tag
+from website.project.model import NodeLog
+from website.project.model import NodeFile
+from website.project.model import Node
+from website.project.model import NodeWikiPage
+
 import schema_yorm
 
 client = pymongo.MongoClient()
@@ -30,146 +32,145 @@ database = client['migrate']
 # could be implemented using some kind of dependency tracking, but is
 # done by hand for now.
 migrate_order = [
-    # 'Keyword',
-    # 'User',
-    # 'Tag',
-    # 'NodeLog',
-    # 'NodeFile',
+    'Keyword',
+    'User',
+    'Tag',
+    'NodeLog',
+    'NodeFile',
     'Node',
-    # 'NodeWikiPage',
+    'NodeWikiPage',
 ]
 
-# Schema definitions
-
-class Keyword(StoredObject):
-
-    _id = fields.StringField(primary=True)
-    type = fields.DictionaryField()
-
-Keyword.set_storage(storage.MongoStorage(database, 'keyword'))
-
-class User(StoredObject):
-
-    _id = fields.StringField(primary=True)
-
-    username = fields.StringField()
-    password = fields.StringField()
-    fullname = fields.StringField()
-    is_registered = fields.BooleanField()
-    is_claimed = fields.BooleanField()
-    verification_key = fields.StringField()
-    emails = fields.StringField(list=True)
-    email_verifications = fields.DictionaryField()
-    aka = fields.StringField(list=True)
-    date_registered = fields.DateTimeField()#auto_now_add=True)
-
-    keywords = fields.ForeignField('keyword', list=True, backref='keyworded')
-
-User.set_storage(storage.MongoStorage(database, 'user'))
-
-class NodeLog(StoredObject):
-
-    _id = fields.ObjectIdField(primary=True)
-
-    date = fields.DateTimeField()#auto_now=True)
-    action = fields.StringField()
-    params = fields.DictionaryField()
-
-    user = fields.ForeignField('user', backref='created')
-
-NodeLog.set_storage(storage.MongoStorage(database, 'nodelog'))
-
-class NodeFile(StoredObject):
-
-    _id = fields.ObjectIdField(primary=True)
-
-    path = fields.StringField()
-    filename = fields.StringField()
-    md5 = fields.StringField()
-    sha = fields.StringField()
-    size = fields.IntegerField()
-    content_type = fields.StringField()
-    is_public = fields.BooleanField()
-    git_commit = fields.StringField()
-    is_deleted = fields.BooleanField()
-
-    date_created = fields.DateTimeField()#auto_now_add=True)
-    date_modified = fields.DateTimeField()#auto_now=True)
-    date_uploaded = fields.DateTimeField()
-
-    uploader = fields.ForeignField('user', backref='uploads')
-
-NodeFile.set_storage(storage.MongoStorage(database, 'nodefile'))
-
-class NodeWikiPage(StoredObject):
-
-    _id = fields.StringField(primary=True)
-    page_name = fields.StringField()
-    version = fields.IntegerField()
-    date = fields.DateTimeField()#auto_now_add=True)
-    is_current = fields.BooleanField()
-    content = fields.StringField()
-
-    user = fields.ForeignField('user')
-    node = fields.ForeignField('node')
-
-NodeWikiPage.set_storage(storage.MongoStorage(database, 'nodewikipage'))
-
-class Tag(StoredObject):
-
-    _id = fields.StringField(primary=True)
-    count_public = fields.IntegerField(default=0)
-    count_total = fields.IntegerField(default=0)
-
-Tag.set_storage(storage.MongoStorage(database, 'tag'))
-
-class Node(StoredObject):
-
-    _id = fields.StringField(primary=True)
-
-    date_created = fields.DateTimeField()
-    is_public = fields.BooleanField()
-
-    is_deleted = fields.BooleanField(default=False)
-    deleted_date = fields.DateTimeField()
-
-    is_registration = fields.BooleanField(default=False)
-    registered_date = fields.DateTimeField()
-
-    is_fork = fields.BooleanField(default=False)
-    forked_date = fields.DateTimeField()
-
-    title = fields.StringField()
-    description = fields.StringField()
-    category = fields.StringField()
-
-    _terms = fields.DictionaryField(list=True)
-    registered_meta = fields.DictionaryField()
-
-    files_current = fields.DictionaryField()
-    files_versions = fields.DictionaryField()
-    wiki_pages_current = fields.DictionaryField()
-    wiki_pages_versions = fields.DictionaryField()
-
-    creator = fields.ForeignField('user', backref='created')
-    contributors = fields.ForeignField('user', list=True, backref='contributed')
-    contributor_list = fields.DictionaryField(list=True)
-    users_watching_node = fields.ForeignField('user', list=True, backref='watched')
-
-    logs = fields.ForeignField('nodelog', list=True, backref='logged')
-    tags = fields.ForeignField('tag', list=True, backref='tagged')
-
-    nodes = fields.ForeignField('node', list=True, backref='parent')
-    forked_from = fields.ForeignField('node', backref='forked')
-    registered_from = fields.ForeignField('node', backref='registrations')
-
-Node.set_storage(storage.MongoStorage(database, 'node'))
+# # Schema definitions
+#
+# class Keyword(StoredObject):
+#
+#     _id = fields.StringField(primary=True)
+#     type = fields.DictionaryField()
+#
+# Keyword.set_storage(storage.MongoStorage(database, 'keyword'))
+#
+# class User(StoredObject):
+#
+#     _id = fields.StringField(primary=True)
+#
+#     username = fields.StringField()
+#     password = fields.StringField()
+#     fullname = fields.StringField()
+#     is_registered = fields.BooleanField()
+#     is_claimed = fields.BooleanField()
+#     verification_key = fields.StringField()
+#     emails = fields.StringField(list=True)
+#     email_verifications = fields.DictionaryField()
+#     aka = fields.StringField(list=True)
+#     date_registered = fields.DateTimeField()#auto_now_add=True)
+#
+#     keywords = fields.ForeignField('keyword', list=True, backref='keyworded')
+#
+# User.set_storage(storage.MongoStorage(database, 'user'))
+#
+# class NodeLog(StoredObject):
+#
+#     _id = fields.ObjectIdField(primary=True)
+#
+#     date = fields.DateTimeField()#auto_now=True)
+#     action = fields.StringField()
+#     params = fields.DictionaryField()
+#
+#     user = fields.ForeignField('user', backref='created')
+#
+# NodeLog.set_storage(storage.MongoStorage(database, 'nodelog'))
+#
+# class NodeFile(StoredObject):
+#
+#     _id = fields.ObjectIdField(primary=True)
+#
+#     path = fields.StringField()
+#     filename = fields.StringField()
+#     md5 = fields.StringField()
+#     sha = fields.StringField()
+#     size = fields.IntegerField()
+#     content_type = fields.StringField()
+#     is_public = fields.BooleanField()
+#     git_commit = fields.StringField()
+#     is_deleted = fields.BooleanField()
+#
+#     date_created = fields.DateTimeField()#auto_now_add=True)
+#     date_modified = fields.DateTimeField()#auto_now=True)
+#     date_uploaded = fields.DateTimeField()
+#
+#     uploader = fields.ForeignField('user', backref='uploads')
+#
+# NodeFile.set_storage(storage.MongoStorage(database, 'nodefile'))
+#
+# class NodeWikiPage(StoredObject):
+#
+#     _id = fields.ObjectIdField(primary=True, default=ObjectId)
+#     page_name = fields.StringField()
+#     version = fields.IntegerField()
+#     date = fields.DateTimeField()#auto_now_add=True)
+#     is_current = fields.BooleanField()
+#     content = fields.StringField()
+#
+#     user = fields.ForeignField('user')
+#     node = fields.ForeignField('node')
+#
+# NodeWikiPage.set_storage(storage.MongoStorage(database, 'nodewikipage'))
+#
+# class Tag(StoredObject):
+#
+#     _id = fields.StringField(primary=True)
+#     count_public = fields.IntegerField(default=0)
+#     count_total = fields.IntegerField(default=0)
+#
+# Tag.set_storage(storage.MongoStorage(database, 'tag'))
+#
+# class Node(StoredObject):
+#
+#     _id = fields.StringField(primary=True)
+#
+#     date_created = fields.DateTimeField()
+#     is_public = fields.BooleanField()
+#
+#     is_deleted = fields.BooleanField(default=False)
+#     deleted_date = fields.DateTimeField()
+#
+#     is_registration = fields.BooleanField(default=False)
+#     registered_date = fields.DateTimeField()
+#
+#     is_fork = fields.BooleanField(default=False)
+#     forked_date = fields.DateTimeField()
+#
+#     title = fields.StringField()
+#     description = fields.StringField()
+#     category = fields.StringField()
+#
+#     _terms = fields.DictionaryField(list=True)
+#     registered_meta = fields.DictionaryField()
+#
+#     files_current = fields.DictionaryField()
+#     files_versions = fields.DictionaryField()
+#     wiki_pages_current = fields.DictionaryField()
+#     wiki_pages_versions = fields.DictionaryField()
+#
+#     creator = fields.ForeignField('user', backref='created')
+#     contributors = fields.ForeignField('user', list=True, backref='contributed')
+#     contributor_list = fields.DictionaryField(list=True)
+#     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
+#
+#     logs = fields.ForeignField('nodelog', list=True, backref='logged')
+#     tags = fields.ForeignField('tag', list=True, backref='tagged')
+#
+#     nodes = fields.ForeignField('node', list=True, backref='parent')
+#     forked_from = fields.ForeignField('node', backref='forked')
+#     registered_from = fields.ForeignField('node', backref='registrations')
+#
+# Node.set_storage(storage.MongoStorage(database, 'node'))
 
 # Migration
 
 def migrate(YORM, ODM):
 
-    print YORM, ODM
     yorms = YORM.find()
 
     for yorm in yorms:
@@ -185,8 +186,6 @@ def migrate(YORM, ODM):
                 continue
             setattr(odm, key, val)
 
-        # if 'nodes' in yorm:#odm.nodes:
-        #     import pdb; pdb.set_trace()
         # Skip records with missing PK
         if isinstance(odm._primary_key, odm._primary_type):
             odm.save()
@@ -197,7 +196,6 @@ t0_all = time.time()
 
 for schema in migrate_order:
 
-    # schema_yorm = globals()['%s_YORM' % (schema)]
     _schema_yorm = getattr(schema_yorm, schema)
     _schema_odm = globals()[schema]
 
@@ -226,3 +224,9 @@ logging.debug(
 )
 
 logging.debug(pprint.pprint(migrate_time))
+
+for collection_name in ['pagecounters', 'useractivitycounters']:
+
+    old_records = schema_yorm.db[collection_name].find()
+    database[collection_name].remove()
+    database[collection_name].insert(old_records)
