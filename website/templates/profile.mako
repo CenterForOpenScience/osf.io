@@ -3,18 +3,16 @@
 <%
     from framework.analytics import get_total_activity_count
 
-
-##    public_projects = [p for p in profile.node_contributed.objects() if p.category=='project' and p.is_public and not p.is_deleted] if profile.node_contributed else []
-##    public_nodes = [p for p in profile.node_contributed.objects() if not p.category=='project' and p.is_public and not p.is_deleted] if profile.node_contributed else []
-    visible_nodes = [
+    nodes = [
         node for node in profile.node__contributed
-        if node.is_public and not node.is_deleted
+        if not node.is_deleted
+        and not node.is_registration
     ]
-    public_projects = [node for node in visible_nodes if node.category == 'project']
-    public_nodes = [node for node in visible_nodes if node.category != 'project']
+    nodes.sort(key=lambda node: node.logs[-1].date)
+    public_projects = [node for node in nodes if node.is_public and node.category == 'project']
+    public_nodes = [node for node in nodes if node.is_public and node.category != 'project']
 
-##    count_total_projects = len([p for p in profile.node_contributed.objects() if p.category=='project' and not p.is_deleted]) if profile.node_contributed else 0
-    count_total_projects = len([p for p in profile.node__contributed if p.category=='project' and not p.is_deleted]) if profile.node__contributed else 0
+    count_total_projects = len([node for node in nodes if node.category == 'project'])
     count_public_projects = len(public_projects)
 
     count_total_activity = get_total_activity_count(profile._primary_key)
