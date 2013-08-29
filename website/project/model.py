@@ -181,6 +181,8 @@ class Node(StoredObject):
     category = fields.StringField()
 
     _terms = fields.DictionaryField(list=True)
+    registration_list = fields.StringField(list=True)
+    fork_list = fields.StringField(list=True)
     registered_meta = fields.DictionaryField()
 
     files_current = fields.DictionaryField()
@@ -221,6 +223,24 @@ class Node(StoredObject):
             if not node.category == 'project':
                 if not node.remove_node(user, date=date):
                     return False
+
+        # Remove self from parent registration list
+        if self.is_registration:
+            registered_from = Node.load(self.registered_from)
+            try:
+                registered_from.registration_list.remove(self._primary_key)
+                registered_from.save()
+            except ValueError:
+                pass
+
+        # Remove self from parent fork list
+        if self.is_fork:
+            forked_from = Node.load(self.forked_from)
+            try:
+                forked_from.fork_list.remove(self._primary_key)
+                forked_from.save()
+            except ValueError:
+                pass
 
         self.is_deleted = True
         self.deleted_date = date
@@ -290,6 +310,9 @@ class Node(StoredObject):
             log_date=when
         )
 
+        original.fork_list.append(forked._primary_key)
+        original.save()
+
         return forked#self
 
     def register_node(self, user, template, data):
@@ -346,6 +369,8 @@ class Node(StoredObject):
             user=user,
             log_date=when
         )
+        original.registration_list.append(registered._id)
+        original.save()
 
         return registered
 
