@@ -941,6 +941,8 @@ def download_file_by_version(*args, **kwargs):
         return send_file(file_path)
 
     content, content_type = node_to_use.get_file(filename, version=version_number)
+    if content is None:
+        return abort(404)
     file_object = node_to_use.get_file_object(filename, version=version_number)
     filename_base, file_extension = os.path.splitext(file_object.path)
     returned_filename = '{base}_{tmstp}{ext}'.format(
