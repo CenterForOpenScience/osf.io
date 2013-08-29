@@ -1,17 +1,18 @@
 from framework.search.model import Keyword
+from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 from topia.termextract import extract
 
-import logging; logging.basicConfig(level=logging.DEBUG); 
+import logging; logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('project.search')
 
 def database_get_search_results(search_term, collection):
-    return collection.storage.db.find({
-        '_terms.term':search_term, 
-        'is_public':True, 
+    return collection.find(
+        Q('_terms.term', 'eq', search_term)
+        & Q('is_public', 'eq', True)
         #'is_registration':False, 
         #'is_deleted':False
-    })
+    )
 
 def generate_keywords(fields):
     e = extract.TermExtractor()
