@@ -22,7 +22,7 @@
     # If a parent project exists, put it here so the title can be displayed.
     parent_project = None
     if node_to_use.node__parent:
-        parent_project = Node.load(node_to_use.node__parent)
+        parent_project = node_to_use.node__parent[0]
 
 
     for contributor in node_to_use.contributor_list:
@@ -106,7 +106,7 @@
               class="btn disabled"
               % endif
           >
-              <i class="icon-fork"></i>&nbsp;${len(node_to_use.node__forked) if node_to_use.node__forked else 0}
+              <i class="icon-fork"></i>&nbsp;${len(node_to_use.fork_list)}
           </a>
         </div>
     </div>
