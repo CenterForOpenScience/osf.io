@@ -99,7 +99,7 @@ def get_file_tree(node_to_use, user):
         if not node.is_deleted:
             tree.append(get_file_tree(node, user))
 
-    if node_to_use.is_contributor(user):
+    if node_to_use.is_public or node_to_use.is_contributor(user):
         for i,v in node_to_use.files_current.items():
             v = NodeFile.load(v)
             tree.append(v)
