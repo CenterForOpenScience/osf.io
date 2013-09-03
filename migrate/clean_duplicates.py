@@ -88,7 +88,7 @@ def resolve_conflict(log, dry_run=False, force=False):
     ordered_nodes = sorted(
         nodes, 
         key=lambda node: (
-            len(node['nodes']),
+            len(node['logs']),
             node['_node_in_parent_nodes'],
             node['_node_is_child_parent'],
             node['_node_in_initial_log'],
@@ -104,7 +104,7 @@ def resolve_conflict(log, dry_run=False, force=False):
         )
         diff = set(node['logs']) - set(ordered_nodes[-1]['logs'])
         tied = (
-            len(node['nodes']) == len(ordered_nodes[-1]['nodes'])
+            len(node['logs']) == len(ordered_nodes[-1]['logs'])
             and node['_node_in_parent_nodes'] == ordered_nodes[-1]['_node_in_parent_nodes']
             and node['_node_is_child_parent'] == ordered_nodes[-1]['_node_is_child_parent']
             and node['_node_in_initial_log'] == ordered_nodes[-1]['_node_in_initial_log']
