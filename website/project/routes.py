@@ -175,7 +175,7 @@ def node_fork_page(*args, **kwargs):
 
     if node_to_use.is_registration:
         push_status_message('At this time, only projects that are not registrations can be forked; however, this behavior is coming soon.')
-        return redirect(node_to_use.url())
+        return node_to_use.url()
 
     fork = node_to_use.fork_node(user)
 
