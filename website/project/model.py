@@ -305,7 +305,7 @@ class Node(StoredObject):
             self.tags.remove(tag)
             self.save()
             self.add_log('tag_removed', {
-                'project':self.node__parent._primary_key if self.node__parent else None,
+                'project':self.node__parent[0]._primary_key if self.node__parent else None,
                 'node':self._primary_key,
                 'tag':tag,
             }, user)
@@ -322,7 +322,7 @@ class Node(StoredObject):
             self.tags.append(new_tag)
             self.save()
             self.add_log('tag_added', {
-                'project':self.node__parent._primary_key if self.node__parent else None,
+                'project':self.node__parent[0]._primary_key if self.node__parent else None,
                 'node':self._primary_key,
                 'tag':tag,
             }, user)
@@ -507,7 +507,7 @@ class Node(StoredObject):
             }, user, log_date=node_file.date_uploaded)
         else:
             self.add_log('file_updated', {
-                'project': self.node__parent._primary_key if self.node__parent else None,
+                'project': self.node__parent[0]._primary_key if self.node__parent else None,
                 'node': self._primary_key,
                 'path': node_file.path,
                 'version': len(self.files_versions)
@@ -553,7 +553,7 @@ class Node(StoredObject):
         self.save()
         self.add_log('remove_contributor', 
             params={
-                'project':self.node__parent._primary_key if self.node__parent else None,
+                'project':self.node__parent[0]._primary_key if self.node__parent else None,
                 'node':self._primary_key,
                 'contributor':{"nr_name":name, "nr_email":email},
             }, 
@@ -683,7 +683,7 @@ class Node(StoredObject):
 
         self.add_log('wiki_updated', 
             params={
-                'project':self.node__parent._primary_key if self.node__parent else None,
+                'project':self.node__parent[0]._primary_key if self.node__parent else None,
                 'node':self._primary_key,
                 'page':v.page_name,
                 'version': v.version,
