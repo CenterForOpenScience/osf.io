@@ -1,33 +1,14 @@
-from framework.mongo import MongoCollectionStorage, MongoObject, db
+from framework.mongo import db
 from framework.search import Keyword
 
 from modularodm import StoredObject
 from modularodm import fields
 from modularodm import storage
+from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 import datetime
 
-# class User(MongoObject):
 class User(StoredObject):
-    # schema = {
-    #     '_id':{},
-    #     "username":{},
-    #     "password":{},
-    #     "fullname":{},
-    #     "is_registered":{},
-    #     "is_claimed":{},
-    #     "verification_key":{},
-    #     "emails":{'type':[str]},
-    #     "email_verifications":{'type':lambda: dict()},
-    #     "aka":{'type':[str]},
-    #     "date_registered":{'default':lambda: datetime.datetime.utcnow()},
-    #     "keywords":{'type':[Keyword], 'backref':['keyworded']},
-    # }
-    # _doc = {
-    #     'name':'user',
-    #     'version':1,
-    # }
-
     _id = fields.StringField(primary=True)
 
     username = fields.StringField()
@@ -91,12 +72,12 @@ class User(StoredObject):
         o = []
         for i in xrange(len(keywords)):
             o.append([])
-        
-        results = cls.storage.db.find({'keywords':{'$in':keywords}})
+
+        results = cls.find(Q('keywords', 'in', keywords))
         keyword_set = set(keywords)
 
         for result in results:
-            result_set = set(result['keywords'])
+            result_set = set([kwd._id for kwd in result.keywords])
             intersection = result_set.intersection(keyword_set)
             o[len(o)-len(intersection)].append(result)
 
@@ -104,8 +85,15 @@ class User(StoredObject):
 
     @classmethod
     def find_by_email(cls, email):
-        results = cls.storage.db.find({'emails':email})
-        return results
+        try:
+            user = cls.find_one(
+                Q('emails', 'eq', email)
+            )
+            return [user]
+        except:
+            return []
+        # results = cls.storage.db.find({'emails':email})
+        # return results
 
     def generate_keywords(self, save=True):
         keywords = self.fullname.lower().split(' ') #todo regex on \ +
@@ -123,5 +111,4 @@ class User(StoredObject):
         if save:
             self.save()
 
-# User.setStorage(MongoCollectionStorage(db, 'user'))
 User.set_storage(storage.MongoStorage(db, 'user'))

@@ -94,9 +94,9 @@ def search_user(*args, **kwargs):
         'is_email':is_email, 
         'results':[
             {
-                'fullname' : item['fullname'],
-                'gravatar' : filters.gravatar(item['username'], size=settings.gravatar_size_add_contributor),
-                'id' : item['_id'],
+                'fullname' : item.fullname,
+                'gravatar' : filters.gravatar(item.username, size=settings.gravatar_size_add_contributor),
+                'id' : item._primary_key,
             } for item in result
         ]
     })
@@ -611,7 +611,7 @@ def project_addcontributor_post(*args, **kwargs):
 
                 node_to_use.add_log('contributor_added', 
                     params={
-                        'project':get_node(node_to_use.node_parent)._primary_key if node_to_use.node_parent else None,
+                        'project':node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
                         'node':node_to_use._primary_key,
                         'contributors':[added_user._primary_key],
                     }, 
@@ -626,7 +626,7 @@ def project_addcontributor_post(*args, **kwargs):
 
         node_to_use.add_log('contributor_added', 
             params={
-                'project':get_node(node_to_use.node_parent)._primary_key if node_to_use.node_parent else None,
+                'project':node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
                 'node':node_to_use._primary_key,
                 'contributors':[{"nr_name":fullname, "nr_email":email}],
             }, 
@@ -667,7 +667,7 @@ def project_addcontributors_post(*args, **kwargs):
     node_to_use.save()
     node_to_use.add_log('contributor_added', 
         params={
-            'project':get_node(node_to_use.node_parent)._primary_key if node_to_use.node_parent else None,
+            'project':node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
             'node':node_to_use._primary_key,
             'contributors':users,
         }, 

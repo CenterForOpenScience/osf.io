@@ -1,4 +1,4 @@
-from framework.mongo import MongoCollectionStorage, MongoObject, ObjectId, db
+from framework.mongo import ObjectId, db
 from framework.auth import User, get_user
 from framework.analytics import get_basic_counters, increment_user_activity_counters
 from framework.search import Keyword, generate_keywords
@@ -36,20 +36,7 @@ def normalize_unicode(ustr):
     return unicodedata.normalize('NFKD', ustr)\
         .encode('ascii', 'ignore')
 
-# class NodeLog(MongoObject):
 class NodeLog(StoredObject):
-    # schema = {
-    #     '_id':{'type': ObjectId, 'default':lambda: ObjectId()},
-    #     'user':{'type':User, 'backref':['created']},
-    #     'action':{},
-    #     'date':{'default':lambda: datetime.datetime.utcnow()},
-    #     'params':{},
-    # }
-    # _doc = {
-    #     'name':'nodelog',
-    #     'version':1,
-    # }
-
     _id = fields.ObjectIdField(primary=True, default=ObjectId)
 
     date = fields.DateTimeField(default=datetime.datetime.utcnow)#auto_now=True)
@@ -58,34 +45,9 @@ class NodeLog(StoredObject):
 
     user = fields.ForeignField('user', backref='created')
 
-# NodeLog.setStorage(MongoCollectionStorage(db, 'nodelog'))
 NodeLog.set_storage(storage.MongoStorage(db, 'nodelog'))
 
-# class NodeFile(MongoObject):
 class NodeFile(StoredObject):
-    # schema = {
-    #     '_id':{'type': ObjectId, 'default':lambda: ObjectId()},
-    #     "path":{},
-    #     "filename":{},
-    #     "md5":{},
-    #     "sha":{},
-    #     "size":{},
-    #     "content_type":{},
-    #     "uploader":{'type':User, 'backref':['uploads']},
-    #     "is_public":{},
-    #     "git_commit":{},
-    #     "is_deleted":{},
-    #     "date_created":{'default':lambda: datetime.datetime.utcnow()},
-    #     "date_modified":{'default':lambda: datetime.datetime.utcnow()},
-    #     "date_uploaded":{'default':lambda: datetime.datetime.utcnow()},
-    #     "_terms":{'type':[]},
-    # }
-    #
-    # _doc = {
-    #     'name':'nodefile',
-    #     'version':1,
-    # }
-
     _id = fields.ObjectIdField(primary=True, default=ObjectId)
 
     path = fields.StringField()
@@ -104,10 +66,8 @@ class NodeFile(StoredObject):
 
     uploader = fields.ForeignField('user', backref='uploads')
 
-# NodeFile.setStorage(MongoCollectionStorage(db, 'nodefile'))
 NodeFile.set_storage(storage.MongoStorage(db, 'nodefile'))
 
-# class Tag(MongoObject):
 class Tag(StoredObject):
 
     schema = {
@@ -124,44 +84,9 @@ class Tag(StoredObject):
     count_public = fields.IntegerField(default=0)
     count_total = fields.IntegerField(default=0)
 
-# Tag.setStorage(MongoCollectionStorage(db, 'tag'))
 Tag.set_storage(storage.MongoStorage(db, 'tag'))
 
-# class Node(MongoObject):
 class Node(StoredObject):
-    # schema = {
-    #     '_id':{},
-    #     'is_deleted':{"default":False},
-    #     'deleted_date':{},
-    #     'is_registration':{"default":False},
-    #     "is_fork":{"default":False},
-    #     "title":{},
-    #     "description":{},
-    #     "category":{},
-    #     "creator":{'type':User, 'backref':['created']},
-    #     "contributors":{'type':[User], 'backref':['contributed']},
-    #     "contributor_list":{"type": [], 'default':lambda: list()}, # {id, nr_name, nr_email}
-    #     "users_watching_node":{'type':[User], 'backref':['watched']},
-    #     "is_public":{},
-    #     "date_created":{'default':lambda: datetime.datetime.utcnow()},
-    #     "_terms":{'type':[]},
-    #     "files_current": {"default":lambda: dict()},
-    #     "files_versions": {"default":lambda: dict()},
-    #     "wiki_pages_current":{"default":lambda: dict()},
-    #     "wiki_pages_versions":{"default":lambda: dict()},
-    #     "logs":{'type':[NodeLog], 'backref':['logged']}, # {date: { user, action, type, ref}} or parent
-    #     "tags":{'type':[Tag], 'backref':['tagged']},
-    #     "registered_date":{},
-    #     "forked_date":{},
-    #     "registered_meta":{"default":lambda: dict()},
-    #     "_terms":{'type':[]},
-    # }
-    #
-    # _doc = {
-    #     'name':'node',
-    #     'version':1,
-    # }
-
     _id = fields.StringField(primary=True)
 
     date_created = fields.DateTimeField(default=datetime.datetime.utcnow)
@@ -226,19 +151,18 @@ class Node(StoredObject):
 
         # Remove self from parent registration list
         if self.is_registration:
-            registered_from = Node.load(self.registered_from)
+            # registered_from = Node.load(self.registered_from)
             try:
-                registered_from.registration_list.remove(self._primary_key)
-                registered_from.save()
+                self.registered_from.registration_list.remove(self._primary_key)
+                self.registered_from.save()
             except ValueError:
                 pass
 
         # Remove self from parent fork list
         if self.is_fork:
-            forked_from = Node.load(self.forked_from)
             try:
-                forked_from.fork_list.remove(self._primary_key)
-                forked_from.save()
+                self.forked_from.fork_list.remove(self._primary_key)
+                self.forked_from.save()
             except ValueError:
                 pass
 
@@ -275,14 +199,16 @@ class Node(StoredObject):
         original = self.load(self._primary_key)
         forked = original.clone()
 
-        # forked.save()
-        forked._optimistic_insert()
+        forked.nodes = []
+        forked.contributors = []
+        forked.contributor_list = []
+
+        forked.save()
+        # forked._optimistic_insert()
 
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.uploads_path, forked._primary_key)
             Repo(folder_old).clone(folder_new)
-
-        forked.nodes = []
 
         for i, node_contained in enumerate(original.nodes):
             forked_node = node_contained.fork_node(user, title='')
@@ -295,8 +221,6 @@ class Node(StoredObject):
         forked.forked_from = original
         forked.is_public = False
 
-        forked.contributors = []
-        forked.contributor_list = []
         forked.add_contributor(user, log=False, save=False)
         forked.save()
 
@@ -322,7 +246,8 @@ class Node(StoredObject):
 
         original = self.load(self._primary_key)
         registered = original.clone()
-        registered._optimistic_insert()
+        registered.save()
+        # registered._optimistic_insert()
 
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.uploads_path, registered._primary_key)
@@ -362,7 +287,7 @@ class Node(StoredObject):
 
         original.add_log('project_registered', 
             params={
-                'project':original.node__parent._primary_key if original.node__parent else None,
+                'project':original.node__parent[0]._primary_key if original.node__parent else None,
                 'node':original._primary_key,
                 'registration':registered._primary_key,
             }, 
@@ -475,7 +400,7 @@ class Node(StoredObject):
             self.files_versions.pop(file_name_key)
 
         self.add_log('file_removed', {
-                'project':self.node__parent._primary_key if self.node__parent else None,
+                'project':self.node__parent[0]._primary_key if self.node__parent else None,
                 'node':self._primary_key,
                 'path':path
             }, user, log_date=date_modified)
@@ -575,7 +500,7 @@ class Node(StoredObject):
 
         if file_is_new:
             self.add_log('file_added', {
-                'project': self.node__parent._primary_key if self.node__parent else None,
+                'project': self.node__parent[0]._primary_key if self.node__parent else None,
                 'node': self._primary_key,
                 'path': node_file.path,
                 'version': len(self.files_versions)
@@ -681,7 +606,7 @@ class Node(StoredObject):
             self.save()
             self.add_log('made_public', 
                 params={
-                    'project':self.node__parent._primary_key if self.node__parent else None,
+                    'project':self.node__parent[0]._primary_key if self.node__parent else None,
                     'node':self._primary_key,
                 }, 
                 user=user,
@@ -694,7 +619,7 @@ class Node(StoredObject):
             self.save()
             self.add_log('made_private',
                 params={
-                    'project':self.node__parent._primary_key if self.node__parent else None,
+                    'project':self.node__parent[0]._primary_key if self.node__parent else None,
                     'node':self._primary_key,
                 },
                 user=user,
@@ -775,29 +700,9 @@ class Node(StoredObject):
         else:
             return get_basic_counters('node:%s' % self._primary_key)
 
-# Node.schema['forked_from'] = {'type':Node, 'backref':['forked']}
-# Node.schema['nodes'] = {'type':[Node], 'backref':'parent'}
-# Node.schema['registered_from'] = {'type':Node, 'backref':['registrations']}
-
-# Node.setStorage(MongoCollectionStorage(db, 'node'))
 Node.set_storage(storage.MongoStorage(db, 'node'))
 
-# class NodeWikiPage(MongoObject):
 class NodeWikiPage(StoredObject):
-    # schema = {
-    #     '_id':{'type': ObjectId, 'default':lambda: ObjectId()},
-    #     'page_name':{},
-    #     'version':{},
-    #     'user':{'type':User},
-    #     'date':{'default':lambda: datetime.datetime.utcnow()},
-    #     'is_current':{},
-    #     'node':{'type':Node}, # parent
-    #     'content':{},
-    # }
-    # _doc = {
-    #     'name':'nodewikipage',
-    #     'version':1,
-    # }
 
     _id = fields.ObjectIdField(primary=True, default=ObjectId)
     page_name = fields.StringField()
@@ -827,5 +732,4 @@ class NodeWikiPage(StoredObject):
 
         return wiki_scrubber.scrub(html_output)
 
-# NodeWikiPage.setStorage(MongoCollectionStorage(db, 'nodewikipage'))
 NodeWikiPage.set_storage(storage.MongoStorage(db, 'nodewikipage'))
