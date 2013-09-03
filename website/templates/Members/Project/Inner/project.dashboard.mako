@@ -1,6 +1,7 @@
 <% 
-  from framework import get_user
-  is_contributor = node_to_use.is_contributor(user)
+    from framework import get_user
+    is_contributor = node_to_use.is_contributor(user)
+    editable = is_contributor and not node_to_use.is_registration
 %>
 <%inherit file="project.view.mako" />
 <%namespace file="_print_logs.mako" import="print_logs"/>
@@ -12,7 +13,7 @@
     $(function(){
         $('#node-tags').tagsInput({
             width: "100%",
-            interactive:${'true' if is_contributor else 'false'},
+            interactive:${'true' if editable else 'false'},
             onAddTag:function(tag){
                 $.ajax({
                     url:"${node_to_use.url()}" + "/addtag/" + tag,
@@ -27,7 +28,7 @@
             },
         });
         // Remove delete UI if not contributor
-        % if not is_contributor:
+        % if not editable:
             $('a[title="Removing tag"]').remove();
             $('span.tag span').each(function(idx, elm) {
                 $(elm).text($(elm).text().replace(/\s*$/, ''))
