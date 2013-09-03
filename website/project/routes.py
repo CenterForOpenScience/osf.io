@@ -242,7 +242,7 @@ def node_register_tempate_page(*args, **kwargs):
 
 
 @post('/project/<pid>/register/<template>')
-@post('/project/<pid>/node/<nid>/<template>')
+@post('/project/<pid>/node/<nid>/register/<template>')
 @must_be_valid_project
 @must_be_contributor # returns user, project
 @must_not_be_registration
