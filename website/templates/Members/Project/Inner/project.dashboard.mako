@@ -48,7 +48,15 @@
       <section id="Nodes">
           
           <div class="page-header">
-              <div style="float:right;"><a class="btn" data-toggle="modal" href="#newComponent" >Add Component</a></div>
+              <div style="float:right;">
+                  % if editable:
+                  <a class="btn" data-toggle="modal" href="#newComponent">
+                  % else:
+                  <a class="btn disabled">
+                  % endif
+                    Add Component
+                  </a>
+              </div>
               <h1>Components</h1>
           </div>
           <div class="modal hide fade" id="newComponent">
