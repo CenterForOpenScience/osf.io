@@ -35,12 +35,10 @@ def search(collection, text, page=1, term='_terms'):
     searchTerms = [i[0] for i in e(text.lower())]
     for i in searchTerms:
         for result in database_get_search_results(i, collection):
-            obj = collection(**result)
-
-            tId = str(result['_id'])
+            tId = str(result._id)
             if tId not in results:
-                results[tId] = obj
-                for tTermDict in result['_terms']:
+                results[tId] = result
+                for tTermDict in result._terms:
                     tTerm = tTermDict['term']
                     tWeight = tTermDict['weight']
                     if tTerm in searchTerms:
