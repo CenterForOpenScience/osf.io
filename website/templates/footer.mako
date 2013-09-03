@@ -33,7 +33,7 @@
                     <div class="span3">
                         <h4>Center for Open Science</h4>
                         <ul>
-                            <li><a href="https://centerforopenscience.org">Home</a></li>
+                            <li><a href="http://centerforopenscience.org">Home</a></li>
                             <li><a href="http://centerforopenscience.org/#contact">Contact</a></li>
                             <li><a href="/project/EZcUj/wiki/home">Reproducibility Project</a></li>
                         </ul>
