@@ -73,8 +73,8 @@
     <div class="btn-toolbar" style="float:right;">
         <div class="btn-group">
         %if not node_to_use.is_public:
+            <button class='btn disabled'>Private</button>
             % if editable:
-                <button class='btn disabled'>Private</button>
                 %if node:
                     <a class="btn" href="/project/${project._primary_key}/node/${node._primary_key}/makepublic" data-confirm="${make_public_warning}">Make public</a>
                 %else:
