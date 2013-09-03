@@ -94,7 +94,6 @@
 
         <div class="btn-group">
           <a rel="tooltip" title="Number of users watching this node" class="btn" href="#"><i class="icon-eye-open"></i>&nbsp;0</a>
-##          <a rel="tooltip" title="Number of users watching this node" class="btn" href="#"><i class="icon-eye-open"></i>&nbsp;${len(node_to_use.watchingUsers) if node_to_use.watchingUsers else 0}</a>
           <a
               href="#"
               rel="tooltip"
