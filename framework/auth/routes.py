@@ -43,7 +43,7 @@ def forgot_password():
         if user_obj:
             user_obj.verification_key = helper.random_string(20)
             user_obj.save()
-            send_email(
+            send_email.delay(
                 to=form.email.data, 
                 subject="Reset Password", 
                 message="http://%s%s" % (
