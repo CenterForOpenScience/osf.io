@@ -18,6 +18,7 @@
         is_project = True
 
     user_is_contributor = node_to_use.is_contributor(user)
+    editable = user_is_contributor and not node_to_use.is_registration
 
     # If a parent project exists, put it here so the title can be displayed.
     parent_project = None
@@ -72,7 +73,7 @@
     <div class="btn-toolbar" style="float:right;">
         <div class="btn-group">
         %if not node_to_use.is_public:
-            % if user_is_contributor:
+            % if editable:
                 <button class='btn disabled'>Private</button>
                 %if node:
                     <a class="btn" href="/project/${project._primary_key}/node/${node._primary_key}/makepublic" data-confirm="${make_public_warning}">Make public</a>
@@ -81,7 +82,7 @@
                 %endif
             % endif
         %else:
-            % if user_is_contributor:
+            % if editable:
                 %if node:
                     <a class="btn" href="/project/${project._primary_key}/node/${node._primary_key}/makeprivate" data-confirm="${make_private_warning}">Make private</a>
                 %else:
