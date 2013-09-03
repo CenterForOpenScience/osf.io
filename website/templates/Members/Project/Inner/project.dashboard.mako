@@ -26,6 +26,13 @@
                 });
             },
         });
+        // Remove delete UI if not contributor
+        % if not is_contributor:
+            $('a[title="Removing tag"]').remove();
+            $('span.tag span').each(function(idx, elm) {
+                $(elm).text($(elm).text().replace(/\s*$/, ''))
+            });
+        % endif
     });
 </script>
   <div class="row">
