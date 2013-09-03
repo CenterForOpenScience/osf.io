@@ -169,10 +169,18 @@
     </div>
     <div class="watermarked">
     <div class="container">
+        <div id="alert-container">
+        <div class='alert alert-block alert-warning fade in'><p>Notice: The OSF will be going down for maintenance for a short period of time between 9:00 p.m. and 12:00 a.m. EDT tonight (9/3). We appreciate your patience and will work to minimize the disruption.</p></div>
         %if status:
-            <div id="alert-container">
-            %for s in status:
-                <div class='alert alert-block alert-warning fade in'><a class='close' data-dismiss='alert' href='#'>&times;</a><p>${s}</p></div>
-            %endfor
-            </div>
+        %for s in status:
+            <div class='alert alert-block alert-warning fade in'><a class='close' data-dismiss='alert' href='#'>&times;</a><p>${s}</p></div>
+        %endfor
         %endif
+        </div>
+##        % if status:
+##            <div id="alert-container">
+##            % for s in status:
+##                <div class='alert alert-block alert-warning fade in'><a class='close' data-dismiss='alert' href='#'>&times;</a><p>${s}</p></div>
+##            % endfor
+##            </div>
+##        % endif
