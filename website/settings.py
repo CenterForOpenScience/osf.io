@@ -29,7 +29,7 @@ try:
     mongo_uri = 'mongodb://osf:osfosfosfosf0$f@localhost:20771/osf20120530'
 except KeyError:
     # mongo_uri = 'mongodb://localhost:20771/osf20120530'
-    mongo_uri = 'mongodb://localhost:27017/migrate'
+    mongo_uri = 'mongodb://localhost:20771/migrate'
 
 #TODO: Configuration should not change between deploys - this should be dynamic.
 canonical_domain = 'openscienceframework.org'
