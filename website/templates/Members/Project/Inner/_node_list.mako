@@ -1,7 +1,7 @@
 <%namespace file="_print_logs.mako" import="print_logs"/>
 <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-<%def name="node_list(nodes, default=None, node_id=None, is_contributor=False)">
-<ul class="list-group ${'sortable' if default=="project_dash" and is_contributor else ''}" node_class="${default}" style="margin-left: 0px;">
+<%def name="node_list(nodes, default=None, node_id=None, is_contributor=False, is_registration=False)">
+<ul class="list-group ${'sortable' if default=="project_dash" and is_contributor and not is_registration else ''}" node_class="${default}" style="margin-left: 0px;">
 
 %for node in nodes:
     % if node._primary_key is None or node.is_deleted:

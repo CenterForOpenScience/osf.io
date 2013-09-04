@@ -96,10 +96,10 @@
         <div class="btn-group">
           <a rel="tooltip" title="Number of users watching this node" class="btn" href="#"><i class="icon-eye-open"></i>&nbsp;0</a>
           <a
-              href="#"
               rel="tooltip"
               title="Number of times this node has been forked (copied)"
               % if is_project and user is not None:
+              href="#"
               class="btn"
               onclick="forkNode();"
               % else:
