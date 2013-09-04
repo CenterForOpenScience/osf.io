@@ -14,6 +14,10 @@ try:
 except KeyError:
     use_cdn_for_client_libs = False
 
+mail_server = 'smtp.sendgrid.net'
+mail_username = 'osf-smtp'
+mail_password = 'nNtxpg8Q0KqOgR'
+
 static_path = os.path.join(base_path, 'static')
 
 try:
