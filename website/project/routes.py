@@ -156,7 +156,7 @@ def project_new_node(*args, **kwargs):
         return redirect('/project/' + str(project._primary_key))
     else:
         push_errors_to_status(form.errors)
-    return redirect('/project/' + str(project.id))
+    return redirect('/project/' + str(project._primary_key))
 
 @post('/project/<pid>/fork')
 @post('/project/<pid>/node/<nid>/fork')
