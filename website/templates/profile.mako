@@ -69,7 +69,7 @@
         %endif
     </div>
     <div class="span6">
-        <h3 style="margin-bottom:10px;">Public Nodes </h3>
+        <h3 style="margin-bottom:10px;">Public Components</h3>
         % if len(public_nodes) > 0:
             ${node_list(reversed(public_nodes))}
         %else:
