@@ -1,21 +1,26 @@
 <%inherit file="project.view.mako" />
 <% import website.settings %>
+<%
+    is_contributor = node_to_use.is_contributor(user)
+    editable = is_contributor and not node_to_use.is_registration
+    disabled_class = "" if editable else " disabled"
+%>
 
 <form id="fileupload" action="${node_to_use.url() + '/files/upload'}" method="POST" enctype="multipart/form-data">
         <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
         <div class="row fileupload-buttonbar">
             <div class="span7">
                 <!-- The fileinput-button span is used to style the file input field as button -->
-                <span class="btn btn-success fileinput-button">
+                <span class="btn btn-success fileinput-button${disabled_class}">
                     <i class="icon-plus icon-white"></i>
                     <span>Add files...</span>
                     <input type="file" name="files[]" multiple>
                 </span>
-                <button type="submit" class="btn btn-primary start">
+                <button type="submit" class="btn btn-primary start${disabled_class}">
                     <i class="icon-upload icon-white"></i>
                     <span>Start upload</span>
                 </button>
-                <button type="reset" class="btn btn-warning cancel">
+                <button type="reset" class="btn btn-warning cancel${disabled_class}">
                     <i class="icon-ban-circle icon-white"></i>
                     <span>Cancel upload</span>
                 </button>
@@ -104,7 +109,7 @@
             <td>{%=file.downloads%}</td>
             <td><a href="{%=file.download_url%}" download="{%=file.name%}"><i class="icon-download-alt"></i></a></td>
             <td><form style='margin:0' method='post' class='fileDeleteForm' action='${node_to_use.url() + '/files/delete/{%=file.name%}'}'>
-                <button type="button" class="btn btn-danger btn-delete" onclick='deleteFile(this)'>
+                <button type="button" class="btn btn-danger btn-delete${disabled_class}"${ "onclick='deleteFile(this)'" if editable else ""}>
                     <i class="icon-trash icon-white"></i>
                     <span>Delete</span>
                 </button>
@@ -185,3 +190,12 @@ $(function () {
 
 <!-- The XDomainRequest Transport is included for cross-domain file deletion for IE8+ -->
 <!--[if gte IE 8]><script src="/js/cors/jquery.xdr-transport.js"></script><![endif]-->
+
+% if not editable:
+    <script type="text/javascript">
+        $('.fileupload-buttonbar .btn').on('click', function(event) {
+            event.preventDefault();
+        });
+        $('input[name="files[]"]').css('cursor', 'default');
+    </script>
+% endif
