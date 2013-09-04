@@ -97,7 +97,7 @@
         </div>
 
         <div class="btn-group">
-          <a rel="tooltip" title="Number of users watching this node" class="btn" href="#"><i class="icon-eye-open"></i>&nbsp;0</a>
+          <a rel="tooltip" title="Coming soon: Number of users watching this node" class="btn disabled" href="#"><i class="icon-eye-open"></i>&nbsp;0</a>
           <a
               rel="tooltip"
               title="Number of times this node has been forked (copied)"
