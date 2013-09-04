@@ -112,7 +112,7 @@ $(function(){
     %>
     <li class="project">
         <h3>
-            <a href="${node.url()}">${node['title']}</a>
+            <a href="${node.url()}">${node.title}</a>
         </h3>
         <div class='project-meta'>
             % if metric == 'hits':

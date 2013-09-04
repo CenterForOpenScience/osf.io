@@ -8,16 +8,16 @@
     % for i, log in enumerate(logs):
         <% if n and i >= n:break %>
                 <% 
-                    tuser = get_user(log['user'])
-                    action = log['action']
-                    params = log['params']
-                    date = log['date']
+                    tuser = log.user#get_user(log.user)
+                    action = log.action
+                    params = log.params
+                    date = log.date
                 %>
                 <% if not date:
                     break
                 %>
                 <dt><span class="date">${date.strftime('%m/%d/%y %I:%M %p')}</span></dt>
-                <dd ><a href="/profile/${tuser.id}">${tuser.fullname}</a> 
+                <dd ><a href="/profile/${tuser._primary_key}">${tuser.fullname}</a>
                 %if action == 'project_created':
                     created <a href='/project/${params['project']}'>project</a>
                 %elif action == 'node_created':
@@ -39,7 +39,7 @@
                                 else:
                                     c = get_user(c)
                                     if c:
-                                        contributors.append(u'<a href="/profile/{id}">{fullname}</a>'.format(id=c.id, fullname=c.fullname))
+                                        contributors.append(u'<a href="/profile/{id}">{fullname}</a>'.format(id=c._primary_key, fullname=c.fullname))
 
                     %>
                     ${', '.join(contributors)} as contributor${'s' if len(contributors) > 1 else ''} on 
@@ -71,7 +71,7 @@
                         else:
                             u = get_user(c)
                             if u:
-                                contributor = u'<a href="/profile/{id}">{fullname}</a>'.format(id=u.id, fullname=u.fullname)
+                                contributor = u'<a href="/profile/{id}">{fullname}</a>'.format(id=u._primary_key, fullname=u.fullname)
 
                     %>
                     ${contributor} as a contributor from

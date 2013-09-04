@@ -3,9 +3,9 @@
     import website.settings
     import framework.analytics as analytics
     if node:
-        counters = analytics.get_day_total_list('node:{0}'.format(node.id))
+        counters = analytics.get_day_total_list('node:{0}'.format(node._primary_key))
     else:
-        counters = analytics.get_day_total_list('node:{0}'.format(project.id))
+        counters = analytics.get_day_total_list('node:{0}'.format(project._primary_key))
 
     csv = "date,price\\n"
     for i in counters:

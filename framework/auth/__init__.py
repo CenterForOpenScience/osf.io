@@ -4,6 +4,8 @@ import framework.status as status
 import framework.flask as web
 import framework.bcrypt as bcrypt
 
+from modularodm.query.querydialect import DefaultQueryDialect as Q
+
 import helper
 
 #import website.settings as settings
@@ -32,29 +34,37 @@ def check_password(actualPassword, givenPassword):
 
 def get_user(id=None, username=None, password=None, verification_key=None):
     # tag: database
-    query = {}
+    query = []
     if id:
-        query['_id'] = id
+        query.append(Q('_id', 'eq', id))
     if username:
         username = username.strip().lower()
-        query['username'] = username
+        query.append(Q('username', 'eq', username))
     if password:
         password = password.strip()
-        user = User.find(**query)
+        try:
+            user = User.find_one(*query)
+        except:
+            user = None
         if user and not check_password(user.password, password):
             return False
-        else:
-            return user
+        return user
     if verification_key:
-        query['verification_key'] = verification_key
-    return User.find(**query)
+        query.append(Q('verification_key', 'eq', verification_key))
+    try:
+        return User.find_one(*query)
+    except:
+        return None
 
 def login(username, password):
     username = username.strip().lower()
     password = password.strip()
 
     if username and password:
-        user = get_user(username=username, password=password)
+        user = get_user(
+            username=username,
+            password=password
+        )
         if user:
             if not user.is_registered:
                 return 2
@@ -63,7 +73,7 @@ def login(username, password):
             else:
                 Session.set([
                     ('auth_user_username', user.username), 
-                    ('auth_user_id', user.id),
+                    ('auth_user_id', user._primary_key),
                     ('auth_user_fullname', user.fullname)
                 ])
                 return True
@@ -81,14 +91,16 @@ def add_unclaimed_user(email, fullname):
     if user:
         return user
     else:
-        user_based_on_email = User.find(emails=email)
+        user_based_on_email = User.find_one(
+            Q('emails', 'eq', email)
+        )
         if user_based_on_email:
             return user_based_on_email
         newUser = User(
-            fullname=fullname,
+            fullname = fullname,
             emails = [email],
         )
-        newUser.optimistic_insert()
+        newUser._optimistic_insert()
         newUser.save()
         return newUser        
 
@@ -114,7 +126,7 @@ def register(username, password, fullname=None):
             verification_key=helper.random_string(15),
             date_registered=datetime.datetime.utcnow()
         )
-        newUser.optimistic_insert()
+        # newUser._optimistic_insert()
         newUser.emails.append(username.strip())
         newUser.save()
         newUser.generate_keywords()
