@@ -1,15 +1,15 @@
-from framework.mongo import MongoCollectionStorage, MongoObject, db
+from framework.mongo import db
+
+from modularodm import StoredObject
+from modularodm import fields
+from modularodm import storage
 
 import datetime
 
-class Keyword(MongoObject):
-    schema = {
-        '_id':{},
-        'type':{'type':lambda: dict()},
-    }
-    _doc = {
-        'name':'keyword',
-        'version':1,
-    }
+class Keyword(StoredObject):
+    _id = fields.StringField(primary=True)
+    type = fields.DictionaryField()
 
-Keyword.setStorage(MongoCollectionStorage(db, 'keyword'))
+    _meta = {'optimistic' : True}
+
+Keyword.set_storage(storage.MongoStorage(db, 'keyword'))

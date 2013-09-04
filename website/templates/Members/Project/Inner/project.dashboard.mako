@@ -60,7 +60,7 @@
               <h1>Components</h1>
           </div>
           <div class="modal hide fade" id="newComponent">
-          <form class="form-horizontal form-horizontal-narrow" action="/project/${project.id}/newnode" method="post">
+          <form class="form-horizontal form-horizontal-narrow" action="/project/${project._primary_key}/newnode" method="post">
             <div class="modal-header">
               <h3 class='img-add'>Add Component</h3>
             </div>
@@ -109,10 +109,10 @@
     </div>
     <div class="span5">
         <div style="margin-right:12px;">
-        <input name="node-tags" id="node-tags" value="${','.join(node_to_use.tags) if node_to_use.tags else ''}" />
+        <input name="node-tags" id="node-tags" value="${','.join([tag._id for tag in node_to_use.tags]) if node_to_use.tags else ''}" />
         </div>
             <div id='main-log'>
-                ${print_logs(reversed(node_to_use.logs.objects()), n=10)}
+                ${print_logs(reversed(node_to_use.logs), n=10)}
             </div>
             <div class="paginate" style="float:right;">more</div>
         </section>

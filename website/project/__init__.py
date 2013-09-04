@@ -28,7 +28,7 @@ def new_project(title, description, user):
     project = new_node('project', title, user, description)
     project.add_log('project_created', 
         params={
-            'project':project.id,
+            'project':project._primary_key,
         },
         user=user,
         log_date=project.date_created
@@ -49,9 +49,9 @@ def new_node(category, title, user, description=None, project=None):
     new_node.generate_keywords()
     
     new_node.creator = user
-    new_node.optimistic_insert()
+    # new_node._optimistic_insert()
     new_node.contributors.append(user)
-    new_node.contributor_list.append({'id':user.id})
+    new_node.contributor_list.append({'id':user._primary_key})
     new_node.save()
 
     if project:
@@ -59,8 +59,8 @@ def new_node(category, title, user, description=None, project=None):
         project.save()
         new_node.add_log('node_created', 
             params={
-                'node':new_node.id,
-                'project':project.id,
+                'node':new_node._primary_key,
+                'project':project._primary_key,
             }, 
             user=user,
             log_date=new_node.date_created
@@ -95,7 +95,7 @@ def watch_node(id, uid):
 
 def get_file_tree(node_to_use, user):
     tree = []
-    for node in node_to_use.nodes.objects():
+    for node in node_to_use.nodes:
         if not node.is_deleted:
             tree.append(get_file_tree(node, user))
 

@@ -19,7 +19,7 @@
       <p>Developers can contribute to OSF and other open-source projects, or connect their projects to OSF via API. To learn more you can watch the above video from SciPy, find us on <a href="https://github.com/centerforopenscience" target="_blank">GitHub</a>, or contact developer@centerforopenscience.org.</p>
         </div>
                   % if website.settings.use_cdn_for_client_libs:
-                  <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+                  <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js._primary_key=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
                   %endif
       </p>
     </div>
