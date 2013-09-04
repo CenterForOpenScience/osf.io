@@ -253,15 +253,14 @@ class Node(StoredObject):
             folder_new = os.path.join(settings.uploads_path, registered._primary_key)
             Repo(folder_old).clone(folder_new)
 
-        self.nodes = []
-        # while len(self.nodes) > 0:
-        #     self.nodes.pop()
+        registered.nodes = []
 
-        for i, node_contained in enumerate(original.nodes):
-            original_node = self.load(node_contained._primary_key)
-            folder_old = os.path.join(settings.uploads_path, node_contained._primary_key)
+        # todo: should be recursive; see Node.fork_node()
+        for i, original_node_contained in enumerate(original.nodes):
+            
+            node_contained = original_node_contained.clone()
 
-            node_contained._optimistic_insert()
+            folder_old = os.path.join(settings.uploads_path, original_node_contained._primary_key)
 
             if os.path.exists(folder_old):
                 folder_new = os.path.join(settings.uploads_path, node_contained._primary_key)
@@ -269,7 +268,7 @@ class Node(StoredObject):
 
             node_contained.is_registration = True
             node_contained.registered_date = when
-            node_contained.registered_from = original_node
+            node_contained.registered_from = original_node_contained
             if not node_contained.registered_meta:
                 node_contained.registered_meta = {}
             node_contained.registered_meta[template] = data
