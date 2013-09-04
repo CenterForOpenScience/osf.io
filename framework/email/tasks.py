@@ -15,7 +15,7 @@ def send_email(to=None, subject=None, message=None):
     :return: True if successful
     """
     fro = "openscienceframework-noreply@openscienceframework.org"
-    msg = MIMEText(message)
+    msg = MIMEText(message, _charset='utf-8')
     msg['Subject'] = subject
     msg['From'] = fro 
     msg['To'] = to
@@ -25,6 +25,10 @@ def send_email(to=None, subject=None, message=None):
     s.starttls()
     s.ehlo()
     s.login(settings.mail_username, settings.mail_password)
-    s.sendmail('openscienceframework-noreply@openscienceframework.org', [to], msg.as_string())
+    s.sendmail(
+        from_addr='openscienceframework-noreply@openscienceframework.org',
+        to_addrs=[to],
+        msg=msg.as_string()
+    )
     s.quit()
     return True
