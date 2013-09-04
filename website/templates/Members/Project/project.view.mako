@@ -77,7 +77,7 @@
         <div class="btn-group">
         %if not node_to_use.is_public:
             <button class='btn disabled'>Private</button>
-            % if editable:
+            % if user_is_contributor:
                 %if node:
                     <a class="btn" href="/project/${project._primary_key}/node/${node._primary_key}/makepublic" data-confirm="${make_public_warning}">Make public</a>
                 %else:
@@ -85,7 +85,7 @@
                 %endif
             % endif
         %else:
-            % if editable:
+            % if user_is_contributor:
                 %if node:
                     <a class="btn" href="/project/${project._primary_key}/node/${node._primary_key}/makeprivate" data-confirm="${make_private_warning}">Make private</a>
                 %else:
