@@ -30,13 +30,16 @@
         if "id" in contributor:
             contributor = framework.get_user(contributor["id"])
             txt = '<a href="/profile/%s"' % contributor._primary_key
-            if user_is_contributor:
+            if editable:
                 txt += ' class="user-quickedit" data-userid="%s" data-fullname="%s"' % (contributor._primary_key, contributor.fullname)
             txt += '>%s</a>' % contributor.fullname
             contributors_ids.append(contributor._primary_key)
         else:
             if "nr_name" in contributor:
-                txt = '<span class="user-quickedit" data-userid="nr-' + hashlib.md5(contributor["nr_email"]).hexdigest() + '" data-fullname="' + contributor["nr_name"] + '">' + contributor["nr_name"] + '</span>'
+                txt = '<span'
+                if editable:
+                    txt += ' class="user-quickedit" data-userid="nr-' + hashlib.md5(contributor["nr_email"]).hexdigest() + '" data-fullname="' + contributor["nr_name"]
+                txt += '">' + contributor["nr_name"] + '</span>'
 
         contributors_text.append(txt)
 
