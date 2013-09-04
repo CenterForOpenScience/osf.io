@@ -30,10 +30,8 @@ except:
 
 try:
     os.environ['OSF_PRODUCTION']
-    mongo_uri = 'mongodb://osf:osfosfosfosf0$f@localhost:20771/osf20120530'
+    mongo_uri = 'mongodb://osf:osfosfosfosf0$f@localhost:20771/osf20130903'
 except KeyError:
-    # mongo_uri = 'mongodb://localhost:20771/osf20120530'
-    # mongo_uri = 'mongodb://localhost:20771/migrate'
     mongo_uri = 'mongodb://localhost:20771/osf20130903'
 
 #TODO: Configuration should not change between deploys - this should be dynamic.
