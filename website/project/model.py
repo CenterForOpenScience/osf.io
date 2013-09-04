@@ -259,6 +259,7 @@ class Node(StoredObject):
         for i, original_node_contained in enumerate(original.nodes):
             
             node_contained = original_node_contained.clone()
+            node_contained.save()
 
             folder_old = os.path.join(settings.uploads_path, original_node_contained._primary_key)
 
