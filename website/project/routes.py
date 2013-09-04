@@ -342,6 +342,7 @@ def node_setting(*args, **kwargs):
 
 @post('/api/v1/reorder_components/<pid>')
 @must_be_valid_project
+@must_not_be_registration
 @must_be_contributor # returns user, project
 def project_reorder_components(*args, **kwargs):
     project = kwargs['project']
@@ -353,14 +354,7 @@ def project_reorder_components(*args, **kwargs):
     new_list = json.loads(request.form['new_list'])
 
     if len(set(old_list).intersection(set(new_list))) == len(old_list):
-        from yORM.Object import Object
-        node_to_use.nodes = Object.ObjectList(
-            node_to_use.nodes.parent,
-            node_to_use.nodes.name,
-            node_to_use.nodes.type,
-            new_list
-        )
-
+        node_to_use.nodes = new_list
         if node_to_use.save():
             print node_to_use.nodes
             return jsonify({'success':'true'})
