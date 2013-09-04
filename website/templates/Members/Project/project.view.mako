@@ -99,7 +99,7 @@
               href="#"
               rel="tooltip"
               title="Number of times this node has been forked (copied)"
-              % if is_project:
+              % if is_project and user is not None:
               class="btn"
               onclick="forkNode();"
               % else:
