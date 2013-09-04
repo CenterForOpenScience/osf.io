@@ -1,8 +1,13 @@
 <%inherit file="project.view.mako" />
 <%namespace file="_node_list.mako" import="node_list"/>
 
-<div class="page-header">
-    <div style="float:right;"><a href="${node_to_use.url()}/register" class="btn" type="button">New Registration</a></div>
+<div class="page-header"><div style="float:right;">
+    % if node_to_use.category == 'project':
+        <a href="${node_to_use.url()}/register" class="btn" type="button">New Registration</a>
+    % else:
+        <a class="btn disabled" type="button">New Registration</a>
+    % endif
+    </div>
 	<h1>Registrations</h1>
 </div>
 % if node_to_use.registration_list:
