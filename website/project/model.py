@@ -39,7 +39,7 @@ def normalize_unicode(ustr):
 class NodeLog(StoredObject):
     _id = fields.ObjectIdField(primary=True, default=ObjectId)
 
-    date = fields.DateTimeField(default=datetime.datetime.utcnow)#auto_now=True)
+    date = fields.DateTimeField(default=datetime.datetime.utcnow())
     action = fields.StringField()
     params = fields.DictionaryField()
 
@@ -60,9 +60,9 @@ class NodeFile(StoredObject):
     git_commit = fields.StringField()
     is_deleted = fields.BooleanField()
 
-    date_created = fields.DateTimeField(default=datetime.datetime.utcnow())#auto_now_add=True)
-    date_modified = fields.DateTimeField(default=datetime.datetime.utcnow())#auto_now=True)
-    date_uploaded = fields.DateTimeField(default=datetime.datetime.utcnow())
+    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    date_uploaded = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
     uploader = fields.ForeignField('user', backref='uploads')
 
@@ -89,7 +89,7 @@ Tag.set_storage(storage.MongoStorage(db, 'tag'))
 class Node(StoredObject):
     _id = fields.StringField(primary=True)
 
-    date_created = fields.DateTimeField(default=datetime.datetime.utcnow)
+    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     is_public = fields.BooleanField()
 
     is_deleted = fields.BooleanField(default=False)
@@ -382,12 +382,12 @@ class Node(StoredObject):
         except subprocess.CalledProcessError:
             return False
 
-        date_modified = datetime.datetime.now()
+        # date_modified = datetime.datetime.now()
 
         if file_name_key in self.files_current:
             nf = NodeFile.load(self.files_current[file_name_key])
             nf.is_deleted = True
-            nf.date_modified = date_modified
+            # nf.date_modified = date_modified
             nf.save()
             self.files_current.pop(file_name_key, None)
 
@@ -395,17 +395,20 @@ class Node(StoredObject):
             for i in self.files_versions[file_name_key]:
                 nf = NodeFile.load(i)
                 nf.is_deleted = True
-                nf.date_modified = date_modified
+                # nf.date_modified = date_modified
                 nf.save()
             self.files_versions.pop(file_name_key)
+
+        # Updates self.date_modified
+        self.save()
 
         self.add_log('file_removed', {
                 'project':self.node__parent[0]._primary_key if self.node__parent else None,
                 'node':self._primary_key,
                 'path':path
-            }, user, log_date=date_modified)
+            }, user, log_date=self.date_modified)
 
-        self.save()
+        # self.save()
         return True
 
     def add_file(self, user, file_name, content, size, content_type):
@@ -707,7 +710,7 @@ class NodeWikiPage(StoredObject):
     _id = fields.ObjectIdField(primary=True, default=ObjectId)
     page_name = fields.StringField()
     version = fields.IntegerField()
-    date = fields.DateTimeField()#auto_now_add=True)
+    date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     is_current = fields.BooleanField()
     content = fields.StringField()
 
