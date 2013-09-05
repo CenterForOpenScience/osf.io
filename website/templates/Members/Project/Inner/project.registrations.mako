@@ -1,8 +1,13 @@
 <%inherit file="project.view.mako" />
 <%namespace file="_node_list.mako" import="node_list"/>
 
+<%
+    is_contributor = node_to_use.is_contributor(user)
+    editable = is_contributor and not node_to_use.is_registration
+%>
+
 <div class="page-header"><div style="float:right;">
-    % if node_to_use.category == 'project':
+    % if editable and node_to_use.category == 'project':
         <a href="${node_to_use.url()}/register" class="btn" type="button">New Registration</a>
     % else:
         <a class="btn disabled" type="button">New Registration</a>
