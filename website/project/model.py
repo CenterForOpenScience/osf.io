@@ -39,7 +39,7 @@ def normalize_unicode(ustr):
 class NodeLog(StoredObject):
     _id = fields.ObjectIdField(primary=True, default=ObjectId)
 
-    date = fields.DateTimeField(default=datetime.datetime.utcnow())
+    date = fields.DateTimeField(default=datetime.datetime.utcnow)
     action = fields.StringField()
     params = fields.DictionaryField()
 
