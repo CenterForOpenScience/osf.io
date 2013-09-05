@@ -13,3 +13,8 @@
 body{
   padding-top: 60px;
 }
+
+a.disabled {
+    color: grey;
+    cursor: default;
+}
