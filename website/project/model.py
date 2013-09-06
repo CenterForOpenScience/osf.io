@@ -406,7 +406,7 @@ class Node(StoredObject):
                 'project':self.node__parent[0]._primary_key if self.node__parent else None,
                 'node':self._primary_key,
                 'path':path
-            }, user, log_date=self.date_modified)
+            }, user, log_date=nf.date_modified)
 
         # self.save()
         return True
@@ -518,7 +518,7 @@ class Node(StoredObject):
 
         return node_file
     
-    def add_log(self, action, params, user, log_date = None):
+    def add_log(self, action, params, user, log_date=None, do_save=True):
         log = NodeLog()
         log.action=action
         log.user=user
@@ -527,12 +527,14 @@ class Node(StoredObject):
         log.params=params
         log.save()
         self.logs.append(log)
-        self.save()
+        if do_save:
+            self.save()
         increment_user_activity_counters(user._primary_key, action, log.date)
         if self.node__parent:
             parent = self.node__parent[0]
             parent.logs.append(log)
             parent.save()
+        return log
 
     def url(self):
         if self.category == 'project':

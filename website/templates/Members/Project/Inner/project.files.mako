@@ -20,10 +20,6 @@
                     <i class="icon-upload icon-white"></i>
                     <span>Start upload</span>
                 </button>
-                <button type="reset" class="btn btn-warning cancel${disabled_class}">
-                    <i class="icon-ban-circle icon-white"></i>
-                    <span>Cancel upload</span>
-                </button>
             </div>
             <!-- The global progress information -->
             <div class="span5 fileupload-progress fade">
@@ -77,12 +73,6 @@
         {% } else { %}
             <td colspan="2"></td>
         {% } %}
-        ##<td class="cancel">{% if (!i) { %}
-        ##    <button class="btn btn-warning">
-        ##        <i class="icon-ban-circle icon-white"></i>
-        ##        <span>{%=locale.fileupload.cancel%}</span>
-        ##    </button>
-        ##{% } %}</td>
     </tr>
 {% } %}
 </script>
