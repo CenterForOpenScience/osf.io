@@ -44,6 +44,7 @@ def activity():
             break
         node = Node.load(node_id.split(':')[1])
         if (
+            node and
             node.is_public and
             node.category == 'project' and
             (not node.is_deleted) and
