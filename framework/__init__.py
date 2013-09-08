@@ -17,7 +17,7 @@ from framework.beaker import set_previous_url, goback, session_set, session_get
 
 ###### Mongo
 
-from framework.mongo import db, MongoObject
+from framework.mongo import db
 
 ##### ODM
 
@@ -58,3 +58,8 @@ def convert_datetime(date, to='US/Eastern'):
     to_zone = pytz.timezone(to)
     date = date.replace(tzinfo=pytz.utc)
     return to_zone.normalize(date.astimezone(to_zone))
+
+##### Session setup
+
+import framework.beaker as session
+app.wsgi_app = session.middleware(app.wsgi_app, session.options)
