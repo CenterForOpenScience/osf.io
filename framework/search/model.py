@@ -1,8 +1,6 @@
 from framework.mongo import db
 
-from modularodm import StoredObject
-from modularodm import fields
-from modularodm import storage
+from framework import StoredObject, fields, storage
 
 import datetime
 

@@ -19,6 +19,11 @@ from framework.beaker import set_previous_url, goback, session_set, session_get
 
 from framework.mongo import db, MongoObject
 
+##### ODM
+
+from modularodm import FlaskStoredObject as StoredObject, fields, storage
+from modularodm.query.querydialect import DefaultQueryDialect as Q
+
 ###### Auth
 
 from framework.auth import get_current_username, get_current_user_id, get_user, \
