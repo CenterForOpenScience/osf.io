@@ -6,9 +6,7 @@ from framework.git.exceptions import FileNotModified
 
 from website import settings
 
-from modularodm import StoredObject
-from modularodm import fields
-from modularodm import storage
+from framework import StoredObject, fields, storage
 
 import hashlib
 import datetime
