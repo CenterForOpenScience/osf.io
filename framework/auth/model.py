@@ -1,10 +1,7 @@
 from framework.mongo import db
 from framework.search import Keyword
 
-from modularodm import StoredObject
-from modularodm import fields
-from modularodm import storage
-from modularodm.query.querydialect import DefaultQueryDialect as Q
+from framework import StoredObject, fields, storage, Q
 
 import datetime
 
