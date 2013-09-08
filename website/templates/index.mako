@@ -11,7 +11,7 @@
     <div class="span4">
         <h1>Journals, Funders, and Societies</h1>
             <p style="padding-top: 25px;">Journals, funders and scientific societies can use the OSF as back-end infrastructure for preregistration, data and materials archiving, and other administrative functions. Email contact@centerforopenscience.org.</p>
-        <a href="http://openscienceframework.org/explore/activity/"><img style="padding-top: 20px; padding-bottom:36px;" src="/static/img/activity.png" alt="public activity screenshot"></a>
+        <a href="/explore/activity/"><img style="padding-top: 20px; padding-bottom:36px;" src="/static/img/activity.png" alt="public activity screenshot"></a>
     </div>
     <div class="span4">
       <h1>Developers</h1>
