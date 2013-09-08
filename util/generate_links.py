@@ -1,5 +1,8 @@
-from bson import ObjectId
-from . import database_source as database
+# from bson import ObjectId
+# from . import database_source as database
+
+# todo import correct database
+# todo generate links from odm schemas
 
 project_url_file = 'project-urls.txt'
 profile_url_file = 'profile-urls.txt'
@@ -141,12 +144,6 @@ def generate_projects_urls(public=True):
 
     return project_urls + node_urls
 
-    # pids = database['node'].find(
-    #     query,
-    #     {'_id' : True}
-    # )
-    # return sum([generate_project_urls(pid['_id']) for pid in pids], [])
-
 def generate_profile_urls():
     
     users = database['user'].find()
@@ -159,9 +156,3 @@ def generate_static_urls():
         '/explore/activity',
         '/getting-started',
     ]
-
-# if __name__ == '__main__':
-#     with open(project_url_file, 'w') as fh:
-#         fh.writelines('%s\n' % url for url in generate_projects_urls())
-#     with open(profile_url_file, 'w') as fh:
-#         fh.writelines('%s\n' % url for url in generate_profile_urls())
