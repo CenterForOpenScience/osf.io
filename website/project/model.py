@@ -200,10 +200,6 @@ class Node(StoredObject):
         forked.contributors = []
         forked.contributor_list = []
 
-        if os.path.exists(folder_old):
-            folder_new = os.path.join(settings.uploads_path, forked._primary_key)
-            Repo(folder_old).clone(folder_new)
-
         for i, node_contained in enumerate(original.nodes):
             forked_node = node_contained.fork_node(user, title='')
             if forked_node is not None:
@@ -229,6 +225,10 @@ class Node(StoredObject):
         )
 
         forked.save()
+
+        if os.path.exists(folder_old):
+            folder_new = os.path.join(settings.uploads_path, forked._primary_key)
+            Repo(folder_old).clone(folder_new)
 
         original.fork_list.append(forked._primary_key)
         original.save()
