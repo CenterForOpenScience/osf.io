@@ -25,7 +25,7 @@
 </style>
 
 %if website.settings.use_cdn_for_client_libs:
-<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.2.2/d3.v3.min.js"></script>
 %else:
 <script src="/static/d3.v3.min.js"></script>
 %endif
