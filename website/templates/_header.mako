@@ -18,12 +18,12 @@
 
     <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
     <!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+      <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
 
     <!-- Le styles -->
     %if website.settings.use_cdn_for_client_libs:
-        <link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1/themes/flick/jquery-ui.css">
+        <link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1/themes/flick/jquery-ui.css">
     %else:
         <link rel="stylesheet" type="text/css" href="/static/jquery-ui.css">
     %endif 
@@ -48,18 +48,18 @@
     </style>
     
     %if website.settings.use_cdn_for_client_libs:
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-        <script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.3.3/underscore-min.js"></script>
-        <script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.2/backbone-min.js"></script>
-        <script src="http://cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.0.beta2/handlebars.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.3.3/underscore-min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.2/backbone-min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.0.beta2/handlebars.min.js"></script>
         
-        <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.12/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.12/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="/static/bootstrap/js/bootstrap.min.js"></script>
         <script src="/static/tag-it.js"></script>
         <script src="/static/jquery.autoresize.js"></script>
         <script src="/static/bootstrap-editable/js/bootstrap-editable.min.js"></script>
         <script src="/static/jquery-treeview/jquery.treeview.js" type="text/javascript"></script>
-        <script src="http://cloud.github.com/downloads/emberjs/ember.js/ember-0.9.5.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/ember.js/0.9.5/ember-0.9.5.min.js"></script>
         <script src="/static/ember-formbuilder.js"></script>
         <script src="/static/site.js"></script>
     %else:

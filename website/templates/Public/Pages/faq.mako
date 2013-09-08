@@ -17,9 +17,9 @@
     individual contributions for all aspects of the research process. To see how
     it works, watch our <a href="http://youtu.be/c6lCJFSnMcg">3-minute
         introduction video</a>, read the <a
-            href="http://openscienceframework.org/getting-started">Getting
+            href="/getting-started">Getting
         Started</a> page, or see the <a
-            href="http://openscienceframework.org/project/4znZP/wiki/home">OSF
+            href="/project/4znZP/wiki/home">OSF
         Features </a>page.</p>
 
 <h3>How can I use the OSF?</h3><p>OSF membership is open and free, so you can

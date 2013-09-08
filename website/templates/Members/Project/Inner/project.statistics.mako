@@ -36,7 +36,7 @@
 
 
 %if website.settings.use_cdn_for_client_libs:
-<script src="http://d3js.org/d3.v2.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/d3/2.10.0/d3.v2.min.js"></script>
 %else:
 <script src="/static/d3.v2.js"></script>
 %endif
