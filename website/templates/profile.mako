@@ -2,12 +2,14 @@
 
 <%
     from framework.analytics import get_total_activity_count
+    from framework import Q
 
-    nodes = [
-        node for node in profile.node__contributed
-        if not node.is_deleted
-        and not node.is_registration
-    ]
+    nodes = profile.node__contributed.find(
+        Q('is_deleted', 'eq', False)
+        &
+        Q('is_registration', 'eq', False)
+    )
+    nodes = list(nodes)
     nodes.sort(key=lambda node: node.logs[-1].date)
     public_projects = [node for node in nodes if node.is_public and node.category == 'project']
     public_nodes = [node for node in nodes if node.is_public and node.category != 'project']
