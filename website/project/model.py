@@ -200,9 +200,6 @@ class Node(StoredObject):
         forked.contributors = []
         forked.contributor_list = []
 
-        forked.save()
-        # forked._optimistic_insert()
-
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.uploads_path, forked._primary_key)
             Repo(folder_old).clone(folder_new)
@@ -219,7 +216,6 @@ class Node(StoredObject):
         forked.is_public = False
 
         forked.add_contributor(user, log=False, save=False)
-        forked.save()
 
         forked.add_log('node_forked',
             params={
@@ -228,8 +224,11 @@ class Node(StoredObject):
                 'registration':forked._primary_key,
             }, 
             user=user,
-            log_date=when
+            log_date=when,
+            do_save=False,
         )
+
+        forked.save()
 
         original.fork_list.append(forked._primary_key)
         original.save()
