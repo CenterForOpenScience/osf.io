@@ -20,7 +20,6 @@ import copy
 import pymongo
 import scrubber
 import unicodedata
-from bson import ObjectId
 
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
@@ -37,7 +36,7 @@ def normalize_unicode(ustr):
         .encode('ascii', 'ignore')
 
 class NodeLog(StoredObject):
-    _id = fields.ObjectIdField(primary=True, default=ObjectId)
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
     date = fields.DateTimeField(default=datetime.datetime.utcnow)
     action = fields.StringField()
@@ -48,7 +47,7 @@ class NodeLog(StoredObject):
 NodeLog.set_storage(storage.MongoStorage(db, 'nodelog'))
 
 class NodeFile(StoredObject):
-    _id = fields.ObjectIdField(primary=True, default=ObjectId)
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
     path = fields.StringField()
     filename = fields.StringField()
@@ -709,7 +708,7 @@ Node.set_storage(storage.MongoStorage(db, 'node'))
 
 class NodeWikiPage(StoredObject):
 
-    _id = fields.ObjectIdField(primary=True, default=ObjectId)
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     page_name = fields.StringField()
     version = fields.IntegerField()
     date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
