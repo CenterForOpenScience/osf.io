@@ -9,5 +9,3 @@ class Keyword(StoredObject):
     type = fields.DictionaryField()
 
     _meta = {'optimistic' : True}
-
-Keyword.set_storage(storage.MongoStorage(db, 'keyword'))

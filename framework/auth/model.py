@@ -107,5 +107,3 @@ class User(StoredObject):
             self.keywords.append(keyword_object)
         if save:
             self.save()
-
-User.set_storage(storage.MongoStorage(db, 'user'))

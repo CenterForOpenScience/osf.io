@@ -42,8 +42,6 @@ class NodeLog(StoredObject):
 
     user = fields.ForeignField('user', backref='created')
 
-NodeLog.set_storage(storage.MongoStorage(db, 'nodelog'))
-
 class NodeFile(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
@@ -63,8 +61,6 @@ class NodeFile(StoredObject):
 
     uploader = fields.ForeignField('user', backref='uploads')
 
-NodeFile.set_storage(storage.MongoStorage(db, 'nodefile'))
-
 class Tag(StoredObject):
 
     schema = {
@@ -80,8 +76,6 @@ class Tag(StoredObject):
     _id = fields.StringField(primary=True)
     count_public = fields.IntegerField(default=0)
     count_total = fields.IntegerField(default=0)
-
-Tag.set_storage(storage.MongoStorage(db, 'tag'))
 
 class Node(StoredObject):
     _id = fields.StringField(primary=True)
@@ -701,8 +695,6 @@ class Node(StoredObject):
         else:
             return get_basic_counters('node:%s' % self._primary_key)
 
-Node.set_storage(storage.MongoStorage(db, 'node'))
-
 class NodeWikiPage(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
@@ -732,5 +724,3 @@ class NodeWikiPage(StoredObject):
         )
 
         return wiki_scrubber.scrub(html_output)
-
-NodeWikiPage.set_storage(storage.MongoStorage(db, 'nodewikipage'))
