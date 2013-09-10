@@ -10,6 +10,7 @@ from .decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from .forms import NewProjectForm, NewNodeForm
 from .model import User, Tag, NodeFile, NodeWikiPage
+from framework.forms.utils import sanitize
 from framework.git.exceptions import FileNotModified
 
 from website import settings
@@ -56,8 +57,8 @@ def edit_node(*args, **kwargs):
     form = request.form
     original_title = node_to_use.title
 
-    if form['name'] == 'title' and not form['value'].strip() == '':
-        node_to_use.title = form['value']
+    if form.get('name') == 'title' and form.get('value'):
+        node_to_use.title = sanitize(form['value'])
 
         node_to_use.add_log('edit_title', 
             params={
