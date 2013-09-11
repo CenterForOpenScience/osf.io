@@ -4,6 +4,8 @@ import website.settings
 import website.models
 import website.routes
 
+app = framework.app
+
 static_folder = website.settings.static_path
 
 if __name__ == '__main__':
@@ -19,4 +21,4 @@ if __name__ == '__main__':
             static_folder,
             'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
-    framework.app.run(port=5000, debug=True)
+    app.run(port=5000, debug=True)
