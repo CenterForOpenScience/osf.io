@@ -1,11 +1,60 @@
 import website.settings
 
-from flask import Flask, jsonify, render_template, render_template_string, Blueprint, send_file, abort
+from flask import Flask, request, jsonify, render_template, render_template_string, Blueprint, send_file, abort, make_response, g
 from werkzeug import secure_filename
+from werkzeug.local import LocalProxy, Local
+import itsdangerous
+import bson.objectid
 
 ###############################################################################
 
 app = Flask(__name__)
+
+sessions = {}
+
+def get_session():
+    if hasattr(g, 'session_id'):
+        try:
+            return sessions[g.session_id]
+        except KeyError:
+            sessions[g.session_id] = {}
+            return sessions[g.session_id]
+    return {}
+
+session = LocalProxy(get_session)
+
+def set_previous_url(url=None):
+    if url is None:
+        url = request.referrer
+    set('url_previous', url)
+
+def goback():
+    url_previous = session.get('url_previous')
+    if url_previous:
+        del session['url_previous']
+        return redirect(url_previous)
+
+def create_key_and_cookie():
+    key = str(bson.objectid.ObjectId())
+    return key, ('osf', itsdangerous.Signer('secrets!').sign(key))
+
+@app.before_request
+def test_before_request():
+    #auth = request.authorization
+    #if auth:
+    #   session['key'] = auth.username
+
+    cookie = request.cookies.get('osf')
+    print 'cookie', cookie
+    if cookie:
+        try:
+            g.session_id = itsdangerous.Signer('secrets!').unsign(cookie)
+        except itsdangerous.BadSignature:
+            pass # create cookie
+        print 'cookies', cookie
+
+    print session
+
 
 def set_static_folder(static_url_path, static_folder):
     def send_static_file(filename):

@@ -1,5 +1,5 @@
 import framework
-import framework.beaker as Session
+from framework import session, goback, set_previous_url
 from framework.email.tasks import send_email
 import framework.mako as template
 import framework.status as status
@@ -81,14 +81,14 @@ def auth_login(
 
     if framework.request.method == 'POST' and not direct_call:
         if form.validate():
-            user = login(form.username.data, form.password.data)
-            if user:
-                if user == 2:
+            response = login(form.username.data, form.password.data)
+            if response:
+                if response == 2:
                     status.push_status_message('''Please check your email (and spam
                         folder) and click the verification link before logging
                         in.''')
-                    return Session.goback()
-                return framework.redirect('/dashboard')
+                    return goback()
+                return response
             else:
                 status.push_status_message('''Log-in failed. Please try again or
                     reset your password''')
@@ -120,7 +120,7 @@ def auth_register_post():
         status.push_status_message('Registration is currently disabled')
         return framework.redirect(framework.url_for('auth_login'))
 
-    Session.set_previous_url()
+    set_previous_url()
 
     # Process form
     if form.validate():
