@@ -2,10 +2,17 @@ import website.settings
 
 from flask import Flask, jsonify, render_template, render_template_string, Blueprint, send_file, abort
 from werkzeug import secure_filename
+import os
 
 ###############################################################################
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    static_folder=os.path.abspath("website/static"),
+    static_url_path="/static"
+)
+
+print app._static_folder
 
 ###############################################################################
 
