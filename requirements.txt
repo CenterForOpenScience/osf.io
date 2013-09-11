@@ -26,3 +26,4 @@ topia.termextract==1.1.0
 wsgiref==0.1.2
 wtforms-recaptcha==0.2.0
 zope.interface==4.0.5
+bleach==1.2.2
