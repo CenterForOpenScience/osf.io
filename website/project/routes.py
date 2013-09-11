@@ -10,36 +10,37 @@ from .decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from .forms import NewProjectForm, NewNodeForm
 from .model import User, Tag, NodeFile, NodeWikiPage
+from framework.forms.utils import sanitize
 from framework.git.exceptions import FileNotModified
 
 from website import settings
 
-from website import settings
 from website import filters
 
 from framework.analytics import get_basic_counters
 
 from flask import Response, make_response
 
-from website import settings
-
 from BeautifulSoup import BeautifulSoup
 import json
 import os
 import re
-import scrubber
-import markdown
 import difflib
 import httplib as http
-from markdown.extensions.wikilinks import WikiLinkExtension
-import pygments
 from cStringIO import StringIO
+
+import pygments
+import pygments.lexers
+import pygments.formatters
+import zipfile
+import tarfile
 
 mod = Blueprint('project', __name__, template_folder='templates')
 
+
 @post('/project/<pid>/edit')
 @post('/project/<pid>/node/<nid>/edit')
-@must_be_logged_in # returns user
+@must_be_logged_in  # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -56,8 +57,8 @@ def edit_node(*args, **kwargs):
     form = request.form
     original_title = node_to_use.title
 
-    if form['name'] == 'title' and not form['value'].strip() == '':
-        node_to_use.title = form['value']
+    if form.get('name') == 'title' and form.get('value'):
+        node_to_use.title = sanitize(form['value'])
 
         node_to_use.add_log('edit_title', 
             params={
@@ -76,10 +77,11 @@ def edit_node(*args, **kwargs):
     #    
     #    node_to_use.save()
 
+
 @post('/search/users/')
 def search_user(*args, **kwargs):
     form = request.form
-    query = form["query"].strip()
+    query = form.get('query', '').strip()
 
     is_email = False
     email_re = re.search('[^@\s]+@[^@\s]+\.[^@\s]+', query)
@@ -254,6 +256,12 @@ def node_register_tempate_page_post(*args, **kwargs):
     node_to_use = ifelse(node, node, project)
 
     data = request.form['data']
+    for k,v in data.items():
+        if v != sanitize(v):
+            # todo interface needs to deal with this
+            return json.dumps({
+                'error':'You tried submitting data that is not allowed'
+            })
 
     template = kwargs['template']
 
@@ -353,12 +361,12 @@ def project_reorder_components(*args, **kwargs):
     old_list = [i._id for i in node_to_use.nodes if not i.is_deleted]
     new_list = json.loads(request.form['new_list'])
 
-    if len(set(old_list).intersection(set(new_list))) == len(old_list):
+    if len(old_list) == len(new_list) and set(new_list) == set(old_list):
         node_to_use.nodes = new_list
         if node_to_use.save():
             print node_to_use.nodes
             return jsonify({'success':'true'})
-
+    # todo log impossibility
     return jsonify({'success':'false'})
 
 @get('/project/<pid>/')
@@ -612,8 +620,10 @@ def project_addcontributor_post(*args, **kwargs):
                     user=user,
                 )
     elif "email" in request.form and "fullname" in request.form:
-        email = request.form["email"].strip()
-        fullname = request.form["fullname"].strip()
+        # TODO: Nothing is done here to make sure that this looks like an email.
+        # todo have same behavior as wtforms
+        email = sanitize(request.form["email"].strip())
+        fullname = sanitize(request.form["fullname"].strip())
         if email and fullname:
             node_to_use.contributor_list.append({'nr_name':fullname, 'nr_email':email})
             node_to_use.save()
@@ -791,12 +801,6 @@ def upload_file_public(*args, **kwargs):
     resp = Response(json.dumps([file_info]), status=200, mimetype='application/json')
     return resp
 
-from pygments.lexers import guess_lexer, guess_lexer_for_filename
-from pygments import highlight
-from pygments.formatters import HtmlFormatter
-import zipfile
-import tarfile
-
 @get('/project/<pid>/files/<fid>')
 @get('/project/<pid>/node/<nid>/files/<fid>')
 @must_be_valid_project # returns project
@@ -850,12 +854,14 @@ def view_file(*args, **kwargs):
     elif file_ext == '.zip':
         archive = zipfile.ZipFile(file_path)
         archive_files = prune_file_list(archive.namelist(), settings.archive_depth)
+        archive_files = [secure_filename(fi) for fi in archive_files]
         file_contents = '\n'.join(['This archive contains the following files:'] + archive_files)
         file_path = 'temp.txt'
         renderer = 'pygments'
     elif file_path.lower().endswith('.tar') or file_path.endswith('.tar.gz'):
         archive = tarfile.open(file_path)
         archive_files = prune_file_list(archive.getnames(), settings.archive_depth)
+        archive_files = [secure_filename(fi) for fi in archive_files]
         file_contents = '\n'.join(['This archive contains the following files:'] + archive_files)
         file_path = 'temp.txt'
         renderer = 'pygments'
@@ -868,14 +874,13 @@ def view_file(*args, **kwargs):
 
     if renderer == 'pygments':
         try:
-            rendered = highlight(file_contents,guess_lexer_for_filename(file_path, file_contents), HtmlFormatter())
+            rendered = pygments.highlight(
+                file_contents,
+                pygments.lexers.guess_lexer_for_filename(file_path, file_contents),
+                pygments.formatters.HtmlFormatter()
+            )
         except pygments.util.ClassNotFound:
             rendered = 'This type of file cannot be rendered online.  Please download the file to view it locally.'
-
-    #if not file_path.endswith('.txt'):
-    #    renderer = 'prettify'
-    #else:
-    #    renderer = 'txt'
 
     return render(
         filename='project.file.mako', 
@@ -1096,6 +1101,8 @@ def project_wiki_page(*args, **kwargs):
 
     pw = node_to_use.get_wiki_page(wid)
 
+    # todo breaks on /<script>; why?
+
     if pw:
         version = pw.version
         is_current = pw.is_current
@@ -1172,14 +1179,17 @@ def project_wiki_edit_post(*args, **kwargs):
 
     if node:
         node_to_use = node
+        base_url = '/project/{pid}/node/{nid}/wiki'.format(pid=project._primary_key, nid=node._primary_key)
     else:
         node_to_use = project
+        base_url = '/project/{pid}/wiki'.format(pid=project._primary_key)
+
+    if wid != sanitize(wid):
+        push_status_message("This is an invalid wiki page name")
+        return redirect(base_url)
 
     node_to_use.updateNodeWikiPage(wid, request.form['content'], user)
 
-    if node:
-        return redirect('/project/{pid}/node/{nid}/wiki/{wid}'.format(pid=project._primary_key, nid=node._primary_key, wid=wid))
-    else:
-        return redirect('/project/{pid}/wiki/{wid}'.format(pid=project._primary_key, wid=wid))
+    return redirect(base_url + '/{wid}'.format(wid=wid))
 
 app.register_blueprint(mod)
