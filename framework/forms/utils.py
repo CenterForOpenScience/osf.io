@@ -1,5 +1,4 @@
 import bleach
 
-
-def sanitize(s):
-    return bleach.clean(s)
+def sanitize(s, **kwargs):
+    return bleach.clean(s, **kwargs)

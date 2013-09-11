@@ -15,24 +15,18 @@ from framework.git.exceptions import FileNotModified
 
 from website import settings
 
-from website import settings
 from website import filters
 
 from framework.analytics import get_basic_counters
 
 from flask import Response, make_response
 
-from website import settings
-
 from BeautifulSoup import BeautifulSoup
 import json
 import os
 import re
-import scrubber
-import markdown
 import difflib
 import httplib as http
-from markdown.extensions.wikilinks import WikiLinkExtension
 import pygments
 from cStringIO import StringIO
 
@@ -257,6 +251,12 @@ def node_register_tempate_page_post(*args, **kwargs):
     node_to_use = ifelse(node, node, project)
 
     data = request.form['data']
+    for k,v in data.items():
+        if v != sanitize(v):
+            # todo interface needs to deal with this
+            return json.dumps({
+                'error':'You tried submitting data that is not allowed'
+            })
 
     template = kwargs['template']
 
@@ -356,12 +356,12 @@ def project_reorder_components(*args, **kwargs):
     old_list = [i._id for i in node_to_use.nodes if not i.is_deleted]
     new_list = json.loads(request.form['new_list'])
 
-    if len(set(old_list).intersection(set(new_list))) == len(old_list):
+    if len(old_list) == len(new_list) and set(new_list) == set(old_list):
         node_to_use.nodes = new_list
         if node_to_use.save():
             print node_to_use.nodes
             return jsonify({'success':'true'})
-
+    # todo log impossibility
     return jsonify({'success':'false'})
 
 @get('/project/<pid>/')
@@ -616,6 +616,7 @@ def project_addcontributor_post(*args, **kwargs):
                 )
     elif "email" in request.form and "fullname" in request.form:
         # TODO: Nothing is done here to make sure that this looks like an email.
+        # todo have same behavior as wtforms
         email = sanitize(request.form["email"].strip())
         fullname = sanitize(request.form["fullname"].strip())
         if email and fullname:
@@ -1100,6 +1101,8 @@ def project_wiki_page(*args, **kwargs):
 
     pw = node_to_use.get_wiki_page(wid)
 
+    # todo breaks on /<script>; why?
+
     if pw:
         version = pw.version
         is_current = pw.is_current
@@ -1176,14 +1179,17 @@ def project_wiki_edit_post(*args, **kwargs):
 
     if node:
         node_to_use = node
+        base_url = '/project/{pid}/node/{nid}/wiki'.format(pid=project._primary_key, nid=node._primary_key)
     else:
         node_to_use = project
+        base_url = '/project/{pid}/wiki'.format(pid=project._primary_key)
+
+    if wid != sanitize(wid):
+        push_status_message("This is an invalid wiki page name")
+        return redirect(base_url)
 
     node_to_use.updateNodeWikiPage(wid, request.form['content'], user)
 
-    if node:
-        return redirect('/project/{pid}/node/{nid}/wiki/{wid}'.format(pid=project._primary_key, nid=node._primary_key, wid=wid))
-    else:
-        return redirect('/project/{pid}/wiki/{wid}'.format(pid=project._primary_key, wid=wid))
+    return redirect(base_url + '/{wid}'.format(wid=wid))
 
 app.register_blueprint(mod)
