@@ -10,6 +10,7 @@ from .decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from .forms import NewProjectForm, NewNodeForm
 from .model import User, Tag, NodeFile, NodeWikiPage
+from framework.forms.utils import sanitize
 from framework.git.exceptions import FileNotModified
 
 from website import settings
@@ -37,9 +38,10 @@ from cStringIO import StringIO
 
 mod = Blueprint('project', __name__, template_folder='templates')
 
+
 @post('/project/<pid>/edit')
 @post('/project/<pid>/node/<nid>/edit')
-@must_be_logged_in # returns user
+@must_be_logged_in  # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -56,8 +58,8 @@ def edit_node(*args, **kwargs):
     form = request.form
     original_title = node_to_use.title
 
-    if form['name'] == 'title' and not form['value'].strip() == '':
-        node_to_use.title = form['value']
+    if form.get('name') == 'title' and form.get('value'):
+        node_to_use.title = sanitize(form['value'])
 
         node_to_use.add_log('edit_title', 
             params={
@@ -76,10 +78,11 @@ def edit_node(*args, **kwargs):
     #    
     #    node_to_use.save()
 
+
 @post('/search/users/')
 def search_user(*args, **kwargs):
     form = request.form
-    query = form["query"].strip()
+    query = form.get('query', '').strip()
 
     is_email = False
     email_re = re.search('[^@\s]+@[^@\s]+\.[^@\s]+', query)
@@ -612,8 +615,9 @@ def project_addcontributor_post(*args, **kwargs):
                     user=user,
                 )
     elif "email" in request.form and "fullname" in request.form:
-        email = request.form["email"].strip()
-        fullname = request.form["fullname"].strip()
+        # TODO: Nothing is done here to make sure that this looks like an email.
+        email = sanitize(request.form["email"].strip())
+        fullname = sanitize(request.form["fullname"].strip())
         if email and fullname:
             node_to_use.contributor_list.append({'nr_name':fullname, 'nr_email':email})
             node_to_use.save()
