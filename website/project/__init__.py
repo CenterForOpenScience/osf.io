@@ -1,4 +1,5 @@
 from .model import Node, NodeFile, NodeWikiPage
+from framework.forms.utils import sanitize
 
 import datetime
 
@@ -38,9 +39,9 @@ def new_project(title, description, user):
 def new_node(category, title, user, description=None, project=None):
     # tag: database
     category = category.strip().lower()
-    title = title.strip()
+    title = sanitize(title.strip())
     if description:
-        description = description.strip()
+        description = sanitize(description.strip())
     
     new_node = Node(category=category)
     new_node.title=title
