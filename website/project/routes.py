@@ -27,8 +27,13 @@ import os
 import re
 import difflib
 import httplib as http
-import pygments
 from cStringIO import StringIO
+
+import pygments
+import pygments.lexers
+import pygments.formatters
+import zipfile
+import tarfile
 
 mod = Blueprint('project', __name__, template_folder='templates')
 
@@ -796,12 +801,6 @@ def upload_file_public(*args, **kwargs):
     resp = Response(json.dumps([file_info]), status=200, mimetype='application/json')
     return resp
 
-from pygments.lexers import guess_lexer, guess_lexer_for_filename
-from pygments import highlight
-from pygments.formatters import HtmlFormatter
-import zipfile
-import tarfile
-
 @get('/project/<pid>/files/<fid>')
 @get('/project/<pid>/node/<nid>/files/<fid>')
 @must_be_valid_project # returns project
@@ -855,12 +854,14 @@ def view_file(*args, **kwargs):
     elif file_ext == '.zip':
         archive = zipfile.ZipFile(file_path)
         archive_files = prune_file_list(archive.namelist(), settings.archive_depth)
+        archive_files = [secure_filename(fi) for fi in archive_files]
         file_contents = '\n'.join(['This archive contains the following files:'] + archive_files)
         file_path = 'temp.txt'
         renderer = 'pygments'
     elif file_path.lower().endswith('.tar') or file_path.endswith('.tar.gz'):
         archive = tarfile.open(file_path)
         archive_files = prune_file_list(archive.getnames(), settings.archive_depth)
+        archive_files = [secure_filename(fi) for fi in archive_files]
         file_contents = '\n'.join(['This archive contains the following files:'] + archive_files)
         file_path = 'temp.txt'
         renderer = 'pygments'
@@ -873,14 +874,13 @@ def view_file(*args, **kwargs):
 
     if renderer == 'pygments':
         try:
-            rendered = highlight(file_contents,guess_lexer_for_filename(file_path, file_contents), HtmlFormatter())
+            rendered = pygments.highlight(
+                file_contents,
+                pygments.lexers.guess_lexer_for_filename(file_path, file_contents),
+                pygments.formatters.HtmlFormatter()
+            )
         except pygments.util.ClassNotFound:
             rendered = 'This type of file cannot be rendered online.  Please download the file to view it locally.'
-
-    #if not file_path.endswith('.txt'):
-    #    renderer = 'prettify'
-    #else:
-    #    renderer = 'txt'
 
     return render(
         filename='project.file.mako', 
