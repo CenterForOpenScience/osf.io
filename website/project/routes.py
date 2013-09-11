@@ -255,12 +255,22 @@ def node_register_tempate_page_post(*args, **kwargs):
 
     data = request.form['data']
 
+    parsed_data = json.loads(data)
+    for k, v in parsed_data.items():
+        if v != sanitize(v):
+            # todo interface needs to deal with this
+            push_status_message('Invalid submission.')
+            return json.dumps({
+                'status' : 'error',
+            })
+
     template = kwargs['template']
 
     register = node_to_use.register_node(user, template, data)
     
     return json.dumps({
-        'result':register.url()
+        'status' : 'success',
+        'result' : register.url(),
     })
 
 @get('/project/<pid>/registrations')
