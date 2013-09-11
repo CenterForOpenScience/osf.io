@@ -56,16 +56,6 @@ def test_before_request():
     print session
 
 
-def set_static_folder(static_url_path, static_folder):
-    def send_static_file(filename):
-        return send_from_directory(static_folder, filename)
-
-    app.add_url_rule(static_url_path + '/<path:filename>',
-        endpoint='static',
-        view_func=send_static_file
-    )
-    return app
-
 ###############################################################################
 
 route = app.route
