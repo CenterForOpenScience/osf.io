@@ -52,6 +52,25 @@ render_zip = True
 render_tar = True
 archive_depth = 2               # Set to None for unlimited depth
 
+wiki_whitelist = {
+    'tags': [
+        'a', 'abbr', 'acronym', 'b', 'bdo', 'big', 'blockquote', 'br',
+        'center', 'cite', 'code',
+        'dd', 'del', 'dfn', 'div', 'dl', 'dt', 'em', 'embed', 'font',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'i', 'img', 'ins',
+        'kbd', 'li', 'object', 'ol', 'param', 'pre', 'p', 'q',
+        's', 'samp', 'small', 'span', 'strike', 'strong', 'sub', 'sup',
+        'table', 'tbody', 'td', 'th', 'thead', 'tr', 'tt', 'ul', 'u',
+        'var', 'wbr',
+    ],
+    'attributes': [
+        'align', 'alt', 'border', 'cite', 'class', 'dir',
+        'height', 'href', 'src', 'style', 'title', 'type', 'width',
+        'face', 'size', # font tags
+        'salign', 'align', 'wmode',
+    ]
+}
+
 try:
     os.environ['OSF_PRODUCTION']
     dev_mode = False
