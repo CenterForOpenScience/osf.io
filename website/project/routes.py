@@ -256,16 +256,10 @@ def node_register_tempate_page_post(*args, **kwargs):
     node_to_use = ifelse(node, node, project)
 
     data = request.form['data']
-    for k,v in data.items():
-        if v != sanitize(v):
-            # todo interface needs to deal with this
-            return json.dumps({
-                'error':'You tried submitting data that is not allowed'
-            })
-
+    
     parsed_data = json.loads(data)
     for k, v in parsed_data.items():
-        if v != sanitize(v):
+        if v is not None and v != sanitize(v):
             # todo interface needs to deal with this
             push_status_message('Invalid submission.')
             return json.dumps({
