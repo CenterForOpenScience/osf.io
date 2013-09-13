@@ -1,7 +1,10 @@
 from framework.flask import send_file, secure_filename, app, route, get, post,\
     redirect, request, url_for, send_from_directory, \
     Blueprint, render_template, render_template_string, jsonify, abort, \
-    make_response, goback, set_previous_url, session
+    make_response
+
+##### Sessions
+from framework.sessions import goback, set_previous_url, session, create_session
 
 ##### Template
 

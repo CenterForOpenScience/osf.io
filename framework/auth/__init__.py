@@ -1,4 +1,4 @@
-from framework import session
+from framework import session, create_session
 import framework.mongo as Database
 import framework.status as status
 import framework.flask as web
@@ -71,22 +71,18 @@ def login(username, password):
             elif not user.is_claimed:
                 return False
             else:
-                response = web.redirect('/')
-                print response
-                key, cookie = web.create_key_and_cookie()
-                response.set_cookie(cookie[0], value=cookie[1])
-                web.g.session_id = key
-                session.update({
+                response = web.redirect('/dashboard')
+                response = create_session(response, data={
                     'auth_user_username': user.username,
                     'auth_user_id': user._primary_key,
                     'auth_user_fullname': user.fullname,
                 })
-                print session
                 return response
     return False
 
 def logout():
     for i in ['auth_user_username', 'auth_user_id', 'auth_user_fullname']:
+        # todo leave username so login page can persist probable id
         del session[i]
     return True
 

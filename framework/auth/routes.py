@@ -1,5 +1,5 @@
 import framework
-from framework import session, goback, set_previous_url
+from framework import goback, set_previous_url
 from framework.email.tasks import send_email
 import framework.mako as template
 import framework.status as status

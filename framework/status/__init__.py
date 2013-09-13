@@ -1,4 +1,4 @@
-from framework.flask import session
+from framework import session
 
 def push_status_message(message, level=0):
     statuses = session.get('status')
