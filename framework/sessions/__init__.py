@@ -8,12 +8,9 @@ from werkzeug.local import LocalProxy
 
 import datetime
 
-from modularodm.storage import MongoStorage
-
-from collections import MutableMapping
-
 COOKIE_NAME = 'osf'
 SECRET_KEY = '4IdgL9FYyZRoDkoQ'
+COLLECTION = db['sessions']
 
 # todo 2-back page view queue
 # todo actively_editing date
@@ -79,7 +76,7 @@ def create_session(response, data=None):
     session_id = str(bson.objectid.ObjectId())
     cookie_value = itsdangerous.Signer(SECRET_KEY).sign(session_id)
     response.set_cookie(COOKIE_NAME, value=cookie_value)
-    d = SessionDict(db['sessions'], session_id)
+    d = SessionDict(COLLECTION, session_id)
     if data:
         for k,v in data.items():
             d[k] = v
@@ -110,7 +107,7 @@ def before_request():
     if cookie:
         try:
             session_id = itsdangerous.Signer(SECRET_KEY).unsign(cookie)
-            sessions[request._get_current_object()] = SessionDict(db['sessions'], session_id)
+            sessions[request._get_current_object()] = SessionDict(COLLECTION, session_id)
         except:
             response = redirect('/account')
             return create_session(response)
