@@ -3,7 +3,7 @@ from framework.mongo import db
 
 import bson.objectid
 import itsdangerous
-from flask import request, redirect, g
+from flask import request, redirect
 from werkzeug.local import LocalProxy
 
 import datetime
@@ -96,21 +96,20 @@ from weakref import WeakKeyDictionary
 sessions = WeakKeyDictionary()
 session = LocalProxy(get_session)
 
+# Request callbacks
 
 @app.before_request
 def before_request():
-    #auth = request.authorization
-    #if auth:
-    #   session['key'] = auth.username
-
     cookie = request.cookies.get(COOKIE_NAME)
     if cookie:
         try:
             session_id = itsdangerous.Signer(SECRET_KEY).unsign(cookie)
             sessions[request._get_current_object()] = SessionDict(COLLECTION, session_id)
+            return
         except:
-            response = redirect('/account')
-            return create_session(response)
+            pass
+    response = redirect('/account')
+    return create_session(response)
 
 @app.after_request
 def after_request(response):
