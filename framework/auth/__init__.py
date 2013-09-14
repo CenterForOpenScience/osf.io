@@ -1,4 +1,4 @@
-import framework.beaker as Session
+from framework import session, create_session
 import framework.mongo as Database
 import framework.status as status
 import framework.flask as web
@@ -16,14 +16,14 @@ from decorator import decorator
 import datetime
 
 def get_current_username():
-    return Session.get('auth_user_username')
+    return session.get('auth_user_username', None)
 
 def get_current_user_id():
-    return Session.get('auth_user_id')
+    return session.get('auth_user_id', None)
 
 def get_current_user():
     # tag: database
-    uid = Session.get("auth_user_id")
+    uid = session.get("auth_user_id", None)
     if uid:
         return User.load(uid)
     else:
@@ -71,16 +71,19 @@ def login(username, password):
             elif not user.is_claimed:
                 return False
             else:
-                Session.set([
-                    ('auth_user_username', user.username), 
-                    ('auth_user_id', user._primary_key),
-                    ('auth_user_fullname', user.fullname)
-                ])
-                return True
+                response = web.redirect('/dashboard')
+                response = create_session(response, data={
+                    'auth_user_username': user.username,
+                    'auth_user_id': user._primary_key,
+                    'auth_user_fullname': user.fullname,
+                })
+                return response
     return False
 
 def logout():
-    Session.unset(['auth_user_username', 'auth_user_id', 'auth_user_fullname'])
+    for i in ['auth_user_username', 'auth_user_id', 'auth_user_fullname']:
+        # todo leave username so login page can persist probable id
+        del session[i]
     return True
 
 def add_unclaimed_user(email, fullname):
