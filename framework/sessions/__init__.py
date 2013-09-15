@@ -1,4 +1,4 @@
-from framework.flask import app
+from framework.flask import app, abort
 from framework.mongo import db
 
 import bson.objectid
@@ -11,6 +11,7 @@ import datetime
 COOKIE_NAME = 'osf'
 SECRET_KEY = '4IdgL9FYyZRoDkoQ'
 COLLECTION = db['sessions']
+TEMP_SESSION = 'tmp'
 
 # todo 2-back page view queue
 # todo actively_editing date
@@ -100,6 +101,39 @@ session = LocalProxy(get_session)
 
 @app.before_request
 def before_request():
+
+    if request.authorization:
+
+        # Hack: Avoid circular import
+        from website.project.model import ApiKey
+        api_key = ApiKey.load(request.authorization.username)
+
+        if api_key:
+
+            user = api_key.user__keyed and api_key.user__keyed[0]
+            node = api_key.node__keyed and api_key.node__keyed[0]
+
+            session = SessionDict(COLLECTION, TEMP_SESSION)
+            session['auth_api_key'] = api_key._primary_key
+
+            if user:
+                session['auth_user_username'] = user.username
+                session['auth_user_id'] = user._primary_key
+                session['auth_user_fullname'] = user.fullname
+
+            elif node:
+                session['auth_node_id'] = node._primary_key
+
+            else:
+                # Invalid key: Not attached to user or node
+                return abort(403)
+
+            sessions[request._get_current_object()] = session
+            return
+
+        # Invalid key: Not found in database
+        return abort(403)
+
     cookie = request.cookies.get(COOKIE_NAME)
     if cookie:
         try:
@@ -108,12 +142,15 @@ def before_request():
             return
         except:
             pass
+    # TODO: Create session in before_request, cookie in after_request
     # Retry request, preserving status code
     response = redirect(request.path, code=307)
     return create_session(response)
 
 @app.after_request
 def after_request(response):
-    if session._get_current_object() is not None:
+    # Flush if session is defined
+    if session._get_current_object() is not None \
+            and session.key != TEMP_SESSION:
         session._flush()
     return response

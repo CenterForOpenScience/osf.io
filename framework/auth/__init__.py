@@ -22,12 +22,30 @@ def get_current_user_id():
     return session.get('auth_user_id', None)
 
 def get_current_user():
-    # tag: database
     uid = session.get("auth_user_id", None)
+    return User.load(uid)
+    # if uid:
+    #     return User.load(uid)
+    # else:
+    #     return None
+
+def get_current_node():
+    from website.models import Node
+    nid = session.get('auth_node_id')
+    if nid:
+        return Node.load(nid)
+
+def get_api_key():
+    # Hack: Avoid circular import
+    from website.project.model import ApiKey
+    api_key = session.get('auth_api_key')
+    return ApiKey.load(api_key)
+
+def get_user_or_node():
+    uid = get_current_user()
     if uid:
-        return User.load(uid)
-    else:
-        return None
+        return uid
+    return get_current_node()
 
 def check_password(actualPassword, givenPassword):
     return bcrypt.check_password_hash(actualPassword, givenPassword)
@@ -148,4 +166,26 @@ def must_be_logged_in(fn):
         else:
             status.push_status_message('You are not logged in')
             return web.redirect('/account')
+    return decorator(wrapped, fn)
+
+def must_have_session_auth(fn):
+
+    def wrapped(func, *args, **kwargs):
+
+        # Get user from session
+        user = get_current_user()
+        if user:
+            kwargs['user'] = user
+            return func(*args, **kwargs)
+
+        # Get node from session
+        node = get_current_node()
+        if node:
+            kwargs['api_node'] = node
+            return func(*args, **kwargs)
+
+        # No session authentication found
+        status.push_status_message('You are not logged in')
+        return web.redirect('/account')
+
     return decorator(wrapped, fn)

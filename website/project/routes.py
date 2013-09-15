@@ -9,9 +9,11 @@ from . import (
 from .decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from .forms import NewProjectForm, NewNodeForm
-from .model import User, Tag, NodeFile, NodeWikiPage
+from .model import ApiKey, User, Tag, Node, NodeFile, NodeWikiPage
 from framework.forms.utils import sanitize
 from framework.git.exceptions import FileNotModified
+from framework.auth import get_api_key, get_user_or_node, must_have_session_auth
+from framework import session
 
 from website import settings
 
@@ -40,19 +42,15 @@ mod = Blueprint('project', __name__, template_folder='templates')
 
 @post('/project/<pid>/edit')
 @post('/project/<pid>/node/<nid>/edit')
-@must_be_logged_in  # returns user
+@must_have_session_auth #
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
 def edit_node(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
-    user = get_current_user()
 
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
+    node_to_use = node or project
     
     form = request.form
     original_title = node_to_use.title
@@ -60,23 +58,20 @@ def edit_node(*args, **kwargs):
     if form.get('name') == 'title' and form.get('value'):
         node_to_use.title = sanitize(form['value'])
 
-        node_to_use.add_log('edit_title', 
+        node_to_use.add_log(
+            action='edit_title',
             params={
                 'project':node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
                 'node':node_to_use._primary_key,
                 'title_new':node_to_use.title,
                 'title_original':original_title,
             }, 
-            user=user,
+            user=get_current_user(),
         )
 
         node_to_use.save()
 
     return jsonify({'response': 'success'})
-    #if 'title' in request.json:
-    #    
-    #    node_to_use.save()
-
 
 @post('/search/users/')
 def search_user(*args, **kwargs):
@@ -140,7 +135,7 @@ def project_new_post(*args, **kwargs):
 ##############################################################################
 
 @post('/project/<pid>/newnode')
-@must_be_logged_in # returns user
+@must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -185,6 +180,7 @@ def node_fork_page(*args, **kwargs):
 
 @get('/project/<pid>/register/')
 @get('/project/<pid>/node/<nid>/register/')
+@must_have_session_auth
 @must_be_valid_project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -208,6 +204,7 @@ def node_register_page(*args, **kwargs):
 
 @get('/project/<pid>/register/<template>')
 @get('/project/<pid>/node/<nid>/register/<template>')
+@must_have_session_auth
 @must_be_valid_project
 @must_be_contributor # returns user, project
 def node_register_tempate_page(*args, **kwargs):
@@ -245,6 +242,7 @@ def node_register_tempate_page(*args, **kwargs):
 
 @post('/project/<pid>/register/<template>')
 @post('/project/<pid>/node/<nid>/register/<template>')
+@must_have_session_auth
 @must_be_valid_project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -277,6 +275,7 @@ def node_register_tempate_page_post(*args, **kwargs):
 
 @get('/project/<pid>/registrations')
 @get('/project/<pid>/node/<nid>/registrations')
+@must_have_session_auth
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
 @update_counters('node:{pid}')
@@ -286,10 +285,7 @@ def node_registrations(*args, **kwargs):
     node = kwargs['node']
     user = get_current_user()
 
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
+    node_to_use = node or project
 
     return render(
         filename='project.registrations.mako', 
@@ -298,12 +294,6 @@ def node_registrations(*args, **kwargs):
         node_to_use=node_to_use,
         user=user,
     )
-
-def ifelse(l,a,b):
-    if l:
-        return a
-    else:
-        return b
 
 @get('/project/<pid>/forks')
 @get('/project/<pid>/node/<nid>/forks')
@@ -316,7 +306,7 @@ def node_forks(*args, **kwargs):
     node = kwargs['node']
     user = get_current_user()
 
-    node_to_use = ifelse(node, node, project)
+    node_to_use = node or project
 
     return render(
         filename='project.forks.mako', 
@@ -335,10 +325,7 @@ def node_setting(*args, **kwargs):
     node = kwargs['node']
     user = get_current_user()
 
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
+    node_to_use = node or project
 
     return render(
         filename='project.settings.mako', 
@@ -450,7 +437,7 @@ def project_statistics(*args, **kwargs):
 #TODO: project_makepublic and project_makeprivate should be refactored into a single function to conform to DRY.
 @get('/project/<pid>/makepublic')
 @get('/project/<pid>/node/<nid>/makepublic')
-@must_be_logged_in # returns user
+@must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 def project_makepublic(*args, **kwargs):
@@ -472,7 +459,7 @@ def project_makepublic(*args, **kwargs):
 
 @get('/project/<pid>/makeprivate')
 @get('/project/<pid>/node/<nid>/makeprivate')
-@must_be_logged_in # returns user
+@must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 def project_makeprivate(*args, **kwargs):
@@ -493,7 +480,7 @@ def project_makeprivate(*args, **kwargs):
     return redirect(url)
 
 @get('/project/<pid>/watch')
-@must_be_logged_in # returns user
+@must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project
 @must_not_be_registration
 def project_watch(*args, **kwargs):
@@ -504,7 +491,7 @@ def project_watch(*args, **kwargs):
 
 @get('/project/<pid>/addtag/<tag>')
 @get('/project/<pid>/node/<nid>/addtag/<tag>')
-@must_be_logged_in
+@must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -525,7 +512,7 @@ def project_addtag(*args, **kwargs):
 
 @get('/project/<pid>/removetag/<tag>')
 @get('/project/<pid>/node/<nid>/removetag/<tag>')
-@must_be_logged_in
+@must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -546,7 +533,7 @@ def project_removetag(*args, **kwargs):
 
 @post('/project/<pid>/remove')
 @post('/project/<pid>/node/<nid>/remove')
-@must_be_logged_in
+@must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -571,7 +558,7 @@ def component_remove(*args, **kwargs):
 ###############################################################################
 @post('/project/<pid>/removecontributors')
 @post('/project/<pid>/node/<nid>/removecontributors')
-@must_be_logged_in
+@must_have_session_auth
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -579,10 +566,8 @@ def project_removecontributor(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
     user = kwargs['user']
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
+
+    node_to_use = node or project
 
     if request.json['id'].startswith('nr-'):
         outcome = node_to_use.remove_nonregistered_contributor(user, request.json['name'], request.json['id'].replace('nr-', ''))    
@@ -592,7 +577,7 @@ def project_removecontributor(*args, **kwargs):
 
 @post('/project/<pid>/addcontributor')
 @post('/project/<pid>/node/<nid>/addcontributor')
-@must_be_logged_in # returns user
+@must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -601,10 +586,7 @@ def project_addcontributor_post(*args, **kwargs):
     node = kwargs['node']
     user = kwargs['user']
 
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
+    node_to_use = node or project
 
     if "user_id" in request.form:
         user_id = request.form['user_id'].strip()
@@ -615,7 +597,8 @@ def project_addcontributor_post(*args, **kwargs):
                 node_to_use.contributor_list.append({'id':added_user._primary_key})
                 node_to_use.save()
 
-                node_to_use.add_log('contributor_added', 
+                node_to_use.add_log(
+                    action='contributor_added',
                     params={
                         'project':node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
                         'node':node_to_use._primary_key,
@@ -632,7 +615,8 @@ def project_addcontributor_post(*args, **kwargs):
             node_to_use.contributor_list.append({'nr_name':fullname, 'nr_email':email})
             node_to_use.save()
 
-        node_to_use.add_log('contributor_added', 
+        node_to_use.add_log(
+            action='contributor_added',
             params={
                 'project':node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
                 'node':node_to_use._primary_key,
@@ -647,7 +631,7 @@ def project_addcontributor_post(*args, **kwargs):
 
 @post('/project/<pid>/addcontributors')
 @post('/project/<pid>/node/<nid>/addcontributors')
-@must_be_logged_in # returns user
+@must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -656,10 +640,7 @@ def project_addcontributors_post(*args, **kwargs):
     node = kwargs['node']
     user = kwargs['user']
 
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
+    node_to_use = node or project
 
     emails = request.form['emails']
     lines = emails.split('\r\n')
@@ -673,7 +654,8 @@ def project_addcontributors_post(*args, **kwargs):
             users.append(temp_user._primary_key)
             node_to_use.contributors.append(temp_user)
     node_to_use.save()
-    node_to_use.add_log('contributor_added', 
+    node_to_use.add_log(
+        action='contributor_added',
         params={
             'project':node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
             'node':node_to_use._primary_key,
@@ -701,10 +683,7 @@ def list_files(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
     user = kwargs['user']
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
+    node_to_use = node or project
 
     return render(
         filename='project.files.mako', 
@@ -722,10 +701,7 @@ def upload_file_get(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
     user = kwargs['user']
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
+    node_to_use = node or project
 
     file_infos = []
     for i, v in node_to_use.files_current.items():
@@ -748,7 +724,7 @@ def upload_file_get(*args, **kwargs):
 
 @post('/project/<pid>/files/upload')
 @post('/project/<pid>/node/<nid>/files/upload')
-@must_be_logged_in # returns user
+@must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor  # returns user, project
 @must_not_be_registration
@@ -756,10 +732,7 @@ def upload_file_public(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
     user = kwargs['user']
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
+    node_to_use = node or project
 
     uploaded_file = request.files.get('files[]')
     uploaded_file_content = uploaded_file.read()
@@ -815,10 +788,7 @@ def view_file(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
     user = kwargs['user']
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
+    node_to_use = node or project
 
     file_name = kwargs['fid']
 
@@ -906,10 +876,7 @@ def download_file(*args, **kwargs):
     node = kwargs['node']
     user = kwargs['user']
     filename = kwargs['fid']
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
+    node_to_use = node or project
     
     kwargs["vid"] = len(node_to_use.files_versions[filename.replace('.', '_')])
 
@@ -933,10 +900,7 @@ def download_file_by_version(*args, **kwargs):
     filename = kwargs['fid']
     version_number = int(kwargs['vid']) - 1
 
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
+    node_to_use = node or project
 
     current_version = len(node_to_use.files_versions[filename.replace('.', '_')])
     if version_number == current_version:
@@ -965,7 +929,7 @@ def download_file_by_version(*args, **kwargs):
 #TODO: These should be DELETEs, not POSTs
 @post('/project/<pid>/files/delete/<fid>')
 @post('/project/<pid>/node/<nid>/files/delete/<fid>')
-@must_be_logged_in
+@must_have_session_auth
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -1005,10 +969,7 @@ def project_wiki_compare(*args, **kwargs):
     user = kwargs['user']
     wid = kwargs['wid']
 
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
+    node_to_use = node or project
 
     pw = node_to_use.get_wiki_page(wid)
 
@@ -1053,10 +1014,7 @@ def project_wiki_version(*args, **kwargs):
     wid = kwargs['wid']
     vid = kwargs['vid']
 
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
+    node_to_use = node or project
 
     pw = node_to_use.get_wiki_page(wid, version=vid)
 
@@ -1089,10 +1047,7 @@ def project_wiki_page(*args, **kwargs):
     wid = kwargs['wid']
 
     user = get_current_user()
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
+    node_to_use = node or project
 
     if not node_to_use.is_public:
         if user:
@@ -1131,7 +1086,7 @@ def project_wiki_page(*args, **kwargs):
 
 @get('/project/<pid>/wiki/<wid>/edit')
 @get('/project/<pid>/node/<nid>/wiki/<wid>/edit')
-@must_be_logged_in # returns user
+@must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -1141,10 +1096,7 @@ def project_wiki_edit(*args, **kwargs):
     user = kwargs['user']
     wid = kwargs['wid']
 
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
+    node_to_use = node or project
 
     pw = node_to_use.get_wiki_page(wid)
 
@@ -1171,7 +1123,7 @@ def project_wiki_edit(*args, **kwargs):
 
 @post('/project/<pid>/wiki/<wid>/edit')
 @post('/project/<pid>/node/<nid>/wiki/<wid>/edit')
-@must_be_logged_in # returns user
+@must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -1197,3 +1149,58 @@ def project_wiki_edit_post(*args, **kwargs):
     return redirect(base_url + '/{wid}'.format(wid=wid))
 
 app.register_blueprint(mod)
+
+@post('/project/<pid>/create_key/')
+@post('/project/<pid>/node/<nid>/create_key/')
+@must_have_session_auth
+@must_be_valid_project # returns project
+@must_be_contributor # returns user, project
+def create_node_key(*args, **kwargs):
+
+    # Generate key
+    api_key = ApiKey(label=request.form['label'])
+    api_key.save()
+
+    # Append to node
+    node_to_use = kwargs['node'] or kwargs['project']
+    node_to_use.api_keys.append(api_key)
+    node_to_use.save()
+
+    # Return response
+    return jsonify({'response': 'success'})
+
+@post('/project/<pid>/remove_key/')
+@post('/project/<pid>/node/<nid>/remove_key/')
+@must_have_session_auth
+@must_be_valid_project # returns project
+@must_be_contributor # returns user, project
+def revoke_node_key(*args, **kwargs):
+
+    # Load key
+    api_key = ApiKey.load(request.form['key'])
+
+    # Remove from user
+    node_to_use = kwargs['node'] or kwargs['project']
+    node_to_use.api_keys.remove(api_key)
+    node_to_use.save()
+
+    # Send response
+    return jsonify({'response': 'success'})
+
+@get('/project/<pid>/key_history/<kid>')
+@get('/project/<pid>/node/<nid>/key_history/<kid>')
+@must_have_session_auth
+@must_be_valid_project # returns project
+@must_be_contributor # returns user, project
+def node_key_history(*args, **kwargs):
+
+    api_key = ApiKey.load(kwargs['kid'])
+    node_to_use = kwargs['node'] or kwargs['project']
+
+    return render(
+        filename='project.keyhistory.mako',
+        api_key=api_key,
+        node=kwargs['node'],
+        project=kwargs['project'],
+        route=node_to_use.url(),
+    )

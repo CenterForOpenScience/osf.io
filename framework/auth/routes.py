@@ -107,6 +107,7 @@ def auth_logout():
 
 @framework.post("/register")
 def auth_register_post():
+    print 'in register!'
     if not website.settings.allow_registration:
         status.push_status_message('We are currently in beta development and \
             registration is only available to those with beta invitations. If you \

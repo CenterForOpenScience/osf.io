@@ -20,6 +20,7 @@ class User(StoredObject):
     date_registered = fields.DateTimeField()#auto_now_add=True)
 
     keywords = fields.ForeignField('keyword', list=True, backref='keyworded')
+    api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
     _meta = {'optimistic' : True}
 

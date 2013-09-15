@@ -4,11 +4,13 @@ from framework.analytics import get_basic_counters, increment_user_activity_coun
 from framework.search import Keyword, generate_keywords
 from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
+from framework.auth import get_api_key
 
 from website import settings
 
 from framework import StoredObject, fields, storage
 
+import uuid
 import hashlib
 import datetime
 import markdown
@@ -31,6 +33,13 @@ def normalize_unicode(ustr):
     return unicodedata.normalize('NFKD', ustr)\
         .encode('ascii', 'ignore')
 
+class ApiKey(StoredObject):
+    _id = fields.StringField(
+        primary=True,
+        default=lambda: str(ObjectId()) + str(uuid.uuid4())
+    )
+    label = fields.StringField()
+
 class NodeLog(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
@@ -39,6 +48,7 @@ class NodeLog(StoredObject):
     params = fields.DictionaryField()
 
     user = fields.ForeignField('user', backref='created')
+    api_key = fields.ForeignField('apikey', backref='created')
 
 class NodeFile(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
@@ -115,6 +125,8 @@ class Node(StoredObject):
     nodes = fields.ForeignField('node', list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked')
     registered_from = fields.ForeignField('node', backref='registrations')
+
+    api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
     _meta = {'optimistic' : True}
 
@@ -506,10 +518,11 @@ class Node(StoredObject):
 
         return node_file
     
-    def add_log(self, action, params, user, log_date=None, do_save=True):
+    def add_log(self, action, params, user, log_date=None, api_key=None, do_save=True):
         log = NodeLog()
         log.action=action
         log.user=user
+        log.api_key = api_key or get_api_key()
         if log_date:
             log.date=log_date
         log.params=params
@@ -517,7 +530,8 @@ class Node(StoredObject):
         self.logs.append(log)
         if do_save:
             self.save()
-        increment_user_activity_counters(user._primary_key, action, log.date)
+        if user:
+            increment_user_activity_counters(user._primary_key, action, log.date)
         if self.node__parent:
             parent = self.node__parent[0]
             parent.logs.append(log)
