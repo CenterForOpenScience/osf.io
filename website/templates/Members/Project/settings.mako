@@ -1,9 +1,6 @@
 <%inherit file="membersOuter.mako" />
 
-<div class="row">
-    <div class="span6">
-    	Profile
-    </div>
-    <div class="span6">
-    </div>
-</div>
+<h2>Profile</h2>
+
+<%namespace file="_render_keys.mako" import="render_keys" />
+${render_keys(user, '/settings')}

@@ -6,8 +6,9 @@ from framework.search.model import Keyword
 User.set_storage(storage.MongoStorage(db, 'user'))
 Keyword.set_storage(storage.MongoStorage(db, 'keyword'))
 
-from website.project.model import Node, NodeLog, NodeFile, NodeWikiPage, Tag
+from website.project.model import ApiKey, Node, NodeLog, NodeFile, NodeWikiPage, Tag
 
+ApiKey.set_storage(storage.MongoStorage(db, 'apikey'))
 Node.set_storage(storage.MongoStorage(db, 'node'))
 NodeLog.set_storage(storage.MongoStorage(db, 'nodelog'))
 NodeFile.set_storage(storage.MongoStorage(db, 'nodefile'))

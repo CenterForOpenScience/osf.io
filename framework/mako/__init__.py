@@ -9,7 +9,6 @@ from website import filters
 makolookup = TemplateLookup(directories=helper.get_directories(['./website']))
 
 def render(filename, **kwargs):
-    'render'
     tidy = None
     prettify = None
     collapse_whitespace = None

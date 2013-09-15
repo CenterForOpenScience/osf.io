@@ -18,7 +18,10 @@
                     window.location,
                     { data: Template.getJson() },
                     function(data){
-                        window.location = data.result;
+                        if (data.status === 'success')
+                            window.location = data.result;
+                        else if (data.status === 'error')
+                            window.location.reload();
                     },
                     'json'
             );

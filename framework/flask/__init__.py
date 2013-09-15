@@ -1,27 +1,23 @@
 import website.settings
 
-from flask import Flask, jsonify, render_template, render_template_string, Blueprint, send_file, abort
-from werkzeug import secure_filename
+from flask import Flask, request, jsonify, render_template, \
+    render_template_string, Blueprint, send_file, abort, make_response, \
+    redirect, url_for, send_from_directory
 
-###############################################################################
+from werkzeug.utils import secure_filename
 
-app = Flask(__name__)
+import os
 
-def set_static_folder(static_url_path, static_folder):
-    def send_static_file(filename):
-        return send_from_directory(static_folder, filename)
 
-    app.add_url_rule(static_url_path + '/<path:filename>',
-        endpoint='static',
-        view_func=send_static_file
-    )
-    return app
+app = Flask(
+    __name__,
+    static_folder=os.path.abspath("website/static"),
+    static_url_path="/static"
+)
 
-###############################################################################
 
 route = app.route
 
-###############################################################################
 
 # https://github.com/ab3/flask/blob/5cdcbb3bcec8e2be222d1ed62dcf6151bfd05271/flask/app.py
 def get(rule, **options):
@@ -43,11 +39,6 @@ def post(rule, **options):
         return f
     return decorator
 
-###############################################################################
-
-from flask import request, redirect, url_for, send_from_directory
-
-###############################################################################
 
 def getReferrer():
     return request.referrer
