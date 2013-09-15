@@ -108,11 +108,12 @@ def before_request():
             return
         except:
             pass
-    response = redirect('/account')
+    # Retry request, preserving status code
+    response = redirect(request.path, code=307)
     return create_session(response)
 
 @app.after_request
 def after_request(response):
-    if session is not None:
+    if session._get_current_object() is not None:
         session._flush()
     return response
