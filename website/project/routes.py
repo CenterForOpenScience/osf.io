@@ -12,8 +12,7 @@ from .forms import NewProjectForm, NewNodeForm
 from .model import ApiKey, User, Tag, Node, NodeFile, NodeWikiPage
 from framework.forms.utils import sanitize
 from framework.git.exceptions import FileNotModified
-from framework.auth import get_api_key, get_user_or_node, must_have_session_auth
-from framework import session
+from framework.auth import must_have_session_auth
 
 from website import settings
 
@@ -212,7 +211,7 @@ def node_register_tempate_page(*args, **kwargs):
     node = kwargs['node']
     user = kwargs['user']
 
-    node_to_use = ifelse(node, node, project)
+    node_to_use = node or project
 
     template_name = kwargs['template'].replace(' ', '_')
 
@@ -251,7 +250,7 @@ def node_register_tempate_page_post(*args, **kwargs):
     node = kwargs['node']
     user = kwargs['user']
 
-    node_to_use = ifelse(node, node, project)
+    node_to_use = node or project
 
     data = request.form['data']
     
