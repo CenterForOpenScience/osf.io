@@ -120,7 +120,7 @@
                type:  'text',
                pk:    '${node_to_use._primary_key}',
                name:  'title',
-               url:   '${node_to_use.url()}/edit',  
+               url:   '/api/v1${node_to_use.url()}/edit/',
                title: 'Edit Title',
                placement: 'bottom',
                value: '${ '\\\''.join(node_to_use.title.split('\'')) }',
@@ -216,7 +216,7 @@
 
         if ( fullname ){
                 jQuery.post(
-                    '${node_to_use.url()}/addcontributor',
+                    '/api/v1${node_to_use.url()}/addcontributor',
                     { fullname: fullname, email: email },
                     function(data){
                         $('#addContributors').modal('hide');
@@ -227,7 +227,7 @@
         }else{
             if ( $('input[name=id]:checked').length > 0 ){
                 jQuery.post(
-                    '${node_to_use.url()}/addcontributor',
+                    '/api/v1${node_to_use.url()}/addcontributor',
                     { user_id:$('input[name=id]:checked')[0].value },
                     function(data){
                         $('#addContributors').modal('hide');
@@ -242,7 +242,7 @@
         var emthis = this;
         var query = this.query;
         jQuery.post(
-            '/search/users/',
+            '/api/v1/search/users/',
             {query:query},
             function(data){
                 emthis.set('has_started', true);
