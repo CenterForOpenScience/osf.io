@@ -1,3 +1,11 @@
 <div>
-    ${public_projects}
+    % if public_projects:
+        <ul class="list-group" style="margin-left: 0px;">
+        % for project in reversed(public_projects):
+            <div mod-meta='{"tpl":"profile/project_summary.html","uri":"/api/v1${project['route']}/get_summary/", "replace": true}'></div>
+        % endfor
+        </ul>
+    % else:
+        <p>None at this time</p>
+    % endif
 </div>
