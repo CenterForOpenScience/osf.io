@@ -7,10 +7,10 @@ var nodeToUse = function(){
 }
 
 var nodeToUseUrl = function(){
-  if(location.pathname.match("\/project\/.*\/node\/.*")){
-    return location.pathname.match("(\/project\/.*?\/node\/.*?)\/.*")[1];
-  }else{
-    return location.pathname.match("(\/project\/.*?)\/.*")[1];
+  if (location.pathname.match("\/project\/.*\/node\/.*")) {
+    return '/api/v1' + location.pathname.match("(\/project\/.*?\/node\/.*?)\/.*")[1];
+  } else {
+    return '/api/v1' + location.pathname.match("(\/project\/.*?)\/.*")[1];
   }
 }
 
