@@ -7,13 +7,13 @@
     ${print_logs(reversed(key.nodelog__created), n=5)}
 
     <div>
-        <a id="remove_key" data-key="${key._id}">Revoke key</a>
+        <a id="revoke_key" data-key="${key._id}">Revoke key</a>
     </div>
 
     <script type="text/javascript">
         $('#remove_key').on('click', function() {
             $.post(
-                '${route}/remove_key/',
+                '/api/v1${route}/revoke_key/',
                 {key : $(this).attr('data-key')},
                 function() {
                     window.location = '${route}';

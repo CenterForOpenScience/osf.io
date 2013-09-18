@@ -54,7 +54,7 @@
         if(page=='project_dash'){
             var data_to_send = {}
             data_to_send['new_list'] = JSON.stringify(id_list);
-            $.post('/api/v1/reorder_components/${node_id}', data_to_send, function(response){
+            $.post('/api/v1/project/${node_id}/reorder_components/', data_to_send, function(response){
                 if(response['success']=='false'){
                     $(item).sortable("cancel");
                 }
