@@ -8,6 +8,8 @@ app = framework.app
 
 static_folder = website.settings.static_path
 
+import new_style
+
 if __name__ == '__main__':
 
     @framework.route('/favicon.ico')
