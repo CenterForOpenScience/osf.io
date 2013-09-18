@@ -573,10 +573,7 @@ class Node(StoredObject):
             self.contributors.remove(user_id_to_be_removed)
             self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != user_id_to_be_removed]
             self.save()
-            # # todo allow backref mechanism to handle this; not implemented
             removed_user = get_user(user_id_to_be_removed)
-            # removed_user._b_node_contributed.remove(self._primary_key)
-            # removed_user.save()
 
             self.add_log('remove_contributor', 
                 params={
@@ -596,16 +593,6 @@ class Node(StoredObject):
             self.contributor_list.append({'id':user._primary_key})
             if save:
                 self.save()
-            if log:
-                pass
-            #self.add_log('contributor_added', 
-            #    params={
-            #        'project':self.node_parent._primary_key if self.node_parent else None,
-            #        'node':self._primary_key,
-            #        'contributors':[user._primary_key],
-            #    }, 
-            #    user=user,
-            #)
 
     def makePublic(self, user):
         if not self.is_public:
