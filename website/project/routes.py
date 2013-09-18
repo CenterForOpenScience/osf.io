@@ -1150,7 +1150,9 @@ def get_summary(*args, **kwargs):
         }
     }
 
+
 @must_be_valid_project
+@must_be_contributor_or_public
 def get_log(*args, **kwargs):
     log = NodeLog.load(kwargs['logid'])
     return {
