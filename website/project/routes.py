@@ -9,7 +9,7 @@ from . import (
 from .decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from .forms import NewProjectForm, NewNodeForm
-from .model import ApiKey, User, Tag, Node, NodeFile, NodeWikiPage
+from .model import ApiKey, User, Tag, Node, NodeFile, NodeWikiPage, NodeLog
 from framework.forms.utils import sanitize
 from framework.git.exceptions import FileNotModified
 from framework.auth import must_have_session_auth
@@ -39,8 +39,6 @@ import tarfile
 mod = Blueprint('project', __name__, template_folder='templates')
 
 
-@post('/project/<pid>/edit')
-@post('/project/<pid>/node/<nid>/edit')
 @must_have_session_auth #
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
@@ -70,9 +68,8 @@ def edit_node(*args, **kwargs):
 
         node_to_use.save()
 
-    return jsonify({'response': 'success'})
+    return {'status' : 'success'}
 
-@post('/search/users/')
 def search_user(*args, **kwargs):
     form = request.form
     query = form.get('query', '').strip()
@@ -86,8 +83,8 @@ def search_user(*args, **kwargs):
     else:
         result = User.search(query)
 
-    return json.dumps({
-        'is_email':is_email, 
+    return {
+        'is_email':is_email,
         'results':[
             {
                 'fullname' : item.fullname,
@@ -95,7 +92,7 @@ def search_user(*args, **kwargs):
                 'id' : item._primary_key,
             } for item in result
         ]
-    })
+    }
 
 @get('/tag/<tag>')
 def project_tag(tag):
@@ -315,8 +312,6 @@ def node_forks(*args, **kwargs):
         user=user,
     )
 
-@get('/project/<pid>/settings')
-@get('/project/<pid>/node/<nid>/settings')
 @must_be_valid_project
 @must_be_contributor # returns user, project
 def node_setting(*args, **kwargs):
@@ -326,19 +321,25 @@ def node_setting(*args, **kwargs):
 
     node_to_use = node or project
 
-    return render(
-        filename='project.settings.mako', 
-        project=project,
-        node=node,
-        node_to_use=node_to_use,
-        user=user,
-    )
+    return {
+        'filename' : 'project.settings.mako',
+        'project' : project,
+        'node' : node,
+        'node_to_use' : node_to_use,
+        'user' : user,
+    }
+    # return render(
+    #     filename='project.settings.mako',
+    #     project=project,
+    #     node=node,
+    #     node_to_use=node_to_use,
+    #     user=user,
+    # )
 
 ##############################################################################
 # View Project
 ##############################################################################
 
-@post('/api/v1/reorder_components/<pid>')
 @must_be_valid_project
 @must_not_be_registration
 @must_be_contributor # returns user, project
@@ -347,17 +348,15 @@ def project_reorder_components(*args, **kwargs):
     user = get_current_user()
 
     node_to_use = project
-    print node_to_use.nodes
     old_list = [i._id for i in node_to_use.nodes if not i.is_deleted]
     new_list = json.loads(request.form['new_list'])
 
     if len(old_list) == len(new_list) and set(new_list) == set(old_list):
         node_to_use.nodes = new_list
         if node_to_use.save():
-            print node_to_use.nodes
-            return jsonify({'success':'true'})
+            return {'status' : 'success'}
     # todo log impossibility
-    return jsonify({'success':'false'})
+    return {'success' : 'failure'}
 
 @get('/project/<pid>/')
 @get('/project/<pid>/node/<nid>/')
@@ -370,10 +369,7 @@ def project_view(*args, **kwargs):
     node = kwargs['node']
     user = get_current_user()
 
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
+    node_to_use = node or project
 
     # If the node is a project, redirect to the project's page at the top level.
     if node and node_to_use.category == 'project':
@@ -488,8 +484,8 @@ def project_watch(*args, **kwargs):
     project.watch(user)
     return redirect('/project/'+str(project._primary_key))
 
-@get('/project/<pid>/addtag/<tag>')
-@get('/project/<pid>/node/<nid>/addtag/<tag>')
+# @get('/project/<pid>/addtag/<tag>')
+# @get('/project/<pid>/node/<nid>/addtag/<tag>')
 @must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
@@ -507,10 +503,10 @@ def project_addtag(*args, **kwargs):
 
     node_to_use.add_tag(tag=tag, user=user)
 
-    return jsonify({'response': 'success'})
+    return {'status' : 'success'}
 
-@get('/project/<pid>/removetag/<tag>')
-@get('/project/<pid>/node/<nid>/removetag/<tag>')
+# @get('/project/<pid>/removetag/<tag>')
+# @get('/project/<pid>/node/<nid>/removetag/<tag>')
 @must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
@@ -528,7 +524,7 @@ def project_removetag(*args, **kwargs):
 
     node_to_use.remove_tag(tag=tag, user=user)
 
-    return jsonify({'response': 'success'})
+    return {'status' : 'success'}
 
 @post('/project/<pid>/remove')
 @post('/project/<pid>/node/<nid>/remove')
@@ -555,13 +551,12 @@ def component_remove(*args, **kwargs):
 ###############################################################################
 # Add Contributors
 ###############################################################################
-@post('/project/<pid>/removecontributors')
-@post('/project/<pid>/node/<nid>/removecontributors')
 @must_have_session_auth
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
 def project_removecontributor(*args, **kwargs):
+
     project = kwargs['project']
     node = kwargs['node']
     user = kwargs['user']
@@ -572,10 +567,9 @@ def project_removecontributor(*args, **kwargs):
         outcome = node_to_use.remove_nonregistered_contributor(user, request.json['name'], request.json['id'].replace('nr-', ''))    
     else:
         outcome = node_to_use.remove_contributor(user, request.json['id'])
-    return jsonify({'response': 'success'})
 
-@post('/project/<pid>/addcontributor')
-@post('/project/<pid>/node/<nid>/addcontributor')
+    return {'status' : 'success'}
+
 @must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
@@ -624,9 +618,7 @@ def project_addcontributor_post(*args, **kwargs):
             user=user,
         )
 
-    return json.dumps({
-        'result':True,
-    })
+    return {'status' : 'success'}
 
 @post('/project/<pid>/addcontributors')
 @post('/project/<pid>/node/<nid>/addcontributors')
@@ -692,8 +684,6 @@ def list_files(*args, **kwargs):
         node_to_use=node_to_use
     )
 
-@get('/project/<pid>/files/upload')
-@get('/project/<pid>/node/<nid>/files/upload')
 @must_be_valid_project # returns project
 @must_be_contributor_or_public  # returns user, project
 def upload_file_get(*args, **kwargs):
@@ -719,10 +709,8 @@ def upload_file_get(*args, **kwargs):
                 "user_fullname":None,
                 "delete": v.is_deleted
             })
-    return jsonify(files=file_infos)
+    return {'files' : file_infos}
 
-@post('/project/<pid>/files/upload')
-@post('/project/<pid>/node/<nid>/files/upload')
 @must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor  # returns user, project
@@ -749,19 +737,14 @@ def upload_file_public(*args, **kwargs):
             uploaded_file_content_type
         )
     except FileNotModified as e:
-        return Response(
-            json.dumps([{
-                'action_taken': None,
-                'message': e.message,
-                'name': uploaded_filename,
-            }]),
-            status=200,
-            mimetype='application/json'
-        )
+        return [{
+            'action_taken' : None,
+            'message' : e.message,
+            'name' : uploaded_filename,
+        }]
 
     unique, total = get_basic_counters('download:' + node_to_use._primary_key + ':' + file_object.path.replace('.', '_') )
 
-    file_infos = []
     file_info = {
         "name":uploaded_filename, 
         "size":uploaded_file_size, 
@@ -773,9 +756,7 @@ def upload_file_public(*args, **kwargs):
         "user_id": None,
         "user_fullname":None,
     }
-    file_infos.append(file_info)
-    resp = Response(json.dumps([file_info]), status=200, mimetype='application/json')
-    return resp
+    return [file_info]
 
 @get('/project/<pid>/files/<fid>')
 @get('/project/<pid>/node/<nid>/files/<fid>')
@@ -925,9 +906,6 @@ def download_file_by_version(*args, **kwargs):
     )
 
 
-#TODO: These should be DELETEs, not POSTs
-@post('/project/<pid>/files/delete/<fid>')
-@post('/project/<pid>/node/<nid>/files/delete/<fid>')
 @must_have_session_auth
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
@@ -938,9 +916,8 @@ def delete_file(*args, **kwargs):
     node_to_use = node or project
 
     if node_to_use.remove_file(user, filename):
-        return jsonify({'success': True})
-    else:
-        return jsonify({'success': False})
+        return jsonify({'status' : 'success'})
+    return jsonify({'status' : 'failure'})
 
 
 
@@ -1149,8 +1126,65 @@ def project_wiki_edit_post(*args, **kwargs):
 
 app.register_blueprint(mod)
 
-@post('/project/<pid>/create_key/')
-@post('/project/<pid>/node/<nid>/create_key/')
+@must_be_valid_project
+def get_logs(*args, **kwargs):
+    project = kwargs['project']
+    return list(reversed(project.logs._to_primary_keys()))
+
+from modularodm.translators import JSONTranslator
+
+from website.profile.routes import _node_info
+
+@must_be_valid_project
+def get_summary(*args, **kwargs):
+
+    node_to_use = kwargs['node'] or kwargs['project']
+
+    return {
+        'summary' : {
+            'pid' : node_to_use._primary_key,
+            'purl' : node_to_use.url(),
+            'title' : node_to_use.title,
+            'registered_date' : node_to_use.registered_date.strftime('%m/%d/%y %I:%M %p') if node_to_use.registered_date else None,
+            'logs' : list(reversed(node_to_use.logs._to_primary_keys()))[:3],
+        }
+    }
+
+@must_be_valid_project
+def get_log(*args, **kwargs):
+    log = NodeLog.load(kwargs['logid'])
+    return {
+        'log' : {
+            '_id' : log._id,
+            'user_id' : log.user._id if log.user else None,
+            'user_name' : log.user.fullname if log.user else None,
+            'api_key' : log.api_key._id if log.api_key else None,
+            'api_label' : log.api_key.label if log.api_key else None,
+            'action' : log.action,
+            'params' : log.params,
+            'date' : log.date.strftime('%m/%d/%y %I:%M %p'),
+            'node_title' : Node.load(log.params['node']).title if 'node' in log.params else None,
+            'node_url' : Node.load(log.params['node']).url() if 'node' in log.params else None,
+            'category' : 'project' if log.params['project'] else 'component'
+        }
+    }
+
+
+@must_have_session_auth
+@must_be_valid_project # returns project
+@must_be_contributor # returns user, project
+def get_node_keys(*args, **kwargs):
+    node_to_use = kwargs['node'] or kwargs['project']
+    return {
+        'keys' : [
+            {
+                'key' : key._id,
+                'label' : key.label,
+            }
+            for key in node_to_use.api_keys
+        ]
+    }
+
 @must_have_session_auth
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
@@ -1166,10 +1200,8 @@ def create_node_key(*args, **kwargs):
     node_to_use.save()
 
     # Return response
-    return jsonify({'response': 'success'})
+    return {'response': 'success'}
 
-@post('/project/<pid>/remove_key/')
-@post('/project/<pid>/node/<nid>/remove_key/')
 @must_have_session_auth
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
@@ -1184,7 +1216,7 @@ def revoke_node_key(*args, **kwargs):
     node_to_use.save()
 
     # Send response
-    return jsonify({'response': 'success'})
+    return {'response': 'success'}
 
 @get('/project/<pid>/key_history/<kid>')
 @get('/project/<pid>/node/<nid>/key_history/<kid>')
