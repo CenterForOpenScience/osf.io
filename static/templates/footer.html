@@ -13,7 +13,6 @@
     }
 </style>
 
- <% import website.settings %>
         </div>
     </div>
         <div class="footer">
@@ -66,7 +65,7 @@
             </div>
         </div>
 
-        %if website.settings.use_cdn_for_client_libs:
+        %if use_cdn:
             <div id="fb-root"></div>
             <script>(function(d, s, id) {
               var js, fjs = d.getElementsByTagName(s)[0];
