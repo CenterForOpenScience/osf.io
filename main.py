@@ -4,6 +4,8 @@ import website.settings
 import website.models
 import website.routes
 
+from website.addons.dataverse import route
+
 app = framework.app
 
 static_folder = website.settings.static_path
