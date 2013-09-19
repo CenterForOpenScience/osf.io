@@ -1137,18 +1137,18 @@ from website.profile.routes import _node_info
 
 @must_be_valid_project
 def get_summary(*args, **kwargs):
-
-    node_to_use = kwargs['node'] or kwargs['project']
-
-    return {
-        'summary' : {
-            'pid' : node_to_use._primary_key,
-            'purl' : node_to_use.url(),
-            'title' : node_to_use.title,
-            'registered_date' : node_to_use.registered_date.strftime('%m/%d/%y %I:%M %p') if node_to_use.registered_date else None,
-            'logs' : list(reversed(node_to_use.logs._to_primary_keys()))[:3],
-        }
-    }
+    return redirect('/')
+    # node_to_use = kwargs['node'] or kwargs['project']
+    #
+    # return {
+    #     'summary' : {
+    #         'pid' : node_to_use._primary_key,
+    #         'purl' : node_to_use.url(),
+    #         'title' : node_to_use.title,
+    #         'registered_date' : node_to_use.registered_date.strftime('%m/%d/%y %I:%M %p') if node_to_use.registered_date else None,
+    #         'logs' : list(reversed(node_to_use.logs._to_primary_keys()))[:3],
+    #     }
+    # }
 
 
 @must_be_valid_project
@@ -1220,20 +1220,34 @@ def revoke_node_key(*args, **kwargs):
     # Send response
     return {'response': 'success'}
 
-@get('/project/<pid>/key_history/<kid>')
-@get('/project/<pid>/node/<nid>/key_history/<kid>')
+# @get('/project/<pid>/key_history/<kid>')
+# @get('/project/<pid>/node/<nid>/key_history/<kid>')
 @must_have_session_auth
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 def node_key_history(*args, **kwargs):
 
     api_key = ApiKey.load(kwargs['kid'])
-    node_to_use = kwargs['node'] or kwargs['project']
+    # node_to_use = kwargs['node'] or kwargs['project']
 
-    return render(
-        filename='project.keyhistory.mako',
-        api_key=api_key,
-        node=kwargs['node'],
-        project=kwargs['project'],
-        route=node_to_use.url(),
-    )
+    # return render(
+    #     filename='project.keyhistory.mako',
+    #     api_key=api_key,
+    #     node=kwargs['node'],
+    #     project=kwargs['project'],
+    #     route=node_to_use.url(),
+    # )
+    return {
+        'key' : api_key._id,
+        'label' : api_key.label,
+        'user' : kwargs['user'],
+        'route' : '/settings',
+        'logs' : [
+            {
+                'lid' : log._id,
+                'nid' : log.node__logged[0]._id,
+                'route' : log.node__logged[0].url(),
+            }
+            for log in api_key.nodelog__created
+        ]
+    }
