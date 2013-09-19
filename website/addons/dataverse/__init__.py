@@ -1,7 +1,7 @@
-from model import UserSettings, NodeSettings, DataverseFile
+from model import DataverseUserSettings, DataverseNodeSettings, DataverseFile
 from .. import Addon
 
-fullname = 'DataVerse'
+fullname = 'Dataverse'
 shortname = 'dataverse'
 provider = 'http://thedata.org/'
 
@@ -9,7 +9,7 @@ addon = Addon(
     fullname=fullname,
     shortname=shortname,
     provider=provider,
-    user_model=UserSettings,
-    node_model=NodeSettings,
+    user_model=DataverseUserSettings,
+    node_model=DataverseNodeSettings,
 )
 addon.register()
