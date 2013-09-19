@@ -1,3 +1,5 @@
+# todo move logic into models
+
 from .model import UserSettings, NodeSettings
 
 # User settings
@@ -69,11 +71,12 @@ def get_node_settings(node, dataverse, study):
     if node_settings:
         return node_settings[0]
 
-def add_node_settings(node, user_settings, dataverse, study):
+def add_node_settings(node, user_settings, hostname, dataverse, study):
     '''
 
     :param node:
     :param user_settings:
+    :param hostname:
     :param dataverse:
     :param study:
 
@@ -83,6 +86,7 @@ def add_node_settings(node, user_settings, dataverse, study):
     node_settings = NodeSettings(
         node=node,
         user_settings=[user_settings],
+        hostname=hostname,
         dataverse=dataverse,
         study=study,
     )

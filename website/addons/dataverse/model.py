@@ -1,6 +1,7 @@
 from framework import StoredObject, fields, storage
 from bson import ObjectId
 
+# todo rename to DataverseUserCredentials?
 class UserSettings(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
@@ -10,6 +11,7 @@ class UserSettings(StoredObject):
     password = fields.StringField()
     label = fields.StringField()
 
+# todo rename to DataverseStudy?
 class NodeSettings(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
