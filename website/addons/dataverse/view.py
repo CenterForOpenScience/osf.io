@@ -2,6 +2,11 @@
 
 from .model import UserSettings, NodeSettings
 
+# todo make swordpoc installable
+from connection import DvnConnection
+from study import Study
+DV_SSL = '/Users/jmcarp/Desktop/dvn-4.hmdc.harvard.edu'
+
 # User settings
 
 def get_user_settings(user, label):
@@ -90,18 +95,61 @@ def add_node_settings(node, user_settings, hostname, dataverse, study):
         dataverse=dataverse,
         study=study,
     )
+    study = get_study(user_settings, node_settings)
+    if study is None:
+        create_study(user_settings, node_settings)
     node_settings.save()
 
+def get_dataverse_connection(user_settings, node_settings):
+
+    return DvnConnection(
+        user_settings.username,
+        user_settings.password,
+        node_settings.hostname,
+        DV_SSL,
+    )
+
 def get_dataverse(user_settings, node_settings):
-    pass
+    '''
+
+    :param user_settings:
+    :param node_settings:
+    :return: DataVerse or None
+    '''
+    dataverse_connection = get_dataverse_connection(user_settings, node_settings)
+    dataverses = [
+        dv
+        for dv in dataverse_connection.get_dataverses()
+        if dv.collection.title == node_settings.dataverse
+    ]
+    if dataverses:
+        return dataverses[0]
 
 def get_study(user_settings, node_settings):
-    pass
+    '''
+
+    :param user_settings:
+    :param node_settings:
+    :return: Study or None
+    '''
+    dataverse = get_dataverse(user_settings, node_settings)
+    if dataverse:
+        return dataverse.get_study_by_hdl(node_settings.study_hdl)
 
 def create_dataverse(user_settings, node_settings):
-    pass
+    raise NotImplementedError
 
 def create_study(user_settings, node_settings):
+
+    study = Study.CreateStudyFromDict({
+        'title' : user_settings.study_title,
+        'author' : '',
+        'abstract' : '',
+    })
+    dataverse = get_dataverse(user_settings, node_settings)
+    dataverse.add_study(study)
+
+def get_service_document(user_settings, node_settings):
     pass
 
 def add_user_settings_to_node_settings(user_settings, node_settings):

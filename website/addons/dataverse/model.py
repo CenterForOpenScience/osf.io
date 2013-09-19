@@ -18,9 +18,16 @@ class NodeSettings(StoredObject):
     node = fields.ForeignField('node')
     user_settings = fields.ForeignField('usersettings', list=True)
 
+    # Allow collaborators to share credentials?
+    allow_proxy_settings = fields.BooleanField()
+
+    # Identify Network / DataVerse / Study
     hostname = fields.StringField()
     dataverse = fields.StringField()
-    study = fields.StringField()
+    study_title = fields.StringField()
+    study_hdl = fields.StringField()
+
+    # Pull from DataVerse
     version = fields.IntegerField()
     is_released = fields.BooleanField()
     terms_of_service = fields.StringField()
@@ -35,4 +42,5 @@ class DataverseFile(StoredObject):
     checksum = fields.IntegerField()
     date_created = fields.DateTimeField()
     date_modified = fields.DateTimeField()
+    download_link = fields.StringField()
     downloads = fields.IntegerField()
