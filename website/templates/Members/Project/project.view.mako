@@ -171,13 +171,13 @@
     <div class="subnav">
         <ul class="nav nav-pills">
             <li><a href="${node_to_use.url()}">Dashboard</a></li>
-            <li><a href="${node_to_use.url()}/wiki/">Wiki</a></li>
-            <li><a href="${node_to_use.url()}/statistics">Statistics</a></li>
-            <li><a href="${node_to_use.url()}/files">Files</a></li>
-            <li><a href="${node_to_use.url()}/registrations">Registrations</a></li>
-            <li><a href="${node_to_use.url()}/forks">Forks</a></li>
+            <li><a href="${node_to_use.url()}wiki/">Wiki</a></li>
+            <li><a href="${node_to_use.url()}statistics/">Statistics</a></li>
+            <li><a href="${node_to_use.url()}files/">Files</a></li>
+            <li><a href="${node_to_use.url()}registrations/">Registrations</a></li>
+            <li><a href="${node_to_use.url()}forks/">Forks</a></li>
             % if user_is_contributor:
-            <li><a href="${node_to_use.url()}/settings">Settings</a></li>
+            <li><a href="${node_to_use.url()}settings/">Settings</a></li>
             %endif
         </ul>
     </div>

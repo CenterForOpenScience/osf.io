@@ -3,6 +3,7 @@ from framework.mako import makolookup
 from mako.template import Template
 import framework
 from website.models import Node
+from website.project import get_file_tree
 from website import settings
 from framework import get_current_user
 
@@ -184,9 +185,23 @@ def view_project(**kwargs):
     user = framework.get_current_user()
 
     return {
-        'project':project,
-        'user':user,
+        'project': project,
+        'user': user,
         'node_to_use': project,
+        'files': get_file_tree(project, user)
+    }
+
+def view_component(**kwargs):
+    project = Node.load(kwargs['pid'])
+    component = Node.load(kwargs['nid']) if kwargs.get('nid') else None
+    user = framework.get_current_user()
+
+    return {
+        'project': project,
+        'node': component,
+        'user': user,
+        'node_to_use': component,
+        'files': get_file_tree(component, user)
     }
 
 from website.profile import routes as profile_routes
@@ -225,6 +240,7 @@ process_urls(app, [
 process_urls(app, [
     ('/', 'get', view_index, render, {}, {'template_file':'index.html', 'renderer':render_mako_string}),
     ('/project/<pid>/', 'get', view_project, render, {}, {'template_file':'project.html', 'renderer':render_mako_string}),
+    ('/project/<pid>/node/<nid>/', 'get', view_component, render, {}, {'template_file':'project.html', 'renderer':render_mako_string}),
     ('/project/<pid>/settings/', 'get', project_routes.node_setting, render, {}, {'template_file':'project/settings.html', 'renderer':render_mako_string}),
 ])
 

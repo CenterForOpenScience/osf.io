@@ -358,8 +358,6 @@ def project_reorder_components(*args, **kwargs):
     # todo log impossibility
     return {'success' : 'failure'}
 
-@get('/project/<pid>/')
-@get('/project/<pid>/node/<nid>/')
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
 @update_counters('node:{pid}')

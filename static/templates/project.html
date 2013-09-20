@@ -1,5 +1,4 @@
 <%
-##    from framework import get_user
     is_contributor = node_to_use.is_contributor(user)
     editable = is_contributor and not node_to_use.is_registration
 %>
@@ -40,8 +39,12 @@
     <div class="span7" id='containment'>
       <section id="Wiki Home">
         <div>
-        ${wiki_home}
-        <p><a href="${node_to_use.url()}/wiki/home">read more</a></p>
+        %if wiki_home:
+            ${ wiki_home }
+            <p><a href="${node_to_use.url()}/wiki/home">read more</a></p>
+        %else:
+            <p>No content</p>
+        %endif
         </div>
       </section>
        %if not node:

@@ -540,10 +540,13 @@ class Node(StoredObject):
 
     def url(self):
         if self.category == 'project':
-            return '/project/' + self._primary_key
+            return '/project/{}/'.format(self._primary_key)
         else:
             if self.node__parent and self.node__parent[0].category == 'project':
-                return '/project/' + self.node__parent[0]._primary_key + '/node/' + self._primary_key # todo just get this directly
+                return '/project/{}/node/{}/'.format(
+                    self.node__parent[0]._primary_key,
+                    self._primary_key
+                )
 
 
     def is_contributor(self, user):
