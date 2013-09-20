@@ -15,7 +15,7 @@
           % if summary['logs']:
               <dl class="dl-horizontal activity-log">
                   % for log in summary['logs']:
-                        <div mod-meta='{"tpl":"profile/print_log.html","uri":"/api/v1${summary['purl']}/log/${log}", "replace": true}'></div>
+                        <div mod-meta='{"tpl":"profile/print_log.html","uri":"/api/v1${summary['purl']}log/${log}/", "replace": true}'></div>
                   % endfor
               </dl>
           % endif

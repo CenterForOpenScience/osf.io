@@ -32,7 +32,7 @@
             <tr><td>Name</td>           <td id="${'profile-fullname' if user and user._primary_key==profile._primary_key else ''}">${profile.fullname}</td></tr>
             <tr><td>Location</td>       <td></td></tr>
             <tr><td>Member Since</td>   <td>${profile.date_registered.strftime("%Y-%m-%d")}</td></tr>
-            <tr><td>Public Profile</td> <td><a href="/profile/${profile._primary_key}">/profile/${profile._primary_key}</td></tr>
+            <tr><td>Public Profile</td> <td><a href="/profile/${profile._primary_key}/">/profile/${profile._primary_key}/</td></tr>
         </table>
     </div>
     <div class="span4">&nbsp;

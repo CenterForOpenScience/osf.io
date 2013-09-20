@@ -248,6 +248,7 @@ process_urls(app, [
     ('/project/<pid>/', 'get', view_project, render, {}, {'template_file':'project.html', 'renderer':render_mako_string}),
     ('/project/<pid>/node/<nid>/', 'get', view_component, render, {}, {'template_file':'project.html', 'renderer':render_mako_string}),
     ('/project/<pid>/settings/', 'get', project_routes.node_setting, render, {}, {'template_file':'project/settings.html', 'renderer':render_mako_string}),
+    ('/project/<pid>/node/<nid>/settings/', 'get', project_routes.node_setting, render, {}, {'template_file':'project/settings.html', 'renderer':render_mako_string}),
 ])
 
 # API
@@ -258,9 +259,9 @@ process_urls(app, [
     ('/api/v1/project/<pid>/get_summary/', 'get', project_routes.get_summary, jsonify, {}, {}),
     ('/api/v1/project/<pid>/node/<nid>/get_summary/', 'get', project_routes.get_summary, jsonify, {}, {}),
     ('/api/v1/project/<pid>/log/', 'get', project_routes.get_logs, jsonify, {}, {}),
-    ('/api/v1/project/<pid>/log/<logid>', 'get', project_routes.get_log, jsonify, {}, {}),
+    ('/api/v1/project/<pid>/log/<logid>/', 'get', project_routes.get_log, jsonify, {}, {}),
     ('/api/v1/project/<pid>/node/<nid>/log/', 'get', project_routes.get_logs, jsonify, {}, {}),
-    ('/api/v1/project/<pid>/node/<nid>/log/<logid>', 'get', project_routes.get_log, jsonify, {}, {}),
+    ('/api/v1/project/<pid>/node/<nid>/log/<logid>/', 'get', project_routes.get_log, jsonify, {}, {}),
     # ('/api/v1/log/<logid>/')
 
     # API keys
