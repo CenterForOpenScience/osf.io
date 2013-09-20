@@ -7,7 +7,11 @@
     </form>
     % for key in keys:
         <div>
-            <div>${key['key']} | ${key['label']}</div>
+            <div class='api-credential'>
+                <span class='api-key'>${key['key']}</span> |
+                <span class='api-label'>${key['label']}</span>
+            </div>
+
             <div>
                 <a href="${route}/key_history/${key['key']}" class="key_history" data-key="${key['key']}">View history</a>
                 <a class="revoke_key" data-key="${key['key']}">Revoke key</a>
