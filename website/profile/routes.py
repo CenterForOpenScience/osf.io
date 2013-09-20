@@ -1,3 +1,4 @@
+import httplib as http
 from framework import (
     abort,
     get,
@@ -55,35 +56,14 @@ def get_public_components(*args, **kwargs):
         and not node.is_deleted
     ]
 
-@must_be_logged_in
-def profile_view(*args, **kwargs):
-    user = kwargs['user']
-    projects = [
-        node
-        for node in user.node__contributed
-        if node.category == 'project'
-        and not node.is_registration
-        and not node.is_deleted
-    ]
-    public_projects = [
-        node
-        for node in projects
-        if node.is_public
-    ]
-    return {
-        'profile' : user,
-        'profile_id' : user._id,
-        'user' : user,
-        'user_id': user._id,
-        'activity_points' : get_total_activity_count(user._primary_key),
-        'number_projects' : len(projects),
-        'number_public_projects' : len(public_projects),
-    }
 
-
-def profile_view_id(uid):
-    profile = get_user(id=uid)
+def profile_view(uid=None):
     user = get_current_user()
+    profile = get_user(id=uid or user)
+
+    if not (uid or user):
+        abort(http.UNAUTHORIZED)
+
     if profile:
         projects = [
             node
@@ -98,13 +78,13 @@ def profile_view_id(uid):
             if node.is_public
         ]
         return {
-            'profile' : profile,
-            'profile_id' : profile._id,
-            'user' : user,
-            'user_id': user._id,
+            'user': user,
+            'user_id': profile._id,
             'activity_points' : get_total_activity_count(profile._primary_key),
             'number_projects' : len(projects),
             'number_public_projects' : len(public_projects),
+            'fullname': profile.fullname,
+            'date_registered': profile.date_registered.strftime("%Y-%m-%d"),
         }
     return abort(404)
 

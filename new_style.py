@@ -224,7 +224,7 @@ from website.project import routes as project_routes
 
 process_urls(app, [
     ('/profile/', 'get', profile_routes.profile_view, render, {}, {'template_file' : 'profile.html', 'renderer' : render_mako_string}),
-    ('/profile/<uid>/', 'get', profile_routes.profile_view_id, render, {}, {'template_file' : 'profile.html', 'renderer' : render_mako_string}),
+    ('/profile/<uid>/', 'get', profile_routes.profile_view, render, {}, {'template_file' : 'profile.html', 'renderer' : render_mako_string}),
     ('/settings/', 'get', profile_routes.profile_settings, render, {}, {'template_file' : 'settings.html', 'renderer' : render_mako_string}),
     ('/settings/key_history/<kid>/', 'get', profile_routes.user_key_history, render, {}, {'template_file' : 'key_history.html', 'renderer' : render_mako_string}),
     ('/profile/<uid>/edit/', 'post', profile_routes.edit_profile, jsonify, {}, {})
@@ -234,7 +234,7 @@ process_urls(app, [
 
 process_urls(app, [
     ('/api/v1/profile/', 'get', profile_routes.profile_view, jsonify, {}, {}),
-    ('/api/v1/profile/<uid>', 'get', profile_routes.profile_view_id, jsonify, {}, {}),
+    ('/api/v1/profile/<uid>/', 'get', profile_routes.profile_view, jsonify, {}, {}),
     ('/api/v1/profile/<uid>/public_projects/', 'get', profile_routes.get_public_projects, jsonify, {}, {}),
     ('/api/v1/profile/<uid>/public_components/', 'get', profile_routes.get_public_components, jsonify, {}, {}),
     ('/api/v1/settings/', 'get', profile_routes.profile_settings, jsonify, {}, {}),
