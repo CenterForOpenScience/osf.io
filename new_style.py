@@ -6,6 +6,7 @@ from mako.template import Template
 import framework
 from website.models import Node
 from website.project import get_file_tree
+import website.project.decorators as node_auth
 from website import settings
 from framework import get_current_user
 
@@ -185,6 +186,8 @@ def view_index():
         'status': framework.status.pop_status_messages(),
     }
 
+
+@node_auth.must_be_contributor_or_public
 def view_project(**kwargs):
     project = Node.load(kwargs['pid'])
     node = None
@@ -197,6 +200,8 @@ def view_project(**kwargs):
         'files': get_file_tree(project, user)
     }
 
+
+@node_auth.must_be_contributor_or_public
 def view_component(**kwargs):
     project = Node.load(kwargs['pid'])
     component = Node.load(kwargs['nid']) if kwargs.get('nid') else None
