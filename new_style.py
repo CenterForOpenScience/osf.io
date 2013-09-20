@@ -1,3 +1,5 @@
+import werkzeug.wrappers
+
 from framework.flask import app, request, make_response
 from framework.mako import makolookup
 from mako.template import Template
@@ -78,6 +80,8 @@ class ODMEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 def jsonify(data, label=None):
+    if isinstance(data, werkzeug.wrappers.BaseResponse):
+        return data
     return json.dumps({label:data} if label else data, cls=ODMEncoder),
     # return app.response_class(
     #     json.dumps({label:data} if label else data, cls=ODMEncoder),
@@ -103,6 +107,8 @@ def get_globals():
     }
 
 def render(data, template_file, renderer):
+    if isinstance(data, werkzeug.wrappers.BaseResponse):
+        return data
 
     data.update(get_globals())
 
