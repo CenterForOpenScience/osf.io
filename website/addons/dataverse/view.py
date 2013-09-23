@@ -5,9 +5,12 @@ import re
 from .model import DataverseUserSettings, DataverseNodeSettings
 from website.models import User, Node
 from framework import request
+from framework import must_be_logged_in
+from website.project.decorators import must_be_contributor, must_not_be_registration
 
 from BeautifulSoup import BeautifulSoup as Soup
 from sword2.exceptions import HTTPResponseError
+from httplib2 import ServerNotFoundError
 
 # todo make swordpoc installable
 # todo: move to_json methods into swordpoc
@@ -31,7 +34,8 @@ Study.to_json = study_to_json
 
 def dvn_file_to_json(self):
     return {
-        'fname' : self.editMediaUri.split('/')[-1],
+        'name' : self.editMediaUri.split('/')[-1],
+        'type' : self.mimetype,
     }
 DvnFile.to_json = dvn_file_to_json
 
@@ -45,22 +49,122 @@ def parse_sword_error(error):
         .text
 
 def credentials_valid(user_settings):
-    connection = get_dataverse_connection(user_settings=user_settings)
-    return not connection.swordConnection.raise_except
+    try:
+        connection = get_dataverse_connection(user_settings=user_settings)
+        if connection.swordConnection.history[1]['payload']['response']['status'] != 200:
+            return {
+                'status' : 'failure',
+                'message' : 'Invalid credentials',
+            }
+        return {
+            'status' : 'success',
+        }
+    except ServerNotFoundError as error:
+        return {
+            'status' : 'failure',
+            'message' : error.message,
+        }
 
 # User settings
+
+@must_be_logged_in
+def add_user_settings_form(**kwargs):
+    user = kwargs['user']
+    user_settings = list_user_settings(user=user)
+    return {
+        'user' : user,
+        'user_id' : user._primary_key,
+        'addons' : user_settings['addons'],
+    }
+
+@must_be_logged_in
+@must_be_contributor
+@must_not_be_registration
+def add_node_settings_form(**kwargs):
+    user = kwargs['user']
+    user_settings_list = list_user_settings(user=user)
+    node_to_use = kwargs['node'] or kwargs['project']
+    node_settings_list = list_node_settings(node_to_use)
+    return {
+        'user' : user,
+        'node_to_use' : node_to_use,
+        'addon' : node_settings_list['addon'],
+        'user_addons' : user_settings_list['addons'],
+    }
+
+@must_be_logged_in
+def list_user_settings(**kwargs):
+    user = kwargs.get('user') or User.load(request.form['user_id'])
+    return {
+        'addons' : [
+            {
+                'network_title' : addon.network_title,
+                'network_uri' : addon.network_uri,
+                'username' : addon.username,
+                'label' : addon.label,
+                'key' : addon._primary_key,
+            }
+            for addon in user.dataverseusersettings__addedon
+        ]
+    }
+
+# @must_be_logged_in
+# @must_be_contributor
+# @must_not_be_registration
+def list_node_settings(node_to_use):
+    # node_to_use = kwargs['node'] or kwargs['project']
+    if node_to_use.dataversenodesettings__addedon:
+        node_settings = node_to_use.dataversenodesettings__addedon[0]
+        files = list_files(
+            user_settings=node_settings.user_settings[0],
+            node_settings=node_settings,
+        )
+
+        if files:
+            citation = files[0].hostStudy.get_citation()
+            version = re.search('V(\d+) \[Version\]', citation).groups()[0]
+            host = files[0].hostStudy.hostDataverse.connection.host
+
+        files_json = []
+        for file in files:
+            fid = re.search('file\/(\d+)\/', file.editMediaUri, re.I).groups()[0]
+            link = 'https://{base}/dvn/FileDownload/?fileId={fid}&xff=0&versionNumber={version}'.format(
+                base=host,
+                fid=fid,
+                version=version,
+            )
+            files_json.append({
+                'name' : file.editMediaUri.split('/')[-1],
+                'link' : link,
+            })
+        addon = {
+            'dataverse_alias' : node_settings.dataverse_alias,
+            'study_global_id' : node_settings.study_global_id,
+            'credentials' : [
+                {
+                    'username' : user_addon.username,
+                    'label' : user_addon.label,
+                }
+                for user_addon in node_settings.user_settings
+            ],
+            'files' : files_json,
+        }
+    else:
+        addon = {}
+    return {'addon' : addon}
 
 def get_user_settings(**kwargs):
     user = kwargs.get('user') or User.load(request.form['user_id'])
     label = kwargs.get('label') or request.form['label']
     user_settings = [
         us
-        for us in user.dataverseusersettings__dataverse
+        for us in user.dataverseusersettings__addedon
         if us.label == label
     ]
     if user_settings:
         return user_settings[0]
 
+@must_be_logged_in
 def add_user_settings(**kwargs):
     user = kwargs.get('user') or User.load(request.form['user_id'])
     label = kwargs.get('label') or request.form['label']
@@ -80,11 +184,8 @@ def add_user_settings(**kwargs):
         label=request.form['label'],
     )
     valid = credentials_valid(user_settings)
-    if not valid:
-        return {
-            'status' : 'failure',
-            'message' : 'Invalid credentials',
-        }
+    if valid['status'] != 'success':
+        return valid
     user_settings.save()
     return {
         'status' : 'success',
@@ -109,7 +210,7 @@ def remove_user_settings(**kwargs):
 
 def list_dataverses(**kwargs):
     user_settings = kwargs.get('user_settings') or \
-        DataverseUserSettings.load(request.form['user_settings_id'])
+        DataverseUserSettings.load(request.args['user_settings_id'])
     connection = get_dataverse_connection(user_settings=user_settings)
     return connection.get_dataverses()
 
@@ -121,20 +222,24 @@ def get_node_settings(**kwargs):
     study_global_id = kwargs.get('study_global_id') or request.form['study_global_id']
     node_settings = [
         ns
-        for ns in node.dataversenodesettings__dataverse
+        for ns in node.dataversenodesettings__addedon
         if ns.dataverse_alias == dataverse_alias
         and ns.study_global_id == study_global_id
     ]
     if node_settings:
         return node_settings[0]
 
+@must_be_logged_in
+@must_be_contributor
+@must_not_be_registration
 def add_node_settings(**kwargs):
-    node = Node.load(request.form['node_id'])
+    # node = Node.load(request.form['node_id'])
+    node_to_use = kwargs['node'] or kwargs['project']
     user_settings = DataverseUserSettings.load(request.form['user_settings_id'])
     # if get_node_settings(dataverse, study):
     #     return
     node_settings = DataverseNodeSettings(
-        node=node,
+        node=node_to_use,
         user_settings=[user_settings],
         network_uri=user_settings.network_uri,
         dataverse_alias=request.form['dataverse_alias'],
@@ -173,13 +278,13 @@ def get_dataverse(**kwargs):
         return dataverses[0]
 
 def list_studies(**kwargs):
-    user_settings = kwargs.get(
-        'user_settings',
-        DataverseUserSettings.load(request.form['user_settings_id'])
-    )
+    user_settings = kwargs.get('user_settings') or \
+        DataverseUserSettings.load(request.args['user_settings_id'])
+    dataverse_alias = kwargs.get('dataverse_alias') or \
+        request.args['dataverse_alias']
     dataverse = get_dataverse(
         user_settings=user_settings,
-        dataverse_title='CoS Dataverse'
+        dataverse_title=dataverse_alias,
     )
     return dataverse.get_studies()
 
@@ -237,22 +342,32 @@ def remove_user_settings_from_node_settings(user_settings, node_settings):
     node_settings.user_settings.remove(user_settings)
     node_settings.save()
 
-def remove_node_settings(node, dataverse, study):
-    '''
-
-    :param node:
-    :param dataverse:
-    :param study:
-    :return: bool -- status
-    '''
-    node_settings = get_node_settings(node, dataverse, study)
+@must_be_logged_in
+@must_be_contributor
+@must_not_be_registration
+def remove_node_settings(**kwargs):
+    node_to_use = kwargs['node'] or kwargs['project']
+    dataverse_alias = kwargs.get('dataverse_alias') or request.form['dataverse_alias']
+    study_global_id = kwargs.get('study_global_id') or request.form['study_global_id']
+    node_settings = get_node_settings(
+        node=node_to_use,
+        dataverse_alias=dataverse_alias,
+        study_global_id=study_global_id,
+    )
     if node_settings:
         DataverseNodeSettings.remove_one(node_settings)
-        return True
-    return False
+        return {
+            'status' : 'success'
+        }
+    return {
+        'status' : 'failure',
+        'message' : 'Node credentials not found.',
+    }
 
 # Files
 
+# @must_be_logged_in
+# @must_be_contributor
 def list_files(**kwargs):
     user_settings = kwargs.get('user_settings') or \
         DataverseUserSettings.load(request.form['user_settings_id'])

@@ -5,7 +5,7 @@ from bson import ObjectId
 class DataverseUserSettings(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
-    user = fields.ForeignField('user')
+    user = fields.ForeignField('user', backref='addedon')
 
     network_title = fields.StringField()
     network_uri = fields.StringField()
@@ -18,8 +18,8 @@ DataverseUserSettings.set_storage(storage.MongoStorage(db, 'dataverseusersetting
 class DataverseNodeSettings(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
-    node = fields.ForeignField('node')
-    user_settings = fields.ForeignField('DataverseUserSettings', list=True)
+    node = fields.ForeignField('node', backref='addedon')
+    user_settings = fields.ForeignField('DataverseUserSettings', backref='addedon', list=True)
 
     # Allow collaborators to share credentials?
     allow_proxy_settings = fields.BooleanField()

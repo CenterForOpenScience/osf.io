@@ -1,0 +1,75 @@
+<%inherit file="membersOuter.mako" />
+
+<h2>Dataverse Credentials</h2>
+
+% for addon in addons:
+    <div>
+        ${addon['username']} | ${addon['label']} | ${addon['network_uri']}
+        <a class="remove-credentials" data-label="${addon['label']}">Remove</a>
+    </div>
+% endfor
+
+<p>Add Dataverse credentials</p>
+
+<form id="add-credentials" method="POST">
+
+    <div>
+        <label>Username</label>
+        <input name="username" />
+    </div>
+
+    <div>
+        <label>Password</label>
+        <input name="password" type="password" />
+    </div>
+
+    <div>
+        <label>Network Title</label>
+        <input name="network_title" />
+    </div>
+
+    <div>
+        <label>Network URI</label>
+        <input name="network_uri" />
+    </div>
+
+    <div>
+        <label>Label</label>
+        <input name="label" />
+    </div>
+
+    <div>
+        <input type="submit" value="Submit" />
+    </div>
+
+</form>
+
+<script type="text/javascript">
+    $('#add-credentials').on('submit', function() {
+        $.post(
+            '/api/v1/dataverse/add_user_settings/',
+            $(this).serialize(),
+            function(response) {
+                if (response.status === 'success') {
+                    window.location.reload();
+                } else {
+                    alert(response.message);
+                }
+            },
+            'json'
+        );
+        return false;
+    });
+    $('.remove-credentials').on('click', function() {
+        $.post(
+            '/api/v1/dataverse/remove_user_settings/',
+            {
+                'user_id' : '${user._primary_key}',
+                'label' : $(this).attr('data-label'),
+            },
+            function() {
+                window.location.reload();
+            }
+        )
+    });
+</script>
