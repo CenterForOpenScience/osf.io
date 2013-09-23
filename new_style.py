@@ -12,6 +12,8 @@ import pystache
 import re
 import lxml.html
 
+TEMPLATE_DIR = 'static/templates/'
+
 def nonwrapped_fn(fn, keywords):
     def wrapped(*args, **kwargs):
         return fn(*args, **kwargs)
@@ -40,6 +42,8 @@ def call_url(url, wrap=True):
 
 view_functions = {}
 
+# todo: add prefix and / or blueprint
+# todo: iterable routes, methods
 def process_urls(app, urls):
     for u in urls:
         url = u[0]
@@ -54,6 +58,8 @@ def process_urls(app, urls):
             fn_kwargs = u[4]
         if len(u) > 5:
             wrapper_kwargs = u[5]
+
+        # todo: decorate view function to handle redirects here
 
         if wrapper:
             view_func = wrapped_fn(fn, wrapper, fn_kwargs, wrapper_kwargs)
@@ -72,6 +78,8 @@ def process_urls(app, urls):
 from modularodm import StoredObject
 class ODMEncoder(json.JSONEncoder):
     def default(self, obj):
+        if hasattr(obj, 'to_json'):
+            return obj.to_json()
         if isinstance(obj, StoredObject):
             return obj._primary_key
         return json.JSONEncoder.default(self, obj)
@@ -101,11 +109,11 @@ def get_globals():
         'allow_login' : settings.allow_login,
     }
 
-def render(data, template_file, renderer):
+def render(data, template_file, renderer, template_dir=TEMPLATE_DIR):
 
     data.update(get_globals())
 
-    rendered = load_file(template_file)
+    rendered = load_file(template_file, template_dir)
     rendered = renderer(rendered, data)
 
     html = lxml.html.fragment_fromstring(rendered, create_parent='removeme')
@@ -147,8 +155,8 @@ def render(data, template_file, renderer):
 
     return rendered
 
-def load_file(template_file):
-    with open(os.path.join('static/templates/', template_file), 'r') as f:
+def load_file(template_file, template_dir):
+    with open(os.path.join(template_dir, template_file), 'r') as f:
         loaded = f.read()
     return loaded
 
@@ -201,7 +209,8 @@ process_urls(app, [
     ('/profile/<uid>/', 'get', profile_routes.profile_view_id, render, {}, {'template_file' : 'profile.html', 'renderer' : render_mako_string}),
     ('/settings/', 'get', profile_routes.profile_settings, render, {}, {'template_file' : 'settings.html', 'renderer' : render_mako_string}),
     ('/settings/key_history/<kid>/', 'get', profile_routes.user_key_history, render, {}, {'template_file' : 'key_history.html', 'renderer' : render_mako_string}),
-    ('/profile/<uid>/edit/', 'post', profile_routes.edit_profile, jsonify, {}, {})
+    ('/profile/<uid>/edit/', 'post', profile_routes.edit_profile, jsonify, {}, {}),
+    ('/addons/', 'get', profile_routes.profile_addons, render, {}, {'template_file' : 'profile/addons.html', 'renderer' : render_mako_string}),
 ])
 
 # API
@@ -226,11 +235,19 @@ process_urls(app, [
     ('/', 'get', view_index, render, {}, {'template_file':'index.html', 'renderer':render_mako_string}),
     ('/project/<pid>/', 'get', view_project, render, {}, {'template_file':'project.html', 'renderer':render_mako_string}),
     ('/project/<pid>/settings/', 'get', project_routes.node_setting, render, {}, {'template_file':'project/settings.html', 'renderer':render_mako_string}),
+    ('/project/<pid>/key_history/<kid>/', 'get', project_routes.node_key_history, render, {}, {'template_file':'key_history.html', 'renderer':render_mako_string}),
+    ('/project/<pid>/node/<nid>/key_history/<kid>/', 'get', project_routes.node_key_history, render, {}, {'template_file':'key_history.html', 'renderer':render_mako_string}),
+    ('/tags/<tag>/', 'get', project_routes.project_tag, render, {}, {'template_file' : 'tags.html', 'renderer' : render_mako_string}),
+
+    ('/project/new/', 'get', project_routes.project_new, render, {}, {'template_file' : 'project/new.html', 'renderer' : render_mako_string}),
+    ('/project/new/', 'post', project_routes.project_new_post, render, {}, {'template_file' : 'project/new.html', 'renderer' : render_mako_string}),
 ])
 
 # API
 
 process_urls(app, [
+
+    ('/api/v1/tags/<tag>/', 'get', project_routes.project_tag, jsonify, {}, {}),
 
     ('/api/v1/project/<pid>/', 'get', view_project, jsonify, {}, {}),
     ('/api/v1/project/<pid>/get_summary/', 'get', project_routes.get_summary, jsonify, {}, {}),
