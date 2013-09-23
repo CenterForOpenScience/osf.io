@@ -94,27 +94,34 @@ def search_user(*args, **kwargs):
         ]
     }
 
-@get('/tag/<tag>')
 def project_tag(tag):
     backs = Tag.load(tag).node__tagged
     if backs:
         nodes = [obj for obj in backs if obj.is_public]
     else:
-        nodes = None
-    return render(filename='tags.mako', tag=tag, nodes=nodes)
+        nodes = []
+    return {
+        'nodes' : [
+            {
+                'title' : node.title,
+                'url' : node.url(),
+            }
+            for node in nodes
+        ]
+    }
 
 ##############################################################################
 # New Project
 ##############################################################################
 
-@get('/project/new')
 @must_be_logged_in
 def project_new(*args, **kwargs):
-    user = kwargs['user']
-    form = NewProjectForm()    
-    return render(filename='project.new.mako', form=form)
+    form = NewProjectForm()
+    return {
+        'form' : form,
+    }
 
-@post('/project/new')
+# @post('/project/new')
 @must_be_logged_in
 def project_new_post(*args, **kwargs):
     user = kwargs['user']
@@ -124,7 +131,10 @@ def project_new_post(*args, **kwargs):
         return redirect('/project/' + str(project._primary_key))
     else:
         push_errors_to_status(form.errors)
-    return render(filename='project.new.mako', form=form)
+    # return render(filename='project.new.mako', form=form)
+    return {
+        'form' : form,
+    }, http.BAD_REQUEST
 
 ##############################################################################
 # New Node
