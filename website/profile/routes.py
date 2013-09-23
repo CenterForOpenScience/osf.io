@@ -129,6 +129,15 @@ def profile_settings(*args, **kwargs):
         'user' : user,
     }
 
+
+@must_be_logged_in
+def profile_addons(*args, **kwargs):
+    user = kwargs['user']
+    return {
+        'user' : user,
+    }
+
+
 @must_be_logged_in
 def get_keys(*args, **kwargs):
     user = kwargs['user']
