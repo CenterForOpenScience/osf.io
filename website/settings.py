@@ -24,7 +24,7 @@ try:
     os.environ['OSF_PRODUCTION']
     cache_path = '/opt/data/osf_cache'
     uploads_path = '/opt/data/uploads'
-except:
+except KeyError:
     cache_path = os.path.join(base_path, 'cache')
     uploads_path = os.path.join(base_path, 'uploads')
 

@@ -22,6 +22,8 @@ from dulwich.object_store import tree_lookup_path
 
 import subprocess
 
+from solr import update_solr, delete_solr_doc, migrate_user
+
 def utc_datetime_to_timestamp(dt):
     return float(
         str(calendar.timegm(dt.utcnow().utctimetuple())) + '.' + str(dt.microsecond)
@@ -117,6 +119,75 @@ class Node(StoredObject):
     registered_from = fields.ForeignField('node', backref='registrations')
 
     _meta = {'optimistic' : True}
+
+    def save(self):
+        # function to overrwrite the save method so
+        # that we can send relevant info to solr
+        super(Node, self).save()
+
+        # If the node is not a project, but doesn't have a
+
+        contributors = []
+        contributors_url = []
+        for user in self.contributors:
+            if user is not None:
+                # puts users in solr
+                migrate_user({
+                    'id': user._id,
+                    'user': user.fullname,
+                    'public': True,
+                })
+                contributors.append(user.fullname)
+                contributors_url.append('/profile/{}/'.format(user._id))
+        # public project defautls to false
+        public_project = False
+        # find out if the root id of our node
+        if self.category == 'project':
+            id = self._id
+        else:
+            try:
+                id = self.node__parent[0]._id
+            except IndexError:
+                return
+        # get the url
+        url = self.url()
+
+        # if deleting, we remove from solr
+        if self.is_deleted:
+            delete_solr_doc({
+                'root_id': id,
+                '_id': self._id,
+            })
+        else:
+            # if its a project
+            if self.category == 'Project':
+                args = {
+                    'id': id,
+                    'public': public_project,
+                    self._id + '_title': self.title,
+                    self._id + '_category': self.category,
+                    'public_project': self.is_public,
+                    self._id + '_public': self.is_public,
+                    self._id + '_tags': self.tags,
+                    self._id + '_description': self.description,
+                    self._id + '_url': url,
+                    self._id + '_contributors': contributors,
+                    self._id + '_contributors_url': contributors_url,
+                }
+            # for all other nodes
+            else:
+                args = {
+                    'id': id,
+                    self._id + '_title': self.title,
+                    self._id + '_category': self.category,
+                    self._id + '_public': self.is_public,
+                    self._id + '_tags': self.tags,
+                    self._id + '_description': self.description,
+                    self._id + '_url': url,
+                    self._id + '_contributors': contributors,
+                    self._id + '_contributors_url': contributors_url,
+                }
+            update_solr(args)
 
     def remove_node(self, user, date=None):
         if not date:
@@ -684,6 +755,15 @@ class Node(StoredObject):
             user=user,
             log_date=v.date
         )
+        # find the root id
+        id = self.find_root_id(self.id)
+        document = {
+            'id': id,
+            self.id+'__'+page_name+'__wiki': content,
+        }
+        # add to solr
+        update_solr(document)
+
 
     def get_stats(self, detailed=False):
         if detailed:
