@@ -20,7 +20,7 @@ var setStatus = function(status){
 
 var forkNode = function(){
   $.ajax({
-    url: nodeToUseUrl() + "/fork",
+    url: nodeToUseUrl() + "/fork/",
     type:"POST",
   }).done(function(response){
     window.location = response;
@@ -43,7 +43,7 @@ var removeUser = function(userid, name, el){
     if (answer){
         $.ajax({
             type: "POST",
-            url: nodeToUseUrl() + "/removecontributors",
+            url: nodeToUseUrl() + "/removecontributors/",
             contentType: "application/json",
             dataType: "json",
             data: JSON.stringify({"id": userid, "name":name}),
