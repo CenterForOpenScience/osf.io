@@ -1,3 +1,6 @@
+import httplib as http
+
+from framework.flask import abort
 from framework import get_current_user, push_status_message, redirect
 from framework.auth import get_api_key
 from website.project import get_node
@@ -114,6 +117,7 @@ def must_be_contributor(fn):
 
 def must_be_contributor_or_public(fn):
     def wrapped(func, *args, **kwargs):
+
         if 'project' not in kwargs:
             project = get_node(kwargs['pid'])
             kwargs['project'] = project
@@ -144,12 +148,15 @@ def must_be_contributor_or_public(fn):
             api_node = get_api_key()
             kwargs['api_node'] = api_node
 
-        if not node_to_use.is_public \
-                and not node_to_use.is_contributor(user) \
-                and api_node != node_to_use:
-            push_status_message('You are not authorized to perform that action \
-                for this node')
-            return redirect('/')
+
+
+        if (
+            not node_to_use.is_public
+            and not node_to_use.is_contributor(user)
+            and api_node != node_to_use
+        ):
+            print kwargs
+            abort(http.FORBIDDEN)
         
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)
