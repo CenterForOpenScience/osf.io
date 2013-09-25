@@ -1,20 +1,16 @@
 import httplib as http
 from framework import (
     abort,
-    get,
     get_current_user,
     get_user,
-    jsonify,
     must_be_logged_in,
-    post,
-    redirect,
-    render,
     request,
 )
 from framework.forms.utils import sanitize
 
-from website.models import User, ApiKey
+from website.models import ApiKey
 from framework.analytics import get_total_activity_count
+
 
 def _node_info(node):
     return {
@@ -91,7 +87,6 @@ def profile_settings(*args, **kwargs):
     user = kwargs['user']
     return {
         'user_id' : user._primary_key,
-        # 'user' : user,
     }
 
 
@@ -100,7 +95,6 @@ def profile_addons(*args, **kwargs):
     user = kwargs['user']
     return {
         'user_id' : user._primary_key,
-        # 'user' : user,
     }
 
 
