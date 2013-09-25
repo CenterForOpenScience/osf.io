@@ -3,36 +3,36 @@
 
 <div class="page-header">
 
+    % if user_is_profile:
     <script>
         $(function() {
             $('#profile-fullname').editable({
                 type:  'text',
-                pk:    '${profile._primary_key}',
+                pk:    '${user_id}',
                 name:  'fullname',
-                url:   '/profile/${profile._primary_key}/edit',
+                url:   '/profile/${user_id}/edit',
                 title: 'Edit Full Name',
                 placement: 'bottom',
-                value: '${profile.fullname}',
+                value: '${fullname}',
                 success: function(data) {
                     document.location.reload(true);
                 }
             });
         });
     </script>
+    % endif
 
-    <h1 id="${'profile-dfullname' if user and user._primary_key==profile._primary_key else ''}" style="display:inline-block">${profile.fullname}</h1>
-    %if not profile.username:
-   <p>This profile is currently unclaimed; others have added this person as a contributor by inputting their name and email. If you'd like to claim this profile, click here, and we'll send the address on file an email with a verification link. Once verified, you'll be able to connect a registered account to this name.</p>
-   %endif
+    <h1 id="${'profile-dfullname' if user_is_profile else ''}" style="display:inline-block">${fullname}</h1>
+
 </div>
 
 <div class="row">
     <div class="span4">
         <table class="table plain">
-            <tr><td>Name</td>           <td id="${'profile-fullname' if user and user._primary_key==profile._primary_key else ''}">${profile.fullname}</td></tr>
+            <tr><td>Name</td>           <td id="${'profile-fullname' if user_is_profile else ''}">${fullname}</td></tr>
             <tr><td>Location</td>       <td></td></tr>
-            <tr><td>Member Since</td>   <td>${profile.date_registered.strftime("%Y-%m-%d")}</td></tr>
-            <tr><td>Public Profile</td> <td><a href="/profile/${profile._primary_key}">/profile/${profile._primary_key}</td></tr>
+            <tr><td>Member Since</td>   <td>${date_registered}</td></tr>
+            <tr><td>Public Profile</td> <td><a href="/profile/${user_id}/">/profile/${user_id}/</td></tr>
         </table>
     </div>
     <div class="span4">&nbsp;
@@ -48,11 +48,17 @@
 <div class="row">
     <div class="span6">
         <h3 style="margin-bottom:10px;">Public Projects</h3>
-        <div mod-meta='{"tpl":"profile/public_projects.html","uri":"/api/v1/profile/${profile_id}/public_projects/", "replace": true}'></div>
+        ##<div mod-meta='{"tpl":"profile/public_projects.html","uri":"/api/v1/profile/${user_id}/public_projects/", "replace": true}'></div>
+        % for node in public_projects:
+            <div mod-meta='{"tpl" : "util/render_node.html", "uri" : "${node['api_url']}get_summary/", "replace" : true}'></div>
+        % endfor
     </div>
     <div class="span6">
         <h3 style="margin-bottom:10px;">Public Components</h3>
-        <div mod-meta='{"tpl":"profile/public_projects.html","uri":"/api/v1/profile/${profile_id}/public_components/", "replace": true}'></div>
+        % for node in public_components:
+            <div mod-meta='{"tpl" : "util/render_node.html", "uri" : "${node['api_url']}get_summary/", "replace" : true}'></div>
+        % endfor
+        ##<div mod-meta='{"tpl":"profile/public_projects.html","uri":"/api/v1/profile/${user_id}/public_components/", "replace": true}'></div>
     </div>
 </div>
 
