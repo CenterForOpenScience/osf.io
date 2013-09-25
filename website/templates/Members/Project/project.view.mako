@@ -116,6 +116,10 @@
     %if user_is_contributor and not node_to_use.is_registration:
     <script>
         $(function() {
+            function urlDecode(str) {
+                return decodeURIComponent((str+'').replace(/\+/g, '%20'));
+            }
+
             $('#node-title-editable').editable({
                type:  'text',
                pk:    '${node_to_use._primary_key}',
@@ -123,7 +127,7 @@
                url:   '${node_to_use.url()}/edit',  
                title: 'Edit Title',
                placement: 'bottom',
-               value: '${ '\\\''.join(node_to_use.title.split('\'')) }',
+               value: urlDecode('${ node_to_use.title | u}'),
                success: function(data){
                     document.location.reload(true);
                }
