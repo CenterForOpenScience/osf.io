@@ -89,7 +89,7 @@ def login(username, password):
             elif not user.is_claimed:
                 return False
             else:
-                response = web.redirect('/dashboard')
+                response = web.redirect('/dashboard/')
                 response = create_session(response, data={
                     'auth_user_username': user.username,
                     'auth_user_id': user._primary_key,
