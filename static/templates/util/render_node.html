@@ -1,0 +1,22 @@
+<li id="projects-widget" node_id="${summary['pid']}" class="project list-group-item" style="display: list-item;">
+    <h3 style="line-height:18px;">
+        <span style="display:inline-block; width: 400px">
+        <a href="${summary['purl']}">${summary['title']}</a>
+        % if is_registration:
+            | registered: ${registered_date}
+        % endif
+        </span>
+        <i style="float:right;" id="icon-${summary['pid']}" class="icon-plus" onclick="openCloseNode('${summary['pid']}');"></i>
+    </h3>
+
+    <div class="body hide" id="body-${summary['pid']}" style="overflow:hidden;">
+          Recent Activity
+          % if summary['logs']:
+              <dl class="dl-horizontal activity-log">
+                  % for log in summary['logs']:
+                        <div mod-meta='{"tpl":"util/render_log.html","uri":"/api/v1/log/${log}/", "replace": true}'></div>
+                  % endfor
+              </dl>
+          % endif
+    </div>
+</li>
