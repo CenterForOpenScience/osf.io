@@ -1,3 +1,4 @@
+import httplib as http
 from framework import (
     abort,
     get,
@@ -16,27 +17,12 @@ from website.models import User, ApiKey
 from framework.analytics import get_total_activity_count
 
 def _node_info(node):
-    if node.category == 'project':
-        route = '/project/{}'.format(
-            node._id
-        )
-        parent, parent_id = None, None
-    else:
-        parent = node.node__parent[0]
-        parent_id = parent._id
-        route = '/project/{}/node/{}'.format(
-            parent._id,
-            node._id,
-        )
     return {
-        'node_id' : node._id,
-        'parent_id' : parent_id,
-        'route' : route,
+        'api_url' : node.api_url(),
     }
 
 
-def get_public_projects(uid):
-    user = User.load(uid)
+def get_public_projects(user):
     return [
         _node_info(node)
         for node in user.node__contributed
@@ -45,8 +31,8 @@ def get_public_projects(uid):
         and not node.is_deleted
     ]
 
-def get_public_components(*args, **kwargs):
-    user = User.load(kwargs['uid'])
+
+def get_public_components(user):
     return [
         _node_info(node)
         for node in user.node__contributed
@@ -55,35 +41,14 @@ def get_public_components(*args, **kwargs):
         and not node.is_deleted
     ]
 
-@must_be_logged_in
-def profile_view(*args, **kwargs):
-    user = kwargs['user']
-    projects = [
-        node
-        for node in user.node__contributed
-        if node.category == 'project'
-        and not node.is_registration
-        and not node.is_deleted
-    ]
-    public_projects = [
-        node
-        for node in projects
-        if node.is_public
-    ]
-    return {
-        'profile' : user,
-        'profile_id' : user._id,
-        'user' : user,
-        'user_id': user._id,
-        'activity_points' : get_total_activity_count(user._primary_key),
-        'number_projects' : len(projects),
-        'number_public_projects' : len(public_projects),
-    }
 
-
-def profile_view_id(uid):
-    profile = get_user(id=uid)
+def profile_view(uid=None):
     user = get_current_user()
+    profile = get_user(id=uid or user)
+
+    if not (uid or user):
+        abort(http.UNAUTHORIZED)
+
     if profile:
         projects = [
             node
@@ -92,19 +57,18 @@ def profile_view_id(uid):
             and not node.is_registration
             and not node.is_deleted
         ]
-        public_projects = [
-            node
-            for node in projects
-            if node.is_public
-        ]
+        public_projects = get_public_projects(user)
+        public_components = get_public_components(user)
         return {
-            'profile' : profile,
-            'profile_id' : profile._id,
-            'user' : user,
-            'user_id': user._id,
+            'user_id': profile._id,
+            'user_is_profile' : user == profile,
             'activity_points' : get_total_activity_count(profile._primary_key),
             'number_projects' : len(projects),
             'number_public_projects' : len(public_projects),
+            'fullname': profile.fullname,
+            'date_registered': profile.date_registered.strftime("%Y-%m-%d"),
+            'public_projects' : public_projects,
+            'public_components' : public_components,
         }
     return abort(404)
 
@@ -126,7 +90,8 @@ def edit_profile(*args, **kwargs):
 def profile_settings(*args, **kwargs):
     user = kwargs['user']
     return {
-        'user' : user,
+        'user_id' : user._primary_key,
+        # 'user' : user,
     }
 
 
@@ -134,7 +99,8 @@ def profile_settings(*args, **kwargs):
 def profile_addons(*args, **kwargs):
     user = kwargs['user']
     return {
-        'user' : user,
+        'user_id' : user._primary_key,
+        # 'user' : user,
     }
 
 
@@ -187,7 +153,6 @@ def user_key_history(*args, **kwargs):
     return {
         'key' : api_key._id,
         'label' : api_key.label,
-        'user' : kwargs['user'],
         'route' : '/settings',
         'logs' : [
             {
