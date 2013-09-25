@@ -1,0 +1,9 @@
+<%inherit file="project.view.mako" />
+
+% if node_forks:
+    % for fork in node_forks:
+        <div mod-meta='{"tpl" : "util/render_node.html", "uri" : "${fork['fork_api_url']}get_summary/", "replace" : true}'></div>
+    % endfor
+% else:
+	There have been no forks.
+% endif
