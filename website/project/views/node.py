@@ -291,7 +291,10 @@ def view_project(*args, **kwargs):
     return _view_project(node_to_use, user)
 
 def _view_project(node_to_use, user):
+    '''Build a JSON object containing everything needed to render
+    project.view.mako.
 
+    '''
     return {
 
         'node_id' : node_to_use._primary_key,
