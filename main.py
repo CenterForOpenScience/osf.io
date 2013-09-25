@@ -4,7 +4,7 @@ import website.settings
 import website.models
 import website.routes
 
-from website.addons.dataverse import route
+# from website.addons.dataverse import route
 
 app = framework.app
 
