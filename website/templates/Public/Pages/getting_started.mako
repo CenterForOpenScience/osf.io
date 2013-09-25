@@ -18,7 +18,7 @@
 <p><a href="/account">Register your account</a> and log in to the OSF. Anyone you plan on listing as a collaborator on the project (thereby granting full
     access to it and its files) should also register.</p>
 <h2>Start a new project</h2>
-<p>Visit your <a href="/dashboard">User Dashboard</a> to create a new project. Projects are the primary tool for collaboration on the OSF, both privately
+<p>Visit your <a href="/dashboard/">User Dashboard</a> to create a new project. Projects are the primary tool for collaboration on the OSF, both privately
     (with only those contributors you add) or publicly.</p>
 <p>A project can be any organized scholarship - such as an experiment, program
     of research, or other organized activity. Projects can be nested in other
