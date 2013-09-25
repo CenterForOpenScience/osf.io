@@ -124,7 +124,7 @@
                 <a class="brand" style="padding-left: 10px; padding-right: 10px;" href="/">Open Science Framework<span style="font-size: 8px;"> BETA</span></a>
                 <ul class="nav">
                     %if username:
-                    <li><a rel="tooltip" title="My Dashboard" href="/dashboard">Dashboard</a></li>
+                    <li><a rel="tooltip" title="My Dashboard" href="/dashboard/">Dashboard</a></li>
                     %endif
                     <li class='dropdown'>
                         <a href="#" class='dropdown-toggle' data-toggle='dropdown'>
