@@ -1,69 +1,12 @@
 <%inherit file="contentContainer.mako"/>
 
 <%
-    import framework
-    import hashlib
-    from website.project.model import Node
-    url = framework.request.url
-    contributors_text = []
-    contributors_ids = []
-
-    if node:
-        node_to_use = node
-        is_node = True
-        is_project = False
-    else:
-        node_to_use = project
-        is_node = False
-        is_project = True
-
-    user_is_contributor = node_to_use.is_contributor(user)
-    editable = user_is_contributor and not node_to_use.is_registration
-
-    # If a parent project exists, put it here so the title can be displayed.
-    parent_project = None
-    if node_to_use.node__parent:
-        parent_project = node_to_use.node__parent[0]
-
-
-    for contributor in node_to_use.contributor_list:
-        if "id" in contributor:
-            contributor = framework.get_user(contributor["id"])
-            txt = '<a href="/profile/%s"' % contributor._primary_key
-            if editable:
-                txt += ' class="user-quickedit" data-userid="%s" data-fullname="%s"' % (contributor._primary_key, contributor.fullname)
-            txt += '>%s</a>' % contributor.fullname
-            contributors_ids.append(contributor._primary_key)
-        else:
-            if "nr_name" in contributor:
-                txt = '<span'
-                if editable:
-                    txt += ' class="user-quickedit" data-userid="nr-' + hashlib.md5(contributor["nr_email"]).hexdigest() + '" data-fullname="' + contributor["nr_name"]
-                txt += '">' + contributor["nr_name"] + '</span>'
-
-        contributors_text.append(txt)
-
-    contributors_text = ', '.join(contributors_text)
-    counterUnique, counterTotal = framework.get_basic_counters(
-        '/project/%s/' % project._primary_key)
-
-    remove_url = "/project/" + project._primary_key + "/"
-    if node:
-        remove_url += "node/" + node._primary_key + "/"
-    remove_url += "removecontributors"
-
     make_public_warning = 'Once a project is made public, there is no way to guarantee that access to the data it contains can be complete prevented. Users should assume that once a project is made public, it will always be public. Are you absolutely sure you would like to continue?'
     make_private_warning = 'Making a project will prevent users from viewing it on this site, but will have no impact on external sites, including Google\'s cache. Would you like to continue?'
 %>
 
-<script>
-
-</script>
-
-
-
-% if node_to_use.is_registration:
-<span class="label label-important" style="font-size:1.1em;margin-bottom:30px;">This node is a registration of <a href="${node_to_use.registered_from.url()}">this node</a>; the content of the node has been frozen and cannot be edited.</span>
+% if node_is_registration:
+<span class="label label-important" style="font-size:1.1em;margin-bottom:30px;">This node is a registration of <a href="${node_registered_from_url}">this node</a>; the content of the node has been frozen and cannot be edited.</span>
     <style type="text/css">
 .watermarked {
   background-image:url('/static/read-only.png');
@@ -75,22 +18,14 @@
 <header class="jumbotron subhead" id="overview">
     <div class="btn-toolbar" style="float:right;">
         <div class="btn-group">
-        %if not node_to_use.is_public:
+        %if not node_is_public:
             <button class='btn disabled'>Private</button>
             % if user_is_contributor:
-                %if node:
-                    <a class="btn" href="/project/${project._primary_key}/node/${node._primary_key}/makepublic" data-confirm="${make_public_warning}">Make public</a>
-                %else:
-                    <a class="btn" href="/project/${project._primary_key}/makepublic" data-confirm="${make_public_warning}">Make public</a>
-                %endif
+                <a class="btn" href="${node_api_url}permissions/public/" data-confirm="${make_public_warning}">Make public</a>
             % endif
         %else:
             % if user_is_contributor:
-                %if node:
-                    <a class="btn" href="/project/${project._primary_key}/node/${node._primary_key}/makeprivate" data-confirm="${make_private_warning}">Make private</a>
-                %else:
-                    <a class="btn" href="/project/${project._primary_key}/makeprivate" data-confirm="${make_private_warning}">Make private</a>
-                %endif
+                <a class="btn" href="${node_api_url}permissions/private/" data-confirm="${make_private_warning}">Make private</a>
             % endif
             <button class="btn disabled">Public</button>
         %endif
@@ -101,7 +36,7 @@
           <a
               rel="tooltip"
               title="Number of times this node has been forked (copied)"
-              % if is_project and user is not None:
+              % if node_category == 'project' and username is not None:
               href="#"
               class="btn"
               onclick="forkNode();"
@@ -109,21 +44,21 @@
               class="btn disabled"
               % endif
           >
-              <i class="icon-fork"></i>&nbsp;${len(node_to_use.fork_list)}
+              <i class="icon-fork"></i>&nbsp;${node_fork_count}
           </a>
         </div>
     </div>
-    %if user_is_contributor and not node_to_use.is_registration:
+    %if user_can_edit:
     <script>
         $(function() {
             $('#node-title-editable').editable({
                type:  'text',
-               pk:    '${node_to_use._primary_key}',
+               pk:    '${node_id}',
                name:  'title',
-               url:   '/api/v1${node_to_use.url()}/edit/',
+               url:   '${node_api_url}/edit/',
                title: 'Edit Title',
                placement: 'bottom',
-               value: '${ '\\\''.join(node_to_use.title.split('\'')) }',
+               value: '${ '\\\''.join(node_title.split('\'')) }',
                success: function(data){
                     document.location.reload(true);
                }
@@ -132,52 +67,49 @@
     </script>
 
     %endif
-    %if parent_project:
-        <h1 id="node-title" style="display:inline-block"><a href="/project/${parent_project._primary_key}/">${parent_project.title}</a> / </h1> <h1 id="${'node-title-editable' if node_to_use.is_contributor else 'node-title'}" style="display:inline-block">${node_to_use.title}</h1>
+    %if parent_id:
+        <h1 id="node-title" style="display:inline-block"><a href="/project/${parent_id}/">${parent_title}</a> / </h1> <h1 id="${'node-title-editable' if user_can_edit else 'node-title'}" style="display:inline-block">${node_title}</h1>
     %else:
-        <h1 id="${'node-title-editable' if node_to_use.is_contributor else 'node-title'}" style="display:inline-block">${project.title}</h1>
+        <h1 id="${'node-title-editable' if user_can_edit else 'node-title'}" style="display:inline-block">${node_title}</h1>
     %endif
-    <p id="contributors">Contributors: ${contributors_text} 
-    % if user_is_contributor:
-        | <a href="#addContributors" data-toggle="modal">add</a>
+    <p id="contributors">Contributors:
+        <div mod-meta='{"tpl" : "project/render_contributors.html", "uri" : "${node_api_url}get_contributors/", "replace" : true}'></div>
+    % if node_is_fork:
+        <br />Forked from <a href="${node_forked_from_url}">${node_forked_from_url}</a> on ${node_forked_date}
     %endif
-    % if node_to_use.is_fork:
-        <br />Forked from <a href="${node_to_use.forked_from.url()}">${node_to_use.forked_from.url()}</a> on ${node_to_use.forked_date.strftime('%Y/%m/%d %I:%M %p')}
+    % if node_is_registration and node_registered_meta:
+        <br />Registration Supplement:
+        % for meta in node_registered_meta:
+            <a href="${node_url}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
+        % endfor
     %endif
-    % if node_to_use.is_registration and node_to_use.registered_meta:
-        <br />Registration Supplement: ${', '. join([u'<a href="{url}/register/{k}">{kf}</a>'.format(url=node_to_use.url(), k=k.replace('.txt', ''), kf=str(k.replace('.txt', '').replace('_', ' '))) for k in node_to_use.registered_meta])}
-    %endif
-    <br />Date Created: 
-    %if not node:
-        <span class="date">${project.date_created.strftime('%Y/%m/%d %I:%M %p')}</span>
-    %else:
-        <span class="date">${node.date_created.strftime('%Y/%m/%d %I:%M %p')}</span>
-    %endif
+    <br />Date Created:
+        <span class="date">${node_date_created}</span>
     | Last Updated: 
     %if not node:
-        <span class="date">${project.logs[-1].date.strftime('%Y/%m/%d %I:%M %p')}</span>
+        <span class="date">${node_date_modified}</span>
     %else:
-        <span class="date">${node.logs[-1].date.strftime('%Y/%m/%d %I:%M %p')}</span>
+        <span class="date">${node_date_modified}</span>
     %endif
     
     %if node:
-        <br />Category: ${node.category}
+        <br />Category: ${node_category}
     %else:
-        %if project.description:
-        <br />Description: ${project.description}
+        %if node_description:
+        <br />Description: ${node_description}
         %endif
     %endif
     </p>
     <div class="subnav">
         <ul class="nav nav-pills">
-            <li><a href="${node_to_use.url()}">Dashboard</a></li>
-            <li><a href="${node_to_use.url()}/wiki/">Wiki</a></li>
-            <li><a href="${node_to_use.url()}/statistics">Statistics</a></li>
-            <li><a href="${node_to_use.url()}/files">Files</a></li>
-            <li><a href="${node_to_use.url()}/registrations">Registrations</a></li>
-            <li><a href="${node_to_use.url()}/forks">Forks</a></li>
+            <li><a href="${node_url}">Dashboard</a></li>
+            <li><a href="${node_url}wiki/">Wiki</a></li>
+            <li><a href="${node_url}statistics/">Statistics</a></li>
+            <li><a href="${node_url}files/">Files</a></li>
+            <li><a href="${node_url}registrations/">Registrations</a></li>
+            <li><a href="${node_url}forks/">Forks</a></li>
             % if user_is_contributor:
-            <li><a href="${node_to_use.url()}/settings">Settings</a></li>
+            <li><a href="${node_url}settings/">Settings</a></li>
             %endif
         </ul>
     </div>
@@ -216,7 +148,7 @@
 
         if ( fullname ){
                 jQuery.post(
-                    '/api/v1${node_to_use.url()}/addcontributor',
+                    '${node_api_url}addcontributor/',
                     { fullname: fullname, email: email },
                     function(data){
                         $('#addContributors').modal('hide');
@@ -227,7 +159,7 @@
         }else{
             if ( $('input[name=id]:checked').length > 0 ){
                 jQuery.post(
-                    '/api/v1${node_to_use.url()}/addcontributor',
+                    '${node_api_url}addcontributor/',
                     { user_id:$('input[name=id]:checked')[0].value },
                     function(data){
                         $('#addContributors').modal('hide');
