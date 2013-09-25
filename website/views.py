@@ -4,12 +4,22 @@ import framework
 def index():
     return framework.render(filename='index.mako')
 
-@framework.route('/dashboard')
 @framework.must_be_logged_in
 def dashboard(*args, **kwargs):
     user = kwargs['user']
-    return framework.render(
-        filename='membersIndex.mako', user=user)
+    nodes = [
+        {
+            'api_url' : node.api_url(),
+        }
+        for node in user.node__contributed
+        if node.category == 'project'
+        and not node.is_deleted
+        and not node.is_registration
+    ]
+
+    return {
+        'nodes' : nodes,
+    }
 
 @framework.get('/about/')
 def about():
