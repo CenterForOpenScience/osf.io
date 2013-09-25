@@ -540,10 +540,16 @@ class Node(StoredObject):
 
     def url(self):
         if self.category == 'project':
-            return '/project/' + self._primary_key
+            return '/project/{}/'.format(self._primary_key)
         else:
             if self.node__parent and self.node__parent[0].category == 'project':
-                return '/project/' + self.node__parent[0]._primary_key + '/node/' + self._primary_key # todo just get this directly
+                return '/project/{}/node/{}/'.format(
+                    self.node__parent[0]._primary_key,
+                    self._primary_key
+                )
+
+    def api_url(self):
+        return '/api/v1' + self.url()
 
 
     def is_contributor(self, user):
@@ -594,30 +600,21 @@ class Node(StoredObject):
             if save:
                 self.save()
 
-    def makePublic(self, user):
-        if not self.is_public:
+    def set_permissions(self, permissions, user):
+        if permissions == 'public' and not self.is_public:
             self.is_public = True
-            self.save()
-            self.add_log('made_public', 
-                params={
-                    'project':self.node__parent[0]._primary_key if self.node__parent else None,
-                    'node':self._primary_key,
-                }, 
-                user=user,
-            )
-        return True
-
-    def makePrivate(self, user):
-        if self.is_public:
+        elif permissions == 'private' and self.is_public:
             self.is_public = False
-            self.save()
-            self.add_log('made_private',
-                params={
-                    'project':self.node__parent[0]._primary_key if self.node__parent else None,
-                    'node':self._primary_key,
-                },
-                user=user,
-            )
+        else:
+            return False
+        self.add_log(
+            'made_{}'.format(permissions),
+            params={
+                'project':self.node__parent[0]._primary_key if self.node__parent else None,
+                'node':self._primary_key,
+            },
+            user=user,
+        )
         return True
 
     def get_wiki_page(self, page, version=None):
