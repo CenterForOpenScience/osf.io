@@ -1,13 +1,15 @@
 import werkzeug.wrappers
 from werkzeug.exceptions import NotFound
+import httplib as http
 
-from framework.flask import app, request, make_response
+from framework.flask import app, redirect
 from framework.mako import makolookup
 from mako.template import Template
 import framework
 from website import settings
 from framework import get_current_user
 
+import copy
 import json
 import os
 import pystache
@@ -27,7 +29,6 @@ def wrapped_fn(fn, wrapper, fn_kwargs, wrapper_kwargs):
     return wrapped
 
 
-# todo check if response
 def call_url(url, wrap=True, view_kwargs=None):
 
     func_name, func_data = app.url_map.bind('').match(url)
@@ -91,15 +92,32 @@ class ODMEncoder(json.JSONEncoder):
 
 class Renderer(object):
 
-    def render(self, data, *args, **kwargs):
+    def render(self):
         raise NotImplementedError
 
     def __call__(self, data, *args, **kwargs):
+
+        # Return if response
         if isinstance(data, werkzeug.wrappers.BaseResponse):
             return data
-        return self.render(data, *args, **kwargs)
+
+        # Unpack tuple
+        if not isinstance(data, tuple):
+            data = (data,)
+        data, status_code, headers, resource_uri = data + (None,) * (4 - len(data))
+
+        # Call subclass render
+        rendered = self.render(data, resource_uri, *args, **kwargs)
+
+        # Return if response
+        if isinstance(data, werkzeug.wrappers.BaseResponse):
+            return data
+
+        return rendered, status_code, headers
 
 class JSONRenderer(Renderer):
+
+    __name__ = 'JSONRenderer'
 
     from modularodm import StoredObject
     class Encoder(json.JSONEncoder):
@@ -110,13 +128,148 @@ class JSONRenderer(Renderer):
                 return obj._primary_key
             return json.JSONEncoder.default(self, obj)
 
-    def render(self, data, *args, **kwargs):
+    def render(self, data, resource_uri):
         return json.dumps(data, cls=self.Encoder)
 
 class WebRenderer(Renderer):
 
-    def render(self, data,  *args, **kwargs):
-        pass
+    __name__ = 'WebRenderer'
+
+    def load_file(self, template_file, template_dir):
+        with open(os.path.join(template_dir, template_file), 'r') as f:
+            loaded = f.read()
+        return loaded
+
+    def render_element(self, element, data, renderer, template_dir):
+
+        element_attributes = element.attrib
+        attributes_string = element_attributes['mod-meta']
+        element_meta = json.loads(attributes_string) # todo more robust jsonqa
+
+        uri = element_meta.get('uri')
+        is_replace = element_meta.get("replace", False)
+        kwargs = element_meta.get('kwargs', {})
+        view_kwargs = element_meta.get('view_kwargs', {})
+
+        render_data = copy.deepcopy(data)
+        render_data.update(kwargs)
+
+        if uri:
+            try:
+                uri_data = call_url(uri, view_kwargs=view_kwargs)
+                render_data.update(uri_data)
+            except NotFound:
+                return '<div>URI {} not found.</div>'.format(uri), is_replace
+            except:
+                return '<div>Error retrieving URI {}.</div>'.format(uri), is_replace
+
+        template_rendered = self.render(
+            render_data,
+            None,
+            element_meta['tpl'],
+            renderer,
+            template_dir=template_dir,
+        )
+
+        return template_rendered, is_replace
+
+    def render(self, data, resource_uri, template_name, renderer, template_dir=TEMPLATE_DIR):
+        
+        if resource_uri is not None:
+            return redirect(resource_uri)
+
+        data.update(get_globals())
+
+        template_file = self.load_file(template_name, template_dir)
+        rendered = renderer(template_file, data)
+
+        html = lxml.html.fragment_fromstring(rendered, create_parent='remove-me')
+
+        for element in html.findall('.//*[@mod-meta]'):
+
+            template_rendered, is_replace = self.render_element(element, data, renderer, template_dir)
+
+            original = lxml.html.tostring(element)
+            if is_replace:
+                replacement = template_rendered
+            else:
+                replacement = lxml.html.tostring(element)
+                replacement = replacement.replace('><', '>'+template_rendered+'<')
+
+            rendered = rendered.replace(original, replacement)
+
+        return rendered
+
+# # def render(data, template_file, renderer, build_response=True, template_dir=TEMPLATE_DIR):
+# def render(data, template_file, renderer, template_dir=TEMPLATE_DIR):
+#
+#     # if isinstance(data, werkzeug.wrappers.BaseResponse):
+#     #     return data
+#     #
+#     # if isinstance(data, tuple):
+#     #     data, status_code = data
+#     # else:
+#     #     status_code = 200
+#
+#     data.update(get_globals())
+#
+#     rendered = load_file(template_file, template_dir)
+#     rendered = renderer(rendered, data)
+#
+#     html = lxml.html.fragment_fromstring(rendered, create_parent='removeme')
+#
+#     for el in html.findall('.//*[@mod-meta]'):
+#
+#         element_attributes = el.attrib
+#         attributes_string = element_attributes['mod-meta']
+#         element_meta = json.loads(attributes_string) # todo more robust jsonqa
+#
+#         is_replace = element_meta.get("replace", False)
+#
+#         render_data = data.copy()
+#
+#         kwargs = element_meta.get('kwargs', {})
+#         view_kwargs = element_meta.get('view_kwargs', {})
+#         render_data.update(kwargs)
+#
+#         uri = element_meta.get('uri')
+#         if uri:
+#             try:
+#                 uri_data = call_url(uri, view_kwargs=view_kwargs)
+#                 render_data.update(uri_data)
+#                 template_rendered = render(
+#                     render_data,
+#                     element_meta['tpl'],
+#                     renderer,
+#                     # build_response=False,
+#                     template_dir=template_dir,
+#                 )
+#             except NotFound:
+#                 template_rendered = '<div>URI {} not found.</div>'.format(uri)
+#             except:
+#                 template_rendered = '<div>Error retrieving URI {}.</div>'.format(uri)
+#         else:
+#             template_rendered = render(
+#                 render_data,
+#                 element_meta['tpl'],
+#                 renderer,
+#                 # build_response=False,
+#                 template_dir=template_dir,
+#             )
+#
+#         original = lxml.html.tostring(el)
+#         if is_replace:
+#             replacement = template_rendered
+#         else:
+#             replacement = lxml.html.tostring(el)
+#             replacement = replacement.replace('><', '>'+template_rendered+'<')
+#
+#         rendered = rendered.replace(original, replacement)
+#
+#     # if build_response:
+#     #     rendered = make_response((rendered, status_code))
+#
+#     return rendered
 
 def jsonify(data, label=None):
     if isinstance(data, werkzeug.wrappers.BaseResponse):
@@ -142,80 +295,10 @@ def get_globals():
         'allow_login' : settings.allow_login,
     }
 
-def render(data, template_file, renderer, build_response=True, template_dir=TEMPLATE_DIR):
-
-    if isinstance(data, werkzeug.wrappers.BaseResponse):
-        return data
-
-    if isinstance(data, tuple):
-        data, status_code = data
-    else:
-        status_code = 200
-
-    data.update(get_globals())
-
-    rendered = load_file(template_file, template_dir)
-    rendered = renderer(rendered, data)
-
-    html = lxml.html.fragment_fromstring(rendered, create_parent='removeme')
-
-    for el in html.findall('.//*[@mod-meta]'):
-
-        element_attributes = el.attrib
-        attributes_string = element_attributes['mod-meta']
-        element_meta = json.loads(attributes_string) # todo more robust jsonqa
-
-        is_replace = element_meta.get("replace", False)
-
-        render_data = data.copy()
-
-        kwargs = element_meta.get('kwargs', {})
-        view_kwargs = element_meta.get('view_kwargs', {})
-        render_data.update(kwargs)
-
-        uri = element_meta.get('uri')
-        if uri:
-            try:
-                uri_data = call_url(uri, view_kwargs=view_kwargs)
-                render_data.update(uri_data)
-                template_rendered = render(
-                    render_data,
-                    element_meta['tpl'],
-                    renderer,
-                    build_response=False,
-                    template_dir=template_dir,
-                )
-            except NotFound:
-                template_rendered = '<div>URI {} not found.</div>'.format(uri)
-            except:
-                template_rendered = '<div>Error retrieving URI {}.</div>'.format(uri)
-        else:
-            template_rendered = render(
-                render_data,
-                element_meta['tpl'],
-                renderer,
-                build_response=False,
-                template_dir=template_dir,
-            )
-
-        original = lxml.html.tostring(el)
-        if is_replace:
-            replacement = template_rendered
-        else:
-            replacement = lxml.html.tostring(el)
-            replacement = replacement.replace('><', '>'+template_rendered+'<')
-
-        rendered = rendered.replace(original, replacement)
-
-    if build_response:
-        rendered = make_response((rendered, status_code))
-
-    return rendered
-
-def load_file(template_file, template_dir):
-    with open(os.path.join(template_dir, template_file), 'r') as f:
-        loaded = f.read()
-    return loaded
+# def load_file(template_file, template_dir):
+#     with open(os.path.join(template_dir, template_file), 'r') as f:
+#         loaded = f.read()
+#     return loaded
 
 def render_mustache_string(tpl_string, data):
     return pystache.render(tpl_string, context=data)
@@ -252,7 +335,7 @@ from website.project import views as project_views
 
 process_urls(app, [
 
-    ('/dashboard/', 'get', website_routes.dashboard, render, {}, {'template_file' : 'dashboard.html', 'renderer' : render_mako_string}),
+    ('/dashboard/', 'get', website_routes.dashboard, WebRenderer(), {}, {'template_name' : 'dashboard.html', 'renderer' : render_mako_string}),
 
 ])
 
@@ -261,12 +344,12 @@ process_urls(app, [
 # Web
 
 process_urls(app, [
-    ('/profile/', 'get', profile_views.profile_view, render, {}, {'template_file' : 'profile.html', 'renderer' : render_mako_string}),
-    ('/profile/<uid>/', 'get', profile_views.profile_view, render, {}, {'template_file' : 'profile.html', 'renderer' : render_mako_string}),
-    ('/settings/', 'get', profile_views.profile_settings, render, {}, {'template_file' : 'settings.html', 'renderer' : render_mako_string}),
-    ('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, render, {}, {'template_file' : 'profile/key_history.html', 'renderer' : render_mako_string}),
+    ('/profile/', 'get', profile_views.profile_view, WebRenderer(), {}, {'template_name' : 'profile.html', 'renderer' : render_mako_string}),
+    ('/profile/<uid>/', 'get', profile_views.profile_view, WebRenderer(), {}, {'template_name' : 'profile.html', 'renderer' : render_mako_string}),
+    ('/settings/', 'get', profile_views.profile_settings, WebRenderer(), {}, {'template_name' : 'settings.html', 'renderer' : render_mako_string}),
+    ('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, WebRenderer(), {}, {'template_name' : 'profile/key_history.html', 'renderer' : render_mako_string}),
     ('/profile/<uid>/edit/', 'post', profile_views.edit_profile, jsonify, {}, {}),
-    ('/addons/', 'get', profile_views.profile_addons, render, {}, {'template_file' : 'profile/addons.html', 'renderer' : render_mako_string}),
+    ('/addons/', 'get', profile_views.profile_addons, WebRenderer(), {}, {'template_name' : 'profile/addons.html', 'renderer' : render_mako_string}),
 ])
 
 # API
@@ -288,67 +371,67 @@ process_urls(app, [
 # Web
 
 process_urls(app, [
-    ('/', 'get', view_index, render, {}, {'template_file':'index.html', 'renderer':render_mako_string}),
-    ('/project/<pid>/', 'get', project_views.node.view_project, render, {}, {'template_file':'project.html', 'renderer':render_mako_string}),
-    ('/project/<pid>/node/<nid>/', 'get', project_views.node.view_project, render, {}, {'template_file':'project.html', 'renderer':render_mako_string}),
-    ('/project/<pid>/settings/', 'get', project_views.node.node_setting, render, {}, {'template_file':'project/settings.html', 'renderer':render_mako_string}),
+    ('/', 'get', view_index, WebRenderer(), {}, {'template_name':'index.html', 'renderer':render_mako_string}),
+    ('/project/<pid>/', 'get', project_views.node.view_project, WebRenderer(), {}, {'template_name':'project.html', 'renderer':render_mako_string}),
+    ('/project/<pid>/node/<nid>/', 'get', project_views.node.view_project, WebRenderer(), {}, {'template_name':'project.html', 'renderer':render_mako_string}),
+    ('/project/<pid>/settings/', 'get', project_views.node.node_setting, WebRenderer(), {}, {'template_name':'project/settings.html', 'renderer':render_mako_string}),
 
-    ('/project/<pid>/key_history/<kid>/', 'get', project_views.key.node_key_history, render, {}, {'template_file':'project/key_history.html', 'renderer':render_mako_string}),
-    ('/project/<pid>/node/<nid>/key_history/<kid>/', 'get', project_views.key.node_key_history, render, {}, {'template_file':'project/key_history.html', 'renderer':render_mako_string}),
-    ('/tags/<tag>/', 'get', project_views.tag.project_tag, render, {}, {'template_file' : 'tags.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/key_history/<kid>/', 'get', project_views.key.node_key_history, WebRenderer(), {}, {'template_name':'project/key_history.html', 'renderer':render_mako_string}),
+    ('/project/<pid>/node/<nid>/key_history/<kid>/', 'get', project_views.key.node_key_history, WebRenderer(), {}, {'template_name':'project/key_history.html', 'renderer':render_mako_string}),
+    ('/tags/<tag>/', 'get', project_views.tag.project_tag, WebRenderer(), {}, {'template_name' : 'tags.html', 'renderer' : render_mako_string}),
 
-    ('/project/new/', 'get', project_views.node.project_new, render, {}, {'template_file' : 'project/new.html', 'renderer' : render_mako_string}),
-    ('/project/new/', 'post', project_views.node.project_new_post, render, {}, {'template_file' : 'project/new.html', 'renderer' : render_mako_string}),
-    ('/project/<pid>/newnode/', 'post', project_views.node.project_new_node),#, render, {}, {}),
+    ('/project/new/', 'get', project_views.node.project_new, WebRenderer(), {}, {'template_name' : 'project/new.html', 'renderer' : render_mako_string}),
+    ('/project/new/', 'post', project_views.node.project_new_post, WebRenderer(), {}, {'template_name' : 'project/new.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/newnode/', 'post', project_views.node.project_new_node),#, WebRenderer(), {}, {}),
 
-    ('/project/<pid>/node/<nid>/settings/', 'get', project_views.node.node_setting, render, {}, {'template_file':'project/settings.html', 'renderer':render_mako_string}),
+    ('/project/<pid>/node/<nid>/settings/', 'get', project_views.node.node_setting, WebRenderer(), {}, {'template_name':'project/settings.html', 'renderer':render_mako_string}),
 
     ### Files ###
-    ('/project/<pid>/files/', 'get', project_views.file.list_files, render, {}, {'template_file':'project/files.html', 'renderer':render_mako_string}),
-    ('/project/<pid>/node/<nid>/files/', 'get', project_views.file.list_files, render, {}, {'template_file':'project/files.html', 'renderer':render_mako_string}),
+    ('/project/<pid>/files/', 'get', project_views.file.list_files, WebRenderer(), {}, {'template_name':'project/files.html', 'renderer':render_mako_string}),
+    ('/project/<pid>/node/<nid>/files/', 'get', project_views.file.list_files, WebRenderer(), {}, {'template_name':'project/files.html', 'renderer':render_mako_string}),
 
-    ('/project/<pid>/files/<fid>/', 'get', project_views.file.view_file, render, {}, {'template_file' : 'project/file.html', 'renderer' : render_mako_string}),
-    ('/project/<pid>/node/<nid>/files/<fid>/', 'get', project_views.file.view_file, render, {}, {'template_file' : 'project/file.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/files/<fid>/', 'get', project_views.file.view_file, WebRenderer(), {}, {'template_name' : 'project/file.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/node/<nid>/files/<fid>/', 'get', project_views.file.view_file, WebRenderer(), {}, {'template_name' : 'project/file.html', 'renderer' : render_mako_string}),
 
     # # Forks
-    # ('/project/<pid>/fork/', 'post', project_views.node_fork_page, render, {}, {}),
-    # ('/project/<pid>/node/<nid>/fork/', 'post', project_views.node_fork_page, render, {}, {}),
+    # ('/project/<pid>/fork/', 'post', project_views.node_fork_page, WebRenderer(), {}, {}),
+    # ('/project/<pid>/node/<nid>/fork/', 'post', project_views.node_fork_page, WebRenderer(), {}, {}),
 
     # View forks
-    ('/project/<pid>/forks/', 'get', project_views.node.node_forks, render, {}, {'template_file' : 'project/forks.html', 'renderer' : render_mako_string}),
-    ('/project/<pid>/node/<nid>/forks/', 'get', project_views.node.node_forks, render, {}, {'template_file' : 'project/forks.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/forks/', 'get', project_views.node.node_forks, WebRenderer(), {}, {'template_name' : 'project/forks.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/node/<nid>/forks/', 'get', project_views.node.node_forks, WebRenderer(), {}, {'template_name' : 'project/forks.html', 'renderer' : render_mako_string}),
 
     # Registrations
-    ('/project/<pid>/register/', 'get', project_views.register.node_register_page, render, {}, {'template_file' : 'project/register.html', 'renderer' : render_mako_string}),
-    ('/project/<pid>/node/<nid>/register/', 'get', project_views.register.node_register_page, render, {}, {'template_file' : 'project/register.html', 'renderer' : render_mako_string}),
-    ('/project/<pid>/register/<template>/', 'get', project_views.register.node_register_template_page, render, {}, {'template_file' : 'project/register.html', 'renderer' : render_mako_string}),
-    ('/project/<pid>/node/<nid>/register/<template>/', 'get', project_views.register.node_register_template_page, render, {}, {'template_file' : 'project/register.html', 'renderer' : render_mako_string}),
-    ('/project/<pid>/registrations/', 'get', project_views.node.node_registrations, render, {}, {'template_file' : 'project/registrations.html', 'renderer' : render_mako_string}),
-    ('/project/<pid>/node/<nid>/registrations/', 'get', project_views.node.node_registrations, render, {}, {'template_file' : 'project/registrations.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/register/', 'get', project_views.register.node_register_page, WebRenderer(), {}, {'template_name' : 'project/register.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/node/<nid>/register/', 'get', project_views.register.node_register_page, WebRenderer(), {}, {'template_name' : 'project/register.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/register/<template>/', 'get', project_views.register.node_register_template_page, WebRenderer(), {}, {'template_name' : 'project/register.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/node/<nid>/register/<template>/', 'get', project_views.register.node_register_template_page, WebRenderer(), {}, {'template_name' : 'project/register.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/registrations/', 'get', project_views.node.node_registrations, WebRenderer(), {}, {'template_name' : 'project/registrations.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/node/<nid>/registrations/', 'get', project_views.node.node_registrations, WebRenderer(), {}, {'template_name' : 'project/registrations.html', 'renderer' : render_mako_string}),
 
     # Statistics
-    ('/project/<pid>/statistics/', 'get', project_views.node.project_statistics, render, {}, {'template_file' : 'project/statistics.html', 'renderer' : render_mako_string}),
-    ('/project/<pid>/node/<nid>/statistics/', 'get', project_views.node.project_statistics, render, {}, {'template_file' : 'project/statistics.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/statistics/', 'get', project_views.node.project_statistics, WebRenderer(), {}, {'template_name' : 'project/statistics.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/node/<nid>/statistics/', 'get', project_views.node.project_statistics, WebRenderer(), {}, {'template_name' : 'project/statistics.html', 'renderer' : render_mako_string}),
 
     ### Wiki ###
     ('/project/<pid>/wiki/', 'get', project_views.wiki.project_project_wikimain),
     ('/project/<pid>/node/<nid>/wiki/', 'get', project_views.wiki.project_node_wikihome),
 
     # View
-    ('/project/<pid>/wiki/<wid>/', 'get', project_views.wiki.project_wiki_page, render, {}, {'template_file' : 'project/wiki.html', 'renderer' : render_mako_string}),
-    ('/project/<pid>/node/<nid>/wiki/<wid>/', 'get', project_views.wiki.project_wiki_page, render, {}, {'template_file' : 'project/wiki.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/wiki/<wid>/', 'get', project_views.wiki.project_wiki_page, WebRenderer(), {}, {'template_name' : 'project/wiki.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/node/<nid>/wiki/<wid>/', 'get', project_views.wiki.project_wiki_page, WebRenderer(), {}, {'template_name' : 'project/wiki.html', 'renderer' : render_mako_string}),
 
     # Edit | GET
-    ('/project/<pid>/wiki/<wid>/edit/', 'get', project_views.wiki.project_wiki_edit, render, {}, {'template_file' : 'project/wiki/edit.html', 'renderer' : render_mako_string}),
-    ('/project/<pid>/node/<nid>/wiki/<wid>/edit/', 'get', project_views.wiki.project_wiki_edit, render, {}, {'template_file' : 'project/wiki/edit.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/wiki/<wid>/edit/', 'get', project_views.wiki.project_wiki_edit, WebRenderer(), {}, {'template_name' : 'project/wiki/edit.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/node/<nid>/wiki/<wid>/edit/', 'get', project_views.wiki.project_wiki_edit, WebRenderer(), {}, {'template_name' : 'project/wiki/edit.html', 'renderer' : render_mako_string}),
 
     # Compare
-    ('/project/<pid>/wiki/<wid>/compare/<compare_id>/', 'get', project_views.wiki.project_wiki_compare, render, {}, {'template_file' : 'project/wiki/compare.html', 'renderer' : render_mako_string}),
-    ('/project/<pid>/node/<nid>/wiki/<wid>/compare/<compare_id>/', 'get', project_views.wiki.project_wiki_compare, render, {}, {'template_file' : 'project/wiki/compare.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/wiki/<wid>/compare/<compare_id>/', 'get', project_views.wiki.project_wiki_compare, WebRenderer(), {}, {'template_name' : 'project/wiki/compare.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/node/<nid>/wiki/<wid>/compare/<compare_id>/', 'get', project_views.wiki.project_wiki_compare, WebRenderer(), {}, {'template_name' : 'project/wiki/compare.html', 'renderer' : render_mako_string}),
 
     # Versions
-    ('/project/<pid>/wiki/<wid>/version/<vid>/', 'get', project_views.wiki.project_wiki_version, render, {}, {'template_file' : 'project/wiki/compare.html', 'renderer' : render_mako_string}),
-    ('/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/', 'get', project_views.wiki.project_wiki_version, render, {}, {'template_file' : 'project/wiki/compare.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/wiki/<wid>/version/<vid>/', 'get', project_views.wiki.project_wiki_version, WebRenderer(), {}, {'template_name' : 'project/wiki/compare.html', 'renderer' : render_mako_string}),
+    ('/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/', 'get', project_views.wiki.project_wiki_version, WebRenderer(), {}, {'template_name' : 'project/wiki/compare.html', 'renderer' : render_mako_string}),
 
 ])
 
