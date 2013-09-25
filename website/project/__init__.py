@@ -94,21 +94,3 @@ def watch_node(id, uid):
     user.save()
     return True
 
-def get_file_tree(node_to_use, user):
-    tree = []
-    for node in node_to_use.nodes:
-        if not node.is_deleted:
-            tree.append(get_file_tree(node, user))
-
-    if node_to_use.is_public or node_to_use.is_contributor(user):
-        for i,v in node_to_use.files_current.items():
-            v = NodeFile.load(v)
-            tree.append(v)
-
-    return (node_to_use, tree)
-
-def prune_file_list(file_list, max_depth):
-    if max_depth is None:
-        return file_list
-    return [file for file in file_list if len([c for c in file if c == '/']) <= max_depth]
-
