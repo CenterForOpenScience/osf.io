@@ -8,7 +8,9 @@
         </form>
         % for key in container.api_keys:
             <div>
-                <div>${key._id} | ${key.label}</div>
+                <div class='api-credential'>
+                    <span class='api-key'>${key._id}</span> |
+                    <span class='api-label'>${key.label}</span></div>
                 <div>
                     <a href="${route}/key_history/${key._id}" class="key_history" data-key="${key._id}">View history</a>
                     <a class="remove_key" data-key="${key._id}">Revoke key</a>
