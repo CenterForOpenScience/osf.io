@@ -5,17 +5,10 @@ from ..decorators import must_not_be_registration, must_be_valid_project, must_b
 from framework.forms.utils import sanitize
 from .node import _view_project
 
+from .. import clean_template_name
+
 import os
 import json
-
-template_name_replacements = {
-    ('.txt', ''),
-    (' ', '_'),
-}
-def clean_template_name(template_name):
-    for replacement in template_name_replacements:
-        template_name = template_name.replace(*replacement)
-    return template_name
 
 @must_have_session_auth
 @must_be_valid_project
