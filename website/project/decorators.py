@@ -155,8 +155,9 @@ def must_be_contributor_or_public(fn):
             and not node_to_use.is_contributor(user)
             and api_node != node_to_use
         ):
-            print kwargs
-            abort(http.FORBIDDEN)
+            # abort(http.FORBIDDEN)
+            push_status_message('You are not authorized to perform that action for this node')
+            return redirect('/')
         
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)
