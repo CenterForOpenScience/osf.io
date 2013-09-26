@@ -88,9 +88,7 @@
             //$('#addContributor').modal('hide')
           </script>
           % if node_children:
-              % for child in node_children:
-                  <div mod-meta='{"tpl" : "util/render_node.html", "uri" : "${child['child_api_url']}get_summary/", "replace" : true}'></div>
-              % endfor
+              <div mod-meta='{"tpl" : "util/render_nodes.html", "uri" : "${node_api_url}get_children/", "replace" : true, "kwargs" : {"sortable" : true}}'></div>
           % else:
               <p>No components have been added to this project.</p>
           % endif
