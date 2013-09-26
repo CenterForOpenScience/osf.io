@@ -56,7 +56,7 @@
                type:  'text',
                pk:    '${node_id}',
                name:  'title',
-               url:   '${node_api_url}/edit/',
+               url:   '${node_api_url}edit/',
                title: 'Edit Title',
                placement: 'bottom',
                value: '${ '\\\''.join(node_title.split('\'')) }',
