@@ -94,3 +94,12 @@ def watch_node(id, uid):
     user.save()
     return True
 
+
+template_name_replacements = {
+    ('.txt', ''),
+    (' ', '_'),
+}
+def clean_template_name(template_name):
+    for replacement in template_name_replacements:
+        template_name = template_name.replace(*replacement)
+    return template_name
