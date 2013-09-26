@@ -9,6 +9,7 @@ from .node import _view_project
 
 from website import settings
 
+import re
 import pygments
 import pygments.lexers
 import pygments.formatters
@@ -89,7 +90,7 @@ def upload_file_get(*args, **kwargs):
                 "size":v.size,
                 "url":node_to_use.url() + "files/" + v.path,
                 "type":v.content_type,
-                "download_url": node_to_use.url() + "/files/download/" + v.path,
+                "download_url": node_to_use.api_url() + "/files/download/" + v.path,
                 "date_uploaded": v.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
                 "downloads": str(total) if total else str(0),
                 "user_id": None,
@@ -135,7 +136,7 @@ def upload_file_public(*args, **kwargs):
     file_info = {
         "name":uploaded_filename,
         "size":uploaded_file_size,
-        "url":node_to_use.url() + "/files/" + uploaded_filename,
+        "url":node_to_use.url() + "files/" + uploaded_filename + "/",
         "type":uploaded_file_content_type,
         "download_url":node_to_use.url() + "/files/download/" + file_object.path,
         "date_uploaded": file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
@@ -205,7 +206,7 @@ def view_file(*args, **kwargs):
 
     # todo: add bzip, etc
     if is_img:
-        rendered="<img src='{node_url}/files/download/{fid}' />".format(node_url=node_to_use.url(), fid=file_name)
+        rendered="<img src='{node_url}files/download/{fid}/' />".format(node_url=node_to_use.api_url(), fid=file_name)
     elif file_ext == '.zip':
         archive = zipfile.ZipFile(file_path)
         archive_files = prune_file_list(archive.namelist(), settings.archive_depth)
@@ -247,9 +248,6 @@ def view_file(*args, **kwargs):
     return rv
     # ).encode('utf-8', 'replace')
 
-# todo routes
-# @get('/project/<pid>/files/download/<fid>')
-# @get('/project/<pid>/node/<nid>/files/download/<fid>')
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
 def download_file(*args, **kwargs):
@@ -261,14 +259,12 @@ def download_file(*args, **kwargs):
 
     kwargs["vid"] = len(node_to_use.files_versions[filename.replace('.', '_')])
 
-    if node:
-        return redirect('/project/{pid}/node/{nid}/files/download/{fid}/version/{vid}'.format(**kwargs))
-    else:
-        return redirect('/project/{pid}/files/download/{fid}/version/{vid}'.format(**kwargs))
+    return redirect('{node_url}files/download/{fid}/version/{vid}/'.format(
+        node_url=node_to_use.api_url(),
+        fid=kwargs['fid'],
+        vid=kwargs['vid'],
+    ))
 
-# todo routes
-# @get('/project/<pid>/files/download/<fid>/version/<vid>')
-# @get('/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>')
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
 @update_counters('download:{pid}:{fid}:{vid}')
@@ -299,7 +295,6 @@ def download_file_by_version(*args, **kwargs):
         ext=file_extension,
         tmstp=file_object.date_uploaded.strftime('%Y%m%d%H%M%S')
     )
-    print returned_filename
     return send_file(
         StringIO(content),
         mimetype=content_type,
