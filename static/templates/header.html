@@ -114,7 +114,7 @@
             <div class="container">
                 <a class="brand" style="padding-left: 10px; padding-right: 10px;" href="/">Open Science Framework<span style="font-size: 8px;"> BETA</span></a>
                 <ul class="nav">
-                    %if username:
+                    %if user_name:
                     <li><a rel="tooltip" title="My Dashboard" href="/dashboard/">Dashboard</a></li>
                     %endif
                     <li class='dropdown'>
@@ -144,7 +144,7 @@
                     <input type="text" class="search-query" placeholder="Search" name="q">
                 </form>
                 <ul class="nav pull-right" id='navbar-icons'>
-                    %if username and display_name:
+                    %if user_name and display_name:
                     <li><a href="/profile">${display_name}</a></li>
                     <li><a rel="tooltip" title="Settings" href="/settings"><span class='icon-white icon-cog'>&nbsp;</span></a></li>
                     <li><a rel='tooltip' title='Log out' href='/logout'><span class="icon-white icon-off">&nbsp;</span></a></li>
