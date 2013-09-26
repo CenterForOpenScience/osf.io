@@ -42,7 +42,7 @@ def migrate_projects():
                     'public': True,
                 })
                 contributors.append(user.fullname)
-                contributors_url.append('/profile/{}/'.format(user._id))
+                contributors_url.append('/profile/{}'.format(user._id))
         id = project._id
 
         document = {
@@ -50,7 +50,7 @@ def migrate_projects():
             project._id + '_title': project.title,
             project._id + '_category': project.category,
             project._id + '_public': True,
-            project._id + '_tags': project.tags,
+            project._id + '_tags': [x._id for x in project.tags],
             project._id + '_description': project.description,
             project._id + '_url': project.url(),
             project._id + '_contributors': contributors,
@@ -76,14 +76,14 @@ def migrate_nodes():
             if user is not None:
                 # put user in solr
                 contributors.append(user.fullname)
-                contributors_url.append('/profile/{}/'.format(user._id))
+                contributors_url.append('/profile/{}'.format(user._id))
         id = node.node__parent[0]._id
         document = {
             'id': id,
             node._id + '_title': node.title,
             node._id + '_category': node.category,
             node._id + '_public': True,
-            node._id + '_tags': node.tags,
+            node._id + '_tags': [x._id for x in node.tags],
             node._id + '_description': node.description,
             node._id + '_url': '/project/{}/node/{}/'.format(id, node._id),
             node._id + '_contributors': contributors,
@@ -125,10 +125,13 @@ def migrate_wikis():
 
 def find_project_id(node):
     # find the project id
-    if node.category == 'project':
-        return node._id
-    else:
-        return node.node__parent[0]._id
+    try:
+        if node.category == 'project':
+            return node._id
+        else:
+            return node.node__parent[0]._id
+    except IndexError:
+        print('ERROR: Node {} is an orphan!'.format(node._id))
 
 
 migrate_projects()
