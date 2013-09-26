@@ -10,7 +10,8 @@ from framework.forms.utils import sanitize
 
 from website.models import ApiKey
 from framework.analytics import get_total_activity_count
-
+from website import settings
+from website import filters
 
 def _node_info(node):
     return {
@@ -55,6 +56,7 @@ def profile_view(uid=None):
         ]
         public_projects = get_public_projects(user)
         public_components = get_public_components(user)
+        gravatar_url = filters.gravatar(profile, size=settings.gravatar_size_profile)
         return {
             'user_id': profile._id,
             'user_is_profile' : user == profile,
@@ -63,6 +65,7 @@ def profile_view(uid=None):
             'number_public_projects' : len(public_projects),
             'fullname': profile.fullname,
             'date_registered': profile.date_registered.strftime("%Y-%m-%d"),
+            'gravatar_url' : gravatar_url,
             'public_projects' : public_projects,
             'public_components' : public_components,
         }
