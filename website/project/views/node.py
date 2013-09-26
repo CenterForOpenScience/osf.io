@@ -11,6 +11,8 @@ from ..model import ApiKey, User, Tag, Node, NodeFile, NodeWikiPage, NodeLog
 from framework.forms.utils import sanitize
 from framework.auth import must_have_session_auth
 
+from .. import clean_template_name
+
 from website import settings
 from website import filters
 
@@ -308,14 +310,7 @@ def _view_project(node_to_use, user):
         'node_date_modified' : node_to_use.logs[-1].date.strftime('%Y/%m/%d %I:%M %p'),
 
         'node_tags' : [tag._primary_key for tag in node_to_use.tags],
-        'node_children' : [
-            {
-                'child_id' : child._primary_key,
-                'child_url' : child.url(),
-                'child_api_url' : child.api_url(),
-            }
-            for child in node_to_use.nodes
-        ],
+        'node_children' : bool(node_to_use.nodes),
 
         'node_is_registration' : node_to_use.is_registration,
         'node_registered_from_url' : node_to_use.registered_from.url() if node_to_use.is_registration else '',
@@ -325,7 +320,7 @@ def _view_project(node_to_use, user):
                 'name_no_ext' : meta.replace('.txt', ''),
                 'name_clean' : clean_template_name(meta),
             }
-            for meta in node_to_use.registered_meta
+            for meta in node_to_use.registered_meta or []
         ],
         'node_registrations' : [
             {
@@ -347,6 +342,7 @@ def _view_project(node_to_use, user):
                 'fork_api_url' : fork.api_url(),
             }
             for fork in node_to_use.node__forked
+            if not fork.is_deleted
         ],
 
         'parent_id' : node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
@@ -374,3 +370,17 @@ def get_summary(*args, **kwargs):
         }
     }
 
+@must_be_contributor_or_public
+def get_children(*args, **kwargs):
+
+    node_to_use = kwargs['node'] or kwargs['project']
+
+    return {
+        'nodes' : [
+            {
+                'url' : child.url(),
+                'api_url' : child.api_url(),
+            }
+            for child in node_to_use.nodes
+        ]
+    }
