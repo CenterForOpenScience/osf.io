@@ -139,8 +139,6 @@ class Node(StoredObject):
                 })
                 contributors.append(user.fullname)
                 contributors_url.append('/profile/{}/'.format(user._id))
-        # public project defautls to false
-        public_project = False
         # find out if the root id of our node
         if self.category == 'project':
             id = self._id
@@ -153,22 +151,21 @@ class Node(StoredObject):
         url = self.url()
 
         # if deleting, we remove from solr
-        if self.is_deleted:
+        if self.is_deleted or not self.is_public:
             delete_solr_doc({
                 'root_id': id,
                 '_id': self._id,
             })
         else:
             # if its a project
-            if self.category == 'Project':
+            if self.category == 'project':
                 args = {
                     'id': id,
-                    'public': public_project,
+                    'public': self.is_public,
                     self._id + '_title': self.title,
                     self._id + '_category': self.category,
-                    'public_project': self.is_public,
                     self._id + '_public': self.is_public,
-                    self._id + '_tags': self.tags,
+                    self._id + '_tags': [x._id for x in self.tags],
                     self._id + '_description': self.description,
                     self._id + '_url': url,
                     self._id + '_contributors': contributors,
@@ -181,7 +178,7 @@ class Node(StoredObject):
                     self._id + '_title': self.title,
                     self._id + '_category': self.category,
                     self._id + '_public': self.is_public,
-                    self._id + '_tags': self.tags,
+                    self._id + '_tags': [x._id for x in self.tags],
                     self._id + '_description': self.description,
                     self._id + '_url': url,
                     self._id + '_contributors': contributors,

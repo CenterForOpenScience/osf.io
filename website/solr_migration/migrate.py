@@ -102,6 +102,10 @@ def migrate_wikis():
                 wiki = [wiki, ]
 
             for wik in wiki:
+                # If wiki's node is not public, skip it
+                if not wik.node.is_public:
+                    continue
+
                 wiki_content = wik.content
                 remove_re = re.compile(
                     u'[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]')

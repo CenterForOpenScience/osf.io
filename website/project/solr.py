@@ -77,20 +77,21 @@ def update_solr(args=None):
 
 
 def delete_solr_doc(args=None):
-    print args
     # if the id we have is for a project, then we
     # just deleted the document
     if solr.query(id=args['_id']).execute():
         db = solr.query(id=args['_id']).execute()[0]
         solr.delete(db)
         solr.commit()
-        print 'project is now deleted'
     # otherwise we just create a new dictionary while
     # that does not include any reference to the id
     # of our node
     else:
-        query = solr.query(id=args['root_id']).execute()[0]
-        print query
+        query = solr.query(id=args['root_id']).execute()
+        try:
+            query = query[0]
+        except IndexError:
+            return
         update_dict = {}
         for key, value in query.iteritems():
             if args['_id'] not in key:
