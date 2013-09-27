@@ -1,8 +1,8 @@
 import urllib
 import urllib2
 import ast
-import sunburnt
-solr = sunburnt.SolrInterface("http://localhost:8983/solr/")
+
+from website import settings
 
 
 def search_solr(query, start=0):
@@ -17,7 +17,7 @@ def search_solr(query, start=0):
         'spellcheck': 'true', 'spellcheck.collate': 'true',
         'start': start, 'rows': 10}
     encoded_args = urllib.urlencode(query_args)
-    url = "http://localhost:8983/solr/spell?"+encoded_args+'&wt=python'
+    url = '{}spell?{}&wt=python'.format(settings.solr, encoded_args)
     # post to the url
     solrReq = urllib2.Request(url)
     solrReq.add_header('Content-Type', 'application/json')

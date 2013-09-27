@@ -60,6 +60,10 @@ class User(StoredObject):
         #TODO: Give users the ability to specify this via their profile.
         return self.given_name[0]
 
+    @property
+    def profile_url(self):
+        return '/profile/{}'.format(self._id)
+
     @classmethod
     def search(cls, terms):
         keywords = terms.lower().split(' ')

@@ -31,8 +31,10 @@ except KeyError:
 try:
     os.environ['OSF_PRODUCTION']
     mongo_uri = 'mongodb://osf:osfosfosfosf0$f@localhost:20771/osf20130903'
+    solr = 'http://services.openscienceframework.org:8983/solr/'
 except KeyError:
     mongo_uri = 'mongodb://localhost:20771/osf20130903'
+    solr = 'http://localhost:8983/solr/'
 
 #TODO: Configuration should not change between deploys - this should be dynamic.
 canonical_domain = 'openscienceframework.org'

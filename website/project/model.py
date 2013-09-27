@@ -125,66 +125,50 @@ class Node(StoredObject):
         # that we can send relevant info to solr
         super(Node, self).save()
 
-        # If the node is not a project, but doesn't have a
+        self.update_solr()
 
-        contributors = []
-        contributors_url = []
-        for user in self.contributors:
-            if user is not None:
-                # puts users in solr
-                migrate_user({
-                    'id': user._id,
-                    'user': user.fullname,
-                    'public': True,
-                })
-                contributors.append(user.fullname)
-                contributors_url.append('/profile/{}/'.format(user._id))
-        # find out if the root id of our node
+    def update_solr(self):
+        """Send the current state of the object to Solr, or delete it from Solr
+        as appropriate
+        """
+
         if self.category == 'project':
-            id = self._id
+            # All projects use their own IDs.
+            solr_document_id = self._id
         else:
             try:
-                id = self.node__parent[0]._id
+                # Components must have a project for a parent; use it's ID.
+                solr_document_id = self.node__parent[0]._id
             except IndexError:
+                # Skip orphaned components. There are some in the DB...
                 return
-        # get the url
-        url = self.url()
 
-        # if deleting, we remove from solr
         if self.is_deleted or not self.is_public:
+            # If the Node is deleted *or made private*
+            # Delete or otherwise ensure the Solr document doesn't exist.
             delete_solr_doc({
-                'root_id': id,
+                'root_id': solr_document_id,
                 '_id': self._id,
             })
         else:
-            # if its a project
-            if self.category == 'project':
-                args = {
-                    'id': id,
-                    'public': self.is_public,
-                    self._id + '_title': self.title,
-                    self._id + '_category': self.category,
-                    self._id + '_public': self.is_public,
-                    self._id + '_tags': [x._id for x in self.tags],
-                    self._id + '_description': self.description,
-                    self._id + '_url': url,
-                    self._id + '_contributors': contributors,
-                    self._id + '_contributors_url': contributors_url,
-                }
-            # for all other nodes
-            else:
-                args = {
-                    'id': id,
-                    self._id + '_title': self.title,
-                    self._id + '_category': self.category,
-                    self._id + '_public': self.is_public,
-                    self._id + '_tags': [x._id for x in self.tags],
-                    self._id + '_description': self.description,
-                    self._id + '_url': url,
-                    self._id + '_contributors': contributors,
-                    self._id + '_contributors_url': contributors_url,
-                }
-            update_solr(args)
+            # Insert/Update the Solr document
+            update_solr({
+                'id': solr_document_id,
+                'public': self.is_public,
+                '{}_contributors'.format(self._id): [
+                    x.fullname for x in self.contributors
+                ],
+                '{}_contributors_url'.format(self._id): [
+                    x.profile_url for x in self.contributors
+                ],
+                '{}_title'.format(self._id): self.title,
+                '{}_category'.format(self._id): self.category,
+                '{}_public'.format(self._id): self.is_public,
+                '{}_tags'.format(self._id): [x._id for x in self.tags],
+                '{}_description'.format(self._id): self.description,
+                '{}_url'.format(self._id): self.url(),
+            })
+
 
     def remove_node(self, user, date=None):
         if not date:
