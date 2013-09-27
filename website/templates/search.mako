@@ -87,7 +87,14 @@ $(function () {
                             </div>
                         % else:
                         <div class="title">
-                            <h4> <a href=${result['url']}>${result['title']}</a> </h4>
+                            <h4>
+                                % if result['url']:
+                                    <a href=${result['url']}>${result['title']}</a>
+                                %else:
+                                    <span style='font-weight:normal; font-style:italic'>${result['title']}</span>
+                                % endif
+
+                            </h4>
                         </div>
 ##                            jeff's nice logic for displaying users
                         <div class="contributors">
@@ -164,7 +171,7 @@ $(function () {
                                             <div class="highlight">
 ##                                               show our highlights
                                                 % for highlight in result['nest'][key]['highlight']:
-                                                    ${highlight}}
+                                                    ${highlight}
                                                 % endfor
 ##                                               and link to wiki, if its there
                                                 % if result['nest'][key]['wiki_link']:

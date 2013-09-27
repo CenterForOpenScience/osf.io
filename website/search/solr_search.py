@@ -10,7 +10,7 @@ def search_solr(query, start=0):
     # description, wiki, and title
     # start is for our pagination
     query_args = {
-        'q': query + ' AND public:true',
+        'q': query,
         'hl.query': query, 'hl': 'true', 'hl.fl': '*',
         'hl.fragsize': '100', 'hl.snippets': '10',
         'hl.preserveMulti': 'true',
@@ -34,9 +34,7 @@ def search_solr(query, start=0):
     # look for specllcheck,
     # dont return that public_project was part of the query to the user
     if spellcheck:
-        # need to strip out the AND
-        # so users dont see that we are searching for AND public:true!
-        spellcheck_result = spellcheck[-1].split(' AND')[0]
+        spellcheck_result = spellcheck[-1]
     else:
         spellcheck_result = None
     solrPost.close()

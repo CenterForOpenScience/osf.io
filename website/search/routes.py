@@ -67,16 +67,15 @@ def create_result(highlights, results):
             container['user'] = result['user']
             container['user_url'] = '/profile/'+result['id']
             result_search.append(container)
-        # otherwise we only look for our public projects
-        elif result['public']:
-            container['title'] = result[id+'_title']
-            container['url'] = result[id+'_url']
+        else:
+            container['title'] = result.get(id+'_title', '-- private project --')
+            container['url'] = result.get(id+'_url')
             contributors = []
             contributors_url = []
             # we're only going to show contributors on projects, for now
-            for contributor in result[id+'_contributors']:
+            for contributor in result.get(id+'_contributors', []):
                 contributors.append(contributor)
-            for url in result[id+'_contributors_url']:
+            for url in result.get(id+'_contributors_url', []):
                 contributors_url.append(url)
             container['contributors'] = contributors
             container['contributors_url'] = contributors_url
@@ -130,7 +129,8 @@ def create_result(highlights, results):
                     # redundant so only show highlight if the
                     # wiki or description are in the key
                     if '__wiki' in key or '_description' in key:
-                        lit = value
+                        if value[0] != 'None':
+                            lit = value
                     # build our contributor list and our contributor url list
                     for contributor in result[split_id+'_contributors']:
                         contributors.append(contributor)
@@ -140,7 +140,7 @@ def create_result(highlights, results):
                         nest[split_id] = {
                             'title': result[split_id+'_title'],
                             'url': result[split_id+'_url'],
-                            'highlight': lit,
+                            'highlight': lit or nest.get(split_id)['highlight'],
                             'wiki_link': wiki_link,
                             'contributors': contributors,
                             'contributors_url': contributors_url,

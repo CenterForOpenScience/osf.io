@@ -147,14 +147,14 @@ class Node(StoredObject):
             # If the Node is deleted *or made private*
             # Delete or otherwise ensure the Solr document doesn't exist.
             delete_solr_doc({
-                'root_id': solr_document_id,
+                'doc_id': solr_document_id,
                 '_id': self._id,
             })
         else:
             # Insert/Update the Solr document
-            update_solr({
+            solr_document = {
                 'id': solr_document_id,
-                'public': self.is_public,
+                #'public': self.is_public,
                 '{}_contributors'.format(self._id): [
                     x.fullname for x in self.contributors
                 ],
@@ -167,7 +167,17 @@ class Node(StoredObject):
                 '{}_tags'.format(self._id): [x._id for x in self.tags],
                 '{}_description'.format(self._id): self.description,
                 '{}_url'.format(self._id): self.url(),
-            })
+                }
+
+            for wiki in [
+                NodeWikiPage.load(x)
+                for x in self.wiki_pages_current.values()
+            ]:
+                solr_document.update({
+                    '__'.join((self._id, wiki.page_name, 'wiki')): wiki.raw_text
+                })
+
+            update_solr(solr_document)
 
 
     def remove_node(self, user, date=None):
@@ -736,14 +746,6 @@ class Node(StoredObject):
             user=user,
             log_date=v.date
         )
-        # find the root id
-        id = self.find_root_id(self.id)
-        document = {
-            'id': id,
-            self.id+'__'+page_name+'__wiki': content,
-        }
-        # add to solr
-        update_solr(document)
 
 
     def get_stats(self, detailed=False):
@@ -753,6 +755,7 @@ class Node(StoredObject):
             )
         else:
             return get_basic_counters('node:%s' % self._primary_key)
+
 
 class NodeWikiPage(StoredObject):
 
@@ -782,3 +785,14 @@ class NodeWikiPage(StoredObject):
         )
 
         return sanitize(html_output, **settings.wiki_whitelist)
+
+    @property
+    def raw_text(self):
+        """ The raw text of the page, suitable for using in a test search"""
+
+        return sanitize(self.html, tags=[], strip=True)
+
+    def save(self, *args, **kwargs):
+        super(NodeWikiPage, self).save(*args, **kwargs)
+
+        self.node.update_solr()
