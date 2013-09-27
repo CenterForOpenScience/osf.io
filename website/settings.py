@@ -68,6 +68,12 @@ wiki_whitelist = {
         'height', 'href', 'src', 'style', 'title', 'type', 'width',
         'face', 'size', # font tags
         'salign', 'align', 'wmode',
+    ],
+    # Styles currently used in Reproducibility Project wiki pages
+    # TODO: Discuss and possibly delete
+    'styles' : [
+        'top', 'left', 'width', 'height',
+        'background', 'font-size', 'position', 'text-align', 'z-index',
     ]
 }
 

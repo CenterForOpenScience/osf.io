@@ -6,6 +6,16 @@ from framework.forms import (
     validators,
 )
 
+
+# The order fields are defined determines their order on the page.
+name_field = TextField(
+    'Full Name',
+    [
+        validators.Required(message=u'Full name is required'),
+        NoHtmlCharacters(),
+    ],
+)
+
 email_field = TextField('Email Address', [
     validators.Required(message=u'Email address is required'),
     validators.Length(min=6, message=u'Email address is too short'),
@@ -14,47 +24,40 @@ email_field = TextField('Email Address', [
     NoHtmlCharacters(),
 ])
 
+confirm_email_field = TextField(
+    'Verify Email Address',
+    [
+        validators.EqualTo(
+            'username',
+            message='Email addresses must match'),
+    ],
+)
+
 password_field = PasswordField('Password', [
     validators.Required(message=u'Password is required'),
     validators.Length(min=6, message=u'Password is too short'),
     validators.Length(max=35, message=u'Password is too long'),
 ])
 
+confirm_password_field = PasswordField(
+    'Verify Password',
+    [
+        validators.EqualTo('password', message='Passwords must match')
+    ],
+)
+
 
 class ResetPasswordForm(Form):
     password = password_field
-    password2 = PasswordField(
-        'Verify Password',
-        [
-            validators.EqualTo('password', message='Passwords must match'),
-        ],
-    )
+    password2 = confirm_password_field
 
 
 class RegistrationForm(Form):
-    fullname = TextField(
-        'Full Name',
-        [
-            validators.Required(message=u'Full name is required'),
-            NoHtmlCharacters(),
-        ],
-    )
+    fullname = name_field
     username = email_field
-    username2 = TextField(
-        'Verify Email Address',
-        [
-            validators.EqualTo(
-                'username',
-                message='Email addresses must match'),
-        ],
-    )
+    username2 = confirm_email_field
     password = password_field
-    password2 = PasswordField(
-        'Verify Password',
-        [
-            validators.EqualTo('password', message='Passwords must match')
-        ],
-    )
+    password2 = confirm_password_field
 
 
 class SignInForm(Form):

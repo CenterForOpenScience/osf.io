@@ -1,75 +1,28 @@
 from framework.flask import app, abort
-from framework.mongo import db
 
 import bson.objectid
 import itsdangerous
 from flask import request, redirect
 from werkzeug.local import LocalProxy
 
-import datetime
-
 COOKIE_NAME = 'osf'
 SECRET_KEY = '4IdgL9FYyZRoDkoQ'
-COLLECTION = db['sessions']
-TEMP_SESSION = 'tmp'
 
 # todo 2-back page view queue
 # todo actively_editing date
 
-class SessionDict(object):
-
-    def __init__(self, db, key):
-        self._collection = db
-        self.key = key
-        self._is_dirty = False
-
-        result = self._collection.find(
-            {'_id': self.key},
-            {'value': 1, '_id': 0})
-
-        if result.count() == 0:
-            self.values = {}
-            self.values['session_date_created'] = datetime.datetime.utcnow()
-        else:
-            self.values = result[0]['value']
-
-    def __setitem__(self, key, value):
-        self.values[key] = value
-        self._is_dirty = True
-
-    def _flush(self):
-        if self._is_dirty:
-            self.values['session_date_modified'] = datetime.datetime.utcnow()
-            self._collection.update(
-                {'_id':self.key},
-                {'_id':self.key, 'value':self.values},
-                upsert=True
-            )
-            self._is_dirty = False
-
-    def __delitem__(self, key):
-        del self.values[key]
-        self._is_dirty = True
-
-    def __getitem__(self, key):
-        return self.values[key]
-
-    def __contains__(self, item):
-        return item in self.values
-
-    def get(self, item, default=None):
-        return self.values.get(item, default)
+from model import Session
 
 def set_previous_url(url=None):
     if url is None:
         url = request.referrer
-    session['url_previous'] = url
+    session.data['url_previous'] = url
 
 
 def goback():
-    url_previous = session.get('url_previous')
+    url_previous = session.data.get('url_previous')
     if url_previous:
-        del session['url_previous']
+        del session.data['url_previous']
         return redirect(url_previous)
 
 
@@ -77,12 +30,9 @@ def create_session(response, data=None):
     session_id = str(bson.objectid.ObjectId())
     cookie_value = itsdangerous.Signer(SECRET_KEY).sign(session_id)
     response.set_cookie(COOKIE_NAME, value=cookie_value)
-    d = SessionDict(COLLECTION, session_id)
-    if data:
-        for k,v in data.items():
-            d[k] = v
-    d._flush()
-    sessions[request._get_current_object()] = d
+    session = Session(_id=session_id, data=data or {})
+    session.save()
+    sessions[request._get_current_object()] = session
     return response
 
 
@@ -106,23 +56,26 @@ def before_request():
 
         # Hack: Avoid circular import
         from website.project.model import ApiKey
-        api_key = ApiKey.load(request.authorization.username)
+        api_label = request.authorization.username
+        api_key = ApiKey.load(request.authorization.password)
 
         if api_key:
 
             user = api_key.user__keyed and api_key.user__keyed[0]
             node = api_key.node__keyed and api_key.node__keyed[0]
 
-            session = SessionDict(COLLECTION, TEMP_SESSION)
-            session['auth_api_key'] = api_key._primary_key
+            session = Session()
+
+            session.data['auth_api_label'] = api_label
+            session.data['auth_api_key'] = api_key._primary_key
 
             if user:
-                session['auth_user_username'] = user.username
-                session['auth_user_id'] = user._primary_key
-                session['auth_user_fullname'] = user.fullname
+                session.data['auth_user_username'] = user.username
+                session.data['auth_user_id'] = user._primary_key
+                session.data['auth_user_fullname'] = user.fullname
 
             elif node:
-                session['auth_node_id'] = node._primary_key
+                session.data['auth_node_id'] = node._primary_key
 
             else:
                 # Invalid key: Not attached to user or node
@@ -138,7 +91,8 @@ def before_request():
     if cookie:
         try:
             session_id = itsdangerous.Signer(SECRET_KEY).unsign(cookie)
-            sessions[request._get_current_object()] = SessionDict(COLLECTION, session_id)
+            session = Session.load(session_id) or Session(_id=session_id)
+            sessions[request._get_current_object()] = session
             return
         except:
             pass
@@ -149,8 +103,8 @@ def before_request():
 
 @app.after_request
 def after_request(response):
-    # Flush if session is defined
+    # Save if session exists and not authenticated by API
     if session._get_current_object() is not None \
-            and session.key != TEMP_SESSION:
-        session._flush()
+            and not session.data.get('auth_api_key'):
+        session.save()
     return response
