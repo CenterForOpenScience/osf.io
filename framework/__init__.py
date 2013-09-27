@@ -3,6 +3,15 @@ from framework.flask import send_file, secure_filename, app, route, get, post,\
     Blueprint, render_template, render_template_string, jsonify, abort, \
     make_response
 
+##### ODM
+
+from modularodm import FlaskStoredObject as StoredObject, fields, storage
+from modularodm.query.querydialect import DefaultQueryDialect as Q
+
+###### Mongo
+
+from framework.mongo import db
+
 ##### Sessions
 from framework.sessions import goback, set_previous_url, session, create_session
 
@@ -14,15 +23,6 @@ from framework.mako import render
 
 from framework.celery import celery
 from framework.celery.tasks import error_handler
-
-###### Mongo
-
-from framework.mongo import db
-
-##### ODM
-
-from modularodm import FlaskStoredObject as StoredObject, fields, storage
-from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 ###### Auth
 

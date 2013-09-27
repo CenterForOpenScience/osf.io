@@ -45,7 +45,7 @@ def update_counters(rex):
 
         d = {'$inc': {}}
 
-        visitedByDate = session.get('visitedByDate')
+        visitedByDate = session.data.get('visited_by_date')
         if not visitedByDate:
             visitedByDate = {'date': date, 'pages': []}
 
@@ -53,23 +53,23 @@ def update_counters(rex):
             if page not in visitedByDate['pages']:
                 d['$inc']['date.%s.unique' % date] = 1
                 visitedByDate['pages'].append(page)
-                session['visitedByDate'] = visitedByDate
+                session.data['visited_by_date'] = visitedByDate
         else:
             visitedByDate['date'] = date
             visitedByDate['pages'] = []
             d['$inc']['date.%s.unique' % date] = 1
             visitedByDate['pages'].append(page)
-            session['visitedByDate'] = visitedByDate
+            session.data['visited_by_date'] = visitedByDate
 
         d['$inc']['date.%s.total' % date] = 1
 
-        visited = session.get('visited') # '/project/x/, project/y/'
+        visited = session.data.get('visited') # '/project/x/, project/y/'
         if not visited:
             visited = []
         if page not in visited:
             d['$inc']['unique'] = 1
             visited.append(page)
-            session['visited'] = visited
+            session.data['visited'] = visited
         d['$inc']['total'] = 1
         collection.update({'_id': page}, d, True, False)
         return func(*args, **kwargs)
