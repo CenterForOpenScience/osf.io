@@ -40,8 +40,8 @@
             });
         });
     </script>
-    <img src="${filters.gravatar(profile, size=settings.gravatar_size_profile)}" />
-    <h1 id="${'profile-dfullname' if user and user._primary_key==profile._primary_key else ''}" style="display:inline-block">${profile.fullname}</h1>
+    <img class="profile-gravatar" src="${filters.gravatar(profile, size=settings.gravatar_size_profile)}" />
+    <h1 id="${'profile-dfullname' if user and user._primary_key==profile._primary_key else ''}" style="display:inline-block; margin-left: 10px;">${profile.fullname}</h1>
     %if not profile.username:
    <p>This profile is currently unclaimed; others have added this person as a contributor by inputting their name and email. If you'd like to claim this profile, click here, and we'll send the address on file an email with a verification link. Once verified, you'll be able to connect a registered account to this name.</p>
    %endif
@@ -70,7 +70,7 @@
     <div class="span6">
         <h3 style="margin-bottom:10px;">Public Projects </h3>
         % if len(public_projects) > 0:
-            ${node_list(reversed(public_projects))}
+            ${node_list(reversed(public_projects),profile_id=profile._primary_key)}
         %else:
             <p>None at this time</p>
         %endif
@@ -78,7 +78,7 @@
     <div class="span6">
         <h3 style="margin-bottom:10px;">Public Components</h3>
         % if len(public_nodes) > 0:
-            ${node_list(reversed(public_nodes))}
+            ${node_list(reversed(public_nodes),profile_id=profile._primary_key)}
         %else:
             <p>None at this time</p>
         %endif
