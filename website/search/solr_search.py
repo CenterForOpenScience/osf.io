@@ -16,7 +16,7 @@ def search_solr(query, start=0):
         'hl.preserveMulti': 'true',
         'spellcheck': 'true', 'spellcheck.collate': 'true',
         'start': start, 'rows': 10}
-    encoded_args = urllib.urlencode(query_args)
+    encoded_args = urllib.urlencode(_encoded_dict(query_args))
     url = '{}spell?{}&wt=python'.format(settings.solr, encoded_args)
     # post to the url
     solrReq = urllib2.Request(url)
@@ -39,3 +39,14 @@ def search_solr(query, start=0):
         spellcheck_result = None
     solrPost.close()
     return result, highlight, spellcheck_result
+
+def _encoded_dict(in_dict):
+    out_dict = {}
+    for k, v in in_dict.iteritems():
+        if isinstance(v, unicode):
+            v = v.encode('utf8')
+        elif isinstance(v, str):
+            # Must be encoded in UTF-8
+            v.decode('utf8')
+        out_dict[k] = v
+    return out_dict

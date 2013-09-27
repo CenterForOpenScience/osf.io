@@ -22,7 +22,7 @@ from dulwich.object_store import tree_lookup_path
 
 import subprocess
 
-from solr import update_solr, delete_solr_doc, migrate_user
+from framework.search.solr import update_solr, delete_solr_doc
 
 def utc_datetime_to_timestamp(dt):
     return float(

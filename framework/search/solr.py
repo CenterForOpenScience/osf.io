@@ -28,14 +28,13 @@ def migrate_solr_wiki(args=None):
         solr.commit()
 
 
-def migrate_user(args=None):
+def update_user(user):
     # if the user is already there, early return
-    if solr.query(id=args['id']).execute():
-        return
-    # otherwise we just add the user
-    else:
-        solr.add(args)
-        solr.commit()
+    solr.add({
+        'id': user._id,
+        'user': user.fullname,
+    })
+    solr.commit()
 
 
 def delete_solr_doc(args=None):

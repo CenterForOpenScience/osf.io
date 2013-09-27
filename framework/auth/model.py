@@ -2,6 +2,7 @@ from framework.mongo import db
 from framework.search import Keyword
 
 from framework import StoredObject, fields, storage, Q
+from framework.search import solr
 
 import datetime
 
@@ -63,6 +64,14 @@ class User(StoredObject):
     @property
     def profile_url(self):
         return '/profile/{}'.format(self._id)
+
+    def save(self, *args, **kwargs):
+        super(User, self).save(*args, **kwargs)
+
+        self.update_solr()
+
+    def update_solr(self):
+        solr.update_user(self)
 
     @classmethod
     def search(cls, terms):

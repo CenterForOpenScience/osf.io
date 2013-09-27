@@ -1,14 +1,9 @@
-import re
-
-from markdown import markdown
 from modularodm.query.querydialect import DefaultQueryDialect as Q
-from BeautifulSoup import BeautifulSoup
 
 from framework import app
-from website.models import Node, NodeWikiPage
-from website.project.solr import (
-    solr, migrate_solr_wiki
-)
+from website.models import Node
+from framework.auth import User
+from framework.search.solr import solr
 
 ctx = app.test_request_context()
 ctx.push()
@@ -30,17 +25,12 @@ def migrate_nodes():
         node.update_solr()
 
 
-def find_project_id(node):
-    # find the project id
-    try:
-        if node.category == 'project':
-            return node._id
-        else:
-            return node.node__parent[0]._id
-    except IndexError:
-        print('ERROR: Node {} is an orphan!'.format(node._id))
+def migrate_users():
+    for user in User.find():
+        user.update_solr()
 
 
 migrate_nodes()
+migrate_users()
 
 ctx.pop()
