@@ -1,8 +1,8 @@
 import framework
 
-@framework.route('/')
-def index():
-    return framework.render(filename='index.mako')
+# @framework.route('/')
+# def index():
+#     return framework.render(filename='index.mako')
 
 @framework.must_be_logged_in
 def dashboard(*args, **kwargs):
