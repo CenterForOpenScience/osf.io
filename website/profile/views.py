@@ -39,7 +39,7 @@ def get_public_components(user):
     ]
 
 
-def profile_view(uid=None):
+def _profile_view(uid=None):
     user = get_current_user()
     profile = get_user(id=uid or user)
 
@@ -71,6 +71,11 @@ def profile_view(uid=None):
         }
     return abort(404)
 
+def profile_view():
+    return _profile_view()
+
+def profile_view_id(uid):
+    return _profile_view(uid)
 
 @must_be_logged_in
 def edit_profile(*args, **kwargs):
