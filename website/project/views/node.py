@@ -3,13 +3,14 @@ from framework import (
     push_errors_to_status, app, render, Blueprint, get_user, get_current_user,
     secure_filename, jsonify, update_counters, send_file
 )
+from framework import HTTPError
 from .. import new_node, new_project
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from ..forms import NewProjectForm, NewNodeForm
 from ..model import ApiKey, User, Tag, Node, NodeFile, NodeWikiPage, NodeLog
 from framework.forms.utils import sanitize
-from framework.auth import must_have_session_auth
+from framework.auth import must_have_session_auth, get_api_key
 
 from .. import clean_template_name
 
@@ -53,6 +54,7 @@ def edit_node(*args, **kwargs):
                 'title_original':original_title,
             },
             user=get_current_user(),
+            api_key=get_api_key(),
         )
 
         node_to_use.save()
@@ -126,11 +128,15 @@ def project_new_node(*args, **kwargs):
             category=form.category.data,
             project = project,
         )
-        return redirect('/project/' + str(project._primary_key))
+        return {
+            'status' : 'success',
+        }, 201, None, project.url()
+        # return redirect('/project/' + str(project._primary_key))
     else:
         push_errors_to_status(form.errors)
     # todo: raise error
-    return redirect('/project/' + str(project._primary_key))
+    raise HTTPError(http.BAD_REQUEST, resource_uri=project.url())
+    # return redirect('/project/' + str(project._primary_key))
 
 @must_be_valid_project
 def node_fork_page(*args, **kwargs):
@@ -139,17 +145,19 @@ def node_fork_page(*args, **kwargs):
     user = get_current_user()
 
     if node:
-        node_to_use = node
-        push_status_message('At this time, only projects can be forked; however, this behavior is coming soon.')
-        # todo discuss
-        return redirect(node_to_use.url())
+        raise HTTPError(http.FORBIDDEN)
+        # node_to_use = node
+        # push_status_message('At this time, only projects can be forked; however, this behavior is coming soon.')
+        # # todo discuss
+        # return redirect(node_to_use.url())
     else:
         node_to_use = project
 
     if node_to_use.is_registration:
-        push_status_message('At this time, only projects that are not registrations can be forked; however, this behavior is coming soon.')
-        # todo discuss
-        return node_to_use.url()
+        raise HTTPError(http.FORBIDDEN)
+        # push_status_message('At this time, only projects that are not registrations can be forked; however, this behavior is coming soon.')
+        # # todo discuss
+        # return node_to_use.url()
 
     fork = node_to_use.fork_node(user)
 
@@ -250,8 +258,7 @@ def project_set_permissions(*args, **kwargs):
 
     node_to_use.set_permissions(permissions, user)
 
-    # todo discuss behavior
-    return redirect(node_to_use.url())
+    return {'status' : 'success'}, None, None, node_to_use.url()
 
 @get('/project/<pid>/watch')
 @must_have_session_auth # returns user or api_node
@@ -278,15 +285,21 @@ def component_remove(*args, **kwargs):
 
     # todo discuss behavior
     if node_to_use.remove_node(user=user):
-        push_status_message('Component(s) deleted')
-        return redirect('/dashboard/')
+        return {
+            'status' : 'success',
+            'message' : 'Component deleted',
+        }, None, None, '/dashboard/'
+        # push_status_message('Component(s) deleted')
+        # return redirect('/dashboard/')
     else:
-        push_status_message('Component(s) unable to be deleted')
-        return redirect(node_to_use.url())
+        raise HTTPError(http.BAD_REQUEST)
+        # push_status_message('Component(s) unable to be deleted')
+        # return redirect(node_to_use.url())
 
 
 
 @must_be_valid_project
+@must_be_contributor_or_public
 def view_project(*args, **kwargs):
     user = get_current_user()
     node_to_use = kwargs['node'] or kwargs['project']
