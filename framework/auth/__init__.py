@@ -1,4 +1,4 @@
-from framework import session, create_session
+from framework import session, create_session, HTTPError
 import framework.mongo as Database
 import framework.status as status
 import framework.flask as web
@@ -15,6 +15,8 @@ from model import User
 from decorator import decorator
 import datetime
 
+import httplib as http
+
 def get_current_username():
     return session.get('auth_user_username', None)
 
@@ -29,11 +31,11 @@ def get_current_user():
     # else:
     #     return None
 
-def get_current_node():
-    from website.models import Node
-    nid = session.get('auth_node_id')
-    if nid:
-        return Node.load(nid)
+# def get_current_node():
+#     from website.models import Node
+#     nid = session.get('auth_node_id')
+#     if nid:
+#         return Node.load(nid)
 
 def get_api_key():
     # Hack: Avoid circular import
@@ -164,28 +166,36 @@ def must_be_logged_in(fn):
             kwargs['user'] = user
             return func(*args, **kwargs)
         else:
-            status.push_status_message('You are not logged in')
-            return web.redirect('/account')
+            raise HTTPError(http.UNAUTHORIZED)
+            # status.push_status_message('You are not logged in')
+            # return web.redirect('/account')
     return decorator(wrapped, fn)
 
 def must_have_session_auth(fn):
 
     def wrapped(func, *args, **kwargs):
 
-        # Get user from session
-        user = get_current_user()
-        if user:
-            kwargs['user'] = user
+        kwargs['user'] = get_current_user()
+        kwargs['api_key'] = get_api_key()
+
+        if kwargs['user'] or kwargs['api_key']:
             return func(*args, **kwargs)
+        # kwargs['api_node'] = get_current_node()
+
+        # Get user from session
+        # user = get_current_user()
+        # if kwargs['user']:
+            # kwargs['user'] = user
+            # return func(*args, **kwargs)
 
         # Get node from session
-        node = get_current_node()
-        if node:
-            kwargs['api_node'] = node
-            return func(*args, **kwargs)
+        # node = get_current_node()
+        # if node:
+        # if kwargs['api_key']:
+            # kwargs['api_node'] = node
+            # return func(*args, **kwargs)
 
         # No session authentication found
-        status.push_status_message('You are not logged in')
-        return web.redirect('/account')
+        raise HTTPError(http.UNAUTHORIZED)
 
     return decorator(wrapped, fn)

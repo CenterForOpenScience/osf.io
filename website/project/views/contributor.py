@@ -6,6 +6,9 @@ from framework.auth import must_have_session_auth
 from framework.forms.utils import sanitize
 import hashlib
 
+from framework import HTTPError
+import httplib as http
+
 @must_have_session_auth
 @must_be_contributor_or_public
 def get_contributors(*args, **kwargs):
@@ -44,11 +47,18 @@ def project_removecontributor(*args, **kwargs):
     node_to_use = node or project
 
     if request.json['id'].startswith('nr-'):
-        outcome = node_to_use.remove_nonregistered_contributor(user, request.json['name'], request.json['id'].replace('nr-', ''))
+        outcome = node_to_use.remove_nonregistered_contributor(
+            user, request.json['name'], request.json['id'].replace('nr-', '')
+        )
     else:
-        outcome = node_to_use.remove_contributor(user, request.json['id'])
+        outcome = node_to_use.remove_contributor(
+            user, request.json['id']
+        )
 
-    return {'status' : 'success' if outcome else 'failure'}
+    if outcome:
+        return {'status' : 'success'}
+    raise HTTPError(http.BAD_REQUEST)
+    # return {'status' : 'success' if outcome else 'failure'}
 
 @must_have_session_auth # returns user
 @must_be_valid_project # returns project
@@ -98,45 +108,4 @@ def project_addcontributor_post(*args, **kwargs):
             user=user,
         )
 
-    return {'status' : 'success'}
-
-# todo is this method needed?
-# @post('/project/<pid>/addcontributors')
-# @post('/project/<pid>/node/<nid>/addcontributors')
-# @must_have_session_auth # returns user
-# @must_be_valid_project # returns project
-# @must_be_contributor # returns user, project
-# @must_not_be_registration
-# def project_addcontributors_post(*args, **kwargs):
-#     project = kwargs['project']
-#     node = kwargs['node']
-#     user = kwargs['user']
-#
-#     node_to_use = node or project
-#
-#     emails = request.form['emails']
-#     lines = emails.split('\r\n')
-#     users = []
-#     for line in lines:
-#         elements = line.split(',')
-#         email = elements[1]
-#         fullname = elements[0]
-#         temp_user = add_unclaimed_user(email, fullname)
-#         if temp_user._primary_key not in node_to_use.contributors:
-#             users.append(temp_user._primary_key)
-#             node_to_use.contributors.append(temp_user)
-#     node_to_use.save()
-#     node_to_use.add_log(
-#         action='contributor_added',
-#         params={
-#             'project':node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
-#             'node':node_to_use._primary_key,
-#             'contributors':users,
-#         },
-#         user=user,
-#     )
-#
-#     if node:
-#         return redirect('/project/{pid}/node/{nid}'.format(pid=project._primary_key, nid=node._primary_key))
-#     else:
-#         return redirect('/project/{pid}'.format(pid=project._primary_key))
+    return {'status' : 'success'}, 201

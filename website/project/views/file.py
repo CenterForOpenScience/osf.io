@@ -1,11 +1,14 @@
-
 from framework import request, redirect, abort, secure_filename, send_file, get_basic_counters, update_counters
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from framework.auth import must_have_session_auth
 from framework.git.exceptions import FileNotModified
+from framework.auth import get_api_key
 from ..model import NodeFile
 from .node import _view_project
+
+from framework import HTTPError
+import httplib as http
 
 from website import settings
 
@@ -15,7 +18,6 @@ import pygments.lexers
 import pygments.formatters
 import zipfile
 import tarfile
-import httplib as http
 from cStringIO import StringIO
 
 import os
@@ -108,6 +110,7 @@ def upload_file_public(*args, **kwargs):
     node = kwargs['node']
     user = kwargs['user']
     node_to_use = node or project
+    api_key = get_api_key()
 
     uploaded_file = request.files.get('files[]')
     uploaded_file_content = uploaded_file.read()
@@ -119,12 +122,14 @@ def upload_file_public(*args, **kwargs):
     try:
         file_object = node_to_use.add_file(
             user,
+            api_key,
             uploaded_filename,
             uploaded_file_content,
             uploaded_file_size,
             uploaded_file_content_type
         )
     except FileNotModified as e:
+        # TODO: Should raise a 400 but this breaks BlueImp
         return [{
             'action_taken' : None,
             'message' : e.message,
@@ -144,7 +149,7 @@ def upload_file_public(*args, **kwargs):
         "user_id": None,
         "user_fullname":None,
     }
-    return [file_info]
+    return [file_info], 201
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
@@ -287,7 +292,8 @@ def download_file_by_version(*args, **kwargs):
 
     content, content_type = node_to_use.get_file(filename, version=version_number)
     if content is None:
-        return abort(404)
+        raise HTTPError(http.NOT_FOUND)
+        # return abort(404)
     file_object = node_to_use.get_file_object(filename, version=version_number)
     filename_base, file_extension = os.path.splitext(file_object.path)
     returned_filename = '{base}_{tmstp}{ext}'.format(
@@ -308,11 +314,15 @@ def download_file_by_version(*args, **kwargs):
 @must_be_contributor # returns user, project
 @must_not_be_registration
 def delete_file(*args, **kwargs):
-    project, node, user, filename = kwargs['project'], kwargs['node'], kwargs['user'], kwargs['fid']
 
-    node_to_use = node or project
+    user = kwargs['user']
+    api_key = get_api_key()
+    filename = kwargs['fid']
+    node_to_use = kwargs['node'] or kwargs['project']
 
-    if node_to_use.remove_file(user, filename):
+    if node_to_use.remove_file(user, api_key, filename):
         return {'status' : 'success'}
-    return {'status' : 'failure'}
+
+    raise HTTPError(http.BAD_REQUEST)
+    # return {'status' : 'failure'}
 

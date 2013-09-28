@@ -36,7 +36,7 @@ def create_node_key(*args, **kwargs):
     node_to_use.save()
 
     # Return response
-    return {'response' : 'success'}
+    return {'response' : 'success'}, 201
 
 @must_have_session_auth
 @must_be_valid_project # returns project

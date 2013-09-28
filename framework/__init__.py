@@ -19,6 +19,9 @@ from framework.celery.tasks import error_handler
 
 from framework.mongo import db
 
+##### Exceptions
+from exceptions import HTTPError
+
 ##### ODM
 
 from modularodm import FlaskStoredObject as StoredObject, fields, storage
@@ -58,4 +61,3 @@ def convert_datetime(date, to='US/Eastern'):
     to_zone = pytz.timezone(to)
     date = date.replace(tzinfo=pytz.utc)
     return to_zone.normalize(date.astimezone(to_zone))
-

@@ -1,14 +1,14 @@
-from new_style import process_urls, render, jsonify, render_mako_string
+from new_style import process_rules, render, jsonify, render_mako_string
 from framework import app
 import view
 
 # Web routes
-process_urls(app, [
+process_rules(app, [
 
 ])
 
 # API routes
-process_urls(app, [
+process_rules(app, [
 
         #
         ('/dataverse/get_user_settings_form/', 'get', view.add_user_settings_form, render, {},

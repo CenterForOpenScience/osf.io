@@ -1,6 +1,9 @@
 from framework.flask import app, abort
 from framework.mongo import db
 
+from framework.exceptions import HTTPError
+import httplib as http
+
 import bson.objectid
 import itsdangerous
 from flask import request, redirect
@@ -108,12 +111,13 @@ def before_request():
         from website.project.model import ApiKey
         api_key = ApiKey.load(request.authorization.username)
 
+        session = SessionDict(COLLECTION, TEMP_SESSION)
+
         if api_key:
 
             user = api_key.user__keyed and api_key.user__keyed[0]
             node = api_key.node__keyed and api_key.node__keyed[0]
 
-            session = SessionDict(COLLECTION, TEMP_SESSION)
             session['auth_api_key'] = api_key._primary_key
 
             if user:
@@ -126,13 +130,15 @@ def before_request():
 
             else:
                 # Invalid key: Not attached to user or node
-                return abort(403)
+                session['auth_error_code'] = http.FORBIDDEN
 
-            sessions[request._get_current_object()] = session
-            return
+        else:
 
-        # Invalid key: Not found in database
-        return abort(403)
+            # Invalid key: Not found in database
+            session['auth_api_key_valid'] = http.FORBIDDEN
+
+        sessions[request._get_current_object()] = session
+        return
 
     cookie = request.cookies.get(COOKIE_NAME)
     if cookie:
