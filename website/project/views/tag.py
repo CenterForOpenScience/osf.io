@@ -38,7 +38,7 @@ def project_addtag(*args, **kwargs):
 
     node_to_use.add_tag(tag=tag, user=user)
 
-    return {'status' : 'success'}
+    return {'status' : 'success'}, 201
 
 
 @must_have_session_auth # returns user or api_node
