@@ -4,6 +4,9 @@ from ..model import Node, NodeLog
 from ..decorators import must_be_valid_project, must_be_contributor_or_public
 from .node import _view_project
 
+from framework import HTTPError
+import httplib as http
+
 def _render_log_contributor(contributor):
     if isinstance(contributor, dict):
         rv = contributor.copy()
@@ -16,7 +19,6 @@ def _render_log_contributor(contributor):
         'registered' : True,
     }
 
-# todo decorate
 def get_log(log_id):
 
     log = NodeLog.load(log_id)
@@ -24,9 +26,7 @@ def get_log(log_id):
     node_to_use = Node.load(log.params.get('node')) or Node.load(log.params.get('project'))
 
     if not node_to_use.is_public and not node_to_use.is_contributor(user):
-        return {
-            'status' : 'failure',
-        }
+        raise HTTPError(http.FORBIDDEN)
 
     project = Node.load(log.params.get('project'))
     node = Node.load(log.params.get('node'))
