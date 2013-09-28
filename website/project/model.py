@@ -1,14 +1,14 @@
-from framework.mongo import ObjectId, db
+from framework.mongo import ObjectId
 from framework.auth import User, get_user
 from framework.analytics import get_basic_counters, increment_user_activity_counters
-from framework.search import Keyword, generate_keywords
+from framework.search import generate_keywords
 from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
 from framework.auth import get_api_key
 
 from website import settings
 
-from framework import StoredObject, fields, storage
+from framework import StoredObject, fields
 
 import uuid
 import hashlib
@@ -24,21 +24,25 @@ from dulwich.object_store import tree_lookup_path
 
 import subprocess
 
-def utc_datetime_to_timestamp(dt):
-    return float(
-        str(calendar.timegm(dt.utcnow().utctimetuple())) + '.' + str(dt.microsecond)
-    )
-
 def normalize_unicode(ustr):
     return unicodedata.normalize('NFKD', ustr)\
         .encode('ascii', 'ignore')
 
 class ApiKey(StoredObject):
+
     _id = fields.StringField(
         primary=True,
         default=lambda: str(ObjectId()) + str(uuid.uuid4())
     )
     label = fields.StringField()
+
+    @property
+    def user(self):
+        return self.user__keyed[0] if self.user__keyed else None
+
+    @property
+    def node(self):
+        return self.node__keyed[0] if self.node__keyed else None
 
 class NodeLog(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
@@ -346,7 +350,7 @@ class Node(StoredObject):
             # TODO: Raise exception here
         return None, None # TODO: Raise exception here
 
-    def remove_file(self, user, path):
+    def remove_file(self, user, api_key, path):
         '''Removes a file from the filesystem, NodeFile collection, and does a git delete ('git rm <file>')
 
         :param user:
@@ -372,12 +376,11 @@ class Node(StoredObject):
             repo = Repo(repo_path)
 
             message = '{path} deleted'.format(path=path)
-            committer = u'{fullname} <user-{id}@openscienceframework.org>'.format(
-                fullname=user.fullname,
-                id=user._primary_key
-            )
-            ascii_committer = normalize_unicode(committer)
-            commit_id = repo.do_commit(message, ascii_committer)
+
+            print 'api_key is ', api_key
+            committer = self._get_committer(user, api_key)
+
+            commit_id = repo.do_commit(message, committer)
 
         except subprocess.CalledProcessError:
             return False
@@ -411,7 +414,42 @@ class Node(StoredObject):
         # self.save()
         return True
 
-    def add_file(self, user, file_name, content, size, content_type):
+    @staticmethod
+    def _get_committer(user, api_key):
+
+        if api_key:
+            commit_key_msg = ':{}'.format(api_key.label)
+            if api_key.user:
+                commit_name = api_key.user.fullname
+                commit_id = api_key.user._primary_key
+                commit_category = 'user'
+            if api_key.node:
+                commit_name = api_key.node.title
+                commit_id = api_key.node._primary_key
+                commit_category = 'node'
+
+        elif user:
+            commit_key_msg = ''
+            commit_name = user.fullname
+            commit_id = user._primary_key
+            commit_category = 'user'
+
+        else:
+            raise Exception('Must provide either user or api_key.')
+
+        committer = u'{name}{key_msg} <{category}-{id}@openscienceframework.org>'.format(
+            name=commit_name,
+            key_msg=commit_key_msg,
+            category=commit_category,
+            id=commit_id,
+        )
+
+        committer = normalize_unicode(committer)
+
+        return committer
+
+
+    def add_file(self, user, api_key, file_name, content, size, content_type):
         """
         Instantiates a new NodeFile object, and adds it to the current Node as
         necessary.
@@ -461,16 +499,13 @@ class Node(StoredObject):
 
         # Deal with git
         repo.stage([file_name])
-        committer = u'{name} <user-{id}@openscienceframework.org>'.format(
-            name=user.fullname,
-            id=user._primary_key,
-        )
-        ascii_committer = normalize_unicode(committer)
+
+        committer = self._get_committer(user, api_key)
 
         commit_id = repo.do_commit(
             message=unicode(file_name +
                             (' added' if file_is_new else ' updated')),
-            committer=ascii_committer,
+            committer=committer,
         )
 
         # Deal with creating a NodeFile in the database
