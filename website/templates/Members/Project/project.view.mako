@@ -22,11 +22,11 @@
         %if not node_is_public:
             <button class='btn disabled'>Private</button>
             % if user_is_contributor:
-                <a class="btn" href="${node_api_url}permissions/public/" data-confirm="${make_public_warning}">Make public</a>
+                <a class="btn" href="${node_url}permissions/public/" data-confirm="${make_public_warning}">Make public</a>
             % endif
         %else:
             % if user_is_contributor:
-                <a class="btn" href="${node_api_url}permissions/private/" data-confirm="${make_private_warning}">Make private</a>
+                <a class="btn" href="${node_url}permissions/private/" data-confirm="${make_private_warning}">Make private</a>
             % endif
             <button class="btn disabled">Public</button>
         %endif
