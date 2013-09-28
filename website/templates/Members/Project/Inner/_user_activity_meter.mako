@@ -1,4 +1,4 @@
-<%def name="print_ua_meter(logs, profileId, rescale_ratio)">
+<%def name="print_ua_meter(logs, profileId, rescale_ratio, profileFullname)">
     <%
         from framework import get_user
         from website.project import get_node
@@ -11,7 +11,7 @@
                 if log is not None:
                     tuser = log.user
                     if tuser is not None and tuser._primary_key==profileId:
-                    # increment counter if log author is current user
+                       # increment counter if log author is current user
                        ua_count += 1
         non_ua_count = total_count - ua_count # base length of blue bar
 
@@ -26,9 +26,12 @@
     <!--Stacked bar to visualize user activity level against total activity level of a project -->
     <!--Length of the stacked bar is normalized over all projects -->
     <ul class="meter-wrapper">
-        <li class="ua-meter" style="width:${ua}px;"></li>
+        <li class="ua-meter" data-toggle="tooltip" title="${profileFullname} contributed ${ua_count} points" style="width:${ua}px;"></li>
         <li class="pa-meter" style="width:${non_ua}px;"></li>
         <li class="pa-meter-label">${total_count} points</li>
     </ul>
+    <script>
+        $('.ua-meter').tooltip();
+    </script>
 
 </%def>

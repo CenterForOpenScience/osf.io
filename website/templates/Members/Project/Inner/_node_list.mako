@@ -1,7 +1,7 @@
 <%namespace file="_print_logs.mako" import="print_logs"/>
 <%namespace file="_user_activity_meter.mako" import="print_ua_meter"/>
 <script src="//code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-<%def name="node_list(nodes, default=None, node_id=None, is_contributor=False, is_registration=False, profile_id=None)">
+<%def name="node_list(nodes, default=None, node_id=None, is_contributor=False, is_registration=False, profile_id=None, profile_fullname=None)">
     <!-- Get total project points for a user
          TODO: refactor computational functions -->
     <%
@@ -14,6 +14,7 @@
         rescale_ratio = max_node_logs / 1.0
     %>
 
+    <!-- TODO: Sort projects by project activity level -->
     <ul class="list-group ${'sortable' if default=="project_dash" and is_contributor and not is_registration else ''}" node_class="${default}" style="margin-left: 0px;">
 
     % for node in nodes:
@@ -36,7 +37,7 @@
             </h3>
             <div class="user-activity-meter">
                 %if node.logs:
-                    ${print_ua_meter(node.logs, profile_id, rescale_ratio)}
+                    ${print_ua_meter(node.logs, profile_id, rescale_ratio, profile_fullname)}
                 %endif
             </div>
             <div class="body hide" id="body-${node._primary_key}" style="overflow:hidden;">

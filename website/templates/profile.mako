@@ -70,7 +70,7 @@
     <div class="span6">
         <h3 style="margin-bottom:10px;">Public Projects </h3>
         % if len(public_projects) > 0:
-            ${node_list(reversed(public_projects),profile_id=profile._primary_key)}
+            ${node_list(reversed(public_projects),profile_id=profile._primary_key, profile_fullname=profile.fullname)}
         %else:
             <p>None at this time</p>
         %endif
@@ -78,7 +78,7 @@
     <div class="span6">
         <h3 style="margin-bottom:10px;">Public Components</h3>
         % if len(public_nodes) > 0:
-            ${node_list(reversed(public_nodes),profile_id=profile._primary_key)}
+            ${node_list(reversed(public_nodes),profile_id=profile._primary_key, profile_fullname=profile.fullname)}
         %else:
             <p>None at this time</p>
         %endif
