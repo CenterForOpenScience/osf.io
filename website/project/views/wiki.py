@@ -10,11 +10,20 @@ from .node import _view_project
 import difflib
 from .. import show_diff
 
-def project_project_wikimain(pid):
-    return redirect('/project/%s/wiki/home' % str(pid))
+from framework import HTTPError
+import httplib as http
 
-def project_node_wikihome(pid, nid):
-    return redirect('/project/{pid}/node/{nid}/wiki/home'.format(pid=pid, nid=nid))
+@must_be_valid_project
+def project_wiki_home(*args, **kwargs):
+    node_to_use = kwargs['node'] or kwargs['project']
+    return {}, None, None, '{}wiki/home/'.format(node_to_use.url())
+
+# def project_project_wikimain(pid):
+#     return {}, None, None, '/project/{}/wiki/home/'.format(pid)
+#     # return redirect('/project/%s/wiki/home' % str(pid))
+#
+# def project_node_wikihome(pid, nid):
+#     return redirect('/project/{pid}/node/{nid}/wiki/home'.format(pid=pid, nid=nid))
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
@@ -57,11 +66,12 @@ def project_wiki_compare(*args, **kwargs):
             }
             rv.update(_view_project(node_to_use, user))
             return rv
-    push_status_message('Not a valid version')
-    return redirect('{}wiki/{}'.format(
-        node_to_use.url(),
-        wid
-    ))
+    raise HTTPError(http.NOT_FOUND)
+    # push_status_message('Not a valid version')
+    # return redirect('{}wiki/{}'.format(
+    #     node_to_use.url(),
+    #     wid
+    # ))
 
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
@@ -89,11 +99,12 @@ def project_wiki_version(*args, **kwargs):
         rv.update(_view_project(node_to_use, user))
         return rv
 
-    push_status_message('Not a valid version')
-    return redirect('{}wiki/{}'.format(
-        node_to_use.url(),
-        wid
-    ))
+    raise HTTPError(http.NOT_FOUND)
+    # push_status_message('Not a valid version')
+    # return redirect('{}wiki/{}'.format(
+    #     node_to_use.url(),
+    #     wid
+    # ))
 
 @must_be_valid_project # returns project
 @update_counters('node:{pid}')
@@ -190,22 +201,19 @@ def project_wiki_edit(*args, **kwargs):
 @must_be_contributor # returns user, project
 @must_not_be_registration
 def project_wiki_edit_post(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
+
+    node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     wid = kwargs['wid']
 
-    if node:
-        node_to_use = node
-        base_url = '/project/{pid}/node/{nid}/wiki'.format(pid=project._primary_key, nid=node._primary_key)
-    else:
-        node_to_use = project
-        base_url = '/project/{pid}/wiki'.format(pid=project._primary_key)
-
     if wid != sanitize(wid):
         push_status_message("This is an invalid wiki page name")
-        return redirect(base_url)
+        raise HTTPError(http.BAD_REQUEST, resource_uri='{}wiki/'.format(node_to_use.url()))
+        # return redirect(base_url)
 
     node_to_use.updateNodeWikiPage(wid, request.form['content'], user)
 
-    return redirect(base_url + '/{wid}'.format(wid=wid))
+    return {
+        'status' : 'success',
+    }, None, None, '{}wiki/{}/'.format(node_to_use.url(), wid)
+    # return redirect('{}wiki/{}/'.format(node_to_use.url(), wid))
