@@ -90,8 +90,7 @@ def node_register_template_page_post(*args, **kwargs):
 
     register = node_to_use.register_node(user, template, data)
 
-    # todo return 201
     return {
         'status' : 'success',
         'result' : register.url(),
-    }
+    }, 201
