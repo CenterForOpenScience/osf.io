@@ -9,27 +9,19 @@ from mako.template import Template
 import framework
 from website import settings
 from framework import get_current_user
+import httplib as http
 
 import copy
 import json
 import os
 import pystache
-import re
 import lxml.html
 
 TEMPLATE_DIR = 'static/templates/'
-
-# todo fix this
-def nonwrapped_fn(fn, keywords):
-    def wrapped(*args, **kwargs):
-        return fn(*args, **kwargs)
-    return wrapped
-
-
-def decorator(fn):
-    def wrapped(*args, **kwargs):
-        return fn(*args, **kwargs)
-    return wrapped
+REDIRECT_CODES = [
+    http.MOVED_PERMANENTLY,
+    http.FOUND,
+]
 
 from framework import session
 
@@ -56,19 +48,13 @@ def call_url(url, wrap=True, view_kwargs=None):
 
     # Call view function
     rv = view_function(**func_data)
+    rv, _, _, _ = unpack(rv)
 
     # Follow redirects
     if isinstance(rv, werkzeug.wrappers.BaseResponse) \
-            and rv.status_code in [302, 303]:
+            and rv.status_code in REDIRECT_CODES:
         url_redirect = rv.headers['Location']
         return call_url(url_redirect, wrap=wrap)
-
-    # TODO: move elsewhere
-    if wrap and not isinstance(rv, dict):
-        if wrap is True:
-            wrap = view_function.__name__
-            wrap = re.sub('^get_', '', wrap)
-        rv = {wrap : rv}
 
     return rv
 
@@ -78,19 +64,23 @@ def process_rules(app, rules, prefix=''):
 
     for rule in rules:
 
-        if rule.render_func:
-            view_func = wrapped_fn(rule.view_func, rule.render_func, rule.view_kwargs)
-            wrapper_name = rule.render_func.__name__
-        else:
-            view_func = nonwrapped_fn(rule.view_func, rule.view_kwargs)
-            wrapper_name = ''
+        view_func = wrapped_fn(rule.view_func, rule.render_func, rule.view_kwargs)
+        render_func_name = getattr(
+            rule.render_func,
+            '__name__',
+            rule.render_func.__class__.__name__
+        )
+        view_func_name = '{}__{}'.format(
+            render_func_name,
+            rule.view_func.__name__
+        )
 
-        view_functions[wrapper_name + '__' + rule.view_func.__name__] = rule.view_func
+        view_functions[view_func_name] = rule.view_func
 
         for url in rule.routes:
             app.add_url_rule(
                 prefix + url,
-                endpoint=wrapper_name + '__' + rule.view_func.__name__,
+                endpoint=view_func_name,
                 view_func=view_func,
                 methods=rule.methods
             )
@@ -110,19 +100,19 @@ def render_mako_string(tplname, data):
     return tpl.render(**data)
 
 
+def unpack(data, n=4):
+    if not isinstance(data, tuple):
+        data = (data,)
+    return data + (None,) * (n - len(data))
+
+
 class Renderer(object):
 
-    def render(self, data, resource_uri, *args, **kwargs):
+    def render(self, data, redirect_url, *args, **kwargs):
         raise NotImplementedError
 
     def handle_error(self, error):
         raise NotImplementedError
-
-    @staticmethod
-    def unpack(data, n=4):
-        if not isinstance(data, tuple):
-            data = (data,)
-        return data + (None,) * (n - len(data))
 
     def __call__(self, data, *args, **kwargs):
 
@@ -135,10 +125,10 @@ class Renderer(object):
             return data
 
         # Unpack tuple
-        data, status_code, headers, resource_uri = self.unpack(data)
+        data, status_code, headers, redirect_url = unpack(data)
 
         # Call subclass render
-        rendered = self.render(data, resource_uri, *args, **kwargs)
+        rendered = self.render(data, redirect_url, *args, **kwargs)
 
         # Return if response
         if isinstance(rendered, werkzeug.wrappers.BaseResponse):
@@ -147,13 +137,21 @@ class Renderer(object):
         return rendered, status_code, headers
 
 
+class NullRenderer(Renderer):
+
+    def handle_error(self, error):
+        pass
+
+    def render(self, data, redirect_url, *args, **kwargs):
+        return data
+
+null_renderer = NullRenderer()
+
 class JSONRenderer(Renderer):
     """
     Renderer for API views. Generates JSON; ignores
     redirects from views and exceptions.
     """
-
-    __name__ = 'JSONRenderer'
 
     class Encoder(json.JSONEncoder):
         def default(self, obj):
@@ -166,8 +164,10 @@ class JSONRenderer(Renderer):
     def handle_error(self, error):
         return self.render(error.to_data(), None), error.code
 
-    def render(self, data, resource_uri, *args, **kwargs):
+    def render(self, data, redirect_url, *args, **kwargs):
         return json.dumps(data, cls=self.Encoder)
+
+json_renderer = JSONRenderer()
 
 class WebRenderer(Renderer):
     """
@@ -175,7 +175,6 @@ class WebRenderer(Renderer):
     from views and exceptions.
     """
 
-    __name__ = 'WebRenderer'
     error_template = 'error.html'
 
     def __init__(self, template_name, renderer, template_dir=TEMPLATE_DIR):
@@ -185,8 +184,8 @@ class WebRenderer(Renderer):
 
     def handle_error(self, error):
 
-        if error.resource_uri is not None:
-            return redirect(error.resource_uri)
+        if error.redirect_url is not None:
+            return redirect(error.redirect_url)
 
         error_data = error.to_data()
         return self._render(
@@ -206,7 +205,7 @@ class WebRenderer(Renderer):
         element_meta = json.loads(attributes_string) # todo more robust jsonqa
 
         uri = element_meta.get('uri')
-        is_replace = element_meta.get("replace", False)
+        is_replace = element_meta.get('replace', False)
         kwargs = element_meta.get('kwargs', {})
         view_kwargs = element_meta.get('view_kwargs', {})
 
@@ -216,6 +215,7 @@ class WebRenderer(Renderer):
         if uri:
             try:
                 uri_data = call_url(uri, view_kwargs=view_kwargs)
+                print uri_data
                 render_data.update(uri_data)
             except NotFound:
                 return '<div>URI {} not found.</div>'.format(uri), is_replace
@@ -254,9 +254,9 @@ class WebRenderer(Renderer):
 
         return rendered
 
-    def render(self, data, resource_uri, *args, **kwargs):
-        if resource_uri is not None:
-            return redirect(resource_uri)
+    def render(self, data, redirect_url, *args, **kwargs):
+        if redirect_url is not None:
+            return redirect(redirect_url)
         template_name = kwargs.get('template_name')
         return self._render(data, template_name)
 
@@ -267,7 +267,6 @@ def get_display_name(username):
             return '%s...%s' % (username[:9],username[-10:])
         return username
 
-# todo allow multiply wrapped functions in process_urls
 def get_globals():
     user = get_current_user()
     return {
@@ -309,8 +308,11 @@ class Rule(object):
         self.routes = self._to_list(routes)
         self.methods = self._to_list(methods)
         self.view_func = view_func
-        self.render_func = render_func
+        self.render_func = render_func or null_renderer
         self.view_kwargs = view_kwargs or {}
+
+        if not callable(self.render_func):
+            raise Exception('Argument render_func must be callable.')
 
 # Base
 
@@ -477,7 +479,7 @@ process_rules(app, [
     Rule([
         '/project/<pid>/get_summary/',
         '/project/<pid>/node/<nid>/get_summary/',
-    ], 'get', project_views.node.get_summary, json),
+    ], 'get', project_views.node.get_summary, JSONRenderer()),
 
     Rule([
         '/project/<pid>/get_children/',
