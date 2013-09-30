@@ -208,7 +208,7 @@ def project_wiki_edit_post(*args, **kwargs):
 
     if wid != sanitize(wid):
         push_status_message("This is an invalid wiki page name")
-        raise HTTPError(http.BAD_REQUEST, resource_uri='{}wiki/'.format(node_to_use.url()))
+        raise HTTPError(http.BAD_REQUEST, redirect_url='{}wiki/'.format(node_to_use.url()))
         # return redirect(base_url)
 
     node_to_use.updateNodeWikiPage(wid, request.form['content'], user)

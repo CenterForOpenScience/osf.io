@@ -135,7 +135,7 @@ def project_new_node(*args, **kwargs):
     else:
         push_errors_to_status(form.errors)
     # todo: raise error
-    raise HTTPError(http.BAD_REQUEST, resource_uri=project.url())
+    raise HTTPError(http.BAD_REQUEST, redirect_url=project.url())
     # return redirect('/project/' + str(project._primary_key))
 
 @must_be_valid_project
@@ -152,7 +152,7 @@ def node_fork_page(*args, **kwargs):
         raise HTTPError(
             http.FORBIDDEN,
             message='At this time, only projects can be forked; however, this behavior is coming soon.',
-            resource_uri=node_to_use.url()
+            redirect_url=node_to_use.url()
         )
     else:
         node_to_use = project
@@ -339,6 +339,8 @@ def _view_project(node_to_use, user):
             }
             for meta in node_to_use.registered_meta or []
         ],
+
+        # todo: break out into separate view / template
         'node_registrations' : [
             {
                 'registration_id' : registration._primary_key,
@@ -352,6 +354,8 @@ def _view_project(node_to_use, user):
         'node_forked_from_url' : node_to_use.forked_from.url() if node_to_use.is_fork else '',
         'node_forked_date' : node_to_use.forked_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_fork else '',
         'node_fork_count' : len(node_to_use.fork_list),
+
+        # todo: break out into separate view / template
         'node_forks' : [
             {
                 'fork_id' : fork._primary_key,
@@ -375,7 +379,15 @@ def _view_project(node_to_use, user):
 @must_be_valid_project
 def get_summary(*args, **kwargs):
 
+    user = get_current_user()
+    api_key = get_api_key()
     node_to_use = kwargs['node'] or kwargs['project']
+
+    node_can_edit = node_to_use.can_edit(user, api_key)
+    parent_can_edit = node_to_use.node__parent and node_to_use.node__parent[0].can_edit(user, api_key)
+
+    if not node_can_edit and not parent_can_edit:
+        raise HTTPError(http.FORBIDDEN)
 
     return {
         'summary' : {
