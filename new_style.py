@@ -332,7 +332,7 @@ process_rules(app, [
     Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, WebRenderer('profile.html', render_mako_string)),
     Rule('/settings/', 'get', profile_views.profile_settings, WebRenderer('settings.html', render_mako_string)),
     Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, WebRenderer('profile/key_history.html', render_mako_string)),
-    Rule('/profile/<uid>/edit', 'post', profile_views.edit_profile, JSONRenderer),
+    Rule('/profile/<uid>/edit/', 'post', profile_views.edit_profile, JSONRenderer()),
     Rule('/addons/', 'get', profile_views.profile_addons, WebRenderer('profile/addons.html', render_mako_string)),
 
 ])
