@@ -54,8 +54,8 @@ def _profile_view(uid=None):
             and not node.is_registration
             and not node.is_deleted
         ]
-        public_projects = get_public_projects(user)
-        public_components = get_public_components(user)
+        public_projects = get_public_projects(profile)
+        public_components = get_public_components(profile)
         gravatar_url = filters.gravatar(profile, size=settings.gravatar_size_profile)
         return {
             'user_id': profile._id,
