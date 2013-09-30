@@ -132,10 +132,10 @@ class Node(StoredObject):
 
     _meta = {'optimistic' : True}
 
-    def save(self):
+    def save(self, *args, **kwargs):
         # function to overrwrite the save method so
         # that we can send relevant info to solr
-        super(Node, self).save()
+        super(Node, self).save(*args, **kwargs)
 
         self.update_solr()
 
