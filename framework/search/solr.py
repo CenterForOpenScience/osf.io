@@ -2,7 +2,7 @@ import sunburnt
 from website import settings
 
 if settings.use_solr:
-    solr = sunburnt.SolrInterface("http://localhost:8983/solr/")
+    solr = sunburnt.SolrInterface(settings.solr)
 
 
 def update_solr(args=None):

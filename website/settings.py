@@ -36,7 +36,7 @@ try:
     solr = 'http://services.openscienceframework.org:8983/solr/'
 except KeyError:
     mongo_uri = 'mongodb://localhost:20771/osf20130903'
-    solr = 'http://localhost:8983/solr/'
+    solr = 'http://23.92.18.234:8983/solr/'
 
 #TODO: Configuration should not change between deploys - this should be dynamic.
 canonical_domain = 'openscienceframework.org'
