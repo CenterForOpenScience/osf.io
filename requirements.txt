@@ -14,8 +14,10 @@ billiard==2.7.3.31
 celery==3.0.21
 decorator==3.4.0
 dulwich==0.8.7
+httplib2==0.8
 itsdangerous==0.23
 kombu==2.5.12
+lxml==3.2.3
 py-bcrypt==0.3
 pymongo==2.5.1
 python-dateutil==2.1
