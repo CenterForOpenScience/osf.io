@@ -4,6 +4,8 @@ from framework.search import Keyword
 from framework import StoredObject, fields, storage, Q
 from framework.search import solr
 
+from website import settings
+
 import datetime
 
 class User(StoredObject):
@@ -71,6 +73,8 @@ class User(StoredObject):
         self.update_solr()
 
     def update_solr(self):
+        if not settings.use_solr:
+            return
         solr.update_user(self)
 
     @classmethod

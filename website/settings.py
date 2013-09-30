@@ -7,6 +7,8 @@ confirm_registrations_by_email = False # Not fully implemented
 allow_registration = True
 allow_login = True
 
+use_solr = False
+
 # External services
 try:
     os.environ['OSF_PRODUCTION']

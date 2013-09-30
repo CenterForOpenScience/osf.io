@@ -132,6 +132,9 @@ class Node(StoredObject):
         as appropriate
         """
 
+        if not settings.use_solr:
+            return
+
         if self.category == 'project':
             # All projects use their own IDs.
             solr_document_id = self._id
