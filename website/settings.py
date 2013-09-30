@@ -7,6 +7,8 @@ confirm_registrations_by_email = False # Not fully implemented
 allow_registration = True
 allow_login = True
 
+use_solr = False
+
 # External services
 try:
     os.environ['OSF_PRODUCTION']
@@ -24,15 +26,17 @@ try:
     os.environ['OSF_PRODUCTION']
     cache_path = '/opt/data/osf_cache'
     uploads_path = '/opt/data/uploads'
-except:
+except KeyError:
     cache_path = os.path.join(base_path, 'cache')
     uploads_path = os.path.join(base_path, 'uploads')
 
 try:
     os.environ['OSF_PRODUCTION']
     mongo_uri = 'mongodb://osf:osfosfosfosf0$f@localhost:20771/osf20130903'
+    solr = 'http://services.openscienceframework.org:8983/solr/'
 except KeyError:
     mongo_uri = 'mongodb://localhost:20771/osf20130903'
+    solr = 'http://localhost:8983/solr/'
 
 #TODO: Configuration should not change between deploys - this should be dynamic.
 canonical_domain = 'openscienceframework.org'

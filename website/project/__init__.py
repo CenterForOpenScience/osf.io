@@ -48,7 +48,7 @@ def new_node(category, title, user, description=None, project=None):
     new_node.description=description
     new_node.is_public=False
     new_node.generate_keywords()
-    
+
     new_node.creator = user
     # new_node._optimistic_insert()
     new_node.contributors.append(user)

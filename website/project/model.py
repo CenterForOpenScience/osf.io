@@ -24,6 +24,8 @@ from dulwich.object_store import tree_lookup_path
 
 import subprocess
 
+from framework.search.solr import update_solr, delete_solr_doc
+
 def utc_datetime_to_timestamp(dt):
     return float(
         str(calendar.timegm(dt.utcnow().utctimetuple())) + '.' + str(dt.microsecond)
@@ -129,6 +131,69 @@ class Node(StoredObject):
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
     _meta = {'optimistic' : True}
+
+    def save(self):
+        # function to overrwrite the save method so
+        # that we can send relevant info to solr
+        super(Node, self).save()
+
+        self.update_solr()
+
+    def update_solr(self):
+        """Send the current state of the object to Solr, or delete it from Solr
+        as appropriate
+        """
+
+        if not settings.use_solr:
+            return
+
+        if self.category == 'project':
+            # All projects use their own IDs.
+            solr_document_id = self._id
+        else:
+            try:
+                # Components must have a project for a parent; use it's ID.
+                solr_document_id = self.node__parent[0]._id
+            except IndexError:
+                # Skip orphaned components. There are some in the DB...
+                return
+
+        if self.is_deleted or not self.is_public:
+            # If the Node is deleted *or made private*
+            # Delete or otherwise ensure the Solr document doesn't exist.
+            delete_solr_doc({
+                'doc_id': solr_document_id,
+                '_id': self._id,
+            })
+        else:
+            # Insert/Update the Solr document
+            solr_document = {
+                'id': solr_document_id,
+                #'public': self.is_public,
+                '{}_contributors'.format(self._id): [
+                    x.fullname for x in self.contributors
+                ],
+                '{}_contributors_url'.format(self._id): [
+                    x.profile_url for x in self.contributors
+                ],
+                '{}_title'.format(self._id): self.title,
+                '{}_category'.format(self._id): self.category,
+                '{}_public'.format(self._id): self.is_public,
+                '{}_tags'.format(self._id): [x._id for x in self.tags],
+                '{}_description'.format(self._id): self.description,
+                '{}_url'.format(self._id): self.url(),
+                }
+
+            for wiki in [
+                NodeWikiPage.load(x)
+                for x in self.wiki_pages_current.values()
+            ]:
+                solr_document.update({
+                    '__'.join((self._id, wiki.page_name, 'wiki')): wiki.raw_text
+                })
+
+            update_solr(solr_document)
+
 
     def remove_node(self, user, date=None):
         if not date:
@@ -699,6 +764,7 @@ class Node(StoredObject):
             log_date=v.date
         )
 
+
     def get_stats(self, detailed=False):
         if detailed:
             raise NotImplementedError(
@@ -706,6 +772,7 @@ class Node(StoredObject):
             )
         else:
             return get_basic_counters('node:%s' % self._primary_key)
+
 
 class NodeWikiPage(StoredObject):
 
@@ -735,3 +802,14 @@ class NodeWikiPage(StoredObject):
         )
 
         return sanitize(html_output, **settings.wiki_whitelist)
+
+    @property
+    def raw_text(self):
+        """ The raw text of the page, suitable for using in a test search"""
+
+        return sanitize(self.html, tags=[], strip=True)
+
+    def save(self, *args, **kwargs):
+        super(NodeWikiPage, self).save(*args, **kwargs)
+
+        self.node.update_solr()
