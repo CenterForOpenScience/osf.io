@@ -140,7 +140,7 @@ def create_result(highlights, results):
                         nest[split_id] = {
                             'title': result[split_id+'_title'],
                             'url': result[split_id+'_url'],
-                            'highlight': lit or nest.get(split_id)['highlight'],
+                            'highlight': lit or nest.get(split_id)['highlight'] if nest.get(split_id) else None,
                             'wiki_link': wiki_link,
                             'contributors': contributors,
                             'contributors_url': contributors_url,

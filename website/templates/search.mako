@@ -123,7 +123,9 @@ $(function () {
                         <div class="highlight">
                             % if result['highlight'] is not None:
                                 % for highlight in result['highlight']:
+                                   %if hightlight:
                                        ${highlight}
+                                   %endif
                                 % endfor
 ##                      if there is a wiki link, display that
                                 % if result['wiki_link']:
