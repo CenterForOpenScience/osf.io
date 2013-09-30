@@ -31,11 +31,11 @@ def get_current_user():
     # else:
     #     return None
 
-# def get_current_node():
-#     from website.models import Node
-#     nid = session.get('auth_node_id')
-#     if nid:
-#         return Node.load(nid)
+def get_current_node():
+    from website.models import Node
+    nid = session.get('auth_node_id')
+    if nid:
+        return Node.load(nid)
 
 def get_api_key():
     # Hack: Avoid circular import
@@ -177,6 +177,7 @@ def must_have_session_auth(fn):
 
         kwargs['user'] = get_current_user()
         kwargs['api_key'] = get_api_key()
+        kwargs['api_node'] = get_current_node()
 
         if kwargs['user'] or kwargs['api_key']:
             return func(*args, **kwargs)
