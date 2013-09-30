@@ -145,11 +145,15 @@ def node_fork_page(*args, **kwargs):
     user = get_current_user()
 
     if node:
-        raise HTTPError(http.FORBIDDEN)
-        # node_to_use = node
-        # push_status_message('At this time, only projects can be forked; however, this behavior is coming soon.')
-        # # todo discuss
+        node_to_use = node
+        push_status_message('At this time, only projects can be forked; however, this behavior is coming soon.')
+        # todo discuss
         # return redirect(node_to_use.url())
+        raise HTTPError(
+            http.FORBIDDEN,
+            message='At this time, only projects can be forked; however, this behavior is coming soon.',
+            resource_uri=node_to_use.url()
+        )
     else:
         node_to_use = project
 
