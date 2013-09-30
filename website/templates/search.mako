@@ -224,8 +224,6 @@ $(function () {
                 </div>
             % else:
                 No results found. <br />
-                <br />
-                Note: Improvements are currently being made on the search engine, so it might have been reasonable to find something based upon your search terms. Feel free to <a href="mailto:jspies@virginia.edu">send me</a> the terms you used and what you expected to find, and I'll use that information to potentially tune the search algorithm. Thanks!
             %endif
     </div>
 </div>
