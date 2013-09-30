@@ -134,6 +134,12 @@ class Node(StoredObject):
 
     _meta = {'optimistic' : True}
 
+    def can_edit(self, user, api_node=None):
+
+        return self.is_public \
+            or self.is_contributor(user) \
+            or self is api_node
+
     def remove_node(self, user, date=None):
         if not date:
             date = datetime.datetime.utcnow()

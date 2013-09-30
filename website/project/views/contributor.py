@@ -9,7 +9,6 @@ import hashlib
 from framework import HTTPError
 import httplib as http
 
-@must_have_session_auth
 @must_be_contributor_or_public
 def get_contributors(*args, **kwargs):
 

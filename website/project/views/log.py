@@ -1,5 +1,6 @@
 
 from framework import User, get_current_user
+from framework.auth import get_api_key
 from ..model import Node, NodeLog
 from ..decorators import must_be_valid_project, must_be_contributor_or_public
 from .node import _view_project
@@ -23,10 +24,17 @@ def get_log(log_id):
 
     log = NodeLog.load(log_id)
     user = get_current_user()
+    api_key = get_api_key()
     node_to_use = Node.load(log.params.get('node')) or Node.load(log.params.get('project'))
 
-    if not node_to_use.is_public and not node_to_use.is_contributor(user):
+    node_can_edit = node_to_use.can_edit(user, api_key)
+    parent_can_edit = node_to_use.node__parent and node_to_use.node__parent[0].can_edit(user, api_key)
+
+    if not node_can_edit and not parent_can_edit:
         raise HTTPError(http.FORBIDDEN)
+
+    # if not node_to_use.is_public and not node_to_use.is_contributor(user):
+    #     raise HTTPError(http.FORBIDDEN)
 
     project = Node.load(log.params.get('project'))
     node = Node.load(log.params.get('node'))
