@@ -33,9 +33,6 @@ def get_log(log_id):
     if not node_can_edit and not parent_can_edit:
         raise HTTPError(http.FORBIDDEN)
 
-    # if not node_to_use.is_public and not node_to_use.is_contributor(user):
-    #     raise HTTPError(http.FORBIDDEN)
-
     project = Node.load(log.params.get('project'))
     node = Node.load(log.params.get('node'))
 
@@ -64,4 +61,4 @@ def get_logs(*args, **kwargs):
     logs = list(reversed(project.logs._to_primary_keys()))
     if 'count' in kwargs:
         logs = logs[:kwargs['count']]
-    return logs
+    return {'logs' : logs}
