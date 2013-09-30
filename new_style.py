@@ -118,6 +118,12 @@ class Renderer(object):
     def handle_error(self, error):
         raise NotImplementedError
 
+    @staticmethod
+    def unpack(data, n=4):
+        if not isinstance(data, tuple):
+            data = (data,)
+        return data + (None,) * (n - len(data))
+
     def __call__(self, data, *args, **kwargs):
 
         # Handle error
@@ -129,9 +135,7 @@ class Renderer(object):
             return data
 
         # Unpack tuple
-        if not isinstance(data, tuple):
-            data = (data,)
-        data, status_code, headers, resource_uri = data + (None,) * (4 - len(data))
+        data, status_code, headers, resource_uri = self.unpack(data)
 
         # Call subclass render
         rendered = self.render(data, resource_uri, *args, **kwargs)
