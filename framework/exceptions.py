@@ -27,12 +27,12 @@ class HTTPError(Exception):
         },
     }
 
-    def __init__(self, code, message=None, resource_uri=None, data=None):
+    def __init__(self, code, message=None, redirect_url=None, data=None):
 
         super(HTTPError, self).__init__(message)
 
         self.code = code
-        self.resource_uri = resource_uri
+        self.redirect_url = redirect_url
         self.data = data or {}
 
         try:
