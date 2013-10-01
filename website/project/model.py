@@ -135,9 +135,9 @@ class Node(StoredObject):
     def save(self, *args, **kwargs):
         # function to overrwrite the save method so
         # that we can send relevant info to solr
-        super(Node, self).save(*args, **kwargs)
-
+        rv = super(Node, self).save(*args, **kwargs)
         self.update_solr()
+        return rv
 
     def update_solr(self):
         """Send the current state of the object to Solr, or delete it from Solr
@@ -268,7 +268,7 @@ class Node(StoredObject):
         forked.nodes = []
         forked.contributors = []
         forked.contributor_list = []
-
+        
         for i, node_contained in enumerate(original.nodes):
             forked_node = node_contained.fork_node(user, title='')
             if forked_node is not None:
