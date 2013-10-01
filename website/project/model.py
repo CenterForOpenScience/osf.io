@@ -268,7 +268,7 @@ class Node(StoredObject):
         forked.nodes = []
         forked.contributors = []
         forked.contributor_list = []
-        
+
         for i, node_contained in enumerate(original.nodes):
             forked_node = node_contained.fork_node(user, title='')
             if forked_node is not None:
@@ -810,6 +810,6 @@ class NodeWikiPage(StoredObject):
         return sanitize(self.html, tags=[], strip=True)
 
     def save(self, *args, **kwargs):
-        super(NodeWikiPage, self).save(*args, **kwargs)
-
+        rv = super(NodeWikiPage, self).save(*args, **kwargs)
         self.node.update_solr()
+        return rv
