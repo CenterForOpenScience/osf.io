@@ -199,6 +199,14 @@ class WebRenderer(Renderer):
         return loaded
 
     def render_element(self, element, data):
+        """Renders an embedded template
+
+        :param element: The template embed (string).
+             Ex: <div mod-meta='{"tpl": "name.html", "replace": true}'></div>
+        :param data: Dictionary to be passed to the template as context
+
+        :returns: 2-tuple: (<result>, <flag: replace div>)
+        """
 
         element_attributes = element.attrib
         attributes_string = element_attributes['mod-meta']
