@@ -152,7 +152,7 @@ class WebRendererTemplateTestCase(OsfTestCase):
             self.assertIsInstance(resp, tuple)
             self.assertIn('child template content', resp[0])
 
-    @unittest.skip('Fails')
+    @unittest.skip('Fails with IOError - should replace the template content')
     def test_broken_template_uri(self):
         with self.app.test_request_context():
             self.app.preprocess_request()
@@ -185,6 +185,36 @@ class WebRendererTemplateTestCase(OsfTestCase):
                 ''.join((
                     "<div mod-meta='",
                     '{"tpl":"nested_child.html","replace": true}',
+                    "'></div>",
+                )),
+                create_parent='remove-me',
+            )
+
+            result = r.render_element(
+                html.findall('.//*[@mod-meta]')[0],
+                data={},
+            )
+
+            self.assertEqual(
+                ('<p>child template content</p>', True),
+                result,
+            )
+
+    @unittest.skip('Fails with IOError - should replace the template content')
+    def test_render_included_template_not_found(self):
+        with self.app.test_request_context():
+            self.app.preprocess_request()
+
+            r = WebRenderer(
+                'nested_child.html',
+                render_mako_string,
+                template_dir='tests/templates',
+            )
+
+            html = lxml.html.fragment_fromstring(
+                ''.join((
+                    "<div mod-meta='",
+                    '{"tpl":"not_a_real_file.html","replace": true}',
                     "'></div>",
                 )),
                 create_parent='remove-me',
