@@ -2,6 +2,7 @@ import json
 import unittest
 
 import flask
+import lxml
 import werkzeug.wrappers
 
 from framework.exceptions import HTTPError, http
@@ -168,6 +169,35 @@ class WebRendererTemplateTestCase(OsfTestCase):
                 'URI {} not found.'.format(
                     'test/templates/not_a_valid_file.html'),
                 resp[0],
+            )
+
+    def test_render_included_template(self):
+        with self.app.test_request_context():
+            self.app.preprocess_request()
+
+            r = WebRenderer(
+                'nested_child.html',
+                render_mako_string,
+                template_dir='tests/templates',
+            )
+
+            html = lxml.html.fragment_fromstring(
+                ''.join((
+                    "<div mod-meta='",
+                    '{"tpl":"nested_child.html","replace": true}',
+                    "'></div>",
+                )),
+                create_parent='remove-me',
+            )
+
+            result = r.render_element(
+                html.findall('.//*[@mod-meta]')[0],
+                data={},
+            )
+
+            self.assertEqual(
+                ('<p>child template content</p>', True),
+                result,
             )
 
 
