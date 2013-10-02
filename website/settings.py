@@ -75,8 +75,9 @@ wiki_whitelist = {
     # Styles currently used in Reproducibility Project wiki pages
     # TODO: Discuss and possibly delete
     'styles' : [
-        'top', 'left', 'width', 'height',
-        'background', 'font-size', 'position', 'text-align', 'z-index',
+        'top', 'left', 'width', 'height', 'position',
+        'background', 'font-size', 'text-align', 'z-index',
+        'list-style',
     ]
 }
 
