@@ -11,9 +11,8 @@ from framework.exceptions import HTTPError, http
 from new_style import (
     Renderer, JSONRenderer, WebRenderer,
     render_mako_string,
-    call_url,
 )
-from tests import OsfTestCase
+from tests.common import OsfTestCase
 
 
 class RendererTestCase(OsfTestCase):
