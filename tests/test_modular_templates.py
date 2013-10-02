@@ -3,8 +3,10 @@ import unittest
 
 import flask
 import lxml
+from modularodm import fields
 import werkzeug.wrappers
 
+from framework import StoredObject
 from framework.exceptions import HTTPError, http
 from new_style import (
     Renderer, JSONRenderer, WebRenderer,
@@ -322,3 +324,37 @@ class CallUriTestCase(OsfTestCase):
             self.app.preprocess_request()
 
             r = call_url('/', wrap=True)
+
+
+class JSONRendererEncoderTestCase(unittest.TestCase):
+
+    def test_encode_custom_class(self):
+
+        class TestClass(object):
+            def to_json(self):
+                return '<JSON representation>'
+
+        test_object = TestClass()
+
+        self.assertEqual(
+            '"<JSON representation>"',
+            json.dumps(test_object, cls=JSONRenderer.Encoder),
+        )
+
+    def test_stored_object(self):
+        class TestClass(StoredObject):
+            _id = fields.StringField(primary=True)
+
+        test_object = TestClass()
+        test_object._id = 'FakeID'
+
+        self.assertEqual(
+            '"FakeID"',
+            json.dumps(test_object, cls=JSONRenderer.Encoder)
+        )
+
+    def test_string(self):
+        self.assertEqual(
+            '"my string"',
+            json.dumps('my string', cls=JSONRenderer.Encoder)
+        )
