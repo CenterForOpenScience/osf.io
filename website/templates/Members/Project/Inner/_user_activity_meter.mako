@@ -16,7 +16,7 @@
         non_ua_count = total_count - ua_count # base length of blue bar
 
         # Normalize over all nodes
-        max_width = 335 # max width in px for the stacked bar
+        max_width = 325 # max width in px for the stacked bar
         # get css widths for bars
         ua = ua_count / rescale_ratio * max_width
         non_ua = non_ua_count / rescale_ratio * max_width

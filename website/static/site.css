@@ -260,7 +260,6 @@ li.project{
     margin-bottom:10px;
     padding:0;
     list-style-type:none;
-    background-color:#F5F5F2;
     -webkit-border-radius:6px;
     -moz-border-radius:6px;
     border-radius:6px;
@@ -270,7 +269,7 @@ li.project{
 li.project h3{
     line-height:10px;
     font-size:14px;
-    padding:5px 10px;
+    padding:10px;
     -webkit-border-radius:6px;
     -webkit-border-bottom-left-radius:0px;
     -webkit-border-bottom-right-radius:0px;
@@ -302,7 +301,6 @@ li.node{
     margin-bottom:10px;
     padding:0;
     list-style-type:none;
-    background-color:#f5f5f5;
     -webkit-border-radius:6px;
     -moz-border-radius:6px;
     border-radius:6px;
