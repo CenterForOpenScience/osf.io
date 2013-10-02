@@ -2,7 +2,6 @@ from framework.search import Keyword
 
 from framework import StoredObject, fields,  Q
 
-
 class User(StoredObject):
     _id = fields.StringField(primary=True)
 
@@ -16,6 +15,7 @@ class User(StoredObject):
     email_verifications = fields.DictionaryField()
     aka = fields.StringField(list=True)
     date_registered = fields.DateTimeField()#auto_now_add=True)
+    # Watched nodes are stored via a list of WatchConfigs
     watched = fields.ForeignField("WatchConfig", list=True, backref="watched")
 
     keywords = fields.ForeignField('keyword', list=True, backref='keyworded')
@@ -107,3 +107,34 @@ class User(StoredObject):
             self.keywords.append(keyword_object)
         if save:
             self.save()
+
+    def watch(self, watch_config, save=False):
+        '''Watch a node by adding its WatchConfig to this user's ``watched``
+        list. Raises ``ValueError`` if the node is already watched.
+
+        :param watch_config: The WatchConfig to add.
+        :param save: Whether to save the user.
+        '''
+        watched_nodes = [each.node for each in self.watched]
+        if watch_config.node in watched_nodes:
+            raise ValueError("Node is already being watched.")
+        watch_config.save()
+        self.watched.append(watch_config)
+        if save:
+            self.save()
+        return None
+
+    def unwatch(self, watch_config, save=False):
+        '''Unwatch a node by removing its WatchConfig from this user's ``watched``
+        list. Raises ``ValueError`` if the node is not already being watched.
+
+        :param watch_config: The WatchConfig to remove.
+        :param save: Whether to save the user.
+        '''
+        for each in self.watched:
+            if watch_config.node._id == each.node._id:
+                self.watched.remove(each)
+                if save:
+                    self.save()
+                return None
+        raise ValueError('Node not being watched.')

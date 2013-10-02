@@ -8,7 +8,7 @@ from .. import new_node, new_project
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from ..forms import NewProjectForm, NewNodeForm
-from ..model import ApiKey, User, Tag, Node, NodeFile, NodeWikiPage, NodeLog
+from ..model import User, WatchConfig
 from framework.forms.utils import sanitize
 from framework.auth import must_have_session_auth, get_api_key
 
@@ -260,15 +260,42 @@ def project_set_permissions(*args, **kwargs):
 
     return {'status' : 'success'}, None, None, node_to_use.url()
 
-@get('/project/<pid>/watch')
+
+@must_have_session_auth  # returns user or api_node
+@must_be_valid_project  # returns project
+@must_be_contributor_or_public
+@must_not_be_registration
+def watch_post(*args, **kwargs):
+    node_to_use = kwargs['node'] or kwargs['project']
+    user = kwargs['user']
+    watch_config = WatchConfig(node=node_to_use,
+                                digest=request.form.get("digest", False),
+                                immediate=request.form.get('immediate', False))
+    try:
+        user.watch(watch_config)
+    except ValueError:  # Node is already being watched
+        raise HTTPError(http.BAD_REQUEST)
+    watch_config.save()
+    user.save()
+
+
 @must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project
+@must_be_contributor_or_public
 @must_not_be_registration
-def project_watch(*args, **kwargs):
-    project = kwargs['project']
+def unwatch_post(*args, **kwargs):
+    print("unwatch post!")
+    node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
-    project.watch(user)
-    return redirect('/project/'+str(project._primary_key))
+    watch_config = WatchConfig(node=node_to_use,
+                                digest=request.form.get("digest", False),
+                                immediate=request.form.get('immediate', False))
+    try:
+        user.unwatch(watch_config)
+    except ValueError:  # Node isn't being watched
+        raise HTTPError(http.BAD_REQUEST)
+    user.save()
+
 
 @must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project

@@ -650,4 +650,16 @@ process_rules(app, [
         '/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/',
     ], 'get', project_views.wiki.project_wiki_version, JSONRenderer()),
 
+    ### Watching ###
+    Rule([
+        '/project/<pid>/watch/',
+        '/project/<pid>/node/<nid>/watch/'
+    ], 'post', project_views.node.watch_post, JSONRenderer()),
+
+    Rule([
+        '/project/<pid>/unwatch/',
+        '/project/<pid>/node/<nid>/unwatch/'
+    ], 'post', project_views.node.unwatch_post, JSONRenderer()),
+
+
 ], prefix='/api/v1')

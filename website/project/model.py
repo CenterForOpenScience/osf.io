@@ -726,6 +726,7 @@ class Node(StoredObject):
         else:
             return get_basic_counters('node:%s' % self._primary_key)
 
+
 class NodeWikiPage(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
