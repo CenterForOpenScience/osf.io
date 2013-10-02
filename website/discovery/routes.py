@@ -7,6 +7,12 @@ from pymongo import DESCENDING
 
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
+#@framework.get('/api/discovery/points/<pid>')
+#def get_points(**kwargs):
+    #project_id = kwargs['pid']
+    #project = Node.load(project_id)
+    #return framework.jsonify({'count':len(project.logs)))
+
 @framework.get('/explore/activity/')
 def activity():
     # Projects

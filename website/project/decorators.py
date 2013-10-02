@@ -1,4 +1,5 @@
 from framework import get_current_user, push_status_message, redirect
+from framework.auth import get_api_key
 from website.project import get_node
 
 ###############################################################################
@@ -92,18 +93,18 @@ def must_be_contributor(fn):
             node = None
             kwargs['node'] = node
 
-        if node:
-            node_to_use = node
-        else:
-            node_to_use = project
+        node_to_use = node or project
         
         if 'user' in kwargs:
             user = kwargs['user']
         else:
             user = get_current_user()
             kwargs['user'] = user
-    
-        if not node_to_use.is_contributor(user):
+
+        api_node = kwargs.get('api_node')
+
+        if not node_to_use.is_contributor(user) \
+                and api_node != node_to_use:
             push_status_message('You are not authorized to perform that action \
                 for this node')
             return redirect('/')
@@ -129,22 +130,26 @@ def must_be_contributor_or_public(fn):
             node = None
             kwargs['node'] = node
 
-        if node:
-            node_to_use = node
-        else:
-            node_to_use = project
+        node_to_use = node or project
 
         if 'user' in kwargs:
             user = kwargs['user']
         else:
             user = get_current_user()
             kwargs['user'] = user
-        
-        if not node_to_use.is_public:
-            if not node_to_use.is_contributor(user):
-                push_status_message('You are not authorized to perform that action \
-                    for this node')
-                return redirect('/')
+
+        if 'api_node' in kwargs:
+            api_node = kwargs['api_node']
+        else:
+            api_node = get_api_key()
+            kwargs['api_node'] = api_node
+
+        if not node_to_use.is_public \
+                and not node_to_use.is_contributor(user) \
+                and api_node != node_to_use:
+            push_status_message('You are not authorized to perform that action \
+                for this node')
+            return redirect('/')
         
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)

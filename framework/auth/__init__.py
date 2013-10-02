@@ -1,5 +1,4 @@
-import framework.beaker as Session
-import framework.mongo as Database
+from framework import session, create_session
 import framework.status as status
 import framework.flask as web
 import framework.bcrypt as bcrypt
@@ -8,26 +7,38 @@ from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 import helper
 
-#import website.settings as settings
-
 from model import User
 
 from decorator import decorator
 import datetime
 
 def get_current_username():
-    return Session.get('auth_user_username')
+    return session.data.get('auth_user_username')
 
 def get_current_user_id():
-    return Session.get('auth_user_id')
+    return session.data.get('auth_user_id')
 
 def get_current_user():
-    # tag: database
-    uid = Session.get("auth_user_id")
+    uid = session.data.get('auth_user_id')
+    return User.load(uid)
+
+def get_current_node():
+    from website.models import Node
+    nid = session.data.get('auth_node_id')
+    if nid:
+        return Node.load(nid)
+
+def get_api_key():
+    # Hack: Avoid circular import
+    from website.project.model import ApiKey
+    api_key = session.data.get('auth_api_key')
+    return ApiKey.load(api_key)
+
+def get_user_or_node():
+    uid = get_current_user()
     if uid:
-        return User.load(uid)
-    else:
-        return None
+        return uid
+    return get_current_node()
 
 def check_password(actualPassword, givenPassword):
     return bcrypt.check_password_hash(actualPassword, givenPassword)
@@ -71,16 +82,19 @@ def login(username, password):
             elif not user.is_claimed:
                 return False
             else:
-                Session.set([
-                    ('auth_user_username', user.username), 
-                    ('auth_user_id', user._primary_key),
-                    ('auth_user_fullname', user.fullname)
-                ])
-                return True
+                response = web.redirect('/dashboard')
+                response = create_session(response, data={
+                    'auth_user_username': user.username,
+                    'auth_user_id': user._primary_key,
+                    'auth_user_fullname': user.fullname,
+                })
+                return response
     return False
 
 def logout():
-    Session.unset(['auth_user_username', 'auth_user_id', 'auth_user_fullname'])
+    for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname']:
+        # todo leave username so login page can persist probable id
+        del session.data[key]
     return True
 
 def add_unclaimed_user(email, fullname):
@@ -145,4 +159,26 @@ def must_be_logged_in(fn):
         else:
             status.push_status_message('You are not logged in')
             return web.redirect('/account')
+    return decorator(wrapped, fn)
+
+def must_have_session_auth(fn):
+
+    def wrapped(func, *args, **kwargs):
+
+        # Get user from session
+        user = get_current_user()
+        if user:
+            kwargs['user'] = user
+            return func(*args, **kwargs)
+
+        # Get node from session
+        node = get_current_node()
+        if node:
+            kwargs['api_node'] = node
+            return func(*args, **kwargs)
+
+        # No session authentication found
+        status.push_status_message('You are not logged in')
+        return web.redirect('/account')
+
     return decorator(wrapped, fn)

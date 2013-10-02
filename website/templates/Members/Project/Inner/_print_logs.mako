@@ -9,6 +9,7 @@
         <% if n and i >= n:break %>
                 <% 
                     tuser = log.user#get_user(log.user)
+                    api_key = log.api_key
                     action = log.action
                     params = log.params
                     category = 'project' if params['project'] else 'component'
@@ -18,7 +19,11 @@
                     break
                 %>
                 <dt><span class="date">${date.strftime('%m/%d/%y %I:%M %p')}</span></dt>
-                <dd ><a href="/profile/${tuser._primary_key}">${tuser.fullname}</a>
+                % if tuser is not None:
+                    <dd><a href="/profile/${tuser._primary_key}">${tuser.fullname}</a>
+                % elif api_key is not None:
+                    <dd>${api_key.label}
+                % endif
                 %if action == 'project_created':
                     created <a href='/project/${params['project']}'>project</a>
                 %elif action == 'node_created':

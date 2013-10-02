@@ -1,6 +1,19 @@
 from framework.flask import send_file, secure_filename, app, route, get, post,\
     redirect, request, url_for, send_from_directory, \
-    Blueprint, render_template, render_template_string, jsonify, abort
+    Blueprint, render_template, render_template_string, jsonify, abort, \
+    make_response
+
+##### ODM
+
+from modularodm import FlaskStoredObject as StoredObject, fields, storage
+from modularodm.query.querydialect import DefaultQueryDialect as Q
+
+###### Mongo
+
+from framework.mongo import db
+
+##### Sessions
+from framework.sessions import goback, set_previous_url, session, create_session
 
 ##### Template
 
@@ -10,19 +23,6 @@ from framework.mako import render
 
 from framework.celery import celery
 from framework.celery.tasks import error_handler
-
-###### Session
-
-from framework.beaker import set_previous_url, goback, session_set, session_get
-
-###### Mongo
-
-from framework.mongo import db
-
-##### ODM
-
-from modularodm import FlaskStoredObject as StoredObject, fields, storage
-from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 ###### Auth
 
@@ -59,7 +59,3 @@ def convert_datetime(date, to='US/Eastern'):
     date = date.replace(tzinfo=pytz.utc)
     return to_zone.normalize(date.astimezone(to_zone))
 
-##### Session setup
-
-import framework.beaker as session
-app.wsgi_app = session.middleware(app.wsgi_app, session.options)
