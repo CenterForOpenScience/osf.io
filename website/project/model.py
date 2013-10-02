@@ -139,7 +139,7 @@ class Node(StoredObject):
             date = datetime.datetime.utcnow()
 
         node_objects = []
- 
+
         if self.nodes and len(self.nodes) > 0:
             node_objects = self.nodes
 
@@ -149,7 +149,7 @@ class Node(StoredObject):
         for node in node_objects:
             #if not node.user_is_contributor(user):
             #    return False
-            
+
             if not node.category == 'project':
                 if not node.remove_node(user, date=date):
                     return False
@@ -191,7 +191,7 @@ class Node(StoredObject):
         self._terms = generate_keywords(source)
         if save:
             self.save()
-        return 
+        return
 
     def fork_node(self, user, title='Fork of '):
         if not (self.is_contributor(user) or self.is_public):
@@ -226,7 +226,7 @@ class Node(StoredObject):
                 'project':original.node__parent[0]._primary_key if original.node__parent else None,
                 'node':original._primary_key,
                 'registration':forked._primary_key,
-            }, 
+            },
             user=user,
             log_date=when,
             do_save=False,
@@ -261,7 +261,7 @@ class Node(StoredObject):
 
         # todo: should be recursive; see Node.fork_node()
         for i, original_node_contained in enumerate(original.nodes):
-            
+
             node_contained = original_node_contained.clone()
             node_contained.save()
 
@@ -289,12 +289,12 @@ class Node(StoredObject):
         registered.registered_meta[template] = data
         registered.save()
 
-        original.add_log('project_registered', 
+        original.add_log('project_registered',
             params={
                 'project':original.node__parent[0]._primary_key if original.node__parent else None,
                 'node':original._primary_key,
                 'registration':registered._primary_key,
-            }, 
+            },
             user=user,
             log_date=when
         )
@@ -552,7 +552,7 @@ class Node(StoredObject):
             }, user, log_date=node_file.date_uploaded)
 
         return node_file
-    
+
     def add_log(self, action, params, user, log_date=None, api_key=None, do_save=True):
         log = NodeLog()
         log.action=action
@@ -592,19 +592,19 @@ class Node(StoredObject):
             if str(user._id) in self.contributors:
                 return True
         return False
-    
+
     def remove_nonregistered_contributor(self, user, name, hash):
         for d in self.contributor_list:
             if d.get('nr_name') == name and hashlib.md5(d.get('nr_email')).hexdigest() == hash:
                 email = d.get('nr_email')
         self.contributor_list[:] = [d for d in self.contributor_list if not (d.get('nr_email') == email)]
         self.save()
-        self.add_log('remove_contributor', 
+        self.add_log('remove_contributor',
             params={
                 'project':self.node__parent[0]._primary_key if self.node__parent else None,
                 'node':self._primary_key,
                 'contributor':{"nr_name":name, "nr_email":email},
-            }, 
+            },
             user=user,
         )
         return True
@@ -616,12 +616,12 @@ class Node(StoredObject):
             self.save()
             removed_user = get_user(user_id_to_be_removed)
 
-            self.add_log('remove_contributor', 
+            self.add_log('remove_contributor',
                 params={
                     'project':self.node__parent[0]._primary_key if self.node__parent else None,
                     'node':self._primary_key,
                     'contributor':removed_user._primary_key,
-                }, 
+                },
                 user=user,
             )
             return True
@@ -675,7 +675,7 @@ class Node(StoredObject):
             pw = NodeWikiPage.load(self.wiki_pages_current[page])
         else:
             pw = None
-        
+
         return pw
 
     def updateNodeWikiPage(self, page, content, user):
@@ -707,13 +707,13 @@ class Node(StoredObject):
 
         self.save()
 
-        self.add_log('wiki_updated', 
+        self.add_log('wiki_updated',
             params={
                 'project':self.node__parent[0]._primary_key if self.node__parent else None,
                 'node':self._primary_key,
                 'page':v.page_name,
                 'version': v.version,
-            }, 
+            },
             user=user,
             log_date=v.date
         )
@@ -754,3 +754,11 @@ class NodeWikiPage(StoredObject):
         )
 
         return sanitize(html_output, **settings.wiki_whitelist)
+
+
+class WatchConfig(StoredObject):
+
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    node = fields.ForeignField('Node', backref='watched')
+    digest = fields.BooleanField(default=False)
+    immediate = fields.BooleanField(default=False)

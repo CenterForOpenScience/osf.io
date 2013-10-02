@@ -1,9 +1,7 @@
-from framework.mongo import db
 from framework.search import Keyword
 
-from framework import StoredObject, fields, storage, Q
+from framework import StoredObject, fields,  Q
 
-import datetime
 
 class User(StoredObject):
     _id = fields.StringField(primary=True)
@@ -18,6 +16,7 @@ class User(StoredObject):
     email_verifications = fields.DictionaryField()
     aka = fields.StringField(list=True)
     date_registered = fields.DateTimeField()#auto_now_add=True)
+    watched = fields.ForeignField("WatchConfig", list=True, backref="watched")
 
     keywords = fields.ForeignField('keyword', list=True, backref='keyworded')
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
@@ -66,7 +65,7 @@ class User(StoredObject):
         keywords = terms.lower().split(' ')
         if terms.lower() not in keywords:
             keywords.append(terms.lower())
-        
+
         o = []
         for i in xrange(len(keywords)):
             o.append([])
