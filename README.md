@@ -30,7 +30,7 @@ $ pip install -r requirements.txt
 - Run your mongodb process.
 
 ```bash
-$ make mongodb
+$ make mongo
 ```
 
 - Run your local development server.
