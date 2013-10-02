@@ -28,7 +28,7 @@ class RendererTestCase(OsfTestCase):
 
         self.assertIsInstance(
             self.r(resp),
-            werkzeug.wrappers.BaseResponse,
+            werkzeug.wrappers.Response,
         )
 
     def test_http_error_raised(self):
@@ -55,7 +55,7 @@ class JSONRendererTestCase(OsfTestCase):
 
         self.assertIsInstance(
             self.r(resp),
-            werkzeug.wrappers.BaseResponse,
+            werkzeug.wrappers.Response,
         )
 
     def test_http_error_raised(self):
@@ -118,7 +118,7 @@ class WebRendererTestCase(OsfTestCase):
 
             self.assertIsInstance(
                 resp,
-                werkzeug.wrappers.BaseResponse,
+                werkzeug.wrappers.Response,
             )
             self.assertEqual(302, resp.status_code)
             self.assertEqual('http://google.com/', resp.location)
@@ -190,7 +190,7 @@ class WebRendererTestCase(OsfTestCase):
         )
 
         self.assertIsInstance(
-            resp, werkzeug.wrappers.BaseResponse
+            resp, werkzeug.wrappers.Response
         )
 
         self.assertEqual(302, resp.status_code)
