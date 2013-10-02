@@ -317,15 +317,6 @@ class WebRendererTemplateTestCase(OsfTestCase):
             )
 
 
-class CallUriTestCase(OsfTestCase):
-
-    def test_call_homepage(self):
-        with self.app.test_request_context():
-            self.app.preprocess_request()
-
-            r = call_url('/', wrap=True)
-
-
 class JSONRendererEncoderTestCase(unittest.TestCase):
 
     def test_encode_custom_class(self):
