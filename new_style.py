@@ -1,271 +1,11 @@
-import werkzeug.wrappers
-from werkzeug.exceptions import NotFound
-from framework import StoredObject
-
-from framework import HTTPError
-from framework.flask import app, redirect
-from framework.mako import makolookup
-from mako.template import Template
+from framework.flask import app
 import framework
 from website import settings
 from framework import get_current_user
-import httplib as http
 
-import copy
-import json
-import os
-import pystache
-import lxml.html
-
-TEMPLATE_DIR = 'static/templates/'
-REDIRECT_CODES = [
-    http.MOVED_PERMANENTLY,
-    http.FOUND,
-]
-
-from framework import session
-
-def wrapped_fn(fn, wrapper, fn_kwargs):
-    def wrapped(*args, **kwargs):
-        try:
-            session_error_code = session.get('auth_error_code')
-            if session_error_code:
-                raise HTTPError(session_error_code)
-            rv = fn(*args, **kwargs)
-        except HTTPError as error:
-            rv = error
-        return wrapper(rv, **fn_kwargs)
-    return wrapped
-
-
-def call_url(url, wrap=True, view_kwargs=None):
-
-    # Parse view function and args
-    func_name, func_data = app.url_map.bind('').match(url)
-    if view_kwargs is not None:
-        func_data.update(view_kwargs)
-    view_function = view_functions[func_name]
-
-    # Call view function
-    rv = view_function(**func_data)
-    rv, _, _, _ = unpack(rv)
-
-    # Follow redirects
-    if isinstance(rv, werkzeug.wrappers.BaseResponse) \
-            and rv.status_code in REDIRECT_CODES:
-        url_redirect = rv.headers['Location']
-        return call_url(url_redirect, wrap=wrap)
-
-    return rv
-
-view_functions = {}
-
-def process_rules(app, rules, prefix=''):
-
-    for rule in rules:
-
-        view_func = wrapped_fn(rule.view_func, rule.render_func, rule.view_kwargs)
-        render_func_name = getattr(
-            rule.render_func,
-            '__name__',
-            rule.render_func.__class__.__name__
-        )
-        view_func_name = '{}__{}'.format(
-            render_func_name,
-            rule.view_func.__name__
-        )
-
-        view_functions[view_func_name] = rule.view_func
-
-        for url in rule.routes:
-            app.add_url_rule(
-                prefix + url,
-                endpoint=view_func_name,
-                view_func=view_func,
-                methods=rule.methods
-            )
-
-def render_mustache_string(tpl_string, data):
-    return pystache.render(tpl_string, context=data)
-
-def render_jinja_string(tpl, data):
-    pass
-
-mako_cache = {}
-def render_mako_string(tplname, data):
-    tpl = mako_cache.get(tplname)
-    if tpl is None:
-        tpl = Template(tplname, lookup=makolookup)
-        mako_cache[tplname] = tpl
-    return tpl.render(**data)
-
-
-def unpack(data, n=4):
-    if not isinstance(data, tuple):
-        data = (data,)
-    return data + (None,) * (n - len(data))
-
-
-class Renderer(object):
-
-    def render(self, data, redirect_url, *args, **kwargs):
-        raise NotImplementedError
-
-    def handle_error(self, error):
-        raise NotImplementedError
-
-    def __call__(self, data, *args, **kwargs):
-
-        # Handle error
-        if isinstance(data, HTTPError):
-            return self.handle_error(data)
-
-        # Return if response
-        if isinstance(data, werkzeug.wrappers.BaseResponse):
-            return data
-
-        # Unpack tuple
-        data, status_code, headers, redirect_url = unpack(data)
-
-        # Call subclass render
-        rendered = self.render(data, redirect_url, *args, **kwargs)
-
-        # Return if response
-        if isinstance(rendered, werkzeug.wrappers.BaseResponse):
-            return rendered
-
-        return rendered, status_code, headers
-
-
-class NullRenderer(Renderer):
-
-    def handle_error(self, error):
-        pass
-
-    def render(self, data, redirect_url, *args, **kwargs):
-        return data
-
-null_renderer = NullRenderer()
-
-class JSONRenderer(Renderer):
-    """
-    Renderer for API views. Generates JSON; ignores
-    redirects from views and exceptions.
-    """
-
-    class Encoder(json.JSONEncoder):
-        def default(self, obj):
-            if hasattr(obj, 'to_json'):
-                return obj.to_json()
-            if isinstance(obj, StoredObject):
-                return obj._primary_key
-            return json.JSONEncoder.default(self, obj)
-
-    def handle_error(self, error):
-        return self.render(error.to_data(), None), error.code
-
-    def render(self, data, redirect_url, *args, **kwargs):
-        return json.dumps(data, cls=self.Encoder)
-
-json_renderer = JSONRenderer()
-
-class WebRenderer(Renderer):
-    """
-    Renderer for web views. Generates HTML; follows redirects
-    from views and exceptions.
-    """
-
-    error_template = 'error.html'
-
-    def __init__(self, template_name, renderer, template_dir=TEMPLATE_DIR):
-        self.template_name = template_name
-        self.renderer = renderer
-        self.template_dir = template_dir
-
-    def handle_error(self, error):
-
-        if error.redirect_url is not None:
-            return redirect(error.redirect_url)
-
-        error_data = error.to_data()
-        return self._render(
-            error_data,
-            self.error_template
-        ), error.code
-
-    def load_file(self, template_file):
-        with open(os.path.join(self.template_dir, template_file), 'r') as f:
-            loaded = f.read()
-        return loaded
-
-    def render_element(self, element, data):
-
-        element_attributes = element.attrib
-        attributes_string = element_attributes['mod-meta']
-        element_meta = json.loads(attributes_string) # todo more robust jsonqa
-
-        uri = element_meta.get('uri')
-        is_replace = element_meta.get('replace', False)
-        kwargs = element_meta.get('kwargs', {})
-        view_kwargs = element_meta.get('view_kwargs', {})
-
-        render_data = copy.deepcopy(data)
-        render_data.update(kwargs)
-
-        if uri:
-            try:
-                uri_data = call_url(uri, view_kwargs=view_kwargs)
-                print uri_data
-                render_data.update(uri_data)
-            except NotFound:
-                return '<div>URI {} not found.</div>'.format(uri), is_replace
-            except:
-                return '<div>Error retrieving URI {}.</div>'.format(uri), is_replace
-
-        template_rendered = self._render(
-            render_data,
-            element_meta['tpl'],
-        )
-
-        return template_rendered, is_replace
-
-    def _render(self, data, template_name=None):
-
-        data.update(get_globals())
-
-        template_name = template_name or self.template_name
-        template_file = self.load_file(template_name)
-        rendered = self.renderer(template_file, data)
-
-        html = lxml.html.fragment_fromstring(rendered, create_parent='remove-me')
-
-        for element in html.findall('.//*[@mod-meta]'):
-
-            template_rendered, is_replace = self.render_element(element, data)
-
-            original = lxml.html.tostring(element)
-            if is_replace:
-                replacement = template_rendered
-            else:
-                replacement = lxml.html.tostring(element)
-                replacement = replacement.replace('><', '>'+template_rendered+'<')
-
-            rendered = rendered.replace(original, replacement)
-
-        return rendered
-
-    def render(self, data, redirect_url, *args, **kwargs):
-        if redirect_url is not None:
-            return redirect(redirect_url)
-        template_name = kwargs.get('template_name')
-        return self._render(data, template_name)
-
-# todo move
-def get_display_name(username):
-    if username:
-        if len(username) > 22:
-            return '%s...%s' % (username[:9],username[-10:])
-        return username
+from framework.routing import (Rule, process_rules,
+                               WebRenderer, json_renderer,
+                               render_mako_string)
 
 def get_globals():
     user = get_current_user()
@@ -278,6 +18,20 @@ def get_globals():
         'allow_login' : settings.allow_login,
         'status' : framework.status.pop_status_messages(),
     }
+
+class OsfWebRenderer(WebRenderer):
+
+    def __init__(self, *args, **kwargs):
+        kwargs['data'] = get_globals
+        super(OsfWebRenderer, self).__init__(*args, **kwargs)
+
+
+# todo move
+def get_display_name(username):
+    if username:
+        if len(username) > 22:
+            return '%s...%s' % (username[:9],username[-10:])
+        return username
 
 def view_index():
 
@@ -296,29 +50,11 @@ from website import views as website_routes
 from website.profile import views as profile_views
 from website.project import views as project_views
 
-class Rule(object):
-
-    @staticmethod
-    def _to_list(value):
-        if not isinstance(value, list):
-            return [value]
-        return value
-
-    def __init__(self, routes, methods, view_func, render_func=None, view_kwargs=None):
-        self.routes = self._to_list(routes)
-        self.methods = self._to_list(methods)
-        self.view_func = view_func
-        self.render_func = render_func or null_renderer
-        self.view_kwargs = view_kwargs or {}
-
-        if not callable(self.render_func):
-            raise Exception('Argument render_func must be callable.')
-
 # Base
 
 process_rules(app, [
 
-    Rule('/dashboard/', 'get', website_routes.dashboard, WebRenderer('dashboard.html', render_mako_string)),
+    Rule('/dashboard/', 'get', website_routes.dashboard, OsfWebRenderer('dashboard.html', render_mako_string)),
 
 ])
 
@@ -328,12 +64,12 @@ process_rules(app, [
 
 process_rules(app, [
 
-    Rule('/profile/', 'get', profile_views.profile_view, WebRenderer('profile.html', render_mako_string)),
-    Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, WebRenderer('profile.html', render_mako_string)),
-    Rule('/settings/', 'get', profile_views.profile_settings, WebRenderer('settings.html', render_mako_string)),
-    Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, WebRenderer('profile/key_history.html', render_mako_string)),
-    Rule('/profile/<uid>/edit', 'post', profile_views.edit_profile, JSONRenderer),
-    Rule('/addons/', 'get', profile_views.profile_addons, WebRenderer('profile/addons.html', render_mako_string)),
+    Rule('/profile/', 'get', profile_views.profile_view, OsfWebRenderer('profile.html', render_mako_string)),
+    Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, OsfWebRenderer('profile.html', render_mako_string)),
+    Rule('/settings/', 'get', profile_views.profile_settings, OsfWebRenderer('settings.html', render_mako_string)),
+    Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, OsfWebRenderer('profile/key_history.html', render_mako_string)),
+    Rule('/profile/<uid>/edit', 'post', profile_views.edit_profile, json_renderer),
+    Rule('/addons/', 'get', profile_views.profile_addons, OsfWebRenderer('profile/addons.html', render_mako_string)),
 
 ])
 
@@ -341,15 +77,15 @@ process_rules(app, [
 
 process_rules(app, [
 
-    Rule('/profile/', 'get', profile_views.profile_view, JSONRenderer()),
-    Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, JSONRenderer()),
-    Rule('/profile/<uid>/public_projects/', 'get', profile_views.get_public_projects, JSONRenderer()),
-    Rule('/profile/<uid>/public_components/', 'get', profile_views.get_public_components, JSONRenderer()),
-    Rule('/settings/', 'get', profile_views.profile_settings, JSONRenderer()),
-    Rule('/settings/keys/', 'get', profile_views.get_keys, JSONRenderer()),
-    Rule('/settings/create_key/', 'post', profile_views.create_user_key, JSONRenderer()),
-    Rule('/settings/revoke_key/', 'post', profile_views.revoke_user_key, JSONRenderer()),
-    Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, JSONRenderer()),
+    Rule('/profile/', 'get', profile_views.profile_view, json_renderer),
+    Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, json_renderer),
+    Rule('/profile/<uid>/public_projects/', 'get', profile_views.get_public_projects, json_renderer),
+    Rule('/profile/<uid>/public_components/', 'get', profile_views.get_public_components, json_renderer),
+    Rule('/settings/', 'get', profile_views.profile_settings, json_renderer),
+    Rule('/settings/keys/', 'get', profile_views.get_keys, json_renderer),
+    Rule('/settings/create_key/', 'post', profile_views.create_user_key, json_renderer),
+    Rule('/settings/revoke_key/', 'post', profile_views.revoke_user_key, json_renderer),
+    Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, json_renderer),
 
 ], prefix='/api/v1',)
 
@@ -359,112 +95,112 @@ process_rules(app, [
 
 process_rules(app, [
 
-    Rule('/', 'get', view_index, WebRenderer('index.html', render_mako_string)),
+    Rule('/', 'get', view_index, OsfWebRenderer('index.html', render_mako_string)),
 
     Rule([
         '/project/<pid>/',
         '/project/<pid>/node/<nid>/',
-    ], 'get', project_views.node.view_project, WebRenderer('project.html', render_mako_string)),
+    ], 'get', project_views.node.view_project, OsfWebRenderer('project.html', render_mako_string)),
 
     Rule([
         '/project/<pid>/key_history/<kid>/',
         '/project/<pid>/node/<nid>/key_history/<kid>/',
-    ], 'get', project_views.key.node_key_history, WebRenderer('project/key_history.html', render_mako_string)),
+    ], 'get', project_views.key.node_key_history, OsfWebRenderer('project/key_history.html', render_mako_string)),
 
-    Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, WebRenderer('tags.html', render_mako_string)),
+    Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.html', render_mako_string)),
 
-    Rule('/project/new/', 'get', project_views.node.project_new, WebRenderer('project/new.html', render_mako_string)),
-    Rule('/project/new/', 'post', project_views.node.project_new_post, WebRenderer('project/new.html', render_mako_string)),
+    Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.html', render_mako_string)),
+    Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.html', render_mako_string)),
 
-    Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, WebRenderer('project.html', render_mako_string)),
+    Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('project.html', render_mako_string)),
 
     Rule([
         '/project/<pid>/settings/',
         '/project/<pid>/node/<nid>/settings/',
-    ], 'get', project_views.node.node_setting, WebRenderer('project/settings.html', render_mako_string)),
+    ], 'get', project_views.node.node_setting, OsfWebRenderer('project/settings.html', render_mako_string)),
 
     # Permissions
     # TODO: Should be a POST
     Rule([
         '/project/<pid>/permissions/<permissions>/',
         '/project/<pid>/node/<nid>/permissions/<permissions>/',
-    ], 'get', project_views.node.project_set_permissions, WebRenderer('project.html', render_mako_string)),
+    ], 'get', project_views.node.project_set_permissions, OsfWebRenderer('project.html', render_mako_string)),
 
     ### Files ###
 
     Rule([
         '/project/<pid>/files/',
         '/project/<pid>/node/<nid>/files/',
-    ], 'get', project_views.file.list_files, WebRenderer('project/files.html', render_mako_string)),
+    ], 'get', project_views.file.list_files, OsfWebRenderer('project/files.html', render_mako_string)),
 
     Rule([
         '/project/<pid>/files/<fid>/',
         '/project/<pid>/node/<nid>/files/<fid>/',
-    ], 'get', project_views.file.view_file, WebRenderer('project/file.html', render_mako_string)),
+    ], 'get', project_views.file.view_file, OsfWebRenderer('project/file.html', render_mako_string)),
 
     # View forks
     Rule([
         '/project/<pid>/forks/',
         '/project/<pid>/node/<nid>/forks/',
-    ], 'get', project_views.node.node_forks, WebRenderer('project/forks.html', render_mako_string)),
+    ], 'get', project_views.node.node_forks, OsfWebRenderer('project/forks.html', render_mako_string)),
 
     # Registrations
     Rule([
         '/project/<pid>/register/',
         '/project/<pid>/node/<nid>/register/',
-    ], 'get', project_views.register.node_register_page, WebRenderer('project/register.html', render_mako_string)),
+    ], 'get', project_views.register.node_register_page, OsfWebRenderer('project/register.html', render_mako_string)),
 
     Rule([
         '/project/<pid>/register/<template>/',
         '/project/<pid>/node/<nid>/register/<template>/',
-    ], 'get', project_views.register.node_register_template_page, WebRenderer('project/register.html', render_mako_string)),
+    ], 'get', project_views.register.node_register_template_page, OsfWebRenderer('project/register.html', render_mako_string)),
 
     Rule([
         '/project/<pid>/registrations/',
         '/project/<pid>/node/<nid>/registrations/',
-    ], 'get', project_views.node.node_registrations, WebRenderer('project/registrations.html', render_mako_string)),
+    ], 'get', project_views.node.node_registrations, OsfWebRenderer('project/registrations.html', render_mako_string)),
 
     # Statistics
     Rule([
         '/project/<pid>/statistics/',
         '/project/<pid>/node/<nid>/statistics/',
-    ], 'get', project_views.node.project_statistics, WebRenderer('project/statistics.html', render_mako_string)),
+    ], 'get', project_views.node.project_statistics, OsfWebRenderer('project/statistics.html', render_mako_string)),
 
     ### Wiki ###
     Rule([
         '/project/<pid>/wiki/',
         '/project/<pid>/node/<nid>/wiki/',
-    ], 'get', project_views.wiki.project_wiki_home, WebRenderer('project/wiki.html', render_mako_string)),
+    ], 'get', project_views.wiki.project_wiki_home, OsfWebRenderer('project/wiki.html', render_mako_string)),
 
     # View
     Rule([
         '/project/<pid>/wiki/<wid>/',
         '/project/<pid>/node/<nid>/wiki/<wid>/',
-    ], 'get', project_views.wiki.project_wiki_page, WebRenderer('project/wiki.html', render_mako_string)),
+    ], 'get', project_views.wiki.project_wiki_page, OsfWebRenderer('project/wiki.html', render_mako_string)),
 
     # Edit | GET
     Rule([
         '/project/<pid>/wiki/<wid>/edit/',
         '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
-    ], 'get', project_views.wiki.project_wiki_edit, WebRenderer('project/wiki/edit.html', render_mako_string)),
+    ], 'get', project_views.wiki.project_wiki_edit, OsfWebRenderer('project/wiki/edit.html', render_mako_string)),
 
     # Edit | POST
     Rule([
         '/project/<pid>/wiki/<wid>/edit/',
         '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
-    ], 'post', project_views.wiki.project_wiki_edit_post, WebRenderer('project/wiki/edit.html', render_mako_string)),
+    ], 'post', project_views.wiki.project_wiki_edit_post, OsfWebRenderer('project/wiki/edit.html', render_mako_string)),
 
     # Compare
     Rule([
         '/project/<pid>/wiki/<wid>/compare/<compare_id>/',
         '/project/<pid>/node/<nid>/wiki/<wid>/compare/<compare_id>/',
-    ], 'get', project_views.wiki.project_wiki_compare, WebRenderer('project/wiki/compare.html', render_mako_string)),
+    ], 'get', project_views.wiki.project_wiki_compare, OsfWebRenderer('project/wiki/compare.html', render_mako_string)),
 
     # Versions
     Rule([
         '/project/<pid>/wiki/<wid>/version/<vid>/',
         '/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/',
-    ], 'get', project_views.wiki.project_wiki_version, WebRenderer('project/wiki/compare.html', render_mako_string)),
+    ], 'get', project_views.wiki.project_wiki_version, OsfWebRenderer('project/wiki/compare.html', render_mako_string)),
 
 ])
 
@@ -472,160 +208,160 @@ process_rules(app, [
 
 process_rules(app, [
 
-    Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, JSONRenderer()),
+    Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, json_renderer),
 
-    Rule('/project/<pid>/', 'get', project_views.node.view_project, JSONRenderer()),
+    Rule('/project/<pid>/', 'get', project_views.node.view_project, json_renderer),
 
     Rule([
         '/project/<pid>/get_summary/',
         '/project/<pid>/node/<nid>/get_summary/',
-    ], 'get', project_views.node.get_summary, JSONRenderer()),
+    ], 'get', project_views.node.get_summary, json_renderer),
 
     Rule([
         '/project/<pid>/get_children/',
         '/project/<pid>/node/<nid>/get_children/',
-    ], 'get', project_views.node.get_children, JSONRenderer()),
+    ], 'get', project_views.node.get_children, json_renderer),
 
-    Rule('/log/<log_id>/', 'get', project_views.log.get_log, JSONRenderer()),
+    Rule('/log/<log_id>/', 'get', project_views.log.get_log, json_renderer),
     Rule([
         '/project/<pid>/log/',
         '/project/<pid>/node/<nid>/log/',
-    ], 'get', project_views.log.get_logs, JSONRenderer()),
+    ], 'get', project_views.log.get_logs, json_renderer),
 
     Rule([
         '/project/<pid>/get_contributors/',
         '/project/<pid>/node/<nid>/get_contributors/',
-    ], 'get', project_views.contributor.get_contributors, JSONRenderer()),
+    ], 'get', project_views.contributor.get_contributors, json_renderer),
 
     # Create
     Rule([
         '/project/new/',
         '/project/<pid>/newnode/',
-    ], 'post', project_views.node.project_new_post, JSONRenderer()),
+    ], 'post', project_views.node.project_new_post, json_renderer),
 
     # Remove
     Rule([
         '/project/<pid>/remove/',
         '/project/<pid>/node/<nid>/remove/',
-    ], 'post', project_views.node.component_remove, JSONRenderer()),
+    ], 'post', project_views.node.component_remove, json_renderer),
 
     # API keys
     Rule([
         '/project/<pid>/create_key/',
         '/project/<pid>/node/<nid>/create_key/',
-    ], 'post', project_views.key.create_node_key, JSONRenderer()),
+    ], 'post', project_views.key.create_node_key, json_renderer),
     Rule([
         '/project/<pid>/revoke_key/',
         '/project/<pid>/node/<nid>/revoke_key/'
-    ], 'post', project_views.key.revoke_node_key,  JSONRenderer()),
+    ], 'post', project_views.key.revoke_node_key,  json_renderer),
     Rule([
         '/project/<pid>/keys/',
         '/project/<pid>/node/<nid>/keys/',
-    ], 'get', project_views.key.get_node_keys, JSONRenderer()),
+    ], 'get', project_views.key.get_node_keys, json_renderer),
 
     # Reorder components
-    Rule('/project/<pid>/reorder_components/', 'post', project_views.node.project_reorder_components, JSONRenderer()),
+    Rule('/project/<pid>/reorder_components/', 'post', project_views.node.project_reorder_components, json_renderer),
 
     # Edit node
     Rule([
         '/project/<pid>/edit/',
         '/project/<pid>/node/<nid>/edit/',
-    ], 'post', project_views.node.edit_node, JSONRenderer()),
+    ], 'post', project_views.node.edit_node, json_renderer),
 
     # Tags
     # TODO: Should be a POST
     Rule([
         '/project/<pid>/addtag/<tag>/',
         '/project/<pid>/node/<nid>/addtag/<tag>/',
-    ], 'get', project_views.tag.project_addtag, JSONRenderer()),
+    ], 'get', project_views.tag.project_addtag, json_renderer),
     # TODO: Should be a POST
     Rule([
         '/project/<pid>/removetag/<tag>/',
         '/project/<pid>/node/<nid>/removetag/<tag>/',
-    ], 'get', project_views.tag.project_removetag, JSONRenderer()),
+    ], 'get', project_views.tag.project_removetag, json_renderer),
 
     ### Files ###
     Rule([
         '/project/<pid>/files/',
         '/project/<pid>/node/<nid>/files/',
-    ], 'get', project_views.file.list_files, JSONRenderer()),
+    ], 'get', project_views.file.list_files, json_renderer),
 
     Rule([
         '/project/<pid>/get_files/',
         '/project/<pid>/node/<nid>/get_files/',
-    ], 'get', project_views.file.get_files, JSONRenderer()),
+    ], 'get', project_views.file.get_files, json_renderer),
 
     # Download file
     Rule([
         '/project/<pid>/files/download/<fid>/',
         '/project/<pid>/node/<nid>/files/download/<fid>/',
-    ], 'get', project_views.file.download_file, JSONRenderer()),
+    ], 'get', project_views.file.download_file, json_renderer),
 
     # Download file by version
     Rule([
         '/project/<pid>/files/download/<fid>/version/<vid>/',
         '/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
-    ], 'get', project_views.file.download_file_by_version, JSONRenderer()),
+    ], 'get', project_views.file.download_file_by_version, json_renderer),
 
     Rule([
         '/project/<pid>/files/upload/',
         '/project/<pid>/node/<nid>/files/upload/',
-    ], 'get', project_views.file.upload_file_get, JSONRenderer()),
+    ], 'get', project_views.file.upload_file_get, json_renderer),
     Rule([
         '/project/<pid>/files/upload/',
         '/project/<pid>/node/<nid>/files/upload/',
-    ], 'post', project_views.file.upload_file_public, JSONRenderer()),
+    ], 'post', project_views.file.upload_file_public, json_renderer),
     Rule([
         '/project/<pid>/files/delete/<fid>/',
         '/project/<pid>/node/<nid>/files/delete/<fid>/',
-    ], 'post', project_views.file.delete_file, JSONRenderer()),
+    ], 'post', project_views.file.delete_file, json_renderer),
 
     # Add / remove contributors
-    Rule('/search/users/', 'post', project_views.node.search_user, JSONRenderer()),
+    Rule('/search/users/', 'post', project_views.node.search_user, json_renderer),
     Rule([
         '/project/<pid>/addcontributor/',
         '/project/<pid>/node/<nid>/addcontributor/',
-    ], 'post', project_views.contributor.project_addcontributor_post, JSONRenderer()),
+    ], 'post', project_views.contributor.project_addcontributor_post, json_renderer),
     Rule([
         '/project/<pid>/removecontributors/',
         '/project/<pid>/node/<nid>/removecontributors/',
-    ], 'post', project_views.contributor.project_removecontributor, JSONRenderer()),
+    ], 'post', project_views.contributor.project_removecontributor, json_renderer),
 
     # Forks
     Rule([
         '/project/<pid>/fork/',
         '/project/<pid>/node/<nid>/fork/',
-    ], 'post', project_views.node.node_fork_page),
+    ], 'post', project_views.node.node_fork_page, json_renderer),
 
     # View forks
     Rule([
         '/project/<pid>/forks/',
         '/project/<pid>/node/<nid>/forks/',
-    ], 'get', project_views.node.node_forks, JSONRenderer()),
+    ], 'get', project_views.node.node_forks, json_renderer),
 
     # Registrations
     Rule([
         '/project/<pid>/register/<template>/',
         '/project/<pid>/node/<nid>/register/<template>/',
-    ], 'get', project_views.register.node_register_template_page, JSONRenderer()),
+    ], 'get', project_views.register.node_register_template_page, json_renderer),
 
     Rule([
         '/project/<pid>/register/<template>/',
         '/project/<pid>/node/<nid>/register/<template>/',
-    ], 'post', project_views.register.node_register_template_page_post, JSONRenderer()),
+    ], 'post', project_views.register.node_register_template_page_post, json_renderer),
 
     # Statistics
     Rule([
         '/project/<pid>/statistics/',
         '/project/<pid>/node/<nid>/statistics/',
-    ], 'get', project_views.node.project_statistics, JSONRenderer()),
+    ], 'get', project_views.node.project_statistics, json_renderer),
 
     # Permissions
     # TODO: Should be a POST
     Rule([
         '/project/<pid>/permissions/<permissions>/',
         '/project/<pid>/node/<nid>/permissions/<permissions>/',
-    ], 'get', project_views.node.project_set_permissions, JSONRenderer()),
+    ], 'get', project_views.node.project_set_permissions, json_renderer),
 
 
     ### Wiki ###
@@ -634,24 +370,24 @@ process_rules(app, [
     Rule([
         '/project/<pid>/wiki/<wid>/',
         '/project/<pid>/node/<nid>/wiki/<wid>/',
-    ], 'get', project_views.wiki.project_wiki_page, JSONRenderer()),
+    ], 'get', project_views.wiki.project_wiki_page, json_renderer),
 
     # Edit | POST
     Rule([
         '/project/<pid>/wiki/<wid>/edit/',
         '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
-    ], 'post', project_views.wiki.project_wiki_edit_post, JSONRenderer()),
+    ], 'post', project_views.wiki.project_wiki_edit_post, json_renderer),
 
     # Compare
     Rule([
         '/project/<pid>/wiki/<wid>/compare/<compare_id>/',
         '/project/<pid>/node/<nid>/wiki/<wid>/compare/<compare_id>/',
-    ], 'get', project_views.wiki.project_wiki_compare, JSONRenderer()),
+    ], 'get', project_views.wiki.project_wiki_compare, json_renderer),
 
     # Versions
     Rule([
         '/project/<pid>/wiki/<wid>/version/<vid>/',
         '/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/',
-    ], 'get', project_views.wiki.project_wiki_version, JSONRenderer()),
+    ], 'get', project_views.wiki.project_wiki_version, json_renderer),
 
 ], prefix='/api/v1')
