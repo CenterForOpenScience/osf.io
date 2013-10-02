@@ -151,18 +151,21 @@ class WebRendererTestCase(OsfTestCase):
         which yields the appropriate error message text.
         """
 
-        err = HTTPError(http.NOT_FOUND)
+        with self.app.test_request_context():
+            self.app.preprocess_request()
 
-        resp = self.r(err)
+            err = HTTPError(http.NOT_FOUND)
 
-        self.assertIn(
-            err.to_data()['message_short'],
-            resp[0],
-        )
-        self.assertEqual(
-            http.NOT_FOUND,
-            resp[1],
-        )
+            resp = self.r(err)
+
+            self.assertIn(
+                err.to_data()['message_short'],
+                resp[0],
+            )
+            self.assertEqual(
+                http.NOT_FOUND,
+                resp[1],
+            )
 
     def test_http_error_raise_with_redirect(self):
         """Some status codes passed to HTTPError may contain a ``resource_uri``
@@ -179,8 +182,9 @@ class WebRendererTestCase(OsfTestCase):
         This functionality is technically a violation of the HTTP spec, and
         should be retired once we move to an API-centric web frontend.
         """
+
         resp = self.r(
-            HTTPError(http.CREATED, resource_uri='http://google.com/')
+            HTTPError(http.CREATED, redirect_url='http://google.com/')
         )
 
         self.assertIsInstance(
