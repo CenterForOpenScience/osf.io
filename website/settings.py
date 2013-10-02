@@ -7,7 +7,8 @@ confirm_registrations_by_email = False # Not fully implemented
 allow_registration = True
 allow_login = True
 
-use_solr = False
+use_solr = True
+solr = 'http://23.92.18.234:8983/solr/'
 
 # External services
 try:
@@ -33,10 +34,8 @@ except KeyError:
 try:
     os.environ['OSF_PRODUCTION']
     mongo_uri = 'mongodb://osf:osfosfosfosf0$f@localhost:20771/osf20130903'
-    solr = 'http://services.openscienceframework.org:8983/solr/'
 except KeyError:
     mongo_uri = 'mongodb://localhost:20771/osf20130903'
-    solr = 'http://23.92.18.234:8983/solr/'
 
 #TODO: Configuration should not change between deploys - this should be dynamic.
 canonical_domain = 'openscienceframework.org'
