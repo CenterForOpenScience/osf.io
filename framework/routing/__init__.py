@@ -295,7 +295,11 @@ class WebRenderer(Renderer):
     def _render(self, data, template_name=None):
 
         template_name = template_name or self.template_name
-        template_file = self.load_file(template_name)
+        try:
+            template_file = self.load_file(template_name)
+        except IOError:
+            return '<div>Template {} not found.</div>'.format(template_name)
+
         rendered = self.renderer(template_file, data)
 
         html = lxml.html.fragment_fromstring(rendered, create_parent='remove-me')
