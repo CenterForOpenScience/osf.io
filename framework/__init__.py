@@ -17,7 +17,7 @@ from framework.celery.tasks import error_handler
 
 ###### Mongo
 
-from framework.mongo import db
+from framework.mongo import db, set_up_storage
 
 ##### Exceptions
 from exceptions import HTTPError
