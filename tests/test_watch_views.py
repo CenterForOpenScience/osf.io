@@ -28,10 +28,12 @@ class TestWatchViews(unittest.TestCase):
         self.project.add_log('project_created',
                         params={'project': self.project._primary_key},
                         user=self.user, log_date=dt.datetime.utcnow() - dt.timedelta(days=100),
+                        api_key=self.auth[0],
                         do_save=True)
         # A log added now
-        self.last_log = project.add_log('tag_added', params={'project': self.project._primary_key},
+        self.last_log = self.project.add_log('tag_added', params={'project': self.project._primary_key},
                         user=self.user, log_date=dt.datetime.utcnow(),
+                        api_key=self.auth[0],
                         do_save=True)
 
         # Clear watched list
