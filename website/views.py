@@ -16,10 +16,12 @@ def dashboard(*args, **kwargs):
         and not node.is_deleted
         and not node.is_registration
     ]
-
+    recent_log_ids = list(user.get_recent_log_ids())
     return {
-        'nodes' : nodes,
+        'nodes': nodes,
+        'logs': recent_log_ids
     }
+
 
 @framework.get('/about/')
 def about():

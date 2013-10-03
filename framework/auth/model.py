@@ -148,7 +148,8 @@ class User(StoredObject):
         '''Return a generator of recent logs' ids.
 
         :param since: A datetime specifying the oldest time to retrieve logs
-        from. If ``None``, defaults to 60 days before today.
+        from. If ``None``, defaults to 60 days before today. Must be a tz-aware
+        datetime because PyMongo's generation times are tz-aware.
 
         :rtype: generator of log ids (strings)
         '''
