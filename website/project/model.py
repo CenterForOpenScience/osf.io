@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+import subprocess
+
 from framework.mongo import ObjectId
 from framework.auth import User, get_user
 from framework.analytics import get_basic_counters, increment_user_activity_counters
@@ -22,18 +25,20 @@ import unicodedata
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 
-import subprocess
 
 def normalize_unicode(ustr):
     return unicodedata.normalize('NFKD', ustr)\
         .encode('ascii', 'ignore')
 
+
 class ApiKey(StoredObject):
 
+    # The key is also its primary key
     _id = fields.StringField(
         primary=True,
         default=lambda: str(ObjectId()) + str(uuid.uuid4())
     )
+    # A display name
     label = fields.StringField()
 
     @property

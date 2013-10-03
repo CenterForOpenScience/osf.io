@@ -6,8 +6,24 @@ import unittest
 import datetime as dt
 from pytz import utc
 from nose.tools import *  # PEP8 asserts
-from website.models import User, Node, WatchConfig
+from framework.auth.model import User
+from website.project.model import ApiKey, Node, Tag, WatchConfig
 from framework import Q
+
+from tests.base import OsfTestCase
+from tests.factories import UserFactory
+
+class TestOsfTestCase(OsfTestCase):
+    '''Whoa, so meta.'''
+
+    def test_creating_a_user(self):
+        user = UserFactory()
+        print(user.username)
+        assert_equal(len(User.find()), 1)
+        user = UserFactory()
+        print(user.username)
+        assert_equal(User.find().count(), 2)
+        assert False
 
 
 class TestWatching(unittest.TestCase):

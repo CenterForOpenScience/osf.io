@@ -27,7 +27,7 @@ seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
 
 def new_project(title, description, user):
     project = new_node('project', title, user, description)
-    project.add_log('project_created', 
+    project.add_log('project_created',
         params={
             'project':project._primary_key,
         },
@@ -42,13 +42,13 @@ def new_node(category, title, user, description=None, project=None):
     title = sanitize(title.strip())
     if description:
         description = sanitize(description.strip())
-    
+
     new_node = Node(category=category)
     new_node.title=title
     new_node.description=description
     new_node.is_public=False
     new_node.generate_keywords()
-    
+
     new_node.creator = user
     # new_node._optimistic_insert()
     new_node.contributors.append(user)
@@ -58,11 +58,11 @@ def new_node(category, title, user, description=None, project=None):
     if project:
         project.nodes.append(new_node)
         project.save()
-        new_node.add_log('node_created', 
+        new_node.add_log('node_created',
             params={
                 'node':new_node._primary_key,
                 'project':project._primary_key,
-            }, 
+            },
             user=user,
             log_date=new_node.date_created
         )
