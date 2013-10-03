@@ -1,18 +1,23 @@
 # -*- coding: utf-8 -*-
+'''Unit tests for models and their factories.'''
 import unittest
+import nose
 from nose.tools import *  # PEP8 asserts
 
 from tests.base import OsfTestCase
 from framework.auth import User
 from website.project.model import ApiKey
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
-    ProjectFactory, NodeLogFactory)
+    ProjectFactory, NodeLogFactory, WatchConfigFactory)
 
 
 class TestUser(OsfTestCase):
 
     def setUp(self):
         pass
+
+    def tearDown(self):
+        User.remove()
 
     def test_factory(self):
         user = UserFactory()
@@ -28,6 +33,9 @@ class TestApiKey(OsfTestCase):
     def setUp(self):
         pass
 
+    def tearDown(self):
+        User.remove()
+
     def test_factory(self):
         key = ApiKeyFactory()
         user = UserFactory()
@@ -41,6 +49,9 @@ class TestNode(OsfTestCase):
 
     def setUp(self):
         pass
+
+    def tearDown(self):
+        User.remove()
 
     def test_node_factory(self):
         node = NodeFactory()
@@ -56,10 +67,24 @@ class TestNodeLog(OsfTestCase):
     def setUp(self):
         pass
 
+    def tearDown(self):
+        User.remove()
+
     def test_node_log_factory(self):
         log = NodeLogFactory()
         assert_true(log.action)
 
 
+class TestWatchConfig(OsfTestCase):
+
+    def tearDown(self):
+        User.remove()
+
+    def test_factory(self):
+        config = WatchConfigFactory(digest=True, immediate=False)
+        assert_true(config.digest)
+        assert_false(config.immediate)
+        assert_true(config.node._id)
+
 if __name__ == '__main__':
-    unittest.main()
+    nose.main()

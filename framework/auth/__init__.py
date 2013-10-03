@@ -125,7 +125,7 @@ def add_unclaimed_user(email, fullname):
         )
         newUser._optimistic_insert()
         newUser.save()
-        return newUser        
+        return newUser
 
 def hash_password(password):
     return bcrypt.generate_password_hash(password.strip())
@@ -177,7 +177,6 @@ def must_have_session_auth(fn):
 
         kwargs['user'] = get_current_user()
         kwargs['api_key'] = get_api_key()
-
         if kwargs['user'] or kwargs['api_key']:
             return func(*args, **kwargs)
         # kwargs['api_node'] = get_current_node()
@@ -195,6 +194,7 @@ def must_have_session_auth(fn):
             # kwargs['api_node'] = node
             # return func(*args, **kwargs)
 
+        print(kwargs)
         # No session authentication found
         raise HTTPError(http.UNAUTHORIZED)
 

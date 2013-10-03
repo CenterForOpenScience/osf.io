@@ -278,9 +278,8 @@ def watch_post(*args, **kwargs):
     watch_config.save()
     user.save()
 
-
-@must_have_session_auth # returns user or api_node
-@must_be_valid_project # returns project
+@must_have_session_auth  # returns user or api_node
+@must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_not_be_registration
 def unwatch_post(*args, **kwargs):

@@ -10,12 +10,14 @@ Example usage: ::
     >>> user2 = UserFactory()
     fred1@example.com
 
+Factory boy docs: http://factoryboy.readthedocs.org/
+
 """
 
 from factory import base, Sequence, SubFactory
 
 from framework.auth import User
-from website.project.model import ApiKey, Node, NodeLog
+from website.project.model import ApiKey, Node, NodeLog, WatchConfig
 
 
 class ModularOdmFactory(base.Factory):
@@ -59,6 +61,7 @@ class NodeFactory(ModularOdmFactory):
     title = 'The meaning of life'
     description = "The meaning of life is 42."
     is_public = False
+    is_registration = False
 
 
 class ProjectFactory(NodeFactory):
@@ -70,3 +73,8 @@ class ProjectFactory(NodeFactory):
 class NodeLogFactory(ModularOdmFactory):
     FACTORY_FOR = NodeLog
     action = 'project_created'
+
+
+class WatchConfigFactory(ModularOdmFactory):
+    FACTORY_FOR = WatchConfig
+    node = SubFactory(NodeFactory)

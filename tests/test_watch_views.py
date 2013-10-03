@@ -2,27 +2,31 @@
 # -*- coding: utf-8 -*-
 '''Views tests for Node/Project watching.'''
 from __future__ import absolute_import
+import os
 import unittest
 import datetime as dt
 from nose.tools import *  # PEP8 asserts
-from website.models import User, Node, WatchConfig
-from framework import Q
 import requests
 
-BASE_URL = "http://localhost:5000"  # FIXME(sloria): Hardcoded port
+from tests.base import OsfTestCase
+from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
+                            WatchConfigFactory)
+
+PORT = int(os.environ.get("OSF_PORT", '5000'))
+BASE_URL = "http://localhost:{port}".format(port=PORT)
 
 
-class TestWatchViews(unittest.TestCase):
+class TestWatchViews(OsfTestCase):
 
     def setUp(self):
-        # FIXME(sloria): This affects the development database;
-        # Assumes a user and project have been created. Use
-        # fixtures/factories in a test db later
-        self.user = User.load("Or8W0")
-        print(self.user)
-        self.auth = (self.user.api_keys[0]._id, 'test')
-        # The first project
-        self.project = Node.find(Q('category', 'eq', 'project'))[0]
+        self.user = UserFactory.build(username='tesla@electric.come')
+        api_key = ApiKeyFactory()
+        self.user.api_keys.append(api_key)
+        self.user.save()
+        self.auth = (self.user.api_keys[0]._id, 'test')  # used for requests auth
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_contributor(self.user)
+        self.project.save()
         # add some log objects
         # A log added 100 days ago
         self.project.add_log('project_created',
@@ -35,7 +39,6 @@ class TestWatchViews(unittest.TestCase):
                         user=self.user, log_date=dt.datetime.utcnow(),
                         api_key=self.auth[0],
                         do_save=True)
-
         # Clear watched list
         self.user.watched = []
         self.user.save()
@@ -43,6 +46,7 @@ class TestWatchViews(unittest.TestCase):
     def test_watching_a_project_appends_to_users_watched_list(self):
         n_watched_then = len(self.user.watched)
         url = BASE_URL + '/api/v1/project/{0}/watch/'.format(self.project._id)
+        print(self.auth)
         res = requests.post(url,
                             data={},
                             auth=self.auth)
@@ -65,7 +69,7 @@ class TestWatchViews(unittest.TestCase):
 
     def test_unwatching_a_project_removes_from_watched_list(self):
         # The user has already watched a project
-        watch_config = WatchConfig(node=self.project)
+        watch_config = WatchConfigFactory(node=self.project)
         self.user.watch(watch_config)
         self.user.save()
         n_watched_then = len(self.user.watched)

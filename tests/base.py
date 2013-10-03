@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 '''Base TextCase class for OSF unittests. Uses a temporary MongoDB database.'''
-
 import os
 import unittest
 
@@ -11,8 +10,9 @@ from framework.search.model import Keyword
 from website.project.model import (ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
                                    Tag, WatchConfig)
 
-MODELS = (User, ApiKey, Keyword, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
+MODELS = (User, ApiKey, Keyword, Node, NodeLog, NodeFile, NodeWikiPage,
           Tag, WatchConfig)
+
 
 class OsfTestCase(unittest.TestCase):
 
