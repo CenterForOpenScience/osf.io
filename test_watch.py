@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''Unit tests for Node/Project watching.'''
+from __future__ import absolute_import
 import unittest
 import datetime as dt
 from pytz import utc
@@ -15,7 +16,7 @@ class TestWatching(unittest.TestCase):
         # FIXME(sloria): This affects the development database;
         # Assumes a user and Node have been created. Use
         # fixtures/factories later
-        self.user = User.find()[0]
+        self.user = User.load("Or8W0")
         self.project = Node.find(Q('category', 'eq', 'project'))[0]
         # add some log objects
         # FIXME(sloria): Assumes user has an API Key

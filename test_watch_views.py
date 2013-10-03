@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''Views tests for Node/Project watching.'''
+from __future__ import absolute_import
 import unittest
 import datetime as dt
 from nose.tools import *  # PEP8 asserts
@@ -17,7 +18,8 @@ class TestWatchViews(unittest.TestCase):
         # FIXME(sloria): This affects the development database;
         # Assumes a user and project have been created. Use
         # fixtures/factories in a test db later
-        self.user = User.find()[0]
+        self.user = User.load("Or8W0")
+        print(self.user)
         self.auth = (self.user.api_keys[0]._id, 'test')
         # The first project
         self.project = Node.find(Q('category', 'eq', 'project'))[0]

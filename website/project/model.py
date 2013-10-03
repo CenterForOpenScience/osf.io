@@ -557,7 +557,7 @@ class Node(StoredObject):
         log = NodeLog()
         log.action=action
         log.user=user
-        log.api_key = api_key or get_api_key()
+        log.api_key = api_key
         if log_date:
             log.date=log_date
         log.params=params
