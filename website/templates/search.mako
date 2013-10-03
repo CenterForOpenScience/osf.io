@@ -233,7 +233,7 @@ $(function () {
                         <br>
                     %endif
                 % endfor
-            pagination! we're simply going to build a query by telling solr which 'row' we want to start on
+##            pagination! we're simply going to build a query by telling solr which 'row' we want to start on
                 <div class="navigate">
                     % if total > 10:
                         % if current_page >= 10:
@@ -250,7 +250,6 @@ $(function () {
                             <a href="?q=${query | h}&pagination=${(current_page)+10}">Next</a>
                         % endif
                     % endif
-
                 </div>
             % else:
                 No results found. <br />
