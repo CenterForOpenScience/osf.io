@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 '''Views tests for Node/Project watching.'''
 import unittest
-import logging
+import datetime as dt
 from nose.tools import *  # PEP8 asserts
 from website.models import User, Node, WatchConfig
 from framework import Q
@@ -16,11 +16,22 @@ class TestWatchViews(unittest.TestCase):
     def setUp(self):
         # FIXME(sloria): This affects the development database;
         # Assumes a user and project have been created. Use
-        # fixtures/factories later
+        # fixtures/factories in a test db later
         self.user = User.find()[0]
         self.auth = (self.user.api_keys[0]._id, 'test')
         # The first project
         self.project = Node.find(Q('category', 'eq', 'project'))[0]
+        # add some log objects
+        # A log added 100 days ago
+        self.project.add_log('project_created',
+                        params={'project': self.project._primary_key},
+                        user=self.user, log_date=dt.datetime.utcnow() - dt.timedelta(days=100),
+                        do_save=True)
+        # A log added now
+        self.last_log = project.add_log('tag_added', params={'project': self.project._primary_key},
+                        user=self.user, log_date=dt.datetime.utcnow(),
+                        do_save=True)
+
         # Clear watched list
         self.user.watched = []
         self.user.save()
@@ -55,7 +66,6 @@ class TestWatchViews(unittest.TestCase):
         self.user.save()
         n_watched_then = len(self.user.watched)
         url = BASE_URL + '/api/v1/project/{0}/unwatch/'.format(self.project._id)
-        print(url)
         res = requests.post(url,
                             data={},
                             auth=self.auth)

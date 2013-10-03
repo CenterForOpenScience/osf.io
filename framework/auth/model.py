@@ -1,6 +1,11 @@
+# -*- coding: utf-8 -*-
+import itertools
+import datetime as dt
+from pytz import utc
 from framework.search import Keyword
-
 from framework import StoredObject, fields,  Q
+from bson import ObjectId
+
 
 class User(StoredObject):
     _id = fields.StringField(primary=True)
@@ -138,3 +143,33 @@ class User(StoredObject):
                     self.save()
                 return None
         raise ValueError('Node not being watched.')
+
+    def get_recent_log_ids(self, since=None):
+        '''Return a generator of recent logs' ids.
+
+        :param since: A datetime specifying the oldest time to retrieve logs
+        from. If ``None``, defaults to 60 days before today.
+
+        :rtype: generator of log ids (strings)
+        '''
+        log_ids = []
+        # Default since to 60 days before today if since is None
+        # timezone aware utcnow
+        utcnow = dt.datetime.utcnow().replace(tzinfo=utc)
+        since_date = since if since else (utcnow - dt.timedelta(days=60))
+        for config in self.watched:
+            # Extract the timestamps for each log from the log_id (fast!)
+            # The first 4 bytes of Mongo's ObjectId encodes time
+            # This prevents having to load each Log Object and access their
+            # date fields
+            node_log_ids = [log_id for log_id in config.node.logs._to_primary_keys()
+                                   if ObjectId(log_id).generation_time > since_date]
+            # Log ids in reverse chronological order
+            log_ids = _merge_into_reversed(log_ids, node_log_ids)
+        return (l_id for l_id in log_ids)
+
+
+def _merge_into_reversed(*iterables):
+    '''Merge multiple sorted inputs into a single output in reverse order.
+    '''
+    return sorted(itertools.chain(*iterables), reverse=True)
