@@ -52,6 +52,10 @@
     %if user_can_edit:
     <script>
         $(function() {
+            function urlDecode(str) {
+                return decodeURIComponent((str+'').replace(/\+/g, '%20'));
+            }
+
             $('#node-title-editable').editable({
                type:  'text',
                pk:    '${node_id}',

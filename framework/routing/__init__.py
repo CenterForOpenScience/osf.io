@@ -325,6 +325,6 @@ class WebRenderer(Renderer):
 
         # Load extra data
         extra_data = self.data if isinstance(self.data, dict) else self.data()
-        data.update(extra_data)
+        data.update({key: val for key, val in extra_data.iteritems() if key not in data})
 
         return self._render(data, template_name)

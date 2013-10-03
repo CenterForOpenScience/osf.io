@@ -1,7 +1,7 @@
 from framework import (
     get, post, request, redirect, must_be_logged_in, push_status_message, abort,
-    push_errors_to_status, app, render, Blueprint, get_user, get_current_user,
-    secure_filename, jsonify, update_counters, send_file
+    push_errors_to_status, get_current_user,
+    secure_filename, jsonify, update_counters, Q
 )
 from framework import HTTPError
 from .. import new_node, new_project
@@ -16,6 +16,7 @@ from .. import clean_template_name
 
 from website import settings
 from website import filters
+from website.views import _render_nodes
 
 from framework import analytics
 
@@ -376,10 +377,29 @@ def _view_project(node_to_use, user):
     }
 
 
+def _get_user_activity(node, user, rescale_ratio):
+
+    # Counters
+    total_count = len(node.logs)
+
+    # Note: It's typically much faster to find logs of a given node
+    # attached to a given user using node.logs.find(...) than by
+    # loading the logs into Python and checking each one. However,
+    # using deep caching might be even faster down the road.
+
+    ua_count = node.logs.find(Q('user', 'eq', user)).count()
+    non_ua_count = total_count - ua_count # base length of blue bar
+
+    # Normalize over all nodes
+    ua = ua_count / rescale_ratio * settings.user_activity_max_width
+    non_ua = non_ua_count / rescale_ratio * settings.user_activity_max_width
+
+    return ua_count, ua, non_ua
+
 @must_be_valid_project
 def get_summary(*args, **kwargs):
 
-    user = get_current_user()
+    user = User.load(kwargs.get('uid')) or get_current_user()
     api_key = get_api_key()
     node_to_use = kwargs['node'] or kwargs['project']
 
@@ -389,6 +409,8 @@ def get_summary(*args, **kwargs):
     if not node_can_edit and not parent_can_edit:
         raise HTTPError(http.FORBIDDEN)
 
+    ua_count, ua, non_ua = _get_user_activity(node_to_use, user, kwargs['rescale_ratio'])
+
     return {
         'summary' : {
             'pid' : node_to_use._primary_key,
@@ -396,6 +418,10 @@ def get_summary(*args, **kwargs):
             'title' : node_to_use.title,
             'registered_date' : node_to_use.registered_date.strftime('%m/%d/%y %I:%M %p') if node_to_use.registered_date else None,
             'logs' : list(reversed(node_to_use.logs._to_primary_keys()))[:3],
+            'nlogs' : len(node_to_use.logs),
+            'ua_count' : ua_count,
+            'ua' : ua,
+            'non_ua' : non_ua,
         }
     }
 
@@ -403,13 +429,4 @@ def get_summary(*args, **kwargs):
 def get_children(*args, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
-
-    return {
-        'nodes' : [
-            {
-                'url' : child.url(),
-                'api_url' : child.api_url(),
-            }
-            for child in node_to_use.nodes
-        ]
-    }
+    return _render_nodes(node_to_use.nodes)

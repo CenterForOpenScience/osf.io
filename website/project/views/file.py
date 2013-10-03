@@ -3,7 +3,7 @@ from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from framework.auth import must_have_session_auth
 from framework.git.exceptions import FileNotModified
-from framework.auth import get_api_key
+from framework.auth import get_current_user, get_api_key
 from ..model import NodeFile
 from .node import _view_project
 
@@ -30,11 +30,17 @@ def prune_file_list(file_list, max_depth):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor_or_public # returns user, project
 def get_files(*args, **kwargs):
 
-    user = kwargs['user']
+    user = get_current_user()
+    api_key = get_api_key()
     node_to_use = kwargs['node'] or kwargs['project']
+
+    node_can_edit = node_to_use.can_edit(user, api_key)
+    parent_can_edit = node_to_use.node__parent and node_to_use.node__parent[0].can_edit(user, api_key)
+
+    if not node_can_edit and not parent_can_edit:
+        raise HTTPError(http.FORBIDDEN)
 
     tree = {
         'title' : node_to_use.title,

@@ -3,14 +3,15 @@ import framework
 from website import settings
 from framework import get_current_user
 
-from framework.routing import (Rule, process_rules,
-                               WebRenderer, json_renderer,
-                               render_mako_string)
+from framework import (Rule, process_rules,
+                       WebRenderer, json_renderer,
+                       render_mako_string)
 
 def get_globals():
     user = get_current_user()
     return {
         'user_name' : user.username if user else '',
+        'user_full_name' : user.fullname if user else '',
         'user_id' : user._primary_key if user else '',
         'display_name' : get_display_name(user.username) if user else '',
         'use_cdn' : settings.use_cdn_for_client_libs,
@@ -79,8 +80,11 @@ process_rules(app, [
 
     Rule('/profile/', 'get', profile_views.profile_view, json_renderer),
     Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, json_renderer),
+
+    # Used by profile.html
     Rule('/profile/<uid>/public_projects/', 'get', profile_views.get_public_projects, json_renderer),
     Rule('/profile/<uid>/public_components/', 'get', profile_views.get_public_components, json_renderer),
+
     Rule('/settings/', 'get', profile_views.profile_settings, json_renderer),
     Rule('/settings/keys/', 'get', profile_views.get_keys, json_renderer),
     Rule('/settings/create_key/', 'post', profile_views.create_user_key, json_renderer),

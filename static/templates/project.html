@@ -88,7 +88,13 @@
             //$('#addContributor').modal('hide')
           </script>
           % if node_children:
-              <div mod-meta='{"tpl" : "util/render_nodes.html", "uri" : "${node_api_url}get_children/", "replace" : true, "kwargs" : {"sortable" : true}}'></div>
+              <div mod-meta='{
+                      "tpl" : "util/render_nodes.html",
+                      "uri" : "${node_api_url}get_children/",
+                      "replace" : true,
+                      "kwargs" : {"sortable" : true}
+                  }'>
+              </div>
           % else:
               <p>No components have been added to this project.</p>
           % endif
@@ -100,7 +106,12 @@
               <h1>Files</h1>
           </div>
           <ul id="browser" class="filetree">
-              <div mod-meta='{"tpl" : "util/render_file_tree.html", "uri" : "${node_api_url}get_files/", "replace" : true}'></div>
+              <div mod-meta='{
+                      "tpl": "util/render_file_tree.html",
+                      "uri": "${node_api_url}get_files/",
+                      "replace": true
+                  }'>
+              </div>
           </ul>
         </div>
       </section>

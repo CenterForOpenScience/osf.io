@@ -1,24 +1,70 @@
+# todo: move routing to new style
+
 import framework
 
-# @framework.route('/')
-# def index():
-#     return framework.render(filename='index.mako')
+
+def _rescale_ratio(nodes):
+    """
+
+    :param nodes:
+    :return:
+    """
+    return float(max([
+        len(node.logs)
+        for node in nodes
+    ]))
+
+
+def _render_node(node):
+    """
+
+    :param node:
+    :return:
+    """
+    return {
+        'id' : node._primary_key,
+        'url' : node.url(),
+        'api_url' : node.api_url(),
+    }
+
+
+def _render_nodes(nodes):
+    """
+
+    :param nodes:
+    :return:
+    """
+
+    return {
+        'nodes' : [
+            _render_node(node)
+            for node in nodes
+        ],
+        'rescale_ratio' : _rescale_ratio(nodes),
+    }
+
 
 @framework.must_be_logged_in
 def dashboard(*args, **kwargs):
     user = kwargs['user']
     nodes = [
-        {
-            'api_url' : node.api_url(),
-        }
+        node
         for node in user.node__contributed
         if node.category == 'project'
         and not node.is_deleted
         and not node.is_registration
     ]
+    node_json = [
+        {
+            'api_url' : node.api_url(),
+        }
+        for node in nodes
+    ]
 
+    print 'HIHIHI', _rescale_ratio(nodes)
     return {
-        'nodes' : nodes,
+        'nodes' : node_json,
+        'rescale_ratio' : _rescale_ratio(nodes),
     }
 
 @framework.get('/about/')
