@@ -1,5 +1,5 @@
 server:
-	export OSF_TEST_DB=0 && python main.py
+	unset OSF_TEST_DB && python main.py
 
 mongo:
 	mongod --port 20771
