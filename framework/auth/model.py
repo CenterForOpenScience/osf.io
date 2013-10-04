@@ -146,11 +146,8 @@ class User(StoredObject):
 
     def is_watching(self, node):
         '''Return whether a not a user is watching a Node.'''
-        node_configs = set(node.watchconfig__watched)
-        user_watched = set(self.watched)
-        # If the sets have an intersection, the user is following the node
-        return len(node_configs & user_watched) > 0
-
+        watched_node_ids = set([config.node._id for config in self.watched])
+        return node._id in watched_node_ids
 
     def get_recent_log_ids(self, since=None):
         '''Return a generator of recent logs' ids.

@@ -74,7 +74,7 @@ class TestNode(OsfTestCase):
     def test_url(self):
         url = self.node.url()
         assert_equal(url, "/project/{0}/node/{1}/".format(self.parent._primary_key,
-                                                        self.node._primary_key))
+                                                          self.node._primary_key))
 
 
 class TestProject(OsfTestCase):
