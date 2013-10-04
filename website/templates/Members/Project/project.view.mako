@@ -71,7 +71,7 @@
                url:   '${node_api_url}edit/',
                title: 'Edit Title',
                placement: 'bottom',
-               value: urlDecode('${ node_to_use.title | u}'),
+               value: '${ '\\\''.join(node_title.split('\'')) }',
                success: function(data){
                     document.location.reload(true);
                }

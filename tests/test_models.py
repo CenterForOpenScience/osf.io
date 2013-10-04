@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
-import unittest
 import nose
 from nose.tools import *  # PEP8 asserts
 
@@ -72,7 +71,7 @@ class TestNode(OsfTestCase):
         assert_in(config1._id, self.node.watchconfig__watched)
 
     def test_url(self):
-        url = self.node.url()
+        url = self.node.url
         assert_equal(url, "/project/{0}/node/{1}/".format(self.parent._primary_key,
                                                         self.node._primary_key))
 
@@ -87,15 +86,15 @@ class TestProject(OsfTestCase):
         assert_equal(node.category, 'project')
 
     def test_url(self):
-        url = self.project.url()
+        url = self.project.url
         assert_equal(url, "/project/{0}/".format(self.project._primary_key))
 
     def test_api_url(self):
-        api_url = self.project.api_url()
+        api_url = self.project.api_url
         assert_equal(api_url, "/api/v1/project/{0}/".format(self.project._primary_key))
 
     def test_watch_url(self):
-        watch_url = self.project.watch_url()
+        watch_url = self.project.watch_url
         assert_equal(watch_url, "/api/v1/project/{0}/watch/".format(self.project._primary_key))
 
 

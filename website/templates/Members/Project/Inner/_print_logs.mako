@@ -29,7 +29,7 @@
                 %elif action == 'node_created':
                     created node <a href='/project/${params['project']}/node/${params['node']}'>${get_node(params['node']).title}</a>
                 %elif action == 'wiki_updated':
-                    updated wiki page <a href="${get_node(params['node']).url()}/wiki/${params['page']}">${params['page']}</a> to version ${log.params['version']}
+                    updated wiki page <a href="${get_node(params['node']).url}/wiki/${params['page']}">${params['page']}</a> to version ${log.params['version']}
                 %elif action == 'contributor_added':
                     added 
                     <% 
@@ -46,14 +46,14 @@
                     %>
                     ${', '.join(contributors)} as contributor${'s' if len(contributors) > 1 else ''} on 
                         <% usethisnodebelowthiscode = get_node(params['node']) %>
-                        node <a href=${usethisnodebelowthiscode.url()}>${usethisnodebelowthiscode.title}</a>
+                        node <a href=${usethisnodebelowthiscode.url}>${usethisnodebelowthiscode.title}</a>
                 %elif action == 'made_public':
                     made ${category}
-                    <a href="${get_node(params['node']).url()}">${get_node(params['node']).title}</a>
+                    <a href="${get_node(params['node']).url}">${get_node(params['node']).title}</a>
                     public
                 %elif action == 'made_private':
                     made ${category}
-                    <a href="${get_node(params['node']).url()}">${get_node(params['node']).title}</a>
+                    <a href="${get_node(params['node']).url}">${get_node(params['node']).title}</a>
                     private
                 %elif action == 'remove_contributor':
                     removed 
@@ -69,31 +69,31 @@
 
                     %>
                     ${contributor} as a contributor from ${category}
-                    <a href="${get_node(params['node']).url()}">${get_node(params['node']).title}</a>
+                    <a href="${get_node(params['node']).url}">${get_node(params['node']).title}</a>
                 %elif action == 'tag_added':
                     tagged ${category}
-                    <a href="${get_node(params['node']).url()}">${get_node(params['node']).title}</a>
+                    <a href="${get_node(params['node']).url}">${get_node(params['node']).title}</a>
                     as <a href="/tag/${params['tag']}">${params['tag']}</a>
                 %elif action == 'tag_removed':
                     removed tag <a href="/tag/${params['tag']}">${params['tag']}</a> from ${category}
-                    <a href="${get_node(params['node']).url()}">${get_node(params['node']).title}</a>
+                    <a href="${get_node(params['node']).url}">${get_node(params['node']).title}</a>
                 %elif action == 'file_added':
                     added file ${params['path']} to ${category}
-                    <a href="${get_node(params['node']).url()}">${get_node(params['node']).title}</a>
+                    <a href="${get_node(params['node']).url}">${get_node(params['node']).title}</a>
                 %elif action == 'file_removed':
                     removed file ${params['path']} from ${category}
-                    <a href="${get_node(params['node']).url()}">${get_node(params['node']).title}</a>
+                    <a href="${get_node(params['node']).url}">${get_node(params['node']).title}</a>
                 %elif action == 'file_updated':
                     updated file ${params['path']} in ${category}
-                    <a href="${get_node(params['node']).url()}">${get_node(params['node']).title}</a>
+                    <a href="${get_node(params['node']).url}">${get_node(params['node']).title}</a>
                 %elif action == 'edit_title':
-                    changed the title from ${params['title_original']} to <a href="${get_node(params['node']).url()}">${params['title_new']}</a>
+                    changed the title from ${params['title_original']} to <a href="${get_node(params['node']).url}">${params['title_new']}</a>
                 %elif action == 'project_registered':
                     <a href="/project/${params['registration']}">registered</a> ${category}
-                    <a href="${get_node(params['node']).url()}">${get_node(params['node']).title}</a>
+                    <a href="${get_node(params['node']).url}">${get_node(params['node']).title}</a>
                 %elif action == 'node_forked':
                     created fork from ${category}
-                    <a href="${get_node(params['node']).url()}">${get_node(params['node']).title}</a>
+                    <a href="${get_node(params['node']).url}">${get_node(params['node']).title}</a>
                 %endif
             </dd>
     % endfor

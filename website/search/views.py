@@ -1,6 +1,4 @@
-from framework import get, request, render, search
-from website.models import Node
-
+from framework import request, render
 
 from framework.status import push_status_message
 from solr_search import search_solr
@@ -12,7 +10,6 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('search.routes')
 
 
-@get('/search/')
 def search_search():
     tick = time.time()
     # solr search results are automatically paginated. on the pages that are

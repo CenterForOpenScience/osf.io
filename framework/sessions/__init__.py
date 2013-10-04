@@ -1,6 +1,5 @@
-from framework.flask import app, abort
+from framework.flask import app
 
-from framework.exceptions import HTTPError
 import httplib as http
 
 import bson.objectid
@@ -8,13 +7,14 @@ import itsdangerous
 from flask import request, redirect
 from werkzeug.local import LocalProxy
 
+from model import Session
+
 COOKIE_NAME = 'osf'
+# todo: make more secret
 SECRET_KEY = '4IdgL9FYyZRoDkoQ'
 
 # todo 2-back page view queue
 # todo actively_editing date
-
-from model import Session
 
 def set_previous_url(url=None):
     if url is None:
@@ -57,17 +57,24 @@ def before_request():
 
     if request.authorization:
 
+        # Create a session from the API key; if key is
+        # not valid, save the HTTP error code in the
+        # "auth_error_code" field of session.data
+
+        # Create empty session
+        session = Session()
+
         # Hack: Avoid circular import
         from website.project.model import ApiKey
-        api_label = request.authorization.username
-        api_key = ApiKey.load(request.authorization.password)
 
-        session = SessionDict(COLLECTION, TEMP_SESSION)
+        api_label = request.authorization.username
+        api_key_id = request.authorization.password
+        api_key = ApiKey.load(api_key_id)
 
         if api_key:
             user = api_key.user__keyed and api_key.user__keyed[0]
             node = api_key.node__keyed and api_key.node__keyed[0]
-            session = Session()
+
             session.data['auth_api_label'] = api_label
             session.data['auth_api_key'] = api_key._primary_key
             if user:
@@ -80,12 +87,12 @@ def before_request():
 
             else:
                 # Invalid key: Not attached to user or node
-                session['auth_error_code'] = http.FORBIDDEN
+                session.data['auth_error_code'] = http.FORBIDDEN
 
         else:
 
             # Invalid key: Not found in database
-            session['auth_api_key_valid'] = http.FORBIDDEN
+            session.data['auth_error_code'] = http.FORBIDDEN
 
         sessions[request._get_current_object()] = session
         return
@@ -104,16 +111,11 @@ def before_request():
     response = redirect(request.path, code=307)
     return create_session(response)
 
+
 @app.after_request
 def after_request(response):
     # Save if session exists and not authenticated by API
     if session._get_current_object() is not None \
-<<<<<<< HEAD
-            and session.key != TEMP_SESSION:
-        session._flush()
-    return response
-=======
             and not session.data.get('auth_api_key'):
         session.save()
     return response
->>>>>>> e08bd6bd92ff5ead9fc1797be4288a16dbf99824

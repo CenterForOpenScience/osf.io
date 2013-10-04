@@ -7,7 +7,7 @@
     		%if isinstance(tmp, tuple):
 	    		${file_tree(tmp)}
 	    	%else:
-	    		<li><span class="file"><a href="${files[0].url()}/files/${tmp.path}">${tmp.path}</a></span></li>
+	    		<li><span class="file"><a href="${files[0].url}/files/${tmp.path}">${tmp.path}</a></span></li>
 	    	%endif
 	    % endfor
 	    </ul>

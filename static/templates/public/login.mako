@@ -1,5 +1,6 @@
 <%inherit file="contentContainer.mako" />
-<% import framework %>
+
+##<% import framework %>
 <div class="page-header">
     <h1>Create an Account or Sign-In</h1>
 </div>
@@ -10,7 +11,7 @@
         <%include file="form.mako" args="
             form=form_registration, 
             name='registration',
-            actionString='/register', 
+            actionString='/register/',
             formClass='form-stacked', 
             submitString='Create Account',
             fieldNamePrefix='register_',
@@ -21,7 +22,7 @@
          <%include file="form.mako" args="
             form=form_signin,
             name='signin',
-            actionString='/login', 
+            actionString='/login/',
             formClass='form-stacked', 
             submitString='Sign In',
         "/>
@@ -30,7 +31,7 @@
         <%include file="form.mako" args="
             form=form_forgotpassword,
             name='forgotpassword', 
-            actionString='/forgotpassword', 
+            actionString='/forgotpassword/',
             formClass='form-stacked', 
             submitString='Reset Password'
         "/>

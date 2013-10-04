@@ -1,5 +1,6 @@
 
 from framework import User, get_current_user
+from framework.auth import get_api_key
 from ..model import Node, NodeLog
 from ..decorators import must_be_valid_project, must_be_contributor_or_public
 from .node import _view_project
@@ -23,9 +24,13 @@ def get_log(log_id):
 
     log = NodeLog.load(log_id)
     user = get_current_user()
+    api_key = get_api_key()
     node_to_use = Node.load(log.params.get('node')) or Node.load(log.params.get('project'))
 
-    if not node_to_use.is_public and not node_to_use.is_contributor(user):
+    node_can_edit = node_to_use.can_edit(user, api_key)
+    parent_can_edit = node_to_use.node__parent and node_to_use.node__parent[0].can_edit(user, api_key)
+
+    if not node_can_edit and not parent_can_edit:
         raise HTTPError(http.FORBIDDEN)
 
     project = Node.load(log.params.get('project'))
@@ -35,8 +40,8 @@ def get_log(log_id):
         'user_id' : log.user._primary_key if log.user else '',
         'user_fullname' : log.user.fullname if log.user else '',
         'api_key' : log.api_key.label if log.api_key else '',
-        'project_url' : project.url() if project else '',
-        'node_url' : node.url() if node else '',
+        'project_url' : project.url if project else '',
+        'node_url' : node.url if node else '',
         'project_title' : project.title if project else '',
         'node_title' : node.title if node else '',
         'action' : log.action,
@@ -56,4 +61,4 @@ def get_logs(*args, **kwargs):
     logs = list(reversed(project.logs._to_primary_keys()))
     if 'count' in kwargs:
         logs = logs[:kwargs['count']]
-    return logs
+    return {'logs' : logs}

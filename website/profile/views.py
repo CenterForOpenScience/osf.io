@@ -5,38 +5,36 @@ from framework import (
     get_user,
     must_be_logged_in,
     request,
+    Q,
 )
 from framework.forms.utils import sanitize
 
-from website.models import ApiKey
+from website.models import ApiKey, User
 from framework.analytics import get_total_activity_count
 from website import settings
 from website import filters
+from website.views import _render_nodes
 
-def _node_info(node):
-    return {
-        'api_url' : node.api_url(),
-    }
-
-
-def get_public_projects(user):
-    return [
-        _node_info(node)
+def get_public_projects(uid=None, user=None):
+    user = user or User.load(uid)
+    return _render_nodes([
+        node
         for node in user.node__contributed
         if node.category == 'project'
-        and node.is_public
-        and not node.is_deleted
-    ]
+            and node.is_public
+            and not node.is_deleted
+    ])
 
 
-def get_public_components(user):
-    return [
-        _node_info(node)
+def get_public_components(uid=None, user=None):
+    user = user or User.load(uid)
+    return _render_nodes([
+        node
         for node in user.node__contributed
         if node.category != 'project'
-        and node.is_public
-        and not node.is_deleted
-    ]
+            and node.is_public
+            and not node.is_deleted
+    ])
 
 
 def _profile_view(uid=None):
@@ -44,6 +42,7 @@ def _profile_view(uid=None):
     profile = get_user(id=uid or user)
 
     if not (uid or user):
+        # todo: should raise HTTPError
         abort(http.UNAUTHORIZED)
 
     if profile:
@@ -54,11 +53,11 @@ def _profile_view(uid=None):
             and not node.is_registration
             and not node.is_deleted
         ]
-        public_projects = get_public_projects(user)
-        public_components = get_public_components(user)
+        public_projects = get_public_projects(user=profile)
         gravatar_url = filters.gravatar(profile, size=settings.gravatar_size_profile)
         return {
             'user_id': profile._id,
+            'user_full_name' : profile.fullname,
             'user_is_profile' : user == profile,
             'activity_points' : get_total_activity_count(profile._primary_key),
             'number_projects' : len(projects),
@@ -66,9 +65,8 @@ def _profile_view(uid=None):
             'fullname': profile.fullname,
             'date_registered': profile.date_registered.strftime("%Y-%m-%d"),
             'gravatar_url' : gravatar_url,
-            'public_projects' : public_projects,
-            'public_components' : public_components,
         }
+    # todo: should raise HTTPError
     return abort(404)
 
 def profile_view():
@@ -109,13 +107,15 @@ def profile_addons(*args, **kwargs):
 @must_be_logged_in
 def get_keys(*args, **kwargs):
     user = kwargs['user']
-    return [
-        {
-            'key' : key._id,
-            'label' : key.label,
-        }
-        for key in user.api_keys
-    ]
+    return {
+        'keys' : [
+            {
+                'key' : key._id,
+                'label' : key.label,
+            }
+            for key in user.api_keys
+        ]
+    }
 
 @must_be_logged_in
 def create_user_key(*args, **kwargs):
@@ -160,7 +160,7 @@ def user_key_history(*args, **kwargs):
             {
                 'lid' : log._id,
                 'nid' : log.node__logged[0]._id,
-                'route' : log.node__logged[0].url(),
+                'route' : log.node__logged[0].url,
             }
             for log in api_key.nodelog__created
         ]

@@ -2,14 +2,13 @@
 from framework import request, User
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
-from framework.auth import must_have_session_auth
+from framework.auth import must_have_session_auth, get_api_key
 from framework.forms.utils import sanitize
 import hashlib
 
 from framework import HTTPError
 import httplib as http
 
-@must_have_session_auth
 @must_be_contributor_or_public
 def get_contributors(*args, **kwargs):
 
@@ -68,6 +67,7 @@ def project_addcontributor_post(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
     user = kwargs['user']
+    api_key = get_api_key()
 
     node_to_use = node or project
 
@@ -88,6 +88,7 @@ def project_addcontributor_post(*args, **kwargs):
                         'contributors':[added_user._primary_key],
                     },
                     user=user,
+                    api_key=api_key
                 )
     elif "email" in request.form and "fullname" in request.form:
         # TODO: Nothing is done here to make sure that this looks like an email.
@@ -106,6 +107,7 @@ def project_addcontributor_post(*args, **kwargs):
                 'contributors':[{"nr_name":fullname, "nr_email":email}],
             },
             user=user,
+            api_key=api_key
         )
 
     return {'status' : 'success'}, 201

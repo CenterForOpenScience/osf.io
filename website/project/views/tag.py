@@ -14,7 +14,7 @@ def project_tag(tag):
         'nodes' : [
             {
                 'title' : node.title,
-                'url' : node.url(),
+                'url' : node.url,
             }
             for node in nodes
         ]
@@ -26,17 +26,13 @@ def project_tag(tag):
 @must_be_contributor # returns user, project
 @must_not_be_registration
 def project_addtag(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
-    user = kwargs['user']
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
 
     tag = kwargs['tag']
+    user = kwargs['user']
+    api_key = kwargs['api_key']
+    node_to_use = kwargs['node'] or kwargs['project']
 
-    node_to_use.add_tag(tag=tag, user=user)
+    node_to_use.add_tag(tag=tag, user=user, api_key=api_key)
 
     return {'status' : 'success'}, 201
 
@@ -46,16 +42,12 @@ def project_addtag(*args, **kwargs):
 @must_be_contributor # returns user, project
 @must_not_be_registration
 def project_removetag(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
-    user = kwargs['user']
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
 
     tag = kwargs['tag']
+    user = kwargs['user']
+    api_key = kwargs['api_key']
+    node_to_use = kwargs['node'] or kwargs['project']
 
-    node_to_use.remove_tag(tag=tag, user=user)
+    node_to_use.remove_tag(tag=tag, user=user, api_key=api_key)
 
     return {'status' : 'success'}

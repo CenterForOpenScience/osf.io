@@ -1,5 +1,4 @@
 from framework import session, create_session, HTTPError
-import framework.mongo as Database
 import framework.status as status
 import framework.flask as web
 import framework.bcrypt as bcrypt
@@ -161,6 +160,7 @@ def register(username, password, fullname=None):
 
 ###############################################################################
 
+
 def must_be_logged_in(fn):
     def wrapped(func, *args, **kwargs):
         user = get_current_user()
@@ -173,12 +173,15 @@ def must_be_logged_in(fn):
             # return web.redirect('/account')
     return decorator(wrapped, fn)
 
+
 def must_have_session_auth(fn):
 
     def wrapped(func, *args, **kwargs):
 
         kwargs['user'] = get_current_user()
         kwargs['api_key'] = get_api_key()
+        print(kwargs['api_key'])
+        kwargs['api_node'] = get_current_node()
         if kwargs['user'] or kwargs['api_key']:
             return func(*args, **kwargs)
         # kwargs['api_node'] = get_current_node()

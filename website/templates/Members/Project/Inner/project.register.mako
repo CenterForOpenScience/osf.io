@@ -35,7 +35,7 @@
 			}
 		}.observes('continueFlagCheck'),
 		templateChange:function(){
-			window.location = nodeToUseUrl() + '/register/' + this.selectedTemplate.replace(/ /g, '_');
+			window.location = nodeToUseurl + '/register/' + this.selectedTemplate.replace(/ /g, '_');
 			##$.ajax({
 			##	url:'/',
 			##	cache:false,

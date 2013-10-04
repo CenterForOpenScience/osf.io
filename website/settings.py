@@ -7,7 +7,7 @@ confirm_registrations_by_email = False # Not fully implemented
 allow_registration = True
 allow_login = True
 
-use_solr = True
+use_solr = False
 solr = 'http://23.92.18.234:8983/solr/'
 
 # External services
@@ -57,6 +57,9 @@ img_fmts = ['jpe?g', 'tiff?', 'png', 'gif', 'bmp', 'svg', 'ico']
 render_zip = True
 render_tar = True
 archive_depth = 2               # Set to None for unlimited depth
+
+# User activity style
+user_activity_max_width = 325
 
 wiki_whitelist = {
     'tags': [

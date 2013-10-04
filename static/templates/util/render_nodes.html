@@ -4,8 +4,18 @@
 
 <ul class="list-group ${'sortable' if sortable and user_can_edit else ''}" style="margin-left: 0px;">
 
+    NODES ${nodes} NODES
     % for node in nodes:
-        <div mod-meta='{"tpl" : "util/render_node.html", "uri" : "${node['api_url']}get_summary/", "replace" : true}'></div>
+        <div mod-meta='{
+                "tpl" : "util/render_node.html",
+                "uri" : "${node['api_url']}get_summary/",
+                "view_kwargs" : {
+                    "rescale_ratio" : ${rescale_ratio},
+                    "uid" : "${user_id}"
+                },
+                "replace" : true
+            }'>
+        </div>
     % endfor
 
 </ul>

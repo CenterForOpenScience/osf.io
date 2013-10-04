@@ -7,7 +7,13 @@
          <h3 style="margin-bottom:10px;">Projects</h3>
         </div>
          % for node in nodes:
-            <div mod-meta='{"tpl" : "util/render_node.html", "uri" : "${node['api_url']}get_summary/", "replace" : true}'></div>
+            <div mod-meta='{
+                    "tpl": "util/render_node.html",
+                    "uri": "${node['api_url']}get_summary/",
+                    "view_kwargs" : {"rescale_ratio" : ${rescale_ratio}},
+                    "replace": true
+                }'>
+            </div>
          % endfor
      </div>
      <div class="row">

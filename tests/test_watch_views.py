@@ -24,7 +24,7 @@ class TestWatchViews(OsfTestCase):
         api_key = ApiKeyFactory()
         self.user.api_keys.append(api_key)
         self.user.save()
-        self.auth = (self.user.api_keys[0]._id, 'test')  # used for requests auth
+        self.auth = ('test', self.user.api_keys[0]._id)  # used for requests auth
         self.project = ProjectFactory(creator=self.user)
         self.project.add_contributor(self.user)
         self.project.save()
@@ -33,12 +33,12 @@ class TestWatchViews(OsfTestCase):
         self.project.add_log('project_created',
                         params={'project': self.project._primary_key},
                         user=self.user, log_date=dt.datetime.utcnow() - dt.timedelta(days=100),
-                        api_key=self.auth[0],
+                        api_key=self.auth[1],
                         do_save=True)
         # A log added now
         self.last_log = self.project.add_log('tag_added', params={'project': self.project._primary_key},
                         user=self.user, log_date=dt.datetime.utcnow(),
-                        api_key=self.auth[0],
+                        api_key=self.auth[1],
                         do_save=True)
         # Clear watched list
         self.user.watched = []
@@ -47,7 +47,6 @@ class TestWatchViews(OsfTestCase):
     def test_watching_a_project_appends_to_users_watched_list(self):
         n_watched_then = len(self.user.watched)
         url = BASE_URL + '/api/v1/project/{0}/watch/'.format(self.project._id)
-        print(self.auth)
         res = requests.post(url,
                             data={},
                             auth=self.auth)

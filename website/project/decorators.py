@@ -1,8 +1,6 @@
 import httplib as http
 from framework import HTTPError
 
-from framework import session
-from framework.flask import abort
 from framework import get_current_user, push_status_message, redirect
 from framework.auth import get_api_key
 from website.project import get_node
@@ -39,7 +37,7 @@ def must_not_be_registration(fn):
         if node_to_use.is_registration:
             raise HTTPError(http.FORBIDDEN)
             # push_status_message('Registrations are read-only')
-            # return redirect(node_to_use.url())
+            # return redirect(node_to_use.url)
 
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)
@@ -111,8 +109,7 @@ def must_be_contributor(fn):
             user = get_current_user()
             kwargs['user'] = user
 
-        # api_node = kwargs.get('api_node')
-        api_node = get_node(session.get('auth_node_id'))
+        api_node = kwargs.get('api_node')
 
         if not node_to_use.is_contributor(user) \
                 and api_node != node_to_use:
