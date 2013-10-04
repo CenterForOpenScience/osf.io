@@ -296,6 +296,30 @@ def unwatch_post(*args, **kwargs):
     return {'status': 'success', 'watchCount': len(node_to_use.watchconfig__watched)}
 
 
+@must_have_session_auth  # returns user or api_node
+@must_be_valid_project  # returns project
+@must_be_contributor_or_public
+@must_not_be_registration
+def togglewatch_post(*args, **kwargs):
+    '''View for toggling watch mode for a node.'''
+    node = kwargs['node'] or kwargs['project']
+    user = kwargs['user']
+    watch_config = WatchConfig(node=node,
+                                digest=request.form.get("digest", False),
+                                immediate=request.form.get('immediate', False))
+    try:
+        if user.is_watching(node):
+            user.unwatch(watch_config, save=True)
+        else:
+            user.watch(watch_config, save=True)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
+    return {'status': 'success',
+            'watchCount': len(node.watchconfig__watched),
+            "watched": user.is_watching(node)
+            }
+
+
 @must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project

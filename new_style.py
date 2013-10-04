@@ -661,5 +661,10 @@ process_rules(app, [
         '/project/<pid>/node/<nid>/unwatch/'
     ], 'post', project_views.node.unwatch_post, JSONRenderer()),
 
+    Rule([
+        '/project/<pid>/togglewatch/',
+        '/project/<pid>/node/<nid>/togglewatch/'
+    ], 'post', project_views.node.togglewatch_post, JSONRenderer()),
+
 
 ], prefix='/api/v1')

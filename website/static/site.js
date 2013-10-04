@@ -30,28 +30,20 @@ NodeActions.forkNode = function(){
   });
 };
 
-NodeActions.watchNode = function() {
+NodeActions.toggleWatch = function () {
     // Send POST request to node's watch API url and update the watch count
     $.ajax({
-        url: nodeToUseUrl() + "/watch/",
+        url: nodeToUseUrl() + "/togglewatch/",
         type: "POST",
         dataType: "json",
         success: function(data, status, xhr) {
+            // Update watch count in DOM
             $watchCount = $("#watchCount");
-            $watchCount.html("Unwatch&nbsp;" + data["watchCount"]);
-        }
-    });
-}
-
-NodeActions.unwatchNode = function () {
-    // Send POST request to node's watch API url and update the watch count
-    $.ajax({
-        url: nodeToUseUrl() + "/unwatch/",
-        type: "POST",
-        dataType: "json",
-        success: function(data, status, xhr) {
-            $watchCount = $("#watchCount");
-            $watchCount.html("Watch&nbsp;" + data["watchCount"]);
+            if (data["watched"]) { // If the user is watching
+                $watchCount.html("Unwatch&nbsp;" + data["watchCount"]);
+            } else {
+                $watchCount.html("Watch&nbsp;" + data["watchCount"]);
+            };
         }
     });
 }

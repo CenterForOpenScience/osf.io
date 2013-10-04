@@ -33,18 +33,14 @@
         </div>
 
         <div class="btn-group">
+          <a rel="tooltip" title="Watch" class="btn" href="#" onclick="NodeActions.toggleWatch()">
+            <i class="icon-eye-open"></i>
         % if not user_is_watching:
-          <a rel="tooltip" title="Watch" class="btn" href="#" onclick="NodeActions.watchNode()">
-            <i class="icon-eye-open"></i>
             <span id="watchCount">Watch&nbsp;${node_watched_count}</span>
-          </a>
         % else:
-          <a rel="tooltip" title="Watching" class="btn" href="#" onclick="NodeActions.unwatchNode()">
-            <i class="icon-eye-open"></i>
             <span id="watchCount">Unwatch&nbsp;${node_watched_count}</span>
-          </a>
         % endif
-
+          </a>
 
           <a
               rel="tooltip"

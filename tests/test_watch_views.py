@@ -8,6 +8,7 @@ import datetime as dt
 from nose.tools import *  # PEP8 asserts
 import requests
 
+from website.project.model import WatchConfig
 from tests.base import OsfTestCase
 from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
                             WatchConfigFactory)
@@ -19,7 +20,7 @@ BASE_URL = "http://localhost:{port}".format(port=PORT)
 class TestWatchViews(OsfTestCase):
 
     def setUp(self):
-        self.user = UserFactory.build(username='tesla@electric.come')
+        self.user = UserFactory.build(username='tesla@electric.com')
         api_key = ApiKeyFactory()
         self.user.api_keys.append(api_key)
         self.user.save()
@@ -81,6 +82,18 @@ class TestWatchViews(OsfTestCase):
         n_watched_now = len(self.user.watched)
         assert_equal(res.status_code, 200)
         assert_equal(n_watched_now, n_watched_then - 1)
+        assert_false(self.user.is_watching(self.project))
+
+    def test_toggle_watch(self):
+        # The user is not watching project
+        assert_false(self.user.is_watching(self.project))
+        url = BASE_URL + "/api/v1/project/{0}/togglewatch/".format(self.project._id)
+        res = requests.post(url, data={}, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        self.user.reload()
+        # The user is now watching the project
+        assert_true(res.json()['watched'])
+        assert_true(self.user.is_watching(self.project))
 
 
 if __name__ == '__main__':

@@ -41,9 +41,10 @@ class TestWatching(OsfTestCase):
         n_watched_then = len(self.user.watched)
         # A user watches a WatchConfig
         config = WatchConfigFactory(node=self.project)
-        self.user.watch(config)
+        self.user.watch(config, save=True)
         n_watched_now = len(self.user.watched)
         assert_equal(n_watched_now, n_watched_then + 1)
+        assert_true(self.user.is_watching(self.project))
 
     def test_unwatch_removes_from_watched_list(self):
         # The user has already watched a project
@@ -53,6 +54,7 @@ class TestWatching(OsfTestCase):
         self.user.unwatch(config)
         n_watched_now = len(self.user.watched)
         assert_equal(n_watched_now, n_watched_then - 1)
+        assert_false(self.user.is_watching(self.project))
 
     @unittest.skip("Won't work because the old log's id doesn't encode the correct log date")
     def test_get_recent_log_ids(self):
