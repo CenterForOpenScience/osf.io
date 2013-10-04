@@ -1,5 +1,5 @@
 ##### Flask
-from framework.flask import send_file, secure_filename, app, route, get, post,\
+from framework.flask import send_file, secure_filename, app, \
     redirect, request, url_for, send_from_directory, \
     Blueprint, render_template, render_template_string, jsonify, abort, \
     make_response

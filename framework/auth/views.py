@@ -13,8 +13,6 @@ import helper
 from framework.auth import register, login, logout, DuplicateEmailError, get_user, hash_password
 from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm
 
-@framework.get('/resetpassword/<verification_key>')
-@framework.post('/resetpassword/<verification_key>')
 def reset_password(*args, **kwargs):
     verification_key = kwargs['verification_key']
     form = ResetPasswordForm(framework.request.form)
@@ -28,13 +26,12 @@ def reset_password(*args, **kwargs):
             status.push_status_message('Password reset')
             return framework.redirect('/account')
 
-    return template.render(
-        filename='resetpassword.mako',
-        form_resetpassword=form,
-        verification_key = verification_key,
-    )
+    # todo: send form errors to status / httperror
+    return {
+        'form_resetpassword': form,
+        'verification_key': verification_key,
+    }
 
-@framework.post('/forgotpassword')
 def forgot_password():
     form = ForgotPasswordForm(framework.request.form, prefix='forgot_password')
 
@@ -66,9 +63,7 @@ def forgot_password():
 ###############################################################################
 # Log in
 ###############################################################################
-@framework.get("/login") #todo fix
-@framework.get("/account")
-@framework.post("/login")
+
 def auth_login(
         registration_form=None,
         forgot_password_form=None
@@ -95,19 +90,18 @@ def auth_login(
     
         forms.push_errors_to_status(form.errors)
     
-    return template.render(
-        filename=settings.auth_tpl_register, form_registration=formr,
-        form_forgotpassword=formf, form_signin=form, prettify=True)
+    return {
+        'form_registration': formr,
+        'form_forgotpassword': formf,
+        'form_signin': form,
+    }
 
-@framework.get('/logout')
 def auth_logout():
     logout()
     status.push_status_message('You have successfully logged out.')
     return framework.redirect('/')
 
-@framework.post("/register")
 def auth_register_post():
-    print 'in register!'
     if not website.settings.allow_registration:
         status.push_status_message('We are currently in beta development and \
             registration is only available to those with beta invitations. If you \
@@ -152,9 +146,5 @@ def auth_register_post():
         return auth_login(registration_form=form)
 
 
-@framework.get("/midas")
-@framework.get("/summit")
-@framework.get("/accountbeta")
-@framework.get("/decline")
 def auth_registerbeta():
     return framework.redirect('/account')

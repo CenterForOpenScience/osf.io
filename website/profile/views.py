@@ -160,7 +160,7 @@ def user_key_history(*args, **kwargs):
             {
                 'lid' : log._id,
                 'nid' : log.node__logged[0]._id,
-                'route' : log.node__logged[0].url(),
+                'route' : log.node__logged[0].url,
             }
             for log in api_key.nodelog__created
         ]

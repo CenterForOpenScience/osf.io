@@ -1,14 +1,13 @@
 from framework import (
-    get, post, request, redirect, must_be_logged_in, push_status_message, abort,
-    push_errors_to_status, get_current_user,
-    secure_filename, jsonify, update_counters, Q
+    request, redirect, must_be_logged_in, push_status_message,
+    push_errors_to_status, get_current_user, update_counters, Q
 )
 from framework import HTTPError
 from .. import new_node, new_project
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from ..forms import NewProjectForm, NewNodeForm
-from ..model import ApiKey, User, Tag, Node, NodeFile, NodeWikiPage, NodeLog
+from ..model import User, WatchConfig
 from framework.forms.utils import sanitize
 from framework.auth import must_have_session_auth, get_api_key
 
@@ -23,12 +22,6 @@ from framework import analytics
 import re
 import json
 import httplib as http
-
-def get_node_permission(node, user):
-    return {
-        'is_contributor' : node.is_contributor(user),
-        'can_edit' : node.is_contributor(user) and not node.is_registration,
-    }
 
 @must_have_session_auth #
 @must_be_valid_project # returns project
@@ -131,12 +124,12 @@ def project_new_node(*args, **kwargs):
         )
         return {
             'status' : 'success',
-        }, 201, None, project.url()
+        }, 201, None, project.url
         # return redirect('/project/' + str(project._primary_key))
     else:
         push_errors_to_status(form.errors)
     # todo: raise error
-    raise HTTPError(http.BAD_REQUEST, redirect_url=project.url())
+    raise HTTPError(http.BAD_REQUEST, redirect_url=project.url)
     # return redirect('/project/' + str(project._primary_key))
 
 @must_be_valid_project
@@ -144,16 +137,17 @@ def node_fork_page(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
     user = get_current_user()
+    api_key = get_api_key()
 
     if node:
         node_to_use = node
         push_status_message('At this time, only projects can be forked; however, this behavior is coming soon.')
         # todo discuss
-        # return redirect(node_to_use.url())
+        # return redirect(node_to_use.url)
         raise HTTPError(
             http.FORBIDDEN,
             message='At this time, only projects can be forked; however, this behavior is coming soon.',
-            redirect_url=node_to_use.url()
+            redirect_url=node_to_use.url
         )
     else:
         node_to_use = project
@@ -162,11 +156,11 @@ def node_fork_page(*args, **kwargs):
         raise HTTPError(http.FORBIDDEN)
         # push_status_message('At this time, only projects that are not registrations can be forked; however, this behavior is coming soon.')
         # # todo discuss
-        # return node_to_use.url()
+        # return node_to_use.url
 
-    fork = node_to_use.fork_node(user)
+    fork = node_to_use.fork_node(user, api_key=api_key)
 
-    return fork.url()
+    return fork.url
 
 @must_have_session_auth
 @must_be_valid_project
@@ -258,22 +252,50 @@ def project_statistics(*args, **kwargs):
 def project_set_permissions(*args, **kwargs):
 
     user = kwargs['user']
+    api_key = kwargs['api_key']
     permissions = kwargs['permissions']
     node_to_use = kwargs['node'] or kwargs['project']
 
-    node_to_use.set_permissions(permissions, user)
+    node_to_use.set_permissions(permissions, user, api_key)
 
-    return {'status' : 'success'}, None, None, node_to_use.url()
+    return {'status' : 'success'}, None, None, node_to_use.url
 
-@get('/project/<pid>/watch')
+
+@must_have_session_auth  # returns user or api_node
+@must_be_valid_project  # returns project
+@must_be_contributor_or_public
+@must_not_be_registration
+def watch_post(*args, **kwargs):
+    node_to_use = kwargs['node'] or kwargs['project']
+    user = kwargs['user']
+    watch_config = WatchConfig(node=node_to_use,
+                                digest=request.form.get("digest", False),
+                                immediate=request.form.get('immediate', False))
+    try:
+        user.watch(watch_config)
+    except ValueError:  # Node is already being watched
+        raise HTTPError(http.BAD_REQUEST)
+    watch_config.save()
+    user.save()
+
+
 @must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project
+@must_be_contributor_or_public
 @must_not_be_registration
-def project_watch(*args, **kwargs):
-    project = kwargs['project']
+def unwatch_post(*args, **kwargs):
+    print("unwatch post!")
+    node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
-    project.watch(user)
-    return redirect('/project/'+str(project._primary_key))
+    watch_config = WatchConfig(node=node_to_use,
+                                digest=request.form.get("digest", False),
+                                immediate=request.form.get('immediate', False))
+    try:
+        user.unwatch(watch_config)
+    except ValueError:  # Node isn't being watched
+        raise HTTPError(http.BAD_REQUEST)
+    user.save()
+
 
 @must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project
@@ -299,7 +321,7 @@ def component_remove(*args, **kwargs):
     else:
         raise HTTPError(http.BAD_REQUEST)
         # push_status_message('Component(s) unable to be deleted')
-        # return redirect(node_to_use.url())
+        # return redirect(node_to_use.url)
 
 
 
@@ -321,8 +343,8 @@ def _view_project(node_to_use, user):
         'node_title' : node_to_use.title,
         'node_category' : node_to_use.category,
         'node_description' : node_to_use.description,
-        'node_url' : node_to_use.url(),
-        'node_api_url' : node_to_use.api_url(),
+        'node_url' : node_to_use.url,
+        'node_api_url' : node_to_use.api_url,
         'node_is_public' : node_to_use.is_public,
         'node_date_created' : node_to_use.date_created.strftime('%Y/%m/%d %I:%M %p'),
         'node_date_modified' : node_to_use.logs[-1].date.strftime('%Y/%m/%d %I:%M %p'),
@@ -331,7 +353,7 @@ def _view_project(node_to_use, user):
         'node_children' : bool(node_to_use.nodes),
 
         'node_is_registration' : node_to_use.is_registration,
-        'node_registered_from_url' : node_to_use.registered_from.url() if node_to_use.is_registration else '',
+        'node_registered_from_url' : node_to_use.registered_from.url if node_to_use.is_registration else '',
         'node_registered_date' : node_to_use.registered_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_registration else '',
         'node_registered_meta' : [
             {
@@ -345,14 +367,14 @@ def _view_project(node_to_use, user):
         'node_registrations' : [
             {
                 'registration_id' : registration._primary_key,
-                'registration_url' : registration.url(),
-                'registration_api_url' : registration.api_url(),
+                'registration_url' : registration.url,
+                'registration_api_url' : registration.api_url,
             }
             for registration in node_to_use.node__registered
         ],
 
         'node_is_fork' : node_to_use.is_fork,
-        'node_forked_from_url' : node_to_use.forked_from.url() if node_to_use.is_fork else '',
+        'node_forked_from_url' : node_to_use.forked_from.url if node_to_use.is_fork else '',
         'node_forked_date' : node_to_use.forked_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_fork else '',
         'node_fork_count' : len(node_to_use.fork_list),
 
@@ -360,8 +382,8 @@ def _view_project(node_to_use, user):
         'node_forks' : [
             {
                 'fork_id' : fork._primary_key,
-                'fork_url' : fork.url(),
-                'fork_api_url' : fork.api_url(),
+                'fork_url' : fork.url,
+                'fork_api_url' : fork.api_url,
             }
             for fork in node_to_use.node__forked
             if not fork.is_deleted
@@ -369,7 +391,7 @@ def _view_project(node_to_use, user):
 
         'parent_id' : node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
         'parent_title' : node_to_use.node__parent[0].title if node_to_use.node__parent else None,
-        'parent_url' : node_to_use.node__parent[0].url() if node_to_use.node__parent else None,
+        'parent_url' : node_to_use.node__parent[0].url if node_to_use.node__parent else None,
 
         'user_is_contributor' : node_to_use.is_contributor(user),
         'user_can_edit' : node_to_use.is_contributor(user) and not node_to_use.is_registration,
@@ -414,7 +436,7 @@ def get_summary(*args, **kwargs):
     return {
         'summary' : {
             'pid' : node_to_use._primary_key,
-            'purl' : node_to_use.url(),
+            'purl' : node_to_use.url,
             'title' : node_to_use.title,
             'registered_date' : node_to_use.registered_date.strftime('%m/%d/%y %I:%M %p') if node_to_use.registered_date else None,
             'logs' : list(reversed(node_to_use.logs._to_primary_keys()))[:3],
@@ -427,6 +449,19 @@ def get_summary(*args, **kwargs):
 
 @must_be_contributor_or_public
 def get_children(*args, **kwargs):
-
     node_to_use = kwargs['node'] or kwargs['project']
     return _render_nodes(node_to_use.nodes)
+
+@must_be_contributor_or_public
+def get_forks(*args, **kwargs):
+    node_to_use = kwargs['node'] or kwargs['project']
+    forks = node_to_use.node__forked.find(
+        Q('is_deleted', 'eq', False)
+    )
+    return _render_nodes(forks)
+
+@must_be_contributor_or_public
+def get_registrations(*args, **kwargs):
+    node_to_use = kwargs['node'] or kwargs['project']
+    forks = node_to_use.node__registered
+    return _render_nodes(forks)

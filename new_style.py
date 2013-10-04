@@ -47,19 +47,78 @@ def view_index():
     }
 
 
+from framework.auth import views as auth_views
 from website import views as website_routes
+from website.search import views as search_views
+from website.discovery import views as discovery_views
 from website.profile import views as profile_views
 from website.project import views as project_views
 
-# Base
+
+def favicon():
+    return framework.send_from_directory(
+        settings.static_path,
+        'favicon.ico',
+        mimetype='image/vnd.microsoft.icon'
+    )
+
+process_rules(app, [
+    Rule('/favicon.ico', 'get', favicon, json_renderer),
+])
+
+### Base ###
 
 process_rules(app, [
 
     Rule('/dashboard/', 'get', website_routes.dashboard, OsfWebRenderer('dashboard.html', render_mako_string)),
+    Rule('/reproducibility/', 'get', website_routes.reproducibility, OsfWebRenderer('', render_mako_string)),
+
+    Rule('/about/', 'get', None, OsfWebRenderer('public/pages/about.mako', render_mako_string)),
+    Rule('/howosfworks/', 'get', None, OsfWebRenderer('public/pages/howosfworks.mako', render_mako_string)),
+    Rule('/faq/', 'get', None, OsfWebRenderer('public/pages/faq.mako', render_mako_string)),
+    Rule('/getting-started/', 'get', None, OsfWebRenderer('public/pages/getting_started.mako', render_mako_string)),
+    Rule('/explore/', 'get', None, OsfWebRenderer('public/explore.mako', render_mako_string)),
+    Rule(['/messages/', '/help/'], 'get', None, OsfWebRenderer('public/comingsoon.mako', render_mako_string)),
 
 ])
 
-# Profile
+### Discovery ###
+
+process_rules(app, [
+
+    Rule('/explore/activity/', 'get', discovery_views.activity, OsfWebRenderer('public/pages/active_nodes.mako', render_mako_string)),
+
+])
+
+### Auth ###
+
+# Web
+
+process_rules(app, [
+
+    Rule(
+        '/resetpassword/<verification_key>/',
+        ['get', 'post'],
+        auth_views.reset_password,
+        OsfWebRenderer('resetpassword.mako', render_mako_string)
+    ),
+
+    Rule('/register/', 'post', auth_views.auth_register_post, OsfWebRenderer('public/login.mako', render_mako_string)),
+
+    Rule(['/login/', '/account/'], 'get', auth_views.auth_login, OsfWebRenderer('public/login.mako', render_mako_string)),
+    Rule('/login/', 'post', auth_views.auth_login, OsfWebRenderer('public/login.mako', render_mako_string), endpoint_suffix='__post'),
+
+    Rule('/logout/', 'get', auth_views.auth_logout, OsfWebRenderer('', None)),
+
+    Rule('/forgotpassword/', 'post', auth_views.forgot_password, OsfWebRenderer('public/login.mako', render_mako_string)),
+
+    Rule([
+        '/midas/', '/summit/', '/accountbeta/', '/decline/'
+    ], 'get', auth_views.auth_registerbeta, OsfWebRenderer('', render_mako_string)),
+
+])
+
+### Profile ###
 
 # Web
 
@@ -92,6 +151,20 @@ process_rules(app, [
     Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, json_renderer),
 
 ], prefix='/api/v1',)
+
+### Search ###
+
+# Web
+
+process_rules(app, [
+    Rule('/search/', 'get', search_views.search_search, OsfWebRenderer('search.mako', render_mako_string)),
+])
+
+# API
+
+process_rules(app, [
+    Rule('/search/', 'get', search_views.search_search, json_renderer),
+], prefix='/api/v1')
 
 # Project
 
@@ -225,6 +298,14 @@ process_rules(app, [
         '/project/<pid>/get_children/',
         '/project/<pid>/node/<nid>/get_children/',
     ], 'get', project_views.node.get_children, json_renderer),
+    Rule([
+        '/project/<pid>/get_forks/',
+        '/project/<pid>/node/<nid>/get_forks/',
+    ], 'get', project_views.node.get_forks, json_renderer),
+    Rule([
+        '/project/<pid>/get_registrations/',
+        '/project/<pid>/node/<nid>/get_registrations/',
+    ], 'get', project_views.node.get_registrations, json_renderer),
 
     Rule('/log/<log_id>/', 'get', project_views.log.get_log, json_renderer),
     Rule([
@@ -393,5 +474,17 @@ process_rules(app, [
         '/project/<pid>/wiki/<wid>/version/<vid>/',
         '/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/',
     ], 'get', project_views.wiki.project_wiki_version, json_renderer),
+
+    ### Watching ###
+    Rule([
+        '/project/<pid>/watch/',
+        '/project/<pid>/node/<nid>/watch/'
+    ], 'post', project_views.node.watch_post, json_renderer),
+
+    Rule([
+        '/project/<pid>/unwatch/',
+        '/project/<pid>/node/<nid>/unwatch/'
+    ], 'post', project_views.node.unwatch_post, json_renderer),
+
 
 ], prefix='/api/v1')

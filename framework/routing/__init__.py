@@ -9,9 +9,9 @@ from mako.template import Template
 
 from framework import session
 
+import os
 import copy
 import json
-import os
 import pystache
 import lxml.html
 import httplib as http
@@ -37,7 +37,19 @@ class Rule(object):
             return value + '/'
         return value
 
-    def __init__(self, routes, methods, view_func, renderer, view_kwargs=None):
+    def __init__(self, routes, methods, view_func, renderer, view_kwargs=None, endpoint_suffix=''):
+        """Rule constructor.
+
+        :param routes: Route or list of routes
+        :param methods: HTTP method or list of methods
+        :param view_func: View function or None; pass None if rule should
+            perform no computation e.g. rendering a template without context
+        :param renderer: Renderer object or function
+        :param view_kwargs: Optional kwargs to pass to view function
+        :param endpoint_suffix: Optional suffix to append to endpoint name;
+            useful for disambiguating routes by HTTP verb
+
+        """
         self.routes = [
             self._ensure_slash(route)
             for route in self._ensure_list(routes)
@@ -46,12 +58,22 @@ class Rule(object):
         self.view_func = view_func
         self.renderer = renderer
         self.view_kwargs = view_kwargs or {}
+        self.endpoint_suffix = endpoint_suffix
 
         if not callable(self.renderer):
             raise Exception('Argument renderer must be callable.')
 
 
-def wrap_with_renderer(fn, renderer, renderer_kwargs):
+def wrap_with_renderer(fn, renderer, renderer_kwargs=None):
+    """
+
+    :param fn: View function; must return a dictionary or a tuple containing
+        (up to) a dictionary, status code, headers, and redirect URL
+    :param renderer: Renderer object or function
+    :param renderer_kwargs: Optional kwargs to pass to renderer
+    :return: Wrapped view function
+
+    """
     def wrapped(*args, **kwargs):
         try:
             session_error_code = session.get('auth_error_code')
@@ -60,7 +82,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs):
             rv = fn(*args, **kwargs)
         except HTTPError as error:
             rv = error
-        return renderer(rv, **renderer_kwargs)
+        return renderer(rv, **renderer_kwargs or {})
     return wrapped
 
 
@@ -72,27 +94,34 @@ def process_rules(app, rules, prefix=''):
     :param app: Flask / Werkzeug app
     :param rules: List of Rule objects
     :param prefix: Optional prefix for rule URLs
-    """
 
+    """
     for rule in rules:
 
-        view_func = wrap_with_renderer(rule.view_func, rule.renderer, rule.view_kwargs)
-        renderer_name = getattr(
-            rule.renderer,
-            '__name__',
-            rule.renderer.__class__.__name__
-        )
-        view_func_name = '{}__{}'.format(
-            renderer_name,
-            rule.view_func.__name__
-        )
-
-        view_functions[view_func_name] = rule.view_func
+        if rule.view_func is not None:
+            view_func = wrap_with_renderer(rule.view_func, rule.renderer, rule.view_kwargs)
+            renderer_name = getattr(
+                rule.renderer,
+                '__name__',
+                rule.renderer.__class__.__name__
+            )
+            endpoint = '{}__{}'.format(
+                renderer_name,
+                rule.view_func.__name__
+            )
+            view_functions[endpoint] = rule.view_func
+        else:
+            # Some rules don't need named view functions; for example,
+            # some views may simply render a template with no context.
+            # This logic provides a common null view function that takes
+            # arbitrary arguments and returns an empty dictionary.
+            view_func = wrap_with_renderer(lambda *args, **kwargs: {}, rule.renderer, {})
+            endpoint = '__'.join(route.replace('/', '') for route in rule.routes)
 
         for url in rule.routes:
             app.add_url_rule(
                 prefix + url,
-                endpoint=view_func_name,
+                endpoint=endpoint + rule.endpoint_suffix,
                 view_func=view_func,
                 methods=rule.methods,
             )
@@ -140,7 +169,8 @@ class Renderer(object):
         """Render data returned by a view function.
 
         :param data: Dictionary or tuple of (up to) dictionary,
-                     status code, headers, and redirect URL
+            status code, headers, and redirect URL
+        :return: Flask / Werkzeug response object
 
         """
         # Handle error
@@ -168,8 +198,8 @@ class Renderer(object):
 class JSONRenderer(Renderer):
     """Renderer for API views. Generates JSON; ignores
     redirects from views and exceptions.
-    """
 
+    """
     # todo: remove once storedobjects are no longer passed from view functions
     class Encoder(json.JSONEncoder):
         def default(self, obj):
@@ -191,8 +221,8 @@ json_renderer = JSONRenderer()
 class WebRenderer(Renderer):
     """Renderer for web views. Generates HTML; follows redirects
     from views and exceptions.
-    """
 
+    """
     error_template = 'error.html'
 
     def __init__(self, template_name, renderer, data=None, template_dir=TEMPLATE_DIR):
@@ -228,6 +258,7 @@ class WebRenderer(Renderer):
 
         :param template_file: Name of template file.
         :return: Template file
+
         """
         with open(os.path.join(self.template_dir, template_file), 'r') as f:
             loaded = f.read()
@@ -240,8 +271,8 @@ class WebRenderer(Renderer):
         :param url: URL
         :param view_kwargs: Optional kwargs to pass to view function
         :return: Data from view function
-        """
 
+        """
         # Parse view function and args
         func_name, func_data = app.url_map.bind('').match(url)
         if view_kwargs is not None:
@@ -277,13 +308,15 @@ class WebRenderer(Renderer):
         render_data.update(kwargs)
 
         if uri:
+            # Catch errors and return appropriate debug divs
+            # todo: add debug parameter
             try:
                 uri_data = self.call_url(uri, view_kwargs=view_kwargs)
                 render_data.update(uri_data)
             except NotFound:
                 return '<div>URI {} not found.</div>'.format(uri), is_replace
-            except:
-                return '<div>Error retrieving URI {}.</div>'.format(uri), is_replace
+            except Exception as error:
+                return '<div>Error retrieving URI {}: {}.</div>'.format(uri, error.message), is_replace
 
         template_rendered = self._render(
             render_data,
@@ -295,6 +328,8 @@ class WebRenderer(Renderer):
     def _render(self, data, template_name=None):
 
         template_name = template_name or self.template_name
+        # Catch errors and return appropriate debug divs
+        # todo: add debug parameter
         try:
             template_file = self.load_file(template_name)
         except IOError:

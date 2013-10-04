@@ -21,6 +21,9 @@
             <div class="page-header">
              <h3 style="margin-bottom:10px;">Watched Projects</h3>
             </div>
+            % for log in logs:
+            <div mod-meta='{"tpl" : "util/render_log.html", "uri": "/api/v1/log/${log}/", "replace": true}'></div>
+            % endfor
          </div>
      </div>
 </div>

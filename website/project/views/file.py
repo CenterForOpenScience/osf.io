@@ -44,7 +44,7 @@ def get_files(*args, **kwargs):
 
     tree = {
         'title' : node_to_use.title,
-        'url' : node_to_use.url(),
+        'url' : node_to_use.url,
         'files' : [],
     }
 
@@ -52,8 +52,8 @@ def get_files(*args, **kwargs):
         if not child.is_deleted:
             tree['files'].append({
                 'type' : 'dir',
-                'url' : child.url(),
-                'api_url' : child.api_url(),
+                'url' : child.url,
+                'api_url' : child.api_url,
             })
 
     if node_to_use.is_public or node_to_use.is_contributor(user):
@@ -96,9 +96,9 @@ def upload_file_get(*args, **kwargs):
             file_infos.append({
                 "name":v.path,
                 "size":v.size,
-                "url":node_to_use.url() + "files/" + v.path,
+                "url":node_to_use.url + "files/" + v.path,
                 "type":v.content_type,
-                "download_url": node_to_use.api_url() + "/files/download/" + v.path,
+                "download_url": node_to_use.api_url + "/files/download/" + v.path,
                 "date_uploaded": v.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
                 "downloads": str(total) if total else str(0),
                 "user_id": None,
@@ -147,9 +147,9 @@ def upload_file_public(*args, **kwargs):
     file_info = {
         "name":uploaded_filename,
         "size":uploaded_file_size,
-        "url":node_to_use.url() + "files/" + uploaded_filename + "/",
+        "url":node_to_use.url + "files/" + uploaded_filename + "/",
         "type":uploaded_file_content_type,
-        "download_url":node_to_use.url() + "/files/download/" + file_object.path,
+        "download_url":node_to_use.url + "/files/download/" + file_object.path,
         "date_uploaded": file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
         "downloads": str(total) if total else str(0),
         "user_id": None,
@@ -217,7 +217,7 @@ def view_file(*args, **kwargs):
 
     # todo: add bzip, etc
     if is_img:
-        rendered="<img src='{node_url}files/download/{fid}/' />".format(node_url=node_to_use.api_url(), fid=file_name)
+        rendered="<img src='{node_url}files/download/{fid}/' />".format(node_url=node_to_use.api_url, fid=file_name)
     elif file_ext == '.zip':
         archive = zipfile.ZipFile(file_path)
         archive_files = prune_file_list(archive.namelist(), settings.archive_depth)
@@ -271,7 +271,7 @@ def download_file(*args, **kwargs):
     kwargs["vid"] = len(node_to_use.files_versions[filename.replace('.', '_')])
 
     return redirect('{node_url}files/download/{fid}/version/{vid}/'.format(
-        node_url=node_to_use.api_url(),
+        node_url=node_to_use.api_url,
         fid=kwargs['fid'],
         vid=kwargs['vid'],
     ))

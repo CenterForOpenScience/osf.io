@@ -1,6 +1,5 @@
-from framework.flask import app, abort
+from framework.flask import app
 
-from framework.exceptions import HTTPError
 import httplib as http
 
 import bson.objectid
@@ -8,13 +7,14 @@ import itsdangerous
 from flask import request, redirect
 from werkzeug.local import LocalProxy
 
+from model import Session
+
 COOKIE_NAME = 'osf'
+# todo: make more secret
 SECRET_KEY = '4IdgL9FYyZRoDkoQ'
 
 # todo 2-back page view queue
 # todo actively_editing date
-
-from model import Session
 
 def set_previous_url(url=None):
     if url is None:

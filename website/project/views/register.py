@@ -72,6 +72,7 @@ def node_register_template_page_post(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
     user = kwargs['user']
+    api_key = kwargs['api_key']
 
     node_to_use = node or project
 
@@ -88,9 +89,9 @@ def node_register_template_page_post(*args, **kwargs):
 
     template = kwargs['template']
 
-    register = node_to_use.register_node(user, template, data)
+    register = node_to_use.register_node(user, api_key, template, data)
 
     return {
         'status' : 'success',
-        'result' : register.url(),
+        'result' : register.url,
     }, 201

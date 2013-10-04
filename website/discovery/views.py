@@ -1,5 +1,4 @@
 import framework
-# from framework.analytics import db as analytics
 from framework import db as analytics
 
 from website.project import Node
@@ -13,7 +12,6 @@ from modularodm.query.querydialect import DefaultQueryDialect as Q
     #project = Node.load(project_id)
     #return framework.jsonify({'count':len(project.logs)))
 
-@framework.get('/explore/activity/')
 def activity():
     # Projects
 
@@ -93,10 +91,9 @@ def activity():
         ):
             most_viewed_registrations.append(node)
 
-    return framework.render(
-        'active_nodes.mako',
-        recent_public_projects=recent_public_projects,
-        most_viewed_projects=most_viewed_projects,
-        recent_public_registrations=recent_public_registrations,
-        most_viewed_registrations=most_viewed_registrations,
-    )
+    return {
+        'recent_public_projects': recent_public_projects,
+        'most_viewed_projects': most_viewed_projects,
+        'recent_public_registrations': recent_public_registrations,
+        'most_viewed_registrations': most_viewed_registrations,
+    }

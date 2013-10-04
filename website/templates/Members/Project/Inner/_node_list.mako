@@ -25,9 +25,9 @@
             <h3 style="line-height:20px;">
                 <span style="display:inline-block; width: 400px">
                 %if not node.node__parent:
-                    <a href="${node.url()}">${node.title}</a>
+                    <a href="${node.url}">${node.title}</a>
                 %else:
-                    <a href="${node.url()}">${node.title}</a>
+                    <a href="${node.url}">${node.title}</a>
                 %endif
                 % if node.is_registration:
                     | registered: ${node.registered_date.strftime('%Y/%m/%d %I:%M %p')}

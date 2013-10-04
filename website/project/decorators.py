@@ -37,7 +37,7 @@ def must_not_be_registration(fn):
         if node_to_use.is_registration:
             raise HTTPError(http.FORBIDDEN)
             # push_status_message('Registrations are read-only')
-            # return redirect(node_to_use.url())
+            # return redirect(node_to_use.url)
 
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)
