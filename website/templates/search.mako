@@ -16,11 +16,39 @@
             padding:25px;
             font-size: 18px;
         }
+
+    .result {
+            padding: 10px;
+    }
+
+    .highlight {
+            background-color: white;
+    }
+
+    .highlight em
+        {
+            font-style: normal;
+            background-color: #FFFFAA;
+        }
+
+    .label-info
+        {
+            margin: 3px;
+        }
+
+    .label-info[href]
+        {
+            background-color: #999999;
+        }
+
+    #whatever a {
+            margin-right: 6px;
+    }
 </style>
 <script>
 $.fn.tagcloud.defaults = {
-  size: {start: 14, end: 18, unit: 'pt'},
-  color: {start: '#cde', end: '#f52'}
+  size: {start: 12, end: 16, unit: 'pt'},
+  color: {start: '#999', end: '#0088cc'}
 };
 
 $(function () {
@@ -34,12 +62,13 @@ $(function () {
             <%
                 components = query.split('AND')
             %>
-        <h1>Search <small> for
+        <h1>Search<small> for
 ##            for showing tags
             % for i, term in enumerate(components):
 ##              the first is not removable. we need it to query
                 % if i != 0:
-                    <a href='/search/?q=${query.replace('AND'+term, '') | h }' class="label label-success btn-mini"> ${term} <span class="badge">x</span></a>
+                      <button class="label label-default" style="cursor:default;">${term}<a href='/search/?q=${query.replace('AND'+term, '') | h }' class="label" style="cursor:pointer;"> X </a></button>
+##                    <a href='/search/?q=${query.replace('AND'+term, '') | h }' class="label label-default btn-mini"> ${term} </a>
                 % else:
                     ${term}
                 % endif
@@ -55,16 +84,17 @@ $(function () {
     </div>
 </section>
 <div class="row">
-    <div class="span2">
+    <div class="span3">
         % if query:
         <h3>
 ##            our search users query
             <a href="/search/?q=user:${query|h}"> Search users </a>
         </h3>
+        <br>
         % endif
 ##        our tag cloud!
         % if tags:
-        <h3> Improve Your Search:</h3>
+        <h4>Improve Your Search: size and <span style="color: #33A0D6">saturation</span> convey relatedness</h4>
             % for key, value in tags.iteritems():
                 % if not (u' tags:"{s}"'.format(s=key) in components or u' tags:"{s}" '.format(s=key) in components):
                     <span id="whatever">
@@ -73,9 +103,8 @@ $(function () {
                 % endif
             % endfor
         % endif
-
     </div>
-    <div class="span10">
+    <div class="span9">
             % if results:
 ##            iterate through our nice lists of results
                 % for result in results:
@@ -91,7 +120,8 @@ $(function () {
                                 % if result['url']:
                                     <a href=${result['url']}>${result['title']}</a>
                                 %else:
-                                    <span style='font-weight:normal; font-style:italic'>${result['title']}</span>
+                                      <span style='font-weight:normal;'><h3>Private parent project</h3></span>
+###                                    <span style='font-weight:normal; font-style:italic'>${result['title']}</span>
                                 % endif
 
                             </h4>
@@ -123,7 +153,7 @@ $(function () {
                         <div class="highlight">
                             % if result['highlight'] is not None:
                                 % for highlight in result['highlight']:
-                                   %if hightlight:
+                                   %if highlight:
                                        ${highlight}
                                    %endif
                                 % endfor
@@ -175,7 +205,7 @@ $(function () {
                                                 % for highlight in result['nest'][key]['highlight']:
                                                     ${highlight}
                                                 % endfor
-##                                               and link to wiki, if its there
+##                                               and link to wiki, if it's there
                                                 % if result['nest'][key]['wiki_link']:
                                                        <a href=${result['nest'][key]['wiki_link']}> jump to wiki </a>
                                                 % endif
@@ -220,7 +250,6 @@ $(function () {
                             <a href="?q=${query | h}&pagination=${(current_page)+10}">Next</a>
                         % endif
                     % endif
-
                 </div>
             % else:
                 No results found. <br />
