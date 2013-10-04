@@ -17,7 +17,7 @@
          <h3 style="margin-bottom:10px;">Projects</h3>
         </div>
          % if nodes:
-             ${node_list(reversed(nodes), default="user_dashboard", profile_id=user._id if user else None)}
+             ${node_list(reversed(nodes), default="user_dashboard", profile_id=user._id if user else None, profile_fullname=user.fullname if user else None)}
          %endif
      </div>
      <div class="row">
