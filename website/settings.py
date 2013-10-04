@@ -7,6 +7,9 @@ confirm_registrations_by_email = False # Not fully implemented
 allow_registration = True
 allow_login = True
 
+use_solr = True
+solr = 'http://23.92.18.234:8983/solr/'
+
 # External services
 try:
     os.environ['OSF_PRODUCTION']
@@ -24,7 +27,7 @@ try:
     os.environ['OSF_PRODUCTION']
     cache_path = '/opt/data/osf_cache'
     uploads_path = '/opt/data/uploads'
-except:
+except KeyError:
     cache_path = os.path.join(base_path, 'cache')
     uploads_path = os.path.join(base_path, 'uploads')
 
@@ -71,6 +74,13 @@ wiki_whitelist = {
         'height', 'href', 'src', 'style', 'title', 'type', 'width',
         'face', 'size', # font tags
         'salign', 'align', 'wmode',
+    ],
+    # Styles currently used in Reproducibility Project wiki pages
+    # TODO: Discuss and possibly delete
+    'styles' : [
+        'top', 'left', 'width', 'height', 'position',
+        'background', 'font-size', 'text-align', 'z-index',
+        'list-style',
     ]
 }
 

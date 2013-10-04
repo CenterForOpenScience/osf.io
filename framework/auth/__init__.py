@@ -8,8 +8,6 @@ from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 import helper
 
-#import website.settings as settings
-
 from model import User
 
 from decorator import decorator
@@ -17,31 +15,33 @@ import datetime
 
 import httplib as http
 
+
 def get_current_username():
-    return session.get('auth_user_username', None)
+    return session.data.get('auth_user_username')
+
 
 def get_current_user_id():
-    return session.get('auth_user_id', None)
+    return session.data.get('auth_user_id')
+
 
 def get_current_user():
-    uid = session.get("auth_user_id", None)
+    uid = session.data.get('auth_user_id')
     return User.load(uid)
-    # if uid:
-    #     return User.load(uid)
-    # else:
-    #     return None
 
-# def get_current_node():
-#     from website.models import Node
-#     nid = session.get('auth_node_id')
-#     if nid:
-#         return Node.load(nid)
+
+def get_current_node():
+    from website.models import Node
+    nid = session.data.get('auth_node_id')
+    if nid:
+        return Node.load(nid)
+
 
 def get_api_key():
     # Hack: Avoid circular import
     from website.project.model import ApiKey
-    api_key = session.get('auth_api_key')
+    api_key = session.data.get('auth_api_key')
     return ApiKey.load(api_key)
+
 
 def get_user_or_node():
     uid = get_current_user()
@@ -49,8 +49,10 @@ def get_user_or_node():
         return uid
     return get_current_node()
 
+
 def check_password(actualPassword, givenPassword):
     return bcrypt.check_password_hash(actualPassword, givenPassword)
+
 
 def get_user(id=None, username=None, password=None, verification_key=None):
     # tag: database
@@ -101,9 +103,9 @@ def login(username, password):
     return False
 
 def logout():
-    for i in ['auth_user_username', 'auth_user_id', 'auth_user_fullname']:
+    for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname']:
         # todo leave username so login page can persist probable id
-        del session[i]
+        del session.data[key]
     return True
 
 def add_unclaimed_user(email, fullname):

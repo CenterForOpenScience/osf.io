@@ -5,4 +5,3 @@
 
 ##<%namespace file="_render_keys.mako" import="render_keys" />
 ##${render_keys(node_to_use, node_to_use.url())}
-<div mod-meta='{"tpl":"render_keys.html", "uri":"/api/v1${node_to_use.url()}/keys/", "replace": true, "kwargs" : {"route": "/api/v1${node_to_use.url()}/"}}'></div>

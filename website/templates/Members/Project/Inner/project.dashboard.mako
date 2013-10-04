@@ -90,7 +90,7 @@
             //$('#addContributor').modal('hide')
           </script>
           % if project.nodes:
-            ${node_list(project.nodes, default="project_dash", node_id=project._primary_key, is_contributor=is_contributor, is_registration=project.is_registration)}
+            ${node_list(project.nodes, default="project_dash", node_id=project._primary_key, is_contributor=is_contributor, is_registration=project.is_registration, profile_id=user._id if user else None)}
           %else:
             <p>No components have been added to this project.</p>
           %endif
