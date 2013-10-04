@@ -1,18 +1,12 @@
 <%def name="print_ua_meter(logs, profileId, rescale_ratio, profileFullname)">
     <%
-        from framework import get_user
-        from website.project import get_node
-
+        from framework import Q
+        
         # Counters
-        ua_count    = 0 # user activity in project, base length of green bar
         total_count = len(logs)
-        if logs is not None:
-            for i, log in enumerate(logs):
-                if log is not None:
-                    tuser = log.user
-                    if tuser is not None and tuser._primary_key==profileId:
-                       # increment counter if log author is current user
-                       ua_count += 1
+        ua_count = logs.find(
+            Q('user', 'eq', profileId)
+        ).count()
         non_ua_count = total_count - ua_count # base length of blue bar
 
         # Normalize over all nodes
