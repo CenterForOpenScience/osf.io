@@ -75,6 +75,12 @@ class TestNode(OsfTestCase):
         assert_equal(url, "/project/{0}/node/{1}/".format(self.parent._primary_key,
                                                         self.node._primary_key))
 
+    def test_watch_url(self):
+        url = self.node.watch_url
+        assert_equal(url, "/api/v1/project/{0}/node/{1}/watch/"
+                                .format(self.parent._primary_key,
+                                        self.node._primary_key))
+
 
 class TestProject(OsfTestCase):
 

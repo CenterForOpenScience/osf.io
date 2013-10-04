@@ -180,7 +180,6 @@ def must_have_session_auth(fn):
 
         kwargs['user'] = get_current_user()
         kwargs['api_key'] = get_api_key()
-        print(kwargs['api_key'])
         kwargs['api_node'] = get_current_node()
         if kwargs['user'] or kwargs['api_key']:
             return func(*args, **kwargs)
@@ -198,8 +197,6 @@ def must_have_session_auth(fn):
         # if kwargs['api_key']:
             # kwargs['api_node'] = node
             # return func(*args, **kwargs)
-
-        print(kwargs)
         # No session authentication found
         raise HTTPError(http.UNAUTHORIZED)
 

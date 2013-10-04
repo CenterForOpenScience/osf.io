@@ -411,7 +411,6 @@ def _view_project(node_to_use, user):
             if not fork.is_deleted
         ],
         'node_watched_count': len(node_to_use.watchconfig__watched),
-        "node_watch_url": node_to_use.watch_url(),
         'parent_id' : node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
         'parent_title' : node_to_use.node__parent[0].title if node_to_use.node__parent else None,
         'parent_url' : node_to_use.node__parent[0].url if node_to_use.node__parent else None,

@@ -11,7 +11,7 @@ import requests
 from website.project.model import WatchConfig
 from tests.base import OsfTestCase
 from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
-                            WatchConfigFactory)
+                            WatchConfigFactory, NodeFactory)
 
 PORT = int(os.environ.get("OSF_PORT", '5000'))
 BASE_URL = "http://localhost:{port}".format(port=PORT)
@@ -25,8 +25,8 @@ class TestWatchViews(OsfTestCase):
         self.user.api_keys.append(api_key)
         self.user.save()
         self.auth = ('test', self.user.api_keys[0]._id)  # used for requests auth
-        self.project = ProjectFactory(creator=self.user)
-        self.project.add_contributor(self.user)
+        # A public project
+        self.project = ProjectFactory(is_public=True)
         self.project.save()
         # add some log objects
         # A log added 100 days ago
@@ -94,6 +94,19 @@ class TestWatchViews(OsfTestCase):
         assert_true(res.json()['watched'])
         assert_true(self.user.is_watching(self.project))
 
+    def test_toggle_watch_node(self):
+        # The project has a public sub-node
+        node = NodeFactory(is_public=True)
+        self.project.nodes.append(node)
+        self.project.save()
+        url = BASE_URL + "/api/v1/project/{}/node/{}/togglewatch/".format(self.project._id,
+                                                                            node._id)
+        res = requests.post(url, data={}, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        self.user.reload()
+        # The user is now watching the sub-node
+        assert_true(res.json()['watched'])
+        assert_true(self.user.is_watching(node))
 
 if __name__ == '__main__':
     unittest.main()
