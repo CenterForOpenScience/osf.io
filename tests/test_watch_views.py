@@ -8,9 +8,10 @@ import datetime as dt
 from nose.tools import *  # PEP8 asserts
 import requests
 
+from website.project.model import WatchConfig
 from tests.base import OsfTestCase
 from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
-                            WatchConfigFactory, NodeFactory)
+                            WatchConfigFactory)
 
 PORT = int(os.environ.get("OSF_PORT", '5000'))
 BASE_URL = "http://localhost:{port}".format(port=PORT)
@@ -19,17 +20,13 @@ BASE_URL = "http://localhost:{port}".format(port=PORT)
 class TestWatchViews(OsfTestCase):
 
     def setUp(self):
-        # A user has an API Key
         self.user = UserFactory.build(username='tesla@electric.com')
         api_key = ApiKeyFactory()
         self.user.api_keys.append(api_key)
         self.user.save()
         self.auth = (self.user.api_keys[0]._id, 'test')  # used for requests auth
-        # The user has a project with a component node
         self.project = ProjectFactory(creator=self.user)
         self.project.add_contributor(self.user)
-        self.subnode = NodeFactory()
-        self.project.nodes.append(self.subnode)
         self.project.save()
         # add some log objects
         # A log added 100 days ago
@@ -87,7 +84,7 @@ class TestWatchViews(OsfTestCase):
         assert_equal(n_watched_now, n_watched_then - 1)
         assert_false(self.user.is_watching(self.project))
 
-    def test_toggle_watch_project(self):
+    def test_toggle_watch(self):
         # The user is not watching project
         assert_false(self.user.is_watching(self.project))
         url = BASE_URL + "/api/v1/project/{0}/togglewatch/".format(self.project._id)
@@ -98,15 +95,6 @@ class TestWatchViews(OsfTestCase):
         assert_true(res.json()['watched'])
         assert_true(self.user.is_watching(self.project))
 
-    def test_toggle_unwatch_project(self):
-        # The user is already watching the project
-        config = WatchConfigFactory(node=self.project)
-        self.user.watch(config, save=True)
-        url = BASE_URL + "/api/v1/project/{0}/togglewatch/".format(self.project._id)
-        res = requests.post(url, data={}, auth=self.auth)
-        self.user.reload()
-        assert_false(res.json()["watched"])
-        assert_false(self.user.is_watching(self.project))
 
 if __name__ == '__main__':
     unittest.main()
