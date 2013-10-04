@@ -33,14 +33,26 @@
         </div>
 
         <div class="btn-group">
-          <a rel="tooltip" title="Coming soon: Number of users watching this node" class="btn disabled" href="#"><i class="icon-eye-open"></i>&nbsp;0</a>
+        % if not user_is_watching:
+          <a rel="tooltip" title="Watch" class="btn" href="#" onclick="NodeActions.watchNode()">
+            <i class="icon-eye-open"></i>
+            <span id="watchCount">Watch&nbsp;${node_watched_count}</span>
+          </a>
+        % else:
+          <a rel="tooltip" title="Watching" class="btn" href="#" onclick="NodeActions.unwatchNode()">
+            <i class="icon-eye-open"></i>
+            <span id="watchCount">Unwatch&nbsp;${node_watched_count}</span>
+          </a>
+        % endif
+
+
           <a
               rel="tooltip"
               title="Number of times this node has been forked (copied)"
               % if node_category == 'project' and username is not None:
               href="#"
               class="btn"
-              onclick="forkNode();"
+              onclick="NodeActions.forkNode();"
               % else:
               class="btn disabled"
               % endif
@@ -86,13 +98,13 @@
     %endif
     <br />Date Created:
         <span class="date">${node_date_created}</span>
-    | Last Updated: 
+    | Last Updated:
     %if not node:
         <span class="date">${node_date_modified}</span>
     %else:
         <span class="date">${node_date_modified}</span>
     %endif
-    
+
     %if node:
         <br />Category: ${node_category}
     %else:
@@ -124,7 +136,7 @@
     attributeBindings: ['type', 'name', 'value'],
 
     type: "radio",
-    
+
     name: "id",
 
     value: "",
@@ -227,7 +239,7 @@
         </script>
     </div>
     <div class="modal-footer">
-        <a href="#" class="btn" data-dismiss="modal">Cancel</a> 
+        <a href="#" class="btn" data-dismiss="modal">Cancel</a>
         <button onclick="App.SearchController.add()" class="btn primary">Add</button>
     </div>
 </div>

@@ -277,23 +277,23 @@ def watch_post(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     watch_config.save()
     user.save()
+    return {'status': 'success', 'watchCount': len(node_to_use.watchconfig__watched)}
 
 @must_have_session_auth  # returns user or api_node
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_not_be_registration
 def unwatch_post(*args, **kwargs):
-    print("unwatch post!")
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     watch_config = WatchConfig(node=node_to_use,
                                 digest=request.form.get("digest", False),
                                 immediate=request.form.get('immediate', False))
     try:
-        user.unwatch(watch_config)
+        user.unwatch(watch_config, save=True)
     except ValueError:  # Node isn't being watched
         raise HTTPError(http.BAD_REQUEST)
-    user.save()
+    return {'status': 'success', 'watchCount': len(node_to_use.watchconfig__watched)}
 
 
 @must_have_session_auth # returns user or api_node
@@ -321,7 +321,6 @@ def component_remove(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
         # push_status_message('Component(s) unable to be deleted')
         # return redirect(node_to_use.url())
-
 
 
 @must_be_valid_project
@@ -383,14 +382,15 @@ def _view_project(node_to_use, user):
             for fork in node_to_use.node__forked
             if not fork.is_deleted
         ],
-
+        'node_watched_count': len(node_to_use.watchconfig__watched),
+        "node_watch_url": node_to_use.watch_url(),
         'parent_id' : node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
         'parent_title' : node_to_use.node__parent[0].title if node_to_use.node__parent else None,
         'parent_url' : node_to_use.node__parent[0].url() if node_to_use.node__parent else None,
 
         'user_is_contributor' : node_to_use.is_contributor(user),
         'user_can_edit' : node_to_use.is_contributor(user) and not node_to_use.is_registration,
-
+        'user_is_watching': user.is_watching(node_to_use),
     }
 
 

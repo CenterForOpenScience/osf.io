@@ -138,11 +138,19 @@ class User(StoredObject):
         '''
         for each in self.watched:
             if watch_config.node._id == each.node._id:
-                self.watched.remove(each)
+                each.__class__.remove_one(each)
                 if save:
                     self.save()
                 return None
         raise ValueError('Node not being watched.')
+
+    def is_watching(self, node):
+        '''Return whether a not a user is watching a Node.'''
+        node_configs = set(node.watchconfig__watched)
+        user_watched = set(self.watched)
+        # If the sets have an intersection, the user is following the node
+        return len(node_configs & user_watched) > 0
+
 
     def get_recent_log_ids(self, since=None):
         '''Return a generator of recent logs' ids.

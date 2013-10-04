@@ -1,5 +1,16 @@
 # -*- coding: utf-8 -*-
 import subprocess
+import uuid
+import hashlib
+import datetime
+import os
+import unicodedata
+import logging
+
+import markdown
+from markdown.extensions import wikilinks
+from dulwich.repo import Repo
+from dulwich.object_store import tree_lookup_path
 
 from framework.mongo import ObjectId
 from framework.auth import User, get_user
@@ -7,23 +18,12 @@ from framework.analytics import get_basic_counters, increment_user_activity_coun
 from framework.search import generate_keywords
 from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
-from framework.auth import get_api_key
+from framework import StoredObject, fields
 
 from website import settings
 
-from framework import StoredObject, fields
 
-import uuid
-import hashlib
-import datetime
-import markdown
-from markdown.extensions import wikilinks
-import calendar
-import os
-import unicodedata
 
-from dulwich.repo import Repo
-from dulwich.object_store import tree_lookup_path
 
 
 def normalize_unicode(ustr):
@@ -587,10 +587,14 @@ class Node(StoredObject):
                     self.node__parent[0]._primary_key,
                     self._primary_key
                 )
+        logging.error("Node {0} has a parent that is not a project".format(self._id))
+        return None
 
     def api_url(self):
         return '/api/v1' + self.url()
 
+    def watch_url(self):
+        return os.path.join(self.api_url(), "watch/")
 
     def is_contributor(self, user):
         if user:
