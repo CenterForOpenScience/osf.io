@@ -229,9 +229,9 @@ $(function () {
                                 % endfor
                             % endif
                         </div>
-                        </div>
                         <br>
                     %endif
+                    </div>
                 % endfor
 ##            pagination! we're simply going to build a query by telling solr which 'row' we want to start on
                 <div class="navigate">
