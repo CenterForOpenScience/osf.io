@@ -49,8 +49,8 @@ def get_user_or_node():
     return get_current_node()
 
 
-def check_password(actualPassword, givenPassword):
-    return bcrypt.check_password_hash(actualPassword, givenPassword)
+# check_password(actual_pw_hash, given_password) -> Boolean
+check_password = bcrypt.check_password_hash
 
 
 def get_user(id=None, username=None, password=None, verification_key=None):
