@@ -7,6 +7,7 @@ from framework import (Rule, process_rules,
                        WebRenderer, json_renderer,
                        render_mako_string)
 
+
 def get_globals():
     user = get_current_user()
     return {

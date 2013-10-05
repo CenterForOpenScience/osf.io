@@ -9,10 +9,10 @@
     <div class="span6">
         <h2>Create Account</h2>
         <%include file="form.mako" args="
-            form=form_registration, 
+            form=form_registration,
             name='registration',
             actionString='/register/',
-            formClass='form-stacked', 
+            formClass='form-stacked',
             submitString='Create Account',
             fieldNamePrefix='register_',
         "/>
@@ -23,16 +23,17 @@
             form=form_signin,
             name='signin',
             actionString='/login/',
-            formClass='form-stacked', 
+            formClass='form-stacked',
             submitString='Sign In',
+            id='signinForm'
         "/>
         <hr />
         <h3>Forgot Password</h3>
         <%include file="form.mako" args="
             form=form_forgotpassword,
-            name='forgotpassword', 
+            name='forgotpassword',
             actionString='/forgotpassword/',
-            formClass='form-stacked', 
+            formClass='form-stacked',
             submitString='Reset Password'
         "/>
     </div>

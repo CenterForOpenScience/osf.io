@@ -78,7 +78,7 @@ def profile_view_id(uid):
 @must_be_logged_in
 def edit_profile(*args, **kwargs):
     user = kwargs['user']
-    
+
     form = request.form
 
     if form.get('name') == 'fullname' and form.get('value', '').strip():

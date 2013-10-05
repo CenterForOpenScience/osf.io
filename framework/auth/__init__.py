@@ -1,12 +1,12 @@
+# -*- coding: utf-8 -*-
+import logging
+
 from framework import session, create_session, HTTPError
 import framework.status as status
 import framework.flask as web
 import framework.bcrypt as bcrypt
-
 from modularodm.query.querydialect import DefaultQueryDialect as Q
-
 import helper
-
 from model import User
 
 from decorator import decorator
@@ -65,21 +65,26 @@ def get_user(id=None, username=None, password=None, verification_key=None):
         password = password.strip()
         try:
             user = User.find_one(*query)
-        except:
+        except Exception as err:
+            logging.error(err)
             user = None
         if user and not check_password(user.password, password):
+            logging.debug("Incorrect password attempt.")
             return False
         return user
     if verification_key:
         query.append(Q('verification_key', 'eq', verification_key))
     try:
-        return User.find_one(*query)
-    except:
+        user = User.find_one(*query)
+        return user
+    except Exception as err:
+        logging.error(err)
         return None
 
 def login(username, password):
     username = username.strip().lower()
     password = password.strip()
+    logging.info("Attempting to log in {0}".format(username))
 
     if username and password:
         user = get_user(
@@ -88,8 +93,10 @@ def login(username, password):
         )
         if user:
             if not user.is_registered:
+                logging.debug("User is not registered")
                 return 2
             elif not user.is_claimed:
+                logging.debug("User is not claimed")
                 return False
             else:
                 response = web.redirect('/dashboard/')
