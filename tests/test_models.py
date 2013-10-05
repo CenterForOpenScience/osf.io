@@ -3,8 +3,10 @@
 import nose
 from nose.tools import *  # PEP8 asserts
 
+
 from tests.base import OsfTestCase
 from framework.auth import User
+from framework.bcrypt import check_password_hash
 from website.project.model import ApiKey
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory)
@@ -18,12 +20,13 @@ class TestUser(OsfTestCase):
     def test_factory(self):
         # Clear users
         User.remove()
-        user = UserFactory()
+        user = UserFactory(password="myprecious")
         assert_equal(User.find().count(), 1)
         assert_true(user.username)
         another_user = UserFactory(username="joe@example.com")
         assert_equal(another_user.username, "joe@example.com")
         assert_equal(User.find().count(), 2)
+        assert_true(user.check_password("myprecious"))
 
     def test_is_watching(self):
         # User watches a node
@@ -34,6 +37,19 @@ class TestUser(OsfTestCase):
         self.user.save()
         assert_true(self.user.is_watching(watched_node))
         assert_false(self.user.is_watching(unwatched_node))
+
+    def test_set_password(self):
+        user = User(username="nick@cage.com", fullname="Nick Cage", is_registered=True)
+        user.set_password("ghostrider")
+        user.save()
+        assert_true(check_password_hash(user.password, 'ghostrider'))
+
+    def test_check_password(self):
+        user = User(username="nick@cage.com", fullname="Nick Cage", is_registered=True)
+        user.set_password("ghostrider")
+        user.save()
+        assert_true(user.check_password("ghostrider"))
+        assert_false(user.check_password("ghostride"))
 
 
 class TestApiKey(OsfTestCase):

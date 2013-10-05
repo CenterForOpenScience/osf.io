@@ -2,6 +2,7 @@
 import itertools
 import datetime as dt
 from pytz import utc
+from framework.bcrypt import generate_password_hash, check_password_hash
 from framework.search import Keyword
 from framework import StoredObject, fields,  Q
 from bson import ObjectId
@@ -31,6 +32,15 @@ class User(StoredObject):
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
     _meta = {'optimistic' : True}
+
+    def set_password(self, raw_password):
+        '''Set the password for this user to the hash of ``raw_password``.'''
+        self.password = generate_password_hash(raw_password)
+        return None
+
+    def check_password(self, raw_password):
+        '''Return a boolean of whether ``raw_password`` was correct.'''
+        return check_password_hash(self.password, raw_password)
 
     @property
     def surname(self):

@@ -135,29 +135,26 @@ def add_unclaimed_user(email, fullname):
         newUser.save()
         return newUser
 
-def hash_password(password):
-    return bcrypt.generate_password_hash(password.strip())
-
 
 class DuplicateEmailError(BaseException):
     pass
 
 
-def register(username, password, fullname=None):
+def register(username, password, fullname):
     username = username.strip().lower()
     fullname = fullname.strip()
 
     if not get_user(username=username):
         newUser = User(
             username=username,
-            password=hash_password(password),
             fullname=fullname,
             is_registered=True,
             is_claimed=True,
             verification_key=helper.random_string(15),
             date_registered=datetime.datetime.utcnow()
         )
-        # newUser._optimistic_insert()
+        # Set the password
+        newUser.set_password(password.strip())
         newUser.emails.append(username.strip())
         newUser.save()
         newUser.generate_keywords()
@@ -165,10 +162,13 @@ def register(username, password, fullname=None):
     else:
         raise DuplicateEmailError
 
-###############################################################################
+#### Auth-related decorators ##################################################
 
 
 def must_be_logged_in(fn):
+    '''Require that user be logged in. Modifies kwargs to include the current
+    user.
+    '''
     def wrapped(func, *args, **kwargs):
         user = get_current_user()
         if user:
@@ -182,7 +182,9 @@ def must_be_logged_in(fn):
 
 
 def must_have_session_auth(fn):
-
+    '''Require session authentication. Modifies kwargs to include the current
+    user, api_key, and node if they exist.
+    '''
     def wrapped(func, *args, **kwargs):
 
         kwargs['user'] = get_current_user()

@@ -10,8 +10,9 @@ import settings
 
 import helper
 
-from framework.auth import register, login, logout, DuplicateEmailError, get_user, hash_password
+from framework.auth import register, login, logout, DuplicateEmailError, get_user
 from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm
+
 
 def reset_password(*args, **kwargs):
     verification_key = kwargs['verification_key']
@@ -21,7 +22,7 @@ def reset_password(*args, **kwargs):
         user_obj = get_user(verification_key=verification_key)
         if user_obj:
             user_obj.verification_key = None
-            user_obj.password = hash_password(form.password.data)
+            user_obj.set_password(form.password.data)
             user_obj.save()
             status.push_status_message('Password reset')
             return framework.redirect('/account')
@@ -32,6 +33,7 @@ def reset_password(*args, **kwargs):
         'verification_key': verification_key,
     }
 
+
 def forgot_password():
     form = ForgotPasswordForm(framework.request.form, prefix='forgot_password')
 
@@ -41,8 +43,8 @@ def forgot_password():
             user_obj.verification_key = helper.random_string(20)
             user_obj.save()
             send_email.delay(
-                to=form.email.data, 
-                subject="Reset Password", 
+                to=form.email.data,
+                subject="Reset Password",
                 message="http://%s%s" % (
                     framework.request.host,
                     framework.url_for(
@@ -87,9 +89,9 @@ def auth_login(
             else:
                 status.push_status_message('''Log-in failed. Please try again or
                     reset your password''')
-    
+
         forms.push_errors_to_status(form.errors)
-    
+
     return {
         'form_registration': formr,
         'form_forgotpassword': formf,

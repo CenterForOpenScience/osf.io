@@ -14,7 +14,7 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
 
-from factory import base, Sequence, SubFactory
+from factory import base, Sequence, SubFactory, PostGenerationMethodCall
 
 from framework.auth import User
 from website.project.model import ApiKey, Node, NodeLog, WatchConfig
@@ -43,7 +43,8 @@ class UserFactory(ModularOdmFactory):
     FACTORY_FOR = User
 
     username = Sequence(lambda n: "fred{0}@example.com".format(n))
-    password = "example"
+    # Sets the password upon generation but before saving
+    password = PostGenerationMethodCall("set_password", "defaultpassword")
     fullname = Sequence(lambda n: "Freddie Mercury the {0}".format(n))
     is_registered = True
     is_claimed = True
