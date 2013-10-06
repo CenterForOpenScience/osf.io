@@ -6,20 +6,19 @@ import os
 import unittest
 import datetime as dt
 from nose.tools import *  # PEP8 asserts
-import requests
 
-from website.project.model import WatchConfig
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, TestApp
 from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
                             WatchConfigFactory, NodeFactory)
 
-PORT = int(os.environ.get("OSF_PORT", '5000'))
-BASE_URL = "http://localhost:{port}".format(port=PORT)
+from framework import app
+import new_style  # This import sets up the routes
 
 
 class TestWatchViews(OsfTestCase):
 
     def setUp(self):
+        self.app = TestApp(app)
         self.user = UserFactory.build(username='tesla@electric.com')
         api_key = ApiKeyFactory()
         self.user.api_keys.append(api_key)
@@ -46,9 +45,9 @@ class TestWatchViews(OsfTestCase):
 
     def test_watching_a_project_appends_to_users_watched_list(self):
         n_watched_then = len(self.user.watched)
-        url = BASE_URL + '/api/v1/project/{0}/watch/'.format(self.project._id)
-        res = requests.post(url,
-                            data={},
+        url = '/api/v1/project/{0}/watch/'.format(self.project._id)
+        res = self.app.post(url,
+                            params={},
                             auth=self.auth)
         self.user.reload()
         n_watched_now = len(self.user.watched)
@@ -56,15 +55,16 @@ class TestWatchViews(OsfTestCase):
         assert_equal(n_watched_now, n_watched_then + 1)
 
     def test_watching_project_twice_returns_400(self):
-        url = BASE_URL + "/api/v1/project/{0}/watch/".format(self.project._id)
-        res = requests.post(url,
-                            data={},
+        url = "/api/v1/project/{0}/watch/".format(self.project._id)
+        res = self.app.post(url,
+                            params={},
                             auth=self.auth)
         assert_equal(res.status_code, 200)
         # User tries to watch a node she's already watching
-        res2 = requests.post(url,
-                            data={},
-                            auth=self.auth)
+        res2 = self.app.post(url,
+                            params={},
+                            auth=self.auth,
+                            expect_errors=True)
         assert_equal(res2.status_code, 400)
 
     def test_unwatching_a_project_removes_from_watched_list(self):
@@ -73,10 +73,8 @@ class TestWatchViews(OsfTestCase):
         self.user.watch(watch_config)
         self.user.save()
         n_watched_then = len(self.user.watched)
-        url = BASE_URL + '/api/v1/project/{0}/unwatch/'.format(self.project._id)
-        res = requests.post(url,
-                            data={},
-                            auth=self.auth)
+        url = '/api/v1/project/{0}/unwatch/'.format(self.project._id)
+        res = self.app.post(url, auth=self.auth)
         self.user.reload()
         n_watched_now = len(self.user.watched)
         assert_equal(res.status_code, 200)
@@ -86,12 +84,12 @@ class TestWatchViews(OsfTestCase):
     def test_toggle_watch(self):
         # The user is not watching project
         assert_false(self.user.is_watching(self.project))
-        url = BASE_URL + "/api/v1/project/{0}/togglewatch/".format(self.project._id)
-        res = requests.post(url, data={}, auth=self.auth)
+        url = "/api/v1/project/{0}/togglewatch/".format(self.project._id)
+        res = self.app.post(url, auth=self.auth, content_type="application/json")
         assert_equal(res.status_code, 200)
         self.user.reload()
         # The user is now watching the project
-        assert_true(res.json()['watched'])
+        assert_true(res.json['watched'])
         assert_true(self.user.is_watching(self.project))
 
     def test_toggle_watch_node(self):
@@ -99,13 +97,13 @@ class TestWatchViews(OsfTestCase):
         node = NodeFactory(is_public=True)
         self.project.nodes.append(node)
         self.project.save()
-        url = BASE_URL + "/api/v1/project/{}/node/{}/togglewatch/".format(self.project._id,
-                                                                            node._id)
-        res = requests.post(url, data={}, auth=self.auth)
+        url = "/api/v1/project/{}/node/{}/togglewatch/".format(self.project._id,
+                                                                node._id)
+        res = self.app.post(url, auth=self.auth)
         assert_equal(res.status_code, 200)
         self.user.reload()
         # The user is now watching the sub-node
-        assert_true(res.json()['watched'])
+        assert_true(res.json['watched'])
         assert_true(self.user.is_watching(node))
 
 if __name__ == '__main__':

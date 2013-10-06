@@ -34,11 +34,7 @@ except KeyError:
 if os.environ.get("OSF_PRODUCTION", False):
     mongo_uri = 'mongodb://osf:osfosfosfosf0$f@localhost:20771/osf20130903'
 else:
-    test_db = os.environ.get("OSF_TEST_DB", False)
-    if test_db:
-        mongo_uri = 'mongodb://localhost:20771/{db}'.format(db=test_db)
-    else:
-        mongo_uri = 'mongodb://localhost:20771/osf20130903'
+    mongo_uri = 'mongodb://localhost:20771/osf20130903'
 
 #TODO: Configuration should not change between deploys - this should be dynamic.
 canonical_domain = 'openscienceframework.org'

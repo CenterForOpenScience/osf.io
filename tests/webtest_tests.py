@@ -51,6 +51,7 @@ class TestAUser(OsfTestCase):
         form['username'] = self.user.username
         form['password'] = 'science'
         # submits
+        # res.showbrowser()
         res = form.submit().follow()
         assert_equal(res.status_code, 200)
         # Sees dashboard with projects and watched projects

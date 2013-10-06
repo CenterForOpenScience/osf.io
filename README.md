@@ -53,9 +53,3 @@ To run a certain test method
 ```bash
 $ nosetests tests/test_module.py:TestClass.test_method
 ```
-
-**NOTE**: In order for views tests to work, you must run a test server that uses the test database. To start the test server:
-
-```bash
-$ make testserver
-```
