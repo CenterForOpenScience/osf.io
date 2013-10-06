@@ -1,7 +1,7 @@
 # todo: move routing to new style
 
 import framework
-from framework import redirect, Q
+from framework import Q
 
 def _rescale_ratio(nodes):
     """
@@ -36,7 +36,6 @@ def _render_nodes(nodes):
     :param nodes:
     :return:
     """
-
     return {
         'nodes' : [
             _render_node(node)

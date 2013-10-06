@@ -68,7 +68,7 @@ def get_user(id=None, username=None, password=None, verification_key=None):
         except Exception as err:
             logging.error(err)
             user = None
-        if user and not check_password(user.password, password):
+        if user and not user.check_password(password):
             logging.debug("Incorrect password attempt.")
             return False
         return user
@@ -80,6 +80,7 @@ def get_user(id=None, username=None, password=None, verification_key=None):
     except Exception as err:
         logging.error(err)
         return None
+
 
 def login(username, password):
     username = username.strip().lower()

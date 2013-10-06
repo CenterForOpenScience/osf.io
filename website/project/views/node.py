@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+import logging
+import re
+import json
+import httplib as http
+
 from framework import (
     request, redirect, must_be_logged_in, push_status_message,
     push_errors_to_status, get_current_user, update_counters, Q
@@ -19,9 +25,6 @@ from website.views import _render_nodes
 
 from framework import analytics
 
-import re
-import json
-import httplib as http
 
 @must_have_session_auth #
 @must_be_valid_project # returns project
@@ -435,8 +438,16 @@ def _get_user_activity(node, user, rescale_ratio):
     non_ua_count = total_count - ua_count # base length of blue bar
 
     # Normalize over all nodes
-    ua = ua_count / rescale_ratio * settings.user_activity_max_width
-    non_ua = non_ua_count / rescale_ratio * settings.user_activity_max_width
+    try:
+        ua = ua_count / rescale_ratio * settings.user_activity_max_width
+    except ZeroDivisionError:
+        ua = 0
+    try:
+        non_ua = non_ua_count / rescale_ratio * settings.user_activity_max_width
+    except ZeroDivisionError:
+        non_ua = 0
+
+
 
     return ua_count, ua, non_ua
 
@@ -454,8 +465,7 @@ def get_summary(*args, **kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     ua_count, ua, non_ua = _get_user_activity(node_to_use, user, kwargs['rescale_ratio'])
-
-    return {
+    data = {
         'summary' : {
             'pid' : node_to_use._primary_key,
             'purl' : node_to_use.url,
@@ -468,6 +478,7 @@ def get_summary(*args, **kwargs):
             'non_ua' : non_ua,
         }
     }
+    return data
 
 @must_be_contributor_or_public
 def get_children(*args, **kwargs):
