@@ -18,7 +18,6 @@ httplib2==0.8
 itsdangerous==0.23
 kombu==2.5.12
 lxml==3.2.3
-modular-odm==0.2
 py-bcrypt==0.3
 pymongo==2.5.1
 python-dateutil==2.1
@@ -31,9 +30,8 @@ wtforms-recaptcha==0.2.0
 zope.interface==4.0.5
 bleach==1.2.2
 pystache==0.5.3
-lxml==3.2.3
 factory-boy==2.2.1
-WebTest==2.0.9
+webtest-plus
 
 # Development version of modular-odm
 -e git://github.com/CenterForOpenScience/modular-odm.git#egg=modular-odm

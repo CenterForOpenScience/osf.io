@@ -45,7 +45,6 @@ class TestAUser(OsfTestCase):
         res = self.app.get("/").follow()
         # Clicks sign in button
         res = res.click("Create an Account or Sign-In").follow()
-        assert_equal(res.status_code, 200)
         # Fills out login info
         form = res.forms['signinForm']  # Get the form from its ID
         form['username'] = self.user.username
@@ -53,7 +52,6 @@ class TestAUser(OsfTestCase):
         # submits
         # res.showbrowser()
         res = form.submit().follow()
-        assert_equal(res.status_code, 200)
         # Sees dashboard with projects and watched projects
         assert_in("Projects", res)
         assert_in("Watched Projects", res)
@@ -61,7 +59,6 @@ class TestAUser(OsfTestCase):
     def test_sees_flash_message_on_bad_login(self):
         # Goes to log in page
         res = self.app.get("/account/").follow()
-        assert_equal(res.status_code, 200)
         # Fills the form with incorrect password
         form  = res.forms['signinForm']
         form['username'] = self.user.username
@@ -81,7 +78,6 @@ class TestAUser(OsfTestCase):
         res = self.app.get("/", auto_follow=True)
         # Clicks Dashboard link in navbar
         res = res.click("Dashboard")
-        assert_equal(res.status_code, 200)
         assert_in("Projects", res)  # Projects heading
         # The project title is listed
         assert_in(project.title, res)
