@@ -6,8 +6,9 @@ import os
 import unittest
 import datetime as dt
 from nose.tools import *  # PEP8 asserts
+from webtest_plus import TestApp
 
-from tests.base import OsfTestCase, TestApp
+from tests.base import OsfTestCase
 from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
                             WatchConfigFactory, NodeFactory)
 
