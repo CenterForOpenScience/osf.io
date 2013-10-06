@@ -33,6 +33,7 @@ bleach==1.2.2
 pystache==0.5.3
 lxml==3.2.3
 factory-boy==2.2.1
+WebTest==2.0.9
 
 # Development version of modular-odm
 -e git://github.com/CenterForOpenScience/modular-odm.git#egg=modular-odm

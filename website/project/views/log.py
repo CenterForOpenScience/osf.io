@@ -21,12 +21,10 @@ def _render_log_contributor(contributor):
     }
 
 def get_log(log_id):
-
     log = NodeLog.load(log_id)
     user = get_current_user()
     api_key = get_api_key()
     node_to_use = Node.load(log.params.get('node')) or Node.load(log.params.get('project'))
-
     node_can_edit = node_to_use.can_edit(user, api_key)
     parent_can_edit = node_to_use.node__parent and node_to_use.node__parent[0].can_edit(user, api_key)
 

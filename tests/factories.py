@@ -73,7 +73,8 @@ class ProjectFactory(NodeFactory):
 
 class NodeLogFactory(ModularOdmFactory):
     FACTORY_FOR = NodeLog
-    action = 'project_created'
+    action = 'file_added'
+    user = SubFactory(UserFactory)
 
 
 class WatchConfigFactory(ModularOdmFactory):
