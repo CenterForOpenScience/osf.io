@@ -3,8 +3,8 @@
 '''Functional tests using WebTest.'''
 import unittest
 from nose.tools import *  # PEP8 asserts
-from webtest import TestApp
-from tests.base import OsfTestCase
+
+from tests.base import OsfTestCase, TestApp
 from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
                             NodeLogFactory, ApiKeyFactory)
 
@@ -18,11 +18,14 @@ class TestAUser(OsfTestCase):
     def setUp(self):
         self.app = TestApp(app)
         self.user = UserFactory(password='science')
+        # Add an API key for quicker authentication
+        api_key = ApiKeyFactory()
+        self.user.api_keys.append(api_key)
         self.user.save()
+        self.auth = ('test', api_key._primary_key)
 
     def _login(self, username, password):
-        '''Log in a user.'''
-        # TODO(sloria): Make this faster by logging in via the API, cookies, or something else
+        '''Log in a user via at the login page.'''
         res = self.app.get("/account/").maybe_follow()
         # Fills out login info
         form = res.forms['signinForm']  # Get the form from its ID
@@ -73,8 +76,8 @@ class TestAUser(OsfTestCase):
         project.add_contributor(self.user)
         project.save()
         # Goes to homepage, already logged in
-        self._login(self.user.username, 'science')
-        res = self.app.get("/")
+        res = self._login(self.user.username, 'science')
+        res = self.app.get("/", auto_follow=True)
         # Clicks Dashboard link in navbar
         res = res.click("Dashboard")
         assert_equal(res.status_code, 200)
@@ -100,8 +103,7 @@ class TestAUser(OsfTestCase):
         self.user.watch(watch_config)
         self.user.save()
         # Goes to her dashboard, already logged in
-        self._login(self.user.username, 'science')
-        res = self.app.get("/dashboard/").maybe_follow()
+        res = self.app.get("/dashboard/", auth=self.auth, auto_follow=True)
         # Sees logs for the watched project
         assert_in("Watched Projects", res)  # Watched Projects header
         # res.showbrowser()
