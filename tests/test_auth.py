@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 import unittest
 from nose.tools import *  # PEP8 asserts
-from tests.base import OsfTestCase
+from tests.base import DbTestCase
 
 import framework.auth as auth
 from framework.auth.model import User
 
 
 
-class TestAuth(OsfTestCase):
+class TestAuth(DbTestCase):
 
     def setUp(self):
         pass

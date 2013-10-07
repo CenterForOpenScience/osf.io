@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import werkzeug.wrappers
 from werkzeug.exceptions import NotFound
 from framework import StoredObject
@@ -50,6 +51,8 @@ class Rule(object):
             useful for disambiguating routes by HTTP verb
 
         """
+        if not callable(renderer):
+            raise ValueError('Argument renderer must be callable.')
         self.routes = [
             self._ensure_slash(route)
             for route in self._ensure_list(routes)
@@ -59,9 +62,6 @@ class Rule(object):
         self.renderer = renderer
         self.view_kwargs = view_kwargs or {}
         self.endpoint_suffix = endpoint_suffix
-
-        if not callable(self.renderer):
-            raise Exception('Argument renderer must be callable.')
 
 
 def wrap_with_renderer(fn, renderer, renderer_kwargs=None):

@@ -8,7 +8,7 @@ mongoshell:
 	mongo osf20130903 --port 20771
 
 requirements:
-	pip install --upgrade -r requirements.txt
+	pip install --upgrade -r dev-requirements.txt
 
 test:
-	nosetests tests
+	nosetests tests/
