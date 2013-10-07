@@ -76,7 +76,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None):
     """
     def wrapped(*args, **kwargs):
         try:
-            session_error_code = session.get('auth_error_code')
+            session_error_code = session.data.get('auth_error_code')
             if session_error_code:
                 raise HTTPError(session_error_code)
             rv = fn(*args, **kwargs)

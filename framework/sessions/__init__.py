@@ -67,7 +67,8 @@ def before_request():
         # Hack: Avoid circular import
         from website.project.model import ApiKey
 
-        api_label, api_key_id = request.authorization
+        api_label = request.authorization.username
+        api_key_id = request.authorization.password
         api_key = ApiKey.load(api_key_id)
 
         if api_key:
@@ -88,12 +89,12 @@ def before_request():
 
             else:
                 # Invalid key: Not attached to user or node
-                session['auth_error_code'] = http.FORBIDDEN
+                session.data['auth_error_code'] = http.FORBIDDEN
 
         else:
 
             # Invalid key: Not found in database
-            session['auth_error_code'] = http.FORBIDDEN
+            session.data['auth_error_code'] = http.FORBIDDEN
 
         sessions[request._get_current_object()] = session
         return
