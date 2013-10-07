@@ -7,12 +7,12 @@ import datetime as dt
 from pytz import utc
 from nose.tools import *  # PEP8 asserts
 
-from tests.base import OsfTestCase
+from tests.base import DbTestCase
 from tests.factories import (UserFactory, ProjectFactory, ApiKeyFactory,
                             WatchConfigFactory)
 
 
-class TestWatching(OsfTestCase):
+class TestWatching(DbTestCase):
 
     def setUp(self):
         self.user = UserFactory(username="tesla@electric.com")

@@ -8,7 +8,7 @@ import datetime as dt
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
-from tests.base import OsfTestCase
+from tests.base import DbTestCase
 from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
                             WatchConfigFactory, NodeFactory)
 
@@ -16,7 +16,7 @@ from framework import app
 import new_style  # This import sets up the routes
 
 
-class TestWatchViews(OsfTestCase):
+class TestWatchViews(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)

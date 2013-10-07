@@ -12,10 +12,10 @@ from framework.routing import (
     Renderer, JSONRenderer, WebRenderer,
     render_mako_string,
 )
-from tests.common import OsfTestCase
+from tests.base import AppTestCase
 
 
-class RendererTestCase(OsfTestCase):
+class RendererTestCase(AppTestCase):
     def setUp(self):
         super(RendererTestCase, self).setUp()
         self.r = Renderer()
@@ -41,7 +41,7 @@ class RendererTestCase(OsfTestCase):
             self.r(('response text', ))
 
 
-class JSONRendererTestCase(OsfTestCase):
+class JSONRendererTestCase(AppTestCase):
 
     def setUp(self):
         super(JSONRendererTestCase, self).setUp()
@@ -87,7 +87,7 @@ class JSONRendererTestCase(OsfTestCase):
         pass
 
 
-class WebRendererTestCase(OsfTestCase):
+class WebRendererTestCase(AppTestCase):
 
     def setUp(self):
         super(WebRendererTestCase, self).setUp()
@@ -196,7 +196,7 @@ class WebRendererTestCase(OsfTestCase):
         self.assertEqual('http://google.com/', resp.location)
 
 
-class WebRendererTemplateTestCase(OsfTestCase):
+class WebRendererTemplateTestCase(AppTestCase):
 
     def test_nested_templates(self):
         """When a template passed to ``WebRenderer`` contains references to

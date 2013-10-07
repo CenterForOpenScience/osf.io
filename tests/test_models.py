@@ -4,7 +4,7 @@ import nose
 from nose.tools import *  # PEP8 asserts
 
 
-from tests.base import OsfTestCase
+from tests.base import DbTestCase
 from framework.auth import User
 from framework.bcrypt import check_password_hash
 from website.project.model import ApiKey
@@ -12,7 +12,7 @@ from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory)
 
 
-class TestUser(OsfTestCase):
+class TestUser(DbTestCase):
 
     def setUp(self):
         self.user = UserFactory()
@@ -52,7 +52,7 @@ class TestUser(OsfTestCase):
         assert_false(user.check_password("ghostride"))
 
 
-class TestApiKey(OsfTestCase):
+class TestApiKey(DbTestCase):
 
     def setUp(self):
         pass
@@ -66,7 +66,7 @@ class TestApiKey(OsfTestCase):
         assert_equal(ApiKey.find().count(), 1)
 
 
-class TestNode(OsfTestCase):
+class TestNode(DbTestCase):
 
     def setUp(self):
         self.parent = ProjectFactory()
@@ -98,7 +98,7 @@ class TestNode(OsfTestCase):
                                         self.node._primary_key))
 
 
-class TestProject(OsfTestCase):
+class TestProject(DbTestCase):
 
     def setUp(self):
         self.project = ProjectFactory()
@@ -120,7 +120,7 @@ class TestProject(OsfTestCase):
         assert_equal(watch_url, "/api/v1/project/{0}/watch/".format(self.project._primary_key))
 
 
-class TestNodeLog(OsfTestCase):
+class TestNodeLog(DbTestCase):
 
     def setUp(self):
         pass
@@ -130,7 +130,7 @@ class TestNodeLog(OsfTestCase):
         assert_true(log.action)
 
 
-class TestWatchConfig(OsfTestCase):
+class TestWatchConfig(DbTestCase):
 
     def tearDown(self):
         User.remove()

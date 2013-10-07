@@ -5,7 +5,7 @@ import unittest
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
-from tests.base import OsfTestCase
+from tests.base import DbTestCase
 from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
                             NodeLogFactory, ApiKeyFactory)
 
@@ -14,7 +14,7 @@ from framework import app
 import new_style  # This import sets up the routes
 
 
-class TestAUser(OsfTestCase):
+class TestAUser(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
