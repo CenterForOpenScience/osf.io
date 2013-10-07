@@ -143,6 +143,45 @@ def render_mako_string(tplname, data):
         mako_cache[tplname] = tpl
     return tpl.render(**data)
 
+def unpack(data, n=4):
+    """Unpack data to tuple of length n.
+
+    :param data: Object or tuple of length <= n
+    :param n: Length to pad tuple
+
+    """
+    if not isinstance(data, tuple):
+        data = (data,)
+    return data + (None,) * (n - len(data))
+
+def call_url(url, view_kwargs=None):
+    """Look up and call view function by URL.
+
+    :param url: URL
+    :param view_kwargs: Optional kwargs to pass to view function
+    :return: Data from view function
+
+    """
+    # Parse view function and args
+    func_name, func_data = app.url_map.bind('').match(url)
+    if view_kwargs is not None:
+        func_data.update(view_kwargs)
+    view_function = view_functions[func_name]
+
+    # Call view function
+    rv = view_function(**func_data)
+
+    # Extract data from return value
+    rv, _, _, _ = unpack(rv)
+
+    # Follow redirects
+    if isinstance(rv, werkzeug.wrappers.BaseResponse) \
+            and rv.status_code in REDIRECT_CODES:
+        redirect_url = rv.headers['Location']
+        return call_url(redirect_url)
+
+    return rv
+
 ### Renderers ###
 
 class Renderer(object):
@@ -152,18 +191,6 @@ class Renderer(object):
 
     def handle_error(self, error):
         raise NotImplementedError
-
-    @staticmethod
-    def unpack(data, n=4):
-        """Unpack data to tuple of length n.
-
-        :param data: Object or tuple of length <= n
-        :param n: Length to pad tuple
-
-        """
-        if not isinstance(data, tuple):
-            data = (data,)
-        return data + (None,) * (n - len(data))
 
     def __call__(self, data, *args, **kwargs):
         """Render data returned by a view function.
@@ -182,7 +209,7 @@ class Renderer(object):
             return data
 
         # Unpack tuple
-        data, status_code, headers, redirect_url = self.unpack(data)
+        data, status_code, headers, redirect_url = unpack(data)
 
         # Call subclass render
         rendered = self.render(data, redirect_url, *args, **kwargs)
@@ -264,35 +291,6 @@ class WebRenderer(Renderer):
             loaded = f.read()
         return loaded
 
-    @classmethod
-    def call_url(cls, url, view_kwargs=None):
-        """Look up and call view function by URL.
-
-        :param url: URL
-        :param view_kwargs: Optional kwargs to pass to view function
-        :return: Data from view function
-
-        """
-        # Parse view function and args
-        func_name, func_data = app.url_map.bind('').match(url)
-        if view_kwargs is not None:
-            func_data.update(view_kwargs)
-        view_function = view_functions[func_name]
-
-        # Call view function
-        rv = view_function(**func_data)
-
-        # Extract data from return value
-        rv, _, _, _ = cls.unpack(rv)
-
-        # Follow redirects
-        if isinstance(rv, werkzeug.wrappers.BaseResponse) \
-                and rv.status_code in REDIRECT_CODES:
-            redirect_url = rv.headers['Location']
-            return cls.call_url(redirect_url)
-
-        return rv
-
     def render_element(self, element, data):
 
         element_attributes = element.attrib
@@ -311,7 +309,7 @@ class WebRenderer(Renderer):
             # Catch errors and return appropriate debug divs
             # todo: add debug parameter
             try:
-                uri_data = self.call_url(uri, view_kwargs=view_kwargs)
+                uri_data = call_url(uri, view_kwargs=view_kwargs)
                 render_data.update(uri_data)
             except NotFound:
                 return '<div>URI {} not found.</div>'.format(uri), is_replace
