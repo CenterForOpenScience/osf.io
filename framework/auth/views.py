@@ -1,7 +1,6 @@
 import framework
-from framework import goback, set_previous_url
+from framework import goback, set_previous_url, push_status_message
 from framework.email.tasks import send_email
-import framework.mako as template
 import framework.status as status
 import framework.forms as forms
 
@@ -10,27 +9,34 @@ import settings
 
 import helper
 
-from framework.auth import register, login, logout, DuplicateEmailError, get_user, hash_password
+from framework.auth import register, login, logout, DuplicateEmailError, get_user
 from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm
 
+
 def reset_password(*args, **kwargs):
+
     verification_key = kwargs['verification_key']
     form = ResetPasswordForm(framework.request.form)
 
-    if form.validate():
-        user_obj = get_user(verification_key=verification_key)
-        if user_obj:
-            user_obj.verification_key = None
-            user_obj.password = hash_password(form.password.data)
-            user_obj.save()
-            status.push_status_message('Password reset')
-            return framework.redirect('/account')
+    user_obj = get_user(verification_key=verification_key)
+    if not user_obj:
+        push_status_message('Invalid verification key')
+        return {
+            'verification_key': verification_key
+        }
 
-    # todo: send form errors to status / httperror
+    if form.validate():
+        user_obj.verification_key = None
+        user_obj.set_password(form.password.data)
+        user_obj.save()
+        status.push_status_message('Password reset')
+        return framework.redirect('/account/')
+
+    forms.push_errors_to_status(form.errors)
     return {
-        'form_resetpassword': form,
         'verification_key': verification_key,
     }
+
 
 def forgot_password():
     form = ForgotPasswordForm(framework.request.form, prefix='forgot_password')
@@ -41,12 +47,12 @@ def forgot_password():
             user_obj.verification_key = helper.random_string(20)
             user_obj.save()
             send_email.delay(
-                to=form.email.data, 
-                subject="Reset Password", 
+                to=form.email.data,
+                subject="Reset Password",
                 message="http://%s%s" % (
                     framework.request.host,
                     framework.url_for(
-                        'reset_password',
+                        'OsfWebRenderer__reset_password',
                         verification_key=user_obj.verification_key
                     )
                 )
@@ -68,13 +74,10 @@ def auth_login(
         registration_form=None,
         forgot_password_form=None
 ):
-    form = SignInForm(framework.request.form)
-    formr = registration_form or RegistrationForm(prefix='register')
-    formf = forgot_password_form or ForgotPasswordForm(prefix='forgot_password')
-
     direct_call = True if registration_form or forgot_password_form else False
 
     if framework.request.method == 'POST' and not direct_call:
+        form = SignInForm(framework.request.form)
         if form.validate():
             response = login(form.username.data, form.password.data)
             if response:
@@ -87,14 +90,10 @@ def auth_login(
             else:
                 status.push_status_message('''Log-in failed. Please try again or
                     reset your password''')
-    
+
         forms.push_errors_to_status(form.errors)
-    
-    return {
-        'form_registration': formr,
-        'form_forgotpassword': formf,
-        'form_signin': form,
-    }
+
+    return {}
 
 def auth_logout():
     logout()

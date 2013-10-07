@@ -31,10 +31,9 @@ except KeyError:
     cache_path = os.path.join(base_path, 'cache')
     uploads_path = os.path.join(base_path, 'uploads')
 
-try:
-    os.environ['OSF_PRODUCTION']
+if os.environ.get("OSF_PRODUCTION", False):
     mongo_uri = 'mongodb://osf:osfosfosfosf0$f@localhost:20771/osf20130903'
-except KeyError:
+else:
     mongo_uri = 'mongodb://localhost:20771/osf20130903'
 
 #TODO: Configuration should not change between deploys - this should be dynamic.

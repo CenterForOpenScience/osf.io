@@ -38,3 +38,18 @@ $ make mongo
 ```bash
 $ make server
 ```
+
+Running Tests
+=============
+
+To run all tests:
+
+```bash
+$ nosetests tests/
+```
+
+To run a certain test method
+
+```bash
+$ nosetests tests/test_module.py:TestClass.test_method
+```

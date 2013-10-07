@@ -1,45 +1,49 @@
+# -*- coding: utf-8 -*-
+import subprocess
+import uuid
+import hashlib
+import calendar
+import datetime
+import os
+import unicodedata
+import logging
+
+import markdown
+from markdown.extensions import wikilinks
+from dulwich.repo import Repo
+from dulwich.object_store import tree_lookup_path
+
 from framework.mongo import ObjectId
 from framework.auth import User, get_user
 from framework.analytics import get_basic_counters, increment_user_activity_counters
 from framework.search import generate_keywords
 from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
+from framework import StoredObject, fields
+from framework.search.solr import update_solr, delete_solr_doc
 
 from website import settings
 
-from framework import StoredObject, fields
-
-import os
-import uuid
-import hashlib
-import calendar
-import datetime
-import markdown
-import unicodedata
-from markdown.extensions import wikilinks
-
-from dulwich.repo import Repo
-from dulwich.object_store import tree_lookup_path
-
-import subprocess
-
-from framework.search.solr import update_solr, delete_solr_doc
 
 def utc_datetime_to_timestamp(dt):
     return float(
         str(calendar.timegm(dt.utcnow().utctimetuple())) + '.' + str(dt.microsecond)
     )
 
+
 def normalize_unicode(ustr):
     return unicodedata.normalize('NFKD', ustr)\
         .encode('ascii', 'ignore')
 
+
 class ApiKey(StoredObject):
 
+    # The key is also its primary key
     _id = fields.StringField(
         primary=True,
         default=lambda: str(ObjectId()) + str(uuid.uuid4())
     )
+    # A display name
     label = fields.StringField()
 
     @property
@@ -50,6 +54,7 @@ class ApiKey(StoredObject):
     def node(self):
         return self.node__keyed[0] if self.node__keyed else None
 
+
 class NodeLog(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
@@ -59,6 +64,7 @@ class NodeLog(StoredObject):
 
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
+
 
 class NodeFile(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
@@ -79,11 +85,13 @@ class NodeFile(StoredObject):
 
     uploader = fields.ForeignField('user', backref='uploads')
 
+
 class Tag(StoredObject):
 
     _id = fields.StringField(primary=True)
     count_public = fields.IntegerField(default=0)
     count_total = fields.IntegerField(default=0)
+
 
 class Node(StoredObject):
     _id = fields.StringField(primary=True)
@@ -128,7 +136,7 @@ class Node(StoredObject):
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
-    _meta = {'optimistic' : True}
+    _meta = {'optimistic': True}
 
     def can_edit(self, user, api_key=None):
 
@@ -144,7 +152,7 @@ class Node(StoredObject):
     def update_solr(self):
         """Send the current state of the object to Solr, or delete it from Solr
         as appropriate
-        
+
         """
         if not settings.use_solr:
             return
@@ -393,33 +401,33 @@ class Node(StoredObject):
             new_tag = Tag.load(tag)
             if not new_tag:
                 new_tag = Tag(_id=tag)
-            new_tag.count_total+=1
+            new_tag.count_total += 1
             if self.is_public:
-                new_tag.count_public+=1
+                new_tag.count_public += 1
             new_tag.save()
             self.tags.append(new_tag)
             self.save()
             self.add_log(
                 action='tag_added',
                 params={
-                    'project':self.parent_id,
-                    'node':self._primary_key,
-                    'tag':tag,
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'tag': tag,
                 },
                 user=user,
                 api_key=api_key
             )
 
     def get_file(self, path, version=None):
-        if not version == None:
+        if version is not None:
             folder_name = os.path.join(settings.uploads_path, self._primary_key)
             if os.path.exists(os.path.join(folder_name, ".git")):
-                file_object =  NodeFile.load(self.files_versions[path.replace('.', '_')][version])
+                file_object = NodeFile.load(self.files_versions[path.replace('.', '_')][version])
                 repo = Repo(folder_name)
                 tree = repo.commit(file_object.git_commit).tree
-                (mode,sha) = tree_lookup_path(repo.get_object,tree,path)
+                (mode, sha) = tree_lookup_path(repo.get_object, tree, path)
                 return repo[sha].data, file_object.content_type
-        return None,None
+        return None, None
 
     def get_file_object(self, path, version=None):
         if version is not None:
@@ -455,8 +463,6 @@ class Node(StoredObject):
             repo = Repo(repo_path)
 
             message = '{path} deleted'.format(path=path)
-
-            print 'api_key is ', api_key
             committer = self._get_committer(user, api_key)
 
             commit_id = repo.do_commit(message, committer)
@@ -666,17 +672,23 @@ class Node(StoredObject):
                     self.node__parent[0]._primary_key,
                     self._primary_key
                 )
-        return ''
+        logging.error("Node {0} has a parent that is not a project".format(self._id))
+        return None
 
     @property
     def api_url(self):
         return '/api/v1' + self.url
 
     @property
+    def watch_url(self):
+        return os.path.join(self.api_url, "watch/")
+
+    @property
     def parent_id(self):
         if self.node__parent:
             return self.node__parent[0]._id
         return None
+
 
     def is_contributor(self, user):
         if user:

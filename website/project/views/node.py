@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+import logging
+import re
+import json
+import httplib as http
+
 from framework import (
     request, redirect, must_be_logged_in, push_status_message,
     push_errors_to_status, get_current_user, update_counters, Q
@@ -19,9 +25,6 @@ from website.views import _render_nodes, _render_node_summary, _render_node_summ
 
 from framework import analytics
 
-import re
-import json
-import httplib as http
 
 @must_have_session_auth #
 @must_be_valid_project # returns project
@@ -277,24 +280,47 @@ def watch_post(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     watch_config.save()
     user.save()
+    return {'status': 'success', 'watchCount': len(node_to_use.watchconfig__watched)}
 
-
-@must_have_session_auth # returns user or api_node
-@must_be_valid_project # returns project
+@must_have_session_auth  # returns user or api_node
+@must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_not_be_registration
 def unwatch_post(*args, **kwargs):
-    print("unwatch post!")
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     watch_config = WatchConfig(node=node_to_use,
                                 digest=request.form.get("digest", False),
                                 immediate=request.form.get('immediate', False))
     try:
-        user.unwatch(watch_config)
+        user.unwatch(watch_config, save=True)
     except ValueError:  # Node isn't being watched
         raise HTTPError(http.BAD_REQUEST)
-    user.save()
+    return {'status': 'success', 'watchCount': len(node_to_use.watchconfig__watched)}
+
+
+@must_have_session_auth  # returns user or api_node
+@must_be_valid_project  # returns project
+@must_be_contributor_or_public
+@must_not_be_registration
+def togglewatch_post(*args, **kwargs):
+    '''View for toggling watch mode for a node.'''
+    node = kwargs['node'] or kwargs['project']
+    user = kwargs['user']
+    watch_config = WatchConfig(node=node,
+                                digest=request.form.get("digest", False),
+                                immediate=request.form.get('immediate', False))
+    try:
+        if user.is_watching(node):
+            user.unwatch(watch_config, save=True)
+        else:
+            user.watch(watch_config, save=True)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
+    return {'status': 'success',
+            'watchCount': len(node.watchconfig__watched),
+            "watched": user.is_watching(node)
+            }
 
 
 @must_have_session_auth # returns user or api_node
@@ -322,7 +348,6 @@ def component_remove(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
         # push_status_message('Component(s) unable to be deleted')
         # return redirect(node_to_use.url)
-
 
 
 @must_be_valid_project
@@ -388,20 +413,43 @@ def _view_project(node_to_use, user):
             for fork in node_to_use.node__forked
             if not fork.is_deleted
         ],
-
+        'node_watched_count': len(node_to_use.watchconfig__watched),
         'parent_id' : node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
         'parent_title' : node_to_use.node__parent[0].title if node_to_use.node__parent else None,
         'parent_url' : node_to_use.node__parent[0].url if node_to_use.node__parent else None,
 
         'user_is_contributor' : node_to_use.is_contributor(user),
         'user_can_edit' : node_to_use.is_contributor(user) and not node_to_use.is_registration,
-
+        'user_is_watching': user.is_watching(node_to_use),
     }
+
+
+def _get_user_activity(node, user, rescale_ratio):
+
+    # Counters
+    total_count = len(node.logs)
+
+    # Note: It's typically much faster to find logs of a given node
+    # attached to a given user using node.logs.find(...) than by
+    # loading the logs into Python and checking each one. However,
+    # using deep caching might be even faster down the road.
+
+    ua_count = node.logs.find(Q('user', 'eq', user)).count()
+    non_ua_count = total_count - ua_count # base length of blue bar
+
+    # Normalize over all nodes
+    try:
+        ua = ua_count / rescale_ratio * settings.user_activity_max_width
+    except ZeroDivisionError:
+        ua = 0
+    try:
+        non_ua = non_ua_count / rescale_ratio * settings.user_activity_max_width
+    except ZeroDivisionError:
+        non_ua = 0
 
 
 @must_be_valid_project
 def get_recent_logs(*args, **kwargs):
-
     node_to_use = kwargs['node'] or kwargs['project']
     logs = list(reversed(node_to_use.logs._to_primary_keys()))[:3]
     return {'logs' : logs}

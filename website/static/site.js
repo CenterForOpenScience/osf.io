@@ -18,7 +18,10 @@ var setStatus = function(status){
     $('#alert-container').append(status);//'<div class=\'alert-message warning fade in\' data-alert=\'alert\'><a class=\'close\' href=\'#\'>&times;</a><p>'+ status +'</p></div>');
 };
 
-var forkNode = function(){
+
+window.NodeActions = {};  // Namespace for NodeActions
+
+NodeActions.forkNode = function(){
   $.ajax({
     url: nodeToUseUrl() + "/fork/",
     type:"POST",
@@ -26,6 +29,24 @@ var forkNode = function(){
     window.location = response;
   });
 };
+
+NodeActions.toggleWatch = function () {
+    // Send POST request to node's watch API url and update the watch count
+    $.ajax({
+        url: nodeToUseUrl() + "/togglewatch/",
+        type: "POST",
+        dataType: "json",
+        success: function(data, status, xhr) {
+            // Update watch count in DOM
+            $watchCount = $("#watchCount");
+            if (data["watched"]) { // If the user is watching
+                $watchCount.html("Unwatch&nbsp;" + data["watchCount"]);
+            } else {
+                $watchCount.html("Watch&nbsp;" + data["watchCount"]);
+            };
+        }
+    });
+}
 
 var addNodeToProject = function(node, project){
     $.ajax({
@@ -50,9 +71,9 @@ var removeUser = function(userid, name, el){
         }).done(function(response){
                 window.location.reload();
             });
-        
-    }         
-    return false;  
+
+    }
+    return false;
 };
 
 $(document).ready(function(){
@@ -60,7 +81,7 @@ $(document).ready(function(){
     $('.nav a[href="' + location.pathname + '"]').parent().addClass('active');
     $('.nav a[href="' + location.pathname + '"]').parent().addClass('active');
     $('.tabs a[href="' + location.pathname + '"]').parent().addClass('active');
-    
+
     $('#tagitfy').tagit({
               availableTags: ["analysis", "methods", "introduction", "hypotheses"], // this param is of course optional. it's for autocomplete.
               // configure the name of the input field (will be submitted with form), default: item[tags]

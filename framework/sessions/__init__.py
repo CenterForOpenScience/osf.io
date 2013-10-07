@@ -72,13 +72,11 @@ def before_request():
         api_key = ApiKey.load(api_key_id)
 
         if api_key:
-
             user = api_key.user__keyed and api_key.user__keyed[0]
             node = api_key.node__keyed and api_key.node__keyed[0]
 
             session.data['auth_api_label'] = api_label
             session.data['auth_api_key'] = api_key._primary_key
-
             if user:
                 session.data['auth_user_username'] = user.username
                 session.data['auth_user_id'] = user._primary_key
@@ -112,6 +110,7 @@ def before_request():
     # Retry request, preserving status code
     response = redirect(request.path, code=307)
     return create_session(response)
+
 
 @app.after_request
 def after_request(response):

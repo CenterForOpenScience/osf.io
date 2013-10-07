@@ -6,21 +6,21 @@ import unittest
 import datetime as dt
 from pytz import utc
 from nose.tools import *  # PEP8 asserts
-from website.models import User, Node, WatchConfig
-from framework import Q
+
+from tests.base import OsfTestCase
+from tests.factories import (UserFactory, ProjectFactory, ApiKeyFactory,
+                            WatchConfigFactory)
 
 
-class TestWatching(unittest.TestCase):
+class TestWatching(OsfTestCase):
 
     def setUp(self):
-        # FIXME(sloria): This affects the development database;
-        # Assumes a user and Node have been created. Use
-        # fixtures/factories later
-        self.user = User.load("Or8W0")
-        self.project = Node.find(Q('category', 'eq', 'project'))[0]
+        self.user = UserFactory(username="tesla@electric.com")
+        self.project = ProjectFactory(creator=self.user)
         # add some log objects
-        # FIXME(sloria): Assumes user has an API Key
-        api_key = self.user.api_keys[0]
+        api_key = ApiKeyFactory()
+        self.user.api_keys.append(api_key)
+        self.user.save()
         # Clear project logs
         self.project.logs = []
         self.project.save()
@@ -40,19 +40,21 @@ class TestWatching(unittest.TestCase):
     def test_watch_adds_to_watched_list(self):
         n_watched_then = len(self.user.watched)
         # A user watches a WatchConfig
-        config = WatchConfig(node=self.project)
-        self.user.watch(config)
+        config = WatchConfigFactory(node=self.project)
+        self.user.watch(config, save=True)
         n_watched_now = len(self.user.watched)
         assert_equal(n_watched_now, n_watched_then + 1)
+        assert_true(self.user.is_watching(self.project))
 
     def test_unwatch_removes_from_watched_list(self):
         # The user has already watched a project
         self._watch_project(self.project)
-        config = WatchConfig(node=self.project)
+        config = WatchConfigFactory(node=self.project)
         n_watched_then = len(self.user.watched)
         self.user.unwatch(config)
         n_watched_now = len(self.user.watched)
         assert_equal(n_watched_now, n_watched_then - 1)
+        assert_false(self.user.is_watching(self.project))
 
     @unittest.skip("Won't work because the old log's id doesn't encode the correct log date")
     def test_get_recent_log_ids(self):
@@ -70,12 +72,12 @@ class TestWatching(unittest.TestCase):
         assert_equal(len(log_ids), 2)
 
     def _watch_project(self, project):
-        watch_config = WatchConfig(node=project)
+        watch_config = WatchConfigFactory(node=project)
         self.user.watch(watch_config)
         self.user.save()
 
     def _unwatch_project(self, project):
-        watch_config = WatchConfig(node=project)
+        watch_config = WatchConfigFactory(node=project)
         self.user.watch(watch_config)
         self.user.save()
 

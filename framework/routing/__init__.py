@@ -186,6 +186,8 @@ def call_url(url, view_kwargs=None):
 
 class Renderer(object):
 
+    CONTENT_TYPE = "text/html"
+
     def render(self, data, redirect_url, *args, **kwargs):
         raise NotImplementedError
 
@@ -218,6 +220,10 @@ class Renderer(object):
         if isinstance(rendered, werkzeug.wrappers.BaseResponse):
             return rendered
 
+        # Set content type in headers
+        headers = headers or {}
+        headers["Content-Type"] = self.CONTENT_TYPE + "; charset=" + kwargs.get("charset", "utf-8")
+
         # Package as response
         return make_response(rendered, status_code, headers)
 
@@ -227,6 +233,9 @@ class JSONRenderer(Renderer):
     redirects from views and exceptions.
 
     """
+
+    CONTENT_TYPE = "application/json"
+
     # todo: remove once storedobjects are no longer passed from view functions
     class Encoder(json.JSONEncoder):
         def default(self, obj):
@@ -250,6 +259,8 @@ class WebRenderer(Renderer):
     from views and exceptions.
 
     """
+
+    CONTENT_TYPE = "text/html"
     error_template = 'error.html'
 
     def __init__(self, template_name, renderer, data=None, template_dir=TEMPLATE_DIR):

@@ -49,7 +49,7 @@ def must_be_valid_project(fn):
             kwargs['project'] = project
         else:
             project = kwargs['project']
-        
+
         if not project or not project.category == 'project':
             raise HTTPError(http.NOT_FOUND)
             # push_status_message('Not a valid project')
@@ -76,7 +76,7 @@ def must_be_valid_project(fn):
                 raise HTTPError(http.GONE)
                 # push_status_message('This component has been deleted')
                 # return redirect('/')
-            
+
         else:
             kwargs['node'] = None
 
@@ -102,7 +102,7 @@ def must_be_contributor(fn):
             kwargs['node'] = node
 
         node_to_use = node or project
-        
+
         if 'user' in kwargs:
             user = kwargs['user']
         else:
@@ -117,7 +117,7 @@ def must_be_contributor(fn):
             # push_status_message('You are not authorized to perform that action \
             #     for this node')
             # return redirect('/')
-        
+
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)
 
@@ -163,6 +163,6 @@ def must_be_contributor_or_public(fn):
             raise HTTPError(http.FORBIDDEN)
             # push_status_message('You are not authorized to perform that action for this node')
             # return redirect('/')
-        
+
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)

@@ -6,13 +6,13 @@
 
     % for node in nodes:
         <div mod-meta='{
-                "tpl" : "util/render_node.html",
-                "uri" : "${node['api_url']}get_summary/",
-                "view_kwargs" : {
+                "tpl": "util/render_node.html",
+                "uri": "${node['api_url']}get_summary/",
+                "view_kwargs": {
                     "rescale_ratio" : ${rescale_ratio},
                     "uid" : "${user_id}"
                 },
-                "replace" : true
+                "replace": true
             }'>
         </div>
     % endfor

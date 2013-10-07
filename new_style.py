@@ -7,6 +7,7 @@ from framework import (Rule, process_rules,
                        WebRenderer, json_renderer,
                        render_mako_string)
 
+
 def get_globals():
     user = get_current_user()
     return {
@@ -88,6 +89,17 @@ process_rules(app, [
 
 ], prefix='/api/v1')
 
+### Forms ###
+
+process_rules(app, [
+
+    Rule('/forms/registration/', 'get', website_routes.registration_form, json_renderer),
+    Rule('/forms/signin/', 'get', website_routes.signin_form, json_renderer),
+    Rule('/forms/forgot_password/', 'get', website_routes.forgot_password_form, json_renderer),
+    Rule('/forms/reset_password/', 'get', website_routes.reset_password_form, json_renderer),
+
+], prefix='/api/v1')
+
 ### Discovery ###
 
 process_rules(app, [
@@ -106,7 +118,7 @@ process_rules(app, [
         '/resetpassword/<verification_key>/',
         ['get', 'post'],
         auth_views.reset_password,
-        OsfWebRenderer('resetpassword.mako', render_mako_string)
+        OsfWebRenderer('public/resetpassword.mako', render_mako_string)
     ),
 
     Rule('/register/', 'post', auth_views.auth_register_post, OsfWebRenderer('public/login.mako', render_mako_string)),
@@ -504,6 +516,11 @@ process_rules(app, [
         '/project/<pid>/unwatch/',
         '/project/<pid>/node/<nid>/unwatch/'
     ], 'post', project_views.node.unwatch_post, json_renderer),
+
+    Rule([
+        '/project/<pid>/togglewatch/',
+        '/project/<pid>/node/<nid>/togglewatch/'
+    ], 'post', project_views.node.togglewatch_post, json_renderer),
 
 
 ], prefix='/api/v1')

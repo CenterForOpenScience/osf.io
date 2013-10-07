@@ -2,7 +2,9 @@
 
 import framework
 from framework.auth import must_have_session_auth
-from framework import redirect, Q
+from framework import Q
+from framework.forms import utils
+from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm
 from website import settings
 
 def _rescale_ratio(nodes):
@@ -38,7 +40,6 @@ def _render_nodes(nodes):
     :param nodes:
     :return:
     """
-
     return {
         'nodes' : [
             _render_node(node)
@@ -121,3 +122,15 @@ def dashboard(*args, **kwargs):
 
 def reproducibility():
     return framework.redirect('/project/EZcUj/wiki')
+
+def registration_form():
+    return utils.jsonify(RegistrationForm(prefix='register'))
+
+def signin_form():
+    return utils.jsonify(SignInForm())
+
+def forgot_password_form():
+    return utils.jsonify(ForgotPasswordForm(prefix='forgot_password'))
+
+def reset_password_form():
+    return utils.jsonify(ResetPasswordForm())

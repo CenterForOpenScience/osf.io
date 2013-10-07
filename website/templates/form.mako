@@ -7,8 +7,13 @@
     submitString='Create Account',
     htmlReplacements=None,
     fieldNamePrefix='',
+    id=None
 " />
-<form name="${name}" method="${methodString}" ${"action=\""+actionString+"\"" if actionString else ""} class="${formClass}">
+<form
+    % if id:
+        id="${id}"
+    % endif
+    name="${name}" method="${methodString}" ${"action=\""+actionString+"\"" if actionString else ""} class="${formClass}">
     <fieldset>
         % for field in form:
             <div class="clearfix">

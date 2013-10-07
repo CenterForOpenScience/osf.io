@@ -2,6 +2,7 @@
 import itertools
 import datetime as dt
 from pytz import utc
+from framework.bcrypt import generate_password_hash, check_password_hash
 from framework.search import Keyword
 from framework import StoredObject, fields,  Q
 from bson import ObjectId
@@ -10,7 +11,6 @@ from framework.search import solr
 
 from website import settings
 
-import datetime
 
 class User(StoredObject):
     _id = fields.StringField(primary=True)
@@ -32,6 +32,15 @@ class User(StoredObject):
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
     _meta = {'optimistic' : True}
+
+    def set_password(self, raw_password):
+        '''Set the password for this user to the hash of ``raw_password``.'''
+        self.password = generate_password_hash(raw_password)
+        return None
+
+    def check_password(self, raw_password):
+        '''Return a boolean of whether ``raw_password`` was correct.'''
+        return check_password_hash(self.password, raw_password)
 
     @property
     def surname(self):
@@ -157,11 +166,16 @@ class User(StoredObject):
         '''
         for each in self.watched:
             if watch_config.node._id == each.node._id:
-                self.watched.remove(each)
+                each.__class__.remove_one(each)
                 if save:
                     self.save()
                 return None
         raise ValueError('Node not being watched.')
+
+    def is_watching(self, node):
+        '''Return whether a not a user is watching a Node.'''
+        watched_node_ids = set([config.node._id for config in self.watched])
+        return node._id in watched_node_ids
 
     def get_recent_log_ids(self, since=None):
         '''Return a generator of recent logs' ids.

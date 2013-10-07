@@ -6,14 +6,20 @@
 <div class="row">
     <div class="span1">&nbsp;</div>
     <div class="span6">
-        <%include file="form.mako" args="
-            form=form_resetpassword,
-            name='resetpassword', 
-            actionString='/resetpassword/' + verification_key, 
-            formClass='form-stacked', 
-            submitString='Reset Password'
-        "/>
-     </div>
-     <div class="span4">&nbsp;</div>
+        <div mod-meta='{
+                "tpl": "util/render_form.mako",
+                "uri": "/api/v1/forms/reset_password/",
+                "kwargs": {
+                    "name": "resetpassword",
+                    "method_string": "POST",
+                    "action_string": "/resetpassword/${verification_key}/",
+                    "form_class": "form-stacked",
+                    "submit_string": "Reset Password"
+                },
+                "replace": true
+            }'>
+        </div>
+    </div>
+    <div class="span4">&nbsp;</div>
     <div class="span1">&nbsp;</div>
 </div>
