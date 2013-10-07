@@ -163,13 +163,17 @@ process_rules(app, [
 # Web
 
 process_rules(app, [
+
     Rule('/search/', 'get', search_views.search_search, OsfWebRenderer('search.mako', render_mako_string)),
+
 ])
 
 # API
 
 process_rules(app, [
+
     Rule('/search/', 'get', search_views.search_search, json_renderer),
+
 ], prefix='/api/v1')
 
 # Project
