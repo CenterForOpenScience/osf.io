@@ -82,6 +82,12 @@ process_rules(app, [
 
 ])
 
+process_rules(app, [
+
+    Rule('/dashboard/get_nodes/', 'get', website_routes.get_dashboard_nodes, json_renderer),
+
+], prefix='/api/v1')
+
 ### Discovery ###
 
 process_rules(app, [
@@ -202,6 +208,15 @@ process_rules(app, [
         '/project/<pid>/permissions/<permissions>/',
         '/project/<pid>/node/<nid>/permissions/<permissions>/',
     ], 'get', project_views.node.project_set_permissions, OsfWebRenderer('project.html', render_mako_string)),
+
+    ### Logs ###
+
+    Rule('/log/<log_id>/', 'get', project_views.log.get_log, OsfWebRenderer('util/render_log.html', render_mako_string)),
+    Rule([
+        '/project/<pid>/log/',
+        '/project/<pid>/node/<nid>/log/',
+    ], 'get', project_views.log.get_logs, OsfWebRenderer('util/render_logs.html', render_mako_string)),
+
 
     ### Files ###
 

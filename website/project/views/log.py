@@ -1,5 +1,5 @@
 
-from framework import User, get_current_user
+from framework import User, request, get_current_user
 from framework.auth import get_api_key
 from ..model import Node, NodeLog
 from ..decorators import must_be_valid_project, must_be_contributor_or_public
@@ -59,6 +59,11 @@ def get_log(log_id):
 def get_logs(*args, **kwargs):
     project = kwargs['project']
     logs = list(reversed(project.logs._to_primary_keys()))
-    if 'count' in kwargs:
-        logs = logs[:kwargs['count']]
+    if 'count' in request.args:
+        count = int(request.args['count'])
+    elif 'count' in kwargs:
+        count = kwargs['count']
+    else:
+        count = 10
+    logs = logs[:count]
     return {'logs' : logs}

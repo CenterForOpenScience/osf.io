@@ -71,21 +71,41 @@
     %endif
 
 
-    <script>
+<script>
+
+    var _openCloseNode = function(node_id) {
+
+        var icon = $("#icon-" + node_id),
+            body = $("#body-" + node_id);
+
+        body.toggleClass('hide');
+
+        if ( body.hasClass('hide') ) {
+            icon.removeClass('icon-minus');
+            icon.addClass('icon-plus');
+        }else{
+            icon.removeClass('icon-plus');
+            icon.addClass('icon-minus');
+        }
+    }
+
     var openCloseNode = function(node_id){
-  icon = $("#icon-" + node_id);
-  body = $("#body-" + node_id);
+        var logs = $('#logs-' + node_id);
+        console.log(logs.attr("data-uri"));
+        if (logs.html() === "") {
+            $.get(
+                logs.attr('data-uri'),
+                {count: 3},
+                function(response) {
+                    logs.html(response);
+                    _openCloseNode(node_id);
+                }
+            );
+        } else {
+            _openCloseNode(node_id);
+        }
 
-  body.toggleClass('hide');
-
-  if ( body.hasClass('hide') ) {
-    icon.removeClass('icon-minus');
-    icon.addClass('icon-plus');
-  }else{
-    icon.removeClass('icon-plus');
-    icon.addClass('icon-minus');
-  }
-};
+    };
 </script>
     <!--uploads-->
     <link rel="stylesheet" href="/static/css/style.css">

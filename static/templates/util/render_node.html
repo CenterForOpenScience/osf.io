@@ -1,36 +1,37 @@
-<li id="projects-widget" node_id="${summary['pid']}" class="project list-group-item" style="display: list-item;">
+<li id="projects-widget" node_id="${summary['id']}" class="project list-group-item" style="display: list-item;">
     <h3 style="line-height:18px;">
         <span style="display:inline-block; width: 400px">
-        <a href="${summary['purl']}">${summary['title']}</a>
+        <a href="${summary['url']}">${summary['title']}</a>
         % if is_registration:
             | registered: ${registered_date}
         % endif
         </span>
-        <i style="float:right;" id="icon-${summary['pid']}" class="icon-plus" onclick="openCloseNode('${summary['pid']}');"></i>
+        % if summary['visibility'] == 'full':
+            <i style="float:right;" id="icon-${summary['id']}" class="icon-plus" onclick="openCloseNode('${summary['id']}');"></i>
+        % endif
     </h3>
 
-    <!--Stacked bar to visualize user activity level against total activity level of a project -->
-    <!--Length of the stacked bar is normalized over all projects -->
-    <div class="user-activity-meter">
-        <ul class="meter-wrapper">
-            <li class="ua-meter" data-toggle="tooltip" title="${user_full_name} made ${summary['ua_count']} contributions" style="width:${summary['ua']}px;"></li>
-            <li class="pa-meter" style="width:${summary['non_ua']}px;"></li>
-            <li class="pa-meter-label">${summary['nlogs']} contributions</li>
-        </ul>
-    </div>
+    % if summary['visibility'] == 'full':
 
-    <script>
-        $('.ua-meter').tooltip();
-    </script>
+        <!--Stacked bar to visualize user activity level against total activity level of a project -->
+        <!--Length of the stacked bar is normalized over all projects -->
+        <div class="user-activity-meter">
+            <ul class="meter-wrapper">
+                <li class="ua-meter" data-toggle="tooltip" title="${user_full_name} made ${summary['ua_count']} contributions" style="width:${summary['ua']}px;"></li>
+                <li class="pa-meter" style="width:${summary['non_ua']}px;"></li>
+                <li class="pa-meter-label">${summary['nlogs']} contributions</li>
+            </ul>
+        </div>
 
-    <div class="body hide" id="body-${summary['pid']}" style="overflow:hidden;">
-          Recent Activity
-          % if summary['logs']:
-              <dl class="dl-horizontal activity-log">
-                  % for log in summary['logs']:
-                        <div mod-meta='{"tpl":"util/render_log.html","uri":"/api/v1/log/${log}/", "replace": true}'></div>
-                  % endfor
-              </dl>
-          % endif
-    </div>
+        <script>
+            $('.ua-meter').tooltip();
+        </script>
+
+        <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
+            Recent Activity
+            <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['url']}log/"></div>
+        </div>
+
+    % endif
+
 </li>

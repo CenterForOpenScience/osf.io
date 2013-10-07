@@ -15,7 +15,7 @@ from .. import clean_template_name
 
 from website import settings
 from website import filters
-from website.views import _render_nodes
+from website.views import _render_nodes, _render_node_summary, _render_node_summary_public
 
 from framework import analytics
 
@@ -399,24 +399,12 @@ def _view_project(node_to_use, user):
     }
 
 
-def _get_user_activity(node, user, rescale_ratio):
+@must_be_valid_project
+def get_recent_logs(*args, **kwargs):
 
-    # Counters
-    total_count = len(node.logs)
-
-    # Note: It's typically much faster to find logs of a given node
-    # attached to a given user using node.logs.find(...) than by
-    # loading the logs into Python and checking each one. However,
-    # using deep caching might be even faster down the road.
-
-    ua_count = node.logs.find(Q('user', 'eq', user)).count()
-    non_ua_count = total_count - ua_count # base length of blue bar
-
-    # Normalize over all nodes
-    ua = ua_count / rescale_ratio * settings.user_activity_max_width
-    non_ua = non_ua_count / rescale_ratio * settings.user_activity_max_width
-
-    return ua_count, ua, non_ua
+    node_to_use = kwargs['node'] or kwargs['project']
+    logs = list(reversed(node_to_use.logs._to_primary_keys()))[:3]
+    return {'logs' : logs}
 
 @must_be_valid_project
 def get_summary(*args, **kwargs):
@@ -429,22 +417,12 @@ def get_summary(*args, **kwargs):
     parent_can_edit = node_to_use.node__parent and node_to_use.node__parent[0].can_edit(user, api_key)
 
     if not node_can_edit and not parent_can_edit:
-        raise HTTPError(http.FORBIDDEN)
-
-    ua_count, ua, non_ua = _get_user_activity(node_to_use, user, kwargs['rescale_ratio'])
+        summary = _render_node_summary_public(node_to_use)
+    else:
+        summary = _render_node_summary(node_to_use, user, kwargs.get('rescale_ratio'))
 
     return {
-        'summary' : {
-            'pid' : node_to_use._primary_key,
-            'purl' : node_to_use.url,
-            'title' : node_to_use.title,
-            'registered_date' : node_to_use.registered_date.strftime('%m/%d/%y %I:%M %p') if node_to_use.registered_date else None,
-            'logs' : list(reversed(node_to_use.logs._to_primary_keys()))[:3],
-            'nlogs' : len(node_to_use.logs),
-            'ua_count' : ua_count,
-            'ua' : ua,
-            'non_ua' : non_ua,
-        }
+        'summary': summary,
     }
 
 @must_be_contributor_or_public
