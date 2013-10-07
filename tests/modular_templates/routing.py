@@ -1,5 +1,5 @@
 import unittest
-from framework.routing import Rule
+from framework.routing import Rule, json_renderer
 
 
 class RuleTestCase(unittest.TestCase):
@@ -12,7 +12,7 @@ class RuleTestCase(unittest.TestCase):
             kwargs.get('routes', ['/', ]),
             kwargs.get('methods', ['GET', ]),
             kwargs.get('view_func', vf),
-            kwargs.get('render_func'),
+            kwargs.get('render_func', json_renderer),
             kwargs.get('view_kwargs'),
         )
 
