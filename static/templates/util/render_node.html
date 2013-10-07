@@ -1,17 +1,17 @@
 <li id="projects-widget" node_id="${summary['id']}" class="project list-group-item" style="display: list-item;">
     <h3 style="line-height:18px;">
-        <span style="display:inline-block; width: 400px">
+        <span style="display:inline-block">
         <a href="${summary['url']}">${summary['title']}</a>
         % if is_registration:
             | registered: ${registered_date}
         % endif
         </span>
-        % if summary['visibility'] == 'full':
+        % if summary['show_logs']:
             <i style="float:right;" id="icon-${summary['id']}" class="icon-plus" onclick="openCloseNode('${summary['id']}');"></i>
         % endif
     </h3>
 
-    % if summary['visibility'] == 'full':
+    % if summary['show_logs']:
 
         <!--Stacked bar to visualize user activity level against total activity level of a project -->
         <!--Length of the stacked bar is normalized over all projects -->

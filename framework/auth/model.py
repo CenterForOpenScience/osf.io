@@ -11,6 +11,14 @@ from framework.search import solr
 
 from website import settings
 
+name_formatters = {
+   'long': lambda user: user.fullname,
+   'surname': lambda user: user.surname,
+   'initials': lambda user: u'{surname}, {initial}.'.format(
+       surname=user.surname,
+       initial=user.given_name_initial
+   ),
+}
 
 class User(StoredObject):
     _id = fields.StringField(primary=True)
@@ -81,12 +89,21 @@ class User(StoredObject):
 
     @property
     def profile_url(self):
-        return '/profile/{}'.format(self._id)
+        return '/profile/{}/'.format(self._id)
+
+    def render(self, formatter):
+        return {
+            'user': {
+                'user_fullname': self.fullname,
+                'user_profile_url': self.profile_url,
+                'user_display_name': name_formatters[formatter](self),
+            },
+        }
 
     def save(self, *args, **kwargs):
-        super(User, self).save(*args, **kwargs)
-
+        rv = super(User, self).save(*args, **kwargs)
         self.update_solr()
+        return rv
 
     def update_solr(self):
         if not settings.use_solr:

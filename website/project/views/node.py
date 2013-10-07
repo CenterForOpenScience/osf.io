@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import logging
 import re
 import json
 import httplib as http
@@ -21,7 +20,7 @@ from .. import clean_template_name
 
 from website import settings
 from website import filters
-from website.views import _render_nodes, _render_node_summary, _render_node_summary_public
+from website.views import _render_nodes
 
 from framework import analytics
 
@@ -434,7 +433,11 @@ def _get_user_activity(node, user, rescale_ratio):
     # loading the logs into Python and checking each one. However,
     # using deep caching might be even faster down the road.
 
-    ua_count = node.logs.find(Q('user', 'eq', user)).count()
+    if user:
+        ua_count = node.logs.find(Q('user', 'eq', user)).count()
+    else:
+        ua_count = 0
+
     non_ua_count = total_count - ua_count # base length of blue bar
 
     # Normalize over all nodes
@@ -447,6 +450,7 @@ def _get_user_activity(node, user, rescale_ratio):
     except ZeroDivisionError:
         non_ua = 0
 
+    return ua_count, ua, non_ua
 
 @must_be_valid_project
 def get_recent_logs(*args, **kwargs):
@@ -457,17 +461,34 @@ def get_recent_logs(*args, **kwargs):
 @must_be_valid_project
 def get_summary(*args, **kwargs):
 
-    user = User.load(kwargs.get('uid')) or get_current_user()
+    user = get_current_user()
     api_key = get_api_key()
+    rescale_ratio = kwargs.get('rescale_ratio')
     node_to_use = kwargs['node'] or kwargs['project']
 
-    node_can_edit = node_to_use.can_edit(user, api_key)
-    parent_can_edit = node_to_use.node__parent and node_to_use.node__parent[0].can_edit(user, api_key)
+    can_edit = node_to_use.can_edit(user, api_key)
 
-    if not node_can_edit and not parent_can_edit:
-        summary = _render_node_summary_public(node_to_use)
-    else:
-        summary = _render_node_summary(node_to_use, user, kwargs.get('rescale_ratio'))
+    # if rescale_ratio:
+    #     ua_count, ua, non_ua = _get_user_activity(node_to_use, user, rescale_ratio)
+    # else:
+    #     ua_count, ua, non_ua = None, None, None
+
+    summary = {
+        'id': node_to_use._primary_key,
+        'url': node_to_use.url,
+        'title': node_to_use.title if can_edit else node_to_use.public_title,
+        'registered_date': node_to_use.registered_date.strftime('%m/%d/%y %I:%M %p') if node_to_use.registered_date else None,
+        'show_logs': can_edit or node_to_use.are_logs_public,
+    }
+
+    if rescale_ratio and (can_edit or node_to_use.are_logs_public):
+        ua_count, ua, non_ua = _get_user_activity(node_to_use, user, rescale_ratio)
+        summary.update({
+            'nlogs': len(node_to_use.logs),
+            'ua_count': ua_count,
+            'ua': ua,
+            'non_ua': non_ua,
+        })
 
     return {
         'summary': summary,

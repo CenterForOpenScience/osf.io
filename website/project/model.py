@@ -65,6 +65,11 @@ class NodeLog(StoredObject):
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
 
+    @property
+    def node(self):
+        return Node.load(self.params.get('node')) or \
+            Node.load(self.params.get('project'))
+
 
 class NodeFile(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
@@ -97,7 +102,13 @@ class Node(StoredObject):
     _id = fields.StringField(primary=True)
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+
+    # Permissions
     is_public = fields.BooleanField()
+    is_title_public = fields.BooleanField(default=True)
+    are_contributors_public = fields.BooleanField(default=True)
+    are_files_public = fields.BooleanField(default=False)
+    are_logs_public = fields.BooleanField(default=True)
 
     is_deleted = fields.BooleanField(default=False)
     deleted_date = fields.DateTimeField()
@@ -142,7 +153,7 @@ class Node(StoredObject):
 
         return self.is_public \
             or self.is_contributor(user) \
-            or api_key and self is api_key.node
+            or (api_key is not None and self is api_key.node)
 
     def save(self, *args, **kwargs):
         rv = super(Node, self).save(*args, **kwargs)
@@ -661,6 +672,21 @@ class Node(StoredObject):
             parent.logs.append(log)
             parent.save()
         return log
+
+    @property
+    def public_title(self):
+        """ Get publicly available title. """
+
+        # Return full title if public
+        if self.is_title_public:
+            return self.title
+
+        # Else return node type and privacy warning
+        if self.is_registration:
+            return 'Title unavailable (private component; registration of {})'.format(self.registered_from.title)
+        if self.is_fork:
+            return 'Title unavailable (private component; fork of {})'.format(self.forked_from.title)
+        return 'Title unavailable (private component)'
 
     @property
     def url(self):

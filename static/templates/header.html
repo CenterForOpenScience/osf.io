@@ -91,7 +91,6 @@
 
     var openCloseNode = function(node_id){
         var logs = $('#logs-' + node_id);
-        console.log(logs.attr("data-uri"));
         if (logs.html() === "") {
             $.get(
                 logs.attr('data-uri'),

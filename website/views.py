@@ -68,34 +68,6 @@ def _get_user_activity(node, user, rescale_ratio):
 
     return ua_count, ua, non_ua
 
-def _render_node_summary_public(node):
-
-    return {
-        'visibility': 'partial',
-        'id': node._primary_key,
-        'url': node.url,
-        'title': node.title,
-    }
-
-def _render_node_summary(node, user=None, rescale_ratio=None):
-
-    if user and rescale_ratio:
-        ua_count, ua, non_ua = _get_user_activity(node, user, rescale_ratio)
-    else:
-        ua_count, ua, non_ua = None, None, None
-
-    summary = _render_node_summary_public(node)
-    summary.update({
-        'visibility': 'full',
-        'registered_date': node.registered_date.strftime('%m/%d/%y %I:%M %p') if node.registered_date else None,
-        'logs': list(reversed(node.logs._to_primary_keys()))[:3],
-        'nlogs': len(node.logs),
-        'ua_count': ua_count,
-        'ua': ua,
-        'non_ua': non_ua,
-    })
-    return summary
-
 @must_have_session_auth
 def get_dashboard_nodes(*args, **kwargs):
     user = kwargs['user']

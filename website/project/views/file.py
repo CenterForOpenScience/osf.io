@@ -36,33 +36,33 @@ def get_files(*args, **kwargs):
     api_key = get_api_key()
     node_to_use = kwargs['node'] or kwargs['project']
 
-    node_can_edit = node_to_use.can_edit(user, api_key)
-    parent_can_edit = node_to_use.node__parent and node_to_use.node__parent[0].can_edit(user, api_key)
-
-    if not node_can_edit and not parent_can_edit:
-        raise HTTPError(http.FORBIDDEN)
+    can_edit = node_to_use.can_edit(user, api_key)
 
     tree = {
-        'title' : node_to_use.title,
+        'title' : node_to_use.title if can_edit else node_to_use.public_title,
         'url' : node_to_use.url,
         'files' : [],
     }
 
-    for child in node_to_use.nodes:
-        if not child.is_deleted:
-            tree['files'].append({
-                'type' : 'dir',
-                'url' : child.url,
-                'api_url' : child.api_url,
-            })
+    # Display children and files if public
+    if can_edit or node_to_use.are_files_public:
 
-    if node_to_use.is_public or node_to_use.is_contributor(user):
+        # Add child nodes
+        for child in node_to_use.nodes:
+            if not child.is_deleted:
+                tree['files'].append({
+                    'type': 'dir',
+                    'url': child.url,
+                    'api_url': child.api_url,
+                })
+
+        # Add files
         for key, value in node_to_use.files_current.iteritems():
             node_file = NodeFile.load(value)
             tree['files'].append({
-                'type' : 'file',
-                'filename' : node_file.filename,
-                'path' : node_file.path,
+                'type': 'file',
+                'filename': node_file.filename,
+                'path': node_file.path,
             })
 
     return tree
