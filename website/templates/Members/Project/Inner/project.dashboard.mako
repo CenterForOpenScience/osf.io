@@ -16,13 +16,13 @@
             interactive:${'true' if editable else 'false'},
             onAddTag:function(tag){
                 $.ajax({
-                    url:"${node_to_use.url()}" + "/addtag/" + tag,
+                    url:"${node_to_use.url}" + "/addtag/" + tag,
                     type:"GET",
                 });
             },
             onRemoveTag:function(tag){
                 $.ajax({
-                    url:"${node_to_use.url()}" + "/removetag/" + tag,
+                    url:"${node_to_use.url}" + "/removetag/" + tag,
                     type:"GET",
                 });
             },
@@ -41,7 +41,7 @@
       <section id="Wiki Home">
         <div>
         ${wiki_home}
-        <p><a href="${node_to_use.url()}/wiki/home">read more</a></p>
+        <p><a href="${node_to_use.url}/wiki/home">read more</a></p>
         </div>
       </section>
        %if not node:

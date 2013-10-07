@@ -1,3 +1,6 @@
+import httplib as http
+from framework import HTTPError
+
 from framework import get_current_user, push_status_message, redirect
 from framework.auth import get_api_key
 from website.project import get_node
@@ -32,8 +35,9 @@ def must_not_be_registration(fn):
             node_to_use = project
 
         if node_to_use.is_registration:
-            push_status_message('Registrations are read-only')
-            return redirect(node_to_use.url())
+            raise HTTPError(http.FORBIDDEN)
+            # push_status_message('Registrations are read-only')
+            # return redirect(node_to_use.url)
 
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)
@@ -45,14 +49,16 @@ def must_be_valid_project(fn):
             kwargs['project'] = project
         else:
             project = kwargs['project']
-        
+
         if not project or not project.category == 'project':
-            push_status_message('Not a valid project')
-            return redirect('/')
+            raise HTTPError(http.NOT_FOUND)
+            # push_status_message('Not a valid project')
+            # return redirect('/')
 
         if project.is_deleted:
-            push_status_message('This project has been deleted')
-            return redirect('')
+            raise HTTPError(http.GONE)
+            # push_status_message('This project has been deleted')
+            # return redirect('')
 
         if "nid" in kwargs or "node" in kwargs:
             if 'node' not in kwargs:
@@ -62,13 +68,15 @@ def must_be_valid_project(fn):
                 node = kwargs['node']
 
             if not node:
-                push_status_message('Not a valid component')
-                return redirect('/')
+                raise HTTPError(http.NOT_FOUND)
+                # push_status_message('Not a valid component')
+                # return redirect('/')
 
             if node.is_deleted:
-                push_status_message('This component has been deleted')
-                return redirect('/')
-            
+                raise HTTPError(http.GONE)
+                # push_status_message('This component has been deleted')
+                # return redirect('/')
+
         else:
             kwargs['node'] = None
 
@@ -94,7 +102,7 @@ def must_be_contributor(fn):
             kwargs['node'] = node
 
         node_to_use = node or project
-        
+
         if 'user' in kwargs:
             user = kwargs['user']
         else:
@@ -105,15 +113,18 @@ def must_be_contributor(fn):
 
         if not node_to_use.is_contributor(user) \
                 and api_node != node_to_use:
-            push_status_message('You are not authorized to perform that action \
-                for this node')
-            return redirect('/')
-        
+            raise HTTPError(http.FORBIDDEN)
+            # push_status_message('You are not authorized to perform that action \
+            #     for this node')
+            # return redirect('/')
+
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)
 
+
 def must_be_contributor_or_public(fn):
     def wrapped(func, *args, **kwargs):
+
         if 'project' not in kwargs:
             project = get_node(kwargs['pid'])
             kwargs['project'] = project
@@ -144,12 +155,14 @@ def must_be_contributor_or_public(fn):
             api_node = get_api_key()
             kwargs['api_node'] = api_node
 
-        if not node_to_use.is_public \
-                and not node_to_use.is_contributor(user) \
-                and api_node != node_to_use:
-            push_status_message('You are not authorized to perform that action \
-                for this node')
-            return redirect('/')
-        
+        if (
+            not node_to_use.is_public
+            and not node_to_use.is_contributor(user)
+            and api_node != node_to_use
+        ):
+            raise HTTPError(http.FORBIDDEN)
+            # push_status_message('You are not authorized to perform that action for this node')
+            # return redirect('/')
+
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)

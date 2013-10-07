@@ -1,32 +1,28 @@
 <div class="well" style="padding: 8px 0;">
     <ul class="nav nav-list">
       <li class="nav-header">
-          <a href="/project/${project._primary_key}/wiki/home">Project</a>
+          <a href="/project/${node_id}/wiki/home">Project</a>
       </li>
-      % if project.wiki_pages_current:
-      % for k in project.wiki_pages_current.keys():
+      % for k in pages_current:
       % if not k == 'home':
        <li>
-         <a href="/project/${project._primary_key}/wiki/${k}">${k}</a>
+         <a href="/project/${node_id}/wiki/${k}">${k}</a>
        </li>
       % endif
       % endfor
-      % endif
-      
-      % for tnode in [x for x in project.nodes if not x.is_deleted]:
+
+      % for child in toc:
       
       <li class="nav-header">
-          <a href="/project/${project._primary_key}/node/${tnode._primary_key}/wiki/home">${tnode.title} (${tnode.category})</a>
+          <a href="/project/${node_id}/node/${child['id']}/wiki/home">${child['title']} (${child['category']})</a>
       </li>
-        % if tnode.wiki_pages_current:
-         % for k in tnode.wiki_pages_current.keys():
-          % if not k == 'home':
+         % for k in child['pages']:
+          % if k != 'home':
            <li>
-             <a href="/project/${project._primary_key}/node/${tnode._primary_key}/wiki/${k}">${k}</a>
+             <a href="/project/${node_id}/node/${child['id']}/wiki/${k}">${k}</a>
            </li>
           %endif
           %endfor
-          %endif
       %endfor
     </ul>
 </div>

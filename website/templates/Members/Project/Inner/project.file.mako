@@ -19,10 +19,10 @@
     <div class="span4">
       	<ul class="breadcrumb">
       		%if project:
-  			<li><a href="${project.url()}/files">${project.title}</a> <span class="divider">/</span></li>
+  			<li><a href="${project.url}/files">${project.title}</a> <span class="divider">/</span></li>
   			%endif
   			%if node:
-  			<li><a href="${node.url()}/files">${node.title}</a> <span class="divider">/</span></li>
+  			<li><a href="${node.url}/files">${node.title}</a> <span class="divider">/</span></li>
   			%endif
   			<li class="active">${file_name}</li>	
 		</ul>
@@ -53,7 +53,7 @@
 					${str(total) if total else str(0)}
 				</td>
 				<td>
-					<a href="${node_to_use.url()}/files/download/${file_name}/version/${version_number}"><i class="icon-download-alt"></i></a>
+					<a href="${node_to_use.url}/files/download/${file_name}/version/${version_number}"><i class="icon-download-alt"></i></a>
 				</td>
 			</tr>
 			%endfor

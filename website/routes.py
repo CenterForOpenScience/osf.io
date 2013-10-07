@@ -1,7 +1,7 @@
-from framework.auth import routes
+from framework.auth import views
 
 from website import views
-from website.profile import routes
-from website.project import routes
-from website.search import routes
-from website.discovery import routes
+# from website.profile import views
+# from website.project import views
+from website.search import views
+from website.discovery import views

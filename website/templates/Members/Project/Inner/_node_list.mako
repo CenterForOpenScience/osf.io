@@ -25,9 +25,9 @@
             <h3 style="line-height:20px;">
                 <span style="display:inline-block; width: 400px">
                 %if not node.node__parent:
-                    <a href="${node.url()}">${node.title}</a>
+                    <a href="${node.url}">${node.title}</a>
                 %else:
-                    <a href="${node.url()}">${node.title}</a>
+                    <a href="${node.url}">${node.title}</a>
                 %endif
                 % if node.is_registration:
                     | registered: ${node.registered_date.strftime('%Y/%m/%d %I:%M %p')}
@@ -51,6 +51,17 @@
     </ul>
 
     <script>
+        function checkListChange(id_list, page, item){
+            if(page=='project_dash'){
+                var data_to_send = {}
+                data_to_send['new_list'] = JSON.stringify(id_list);
+                $.post('${node_api_url}reorder_components/', data_to_send, function(response){
+                    if(response['success']=='false'){
+                        $(item).sortable("cancel");
+                    }
+                });
+            }
+        };
         $(function(){
             $('.sortable').sortable({
                 containment: "#containment",
@@ -66,18 +77,5 @@
                 }
             });
         });
-
-
-        function checkListChange(id_list, page, item){
-            if(page=='project_dash'){
-                var data_to_send = {}
-                data_to_send['new_list'] = JSON.stringify(id_list);
-                $.post('/api/v1/reorder_components/${node_id}', data_to_send, function(response){
-                    if(response['success']=='false'){
-                        $(item).sortable("cancel");
-                    }
-                });
-              }
-        };
     </script>
 </%def>

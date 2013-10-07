@@ -8,7 +8,7 @@
 
 <div class="page-header"><div style="float:right;">
     % if editable and node_to_use.category == 'project':
-        <a href="${node_to_use.url()}/register" class="btn" type="button">New Registration</a>
+        <a href="${node_to_use.url}/register" class="btn" type="button">New Registration</a>
     % else:
         <a class="btn disabled" type="button">New Registration</a>
     % endif

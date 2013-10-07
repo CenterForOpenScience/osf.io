@@ -1,0 +1,10 @@
+<%inherit file="contentContainer.mako" />
+
+<h2>Create New Project</h2>
+<%include file="form.mako" args="
+    form=form,
+    name='newProject',
+    actionString='/api/v1/project/new/',
+    formClass='form-stacked',
+    submitString='Create New Project'
+"/>

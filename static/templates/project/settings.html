@@ -1,0 +1,8 @@
+<%inherit file="project.view.mako" />
+<form method="post" action="${node_api_url}remove/">
+    <button type="submit" class="btn primary">Delete this component and all non-project components</button>
+</form>
+
+
+
+<div mod-meta='{"tpl":"util/render_keys.html", "uri":"${node_api_url}keys/", "replace": true, "kwargs" : {"route": "${node_url}"}}'></div>

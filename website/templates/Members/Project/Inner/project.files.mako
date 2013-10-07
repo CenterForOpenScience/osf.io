@@ -6,7 +6,7 @@
     disabled_class = "" if editable else " disabled"
 %>
 
-<form id="fileupload" action="${node_to_use.url() + '/files/upload'}" method="POST" enctype="multipart/form-data">
+<form id="fileupload" action="/api/v1${node_to_use.url + '/files/upload'}" method="POST" enctype="multipart/form-data">
         <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
         <div class="row fileupload-buttonbar">
             <div class="span7">
@@ -98,7 +98,7 @@
             <td class="size"><span>{%=o.formatFileSize(file.size)%}</span></td>
             <td>{%=file.downloads%}</td>
             <td><a href="{%=file.download_url%}" download="{%=file.name%}"><i class="icon-download-alt"></i></a></td>
-            <td><form style='margin:0' method='post' class='fileDeleteForm' action='${node_to_use.url() + '/files/delete/{%=file.name%}'}'>
+            <td><form style='margin:0' method='post' class='fileDeleteForm' action='${node_to_use.url + '/files/delete/{%=file.name%}'}'>
                 <button type="button" class="btn btn-danger btn-delete${disabled_class}"${ "onclick='deleteFile(this)'" if editable else ""}>
                     <i class="icon-trash icon-white"></i>
                     <span>Delete</span>
@@ -135,7 +135,7 @@ $(function () {
     // Initialize the jQuery File Upload widget:
     $('#fileupload').fileupload();
     $('#fileupload').fileupload('option',{
-        url: '${node_to_use.url() + '/files/upload'}',
+        url: '/api/v1${node_to_use.url + '/files/upload/'}',
         acceptFileTypes: /(\.|\/)(.*)$/i,
         maxFileSize: ${website.settings.max_upload_size}
     });

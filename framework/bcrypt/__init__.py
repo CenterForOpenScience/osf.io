@@ -11,16 +11,17 @@ import bcrypt
 
 _log_rounds = [12]
 
+
 def generate_password_hash(password, rounds=None):
-    '''Generates a password hash using `bcrypt`. Specifying `log_rounds` sets 
-    the log_rounds parameter of `bcrypt.gensalt()` which determines the 
+    '''Generates a password hash using `bcrypt`. Specifying `log_rounds` sets
+    the log_rounds parameter of `bcrypt.gensalt()` which determines the
     complexity of the salt. 12 is the default value.
-    
+
     Returns the hashed password.
     '''
-    
+
     if rounds is None:
-        rounds = _log_rounds[0]    
+        rounds = _log_rounds[0]
 
     if not password:
         raise ValueError('Password must be non-empty.')
@@ -29,8 +30,9 @@ def generate_password_hash(password, rounds=None):
         unicode(password).encode('utf-8'),
         bcrypt.gensalt(rounds)
     )
-    
+
     return pw_hash
+
 
 def constant_time_compare(val1, val2):
     '''Returns True if the two strings are equal, False otherwise.
@@ -47,9 +49,10 @@ def constant_time_compare(val1, val2):
 
     return result == 0
 
+
 def check_password_hash(pw_hash, password):
     '''Checks a hashed password against a password.
-    
+
     Returns `True` if the password matched, `False` otherwise.
     '''
 

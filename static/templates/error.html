@@ -1,0 +1,15 @@
+<div mod-meta='{"tpl":"header.html","replace": true}'></div>
+
+<div class="container" style="margin-top: 30px;">
+    <div class='row'>
+        <div class='span12'>
+            <h2>${message_short}</h2>
+            <p>${message_long}</p>
+            % if referrer:
+                <p><a href="${referrer}">Back</a></p>
+            % endif
+        </div>
+    </div>
+</div>
+
+<div mod-meta='{"tpl":"footer.html","replace": true}'></div>
