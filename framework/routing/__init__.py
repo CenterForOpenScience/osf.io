@@ -286,9 +286,10 @@ class WebRenderer(Renderer):
         # Render error page
         # todo: use message / data from exception in error page
         error_data = error.to_data()
-        return self._render(
+        return self.render(
             error_data,
-            self.error_template
+            None,
+            template_name=self.error_template
         ), error.code
 
     def load_file(self, template_file):
