@@ -15,7 +15,7 @@
     %>
 
     <!-- TODO: Sort projects by project activity level -->
-    <ul class="list-group ${'sortable' if default=="project_dash" and is_contributor and not is_registration else ''}" node_class="${default}" style="margin-left: 0px;">
+    <div class="list-group ${'sortable' if default=="project_dash" and is_contributor and not is_registration else ''}" node_class="${default}" style="margin-left: 0px;">
 
     % for node in nodes:
         % if node._primary_key is None or node.is_deleted:
@@ -24,11 +24,7 @@
         <li id="projects-widget" node_id="${node._primary_key}" class="project list-group-item" style="display: list-item;">
             <h3 style="line-height:20px;">
                 <span style="display:inline-block; width: 400px">
-                %if not node.node__parent:
                     <a href="${node.url}">${node.title}</a>
-                %else:
-                    <a href="${node.url}">${node.title}</a>
-                %endif
                 % if node.is_registration:
                     | registered: ${node.registered_date.strftime('%Y/%m/%d %I:%M %p')}
                 % endif
@@ -48,7 +44,7 @@
             </div>
         </li>
     % endfor
-    </ul>
+    </div>
 
     <script>
         function checkListChange(id_list, page, item){

@@ -4,45 +4,95 @@
     from framework import get_user
 %>
 
-  <div class="row">
-    <div class="col-md-3 col-sm-4 sidebar">
-        <ul class="nav nav-stacked nav-pills">
+<style type='text/css'>
+    ul#sideNav {
+        width: 280px;
+        position:fixed;
+    }
+    ul.project-list {
+        margin-left:0;
+        margin-top:15px;
+    }
+    ul.project-list div.body {overflow:hidden;}
+    ul.project-list td ul {margin:0}
+    ul.project-list td li {list-style-type:none}
+    ul.project-list table.table {margin-bottom:0;}
+    ul.project-list table.table th {width:100px;}
+    ul.project-list div.project-authors{
+        border-bottom-left-radius: 6px;
+        border-bottom-right-radius: 6px;
+        background-color:white;
+        padding: 0 10px 10px 10px;
+        font-style:italic;
+    }
+    ul.project-list h3 {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        padding-bottom:0;
+        line-height:18px;
+    }
+    ul.project-list h3 a {
+        display:block;
+        padding-right:110px;
+    }
+    ul.project-list div.project-meta {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-weight: normal;
+        font-style: italic;
+    }
+    ul.project-list li.project { position:relative }
+</style>
+<script>
+$(function(){
+    // This makes sure that links clicked on the sidebar account for the height of the header.
+    var offset = 50;
+
+    $('#sideNav li a').click(function(event) {
+        event.preventDefault();
+        $($(this).attr('href'))[0].scrollIntoView();
+        scrollBy(0, -offset);
+    });
+})
+</script>
+
+<div class='row'>
+    <div class='span4' style='height:1px'>
+        <ul id='sideNav' class='nav nav-stacked nav-tabs'>
             <li><a href='#newPublicProjects'>Newest Public Projects</a></li>
             <li><a href='#newPublicRegistrations'>Newest Public Registrations</a></li>
             <li><a href='#popularPublicProjects'>Most Viewed Public Projects</a></li>
             <li><a href='#popularPublicRegistrations'>Most Viewed Public Registrations</a></li>
         </ul>
     </div>
-
-    <div class="col-md-9 col-sm-8">
-      <h1 class="page-header">Public Activity</h1>
+    <div class='span8'>
         <section id='newPublicProjects'>
             <h2>Newest Public Projects</h2>
-            <ul class='project-list list-group'>
+            <ul class='project-list'>
                 ${node_list(recent_public_projects, prefix='newest_public', metric='date_created')}
             </ul>
         </section>
         <section id='newPublicRegistrations'>
             <h2>Newest Public Registrations</h2>
-            <ul class='project-list list-group'>
+            <ul class='project-list'>
                 ${node_list(recent_public_registrations, prefix='newest_public', metric='date_created')}
             </ul>
         </section>
         <section id='popularPublicProjects'>
             <h2>Most Viewed Public Projects</h2>
-            <ul class='project-list list-group'>
+            <ul class='project-list'>
                 ${node_list(most_viewed_projects, prefix='most_viewed')}
             </ul>
         </section>
         <section id='popularPublicRegistrations'>
             <h2>Most Viewed Public Registrations</h2>
-            <ul class='project-list list-group'>
+            <ul class='project-list'>
                 ${node_list(most_viewed_registrations, prefix='most_viewed')}
             </ul>
         </section>
     </div>
-  </div><!-- /.row -->
-
+</div>
 
 <%def name="node_list(nodes, default=0, prefix='', metric='hits')">
 %for node in nodes:
@@ -60,20 +110,22 @@
             month=node.date_created.date().strftime('%B')
         )
     %>
-    <li class="project list-group-item">
-        <h3 class="list-group-item-heading">
+    <li class="project">
+        <h3>
             <a href="${node.url}">${node.title}</a>
         </h3>
+        <div class='project-meta'>
             % if metric == 'hits':
-                <span class="badge" rel='tooltip' data-original-title='${hits} hits <br>${unique_hits} unique'>
-                    ${hits} views
-                </span>
+                <a rel='tooltip' data-original-title='${hits} hits <br>${unique_hits} unique'>
+                    ${hits}
+                </a>
             % elif metric == 'date_created':
-                <span class="badge" rel='tooltip' data-original-title='Created: ${explicit_date}'>
+                <a rel='tooltip' data-original-title='Created: ${explicit_date}'>
                     ${node.date_created.date()}
-                </span>
+                </a>
             % endif
-        <!-- <div class='project-authors'> -->
+        </div>
+        <div class='project-authors'>
             % for index, user_id in enumerate(node.contributors[:3]):
                 <%
                     if index == 2 and len(node.contributors) > 3:
@@ -94,7 +146,7 @@
                 %>
                 ${print_user(user_id, format='surname')}${sep}
             % endfor
-        <!-- </div> -->
+        </div>
     </li>
 %endfor
 
@@ -113,4 +165,4 @@
     }
     user_display_name = name_formatters[format]()
 %>
-<a class="list-group-item-text" rel='tooltip' href='/profile/${user_id}' data-original-title='${user.fullname}'>${user_display_name}</a></%def>
+<a rel='tooltip' href='/profile/${user_id}' data-original-title='${user.fullname}'>${user_display_name}</a></%def>

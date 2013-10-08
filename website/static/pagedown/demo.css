@@ -1,53 +1,47 @@
-body 
-{ 
-	background-color: White;
-    font-family: sans-serif;
-}
-
 .wmd-panel
 {
 	width: 100%;
 }
 
-.wmd-button-bar 
+.wmd-button-bar
 {
 	width: 100%;
-	background-color: Silver; 
+	background-color: Silver;
 }
 
-.wmd-input 
-{ 
+.wmd-input
+{
 	height: 300px;
 	width: 100%;
 	background-color: Gainsboro;
 	border: 1px solid DarkGray;
 }
 
-.wmd-preview 
-{ 
-	background-color: #c0e0ff; 
+.wmd-preview
+{
+	background-color: #c0e0ff;
 }
 
-.wmd-button-row 
+.wmd-button-row
 {
-	position: relative; 
+	position: relative;
 	margin-left: 5px;
 	margin-right: 5px;
 	margin-bottom: 5px;
 	margin-top: 10px;
-	padding: 0px;  
+	padding: 0px;
 	height: 20px;
 }
 
 .wmd-spacer
 {
-	width: 1px; 
-	height: 20px; 
+	width: 1px;
+	height: 20px;
 	margin-left: 14px;
-	
+
 	position: absolute;
 	background-color: Silver;
-	display: inline-block; 
+	display: inline-block;
 	list-style: none;
 }
 
