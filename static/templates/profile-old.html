@@ -24,10 +24,10 @@
     <img src="${gravatar_url}" />
     <h1 id="${'profile-fullname' if user_is_profile else ''}" style="display:inline-block">${fullname}</h1>
 
-</div><!-- end-page-header -->
+</div>
 
 <div class="row">
-    <div class="col-md-4">
+    <div class="span4">
         <table class="table plain">
             <tr>
               <td>Name</td>
@@ -43,22 +43,22 @@
             </tr>
             <tr>
               <td>Public Profile</td>
-              <td><a href="/profile/${user_id}/">/profile/${user_id}/</a></td>
+              <td><a href="/profile/${user_id}/">/profile/${user_id}/</td>
             </tr>
         </table>
     </div>
-    <div class="col-md-4">&nbsp;</div>
-    <div class="col-md-4">
+    <div class="span4">&nbsp;
+    </div>
+    <div class="span4">
         <h2>
            ${activity_points} activity point${'s' if activity_points != 1 else ''}<br />
            ##${number_projects} project${'s' if number_projects !=1  else ''}, ${number_public_projects} public
         </h2>
     </div>
-</div><!-- end row -->
+</div>
 <hr />
-
 <div class="row">
-    <div class="col-md-6">
+    <div class="span6">
         <h3 style="margin-bottom:10px;">Public Projects</h3>
 
         <div mod-meta='{
@@ -69,14 +69,14 @@
             }'>
         </div>
     </div>
-    <div class="col-md-6">
+    <div class="span6">
         <h3 style="margin-bottom:10px;">Public Components</h3>
         <div mod-meta='{
                 "tpl" : "util/render_nodes.html",
                 "uri" : "/api/v1/profile/${user_id}/public_components/",
                 "replace" : true,
                 "kwargs" : {"sortable" : true}
-            }'></div>
+            }'>
     </div>
 </div>
 

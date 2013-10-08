@@ -5,8 +5,7 @@
 </div>
 
 <div class="row">
-    <div class="span1">&nbsp;</div>
-    <div class="span6">
+    <div class="col-md-5">
         <h2>Create Account</h2>
         <div mod-meta='{
                 "tpl": "util/render_form.mako",
@@ -22,9 +21,8 @@
                 "replace": true
             }'>
         </div>
-
     </div>
-    <div class="span4">
+    <div class="col-md-5 col-md-offset-2">
         <h2>Sign-In</h2>
         <div mod-meta='{
                 "tpl": "util/render_form.mako",
@@ -56,5 +54,5 @@
             }'>
         </div>
     </div>
-    <div class="span1">&nbsp;</div>
+    <div class="col-md-1">&nbsp;</div>
 </div>

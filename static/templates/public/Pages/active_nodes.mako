@@ -65,7 +65,7 @@
             <a href="${node.url}">${node.title}</a>
         </h3>
             % if metric == 'hits':
-                <span class="badge" rel='tooltip' data-original-title='${hits} hits <br>${unique_hits} unique'>
+                <span class="badge" rel='tooltip' data-original-title='${hits} hits (${unique_hits} unique)'>
                     ${hits} views
                 </span>
             % elif metric == 'date_created':

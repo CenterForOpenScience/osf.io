@@ -4,14 +4,13 @@ from wtforms import fields, Form, PasswordField, BooleanField, IntegerField, \
     DateField, DateTimeField, FileField, HiddenField, RadioField, SelectField, \
     SelectMultipleField, SubmitField, TextAreaField, TextField, FieldList, \
     validators
-from wtforms.widgets import TextInput
+
+from wtforms.widgets import TextInput, PasswordInput, html_params
 from wtforms.validators import ValidationError
 
 from wtfrecaptcha.fields import RecaptchaField
 
 from framework.forms.utils import sanitize
-
-# from wtforms.ext.sqlalchemy.orm import model_form
 
 
 class MyTextInput(TextInput):
@@ -21,6 +20,24 @@ class MyTextInput(TextInput):
     def __call__(self, field, **kwargs):
         kwargs.setdefault('class', 'span12')
         return super(MyTextInput, self).__call__(field, **kwargs)
+
+# TODO(sloria): Allow for placeholder text
+class BootstrapTextInput(TextInput):
+    '''Custom TextInput that sets a field's class to 'form-control'.'''
+    def __call__(self, field, **kwargs):
+        kwargs.setdefault('class', 'form-control')
+        kwargs.setdefault('class_', 'form-control')
+        return super(BootstrapTextInput, self).__call__(field, **kwargs)
+
+
+class BootstrapPasswordInput(PasswordInput):
+    '''Custom PasswordInput that sets a field's class to 'form-control'.'''
+
+    def __call__(self, field, placeholder=None, **kwargs):
+        kwargs.setdefault('class', 'form-control')
+        kwargs.setdefault('class_', 'form-control')
+        html = super(BootstrapPasswordInput, self).__call__(field, **kwargs)
+        return html
 
 RecaptchaField = RecaptchaField
 
