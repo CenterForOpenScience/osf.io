@@ -30,13 +30,13 @@ $ pip install -r dev-requirements.txt
 - Run your mongodb process.
 
 ```bash
-$ make mongo
+$ invoke mongo
 ```
 
 - Run your local development server.
 
 ```bash
-$ make server
+$ invoke server
 ```
 
 Running Tests
