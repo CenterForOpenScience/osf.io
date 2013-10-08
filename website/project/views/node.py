@@ -479,6 +479,10 @@ def get_summary(*args, **kwargs):
         'title': node_to_use.title if can_edit else node_to_use.public_title,
         'registered_date': node_to_use.registered_date.strftime('%m/%d/%y %I:%M %p') if node_to_use.registered_date else None,
         'show_logs': can_edit or node_to_use.are_logs_public,
+        'nlogs': None,
+        'ua_count': None,
+        'ua': None,
+        'non_ua': None,
     }
 
     if rescale_ratio and (can_edit or node_to_use.are_logs_public):
@@ -489,7 +493,6 @@ def get_summary(*args, **kwargs):
             'ua': ua,
             'non_ua': non_ua,
         })
-
     return {
         'summary': summary,
     }

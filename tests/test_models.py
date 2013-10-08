@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
-import nose
+import unittest
 from nose.tools import *  # PEP8 asserts
-
 
 from tests.base import DbTestCase
 from framework.auth import User
@@ -69,8 +68,11 @@ class TestApiKey(DbTestCase):
 class TestNode(DbTestCase):
 
     def setUp(self):
+        self.user = UserFactory()
         self.parent = ProjectFactory()
-        self.node = NodeFactory()
+        self.node = NodeFactory.build(creator=self.user)
+        self.node.contributors.append(self.user)
+        self.node.save()
         self.parent.nodes.append(self.node)
         self.parent.save()
 
@@ -96,6 +98,18 @@ class TestNode(DbTestCase):
         assert_equal(url, "/api/v1/project/{0}/node/{1}/watch/"
                                 .format(self.parent._primary_key,
                                         self.node._primary_key))
+
+    def test_update_node_wiki(self):
+        # user updates the wiki
+        self.node.update_node_wiki("home", "Hello world", self.user, api_key=None)
+        versions = self.node.wiki_pages_versions
+        assert_equal(len(versions['home']), 1)
+        # Makes another update
+        self.node.update_node_wiki('home', "Hola mundo", self.user, api_key=None)
+        # Now there are 2 versions
+        assert_equal(len(versions['home']), 2)
+        # A log event was saved
+        assert_equal(self.node.logs[-1].action, "wiki_updated")
 
 
 class TestProject(DbTestCase):
@@ -142,4 +156,4 @@ class TestWatchConfig(DbTestCase):
         assert_true(config.node._id)
 
 if __name__ == '__main__':
-    nose.main()
+    unittest.main()

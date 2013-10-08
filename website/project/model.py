@@ -812,7 +812,14 @@ class Node(StoredObject):
 
         return pw
 
-    def updateNodeWikiPage(self, page, content, user, api_key):
+    def update_node_wiki(self, page, content, user, api_key):
+        '''Update a the node's wiki page with new content.
+
+        :param page: A string, the page's name, e.g. ``"home"``.
+        :param content: A string, the posted content.
+        :param user: A `User` object.
+        :param api_key: A string, the api key. Can be ``None``.
+        '''
         page = str(page).lower()
 
         if page not in self.wiki_pages_current:

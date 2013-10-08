@@ -48,7 +48,7 @@ NodeActions.toggleWatch = function () {
     });
 }
 
-var addNodeToProject = function(node, project){
+NodeActions.addNodeToProject = function(node, project){
     $.ajax({
        url:"/project/" + project + "/addnode/" + node,
        type:"POST",
@@ -59,7 +59,7 @@ var addNodeToProject = function(node, project){
        });
 };
 
-var removeUser = function(userid, name, el){
+NodeActions.removeUser = function(userid, name, el){
     var answer = confirm("Remove " + name + " from contributor list?")
     if (answer){
         $.ajax({
@@ -98,7 +98,7 @@ $(document).ready(function(){
             me = $(this);
             el = $('<i class="icon-remove"></i>');
             el.click(function(){
-                removeUser(me.attr("data-userid"), me.attr("data-fullname"), me);
+                NodeActions.removeUser(me.attr("data-userid"), me.attr("data-fullname"), me);
                 return false;
             });
             $(this).append(el);

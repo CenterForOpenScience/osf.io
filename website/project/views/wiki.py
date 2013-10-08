@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+import logging
+import httplib as http
 
 from framework import request, redirect, get_current_user, update_counters, push_status_message
 from ..decorators import must_not_be_registration, must_be_valid_project, \
@@ -11,7 +14,8 @@ import difflib
 from .. import show_diff
 
 from framework import HTTPError
-import httplib as http
+
+logger = logging.getLogger(__name__)
 
 @must_be_valid_project
 def project_wiki_home(*args, **kwargs):
@@ -205,13 +209,15 @@ def project_wiki_edit_post(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     wid = kwargs['wid']
+    logging.debug("{user} edited wiki page: {wid}".format(user=user.username,
+                                                          wid=wid))
 
     if wid != sanitize(wid):
         push_status_message("This is an invalid wiki page name")
         raise HTTPError(http.BAD_REQUEST, redirect_url='{}wiki/'.format(node_to_use.url))
         # return redirect(base_url)
 
-    node_to_use.updateNodeWikiPage(wid, request.form['content'], user)
+    node_to_use.update_node_wiki(wid, request.form['content'], user, api_key=None)
 
     return {
         'status' : 'success',
