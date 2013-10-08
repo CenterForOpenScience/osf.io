@@ -97,7 +97,7 @@ def watch_node(id, uid):
 
 template_name_replacements = {
     ('.txt', ''),
-    (' ', '_'),
+    ('_', ' '),
 }
 def clean_template_name(template_name):
     for replacement in template_name_replacements:
