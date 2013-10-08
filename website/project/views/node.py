@@ -468,17 +468,14 @@ def get_summary(*args, **kwargs):
 
     can_edit = node_to_use.can_edit(user, api_key)
 
-    # if rescale_ratio:
-    #     ua_count, ua, non_ua = _get_user_activity(node_to_use, user, rescale_ratio)
-    # else:
-    #     ua_count, ua, non_ua = None, None, None
-
     summary = {
         'id': node_to_use._primary_key,
         'url': node_to_use.url,
+        'api_url': node_to_use.api_url,
         'title': node_to_use.title if can_edit else node_to_use.public_title,
         'registered_date': node_to_use.registered_date.strftime('%m/%d/%y %I:%M %p') if node_to_use.registered_date else None,
         'show_logs': can_edit or node_to_use.are_logs_public,
+        'show_contributors': can_edit or node_to_use.are_contributors_public,
     }
 
     if rescale_ratio and (can_edit or node_to_use.are_logs_public):

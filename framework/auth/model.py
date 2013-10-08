@@ -91,13 +91,11 @@ class User(StoredObject):
     def profile_url(self):
         return '/profile/{}/'.format(self._id)
 
-    def render(self, formatter):
+    def get_summary(self, formatter='long'):
         return {
-            'user': {
-                'user_fullname': self.fullname,
-                'user_profile_url': self.profile_url,
-                'user_display_name': name_formatters[formatter](self),
-            },
+            'user_fullname': self.fullname,
+            'user_profile_url': self.profile_url,
+            'user_display_name': name_formatters[formatter](self),
         }
 
     def save(self, *args, **kwargs):

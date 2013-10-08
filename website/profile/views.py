@@ -88,6 +88,11 @@ def edit_profile(*args, **kwargs):
     return {'response' : 'success'}
 
 
+def get_profile_summary(user_id, formatter='long'):
+
+    user = User.load(user_id)
+    return user.get_summary(formatter)
+
 @must_be_logged_in
 def profile_settings(*args, **kwargs):
     user = kwargs['user']

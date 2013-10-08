@@ -125,44 +125,19 @@ $(function(){
                 </a>
             % endif
         </div>
-        <div class='project-authors'>
-            % for index, user_id in enumerate(node.contributors[:3]):
-                <%
-                    if index == 2 and len(node.contributors) > 3:
-                        # third item, > 3 total items
-                        sep = ' & <a href="{url}">{num} other{plural}</a>'.format(
-                            num=len(node.contributors) - 3,
-                            plural='s' if len(node.contributors) - 3 else '',
-                            url=node.url
-                        )
-                    elif index == len(node.contributors) - 1:
-                        # last item
-                        sep = ''
-                    elif index == len(node.contributors) - 2:
-                        # second to last item
-                        sep = ' & '
-                    else:
-                        sep = ','
-                %>
-                ${print_user(user_id, format='surname')}${sep}
-            % endfor
+
+        <!-- Show abbreviated contributors list -->
+        <div mod-meta='{
+                "tpl": "util/render_users_abbrev.mako",
+                "uri": "${node.api_url}contributors_abbrev/",
+                "kwargs": {
+                    "node_url": "${node.url}"
+                },
+                "replace": true
+            }'>
         </div>
+
     </li>
 %endfor
 
 </%def>
-
-<%def name="print_user(user_id, format='long')">
-<%
-    user = get_user(user_id)
-    name_formatters = {
-        'long': lambda: user.fullname,
-        'surname': lambda: user.surname,
-        'initials': lambda: u'{surname}, {initial}.'.format(
-            surname=user.surname,
-            initial=user.given_name_initial
-        ),
-    }
-    user_display_name = name_formatters[format]()
-%>
-<a rel='tooltip' href='/profile/${user_id}' data-original-title='${user.fullname}'>${user_display_name}</a></%def>
