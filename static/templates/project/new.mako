@@ -7,7 +7,7 @@
         "kwargs": {
             "name": "newProject",
             "method_string": "POST",
-            "action_string": "/api/v1/project/new/",
+            "action_string": "/project/new/",
             "form_class": "form-stacked",
             "submit_string": "Create New Project"
         },

@@ -98,9 +98,7 @@ def project_new_post(*args, **kwargs):
         return redirect('/project/' + str(project._primary_key))
     else:
         push_errors_to_status(form.errors)
-    return {
-        'form' : form,
-    }, http.BAD_REQUEST
+    return {}, http.BAD_REQUEST
 
 ##############################################################################
 # New Node
