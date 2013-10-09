@@ -26,7 +26,7 @@
             % endif
         %else:
             % if user_is_contributor:
-                <a class="btn btn-warning" href="${node_url}permissions/private/" data-confirm="${make_private_warning}">Make private</a>
+                <a class="btn btn-default" href="${node_url}permissions/private/" data-confirm="${make_private_warning}">Make private</a>
             % endif
             <button class="btn btn-warning disabled">Public</button>
         %endif
