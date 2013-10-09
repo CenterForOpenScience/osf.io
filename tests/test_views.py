@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''Views tests for Node/Project watching.'''
+'''Views tests for the OSF.'''
 from __future__ import absolute_import
 import os
 import unittest
@@ -13,8 +13,28 @@ from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
                             WatchConfigFactory, NodeFactory)
 
 from framework import app
+from website.models import Node
 import new_style  # This import sets up the routes
 
+
+class TestProjectViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user1  = UserFactory()
+        self.user2 = UserFactory()
+        # A project has 2 contributors
+        self.project = ProjectFactory(creator=self.user1)
+        self.project.add_contributor(self.user1)
+        self.project.add_contributor(self.user2)
+        self.project.save()
+
+    def test_project_remove_contributor(self):
+        url = "/api/v1/project/8gu9y/removecontributors/".format(self.project._id)
+        # User 1 removes user2
+        res = self.app.post(url, params={"id": self.user2._id})
+        self.project.reload()
+        assert_not_in(self.user2._id, self.project.contributors)
 
 class TestWatchViews(DbTestCase):
 
