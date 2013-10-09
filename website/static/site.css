@@ -297,6 +297,18 @@ footer {
   margin: 30px 0;
 }
 
+.centered{
+    float: none;
+    margin: 0 auto;
+}
+
+.btn-xl {
+padding: 10px 16px;
+font-size: 40px;
+line-height: 1.33;
+border-radius: 6px;
+}
+
 
 /* Profile gravatar
 -------------------------------------------------- */

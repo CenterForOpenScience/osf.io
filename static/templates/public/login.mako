@@ -1,8 +1,5 @@
 <%inherit file="contentContainer.mako" />
 
-<div class="page-header">
-    <h1>Create an Account or Sign-In</h1>
-</div>
 
 <div class="row">
     <div class="col-md-5">
@@ -16,7 +13,8 @@
                     "action_string": "/register/",
                     "form_class": "form-stacked",
                     "submit_string": "Create Account",
-                    "field_name_prefix": "register_"
+                    "field_name_prefix": "register_",
+                    "submit_btn_class": "btn-success"
                 },
                 "replace": true
             }'>
@@ -33,7 +31,8 @@
                     "method_string": "POST",
                     "action_string": "/login/",
                     "form_class": "form-stacked",
-                    "submit_string": "Sign In"
+                    "submit_string": "Sign In",
+                    "submit_btn_class": "btn-primary"
                 },
                 "replace": true
             }'>
@@ -48,7 +47,8 @@
                     "method_string": "POST",
                     "action_string": "/forgotpassword/",
                     "form_class": "form-stacked",
-                    "submit_string": "Reset Password"
+                    "submit_string": "Reset Password",
+                    "submit_btn_class": "btn-default"
                 },
                 "replace": true
             }'>
