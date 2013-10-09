@@ -5,7 +5,7 @@ from wtforms import fields, Form, PasswordField, BooleanField, IntegerField, \
     SelectMultipleField, SubmitField, TextAreaField, TextField, FieldList, \
     validators
 
-from wtforms.widgets import TextInput, PasswordInput, html_params
+from wtforms.widgets import TextInput, PasswordInput, html_params, TextArea
 from wtforms.validators import ValidationError
 
 from wtfrecaptcha.fields import RecaptchaField
@@ -37,6 +37,15 @@ class BootstrapPasswordInput(PasswordInput):
         kwargs.setdefault('class', 'form-control')
         kwargs.setdefault('class_', 'form-control')
         html = super(BootstrapPasswordInput, self).__call__(field, **kwargs)
+        return html
+
+class BootstrapTextArea(TextArea):
+    '''Custom TextArea that sets a field's class to 'form-control'.'''
+
+    def __call__(self, field, placeholder=None, **kwargs):
+        kwargs.setdefault('class', 'form-control')
+        kwargs.setdefault('class_', 'form-control')
+        html = super(BootstrapTextArea, self).__call__(field, **kwargs)
         return html
 
 RecaptchaField = RecaptchaField

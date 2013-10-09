@@ -17,44 +17,44 @@
 %endif
 
 <header class="jumbotron subhead" id="overview">
-    <div class="btn-toolbar pull-right">
+    <div class="btn-toolbar" style="float:right;">
         <div class="btn-group">
         %if not node_is_public:
             <button class='btn disabled'>Private</button>
             % if user_is_contributor:
-                <a class="btn btn-success" href="${node_url}permissions/public/" data-confirm="${make_public_warning}">Make public</a>
+                <a class="btn" href="${node_url}permissions/public/" data-confirm="${make_public_warning}">Make public</a>
             % endif
         %else:
             % if user_is_contributor:
-                <a class="btn btn-warning" href="${node_url}permissions/private/" data-confirm="${make_private_warning}">Make private</a>
+                <a class="btn" href="${node_url}permissions/private/" data-confirm="${make_private_warning}">Make private</a>
             % endif
-            <button class="btn btn-warning disabled">Public</button>
+            <button class="btn disabled">Public</button>
         %endif
         </div>
 
         <div class="btn-group">
-          <button rel="tooltip" title="Watch" class="btn btn-inverse" href="#" onclick="NodeActions.toggleWatch()">
+          <a rel="tooltip" title="Watch" class="btn" href="#" onclick="NodeActions.toggleWatch()">
             <i class="icon-eye-open"></i>
         % if not user_is_watching:
             <span id="watchCount">Watch&nbsp;${node_watched_count}</span>
         % else:
             <span id="watchCount">Unwatch&nbsp;${node_watched_count}</span>
         % endif
-          </button>
+          </a>
 
-          <button
+          <a
               rel="tooltip"
               title="Number of times this node has been forked (copied)"
               % if node_category == 'project' and username is not None:
               href="#"
-              class="btn btn-inverse"
+              class="btn"
               onclick="NodeActions.forkNode();"
               % else:
-              class="btn btn-default disabled"
+              class="btn disabled"
               % endif
           >
               <i class="icon-fork"></i>&nbsp;${node_fork_count}
-          </button>
+          </a>
         </div>
     </div>
     %if user_can_edit:

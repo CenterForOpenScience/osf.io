@@ -16,7 +16,7 @@
     name="${name}" method="${methodString}" ${"action=\""+actionString+"\"" if actionString else ""} class="${formClass}">
     <fieldset>
         % for field in form:
-            <div class="clearfix">
+            <div class="form-group">
                 ${field.label}
                 <div class="input">
                     % if htmlReplacements and (field.id in htmlReplacements):
@@ -27,8 +27,6 @@
                 </div>
             </div>
         % endfor
-        <div class="">
-          <button type="submit" class="btn primary">${submitString}</button>
-        </div>
+          <button class="btn btn-primary btn-submit" type="submit">${submitString}</button>
     </fieldset>
 </form>

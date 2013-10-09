@@ -31,7 +31,7 @@
     });
 </script>
   <div class="row">
-    <div class="span7" id='containment'>
+    <div class="col-md-7" id='containment'>
       <section id="Wiki Home">
         <div>
         %if wiki_home:
@@ -116,7 +116,7 @@
         </div>
       </section>
     </div>
-    <div class="span5">
+    <div class="col-md-5">
         <div style="margin-right:12px;">
         <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node_tags]) if node_tags else ''}" />
         </div>
