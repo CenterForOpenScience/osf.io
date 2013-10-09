@@ -96,6 +96,9 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
 
 view_functions = {}
 
+def data_to_lambda(data):
+    return lambda *args, **kwargs: data
+
 def process_rules(app, rules, prefix=''):
     """Add URL routes to Flask / Werkzeug lookup table.
 
@@ -122,7 +125,7 @@ def process_rules(app, rules, prefix=''):
 
         else:
 
-            view_func = lambda *args, **kwargs: rule.view_func_or_data
+            view_func = data_to_lambda(rule.view_func_or_data)
             endpoint = '__'.join(
                 route.replace('/', '') for route in rule.routes
             )

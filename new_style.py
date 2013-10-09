@@ -220,8 +220,8 @@ process_rules(app, [
 
     Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
-    Rule('/project/new/', 'get', {}, OsfWebRenderer('project/new.mako', render_mako_string)),
-    Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.mako', render_mako_string)),
+    Rule('/project/new/', 'get', {}, OsfWebRenderer('project/new.mako')),
+    Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.mako')),
 
     Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('project.mako')),
 
