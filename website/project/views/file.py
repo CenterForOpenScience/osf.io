@@ -98,7 +98,7 @@ def upload_file_get(*args, **kwargs):
                 "size":v.size,
                 "url":node_to_use.url + "files/" + v.path,
                 "type":v.content_type,
-                "download_url": node_to_use.api_url + "/files/download/" + v.path,
+                "download_url": node_to_use.api_url + "files/download/" + v.path,
                 "date_uploaded": v.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
                 "downloads": str(total) if total else str(0),
                 "user_id": None,

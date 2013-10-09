@@ -93,14 +93,14 @@
             <td class="size"><span>{%=o.formatFileSize(file.size)%}</span></td>
             <td>{%=file.downloads%}</td>
             <td><a href="{%=file.download_url%}" download="{%=file.name%}"><i class="icon-download-alt"></i></a></td>
-            <td><form style="margin: 0;">
+            <td><form class="fileDeleteForm" style="margin: 0;">
                 % if user_can_edit:
-                    <button type="button" class="btn btn-danger delete-file" data-filename="{%=file.name%}" onclick="deleteFile(this)">
+                    <button type="button" class="btn btn-danger btn-delete delete-file" data-filename="{%=file.name%}" onclick="deleteFile(this)">
                         <i class="icon-trash icon-white"></i>
                         <span>Delete</span>
                     </button>
                 % else:
-                    <button type="button" class="btn btn-danger disabled">
+                    <button type="button" class="btn btn-danger btn-delete disabled">
                         <i class="icon-trash icon-white"></i>
                         <span>Delete</span>
                     </button>
@@ -136,30 +136,9 @@
             }
         )
     }
-//    $('.delete-file').on('click', function() {
-//        console.log('clicked');
-//        bootbox.prompt(
-//            'Are you sure you want to delete this file?',
-//            function(result) {
-//                if (result) {
-//                    console.log('deleting!');
-//                }
-//            }
-//        )
-//    });
 </script>
 
 <script>
-//function deleteFile(button) {
-//   var url = $(button).parents('form.fileDeleteForm').attr('action');
-//    $.post(url, function(data) {
-//        if (data.status !== 'success') {
-//            alert('Error!');
-//        } else {
-//            $(button).parents('.template-download').fadeOut();
-//        }
-//    }, 'json')
-//}
 
 $(function () {
     'use strict';
