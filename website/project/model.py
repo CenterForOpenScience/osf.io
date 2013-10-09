@@ -740,12 +740,17 @@ class Node(StoredObject):
         )
         return True
 
-    def remove_contributor(self, user, api_key, user_id_to_be_removed):
-        if not user._primary_key == user_id_to_be_removed:
-            self.contributors.remove(user_id_to_be_removed)
-            self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != user_id_to_be_removed]
+    def remove_contributor(self, user, contributor, api_key=None):
+        '''Remove a contributor from this project.
+
+        :param user: User object, the user who is removing the contributor.
+        :param contributor: User object, the contributor to be removed
+        '''
+        if not user._primary_key == contributor._id:
+            self.contributors.remove(contributor._id)
+            self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != contributor._id]
             self.save()
-            removed_user = get_user(user_id_to_be_removed)
+            removed_user = get_user(contributor._id)
 
             self.add_log(
                 action='remove_contributor',
@@ -762,6 +767,10 @@ class Node(StoredObject):
             return False
 
     def add_contributor(self, user, log=True, save=False):
+        '''Add a contributor to the project.
+
+        :param user: A user object.
+        '''
         if user._primary_key not in self.contributors:
             self.contributors.append(user)
             self.contributor_list.append({'id':user._primary_key})
