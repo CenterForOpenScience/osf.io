@@ -75,7 +75,11 @@ def search_user(*args, **kwargs):
         'results':[
             {
                 'fullname' : item.fullname,
-                'gravatar' : filters.gravatar(item.username, size=settings.gravatar_size_add_contributor),
+                'gravatar' : filters.gravatar(
+                    item.username,
+                    use_ssl=True,
+                    size=settings.gravatar_size_add_contributor
+                ),
                 'id' : item._primary_key,
             } for item in result
         ]

@@ -52,7 +52,11 @@ def _profile_view(uid=None):
             and not node.is_deleted
         ]
         public_projects = get_public_projects(user=profile)
-        gravatar_url = filters.gravatar(profile, size=settings.gravatar_size_profile)
+        gravatar_url = filters.gravatar(
+            profile,
+            use_ssl=True,
+            size=settings.gravatar_size_profile
+        )
         return {
             'user_id': profile._id,
             'user_full_name' : profile.fullname,

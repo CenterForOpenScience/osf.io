@@ -1,5 +1,3 @@
-from website import settings
-
 import hashlib
 import urllib
 
