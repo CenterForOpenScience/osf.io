@@ -361,7 +361,7 @@ def _view_project(node_to_use, user):
     project.view.mako.
 
     '''
-    return {
+    data = {
 
         'node_id' : node_to_use._primary_key,
         'node_title' : node_to_use.title,
@@ -417,10 +417,16 @@ def _view_project(node_to_use, user):
         'parent_title' : node_to_use.node__parent[0].title if node_to_use.node__parent else None,
         'parent_url' : node_to_use.node__parent[0].url if node_to_use.node__parent else None,
 
-        'user_is_contributor' : node_to_use.is_contributor(user),
-        'user_can_edit' : node_to_use.is_contributor(user) and not node_to_use.is_registration,
-        'user_is_watching': user.is_watching(node_to_use),
     }
+    if user:
+        data.update(
+            {
+                'user_is_contributor' : node_to_use.is_contributor(user),
+                'user_can_edit' : node_to_use.is_contributor(user) and not node_to_use.is_registration,
+                'user_is_watching': user.is_watching(node_to_use) or False,
+            }
+        )
+    return data
 
 
 def _get_user_activity(node, user, rescale_ratio):
