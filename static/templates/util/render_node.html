@@ -1,4 +1,5 @@
 <li id="projects-widget" node_id="${summary['id']}" class="project list-group-item" style="display: list-item;">
+
     <h3 style="line-height:18px;">
         <span style="display:inline-block">
         <a href="${summary['url']}">${summary['title']}</a>
@@ -10,6 +11,21 @@
             <i style="float:right;" id="icon-${summary['id']}" class="icon-plus" onclick="openCloseNode('${summary['id']}');"></i>
         % endif
     </h3>
+
+    <!-- Show abbreviated contributors list -->
+    % if summary['show_contributors']:
+        <div mod-meta='{
+                "tpl": "util/render_users_abbrev.mako",
+                "uri": "${summary['api_url']}contributors_abbrev/",
+                "kwargs": {
+                    "node_url": "${summary['url']}"
+                },
+                "replace": true
+            }'>
+        </div>
+    % else:
+        <div style="padding: 0px 10px 10px 10px;">Contributors unavailable</div>
+    % endif
 
     % if summary['show_logs']:
 

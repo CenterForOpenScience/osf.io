@@ -33,28 +33,33 @@
         </div>
 
         <div class="btn-group">
-          <a rel="tooltip" title="Watch" class="btn" href="#" onclick="NodeActions.toggleWatch()">
-            <i class="icon-eye-open"></i>
-        % if not user_is_watching:
-            <span id="watchCount">Watch&nbsp;${node_watched_count}</span>
-        % else:
-            <span id="watchCount">Unwatch&nbsp;${node_watched_count}</span>
-        % endif
-          </a>
+            % if user_name:
+                <a rel="tooltip" title="Watch" class="btn" href="#" onclick="NodeActions.toggleWatch()">
+            % else:
+                <a rel="tooltip" title="Watch" class="btn disabled" href="#">
+            % endif
 
-          <a
-              rel="tooltip"
-              title="Number of times this node has been forked (copied)"
-              % if node_category == 'project' and username is not None:
-              href="#"
-              class="btn"
-              onclick="NodeActions.forkNode();"
-              % else:
-              class="btn disabled"
-              % endif
-          >
-              <i class="icon-fork"></i>&nbsp;${node_fork_count}
-          </a>
+            <i class="icon-eye-open"></i>
+            % if not user_is_watching:
+                <span id="watchCount">Watch&nbsp;${node_watched_count}</span>
+            % else:
+                <span id="watchCount">Unwatch&nbsp;${node_watched_count}</span>
+            % endif
+              </a>
+
+            <a
+                rel="tooltip"
+                title="Number of times this node has been forked (copied)"
+                % if node_category == 'project' and user_name:
+                    href="#"
+                    class="btn"
+                    onclick="NodeActions.forkNode();"
+                % else:
+                    class="btn disabled"
+                % endif
+            >
+                <i class="icon-fork"></i>&nbsp;${node_fork_count}
+            </a>
         </div>
     </div>
     %if user_can_edit:
@@ -81,10 +86,10 @@
 
     %endif
     %if parent_id:
-        <h1 id="node-title" style="display:inline-block"><a href="/project/${parent_id}/">${parent_title}</a> / </h1> <h1 id="${'node-title-editable' if user_can_edit else 'node-title'}" style="display:inline-block">${node_title}</h1>
-    %else:
-        <h1 id="${'node-title-editable' if user_can_edit else 'node-title'}" style="display:inline-block">${node_title}</h1>
+        <h1 id="node-title" style="display:inline-block" class="node-parent-title"><a href="/project/${parent_id}/">${parent_title}</a> / </h1>
     %endif
+    <h1 id="${'node-title-editable' if user_can_edit else 'node-title'}" class='node-title' style="display:inline-block">${node_title}</h1>
+
     <p id="contributors">Contributors:
         <div mod-meta='{"tpl" : "project/render_contributors.html", "uri" : "${node_api_url}get_contributors/", "replace" : true}'></div>
     % if node_is_fork:
