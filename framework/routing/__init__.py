@@ -84,7 +84,6 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
         except HTTPError as error:
             rv = error
         except Exception as error:
-            print 'hi', debug_mode
             if debug_mode:
                 raise error
             rv = HTTPError(
@@ -159,6 +158,12 @@ def render_mako_string(tplname, data):
         tpl = Template(tplname, lookup=makolookup)
         mako_cache[tplname] = tpl
     return tpl.render(**data)
+
+renderer_extension_map = {
+    '.stache': render_mustache_string,
+    '.jinja': render_jinja_string,
+    '.mako': render_mako_string,
+}
 
 def unpack(data, n=4):
     """Unpack data to tuple of length n.
@@ -278,21 +283,46 @@ class WebRenderer(Renderer):
     """
 
     CONTENT_TYPE = "text/html"
-    error_template = 'error.html'
+    error_template = 'error.mako'
 
-    def __init__(self, template_name, renderer, data=None, template_dir=TEMPLATE_DIR):
+    def detect_renderer(self, renderer, filename):
+
+        if renderer:
+            return renderer
+
+        try:
+            _, extension = os.path.splitext(filename)
+            return renderer_extension_map[extension]
+        except KeyError:
+            raise Exception(
+                'Could not infer renderer from file name: {}'.format(
+                    filename
+                )
+            )
+
+    def __init__(self, template_name, renderer=None, error_renderer=None,
+                 data=None, template_dir=TEMPLATE_DIR):
         """Construct WebRenderer.
 
-        :param template_name:
-        :param renderer:
+        :param template_name: Name of template file
+        :param renderer: Renderer callable; attempt to auto-detect if None
+        :param error_renderer: Renderer for error views; attempt to
+            auto-detect if None
         :param data: Optional dictionary or dictionary-generating function
                      to add to data from view function
-        :param template_dir:
+        :param template_dir: Path to template directory
+
         """
         self.template_name = template_name
-        self.renderer = renderer
         self.data = data or {}
         self.template_dir = template_dir
+
+
+        self.renderer = self.detect_renderer(renderer, template_name)
+        self.error_renderer = self.detect_renderer(
+            error_renderer,
+            self.error_template
+        )
 
     def handle_error(self, error):
 

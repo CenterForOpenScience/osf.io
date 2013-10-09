@@ -1,5 +1,5 @@
 
-<div mod-meta='{"tpl":"header.html","replace": true}'></div>
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
 
 <div class="page-header">
 
@@ -68,4 +68,4 @@
     </div>
 </div>
 
-<div mod-meta='{"tpl":"footer.html","replace": true}'></div>
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
