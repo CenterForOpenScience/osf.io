@@ -4,7 +4,7 @@
 <form id="fileupload" action="${node_api_url + 'files/upload/'}" method="POST" enctype="multipart/form-data">
         <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
         <div class="row fileupload-buttonbar">
-            <div class="span7">
+            <div class="col-md-7">
                 <!-- The fileinput-button span is used to style the file input field as button -->
                 <span class="btn btn-success fileinput-button${'' if user_can_edit else ' disabled'}">
                     <i class="icon-plus icon-white"></i>
@@ -17,7 +17,7 @@
                 </button>
             </div>
             <!-- The global progress information -->
-            <div class="span5 fileupload-progress fade">
+            <div class="col-md-5 fileupload-progress fade">
                 <!-- The global progress bar -->
                 <div style='margin-bottom:0' class="progress progress-success progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100">
                     <div class="bar" style="width:0%;"></div>
@@ -97,12 +97,10 @@
                 % if user_can_edit:
                     <button type="button" class="btn btn-danger btn-delete delete-file" data-filename="{%=file.name%}" onclick="deleteFile(this)">
                         <i class="icon-trash icon-white"></i>
-                        <span>Delete</span>
                     </button>
                 % else:
                     <button type="button" class="btn btn-danger btn-delete disabled">
                         <i class="icon-trash icon-white"></i>
-                        <span>Delete</span>
                     </button>
                 % endif
             </form>
