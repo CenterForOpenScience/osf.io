@@ -33,7 +33,7 @@
         </div>
 
         <div class="btn-group">
-          <button rel="tooltip" title="Watch" class="btn btn-inverse" href="#" onclick="NodeActions.toggleWatch()">
+          <button rel="tooltip" title="Watch" class="btn btn-default" href="#" onclick="NodeActions.toggleWatch()">
             <i class="icon-eye-open"></i>
         % if not user_is_watching:
             <span id="watchCount">Watch&nbsp;${node_watched_count}</span>
@@ -47,13 +47,13 @@
               title="Number of times this node has been forked (copied)"
               % if node_category == 'project' and username is not None:
               href="#"
-              class="btn btn-inverse"
+              class="btn btn-default"
               onclick="NodeActions.forkNode();"
               % else:
               class="btn btn-default disabled"
               % endif
           >
-              <i class="icon-fork"></i>&nbsp;${node_fork_count}
+              <i class="icon-code-fork"></i>&nbsp;${node_fork_count}
           </button>
         </div>
     </div>
