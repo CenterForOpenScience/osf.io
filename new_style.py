@@ -1,12 +1,14 @@
-from framework.flask import app
+from framework.flask import app, request
 import framework
 from website import settings
 from framework import get_current_user
-
+from framework import HTTPError
 from framework import (Rule, process_rules,
                        WebRenderer, json_renderer,
                        render_mako_string)
 
+
+import httplib as http
 
 def get_globals():
     user = get_current_user()
@@ -55,6 +57,13 @@ from website.discovery import views as discovery_views
 from website.profile import views as profile_views
 from website.project import views as project_views
 
+# Set default views to 404, using URL-appropriate renderers
+process_rules(app, [
+    Rule('/<path:_>', ['get', 'post'], HTTPError(http.NOT_FOUND),
+         OsfWebRenderer('', render_mako_string)),
+    Rule('/api/v1/<path:_>', ['get', 'post'],
+         HTTPError(http.NOT_FOUND), json_renderer),
+])
 
 def favicon():
     return framework.send_from_directory(
@@ -74,12 +83,12 @@ process_rules(app, [
     Rule('/dashboard/', 'get', website_routes.dashboard, OsfWebRenderer('dashboard.html', render_mako_string)),
     Rule('/reproducibility/', 'get', website_routes.reproducibility, OsfWebRenderer('', render_mako_string)),
 
-    Rule('/about/', 'get', None, OsfWebRenderer('public/pages/about.mako', render_mako_string)),
-    Rule('/howosfworks/', 'get', None, OsfWebRenderer('public/pages/howosfworks.mako', render_mako_string)),
-    Rule('/faq/', 'get', None, OsfWebRenderer('public/pages/faq.mako', render_mako_string)),
-    Rule('/getting-started/', 'get', None, OsfWebRenderer('public/pages/getting_started.mako', render_mako_string)),
-    Rule('/explore/', 'get', None, OsfWebRenderer('public/explore.mako', render_mako_string)),
-    Rule(['/messages/', '/help/'], 'get', None, OsfWebRenderer('public/comingsoon.mako', render_mako_string)),
+    Rule('/about/', 'get', {}, OsfWebRenderer('public/pages/about.mako', render_mako_string)),
+    Rule('/howosfworks/', 'get', {}, OsfWebRenderer('public/pages/howosfworks.mako', render_mako_string)),
+    Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako', render_mako_string)),
+    Rule('/getting-started/', 'get', {}, OsfWebRenderer('public/pages/getting_started.mako', render_mako_string)),
+    Rule('/explore/', 'get', {}, OsfWebRenderer('public/explore.mako', render_mako_string)),
+    Rule(['/messages/', '/help/'], 'get', {}, OsfWebRenderer('public/comingsoon.mako', render_mako_string)),
 
 ])
 

@@ -1,11 +1,10 @@
 import httplib as http
 from framework import (
-    abort,
     get_current_user,
     get_user,
     must_be_logged_in,
     request,
-    Q,
+    HTTPError,
 )
 from framework.forms.utils import sanitize
 
@@ -42,8 +41,7 @@ def _profile_view(uid=None):
     profile = get_user(id=uid or user)
 
     if not (uid or user):
-        # todo: should raise HTTPError
-        abort(http.UNAUTHORIZED)
+        raise HTTPError(http.UNAUTHORIZED)
 
     if profile:
         projects = [
@@ -66,8 +64,8 @@ def _profile_view(uid=None):
             'date_registered': profile.date_registered.strftime("%Y-%m-%d"),
             'gravatar_url' : gravatar_url,
         }
-    # todo: should raise HTTPError
-    return abort(404)
+    raise HTTPError(http.NOT_FOUND)
+
 
 def profile_view():
     return _profile_view()
