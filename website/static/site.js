@@ -30,6 +30,10 @@ NodeActions.forkNode = function(){
   });
 };
 
+/*
+Toggles the watch mode ("watched" or "unwatched") when for a node at the
+project view page.
+*/
 NodeActions.toggleWatch = function () {
     // Send POST request to node's watch API url and update the watch count
     $.ajax({
@@ -74,6 +78,41 @@ NodeActions.removeUser = function(userid, name, el){
 
     }
     return false;
+};
+
+NodeActions._openCloseNode = function(node_id) {
+
+    var icon = $("#icon-" + node_id),
+        body = $("#body-" + node_id);
+
+    body.toggleClass('hide');
+
+    if ( body.hasClass('hide') ) {
+        icon.removeClass('icon-minus');
+        icon.addClass('icon-plus');
+    }else{
+        icon.removeClass('icon-plus');
+        icon.addClass('icon-minus');
+    }
+}
+
+/*
+Display recent logs for for a node on the project view page.
+*/
+NodeActions.openCloseNode = function(node_id){
+    var logs = $('#logs-' + node_id);
+    if (logs.html() === "") {
+        $.get(
+            logs.attr('data-uri'),
+            {count: 3},
+            function(response) {
+                logs.html(response);
+                NodeActions._openCloseNode(node_id);
+            }
+        );
+    } else {
+        NodeActions._openCloseNode(node_id);
+    }
 };
 
 /*

@@ -29,7 +29,7 @@
                     | registered: ${node.registered_date.strftime('%Y/%m/%d %I:%M %p')}
                 % endif
                 </span>
-                <i style="float:right;margin-top: 8px;" id="icon-${node._primary_key}" class="icon-plus" onclick="openCloseNode('${node._primary_key}');"></i>
+                <i style="float:right;margin-top: 8px;" id="icon-${node._primary_key}" class="icon-plus" onclick="NodeActions.openCloseNode('${node._primary_key}');"></i>
             </h3>
             <div class="user-activity-meter">
                 %if node.logs:

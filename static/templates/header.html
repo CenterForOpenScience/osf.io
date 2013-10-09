@@ -50,42 +50,6 @@
     <script src="/static/ember-formbuilder.js"></script>
     <script src="/static/site.js"></script>
 
-
-<script>
-
-    var _openCloseNode = function(node_id) {
-
-        var icon = $("#icon-" + node_id),
-            body = $("#body-" + node_id);
-
-        body.toggleClass('hide');
-
-        if ( body.hasClass('hide') ) {
-            icon.removeClass('icon-minus');
-            icon.addClass('icon-plus');
-        }else{
-            icon.removeClass('icon-plus');
-            icon.addClass('icon-minus');
-        }
-    }
-
-    var openCloseNode = function(node_id){
-        var logs = $('#logs-' + node_id);
-        if (logs.html() === "") {
-            $.get(
-                logs.attr('data-uri'),
-                {count: 3},
-                function(response) {
-                    logs.html(response);
-                    _openCloseNode(node_id);
-                }
-            );
-        } else {
-            _openCloseNode(node_id);
-        }
-
-    };
-</script>
     <!--uploads-->
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/jquery.fileupload-ui.css">
