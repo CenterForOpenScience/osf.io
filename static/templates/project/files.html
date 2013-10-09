@@ -93,29 +93,73 @@
             <td class="size"><span>{%=o.formatFileSize(file.size)%}</span></td>
             <td>{%=file.downloads%}</td>
             <td><a href="{%=file.download_url%}" download="{%=file.name%}"><i class="icon-download-alt"></i></a></td>
-            <td><form style='margin:0' method='post' class='fileDeleteForm' action='${node_api_url + 'files/delete/{%=file.name%}/'}'>
-                <button type="button" class="btn btn-danger btn-delete${'' if user_can_edit else ' disabled'}"${ "onclick='deleteFile(this)'" if user_can_edit else ""}>
-                    <i class="icon-trash icon-white"></i>
-                    <span>Delete</span>
-                </button>
-                </form>
+            <td><form style="margin: 0;">
+                % if user_can_edit:
+                    <button type="button" class="btn btn-danger delete-file" data-filename="{%=file.name%}" onclick="deleteFile(this)">
+                        <i class="icon-trash icon-white"></i>
+                        <span>Delete</span>
+                    </button>
+                % else:
+                    <button type="button" class="btn btn-danger diabled">
+                        <i class="icon-trash icon-white"></i>
+                        <span>Delete</span>
+                    </button>
+                % endif
+            </form>
             </td>
             {% } %}
         {% } %}
     </tr>
 {% } %}
 </script>
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.0.0/bootbox.min.js"></script>
+<script type="text/javascript">
+    function deleteFile(button) {
+        var $button = $(button),
+            filename = $button.attr('data-filename');
+        bootbox.confirm(
+            'Are you sure you want to delete the file "' + filename + '"?',
+            function(result) {
+                if (result) {
+                    $.post(
+                        '${node_api_url}files/delete/' + filename + '/'
+                    ).always(function(response) {
+                        if (response.status !== 'success') {
+                            bootbox.alert('File could not be deleted');
+                        } else {
+                            $button.parents('.template-download').fadeOut();
+                        }
+                    });
+                }
+            }
+        )
+    }
+//    $('.delete-file').on('click', function() {
+//        console.log('clicked');
+//        bootbox.prompt(
+//            'Are you sure you want to delete this file?',
+//            function(result) {
+//                if (result) {
+//                    console.log('deleting!');
+//                }
+//            }
+//        )
+//    });
+</script>
+
 <script>
-function deleteFile(button) {
-   var url = $(button).parents('form.fileDeleteForm').attr('action');
-    $.post(url, function(data) {
-        if (data.status !== 'success') {
-            alert('Error!');
-        } else {
-            $(button).parents('.template-download').fadeOut();
-        }
-    }, 'json')
-}
+//function deleteFile(button) {
+//   var url = $(button).parents('form.fileDeleteForm').attr('action');
+//    $.post(url, function(data) {
+//        if (data.status !== 'success') {
+//            alert('Error!');
+//        } else {
+//            $(button).parents('.template-download').fadeOut();
+//        }
+//    }, 'json')
+//}
 
 $(function () {
     'use strict';

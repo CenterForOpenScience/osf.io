@@ -335,18 +335,14 @@ def component_remove(*args, **kwargs):
     else:
         node_to_use = project
 
-    # todo discuss behavior
     if node_to_use.remove_node(user=user):
+        push_status_message('Component deleted')
         return {
             'status' : 'success',
             'message' : 'Component deleted',
         }, None, None, '/dashboard/'
-        # push_status_message('Component(s) deleted')
-        # return redirect('/dashboard/')
     else:
-        raise HTTPError(http.BAD_REQUEST)
-        # push_status_message('Component(s) unable to be deleted')
-        # return redirect(node_to_use.url)
+        raise HTTPError(http.BAD_REQUEST, message='Could not delete component')
 
 
 @must_be_valid_project

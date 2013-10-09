@@ -220,6 +220,12 @@ process_rules(app, [
         '/project/<pid>/node/<nid>/settings/',
     ], 'get', project_views.node.node_setting, OsfWebRenderer('project/settings.html', render_mako_string)),
 
+    # Remove
+    Rule([
+        '/project/<pid>/remove/',
+        '/project/<pid>/node/<nid>/remove/',
+    ], 'get', project_views.node.component_remove, WebRenderer(None, None)),
+
     # Permissions
     # TODO: Should be a POST
     Rule([
