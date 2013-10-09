@@ -33,28 +33,33 @@
         </div>
 
         <div class="btn-group">
-          <a rel="tooltip" title="Watch" class="btn" href="#" onclick="NodeActions.toggleWatch()">
-            <i class="icon-eye-open"></i>
-        % if not user_is_watching:
-            <span id="watchCount">Watch&nbsp;${node_watched_count}</span>
-        % else:
-            <span id="watchCount">Unwatch&nbsp;${node_watched_count}</span>
-        % endif
-          </a>
+            % if user_name:
+                <a rel="tooltip" title="Watch" class="btn" href="#" onclick="NodeActions.toggleWatch()">
+            % else:
+                <a rel="tooltip" title="Watch" class="btn disabled" href="#">
+            % endif
 
-          <a
-              rel="tooltip"
-              title="Number of times this node has been forked (copied)"
-              % if node_category == 'project' and username is not None:
-              href="#"
-              class="btn"
-              onclick="NodeActions.forkNode();"
-              % else:
-              class="btn disabled"
-              % endif
-          >
-              <i class="icon-fork"></i>&nbsp;${node_fork_count}
-          </a>
+            <i class="icon-eye-open"></i>
+            % if not user_is_watching:
+                <span id="watchCount">Watch&nbsp;${node_watched_count}</span>
+            % else:
+                <span id="watchCount">Unwatch&nbsp;${node_watched_count}</span>
+            % endif
+              </a>
+
+            <a
+                rel="tooltip"
+                title="Number of times this node has been forked (copied)"
+                % if node_category == 'project' and user_name:
+                    href="#"
+                    class="btn"
+                    onclick="NodeActions.forkNode();"
+                % else:
+                    class="btn disabled"
+                % endif
+            >
+                <i class="icon-fork"></i>&nbsp;${node_fork_count}
+            </a>
         </div>
     </div>
     %if user_can_edit:
