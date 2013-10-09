@@ -60,10 +60,6 @@
     %if user_can_edit:
     <script>
         $(function() {
-            function urlDecode(str) {
-                return decodeURIComponent((str+'').replace(/\+/g, '%20'));
-            }
-
             $('#node-title-editable').editable({
                type:  'text',
                pk:    '${node_id}',
@@ -71,7 +67,7 @@
                url:   '${node_api_url}edit/',
                title: 'Edit Title',
                placement: 'bottom',
-               value: '${ '\\\''.join(node_title.split('\'')) }',
+               value: "${ '\\\''.join(node_title.split('\'')) }",
                success: function(data){
                     document.location.reload(true);
                }
@@ -127,6 +123,7 @@
         </ul>
     </div>
 </header>
+<!-- TODO: Move this out of html -->
 <script type="text/javascript">
   var App = Ember.Application.create();
 
@@ -200,47 +197,54 @@
     },
   });
 </script>
-<div class="modal hide fade" id="addContributors">
-    <div class="modal-header">
-        <h3>Add Contributors</h3>
-    </div>
-    <div class="modal-body">
-        <script type="text/x-handlebars">
-        {{view Ember.TextField valueBinding="App.SearchController.query"}}
-        {{#view Em.Button target="App.SearchController" action="search"}}
-            Search
-        {{/view}}
-        <br />
-        {{#if App.SearchController.content}}
-            {{#each App.SearchController.content}}
-                {{#view App.RadioButton value=id fullname=fullname}}
-                    {{fullname}}
-                {{/view}}
-                {{#view App.Gravatar src=gravatar}}
+<div class="modal fade" id="addContributors">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Contributors</h3>
+            </div><!-- end modal-header -->
+            <div class="modal-body">
+                <script type="text/x-handlebars">
+                {{view Ember.TextField valueBinding="App.SearchController.query"}}
+                {{#view Em.Button target="App.SearchController" action="search"}}
+                    Search
                 {{/view}}
                 <br />
-                ##<input type="radio" name="id" value="{{id}}">&nbsp;{{fullname}}<br />
-            {{/each}}
-        {{else}}
-            {{#if App.SearchController.has_started}}
-                {{#if App.SearchController.is_email}}
-                    No user by that email address found.
+                {{#if App.SearchController.content}}
+                    {{#each App.SearchController.content}}
+                        {{#view App.RadioButton value=id fullname=fullname}}
+                            {{fullname}}
+                        {{/view}}
+                        {{#view App.Gravatar src=gravatar}}
+                        {{/view}}
+                        <br />
+                        ##<input type="radio" name="id" value="{{id}}">&nbsp;{{fullname}}<br />
+                    {{/each}}
                 {{else}}
-                    No user by that name found.
+                    {{#if App.SearchController.has_started}}
+                        {{#if App.SearchController.is_email}}
+                            No user by that email address found.
+                        {{else}}
+                            No user by that name found.
+                        {{/if}}
+                         You can manually add the person you are looking for by entering their name and email address below.  They can later claim this project via that email address when they associate said address with an OSF account. <br />
+                            <br />
+                            <form class="form-horizontal">
+                            <div class="form-group">
+                            <label>Full name</label><div>{{view Ember.TextField valueBinding="App.SearchController.fullname"}}</div>
+                            <label>Email</label><div>{{view Ember.TextField valueBinding="App.SearchController.email"}}</div>
+                            </div>
+                            </form>
+                    {{/if}}
                 {{/if}}
-                 You can manually add the person you are looking for by entering their name and email address below.  They can later claim this project via that email address when they associate said address with an OSF account. <br />
-                    <br />
-                    <form class="form-horizontal">
-                    <label>Full name</label><div>{{view Ember.TextField valueBinding="App.SearchController.fullname"}}</div>
-                    <label>Email</label><div>{{view Ember.TextField valueBinding="App.SearchController.email"}}</div>
-                    </form>
-            {{/if}}
-        {{/if}}
-        </script>
-    </div>
-    <div class="modal-footer">
-        <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-        <button onclick="App.SearchController.add()" class="btn primary">Add</button>
-    </div>
-</div>
+                </script>
+            </div><!-- end modal-body -->
+            <div class="modal-footer">
+                <a href="#" class="btn" data-dismiss="modal">Cancel</a>
+                <button onclick="App.SearchController.add()" class="btn primary">Add</button>
+            </div><!-- end modal-footer -->
+        </div><!-- end modal-content -->
+    </div><!-- end modal-dialog -->
+</div><!-- end modal -->
+
 ${next.body()}

@@ -18,6 +18,10 @@ var setStatus = function(status){
     $('#alert-container').append(status);//'<div class=\'alert-message warning fade in\' data-alert=\'alert\'><a class=\'close\' href=\'#\'>&times;</a><p>'+ status +'</p></div>');
 };
 
+var urlDecode = function(str) {
+    return decodeURIComponent((str+'').replace(/\+/g, '%20'));
+}
+
 
 window.NodeActions = {};  // Namespace for NodeActions
 
