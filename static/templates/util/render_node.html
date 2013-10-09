@@ -11,6 +11,21 @@
         % endif
     </h3>
 
+    <!-- Show abbreviated contributors list -->
+    % if summary['show_contributors']:
+        <div mod-meta='{
+                "tpl": "util/render_users_abbrev.mako",
+                "uri": "${summary['api_url']}contributors_abbrev/",
+                "kwargs": {
+                    "node_url": "${summary['url']}"
+                },
+                "replace": true
+            }'>
+        </div>
+    % else:
+        <div style="padding: 0px 10px 10px 10px;">Contributors unavailable</div>
+    % endif
+
     % if summary['show_logs']:
 
         <!--Stacked bar to visualize user activity level against total activity level of a project -->

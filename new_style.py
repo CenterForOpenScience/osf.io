@@ -168,6 +168,8 @@ process_rules(app, [
     Rule('/settings/revoke_key/', 'post', profile_views.revoke_user_key, json_renderer),
     Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, json_renderer),
 
+    Rule('/profile/<user_id>/summary/', 'get', profile_views.get_profile_summary, json_renderer),
+
 ], prefix='/api/v1',)
 
 ### Search ###
@@ -217,6 +219,12 @@ process_rules(app, [
         '/project/<pid>/settings/',
         '/project/<pid>/node/<nid>/settings/',
     ], 'get', project_views.node.node_setting, OsfWebRenderer('project/settings.html', render_mako_string)),
+
+    # Remove
+    Rule([
+        '/project/<pid>/remove/',
+        '/project/<pid>/node/<nid>/remove/',
+    ], 'get', project_views.node.component_remove, WebRenderer(None, None)),
 
     # Permissions
     # TODO: Should be a POST
@@ -315,6 +323,11 @@ process_rules(app, [
 # API
 
 process_rules(app, [
+
+    Rule([
+        '/project/<pid>/contributors_abbrev/',
+        '/project/<pid>/node/<nid>/contributors_abbrev/',
+    ], 'get', project_views.contributor.get_node_contributors_abbrev, json_renderer),
 
     Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, json_renderer),
 

@@ -331,14 +331,23 @@ class WebRenderer(Renderer):
                 uri_data = call_url(uri, view_kwargs=view_kwargs)
                 render_data.update(uri_data)
             except NotFound:
-                return '<div>URI {} not found.</div>'.format(uri), is_replace
+                return '<div>URI {} not found</div>'.format(uri), is_replace
             except Exception as error:
-                return '<div>Error retrieving URI {}: {}.</div>'.format(uri, error.message), is_replace
+                return '<div>Error retrieving URI {}: {}</div>'.format(
+                    uri,
+                    repr(error)
+                ), is_replace
 
-        template_rendered = self._render(
-            render_data,
-            element_meta['tpl'],
-        )
+        try:
+            template_rendered = self._render(
+                render_data,
+                element_meta['tpl'],
+            )
+        except Exception as error:
+            return '<div>Error rendering template {}: {}'.format(
+                element_meta['tpl'],
+                repr(error)
+            ), is_replace
 
         return template_rendered, is_replace
 

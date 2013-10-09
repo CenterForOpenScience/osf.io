@@ -335,18 +335,14 @@ def component_remove(*args, **kwargs):
     else:
         node_to_use = project
 
-    # todo discuss behavior
     if node_to_use.remove_node(user=user):
+        push_status_message('Component deleted')
         return {
             'status' : 'success',
             'message' : 'Component deleted',
         }, None, None, '/dashboard/'
-        # push_status_message('Component(s) deleted')
-        # return redirect('/dashboard/')
     else:
-        raise HTTPError(http.BAD_REQUEST)
-        # push_status_message('Component(s) unable to be deleted')
-        # return redirect(node_to_use.url)
+        raise HTTPError(http.BAD_REQUEST, message='Could not delete component')
 
 
 @must_be_valid_project
@@ -416,7 +412,6 @@ def _view_project(node_to_use, user):
         'parent_id' : node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
         'parent_title' : node_to_use.node__parent[0].title if node_to_use.node__parent else None,
         'parent_url' : node_to_use.node__parent[0].url if node_to_use.node__parent else None,
-
     }
     if user:
         data.update(
@@ -474,17 +469,14 @@ def get_summary(*args, **kwargs):
 
     can_edit = node_to_use.can_edit(user, api_key)
 
-    # if rescale_ratio:
-    #     ua_count, ua, non_ua = _get_user_activity(node_to_use, user, rescale_ratio)
-    # else:
-    #     ua_count, ua, non_ua = None, None, None
-
     summary = {
         'id': node_to_use._primary_key,
         'url': node_to_use.url,
+        'api_url': node_to_use.api_url,
         'title': node_to_use.title if can_edit else node_to_use.public_title,
         'registered_date': node_to_use.registered_date.strftime('%m/%d/%y %I:%M %p') if node_to_use.registered_date else None,
         'show_logs': can_edit or node_to_use.are_logs_public,
+        'show_contributors': can_edit or node_to_use.are_contributors_public,
         'nlogs': None,
         'ua_count': None,
         'ua': None,
