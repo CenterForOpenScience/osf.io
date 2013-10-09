@@ -81,12 +81,12 @@ def edit_profile(*args, **kwargs):
 
     form = request.form
 
+    response_data = {'response' : 'success'}
     if form.get('name') == 'fullname' and form.get('value', '').strip():
         user.fullname = sanitize(form['value'])
         user.save()
-
-    return {'response' : 'success'}
-
+        response_data['name'] = user.fullname
+    return response_data
 
 @must_be_logged_in
 def profile_settings(*args, **kwargs):

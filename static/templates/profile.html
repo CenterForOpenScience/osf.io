@@ -10,12 +10,14 @@
                 type:  'text',
                 pk:    '${user_id}',
                 name:  'fullname',
-                url:   '/profile/${user_id}/edit',
+                url:   '/profile/${user_id}/edit/',
                 title: 'Edit Full Name',
                 placement: 'bottom',
                 value: '${fullname}',
+                mode: "inline",
                 success: function(data) {
-                    document.location.reload(true);
+                    // Also change the display name in the user info table
+                    $("td.fullname").text(data['name']);
                 }
             });
         });
@@ -31,7 +33,7 @@
         <table class="table plain">
             <tr>
               <td>Name</td>
-              <td id="${'profile-fullname' if user_is_profile else ''}">${fullname}</td>
+              <td class="${'fullname' if user_is_profile else ''}">${fullname}</td>
             </tr>
             <tr>
                 <td>Location</td>
@@ -59,8 +61,7 @@
 
 <div class="row">
     <div class="col-md-6">
-        <h3 style="margin-bottom:10px;">Public Projects</h3>
-
+        <h3>Public Projects</h3>
         <div mod-meta='{
                 "tpl" : "util/render_nodes.html",
                 "uri" : "/api/v1/profile/${user_id}/public_projects/",
@@ -70,7 +71,7 @@
         </div>
     </div>
     <div class="col-md-6">
-        <h3 style="margin-bottom:10px;">Public Components</h3>
+        <h3>Public Components</h3>
         <div mod-meta='{
                 "tpl" : "util/render_nodes.html",
                 "uri" : "/api/v1/profile/${user_id}/public_components/",

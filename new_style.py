@@ -146,7 +146,7 @@ process_rules(app, [
     Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, OsfWebRenderer('profile.html', render_mako_string)),
     Rule('/settings/', 'get', profile_views.profile_settings, OsfWebRenderer('settings.html', render_mako_string)),
     Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, OsfWebRenderer('profile/key_history.html', render_mako_string)),
-    Rule('/profile/<uid>/edit', 'post', profile_views.edit_profile, json_renderer),
+    Rule('/profile/<uid>/edit/', 'post', profile_views.edit_profile, json_renderer),
     Rule('/addons/', 'get', profile_views.profile_addons, OsfWebRenderer('profile/addons.html', render_mako_string)),
 
 ])
