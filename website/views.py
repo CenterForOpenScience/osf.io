@@ -4,7 +4,9 @@ import framework
 from framework.auth import must_have_session_auth
 from framework import Q
 from framework.forms import utils
-from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm
+from framework.auth.forms import (RegistrationForm, SignInForm,
+                                  ForgotPasswordForm, ResetPasswordForm)
+from website.project.forms import NewProjectForm
 from website import settings
 
 def _rescale_ratio(nodes):
@@ -106,3 +108,6 @@ def forgot_password_form():
 
 def reset_password_form():
     return utils.jsonify(ResetPasswordForm())
+
+def new_project_form():
+    return utils.jsonify(NewProjectForm())

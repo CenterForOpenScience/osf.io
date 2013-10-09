@@ -106,6 +106,7 @@ process_rules(app, [
     Rule('/forms/signin/', 'get', website_routes.signin_form, json_renderer),
     Rule('/forms/forgot_password/', 'get', website_routes.forgot_password_form, json_renderer),
     Rule('/forms/reset_password/', 'get', website_routes.reset_password_form, json_renderer),
+    Rule('/forms/new_project/', 'get', website_routes.new_project_form, json_renderer),
 
 ], prefix='/api/v1')
 
@@ -219,8 +220,8 @@ process_rules(app, [
 
     Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.html', render_mako_string)),
 
-    Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.html', render_mako_string)),
-    Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.html', render_mako_string)),
+    Rule('/project/new/', 'get', {}, OsfWebRenderer('project/new.mako', render_mako_string)),
+    Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.mako', render_mako_string)),
 
     Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('project.html', render_mako_string)),
 
