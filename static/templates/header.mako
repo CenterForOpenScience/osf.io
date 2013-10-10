@@ -111,7 +111,7 @@
     <link rel="stylesheet" href="/static/css/jquery.fileupload-ui.css">
     <link rel="stylesheet" href="/static/pygments.css" />
     <link href="/static/bootstrap-editable/css/bootstrap-editable.css" rel="stylesheet">
-    <%include file='_modal_confirm.mako' />
+    <div mod-meta='{"tpl": "include/confirm.mako", "replace": true}'></div>
 </head>
 <body>
     % if dev_mode:

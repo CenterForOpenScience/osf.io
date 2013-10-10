@@ -1,4 +1,4 @@
-<%inherit file="contentContainer.mako" />
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
 
 <div class="page-header">
     <h1>How the Open Science Framework works</h1>
@@ -94,3 +94,5 @@
     unsuccessful, project teams can communicate the nature of the conflict to 
     the OSF discussion group for resolution advice.
 </p>
+
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

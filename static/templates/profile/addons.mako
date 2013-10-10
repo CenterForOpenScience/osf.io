@@ -1,4 +1,5 @@
-<%inherit file="membersOuter.mako" />
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+<div mod-meta='{"tpl": "include/subnav.mako", "replace": true}'></div>
 
 <h2>Addons</h2>
 
@@ -35,3 +36,5 @@
         return false;
     });
 </script>
+
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

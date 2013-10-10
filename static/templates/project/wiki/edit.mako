@@ -1,4 +1,6 @@
-<%inherit file="project.view.mako" />
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+<div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
+
 <div class="row">
     <div class="span9">
         <form action="${node_url}wiki/${pageName}/edit/" method="POST">
@@ -12,8 +14,14 @@
     </div>
     <div class="span3">
         <div style="width:200px; float:right; margin-left:30px;">
-        <%include file="_wiki_status.mako" />
-        <%include file="_wiki_nav.mako" />
+            <div mod-meta='{
+                    "tpl": "project/wiki/nav.mako",
+                    "replace": true
+                }'></div>
+            <div mod-meta='{
+                    "tpl": "project/wiki/history.mako",
+                    "replace": true
+                }'></div>
         </div>
     </div>
     <script type="text/javascript" src="/static/pagedown/Markdown.Converter.js"></script>
@@ -27,3 +35,5 @@
         })();
     </script>
 </div>
+
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

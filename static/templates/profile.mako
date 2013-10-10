@@ -50,22 +50,20 @@
         <h3 style="margin-bottom:10px;">Public Projects</h3>
 
         <div mod-meta='{
-                "tpl" : "util/render_nodes.html",
+                "tpl" : "util/render_nodes.mako",
                 "uri" : "/api/v1/profile/${user_id}/public_projects/",
                 "replace" : true,
                 "kwargs" : {"sortable" : true}
-            }'>
-        </div>
+            }'></div>
     </div>
     <div class="span6">
         <h3 style="margin-bottom:10px;">Public Components</h3>
         <div mod-meta='{
-                "tpl" : "util/render_nodes.html",
+                "tpl" : "util/render_nodes.mako",
                 "uri" : "/api/v1/profile/${user_id}/public_components/",
                 "replace" : true,
                 "kwargs" : {"sortable" : true}
-            }'>
-    </div>
+            }'></div>
 </div>
 
 <div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

@@ -1,4 +1,4 @@
-<%inherit file="contentContainer.mako" />
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
 
 <div class="page-header">
     <h1>Create an Account or Sign-In</h1>
@@ -58,3 +58,5 @@
     </div>
     <div class="span1">&nbsp;</div>
 </div>
+
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

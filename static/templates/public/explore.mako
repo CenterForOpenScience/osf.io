@@ -1,4 +1,5 @@
-<%inherit file="contentContainer.mako" />
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+
 <% import website.settings %>
 <div class="row">
   <div class="span12">
@@ -84,3 +85,5 @@ d3.json("/static/nodes.json", function(error, graph) {
 });
 
 </script>
+
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

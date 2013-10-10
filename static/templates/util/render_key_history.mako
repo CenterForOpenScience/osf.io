@@ -3,7 +3,11 @@
 <h3>Revision history</h3>
 
 % for log in logs:
-    <div mod-meta='{"tpl" : "util/render_log.html", "uri" : "/api/v1/log/${log["lid"]}/", "replace": true}'></div>
+    <div mod-meta='{
+            "tpl": "util/render_log.mako",
+            "uri": "/api/v1/log/${log["lid"]}/",
+            "replace": true
+        }'></div>
 % endfor
 
 <div>

@@ -1,4 +1,6 @@
-<%inherit file="project.view.mako" />
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+<div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
+
 <%
     import website.settings
 %>
@@ -140,3 +142,5 @@ function brush() {
 }
 
 </script>
+
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

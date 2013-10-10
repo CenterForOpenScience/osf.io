@@ -1,4 +1,6 @@
-<%inherit file="project.view.mako" />
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+<div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
+
 <% import website.settings %>
 
 <form id="fileupload" action="${node_api_url + 'files/upload/'}" method="POST" enctype="multipart/form-data">
@@ -194,3 +196,5 @@ $(function () {
         $('input[name="files[]"]').css('cursor', 'default');
     </script>
 % endif
+
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
