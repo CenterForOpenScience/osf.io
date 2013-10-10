@@ -92,7 +92,9 @@
         <div class="span4">
 
             %if parent_id:
-                <h1 id="node-title" style="display:inline-block" class="node-parent-title"><a href="/project/${parent_id}/">${parent_title}</a> / </h1>
+                <h1 style="display:inline-block" class="node-parent-title">
+                    <a href="/project/${parent_id}/">${parent_title}</a> /
+                </h1>
             %endif
             <h1 id="${'node-title-editable' if user_can_edit else 'node-title'}" class='node-title' style="display:inline-block">${node_title}</h1>
 
