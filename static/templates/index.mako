@@ -1,4 +1,4 @@
-<div mod-meta='{"tpl":"header.html","replace": true}'></div>
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
 
       <div class="headline">
         <div class="container">
@@ -46,4 +46,8 @@
       <!-- /END THE FEATURETTES -->
 
 
-<div mod-meta='{"tpl":"footer.html","replace": true}'></div>
+      % if use_cdn:
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js._primary_key=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+      %endif
+
+<div mod-meta='{"tpl":"footer.mako","replace": true}'></div>

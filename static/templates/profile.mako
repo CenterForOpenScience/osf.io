@@ -1,5 +1,5 @@
 
-<div mod-meta='{"tpl":"header.html","replace": true}'></div>
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
 
 <div class="page-header">
 
@@ -10,7 +10,7 @@
                 type:  'text',
                 pk:    '${user_id}',
                 name:  'fullname',
-                url:   '/profile/${user_id}/edit/',
+                url:   '/api/v1/profile/${user_id}/edit/',
                 title: 'Edit Full Name',
                 placement: 'bottom',
                 value: '${fullname}',
@@ -81,4 +81,4 @@
     </div>
 </div>
 
-<div mod-meta='{"tpl":"footer.html","replace": true}'></div>
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

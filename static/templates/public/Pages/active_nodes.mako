@@ -12,7 +12,7 @@
             <li><a href='#popularPublicProjects'>Most Viewed Public Projects</a></li>
             <li><a href='#popularPublicRegistrations'>Most Viewed Public Registrations</a></li>
         </ul>
-    </div>
+    </div><!-- end sidebar -->
 
     <div class="col-md-9 col-sm-8">
       <h1 class="page-header">Public Activity</h1>

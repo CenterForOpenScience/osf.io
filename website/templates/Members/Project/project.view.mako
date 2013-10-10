@@ -7,108 +7,127 @@
 %>
 
 % if node_is_registration:
-<span class="label label-important" style="font-size:1.1em;margin-bottom:30px;">This node is a registration of <a href="${node_registered_from_url}">this node</a>; the content of the node has been frozen and cannot be edited.</span>
+    <span class="label label-important" style="font-size:1.1em;margin-bottom:30px;">This node is a registration of <a href="${node_registered_from_url}">this node</a>; the content of the node has been frozen and cannot be edited.</span>
     <style type="text/css">
-.watermarked {
-  background-image:url('/static/read-only.png');
-  background-repeat:repeat;
-}
-</style>
+    .watermarked {
+        background-image:url('/static/read-only.png');
+        background-repeat:repeat;
+    }
+    </style>
 %endif
 
 <header class="jumbotron subhead" id="overview">
-    <div class="btn-toolbar pull-right">
-        <div class="btn-group">
-        %if not node_is_public:
-            <button class='btn disabled'>Private</button>
-            % if user_is_contributor:
-                <a class="btn btn-success" href="${node_url}permissions/public/" data-confirm="${make_public_warning}">Make public</a>
-            % endif
-        %else:
-            % if user_is_contributor:
-                <a class="btn btn-default" href="${node_url}permissions/private/" data-confirm="${make_private_warning}">Make private</a>
-            % endif
-            <button class="btn btn-warning disabled">Public</button>
+
+    <div class="row">
+
+        <div class="btn-toolbar pull-right">
+            <div class="btn-group">
+            %if not node_is_public:
+                <button class='btn btn-default disabled'>Private</button>
+                % if user_is_contributor:
+                    <a class="btn btn-warning" href="${node_url}permissions/public/" data-confirm="${make_public_warning}">Make public</a>
+                % endif
+            %else:
+                % if user_is_contributor:
+                    <a class="btn btn-default" href="${node_url}permissions/private/" data-confirm="${make_private_warning}">Make private</a>
+                % endif
+                <button class="btn btn-warning disabled">Public</button>
+            %endif
+            </div>
+
+            <div class="btn-group">
+                % if user_name:
+                    <button rel="tooltip" title="Watch" class="btn btn-default" href="#" onclick="NodeActions.toggleWatch()">
+                % else:
+                    <button rel="tooltip" title="Watch" class="btn btn-default disabled" href="#">
+                % endif
+                <i class="icon-eye-open"></i>
+                % if not user_is_watching:
+                    <span id="watchCount">Watch&nbsp;${node_watched_count}</span>
+                % else:
+                    <span id="watchCount">Unwatch&nbsp;${node_watched_count}</span>
+                % endif
+                  </button>
+
+                <button
+                    rel="tooltip"
+                    title="Number of times this node has been forked (copied)"
+                    % if node_category == 'project' and user_name:
+                        href="#"
+                        class="btn btn-default"
+                        onclick="NodeActions.forkNode();"
+                    % else:
+                        class="btn disabled"
+                    % endif
+                >
+                    <i class="icon-code-fork"></i>&nbsp;${node_fork_count}
+                </button>
+            </div>
+        </div>
+
+        %if user_can_edit:
+            <script>
+                $(function() {
+                    function urlDecode(str) {
+                        return decodeURIComponent((str+'').replace(/\+/g, '%20'));
+                    }
+
+                    $('#node-title-editable').editable({
+                       type:  'text',
+                       pk:    '${node_id}',
+                       name:  'title',
+                       url:   '${node_api_url}edit/',
+                       title: 'Edit Title',
+                       placement: 'bottom',
+                       value: "${ '\\\''.join(node_title.split('\'')) }",
+                       success: function(data){
+                            document.location.reload(true);
+                       }
+                    });
+                });
+            </script>
         %endif
+
+        <div class="span4">
+
+            %if parent_id:
+                <h1 id="node-title" style="display:inline-block" class="node-parent-title"><a href="/project/${parent_id}/">${parent_title}</a> / </h1>
+            %endif
+            <h1 id="${'node-title-editable' if user_can_edit else 'node-title'}" class='node-title' style="display:inline-block">${node_title}</h1>
+
+            <p id="contributors">Contributors:
+                <div mod-meta='{"tpl" : "project/render_contributors.html", "uri" : "${node_api_url}get_contributors/", "replace" : true}'></div>
+            % if node_is_fork:
+                <br />Forked from <a href="${node_forked_from_url}">${node_forked_from_url}</a> on ${node_forked_date}
+            %endif
+            % if node_is_registration and node_registered_meta:
+                <br />Registration Supplement:
+                % for meta in node_registered_meta:
+                    <a href="${node_url}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
+                % endfor
+            %endif
+            <br />Date Created:
+                <span class="date">${node_date_created}</span>
+            | Last Updated:
+            %if not node:
+                <span class="date">${node_date_modified}</span>
+            %else:
+                <span class="date">${node_date_modified}</span>
+            %endif
+
+            %if node:
+                <br />Category: ${node_category}
+            %else:
+                %if node_description:
+                <br />Description: ${node_description}
+                %endif
+            %endif
+            </p>
+
         </div>
 
-        <div class="btn-group">
-          <button rel="tooltip" title="Watch" class="btn btn-default" href="#" onclick="NodeActions.toggleWatch()">
-            <i class="icon-eye-open"></i>
-        % if not user_is_watching:
-            <span id="watchCount">Watch&nbsp;${node_watched_count}</span>
-        % else:
-            <span id="watchCount">Unwatch&nbsp;${node_watched_count}</span>
-        % endif
-          </button>
-
-          <button
-              rel="tooltip"
-              title="Number of times this node has been forked (copied)"
-              % if node_category == 'project' and username is not None:
-              href="#"
-              class="btn btn-default"
-              onclick="NodeActions.forkNode();"
-              % else:
-              class="btn btn-default disabled"
-              % endif
-          >
-              <i class="icon-code-fork"></i>&nbsp;${node_fork_count}
-          </button>
-        </div>
     </div>
-    %if user_can_edit:
-    <script>
-        $(function() {
-            $('#node-title-editable').editable({
-               type:  'text',
-               pk:    '${node_id}',
-               name:  'title',
-               url:   '${node_api_url}edit/',
-               title: 'Edit Title',
-               placement: 'bottom',
-               value: "${ '\\\''.join(node_title.split('\'')) }",
-               success: function(data){
-                    document.location.reload(true);
-               }
-            });
-        });
-    </script>
 
-    %endif
-    %if parent_id:
-        <h1 id="node-title" style="display:inline-block" class="node-parent-title"><a href="/project/${parent_id}/">${parent_title}</a> / </h1>
-    %endif
-    <h1 id="${'node-title-editable' if user_can_edit else 'node-title'}" class='node-title' style="display:inline-block">${node_title}</h1>
-
-    <p id="contributors">Contributors:
-        <div mod-meta='{"tpl" : "project/render_contributors.html", "uri" : "${node_api_url}get_contributors/", "replace" : true}'></div>
-    % if node_is_fork:
-        <br />Forked from <a href="${node_forked_from_url}">${node_forked_from_url}</a> on ${node_forked_date}
-    %endif
-    % if node_is_registration and node_registered_meta:
-        <br />Registration Supplement:
-        % for meta in node_registered_meta:
-            <a href="${node_url}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
-        % endfor
-    %endif
-    <br />Date Created:
-        <span class="date">${node_date_created}</span>
-    | Last Updated:
-    %if not node:
-        <span class="date">${node_date_modified}</span>
-    %else:
-        <span class="date">${node_date_modified}</span>
-    %endif
-
-    %if node:
-        <br />Category: ${node_category}
-    %else:
-        %if node_description:
-        <br />Description: ${node_description}
-        %endif
-    %endif
-    </p>
     <div class="subnav">
         <ul class="nav nav-pills">
             <li><a href="${node_url}">Dashboard</a></li>

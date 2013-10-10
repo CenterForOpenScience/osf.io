@@ -75,7 +75,11 @@ def search_user(*args, **kwargs):
         'results':[
             {
                 'fullname' : item.fullname,
-                'gravatar' : filters.gravatar(item.username, size=settings.gravatar_size_add_contributor),
+                'gravatar' : filters.gravatar(
+                    item.username,
+                    use_ssl=True,
+                    size=settings.gravatar_size_add_contributor
+                ),
                 'id' : item._primary_key,
             } for item in result
         ]
@@ -86,13 +90,6 @@ def search_user(*args, **kwargs):
 ##############################################################################
 
 @must_be_logged_in
-def project_new(*args, **kwargs):
-    form = NewProjectForm()
-    return {
-        'form' : form,
-    }
-
-@must_be_logged_in
 def project_new_post(*args, **kwargs):
     user = kwargs['user']
     form = NewProjectForm(request.form)
@@ -101,9 +98,7 @@ def project_new_post(*args, **kwargs):
         return redirect('/project/' + str(project._primary_key))
     else:
         push_errors_to_status(form.errors)
-    return {
-        'form' : form,
-    }, http.BAD_REQUEST
+    return {}, http.BAD_REQUEST
 
 ##############################################################################
 # New Node

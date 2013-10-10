@@ -38,13 +38,14 @@ class Rule(object):
             return value + '/'
         return value
 
-    def __init__(self, routes, methods, view_func, renderer, view_kwargs=None, endpoint_suffix=''):
+    def __init__(self, routes, methods, view_func_or_data, renderer,
+                 view_kwargs=None, endpoint_suffix=''):
         """Rule constructor.
 
         :param routes: Route or list of routes
         :param methods: HTTP method or list of methods
-        :param view_func: View function or None; pass None if rule should
-            perform no computation e.g. rendering a template without context
+        :param view_func_or_data: View function or data; pass data
+            if view returns a constant data dictionary
         :param renderer: Renderer object or function
         :param view_kwargs: Optional kwargs to pass to view function
         :param endpoint_suffix: Optional suffix to append to endpoint name;
@@ -58,13 +59,13 @@ class Rule(object):
             for route in self._ensure_list(routes)
         ]
         self.methods = self._ensure_list(methods)
-        self.view_func = view_func
+        self.view_func_or_data = view_func_or_data
         self.renderer = renderer
         self.view_kwargs = view_kwargs or {}
         self.endpoint_suffix = endpoint_suffix
 
 
-def wrap_with_renderer(fn, renderer, renderer_kwargs=None):
+def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
     """
 
     :param fn: View function; must return a dictionary or a tuple containing
@@ -82,11 +83,21 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None):
             rv = fn(*args, **kwargs)
         except HTTPError as error:
             rv = error
+        except Exception as error:
+            if debug_mode:
+                raise error
+            rv = HTTPError(
+                http.INTERNAL_SERVER_ERROR,
+                message=repr(error),
+            )
         return renderer(rv, **renderer_kwargs or {})
     return wrapped
 
 
 view_functions = {}
+
+def data_to_lambda(data):
+    return lambda *args, **kwargs: data
 
 def process_rules(app, rules, prefix=''):
     """Add URL routes to Flask / Werkzeug lookup table.
@@ -98,8 +109,9 @@ def process_rules(app, rules, prefix=''):
     """
     for rule in rules:
 
-        if rule.view_func is not None:
-            view_func = wrap_with_renderer(rule.view_func, rule.renderer, rule.view_kwargs)
+        if callable(rule.view_func_or_data):
+
+            view_func = rule.view_func_or_data
             renderer_name = getattr(
                 rule.renderer,
                 '__name__',
@@ -107,22 +119,29 @@ def process_rules(app, rules, prefix=''):
             )
             endpoint = '{}__{}'.format(
                 renderer_name,
-                rule.view_func.__name__
+                rule.view_func_or_data.__name__
             )
-            view_functions[endpoint] = rule.view_func
+            view_functions[endpoint] = rule.view_func_or_data
+
         else:
-            # Some rules don't need named view functions; for example,
-            # some views may simply render a template with no context.
-            # This logic provides a common null view function that takes
-            # arbitrary arguments and returns an empty dictionary.
-            view_func = wrap_with_renderer(lambda *args, **kwargs: {}, rule.renderer, {})
-            endpoint = '__'.join(route.replace('/', '') for route in rule.routes)
+
+            view_func = data_to_lambda(rule.view_func_or_data)
+            endpoint = '__'.join(
+                route.replace('/', '') for route in rule.routes
+            )
+
+        wrapped_view_func = wrap_with_renderer(
+            view_func,
+            rule.renderer,
+            rule.view_kwargs,
+            debug_mode=app.debug
+        )
 
         for url in rule.routes:
             app.add_url_rule(
                 prefix + url,
                 endpoint=endpoint + rule.endpoint_suffix,
-                view_func=view_func,
+                view_func=wrapped_view_func,
                 methods=rule.methods,
             )
 
@@ -142,6 +161,12 @@ def render_mako_string(tplname, data):
         tpl = Template(tplname, lookup=makolookup)
         mako_cache[tplname] = tpl
     return tpl.render(**data)
+
+renderer_extension_map = {
+    '.stache': render_mustache_string,
+    '.jinja': render_jinja_string,
+    '.mako': render_mako_string,
+}
 
 def unpack(data, n=4):
     """Unpack data to tuple of length n.
@@ -261,21 +286,46 @@ class WebRenderer(Renderer):
     """
 
     CONTENT_TYPE = "text/html"
-    error_template = 'error.html'
+    error_template = 'error.mako'
 
-    def __init__(self, template_name, renderer, data=None, template_dir=TEMPLATE_DIR):
+    def detect_renderer(self, renderer, filename):
+
+        if renderer:
+            return renderer
+
+        try:
+            _, extension = os.path.splitext(filename)
+            return renderer_extension_map[extension]
+        except KeyError:
+            raise Exception(
+                'Could not infer renderer from file name: {}'.format(
+                    filename
+                )
+            )
+
+    def __init__(self, template_name, renderer=None, error_renderer=None,
+                 data=None, template_dir=TEMPLATE_DIR):
         """Construct WebRenderer.
 
-        :param template_name:
-        :param renderer:
+        :param template_name: Name of template file
+        :param renderer: Renderer callable; attempt to auto-detect if None
+        :param error_renderer: Renderer for error views; attempt to
+            auto-detect if None
         :param data: Optional dictionary or dictionary-generating function
                      to add to data from view function
-        :param template_dir:
+        :param template_dir: Path to template directory
+
         """
         self.template_name = template_name
-        self.renderer = renderer
         self.data = data or {}
         self.template_dir = template_dir
+
+
+        self.renderer = self.detect_renderer(renderer, template_name)
+        self.error_renderer = self.detect_renderer(
+            error_renderer,
+            self.error_template
+        )
 
     def handle_error(self, error):
 

@@ -1,4 +1,4 @@
-<div mod-meta='{"tpl":"header.html","replace": true}'></div>
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
 
 <div class="subnav">
     <ul class="nav nav-pills">
@@ -10,4 +10,4 @@
 
 ${next.body()}
 
-<div mod-meta='{"tpl":"footer.html","replace": true}'></div>
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
