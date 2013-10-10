@@ -3,10 +3,10 @@
         <div class="footer">
             <div class="container">
                 <div class="row">
-                    <div class="span1">
+                    <div class="col-md-1">
                         &nbsp;
                     </div>
-                     <div class="span2">
+                     <div class="col-md-2">
                         <h4>OSF</h4>
                         <ul>
                             <li><a href="/project/4znZP/wiki/home">About</a></li>
@@ -14,7 +14,7 @@
                             <li><a href="/explore">Explore</a></li>
                         </ul>
                     </div>
-                    <div class="span3">
+                    <div class="col-md-3">
                         <h4>Center for Open Science</h4>
                         <ul>
                             <li><a href="http://centerforopenscience.org">Home</a></li>
@@ -22,14 +22,14 @@
                             <li><a href="/project/EZcUj/wiki/home">Reproducibility Project</a></li>
                         </ul>
                     </div>
-                    <div class="span2">
+                    <div class="col-md-2">
                         <h4>Documentation</h4>
                         <ul>
                             <li><a href="/getting-started">Getting Started</a></li>
                             <li>Developer API</li>
                         </ul>
                     </div>
-                    <div class="span2">
+                    <div class="col-md-2">
                         <h4>Socialize</h4>
                         <div class="social">
                             <a href="http://twitter.com/OSFramework"><img src="/static/img/twitter_alt.png" alt="Twitter" height="24" width="24"></a>
@@ -44,7 +44,7 @@
         </div>
         <div class="container copyright">
             <div class="row">
-                <div class="span12">
+                <div class="col-md-12">
                 <p>Copyright &copy; 2011-2013 <a href="http://centerforopenscience.org">CenterforOpenScience.org</a> - Terms of Service | Privacy | Security</p>
                 </div>
             </div>
