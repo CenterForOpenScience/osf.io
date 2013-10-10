@@ -20,8 +20,7 @@
                     "field_name_prefix": "register_"
                 },
                 "replace": true
-            }'>
-        </div>
+            }'></div>
 
     </div>
     <div class="span4">
@@ -38,9 +37,10 @@
                     "submit_string": "Sign In"
                 },
                 "replace": true
-            }'>
-        </div>
+            }'></div>
+
         <hr />
+
         <h3>Forgot Password</h3>
         <div mod-meta='{
                 "tpl": "util/render_form.mako",
@@ -53,10 +53,12 @@
                     "submit_string": "Reset Password"
                 },
                 "replace": true
-            }'>
-        </div>
+            }'></div>
+
     </div>
+
     <div class="span1">&nbsp;</div>
+
 </div>
 
 <div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

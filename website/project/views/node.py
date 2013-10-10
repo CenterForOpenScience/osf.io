@@ -265,7 +265,8 @@ def project_set_permissions(*args, **kwargs):
 def watch_post(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
-    watch_config = WatchConfig(node=node_to_use,
+
+    _config = WatchConfig(node=node_to_use,
                                 digest=request.form.get("digest", False),
                                 immediate=request.form.get('immediate', False))
     try:

@@ -302,14 +302,15 @@ class WebRenderer(Renderer):
             _, extension = os.path.splitext(filename)
             return renderer_extension_map[extension]
         except KeyError:
-            raise Exception(
+            raise KeyError(
                 'Could not infer renderer from file name: {}'.format(
                     filename
                 )
             )
 
     def __init__(self, template_name, renderer=None, error_renderer=None,
-                 data=None, template_dir=TEMPLATE_DIR):
+                 data=None, detect_render_nested=True,
+                 template_dir=TEMPLATE_DIR):
         """Construct WebRenderer.
 
         :param template_name: Name of template file
@@ -318,13 +319,15 @@ class WebRenderer(Renderer):
             auto-detect if None
         :param data: Optional dictionary or dictionary-generating function
                      to add to data from view function
+        :param detect_render_nested: Auto-detect renderers for nested
+            templates?
         :param template_dir: Path to template directory
 
         """
         self.template_name = template_name
         self.data = data or {}
+        self.detect_render_nested = detect_render_nested
         self.template_dir = template_dir
-
 
         self.renderer = self.detect_renderer(renderer, template_name)
         self.error_renderer = self.detect_renderer(
@@ -426,7 +429,17 @@ class WebRenderer(Renderer):
         :return: Rendered HTML
         """
 
+        nested = template_name is None
         template_name = template_name or self.template_name
+
+        if nested and self.detect_render_nested:
+            try:
+                renderer = self.detect_renderer(None, template_name)
+            except KeyError:
+                renderer = self.renderer
+        else:
+            renderer = self.renderer
+
         # Catch errors and return appropriate debug divs
         # todo: add debug parameter
         try:
@@ -434,11 +447,12 @@ class WebRenderer(Renderer):
         except IOError:
             return '<div>Template {} not found.</div>'.format(template_name)
 
-        rendered = self.renderer(template_file, data)
+        rendered = renderer(template_file, data)
 
-        # Parse HTML using built-in parser; reasonably fast and less strict
-        # than LXML
-        parsed = BeautifulSoup(rendered, 'html.parser')
+        # Parse HTML using html5lib; lxml is too strict and e.g. throws
+        # errors if missing parent container; htmlparser mangles whitespace
+        # and breaks replacement
+        parsed = BeautifulSoup(rendered, 'html5lib')
         subtemplates = parsed.find_all(
             lambda tag: tag.has_attr('mod-meta')
         )

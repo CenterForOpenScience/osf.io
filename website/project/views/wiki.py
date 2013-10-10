@@ -26,6 +26,11 @@ def project_wiki_home(*args, **kwargs):
 
 def _get_wiki_versions(node, wid):
 
+    # Skip if page doesn't exist; happens on new projects before
+    # default "home" page is created
+    if wid not in node.wiki_pages_versions:
+        return []
+
     versions = [
         NodeWikiPage.load(page)
         for page in node.wiki_pages_versions[wid]

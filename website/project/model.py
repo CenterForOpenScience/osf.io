@@ -165,7 +165,6 @@ class Node(StoredObject):
         as appropriate
 
         """
-        print 'updating solr...'
         if not settings.use_solr:
             return
 
