@@ -3,7 +3,7 @@ The Open Science Framework
 
 This repository will soon house the codebase for the Open Science Framework, the open service designed to support scientific workflow and help foster alignment between scientific values and practices.
 
-We plan to publish our codebase by the last day of [SciPy 2013](http://conference.scipy.org/scipy2013/) sprints - June 29th, 2013. You can monitor our progess [here](https://github.com/CenterForOpenScience/OpenScienceFramework/issues?milestone=1&state=open).
+We're in the last stages of a major rearchitecture and plan to publish the code once we move authentication credentials out of the repo (as of 2013/10/10).
 
 Issue Tracking (Bug Reports)
 ----------------------------
