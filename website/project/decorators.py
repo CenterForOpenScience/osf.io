@@ -111,12 +111,11 @@ def must_be_contributor(fn):
 
         api_node = kwargs.get('api_node')
 
+        if user is None:
+            raise HTTPError(http.UNAUTHORIZED)
         if not node_to_use.is_contributor(user) \
                 and api_node != node_to_use:
             raise HTTPError(http.FORBIDDEN)
-            # push_status_message('You are not authorized to perform that action \
-            #     for this node')
-            # return redirect('/')
 
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)
@@ -155,14 +154,12 @@ def must_be_contributor_or_public(fn):
             api_node = get_api_key()
             kwargs['api_node'] = api_node
 
-        if (
-            not node_to_use.is_public
-            and not node_to_use.is_contributor(user)
-            and api_node != node_to_use
-        ):
-            raise HTTPError(http.FORBIDDEN)
-            # push_status_message('You are not authorized to perform that action for this node')
-            # return redirect('/')
+        if not node_to_use.is_public:
+            if user is None:
+                raise HTTPError(http.UNAUTHORIZED)
+            if not node_to_use.is_contributor(user) \
+                    and api_node != node_to_use:
+                raise HTTPError(http.FORBIDDEN)
 
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)
