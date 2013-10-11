@@ -18,7 +18,7 @@
 
     <div class="row">
 
-        <div class="btn-toolbar span4" style="float:right;">
+        <div class="btn-toolbar" style="float:right;">
 
             <div class="btn-group">
             %if not node_is_public:
@@ -41,28 +41,31 @@
                     <a rel="tooltip" title="Watch" class="btn disabled" href="#">
                 % endif
 
-                <i class="icon-eye-open"></i>
-                % if not user_is_watching:
-                    <span id="watchCount">Watch&nbsp;${node_watched_count}</span>
-                % else:
-                    <span id="watchCount">Unwatch&nbsp;${node_watched_count}</span>
-                % endif
-                  </a>
+                    <i class="icon-eye-open"></i>
+                    % if not user_is_watching:
+                        <span id="watchCount">Watch&nbsp;${node_watched_count}</span>
+                    % else:
+                        <span id="watchCount">Unwatch&nbsp;${node_watched_count}</span>
+                    % endif
+
+                </a>
 
                 <a
                     rel="tooltip"
                     title="Number of times this node has been forked (copied)"
                     % if node_category == 'project' and user_name:
                         href="#"
-                        class="btn"
+                        class="btn node-fork-btn"
                         onclick="NodeActions.forkNode();"
                     % else:
-                        class="btn disabled"
+                        class="btn disabled node-fork-btn"
                     % endif
                 >
                     <i class="icon-fork"></i>&nbsp;${node_fork_count}
                 </a>
+
             </div>
+
         </div>
 
         %if user_can_edit:
@@ -108,7 +111,7 @@
                 "replace": true
             }'></div>
         % if node_is_fork:
-            <br />Forked from <a href="${node_forked_from_url}">${node_forked_from_url}</a> on ${node_forked_date}
+            <br />Forked from <a class="node-forked-from" href="${node_forked_from_url}">${node_forked_from_url}</a> on ${node_forked_date}
         % endif
         % if node_is_registration and node_registered_meta:
             <br />Registration Supplement:
@@ -117,19 +120,15 @@
             % endfor
         % endif
         <br />Date Created:
-            <span class="date">${node_date_created}</span>
+            <span class="date node-date-created">${node_date_created}</span>
         | Last Updated:
-        % if not node:
-            <span class="date">${node_date_modified}</span>
-        % else:
-            <span class="date">${node_date_modified}</span>
-        % endif
+        <span class="date node-last-modified-date">${node_date_modified}</span>
 
         % if node:
-            <br />Category: ${node_category}
+            <br />Category: <span class="node-category">${node_category}</span>
         % else:
             % if node_description:
-                <br />Description: ${node_description}
+                <br />Description: <span class="node-description">${node_description}</span>
             % endif
         % endif
     </p>
