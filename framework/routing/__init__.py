@@ -24,7 +24,7 @@ REDIRECT_CODES = [
 ]
 
 class Rule(object):
-    """ Container for routing and rendering rules. """
+    """ Container for routing and rendering rules."""
 
     @staticmethod
     def _ensure_list(value):

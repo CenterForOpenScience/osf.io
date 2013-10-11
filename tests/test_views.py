@@ -34,6 +34,7 @@ class TestProjectViews(DbTestCase):
         # User 1 removes user2
         res = self.app.post(url, params={"id": self.user2._id})
         self.project.reload()
+        # FIXME(sloria): Not sure why this assertion fails.
         assert_not_in(self.user2._id, self.project.contributors)
 
 class TestWatchViews(DbTestCase):

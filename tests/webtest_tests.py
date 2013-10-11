@@ -78,11 +78,10 @@ class TestAUser(DbTestCase):
         res = self._login(self.user.username, 'science')
         res = self.app.get("/", auto_follow=True)
         # Clicks Dashboard link in navbar
-        res = res.click("Dashboard")
+        res = res.click("Dashboard", index=0)
         assert_in("Projects", res)  # Projects heading
         # The project title is listed
         assert_in(project.title, res)
-
 
     def test_sees_log_events_on_watched_projects(self):
         # Another user has a public project

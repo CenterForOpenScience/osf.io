@@ -11,7 +11,7 @@ class RuleTestCase(unittest.TestCase):
         return Rule(
             kwargs.get('routes', ['/', ]),
             kwargs.get('methods', ['GET', ]),
-            kwargs.get('view_func', vf),
+            kwargs.get('view_func_or_data', vf),
             kwargs.get('render_func', json_renderer),
             kwargs.get('view_kwargs'),
         )
@@ -26,4 +26,4 @@ class RuleTestCase(unittest.TestCase):
 
     def test_rule_lambda_view(self):
         r = self._make_rule(view_func=lambda: '')
-        self.assertTrue(callable(r.view_func))
+        self.assertTrue(callable(r.view_func_or_data))
