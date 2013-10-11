@@ -112,6 +112,7 @@ def project_wiki_version(*args, **kwargs):
 
 
 @must_be_valid_project # returns project
+@must_be_contributor_or_public
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
 def project_wiki_page(*args, **kwargs):
@@ -121,9 +122,6 @@ def project_wiki_page(*args, **kwargs):
 
     user = get_current_user()
     node_to_use = node or project
-
-    if not node_to_use.is_public:
-        raise HTTPError(http.FORBIDDEN)
 
     pw = node_to_use.get_wiki_page(wid)
 

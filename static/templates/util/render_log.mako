@@ -11,7 +11,7 @@
     %elif log['action'] == 'node_created':
         created node <a href="${log['node_url']}">${log['node_title']}</a>
     %elif log['action'] == 'wiki_updated':
-        updated wiki page <a href="${log['node_url']}wiki/${log['params']['page']}">${log['params']['page']}</a> to version ${log['params']['version']}
+        updated wiki page <a href="${log['node_url']}wiki/${log['params']['page']}/">${log['params']['page']}</a> to version ${log['params']['version']}
     %elif log['action'] == 'contributor_added':
         added
         % for contributor in log['contributors']:

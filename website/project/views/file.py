@@ -187,7 +187,7 @@ def view_file(*args, **kwargs):
         versions.append({
             'file_name' : file_name,
             'number' : number,
-            'display_number' : number if number > 0 else 'current',
+            'display_number' : number if idx > 0 else 'current',
             'date_uploaded' : node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
             'total' : total if total else 0,
         })
