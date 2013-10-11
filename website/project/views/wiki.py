@@ -123,13 +123,7 @@ def project_wiki_page(*args, **kwargs):
     node_to_use = node or project
 
     if not node_to_use.is_public:
-        if user:
-            if not node_to_use.is_contributor(user):
-                push_status_message('You are not a contributor on this page')
-                return redirect('/')
-        else:
-            push_status_message('You are not authorized to view this page')
-            return redirect('/account')
+        raise HTTPError(http.FORBIDDEN)
 
     pw = node_to_use.get_wiki_page(wid)
 
