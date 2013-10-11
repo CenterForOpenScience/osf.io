@@ -73,7 +73,6 @@
                     ${node.date_created.date()}
                 </span>
             % endif
-        </div>
 
         <!-- Show abbreviated contributors list -->
         <div mod-meta='{

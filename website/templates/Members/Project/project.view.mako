@@ -57,7 +57,7 @@
                         class="btn btn-default"
                         onclick="NodeActions.forkNode();"
                     % else:
-                        class="btn disabled"
+                        class="btn btn-default disabled"
                     % endif
                 >
                     <i class="icon-code-fork"></i>&nbsp;${node_fork_count}

@@ -15,9 +15,6 @@
         % endif
           </div>
         </div>
-
-
-      <!-- START THE FEATURETTES -->
       <hr class="featurette-divider">
 
       <div class="featurette" id="about">
@@ -42,10 +39,6 @@
         <h2 class="featurette-heading">Developers</h2>
         <p class="lead">Developers can contribute to OSF and other open-source projects, or connect their projects to OSF via API. To learn more you can watch the above video from SciPy, find us on <a href="https://github.com/centerforopenscience" target="_blank">GitHub</a>, or contact <a href="mailto:developer@centerforopenscience.org"> developer@centerforopenscience.org.</a></p>
       </div>
-
-      <!-- /END THE FEATURETTES -->
-
-
       % if use_cdn:
       <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js._primary_key=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
       %endif
