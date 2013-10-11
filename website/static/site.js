@@ -22,12 +22,12 @@ var setStatus = function(status){
 window.NodeActions = {};  // Namespace for NodeActions
 
 NodeActions.forkNode = function(){
-  $.ajax({
-    url: nodeToUseUrl() + "/fork/",
-    type:"POST",
-  }).done(function(response){
-    window.location = response;
-  });
+    $.ajax({
+        url: nodeToUseUrl() + "/fork/",
+        type: "POST",
+    }).done(function(response) {
+        window.location = response;
+    });
 };
 
 NodeActions.toggleWatch = function () {
@@ -59,26 +59,28 @@ NodeActions.addNodeToProject = function(node, project){
        });
 };
 
-NodeActions.removeUser = function(userid, name, el){
-    var answer = confirm("Remove " + name + " from contributor list?")
-    if (answer){
-        $.ajax({
-            type: "POST",
-            url: nodeToUseUrl() + "/removecontributors/",
-            contentType: "application/json",
-            dataType: "json",
-            data: JSON.stringify({"id": userid, "name":name}),
-        }).done(function(response){
+NodeActions.removeUser = function(userid, name) {
+    bootbox.confirm('Remove ' + name + ' from contributor list?', function(result) {
+        if (result) {
+            $.ajax({
+                type: "POST",
+                url: nodeToUseUrl() + "/removecontributors/",
+                contentType: "application/json",
+                dataType: "json",
+                data: JSON.stringify({
+                    "id": userid,
+                    "name": name,
+                })
+            }).done(function(response) {
                 window.location.reload();
             });
-
-    }
+        }
+    });
     return false;
 };
 
 $(document).ready(function(){
 
-    $('.nav a[href="' + location.pathname + '"]').parent().addClass('active');
     $('.nav a[href="' + location.pathname + '"]').parent().addClass('active');
     $('.tabs a[href="' + location.pathname + '"]').parent().addClass('active');
 
@@ -98,7 +100,7 @@ $(document).ready(function(){
             me = $(this);
             el = $('<i class="icon-remove"></i>');
             el.click(function(){
-                NodeActions.removeUser(me.attr("data-userid"), me.attr("data-fullname"), me);
+                NodeActions.removeUser(me.attr("data-userid"), me.attr("data-fullname"));
                 return false;
             });
             $(this).append(el);

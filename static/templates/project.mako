@@ -1,8 +1,13 @@
 <div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
 <div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
+<!-- Import jQuery tags -->
 <link rel="stylesheet" type="text/css" href="/static/css/jquery.tagsinput.css" />
 <script src="/static/js/jquery.tagsinput.min.js"></script>
+
+<!-- Import Bootbox -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.0.0/bootbox.min.js"></script>
+
 <script>
     $(function(){
         $('#node-tags').tagsInput({

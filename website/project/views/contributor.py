@@ -101,6 +101,7 @@ def project_removecontributor(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
     user = kwargs['user']
+    api_key = get_api_key()
     node_to_use = node or project
     logging.error(request.json)
 
@@ -115,13 +116,12 @@ def project_removecontributor(*args, **kwargs):
             logger.error(err)
             raise HTTPError(http.BAD_REQUEST)
         outcome = node_to_use.remove_contributor(
-            user, contributor, api_key=None
+            user, contributor, api_key=api_key
         )
     if outcome:
         # TODO(sloria): Add flash message
         return {'status': 'success'}
     raise HTTPError(http.BAD_REQUEST)
-    # return {'status' : 'success' if outcome else 'failure'}
 
 
 @must_have_session_auth # returns user
