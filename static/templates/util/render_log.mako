@@ -2,7 +2,7 @@
 
     <dt><span class="date">${log['date']}</span></dt>
     % if log['user_fullname']:
-        <dd><a href="/profile/${log['user_id']}">${log['user_fullname']}</a>
+        <dd><a href="/profile/${log['user_id']}/">${log['user_fullname']}</a>
     % elif log['api_key']:
         <dd>${log['api_key']}
     % endif
@@ -16,7 +16,7 @@
         added
         % for contributor in log['contributors']:
             % if contributor['registered']:
-                <a href="/profile/${contributor['id']}">${contributor['fullname']}</a>${', ' if not loop.last else ''}
+                <a href="/profile/${contributor['id']}/">${contributor['fullname']}</a>${', ' if not loop.last else ''}
             % else:
                 ${contributor['nr_name']}${', ' if not loop.last else ''}
             % endif
@@ -44,7 +44,7 @@
         <a href="${log['node_url']}">${log['node_title']}</a>
         as <a href="/tag/${log['params']['tag']}">${log['params']['tag']}</a>
     %elif log['action'] == 'tag_removed':
-        removed tag <a href="/tag/${log['params']['tag']}">${log['params']['tag']}</a> from ${log['category']}
+        removed tag <a href="/tag/${log['params']['tag']}/">${log['params']['tag']}</a> from ${log['category']}
         <a href="${log['node_url']}">${log['node_title']}</a>
     %elif log['action'] == 'file_added':
         added file ${log['params']['path']} to ${log['category']}
@@ -58,7 +58,7 @@
     %elif log['action'] == 'edit_title':
         changed the title from ${log['params']['title_original']} to <a href="${log['node_url']}">${log['params']['title_new']}</a>
     %elif log['action'] == 'project_registered':
-        <a href="/project/${log['params']['registration']}">registered</a> ${log['category']}
+        <a href="/project/${log['params']['registration']}/">registered</a> ${log['category']}
         <a href="${log['node_url']}">${log['node_title']}</a>
     %elif log['action'] == 'node_forked':
         created fork from ${log['category']}
