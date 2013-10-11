@@ -19,6 +19,7 @@
     <div class="row">
 
         <div class="btn-toolbar span4" style="float:right;">
+
             <div class="btn-group">
             %if not node_is_public:
                 <button class='btn disabled'>Private</button>
@@ -96,42 +97,42 @@
             %endif
             <h1 id="${'node-title-editable' if user_can_edit else 'node-title'}" class='node-title' style="display:inline-block">${node_title}</h1>
 
-            <p id="contributors">Contributors:
-                <div mod-meta='{
-                        "tpl": "util/render_contributors.mako",
-                        "uri": "${node_api_url}get_contributors/",
-                        "replace": true
-                    }'></div>
-            % if node_is_fork:
-                <br />Forked from <a href="${node_forked_from_url}">${node_forked_from_url}</a> on ${node_forked_date}
-            %endif
-            % if node_is_registration and node_registered_meta:
-                <br />Registration Supplement:
-                % for meta in node_registered_meta:
-                    <a href="${node_url}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
-                % endfor
-            %endif
-            <br />Date Created:
-                <span class="date">${node_date_created}</span>
-            | Last Updated:
-            %if not node:
-                <span class="date">${node_date_modified}</span>
-            %else:
-                <span class="date">${node_date_modified}</span>
-            %endif
-
-            %if node:
-                <br />Category: ${node_category}
-            %else:
-                %if node_description:
-                <br />Description: ${node_description}
-                %endif
-            %endif
-            </p>
-
         </div>
 
     </div>
+
+    <p id="contributors">Contributors:
+        <div mod-meta='{
+                "tpl": "util/render_contributors.mako",
+                "uri": "${node_api_url}get_contributors/",
+                "replace": true
+            }'></div>
+        % if node_is_fork:
+            <br />Forked from <a href="${node_forked_from_url}">${node_forked_from_url}</a> on ${node_forked_date}
+        % endif
+        % if node_is_registration and node_registered_meta:
+            <br />Registration Supplement:
+            % for meta in node_registered_meta:
+                <a href="${node_url}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
+            % endfor
+        % endif
+        <br />Date Created:
+            <span class="date">${node_date_created}</span>
+        | Last Updated:
+        % if not node:
+            <span class="date">${node_date_modified}</span>
+        % else:
+            <span class="date">${node_date_modified}</span>
+        % endif
+
+        % if node:
+            <br />Category: ${node_category}
+        % else:
+            % if node_description:
+                <br />Description: ${node_description}
+            % endif
+        % endif
+    </p>
 
     <div class="subnav">
         <ul class="nav nav-pills">
