@@ -21,4 +21,4 @@ logging.info("Setting storage backends")
 set_up_storage(website.models.MODELS, storage.MongoStorage, db=db)
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    app.run(port=5000)

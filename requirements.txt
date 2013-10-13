@@ -1,4 +1,3 @@
-BeautifulSoup==3.2.1
 Flask==0.10.1
 Jinja2==2.7.1
 Mako==0.8.0
@@ -9,6 +8,7 @@ WTForms==1.0.4
 Werkzeug==0.9.4
 amqp==1.0.12
 anyjson==0.3.3
+beautifulsoup4==4.3.2
 billiard==2.7.3.31
 celery==3.0.21
 decorator==3.4.0

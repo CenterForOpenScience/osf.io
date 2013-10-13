@@ -17,17 +17,34 @@ from framework import HTTPError
 
 logger = logging.getLogger(__name__)
 
+
 @must_be_valid_project
 def project_wiki_home(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     return {}, None, None, '{}wiki/home/'.format(node_to_use.url)
 
-# def project_project_wikimain(pid):
-#     return {}, None, None, '/project/{}/wiki/home/'.format(pid)
-#     # return redirect('/project/%s/wiki/home' % str(pid))
-#
-# def project_node_wikihome(pid, nid):
-#     return redirect('/project/{pid}/node/{nid}/wiki/home'.format(pid=pid, nid=nid))
+
+def _get_wiki_versions(node, wid):
+
+    # Skip if page doesn't exist; happens on new projects before
+    # default "home" page is created
+    if wid not in node.wiki_pages_versions:
+        return []
+
+    versions = [
+        NodeWikiPage.load(page)
+        for page in node.wiki_pages_versions[wid]
+    ]
+
+    return [
+        {
+            'version': version.version,
+            'user_fullname': version.user.fullname,
+            'date': version.date,
+        }
+        for version in reversed(versions)
+    ]
+
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
@@ -52,18 +69,10 @@ def project_wiki_compare(*args, **kwargs):
             sm = difflib.SequenceMatcher(None, comparison, current)
             content = show_diff(sm)
             content = content.replace('\n', '<br />')
-            versions = [NodeWikiPage.load(i) for i in reversed(node_to_use.wiki_pages_versions[wid])]
-            versions_json = []
-            for version in versions:
-                versions_json.append({
-                    'version' : version.version,
-                    'user_fullname' : version.user.fullname,
-                    'date' : version.date,
-                })
             rv = {
                 'pageName' : wid,
                 'content' : content,
-                'versions' : versions_json,
+                'versions' : _get_wiki_versions(node_to_use, wid),
                 'is_current' : True,
                 'is_edit' : True,
                 'version' : pw.version,
@@ -71,11 +80,7 @@ def project_wiki_compare(*args, **kwargs):
             rv.update(_view_project(node_to_use, user))
             return rv
     raise HTTPError(http.NOT_FOUND)
-    # push_status_message('Not a valid version')
-    # return redirect('{}wiki/{}'.format(
-    #     node_to_use.url,
-    #     wid
-    # ))
+
 
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
@@ -94,23 +99,20 @@ def project_wiki_version(*args, **kwargs):
 
     if pw:
         rv = {
-            'pageName' : wid,
-            'content' : pw.html,
-            'version' : pw.version,
-            'is_current' : pw.is_current,
-            'is_edit' : False,
+            'pageName': wid,
+            'content': pw.html,
+            'version': pw.version,
+            'is_current': pw.is_current,
+            'is_edit': False,
         }
         rv.update(_view_project(node_to_use, user))
         return rv
 
     raise HTTPError(http.NOT_FOUND)
-    # push_status_message('Not a valid version')
-    # return redirect('{}wiki/{}'.format(
-    #     node_to_use.url,
-    #     wid
-    # ))
+
 
 @must_be_valid_project # returns project
+@must_be_contributor_or_public
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
 def project_wiki_page(*args, **kwargs):
@@ -120,15 +122,6 @@ def project_wiki_page(*args, **kwargs):
 
     user = get_current_user()
     node_to_use = node or project
-
-    if not node_to_use.is_public:
-        if user:
-            if not node_to_use.is_contributor(user):
-                push_status_message('You are not a contributor on this page')
-                return redirect('/')
-        else:
-            push_status_message('You are not authorized to view this page')
-            return redirect('/account')
 
     pw = node_to_use.get_wiki_page(wid)
 
@@ -167,6 +160,7 @@ def project_wiki_page(*args, **kwargs):
     rv.update(_view_project(node_to_use, user))
     return rv
 
+
 @must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
@@ -193,12 +187,14 @@ def project_wiki_edit(*args, **kwargs):
         'pageName' : wid,
         'page' : pw,
         'version' : version,
+        'versions' : _get_wiki_versions(node_to_use, wid),
         'content' : content,
         'is_current' : is_current,
         'is_edit' : True,
     }
     rv.update(_view_project(node_to_use, user))
     return rv
+
 
 @must_have_session_auth # returns user
 @must_be_valid_project # returns project
@@ -215,11 +211,9 @@ def project_wiki_edit_post(*args, **kwargs):
     if wid != sanitize(wid):
         push_status_message("This is an invalid wiki page name")
         raise HTTPError(http.BAD_REQUEST, redirect_url='{}wiki/'.format(node_to_use.url))
-        # return redirect(base_url)
 
     node_to_use.update_node_wiki(wid, request.form['content'], user, api_key=None)
 
     return {
         'status' : 'success',
     }, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
-    # return redirect('{}wiki/{}/'.format(node_to_use.url, wid))

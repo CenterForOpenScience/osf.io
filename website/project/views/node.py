@@ -75,7 +75,11 @@ def search_user(*args, **kwargs):
         'results':[
             {
                 'fullname' : item.fullname,
-                'gravatar' : filters.gravatar(item.username, size=settings.gravatar_size_add_contributor),
+                'gravatar' : filters.gravatar(
+                    item.username,
+                    use_ssl=True,
+                    size=settings.gravatar_size_add_contributor
+                ),
                 'id' : item._primary_key,
             } for item in result
         ]
@@ -86,13 +90,6 @@ def search_user(*args, **kwargs):
 ##############################################################################
 
 @must_be_logged_in
-def project_new(*args, **kwargs):
-    form = NewProjectForm()
-    return {
-        'form' : form,
-    }
-
-@must_be_logged_in
 def project_new_post(*args, **kwargs):
     user = kwargs['user']
     form = NewProjectForm(request.form)
@@ -101,9 +98,7 @@ def project_new_post(*args, **kwargs):
         return redirect('/project/' + str(project._primary_key))
     else:
         push_errors_to_status(form.errors)
-    return {
-        'form' : form,
-    }, http.BAD_REQUEST
+    return {}, http.BAD_REQUEST
 
 ##############################################################################
 # New Node
@@ -270,7 +265,8 @@ def project_set_permissions(*args, **kwargs):
 def watch_post(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
-    watch_config = WatchConfig(node=node_to_use,
+
+    _config = WatchConfig(node=node_to_use,
                                 digest=request.form.get("digest", False),
                                 immediate=request.form.get('immediate', False))
     try:
@@ -382,32 +378,13 @@ def _view_project(node_to_use, user):
             }
             for meta in node_to_use.registered_meta or []
         ],
-
-        # todo: break out into separate view / template
-        'node_registrations' : [
-            {
-                'registration_id' : registration._primary_key,
-                'registration_url' : registration.url,
-                'registration_api_url' : registration.api_url,
-            }
-            for registration in node_to_use.node__registered
-        ],
+        'node_registration_count' : len(node_to_use.registration_list),
 
         'node_is_fork' : node_to_use.is_fork,
         'node_forked_from_url' : node_to_use.forked_from.url if node_to_use.is_fork else '',
         'node_forked_date' : node_to_use.forked_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_fork else '',
         'node_fork_count' : len(node_to_use.fork_list),
 
-        # todo: break out into separate view / template
-        'node_forks' : [
-            {
-                'fork_id' : fork._primary_key,
-                'fork_url' : fork.url,
-                'fork_api_url' : fork.api_url,
-            }
-            for fork in node_to_use.node__forked
-            if not fork.is_deleted
-        ],
         'node_watched_count': len(node_to_use.watchconfig__watched),
         'parent_id' : node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
         'parent_title' : node_to_use.node__parent[0].title if node_to_use.node__parent else None,
@@ -506,5 +483,5 @@ def get_forks(*args, **kwargs):
 @must_be_contributor_or_public
 def get_registrations(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
-    forks = node_to_use.node__registered
-    return _render_nodes(forks)
+    registrations = node_to_use.node__registrations
+    return _render_nodes(registrations)

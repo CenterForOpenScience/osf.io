@@ -115,7 +115,8 @@ class TestNode(DbTestCase):
 class TestProject(DbTestCase):
 
     def setUp(self):
-        self.project = ProjectFactory()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
 
     def test_project_factory(self):
         node = ProjectFactory()
@@ -132,6 +133,22 @@ class TestProject(DbTestCase):
     def test_watch_url(self):
         watch_url = self.project.watch_url
         assert_equal(watch_url, "/api/v1/project/{0}/watch/".format(self.project._primary_key))
+
+    def test_add_contributor(self):
+        # A user is added as a contributor
+        user2 = UserFactory()
+        self.project.add_contributor(user2)
+        self.project.save()
+        assert_in(user2, self.project.contributors)
+
+    def test_remove_contributor(self):
+        # A user is added as a contributor
+        user2 = UserFactory()
+        self.project.add_contributor(user2)
+        self.project.save()
+        # The user is removed
+        self.project.remove_contributor(self.user, contributor=user2, api_key=None)
+        assert_not_in(user2, self.project.contributors)
 
 
 class TestNodeLog(DbTestCase):

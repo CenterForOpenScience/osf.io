@@ -1,4 +1,4 @@
-<%inherit file="contentContainer.mako" />
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
 
 <%
     from framework import get_user
@@ -141,3 +141,5 @@ $(function(){
 %endfor
 
 </%def>
+
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

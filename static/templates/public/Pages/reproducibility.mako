@@ -1,4 +1,4 @@
-<%inherit file="contentContainer.mako" />
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
 
 <div class="page-header">
     <h1>About the Reproducibility Project</h1>
@@ -23,3 +23,5 @@
 <li>Project Materials Dropbox: Access scientific articles that are eligible for replication, or other background reading materials (email nosek at virginia dot edu to get access)
 <li>Open Science Framework: Replication study materials will be made available in the OSF.
 </ol>
+
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

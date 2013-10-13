@@ -1,12 +1,14 @@
-from framework.flask import app
+from framework.flask import app, request
 import framework
 from website import settings
 from framework import get_current_user
-
+from framework import HTTPError
 from framework import (Rule, process_rules,
                        WebRenderer, json_renderer,
                        render_mako_string)
 
+
+import httplib as http
 
 def get_globals():
     user = get_current_user()
@@ -55,6 +57,13 @@ from website.discovery import views as discovery_views
 from website.profile import views as profile_views
 from website.project import views as project_views
 
+# Set default views to 404, using URL-appropriate renderers
+process_rules(app, [
+    Rule('/<path:_>', ['get', 'post'], HTTPError(http.NOT_FOUND),
+         OsfWebRenderer('', render_mako_string)),
+    Rule('/api/v1/<path:_>', ['get', 'post'],
+         HTTPError(http.NOT_FOUND), json_renderer),
+])
 
 def favicon():
     return framework.send_from_directory(
@@ -71,15 +80,15 @@ process_rules(app, [
 
 process_rules(app, [
 
-    Rule('/dashboard/', 'get', website_routes.dashboard, OsfWebRenderer('dashboard.html', render_mako_string)),
+    Rule('/dashboard/', 'get', website_routes.dashboard, OsfWebRenderer('dashboard.mako')),
     Rule('/reproducibility/', 'get', website_routes.reproducibility, OsfWebRenderer('', render_mako_string)),
 
-    Rule('/about/', 'get', None, OsfWebRenderer('public/pages/about.mako', render_mako_string)),
-    Rule('/howosfworks/', 'get', None, OsfWebRenderer('public/pages/howosfworks.mako', render_mako_string)),
-    Rule('/faq/', 'get', None, OsfWebRenderer('public/pages/faq.mako', render_mako_string)),
-    Rule('/getting-started/', 'get', None, OsfWebRenderer('public/pages/getting_started.mako', render_mako_string)),
-    Rule('/explore/', 'get', None, OsfWebRenderer('public/explore.mako', render_mako_string)),
-    Rule(['/messages/', '/help/'], 'get', None, OsfWebRenderer('public/comingsoon.mako', render_mako_string)),
+    Rule('/about/', 'get', {}, OsfWebRenderer('public/pages/about.mako')),
+    Rule('/howosfworks/', 'get', {}, OsfWebRenderer('public/pages/howosfworks.mako')),
+    Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako')),
+    Rule('/getting-started/', 'get', {}, OsfWebRenderer('public/pages/getting_started.mako')),
+    Rule('/explore/', 'get', {}, OsfWebRenderer('public/explore.mako')),
+    Rule(['/messages/', '/help/'], 'get', {}, OsfWebRenderer('public/comingsoon.mako')),
 
 ])
 
@@ -97,6 +106,7 @@ process_rules(app, [
     Rule('/forms/signin/', 'get', website_routes.signin_form, json_renderer),
     Rule('/forms/forgot_password/', 'get', website_routes.forgot_password_form, json_renderer),
     Rule('/forms/reset_password/', 'get', website_routes.reset_password_form, json_renderer),
+    Rule('/forms/new_project/', 'get', website_routes.new_project_form, json_renderer),
 
 ], prefix='/api/v1')
 
@@ -104,7 +114,7 @@ process_rules(app, [
 
 process_rules(app, [
 
-    Rule('/explore/activity/', 'get', discovery_views.activity, OsfWebRenderer('public/pages/active_nodes.mako', render_mako_string)),
+    Rule('/explore/activity/', 'get', discovery_views.activity, OsfWebRenderer('public/pages/active_nodes.mako')),
 
 ])
 
@@ -121,14 +131,14 @@ process_rules(app, [
         OsfWebRenderer('public/resetpassword.mako', render_mako_string)
     ),
 
-    Rule('/register/', 'post', auth_views.auth_register_post, OsfWebRenderer('public/login.mako', render_mako_string)),
+    Rule('/register/', 'post', auth_views.auth_register_post, OsfWebRenderer('public/login.mako')),
 
-    Rule(['/login/', '/account/'], 'get', auth_views.auth_login, OsfWebRenderer('public/login.mako', render_mako_string)),
-    Rule('/login/', 'post', auth_views.auth_login, OsfWebRenderer('public/login.mako', render_mako_string), endpoint_suffix='__post'),
+    Rule(['/login/', '/account/'], 'get', auth_views.auth_login, OsfWebRenderer('public/login.mako')),
+    Rule('/login/', 'post', auth_views.auth_login, OsfWebRenderer('public/login.mako'), endpoint_suffix='__post'),
 
-    Rule('/logout/', 'get', auth_views.auth_logout, OsfWebRenderer('', None)),
+    Rule('/logout/', 'get', auth_views.auth_logout, OsfWebRenderer('', render_mako_string)),
 
-    Rule('/forgotpassword/', 'post', auth_views.forgot_password, OsfWebRenderer('public/login.mako', render_mako_string)),
+    Rule('/forgotpassword/', 'post', auth_views.forgot_password, OsfWebRenderer('public/login.mako')),
 
     Rule([
         '/midas/', '/summit/', '/accountbeta/', '/decline/'
@@ -142,12 +152,11 @@ process_rules(app, [
 
 process_rules(app, [
 
-    Rule('/profile/', 'get', profile_views.profile_view, OsfWebRenderer('profile.html', render_mako_string)),
-    Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, OsfWebRenderer('profile.html', render_mako_string)),
-    Rule('/settings/', 'get', profile_views.profile_settings, OsfWebRenderer('settings.html', render_mako_string)),
-    Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, OsfWebRenderer('profile/key_history.html', render_mako_string)),
-    Rule('/profile/<uid>/edit', 'post', profile_views.edit_profile, json_renderer),
-    Rule('/addons/', 'get', profile_views.profile_addons, OsfWebRenderer('profile/addons.html', render_mako_string)),
+    Rule('/profile/', 'get', profile_views.profile_view, OsfWebRenderer('profile.mako')),
+    Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, OsfWebRenderer('profile.mako')),
+    Rule('/settings/', 'get', profile_views.profile_settings, OsfWebRenderer('settings.mako')),
+    Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, OsfWebRenderer('profile/key_history.mako')),
+    Rule('/addons/', 'get', profile_views.profile_addons, OsfWebRenderer('profile/addons.mako')),
 
 ])
 
@@ -159,6 +168,7 @@ process_rules(app, [
     Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, json_renderer),
 
     # Used by profile.html
+    Rule('/profile/<uid>/edit/', 'post', profile_views.edit_profile, json_renderer),
     Rule('/profile/<uid>/public_projects/', 'get', profile_views.get_public_projects, json_renderer),
     Rule('/profile/<uid>/public_components/', 'get', profile_views.get_public_components, json_renderer),
 
@@ -178,7 +188,7 @@ process_rules(app, [
 
 process_rules(app, [
 
-    Rule('/search/', 'get', search_views.search_search, OsfWebRenderer('search.mako', render_mako_string)),
+    Rule('/search/', 'get', search_views.search_search, OsfWebRenderer('search.mako')),
 
 ])
 
@@ -196,50 +206,50 @@ process_rules(app, [
 
 process_rules(app, [
 
-    Rule('/', 'get', view_index, OsfWebRenderer('index.html', render_mako_string)),
+    Rule('/', 'get', view_index, OsfWebRenderer('index.mako')),
 
     Rule([
         '/project/<pid>/',
         '/project/<pid>/node/<nid>/',
-    ], 'get', project_views.node.view_project, OsfWebRenderer('project.html', render_mako_string)),
+    ], 'get', project_views.node.view_project, OsfWebRenderer('project.mako')),
 
     Rule([
         '/project/<pid>/key_history/<kid>/',
         '/project/<pid>/node/<nid>/key_history/<kid>/',
-    ], 'get', project_views.key.node_key_history, OsfWebRenderer('project/key_history.html', render_mako_string)),
+    ], 'get', project_views.key.node_key_history, OsfWebRenderer('project/key_history.mako')),
 
-    Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.html', render_mako_string)),
+    Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
-    Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.html', render_mako_string)),
-    Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.html', render_mako_string)),
+    Rule('/project/new/', 'get', {}, OsfWebRenderer('project/new.mako')),
+    Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.mako')),
 
-    Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('project.html', render_mako_string)),
+    Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('project.mako')),
 
     Rule([
         '/project/<pid>/settings/',
         '/project/<pid>/node/<nid>/settings/',
-    ], 'get', project_views.node.node_setting, OsfWebRenderer('project/settings.html', render_mako_string)),
+    ], 'get', project_views.node.node_setting, OsfWebRenderer('project/settings.mako')),
 
     # Remove
     Rule([
         '/project/<pid>/remove/',
         '/project/<pid>/node/<nid>/remove/',
-    ], 'get', project_views.node.component_remove, WebRenderer(None, None)),
+    ], 'get', project_views.node.component_remove, WebRenderer('', render_mako_string)),
 
     # Permissions
     # TODO: Should be a POST
     Rule([
         '/project/<pid>/permissions/<permissions>/',
         '/project/<pid>/node/<nid>/permissions/<permissions>/',
-    ], 'get', project_views.node.project_set_permissions, OsfWebRenderer('project.html', render_mako_string)),
+    ], 'get', project_views.node.project_set_permissions, OsfWebRenderer('project.mako')),
 
     ### Logs ###
 
-    Rule('/log/<log_id>/', 'get', project_views.log.get_log, OsfWebRenderer('util/render_log.html', render_mako_string)),
+    Rule('/log/<log_id>/', 'get', project_views.log.get_log, OsfWebRenderer('util/render_log.mako')),
     Rule([
         '/project/<pid>/log/',
         '/project/<pid>/node/<nid>/log/',
-    ], 'get', project_views.log.get_logs, OsfWebRenderer('util/render_logs.html', render_mako_string)),
+    ], 'get', project_views.log.get_logs, OsfWebRenderer('util/render_logs.mako')),
 
 
     ### Files ###
@@ -247,76 +257,76 @@ process_rules(app, [
     Rule([
         '/project/<pid>/files/',
         '/project/<pid>/node/<nid>/files/',
-    ], 'get', project_views.file.list_files, OsfWebRenderer('project/files.html', render_mako_string)),
+    ], 'get', project_views.file.list_files, OsfWebRenderer('project/files.mako')),
 
     Rule([
         '/project/<pid>/files/<fid>/',
         '/project/<pid>/node/<nid>/files/<fid>/',
-    ], 'get', project_views.file.view_file, OsfWebRenderer('project/file.html', render_mako_string)),
+    ], 'get', project_views.file.view_file, OsfWebRenderer('project/file.mako')),
 
     # View forks
     Rule([
         '/project/<pid>/forks/',
         '/project/<pid>/node/<nid>/forks/',
-    ], 'get', project_views.node.node_forks, OsfWebRenderer('project/forks.html', render_mako_string)),
+    ], 'get', project_views.node.node_forks, OsfWebRenderer('project/forks.mako')),
 
     # Registrations
     Rule([
         '/project/<pid>/register/',
         '/project/<pid>/node/<nid>/register/',
-    ], 'get', project_views.register.node_register_page, OsfWebRenderer('project/register.html', render_mako_string)),
+    ], 'get', project_views.register.node_register_page, OsfWebRenderer('project/register.mako')),
 
     Rule([
         '/project/<pid>/register/<template>/',
         '/project/<pid>/node/<nid>/register/<template>/',
-    ], 'get', project_views.register.node_register_template_page, OsfWebRenderer('project/register.html', render_mako_string)),
+    ], 'get', project_views.register.node_register_template_page, OsfWebRenderer('project/register.mako')),
 
     Rule([
         '/project/<pid>/registrations/',
         '/project/<pid>/node/<nid>/registrations/',
-    ], 'get', project_views.node.node_registrations, OsfWebRenderer('project/registrations.html', render_mako_string)),
+    ], 'get', project_views.node.node_registrations, OsfWebRenderer('project/registrations.mako')),
 
     # Statistics
     Rule([
         '/project/<pid>/statistics/',
         '/project/<pid>/node/<nid>/statistics/',
-    ], 'get', project_views.node.project_statistics, OsfWebRenderer('project/statistics.html', render_mako_string)),
+    ], 'get', project_views.node.project_statistics, OsfWebRenderer('project/statistics.mako')),
 
     ### Wiki ###
     Rule([
         '/project/<pid>/wiki/',
         '/project/<pid>/node/<nid>/wiki/',
-    ], 'get', project_views.wiki.project_wiki_home, OsfWebRenderer('project/wiki.html', render_mako_string)),
+    ], 'get', project_views.wiki.project_wiki_home, OsfWebRenderer('project/wiki.mako')),
 
     # View
     Rule([
         '/project/<pid>/wiki/<wid>/',
         '/project/<pid>/node/<nid>/wiki/<wid>/',
-    ], 'get', project_views.wiki.project_wiki_page, OsfWebRenderer('project/wiki.html', render_mako_string)),
+    ], 'get', project_views.wiki.project_wiki_page, OsfWebRenderer('project/wiki.mako')),
 
     # Edit | GET
     Rule([
         '/project/<pid>/wiki/<wid>/edit/',
         '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
-    ], 'get', project_views.wiki.project_wiki_edit, OsfWebRenderer('project/wiki/edit.html', render_mako_string)),
+    ], 'get', project_views.wiki.project_wiki_edit, OsfWebRenderer('project/wiki/edit.mako')),
 
     # Edit | POST
     Rule([
         '/project/<pid>/wiki/<wid>/edit/',
         '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
-    ], 'post', project_views.wiki.project_wiki_edit_post, OsfWebRenderer('project/wiki/edit.html', render_mako_string)),
+    ], 'post', project_views.wiki.project_wiki_edit_post, OsfWebRenderer('project/wiki/edit.mako')),
 
     # Compare
     Rule([
         '/project/<pid>/wiki/<wid>/compare/<compare_id>/',
         '/project/<pid>/node/<nid>/wiki/<wid>/compare/<compare_id>/',
-    ], 'get', project_views.wiki.project_wiki_compare, OsfWebRenderer('project/wiki/compare.html', render_mako_string)),
+    ], 'get', project_views.wiki.project_wiki_compare, OsfWebRenderer('project/wiki/compare.mako')),
 
     # Versions
     Rule([
         '/project/<pid>/wiki/<wid>/version/<vid>/',
         '/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/',
-    ], 'get', project_views.wiki.project_wiki_version, OsfWebRenderer('project/wiki/compare.html', render_mako_string)),
+    ], 'get', project_views.wiki.project_wiki_version, OsfWebRenderer('project/wiki/compare.mako')),
 
 ])
 

@@ -5,7 +5,6 @@ from framework import StoredObject
 
 from framework import HTTPError
 from framework.flask import app, redirect, make_response
-from framework.mako import makolookup
 from mako.template import Template
 
 from framework import session
@@ -14,8 +13,8 @@ import os
 import copy
 import json
 import pystache
-import lxml.html
 import httplib as http
+from bs4 import BeautifulSoup
 
 TEMPLATE_DIR = 'static/templates/'
 REDIRECT_CODES = [
@@ -38,13 +37,14 @@ class Rule(object):
             return value + '/'
         return value
 
-    def __init__(self, routes, methods, view_func, renderer, view_kwargs=None, endpoint_suffix=''):
+    def __init__(self, routes, methods, view_func_or_data, renderer,
+                 view_kwargs=None, endpoint_suffix=''):
         """Rule constructor.
 
         :param routes: Route or list of routes
         :param methods: HTTP method or list of methods
-        :param view_func: View function or None; pass None if rule should
-            perform no computation e.g. rendering a template without context
+        :param view_func_or_data: View function or data; pass data
+            if view returns a constant data dictionary
         :param renderer: Renderer object or function
         :param view_kwargs: Optional kwargs to pass to view function
         :param endpoint_suffix: Optional suffix to append to endpoint name;
@@ -58,13 +58,13 @@ class Rule(object):
             for route in self._ensure_list(routes)
         ]
         self.methods = self._ensure_list(methods)
-        self.view_func = view_func
+        self.view_func_or_data = view_func_or_data
         self.renderer = renderer
         self.view_kwargs = view_kwargs or {}
         self.endpoint_suffix = endpoint_suffix
 
 
-def wrap_with_renderer(fn, renderer, renderer_kwargs=None):
+def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
     """
 
     :param fn: View function; must return a dictionary or a tuple containing
@@ -82,8 +82,19 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None):
             rv = fn(*args, **kwargs)
         except HTTPError as error:
             rv = error
+        except Exception as error:
+            if debug_mode:
+                raise error
+            rv = HTTPError(
+                http.INTERNAL_SERVER_ERROR,
+                message=repr(error),
+            )
         return renderer(rv, **renderer_kwargs or {})
     return wrapped
+
+
+def data_to_lambda(data):
+    return lambda *args, **kwargs: data
 
 
 view_functions = {}
@@ -98,8 +109,10 @@ def process_rules(app, rules, prefix=''):
     """
     for rule in rules:
 
-        if rule.view_func is not None:
-            view_func = wrap_with_renderer(rule.view_func, rule.renderer, rule.view_kwargs)
+        # Handle view function
+        if callable(rule.view_func_or_data):
+
+            view_func = rule.view_func_or_data
             renderer_name = getattr(
                 rule.renderer,
                 '__name__',
@@ -107,22 +120,33 @@ def process_rules(app, rules, prefix=''):
             )
             endpoint = '{}__{}'.format(
                 renderer_name,
-                rule.view_func.__name__
+                rule.view_func_or_data.__name__
             )
-            view_functions[endpoint] = rule.view_func
-        else:
-            # Some rules don't need named view functions; for example,
-            # some views may simply render a template with no context.
-            # This logic provides a common null view function that takes
-            # arbitrary arguments and returns an empty dictionary.
-            view_func = wrap_with_renderer(lambda *args, **kwargs: {}, rule.renderer, {})
-            endpoint = '__'.join(route.replace('/', '') for route in rule.routes)
+            view_functions[endpoint] = rule.view_func_or_data
 
+        # Handle view data: wrap in lambda and build endpoint from
+        # HTTP methods
+        else:
+
+            view_func = data_to_lambda(rule.view_func_or_data)
+            endpoint = '__'.join(
+                route.replace('/', '') for route in rule.routes
+            )
+
+        # Wrap view function with renderer
+        wrapped_view_func = wrap_with_renderer(
+            view_func,
+            rule.renderer,
+            rule.view_kwargs,
+            debug_mode=app.debug
+        )
+
+        # Add routes
         for url in rule.routes:
             app.add_url_rule(
                 prefix + url,
                 endpoint=endpoint + rule.endpoint_suffix,
-                view_func=view_func,
+                view_func=wrapped_view_func,
                 methods=rule.methods,
             )
 
@@ -139,9 +163,15 @@ mako_cache = {}
 def render_mako_string(tplname, data):
     tpl = mako_cache.get(tplname)
     if tpl is None:
-        tpl = Template(tplname, lookup=makolookup)
+        tpl = Template(tplname)
         mako_cache[tplname] = tpl
     return tpl.render(**data)
+
+renderer_extension_map = {
+    '.stache': render_mustache_string,
+    '.jinja': render_jinja_string,
+    '.mako': render_mako_string,
+}
 
 def unpack(data, n=4):
     """Unpack data to tuple of length n.
@@ -261,23 +291,56 @@ class WebRenderer(Renderer):
     """
 
     CONTENT_TYPE = "text/html"
-    error_template = 'error.html'
+    error_template = 'error.mako'
 
-    def __init__(self, template_name, renderer, data=None, template_dir=TEMPLATE_DIR):
+    def detect_renderer(self, renderer, filename):
+
+        if renderer:
+            return renderer
+
+        try:
+            _, extension = os.path.splitext(filename)
+            return renderer_extension_map[extension]
+        except KeyError:
+            raise KeyError(
+                'Could not infer renderer from file name: {}'.format(
+                    filename
+                )
+            )
+
+    def __init__(self, template_name, renderer=None, error_renderer=None,
+                 data=None, detect_render_nested=True,
+                 template_dir=TEMPLATE_DIR):
         """Construct WebRenderer.
 
-        :param template_name:
-        :param renderer:
+        :param template_name: Name of template file
+        :param renderer: Renderer callable; attempt to auto-detect if None
+        :param error_renderer: Renderer for error views; attempt to
+            auto-detect if None
         :param data: Optional dictionary or dictionary-generating function
                      to add to data from view function
-        :param template_dir:
+        :param detect_render_nested: Auto-detect renderers for nested
+            templates?
+        :param template_dir: Path to template directory
+
         """
         self.template_name = template_name
-        self.renderer = renderer
         self.data = data or {}
+        self.detect_render_nested = detect_render_nested
         self.template_dir = template_dir
 
+        self.renderer = self.detect_renderer(renderer, template_name)
+        self.error_renderer = self.detect_renderer(
+            error_renderer,
+            self.error_template
+        )
+
     def handle_error(self, error):
+        """Handle an HTTPError.
+
+        :param error: HTTPError object
+        :return: HTML error page
+        """
 
         # Follow redirects
         if error.redirect_url is not None:
@@ -304,7 +367,7 @@ class WebRenderer(Renderer):
         return loaded
 
     def render_element(self, element, data):
-        """Renders an embedded template.
+        """Render an embedded template.
 
         :param element: The template embed (HtmlElement).
              Ex: <div mod-meta='{"tpl": "name.html", "replace": true}'></div>
@@ -312,9 +375,16 @@ class WebRenderer(Renderer):
         :return: 2-tuple: (<result>, <flag: replace div>)
         """
 
-        element_attributes = element.attrib
+        element_attributes = element.attrs
         attributes_string = element_attributes['mod-meta']
-        element_meta = json.loads(attributes_string) # todo more robust jsonqa
+
+        # Return debug <div> if JSON cannot be parsed
+        try:
+            element_meta = json.loads(attributes_string)
+        except ValueError:
+            return '<div>No JSON object could be decoded: {}</div>'.format(
+                attributes_string
+            ), True
 
         uri = element_meta.get('uri')
         is_replace = element_meta.get('replace', False)
@@ -352,8 +422,24 @@ class WebRenderer(Renderer):
         return template_rendered, is_replace
 
     def _render(self, data, template_name=None):
+        """Render output of view function to HTML.
 
+        :param data: Data dictionary from view function
+        :param template_name: Name of template file
+        :return: Rendered HTML
+        """
+
+        nested = template_name is None
         template_name = template_name or self.template_name
+
+        if nested and self.detect_render_nested:
+            try:
+                renderer = self.detect_renderer(None, template_name)
+            except KeyError:
+                renderer = self.renderer
+        else:
+            renderer = self.renderer
+
         # Catch errors and return appropriate debug divs
         # todo: add debug parameter
         try:
@@ -361,26 +447,44 @@ class WebRenderer(Renderer):
         except IOError:
             return '<div>Template {} not found.</div>'.format(template_name)
 
-        rendered = self.renderer(template_file, data)
+        rendered = renderer(template_file, data)
 
-        html = lxml.html.fragment_fromstring(rendered, create_parent='remove-me')
+        # Parse HTML using html5lib; lxml is too strict and e.g. throws
+        # errors if missing parent container; htmlparser mangles whitespace
+        # and breaks replacement
+        parsed = BeautifulSoup(rendered, 'html5lib')
+        subtemplates = parsed.find_all(
+            lambda tag: tag.has_attr('mod-meta')
+        )
 
-        for element in html.findall('.//*[@mod-meta]'):
+        for element in subtemplates:
 
+            # Extract HTML of original element
+            element_html = str(element)
+
+            # Render nested template
             template_rendered, is_replace = self.render_element(element, data)
 
-            original = lxml.html.tostring(element)
+            # Build replacement
             if is_replace:
                 replacement = template_rendered
             else:
-                replacement = lxml.html.tostring(element)
-                replacement = replacement.replace('><', '>'+template_rendered+'<')
+                element.string = template_rendered
+                replacement = str(element)
 
-            rendered = rendered.replace(original, replacement)
+            # Replace
+            rendered = rendered.replace(element_html, replacement)
 
         return rendered
 
     def render(self, data, redirect_url, *args, **kwargs):
+        """Render output of view function to HTML, following redirects
+        and adding optional auxiliary data to view function response
+
+        :param data: Data dictionary from view function
+        :param redirect_url: Redirect URL; follow if not None
+        :return: Rendered HTML
+        """
 
         # Follow redirects
         if redirect_url is not None:

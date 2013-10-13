@@ -7,8 +7,14 @@ confirm_registrations_by_email = False # Not fully implemented
 allow_registration = True
 allow_login = True
 
-use_solr = False
-solr = 'http://23.92.18.234:8983/solr/'
+use_solr = True
+solr = 'http://localhost:8983/solr/'
+
+try:
+    os.environ['OSF_PRODUCTION']
+    debug_mode = False
+except KeyError:
+    debug_mode = True
 
 # External services
 try:

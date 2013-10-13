@@ -17,7 +17,7 @@
             </div>
         % endfor
         <div class="">
-          <button type="submit" class="btn primary">${submit_string}</button>
+            <button type="submit" class="btn primary">${submit_string}</button>
         </div>
     </fieldset>
 </form>

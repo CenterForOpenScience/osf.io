@@ -1,5 +1,8 @@
+# -*- coding: utf-8 -*-
+import httplib as http
+import logging
 
-from framework import request, User
+from framework import request, User, Q
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from framework.auth import must_have_session_auth, get_current_user, get_api_key
@@ -7,7 +10,8 @@ from framework.forms.utils import sanitize
 import hashlib
 
 from framework import HTTPError
-import httplib as http
+
+logger = logging.getLogger(__name__)
 
 @must_be_valid_project
 def get_node_contributors_abbrev(*args, **kwargs):
@@ -89,30 +93,36 @@ def get_contributors(*args, **kwargs):
 
 
 @must_have_session_auth
-@must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+@must_be_valid_project  # returns project
+@must_be_contributor  # returns user, project
 @must_not_be_registration
 def project_removecontributor(*args, **kwargs):
 
     project = kwargs['project']
     node = kwargs['node']
     user = kwargs['user']
-
+    api_key = get_api_key()
     node_to_use = node or project
+    logging.error(request.json)
 
     if request.json['id'].startswith('nr-'):
         outcome = node_to_use.remove_nonregistered_contributor(
             user, request.json['name'], request.json['id'].replace('nr-', '')
         )
     else:
+        try:
+            contributor = User.find_one(Q("_id", "eq", request.json['id']))
+        except Exception as err:
+            logger.error(err)
+            raise HTTPError(http.BAD_REQUEST)
         outcome = node_to_use.remove_contributor(
-            user, request.json['id']
+            user, contributor, api_key=api_key
         )
-
     if outcome:
-        return {'status' : 'success'}
+        # TODO(sloria): Add flash message
+        return {'status': 'success'}
     raise HTTPError(http.BAD_REQUEST)
-    # return {'status' : 'success' if outcome else 'failure'}
+
 
 @must_have_session_auth # returns user
 @must_be_valid_project # returns project

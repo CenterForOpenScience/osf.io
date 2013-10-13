@@ -1,4 +1,4 @@
-from framework import request, redirect, abort, secure_filename, send_file, get_basic_counters, update_counters
+from framework import request, redirect, secure_filename, send_file, get_basic_counters, update_counters
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from framework.auth import must_have_session_auth
@@ -94,16 +94,16 @@ def upload_file_get(*args, **kwargs):
         if not v.is_deleted:
             unique, total = get_basic_counters('download:' + node_to_use._primary_key + ':' + v.path.replace('.', '_') )
             file_infos.append({
-                "name":v.path,
-                "size":v.size,
-                "url":node_to_use.url + "files/" + v.path,
-                "type":v.content_type,
+                "name": v.path,
+                "size": v.size,
+                "url": node_to_use.url + "files/" + v.path,
+                "type": v.content_type,
                 "download_url": node_to_use.api_url + "files/download/" + v.path,
                 "date_uploaded": v.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
                 "downloads": str(total) if total else str(0),
                 "user_id": None,
-                "user_fullname":None,
-                "delete": v.is_deleted
+                "user_fullname": None,
+                "delete": v.is_deleted,
             })
     return {'files' : file_infos}
 
@@ -173,7 +173,7 @@ def view_file(*args, **kwargs):
     file_path = os.path.join(settings.uploads_path, node_to_use._primary_key, file_name)
 
     if not os.path.isfile(file_path):
-        abort(http.NOT_FOUND)
+        raise HTTPError(http.NOT_FOUND)
 
     versions = []
     for idx, version in enumerate(list(reversed(node_to_use.files_versions[file_name_clean]))):
@@ -187,7 +187,7 @@ def view_file(*args, **kwargs):
         versions.append({
             'file_name' : file_name,
             'number' : number,
-            'display_number' : number if number > 0 else 'current',
+            'display_number' : number if idx > 0 else 'current',
             'date_uploaded' : node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
             'total' : total if total else 0,
         })
@@ -237,7 +237,7 @@ def view_file(*args, **kwargs):
         try:
             file_contents = open(file_path, 'r').read()
         except IOError:
-            abort(http.NOT_FOUND)
+            raise HTTPError(http.NOT_FOUND)
 
     if renderer == 'pygments':
         try:
@@ -299,7 +299,6 @@ def download_file_by_version(*args, **kwargs):
     content, content_type = node_to_use.get_file(filename, version=version_number)
     if content is None:
         raise HTTPError(http.NOT_FOUND)
-        # return abort(404)
     file_object = node_to_use.get_file_object(filename, version=version_number)
     filename_base, file_extension = os.path.splitext(file_object.path)
     returned_filename = '{base}_{tmstp}{ext}'.format(

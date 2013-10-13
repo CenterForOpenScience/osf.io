@@ -8,7 +8,7 @@ from framework import request
 from framework import must_be_logged_in
 from website.project.decorators import must_be_contributor, must_not_be_registration
 
-from BeautifulSoup import BeautifulSoup as Soup
+from bs4 import BeautifulSoup
 from sword2.exceptions import HTTPResponseError
 from httplib2 import ServerNotFoundError
 
@@ -44,7 +44,7 @@ DV_SSL = '/Users/jmcarp/Desktop/dvn-4.hmdc.harvard.edu'
 # Todo: move elsewhere
 # Utility functions
 def parse_sword_error(error):
-    return Soup(error.content)\
+    return BeautifulSoup(error.content)\
         .find('atom:summary')\
         .text
 
