@@ -1,4 +1,4 @@
-from framework import request, render
+from framework import request
 
 from framework.status import push_status_message
 from solr_search import search_solr
@@ -22,8 +22,11 @@ def search_search():
     # if there is not a query, tell our users to enter a search
     if query == '':
         push_status_message('Enter a search!')
-        return render(
-            filename='search.mako', results=[], tags=[], query='')
+        return {
+            'results': [],
+            'tags': [],
+            'query': '',
+        }
     # if the search does not work,
     # post an error message to the user, otherwise,
     # the document, highlight,
@@ -32,17 +35,25 @@ def search_search():
         results, highlights, spellcheck_results = search_solr(query, start)
     except HTTPError:
         push_status_message('Malformed query. Please try again')
-        return render(
-            filename='search.mako', results=[], tags=[], query='')
+        return {
+            'results': [],
+            'tags': [],
+            'query': '',
+        }
     # with our highlights and search result 'documents' we build the search
     # results so that it is easier for us to displa
     result_search, tags = create_result(highlights, results['docs'])
     total = results['numFound']
-    return render(
-        filename='search.mako', highlight=highlights,
-        results=result_search, total=total, query=query,
-        spellcheck=spellcheck_results, current_page=start,
-        time=round(time.time()-tick, 2), tags=tags)
+    return {
+        'highlight': highlights,
+        'results': result_search,
+        'total': total,
+        'query': query,
+        'spellcheck': spellcheck_results,
+        'current_page': start,
+        'time': round(time.time() - tick, 2),
+        'tags': tags,
+    }
 
 
 def create_result(highlights, results):

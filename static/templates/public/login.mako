@@ -1,4 +1,4 @@
-<%inherit file="contentContainer.mako" />
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
 
 
 <div class="row">
@@ -35,9 +35,10 @@
                     "submit_btn_class": "btn-primary"
                 },
                 "replace": true
-            }'>
-        </div>
+            }'></div>
+
         <hr />
+
         <h3>Forgot Password</h3>
         <div mod-meta='{
                 "tpl": "util/render_form.mako",
@@ -51,8 +52,11 @@
                     "submit_btn_class": "btn-default"
                 },
                 "replace": true
-            }'>
-        </div>
+            }'></div>
+
     </div>
     <div class="col-md-1">&nbsp;</div>
+
 </div>
+
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

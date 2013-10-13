@@ -1,4 +1,4 @@
-<%inherit file="contentContainer.mako" />
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
 
 <h3>How much does the OSF service cost?</h3>
 
@@ -82,3 +82,5 @@
     more information. If you want to comment on how to make the OSF more useful
     for managing your workflow, send comments <a
             href="mailto:contact@openscienceframework.org">here</a>.</p>
+
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

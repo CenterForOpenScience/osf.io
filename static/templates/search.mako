@@ -1,4 +1,5 @@
-<%inherit file="contentContainer.mako" />
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+
 <link rel="stylesheet" type="text/css" href="/static/css/jquery.tagsinput.css" />
 
 ## todo: add CDN links
@@ -227,3 +228,5 @@ $(function () {
             %endif
     </div>
 </div>
+
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

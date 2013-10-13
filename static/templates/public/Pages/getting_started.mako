@@ -1,4 +1,5 @@
-<%inherit file="contentContainer.mako" />
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+
 <style>
     .staticpage img {
         border:2px solid black;
@@ -77,3 +78,5 @@
     workflow, send comments <a href="mailto:feedback@openscienceframework.org">here</a>.
 </p>
 </div>
+
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

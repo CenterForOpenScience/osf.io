@@ -1,4 +1,5 @@
-<%inherit file="project.view.mako" />
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+<div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
 <!-- Delete project -->
 <button id="delete-node" class="btn btn-danger">Delete component</button>
@@ -20,10 +21,12 @@
 
 <!-- Show API key settings -->
 <div mod-meta='{
-        "tpl": "util/render_keys.html",
+        "tpl": "util/render_keys.mako",
         "uri": "${node_api_url}keys/",
         "replace": true,
         "kwargs": {
             "route": "${node_url}"
         }
     }'></div>
+
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

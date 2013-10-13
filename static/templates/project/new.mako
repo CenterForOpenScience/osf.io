@@ -1,4 +1,4 @@
-<%inherit file="contentContainer.mako" />
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
 
 <h2>Create New Project</h2>
 <div mod-meta='{
@@ -14,3 +14,5 @@
         "replace": true
     }'>
 </div>
+
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

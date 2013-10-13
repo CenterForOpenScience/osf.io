@@ -1,4 +1,5 @@
-<%inherit file="contentContainer.mako"/>
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+
 <h1>Nodes</h1>
 % if nodes:
 	% for node in nodes:
@@ -7,3 +8,5 @@
 % else:
 	No public nodes tagged as ${tag}
 % endif
+
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

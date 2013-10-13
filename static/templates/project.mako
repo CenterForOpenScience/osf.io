@@ -1,7 +1,13 @@
-<%inherit file="project.view.mako" />
+<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+<div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
+<!-- Import jQuery tags -->
 <link rel="stylesheet" type="text/css" href="/static/css/jquery.tagsinput.css" />
 <script src="/static/js/jquery.tagsinput.min.js"></script>
+
+<!-- Import Bootbox -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.0.0/bootbox.min.js"></script>
+
 <script>
     $(function(){
         $('#node-tags').tagsInput({
@@ -88,12 +94,11 @@
           </script>
           % if node_children:
               <div mod-meta='{
-                      "tpl" : "util/render_nodes.html",
+                      "tpl" : "util/render_nodes.mako",
                       "uri" : "${node_api_url}get_children/",
                       "replace" : true,
                       "kwargs" : {"sortable" : true}
-                  }'>
-              </div>
+                  }'></div>
           % else:
               <p>No components have been added to this project.</p>
           % endif
@@ -106,11 +111,10 @@
           </div>
           <ul id="browser" class="filetree">
               <div mod-meta='{
-                      "tpl": "util/render_file_tree.html",
+                      "tpl": "util/render_file_tree.mako",
                       "uri": "${node_api_url}get_files/",
                       "replace": true
-                  }'>
-              </div>
+                  }'></div>
           </ul>
         </div>
       </section>
@@ -121,16 +125,17 @@
         </div>
             <div id='main-log'>
                 <div mod-meta='{
-                        "tpl": "util/render_logs.html",
+                        "tpl": "util/render_logs.mako",
                         "uri": "${node_api_url}log/",
                         "view_kwargs": {
                             "count": 10
                         },
                         "replace": true
-                    }'>
-                </div>
+                    }'></div>
             </div>
             <div class="paginate" style="float:right;">more</div>
         </section>
     </div>
   </div>
+
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

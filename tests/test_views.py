@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 '''Views tests for the OSF.'''
 from __future__ import absolute_import
-import os
 import unittest
 import datetime as dt
 from nose.tools import *  # PEP8 asserts
@@ -13,7 +12,6 @@ from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
                             WatchConfigFactory, NodeFactory)
 
 from framework import app
-from website.models import Node
 import new_style  # This import sets up the routes
 
 
@@ -21,7 +19,7 @@ class TestProjectViews(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.user1  = UserFactory()
+        self.user1 = UserFactory()
         self.user2 = UserFactory()
         # A project has 2 contributors
         self.project = ProjectFactory(creator=self.user1)

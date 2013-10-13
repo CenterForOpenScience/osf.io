@@ -6,15 +6,14 @@
 
     % for node in nodes:
         <div mod-meta='{
-                "tpl": "util/render_node.html",
+                "tpl": "util/render_node.mako",
                 "uri": "${node['api_url']}get_summary/",
                 "view_kwargs": {
                     "rescale_ratio" : ${rescale_ratio},
                     "uid" : "${user_id}"
                 },
                 "replace": true
-            }'>
-        </div>
+            }'></div>
     % endfor
 
 </ul>

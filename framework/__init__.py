@@ -14,9 +14,6 @@ from framework.mongo import db, set_up_storage
 ##### Sessions
 from framework.sessions import goback, set_previous_url, session, create_session
 
-##### Template
-from framework.mako import render
-
 ###### Celery
 from framework.celery import celery
 from framework.celery.tasks import error_handler
