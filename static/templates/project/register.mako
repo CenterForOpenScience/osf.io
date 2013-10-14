@@ -109,7 +109,7 @@
 			{{#if Templater.Templates.continueFlag}}
 			<div class="control-group">
 				<div class="controls">
-				<button type="button" class="btn primary" onclick="Templater.Templates.submitRegistration()">Register</button>
+				<button type="button" class="btn btn-primary" onclick="Templater.Templates.submitRegistration()">Register</button>
 				</div>
 			</div>
 			{{/if}}

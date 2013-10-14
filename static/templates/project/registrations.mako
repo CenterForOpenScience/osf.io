@@ -1,11 +1,12 @@
 <div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
 <div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
-<div class="page-header"><div style="float:right;">
+<div class="page-header">
+    <div class="pull-right">
     % if user_can_edit and node_category == 'project':
-        <a href="${node_url}register" class="btn" type="button">New Registration</a>
+        <a href="${node_url}register" class="btn btn-default" type="button">New Registration</a>
     % else:
-        <a class="btn disabled" type="button">New Registration</a>
+        <a class="btn btn-default disabled" type="button">New Registration</a>
     % endif
     </div>
 	<h1>Registrations</h1>

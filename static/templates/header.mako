@@ -126,6 +126,7 @@
           </div><!-- end navbar-collapse -->
         </div><!-- end container-->
     </nav>
+    <div class="watermarked">
     <div class="container">
     % if status:
         <div id="alert-container">
