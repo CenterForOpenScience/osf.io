@@ -2,8 +2,8 @@
     <h3 class="list-group-item-heading">
         <span style="display:inline-block">
         <a href="${summary['url']}">${summary['title']}</a>
-        % if is_registration:
-            | registered: ${registered_date}
+        % if summary['is_registration']:
+            | Registered: ${summary['registered_date']}
         % endif
         </span>
         % if summary['show_logs']:
@@ -37,10 +37,6 @@
                 <li class="pa-meter-label">${summary['nlogs']} contributions</li>
             </ul>
         </div>
-
-        <script>
-            $('.ua-meter').tooltip();
-        </script>
 
         <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
             Recent Activity
