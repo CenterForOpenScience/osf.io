@@ -1,5 +1,9 @@
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
+# Storage backends are attached to models in main; must import
+# to get access to data
+import main
+
 from framework import app
 from website.models import Node
 from framework.auth import User
