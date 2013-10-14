@@ -1,6 +1,7 @@
 <div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
 <div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
+## TODO: Move to header.mako
 <!-- Import jQuery tags -->
 <link rel="stylesheet" type="text/css" href="/static/css/jquery.tagsinput.css" />
 <script src="/static/js/jquery.tagsinput.min.js"></script>

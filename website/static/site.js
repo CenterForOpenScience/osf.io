@@ -1,3 +1,16 @@
+
+// Messages, e.g. for confirmation dialogs, alerts, etc.
+window.Messages = {
+    makePublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
+                        'access to the data it contains can be complete prevented. Users ' +
+                        'should assume that once a project is made public, it will always ' +
+                        'be public. Are you absolutely sure you would like to continue?',
+
+    makePrivateWarning: 'Making a project will prevent users from viewing it on this site, ' +
+                        'but will have no impact on external sites, including Google\'s cache. ' +
+                        'Would you like to continue?'
+}
+
 var nodeToUse = function(){
   if(location.pathname.match("\/project\/.*\/node\/.*")){
     return location.pathname.match("\/project\/.*?\/node\/(.*?)\/.*")[1];
@@ -20,6 +33,22 @@ var setStatus = function(status){
 
 var urlDecode = function(str) {
     return decodeURIComponent((str+'').replace(/\+/g, '%20'));
+}
+
+
+/**
+ * Display a modal confirmation window before relocating to an url.
+ * @param  <String> message
+ * @param  <String> url
+ */
+var modalConfirm = function(message, url){
+    bootbox.confirm(message,
+        function(result) {
+            if (result) {
+                window.location.href = url;
+            }
+        }
+    )
 }
 
 window.NodeActions = {};  // Namespace for NodeActions
@@ -153,6 +182,8 @@ data-confirm-no:
 
 
  */
+
+ // FIXME: Migrate to BS3 or use Bootbox
 function generateConfirmModal(args) {
     // Supported parameters
     var params = ['message','title','confirm_text','deny_text'];
@@ -302,4 +333,18 @@ $(document).ready(function(){
     );
 
     $("#browser").treeview();
+
+    /* Modal Click handlers for project page */
+
+    // Private Button confirm dlg
+    $('#privateButton').on('click', function() {
+        var url = $(this).data("target");
+        modalConfirm(Messages.makePrivateWarning, url);
+    });
+
+    // Public Button confirm dlg
+    $('#publicButton').on('click', function() {
+        var url = $(this).data("target");
+        modalConfirm(Messages.makePublicWarning, url);
+    });
 });

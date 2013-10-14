@@ -1,10 +1,3 @@
-## todo: move to warnings.py
-<%
-    make_public_warning = 'Once a project is made public, there is no way to guarantee that access to the data it contains can be complete prevented. Users should assume that once a project is made public, it will always be public. Are you absolutely sure you would like to continue?'
-    make_private_warning = 'Making a project will prevent users from viewing it on this site, but will have no impact on external sites, including Google\'s cache. Would you like to continue?'
-%>
-
-
 % if node_is_registration:
     <div class="alert alert-info">This node is a registration of <a class="alert-link" href="${node_registered_from_url}">this node</a>; the content of the node has been frozen and cannot be edited.
     </div>
@@ -26,11 +19,11 @@
             %if not node_is_public:
                 <button class='btn btn-default disabled'>Private</button>
                 % if user_is_contributor:
-                    <a id="publicButton" class="btn btn-warning">Make public</a>
+                    <a id="publicButton" data-id="${node_id}" data-target="${node_url}permissions/public/" class="btn btn-warning">Make public</a>
                 % endif
             %else:
                 % if user_is_contributor:
-                    <a id="privateButton" class="btn btn-default">Make private</a>
+                    <a id="privateButton" data-id="${node_id}" data-target="${node_url}permissions/private/" class="btn btn-default">Make private</a>
                 % endif
                 <button class="btn btn-warning disabled">Public</button>
             %endif
@@ -73,10 +66,6 @@
         %if user_can_edit:
             <script>
                 $(function() {
-                    function urlDecode(str) {
-                        return decodeURIComponent((str+'').replace(/\+/g, '%20'));
-                    }
-
                     $('#node-title-editable').editable({
                        type:  'text',
                        pk:    '${node_id}',
@@ -149,6 +138,7 @@
         </ul>
     </div>
 </header>
+## TODO: Move to site.js
 <script type="text/javascript">
   var App = Ember.Application.create();
 
@@ -269,29 +259,3 @@
         </div><!-- end modal-content -->
     </div><!-- end modal-dialog -->
 </div><!-- end modal -->
-
-<script type="text/javascript">
-    // TODO: Move to script.js
-
-    /* Modal Click handlers */
-    // Private Button
-    $('#privateButton').on('click', function() {
-        bootbox.confirm("${make_private_warning}",
-            function(result) {
-                if (result) {
-                    window.location.href = "${node_url}permissions/private/";
-                }
-            }
-        )
-    });
-    // Public Button
-    $('#publicButton').on('click', function() {
-        bootbox.confirm("${make_public_warning}",
-            function(result) {
-                if (result) {
-                    window.location.href = "${node_url}permissions/public/";
-                }
-            }
-        )
-    });
-</script>
