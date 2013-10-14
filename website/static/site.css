@@ -1,3 +1,4 @@
+
 /* Body and structure
 -------------------------------------------------- */
 
@@ -307,6 +308,10 @@ padding: 10px 16px;
 font-size: 40px;
 line-height: 1.33;
 border-radius: 6px;
+}
+
+.brand-version {
+    font-size: 8px;
 }
 
 

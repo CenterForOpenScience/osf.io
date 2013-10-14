@@ -81,7 +81,7 @@
               <span class="icon-bar"></span>
               <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="/">Open Science Framework<span style="font-size: 8px;"> BETA</span></a>
+            <a class="navbar-brand" href="/">Open Science Framework<span class="brand-version"> BETA</span></a>
           </div><!-- end navbar-header -->
 
           <div class="collapse navbar-collapse navbar-ex1-collapse">

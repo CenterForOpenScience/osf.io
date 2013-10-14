@@ -2,7 +2,7 @@
 
 <div class="container" style="margin-top: 30px;">
     <div class='row'>
-        <div class='span12'>
+        <div class='col-md-12'>
             <h2>${message_short}</h2>
             <p>${message_long}</p>
             % if referrer:

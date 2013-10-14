@@ -51,7 +51,7 @@
       <section id="Nodes">
 
           <div class="page-header">
-              <div style="float:right;">
+              <div class="pull-right">
                   % if user_can_edit:
                   <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">
                   % else:
@@ -138,7 +138,7 @@
                         "replace": true
                     }'></div>
             </div>
-            <div class="paginate" style="float:right;">more</div>
+            <div class="paginate pull-right">more</div>
         </section>
     </div>
   </div>
