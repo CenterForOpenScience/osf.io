@@ -8,27 +8,29 @@
     <span class="label label-important" style="font-size:1.1em;margin-bottom:30px;">This node is a registration of <a href="${node_registered_from_url}">this node</a>; the content of the node has been frozen and cannot be edited.</span>
     <style type="text/css">
     .watermarked {
-        background-image:url('/static/read-only.png');
+        background-image: url('/static/read-only.png');
         background-repeat:repeat;
     }
     </style>
 % endif
 
+
+
 <header class="jumbotron subhead" id="overview">
 
     <div class="row">
 
-        <div class="btn-toolbar" style="float:right;">
+        <div class="btn-toolbar pull-right">
 
             <div class="btn-group">
             %if not node_is_public:
                 <button class='btn btn-default disabled'>Private</button>
                 % if user_is_contributor:
-                    <a class="btn btn-warning" href="${node_url}permissions/public/" data-confirm="${make_public_warning}">Make public</a>
+                    <a id="publicButton" class="btn btn-warning">Make public</a>
                 % endif
             %else:
                 % if user_is_contributor:
-                    <a class="btn btn-default" href="${node_url}permissions/private/" data-confirm="${make_private_warning}">Make private</a>
+                    <a id="privateButton" class="btn btn-default">Make private</a>
                 % endif
                 <button class="btn btn-warning disabled">Public</button>
             %endif
@@ -91,7 +93,7 @@
             </script>
         %endif
 
-        <div class="span4">
+        <div class="col-md-4">
 
             %if parent_id:
                 <h1 style="display:inline-block" class="node-parent-title">
@@ -263,3 +265,27 @@
         <button onclick="App.SearchController.add()" class="btn primary">Add</button>
     </div>
 </div>
+
+<script type="text/javascript">
+    /* Modal Click handlers */
+    // Private Button
+    $('#privateButton').on('click', function() {
+        bootbox.confirm("${make_private_warning}",
+            function(result) {
+                if (result) {
+                    window.location.href = "${node_url}permissions/private/";
+                }
+            }
+        )
+    });
+    // Public Button
+    $('#publicButton').on('click', function() {
+        bootbox.confirm("${make_public_warning}",
+            function(result) {
+                if (result) {
+                    window.location.href = "${node_url}permissions/public/";
+                }
+            }
+        )
+    });
+</script>

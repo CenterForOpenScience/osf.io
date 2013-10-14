@@ -22,7 +22,6 @@ var urlDecode = function(str) {
     return decodeURIComponent((str+'').replace(/\+/g, '%20'));
 }
 
-
 window.NodeActions = {};  // Namespace for NodeActions
 
 NodeActions.forkNode = function(){
@@ -172,26 +171,29 @@ function generateConfirmModal(args) {
     }
     var template = [
         '<div class="modal hide fade">',
-            '<div class="modal-header">',
-                '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>',
-                '<h3>Are you sure?</h3>',
-            '</div>',
-            '<div class="modal-body">',
-                '<p></p>',
-            '</div>',
-            '<div class="modal-footer">',
-                '<button href="#" data-dismiss="modal" class="btn modal-deny">No</button>',
-                '<button href="#" data-dismiss="modal" class="btn btn-primary modal-confirm">Yes</button>',
-            '</div>',
+            '<div class="modal-dialog">',
+                '<div class="modal-content">',
+                    '<div class="modal-header">',
+                        '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>',
+                        '<h3>Are you sure?</h3>',
+                    '</div>',
+                    '<div class="modal-body">',
+                        '<p></p>',
+                    '</div>',
+                    '<div class="modal-footer">',
+                        '<button href="#" data-dismiss="modal" class="btn modal-deny">No</button>',
+                        '<button href="#" data-dismiss="modal" class="btn btn-primary modal-confirm">Yes</button>',
+                    '</div>',
+                '</div><!-- end modal-content -->',
+            '</div><!-- end modal-dialog -->',
         '</div>'
     ].join('');
-
     // If document.modals doesn't exist, create it as an empty array.
     if( typeof(document.modals) === 'undefined' ) {
         document.modals = [];
     };
 
-    params.id = 'modal_' + document.modals.length.toString()
+    params.id = 'modal_' + document.modals.length.toString();
 
     // Apply passed params to the template
     var modal = $(template).attr('id', params.id);
@@ -209,7 +211,6 @@ function generateConfirmModal(args) {
            $(this).parents('.modal').attr('data-result', 0);
        }
     });
-
     document.modals.push(modal);
     $(document.body).append(modal);
     return '#' + params.id
@@ -257,7 +258,6 @@ $(function(){
                     window.location = href;
                 };
             });
-
             // Show the modal
             $(modal_id).modal('show');
 
@@ -268,6 +268,7 @@ $(function(){
 
     });
 });
+
 
 $(document).ready(function(){
 

@@ -7,7 +7,7 @@ confirm_registrations_by_email = False # Not fully implemented
 allow_registration = True
 allow_login = True
 
-use_solr = True
+use_solr = False
 solr = 'http://localhost:8983/solr/'
 
 try:

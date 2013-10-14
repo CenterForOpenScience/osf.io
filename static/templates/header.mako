@@ -36,6 +36,7 @@
         <script src="//cdnjs.cloudflare.com/ajax/libs/ember.js/0.9.5/ember-0.9.5.min.js"></script>
     %else:
         <script src="/static/vendor/jquery/jquery-1.10.2.min.js"></script>
+        <script src="/static/vendor/jquery/jquery-migrate-1.2.1.min.js"></script>
         <script src="/static/underscore-min.js"></script>
         <script src="/static/handlebars.min.js"></script>
         <script src="/static/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
@@ -54,7 +55,7 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/jquery.fileupload-ui.css">
     <link rel="stylesheet" href="/static/pygments.css" />
-    <div mod-meta='{"tpl": "include/confirm.mako", "replace": true}'></div>
+    <!-- <div mod-meta='{"tpl": "include/confirm.mako", "replace": true}'></div> -->
 </head>
 <body>
     % if dev_mode:
