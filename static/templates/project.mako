@@ -53,41 +53,46 @@
           <div class="page-header">
               <div style="float:right;">
                   % if user_can_edit:
-                  <a class="btn" data-toggle="modal" href="#newComponent">
+                  <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">
                   % else:
-                  <a class="btn disabled">
+                  <a class="btn btn-default disabled">
                   % endif
                     Add Component
                   </a>
               </div>
               <h1>Components</h1>
           </div>
-          <div class="modal hide fade" id="newComponent">
-          <form class="form-horizontal form-horizontal-narrow" action="${node_url}newnode/" method="post">
-            <div class="modal-header">
-              <h3 class='img-add'>Add Component</h3>
-            </div>
-            <div class="modal-body">
-                    <div class='control-group'>
-                        <label for='title' class='control-label'>Title</label>
-                        <input name="title" type="text" class='controls'>
-                    </div>
-                    <div class='control-group'>
-                        <label for='category' class='control-label'>Category</label>
-                        <select id="category" name="category" class='controls'>
-                            <option disabled selected value=''>-- Choose--</option>
-                            %for i in ["Project", "Hypothesis", "Methods and Measures", "Procedure", "Instrumentation", "Data", "Analysis", "Communication", "Other"]:
-                            <option>${i}</option>
-                            %endfor
-                        </select>
-                    </div>
-            </div>
-                <div class="modal-footer">
-                   <a href="#" class="btn" data-dismiss="modal">Close</a>
-                  <button type="submit" class="btn btn-primary">OK</button>
-                </div>
-            </form>
-            </div>
+          <!-- New Component Modal -->
+          <div class="modal fade" id="newComponent">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                <form class="form-horizontal form-horizontal-narrow" action="${node_url}newnode/" method="post">
+                <div class="modal-header">
+                  <h3>Add Component</h3>
+                </div><!-- end modal-header -->
+                <div class="modal-body">
+                        <div class='control-group'>
+                            <label for='title' class='control-label'>Title</label>
+                            <input name="title" type="text" class='controls'>
+                        </div>
+                        <div class='control-group'>
+                            <label for='category' class='control-label'>Category</label>
+                            <select id="category" name="category" class='controls'>
+                                <option disabled selected value=''>-- Choose--</option>
+                                %for i in ["Project", "Hypothesis", "Methods and Measures", "Procedure", "Instrumentation", "Data", "Analysis", "Communication", "Other"]:
+                                <option>${i}</option>
+                                %endfor
+                            </select>
+                        </div>
+                </div><!-- end modal-body -->
+                    <div class="modal-footer">
+                       <a href="#" class="btn" data-dismiss="modal">Close</a>
+                      <button type="submit" class="btn btn-primary">OK</button>
+                    </div><!-- end modal-footer -->
+                </form>
+                </div><!-- end modal- content -->
+              </div><!-- end modal-dialog -->
+            </div><!-- end modal -->
 
           <script type="text/javascript">
             //$('#addContributor').modal('hide')

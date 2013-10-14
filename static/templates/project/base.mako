@@ -269,6 +269,8 @@
 </div><!-- end modal -->
 
 <script type="text/javascript">
+    // TODO: Move to script.js
+
     /* Modal Click handlers */
     // Private Button
     $('#privateButton').on('click', function() {
