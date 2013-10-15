@@ -16,7 +16,7 @@ def server():
 def mongo(daemon=False):
     '''Run the mongod process.
     '''
-    port = settings.MONGO_PORT
+    port = settings.DB_PORT
     cmd = "mongod --port {0}".format(port)
     if daemon:
         cmd += " --fork"

@@ -42,10 +42,12 @@ except KeyError:
     cache_path = os.path.join(base_path, 'cache')
     uploads_path = os.path.join(base_path, 'uploads')
 
+DB_PORT = 20771
+DB_NAME = "osf20130903"
 if os.environ.get("OSF_PRODUCTION", False):
-    mongo_uri = 'mongodb://osf:osfosfosfosf0$f@localhost:20771/osf20130903'
+    mongo_uri = 'mongodb://osf:osfosfosfosf0$f@localhost:{0}/{1}'.format(DB_PORT, DB_NAME)
 else:
-    mongo_uri = 'mongodb://localhost:20771/osf20130903'
+    mongo_uri = 'mongodb://localhost:{0}/{1}'.format(DB_PORT, DB_NAME)
 
 #TODO: Configuration should not change between deploys - this should be dynamic.
 canonical_domain = 'openscienceframework.org'
