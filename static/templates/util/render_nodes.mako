@@ -18,6 +18,11 @@
 
 </ul>
 
+<!-- Build tooltips on user activity widgets -->
+<script>
+    $('.ua-meter').tooltip();
+</script>
+
 % if sortable and user_can_edit:
 
     <script>
