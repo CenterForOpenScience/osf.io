@@ -61,9 +61,9 @@
         )
     %>
     <li class="project list-group-item">
-        <h3 class="list-group-item-heading">
+        <h4 class="list-group-item-heading">
             <a href="${node.url}">${node.title}</a>
-        </h3>
+        </h4>
             % if metric == 'hits':
                 <span class="badge" rel='tooltip' data-original-title='${hits} hits (${unique_hits} unique)'>
                     ${hits} views

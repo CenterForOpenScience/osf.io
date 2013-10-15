@@ -341,21 +341,19 @@ border-radius: 6px;
 }
 .user-activity-meter{
     height: 10px;
-    margin-bottom: 8px;
+    margin: 8px 0px;
 }
 .user-activity-meter ul{
     height:100%;
     list-style:none;
-    margin-left:10px;
+    padding-left: 0px;
 }
 .user-activity-meter ul li{
     display:inline;
     float:left;
     height:100%;
 }
-.meter-wrapper{
-    width:415px;
-}
+
 .pa-meter{
     background:#4572A7;
 }

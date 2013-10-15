@@ -1,5 +1,5 @@
 <li node_id="${summary['id']}" class="project list-group-item">
-    <h3 class="list-group-item-heading">
+    <h4 class="list-group-item-heading">
         <span style="display:inline-block">
         <a href="${summary['url']}">${summary['title']}</a>
         % if summary['is_registration']:
@@ -9,7 +9,8 @@
         % if summary['show_logs']:
             <i id="icon-${summary['id']}" class="icon-plus pull-right" onclick="NodeActions.openCloseNode('${summary['id']}');"></i>
         % endif
-    </h3>
+    </h4>
+    <div class="list-group-item-text"></div>
 
     <!-- Show abbreviated contributors list -->
     % if summary['show_contributors']:

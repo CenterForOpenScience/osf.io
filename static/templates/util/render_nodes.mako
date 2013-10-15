@@ -2,7 +2,7 @@
     <script src="//code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 % endif
 
-<ul class="list-group ${'sortable' if sortable and user_can_edit else ''}" style="margin-left: 0px;">
+<ul class="list-group ${'sortable' if sortable and user_can_edit else ''}">
 
     % for node in nodes:
         <div mod-meta='{
