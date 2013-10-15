@@ -9,7 +9,7 @@
     </style>
 % endif
 
-<header class="jumbotron subhead" id="overview">
+<header class="subhead" id="overview">
 
     <div class="row">
 
@@ -82,7 +82,7 @@
             </script>
         %endif
 
-        <div class="col-md-4">
+        <div class="col-md-8">
 
             %if parent_id:
                 <h1 style="display:inline-block" class="node-parent-title">
@@ -124,8 +124,11 @@
         % endif
     </p>
 
-    <div class="subnav">
-        <ul class="nav nav-pills">
+</header>
+    <!-- <div class="subnav"> -->
+    <nav class="navbar navbar-default ">
+
+        <ul class="nav navbar-nav">
             <li><a href="${node_url}">Dashboard</a></li>
             <li><a href="${node_url}wiki/">Wiki</a></li>
             <li><a href="${node_url}statistics/">Statistics</a></li>
@@ -136,8 +139,8 @@
             <li><a href="${node_url}settings/">Settings</a></li>
             %endif
         </ul>
-    </div>
-</header>
+    </nav>
+    <!-- </div> -->
 ## TODO: Move to site.js
 <script type="text/javascript">
   var App = Ember.Application.create();

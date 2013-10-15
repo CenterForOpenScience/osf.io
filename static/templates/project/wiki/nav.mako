@@ -1,5 +1,6 @@
-<div class="subnav">
-    <ul class="nav nav-pills">
+<nav class="subnav navbar navbar-default">
+    <ul class="nav navbar-nav">
+
         % if is_edit:
             <li><a href="${node_url}wiki/${pageName}">View</a></li>
         % else:
@@ -11,4 +12,4 @@
         %endif
         <li><a href="${node_url}wiki/${pageName}/compare/1">History</a></li>
     </ul>
-</div>
+</nav>

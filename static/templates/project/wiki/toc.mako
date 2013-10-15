@@ -1,6 +1,6 @@
-<div class="well" style="padding: 8px 0;">
+<div class="well sidebar-nav">
 
-    <ul class="nav nav-list">
+    <ul class="nav">
 
         <li class="nav-header">
             <a href="/project/${node_id}/wiki/home">Project</a>
