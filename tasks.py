@@ -4,6 +4,7 @@
 commands, run ``$ invoke -list``.
 '''
 from invoke import task, run, ctask
+from website import settings
 
 
 @task
@@ -12,8 +13,10 @@ def server():
 
 
 @task
-def mongo(daemon=True, port=20771):
-    '''Run the mongod process.'''
+def mongo(daemon=False):
+    '''Run the mongod process.
+    '''
+    port = settings.MONGO_PORT
     cmd = "mongod --port {0}".format(port)
     if daemon:
         cmd += " --fork"
