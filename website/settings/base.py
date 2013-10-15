@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+'''Base settings file, common to all environments.
+
+These settings can be overridden in local.py.
+'''
 import os
 
 base_path = str(os.path.dirname(os.path.abspath(__file__)))

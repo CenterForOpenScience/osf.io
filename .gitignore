@@ -43,7 +43,11 @@ nosetests.xml
 .hgignore
 env/*
 
-# OSF-specific 
+# OSF-specific
 #######################
 website/cache/*
 website/uploads/*
+
+# Local settings
+*/settings/local.py
+
