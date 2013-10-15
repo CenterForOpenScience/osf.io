@@ -126,7 +126,7 @@
         </div><!-- end container-->
     </nav>
     <div class="watermarked">
-    <div class="container">
+    <div role="content" class="content container">
     % if status:
         <div id="alert-container">
         % for s in status:

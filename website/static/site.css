@@ -540,3 +540,9 @@ form.form-horizontal.form-horizontal-narrow .controls {
 form.form-horizontal.form-horizontal-narrow .control-group {
     padding-left:55px;
 }
+
+/* Static pages */
+.staticpage img {
+    border:2px solid black;
+}
+.staticpage p { font-size: 14px; }
