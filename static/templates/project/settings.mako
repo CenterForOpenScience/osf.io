@@ -11,8 +11,6 @@
             function(result) {
                 if (result === '${node_title}') {
                     window.location.href = '${node_url}remove/';
-                } else {
-                    bootbox.alert('Component not deleted');
                 }
             }
         )

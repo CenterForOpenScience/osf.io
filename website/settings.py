@@ -7,7 +7,7 @@ confirm_registrations_by_email = False # Not fully implemented
 allow_registration = True
 allow_login = True
 
-use_solr = True # TODO: Default to False in dev environment? Maybe have a local settings file..
+use_solr = False # TODO: Default to False in dev environment? Maybe have a local settings file..
 solr = 'http://localhost:8983/solr/'
 
 try:

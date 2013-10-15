@@ -1,7 +1,9 @@
 <div>
     <h2>Keys</h2>
     <form id="create_key" class="form-inline">
-        <input name="label" placeholder="Key label..." />
+        <div class="form-group">
+            <input class="form-control" name="label" placeholder="Key label..." />
+        </div>
         <button class="btn btn-default" type="submit">Create key</button>
     </form>
     % for key in keys:
