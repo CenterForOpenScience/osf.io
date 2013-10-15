@@ -1,4 +1,6 @@
+# -*- coding: utf-8 -*-
 # todo: move routing to new style
+import logging
 
 import framework
 from framework.auth import must_have_session_auth
@@ -8,6 +10,8 @@ from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm)
 from website.project.forms import NewProjectForm
 from website import settings
+
+logger = logging.getLogger(__name__)
 
 def _rescale_ratio(nodes):
     """

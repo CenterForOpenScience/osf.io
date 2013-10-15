@@ -9,7 +9,9 @@
             "method_string": "POST",
             "action_string": "/project/new/",
             "form_class": "form-stacked",
-            "submit_string": "Create New Project"
+            "submit_string": "Create New Project",
+            "id": "projectForm",
+            "submit_btn_class": "btn-primary"
         },
         "replace": true
     }'>

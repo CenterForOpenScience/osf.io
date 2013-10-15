@@ -108,6 +108,20 @@ class TestAUser(DbTestCase):
         assert_in("added file test.html", res)
         assert_in(project.title, res)
 
+    def test_can_create_a_project(self):
+        res = self._login(self.user.username, 'science')
+        # Goes to dashboard (already logged in)
+        res = res.click("My Dashboard", index=0)
+        # Clicks New Project
+        res = res.click("New Project").maybe_follow()
+        # Fills out the form
+        form = res.forms['projectForm']
+        form['title'] = "My new project"
+        form['description'] = "Just testing"
+        # Submits
+        res = form.submit().maybe_follow()
+        # Taken to the project's page
+        assert_in("My new project", res)
 
 if __name__ == '__main__':
     unittest.main()

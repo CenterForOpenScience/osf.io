@@ -24,7 +24,7 @@
             }'>
         </div>
     % else:
-        <div style="padding: 0px 10px 10px 10px;">Contributors unavailable</div>
+        <span>Contributors unavailable</span>
     % endif
 
     % if summary['show_logs']:

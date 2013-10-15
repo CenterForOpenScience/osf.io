@@ -71,7 +71,7 @@
                     </div><!-- end modal-header -->
                     <div class="modal-body">
                             <div class='form-group'>
-                                <input placeholder="Title" name="title" type="text" class='form-control'>
+                                <input placeholder="Component Title" name="title" type="text" class='form-control'>
                             </div>
                             <div class='form-group'>
                                 <select id="category" name="category" class='form-control'>
