@@ -103,8 +103,6 @@ def project_removecontributor(*args, **kwargs):
     user = kwargs['user']
     api_key = get_api_key()
     node_to_use = node or project
-    logging.error(request.json)
-
     if request.json['id'].startswith('nr-'):
         outcome = node_to_use.remove_nonregistered_contributor(
             user, request.json['name'], request.json['id'].replace('nr-', '')

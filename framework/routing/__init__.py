@@ -1,20 +1,23 @@
 # -*- coding: utf-8 -*-
-import werkzeug.wrappers
-from werkzeug.exceptions import NotFound
-from framework import StoredObject
+import os
+import logging
+import copy
+import json
+import pystache
+import httplib as http
 
+import werkzeug.wrappers
+from bs4 import BeautifulSoup
+from werkzeug.exceptions import NotFound
+
+from framework import StoredObject
 from framework import HTTPError
 from framework.flask import app, redirect, make_response
 from mako.template import Template
 
 from framework import session
 
-import os
-import copy
-import json
-import pystache
-import httplib as http
-from bs4 import BeautifulSoup
+logger = logging.getLogger(__name__)
 
 TEMPLATE_DIR = 'static/templates/'
 REDIRECT_CODES = [
@@ -83,6 +86,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
         except HTTPError as error:
             rv = error
         except Exception as error:
+            logger.error(error)
             if debug_mode:
                 raise error
             rv = HTTPError(

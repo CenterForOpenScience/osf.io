@@ -745,6 +745,7 @@ class Node(StoredObject):
 
         :param user: User object, the user who is removing the contributor.
         :param contributor: User object, the contributor to be removed
+        :param api_key: ApiKey object
         '''
         if not user._primary_key == contributor._id:
             self.contributors.remove(contributor._id)
