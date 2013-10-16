@@ -19,3 +19,7 @@ use_solr = False
 
 # Example of extending base settings
 # base.img_fmts += ["pdf"]
+
+mail_server = 'smtp.sendgrid.net'
+mail_username = 'osf-smtp'
+mail_password = 'changeme'

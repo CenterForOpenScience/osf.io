@@ -35,7 +35,7 @@ except KeyError:
 
 mail_server = 'smtp.sendgrid.net'
 mail_username = 'osf-smtp'
-mail_password = 'nNtxpg8Q0KqOgR'
+mail_password = ''
 
 static_path = os.path.join(base_path, 'static')
 
