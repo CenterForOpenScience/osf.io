@@ -5,7 +5,12 @@ These settings can be overridden in local.py.
 '''
 import os
 
-base_path = str(os.path.dirname(os.path.abspath(__file__)))
+def parent_dir(path):
+    '''Return the parent of a directory.'''
+    return os.path.abspath(os.path.join(path, os.pardir))
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+base_path = parent_dir(HERE)  # website/ directory
 
 # User management & registration
 confirm_registrations_by_email = False # Not fully implemented
