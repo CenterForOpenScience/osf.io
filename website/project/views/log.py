@@ -43,9 +43,7 @@ def get_log(log_id):
         'params': log.params,
         # params['project'] contains node's parent ID or None; node is a
         # project if params['project'] is None
-        'category': 'project'
-            if node_to_use.category == 'project'
-            else 'component',
+        'category': 'component' if log.params['project'] else 'project',
         'date': log.date.strftime('%m/%d/%y %I:%M %p'),
         'contributors': [_render_log_contributor(contributor) for contributor in log.params.get('contributors', [])],
         'contributor': _render_log_contributor(log.params.get('contributor', {})),

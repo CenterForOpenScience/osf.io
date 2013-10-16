@@ -9,8 +9,7 @@
     %if log['action'] == 'project_created':
         created <a href="${log['project_url']}">project</a>
     %elif log['action'] == 'node_created':
-        created ${log['category']}
-        <a href="${log['node_url']}">${log['node_title']}</a>
+        created node <a href="${log['node_url']}">${log['node_title']}</a>
     %elif log['action'] == 'wiki_updated':
         updated wiki page <a href="${log['node_url']}wiki/${log['params']['page']}/">${log['params']['page']}</a> to version ${log['params']['version']}
     %elif log['action'] == 'contributor_added':
@@ -22,8 +21,7 @@
                 ${contributor['nr_name']}${', ' if not loop.last else ''}
             % endif
         % endfor
-        to ${log['category']}
-        <a href=${log['node_url']}>${log['node_title']}</a>
+            to node <a href=${log['node_url']}>${log['node_title']}</a>
     %elif log['action'] == 'made_public':
         made ${log['category']}
         <a href="${log['node_url']}">${log['node_title']}</a>

@@ -332,14 +332,10 @@ def component_remove(*args, **kwargs):
         node_to_use = project
 
     if node_to_use.remove_node(user=user):
-        category = 'project' \
-            if node_to_use.category == 'project' \
-            else 'component'
-        message = '{} deleted'.format(category.capitalize())
-        push_status_message(message)
+        push_status_message('Component deleted')
         return {
             'status' : 'success',
-            'message' : message,
+            'message' : 'Component deleted',
         }, None, None, '/dashboard/'
     else:
         raise HTTPError(http.BAD_REQUEST, message='Could not delete component')
@@ -361,9 +357,7 @@ def _view_project(node_to_use, user):
 
         'node_id' : node_to_use._primary_key,
         'node_title' : node_to_use.title,
-        'node_category' : 'project'
-            if node_to_use.category == 'project'
-            else 'component',
+        'node_category' : node_to_use.category,
         'node_description' : node_to_use.description,
         'node_url' : node_to_use.url,
         'node_api_url' : node_to_use.api_url,
