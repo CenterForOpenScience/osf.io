@@ -1,12 +1,12 @@
 <div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
 <div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
-<!-- Delete project -->
-<button id="delete-node" class="btn btn-danger">Delete component</button>
+<!-- Delete node -->
+<button id="delete-node" class="btn primary">Delete ${node_category}</button>
 <script type="text/javascript">
     $('#delete-node').on('click', function() {
         bootbox.prompt(
-            '<div>Delete this component and all non-project children</div>' +
+            '<div>Delete this ${node_category} and all non-project children</div>' +
                 '<div style="font-weight: normal; font-size: medium; line-height: normal;">If you want to continue, type the project title below and click OK</div>',
             function(result) {
                 if (result === '${node_title}') {
