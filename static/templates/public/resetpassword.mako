@@ -4,8 +4,8 @@
     <h1>Reset Password</h1>
 </div>
 <div class="row">
-    <div class="span1">&nbsp;</div>
-    <div class="span6">
+    <div class="col-md-1">&nbsp;</div>
+    <div class="col-md-6">
         <div mod-meta='{
                 "tpl": "util/render_form.mako",
                 "uri": "/api/v1/forms/reset_password/",
@@ -20,8 +20,8 @@
             }'>
         </div>
     </div>
-    <div class="span4">&nbsp;</div>
-    <div class="span1">&nbsp;</div>
+    <div class="col-md-4">&nbsp;</div>
+    <div class="col-md-1">&nbsp;</div>
 </div>
 
 <div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
