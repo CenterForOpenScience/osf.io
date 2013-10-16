@@ -1,6 +1,7 @@
+(function() {
 
 // Messages, e.g. for confirmation dialogs, alerts, etc.
-window.Messages = {
+Messages = {
     makePublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
                         'access to the data it contains can be complete prevented. Users ' +
                         'should assume that once a project is made public, it will always ' +
@@ -51,6 +52,8 @@ var modalConfirm = function(message, url){
     )
 }
 
+// TODO: Move Watch and Fork click handlers to this file so that NodeActions
+// doesn't need to be in global namespace
 window.NodeActions = {};  // Namespace for NodeActions
 
 NodeActions.forkNode = function(){
@@ -303,9 +306,12 @@ $(function(){
 
 $(document).ready(function(){
 
+
+    // Highlight active tabs and nav labels
     $('.nav a[href="' + location.pathname + '"]').parent().addClass('active');
     $('.tabs a[href="' + location.pathname + '"]').parent().addClass('active');
 
+    // Initiate tag input
     $('#tagitfy').tagit({
               availableTags: ["analysis", "methods", "introduction", "hypotheses"], // this param is of course optional. it's for autocomplete.
               // configure the name of the input field (will be submitted with form), default: item[tags]
@@ -316,6 +322,13 @@ $(document).ready(function(){
     $("[rel=tooltip]").tooltip({
         placement:'bottom',
     });
+
+    $("#browser").treeview();  // Initiate filebrowser
+
+
+    ////////////////////
+    // Event Handlers //
+    ////////////////////
 
     $('.user-quickedit').hover(
         function(){
@@ -332,8 +345,6 @@ $(document).ready(function(){
         }
     );
 
-    $("#browser").treeview();
-
     /* Modal Click handlers for project page */
 
     // Private Button confirm dlg
@@ -348,3 +359,5 @@ $(document).ready(function(){
         modalConfirm(Messages.makePublicWarning, url);
     });
 });
+
+}).call(this);
