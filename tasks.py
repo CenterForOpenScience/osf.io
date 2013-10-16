@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''Invoke tasks. To run a task, run ``$ invoke <COMMAND>``. To see a list of
-commands, run ``$ invoke -list``.
+commands, run ``$ invoke --list``.
 '''
 from invoke import task, run, ctask
+from website import settings
 
 
 @task
@@ -12,8 +13,10 @@ def server():
 
 
 @task
-def mongo(daemon=True, port=20771):
-    '''Run the mongod process.'''
+def mongo(daemon=False):
+    '''Run the mongod process.
+    '''
+    port = settings.DB_PORT
     cmd = "mongod --port {0}".format(port)
     if daemon:
         cmd += " --fork"
@@ -21,8 +24,10 @@ def mongo(daemon=True, port=20771):
 
 
 @task
-def mongoshell(db="osf20130903", port=20771):
-    '''Run the mongo shell.'''
+def mongoshell():
+    '''Run the mongo shell for the OSF database.'''
+    db = settings.DB_NAME
+    port = settings.DB_PORT
     run("mongo {db} --port {port}".format(db=db, port=port), pty=True)
 
 

@@ -357,8 +357,7 @@ def _view_project(node_to_use, user):
     project.view.mako.
 
     '''
-    data = {
-
+    return {
         'node_id' : node_to_use._primary_key,
         'node_title' : node_to_use.title,
         'node_category' : 'project'
