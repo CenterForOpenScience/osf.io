@@ -27,16 +27,24 @@ $ brew install libxslt
 $ pip install -r dev-requirements.txt
 ```
 
+- Create your local settings file.
+
+```bash
+$ cp website/settings/local-dist.py website/settings/local.py
+```
+
+`local.py` will override settings in `base.py`. It will not be added to source control, so change it as you wish.
+
 - Run your mongodb process.
 
 ```bash
-$ make mongo
+$ invoke mongo
 ```
 
 - Run your local development server.
 
 ```bash
-$ make server
+$ invoke server
 ```
 
 Running Tests
