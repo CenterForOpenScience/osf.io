@@ -46,6 +46,7 @@
                 "tpl": "util/render_form.mako",
                 "uri": "/api/v1/forms/forgot_password/",
                 "kwargs": {
+                    "id": "forgotpassword",
                     "name": "forgotpassword",
                     "method_string": "POST",
                     "action_string": "/forgotpassword/",
