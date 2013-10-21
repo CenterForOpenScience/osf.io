@@ -38,7 +38,7 @@ class AppTestCase(unittest.TestCase):
 
     def setUp(self):
         self.app = init_app(set_backends=False, routes=True)
-        self.ctx = app.app_context()
+        self.ctx = self.app.app_context()
         self.ctx.push()
 
     def tearDown(self):
