@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 '''Views tests for the OSF.'''
 from __future__ import absolute_import
-import os
+import json
 import unittest
 import datetime as dt
+
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
@@ -20,18 +21,26 @@ class TestProjectViews(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.user1  = UserFactory()
+        self.user1 = UserFactory.build()
+        # Add an API key for quicker authentication
+        api_key = ApiKeyFactory()
+        self.user1.api_keys.append(api_key)
+        self.user1.save()
+        self.auth = ('test', api_key._primary_key)
         self.user2 = UserFactory()
         # A project has 2 contributors
         self.project = ProjectFactory(creator=self.user1)
         self.project.add_contributor(self.user1)
         self.project.add_contributor(self.user2)
+        self.project.api_keys.append(api_key)
         self.project.save()
 
     def test_project_remove_contributor(self):
-        url = "/api/v1/project/8gu9y/removecontributors/".format(self.project._id)
+        url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
         # User 1 removes user2
-        res = self.app.post(url, params={"id": self.user2._id})
+        res = self.app.post(url, json.dumps({"id": self.user2._id}),
+                            content_type="application/json",
+                            auth=self.auth).maybe_follow()
         self.project.reload()
         assert_not_in(self.user2._id, self.project.contributors)
 
