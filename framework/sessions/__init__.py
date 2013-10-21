@@ -7,11 +7,11 @@ import itsdangerous
 from flask import request, redirect
 from werkzeug.local import LocalProxy
 
-from model import Session
 
-COOKIE_NAME = 'osf'
-# todo: make more secret
-SECRET_KEY = '4IdgL9FYyZRoDkoQ'
+from website import settings
+from framework.flask import app, request, redirect
+from .model import Session
+
 
 # todo 2-back page view queue
 # todo actively_editing date
@@ -31,8 +31,8 @@ def goback():
 
 def create_session(response, data=None):
     session_id = str(bson.objectid.ObjectId())
-    cookie_value = itsdangerous.Signer(SECRET_KEY).sign(session_id)
-    response.set_cookie(COOKIE_NAME, value=cookie_value)
+    cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(session_id)
+    response.set_cookie(settings.COOKIE_NAME, value=cookie_value)
     session = Session(_id=session_id, data=data or {})
     session.save()
     sessions[request._get_current_object()] = session
@@ -97,10 +97,10 @@ def before_request():
         sessions[request._get_current_object()] = session
         return
 
-    cookie = request.cookies.get(COOKIE_NAME)
+    cookie = request.cookies.get(settings.COOKIE_NAME)
     if cookie:
         try:
-            session_id = itsdangerous.Signer(SECRET_KEY).unsign(cookie)
+            session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
             session = Session.load(session_id) or Session(_id=session_id)
             sessions[request._get_current_object()] = session
             return

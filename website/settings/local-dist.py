@@ -17,9 +17,14 @@ mongo_uri = 'mongodb://localhost:{port}/{db}'.format(port=DB_PORT, db=DB_NAME)
 # Comment out to use solr in development
 use_solr = False
 
-# Example of extending base settings
-# base.img_fmts += ["pdf"]
-
+# Email
 mail_server = 'smtp.sendgrid.net'
 mail_username = 'osf-smtp'
-mail_password = 'changeme'
+mail_password = 'CHANGEME'
+
+# Session
+COOKIE_NAME = 'osf'
+SECRET_KEY = "CHANGEME"
+
+# Example of extending base settings
+# base.img_fmts += ["pdf"]
