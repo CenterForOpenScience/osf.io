@@ -21,6 +21,7 @@ from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
 from framework import StoredObject, fields
 from framework.search.solr import update_solr, delete_solr_doc
+from framework import GuidStoredObject
 
 from website import settings
 
@@ -34,7 +35,6 @@ def utc_datetime_to_timestamp(dt):
 def normalize_unicode(ustr):
     return unicodedata.normalize('NFKD', ustr)\
         .encode('ascii', 'ignore')
-
 
 class ApiKey(StoredObject):
 
@@ -55,8 +55,9 @@ class ApiKey(StoredObject):
         return self.node__keyed[0] if self.node__keyed else None
 
 
-class NodeLog(StoredObject):
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+class NodeLog(GuidStoredObject):
+
+    _id = fields.StringField(primary=True)
 
     date = fields.DateTimeField(default=datetime.datetime.utcnow)
     action = fields.StringField()
@@ -71,8 +72,9 @@ class NodeLog(StoredObject):
             Node.load(self.params.get('project'))
 
 
-class NodeFile(StoredObject):
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+class NodeFile(GuidStoredObject):
+
+    _id = fields.StringField(primary=True)
 
     path = fields.StringField()
     filename = fields.StringField()
@@ -88,8 +90,12 @@ class NodeFile(StoredObject):
     date_uploaded = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
+    node = fields.ForeignField('node', backref='uploads')
     uploader = fields.ForeignField('user', backref='uploads')
 
+    @property
+    def url(self):
+        return '{}files/{}/'.format(self.node.url, self.filename)
 
 class Tag(StoredObject):
 
@@ -98,7 +104,7 @@ class Tag(StoredObject):
     count_total = fields.IntegerField(default=0)
 
 
-class Node(StoredObject):
+class Node(GuidStoredObject):
     _id = fields.StringField(primary=True)
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -616,6 +622,7 @@ class Node(StoredObject):
         node_file.filename = file_name
         node_file.size = size
         node_file.is_public = self.is_public
+        node_file.node = self
         node_file.uploader = user
         node_file.git_commit = commit_id
         node_file.content_type = content_type
@@ -880,9 +887,10 @@ class Node(StoredObject):
             return get_basic_counters('node:%s' % self._primary_key)
 
 
-class NodeWikiPage(StoredObject):
+class NodeWikiPage(GuidStoredObject):
 
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    _id = fields.StringField(primary=True)
+
     page_name = fields.StringField()
     version = fields.IntegerField()
     date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -891,6 +899,10 @@ class NodeWikiPage(StoredObject):
 
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')
+
+    @property
+    def url(self):
+        return '{}{}/'.format(self.node.url, self.page_name)
 
     @property
     def html(self):
@@ -915,7 +927,8 @@ class NodeWikiPage(StoredObject):
 
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
-        self.node.update_solr()
+        if self.node:
+            self.node.update_solr()
         return rv
 
 class WatchConfig(StoredObject):

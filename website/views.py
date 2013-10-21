@@ -1,11 +1,12 @@
-# todo: move routing to new style
-
 import framework
 from framework.auth import must_have_session_auth
 from framework import Q
 from framework.forms import utils
 from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm)
+from website.models import Guid
+from framework import redirect, HTTPError
+import httplib as http
 from website.project.forms import NewProjectForm
 from website import settings
 
@@ -111,3 +112,10 @@ def reset_password_form():
 
 def new_project_form():
     return utils.jsonify(NewProjectForm())
+
+def resolve_guid(guid):
+
+    guid_object = Guid.load(guid)
+    if guid_object:
+        return redirect(guid_object.referent.url)
+    raise HTTPError(http.NOT_FOUND)

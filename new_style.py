@@ -98,6 +98,14 @@ process_rules(app, [
 
 ], prefix='/api/v1')
 
+### GUID ###
+
+process_rules(app, [
+
+    Rule('/guid/<guid>/', 'get', website_routes.resolve_guid, OsfWebRenderer('', render_mako_string)),
+
+])
+
 ### Forms ###
 
 process_rules(app, [

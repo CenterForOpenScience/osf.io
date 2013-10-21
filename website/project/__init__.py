@@ -50,9 +50,8 @@ def new_node(category, title, user, description=None, project=None):
     new_node.generate_keywords()
 
     new_node.creator = user
-    # new_node._optimistic_insert()
     new_node.contributors.append(user)
-    new_node.contributor_list.append({'id':user._primary_key})
+    new_node.contributor_list.append({'id': user._primary_key})
     new_node.save()
 
     if project:
@@ -60,8 +59,8 @@ def new_node(category, title, user, description=None, project=None):
         project.save()
         new_node.add_log('node_created',
             params={
-                'node':new_node._primary_key,
-                'project':project._primary_key,
+                'node': new_node._primary_key,
+                'project': project._primary_key,
             },
             user=user,
             log_date=new_node.date_created

@@ -4,7 +4,8 @@ import datetime as dt
 from pytz import utc
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework.search import Keyword
-from framework import StoredObject, fields,  Q
+from framework import fields,  Q
+from framework import GuidStoredObject
 from bson import ObjectId
 
 from framework.search import solr
@@ -20,7 +21,8 @@ name_formatters = {
    ),
 }
 
-class User(StoredObject):
+class User(GuidStoredObject):
+
     _id = fields.StringField(primary=True)
 
     username = fields.StringField()
@@ -49,6 +51,10 @@ class User(StoredObject):
     def check_password(self, raw_password):
         '''Return a boolean of whether ``raw_password`` was correct.'''
         return check_password_hash(self.password, raw_password)
+
+    @property
+    def url(self):
+        return '/profile/{}/'.format(self._primary_key)
 
     @property
     def surname(self):
