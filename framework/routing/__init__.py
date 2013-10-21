@@ -375,8 +375,7 @@ class WebRenderer(Renderer):
         :return: 2-tuple: (<result>, <flag: replace div>)
         """
 
-        element_attributes = element.attrs
-        attributes_string = element_attributes['mod-meta']
+        attributes_string = element.get("mod-meta")
 
         # Return debug <div> if JSON cannot be parsed
         try:

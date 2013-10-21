@@ -2,7 +2,7 @@ import json
 import unittest
 
 import flask
-import lxml
+from lxml.html import fragment_fromstring
 from modularodm import fields
 import werkzeug.wrappers
 
@@ -236,7 +236,7 @@ class WebRendererTemplateTestCase(AppTestCase):
                 template_dir='tests/templates',
             )
 
-            html = lxml.html.fragment_fromstring(
+            html = fragment_fromstring(
                 ''.join((
                     "<div mod-meta='",
                     '{"tpl":"nested_child.html","replace": true}',
@@ -293,7 +293,7 @@ class WebRendererTemplateTestCase(AppTestCase):
                 template_dir='tests/templates',
             )
 
-            html = lxml.html.fragment_fromstring(
+            html = fragment_fromstring(
                 ''.join((
                     "<div mod-meta='",
                     '{"tpl":"not_a_real_file.html","replace": true}',
