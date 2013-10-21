@@ -9,8 +9,8 @@ from framework import storage, set_up_storage
 import website.models
 from website.app import init_app
 
-# An app without the storage backends set
-test_app = init_app(settings_module="website.settings", set_backends=False)
+# Just a simple app without routing set up or backends
+test_app = init_app(settings_module="website.settings", routes=False, set_backends=False)
 
 class DbTestCase(unittest.TestCase):
     '''Base TestCase for tests that require a temporary MongoDB database.
