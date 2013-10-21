@@ -6,18 +6,9 @@ import unittest
 from pymongo import MongoClient
 
 from framework import storage, set_up_storage
-from framework.auth.model import User
-from framework.sessions.model import Session
-from framework.search.model import Keyword
-from website.project.model import (ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
-                                   Tag, WatchConfig)
+import website.models
 
 from new_style import app
-
-# All Models
-MODELS = (User, ApiKey, Keyword, Node, NodeLog, NodeFile, NodeWikiPage,
-          Tag, WatchConfig, Session)
-
 
 class DbTestCase(unittest.TestCase):
     '''Base TestCase for tests that require a temporary MongoDB database.
@@ -33,7 +24,7 @@ class DbTestCase(unittest.TestCase):
         klass._client = MongoClient(host=klass.db_host, port=klass.db_port)
         klass.db = klass._client[klass.db_name]
         # Set storage backend to MongoDb
-        set_up_storage(MODELS, storage.MongoStorage, db=klass.db)
+        set_up_storage(website.models.MODELS, storage.MongoStorage, db=klass.db)
 
     @classmethod
     def tearDownClass(klass):
