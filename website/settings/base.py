@@ -11,6 +11,8 @@ def parent_dir(path):
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 base_path = parent_dir(HERE)  # website/ directory
+STATIC_FOLDER = os.path.join(HERE, 'website', 'static')
+STATIC_URL_PATH = "/static"
 
 # User management & registration
 confirm_registrations_by_email = False # Not fully implemented
@@ -22,9 +24,9 @@ solr = 'http://localhost:8983/solr/'
 
 try:
     os.environ['OSF_PRODUCTION']
-    debug_mode = False
+    DEBUG = False
 except KeyError:
-    debug_mode = True
+    DEBUG = True
 
 # External services
 try:

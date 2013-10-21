@@ -12,10 +12,9 @@ from tests.base import DbTestCase
 from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
                             WatchConfigFactory, NodeFactory)
 
-from framework import app
-from website.models import Node
-import new_style  # This import sets up the routes
+import framework
 
+app = framework.create_app(routes=True, db=False, settings="website.settings")
 
 class TestProjectViews(DbTestCase):
 

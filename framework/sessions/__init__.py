@@ -1,14 +1,15 @@
-from framework.flask import app
-
+# -*- coding: utf-8 -*-
 import httplib as http
 
 import bson.objectid
 import itsdangerous
-from flask import request, redirect
 from werkzeug.local import LocalProxy
 
-from model import Session
+from framework.flask import app, request, redirect
+from .model import Session
 
+
+# TODO: move to settings
 COOKIE_NAME = 'osf'
 # todo: make more secret
 SECRET_KEY = '4IdgL9FYyZRoDkoQ'
