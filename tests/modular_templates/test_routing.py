@@ -25,5 +25,5 @@ class RuleTestCase(unittest.TestCase):
         self.assertEqual(r.methods, ['GET', ])
 
     def test_rule_lambda_view(self):
-        r = self._make_rule(view_func=lambda: '')
-        self.assertTrue(callable(r.view_func))
+        r = self._make_rule(view_func_or_data=lambda: '')
+        self.assertTrue(callable(r.view_func_or_data))

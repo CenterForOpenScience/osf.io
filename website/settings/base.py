@@ -20,6 +20,10 @@ allow_login = True
 use_solr = True
 solr = 'http://localhost:8983/solr/'
 
+# Sessions
+COOKIE_NAME = 'osf'
+SECRET_KEY = "CHANGEME"
+
 try:
     os.environ['OSF_PRODUCTION']
     debug_mode = False
