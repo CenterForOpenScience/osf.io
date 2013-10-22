@@ -1,4 +1,6 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+<%inherit file="base.mako"/>
+<%def name="title()">Project Statistics</%def>
+<%def name="content()">
 <div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
 <%
@@ -142,5 +144,4 @@ function brush() {
 }
 
 </script>
-
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+</%def>

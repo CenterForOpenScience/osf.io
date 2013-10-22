@@ -1,5 +1,6 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
-
+<%inherit file="base.mako"/>
+<%def name="title()">Explore</%def>
+<%def name="content()">
 <%
     from framework import get_user
 %>
@@ -139,7 +140,5 @@ $(function(){
 
     </li>
 %endfor
-
 </%def>
-
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+</%def>

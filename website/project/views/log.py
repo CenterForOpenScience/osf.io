@@ -30,7 +30,7 @@ def get_log(log_id):
 
     project = Node.load(log.params.get('project'))
     node = Node.load(log.params.get('node'))
-
+    # TODO: this logic should be in the Log model
     log_json = {
         'user_id': log.user._primary_key if log.user else '',
         'user_fullname': log.user.fullname if log.user else '',

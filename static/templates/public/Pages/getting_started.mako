@@ -1,5 +1,6 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
-
+<%inherit file="base.mako"/>
+<%def name="title()">Getting Started</%def>
+<%def name="content()">
 <style>
     .staticpage img {
         border:2px solid black;
@@ -79,4 +80,5 @@
 </p>
 </div>
 
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+</%def>
+

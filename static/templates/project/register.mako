@@ -1,4 +1,6 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+<%inherit file="base.mako"/>
+<%def name="title()">Register Component</%def>
+<%def name="content()">
 <div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
 <legend>Register</legend>
@@ -116,5 +118,4 @@
 		</script>
 	%endif
 </form>
-
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+</%def>

@@ -1,6 +1,7 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+<%inherit file="base.mako"/>
+<%def name="title()">Settings</%def>
+<%def name="content()">
 <div mod-meta='{"tpl": "include/subnav.mako", "replace": true}'></div>
-
 <h2>Profile</h2>
 
 <div mod-meta='{
@@ -11,4 +12,4 @@
             "route": "/settings/"}
         }'></div>
 
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+</%def>

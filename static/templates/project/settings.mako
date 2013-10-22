@@ -1,4 +1,6 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+<%inherit file="base.mako"/>
+<%def name="title()">Project Settings</%def>
+<%def name="title()">
 <div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
 <!-- Delete node -->
@@ -29,5 +31,4 @@
             "route": "${node_url}"
         }
     }'></div>
-
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+</%def>
