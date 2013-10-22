@@ -85,7 +85,7 @@
     <div class="watermarked">
         <div class="container">
             % if status:
-                <div mod-meta='{"tpl": "alert.mako", "replace": true'></div>
+                <div mod-meta='{"tpl": "alert.mako", "replace": true}'></div>
             % endif
             ${self.content()}
         </div><!-- end container -->

@@ -1,6 +1,6 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Project Settings</%def>
-<%def name="title()">
+<%def name="content()">
 <div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
 <!-- Delete node -->
