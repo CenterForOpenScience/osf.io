@@ -20,5 +20,8 @@ import new_style  # Side effect: Sets up routes
 logging.info("Setting storage backends")
 set_up_storage(website.models.MODELS, storage.MongoStorage, db=db)
 
+from website.project.model import ensure_schemas
+ensure_schemas()
+
 if __name__ == '__main__':
     app.run(port=5000)
