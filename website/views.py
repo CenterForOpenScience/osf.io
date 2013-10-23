@@ -1,14 +1,16 @@
 import framework
 from framework.auth import must_have_session_auth
-from framework import Q
+from framework import Q, request
 from framework.forms import utils
 from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm)
-from website.models import Guid
-from framework import redirect, HTTPError
-import httplib as http
+from website.models import Guid, Node, MetaData
+from framework import redirect, HTTPError, get_current_user
 from website.project.forms import NewProjectForm
 from website import settings
+
+import httplib as http
+import datetime
 
 def _rescale_ratio(nodes):
     """
@@ -113,9 +115,48 @@ def reset_password_form():
 def new_project_form():
     return utils.jsonify(NewProjectForm())
 
+### GUID ###
+
 def resolve_guid(guid):
 
     guid_object = Guid.load(guid)
     if guid_object:
         return redirect(guid_object.referent.url)
     raise HTTPError(http.NOT_FOUND)
+
+### Meta-data ###
+
+def node_comment_schema():
+    return {'schema': Node.comment_schema['schema']}
+
+# todo: check whether user can view comments
+def get_comments_guid(guid, collection=None):
+    guid_obj = Guid.load(guid)
+    annotations = guid_obj.referent.annotations
+    return {'comments': [
+        {
+            'payload': annotation.payload,
+            'user_fullname': annotation.user.fullname,
+            'date': annotation.date.strftime('%Y/%m/%d %I:%M %p'),
+            'comment_id': annotation._primary_key,
+        }
+        for annotation in annotations
+        if annotation.category == 'comment'
+    ]}
+
+# todo: check whether user can post comments
+def add_comment_guid(guid, collection=None):
+    guid_obj = Guid.load(guid)
+    user = get_current_user()
+    comment = MetaData(
+        target=guid_obj.referent,
+        category='comment',
+        schema='osf_comment',
+        payload={
+            'comment': request.form.get('comment'),
+            'rating': request.form.get('rating'),
+        },
+        user=user,
+        date=datetime.datetime.utcnow(),
+    )
+    comment.save()

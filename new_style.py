@@ -106,6 +106,23 @@ process_rules(app, [
 
 ])
 
+### Meta-data ###
+
+process_rules(app, [
+
+    Rule([
+        '/metadata/node/comment/',
+        '/metadata/comment/comment/',
+    ], 'get', website_routes.node_comment_schema, json_renderer),
+
+    # Get comments
+    Rule('/guid/<guid>/comments/', 'get', website_routes.get_comments_guid, json_renderer),
+
+    # Add comment
+    Rule('/guid/<guid>/comment/', 'post', website_routes.add_comment_guid, json_renderer),
+
+], prefix='/api/v1')
+
 ### Forms ###
 
 process_rules(app, [

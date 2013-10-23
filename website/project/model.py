@@ -21,8 +21,9 @@ from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
 from framework import StoredObject, fields
 from framework.search.solr import update_solr, delete_solr_doc
-from framework import GuidStoredObject
+from framework import GuidStoredObject, Q
 
+from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
 
 
@@ -35,6 +36,47 @@ def utc_datetime_to_timestamp(dt):
 def normalize_unicode(ustr):
     return unicodedata.normalize('NFKD', ustr)\
         .encode('ascii', 'ignore')
+
+
+class MetaSchema(StoredObject):
+
+    _id = fields.StringField(default=lambda: str(ObjectId()))
+    schema = fields.DictionaryField()
+    category = fields.StringField()
+    version = fields.StringField()
+
+
+def ensure_schemas():
+    for key, value in OSF_META_SCHEMAS.items():
+        try:
+            MetaSchema.find_one(Q('_id', 'eq', key))
+        except:
+            schema_obj = MetaSchema(_id=key, **value)
+            schema_obj.save()
+
+
+class MetaData(GuidStoredObject):
+
+    _id = fields.StringField()
+    target = fields.AbstractForeignField(backref='annotated')
+
+    # Annotation category: Comment, review, registration, etc.
+    category = fields.StringField()
+
+    # Annotation data
+    schema = fields.ForeignField('MetaSchema')
+    payload = fields.DictionaryField()
+
+    # Annotation provenance
+    user = fields.ForeignField('User', backref='annotated')
+    date = fields.DateTimeField(auto_now_add=True)
+
+    def __init__(self, *args, **kwargs):
+        super(MetaData, self).__init__(*args, **kwargs)
+        if self.category and not self.schema:
+            if self.category in OSF_META_SCHEMAS:
+                self.schema = self.category
+
 
 class ApiKey(StoredObject):
 
@@ -125,7 +167,7 @@ class Node(GuidStoredObject):
     is_fork = fields.BooleanField(default=False)
     forked_date = fields.DateTimeField()
 
-    title = fields.StringField()
+    title = fields.StringField(versioned=True)
     description = fields.StringField()
     category = fields.StringField()
 
@@ -152,6 +194,9 @@ class Node(GuidStoredObject):
     registered_from = fields.ForeignField('node', backref='registrations')
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
+
+    # Meta-data
+    comment_schema = OSF_META_SCHEMAS['osf_comment']
 
     _meta = {'optimistic': True}
 
@@ -295,9 +340,8 @@ class Node(GuidStoredObject):
         original = self.load(self._primary_key)
         forked = original.clone()
 
-        forked.nodes = []
-        forked.contributors = []
-        forked.contributor_list = []
+        forked.logs = self.logs
+        forked.tags = self.tags
 
         for i, node_contained in enumerate(original.nodes):
             forked_node = node_contained.fork_node(user, api_key=api_key, title='')
@@ -343,6 +387,12 @@ class Node(GuidStoredObject):
 
         original = self.load(self._primary_key)
         registered = original.clone()
+
+        registered.contributors = self.contributors
+        registered.creator = self.creator
+        registered.logs = self.logs
+        registered.tags = self.tags
+
         registered.save()
         # registered._optimistic_insert()
 

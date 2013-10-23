@@ -99,6 +99,7 @@ def project_wiki_version(*args, **kwargs):
 
     if pw:
         rv = {
+            'wiki_id': pw._primary_key,
             'pageName': wid,
             'content': pw.html,
             'version': pw.version,
@@ -138,24 +139,25 @@ def project_wiki_page(*args, **kwargs):
 
     toc = [
         {
-            'id' : child._primary_key,
-            'title' : child.title,
-            'category' : child.category,
-            'pages' : child.wiki_pages_current.keys() if child.wiki_pages_current else [],
+            'id': child._primary_key,
+            'title': child.title,
+            'category': child.category,
+            'pages': child.wiki_pages_current.keys() if child.wiki_pages_current else [],
         }
         for child in node_to_use.nodes
         if not child.is_deleted
     ]
 
     rv = {
-        'pageName' : wid,
-        'page' : pw,
-        'version' : version,
-        'content' : content,
-        'is_current' : is_current,
-        'is_edit' : False,
-        'pages_current' : node_to_use.wiki_pages_versions.keys(),
-        'toc' : toc,
+        'wiki_id': pw._primary_key,
+        'pageName': wid,
+        'page': pw,
+        'version': version,
+        'content': content,
+        'is_current': is_current,
+        'is_edit': False,
+        'pages_current': node_to_use.wiki_pages_versions.keys(),
+        'toc': toc,
     }
     rv.update(_view_project(node_to_use, user))
     return rv

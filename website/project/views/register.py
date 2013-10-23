@@ -5,6 +5,9 @@ from ..decorators import must_not_be_registration, must_be_valid_project, must_b
 from framework.forms.utils import sanitize
 from .node import _view_project
 
+from website.models import MetaSchema
+from framework import Q
+
 from .. import clean_template_name
 
 import os
@@ -19,12 +22,14 @@ def node_register_page(*args, **kwargs):
     user = kwargs['user']
     node_to_use = kwargs['node'] or kwargs['project']
 
-    content = ','.join([
-        '"{}"'.format(clean_template_name(template_name))
-        for template_name in os.listdir('website/static/registration_templates/')
-    ])
     rv = {
-        'content' : content,
+        'options': [
+            {
+                'template_name': metaschema._id,
+                'template_name_clean': clean_template_name(metaschema._id)
+            }
+            for metaschema in MetaSchema.find(Q('category', 'eq', 'registration'))
+        ]
     }
     rv.update(_view_project(node_to_use, user))
     return rv
@@ -42,24 +47,21 @@ def node_register_template_page(*args, **kwargs):
 
     template_name = kwargs['template'].replace(' ', '_').replace('.txt', '')
 
-    with open('website/static/registration_templates/' +  template_name + '.txt') as f:
-        template = f.read()
-
-    content = ','.join([
-        '"{}"'.format(stored_template_name.replace('_', ' '))
-        for stored_template_name in os.listdir('website/static/registration_templates/')
-    ])
+    meta_schema = MetaSchema.find_one(Q('_id', 'eq', template_name))
+    schema = meta_schema.schema
 
     if node_to_use.is_registration and node_to_use.registered_meta:
-        form_values = node_to_use.registered_meta.get(template_name)
+        registered = True
+        payload = json.loads(node_to_use.registered_meta.get(template_name))
+        for item in schema:
+            item['value'] = payload[item['id']]
     else:
-        form_values = None
+        registered = False
 
     rv = {
-        'content' : content,
-        'template' : template,
-        'template_name' : template_name,
-        'form_values' : form_values
+        'template_name': template_name,
+        'schema': json.dumps(schema),
+        'registered': registered,
     }
     rv.update(_view_project(node_to_use, user))
     return rv
@@ -84,14 +86,15 @@ def node_register_template_page_post(*args, **kwargs):
             # todo interface needs to deal with this
             push_status_message('Invalid submission.')
             return json.dumps({
-                'status' : 'error',
+                'status': 'error',
             })
 
     template = kwargs['template']
 
     register = node_to_use.register_node(user, api_key, template, data)
 
+    print register.url
     return {
-        'status' : 'success',
-        'result' : register.url,
+        'status': 'success',
+        'result': register.url,
     }, 201

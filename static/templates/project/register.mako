@@ -1,120 +1,116 @@
 <div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+
 <div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
+
+<div mod-meta='{
+        "tpl": "metadata/knockout.mako",
+        "replace": true
+    }'></div>
 
 <legend>Register</legend>
 
-<script type="text/javascript">
-	var Template = Ember.Application.create(${str('JSON.parse(\'' + form_values + '\')') if form_values else ''});
-	var Templater = Ember.Application.create();
-	Templater.Templates = Ember.Object.create({
-		continueFlag:false,
-		selectedTemplate:null,
-		content:[${content}],
-		submitRegistration:function(){
-			jQuery.post(
+% if schema:
+
+    <!-- Build registration form -->
+    <form id="register" method="POST" class="form-horizontal">
+
+        <!-- Auto-generated contect from Knockout -->
+        <div data-bind="foreach:schema">
+            <div class="control-group">
+                <label class="control-label" data-bind="text:$data.label, attr:{for:$data.id}"></label>
+                <div class="controls">
+                    <div data-bind='item:$data, attr:{id:$data.id}'></div>
+                </div>
+            </div>
+        </div>
+
+        % if not registered:
+
+            <!-- Register the node -->
+            <p>
+                Registration cannot be undone, and the archived content and
+                files cannot be deleted after registration. Please be sure the
+                project is complete and comprehensive for what you wish to
+                register.
+            </p>
+
+            <div class="control-group">
+                <label class="control-label">
+                    Type "continue" if you are sure you want to continue
+                </label>
+                <div class="controls">
+                    <input data-bind="value:continueText, valueUpdate: 'afterkeydown'" />
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="controls">
+                    <input data-bind="visible:continueFlag" type="submit" value="Register" class="btn" />
+                </div>
+            </div>
+
+        % endif
+
+    </form>
+
+    <!-- Apply view model -->
+    <script type="text/javascript">
+        var view_model = new ViewModel(${schema});
+        ko.applyBindings(view_model, $('#register')[0]);
+    </script>
+
+    <script type="text/javascript">
+
+        $('#register').on('submit', function() {
+            var $this = $(this),
+                data = {};
+            $this.serializeArray().forEach(function(elm) {
+                data[elm.name] = elm.value;
+            });
+			$.post(
                 '${node_api_url}' + 'register/' + '${template_name if template_name else ''}/',
-                { data: Template.getJson() },
-                function(data){
-                    if (data.status === 'success')
-                        window.location = data.result;
-                    else if (data.status === 'error')
+                {data: JSON.stringify(data)},
+                function(response) {
+                    if (response.status === 'success')
+                        window.location.href = response.result;
+                    else if (response.status === 'error')
                         window.location.reload();
                 },
                 'json'
             );
-		},
-		isContinue:function(){
-			console.log(this.continueFlagCheck =='continue');
-			if(this.continueFlagCheck =='continue'){
-				this.set("continueFlag",true);
-			}else{
-				this.set("continueFlag",false);
-			}
-		}.observes('continueFlagCheck'),
-		templateChange:function(){
-			window.location = '${node_url}' + 'register/' + this.selectedTemplate.replace(/ /g, '_');
-		}.observes('selectedTemplate'),
-	});
+            return false;
+        });
 
-	Ember.Handlebars.registerHelper('compare', function (lvalue, operator, rvalue, options) {
+    </script>
 
-	    var operators, result;
+% else:
 
-	    if (arguments.length < 3) {
-	        throw new Error("Handlerbars Helper 'compare' needs 2 parameters");
-	    }
+    <form>
 
-	    var lvalue = Ember.getPath(lvalue);
+        <select id="select-registration-template">
+            <option>Please select</option>
+            % for option in options:
+                <option value="${option['template_name']}">${option['template_name_clean']}</option>
+            % endfor
+        </select>
 
-	    operators = {
-	        '==': function (l, r) { return l == r; },
-	        '===': function (l, r) { return l === r; },
-	        '!=': function (l, r) { return l != r; },
-	        '!==': function (l, r) { return l !== r; },
-	        '<': function (l, r) { return l < r; },
-	        '>': function (l, r) { return l > r; },
-	        '<=': function (l, r) { return l <= r; },
-	        '>=': function (l, r) { return l >= r; },
-	        'typeof': function (l, r) { return typeof l == r; }
-	    };
+    </form>
 
-	    if (!operators[operator]) {
-	        throw new Error("Handlerbars Helper 'compare' doesn't know the operator " + operator);
-	    }
+    <p>
+        Registration will create a frozen version of the project as it exists
+        right now.  You will still be able to make revisions to the project,
+        but the frozen version will be read-only, have a unique url, and will
+        always be associated with the project.
+    </p>
 
-	    result = operators[operator](lvalue, rvalue);
+    <script type="text/javascript">
+        $('#select-registration-template').on('change', function() {
+            var $this = $(this),
+                val = $this.val();
+            if (val)
+                window.location.href += val;
+        });
+    </script>
 
-	    if (result) {
-	        return options.fn(this);
-	    } else {
-	        return options.inverse(this);
-	    }
-
-	});
-</script>
-
-<form class="form-horizontal">
-	%if not template:
-	<script type="text/x-handlebars">
-		<div class="control-group">
-		<label class="control-label">Registration Template</label>
-		<div class="controls">
-		{{view Ember.Select
-	       contentBinding="Templater.Templates.content"
-	       optionLabelPath="content"
-	       optionValuePath="content"
-	       selectionBinding="Templater.Templates.selectedTemplate"
-	       prompt="Please Select"}}
-	    </div>
-		</div>
-		<p>Registration will create a frozen version of the project as it exists right now.  You will still be able to make revisions to the project, but the frozen version will be read-only, have a unique url, and will always be associated with the project.</p>
-		<p>Presently, registration options are open-ended.  If you wish to create a new registration template with additional detail, contact <a href="mailto:jspies@virginia.edu">Jeffrey Spies</a>.</p>
-	</script>
-	%endif
-
-	<div id="registration_template">
-		%if template:
-			${template}
-		%endif
-	</div>
-	%if template and not form_values:
-		<script type="text/x-handlebars">
-			<p>Registration cannot be undone, and the archived content and files cannot be deleted after registration. Please be sure the project is complete and comprehensive for what you wish to register.</p>
-			<div class="control-group">
-				<label class="control-label">Type "continue" if you are sure you want to continue</label>
-				<div class="controls">
-					{{view Ember.TextField valueBinding="Templater.Templates.continueFlagCheck"}}
-				</div>
-			</div>
-			{{#if Templater.Templates.continueFlag}}
-			<div class="control-group">
-				<div class="controls">
-				<button type="button" class="btn primary" onclick="Templater.Templates.submitRegistration()">Register</button>
-				</div>
-			</div>
-			{{/if}}
-		</script>
-	%endif
-</form>
+% endif
 
 <div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

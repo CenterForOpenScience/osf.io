@@ -8,8 +8,8 @@ from framework.search.model import Keyword
 from framework.sessions.model import Session
 
 from website.project.model import (ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
-                                   Tag, WatchConfig)
+                                   Tag, WatchConfig, MetaData, MetaSchema)
 
 # All models
 MODELS = (User, ApiKey, Keyword, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
-          Tag, WatchConfig, Session, Guid)
+          Tag, WatchConfig, Session, Guid, MetaData, MetaSchema)

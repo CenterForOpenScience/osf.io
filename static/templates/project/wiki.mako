@@ -24,4 +24,19 @@
 
 </div>
 
+<div mod-meta='{
+        "tpl": "metadata/knockout.mako",
+        "replace": true
+    }'></div>
+
+
+<div mod-meta='{
+        "tpl": "metadata/comment_group.mako",
+        "kwargs": {
+            "guid": "${wiki_id}",
+            "top": true
+        },
+        "replace": true
+    }'></div>
+
 <div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
