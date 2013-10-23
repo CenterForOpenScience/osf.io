@@ -2,7 +2,7 @@ import smtplib
 
 from email.mime.text import MIMEText
 from framework.tasks import celery
-from website import settings
+from website import settings  # TODO: Use framework's config module instead
 
 @celery.task
 def send_email(to=None, subject=None, message=None):
@@ -14,7 +14,7 @@ def send_email(to=None, subject=None, message=None):
 
     :return: True if successful
     """
-    fro = "openscienceframework-noreply@openscienceframework.org"
+    fro = settings.FROM_EMAIL
     msg = MIMEText(message, _charset='utf-8')
     msg['Subject'] = subject
     msg['From'] = fro
@@ -26,7 +26,7 @@ def send_email(to=None, subject=None, message=None):
     s.ehlo()
     s.login(settings.mail_username, settings.mail_password)
     s.sendmail(
-        from_addr='openscienceframework-noreply@openscienceframework.org',
+        from_addr=fro,
         to_addrs=[to],
         msg=msg.as_string()
     )

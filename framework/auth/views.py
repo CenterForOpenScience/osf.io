@@ -46,6 +46,7 @@ def forgot_password():
         if user_obj:
             user_obj.verification_key = helper.random_string(20)
             user_obj.save()
+            # TODO: This is OSF-specific
             send_email.delay(
                 to=form.email.data,
                 subject="Reset Password",

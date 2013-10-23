@@ -37,9 +37,11 @@ try:
 except KeyError:
     use_cdn_for_client_libs = False
 
+
+FROM_EMAIL = "openscienceframework-noreply@openscienceframework.org"
 mail_server = 'smtp.sendgrid.net'
 mail_username = 'osf-smtp'
-mail_password = ''
+mail_password = ''  # Set this in local.py
 
 static_path = os.path.join(base_path, 'static')
 
