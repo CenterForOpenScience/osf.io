@@ -17,7 +17,7 @@ def send_email(to=None, subject=None, message=None):
     fro = "openscienceframework-noreply@openscienceframework.org"
     msg = MIMEText(message, _charset='utf-8')
     msg['Subject'] = subject
-    msg['From'] = fro 
+    msg['From'] = fro
     msg['To'] = to
 
     s = smtplib.SMTP(settings.mail_server)

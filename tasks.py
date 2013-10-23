@@ -4,8 +4,8 @@
 commands, run ``$ invoke --list``.
 '''
 from invoke import task, run, ctask
-from website import settings
 
+from website import settings
 
 @task
 def server():
@@ -29,6 +29,10 @@ def mongoshell():
     db = settings.DB_NAME
     port = settings.DB_PORT
     run("mongo {db} --port {port}".format(db=db, port=port), pty=True)
+
+@task
+def celery():
+    '''Run the Celery process.'''
 
 
 @task

@@ -1,3 +1,4 @@
+# TODO: Move me to website.settings
 # Config file for Celery Daemon
 
 # Default RabbitMQ broker
