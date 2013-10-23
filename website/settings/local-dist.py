@@ -26,5 +26,18 @@ mail_password = 'CHANGEME'
 COOKIE_NAME = 'osf'
 SECRET_KEY = "CHANGEME"
 
+##### Celery #####
+## Default RabbitMQ broker
+BROKER_URL = 'amqp://'
+
+# Default RabbitMQ backend
+CELERY_RESULT_BACKEND = 'amqp://'
+
+# Modules to import when celery launches
+CELERY_IMPORTS = (
+    "framework.email.tasks",
+    "framework.celery.tasks"
+)
+
 # Example of extending base settings
 # base.img_fmts += ["pdf"]

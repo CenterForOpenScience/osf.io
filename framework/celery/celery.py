@@ -5,8 +5,8 @@ from celery import Celery
 # instansiate Celery object
 celery = Celery()
 
-# TODO: Hardcoded. Should be set using framework's config handler
-celery.config_from_object('celeryconfig')
+# TODO: Hardcoded settings module. Should be set using framework's config handler
+celery.config_from_object('website.settings')
 
 if __name__ == '__main__':
     celery.start()
