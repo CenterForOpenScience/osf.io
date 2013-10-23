@@ -5,7 +5,7 @@ from framework.tasks import celery
 from website import settings  # TODO: Use framework's config module instead
 
 @celery.task
-def send_email(to=None, subject=None, message=None):
+def send_email(to, subject, message):
     """sends email from openscienceframework-noreply to specified destination
 
     :param to: string destination address
