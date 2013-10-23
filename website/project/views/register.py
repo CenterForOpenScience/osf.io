@@ -1,7 +1,7 @@
 
 from framework import request, push_status_message
 from framework.auth import must_have_session_auth
-from ..decorators import must_not_be_registration, must_be_valid_project, must_be_contributor
+from ..decorators import must_not_be_registration, must_be_valid_project, must_be_contributor, must_be_contributor_or_public
 from framework.forms.utils import sanitize
 from .node import _view_project
 
@@ -37,7 +37,7 @@ def node_register_page(*args, **kwargs):
 
 @must_have_session_auth
 @must_be_valid_project
-@must_be_contributor # returns user, project
+@must_be_contributor_or_public # returns user, project
 def node_register_template_page(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
@@ -53,8 +53,10 @@ def node_register_template_page(*args, **kwargs):
     if node_to_use.is_registration and node_to_use.registered_meta:
         registered = True
         payload = json.loads(node_to_use.registered_meta.get(template_name))
-        for item in schema:
-            item['value'] = payload[item['id']]
+        for page in schema['pages']:
+            for question in page['questions']:
+                question['value'] = payload.get(question['id'], '')
+
     else:
         registered = False
 
@@ -93,7 +95,6 @@ def node_register_template_page_post(*args, **kwargs):
 
     register = node_to_use.register_node(user, api_key, template, data)
 
-    print register.url
     return {
         'status': 'success',
         'result': register.url,

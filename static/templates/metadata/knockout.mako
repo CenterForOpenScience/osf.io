@@ -27,18 +27,65 @@
         init: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
             var options = ko.utils.unwrapObservable(valueAccessor());
             options.value = options.value || '';
-            options.disable = !!options.value;
+            options.disable = options.diable || bindingContext.$root.disable;
             ko.renderTemplate(templates[options.type], options, { templateEngine: stringTemplateEngine }, element, 'replaceNode');
         }
     };
 
-    function ViewModel(schema) {
+    function Page(id, title, questions) {
+        this.id = ko.observable(id);
+        this.title = title;
+        this.questions = questions;
+    }
+
+    function ViewModel(schema, disable) {
+
         var self = this;
-        self.schema = schema;
+
+        var pages;
+        if ('pages' in schema) {
+            pages = schema.pages;
+        } else {
+            pages = [
+                {
+                    id: 1,
+                    title: '',
+                    questions: schema.questions
+                }
+            ]
+        }
+
+        self.npages = pages.length;
+        self.pages = ko.observableArray(
+            ko.utils.arrayMap(pages, function(page) {
+                return new Page(page.id, page.title, page.questions);
+            })
+        );
+
+        self.currentIndex = ko.observable(0);
+        self.currentPage =  ko.computed(function(){
+           return self.pages()[self.currentIndex()];
+        });
+        self.previous = function() {
+            self.currentIndex(self.currentIndex()-1);
+        };
+        self.next = function() {
+            self.currentIndex(self.currentIndex()+1);
+        };
+        self.isFirst = function() {
+            return self.currentIndex() === 0;
+        };
+        self.isLast = function() {
+            return self.currentIndex() === self.npages - 1;
+        };
+
+        self.disable = disable || false;
+
         self.continueText = ko.observable('');
         self.continueFlag = ko.computed(function() {
             return self.continueText() === 'continue';
         });
+
     }
 
 </script>

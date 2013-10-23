@@ -1,19 +1,34 @@
 <div class="comment-container">
 
-    <a class="btn comment-reply">Reply</a>
+    <a class="btn comment-reply">
+        % if top:
+            Comment
+        % else:
+            Reply
+        % endif
+    </a>
 
     <!-- Build comment form -->
     <form id="comment-${guid}" method="POST" action="/api/v1/guid/${guid}/comment/" class="comment-form form-horizontal" style="display: none;">
-        <div data-bind="foreach:schema">
-            <div class="control-group">
-                <label class="control-label" data-bind="text:$data.label, attr:{for:$data.id}"></label>
-                <div class="controls">
-                    <div data-bind='item:$data, attr:{id:$data.id}'></div>
+
+        <div data-bind="with:currentPage">
+            <div data-bind="foreach:questions">
+                <div class="control-group">
+                    <label class="control-label" data-bind="text:$data.label, attr:{for:$data.id}"></label>
+                    <div class="controls">
+                        <div data-bind='item:$data, attr:{id:$data.id}'></div>
+                    </div>
                 </div>
             </div>
         </div>
-        <input type="submit" value="Submit" class="btn" />
-        <a class="btn comment-cancel" />Cancel</a>
+
+        <div class="control-group">
+            <div class="controls">
+                <input type="submit" value="Submit" class="btn" />
+                <a class="btn comment-cancel">Cancel</a>
+            </div>
+        </div>
+
     </form>
 
 </div>

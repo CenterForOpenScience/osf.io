@@ -7,17 +7,17 @@
     >
 
     <div mod-meta='{
+            "tpl": "metadata/show_comments.mako",
+            "uri": "/api/v1/guid/${guid}/comments/",
+            "replace": true
+        }'></div>
+
+    <div mod-meta='{
             "tpl": "metadata/add_comment.mako",
             "uri": "/api/v1/metadata/node/comment/",
             "kwargs": {
                 "guid": "${guid}"
             },
-            "replace": true
-        }'></div>
-
-    <div mod-meta='{
-            "tpl": "metadata/show_comments.mako",
-            "uri": "/api/v1/guid/${guid}/comments/",
             "replace": true
         }'></div>
 

@@ -389,12 +389,12 @@ class Node(GuidStoredObject):
         registered = original.clone()
 
         registered.contributors = self.contributors
+        registered.forked_from = self.forked_from
         registered.creator = self.creator
         registered.logs = self.logs
         registered.tags = self.tags
 
         registered.save()
-        # registered._optimistic_insert()
 
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.uploads_path, registered._primary_key)
