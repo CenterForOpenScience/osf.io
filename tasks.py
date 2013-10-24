@@ -31,17 +31,17 @@ def mongoshell():
     port = settings.DB_PORT
     run("mongo {db} --port {port}".format(db=db, port=port), pty=True)
 
-# FIXME
+
 @task
-def celery():
+def celery_worker(level="debug"):
     '''Run the Celery process.'''
-    celery.start()
+    run("celery worker -A framework -l {0}".format(level))
 
 
 @task
 def requirements():
     '''Install dependencies.'''
-    run("pip install --upgrade -r dev-requirements.txt")
+    run("pip install --upgrade -r dev-requirements.txt", pty=True)
 
 
 @ctask(help={
