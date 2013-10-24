@@ -39,6 +39,10 @@ def celery_worker(level="debug"):
 
 
 @task
+def rabbitmq():
+    run("rabbitmq-server", pty=True)
+
+@task
 def mailserver(port=1025):
     '''Run a SMTP test server.'''
     run("python -m smtpd -n -c DebuggingServer localhost:{port}".format(port=port), pty=True)

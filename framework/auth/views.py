@@ -48,8 +48,8 @@ def forgot_password():
             user_obj.save()
             # TODO: This is OSF-specific
             success = send_email.delay(
-                from_=website.settings.FROM_EMAIL,
-                to=form.email.data,
+                from_addr=website.settings.FROM_EMAIL,
+                to_addr=form.email.data,
                 subject="Reset Password",
                 message="http://%s%s" % (
                     framework.request.host,

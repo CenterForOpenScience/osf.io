@@ -81,8 +81,31 @@ Then fire up a pseudo-mailserver with:
 $ invoke mailserver -p 1025
 ```
 
-Starting Celery
-===============
+Using Celery
+============
+
+- Install RabbitMQ. On MacOSX with homebrew,
+
+```bash
+$ brew update
+$ brew install rabbitmq
+```
+The scripts are installed to `/usr/local/sbin`, so you may need to add `PATH=$PATH:/usr/local/sbin` to your `.bash_profile`.
+
+For instructions for other OS's, see [the official docs](http://www.rabbitmq.com/download.html).
+
+Then start the RabbitMQ server with
+
+```bash
+$ invoke rabbitmq
+```
+
+If you want the rabbitmq server to start every time you start your computer (MacOSX), run
+
+```bash
+$ ln -sfv /usr/local/opt/rabbitmq/*.plist ~/Library/LaunchAgents
+$ launchctl load ~/Library/LaunchAgents/homebrew.mxcl.rabbitmq.plist
+```
 
 To start a local celery worker:
 
