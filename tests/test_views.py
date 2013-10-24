@@ -136,5 +136,14 @@ class TestWatchViews(DbTestCase):
         assert_true(res.json['watched'])
         assert_true(self.user.is_watching(node))
 
+class TestPublicViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+
+    def test_explore(self):
+        res = self.app.get("/explore/").maybe_follow()
+        assert_equal(res.status_code, 200)
+
 if __name__ == '__main__':
     unittest.main()
