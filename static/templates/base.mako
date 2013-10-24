@@ -12,7 +12,6 @@
     <![endif]-->
 
     <!-- Le styles -->
-    <!-- Le styles -->
     %if use_cdn:
         <link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1/themes/flick/jquery-ui.css">
     %else:

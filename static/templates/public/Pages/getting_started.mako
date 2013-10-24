@@ -8,7 +8,6 @@
     }
     p { font-size: 14px; }
 </style>
->>>>>>> template-inheritance
 <div class='staticpage'>
 <p>Welcome! The Open Science Framework (OSF) helps researchers manage their work
     across the research lifecycle. OSF is partly a file management system,
