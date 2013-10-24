@@ -18,7 +18,7 @@ mongo_uri = 'mongodb://localhost:{port}/{db}'.format(port=DB_PORT, db=DB_NAME)
 use_solr = False
 
 # Email
-mail_server = 'smtp.sendgrid.net'
+mail_server = 'localhost:1025'  # For local testing
 mail_username = 'osf-smtp'
 mail_password = 'CHANGEME'
 

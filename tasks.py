@@ -39,6 +39,12 @@ def celery_worker(level="debug"):
 
 
 @task
+def mailserver(port=1025):
+    '''Run a SMTP test server.'''
+    run("python -m smtpd -n -c DebuggingServer localhost:{port}".format(port=port), pty=True)
+
+
+@task
 def requirements():
     '''Install dependencies.'''
     run("pip install --upgrade -r dev-requirements.txt", pty=True)

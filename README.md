@@ -61,3 +61,33 @@ To run a certain test method
 ```bash
 $ nosetests tests/test_module.py:TestClass.test_method
 ```
+
+Testing Email
+-------------
+
+First, set `mail_server` to `localhost:1025` in you `local.py` file.
+
+website/settings/local.py
+
+```python
+...
+mail_server = "localhost:1025"
+...
+```
+
+Then fire up a pseudo-mailserver with:
+
+```bash
+$ invoke mailserver -p 1025
+```
+
+Starting Celery
+===============
+
+To start a local celery worker:
+
+```bash
+invoke celery_worker
+```
+
+
