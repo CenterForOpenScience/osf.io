@@ -18,8 +18,8 @@ def init(path):
     ).communicate()
 
 def branch_orphan_pull(old, new, user):
-    folder_old = os.path.join(website.settings.uploads_path, old)
-    folder_new = os.path.join(website.settings.uploads_path, new)
+    folder_old = os.path.join(website.settings.UPLOADS_PATH, old)
+    folder_new = os.path.join(website.settings.UPLOADS_PATH, new)
 
     p1 = subprocess.Popen(["git","checkout","--orphan", str(new)],
         cwd=folder_old,
@@ -28,10 +28,10 @@ def branch_orphan_pull(old, new, user):
         shell=False
     )
     p2 = subprocess.Popen(
-        [   "git", "commit", "--author", 
+        [   "git", "commit", "--author",
             '"{fullname} <{email}>"'.format(
-                fullname=user.fullname, 
-                email='user-' + str(user.id) + '@openscienceframework.org'), 
+                fullname=user.fullname,
+                email='user-' + str(user.id) + '@openscienceframework.org'),
             "-m", '"Forked from {old} to {new}"'.format(old=str(old), new=str(new))
         ],
         cwd=folder_old,

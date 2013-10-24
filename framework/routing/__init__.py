@@ -88,7 +88,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
             rv = error
         except Exception as error:
             if debug_mode:
-                raise error
+                raise
             rv = HTTPError(
                 http.INTERNAL_SERVER_ERROR,
                 message=repr(error),

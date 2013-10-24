@@ -1,7 +1,7 @@
 import sunburnt
 from website import settings
 
-if settings.use_solr:
+if settings.USE_SOLR:
     solr = sunburnt.SolrInterface(settings.solr)
 
 

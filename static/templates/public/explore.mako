@@ -34,6 +34,14 @@
 
 </style>
 
+<<<<<<< HEAD
+=======
+%if website.settings.USE_CDN_FOR_CLIENT_LIBS:
+<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.2.2/d3.v3.min.js"></script>
+%else:
+<script src="/static/d3.v3.min.js"></script>
+%endif
+>>>>>>> watching
 
 <script>
 
@@ -91,3 +99,7 @@ d3.json("/static/nodes.json", function(error, graph) {
 </script>
 </%def>
 
+<<<<<<< HEAD
+=======
+<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+>>>>>>> watching

@@ -4,7 +4,7 @@ from framework.email.tasks import send_email
 import framework.status as status
 import framework.forms as forms
 
-import website.settings
+import website.settings  # TODO: Use framework settings module instead
 import settings
 
 import helper
@@ -46,8 +46,10 @@ def forgot_password():
         if user_obj:
             user_obj.verification_key = helper.random_string(20)
             user_obj.save()
-            send_email.delay(
-                to=form.email.data,
+            # TODO: This is OSF-specific
+            success = send_email.delay(
+                from_addr=website.settings.FROM_EMAIL,
+                to_addr=form.email.data,
                 subject="Reset Password",
                 message="http://%s%s" % (
                     framework.request.host,
@@ -57,7 +59,10 @@ def forgot_password():
                     )
                 )
             )
-            status.push_status_message('Reset email sent')
+            if success:
+                status.push_status_message('Reset email sent')
+            else:
+                status.push_status_message("Could not send email. Please try again later.")
             return framework.redirect('/')
         else:
             status.push_status_message('Email {email} not found'.format(email=form.email.data))
@@ -101,7 +106,7 @@ def auth_logout():
     return framework.redirect('/')
 
 def auth_register_post():
-    if not website.settings.allow_registration:
+    if not website.settings.ALLOW_REGISTRATION:
         status.push_status_message('We are currently in beta development and \
             registration is only available to those with beta invitations. If you \
             would like to be added to the invitation list, please email \
@@ -124,7 +129,7 @@ def auth_register_post():
             status.push_status_message('The email <em>%s</em> has already been registered.' % form.username.data)
             return auth_login(registration_form=form)
         if u:
-            if website.settings.confirm_registrations_by_email:
+            if website.settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
                 # TODO: The sendRegistration method does not exist, this block
                 #   will fail if email confirmation is on.
                 raise NotImplementedError(
