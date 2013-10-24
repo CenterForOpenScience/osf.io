@@ -4,7 +4,7 @@
 <div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
 <div class="col-md-9">
-    ${content}
+    ${wiki_content}
 </div>
 
 <div class="col-md-3">
@@ -23,7 +23,5 @@
         }'></div>
 
 </div>
-
-${wiki_content}
 
 </%def>

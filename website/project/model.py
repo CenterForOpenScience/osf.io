@@ -772,6 +772,7 @@ class Node(StoredObject):
 
         :param user: A user object.
         '''
+        # TODO: log is not used
         if user._primary_key not in self.contributors:
             self.contributors.append(user)
             self.contributor_list.append({'id':user._primary_key})
