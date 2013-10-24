@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+'''Unit tests for the modular template system.
+
+These require a test db because they use Session objects.
+'''
 import json
 import unittest
 
@@ -13,10 +17,9 @@ from framework.routing import (
     Renderer, JSONRenderer, WebRenderer,
     render_mako_string,
 )
-from tests.base import AppTestCase
+from tests.base import AppTestCase, DbTestCase
 
-
-class RendererTestCase(AppTestCase):
+class RendererTestCase(DbTestCase, AppTestCase):
     def setUp(self):
         super(RendererTestCase, self).setUp()
         self.r = Renderer()
@@ -42,7 +45,7 @@ class RendererTestCase(AppTestCase):
             self.r(('response text', ))
 
 
-class JSONRendererTestCase(AppTestCase):
+class JSONRendererTestCase(RendererTestCase):
 
     def setUp(self):
         super(JSONRendererTestCase, self).setUp()

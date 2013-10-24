@@ -71,7 +71,7 @@ def project_wiki_compare(*args, **kwargs):
             content = content.replace('\n', '<br />')
             rv = {
                 'pageName' : wid,
-                'content' : content,
+                'wiki_content' : content,
                 'versions' : _get_wiki_versions(node_to_use, wid),
                 'is_current' : True,
                 'is_edit' : True,
@@ -100,7 +100,7 @@ def project_wiki_version(*args, **kwargs):
     if pw:
         rv = {
             'pageName': wid,
-            'content': pw.html,
+            'wiki_content': pw.html,
             'version': pw.version,
             'is_current': pw.is_current,
             'is_edit': False,
@@ -151,7 +151,7 @@ def project_wiki_page(*args, **kwargs):
         'pageName' : wid,
         'page' : pw,
         'version' : version,
-        'content' : content,
+        'wiki_content' : content,
         'is_current' : is_current,
         'is_edit' : False,
         'pages_current' : node_to_use.wiki_pages_versions.keys(),
@@ -188,7 +188,7 @@ def project_wiki_edit(*args, **kwargs):
         'page' : pw,
         'version' : version,
         'versions' : _get_wiki_versions(node_to_use, wid),
-        'content' : content,
+        'wiki_content' : content,
         'is_current' : is_current,
         'is_edit' : True,
     }

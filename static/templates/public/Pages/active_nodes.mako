@@ -1,5 +1,6 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
-
+<%inherit file="base.mako"/>
+<%def name="title()">Explore</%def>
+<%def name="content()">
 <%
     from framework import get_user
 %>
@@ -44,50 +45,48 @@
   </div><!-- /.row -->
 
 
-<%def name="node_list(nodes, default=0, prefix='', metric='hits')">
-%for node in nodes:
-    <%
-        #import locale
-        #locale.setlocale(locale.LC_ALL, 'en_US')
-        unique_hits, hits = (
-             #locale.format('%d', val, grouping=True) if val else
-             #locale.format(0, val, grouping=True)
-            val if val else 0
-            for val in node.get_stats()
-        )
-        explicit_date = '{month} {dt.day} {dt.year}'.format(
-            dt=node.date_created.date(),
-            month=node.date_created.date().strftime('%B')
-        )
-    %>
-    <li class="project list-group-item">
-        <h4 class="list-group-item-heading">
-            <a href="${node.url}">${node.title}</a>
-        </h4>
-            % if metric == 'hits':
-                <span class="badge" rel='tooltip' data-original-title='${hits} hits (${unique_hits} unique)'>
-                    ${hits} views
-                </span>
-            % elif metric == 'date_created':
-                <span class="badge" rel='tooltip' data-original-title='Created: ${explicit_date}'>
-                    ${node.date_created.date()}
-                </span>
-            % endif
+    <%def name="node_list(nodes, default=0, prefix='', metric='hits')">
+    %for node in nodes:
+        <%
+            #import locale
+            #locale.setlocale(locale.LC_ALL, 'en_US')
+            unique_hits, hits = (
+                 #locale.format('%d', val, grouping=True) if val else
+                 #locale.format(0, val, grouping=True)
+                val if val else 0
+                for val in node.get_stats()
+            )
+            explicit_date = '{month} {dt.day} {dt.year}'.format(
+                dt=node.date_created.date(),
+                month=node.date_created.date().strftime('%B')
+            )
+        %>
+        <li class="project list-group-item">
+            <h4 class="list-group-item-heading">
+                <a href="${node.url}">${node.title}</a>
+            </h4>
+                % if metric == 'hits':
+                    <span class="badge" rel='tooltip' data-original-title='${hits} hits (${unique_hits} unique)'>
+                        ${hits} views
+                    </span>
+                % elif metric == 'date_created':
+                    <span class="badge" rel='tooltip' data-original-title='Created: ${explicit_date}'>
+                        ${node.date_created.date()}
+                    </span>
+                % endif
 
-        <!-- Show abbreviated contributors list -->
-        <div mod-meta='{
-                "tpl": "util/render_users_abbrev.mako",
-                "uri": "${node.api_url}contributors_abbrev/",
-                "kwargs": {
-                    "node_url": "${node.url}"
-                },
-                "replace": true
-            }'>
-        </div>
+            <!-- Show abbreviated contributors list -->
+            <div mod-meta='{
+                    "tpl": "util/render_users_abbrev.mako",
+                    "uri": "${node.api_url}contributors_abbrev/",
+                    "kwargs": {
+                        "node_url": "${node.url}"
+                    },
+                    "replace": true
+                }'>
+            </div>
 
-    </li>
-%endfor
-
+        </li>
+    %endfor
+    </%def>
 </%def>
-
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

@@ -78,7 +78,7 @@ def search_user(*args, **kwargs):
                 'gravatar' : filters.gravatar(
                     item.username,
                     use_ssl=True,
-                    size=settings.gravatar_size_add_contributor
+                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
                 ),
                 'id' : item._primary_key,
             } for item in result
@@ -425,11 +425,11 @@ def _get_user_activity(node, user, rescale_ratio):
 
     # Normalize over all nodes
     try:
-        ua = ua_count / rescale_ratio * settings.user_activity_max_width
+        ua = ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
     except ZeroDivisionError:
         ua = 0
     try:
-        non_ua = non_ua_count / rescale_ratio * settings.user_activity_max_width
+        non_ua = non_ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
     except ZeroDivisionError:
         non_ua = 0
 

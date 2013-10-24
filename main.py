@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 app = framework.app
 
-static_folder = website.settings.static_path
+static_folder = website.settings.STATIC_PATH
 
 import new_style  # Side effect: Sets up routes
 

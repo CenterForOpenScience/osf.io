@@ -1,4 +1,6 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+<%inherit file="base.mako"/>
+<%def name="title()">Key History</%def>
+<%def name="content()">
 <div mod-meta='{"tpl": "include/subnav.mako", "replace": true}'></div>
 
 <div mod-meta='{
@@ -6,5 +8,5 @@
         "uri": "/api/v1/settings/key_history/${key}/",
         "replace": true
     }'></div>
+</%def>
 
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

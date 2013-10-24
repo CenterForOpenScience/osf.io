@@ -1,6 +1,6 @@
-
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
-
+<%inherit file="base.mako"/>
+<%def name="title()">${fullname}'s Profile</%def>
+<%def name="content()">
 <div class="page-header">
 
     % if user_is_profile:
@@ -79,5 +79,4 @@
             }'></div>
     </div>
 </div><!-- end row -->
-
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+</%def>

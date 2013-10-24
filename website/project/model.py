@@ -165,7 +165,7 @@ class Node(StoredObject):
         as appropriate
 
         """
-        if not settings.use_solr:
+        if not settings.USE_SOLR:
             return
 
         if self.category == 'project':
@@ -282,7 +282,7 @@ class Node(StoredObject):
         # if not (self.is_contributor(user) or self.is_public):
         #     return
 
-        folder_old = os.path.join(settings.uploads_path, self._primary_key)
+        folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
         when = datetime.datetime.utcnow()
 
@@ -322,7 +322,7 @@ class Node(StoredObject):
         forked.save()
 
         if os.path.exists(folder_old):
-            folder_new = os.path.join(settings.uploads_path, forked._primary_key)
+            folder_new = os.path.join(settings.UPLOADS_PATH, forked._primary_key)
             Repo(folder_old).clone(folder_new)
 
         original.fork_list.append(forked._primary_key)
@@ -331,7 +331,7 @@ class Node(StoredObject):
         return forked#self
 
     def register_node(self, user, api_key, template, data):
-        folder_old = os.path.join(settings.uploads_path, self._primary_key)
+        folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
         when = datetime.datetime.utcnow()
 
@@ -341,7 +341,7 @@ class Node(StoredObject):
         # registered._optimistic_insert()
 
         if os.path.exists(folder_old):
-            folder_new = os.path.join(settings.uploads_path, registered._primary_key)
+            folder_new = os.path.join(settings.UPLOADS_PATH, registered._primary_key)
             Repo(folder_old).clone(folder_new)
 
         registered.nodes = []
@@ -352,10 +352,10 @@ class Node(StoredObject):
             node_contained = original_node_contained.clone()
             node_contained.save()
 
-            folder_old = os.path.join(settings.uploads_path, original_node_contained._primary_key)
+            folder_old = os.path.join(settings.UPLOADS_PATH, original_node_contained._primary_key)
 
             if os.path.exists(folder_old):
-                folder_new = os.path.join(settings.uploads_path, node_contained._primary_key)
+                folder_new = os.path.join(settings.UPLOADS_PATH, node_contained._primary_key)
                 Repo(folder_old).clone(folder_new)
 
             node_contained.is_registration = True
@@ -431,7 +431,7 @@ class Node(StoredObject):
 
     def get_file(self, path, version=None):
         if version is not None:
-            folder_name = os.path.join(settings.uploads_path, self._primary_key)
+            folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
             if os.path.exists(os.path.join(folder_name, ".git")):
                 file_object = NodeFile.load(self.files_versions[path.replace('.', '_')][version])
                 repo = Repo(folder_name)
@@ -442,7 +442,7 @@ class Node(StoredObject):
 
     def get_file_object(self, path, version=None):
         if version is not None:
-            directory = os.path.join(settings.uploads_path, self._primary_key)
+            directory = os.path.join(settings.UPLOADS_PATH, self._primary_key)
             if os.path.exists(os.path.join(directory, '.git')):
                 return NodeFile.load(self.files_versions[path.replace('.', '_')][version])
             # TODO: Raise exception here
@@ -460,7 +460,7 @@ class Node(StoredObject):
         #FIXME: encoding the filename this way is flawed. For instance - foo.bar resolves to the same string as foo_bar.
         file_name_key = path.replace('.', '_')
 
-        repo_path = os.path.join(settings.uploads_path, self._primary_key)
+        repo_path = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
         # TODO make sure it all works, otherwise rollback as needed
         # Do a git delete, which also removes from working filesystem.
@@ -559,12 +559,12 @@ class Node(StoredObject):
         # TODO: Reading the whole file into memory is not scalable. Fix this.
 
         # This node's folder
-        folder_name = os.path.join(settings.uploads_path, self._primary_key)
+        folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
         # TODO: This should be part of the build phase, not here.
         # verify the upload root exists
-        if not os.path.isdir(settings.uploads_path):
-            os.mkdir(settings.uploads_path)
+        if not os.path.isdir(settings.UPLOADS_PATH):
+            os.mkdir(settings.UPLOADS_PATH)
 
         # Make sure the upload directory contains a git repo.
         if os.path.exists(folder_name):
@@ -906,7 +906,7 @@ class NodeWikiPage(StoredObject):
             ]
         )
 
-        return sanitize(html_output, **settings.wiki_whitelist)
+        return sanitize(html_output, **settings.WIKI_WHITELIST)
 
     @property
     def raw_text(self):

@@ -1,5 +1,6 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
-
+<%inherit file="base.mako"/>
+<%def name="title()">Home</%def>
+<%def name="content()">
       <div class="headline">
         <div class="container">
           <h1>The Open Science Framework</h1>
@@ -42,5 +43,5 @@
       % if use_cdn:
       <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js._primary_key=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
       %endif
+</%def>
 
-<div mod-meta='{"tpl":"footer.mako","replace": true}'></div>

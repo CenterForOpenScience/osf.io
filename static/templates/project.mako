@@ -1,7 +1,7 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+<%inherit file="base.mako"/>
+<%def name="title()">Project</%def>
+<%def name="content()">
 <div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
-
-## TODO: Move to header.mako
 <!-- Import jQuery tags -->
 <link rel="stylesheet" type="text/css" href="/static/css/jquery.tagsinput.css" />
 <script src="/static/js/jquery.tagsinput.min.js"></script>
@@ -139,5 +139,4 @@
         </section>
     </div>
   </div>
-
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+</%def>

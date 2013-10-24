@@ -3,7 +3,7 @@
 
 ::
     >>> from website import settings
-    >>> settings.mail_server
+    >>> settings.MAIL_SERVER
     'smtp.sendgrid.net'
 '''
 from .base import *

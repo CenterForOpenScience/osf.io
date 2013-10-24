@@ -123,5 +123,19 @@ class TestAUser(DbTestCase):
         # Taken to the project's page
         assert_in("My new project", res)
 
+    def test_sees_correct_title_home_page(self):
+        # User goes to homepage
+        res = self.app.get("/", auto_follow=True)
+        title = res.html.title.string
+        # page title is correct
+        assert_equal("Open Science Framework | Home", title)
+
+    def test_sees_correct_title_on_dashboard(self):
+        # User goes to dashboard
+        res = self.app.get("/dashboard/", auth=self.auth, auto_follow=True)
+        title = res.html.title.string
+        assert_equal("Open Science Framework | Dashboard", title)
+
+
 if __name__ == '__main__':
     unittest.main()

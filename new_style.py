@@ -1,25 +1,32 @@
-from framework.flask import app, request
+# -*- coding: utf-8 -*-
+from framework.flask import app
 import framework
-from website import settings
-from framework import get_current_user
 from framework import HTTPError
 from framework import (Rule, process_rules,
                        WebRenderer, json_renderer,
                        render_mako_string)
+from framework.auth import views as auth_views
+
+from website import settings
+from website import views as website_routes
+from website.search import views as search_views
+from website.discovery import views as discovery_views
+from website.profile import views as profile_views
+from website.project import views as project_views
 
 
 import httplib as http
 
 def get_globals():
-    user = get_current_user()
+    user = framework.auth.get_current_user()
     return {
         'user_name' : user.username if user else '',
         'user_full_name' : user.fullname if user else '',
         'user_id' : user._primary_key if user else '',
-        'display_name' : get_display_name(user.username) if user else '',
-        'use_cdn' : settings.use_cdn_for_client_libs,
-        'dev_mode' : settings.dev_mode,
-        'allow_login' : settings.allow_login,
+        'display_name' : framework.auth.get_display_name(user.username) if user else '',
+        'use_cdn' : settings.USE_CDN_FOR_CLIENT_LIBS,
+        'dev_mode' : settings.DEV_MODE,
+        'allow_login' : settings.ALLOW_LOGIN,
         'status' : framework.status.pop_status_messages(),
     }
 
@@ -30,18 +37,11 @@ class OsfWebRenderer(WebRenderer):
         super(OsfWebRenderer, self).__init__(*args, **kwargs)
 
 
-# todo move
-def get_display_name(username):
-    if username:
-        if len(username) > 22:
-            return '%s...%s' % (username[:9],username[-10:])
-        return username
-
 def view_index():
 
     display_name = username = framework.get_current_username()
     if username and len(username) > 22:
-        display_name = get_display_name(username)
+        display_name = framework.auth.get_display_name(username)
 
     return {
         'user_name': username,
@@ -49,13 +49,6 @@ def view_index():
         'status': framework.status.pop_status_messages(),
     }
 
-
-from framework.auth import views as auth_views
-from website import views as website_routes
-from website.search import views as search_views
-from website.discovery import views as discovery_views
-from website.profile import views as profile_views
-from website.project import views as project_views
 
 # Set default views to 404, using URL-appropriate renderers
 process_rules(app, [
@@ -67,7 +60,7 @@ process_rules(app, [
 
 def favicon():
     return framework.send_from_directory(
-        settings.static_path,
+        settings.STATIC_PATH,
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'
     )

@@ -14,12 +14,16 @@ from framework import StoredObject
 from framework import HTTPError
 from framework.flask import app, redirect, make_response
 from mako.template import Template
+from mako.lookup import TemplateLookup
 
 from framework import session
 
 logger = logging.getLogger(__name__)
 
+# TODO: Move to settings
 TEMPLATE_DIR = 'static/templates/'
+_tpl_lookup = TemplateLookup(directories=[TEMPLATE_DIR],
+                            module_directory="/tmp/mako_modules")
 REDIRECT_CODES = [
     http.MOVED_PERMANENTLY,
     http.FOUND,
@@ -88,7 +92,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
         except Exception as error:
             logger.error(error)
             if debug_mode:
-                raise error
+                raise
             rv = HTTPError(
                 http.INTERNAL_SERVER_ERROR,
                 message=repr(error),
@@ -167,7 +171,7 @@ mako_cache = {}
 def render_mako_string(tplname, data):
     tpl = mako_cache.get(tplname)
     if tpl is None:
-        tpl = Template(tplname)
+        tpl = Template(tplname, lookup=_tpl_lookup)
         mako_cache[tplname] = tpl
     return tpl.render(**data)
 
@@ -378,7 +382,7 @@ class WebRenderer(Renderer):
         :param data: Dictionary to be passed to the template as context
         :return: 2-tuple: (<result>, <flag: replace div>)
         """
-        attributes_string = element.get('mod-meta')
+        attributes_string = element.get("mod-meta")
 
         # Return debug <div> if JSON cannot be parsed
         try:

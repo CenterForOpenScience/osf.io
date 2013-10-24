@@ -52,6 +52,7 @@ var modalConfirm = function(message, url){
     )
 }
 
+
 // TODO: Move Watch and Fork click handlers to this file so that NodeActions
 // doesn't need to be in global namespace
 window.NodeActions = {};  // Namespace for NodeActions
@@ -302,7 +303,6 @@ $(function(){
 
     });
 });
-
 
 $(document).ready(function(){
 

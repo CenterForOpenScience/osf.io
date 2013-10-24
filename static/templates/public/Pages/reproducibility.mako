@@ -1,5 +1,6 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
-
+<%inherit file="base.mako"/>
+<%def name="title()">About the Reproducibility Project</%def>
+<%def name="content()">
 <div class="page-header">
     <h1>About the Reproducibility Project</h1>
 </div>
@@ -17,11 +18,10 @@
 <p>The Reproducibility Project is open and transparent.  You can access background information about the project, materials about the study design, and information about the present progress and results with the links below.  Also, a public google group documents discussion about the project.  Anyone can join the google group to monitor the discussion, or contribute.</p>
 <ol>
 <li><a href="https://docs.google.com/document/d/1FcWLfASVXPkLuTVQmbZKvpkPsgrW8XKPGfWJqnSnmeM/edit">Executive Summary</a>: Get an overview of the project goals and approach (start here if you want some background of the project)
-<li><a href="https://docs.google.com/document/d/1b8wlI8RqR07aOJKv5qMRTGCSi10ntb7glL7gyzUEE3M/edit">Researcher Guide</a>: A comprehensive list of tasks for researchers that would like to conduct a replication (start here if you know the project and want to join in) 
+<li><a href="https://docs.google.com/document/d/1b8wlI8RqR07aOJKv5qMRTGCSi10ntb7glL7gyzUEE3M/edit">Researcher Guide</a>: A comprehensive list of tasks for researchers that would like to conduct a replication (start here if you know the project and want to join in)
 <li><a href="https://docs.google.com/spreadsheet/ccc?key=0AvIo2znxWnxZdERIS2xqNnNxUUZRRTB5LVJxckhiY3c#gid=8">Project Progress and Results Spreadsheet</a>: The primary vehicle for reviewing eligible articles, reporting project progress and results, and documenting researcher contribution
 <li><a href="http://groups.google.com/group/openscienceframework?hl=en">Google Discussion Group</a>: to participate in the dynamic discussion of project design and progress (and discussions about other OSF projects)
 <li>Project Materials Dropbox: Access scientific articles that are eligible for replication, or other background reading materials (email nosek at virginia dot edu to get access)
 <li>Open Science Framework: Replication study materials will be made available in the OSF.
 </ol>
-
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+</%def>

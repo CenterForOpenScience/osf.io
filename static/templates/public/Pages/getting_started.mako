@@ -1,6 +1,14 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+<%inherit file="base.mako"/>
+<%def name="title()">Getting Started</%def>
+<%def name="content()">
 <h1 class="page-title">Getting Started</h1>
-
+<style>
+    .staticpage img {
+        border:2px solid black;
+    }
+    p { font-size: 14px; }
+</style>
+>>>>>>> template-inheritance
 <div class='staticpage'>
 <p>Welcome! The Open Science Framework (OSF) helps researchers manage their work
     across the research lifecycle. OSF is partly a file management system,
@@ -73,5 +81,4 @@
     workflow, send comments <a href="mailto:feedback@openscienceframework.org">here</a>.
 </p>
 </div>
-
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+</%def>
