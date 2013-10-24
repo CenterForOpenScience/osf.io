@@ -21,7 +21,7 @@ def init_app(settings_module="website.settings", set_backends=True, routes=True)
     """
     # The settings module
     settings = importlib.import_module(settings_module)
-    app.debug = settings.DEBUG
+    app.debug = settings.DEBUG_MODE
     if set_backends:
         # TODO: Instantiate client and db here?
         logger.debug("Setting storage backends")

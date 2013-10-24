@@ -7,7 +7,6 @@ from website import settings
 import os
 
 # Create app
-# todo: move to app factory
 app = Flask(
     __name__,
     static_folder=os.path.abspath("website/static"),
@@ -15,4 +14,4 @@ app = Flask(
 )
 
 # Pull debug mode from settings
-app.debug = settings.DEBUG
+app.debug = settings.DEBUG_MODE

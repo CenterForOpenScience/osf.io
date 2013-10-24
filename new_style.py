@@ -23,9 +23,9 @@ def get_globals():
         'user_full_name' : user.fullname if user else '',
         'user_id' : user._primary_key if user else '',
         'display_name' : framework.auth.get_display_name(user.username) if user else '',
-        'use_cdn' : settings.use_cdn_for_client_libs,
-        'dev_mode' : settings.dev_mode,
-        'allow_login' : settings.allow_login,
+        'use_cdn' : settings.USE_CDN_FOR_CLIENT_LIBS,
+        'dev_mode' : settings.DEV_MODE,
+        'allow_login' : settings.ALLOW_LOGIN,
         'status' : framework.status.pop_status_messages(),
     }
 
@@ -51,7 +51,7 @@ def view_index():
 
 def favicon():
     return framework.send_from_directory(
-        settings.static_path,
+        settings.STATIC_PATH,
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'
     )
