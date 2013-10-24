@@ -2,8 +2,7 @@
 <%def name="title()">Content</%def>
 
 <%def name="javascript()">
-    <% import website.settings %>
-    %if website.settings.use_cdn_for_client_libs:
+    %if use_cdn:
     <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.2.2/d3.v3.min.js"></script>
     %else:
     <script src="/static/d3.v3.min.js"></script>
@@ -11,7 +10,7 @@
 </%def>
 <%def name="content()">
 <div class="row">
-  <div class="span12">
+  <div class="col-md-12">
     <h1>Collaborator Network for Public Projects</h1>
     <p>Projects with more than 10 connections are used to represent the connections between each of the collaborators on that project for clarity. Node radius represents total collaboration overall, while number of lines connecting to a node represent the individuals they collaborate with.</p>
     <div style="font: 10px sans-serif;margin: 0px auto 22px;clear: both;width">
@@ -34,7 +33,7 @@
 
 </style>
 
-%if website.settings.USE_CDN_FOR_CLIENT_LIBS:
+%if use_cdn:
 <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.2.2/d3.v3.min.js"></script>
 %else:
 <script src="/static/d3.v3.min.js"></script>
@@ -95,8 +94,3 @@ d3.json("/static/nodes.json", function(error, graph) {
 
 </script>
 </%def>
-
-<<<<<<< HEAD
-=======
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
->>>>>>> watching
