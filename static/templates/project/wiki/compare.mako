@@ -18,7 +18,7 @@
 
     </div>
 
-    ${content}
+    ${wiki_content}
 
 </div>
 </%def>
