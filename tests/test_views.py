@@ -36,6 +36,31 @@ class TestProjectViews(DbTestCase):
         self.project.api_keys.append(api_key)
         self.project.save()
 
+    def test_add_contributor_post(self):
+        # A user is added as a contributor via a POST request
+        user = UserFactory()
+        url = "/api/v1/project/{0}/addcontributor/".format(self.project._id)
+        res = self.app.post(url, json.dumps({"user_id": user._id}),
+                            content_type="application/json",
+                            auth=self.auth).maybe_follow()
+        self.project.reload()
+        assert_in(user._id, self.project.contributors)
+        # A log event was added
+        assert_equal(self.project.logs[-1].action, "contributor_added")
+
+    def test_add_non_registered_contributor(self):
+        url = "/api/v1/project/{0}/addcontributor/".format(self.project._id)
+        # A non-registered user is added
+        res = self.app.post(url, json.dumps({"email": "joe@example.com", "fullname": "Joe Dirt"}),
+                            content_type="application/json",
+                            auth=self.auth).maybe_follow()
+        self.project.reload()
+        # The contributor list should have length 3 (2 registered, 1 unregistered)
+        assert_equal(len(self.project.contributor_list), 3)
+        # A log event was added
+        assert_equal(self.project.logs[-1].action, "contributor_added")
+
+
     def test_project_remove_contributor(self):
         url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
         # User 1 removes user2
@@ -44,6 +69,8 @@ class TestProjectViews(DbTestCase):
                             auth=self.auth).maybe_follow()
         self.project.reload()
         assert_not_in(self.user2._id, self.project.contributors)
+        # A log event was added
+        assert_equal(self.project.logs[-1].action, "contributor_removed")
 
 class TestWatchViews(DbTestCase):
 

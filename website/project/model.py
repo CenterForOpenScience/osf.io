@@ -135,6 +135,8 @@ class Node(StoredObject):
 
     creator = fields.ForeignField('user', backref='created')
     contributors = fields.ForeignField('user', list=True, backref='contributed')
+    # Dict list that includes registered AND unregsitered users
+    # Example: [{u'id': u've4nx'}, {u'nr_name': u'Joe Dirt', u'nr_email': u'joe@example.com'}]
     contributor_list = fields.DictionaryField(list=True)
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
 
@@ -753,7 +755,7 @@ class Node(StoredObject):
             removed_user = get_user(contributor._id)
 
             self.add_log(
-                action='remove_contributor',
+                action='remove_contributor',  # FIXME: make naming more consistent ("contributor_removed")
                 params={
                     'project':self.parent_id,
                     'node':self._primary_key,
@@ -766,16 +768,30 @@ class Node(StoredObject):
         else:
             return False
 
-    def add_contributor(self, user, log=True, save=False):
+    def add_contributor(self, user, log=True, api_key=None, save=False):
         '''Add a contributor to the project.
 
         :param user: A user object.
         '''
         if user._primary_key not in self.contributors:
             self.contributors.append(user)
-            self.contributor_list.append({'id':user._primary_key})
+            self.contributor_list.append({'id': user._primary_key})
+            if log:
+                self.add_log(
+                    action='contributor_added',
+                    params={
+                        'project': self.node__parent[0]._primary_key if self.node__parent else None,
+                        'node': self._primary_key,
+                        'contributors': [user._primary_key],
+                    },
+                    user=user,
+                    api_key=api_key
+                )
             if save:
                 self.save()
+            return True
+        else:
+            return False
 
     def set_permissions(self, permissions, user, api_key):
         if permissions == 'public' and not self.is_public:

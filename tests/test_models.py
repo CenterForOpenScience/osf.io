@@ -140,6 +140,7 @@ class TestProject(DbTestCase):
         self.project.add_contributor(user2)
         self.project.save()
         assert_in(user2, self.project.contributors)
+        assert_equal(self.project.logs[-1].action, 'contributor_added')
 
     def test_remove_contributor(self):
         # A user is added as a contributor

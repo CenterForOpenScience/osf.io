@@ -103,7 +103,6 @@ def project_removecontributor(*args, **kwargs):
     user = kwargs['user']
     api_key = get_api_key()
     node_to_use = node or project
-    logging.error(request.json)
 
     if request.json['id'].startswith('nr-'):
         outcome = node_to_use.remove_nonregistered_contributor(
@@ -124,6 +123,7 @@ def project_removecontributor(*args, **kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 
+# FIXME(sloria): This should be getting JSON data, not form data
 @must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
@@ -133,14 +133,20 @@ def project_addcontributor_post(*args, **kwargs):
     node = kwargs['node']
     user = kwargs['user']
     api_key = get_api_key()
-
     node_to_use = node or project
+    if request.json:
+        logging.debug("JSON data:")
+        logging.debug(request.json)
+    elif request.json:
+        logging.debug("Form data:")
+        logging.debug(request.json)
 
-    if "user_id" in request.form:
-        user_id = request.form['user_id'].strip()
+    if "user_id" in request.json:
+        user_id = request.json['user_id'].strip()
         added_user = User.load(user_id)
         if added_user:
             if user_id not in node_to_use.contributors:
+                logger.debug("Adding user {0}".format(user_id))
                 node_to_use.contributors.append(added_user)
                 node_to_use.contributor_list.append({'id':added_user._primary_key})
                 node_to_use.save()
@@ -155,11 +161,11 @@ def project_addcontributor_post(*args, **kwargs):
                     user=user,
                     api_key=api_key
                 )
-    elif "email" in request.form and "fullname" in request.form:
+    elif "email" in request.json and "fullname" in request.json:
         # TODO: Nothing is done here to make sure that this looks like an email.
         # todo have same behavior as wtforms
-        email = sanitize(request.form["email"].strip())
-        fullname = sanitize(request.form["fullname"].strip())
+        email = sanitize(request.json["email"].strip())
+        fullname = sanitize(request.json["fullname"].strip())
         if email and fullname:
             node_to_use.contributor_list.append({'nr_name':fullname, 'nr_email':email})
             node_to_use.save()
