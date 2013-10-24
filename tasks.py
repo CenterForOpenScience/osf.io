@@ -6,7 +6,7 @@ commands, run ``$ invoke --list``.
 from invoke import task, run, ctask
 
 from website import settings
-from framework.celery.celery import celery
+from framework.tasks import celery
 
 @task
 def server():

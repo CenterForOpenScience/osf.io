@@ -4,7 +4,7 @@ from framework.email.tasks import send_email
 import framework.status as status
 import framework.forms as forms
 
-import website.settings
+import website.settings  # TODO: Use framework settings module instead
 import settings
 
 import helper
@@ -47,7 +47,8 @@ def forgot_password():
             user_obj.verification_key = helper.random_string(20)
             user_obj.save()
             # TODO: This is OSF-specific
-            send_email.delay(
+            success = send_email.delay(
+                from_=website.settings.FROM_EMAIL,
                 to=form.email.data,
                 subject="Reset Password",
                 message="http://%s%s" % (
@@ -58,7 +59,10 @@ def forgot_password():
                     )
                 )
             )
-            status.push_status_message('Reset email sent')
+            if success:
+                status.push_status_message('Reset email sent')
+            else:
+                status.push_status_message("Could not send email. Please try again later.")
             return framework.redirect('/')
         else:
             status.push_status_message('Email {email} not found'.format(email=form.email.data))
