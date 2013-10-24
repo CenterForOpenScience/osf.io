@@ -65,8 +65,8 @@ def _get_user_activity(node, user, rescale_ratio):
     non_ua_count = total_count - ua_count # base length of blue bar
 
     # Normalize over all nodes
-    ua = ua_count / rescale_ratio * settings.user_activity_max_width
-    non_ua = non_ua_count / rescale_ratio * settings.user_activity_max_width
+    ua = ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
+    non_ua = non_ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
 
     return ua_count, ua, non_ua
 

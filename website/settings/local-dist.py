@@ -7,20 +7,20 @@ NOTE: local.py will not be added to source control.
 
 from . import base
 
-dev_mode = True
+DEV_MODE = True
 
 # Change to whatever port and db you want
 DB_PORT = 20771
 DB_NAME = "osf20130903"
-mongo_uri = 'mongodb://localhost:{port}/{db}'.format(port=DB_PORT, db=DB_NAME)
+MONGO_URI = 'mongodb://localhost:{port}/{db}'.format(port=DB_PORT, db=DB_NAME)
 
 # Comment out to use solr in development
-use_solr = False
+USE_SOLR = False
 
 # Email
-mail_server = 'localhost:1025'  # For local testing
-mail_username = 'osf-smtp'
-mail_password = 'CHANGEME'
+MAIL_SERVER = 'localhost:1025'  # For local testing
+MAIL_USERNAME = 'osf-smtp'
+MAIL_PASSWORD = 'CHANGEME'
 
 # Session
 COOKIE_NAME = 'osf'
@@ -40,4 +40,4 @@ CELERY_IMPORTS = (
 )
 
 # Example of extending base settings
-# base.img_fmts += ["pdf"]
+# base.IMG_FMTS += ["pdf"]

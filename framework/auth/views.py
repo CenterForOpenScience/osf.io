@@ -106,7 +106,7 @@ def auth_logout():
     return framework.redirect('/')
 
 def auth_register_post():
-    if not website.settings.allow_registration:
+    if not website.settings.ALLOW_REGISTRATION:
         status.push_status_message('We are currently in beta development and \
             registration is only available to those with beta invitations. If you \
             would like to be added to the invitation list, please email \
@@ -129,7 +129,7 @@ def auth_register_post():
             status.push_status_message('The email <em>%s</em> has already been registered.' % form.username.data)
             return auth_login(registration_form=form)
         if u:
-            if website.settings.confirm_registrations_by_email:
+            if website.settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
                 # TODO: The sendRegistration method does not exist, this block
                 #   will fail if email confirmation is on.
                 raise NotImplementedError(

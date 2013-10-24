@@ -26,13 +26,13 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
     msg['From'] = from_addr
     msg['To'] = to_addr
 
-    s = smtplib.SMTP(settings.mail_server)
+    s = smtplib.SMTP(settings.MAIL_SERVER)
     s.ehlo()
     if ttls:
         s.starttls()
         s.ehlo()
     if login:
-        s.login(settings.mail_username, settings.mail_password)
+        s.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
     s.sendmail(
         from_addr=from_addr,
         to_addrs=[to_addr],

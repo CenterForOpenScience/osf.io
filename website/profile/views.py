@@ -55,7 +55,7 @@ def _profile_view(uid=None):
         gravatar_url = filters.gravatar(
             profile,
             use_ssl=True,
-            size=settings.gravatar_size_profile
+            size=settings.GRAVATAR_SIZE_PROFILE
         )
         return {
             'user_id': profile._id,

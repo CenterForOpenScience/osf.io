@@ -65,13 +65,13 @@ $ nosetests tests/test_module.py:TestClass.test_method
 Testing Email
 -------------
 
-First, set `mail_server` to `localhost:1025` in you `local.py` file.
+First, set `MAIL_SERVER` to `localhost:1025` in you `local.py` file.
 
 website/settings/local.py
 
 ```python
 ...
-mail_server = "localhost:1025"
+MAIL_SERVER = "localhost:1025"
 ...
 ```
 

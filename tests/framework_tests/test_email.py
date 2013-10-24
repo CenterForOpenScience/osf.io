@@ -10,7 +10,7 @@ from website import settings
 # Check if local mail server is running
 SERVER_RUNNING = True
 try:
-    s = smtplib.SMTP(settings.mail_server)
+    s = smtplib.SMTP(settings.MAIL_SERVER)
     s.quit()
 except Exception as err:
     SERVER_RUNNING = False

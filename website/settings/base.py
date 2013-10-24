@@ -10,14 +10,14 @@ def parent_dir(path):
     return os.path.abspath(os.path.join(path, os.pardir))
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-base_path = parent_dir(HERE)  # website/ directory
+BASE_PATH = parent_dir(HERE)  # website/ directory
 
 # User management & registration
-confirm_registrations_by_email = False # Not fully implemented
-allow_registration = True
-allow_login = True
+CONFIRM_REGISTRATIONS_BY_EMAIL = False # Not fully implemented
+ALLOW_REGISTRATION = True
+ALLOW_LOGIN = True
 
-use_solr = True
+USE_SOLR = True
 solr = 'http://localhost:8983/solr/'
 
 # Sessions
@@ -26,62 +26,62 @@ SECRET_KEY = "CHANGEME"
 
 try:
     os.environ['OSF_PRODUCTION']
-    debug_mode = False
+    DEBUG_MODE = False
 except KeyError:
-    debug_mode = True
+    DEBUG_MODE = True
 
 # External services
 try:
     os.environ['OSF_PRODUCTION']
-    use_cdn_for_client_libs = True
+    USE_CDN_FOR_CLIENT_LIBS = True
 except KeyError:
-    use_cdn_for_client_libs = False
+    USE_CDN_FOR_CLIENT_LIBS = False
 
 
 FROM_EMAIL = "openscienceframework-noreply@openscienceframework.org"
-mail_server = 'smtp.sendgrid.net'
-mail_username = 'osf-smtp'
-mail_password = ''  # Set this in local.py
+MAIL_SERVER = 'smtp.sendgrid.net'
+MAIL_USERNAME = 'osf-smtp'
+MAIL_PASSWORD = ''  # Set this in local.py
 
-static_path = os.path.join(base_path, 'static')
+STATIC_PATH = os.path.join(BASE_PATH, 'static')
 
 try:
     os.environ['OSF_PRODUCTION']
-    cache_path = '/opt/data/osf_cache'
-    uploads_path = '/opt/data/uploads'
+    CACHE_PATH = '/opt/data/osf_cache'
+    UPLOADS_PATH = '/opt/data/uploads'
 except KeyError:
-    cache_path = os.path.join(base_path, 'cache')
-    uploads_path = os.path.join(base_path, 'uploads')
+    CACHE_PATH = os.path.join(BASE_PATH, 'cache')
+    UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
 
 DB_PORT = 20771
 DB_NAME = "osf20130903"
 if os.environ.get("OSF_PRODUCTION", False):
-    mongo_uri = 'mongodb://osf:osfosfosfosf0$f@localhost:{0}/{1}'.format(DB_PORT, DB_NAME)
+    MONGO_URI = 'mongodb://osf:osfosfosfosf0$f@localhost:{0}/{1}'.format(DB_PORT, DB_NAME)
 else:
-    mongo_uri = 'mongodb://localhost:{0}/{1}'.format(DB_PORT, DB_NAME)
+    MONGO_URI = 'mongodb://localhost:{0}/{1}'.format(DB_PORT, DB_NAME)
 
 #TODO: Configuration should not change between deploys - this should be dynamic.
-canonical_domain = 'openscienceframework.org'
-cookie_domain = '.openscienceframework.org' # Beaker
+CANONICAL_DOMAIN = 'openscienceframework.org'
+COOKIE_DOMAIN = '.openscienceframework.org' # Beaker
 
 # Gravatar options
-gravatar_size_profile = 120
-gravatar_size_add_contributor = 80
+GRAVATAR_SIZE_PROFILE = 120
+GRAVATAR_SIZE_ADD_CONTRIBUTOR = 80
 
 # File upload options
-max_upload_size = 1024*1024*250     # In bytes
+MAX_UPLOAD_SIZE = 1024*1024*250     # In bytes
 
 # File render options
-max_render_size = 1024*1024*2.5     # In bytes
-img_fmts = ['jpe?g', 'tiff?', 'png', 'gif', 'bmp', 'svg', 'ico']
-render_zip = True
-render_tar = True
-archive_depth = 2               # Set to None for unlimited depth
+MAX_RENDER_SIZE = 1024*1024*2.5     # In bytes
+IMG_FMTS = ['jpe?g', 'tiff?', 'png', 'gif', 'bmp', 'svg', 'ico']
+RENDER_ZIP = True
+RENDER_TAR = True
+ARCHIVE_DEPTH = 2               # Set to None for unlimited depth
 
 # User activity style
-user_activity_max_width = 325
+USER_ACTIVITY_MAX_WIDTH = 325
 
-wiki_whitelist = {
+WIKI_WHITELIST = {
     'tags': [
         'a', 'abbr', 'acronym', 'b', 'bdo', 'big', 'blockquote', 'br',
         'center', 'cite', 'code',
@@ -109,9 +109,9 @@ wiki_whitelist = {
 
 try:
     os.environ['OSF_PRODUCTION']
-    dev_mode = False
+    DEV_MODE = False
 except KeyError:
-    dev_mode = True
+    DEV_MODE = True
 
 
 ##### Celery #####

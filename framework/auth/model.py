@@ -104,7 +104,7 @@ class User(StoredObject):
         return rv
 
     def update_solr(self):
-        if not settings.use_solr:
+        if not settings.USE_SOLR:
             return
         solr.update_user(self)
 

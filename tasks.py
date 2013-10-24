@@ -40,6 +40,11 @@ def celery_worker(level="debug"):
 
 @task
 def rabbitmq():
+    '''Start a local rabbitmq server.
+
+    NOTE: this is for development only. The production environment should start
+    the server as a daemon.
+    '''
     run("rabbitmq-server", pty=True)
 
 @task

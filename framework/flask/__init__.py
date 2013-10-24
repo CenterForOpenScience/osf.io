@@ -15,4 +15,4 @@ app = Flask(
 )
 
 # Pull debug mode from settings
-app.debug = settings.debug_mode
+app.debug = settings.DEBUG_MODE
