@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 import json
+import logging
 import httplib as http
 
 from framework import (
@@ -24,6 +25,7 @@ from website.views import _render_nodes
 
 from framework import analytics
 
+logger = logging.getLogger(__name__)
 
 @must_have_session_auth #
 @must_be_valid_project # returns project
@@ -349,6 +351,7 @@ def component_remove(*args, **kwargs):
 @must_be_contributor_or_public
 def view_project(*args, **kwargs):
     user = get_current_user()
+    logger.error(user)
     node_to_use = kwargs['node'] or kwargs['project']
     return _view_project(node_to_use, user)
 
@@ -357,7 +360,7 @@ def _view_project(node_to_use, user):
     project.view.mako.
 
     '''
-    return {
+    data = {
         'node_id' : node_to_use._primary_key,
         'node_title' : node_to_use.title,
         'node_category' : 'project'

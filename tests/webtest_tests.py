@@ -136,6 +136,16 @@ class TestAUser(DbTestCase):
         title = res.html.title.string
         assert_equal("Open Science Framework | Dashboard", title)
 
+    def test_can_see_make_public_button_if_contributor(self):
+        # User is a contributor on a project
+        project = ProjectFactory()
+        project.add_contributor(self.user)
+        project.save()
+        # User goes to the project page
+        res = self.app.get("/project/{0}/".format(project._primary_key), auth=self.auth).maybe_follow()
+        assert_in("Make public", res)
+
+
 
 if __name__ == '__main__':
     unittest.main()

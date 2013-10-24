@@ -134,7 +134,7 @@ def project_addcontributor_post(*args, **kwargs):
     api_key = get_api_key()
 
     node_to_use = node or project
-
+    # TODO: use Node.add_contributor
     if "user_id" in request.form:
         user_id = request.form['user_id'].strip()
         added_user = User.load(user_id)
