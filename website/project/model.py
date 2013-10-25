@@ -968,9 +968,9 @@ class Node(GuidStoredObject):
         self.add_log(
             action='wiki_updated',
             params={
-                'project':self.parent_id,
-                'node':self._primary_key,
-                'page':v.page_name,
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'page': v.page_name,
                 'version': v.version,
             },
             user=user,

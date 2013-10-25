@@ -99,7 +99,7 @@ def project_wiki_version(*args, **kwargs):
 
     if pw:
         rv = {
-            'wiki_id': pw._primary_key,
+            'wiki_id': pw._primary_key if pw else None,
             'pageName': wid,
             'wiki_content': pw.html,
             'version': pw.version,
@@ -149,7 +149,7 @@ def project_wiki_page(*args, **kwargs):
     ]
 
     rv = {
-        'wiki_id': pw._primary_key,
+        'wiki_id': pw._primary_key if pw else None,
         'pageName': wid,
         'page': pw,
         'version': version,
