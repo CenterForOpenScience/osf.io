@@ -1,4 +1,6 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+<%inherit file="base.mako"/>
+<%def name="title()">Dashboard</%def>
+<%def name="content()">
 <div mod-meta='{"tpl": "include/subnav.mako", "replace": true}'></div>
 
 <div class="row">
@@ -28,5 +30,4 @@
         </div>
     </div>
 </div>
-
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+</%def>

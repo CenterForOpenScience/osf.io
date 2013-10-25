@@ -47,7 +47,6 @@ def new_node(category, title, user, description=None, project=None):
     new_node.title=title
     new_node.description=description
     new_node.is_public=False
-    new_node.generate_keywords()
 
     new_node.creator = user
     new_node.contributors.append(user)
@@ -80,19 +79,6 @@ def get_wiki_page(project, node, wid):
 
 def get_node(id):
     return Node.load(id)
-
-def watch_node(id, uid):
-    user = get_user(id=uid)
-    project = Node.load(id)
-    if not user.watchingNodes:
-        user.watchingNodes = []
-    else:
-        if ref('projects', id) in user.watchingNodes:
-            return False
-    user.watchingNodes.append(ref('projects', id, backref=(project, "watchingUsers")))
-    user.save()
-    return True
-
 
 template_name_replacements = {
     ('.txt', ''),

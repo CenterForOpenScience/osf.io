@@ -1,5 +1,6 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
-
+<%inherit file="base.mako"/>
+<%def name="title()">Register Component</%def>
+<%def name="content()">
 <div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
 <div mod-meta='{
@@ -110,7 +111,7 @@
             });
 
             // Send data to OSF
-			$.post(
+                        $.post(
                 '${node_api_url}' + 'register/' + '${template_name if template_name else ''}/',
                 {data: JSON.stringify(data)},
                 function(response) {
@@ -160,4 +161,4 @@
 
 % endif
 
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+</%def>

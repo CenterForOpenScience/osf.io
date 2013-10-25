@@ -17,8 +17,8 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 from factory import base, Sequence, SubFactory, PostGenerationMethodCall
 
 from framework.auth import User
-from website.project.model import ApiKey, Node, NodeLog, WatchConfig, MetaData
-
+from website.project.model import (ApiKey, Node, NodeLog, WatchConfig,
+                                   MetaData, Tag)
 
 class ModularOdmFactory(base.Factory):
 
@@ -49,6 +49,12 @@ class UserFactory(ModularOdmFactory):
     is_registered = True
     is_claimed = True
     api_keys = []
+
+
+class TagFactory(ModularOdmFactory):
+    FACTORY_FOR = Tag
+
+    _id = Sequence(lambda n: "scientastic-{}".format(n))
 
 
 class ApiKeyFactory(ModularOdmFactory):

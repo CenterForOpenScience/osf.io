@@ -6,6 +6,7 @@ from framework import StoredObject
 from framework import HTTPError
 from framework.flask import app, redirect, make_response
 from mako.template import Template
+from mako.lookup import TemplateLookup
 
 from framework import session
 
@@ -16,7 +17,10 @@ import pystache
 import httplib as http
 from bs4 import BeautifulSoup
 
+# TODO: Move to settings
 TEMPLATE_DIR = 'static/templates/'
+_tpl_lookup = TemplateLookup(directories=[TEMPLATE_DIR],
+                            module_directory="/tmp/mako_modules")
 REDIRECT_CODES = [
     http.MOVED_PERMANENTLY,
     http.FOUND,
@@ -163,7 +167,7 @@ mako_cache = {}
 def render_mako_string(tplname, data):
     tpl = mako_cache.get(tplname)
     if tpl is None:
-        tpl = Template(tplname)
+        tpl = Template(tplname, lookup=_tpl_lookup)
         mako_cache[tplname] = tpl
     return tpl.render(**data)
 
@@ -375,8 +379,7 @@ class WebRenderer(Renderer):
         :return: 2-tuple: (<result>, <flag: replace div>)
         """
 
-        element_attributes = element.attrs
-        attributes_string = element_attributes['mod-meta']
+        attributes_string = element.get("mod-meta")
 
         # Return debug <div> if JSON cannot be parsed
         try:

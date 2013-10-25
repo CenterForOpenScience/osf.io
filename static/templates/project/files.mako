@@ -1,4 +1,6 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+<%inherit file="base.mako"/>
+<%def name="title()">Files</%def>
+<%def name="content()">
 <div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
 <% import website.settings %>
@@ -150,7 +152,7 @@ $(function () {
     $('#fileupload').fileupload('option',{
         url: '${node_api_url + 'files/upload/'}',
         acceptFileTypes: /(\.|\/)(.*)$/i,
-        maxFileSize: ${website.settings.max_upload_size}
+        maxFileSize: ${website.settings.MAX_UPLOAD_SIZE}
     });
 
      // Load existing files:
@@ -196,5 +198,4 @@ $(function () {
         $('input[name="files[]"]').css('cursor', 'default');
     </script>
 % endif
-
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+</%def>

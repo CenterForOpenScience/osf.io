@@ -1,6 +1,3 @@
-<!-- Import Knockout -->
-<script src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>
-
 <script type="text/javascript">
 
     var stringTemplateSource = function (template) {

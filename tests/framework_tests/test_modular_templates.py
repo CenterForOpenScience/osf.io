@@ -1,8 +1,14 @@
+# -*- coding: utf-8 -*-
+'''Unit tests for the modular template system.
+
+These require a test db because they use Session objects.
+'''
 import json
 import unittest
+import os
 
 import flask
-import lxml
+from lxml.html import fragment_fromstring
 from modularodm import fields
 import werkzeug.wrappers
 
@@ -12,10 +18,12 @@ from framework.routing import (
     Renderer, JSONRenderer, WebRenderer,
     render_mako_string,
 )
-from tests.base import AppTestCase
+from tests.base import AppTestCase, DbTestCase
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+TEMPLATES_PATH = os.path.join(HERE, 'templates')
 
-class RendererTestCase(AppTestCase):
+class RendererTestCase(DbTestCase, AppTestCase):
     def setUp(self):
         super(RendererTestCase, self).setUp()
         self.r = Renderer()
@@ -41,7 +49,7 @@ class RendererTestCase(AppTestCase):
             self.r(('response text', ))
 
 
-class JSONRendererTestCase(AppTestCase):
+class JSONRendererTestCase(RendererTestCase):
 
     def setUp(self):
         super(JSONRendererTestCase, self).setUp()
@@ -92,7 +100,7 @@ class WebRendererTestCase(AppTestCase):
     def setUp(self):
         super(WebRendererTestCase, self).setUp()
         self.r = WebRenderer(
-            '../../tests/templates/main.html',
+            os.path.join(TEMPLATES_PATH, 'main.html'),
             render_mako_string
         )
 
@@ -210,7 +218,7 @@ class WebRendererTemplateTestCase(AppTestCase):
             r = WebRenderer(
                 'nested_parent.html',
                 render_mako_string,
-                template_dir='tests/templates',
+                template_dir=TEMPLATES_PATH,
             )
 
             # render the template (with an empty context)
@@ -233,10 +241,10 @@ class WebRendererTemplateTestCase(AppTestCase):
             r = WebRenderer(
                 'nested_child.html',
                 render_mako_string,
-                template_dir='tests/templates',
+                template_dir=TEMPLATES_PATH,
             )
 
-            html = lxml.html.fragment_fromstring(
+            html = fragment_fromstring(
                 ''.join((
                     "<div mod-meta='",
                     '{"tpl":"nested_child.html","replace": true}',
@@ -268,7 +276,7 @@ class WebRendererTemplateTestCase(AppTestCase):
             r = WebRenderer(
                 'nested_parent_broken.html',
                 render_mako_string,
-                template_dir='tests/templates',
+                template_dir=TEMPLATES_PATH,
             )
 
             resp = r({})
@@ -293,7 +301,7 @@ class WebRendererTemplateTestCase(AppTestCase):
                 template_dir='tests/templates',
             )
 
-            html = lxml.html.fragment_fromstring(
+            html = fragment_fromstring(
                 ''.join((
                     "<div mod-meta='",
                     '{"tpl":"not_a_real_file.html","replace": true}',

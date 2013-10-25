@@ -1,5 +1,6 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
-
+<%inherit file="base.mako"/>
+<%def name="title()">Coming soon</%def>
+<%def name="content()">
 <p>This page is under development</p>
+</%def>
 
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

@@ -1,4 +1,6 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
+<%inherit file="base.mako"/>
+<%def name="title()">Project Statistics</%def>
+<%def name="content()">
 <div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
 <%
@@ -14,7 +16,7 @@
 	</div>
 </div>
 
-%if website.settings.use_cdn_for_client_libs:
+%if website.settings.USE_CDN_FOR_CLIENT_LIBS:
 <script src="//cdnjs.cloudflare.com/ajax/libs/d3/2.10.0/d3.v2.min.js"></script>
 %else:
 <script src="/static/d3.v2.js"></script>
@@ -142,5 +144,4 @@ function brush() {
 }
 
 </script>
-
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+</%def>

@@ -27,21 +27,35 @@ class GuidStoredObject(StoredObject):
         # Call superclass constructor
         super(GuidStoredObject, self).__init__(*args, **kwargs)
 
-        # Done if primary key exists
+        # Create GUID with specified ID if ID provided
         if self._primary_key:
-            return
 
-        # Create GUID
-        guid = Guid()
-        guid.save()
+            # Done if GUID already exists
+            guid = Guid.load(self._primary_key)
+            if guid is not None:
+                return
 
-        # Set primary key to GUID key
-        self._primary_key = guid._primary_key
-        self.save()
+            # Create GUID
+            guid = Guid(
+                _id=self._primary_key,
+                referent=self
+            )
+            guid.save()
 
-        # Add self to GUID
-        guid.referent = self
-        guid.save()
+        # Else create GUID optimistically
+        else:
+
+            # Create GUID
+            guid = Guid()
+            guid.save()
+
+            # Set primary key to GUID key
+            self._primary_key = guid._primary_key
+            self.save()
+
+            # Add self to GUID
+            guid.referent = self
+            guid.save()
 
     @property
     def annotations(self):

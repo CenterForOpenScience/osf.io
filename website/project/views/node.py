@@ -32,58 +32,15 @@ from framework import analytics
 def edit_node(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
-
     node_to_use = node or project
-
     form = request.form
-    original_title = node_to_use.title
-
     if form.get('name') == 'title' and form.get('value'):
-        node_to_use.title = sanitize(form['value'])
-
-        node_to_use.add_log(
-            action='edit_title',
-            params={
-                'project':node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
-                'node':node_to_use._primary_key,
-                'title_new':node_to_use.title,
-                'title_original':original_title,
-            },
-            user=get_current_user(),
-            api_key=get_api_key(),
-        )
-
+        new_title = sanitize(form['value'])
+        node_to_use.set_title(new_title, user=get_current_user(),
+                              api_key=get_api_key())
         node_to_use.save()
-
     return {'status' : 'success'}
 
-def search_user(*args, **kwargs):
-    form = request.form
-    query = form.get('query', '').strip()
-
-    is_email = False
-    email_re = re.search('[^@\s]+@[^@\s]+\.[^@\s]+', query)
-    if email_re:
-        is_email = True
-        email = email_re.group(0)
-        result = User.find_by_email(email)
-    else:
-        result = User.search(query)
-
-    return {
-        'is_email':is_email,
-        'results':[
-            {
-                'fullname' : item.fullname,
-                'gravatar' : filters.gravatar(
-                    item.username,
-                    use_ssl=True,
-                    size=settings.gravatar_size_add_contributor
-                ),
-                'id' : item._primary_key,
-            } for item in result
-        ]
-    }
 
 ##############################################################################
 # New Project
@@ -213,7 +170,7 @@ def project_reorder_components(*args, **kwargs):
         if node_to_use.save():
             return {'status' : 'success'}
     # todo log impossibility
-    return {'success' : 'failure'}
+    return {'status' : 'failure'}
 
 ##############################################################################
 
@@ -255,7 +212,7 @@ def project_set_permissions(*args, **kwargs):
 
     node_to_use.set_permissions(permissions, user, api_key)
 
-    return {'status' : 'success'}, None, None, node_to_use.url
+    return {'status' : 'success', "permissions": permissions, "redirect_url": node_to_use.url}, None, None
 
 
 @must_have_session_auth  # returns user or api_node
@@ -265,10 +222,9 @@ def project_set_permissions(*args, **kwargs):
 def watch_post(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
-
     watch_config = WatchConfig(node=node_to_use,
-                                digest=request.form.get("digest", False),
-                                immediate=request.form.get('immediate', False))
+                               digest=request.json.get("digest", False),
+                               immediate=request.json.get('immediate', False))
     try:
         user.watch(watch_config)
     except ValueError:  # Node is already being watched
@@ -285,8 +241,8 @@ def unwatch_post(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     watch_config = WatchConfig(node=node_to_use,
-                                digest=request.form.get("digest", False),
-                                immediate=request.form.get('immediate', False))
+                                digest=request.json.get("digest", False),
+                                immediate=request.json.get('immediate', False))
     try:
         user.unwatch(watch_config, save=True)
     except ValueError:  # Node isn't being watched
@@ -303,8 +259,8 @@ def togglewatch_post(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     watch_config = WatchConfig(node=node,
-                                digest=request.form.get("digest", False),
-                                immediate=request.form.get('immediate', False))
+                                digest=request.json.get("digest", False),
+                                immediate=request.json.get('immediate', False))
     try:
         if user.is_watching(node):
             user.unwatch(watch_config, save=True)
@@ -358,7 +314,6 @@ def _view_project(node_to_use, user):
 
     '''
     return {
-
         'node_id' : node_to_use._primary_key,
         'node_title' : node_to_use.title,
         'node_category' : 'project'
@@ -421,11 +376,11 @@ def _get_user_activity(node, user, rescale_ratio):
 
     # Normalize over all nodes
     try:
-        ua = ua_count / rescale_ratio * settings.user_activity_max_width
+        ua = ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
     except ZeroDivisionError:
         ua = 0
     try:
-        non_ua = non_ua_count / rescale_ratio * settings.user_activity_max_width
+        non_ua = non_ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
     except ZeroDivisionError:
         non_ua = 0
 

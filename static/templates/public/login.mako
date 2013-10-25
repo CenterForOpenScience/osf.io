@@ -1,5 +1,6 @@
-<div mod-meta='{"tpl": "header.mako", "replace": true}'></div>
-
+<%inherit file="base.mako"/>
+<%def name="title()">Sign up or Log in</%def>
+<%def name="content()">
 <div class="page-header">
     <h1>Create an Account or Sign-In</h1>
 </div>
@@ -46,6 +47,7 @@
                 "tpl": "util/render_form.mako",
                 "uri": "/api/v1/forms/forgot_password/",
                 "kwargs": {
+                    "id": "forgotpassword",
                     "name": "forgotpassword",
                     "method_string": "POST",
                     "action_string": "/forgotpassword/",
@@ -60,5 +62,5 @@
     <div class="span1">&nbsp;</div>
 
 </div>
+</%def>
 
-<div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
