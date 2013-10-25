@@ -13,8 +13,9 @@ if settings.USE_SOLR:
     try:
         solr = sunburnt.SolrInterface(settings.solr)
     except Exception:
-        raise ConnectionError("The USE_SOLR setting is enabled but there was a problem "
+        logging.warn("The USE_SOLR setting is enabled but there was a problem "
                     "starting the Solr interface. Is the Solr server running?")
+        solr = None
 else:
     solr = None
 
