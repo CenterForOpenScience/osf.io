@@ -28,6 +28,7 @@
     <link rel="stylesheet" href="/static/pygments.css" />
     <link href="/static/bootstrap-editable/css/bootstrap-editable.css" rel="stylesheet">
     <link href="/static/site.css" rel="stylesheet">
+    ${self.stylesheets()}
 
 
     %if use_cdn:
@@ -129,6 +130,10 @@
 
 <%def name="description()">
     ### The page description ###
+</%def>
+
+<%def name="stylesheets()">
+    ### Extra css for this page. ###
 </%def>
 
 <%def name="javascript()">
