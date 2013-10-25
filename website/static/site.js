@@ -155,13 +155,44 @@ $(document).ready(function(){
     // Private Button confirm dlg
     $('#privateButton').on('click', function() {
         var url = $(this).data("target");
-        modalConfirm(Messages.makePrivateWarning, url);
+        bootbox.confirm(Messages.makePrivateWarning,
+            function(result) {
+                if (result) {
+                    $.ajax({
+                        url: url,
+                        type: "POST",
+                        data: {"permissions": "public"},
+                        contentType: "application/json",
+                        dataType: "json",
+                        success: function(data){
+                            window.location.href = data["redirect_url"];
+                        }
+                    })
+                }
+            }
+        )
     });
 
+    // TODO(sloria): Repetition here. Rethink.
     // Public Button confirm dlg
     $('#publicButton').on('click', function() {
         var url = $(this).data("target");
-        modalConfirm(Messages.makePublicWarning, url);
+        bootbox.confirm(Messages.makePublicWarning,
+            function(result) {
+                if (result) {
+                    $.ajax({
+                        url: url,
+                        type: "POST",
+                        data: {"permissions": "private"},
+                        contentType: "application/json",
+                        dataType: "json",
+                        success: function(data){
+                            window.location.href = data["redirect_url"];
+                        }
+                    })
+                }
+            }
+        )
     });
 
 

@@ -18,11 +18,11 @@
             %if not node_is_public:
                 <button class='btn disabled'>Private</button>
                 % if user_is_contributor:
-                    <a class="btn" id="publicButton" data-target="${node_url}permissions/public/">Make public</a>
+                    <a class="btn" id="publicButton" data-target="${node_api_url}permissions/public/">Make public</a>
                 % endif
             %else:
                 % if user_is_contributor:
-                    <a class="btn" id="privateButton" data-target="${node_url}permissions/private/">Make private</a>
+                    <a class="btn" id="privateButton" data-target="${node_api_url}permissions/private/">Make private</a>
                 % endif
                 <button class="btn disabled">Public</button>
             %endif

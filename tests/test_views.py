@@ -98,10 +98,18 @@ class TestProjectViews(DbTestCase):
         self.project.is_public = False
         self.project.save()
         url = "/api/v1/project/{0}/permissions/public/".format(self.project._id)
-        # TODO: Change this to POST
-        res = self.app.get(url, {}, auth=self.auth)
+        res = self.app.post_json(url, {}, auth=self.auth)
         self.project.reload()
         assert_true(self.project.is_public)
+        assert_equal(res.json['status'], 'success')
+
+    def test_make_private(self):
+        self.project.is_public = False
+        self.project.save()
+        url = "/api/v1/project/{0}/permissions/private/".format(self.project._id)
+        res = self.app.post_json(url, {}, auth=self.auth)
+        self.project.reload()
+        assert_false(self.project.is_public)
         assert_equal(res.json['status'], 'success')
 
 
