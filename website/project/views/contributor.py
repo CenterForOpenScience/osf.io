@@ -134,12 +134,6 @@ def project_addcontributor_post(*args, **kwargs):
     user = kwargs['user']
     api_key = get_api_key()
     node_to_use = node or project
-    if request.json:
-        logging.debug("JSON data:")
-        logging.debug(request.json)
-    elif request.json:
-        logging.debug("Form data:")
-        logging.debug(request.json)
 
     if "user_id" in request.json:
         user_id = request.json['user_id'].strip()

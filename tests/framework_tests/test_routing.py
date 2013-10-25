@@ -11,6 +11,13 @@ class RuleTestCase(unittest.TestCase):
     def setUp(self):
         self.app = framework.app
 
+    # Can't clear the url map because that will affect all the other tests
+    # (use app factory in the future?)
+    # def tearDown(self):
+    #     # Clear the url_map
+    #     self.app.url_map = Map()
+    #     self.app.view_functions = {}
+
     def _make_rule(self, **kwargs):
         def vf():
             return {}
@@ -47,10 +54,20 @@ class RuleTestCase(unittest.TestCase):
             process_rules(self.app, [r])
             assert_equal(framework.url_for("JSONRenderer__dummy_view2", pid=123), "/project/123/")
 
+    def test_url_for_with_prefix(self):
+        with self.app.test_request_context():
+            api_rule = Rule(["/project/"], "get", view_func_or_data=dummy_view3,
+                    renderer=json_renderer)
+            process_rules(self.app, [api_rule], prefix="/api/v1")
+
+            assert_equal(framework.url_for("JSONRenderer__dummy_view3"), "/api/v1/project/")
+
 
 def dummy_view():
     return {'status': 'success'}
 
-
 def dummy_view2(pid):
     return {"id": pid}
+
+def dummy_view3():
+    return {"status": "success"}

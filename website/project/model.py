@@ -731,7 +731,7 @@ class Node(StoredObject):
         self.contributor_list[:] = [d for d in self.contributor_list if not (d.get('nr_email') == email)]
         self.save()
         self.add_log(
-            action='remove_contributor',
+            action='contributor_removed',
             params={
                 'project':self.parent_id,
                 'node':self._primary_key,
@@ -755,7 +755,7 @@ class Node(StoredObject):
             removed_user = get_user(contributor._id)
 
             self.add_log(
-                action='remove_contributor',  # FIXME: make naming more consistent ("contributor_removed")
+                action='contributor_removed',
                 params={
                     'project':self.parent_id,
                     'node':self._primary_key,

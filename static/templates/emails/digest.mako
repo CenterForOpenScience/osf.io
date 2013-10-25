@@ -34,7 +34,7 @@
             made ${log['category']}
             <a href="${log['node_url']}">${log['node_title']}</a>
             private
-        %elif log['action'] == 'remove_contributor':
+        %elif log['action'] == 'contributor_removed':
             removed
             % if log['contributor']['registered']:
                 <a href="/profile/${log['contributor']['id']}/">${log['contributor']['fullname']}</a>
