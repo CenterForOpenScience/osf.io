@@ -88,7 +88,11 @@
     <script type="text/javascript">
 
         $('#register-submit').on('click', function() {
-            $(this).closest('form').submit();
+            var $this = $(this);
+            if (!$this.hasClass('disabled')) {
+                $this.addClass('disabled');
+                $this.closest('form').submit();
+            }
             return false;
         });
 
