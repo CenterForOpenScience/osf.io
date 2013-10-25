@@ -213,7 +213,7 @@ def project_reorder_components(*args, **kwargs):
         if node_to_use.save():
             return {'status' : 'success'}
     # todo log impossibility
-    return {'success' : 'failure'}
+    return {'status' : 'failure'}
 
 ##############################################################################
 
