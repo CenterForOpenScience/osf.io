@@ -279,12 +279,17 @@
             var user_ids = self.selection().map(function(elm) {
                 return elm.id;
             });
-            $.post(
+            $.ajax(
                 '${node_api_url}addcontributors/',
-                {user_ids: JSON.stringify(user_ids)},
-                function(response) {
-                    if (response.status === 'success') {
-                        window.location.reload();
+                {
+                    type: 'post',
+                    data: JSON.stringify({user_ids: user_ids}),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            window.location.reload();
+                        }
                     }
                 }
             )

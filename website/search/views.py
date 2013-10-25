@@ -226,7 +226,7 @@ def search_contributor():
         response[idx]['gravatar'] = gravatar(
             user,
             use_ssl=True,
-            size=settings.gravatar_size_add_contributor
+            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
         )
 
     return response
