@@ -8,6 +8,7 @@ from ..decorators import must_not_be_registration, must_be_valid_project, \
 from framework.auth import must_have_session_auth, get_current_user, get_api_key
 from framework.forms.utils import sanitize
 import hashlib
+import json
 
 from framework import HTTPError
 
@@ -123,35 +124,40 @@ def project_removecontributor(*args, **kwargs):
         return {'status': 'success'}
     raise HTTPError(http.BAD_REQUEST)
 
-
+# TODO: This should accept json--not form--data
 @must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
-def project_addcontributor_post(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
+def project_addcontributors_post(*args, **kwargs):
+    """ Add contributors to a node. """
+
+    node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     api_key = get_api_key()
-    node_to_use = node or project
+    user_ids_json = request.form.get('user_ids')
+    user_ids = json.loads(user_ids_json)
+    # TODO: Move to model
 
-    if "user_id" in request.json:
-        user_id = request.json['user_id'].strip()
-        added_user = User.load(user_id)
-        if added_user:
-            node_to_use.add_contributor(contributor=added_user, user=user, log=True)
-            node_to_use.save()
-        else:
-            return {"status": "failure"}, 201
-    elif "email" in request.json and "fullname" in request.json:
-        # TODO: Nothing is done here to make sure that this looks like an email.
-        # todo have same behavior as wtforms
-        email = sanitize(request.json["email"].strip())
-        fullname = sanitize(request.json["fullname"].strip())
-        if email and fullname:
-            node_to_use.add_nonregistered_contributor(name=fullname, email=email,
-                                                        user=user, api_key=api_key)
-            node_to_use.save()
-        else:
-            return {"status": "failure", 'message': "Must include both name and email."}, 201
-    return {'status' : 'success'}, 201
+    for user_id in user_ids:
+        if user_id not in node_to_use.contributors:
+            added_user = User.load(user_id)
+            node_to_use.contributors.append(added_user)
+            node_to_use.contributor_list.append({
+                'id': added_user._primary_key,
+            })
+
+    node_to_use.save()
+
+    node_to_use.add_log(
+        action='contributor_added',
+        params={
+            'project': node_to_use.parent_id,
+            'node': node_to_use._primary_key,
+            'contributors': user_ids,
+        },
+        user=user,
+        api_key=api_key,
+    )
+
+    return {'status': 'success'}, 201

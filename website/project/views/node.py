@@ -41,33 +41,6 @@ def edit_node(*args, **kwargs):
         node_to_use.save()
     return {'status' : 'success'}
 
-def search_user(*args, **kwargs):
-    form = request.form
-    query = form.get('query', '').strip()
-
-    is_email = False
-    email_re = re.search('[^@\s]+@[^@\s]+\.[^@\s]+', query)
-    if email_re:
-        is_email = True
-        email = email_re.group(0)
-        result = User.find_by_email(email)
-    else:
-        result = User.search(query)
-
-    return {
-        'is_email':is_email,
-        'results':[
-            {
-                'fullname' : item.fullname,
-                'gravatar' : filters.gravatar(
-                    item.username,
-                    use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
-                ),
-                'id' : item._primary_key,
-            } for item in result
-        ]
-    }
 
 ##############################################################################
 # New Project

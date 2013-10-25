@@ -192,3 +192,41 @@ def create_result(highlights, results):
                         tags[tag] += 1
             result_search.append(container)
     return result_search, tags
+
+import ast
+import urllib
+import urlparse
+import requests
+
+from website import settings
+from website.filters import gravatar
+from website.models import User
+
+def search_contributor():
+
+    solr_params = {
+        'q': 'user:{}'.format(request.args.get('query')),
+        'wt': 'python',
+    }
+    solr_url = '{}?{}'.format(
+        urlparse.urljoin(settings.solr, 'spell'),
+        urllib.urlencode(solr_params)
+    )
+
+    raw_output = requests.get(solr_url).content
+    parsed_output = ast.literal_eval(raw_output)
+
+    try:
+        response = parsed_output['response']['docs']
+    except KeyError:
+        return []
+
+    for idx in range(len(response)):
+        user = User.load(response[idx]['id'])
+        response[idx]['gravatar'] = gravatar(
+            user,
+            use_ssl=True,
+            size=settings.gravatar_size_add_contributor
+        )
+
+    return response

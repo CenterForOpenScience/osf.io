@@ -32,8 +32,6 @@ from framework.forms import Form, PasswordField, BooleanField, IntegerField, \
     SelectMultipleField, SubmitField, TextAreaField, TextField, validators, \
     push_errors_to_status, MyTextInput, FieldList
 
-##### Search
-from framework.search import generate_keywords, search
 
 ##### Status
 from framework.status import push_status_message

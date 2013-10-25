@@ -8,6 +8,16 @@
     </style>
 % endif
 
+<style>
+    .contrib-button {
+        font-size: 18px;
+    }
+    #addContributors table {
+        border-collapse:separate;
+        border-spacing: 5px;
+    }
+</style>
+
 <header class="jumbotron subhead" id="overview">
 
     <div class="row">
@@ -72,7 +82,7 @@
                        url:   '${node_api_url}edit/',
                        title: 'Edit Title',
                        placement: 'bottom',
-                       value: '${ '\\\''.join(node_title.split('\'')) }',
+                       value: "${ '\\\''.join(node_title.split('\'')) }",
                        success: function(data){
                             document.location.reload(true);
                        }
@@ -137,126 +147,166 @@
         </ul>
     </div>
 </header>
-<script type="text/javascript">
-  var App = Ember.Application.create();
 
-  App.RadioButton = Ember.View.extend({
-    classNames: ['ember-radiobox'],
-    tagName: "input",
-    attributeBindings: ['type', 'name', 'value'],
+<script src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>
 
-    type: "radio",
-
-    name: "id",
-
-    value: "",
-  });
-
-  App.Gravatar = Ember.View.extend({
-    classNames: ['ember-gravatar'],
-    tagName: "img",
-    attributeBindings: ['src'],
-  });
-
-  App.SearchController = Ember.Object.create({
-    has_started: false,
-    is_email: null,
-    content: [],
-    search_type:'users',
-    add:function(){
-        var emthis = this;
-        var user = this.user;
-        var fullname = this.fullname;
-        var email = this.email;
-
-        if ( fullname ){
-                jQuery.ajax({
-                    type: "POST",
-                    url: '${node_api_url}addcontributor/',
-                    data: JSON.stringify({"fullname": fullname, "email": email }),
-                    success: function(data){
-                        $('#addContributors').modal('hide');
-                        window.location.reload();
-                    },
-                    dataType: "json",
-                    contentType: "application/json"
-                });
-        }else{
-            if ( $('input[name=id]:checked').length > 0 ){
-                jQuery.ajax({
-                    type: "POST",
-                    url: '${node_api_url}addcontributor/',
-                    data: JSON.stringify({
-                        user_id: $('input[name=id]:checked')[0].value,
-                        test: "hi"}
-                    ),
-                    success: function(data){
-                        $('#addContributors').modal('hide');
-                        window.location.reload();
-                    },
-                    dataType: "json",
-                    contentType: "application/json"
-                });
-            }
-        }
-    },
-    search: function() {
-        var emthis = this;
-        var query = this.query;
-        jQuery.post(
-            '/api/v1/search/users/',
-            {query:query},
-            function(data){
-                emthis.set('has_started', true);
-                emthis.set('is_email', data['is_email']);
-                emthis.set('content', []);
-                emthis.set('content', data['results']);
-            },
-            'json'
-        );
-    },
-  });
-</script>
 <div class="modal hide fade" id="addContributors">
+
     <div class="modal-header">
         <h3>Add Contributors</h3>
     </div>
+
     <div class="modal-body">
-        <script type="text/x-handlebars">
-        {{view Ember.TextField valueBinding="App.SearchController.query"}}
-        {{#view Em.Button target="App.SearchController" action="search"}}
-            Search
-        {{/view}}
-        <br />
-        {{#if App.SearchController.content}}
-            {{#each App.SearchController.content}}
-                {{#view App.RadioButton value=id fullname=fullname}}
-                    {{fullname}}
-                {{/view}}
-                {{#view App.Gravatar src=gravatar}}
-                {{/view}}
-                <br />
-                ##<input type="radio" name="id" value="{{id}}">&nbsp;{{fullname}}<br />
-            {{/each}}
-        {{else}}
-            {{#if App.SearchController.has_started}}
-                {{#if App.SearchController.is_email}}
-                    No user by that email address found.
-                {{else}}
-                    No user by that name found.
-                {{/if}}
-                 You can manually add the person you are looking for by entering their name and email address below.  They can later claim this project via that email address when they associate said address with an OSF account. <br />
-                    <br />
-                    <form class="form-horizontal">
-                    <label>Full name</label><div>{{view Ember.TextField valueBinding="App.SearchController.fullname"}}</div>
-                    <label>Email</label><div>{{view Ember.TextField valueBinding="App.SearchController.email"}}</div>
-                    </form>
-            {{/if}}
-        {{/if}}
-        </script>
+
+        <!-- Search box -->
+        <form class="form-inline">
+            <input data-bind="value:query" />
+            <button class="btn" data-bind="click:search">Search</button>
+        </form>
+
+        <hr />
+
+        <div class="row-fluid">
+
+            <div class="span6">
+                <h3>Search Results</h3>
+                <table>
+                    <tbody data-bind="foreach:{data:results, afterRender:addTips}">
+                        <tr data-bind="if:!($root.selected($data))">
+                            <td style="padding-right: 10px;">
+                                <a
+                                        class="btn contrib-button"
+                                        data-bind="click:$root.add"
+                                        rel="tooltip"
+                                        title="Add contributor"
+                                    >+</a>
+                            </td>
+                            <td>
+                                <img data-bind="attr:{src:$data.gravatar}" />
+                            </td>
+                            <td data-bind="text:user"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="span6">
+                <h3>Contributors to Add</h3>
+                <table>
+                    <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
+                        <tr>
+                            <td style="padding-right: 10px;">
+                                <a
+                                        class="btn contrib-button"
+                                        data-bind="click:$root.remove"
+                                        rel="tooltip"
+                                        title="Remove contributor"
+                                    >-</a>
+                            </td>
+                            <td>
+                                <img data-bind="attr:{src:$data.gravatar}" />
+                            </td>
+                            <td data-bind="text:user"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
     </div>
+
     <div class="modal-footer">
+        <span data-bind="if:selection().length">
+            <a class="btn" data-bind="click:submit">Add</a>
+        </span>
         <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-        <button onclick="App.SearchController.add()" class="btn primary">Add</button>
     </div>
+
 </div>
+
+<script type="text/javascript">
+
+    var addContributorModel = function(initial) {
+
+        var self = this;
+
+        self.query = ko.observable('');
+        self.results = ko.observableArray(initial);
+        self.selection = ko.observableArray([]);
+
+        self.search = function() {
+            $.getJSON(
+                '/api/v1/user/search/',
+                {query: self.query()},
+                function(result) {
+                    self.results(result);
+                }
+            )
+        };
+
+        self.addTips = function(elements, data) {
+            elements.forEach(function(element) {
+                $(element).find('.contrib-button').tooltip();
+            });
+        };
+
+        self.add = function(data, element) {
+            self.selection.push(data);
+            // Hack: Hide and refresh tooltips
+            $('.tooltip').hide();
+            $('.contrib-button').tooltip();
+        };
+
+        self.remove = function(data, element) {
+            self.selection.splice(
+                self.selection.indexOf(data), 1
+            );
+            // Hack: Hide and refresh tooltips
+            $('.tooltip').hide();
+            $('.contrib-button').tooltip();
+        };
+
+        self.selected = function(data) {
+            for (var idx=0; idx < self.selection().length; idx++) {
+                if (data.id == self.selection()[idx].id)
+                    return true;
+            }
+            return false;
+        };
+
+        self.submit = function() {
+            var user_ids = self.selection().map(function(elm) {
+                return elm.id;
+            });
+            $.post(
+                '${node_api_url}addcontributors/',
+                {user_ids: JSON.stringify(user_ids)},
+                function(response) {
+                    if (response.status === 'success') {
+                        window.location.reload();
+                    }
+                }
+            )
+        };
+
+        self.clear = function() {
+            self.query('');
+            self.results([]);
+            self.selection([]);
+        };
+
+    };
+
+    var $addContributors = $('#addContributors');
+
+    viewModel = new addContributorModel();
+    ko.applyBindings(viewModel, $addContributors[0]);
+
+    // Clear user search modal when dismissed; catches dismiss by escape key
+    // or cancel button.
+    $addContributors.on('hidden', function() {
+        viewModel.clear();
+    });
+
+</script>

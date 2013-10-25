@@ -165,7 +165,6 @@ def register(username, password, fullname):
         newUser.set_password(password.strip())
         newUser.emails.append(username.strip())
         newUser.save()
-        newUser.generate_keywords()
         return newUser
     else:
         raise DuplicateEmailError

@@ -189,6 +189,8 @@ def make_url_map(app):
 
         Rule('/search/', 'get', search_views.search_search, OsfWebRenderer('search.mako')),
 
+        Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
+
     ])
 
     # API
@@ -455,11 +457,10 @@ def make_url_map(app):
         ], 'post', project_views.file.delete_file, json_renderer),
 
         # Add / remove contributors
-        Rule('/search/users/', 'post', project_views.node.search_user, json_renderer),
         Rule([
-            '/project/<pid>/addcontributor/',
-            '/project/<pid>/node/<nid>/addcontributor/',
-        ], 'post', project_views.contributor.project_addcontributor_post, json_renderer),
+            '/project/<pid>/addcontributors/',
+            '/project/<pid>/node/<nid>/addcontributors/',
+        ], 'post', project_views.contributor.project_addcontributors_post, json_renderer),
         Rule([
             '/project/<pid>/removecontributors/',
             '/project/<pid>/node/<nid>/removecontributors/',
@@ -545,5 +546,3 @@ def make_url_map(app):
 
 
     ], prefix='/api/v1')
-
-    return None
