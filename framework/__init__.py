@@ -22,6 +22,9 @@ from framework.routing import (Rule, process_rules,
                                WebRenderer, json_renderer,
                                render_mako_string)
 
+##### GUID
+from framework.guid.model import GuidStoredObject
+
 ###### Auth
 from framework.auth import get_current_username, get_current_user_id, get_user, \
     get_current_user, must_be_logged_in, User

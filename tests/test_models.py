@@ -8,8 +8,13 @@ from framework.auth import User
 from framework.bcrypt import check_password_hash
 from website.project.model import ApiKey
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
-    ProjectFactory, NodeLogFactory, WatchConfigFactory)
+    ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
+    TagFactory)
 
+from .base import Guid
+
+GUID_FACTORIES = (UserFactory, TagFactory, NodeFactory, ProjectFactory,
+                  MetaDataFactory)
 
 class TestUser(DbTestCase):
 
@@ -49,6 +54,47 @@ class TestUser(DbTestCase):
         user.save()
         assert_true(user.check_password("ghostrider"))
         assert_false(user.check_password("ghostride"))
+
+
+class TestGUID(DbTestCase):
+
+    def setUp(self):
+
+        self.records = {}
+        for factory in GUID_FACTORIES:
+            record = factory()
+            record.save()
+            self.records[record._name] = record
+
+    def test_guid(self):
+
+        for record in self.records.values():
+
+            record_guid = Guid.load(record._primary_key)
+
+            # GUID must exist
+            assert_false(record_guid is None)
+
+            # Primary keys of GUID and record must be the same
+            assert_equal(
+                record_guid._primary_key,
+                record._primary_key
+            )
+
+            # GUID must refer to record
+            assert_equal(
+                record_guid.referent,
+                record
+            )
+
+
+class TestMetaData(DbTestCase):
+
+    def setUp(self):
+        pass
+
+    def test_referent(self):
+        pass
 
 
 class TestApiKey(DbTestCase):
