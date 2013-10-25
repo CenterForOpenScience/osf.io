@@ -173,7 +173,7 @@
 
         <div class="row-fluid">
 
-            <div class="span6">
+            <div class="col-md-6">
                 <h3>Search Results</h3>
                 <table>
                     <tbody data-bind="foreach:{data:results, afterRender:addTips}">
@@ -195,7 +195,7 @@
                 </table>
             </div>
 
-            <div class="span6">
+            <div class="col-md-6">
                 <h3>Contributors to Add</h3>
                 <table>
                     <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
