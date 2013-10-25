@@ -1,11 +1,14 @@
 from framework import StoredObject, fields
-from . import make_encoded_snowflake
 
 
 class Guid(StoredObject):
 
-    _id = fields.StringField(default=make_encoded_snowflake)
+    _id = fields.StringField()
     referent = fields.AbstractForeignField(backref='guid')
+
+    _meta = {
+        'optimistic': True
+    }
 
 
 class GuidStoredObject(StoredObject):

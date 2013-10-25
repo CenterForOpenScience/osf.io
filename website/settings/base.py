@@ -85,7 +85,7 @@ wiki_whitelist = {
         'align', 'alt', 'border', 'cite', 'class', 'dir',
         'height', 'href', 'src', 'style', 'title', 'type', 'width',
         'face', 'size', # font tags
-        'salign', 'align', 'wmode',
+        'salign', 'align', 'wmode', 'target',
     ],
     # Styles currently used in Reproducibility Project wiki pages
     # TODO: Discuss and possibly delete
