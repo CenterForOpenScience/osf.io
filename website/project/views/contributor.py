@@ -146,21 +146,8 @@ def project_addcontributor_post(*args, **kwargs):
         added_user = User.load(user_id)
         if added_user:
             if user_id not in node_to_use.contributors:
-                logger.debug("Adding user {0}".format(user_id))
-                node_to_use.contributors.append(added_user)
-                node_to_use.contributor_list.append({'id':added_user._primary_key})
+                node_to_use.add_contributor(added_user, log=True)
                 node_to_use.save()
-
-                node_to_use.add_log(
-                    action='contributor_added',
-                    params={
-                        'project':node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
-                        'node':node_to_use._primary_key,
-                        'contributors':[added_user._primary_key],
-                    },
-                    user=user,
-                    api_key=api_key
-                )
     elif "email" in request.json and "fullname" in request.json:
         # TODO: Nothing is done here to make sure that this looks like an email.
         # todo have same behavior as wtforms
