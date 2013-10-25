@@ -3,6 +3,8 @@ from website import settings
 
 if settings.USE_SOLR:
     solr = sunburnt.SolrInterface(settings.solr)
+else:
+    solr = None
 
 
 def update_solr(args=None):

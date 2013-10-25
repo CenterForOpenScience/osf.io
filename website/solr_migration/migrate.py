@@ -1,13 +1,12 @@
+
 from modularodm.query.querydialect import DefaultQueryDialect as Q
-
-# Storage backends are attached to models in main; must import
-# to get access to data
-import main
-
-from framework import app
 from website.models import Node
 from framework.auth import User
 from framework.search.solr import solr
+
+from website.app import init_app
+
+app = init_app("website.settings", set_backends=True, routes=True)
 
 ctx = app.test_request_context()
 ctx.push()
