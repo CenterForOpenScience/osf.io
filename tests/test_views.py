@@ -9,12 +9,13 @@ import datetime as dt
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
+import website.app
+
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
                             WatchConfigFactory, NodeFactory)
 
-from framework import app
-import new_style  # This import sets up the routes
+app = website.app.init_app(routes=True, set_backends=False, settings_module="website.settings")
 
 
 class TestProjectViews(DbTestCase):

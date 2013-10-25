@@ -7,8 +7,10 @@ from pymongo import MongoClient
 
 from framework import storage, set_up_storage
 import website.models
+from website.app import init_app
 
-from new_style import app
+# Just a simple app without routing set up or backends
+test_app = init_app(settings_module="website.settings", routes=False, set_backends=False)
 
 class DbTestCase(unittest.TestCase):
     '''Base TestCase for tests that require a temporary MongoDB database.
@@ -37,8 +39,8 @@ class AppTestCase(unittest.TestCase):
     '''
 
     def setUp(self):
-        self.app = app
-        self.ctx = app.app_context()
+        self.app = test_app
+        self.ctx = self.app.app_context()
         self.ctx.push()
 
     def tearDown(self):
