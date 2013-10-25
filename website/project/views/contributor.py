@@ -135,8 +135,7 @@ def project_addcontributors_post(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     api_key = get_api_key()
-    user_ids_json = request.form.get('user_ids')
-    user_ids = json.loads(user_ids_json)
+    user_ids = request.json.get('user_ids', [])
     # TODO: Move to model
 
     for user_id in user_ids:

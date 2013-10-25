@@ -40,8 +40,8 @@ class TestProjectViews(DbTestCase):
     def test_add_contributor_post(self):
         # A user is added as a contributor via a POST request
         user = UserFactory()
-        url = "/api/v1/project/{0}/addcontributor/".format(self.project._id)
-        res = self.app.post(url, json.dumps({"user_id": user._id}),
+        url = "/api/v1/project/{0}/addcontributors/".format(self.project._id)
+        res = self.app.post(url, json.dumps({"user_ids": [user._id]}),
                             content_type="application/json",
                             auth=self.auth).maybe_follow()
         self.project.reload()
@@ -49,6 +49,8 @@ class TestProjectViews(DbTestCase):
         # A log event was added
         assert_equal(self.project.logs[-1].action, "contributor_added")
 
+    @unittest.skip('Adding non-registered contributors is on hold until '
+                   'invitations and account merging are done.')
     def test_add_non_registered_contributor(self):
         url = "/api/v1/project/{0}/addcontributor/".format(self.project._id)
         # A non-registered user is added
@@ -72,6 +74,8 @@ class TestProjectViews(DbTestCase):
         # A log event was added
         assert_equal(self.project.logs[-1].action, "contributor_removed")
 
+    @unittest.skip('Removing non-registered contributors is on hold until '
+                   'invitations and account merging are done.')
     def test_project_remove_non_registered_contributor(self):
         # A non-registered user is added to the project
         self.project.add_nonregistered_contributor(name="Vanilla Ice",
