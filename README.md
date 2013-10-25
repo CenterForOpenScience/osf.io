@@ -126,9 +126,10 @@ $ brew update
 $ brew install solr
 ```
 
-- Migrate the models.
+- Start the Solr server and migrate the models.
 
 ```bash
+$ invoke solr
 $ invoke solr_migrate
 ```
 
@@ -141,7 +142,15 @@ $ invoke solr
 This will start a Solr server on port 8983.
 
 
+## Summary
 
+If you have all the above services installed, you can start *everything* up with this sequence
 
-
-
+```bash
+invoke mongo -d  # Runs mongod as a daemon
+invoke mailserver
+invoke rabbit_mq
+invoke celery_worker
+invoke solr
+invoke server
+```
