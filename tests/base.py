@@ -8,14 +8,13 @@ from pymongo import MongoClient
 from framework import storage, set_up_storage
 from framework.auth.model import User
 from framework.sessions.model import Session
-from framework.search.model import Keyword
 from website.project.model import (ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
                                    Tag, WatchConfig)
 
 from new_style import app
 
 # All Models
-MODELS = (User, ApiKey, Keyword, Node, NodeLog, NodeFile, NodeWikiPage,
+MODELS = (User, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
           Tag, WatchConfig, Session)
 
 

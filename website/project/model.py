@@ -16,7 +16,6 @@ from dulwich.object_store import tree_lookup_path
 from framework.mongo import ObjectId
 from framework.auth import User, get_user
 from framework.analytics import get_basic_counters, increment_user_activity_counters
-from framework.search import generate_keywords
 from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
 from framework import StoredObject, fields
@@ -123,7 +122,7 @@ class Node(StoredObject):
     description = fields.StringField()
     category = fields.StringField()
 
-    _terms = fields.DictionaryField(list=True)
+    #_terms = fields.DictionaryField(list=True)
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
     registered_meta = fields.DictionaryField()
@@ -257,22 +256,6 @@ class Node(StoredObject):
         self.save()
 
         return True
-
-    def generate_keywords(self, save=True):
-        source = []
-        keywords = []
-        source.append(self.title)
-        for k,v in self.wiki_pages_current.items():
-            page = NodeWikiPage.load(v)
-            source.append(page.content)
-        for t in self.tags:
-            source.append(t._id)
-        self._terms = []
-        # TODO force tags, add users, files
-        self._terms = generate_keywords(source)
-        if save:
-            self.save()
-        return
 
     def fork_node(self, user, api_key=None, title='Fork of '):
 
@@ -852,8 +835,6 @@ class Node(StoredObject):
             self.wiki_pages_versions[page] = []
         self.wiki_pages_versions[page].append(v._primary_key)
         self.wiki_pages_current[page] = v._primary_key
-
-        self.generate_keywords(save=False)
 
         self.save()
 

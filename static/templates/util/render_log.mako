@@ -17,9 +17,9 @@
         added
         % for contributor in log['contributors']:
             % if contributor['registered']:
-                <a href="/profile/${contributor['id']}/">${contributor['fullname']}</a>${', ' if not loop.last else ''}
+                <a href="/profile/${contributor['id']}/">${contributor['fullname']}</a>${', and ' if not loop.last else ''}
             % else:
-                ${contributor['nr_name']}${', ' if not loop.last else ''}
+                ${contributor['nr_name']}${', and ' if not loop.last else ''}
             % endif
         % endfor
         to ${log['category']}

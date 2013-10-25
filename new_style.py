@@ -190,6 +190,8 @@ process_rules(app, [
 
     Rule('/search/', 'get', search_views.search_search, OsfWebRenderer('search.mako')),
 
+    Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
+
 ])
 
 # API
@@ -461,6 +463,10 @@ process_rules(app, [
         '/project/<pid>/addcontributor/',
         '/project/<pid>/node/<nid>/addcontributor/',
     ], 'post', project_views.contributor.project_addcontributor_post, json_renderer),
+    Rule([
+        '/project/<pid>/addcontributors/',
+        '/project/<pid>/node/<nid>/addcontributors/',
+    ], 'post', project_views.contributor.project_addcontributors_post, json_renderer),
     Rule([
         '/project/<pid>/removecontributors/',
         '/project/<pid>/node/<nid>/removecontributors/',
