@@ -76,7 +76,7 @@ class TestProjectViews(DbTestCase):
         # A non-registered user is added to the project
         self.project.add_nonregistered_contributor(name="Vanilla Ice",
                                                     email="iceice@baby.ice",
-                                                    user=self.user)
+                                                    user=self.user1)
         self.project.save()
         url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
         # the contributor is removed via the API
@@ -93,6 +93,16 @@ class TestProjectViews(DbTestCase):
         assert_equal(self.project.title, "Bacon")
         # A log event was saved
         assert_equal(self.project.logs[-1].action, "edit_title")
+
+    def test_make_public(self):
+        self.project.is_public = False
+        self.project.save()
+        url = "/api/v1/project/{0}/permissions/public/".format(self.project._id)
+        # TODO: Change this to POST
+        res = self.app.get(url, {}, auth=self.auth)
+        self.project.reload()
+        assert_true(self.project.is_public)
+        assert_equal(res.json['status'], 'success')
 
 
 class TestWatchViews(DbTestCase):
