@@ -1,8 +1,7 @@
 [This repository has moved; click here.](http://github.com/CenterForOpenScience/openscienceframework/)
 ===========================
 
-Quickstart
-==========
+## Quickstart
 
 These instructions should work on Mac OSX >= 10.7
 
@@ -35,6 +34,8 @@ $ cp website/settings/local-dist.py website/settings/local.py
 
 `local.py` will override settings in `base.py`. It will not be added to source control, so change it as you wish.
 
+## Starting Up
+
 - Run your mongodb process.
 
 ```bash
@@ -47,13 +48,12 @@ $ invoke mongo
 $ invoke server
 ```
 
-Running Tests
-=============
+## Running Tests
 
 To run all tests:
 
 ```bash
-$ nosetests tests/
+$ invoke test
 ```
 
 To run a certain test method
@@ -62,8 +62,8 @@ To run a certain test method
 $ nosetests tests/test_module.py:TestClass.test_method
 ```
 
-Testing Email
--------------
+### Testing Email
+
 
 First, set `MAIL_SERVER` to `localhost:1025` in you `local.py` file.
 
@@ -81,8 +81,9 @@ Then fire up a pseudo-mailserver with:
 $ invoke mailserver -p 1025
 ```
 
-Using Celery
-============
+## Using Celery
+
+### Installing Celery + RabbitMQ
 
 - Install RabbitMQ. On MacOSX with homebrew,
 
@@ -107,10 +108,40 @@ $ ln -sfv /usr/local/opt/rabbitmq/*.plist ~/Library/LaunchAgents
 $ launchctl load ~/Library/LaunchAgents/homebrew.mxcl.rabbitmq.plist
 ```
 
-To start a local celery worker:
+### Starting A Celery Worker
 
 ```bash
 invoke celery_worker
 ```
+
+## Using Solr
+
+### Installing Solr
+
+- Make sure [Java is installed](https://www.java.com/en/download/help/index_installing.xml)
+- Install solr. On MacOSX with Homebrew:
+
+```bash
+$ brew update
+$ brew install solr
+```
+
+- Migrate the models.
+
+```bash
+$ invoke solr_migrate
+```
+
+### Starting A Local Solr Server
+
+```bash
+$ invoke solr
+```
+
+This will start a Solr server on port 8983.
+
+
+
+
 
 
