@@ -70,12 +70,12 @@ def project_wiki_compare(*args, **kwargs):
             content = show_diff(sm)
             content = content.replace('\n', '<br />')
             rv = {
-                'pageName' : wid,
-                'wiki_content' : content,
-                'versions' : _get_wiki_versions(node_to_use, wid),
-                'is_current' : True,
-                'is_edit' : True,
-                'version' : pw.version,
+                'pageName': wid,
+                'wiki_content': content,
+                'versions': _get_wiki_versions(node_to_use, wid),
+                'is_current': True,
+                'is_edit': True,
+                'version': pw.version,
             }
             rv.update(_view_project(node_to_use, user))
             return rv
@@ -99,6 +99,7 @@ def project_wiki_version(*args, **kwargs):
 
     if pw:
         rv = {
+            'wiki_id': pw._primary_key if pw else None,
             'pageName': wid,
             'wiki_content': pw.html,
             'version': pw.version,
@@ -138,24 +139,25 @@ def project_wiki_page(*args, **kwargs):
 
     toc = [
         {
-            'id' : child._primary_key,
-            'title' : child.title,
-            'category' : child.category,
-            'pages' : child.wiki_pages_current.keys() if child.wiki_pages_current else [],
+            'id': child._primary_key,
+            'title': child.title,
+            'category': child.category,
+            'pages': child.wiki_pages_current.keys() if child.wiki_pages_current else [],
         }
         for child in node_to_use.nodes
         if not child.is_deleted
     ]
 
     rv = {
-        'pageName' : wid,
-        'page' : pw,
-        'version' : version,
-        'wiki_content' : content,
-        'is_current' : is_current,
-        'is_edit' : False,
-        'pages_current' : node_to_use.wiki_pages_versions.keys(),
-        'toc' : toc,
+        'wiki_id': pw._primary_key if pw else None,
+        'pageName': wid,
+        'page': pw,
+        'version': version,
+        'wiki_content': content,
+        'is_current': is_current,
+        'is_edit': False,
+        'pages_current': node_to_use.wiki_pages_versions.keys(),
+        'toc': toc,
     }
     rv.update(_view_project(node_to_use, user))
     return rv
@@ -184,13 +186,13 @@ def project_wiki_edit(*args, **kwargs):
         is_current = False
         content = ''
     rv = {
-        'pageName' : wid,
-        'page' : pw,
-        'version' : version,
-        'versions' : _get_wiki_versions(node_to_use, wid),
-        'wiki_content' : content,
-        'is_current' : is_current,
-        'is_edit' : True,
+        'pageName': wid,
+        'page': pw,
+        'version': version,
+        'versions': _get_wiki_versions(node_to_use, wid),
+        'wiki_content': content,
+        'is_current': is_current,
+        'is_edit': True,
     }
     rv.update(_view_project(node_to_use, user))
     return rv

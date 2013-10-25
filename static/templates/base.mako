@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
     <link href="/static/jquery-treeview/jquery.treeview.css" rel="stylesheet" type="text/css" media="screen" />
     <link href="/static/site.css" rel="stylesheet">
+    ${self.stylesheets()}
 
 
     %if use_cdn:
@@ -118,6 +119,10 @@
 
 <%def name="description()">
     ### The page description ###
+</%def>
+
+<%def name="stylesheets()">
+    ### Extra css for this page. ###
 </%def>
 
 <%def name="javascript()">

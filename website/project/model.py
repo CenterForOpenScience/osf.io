@@ -20,7 +20,9 @@ from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
 from framework import StoredObject, fields
 from framework.search.solr import update_solr, delete_solr_doc
+from framework import GuidStoredObject, Q
 
+from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
 
 
@@ -33,6 +35,46 @@ def utc_datetime_to_timestamp(dt):
 def normalize_unicode(ustr):
     return unicodedata.normalize('NFKD', ustr)\
         .encode('ascii', 'ignore')
+
+
+class MetaSchema(StoredObject):
+
+    _id = fields.StringField(default=lambda: str(ObjectId()))
+    schema = fields.DictionaryField()
+    category = fields.StringField()
+    version = fields.StringField()
+
+
+def ensure_schemas():
+    for key, value in OSF_META_SCHEMAS.items():
+        try:
+            MetaSchema.find_one(Q('_id', 'eq', key))
+        except:
+            schema_obj = MetaSchema(_id=key, **value)
+            schema_obj.save()
+
+
+class MetaData(GuidStoredObject):
+
+    _id = fields.StringField()
+    target = fields.AbstractForeignField(backref='annotated')
+
+    # Annotation category: Comment, review, registration, etc.
+    category = fields.StringField()
+
+    # Annotation data
+    schema = fields.ForeignField('MetaSchema')
+    payload = fields.DictionaryField()
+
+    # Annotation provenance
+    user = fields.ForeignField('User', backref='annotated')
+    date = fields.DateTimeField(auto_now_add=True)
+
+    def __init__(self, *args, **kwargs):
+        super(MetaData, self).__init__(*args, **kwargs)
+        if self.category and not self.schema:
+            if self.category in OSF_META_SCHEMAS:
+                self.schema = self.category
 
 
 class ApiKey(StoredObject):
@@ -55,6 +97,7 @@ class ApiKey(StoredObject):
 
 
 class NodeLog(StoredObject):
+
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
     date = fields.DateTimeField(default=datetime.datetime.utcnow)
@@ -70,8 +113,9 @@ class NodeLog(StoredObject):
             Node.load(self.params.get('project'))
 
 
-class NodeFile(StoredObject):
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+class NodeFile(GuidStoredObject):
+
+    _id = fields.StringField(primary=True)
 
     path = fields.StringField()
     filename = fields.StringField()
@@ -87,17 +131,25 @@ class NodeFile(StoredObject):
     date_uploaded = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
+    node = fields.ForeignField('node', backref='uploads')
     uploader = fields.ForeignField('user', backref='uploads')
 
+    @property
+    def url(self):
+        return '{}files/{}/'.format(self.node.url, self.filename)
 
-class Tag(StoredObject):
+class Tag(GuidStoredObject):
 
     _id = fields.StringField(primary=True)
     count_public = fields.IntegerField(default=0)
     count_total = fields.IntegerField(default=0)
 
+    @property
+    def url(self):
+        return '/search/?q=tags:{}'.format(self._id)
 
-class Node(StoredObject):
+
+class Node(GuidStoredObject):
     _id = fields.StringField(primary=True)
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -118,7 +170,7 @@ class Node(StoredObject):
     is_fork = fields.BooleanField(default=False)
     forked_date = fields.DateTimeField()
 
-    title = fields.StringField()
+    title = fields.StringField(versioned=True)
     description = fields.StringField()
     category = fields.StringField()
 
@@ -147,6 +199,9 @@ class Node(StoredObject):
     registered_from = fields.ForeignField('node', backref='registrations')
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
+
+    ## Meta-data
+    #comment_schema = OSF_META_SCHEMAS['osf_comment']
 
     _meta = {'optimistic': True}
 
@@ -299,9 +354,8 @@ class Node(StoredObject):
         original = self.load(self._primary_key)
         forked = original.clone()
 
-        forked.nodes = []
-        forked.contributors = []
-        forked.contributor_list = []
+        forked.logs = self.logs
+        forked.tags = self.tags
 
         for i, node_contained in enumerate(original.nodes):
             forked_node = node_contained.fork_node(user, api_key=api_key, title='')
@@ -347,8 +401,14 @@ class Node(StoredObject):
 
         original = self.load(self._primary_key)
         registered = original.clone()
+
+        registered.contributors = self.contributors
+        registered.forked_from = self.forked_from
+        registered.creator = self.creator
+        registered.logs = self.logs
+        registered.tags = self.tags
+
         registered.save()
-        # registered._optimistic_insert()
 
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, registered._primary_key)
@@ -367,6 +427,12 @@ class Node(StoredObject):
             if os.path.exists(folder_old):
                 folder_new = os.path.join(settings.UPLOADS_PATH, node_contained._primary_key)
                 Repo(folder_old).clone(folder_new)
+
+            node_contained.contributors = original_node_contained.contributors
+            node_contained.forked_from = original_node_contained.forked_from
+            node_contained.creator = original_node_contained.creator
+            node_contained.logs = original_node_contained.logs
+            node_contained.tags = original_node_contained.tags
 
             node_contained.is_registration = True
             node_contained.registered_date = when
@@ -626,6 +692,7 @@ class Node(StoredObject):
         node_file.filename = file_name
         node_file.size = size
         node_file.is_public = self.is_public
+        node_file.node = self
         node_file.uploader = user
         node_file.git_commit = commit_id
         node_file.content_type = content_type
@@ -902,9 +969,9 @@ class Node(StoredObject):
         self.add_log(
             action='wiki_updated',
             params={
-                'project':self.parent_id,
-                'node':self._primary_key,
-                'page':v.page_name,
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'page': v.page_name,
                 'version': v.version,
             },
             user=user,
@@ -922,9 +989,10 @@ class Node(StoredObject):
             return get_basic_counters('node:%s' % self._primary_key)
 
 
-class NodeWikiPage(StoredObject):
+class NodeWikiPage(GuidStoredObject):
 
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    _id = fields.StringField(primary=True)
+
     page_name = fields.StringField()
     version = fields.IntegerField()
     date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -933,6 +1001,10 @@ class NodeWikiPage(StoredObject):
 
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')
+
+    @property
+    def url(self):
+        return '{}wiki/{}/'.format(self.node.url, self.page_name)
 
     @property
     def html(self):
@@ -957,7 +1029,8 @@ class NodeWikiPage(StoredObject):
 
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
-        self.node.update_solr()
+        if self.node:
+            self.node.update_solr()
         return rv
 
 class WatchConfig(StoredObject):

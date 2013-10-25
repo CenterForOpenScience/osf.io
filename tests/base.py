@@ -6,6 +6,17 @@ import unittest
 from pymongo import MongoClient
 
 from framework import storage, set_up_storage
+from framework.auth.model import User
+from framework.sessions.model import Session
+from framework.guid.model import Guid
+from website.project.model import (ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
+                                   Tag, WatchConfig, MetaData)
+
+
+# All Models
+MODELS = (User, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
+          Tag, WatchConfig, Session, MetaData, Guid)
+
 import website.models
 from website.app import init_app
 

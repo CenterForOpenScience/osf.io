@@ -576,6 +576,7 @@ form.form-horizontal.form-horizontal-narrow .control-group {
     padding-left:55px;
 }
 
+
 /* Static pages */
 .staticpage img {
     border:2px solid black;
@@ -676,4 +677,12 @@ form.form-horizontal.form-horizontal-narrow .control-group {
   }
 }
 
+/* Project page */
 
+.contrib-button {
+    font-size: 18px;
+}
+#addContributors table {
+    border-collapse:separate;
+    border-spacing: 5px;
+}

@@ -225,8 +225,8 @@ def watch_post(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     watch_config = WatchConfig(node=node_to_use,
-                                digest=request.json.get("digest", False),
-                                immediate=request.json.get('immediate', False))
+                               digest=request.json.get("digest", False),
+                               immediate=request.json.get('immediate', False))
     try:
         user.watch(watch_config)
     except ValueError:  # Node is already being watched
