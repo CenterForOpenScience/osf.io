@@ -47,7 +47,11 @@ env/*
 #######################
 website/cache/*
 website/uploads/*
-
 # Local settings
 */settings/local.py
+
+# Solr
+#######################
+scripts/solr-dev/logs/*
+scripts/solr-dev/solr-webapp/*
 

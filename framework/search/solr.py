@@ -1,8 +1,19 @@
+# -*- coding: utf-8 -*-
+import logging
+
 import sunburnt
+
 from website import settings
 
+logger = logging.getLogger(__name__)
+
 if settings.USE_SOLR:
-    solr = sunburnt.SolrInterface(settings.solr)
+    try:
+        solr = sunburnt.SolrInterface(settings.solr)
+    except Exception:
+        logger.warn("The USE_SOLR setting is enabled but there was a problem "
+                    "starting the Solr interface. Is the Solr server running?")
+        solr = None
 else:
     solr = None
 
