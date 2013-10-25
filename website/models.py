@@ -13,3 +13,5 @@ from website.project.model import (ApiKey, Node, NodeLog, NodeFile, NodeWikiPage
 # All models
 MODELS = (User, ApiKey, Keyword, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
           Tag, WatchConfig, Session, Guid, MetaData, MetaSchema)
+
+GUID_MODELS = (User, Node, NodeFile, NodeWikiPage, Tag, MetaData)

@@ -97,9 +97,9 @@ class ApiKey(StoredObject):
         return self.node__keyed[0] if self.node__keyed else None
 
 
-class NodeLog(GuidStoredObject):
+class NodeLog(StoredObject):
 
-    _id = fields.StringField(primary=True)
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
     date = fields.DateTimeField(default=datetime.datetime.utcnow)
     action = fields.StringField()
@@ -144,6 +144,10 @@ class Tag(StoredObject):
     _id = fields.StringField(primary=True)
     count_public = fields.IntegerField(default=0)
     count_total = fields.IntegerField(default=0)
+
+    @property
+    def url(self):
+        return '/search/?q=tags:{}'.format(self._id)
 
 
 class Node(GuidStoredObject):
@@ -952,7 +956,7 @@ class NodeWikiPage(GuidStoredObject):
 
     @property
     def url(self):
-        return '{}{}/'.format(self.node.url, self.page_name)
+        return '{}wiki/{}/'.format(self.node.url, self.page_name)
 
     @property
     def html(self):

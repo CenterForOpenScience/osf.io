@@ -17,7 +17,7 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 from factory import base, Sequence, SubFactory, PostGenerationMethodCall
 
 from framework.auth import User
-from website.project.model import ApiKey, Node, NodeLog, WatchConfig
+from website.project.model import ApiKey, Node, NodeLog, WatchConfig, MetaData
 
 
 class ModularOdmFactory(base.Factory):
@@ -80,3 +80,7 @@ class NodeLogFactory(ModularOdmFactory):
 class WatchConfigFactory(ModularOdmFactory):
     FACTORY_FOR = WatchConfig
     node = SubFactory(NodeFactory)
+
+
+class MetaDataFactory(ModularOdmFactory):
+    FACTORY_FOR = MetaData
