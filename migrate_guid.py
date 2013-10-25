@@ -6,8 +6,10 @@ created records will have optimistically generated GUIDs.
 
 import logging
 
-import main
 from website import models
+from website.app import init_app
+
+app = init_app("website.settings", set_backends=True, routes=True)
 
 def check_conflicts(models):
 
