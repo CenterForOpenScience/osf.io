@@ -265,10 +265,9 @@ def project_set_permissions(*args, **kwargs):
 def watch_post(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
-
     watch_config = WatchConfig(node=node_to_use,
-                                digest=request.form.get("digest", False),
-                                immediate=request.form.get('immediate', False))
+                                digest=request.json.get("digest", False),
+                                immediate=request.json.get('immediate', False))
     try:
         user.watch(watch_config)
     except ValueError:  # Node is already being watched
@@ -285,8 +284,8 @@ def unwatch_post(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     watch_config = WatchConfig(node=node_to_use,
-                                digest=request.form.get("digest", False),
-                                immediate=request.form.get('immediate', False))
+                                digest=request.json.get("digest", False),
+                                immediate=request.json.get('immediate', False))
     try:
         user.unwatch(watch_config, save=True)
     except ValueError:  # Node isn't being watched
@@ -303,8 +302,8 @@ def togglewatch_post(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     watch_config = WatchConfig(node=node,
-                                digest=request.form.get("digest", False),
-                                immediate=request.form.get('immediate', False))
+                                digest=request.json.get("digest", False),
+                                immediate=request.json.get('immediate', False))
     try:
         if user.is_watching(node):
             user.unwatch(watch_config, save=True)

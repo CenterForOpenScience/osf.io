@@ -36,6 +36,8 @@ NodeActions.toggleWatch = function () {
         url: nodeToUseUrl() + "/togglewatch/",
         type: "POST",
         dataType: "json",
+        data: JSON.stringify({}),
+        contentType: "application/json",
         success: function(data, status, xhr) {
             // Update watch count in DOM
             $watchCount = $("#watchCount");

@@ -103,22 +103,24 @@ class TestWatchViews(DbTestCase):
     def test_watching_a_project_appends_to_users_watched_list(self):
         n_watched_then = len(self.user.watched)
         url = '/api/v1/project/{0}/watch/'.format(self.project._id)
-        res = self.app.post(url,
-                            params={},
-                            auth=self.auth)
+        res = self.app.post_json(url,
+                                params={"digest": True},
+                                auth=self.auth)
+        assert_equal(res.json['watchCount'], 1)
         self.user.reload()
         n_watched_now = len(self.user.watched)
         assert_equal(res.status_code, 200)
         assert_equal(n_watched_now, n_watched_then + 1)
+        assert_true(self.user.watched[-1].digest)
 
     def test_watching_project_twice_returns_400(self):
         url = "/api/v1/project/{0}/watch/".format(self.project._id)
-        res = self.app.post(url,
+        res = self.app.post_json(url,
                             params={},
                             auth=self.auth)
         assert_equal(res.status_code, 200)
         # User tries to watch a node she's already watching
-        res2 = self.app.post(url,
+        res2 = self.app.post_json(url,
                             params={},
                             auth=self.auth,
                             expect_errors=True)
@@ -131,7 +133,7 @@ class TestWatchViews(DbTestCase):
         self.user.save()
         n_watched_then = len(self.user.watched)
         url = '/api/v1/project/{0}/unwatch/'.format(self.project._id)
-        res = self.app.post(url, auth=self.auth)
+        res = self.app.post_json(url, {}, auth=self.auth)
         self.user.reload()
         n_watched_now = len(self.user.watched)
         assert_equal(res.status_code, 200)
@@ -142,7 +144,10 @@ class TestWatchViews(DbTestCase):
         # The user is not watching project
         assert_false(self.user.is_watching(self.project))
         url = "/api/v1/project/{0}/togglewatch/".format(self.project._id)
-        res = self.app.post(url, auth=self.auth, content_type="application/json")
+        res = self.app.post_json(url, {}, auth=self.auth)
+        # The response json has a watchcount and watched property
+        assert_equal(res.json['watchCount'], 1)
+        assert_true(res.json['watched'])
         assert_equal(res.status_code, 200)
         self.user.reload()
         # The user is now watching the project
@@ -156,7 +161,7 @@ class TestWatchViews(DbTestCase):
         self.project.save()
         url = "/api/v1/project/{}/node/{}/togglewatch/".format(self.project._id,
                                                                 node._id)
-        res = self.app.post(url, auth=self.auth)
+        res = self.app.post_json(url, {}, auth=self.auth)
         assert_equal(res.status_code, 200)
         self.user.reload()
         # The user is now watching the sub-node
