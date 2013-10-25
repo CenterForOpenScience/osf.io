@@ -151,6 +151,17 @@ class TestProject(DbTestCase):
         self.project.remove_contributor(self.user, contributor=user2, api_key=None)
         assert_not_in(user2, self.project.contributors)
 
+    def test_set_title(self):
+        proj = ProjectFactory(title="That Was Then", creator=self.user)
+        proj.set_title("This is now", user=self.user)
+        proj.save()
+        # Title was changed
+        assert_equal(proj.title, "This is now")
+        # A log event was saved
+        latest_log = proj.logs[-1]
+        assert_equal(latest_log.action, "edit_title")
+        assert_equal(latest_log.params['title_original'], "That Was Then")
+
 
 class TestNodeLog(DbTestCase):
 

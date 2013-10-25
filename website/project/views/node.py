@@ -32,29 +32,13 @@ from framework import analytics
 def edit_node(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
-
     node_to_use = node or project
-
     form = request.form
-    original_title = node_to_use.title
-
     if form.get('name') == 'title' and form.get('value'):
-        node_to_use.title = sanitize(form['value'])
-
-        node_to_use.add_log(
-            action='edit_title',
-            params={
-                'project':node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
-                'node':node_to_use._primary_key,
-                'title_new':node_to_use.title,
-                'title_original':original_title,
-            },
-            user=get_current_user(),
-            api_key=get_api_key(),
-        )
-
+        new_title = sanitize(form['value'])
+        node_to_use.set_title(new_title, user=get_current_user(),
+                              api_key=get_api_key())
         node_to_use.save()
-
     return {'status' : 'success'}
 
 def search_user(*args, **kwargs):

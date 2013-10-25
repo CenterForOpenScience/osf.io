@@ -162,6 +162,30 @@ class Node(StoredObject):
         self.update_solr()
         return rv
 
+    def set_title(self, title, user, api_key=None, save=False):
+        '''Sets the title of this Node and logs it.
+
+        :param title: A string, the new title
+        :param user: A User object
+        :param api_key: An ApiKey object
+        '''
+        original_title = self.title
+        self.title = title
+        self.add_log(
+            action='edit_title',
+            params={
+                'project': self.node__parent[0]._primary_key if self.node__parent else None,
+                'node': self._primary_key,
+                'title_new': self.title,
+                'title_original': original_title,
+            },
+            user=user,
+            api_key=api_key,
+        )
+        if save:
+            self.save()
+        return None
+
     def update_solr(self):
         """Send the current state of the object to Solr, or delete it from Solr
         as appropriate

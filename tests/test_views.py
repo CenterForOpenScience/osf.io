@@ -14,7 +14,6 @@ from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
                             WatchConfigFactory, NodeFactory)
 
 from framework import app
-from website.models import Node
 import new_style  # This import sets up the routes
 
 
@@ -30,7 +29,7 @@ class TestProjectViews(DbTestCase):
         self.auth = ('test', api_key._primary_key)
         self.user2 = UserFactory()
         # A project has 2 contributors
-        self.project = ProjectFactory(creator=self.user1)
+        self.project = ProjectFactory(title="Ham", creator=self.user1)
         self.project.add_contributor(self.user1)
         self.project.add_contributor(self.user2)
         self.project.api_keys.append(api_key)
@@ -71,6 +70,17 @@ class TestProjectViews(DbTestCase):
         assert_not_in(self.user2._id, self.project.contributors)
         # A log event was added
         assert_equal(self.project.logs[-1].action, "contributor_removed")
+
+    def test_edit_node_title(self):
+        url = "/api/v1/project/{0}/edit/".format(self.project._id)
+        # The title is changed though posting form data
+        res = self.app.post(url, {"name": "title", "value": "Bacon"},
+                            auth=self.auth).maybe_follow()
+        self.project.reload()
+        # The title was changed
+        assert_equal(self.project.title, "Bacon")
+        # A log event was saved
+        assert_equal(self.project.logs[-1].action, "edit_title")
 
 class TestWatchViews(DbTestCase):
 
