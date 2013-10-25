@@ -153,9 +153,10 @@ class Node(StoredObject):
 
     def can_edit(self, user, api_key=None):
 
-        return self.is_public \
-            or self.is_contributor(user) \
-            or (api_key is not None and self is api_key.node)
+        return (self.is_public
+                or self.is_contributor(user)
+                or (api_key is not None and self is api_key.node)
+                or user == self.creator)
 
     def save(self, *args, **kwargs):
         rv = super(Node, self).save(*args, **kwargs)
@@ -741,16 +742,12 @@ class Node(StoredObject):
             return self.node__parent[0]._id
         return None
 
-
     def is_contributor(self, user):
-        if user:
-            if str(user._id) in self.contributors:
-                return True
-        return False
+        return user in self.contributors
 
-    def remove_nonregistered_contributor(self, user, api_key, name, hash):
+    def remove_nonregistered_contributor(self, user, api_key, name, hash_id):
         for d in self.contributor_list:
-            if d.get('nr_name') == name and hashlib.md5(d.get('nr_email')).hexdigest() == hash:
+            if d.get('nr_name') == name and hashlib.md5(d.get('nr_email')).hexdigest() == hash_id:
                 email = d.get('nr_email')
         self.contributor_list[:] = [d for d in self.contributor_list if not (d.get('nr_email') == email)]
         self.save()
@@ -792,21 +789,22 @@ class Node(StoredObject):
         else:
             return False
 
-    def add_contributor(self, user, log=True, api_key=None, save=False):
+    def add_contributor(self, contributor, user=None, log=True, api_key=None, save=False):
         '''Add a contributor to the project.
 
-        :param user: A user object.
+        :param contributor: A User object, the contributor to be added
+        :param user: A User object, the user who added the contributor or None.
         '''
-        if user._primary_key not in self.contributors:
-            self.contributors.append(user)
-            self.contributor_list.append({'id': user._primary_key})
+        if contributor._primary_key not in self.contributors:
+            self.contributors.append(contributor)
+            self.contributor_list.append({'id': contributor._primary_key})
             if log:
                 self.add_log(
                     action='contributor_added',
                     params={
                         'project': self.node__parent[0]._primary_key if self.node__parent else None,
                         'node': self._primary_key,
-                        'contributors': [user._primary_key],
+                        'contributors': [contributor._primary_key],
                     },
                     user=user,
                     api_key=api_key
@@ -816,6 +814,28 @@ class Node(StoredObject):
             return True
         else:
             return False
+
+    def add_nonregistered_contributor(self, name, email, user, api_key=None, save=False):
+        '''Add a non-registered contributor to the project.
+
+        :param name: A string, the full name of the person.
+        :param email: A string, the email address of the person.
+        :param user: A User object, the user who added the person.
+        '''
+        self.contributor_list.append({'nr_name': name, 'nr_email':email})
+        self.add_log(
+            action='contributor_added',
+            params={
+                'project':self.node__parent[0]._primary_key if self.node__parent else None,
+                'node':self._primary_key,
+                'contributors':[{"nr_name": name, "nr_email":email}],
+            },
+            user=user,
+            api_key=api_key
+        )
+        if save:
+            self.save()
+        return None
 
     def set_permissions(self, permissions, user, api_key):
         if permissions == 'public' and not self.is_public:

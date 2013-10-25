@@ -15,7 +15,8 @@ from tests.base import DbTestCase
 from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
                             WatchConfigFactory, NodeFactory)
 
-app = website.app.init_app(routes=True, set_backends=False, settings_module="website.settings")
+app = website.app.init_app(routes=True, set_backends=False,
+                            settings_module="website.settings")
 
 
 class TestProjectViews(DbTestCase):
@@ -60,7 +61,6 @@ class TestProjectViews(DbTestCase):
         # A log event was added
         assert_equal(self.project.logs[-1].action, "contributor_added")
 
-
     def test_project_remove_contributor(self):
         url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
         # User 1 removes user2
@@ -72,6 +72,17 @@ class TestProjectViews(DbTestCase):
         # A log event was added
         assert_equal(self.project.logs[-1].action, "contributor_removed")
 
+    def test_project_remove_non_registered_contributor(self):
+        # A non-registered user is added to the project
+        self.project.add_nonregistered_contributor(name="Vanilla Ice",
+                                                    email="iceice@baby.ice",
+                                                    user=self.user)
+        self.project.save()
+        url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
+        # the contributor is removed via the API
+        assert False, 'finish me'
+
+
     def test_edit_node_title(self):
         url = "/api/v1/project/{0}/edit/".format(self.project._id)
         # The title is changed though posting form data
@@ -82,6 +93,7 @@ class TestProjectViews(DbTestCase):
         assert_equal(self.project.title, "Bacon")
         # A log event was saved
         assert_equal(self.project.logs[-1].action, "edit_title")
+
 
 class TestWatchViews(DbTestCase):
 
