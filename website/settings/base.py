@@ -55,7 +55,7 @@ cookie_domain = '.openscienceframework.org' # Beaker
 
 # Gravatar options
 gravatar_size_profile = 120
-gravatar_size_add_contributor = 80
+gravatar_size_add_contributor = 60
 
 # File upload options
 max_upload_size = 1024*1024*250     # In bytes

@@ -223,6 +223,10 @@ def search_contributor():
 
     for idx in range(len(response)):
         user = User.load(response[idx]['id'])
-        response[idx]['gravatar'] = gravatar(user)
+        response[idx]['gravatar'] = gravatar(
+            user,
+            use_ssl=True,
+            size=settings.gravatar_size_add_contributor
+        )
 
     return response

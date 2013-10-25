@@ -458,7 +458,6 @@ process_rules(app, [
     ], 'post', project_views.file.delete_file, json_renderer),
 
     # Add / remove contributors
-    Rule('/search/users/', 'post', project_views.node.search_user, json_renderer),
     Rule([
         '/project/<pid>/addcontributors/',
         '/project/<pid>/node/<nid>/addcontributors/',

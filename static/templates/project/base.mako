@@ -14,6 +14,16 @@
     </style>
 % endif
 
+<style>
+    .contrib-button {
+        font-size: 18px;
+    }
+    #addContributors table {
+        border-collapse:separate;
+        border-spacing: 5px;
+    }
+</style>
+
 <header class="jumbotron subhead" id="overview">
 
     <div class="row">
@@ -171,10 +181,15 @@
             <div class="span6">
                 <h3>Search Results</h3>
                 <table>
-                    <tbody data-bind="foreach:results">
+                    <tbody data-bind="foreach:{data:results, afterRender:addTips}">
                         <tr data-bind="if:!($root.selected($data))">
                             <td style="padding-right: 10px;">
-                                <a class="btn" data-bind="click:$root.add">+</a>
+                                <a
+                                        class="btn contrib-button"
+                                        data-bind="click:$root.add"
+                                        rel="tooltip"
+                                        title="Add contributor"
+                                    >+</a>
                             </td>
                             <td>
                                 <img data-bind="attr:{src:$data.gravatar}" />
@@ -188,10 +203,15 @@
             <div class="span6">
                 <h3>Contributors to Add</h3>
                 <table>
-                    <tbody data-bind="foreach:selection">
+                    <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
                         <tr>
                             <td style="padding-right: 10px;">
-                                <a class="btn" data-bind="click:$root.remove">x</a>
+                                <a
+                                        class="btn contrib-button"
+                                        data-bind="click:$root.remove"
+                                        rel="tooltip"
+                                        title="Remove contributor"
+                                    >-</a>
                             </td>
                             <td>
                                 <img data-bind="attr:{src:$data.gravatar}" />
@@ -235,14 +255,26 @@
             )
         };
 
-        self.add = function(data) {
-            self.selection.push(data);
+        self.addTips = function(elements, data) {
+            elements.forEach(function(element) {
+                $(element).find('.contrib-button').tooltip();
+            });
         };
 
-        self.remove = function(data) {
+        self.add = function(data, element) {
+            self.selection.push(data);
+            // Hack: Hide and refresh tooltips
+            $('.tooltip').hide();
+            $('.contrib-button').tooltip();
+        };
+
+        self.remove = function(data, element) {
             self.selection.splice(
                 self.selection.indexOf(data), 1
             );
+            // Hack: Hide and refresh tooltips
+            $('.tooltip').hide();
+            $('.contrib-button').tooltip();
         };
 
         self.selected = function(data) {
@@ -276,14 +308,14 @@
 
     };
 
-    viewModel = new addContributorModel();
-    ko.applyBindings(viewModel, $('#addContributors')[0]);
+    var $addContributors = $('#addContributors');
 
-    /*
-     * Clear user search modal when dismissed; catches dismiss by escape key
-     * or cancel button.
-     */
-    $('#addContributors').on('hidden', function() {
+    viewModel = new addContributorModel();
+    ko.applyBindings(viewModel, $addContributors[0]);
+
+    // Clear user search modal when dismissed; catches dismiss by escape key
+    // or cancel button.
+    $addContributors.on('hidden', function() {
         viewModel.clear();
     });
 
