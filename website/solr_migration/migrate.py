@@ -1,40 +1,44 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''Migration script for Solr-enabled Models.'''
+from __future__ import absolute_import
 from modularodm.query.querydialect import DefaultQueryDialect as Q
-
-# Storage backends are attached to models in main; must import
-# to get access to data
-import main
-
-from framework import app
 from website.models import Node
 from framework.auth import User
 from framework.search.solr import solr
 
-ctx = app.test_request_context()
-ctx.push()
+from website.app import init_app
+
+app = init_app("website.settings", set_backends=True, routes=True)
 
 
-def migrate_nodes():
-    # Projects
-    # our first step is to delete all projects
-    solr.delete_all()
-    # and then commit that delete
-    solr.commit()
-    # find all public projects that are not deleted,
-    # are public
+def main():
+    ctx = app.test_request_context()
+    ctx.push()
 
-    for node in Node.find(
-        Q('is_public', 'eq', True) &
-        Q('is_deleted', 'eq', False)
-    ):
-        node.update_solr()
+    def migrate_nodes():
+        # Projects
+        # our first step is to delete all projects
+        solr.delete_all()
+        # and then commit that delete
+        solr.commit()
+        # find all public projects that are not deleted,
+        # are public
 
+        for node in Node.find(
+            Q('is_public', 'eq', True) &
+            Q('is_deleted', 'eq', False)
+        ):
+            node.update_solr()
 
-def migrate_users():
-    for user in User.find():
-        user.update_solr()
+    def migrate_users():
+        for user in User.find():
+            user.update_solr()
 
+    migrate_nodes()
+    migrate_users()
 
-migrate_nodes()
-migrate_users()
+    ctx.pop()
 
-ctx.pop()
+if __name__ == '__main__':
+    main()

@@ -9,7 +9,18 @@
     </style>
 % endif
 
-<header class="subhead" id="overview">
+
+<style>
+    .contrib-button {
+        font-size: 18px;
+    }
+    #addContributors table {
+        border-collapse:separate;
+        border-spacing: 5px;
+    }
+</style>
+
+<header class="jumbotron subhead" id="overview">
 
     <div class="row">
 
@@ -19,11 +30,11 @@
             %if not node_is_public:
                 <button class='btn btn-default disabled'>Private</button>
                 % if user_is_contributor:
-                    <a id="publicButton" data-id="${node_id}" data-target="${node_url}permissions/public/" class="btn btn-warning">Make public</a>
+                    <a class="btn" id="publicButton" data-target="${node_api_url}permissions/public/">Make public</a>
                 % endif
             %else:
                 % if user_is_contributor:
-                    <a id="privateButton" data-id="${node_id}" data-target="${node_url}permissions/private/" class="btn btn-default">Make private</a>
+                    <a class="btn" id="privateButton" data-target="${node_api_url}permissions/private/">Make private</a>
                 % endif
                 <button class="btn btn-warning disabled">Public</button>
             %endif
@@ -139,126 +150,173 @@
             <li><a href="${node_url}settings/">Settings</a></li>
             %endif
         </ul>
-    </nav>
-    <!-- </div> -->
-## TODO: Move to site.js
+    </div>
+</header>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>
+
+<div class="modal hide fade" id="addContributors">
+
+    <div class="modal-header">
+        <h3>Add Contributors</h3>
+    </div>
+
+    <div class="modal-body">
+
+        <!-- Search box -->
+        <form class="form-inline">
+            <input data-bind="value:query" />
+            <button class="btn" data-bind="click:search">Search</button>
+        </form>
+
+        <hr />
+
+        <div class="row-fluid">
+
+            <div class="span6">
+                <h3>Search Results</h3>
+                <table>
+                    <tbody data-bind="foreach:{data:results, afterRender:addTips}">
+                        <tr data-bind="if:!($root.selected($data))">
+                            <td style="padding-right: 10px;">
+                                <a
+                                        class="btn contrib-button"
+                                        data-bind="click:$root.add"
+                                        rel="tooltip"
+                                        title="Add contributor"
+                                    >+</a>
+                            </td>
+                            <td>
+                                <img data-bind="attr:{src:$data.gravatar}" />
+                            </td>
+                            <td data-bind="text:user"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="span6">
+                <h3>Contributors to Add</h3>
+                <table>
+                    <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
+                        <tr>
+                            <td style="padding-right: 10px;">
+                                <a
+                                        class="btn contrib-button"
+                                        data-bind="click:$root.remove"
+                                        rel="tooltip"
+                                        title="Remove contributor"
+                                    >-</a>
+                            </td>
+                            <td>
+                                <img data-bind="attr:{src:$data.gravatar}" />
+                            </td>
+                            <td data-bind="text:user"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="modal-footer">
+        <span data-bind="if:selection().length">
+            <a class="btn" data-bind="click:submit">Add</a>
+        </span>
+        <a href="#" class="btn" data-dismiss="modal">Cancel</a>
+    </div>
+
+</div>
+
 <script type="text/javascript">
-  var App = Ember.Application.create();
 
-  App.RadioButton = Ember.View.extend({
-    classNames: ['ember-radiobox'],
-    tagName: "input",
-    attributeBindings: ['type', 'name', 'value'],
+    var addContributorModel = function(initial) {
 
-    type: "radio",
+        var self = this;
 
-    name: "id",
+        self.query = ko.observable('');
+        self.results = ko.observableArray(initial);
+        self.selection = ko.observableArray([]);
 
-    value: "",
-  });
+        self.search = function() {
+            $.getJSON(
+                '/api/v1/user/search/',
+                {query: self.query()},
+                function(result) {
+                    self.results(result);
+                }
+            )
+        };
 
-  App.Gravatar = Ember.View.extend({
-    classNames: ['ember-gravatar'],
-    tagName: "img",
-    attributeBindings: ['src'],
-  });
+        self.addTips = function(elements, data) {
+            elements.forEach(function(element) {
+                $(element).find('.contrib-button').tooltip();
+            });
+        };
 
-  App.SearchController = Ember.Object.create({
-    has_started: false,
-    is_email: null,
-    content: [],
-    search_type:'users',
-    add:function(){
-        var emthis = this;
-        var user = this.user;
-        var fullname = this.fullname;
-        var email = this.email;
+        self.add = function(data, element) {
+            self.selection.push(data);
+            // Hack: Hide and refresh tooltips
+            $('.tooltip').hide();
+            $('.contrib-button').tooltip();
+        };
 
-        if ( fullname ){
-                jQuery.post(
-                    '${node_api_url}addcontributor/',
-                    { fullname: fullname, email: email },
-                    function(data){
-                        $('#addContributors').modal('hide');
-                        window.location.reload();
-                    },
-                    'json'
-                );
-        }else{
-            if ( $('input[name=id]:checked').length > 0 ){
-                jQuery.post(
-                    '${node_api_url}addcontributor/',
-                    { user_id:$('input[name=id]:checked')[0].value },
-                    function(data){
-                        $('#addContributors').modal('hide');
-                        window.location.reload();
-                    },
-                    'json'
-                );
+        self.remove = function(data, element) {
+            self.selection.splice(
+                self.selection.indexOf(data), 1
+            );
+            // Hack: Hide and refresh tooltips
+            $('.tooltip').hide();
+            $('.contrib-button').tooltip();
+        };
+
+        self.selected = function(data) {
+            for (var idx=0; idx < self.selection().length; idx++) {
+                if (data.id == self.selection()[idx].id)
+                    return true;
             }
-        }
-    },
-    search: function() {
-        var emthis = this;
-        var query = this.query;
-        jQuery.post(
-            '/api/v1/search/users/',
-            {query:query},
-            function(data){
-                emthis.set('has_started', true);
-                emthis.set('is_email', data['is_email']);
-                emthis.set('content', []);
-                emthis.set('content', data['results']);
-            },
-            'json'
-        );
-    },
-  });
+            return false;
+        };
+
+        self.submit = function() {
+            var user_ids = self.selection().map(function(elm) {
+                return elm.id;
+            });
+            $.ajax(
+                '${node_api_url}addcontributors/',
+                {
+                    type: 'post',
+                    data: JSON.stringify({user_ids: user_ids}),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            window.location.reload();
+                        }
+                    }
+                }
+            )
+        };
+
+        self.clear = function() {
+            self.query('');
+            self.results([]);
+            self.selection([]);
+        };
+
+    };
+
+    var $addContributors = $('#addContributors');
+
+    viewModel = new addContributorModel();
+    ko.applyBindings(viewModel, $addContributors[0]);
+
+    // Clear user search modal when dismissed; catches dismiss by escape key
+    // or cancel button.
+    $addContributors.on('hidden', function() {
+        viewModel.clear();
+    });
+
 </script>
-<div class="modal fade" id="addContributors">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Add Contributors</h3>
-            </div><!-- end modal-header-->
-            <div class="modal-body">
-                <script type="text/x-handlebars">
-                {{view Ember.TextField valueBinding="App.SearchController.query"}}
-                {{#view Em.Button target="App.SearchController" action="search"}}
-                    Search
-                {{/view}}
-                <br />
-                {{#if App.SearchController.content}}
-                    {{#each App.SearchController.content}}
-                        {{#view App.RadioButton value=id fullname=fullname}}
-                            {{fullname}}
-                        {{/view}}
-                        {{#view App.Gravatar src=gravatar}}
-                        {{/view}}
-                        <br />
-                        ##<input type="radio" name="id" value="{{id}}">&nbsp;{{fullname}}<br />
-                    {{/each}}
-                {{else}}
-                    {{#if App.SearchController.has_started}}
-                        {{#if App.SearchController.is_email}}
-                            No user by that email address found.
-                        {{else}}
-                            No user by that name found.
-                        {{/if}}
-                         You can manually add the person you are looking for by entering their name and email address below.  They can later claim this project via that email address when they associate said address with an OSF account. <br />
-                            <br />
-                            <form class="form-horizontal">
-                            <label>Full name</label><div>{{view Ember.TextField valueBinding="App.SearchController.fullname"}}</div>
-                            <label>Email</label><div>{{view Ember.TextField valueBinding="App.SearchController.email"}}</div>
-                            </form>
-                    {{/if}}
-                {{/if}}
-                </script>
-            </div><!-- end modal-body -->
-            <div class="modal-footer">
-                <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
-                <button onclick="App.SearchController.add()" class="btn btn-primary">Add</button>
-            </div><!-- end modal-footer -->
-        </div><!-- end modal-content -->
-    </div><!-- end modal-dialog -->
-</div><!-- end modal -->

@@ -3,10 +3,13 @@
 '''Invoke tasks. To run a task, run ``$ invoke <COMMAND>``. To see a list of
 commands, run ``$ invoke --list``.
 '''
+import os
 from invoke import task, run, ctask
 
 from website import settings
 from framework.tasks import celery
+
+SOLR_DEV_PATH = os.path.join("scripts", "solr-dev")  # Path to example solr app
 
 @task
 def server():
@@ -46,6 +49,21 @@ def rabbitmq():
     the server as a daemon.
     '''
     run("rabbitmq-server", pty=True)
+
+
+@task
+def solr():
+    '''Start a local solr server.
+
+    NOTE: Requires that Java and Solr are installed. See README for more instructions.
+    '''
+    os.chdir(SOLR_DEV_PATH)
+    run("java -jar start.jar", pty=True)
+
+@task
+def solr_migrate():
+    '''Migrate the solr-enabled models.'''
+    run("python -m website.solr_migration.migrate")
 
 @task
 def mailserver(port=1025):

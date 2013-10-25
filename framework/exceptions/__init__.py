@@ -1,6 +1,12 @@
+# -*- coding: utf-8 -*-
+'''Custom exceptions for the framework.'''
 import copy
 import httplib as http
 from framework.flask import request
+
+
+class ConnectionError(Exception):
+    pass
 
 class HTTPError(Exception):
 

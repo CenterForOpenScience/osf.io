@@ -8,6 +8,7 @@ from ..decorators import must_not_be_registration, must_be_valid_project, \
 from framework.auth import must_have_session_auth, get_current_user, get_api_key
 from framework.forms.utils import sanitize
 import hashlib
+import json
 
 from framework import HTTPError
 
@@ -103,6 +104,8 @@ def project_removecontributor(*args, **kwargs):
     user = kwargs['user']
     api_key = get_api_key()
     node_to_use = node or project
+
+    # FIXME: this isn't working
     if request.json['id'].startswith('nr-'):
         outcome = node_to_use.remove_nonregistered_contributor(
             user, request.json['name'], request.json['id'].replace('nr-', '')
@@ -122,56 +125,36 @@ def project_removecontributor(*args, **kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 
-
 @must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
-def project_addcontributor_post(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
+def project_addcontributors_post(*args, **kwargs):
+    """ Add contributors to a node. """
+
+    node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     api_key = get_api_key()
+    user_ids = request.json.get('user_ids', [])
+    # TODO: Move to model
 
-    node_to_use = node or project
-    # TODO: use Node.add_contributor
-    if "user_id" in request.form:
-        user_id = request.form['user_id'].strip()
-        added_user = User.load(user_id)
-        if added_user:
-            if user_id not in node_to_use.contributors:
-                node_to_use.contributors.append(added_user)
-                node_to_use.contributor_list.append({'id':added_user._primary_key})
-                node_to_use.save()
+    for user_id in user_ids:
+        if user_id not in node_to_use.contributors:
+            added_user = User.load(user_id)
+            node_to_use.contributors.append(added_user)
+            node_to_use.contributor_list.append({
+                'id': added_user._primary_key,
+            })
+    node_to_use.save()
 
-                node_to_use.add_log(
-                    action='contributor_added',
-                    params={
-                        'project':node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
-                        'node':node_to_use._primary_key,
-                        'contributors':[added_user._primary_key],
-                    },
-                    user=user,
-                    api_key=api_key
-                )
-    elif "email" in request.form and "fullname" in request.form:
-        # TODO: Nothing is done here to make sure that this looks like an email.
-        # todo have same behavior as wtforms
-        email = sanitize(request.form["email"].strip())
-        fullname = sanitize(request.form["fullname"].strip())
-        if email and fullname:
-            node_to_use.contributor_list.append({'nr_name':fullname, 'nr_email':email})
-            node_to_use.save()
-
-        node_to_use.add_log(
-            action='contributor_added',
-            params={
-                'project':node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
-                'node':node_to_use._primary_key,
-                'contributors':[{"nr_name":fullname, "nr_email":email}],
-            },
-            user=user,
-            api_key=api_key
-        )
-
-    return {'status' : 'success'}, 201
+    node_to_use.add_log(
+        action='contributor_added',
+        params={
+            'project': node_to_use.parent_id,
+            'node': node_to_use._primary_key,
+            'contributors': user_ids,
+        },
+        user=user,
+        api_key=api_key,
+    )
+    return {'status': 'success'}, 201

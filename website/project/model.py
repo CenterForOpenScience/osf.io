@@ -16,7 +16,6 @@ from dulwich.object_store import tree_lookup_path
 from framework.mongo import ObjectId
 from framework.auth import User, get_user
 from framework.analytics import get_basic_counters, increment_user_activity_counters
-from framework.search import generate_keywords
 from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
 from framework import StoredObject, fields
@@ -123,7 +122,7 @@ class Node(StoredObject):
     description = fields.StringField()
     category = fields.StringField()
 
-    _terms = fields.DictionaryField(list=True)
+    #_terms = fields.DictionaryField(list=True)
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
     registered_meta = fields.DictionaryField()
@@ -135,6 +134,8 @@ class Node(StoredObject):
 
     creator = fields.ForeignField('user', backref='created')
     contributors = fields.ForeignField('user', list=True, backref='contributed')
+    # Dict list that includes registered AND unregsitered users
+    # Example: [{u'id': u've4nx'}, {u'nr_name': u'Joe Dirt', u'nr_email': u'joe@example.com'}]
     contributor_list = fields.DictionaryField(list=True)
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
 
@@ -151,14 +152,39 @@ class Node(StoredObject):
 
     def can_edit(self, user, api_key=None):
 
-        return self.is_public \
-            or self.is_contributor(user) \
-            or (api_key is not None and self is api_key.node)
+        return (self.is_public
+                or self.is_contributor(user)
+                or (api_key is not None and self is api_key.node)
+                or user == self.creator)
 
     def save(self, *args, **kwargs):
         rv = super(Node, self).save(*args, **kwargs)
         self.update_solr()
         return rv
+
+    def set_title(self, title, user, api_key=None, save=False):
+        '''Sets the title of this Node and logs it.
+
+        :param title: A string, the new title
+        :param user: A User object
+        :param api_key: An ApiKey object
+        '''
+        original_title = self.title
+        self.title = title
+        self.add_log(
+            action='edit_title',
+            params={
+                'project': self.node__parent[0]._primary_key if self.node__parent else None,
+                'node': self._primary_key,
+                'title_new': self.title,
+                'title_original': original_title,
+            },
+            user=user,
+            api_key=api_key,
+        )
+        if save:
+            self.save()
+        return None
 
     def update_solr(self):
         """Send the current state of the object to Solr, or delete it from Solr
@@ -257,22 +283,6 @@ class Node(StoredObject):
         self.save()
 
         return True
-
-    def generate_keywords(self, save=True):
-        source = []
-        keywords = []
-        source.append(self.title)
-        for k,v in self.wiki_pages_current.items():
-            page = NodeWikiPage.load(v)
-            source.append(page.content)
-        for t in self.tags:
-            source.append(t._id)
-        self._terms = []
-        # TODO force tags, add users, files
-        self._terms = generate_keywords(source)
-        if save:
-            self.save()
-        return
 
     def fork_node(self, user, api_key=None, title='Fork of '):
 
@@ -715,21 +725,17 @@ class Node(StoredObject):
             return self.node__parent[0]._id
         return None
 
-
     def is_contributor(self, user):
-        if user:
-            if str(user._id) in self.contributors:
-                return True
-        return False
+        return user in self.contributors
 
-    def remove_nonregistered_contributor(self, user, api_key, name, hash):
+    def remove_nonregistered_contributor(self, user, api_key, name, hash_id):
         for d in self.contributor_list:
-            if d.get('nr_name') == name and hashlib.md5(d.get('nr_email')).hexdigest() == hash:
+            if d.get('nr_name') == name and hashlib.md5(d.get('nr_email')).hexdigest() == hash_id:
                 email = d.get('nr_email')
         self.contributor_list[:] = [d for d in self.contributor_list if not (d.get('nr_email') == email)]
         self.save()
         self.add_log(
-            action='remove_contributor',
+            action='contributor_removed',
             params={
                 'project':self.parent_id,
                 'node':self._primary_key,
@@ -754,7 +760,7 @@ class Node(StoredObject):
             removed_user = get_user(contributor._id)
 
             self.add_log(
-                action='remove_contributor',
+                action='contributor_removed',
                 params={
                     'project':self.parent_id,
                     'node':self._primary_key,
@@ -767,17 +773,53 @@ class Node(StoredObject):
         else:
             return False
 
-    def add_contributor(self, user, log=True, save=False):
+    def add_contributor(self, contributor, user=None, log=True, api_key=None, save=False):
         '''Add a contributor to the project.
 
-        :param user: A user object.
+        :param contributor: A User object, the contributor to be added
+        :param user: A User object, the user who added the contributor or None.
         '''
-        # TODO: log is not used
-        if user._primary_key not in self.contributors:
-            self.contributors.append(user)
-            self.contributor_list.append({'id':user._primary_key})
+        if contributor._primary_key not in self.contributors:
+            self.contributors.append(contributor)
+            self.contributor_list.append({'id': contributor._primary_key})
+            if log:
+                self.add_log(
+                    action='contributor_added',
+                    params={
+                        'project': self.node__parent[0]._primary_key if self.node__parent else None,
+                        'node': self._primary_key,
+                        'contributors': [contributor._primary_key],
+                    },
+                    user=user,
+                    api_key=api_key
+                )
             if save:
                 self.save()
+            return True
+        else:
+            return False
+
+    def add_nonregistered_contributor(self, name, email, user, api_key=None, save=False):
+        '''Add a non-registered contributor to the project.
+
+        :param name: A string, the full name of the person.
+        :param email: A string, the email address of the person.
+        :param user: A User object, the user who added the person.
+        '''
+        self.contributor_list.append({'nr_name': name, 'nr_email':email})
+        self.add_log(
+            action='contributor_added',
+            params={
+                'project':self.node__parent[0]._primary_key if self.node__parent else None,
+                'node':self._primary_key,
+                'contributors':[{"nr_name": name, "nr_email":email}],
+            },
+            user=user,
+            api_key=api_key
+        )
+        if save:
+            self.save()
+        return None
 
     def set_permissions(self, permissions, user, api_key):
         if permissions == 'public' and not self.is_public:
@@ -854,8 +896,6 @@ class Node(StoredObject):
             self.wiki_pages_versions[page] = []
         self.wiki_pages_versions[page].append(v._primary_key)
         self.wiki_pages_current[page] = v._primary_key
-
-        self.generate_keywords(save=False)
 
         self.save()
 

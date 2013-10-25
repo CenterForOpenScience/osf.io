@@ -137,18 +137,58 @@ class TestProject(DbTestCase):
     def test_add_contributor(self):
         # A user is added as a contributor
         user2 = UserFactory()
-        self.project.add_contributor(user2)
+        self.project.add_contributor(contributor=user2, user=self.user)
         self.project.save()
         assert_in(user2, self.project.contributors)
+        assert_equal(self.project.logs[-1].action, 'contributor_added')
+
+    def test_add_nonregistered_contributor(self):
+        self.project.add_nonregistered_contributor(email="foo@bar.com", name="Weezy F. Baby", user=self.user)
+        self.project.save()
+        # Contributor list include nonregistered contributor
+        latest_contributor = self.project.contributor_list[-1]
+        assert_dict_equal(latest_contributor,
+                        {"nr_name": "Weezy F. Baby", "nr_email": "foo@bar.com"})
+        # A log event was added
+        assert_equal(self.project.logs[-1].action, "contributor_added")
 
     def test_remove_contributor(self):
         # A user is added as a contributor
         user2 = UserFactory()
-        self.project.add_contributor(user2)
+        self.project.add_contributor(contributor=user2, user=self.user)
         self.project.save()
         # The user is removed
         self.project.remove_contributor(self.user, contributor=user2, api_key=None)
         assert_not_in(user2, self.project.contributors)
+
+    def test_set_title(self):
+        proj = ProjectFactory(title="That Was Then", creator=self.user)
+        proj.set_title("This is now", user=self.user)
+        proj.save()
+        # Title was changed
+        assert_equal(proj.title, "This is now")
+        # A log event was saved
+        latest_log = proj.logs[-1]
+        assert_equal(latest_log.action, "edit_title")
+        assert_equal(latest_log.params['title_original'], "That Was Then")
+
+    def test_contributor_can_edit(self):
+        contributor = UserFactory()
+        self.project.add_contributor(contributor=contributor, user=self.user)
+        self.project.save()
+        assert_true(self.project.can_edit(contributor))
+
+    def test_creator_can_edit(self):
+        assert_true(self.project.can_edit(self.user))
+
+    def test_is_contributor(self):
+        contributor = UserFactory()
+        other_guy = UserFactory()
+        self.project.add_contributor(contributor=contributor, user=self.user)
+        self.project.save()
+        assert_true(self.project.is_contributor(contributor))
+        assert_false(self.project.is_contributor(other_guy))
+        assert_false(self.project.is_contributor(None))
 
 
 class TestNodeLog(DbTestCase):

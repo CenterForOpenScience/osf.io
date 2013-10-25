@@ -52,6 +52,25 @@ var modalConfirm = function(message, url){
     )
 }
 
+var urlDecode = function(str) {
+    return decodeURIComponent((str+'').replace(/\+/g, '%20'));
+}
+
+
+/**
+ * Display a modal confirmation window before relocating to an url.
+ * @param  <String> message
+ * @param  <String> url
+ */
+var modalConfirm = function(message, url){
+    bootbox.confirm(message,
+        function(result) {
+            if (result) {
+                window.location.href = url;
+            }
+        }
+    )
+}
 
 // TODO: Move Watch and Fork click handlers to this file so that NodeActions
 // doesn't need to be in global namespace
@@ -76,6 +95,8 @@ NodeActions.toggleWatch = function () {
         url: nodeToUseUrl() + "/togglewatch/",
         type: "POST",
         dataType: "json",
+        data: JSON.stringify({}),
+        contentType: "application/json",
         success: function(data, status, xhr) {
             // Update watch count in DOM
             $watchCount = $("#watchCount");
@@ -350,13 +371,44 @@ $(document).ready(function(){
     // Private Button confirm dlg
     $('#privateButton').on('click', function() {
         var url = $(this).data("target");
-        modalConfirm(Messages.makePrivateWarning, url);
+        bootbox.confirm(Messages.makePrivateWarning,
+            function(result) {
+                if (result) {
+                    $.ajax({
+                        url: url,
+                        type: "POST",
+                        data: {"permissions": "public"},
+                        contentType: "application/json",
+                        dataType: "json",
+                        success: function(data){
+                            window.location.href = data["redirect_url"];
+                        }
+                    })
+                }
+            }
+        )
     });
 
+    // TODO(sloria): Repetition here. Rethink.
     // Public Button confirm dlg
     $('#publicButton').on('click', function() {
         var url = $(this).data("target");
-        modalConfirm(Messages.makePublicWarning, url);
+        bootbox.confirm(Messages.makePublicWarning,
+            function(result) {
+                if (result) {
+                    $.ajax({
+                        url: url,
+                        type: "POST",
+                        data: {"permissions": "private"},
+                        contentType: "application/json",
+                        dataType: "json",
+                        success: function(data){
+                            window.location.href = data["redirect_url"];
+                        }
+                    })
+                }
+            }
+        )
     });
 });
 
