@@ -1,9 +1,3 @@
-## todo: move to warnings.py
-<%
-    make_public_warning = 'Once a project is made public, there is no way to guarantee that access to the data it contains can be complete prevented. Users should assume that once a project is made public, it will always be public. Are you absolutely sure you would like to continue?'
-    make_private_warning = 'Making a project will prevent users from viewing it on this site, but will have no impact on external sites, including Google\'s cache. Would you like to continue?'
-%>
-
 % if node_is_registration:
     <span class="label label-important" style="font-size:1.1em;margin-bottom:30px;">This node is a registration of <a href="${node_registered_from_url}">this node</a>; the content of the node has been frozen and cannot be edited.</span>
     <style type="text/css">
@@ -24,11 +18,11 @@
             %if not node_is_public:
                 <button class='btn disabled'>Private</button>
                 % if user_is_contributor:
-                    <a class="btn" href="${node_url}permissions/public/" data-confirm="${make_public_warning}">Make public</a>
+                    <a class="btn" id="publicButton" data-target="${node_url}permissions/public/">Make public</a>
                 % endif
             %else:
                 % if user_is_contributor:
-                    <a class="btn" href="${node_url}permissions/private/" data-confirm="${make_private_warning}">Make private</a>
+                    <a class="btn" id="privateButton" data-target="${node_url}permissions/private/">Make private</a>
                 % endif
                 <button class="btn disabled">Public</button>
             %endif
@@ -71,10 +65,6 @@
         %if user_can_edit:
             <script>
                 $(function() {
-                    function urlDecode(str) {
-                        return decodeURIComponent((str+'').replace(/\+/g, '%20'));
-                    }
-
                     $('#node-title-editable').editable({
                        type:  'text',
                        pk:    '${node_id}',
