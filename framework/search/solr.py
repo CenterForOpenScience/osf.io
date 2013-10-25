@@ -4,6 +4,8 @@ import logging
 import sunburnt
 
 from website import settings
+from framework.exceptions import ConnectionError
+
 
 logger = logging.getLogger(__name__)
 
@@ -11,16 +13,14 @@ if settings.USE_SOLR:
     try:
         solr = sunburnt.SolrInterface(settings.solr)
     except Exception:
-        logger.warn("The USE_SOLR setting is enabled but there was a problem "
+        raise ConnectionError("The USE_SOLR setting is enabled but there was a problem "
                     "starting the Solr interface. Is the Solr server running?")
-        solr = None
 else:
     solr = None
 
 
 def update_solr(args=None):
     # check to see if the document is in the solr database
-
     try:
         new = solr.query(id=args['id']).execute()[0]
     except IndexError:
@@ -56,7 +56,6 @@ def update_user(user):
 def delete_solr_doc(args=None):
     # if the id we have is for a project, then we
     # just deleted the document
-    print 'deleting.'
     try:
         db = solr.query(id=args['doc_id']).execute()[0]
         for key in db.keys():
