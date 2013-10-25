@@ -164,5 +164,5 @@ OSF_META_SCHEMAS = {
     'osf_comment': ensure_schema_structure(COMMENT_SCHEMA),
     'Open-Ended_Registration': ensure_schema_structure(OPEN_REGISTRATION_SCHEMA),
     'OSF-Standard_Pre-Data_Collection_Registration': ensure_schema_structure(STANDARD_REGISTRATION_SCHEMA),
-    'brandt_preregistration': ensure_schema_structure(BRANDT_PREREGISTRATION),
+    #'brandt_preregistration': ensure_schema_structure(BRANDT_PREREGISTRATION),
 }

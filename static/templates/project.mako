@@ -138,26 +138,26 @@
     </div>
   </div>
 
-<!-- Include Knockout and view model -->
-<div mod-meta='{
-        "tpl": "metadata/knockout.mako",
-        "replace": true
-    }'></div>
-
-<!-- Render comments -->
-<div mod-meta='{
-        "tpl": "metadata/comment_group.mako",
-        "kwargs": {
-            "guid": "${node_id}",
-            "top": true
-        },
-        "replace": true
-    }'></div>
-
-<!-- Boilerplate comment JS -->
-<div mod-meta='{
-        "tpl": "metadata/comment_js.mako",
-        "replace": true
-    }'></div>
+##<!-- Include Knockout and view model -->
+##<div mod-meta='{
+##        "tpl": "metadata/knockout.mako",
+##        "replace": true
+##    }'></div>
+##
+##<!-- Render comments -->
+##<div mod-meta='{
+##        "tpl": "metadata/comment_group.mako",
+##        "kwargs": {
+##            "guid": "${node_id}",
+##            "top": true
+##        },
+##        "replace": true
+##    }'></div>
+##
+##<!-- Boilerplate comment JS -->
+##<div mod-meta='{
+##        "tpl": "metadata/comment_js.mako",
+##        "replace": true
+##    }'></div>
 
 <div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
