@@ -104,6 +104,7 @@ def project_removecontributor(*args, **kwargs):
     api_key = get_api_key()
     node_to_use = node or project
 
+    # FIXME: this isn't working
     if request.json['id'].startswith('nr-'):
         outcome = node_to_use.remove_nonregistered_contributor(
             user, request.json['name'], request.json['id'].replace('nr-', '')
@@ -123,7 +124,6 @@ def project_removecontributor(*args, **kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 
-# FIXME(sloria): This should be getting JSON data, not form data
 @must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
@@ -139,27 +139,19 @@ def project_addcontributor_post(*args, **kwargs):
         user_id = request.json['user_id'].strip()
         added_user = User.load(user_id)
         if added_user:
-            if user_id not in node_to_use.contributors:
-                node_to_use.add_contributor(added_user, log=True)
-                node_to_use.save()
+            node_to_use.add_contributor(contributor=added_user, user=user, log=True)
+            node_to_use.save()
+        else:
+            return {"status": "failure"}, 201
     elif "email" in request.json and "fullname" in request.json:
         # TODO: Nothing is done here to make sure that this looks like an email.
         # todo have same behavior as wtforms
         email = sanitize(request.json["email"].strip())
         fullname = sanitize(request.json["fullname"].strip())
         if email and fullname:
-            node_to_use.contributor_list.append({'nr_name':fullname, 'nr_email':email})
+            node_to_use.add_nonregistered_contributor(name=fullname, email=email,
+                                                        user=user, api_key=api_key)
             node_to_use.save()
-
-        node_to_use.add_log(
-            action='contributor_added',
-            params={
-                'project':node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
-                'node':node_to_use._primary_key,
-                'contributors':[{"nr_name":fullname, "nr_email":email}],
-            },
-            user=user,
-            api_key=api_key
-        )
-
+        else:
+            return {"status": "failure", 'message': "Must include both name and email."}, 201
     return {'status' : 'success'}, 201

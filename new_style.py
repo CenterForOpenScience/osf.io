@@ -495,11 +495,10 @@ def make_url_map(app):
         ], 'get', project_views.node.project_statistics, json_renderer),
 
         # Permissions
-        # TODO: Should be a POST
         Rule([
             '/project/<pid>/permissions/<permissions>/',
             '/project/<pid>/node/<nid>/permissions/<permissions>/',
-        ], 'get', project_views.node.project_set_permissions, json_renderer),
+        ], 'post', project_views.node.project_set_permissions, json_renderer),
 
 
         ### Wiki ###

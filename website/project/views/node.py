@@ -239,7 +239,7 @@ def project_set_permissions(*args, **kwargs):
 
     node_to_use.set_permissions(permissions, user, api_key)
 
-    return {'status' : 'success'}, None, None, node_to_use.url
+    return {'status' : 'success', "permissions": permissions, "redirect_url": node_to_use.url}, None, None
 
 
 @must_have_session_auth  # returns user or api_node
