@@ -460,10 +460,6 @@ process_rules(app, [
     # Add / remove contributors
     Rule('/search/users/', 'post', project_views.node.search_user, json_renderer),
     Rule([
-        '/project/<pid>/addcontributor/',
-        '/project/<pid>/node/<nid>/addcontributor/',
-    ], 'post', project_views.contributor.project_addcontributor_post, json_renderer),
-    Rule([
         '/project/<pid>/addcontributors/',
         '/project/<pid>/node/<nid>/addcontributors/',
     ], 'post', project_views.contributor.project_addcontributors_post, json_renderer),

@@ -3,7 +3,6 @@ import itertools
 import datetime as dt
 from pytz import utc
 from framework.bcrypt import generate_password_hash, check_password_hash
-from framework.search import Keyword
 from framework import StoredObject, fields,  Q
 from bson import ObjectId
 
