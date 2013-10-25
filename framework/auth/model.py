@@ -156,6 +156,7 @@ class User(StoredObject):
         if save:
             self.save()
 
+    # TODO: This is OSF specific. Move to website package
     def watch(self, watch_config, save=False):
         '''Watch a node by adding its WatchConfig to this user's ``watched``
         list. Raises ``ValueError`` if the node is already watched.

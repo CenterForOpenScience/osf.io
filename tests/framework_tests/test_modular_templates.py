@@ -5,6 +5,7 @@ These require a test db because they use Session objects.
 '''
 import json
 import unittest
+import os
 
 import flask
 from lxml.html import fragment_fromstring
@@ -18,6 +19,9 @@ from framework.routing import (
     render_mako_string,
 )
 from tests.base import AppTestCase, DbTestCase
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+TEMPLATES_PATH = os.path.join(HERE, 'templates')
 
 class RendererTestCase(DbTestCase, AppTestCase):
     def setUp(self):
@@ -96,7 +100,7 @@ class WebRendererTestCase(AppTestCase):
     def setUp(self):
         super(WebRendererTestCase, self).setUp()
         self.r = WebRenderer(
-            '../../tests/templates/main.html',
+            os.path.join(TEMPLATES_PATH, 'main.html'),
             render_mako_string
         )
 
@@ -214,7 +218,7 @@ class WebRendererTemplateTestCase(AppTestCase):
             r = WebRenderer(
                 'nested_parent.html',
                 render_mako_string,
-                template_dir='tests/templates',
+                template_dir=TEMPLATES_PATH,
             )
 
             # render the template (with an empty context)
@@ -237,7 +241,7 @@ class WebRendererTemplateTestCase(AppTestCase):
             r = WebRenderer(
                 'nested_child.html',
                 render_mako_string,
-                template_dir='tests/templates',
+                template_dir=TEMPLATES_PATH,
             )
 
             html = fragment_fromstring(
@@ -272,7 +276,7 @@ class WebRendererTemplateTestCase(AppTestCase):
             r = WebRenderer(
                 'nested_parent_broken.html',
                 render_mako_string,
-                template_dir='tests/templates',
+                template_dir=TEMPLATES_PATH,
             )
 
             resp = r({})

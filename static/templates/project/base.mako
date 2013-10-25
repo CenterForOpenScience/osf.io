@@ -180,26 +180,33 @@
         var email = this.email;
 
         if ( fullname ){
-                jQuery.post(
-                    '${node_api_url}addcontributor/',
-                    { fullname: fullname, email: email },
-                    function(data){
+                jQuery.ajax({
+                    type: "POST",
+                    url: '${node_api_url}addcontributor/',
+                    data: JSON.stringify({"fullname": fullname, "email": email }),
+                    success: function(data){
                         $('#addContributors').modal('hide');
                         window.location.reload();
                     },
-                    'json'
-                );
+                    dataType: "json",
+                    contentType: "application/json"
+                });
         }else{
             if ( $('input[name=id]:checked').length > 0 ){
-                jQuery.post(
-                    '${node_api_url}addcontributor/',
-                    { user_id:$('input[name=id]:checked')[0].value },
-                    function(data){
+                jQuery.ajax({
+                    type: "POST",
+                    url: '${node_api_url}addcontributor/',
+                    data: JSON.stringify({
+                        user_id: $('input[name=id]:checked')[0].value,
+                        test: "hi"}
+                    ),
+                    success: function(data){
                         $('#addContributors').modal('hide');
                         window.location.reload();
                     },
-                    'json'
-                );
+                    dataType: "json",
+                    contentType: "application/json"
+                });
             }
         }
     },
