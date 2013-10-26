@@ -3,7 +3,7 @@
     <div mod-meta='{
             "tpl": "util/render_log.mako",
             "uri": "/api/v1/log/${log}/",
-            "error": "Log unavailable (private component)",
+            "error": "<div>Log unavailable (private component)</div>",
             "replace": true
         }'></div>
 % endfor
