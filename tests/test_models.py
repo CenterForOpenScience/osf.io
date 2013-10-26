@@ -167,6 +167,7 @@ class TestProject(DbTestCase):
     def test_project_factory(self):
         node = ProjectFactory()
         assert_equal(node.category, 'project')
+        assert_equal(node.logs[-1].action, 'project_created')
 
     def test_url(self):
         url = self.project.url
