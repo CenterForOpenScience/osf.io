@@ -25,6 +25,7 @@ seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
             raise RuntimeError, "unexpected opcode"
     return ''.join(output)
 
+# TODO: These belong in framework.auth
 def new_project(title, description, user):
     project = new_node('project', title, user, description)
     project.add_log('project_created',

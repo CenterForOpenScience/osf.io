@@ -410,3 +410,15 @@ form.form-horizontal.form-horizontal-narrow .control-group {
     border-collapse:separate;
     border-spacing: 5px;
 }
+
+
+/* Search */
+.nested
+    {
+        padding-left: 25px;
+    }
+.navigate
+    {
+        padding:25px;
+        font-size: 18px;
+    }

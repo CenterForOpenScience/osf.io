@@ -1,21 +1,19 @@
 # -*- coding: utf-8 -*-
-import werkzeug.wrappers
-from werkzeug.exceptions import NotFound
-from framework import StoredObject
-
-from framework import HTTPError
-from framework.flask import app, redirect, make_response
-from mako.template import Template
-from mako.lookup import TemplateLookup
-
-from framework import session
-
 import os
 import copy
 import json
 import pystache
 import httplib as http
+
 from bs4 import BeautifulSoup
+import werkzeug.wrappers
+from werkzeug.exceptions import NotFound
+from mako.template import Template
+from mako.lookup import TemplateLookup
+
+from framework import StoredObject, HTTPError, session
+from framework.flask import app, redirect, make_response
+
 
 # TODO: Move to settings
 TEMPLATE_DIR = 'static/templates/'
