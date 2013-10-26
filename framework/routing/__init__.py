@@ -393,6 +393,7 @@ class WebRenderer(Renderer):
         is_replace = element_meta.get('replace', False)
         kwargs = element_meta.get('kwargs', {})
         view_kwargs = element_meta.get('view_kwargs', {})
+        error_msg = element_meta.get('error', None)
 
         render_data = copy.deepcopy(data)
         render_data.update(kwargs)
@@ -406,6 +407,8 @@ class WebRenderer(Renderer):
             except NotFound:
                 return '<div>URI {} not found</div>'.format(uri), is_replace
             except Exception as error:
+                if error_msg:
+                    return error_msg, is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(
                     uri,
                     repr(error)

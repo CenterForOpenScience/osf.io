@@ -19,14 +19,19 @@ def check_conflicts(models):
         ids += list(model.find().__iter__(raw=True))
 
     if len(set(ids)) != len(ids):
-        logging.error('Conflict among models {}'.format(
-            ', '.join([model._name for model in models])
-        ))
+        raise Exception(
+            'Conflict among models {}'.format(
+                ', '.join([model._name for model in models])
+            )
+        )
 
 
 optimistic_models = [models.Node, models.User]
 objectid_models = [models.NodeLog, models.NodeFile, models.NodeWikiPage,
                    models.Tag, models.MetaData]
+
+check_conflicts(optimistic_models)
+check_conflicts(objectid_models)
 
 logging.debug('Deleting GUID objects...')
 for guid_obj in models.Guid.find():
@@ -47,4 +52,4 @@ for model in optimistic_models + objectid_models:
             try:
                 guid_obj.save()
             except:
-                print obj._id, obj._name
+                print 'error creating guid on', obj._id, obj._name

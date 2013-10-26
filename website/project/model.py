@@ -207,10 +207,12 @@ class Node(GuidStoredObject):
 
     def can_edit(self, user, api_key=None):
 
-        return (self.is_public
-                or self.is_contributor(user)
-                or (api_key is not None and self is api_key.node)
-                or user == self.creator)
+        return (
+            self.is_public
+            or self.is_contributor(user)
+            or (api_key is not None and self is api_key.node)
+            or (user and user == self.creator)
+        )
 
     def save(self, *args, **kwargs):
         rv = super(Node, self).save(*args, **kwargs)

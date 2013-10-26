@@ -203,9 +203,19 @@ from website.filters import gravatar
 from website.models import User
 
 def search_contributor():
+    """Search for contributors to add to a project using Solr. Request must
+    include JSON data with a "query" field.
+
+    :return: List of dictionaries, each containing the ID, full name, and
+        gravatar URL of an OSF user
+
+    """
+    # Prepare query
+    query = request.args.get('query', '')
+    q = u'user:{}'.format(query).encode('utf-8')
 
     solr_params = {
-        'q': 'user:{}'.format(request.args.get('query')),
+        'q': q,
         'wt': 'python',
     }
     solr_url = '{}?{}'.format(
