@@ -9,20 +9,20 @@
     </style>
 % endif
 
-<header class="jumbotron subhead" id="overview">
+<header class="subhead" id="overview">
     <div class="row">
         <div class="btn-toolbar pull-right">
             <div class="btn-group">
             %if not node_is_public:
                 <button class='btn btn-default disabled'>Private</button>
                 % if user_is_contributor:
-                    <a class="btn" id="publicButton" data-target="${node_api_url}permissions/public/">Make public</a>
+                    <a class="btn btn-primary" id="publicButton" data-target="${node_api_url}permissions/public/">Make public</a>
                 % endif
             %else:
                 % if user_is_contributor:
-                    <a class="btn" id="privateButton" data-target="${node_api_url}permissions/private/">Make private</a>
+                    <a class="btn btn-default" id="privateButton" data-target="${node_api_url}permissions/private/">Make private</a>
                 % endif
-                <button class="btn btn-warning disabled">Public</button>
+                <button class="btn btn-primary disabled">Public</button>
             %endif
             </div>
 
@@ -56,8 +56,7 @@
                     <i class="icon-code-fork"></i>&nbsp;${node_fork_count}
                 </a>
 
-            </div>
-
+            </div><!-- end btn-grp -->
         </div>
 
         <div class="col-md-8">
@@ -70,6 +69,7 @@
         </div>
 
     </div>
+
 
     <p id="contributors">Contributors:
         <div mod-meta='{
@@ -115,7 +115,7 @@
             <li><a href="${node_url}settings/">Settings</a></li>
             %endif
         </ul>
-    </div>
+    </nav>
 </header>
 <div class="modal hide fade" id="addContributors">
 
@@ -177,7 +177,7 @@
                         </tr>
                     </tbody>
                 </table>
-            </div>
+            </div><!-- end col-md -->
 
         </div>
 
