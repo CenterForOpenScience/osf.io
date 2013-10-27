@@ -47,6 +47,7 @@
     <script src="/static/vendor/jquery-tagcloud/jquery.tagcloud.js"></script>
     <script src="/static/vendor/jquery-treeview/jquery.treeview.js" type="text/javascript"></script>
     <script src="/static/vendor/bootstrap2/js/bootstrap.min.js"></script>
+    <script src="/static/vendor/bootbox/bootbox.min.js"></script>
     <script src="/static/vendor/bootstrap-editable/js/bootstrap-editable.min.js"></script>
     <script src="/static/vendor/jquery-autoresize/jquery.autoresize.js"></script>
     <script src="/static/vendor/jquery-tagit/js/tag-it.js"></script>

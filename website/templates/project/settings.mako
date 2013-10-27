@@ -4,7 +4,6 @@
 <div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
 <!-- Delete node -->
-<script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.0.0/bootbox.min.js"></script>
 <button id="delete-node" class="btn primary">Delete ${node_category}</button>
 <script type="text/javascript">
     $('#delete-node').on('click', function() {

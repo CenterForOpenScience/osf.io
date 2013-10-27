@@ -6,8 +6,6 @@
 </%def>
 
 <%def name="javascript_bottom()">
-## Import Bootbox
-<script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.0.0/bootbox.min.js"></script>
 <script>
     var addContributorModel = function(initial) {
 
