@@ -9,7 +9,7 @@
             <div class="wmd-panel">
                 <div id="wmd-button-bar"></div>
                 <textarea class="wmd-input" id="wmd-input" name="content">${wiki_content}</textarea>
-                <input type="submit" value="Save">
+                <input class="btn btn-primary" type="submit" value="Save">
             </div>
             <div id="wmd-preview" class="wmd-panel wmd-preview"></div>
         </form>

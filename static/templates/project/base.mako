@@ -181,8 +181,8 @@
 
     <div class="modal-footer">
         <span data-bind="if:selection().length">
-            <a class="btn" data-bind="click:submit">Add</a>
+            <a class="btn btn-primary" data-bind="click:submit">Add</a>
         </span>
-        <a href="#" class="btn" data-dismiss="modal">Cancel</a>
+        <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
     </div>
 </div>
