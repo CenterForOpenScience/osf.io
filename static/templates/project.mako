@@ -1,16 +1,11 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Project</%def>
 
-<%def name="stylesheets()">
-<link rel="stylesheet" type="text/css" href="/static/css/jquery.tagsinput.css" />
-</%def>
-
 <%def name="javascript()">
 <script src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>
 </%def>
 
 <%def name="javascript_bottom()">
-<script src="/static/js/jquery.tagsinput.min.js"></script>
 ## Import Bootbox
 <script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.0.0/bootbox.min.js"></script>
 <script>

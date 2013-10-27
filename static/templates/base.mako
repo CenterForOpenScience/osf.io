@@ -18,6 +18,7 @@
         <link rel="stylesheet" type="text/css" href="/static/jquery-ui.css">
     %endif
     <link rel="stylesheet" type="text/css" href="/static/jquery.tagit.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/jquery.tagsinput.css" />
     <link href="/static/tagit.ui-zendesk.css" rel="stylesheet" type="stylesheet">
     <link rel="stylesheet" type="text/css" href="/static/pagedown/demo.css" />
     <link href="/static/bootstrap/css/bootstrap.css" rel="stylesheet">
