@@ -11,8 +11,6 @@ from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
 
 from framework import app
 
-import new_style  # This import sets up the routes
-
 
 class TestAUser(DbTestCase):
 
@@ -33,7 +31,7 @@ class TestAUser(DbTestCase):
         form['username'] = self.user.username
         form['password'] = 'science'
         # submits
-        res = form.submit().follow()
+        res = form.submit().maybe_follow()
         return res
 
     def test_can_see_homepage(self):
@@ -45,21 +43,20 @@ class TestAUser(DbTestCase):
         # Goes to home page
         res = self.app.get("/").follow()
         # Clicks sign in button
-        res = res.click("Create an Account or Sign-In").follow()
+        res = res.click("Create an Account or Sign-In").maybe_follow()
         # Fills out login info
         form = res.forms['signinForm']  # Get the form from its ID
         form['username'] = self.user.username
         form['password'] = 'science'
         # submits
-        # res.showbrowser()
-        res = form.submit().follow()
+        res = form.submit().maybe_follow()
         # Sees dashboard with projects and watched projects
         assert_in("Projects", res)
         assert_in("Watched Projects", res)
 
     def test_sees_flash_message_on_bad_login(self):
         # Goes to log in page
-        res = self.app.get("/account/").follow()
+        res = self.app.get("/account/").maybe_follow()
         # Fills the form with incorrect password
         form  = res.forms['signinForm']
         form['username'] = self.user.username
@@ -76,7 +73,7 @@ class TestAUser(DbTestCase):
         project.save()
         # Goes to homepage, already logged in
         res = self._login(self.user.username, 'science')
-        res = self.app.get("/", auto_follow=True)
+        res = self.app.get("/").maybe_follow()
         # Clicks Dashboard link in navbar
         res = res.click("Dashboard", index=0)
         assert_in("Projects", res)  # Projects heading
@@ -145,6 +142,13 @@ class TestAUser(DbTestCase):
         res = self.app.get("/project/{0}/".format(project._primary_key), auth=self.auth).maybe_follow()
         assert_in("Make public", res)
 
+    def test_sees_logs_on_a_project(self):
+        project = ProjectFactory(is_public=True)
+        # User goes to the project's page
+        res = self.app.get("/project/{0}/".format(project._primary_key), auth=self.auth).maybe_follow()
+        # Can see log event
+        # res.showbrowser()
+        assert_in("created", res)
 
 
 if __name__ == '__main__':

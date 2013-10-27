@@ -1,9 +1,8 @@
 <%inherit file="base.mako"/>
 <%def name="title()">${fullname}'s Profile</%def>
-<%def name="content()">
-<div class="page-header">
 
-    % if user_is_profile:
+<%def name="javascript_bottom()">
+% if user_is_profile:
     <script>
         $(function() {
             $('#profile-fullname').editable({
@@ -22,7 +21,12 @@
             });
         });
     </script>
-    % endif
+% endif
+</%def>
+
+<%def name="content()">
+<div class="page-header">
+
     <img src="${gravatar_url}" />
     <h1 id="${'profile-fullname' if user_is_profile else ''}" style="display:inline-block">${fullname}</h1>
 

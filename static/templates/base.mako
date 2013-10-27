@@ -37,12 +37,14 @@
         <script src="//cdnjs.cloudflare.com/ajax/libs/ember.js/0.9.5/ember-0.9.5.min.js"></script>
     %else:
         <script src="/static/vendor/jquery/jquery-1.10.2.min.js"></script>
-        <script src="/static/vendor/jquery/jquery-migrate-1.2.1.min.js"></script>
         <script src="/static/underscore-min.js"></script>
         <script src="/static/handlebars.min.js"></script>
         <script src="/static/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="/static/tag-it.js"></script>
+        <script src="/static/js/jquery.tagsinput.min.js"></script>
         <script src="/static/ember-0.9.5.min.js"></script>
     %endif
+    <script src="/static/jquery.tagcloud.js"></script>
     <script src="/static/vendor/bootstrap3/js/bootstrap.min.js"></script>
     <script src="/static/tag-it.js"></script>
     <script src="/static/jquery.autoresize.js"></script>

@@ -1,35 +1,12 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Search</%def>
-<%def name="content()">
 
+<%def name="stylesheets()">
 <link rel="stylesheet" type="text/css" href="/static/css/jquery.tagsinput.css" />
+</%def>
 
-## todo: add CDN links
-<script src="/static/js/jquery.tagsinput.min.js"></script>
-<script src="/static/jquery.tagcloud.js"></script>
 
-## todo: move to static
-<style>
-    .nested
-        {
-            padding-left: 25px;
-        }
-    .navigate
-        {
-            padding:25px;
-            font-size: 18px;
-        }
-</style>
-<script>
-$.fn.tagcloud.defaults = {
-  size: {start: 14, end: 18, unit: 'pt'},
-  color: {start: '#cde', end: '#f52'}
-};
-
-$(function () {
-  $('#whatever a').tagcloud();
-});
-</script>
+<%def name="content()">
 <section id="Search" xmlns="http://www.w3.org/1999/html">
     <div class="page-header">
         % if query:
