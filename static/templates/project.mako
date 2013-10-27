@@ -175,7 +175,7 @@
           <div class="modal hide fade" id="newComponent">
           <form class="form-horizontal form-horizontal-narrow" action="${node_url}newnode/" method="post">
             <div class="modal-header">
-              <h3 class='img-add'>Add Component</h3>
+              <h3>Add Component</h3>
             </div>
             <div class="modal-body">
                     <div class='control-group'>

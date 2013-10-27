@@ -180,9 +180,9 @@
     </div>
 
     <div class="modal-footer">
+        <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
         <span data-bind="if:selection().length">
             <a class="btn btn-primary" data-bind="click:submit">Add</a>
         </span>
-        <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
     </div>
 </div>
