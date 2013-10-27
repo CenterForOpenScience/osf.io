@@ -11,8 +11,9 @@ def parent_dir(path):
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = parent_dir(HERE)  # website/ directory
-STATIC_FOLDER = os.path.join(HERE, 'website', 'static')
+STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
+TEMPLATES_PATH = os.path.join(BASE_PATH, "templates")
 
 
 # User management & registration

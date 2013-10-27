@@ -11,12 +11,12 @@ from werkzeug.exceptions import NotFound
 from mako.template import Template
 from mako.lookup import TemplateLookup
 
+from website import settings
 from framework import StoredObject, HTTPError, session
 from framework.flask import app, redirect, make_response
 
 
-# TODO: Move to settings
-TEMPLATE_DIR = 'website/templates/'
+TEMPLATE_DIR = settings.TEMPLATES_PATH
 _tpl_lookup = TemplateLookup(directories=[TEMPLATE_DIR],
                             module_directory="/tmp/mako_modules")
 REDIRECT_CODES = [
