@@ -5,7 +5,7 @@
     %if use_cdn:
     <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.2.2/d3.v3.min.js"></script>
     %else:
-    <script src="/static/d3.v3.min.js"></script>
+    <script src="/static/vendor/d3/d3.v3.min.js"></script>
     %endif
 </%def>
 <%def name="content()">
@@ -33,11 +33,6 @@
 
 </style>
 
-%if use_cdn:
-<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.2.2/d3.v3.min.js"></script>
-%else:
-<script src="/static/d3.v3.min.js"></script>
-%endif
 
 <script>
 

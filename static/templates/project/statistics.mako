@@ -19,7 +19,7 @@
 %if website.settings.USE_CDN_FOR_CLIENT_LIBS:
 <script src="//cdnjs.cloudflare.com/ajax/libs/d3/2.10.0/d3.v2.min.js"></script>
 %else:
-<script src="/static/d3.v2.js"></script>
+<script src="/static/vendor/d3/d3.v2.js"></script>
 %endif
 <style>
 

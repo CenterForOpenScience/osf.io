@@ -1,11 +1,5 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Search</%def>
-
-<%def name="stylesheets()">
-<link rel="stylesheet" type="text/css" href="/static/css/jquery.tagsinput.css" />
-</%def>
-
-
 <%def name="content()">
 <section id="Search" xmlns="http://www.w3.org/1999/html">
     <div class="page-header">

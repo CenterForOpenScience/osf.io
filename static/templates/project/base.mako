@@ -2,7 +2,7 @@
     <span class="label label-important" style="font-size:1.1em;margin-bottom:30px;">This node is a registration of <a href="${node_registered_from_url}">this node</a>; the content of the node has been frozen and cannot be edited.</span>
     <style type="text/css">
     .watermarked {
-        background-image:url('/static/read-only.png');
+        background-image:url('/static/img/read-only.png');
         background-repeat:repeat;
     }
     </style>

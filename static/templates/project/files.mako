@@ -172,23 +172,9 @@ $(function () {
  });
 </script>
 
-<script src="/static/js/vendor/jquery.ui.widget.js"></script>
-
-<script src="/static/tmpl.min.js"></script>
-<script src="/static/load-image.min.js"></script>
-<script src="/static/canvas-to-blob.min.js"></script>
-<script src="/static/bootstrap.min.js"></script>
-<script src="/static/bootstrap-image-gallery.min.js"></script>
-
-<script src="/static/js/jquery.iframe-transport.js"></script>
-<script src="/static/js/jquery.fileupload.js"></script>
-<script src="/static/js/jquery.fileupload-fp.js"></script>
-<script src="/static/js/jquery.fileupload-ui.js"></script>
-<script src="/static/js/locale.js"></script>
-<script src="/static/js/main.js"></script>
 
 <!-- The XDomainRequest Transport is included for cross-domain file deletion for IE8+ -->
-<!--[if gte IE 8]><script src="/js/cors/jquery.xdr-transport.js"></script><![endif]-->
+<!--[if gte IE 8]><script src="/static/vendor/jquery-fileupload//js/cors/jquery.xdr-transport.js"></script><![endif]-->
 
 % if not user_can_edit:
     <script type="text/javascript">
@@ -198,4 +184,17 @@ $(function () {
         $('input[name="files[]"]').css('cursor', 'default');
     </script>
 % endif
+</%def>
+
+<%def name="javascript()">
+<script src="/static/vendor/jquery-ui-widget/jquery.ui.widget.js"></script>
+<script src="/static/vendor/tmpl/tmpl.min.js"></script>
+<script src="/static/vendor/jquery-fileupload/js/jquery.fileupload.js"></script>
+<script src="/static/vendor/jquery-fileupload/js/load-image.min.js"></script>
+<script src="/static/vendor/jquery-fileupload/js/canvas-to-blob.min.js"></script>
+<script src="/static/vendor/jquery-fileupload/js/jquery.iframe-transport.js"></script>
+<script src="/static/vendor/jquery-fileupload/js/jquery.fileupload-fp.js"></script>
+<script src="/static/vendor/jquery-fileupload/js/jquery.fileupload-ui.js"></script>
+<script src="/static/vendor/jquery-fileupload/js/locale.js"></script>
+<script src="/static/vendor/bootstrap-image-gallery/bootstrap-image-gallery.min.js"></script>
 </%def>

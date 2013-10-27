@@ -26,9 +26,13 @@
                 }'></div>
         </div>
     </div>
-    <script type="text/javascript" src="/static/pagedown/Markdown.Converter.js"></script>
-    <script type="text/javascript" src="/static/pagedown/Markdown.Sanitizer.js"></script>
-    <script type="text/javascript" src="/static/pagedown/Markdown.Editor.js"></script>
+</div>
+</%def>
+
+<%def name="javascript_bottom()">
+    <script type="text/javascript" src="/static/vendor/pagedown/Markdown.Converter.js"></script>
+    <script type="text/javascript" src="/static/vendor/pagedown/Markdown.Sanitizer.js"></script>
+    <script type="text/javascript" src="/static/vendor/pagedown/Markdown.Editor.js"></script>
     <script type="text/javascript">
         (function () {
             var converter1 = Markdown.getSanitizingConverter();
@@ -36,5 +40,4 @@
             editor1.run();
         })();
     </script>
-</div>
 </%def>

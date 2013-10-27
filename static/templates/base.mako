@@ -15,54 +15,43 @@
      %if use_cdn:
         <link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1/themes/flick/jquery-ui.css">
     %else:
-        <link rel="stylesheet" type="text/css" href="/static/jquery-ui.css">
+        <link rel="stylesheet" type="text/css" href="/static/vendor/jquery-ui/css/jquery-ui.css">
     %endif
-    <link rel="stylesheet" type="text/css" href="/static/jquery.tagit.css">
-    <link rel="stylesheet" type="text/css" href="/static/css/jquery.tagsinput.css" />
-    <link href="/static/tagit.ui-zendesk.css" rel="stylesheet" type="stylesheet">
-    <link rel="stylesheet" type="text/css" href="/static/pagedown/demo.css" />
-    <link href="/static/bootstrap/css/bootstrap.css" rel="stylesheet">
-    <link href="/static/jquery-treeview/jquery.treeview.css" rel="stylesheet" type="text/css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="/static/vendor/jquery-tagit/css/jquery.tagit.css">
+    <link rel="stylesheet" type="text/css" href="/static/vendor/jquery-tagsinput/css/jquery.tagsinput.css" />
+    <link href="/static/vendor/jquery-tagit/css/tagit.ui-zendesk.css" rel="stylesheet" type="stylesheet">
+    <link href="/static/vendor/bootstrap2/css/bootstrap.css" rel="stylesheet">
+    <link href="/static/vendor/jquery-treeview/jquery.treeview.css" rel="stylesheet" type="text/css" media="screen" />
     <!--uploads-->
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="/static/css/jquery.fileupload-ui.css">
-    <link rel="stylesheet" href="/static/pygments.css" />
-    <link href="/static/bootstrap-editable/css/bootstrap-editable.css" rel="stylesheet">
-    <link href="/static/site.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/vendor/jquery-fileupload/css/jquery.fileupload-ui.css">
+    <link rel="stylesheet" href="/static/vendor/pygments.css" />
+    <link href="/static/vendor/bootstrap-editable/css/bootstrap-editable.css" rel="stylesheet">
+    <link href="/static/css/site.css" rel="stylesheet">
     ${self.stylesheets()}
 
 
     %if use_cdn:
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.3.3/underscore-min.js"></script>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.2/backbone-min.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.0.beta2/handlebars.min.js"></script>
-
         <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.12/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="/static/bootstrap/js/bootstrap.min.js"></script>
-        <script src="/static/tag-it.js"></script>
-        <script src="/static/jquery.autoresize.js"></script>
-        <script src="/static/bootstrap-editable/js/bootstrap-editable.min.js"></script>
-        <script src="/static/jquery-treeview/jquery.treeview.js" type="text/javascript"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/ember.js/0.9.5/ember-0.9.5.min.js"></script>
-        <script src="/static/ember-formbuilder.js"></script>
-        <script src="/static/site.js"></script>
     %else:
-        <script src="/static/jquery.min.js"></script>
-        <script src="/static/underscore-min.js"></script>
-        <script src="/static/handlebars.min.js"></script>
-        <script src="/static/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="/static/bootstrap/js/bootstrap.min.js"></script>
-        <script src="/static/tag-it.js"></script>
-        <script src="/static/js/jquery.tagsinput.min.js"></script>
-        <script src="/static/jquery.tagcloud.js"></script>
-        <script src="/static/jquery.autoresize.js"></script>
-        <script src="/static/bootstrap-editable/js/bootstrap-editable.min.js"></script>
-        <script src="/static/jquery-treeview/jquery.treeview.js" type="text/javascript"></script>
-        <script src="/static/ember-0.9.5.min.js"></script>
-        <script src="/static/ember-formbuilder.js"></script>
-        <script src="/static/site.js"></script>
+        <script src="/static/vendor/jquery/jquery.min.js"></script>
+        <script src="/static/vendor/underscore/underscore-min.js"></script>
+        <script src="/static/vendor/handlebars/handlebars.min.js"></script>
+        <script src="/static/vendor/jquery-ui/js/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="/static/vendor/ember/ember-0.9.5.min.js"></script>
     %endif
+    <script src="/static/vendor/jquery-tagsinput/js/jquery.tagsinput.min.js"></script>
+    <script src="/static/vendor/jquery-tagcloud/jquery.tagcloud.js"></script>
+    <script src="/static/vendor/jquery-treeview/jquery.treeview.js" type="text/javascript"></script>
+    <script src="/static/vendor/bootstrap2/js/bootstrap.min.js"></script>
+    <script src="/static/vendor/bootstrap-editable/js/bootstrap-editable.min.js"></script>
+    <script src="/static/vendor/jquery-autoresize/jquery.autoresize.js"></script>
+    <script src="/static/vendor/jquery-tagit/js/tag-it.js"></script>
+    <script src="/static/vendor/ember-formbuilder/ember-formbuilder.js"></script>
+    <script src="/static/js/site.js"></script>
     ${self.javascript()}
 
 </head>
