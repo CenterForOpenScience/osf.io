@@ -154,8 +154,6 @@
         %if wiki_home:
             ${ wiki_home }
             <p><a href="${node_url}/wiki/home">read more</a></p>
-        %else:
-            <p>No content</p>
         %endif
         </div>
       </section>
