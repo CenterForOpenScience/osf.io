@@ -16,7 +16,7 @@ from framework.flask import app, redirect, make_response
 
 
 # TODO: Move to settings
-TEMPLATE_DIR = 'static/templates/'
+TEMPLATE_DIR = 'website/templates/'
 _tpl_lookup = TemplateLookup(directories=[TEMPLATE_DIR],
                             module_directory="/tmp/mako_modules")
 REDIRECT_CODES = [
