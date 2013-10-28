@@ -54,8 +54,8 @@
 <script id="template-upload" type="text/x-tmpl">
 {% for (var i=0, file; file=o.files[i]; i++) { %}
     <tr class="template-upload fade">
-        <td class="preview"><span class="fade"></span></td>
         <td class="name"><span>{%=file.name%}</span></td>
+        <td class="modified"><span></span></td>
         <td class="size"><span>{%=o.formatFileSize(file.size)%}</span></td>
         {% if (file.error) { %}
             <td class="error" colspan="2"><span class="label label-important">{%=locale.fileupload.error%}</span> {%=locale.fileupload.errors[file.error] || file.error%}</td>

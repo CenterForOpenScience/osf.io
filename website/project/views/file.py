@@ -262,6 +262,7 @@ def view_file(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
 def download_file(*args, **kwargs):
+    print 'IN DF'
     project = kwargs['project']
     node = kwargs['node']
     user = kwargs['user']
@@ -283,22 +284,25 @@ def download_file(*args, **kwargs):
 @update_counters('download:{pid}:{fid}')
 @update_counters('download:{nid}:{fid}')
 def download_file_by_version(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
-    user = kwargs['user']
+    node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
+
     version_number = int(kwargs['vid']) - 1
-
-    node_to_use = node or project
-
-    current_version = len(node_to_use.files_versions[filename.replace('.', '_')])
-    if version_number == current_version:
-        file_path = os.path.join(settings.UPLOADS_PATH, node_to_use._primary_key, filename)
-        return send_file(file_path)
+    current_version = len(node_to_use.files_versions[filename.replace('.', '_')]) - 1
 
     content, content_type = node_to_use.get_file(filename, version=version_number)
     if content is None:
         raise HTTPError(http.NOT_FOUND)
+
+    if version_number == current_version:
+        file_path = os.path.join(settings.UPLOADS_PATH, node_to_use._primary_key, filename)
+        return send_file(
+            file_path,
+            mimetype=content_type,
+            as_attachment=True,
+            attachment_filename=filename,
+        )
+
     file_object = node_to_use.get_file_object(filename, version=version_number)
     filename_base, file_extension = os.path.splitext(file_object.path)
     returned_filename = '{base}_{tmstp}{ext}'.format(

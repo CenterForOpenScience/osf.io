@@ -346,8 +346,6 @@ class Node(GuidStoredObject):
         # todo: should this raise an error?
         if not self.can_edit(user, api_key):
             return
-        # if not (self.is_contributor(user) or self.is_public):
-        #     return
 
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
@@ -369,6 +367,7 @@ class Node(GuidStoredObject):
         forked.forked_date = when
         forked.forked_from = original
         forked.is_public = False
+        forked.contributor_list = []
 
         forked.add_contributor(user, log=False, save=False)
 
