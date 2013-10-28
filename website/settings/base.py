@@ -28,18 +28,12 @@ solr = 'http://localhost:8983/solr/'
 COOKIE_NAME = 'osf'
 SECRET_KEY = "CHANGEME"
 
-try:
-    os.environ['OSF_PRODUCTION']
-    DEBUG_MODE = False
-except KeyError:
-    DEBUG_MODE = True
+# May set these to True in local.py for development
+DEV_MODE = False
+DEBUG_MODE = False
 
 # External services
-try:
-    os.environ['OSF_PRODUCTION']
-    USE_CDN_FOR_CLIENT_LIBS = True
-except KeyError:
-    USE_CDN_FOR_CLIENT_LIBS = False
+USE_CDN_FOR_CLIENT_LIBS = True
 
 
 FROM_EMAIL = "openscienceframework-noreply@openscienceframework.org"
@@ -49,6 +43,7 @@ MAIL_PASSWORD = ''  # Set this in local.py
 
 STATIC_PATH = os.path.join(BASE_PATH, 'static')
 
+# TODO: Set me up in local.py in production
 try:
     os.environ['OSF_PRODUCTION']
     CACHE_PATH = '/opt/data/osf_cache'
@@ -57,6 +52,7 @@ except KeyError:
     CACHE_PATH = os.path.join(BASE_PATH, 'cache')
     UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
 
+# TODO: Set me up in local.py in production
 DB_PORT = 20771
 DB_NAME = "osf20130903"
 if os.environ.get("OSF_PRODUCTION", False):
@@ -110,12 +106,6 @@ WIKI_WHITELIST = {
         'list-style',
     ]
 }
-
-try:
-    os.environ['OSF_PRODUCTION']
-    DEV_MODE = False
-except KeyError:
-    DEV_MODE = True
 
 
 ##### Celery #####

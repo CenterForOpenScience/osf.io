@@ -41,5 +41,7 @@ CELERY_IMPORTS = (
     "framework.celery.tasks"
 )
 
+USE_CDN_FOR_CLIENT_LIBS = False
+
 # Example of extending base settings
 # base.IMG_FMTS += ["pdf"]
