@@ -794,7 +794,7 @@ class Node(GuidStoredObject):
         return None
 
     def is_contributor(self, user):
-        return user in self.contributors
+        return (user is not None) and ((user in self.contributors) or user == self.creator)
 
     def remove_nonregistered_contributor(self, user, api_key, name, hash_id):
         for d in self.contributor_list:

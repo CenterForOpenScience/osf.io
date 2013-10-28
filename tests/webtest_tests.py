@@ -161,6 +161,13 @@ class TestAUser(DbTestCase):
         # res.showbrowser()
         assert_in("created", res)
 
+    def test_no_wiki_content_message(self):
+        project = ProjectFactory(creator=self.user)
+        # Goes to project's wiki, where there is no content
+        res = self.app.get("/project/{0}/wiki/home/".format(project._primary_key), auth=self.auth)
+        # Sees a message indicating no content
+        assert_in("No wiki content", res)
+
 
 if __name__ == '__main__':
     unittest.main()
