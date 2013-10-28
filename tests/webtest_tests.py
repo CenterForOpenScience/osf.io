@@ -9,11 +9,12 @@ from tests.base import DbTestCase
 from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
                             NodeLogFactory, ApiKeyFactory)
 
-from framework import app
+# from framework import app
+from website import settings
 
 # Only uncomment if running these tests in isolation
-# from website.app import init_app
-# app = init_app(set_backends=False, routes=True)
+from website.app import init_app
+app = init_app(set_backends=False, routes=True)
 
 class TestAnUnregisteredUser(DbTestCase):
 
@@ -207,6 +208,47 @@ class TestAUser(DbTestCase):
         res = self.app.get("/project/{0}/wiki/home/".format(project._primary_key), auth=self.auth)
         # Sees a message indicating no content
         assert_in("No wiki content", res)
+
+# TODO: These affect search in development environment. Remove this side effect.
+@unittest.skipIf(not settings.USE_SOLR, "Skipping because USE_SOLR is False")
+class TestSearching(DbTestCase):
+
+    '''Test searching using the search bar. NOTE: These may affect the
+    Solr database. May need to migrate after running these.
+    '''
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = UserFactory()
+        # Add an API key for quicker authentication
+        api_key = ApiKeyFactory()
+        self.user.api_keys.append(api_key)
+        self.user.save()
+        self.auth = ('test', api_key._primary_key)
+
+    def test_a_user_from_home_page(self):
+        user = UserFactory()
+        # Goes to home page
+        res = self.app.get("/").maybe_follow()
+        # Fills search form
+        form = res.forms['searchBar']
+        form['q'] = user.fullname
+        res = form.submit().maybe_follow()
+        # No results, so clicks Search Users
+        res = res.click("Search users")
+        # The username shows as a search result
+        assert_in(user.fullname, res)
+
+    def test_a_public_project_from_home_page(self):
+        project = ProjectFactory(title="Foobar Project", is_public=True)
+        # Searches a part of the name
+        res = self.app.get('/').maybe_follow()
+        project.reload()
+        form = res.forms['searchBar']
+        form['q'] = "Foobar"
+        res = form.submit().maybe_follow()
+        # A link to the project is shown as a result
+        assert_in("Foobar Project", res)
 
 
 if __name__ == '__main__':
