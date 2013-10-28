@@ -6,10 +6,10 @@
             | Registered: ${summary['registered_date']}
         % endif
         </span>
+    </h4>
         % if summary['show_logs']:
             <i id="icon-${summary['id']}" class="icon-plus pull-right" onclick="NodeActions.openCloseNode('${summary['id']}');"></i>
         % endif
-    </h4>
     <div class="list-group-item-text"></div>
 
     <!-- Show abbreviated contributors list -->
