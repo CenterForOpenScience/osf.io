@@ -188,6 +188,7 @@
 </div>
 
 <script src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.0.0/bootbox.min.js"></script>
 
 ## todo: move to static
 <script>
