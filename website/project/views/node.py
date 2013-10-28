@@ -442,7 +442,11 @@ def get_summary(*args, **kwargs):
 @must_be_contributor_or_public
 def get_children(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
-    return _render_nodes(node_to_use.nodes)
+    return _render_nodes([
+        node
+        for node in node_to_use.nodes
+        if not node.is_deleted
+    ])
 
 @must_be_contributor_or_public
 def get_forks(*args, **kwargs):
