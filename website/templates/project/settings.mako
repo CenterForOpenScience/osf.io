@@ -8,7 +8,7 @@
 <script type="text/javascript">
     $('#delete-node').on('click', function() {
         bootbox.prompt(
-            '<div>Delete this ${node_category} and all non-project children</div>' +
+            '<div>Delete this ${node_category} and all non-project children? This is IRREVERSIBLE.</div>' +
                 '<div style="font-weight: normal; font-size: medium; line-height: normal;">If you want to continue, type the project title below and click OK</div>',
             function(result) {
                 if (result === '${node_title}') {

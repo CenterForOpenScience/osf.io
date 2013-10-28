@@ -37,12 +37,14 @@
         <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.0.beta2/handlebars.min.js"></script>
         <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.12/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/ember.js/0.9.5/ember-0.9.5.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.0.0/bootbox.min.js"></script>
     %else:
         <script src="/static/vendor/jquery/jquery.min.js"></script>
         <script src="/static/vendor/underscore/underscore-min.js"></script>
         <script src="/static/vendor/handlebars/handlebars.min.js"></script>
         <script src="/static/vendor/jquery-ui/js/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="/static/vendor/ember/ember-0.9.5.min.js"></script>
+        <script src="/static/vendor/bootbox/bootbox.min.js"></script>
     %endif
     <script src="/static/vendor/jquery-tagsinput/js/jquery.tagsinput.min.js"></script>
     <script src="/static/vendor/jquery-tagcloud/jquery.tagcloud.js"></script>

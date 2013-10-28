@@ -1,101 +1,14 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Project</%def>
-
-<%def name="javascript()">
-<script src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>
+<%def name="stylesheets()">
+<link rel="stylesheet" type="text/css" href="/static/css/jquery.tagsinput.css" />
 </%def>
 
 <%def name="javascript_bottom()">
 <script>
-    var addContributorModel = function(initial) {
-
-        var self = this;
-
-        self.query = ko.observable('');
-        self.results = ko.observableArray(initial);
-        self.selection = ko.observableArray([]);
-
-        self.search = function() {
-            $.getJSON(
-                '/api/v1/user/search/',
-                {query: self.query()},
-                function(result) {
-                    self.results(result);
-                }
-            )
-        };
-
-        self.addTips = function(elements, data) {
-            elements.forEach(function(element) {
-                $(element).find('.contrib-button').tooltip();
-            });
-        };
-
-        self.add = function(data, element) {
-            self.selection.push(data);
-            // Hack: Hide and refresh tooltips
-            $('.tooltip').hide();
-            $('.contrib-button').tooltip();
-        };
-
-        self.remove = function(data, element) {
-            self.selection.splice(
-                self.selection.indexOf(data), 1
-            );
-            // Hack: Hide and refresh tooltips
-            $('.tooltip').hide();
-            $('.contrib-button').tooltip();
-        };
-
-        self.selected = function(data) {
-            for (var idx=0; idx < self.selection().length; idx++) {
-                if (data.id == self.selection()[idx].id)
-                    return true;
-            }
-            return false;
-        };
-
-        self.submit = function() {
-            var user_ids = self.selection().map(function(elm) {
-                return elm.id;
-            });
-            $.ajax(
-                '${node_api_url}addcontributors/',
-                {
-                    type: 'post',
-                    data: JSON.stringify({user_ids: user_ids}),
-                    contentType: 'application/json',
-                    dataType: 'json',
-                    success: function(response) {
-                        if (response.status === 'success') {
-                            window.location.reload();
-                        }
-                    }
-                }
-            )
-        };
-
-        self.clear = function() {
-            self.query('');
-            self.results([]);
-            self.selection([]);
-        };
-
-    };
-
-    var $addContributors = $('#addContributors');
-
-    viewModel = new addContributorModel();
-    ko.applyBindings(viewModel, $addContributors[0]);
-
-    // Clear user search modal when dismissed; catches dismiss by escape key
-    // or cancel button.
-    $addContributors.on('hidden', function() {
-        viewModel.clear();
-    });
     $(function(){
-        ### Editable Title ###
 
+        ### Editable Title ###
         %if user_can_edit:
                 $(function() {
                     $('#node-title-editable').editable({
@@ -131,8 +44,8 @@
                 });
             },
         });
-        // Remove delete UI if not contributor
         % if not user_can_edit:
+            // Remove delete UI if not contributor
             $('a[title="Removing tag"]').remove();
             $('span.tag span').each(function(idx, elm) {
                 $(elm).text($(elm).text().replace(/\s*$/, ''))
@@ -149,10 +62,8 @@
     <div class="col-md-7" id='containment'>
       <section id="Wiki Home">
         <div>
-        %if wiki_home:
             ${ wiki_home }
-            <p><a href="${node_url}/wiki/home">read more</a></p>
-        %endif
+            <p><a href="${node_url}wiki/home">read more</a></p>
         </div>
       </section>
        %if not node:

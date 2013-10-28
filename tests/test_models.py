@@ -237,6 +237,8 @@ class TestProject(DbTestCase):
         assert_false(self.project.is_contributor(other_guy))
         assert_false(self.project.is_contributor(None))
 
+    def test_creator_is_contributor(self):
+        assert_true(self.project.is_contributor(self.user))
 
 class TestNodeLog(DbTestCase):
 

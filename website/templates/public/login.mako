@@ -12,6 +12,7 @@
                 "tpl": "util/render_form.mako",
                 "uri": "/api/v1/forms/registration/",
                 "kwargs": {
+                    "id": "registerForm",
                     "name": "registration",
                     "method_string": "POST",
                     "action_string": "/register/",
@@ -48,7 +49,7 @@
                 "tpl": "util/render_form.mako",
                 "uri": "/api/v1/forms/forgot_password/",
                 "kwargs": {
-                    "id": "forgotpassword",
+                    "id": "forgotPassword",
                     "name": "forgotpassword",
                     "method_string": "POST",
                     "action_string": "/forgotpassword/",

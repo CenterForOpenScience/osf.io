@@ -117,7 +117,7 @@ def auth_register_post():
 
     if not settings.registrationEnabled:
         status.push_status_message('Registration is currently disabled')
-        return framework.redirect(framework.url_for('auth_login'))
+        return framework.redirect(framework.url_for('OsfWebRenderer__auth_login'))
 
     set_previous_url()
 
@@ -141,8 +141,8 @@ def auth_register_post():
                     check %s to confirm your email address, %s.' %
                     (str(u.username), str(u.fullname)))
             else:
-                status.push_status_message('You may now login')
-            return framework.redirect('/')
+                status.push_status_message('You may now log in')
+            return framework.redirect(framework.url_for('OsfWebRenderer__auth_login'))
 
     else:
         forms.push_errors_to_status(form.errors)

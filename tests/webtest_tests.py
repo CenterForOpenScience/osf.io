@@ -11,6 +11,57 @@ from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
 
 from framework import app
 
+# Only uncomment if running these tests in isolation
+# from website.app import init_app
+# app = init_app(set_backends=False, routes=True)
+
+class TestAnUnregisteredUser(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+
+    def test_can_register(self):
+        # Goes to home page
+        res = self.app.get("/").maybe_follow()
+        # Clicks sign in button
+        res = res.click("Create an Account or Sign-In").maybe_follow()
+        # Fills out registration form
+        form = res.forms['registerForm']
+        form['register-fullname'] = "Nicholas Cage"
+        form['register-username'] = "nickcage@example.com"
+        form['register-username2'] = "nickcage@example.com"
+        form['register-password'] = "example"
+        form['register-password2'] = "example"
+        # Submits
+        res = form.submit().follow()
+        # There's a flash message
+        assert_in("You may now log in", res)
+        # User logs in
+        form = res.forms['signinForm']
+        form['username'] = "nickcage@example.com"
+        form['password'] = "example"
+        # Submits
+        res = form.submit().maybe_follow()
+
+    def test_sees_error_if_email_is_already_registered(self):
+        # A user is already registered
+        user = UserFactory(username="foo@bar.com")
+        # Goes to home page
+        res = self.app.get("/").maybe_follow()
+        # Clicks sign in button
+        res = res.click("Create an Account or Sign-In").maybe_follow()
+        # Fills out registration form
+        form = res.forms['registerForm']
+        form['register-fullname'] = "Foo Bar"
+        form['register-username'] = "foo@bar.com"
+        form['register-username2'] = "foo@bar.com"
+        form['register-password'] = "example"
+        form['register-password2'] = "example"
+        # submits
+        res = form.submit().maybe_follow()
+        # sees error message because email is already registered
+        assert_in("has already been registered.", res)
+
 
 class TestAUser(DbTestCase):
 
@@ -149,6 +200,13 @@ class TestAUser(DbTestCase):
         # Can see log event
         # res.showbrowser()
         assert_in("created", res)
+
+    def test_no_wiki_content_message(self):
+        project = ProjectFactory(creator=self.user)
+        # Goes to project's wiki, where there is no content
+        res = self.app.get("/project/{0}/wiki/home/".format(project._primary_key), auth=self.auth)
+        # Sees a message indicating no content
+        assert_in("No wiki content", res)
 
 
 if __name__ == '__main__':
