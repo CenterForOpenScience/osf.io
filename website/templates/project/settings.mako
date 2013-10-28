@@ -4,7 +4,7 @@
 <div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
 <!-- Delete node -->
-<button id="delete-node" class="btn primary">Delete ${node_category}</button>
+<button id="delete-node" class="btn btn-danger">Delete ${node_category}</button>
 <script type="text/javascript">
     $('#delete-node').on('click', function() {
         bootbox.prompt(
