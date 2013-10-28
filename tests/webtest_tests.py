@@ -9,7 +9,42 @@ from tests.base import DbTestCase
 from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
                             NodeLogFactory, ApiKeyFactory)
 
-from framework import app
+# from framework import app
+
+from website.app import init_app
+
+app = init_app(set_backends=False, routes=True)
+
+class TestAnUnregisteredUser(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+
+    def test_can_register(self):
+        # Goes to home page
+        res = self.app.get("/").maybe_follow()
+        # Clicks sign in button
+        res = res.click("Create an Account or Sign-In").maybe_follow()
+        # Fills out registration form
+        form = res.forms['registerForm']
+        form['register-fullname'] = "Nicholas Cage"
+        form['register-username'] = "nickcage@example.com"
+        form['register-username2'] = "nickcage@example.com"
+        form['register-password'] = "example"
+        form['register-password2'] = "example"
+        # Submits
+        res = form.submit().follow()
+        # There's a flash message
+        assert_in("You may now log in", res)
+        # User logs in
+        form = res.forms['signinForm']
+        form['username'] = "nickcage@example.com"
+        form['password'] = "example"
+        # Submits
+        res = form.submit().maybe_follow()
+
+    def test_sees_error_if_email_is_already_registered(self):
+        assert False, 'finish me'
 
 
 class TestAUser(DbTestCase):
