@@ -9,5 +9,5 @@
 % endfor
 
 % if user_can_edit:
-    | <a data-target="#addContributors" data-toggle="modal">add</a>
+    | <a href="#addContributors" data-toggle="modal">add</a>
 % endif

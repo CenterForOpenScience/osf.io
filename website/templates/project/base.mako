@@ -117,76 +117,71 @@
         </ul>
     </nav>
 </header>
-<div class="modal hide fade" id="addContributors">
-
-    <div class="modal-header">
-        <h3>Add Contributors</h3>
-    </div>
-
-    <div class="modal-body">
-
-        <!-- Search box -->
-        <form class="form-inline">
-            <input data-bind="value:query" />
-            <button class="btn" data-bind="click:search">Search</button>
-        </form>
-
-        <hr />
-
-        <div class="row-fluid">
-
-            <div class="col-md-6">
-                <h3>Search Results</h3>
-                <table>
-                    <tbody data-bind="foreach:{data:results, afterRender:addTips}">
-                        <tr data-bind="if:!($root.selected($data))">
-                            <td style="padding-right: 10px;">
-                                <a
-                                        class="btn btn-default contrib-button"
-                                        data-bind="click:$root.add"
-                                        rel="tooltip"
-                                        title="Add contributor"
-                                    >+</a>
-                            </td>
-                            <td>
-                                <img data-bind="attr:{src:$data.gravatar}" />
-                            </td>
-                            <td data-bind="text:user"></td>
-                        </tr>
-                    </tbody>
-                </table>
+<div class="modal" id="addContributors" role="dialog" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Contributors</h3>
             </div>
+            <div class="modal-body">
+                <!-- Search box -->
+                <form class="form-inline">
+                    <input data-bind="value:query" />
+                    <button class="btn btn-default" data-bind="click:search">Search</button>
+                </form>
+                <div class="row">
 
-            <div class="col-md-6">
-                <h3>Contributors to Add</h3>
-                <table>
-                    <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
-                        <tr>
-                            <td style="padding-right: 10px;">
-                                <a
-                                        class="btn btn-default contrib-button"
-                                        data-bind="click:$root.remove"
-                                        rel="tooltip"
-                                        title="Remove contributor"
-                                    >-</a>
-                            </td>
-                            <td>
-                                <img data-bind="attr:{src:$data.gravatar}" />
-                            </td>
-                            <td data-bind="text:user"></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div><!-- end col-md -->
+                    <div class="col-md-6">
+                        <h3>Search Results</h3>
+                        <table>
+                            <tbody data-bind="foreach:{data:results, afterRender:addTips}">
+                                <tr data-bind="if:!($root.selected($data))">
+                                    <td style="padding-right: 10px;">
+                                        <a
+                                                class="btn btn-default contrib-button"
+                                                data-bind="click:$root.add"
+                                                rel="tooltip"
+                                                title="Add contributor"
+                                            >+</a>
+                                    </td>
+                                    <td>
+                                        <img data-bind="attr:{src:$data.gravatar}" />
+                                    </td>
+                                    <td data-bind="text:user"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-        </div>
-
-    </div>
-
-    <div class="modal-footer">
-        <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
-        <span data-bind="if:selection().length">
-            <a class="btn btn-primary" data-bind="click:submit">Add</a>
-        </span>
-    </div>
-</div>
+                    <div class="col-md-6">
+                        <h3>Contributors to Add</h3>
+                        <table>
+                            <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
+                                <tr>
+                                    <td style="padding-right: 10px;">
+                                        <a
+                                                class="btn btn-default contrib-button"
+                                                data-bind="click:$root.remove"
+                                                rel="tooltip"
+                                                title="Remove contributor"
+                                            >-</a>
+                                    </td>
+                                    <td>
+                                        <img data-bind="attr:{src:$data.gravatar}" />
+                                    </td>
+                                    <td data-bind="text:user"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div><!-- end col-md -->
+                </div>
+            </div><!-- end modal-body -->
+            <div class="modal-footer">
+                <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
+                <span data-bind="if:selection().length">
+                    <a class="btn btn-primary" data-bind="click:submit">Add</a>
+                </span>
+            </div><!-- end modal-footer-->
+        </div><!-- end modal-content -->
+    </div><!-- end modal-dialog -->
+</div><!-- end modal -->
