@@ -15,6 +15,7 @@ from ..forms import NewProjectForm, NewNodeForm
 from ..model import User, WatchConfig
 from framework.forms.utils import sanitize
 from framework.auth import must_have_session_auth, get_api_key
+from bs4 import BeautifulSoup
 
 from .. import clean_template_name
 
@@ -313,6 +314,14 @@ def _view_project(node_to_use, user):
     project.view.mako.
 
     '''
+
+    pw = node_to_use.get_wiki_page('home')
+    if pw:
+        wiki_home = pw.html
+        wiki_home = BeautifulSoup(wiki_home[:500] + '...')
+    else:
+        wiki_home = "<p>No content</p>"
+
     return {
         'node_id' : node_to_use._primary_key,
         'node_title' : node_to_use.title,
@@ -320,6 +329,7 @@ def _view_project(node_to_use, user):
             if node_to_use.category == 'project'
             else 'component',
         'node_description' : node_to_use.description,
+        'wiki_home': wiki_home,
         'node_url' : node_to_use.url,
         'node_api_url' : node_to_use.api_url,
         'node_is_public' : node_to_use.is_public,

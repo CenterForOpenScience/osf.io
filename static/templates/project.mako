@@ -40,12 +40,8 @@
     <div class="span7" id='containment'>
       <section id="Wiki Home">
         <div>
-        %if wiki_home:
             ${ wiki_home }
-            <p><a href="${node_url}/wiki/home">read more</a></p>
-        %else:
-            <p>No content</p>
-        %endif
+            <p><a href="${node_url}wiki/home">read more</a></p>
         </div>
       </section>
        %if not node:
