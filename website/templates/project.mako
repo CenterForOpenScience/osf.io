@@ -152,7 +152,8 @@
                         "replace": true
                     }'></div>
             </div>
-            <div class="paginate" style="float:right;">more</div>
+            ## Hide More widget until paging for logs is implemented
+            ##<div class="paginate" style="float:right;">more</div>
         </section>
     </div>
   </div>

@@ -35,7 +35,8 @@
             <ul class="nav pull-right" id='navbar-icons'>
                 %if user_name and display_name:
                 <li><a href="/profile">${display_name}</a></li>
-                <li><a rel="tooltip" title="Settings" href="/settings"><span class='icon-white icon-cog'>&nbsp;</span></a></li>
+                ## Hide Settings button until functionality is implemented
+                ##<li><a rel="tooltip" title="Settings" href="/settings"><span class='icon-white icon-cog'>&nbsp;</span></a></li>
                 <li><a rel='tooltip' title='Log out' href='/logout'><span class="icon-white icon-off">&nbsp;</span></a></li>
                 %else:
                     %if allow_login:
