@@ -133,6 +133,12 @@ $ invoke solr
 $ invoke solr_migrate
 ```
 
+- In your `website/settings/local.py` file, set `USE_SOLR` to True.
+
+```python
+USE_SOLR = True
+```
+
 ### Starting A Local Solr Server
 
 ```bash
