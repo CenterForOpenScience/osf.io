@@ -32,7 +32,7 @@
           </li><!-- end dropdown -->
         </ul><!-- end nav navbar-nav -->
         <!-- Search bar -->
-        <form class="navbar-form navbar-left" role="search">
+        <form class="navbar-form navbar-left" action="/search/" method="get" role="search">
           <div class="form-group">
             <input type="text" class="form-control search-query" placeholder="Search" name="q">
           </div>
