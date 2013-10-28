@@ -7,8 +7,8 @@
 <%def name="javascript_bottom()">
 <script>
     $(function(){
-        ### Editable Title ###
 
+        ### Editable Title ###
         %if user_can_edit:
                 $(function() {
                     $('#node-title-editable').editable({
@@ -44,8 +44,8 @@
                 });
             },
         });
-        // Remove delete UI if not contributor
         % if not user_can_edit:
+            // Remove delete UI if not contributor
             $('a[title="Removing tag"]').remove();
             $('span.tag span').each(function(idx, elm) {
                 $(elm).text($(elm).text().replace(/\s*$/, ''))
