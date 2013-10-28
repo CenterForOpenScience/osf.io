@@ -16,7 +16,7 @@
                 mode: "inline",
                 success: function(data) {
                     // Also change the display name in the user info table
-                    $("td.fullname").text(data['name']);
+                    $(".fullname").text(data['name']);
                 }
             });
         });
@@ -33,14 +33,10 @@
 
 <div class="row">
     <div class="col-md-4">
-        <table class="table plain">
+        <table class="table table-plain">
             <tr>
               <td>Name</td>
               <td class="${'fullname' if user_is_profile else ''}">${fullname}</td>
-            </tr>
-            <tr>
-                <td>Location</td>
-                <td></td>
             </tr>
             <tr>
               <td>Member Since</td>

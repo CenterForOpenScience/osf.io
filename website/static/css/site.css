@@ -423,7 +423,7 @@ border-radius: 6px;
 }
 
 /*****************************************************/
-.plain th, .plain td {
+table.table.table-plain th, table.table.table-plain td {
   padding: 8px;
   line-height: 10px;
   text-align: left;
