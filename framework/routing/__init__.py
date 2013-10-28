@@ -5,6 +5,7 @@ import copy
 import json
 import pystache
 import httplib as http
+import logging
 
 import lxml.html
 import werkzeug.wrappers
@@ -17,7 +18,6 @@ from framework.flask import app, redirect, make_response
 from website import settings
 
 logger = logging.getLogger(__name__)
-
 
 TEMPLATE_DIR = settings.TEMPLATES_PATH
 _tpl_lookup = TemplateLookup(directories=[TEMPLATE_DIR],
@@ -167,9 +167,12 @@ def render_jinja_string(tpl, data):
 
 mako_cache = {}
 def render_mako_string(tpldir, tplname, data):
-    tpl = mako_cache.get(tplname)
-    if tpl is None:
-        tpl = Template(open(os.path.join(tpldir, tplname)).read(), lookup=_tpl_lookup)
+
+    tpl = mako_cache.get(tplname,
+                        Template(open(os.path.join(tpldir, tplname)).read(), lookup=_tpl_lookup))
+    # Don't cache in debug mode
+    if not app.debug:
+        logger.debug("Caching template: {0}".format(tplname))
         mako_cache[tplname] = tpl
     return tpl.render(**data)
 

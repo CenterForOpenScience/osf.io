@@ -7,7 +7,9 @@ NOTE: local.py will not be added to source control.
 
 from . import base
 
+# TODO: not sure if both of these are necessary
 DEV_MODE = True
+DEBUG_MODE = True  # Sets the Flask app to Debug mode
 
 # Change to whatever port and db you want
 DB_PORT = 20771
