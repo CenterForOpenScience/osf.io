@@ -9,10 +9,10 @@ from tests.base import DbTestCase
 from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
                             NodeLogFactory, ApiKeyFactory)
 
-from framework import app
+# from framework import app
 
-# from website.app import init_app
-# app = init_app(set_backends=False, routes=True)
+from website.app import init_app
+app = init_app(set_backends=False, routes=True)
 
 class TestAnUnregisteredUser(DbTestCase):
 
@@ -43,7 +43,23 @@ class TestAnUnregisteredUser(DbTestCase):
         res = form.submit().maybe_follow()
 
     def test_sees_error_if_email_is_already_registered(self):
-        assert False, 'finish me'
+        # A user is already registered
+        user = UserFactory(username="foo@bar.com")
+        # Goes to home page
+        res = self.app.get("/").maybe_follow()
+        # Clicks sign in button
+        res = res.click("Create an Account or Sign-In").maybe_follow()
+        # Fills out registration form
+        form = res.forms['registerForm']
+        form['register-fullname'] = "Foo Bar"
+        form['register-username'] = "foo@bar.com"
+        form['register-username2'] = "foo@bar.com"
+        form['register-password'] = "example"
+        form['register-password2'] = "example"
+        # submits
+        res = form.submit().maybe_follow()
+        # sees error message because email is already registered
+        assert_in("has already been registered.", res)
 
 
 class TestAUser(DbTestCase):
