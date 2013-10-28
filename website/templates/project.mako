@@ -140,9 +140,7 @@
       </section>
     </div>
     <div class="col-md-5">
-        <div style="margin-right:12px;">
         <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node_tags]) if node_tags else ''}" />
-        </div>
             <div id='main-log'>
                 <div mod-meta='{
                         "tpl": "util/render_logs.mako",
