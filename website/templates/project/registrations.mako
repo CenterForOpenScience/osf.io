@@ -1,7 +1,7 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Registrations</%def>
 <%def name="content()">
-<div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
+<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 <div class="page-header">
     <div class="pull-right">
     % if user_can_edit and node_category == 'project':

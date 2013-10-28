@@ -1,7 +1,7 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Wiki</%def>
 <%def name="content()">
-<div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
+<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 <div class="col-md-9">
     ${wiki_content}

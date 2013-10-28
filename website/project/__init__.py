@@ -1,7 +1,6 @@
 from .model import Node, NodeFile, NodeWikiPage
 from framework.forms.utils import sanitize
 
-import datetime
 
 import difflib
 def show_diff(seqm):

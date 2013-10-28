@@ -1,7 +1,7 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Project Settings</%def>
 <%def name="content()">
-<div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
+<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 <!-- Delete node -->
 <button id="delete-node" class="btn btn-danger">Delete ${node_category}</button>
