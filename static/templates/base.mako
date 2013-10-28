@@ -39,8 +39,6 @@
 
         <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.12/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="/static/bootstrap/js/bootstrap.min.js"></script>
-        <script src="/static/tag-it.js"></script>
-        <script src="/static/jquery.autoresize.js"></script>
         <script src="/static/bootstrap-editable/js/bootstrap-editable.min.js"></script>
         <script src="/static/jquery-treeview/jquery.treeview.js" type="text/javascript"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/ember.js/0.9.5/ember-0.9.5.min.js"></script>
@@ -52,16 +50,16 @@
         <script src="/static/handlebars.min.js"></script>
         <script src="/static/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="/static/bootstrap/js/bootstrap.min.js"></script>
-        <script src="/static/tag-it.js"></script>
-        <script src="/static/js/jquery.tagsinput.min.js"></script>
-        <script src="/static/jquery.tagcloud.js"></script>
-        <script src="/static/jquery.autoresize.js"></script>
         <script src="/static/bootstrap-editable/js/bootstrap-editable.min.js"></script>
         <script src="/static/jquery-treeview/jquery.treeview.js" type="text/javascript"></script>
         <script src="/static/ember-0.9.5.min.js"></script>
         <script src="/static/ember-formbuilder.js"></script>
         <script src="/static/site.js"></script>
     %endif
+    <script src="/static/tag-it.js"></script>
+    <script src="/static/js/jquery.tagsinput.min.js"></script>
+    <script src="/static/jquery.tagcloud.js"></script>
+    <script src="/static/jquery.autoresize.js"></script>
     ${self.javascript()}
 
 </head>
@@ -104,7 +102,6 @@
               fjs.parentNode.insertBefore(js, fjs);
             }(document, 'script', 'facebook-jssdk'));</script>
 
-            <script type="text/javascript">
             <script type="text/javascript">
 
               var _gaq = _gaq || [];
