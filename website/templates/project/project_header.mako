@@ -130,13 +130,12 @@
                     <button class="btn btn-default" data-bind="click:search">Search</button>
                 </form>
                 <div class="row">
-
                     <div class="col-md-6">
                         <h3>Search Results</h3>
                         <table>
                             <tbody data-bind="foreach:{data:results, afterRender:addTips}">
-                                <tr data-bind="if:!($root.selected($data))">
-                                    <td style="padding-right: 10px;">
+                                <tr class="search-contributor-result" data-bind="if:!($root.selected($data))">
+                                    <td>
                                         <a
                                                 class="btn btn-default contrib-button"
                                                 data-bind="click:$root.add"
@@ -157,8 +156,8 @@
                         <h3>Contributors to Add</h3>
                         <table>
                             <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
-                                <tr>
-                                    <td style="padding-right: 10px;">
+                                <tr class="search-contributor-result">
+                                    <td>
                                         <a
                                                 class="btn btn-default contrib-button"
                                                 data-bind="click:$root.remove"

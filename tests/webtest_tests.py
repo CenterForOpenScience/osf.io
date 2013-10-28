@@ -209,7 +209,8 @@ class TestAUser(DbTestCase):
         # Sees a message indicating no content
         assert_in("No wiki content", res)
 
-# TODO: These affect search in development environment. Remove this side effect.
+# TODO: These affect search in development environment. So need to migrate solr after running.
+# # Remove this side effect.
 @unittest.skipIf(not settings.USE_SOLR, "Skipping because USE_SOLR is False")
 class TestSearching(DbTestCase):
 

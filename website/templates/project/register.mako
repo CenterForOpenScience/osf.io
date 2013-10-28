@@ -17,10 +17,10 @@
         <h2 data-bind="text:$data.title"></h2>
         <br />
 
-        <form class="form-horizontal">
+        <form class="form">
 
             <div data-bind="foreach:questions">
-                <div class="control-group">
+                <div class="form-group">
                     <label class="control-label" data-bind="text:$data.label, attr:{for:$data.id}"></label>
                     <div class="controls">
                         <div data-bind='item:$data, attr:{id:$data.id}'></div>
@@ -30,7 +30,7 @@
 
             <!-- Pagination -->
             <div data-bind="visible:$parent.npages > 1">
-                <div class="control-group">
+                <div class="form-group">
                     <div class="controls">
                         <button class="btn" data-bind="click:$parent.previous, disable:$parent.isFirst()">Previous</button>
                         <span class="progress-meter" style="padding: 0px 10px 0px 10px;">
@@ -48,29 +48,25 @@
 
                     <hr />
 
-                    <p>
+                    <p class="help-block">
                         Registration cannot be undone, and the archived content and
                         files cannot be deleted after registration. Please be sure the
                         project is complete and comprehensive for what you wish to
                         register.
                     </p>
 
-                    <div class="control-group">
-                        <label class="control-label">
+                    <div class="form-group">
+                        <label>
                             Type "continue" if you are sure you want to continue
                         </label>
                         <div class="controls">
-                            <input data-bind="value:$parent.continueText, valueUpdate: 'afterkeydown'" />
+                            <input class="form-control" data-bind="value:$parent.continueText, valueUpdate: 'afterkeydown'" />
                         </div>
                     </div>
 
-                    <div class="control-group">
-                        <div class="controls">
-                            <button id="register-submit" class="btn" data-bind="visible:$parent.continueFlag">
-                                Register
-                            </button>
-                        </div>
-                    </div>
+                    <button id="register-submit" class="btn btn-success" data-bind="visible:$parent.continueFlag">
+                        Register
+                    </button>
 
                 </div>
 
@@ -132,23 +128,20 @@
 
 % else:
 
-    <form>
+    <form role="form">
 
-        <select id="select-registration-template">
+        <select class="form-control" id="select-registration-template">
             <option>Please select</option>
             % for option in options:
                 <option value="${option['template_name']}">${option['template_name_clean']}</option>
             % endfor
         </select>
-
-    </form>
-
-    <p>
-        Registration will create a frozen version of the project as it exists
+        <span class="help-block">Registration will create a frozen version of the project as it exists
         right now.  You will still be able to make revisions to the project,
         but the frozen version will be read-only, have a unique url, and will
-        always be associated with the project.
-    </p>
+        always be associated with the project.</span>
+    </form>
+
 
     <script type="text/javascript">
         $('#select-registration-template').on('change', function() {

@@ -349,12 +349,6 @@ border-radius: 6px;
     font-size: 8px;
 }
 
-/* Navbar */
-
-.navbar .search-query {
-    width: 200px;
-}
-
 
 /* Profile gravatar
 -------------------------------------------------- */
@@ -701,6 +695,12 @@ form.form-horizontal.form-horizontal-narrow .control-group {
         padding:25px;
         font-size: 18px;
     }
+
+/* Searh Contributors */
+
+.search-contributor-result td {
+    padding-right: 10px;
+}
 
 /* Markdown editing */
 

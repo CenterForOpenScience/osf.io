@@ -1,3 +1,4 @@
+## TODO: Put this is site.js
 <script type="text/javascript">
 
     var stringTemplateSource = function (template) {
@@ -14,10 +15,10 @@
     };
 
     var templates = {
-        textarea: '<textarea data-bind="value:value, attr:{name:id}, disable:disable"></textarea>',
-        textfield: '<input type="text" data-bind="value:value, attr:{name:id}, disable:disable" />',
-        select: '<select data-bind="options: options, value:value, attr:{name:id}, optionsCaption: caption, disable:disable"></select>',
-        checkbox: '<input type="checkbox" data-bind="checked:value, attr:{name:id}, disable:disable" />'
+        textarea: '<textarea class="form-control" data-bind="value:value, attr:{name:id}, disable:disable"></textarea>',
+        textfield: '<input class="form-control" type="text" data-bind="value:value, attr:{name:id}, disable:disable" />',
+        select: '<select class="form-control" data-bind="options: options, value:value, attr:{name:id}, optionsCaption: caption, disable:disable"></select>',
+        checkbox: '<input class="form-control" type="checkbox" data-bind="checked:value, attr:{name:id}, disable:disable" />'
     };
 
     ko.bindingHandlers.item = {
