@@ -20,7 +20,7 @@ from framework.flask import app, redirect, make_response
 
 TEMPLATE_DIR = settings.TEMPLATES_PATH
 _tpl_lookup = TemplateLookup(directories=[TEMPLATE_DIR],
-                            module_directory="/tmp/mako_modules")
+                             module_directory='/tmp/mako_modules')
 REDIRECT_CODES = [
     http.MOVED_PERMANENTLY,
     http.FOUND,
@@ -164,10 +164,10 @@ def render_jinja_string(tpl, data):
     pass
 
 mako_cache = {}
-def render_mako_string(tplname, data):
+def render_mako_string(tpldir, tplname, data):
     tpl = mako_cache.get(tplname)
     if tpl is None:
-        tpl = Template(tplname, lookup=_tpl_lookup)
+        tpl = Template(open(os.path.join(tpldir, tplname)).read(), lookup=_tpl_lookup)
         mako_cache[tplname] = tpl
     return tpl.render(**data)
 
@@ -359,17 +359,6 @@ class WebRenderer(Renderer):
             template_name=self.error_template
         ), error.code
 
-    def load_file(self, template_file):
-        """Load template file from template directory.
-
-        :param template_file: Name of template file.
-        :return: Template file
-
-        """
-        with open(os.path.join(self.template_dir, template_file), 'r') as f:
-            loaded = f.read()
-        return loaded
-
     def render_element(self, element, data):
         """Render an embedded template.
 
@@ -395,7 +384,8 @@ class WebRenderer(Renderer):
         view_kwargs = element_meta.get('view_kwargs', {})
         error_msg = element_meta.get('error', None)
 
-        render_data = copy.deepcopy(data)
+        # TODO: Is copy enough? Discuss.
+        render_data = copy.copy(data)
         render_data.update(kwargs)
 
         if uri:
@@ -449,14 +439,11 @@ class WebRenderer(Renderer):
         # Catch errors and return appropriate debug divs
         # todo: add debug parameter
         try:
-            template_file = self.load_file(template_name)
+            rendered = renderer(self.template_dir, template_name, data)
         except IOError:
             return '<div>Template {} not found.</div>'.format(template_name)
 
-        rendered = renderer(template_file, data)
-
         html = lxml.html.fragment_fromstring(rendered, create_parent='remove')
-        #html = lxml.html.document_fromstring(rendered)
 
         for element in html.findall('.//*[@mod-meta]'):
 
