@@ -9,17 +9,17 @@ import httplib as http
 import werkzeug.wrappers
 from bs4 import BeautifulSoup
 from werkzeug.exceptions import NotFound
+from mako.template import Template
+from mako.lookup import TemplateLookup
 
 from framework import StoredObject, session, HTTPError
 from framework.flask import app, redirect, make_response
-from mako.template import Template
-from mako.lookup import TemplateLookup
+from website import settings
 
 logger = logging.getLogger(__name__)
 
 
-# TODO: Move to settings
-TEMPLATE_DIR = 'static/templates/'
+TEMPLATE_DIR = settings.TEMPLATES_PATH
 _tpl_lookup = TemplateLookup(directories=[TEMPLATE_DIR],
                             module_directory="/tmp/mako_modules")
 REDIRECT_CODES = [
