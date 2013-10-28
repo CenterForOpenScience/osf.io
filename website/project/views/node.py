@@ -322,50 +322,55 @@ def _view_project(node_to_use, user):
     else:
         wiki_home = "<p>No content</p>"
 
+    parent = node_to_use.node__parent[0] \
+        if node_to_use.node__parent \
+            and not node_to_use.node__parent[0].is_deleted \
+            else None
+
     return {
-        'node_id' : node_to_use._primary_key,
-        'node_title' : node_to_use.title,
-        'node_category' : 'project'
+        'node_id': node_to_use._primary_key,
+        'node_title': node_to_use.title,
+        'node_category': 'project'
             if node_to_use.category == 'project'
             else 'component',
-        'node_description' : node_to_use.description,
+        'node_description': node_to_use.description,
         'wiki_home': wiki_home,
-        'node_url' : node_to_use.url,
-        'node_api_url' : node_to_use.api_url,
-        'node_is_public' : node_to_use.is_public,
-        'node_date_created' : node_to_use.date_created.strftime('%Y/%m/%d %I:%M %p'),
-        'node_date_modified' : node_to_use.logs[-1].date.strftime('%Y/%m/%d %I:%M %p'),
+        'node_url': node_to_use.url,
+        'node_api_url': node_to_use.api_url,
+        'node_is_public': node_to_use.is_public,
+        'node_date_created': node_to_use.date_created.strftime('%Y/%m/%d %I:%M %p'),
+        'node_date_modified': node_to_use.logs[-1].date.strftime('%Y/%m/%d %I:%M %p'),
 
-        'node_tags' : [tag._primary_key for tag in node_to_use.tags],
-        'node_children' : bool(node_to_use.nodes),
+        'node_tags': [tag._primary_key for tag in node_to_use.tags],
+        'node_children': bool(node_to_use.nodes),
 
-        'node_is_registration' : node_to_use.is_registration,
-        'node_registered_from_url' : node_to_use.registered_from.url if node_to_use.is_registration else '',
-        'node_registered_date' : node_to_use.registered_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_registration else '',
-        'node_registered_meta' : [
+        'node_is_registration': node_to_use.is_registration,
+        'node_registered_from_url': node_to_use.registered_from.url if node_to_use.is_registration else '',
+        'node_registered_date': node_to_use.registered_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_registration else '',
+        'node_registered_meta': [
             {
-                'name_no_ext' : meta.replace('.txt', ''),
-                'name_clean' : clean_template_name(meta),
+                'name_no_ext': meta.replace('.txt', ''),
+                'name_clean': clean_template_name(meta),
             }
             for meta in node_to_use.registered_meta or []
         ],
-        'node_registration_count' : len(node_to_use.registration_list),
+        'node_registration_count': len(node_to_use.registration_list),
 
-        'node_is_fork' : node_to_use.is_fork,
-        'node_forked_from_url' : node_to_use.forked_from.url if node_to_use.is_fork else '',
-        'node_forked_date' : node_to_use.forked_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_fork else '',
-        'node_fork_count' : len(node_to_use.fork_list),
+        'node_is_fork': node_to_use.is_fork,
+        'node_forked_from_url': node_to_use.forked_from.url if node_to_use.is_fork else '',
+        'node_forked_date': node_to_use.forked_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_fork else '',
+        'node_fork_count': len(node_to_use.fork_list),
 
         'node_watched_count': len(node_to_use.watchconfig__watched),
-        'parent_id' : node_to_use.node__parent[0]._primary_key if node_to_use.node__parent else None,
-        'parent_title' : node_to_use.node__parent[0].title if node_to_use.node__parent else None,
-        'parent_url' : node_to_use.node__parent[0].url if node_to_use.node__parent else None,
 
-        'user_is_contributor' : node_to_use.is_contributor(user),
-        'user_can_edit' : node_to_use.is_contributor(user) and not node_to_use.is_registration,
+        'parent_id':parent._primary_key if parent else None,
+        'parent_title': parent.title if parent else None,
+        'parent_url': parent.url if parent else None,
+
+        'user_is_contributor': node_to_use.is_contributor(user),
+        'user_can_edit': node_to_use.is_contributor(user) and not node_to_use.is_registration,
         'user_is_watching': user.is_watching(node_to_use) if user else False,
     }
-
 
 def _get_user_activity(node, user, rescale_ratio):
 
@@ -400,7 +405,7 @@ def _get_user_activity(node, user, rescale_ratio):
 def get_recent_logs(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     logs = list(reversed(node_to_use.logs._to_primary_keys()))[:3]
-    return {'logs' : logs}
+    return {'logs': logs}
 
 @must_be_valid_project
 def get_summary(*args, **kwargs):
