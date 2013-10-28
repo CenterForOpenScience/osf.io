@@ -318,9 +318,12 @@ def _view_project(node_to_use, user):
     pw = node_to_use.get_wiki_page('home')
     if pw:
         wiki_home = pw.html
-        wiki_home = BeautifulSoup(wiki_home[:500] + '...')
+        if len(wiki_home) > 500:
+            wiki_home = BeautifulSoup(wiki_home[:500] + '...')
+        else:
+            wiki_home = BeautifulSoup(wiki_home)
     else:
-        wiki_home = "<p>No content</p>"
+        wiki_home = "<p><em>No wiki content</em></p>"
 
     parent = node_to_use.node__parent[0] \
         if node_to_use.node__parent \

@@ -135,7 +135,7 @@ def project_wiki_page(*args, **kwargs):
     else:
         version = 'NA'
         is_current = False
-        content = 'There does not seem to be any content on this page; sorry.'
+        content = '<p><em>No wiki content</em></p>'
 
     toc = [
         {
