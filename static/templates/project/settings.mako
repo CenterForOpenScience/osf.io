@@ -22,13 +22,13 @@
     });
 </script>
 
-<!-- Show API key settings -->
-<div mod-meta='{
-        "tpl": "util/render_keys.mako",
-        "uri": "${node_api_url}keys/",
-        "replace": true,
-        "kwargs": {
-            "route": "${node_url}"
-        }
-    }'></div>
+##<!-- Show API key settings -->
+##<div mod-meta='{
+##        "tpl": "util/render_keys.mako",
+##        "uri": "${node_api_url}keys/",
+##        "replace": true,
+##        "kwargs": {
+##            "route": "${node_url}"
+##        }
+##    }'></div>
 </%def>
