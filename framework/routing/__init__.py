@@ -406,7 +406,7 @@ class WebRenderer(Renderer):
                 return '<div>URI {} not found</div>'.format(uri), is_replace
             except Exception as error:
                 if error_msg:
-                    return error_msg, is_replace
+                    return '<div>{}</div>'.format(error_msg), is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(
                     uri,
                     repr(error)
