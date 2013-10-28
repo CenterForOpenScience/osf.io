@@ -156,7 +156,8 @@
                         "replace": true
                     }'></div>
             </div>
-            <div class="paginate pull-right">more</div>
+            ## Hide More widget until paging for logs is implemented
+            ##<div class="paginate pull-right">more</div>
         </section>
     </div>
   </div>
