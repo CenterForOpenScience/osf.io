@@ -369,6 +369,7 @@ class Node(GuidStoredObject):
         forked.forked_date = when
         forked.forked_from = original
         forked.is_public = False
+        forked.contributor_list = []
 
         forked.add_contributor(user, log=False, save=False)
 
