@@ -4,7 +4,6 @@ import logging
 import sunburnt
 
 from website import settings
-from framework.exceptions import ConnectionError
 
 
 logger = logging.getLogger(__name__)
@@ -13,7 +12,7 @@ if settings.USE_SOLR:
     try:
         solr = sunburnt.SolrInterface(settings.solr)
     except Exception:
-        logging.warn("The USE_SOLR setting is enabled but there was a problem "
+        logger.warn("The USE_SOLR setting is enabled but there was a problem "
                     "starting the Solr interface. Is the Solr server running?")
         solr = None
 else:

@@ -8,22 +8,9 @@
     </style>
 % endif
 
-<style>
-    .contrib-button {
-        font-size: 18px;
-    }
-    #addContributors table {
-        border-collapse:separate;
-        border-spacing: 5px;
-    }
-</style>
-
 <header class="jumbotron subhead" id="overview">
-
     <div class="row">
-
         <div class="btn-toolbar" style="float:right;">
-
             <div class="btn-group">
             %if not node_is_public:
                 <button class='btn disabled'>Private</button>
@@ -72,34 +59,13 @@
 
         </div>
 
-        %if user_can_edit:
-            <script>
-                $(function() {
-                    $('#node-title-editable').editable({
-                       type:  'text',
-                       pk:    '${node_id}',
-                       name:  'title',
-                       url:   '${node_api_url}edit/',
-                       title: 'Edit Title',
-                       placement: 'bottom',
-                       value: "${ '\\\''.join(node_title.split('\'')) }",
-                       success: function(data){
-                            document.location.reload(true);
-                       }
-                    });
-                });
-            </script>
-        %endif
-
         <div class="span4">
-
             %if parent_id:
                 <h1 style="display:inline-block" class="node-parent-title">
                     <a href="/project/${parent_id}/">${parent_title}</a> /
                 </h1>
             %endif
             <h1 id="${'node-title-editable' if user_can_edit else 'node-title'}" class='node-title' style="display:inline-block">${node_title}</h1>
-
         </div>
 
     </div>
@@ -147,9 +113,6 @@
         </ul>
     </div>
 </header>
-
-<script src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>
-
 <div class="modal hide fade" id="addContributors">
 
     <div class="modal-header">
@@ -175,7 +138,7 @@
                         <tr data-bind="if:!($root.selected($data))">
                             <td style="padding-right: 10px;">
                                 <a
-                                        class="btn contrib-button"
+                                        class="btn btn-default contrib-button"
                                         data-bind="click:$root.add"
                                         rel="tooltip"
                                         title="Add contributor"
@@ -197,7 +160,7 @@
                         <tr>
                             <td style="padding-right: 10px;">
                                 <a
-                                        class="btn contrib-button"
+                                        class="btn btn-default contrib-button"
                                         data-bind="click:$root.remove"
                                         rel="tooltip"
                                         title="Remove contributor"
@@ -222,96 +185,4 @@
         </span>
         <a href="#" class="btn" data-dismiss="modal">Cancel</a>
     </div>
-
 </div>
-
-<script type="text/javascript">
-
-    var addContributorModel = function(initial) {
-
-        var self = this;
-
-        self.query = ko.observable('');
-        self.results = ko.observableArray(initial);
-        self.selection = ko.observableArray([]);
-
-        self.search = function() {
-            $.getJSON(
-                '/api/v1/user/search/',
-                {query: self.query()},
-                function(result) {
-                    self.results(result);
-                }
-            )
-        };
-
-        self.addTips = function(elements, data) {
-            elements.forEach(function(element) {
-                $(element).find('.contrib-button').tooltip();
-            });
-        };
-
-        self.add = function(data, element) {
-            self.selection.push(data);
-            // Hack: Hide and refresh tooltips
-            $('.tooltip').hide();
-            $('.contrib-button').tooltip();
-        };
-
-        self.remove = function(data, element) {
-            self.selection.splice(
-                self.selection.indexOf(data), 1
-            );
-            // Hack: Hide and refresh tooltips
-            $('.tooltip').hide();
-            $('.contrib-button').tooltip();
-        };
-
-        self.selected = function(data) {
-            for (var idx=0; idx < self.selection().length; idx++) {
-                if (data.id == self.selection()[idx].id)
-                    return true;
-            }
-            return false;
-        };
-
-        self.submit = function() {
-            var user_ids = self.selection().map(function(elm) {
-                return elm.id;
-            });
-            $.ajax(
-                '${node_api_url}addcontributors/',
-                {
-                    type: 'post',
-                    data: JSON.stringify({user_ids: user_ids}),
-                    contentType: 'application/json',
-                    dataType: 'json',
-                    success: function(response) {
-                        if (response.status === 'success') {
-                            window.location.reload();
-                        }
-                    }
-                }
-            )
-        };
-
-        self.clear = function() {
-            self.query('');
-            self.results([]);
-            self.selection([]);
-        };
-
-    };
-
-    var $addContributors = $('#addContributors');
-
-    viewModel = new addContributorModel();
-    ko.applyBindings(viewModel, $addContributors[0]);
-
-    // Clear user search modal when dismissed; catches dismiss by escape key
-    // or cancel button.
-    $addContributors.on('hidden', function() {
-        viewModel.clear();
-    });
-
-</script>

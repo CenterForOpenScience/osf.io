@@ -400,3 +400,25 @@ form.form-horizontal.form-horizontal-narrow .controls {
 form.form-horizontal.form-horizontal-narrow .control-group {
     padding-left:55px;
 }
+
+/* Project page */
+
+.contrib-button {
+    font-size: 18px;
+}
+#addContributors table {
+    border-collapse:separate;
+    border-spacing: 5px;
+}
+
+
+/* Search */
+.nested
+    {
+        padding-left: 25px;
+    }
+.navigate
+    {
+        padding:25px;
+        font-size: 18px;
+    }

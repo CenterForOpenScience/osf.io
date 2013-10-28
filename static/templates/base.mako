@@ -28,6 +28,7 @@
     <link rel="stylesheet" href="/static/pygments.css" />
     <link href="/static/bootstrap-editable/css/bootstrap-editable.css" rel="stylesheet">
     <link href="/static/site.css" rel="stylesheet">
+    ${self.stylesheets()}
 
 
     %if use_cdn:
@@ -48,12 +49,12 @@
     %else:
         <script src="/static/jquery.min.js"></script>
         <script src="/static/underscore-min.js"></script>
-        <script src="/static/backbone-min.js"></script>
         <script src="/static/handlebars.min.js"></script>
-
         <script src="/static/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="/static/bootstrap/js/bootstrap.min.js"></script>
         <script src="/static/tag-it.js"></script>
+        <script src="/static/js/jquery.tagsinput.min.js"></script>
+        <script src="/static/jquery.tagcloud.js"></script>
         <script src="/static/jquery.autoresize.js"></script>
         <script src="/static/bootstrap-editable/js/bootstrap-editable.min.js"></script>
         <script src="/static/jquery-treeview/jquery.treeview.js" type="text/javascript"></script>
@@ -129,6 +130,10 @@
 
 <%def name="description()">
     ### The page description ###
+</%def>
+
+<%def name="stylesheets()">
+    ### Extra css for this page. ###
 </%def>
 
 <%def name="javascript()">
