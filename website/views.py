@@ -86,21 +86,20 @@ def get_dashboard_nodes(*args, **kwargs):
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False)
     )
+    nodes = [
+        node
+        for node in nodes
+        if node.category != 'project' or node.parent_id is None
+    ]
     return _render_nodes(nodes)
 
 @framework.must_be_logged_in
 def dashboard(*args, **kwargs):
     user = kwargs['user']
-    nodes = user.node__contributed.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False)
-    )
     recent_log_ids = list(user.get_recent_log_ids())
-
-    rv = _render_nodes(nodes)
-    rv['logs'] = recent_log_ids
-    return rv
+    return {
+        'logs': recent_log_ids
+    }
 
 def reproducibility():
     return framework.redirect('/project/EZcUj/wiki')

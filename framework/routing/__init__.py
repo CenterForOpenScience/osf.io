@@ -6,8 +6,8 @@ import json
 import pystache
 import httplib as http
 
+import lxml.html
 import werkzeug.wrappers
-from bs4 import BeautifulSoup
 from werkzeug.exceptions import NotFound
 from mako.template import Template
 from mako.lookup import TemplateLookup
@@ -409,7 +409,7 @@ class WebRenderer(Renderer):
                 return '<div>URI {} not found</div>'.format(uri), is_replace
             except Exception as error:
                 if error_msg:
-                    return error_msg, is_replace
+                    return '<div>{}</div>'.format(error_msg), is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(
                     uri,
                     repr(error)
@@ -456,31 +456,48 @@ class WebRenderer(Renderer):
 
         rendered = renderer(template_file, data)
 
-        # Parse HTML using html5lib; lxml is too strict and e.g. throws
-        # errors if missing parent container; htmlparser mangles whitespace
-        # and breaks replacement
-        parsed = BeautifulSoup(rendered, 'html5lib')
-        subtemplates = parsed.find_all(
-            lambda tag: tag.has_attr('mod-meta')
-        )
+        html = lxml.html.fragment_fromstring(rendered, create_parent='remove')
+        #html = lxml.html.document_fromstring(rendered)
 
-        for element in subtemplates:
-
-            # Extract HTML of original element
-            element_html = str(element)
+        for element in html.findall('.//*[@mod-meta]'):
 
             # Render nested template
             template_rendered, is_replace = self.render_element(element, data)
 
-            # Build replacement
+            original = lxml.html.tostring(element)
             if is_replace:
                 replacement = template_rendered
             else:
-                element.string = template_rendered
-                replacement = str(element)
+                replacement = original
+                replacement = replacement.replace('><', '>' + template_rendered + '<')
 
-            # Replace
-            rendered = rendered.replace(element_html, replacement)
+            rendered = rendered.replace(original, replacement)
+
+        ## Parse HTML using html5lib; lxml is too strict and e.g. throws
+        ## errors if missing parent container; htmlparser mangles whitespace
+        ## and breaks replacement
+        #parsed = BeautifulSoup(rendered, 'html5lib')
+        #subtemplates = parsed.find_all(
+        #    lambda tag: tag.has_attr('mod-meta')
+        #)
+        #
+        #for element in subtemplates:
+        #
+        #    # Extract HTML of original element
+        #    element_html = str(element)
+        #
+        #    # Render nested template
+        #    template_rendered, is_replace = self.render_element(element, data)
+        #
+        #    # Build replacement
+        #    if is_replace:
+        #        replacement = template_rendered
+        #    else:
+        #        element.string = template_rendered
+        #        replacement = str(element)
+        #
+        #    # Replace
+        #    rendered = rendered.replace(element_html, replacement)
 
         return rendered
 

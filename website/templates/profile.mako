@@ -25,11 +25,10 @@
 </%def>
 
 <%def name="content()">
-<div class="page-header">
 
+<div class="page-header">
     <img src="${gravatar_url}" />
     <h1 id="${'profile-fullname' if user_is_profile else ''}" style="display:inline-block">${fullname}</h1>
-
 </div><!-- end-page-header -->
 
 <div class="row">
@@ -53,8 +52,7 @@
             </tr>
         </table>
     </div>
-    <div class="col-md-4">&nbsp;</div>
-    <div class="col-md-4">
+    <div class="col-md-4 col-md-offset-4">
         <h2>
            ${activity_points} activity point${'s' if activity_points != 1 else ''}<br />
            ##${number_projects} project${'s' if number_projects !=1  else ''}, ${number_public_projects} public

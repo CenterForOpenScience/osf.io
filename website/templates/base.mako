@@ -33,17 +33,11 @@
 
     %if use_cdn:
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.3.3/underscore-min.js"></script>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.0.beta2/handlebars.min.js"></script>
         <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.12/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/ember.js/0.9.5/ember-0.9.5.min.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.0.0/bootbox.min.js"></script>
     %else:
         <script src="/static/vendor/jquery/jquery.min.js"></script>
-        <script src="/static/vendor/underscore/underscore-min.js"></script>
-        <script src="/static/vendor/handlebars/handlebars.min.js"></script>
         <script src="/static/vendor/jquery-ui/js/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="/static/vendor/ember/ember-0.9.5.min.js"></script>
         <script src="/static/vendor/bootbox/bootbox.min.js"></script>
     %endif
     <script src="/static/vendor/jquery-tagsinput/js/jquery.tagsinput.min.js"></script>
@@ -52,9 +46,8 @@
     <script src="/static/vendor/bootstrap3/js/bootstrap.min.js"></script>
     <script src="/static/vendor/bootbox/bootbox.min.js"></script>
     <script src="/static/vendor/bootstrap3-editable/js/bootstrap-editable.min.js"></script>
-    <script src="/static/vendor/jquery-autoresize/jquery.autoresize.js"></script>
+
     <script src="/static/vendor/jquery-tagit/js/tag-it.js"></script>
-    <script src="/static/vendor/ember-formbuilder/ember-formbuilder.js"></script>
     <script src="/static/js/site.js"></script>
     ${self.javascript()}
 
