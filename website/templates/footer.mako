@@ -12,12 +12,13 @@
                     <li><a href="/explore">Explore</a></li>
                 </ul>
             </div>
-            <div class="span3">
+            <div class="span4">
                 <h4>Center for Open Science</h4>
                 <ul>
                     <li><a href="http://centerforopenscience.org">Home</a></li>
                     <li><a href="http://centerforopenscience.org/#contact">Contact</a></li>
-                    <li><a href="/project/EZcUj/wiki/home">Reproducibility Project</a></li>
+                    <li><a href="/project/EZcUj/wiki/home">Reproducibility Project: Psychology</a></li>
+                    <li><a href="/project/e81xl/wiki/home/">Reproducibility Project: Cancer Biology</a></li>
                 </ul>
             </div>
             <div class="span2">
