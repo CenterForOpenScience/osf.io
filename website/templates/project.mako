@@ -1,7 +1,6 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Project</%def>
 <%def name="stylesheets()">
-<link rel="stylesheet" type="text/css" href="/static/css/jquery.tagsinput.css" />
 </%def>
 
 <%def name="javascript_bottom()">
