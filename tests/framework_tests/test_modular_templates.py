@@ -18,6 +18,8 @@ from framework.routing import (
     Renderer, JSONRenderer, WebRenderer,
     render_mako_string,
 )
+from new_style import OsfWebRenderer
+
 from tests.base import AppTestCase, DbTestCase
 
 # Need to use OsfWebRenderer to get global variables
@@ -102,6 +104,8 @@ class WebRendererTestCase(AppTestCase):
 
     def setUp(self):
         super(WebRendererTestCase, self).setUp()
+
+        # Use OsfRenderer so that global vars are included
         self.r = OsfWebRenderer(
             os.path.join(TEMPLATES_PATH, 'main.html'),
             render_mako_string

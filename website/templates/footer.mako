@@ -25,7 +25,7 @@
                 <h4>Documentation</h4>
                 <ul>
                     <li><a href="/getting-started">Getting Started</a></li>
-                    <li>Developer API</li>
+                    <li><a href="https://openscienceframework.org/project/4znZP/node/QB0Du/">Developer API</a></li>
                 </ul>
             </div>
             <div class="col-md-2">
