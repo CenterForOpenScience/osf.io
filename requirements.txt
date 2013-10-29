@@ -34,4 +34,5 @@ pystache==0.5.3
 
 # Assets
 webassets==0.9
-jsmin==2.0.7
+jsmin>=2.0.7
+cssmin>=0.2.0

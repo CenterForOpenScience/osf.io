@@ -5,6 +5,26 @@ from website import settings
 
 env = Environment(settings.STATIC_FOLDER, settings.STATIC_URL_PATH)
 
+css = Bundle(
+            "css/site.css",
+            filters="cssmin",
+            output="public/css/common.css"
+)
+
+css_vendor = Bundle(
+            "vendor/jquery-ui/css/jquery-ui.css",
+            "vendor/jquery-tagit/css/jquery.tagit.css",
+            "vendor/jquery-tagsinput/css/jquery.tagsinput.css",
+            "vendor/jquery-tagit/css/tagit.ui-zendesk.css",
+            "vendor/bootstrap2/css/bootstrap.css",
+            "vendor/jquery-treeview/jquery.treeview.css",
+            "vendor/jquery-fileupload/css/jquery.fileupload-ui.css",
+            "vendor/pygments.css",
+            "vendor/bootstrap-editable/css/bootstrap-editable.css",
+            filters="cssmin",
+            output="public/css/vendor.css"
+)
+
 js = Bundle(
             "js/site.js",
             filters="jsmin",
@@ -26,3 +46,5 @@ js_vendor = Bundle(
 
 env.register("js", js)
 env.register("js_vendor", js_vendor)
+env.register("css", css)
+env.register("css_vendor", css_vendor)

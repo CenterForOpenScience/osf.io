@@ -12,21 +12,10 @@
     <![endif]-->
 
     <!-- Le styles -->
-     %if use_cdn:
-        <link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1/themes/flick/jquery-ui.css">
-    %else:
-        <link rel="stylesheet" type="text/css" href="/static/vendor/jquery-ui/css/jquery-ui.css">
-    %endif
-    <link rel="stylesheet" type="text/css" href="/static/vendor/jquery-tagit/css/jquery.tagit.css">
-    <link rel="stylesheet" type="text/css" href="/static/vendor/jquery-tagsinput/css/jquery.tagsinput.css" />
-    <link href="/static/vendor/jquery-tagit/css/tagit.ui-zendesk.css" rel="stylesheet" type="stylesheet">
-    <link href="/static/vendor/bootstrap2/css/bootstrap.css" rel="stylesheet">
-    <link href="/static/vendor/jquery-treeview/jquery.treeview.css" rel="stylesheet" type="text/css" media="screen" />
-    <!--uploads-->
-    <link rel="stylesheet" href="/static/vendor/jquery-fileupload/css/jquery.fileupload-ui.css">
-    <link rel="stylesheet" href="/static/vendor/pygments.css" />
-    <link href="/static/vendor/bootstrap-editable/css/bootstrap-editable.css" rel="stylesheet">
-    <link href="/static/css/site.css" rel="stylesheet">
+
+    % for url in css_all:
+        <link rel="stylesheet" href="${url}">
+    % endfor
     ${self.stylesheets()}
 
     % for url in js_all:
