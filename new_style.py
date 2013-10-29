@@ -28,8 +28,8 @@ def get_globals():
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
         'status': framework.status.pop_status_messages(),
-        "js_all": assets_env['js_vendor'].urls() + assets_env['js'].urls(),
-        "css_all": assets_env['css_vendor'].urls() + assets_env['css'].urls()
+        "js_all": assets_env['js'].urls(),
+        "css_all": assets_env['css'].urls()
     }
 
 
