@@ -1,16 +1,16 @@
-from framework import db, storage
+# -*- coding: utf-8 -*-
+'''Consolidates all necessary models from the framework and website packages.
+'''
 
+from framework.guid.model import Guid
 from framework.auth.model import User
-from framework.search.model import Keyword
+from framework.sessions.model import Session
 
-User.set_storage(storage.MongoStorage(db, 'user'))
-Keyword.set_storage(storage.MongoStorage(db, 'keyword'))
+from website.project.model import (ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
+                                   Tag, WatchConfig, MetaData, MetaSchema)
 
-from website.project.model import ApiKey, Node, NodeLog, NodeFile, NodeWikiPage, Tag
+# All models
+MODELS = (User, ApiKey, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
+          Tag, WatchConfig, Session, Guid, MetaData, MetaSchema)
 
-ApiKey.set_storage(storage.MongoStorage(db, 'apikey'))
-Node.set_storage(storage.MongoStorage(db, 'node'))
-NodeLog.set_storage(storage.MongoStorage(db, 'nodelog'))
-NodeFile.set_storage(storage.MongoStorage(db, 'nodefile'))
-NodeWikiPage.set_storage(storage.MongoStorage(db, 'nodewikipage'))
-Tag.set_storage(storage.MongoStorage(db, 'tag'))
+GUID_MODELS = (User, Node, NodeFile, NodeWikiPage, Tag, MetaData)

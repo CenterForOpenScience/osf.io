@@ -1,18 +1,11 @@
-import framework
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-import website.settings
-import website.models
-import website.routes
+from website.app import init_app
+from website.project.model import ensure_schemas
 
-app = framework.app
-
-static_folder = website.settings.static_path
+app = init_app("website.settings", set_backends=True, routes=True)
+ensure_schemas()
 
 if __name__ == '__main__':
-
-    @framework.route('/favicon.ico')
-    def favicon():
-        return framework.send_from_directory(static_folder,
-            'favicon.ico', mimetype='image/vnd.microsoft.icon')
-
-    app.run(port=5000, debug=True)
+    app.run(port=5000)

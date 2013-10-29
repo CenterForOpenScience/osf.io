@@ -25,9 +25,10 @@ seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
             raise RuntimeError, "unexpected opcode"
     return ''.join(output)
 
+# TODO: These belong in framework.auth
 def new_project(title, description, user):
     project = new_node('project', title, user, description)
-    project.add_log('project_created', 
+    project.add_log('project_created',
         params={
             'project':project._primary_key,
         },
@@ -42,27 +43,25 @@ def new_node(category, title, user, description=None, project=None):
     title = sanitize(title.strip())
     if description:
         description = sanitize(description.strip())
-    
+
     new_node = Node(category=category)
     new_node.title=title
     new_node.description=description
     new_node.is_public=False
-    new_node.generate_keywords()
 
     new_node.creator = user
-    # new_node._optimistic_insert()
     new_node.contributors.append(user)
-    new_node.contributor_list.append({'id':user._primary_key})
+    new_node.contributor_list.append({'id': user._primary_key})
     new_node.save()
 
     if project:
         project.nodes.append(new_node)
         project.save()
-        new_node.add_log('node_created', 
+        new_node.add_log('node_created',
             params={
-                'node':new_node._primary_key,
-                'project':project._primary_key,
-            }, 
+                'node': new_node._primary_key,
+                'project': project._primary_key,
+            },
             user=user,
             log_date=new_node.date_created
         )
@@ -82,33 +81,11 @@ def get_wiki_page(project, node, wid):
 def get_node(id):
     return Node.load(id)
 
-def watch_node(id, uid):
-    user = get_user(id=uid)
-    project = Node.load(id)
-    if not user.watchingNodes:
-        user.watchingNodes = []
-    else:
-        if ref('projects', id) in user.watchingNodes:
-            return False
-    user.watchingNodes.append(ref('projects', id, backref=(project, "watchingUsers")))
-    user.save()
-    return True
-
-def get_file_tree(node_to_use, user):
-    tree = []
-    for node in node_to_use.nodes:
-        if not node.is_deleted:
-            tree.append(get_file_tree(node, user))
-
-    if node_to_use.is_public or node_to_use.is_contributor(user):
-        for i,v in node_to_use.files_current.items():
-            v = NodeFile.load(v)
-            tree.append(v)
-
-    return (node_to_use, tree)
-
-def prune_file_list(file_list, max_depth):
-    if max_depth is None:
-        return file_list
-    return [file for file in file_list if len([c for c in file if c == '/']) <= max_depth]
-
+template_name_replacements = {
+    ('.txt', ''),
+    ('_', ' '),
+}
+def clean_template_name(template_name):
+    for replacement in template_name_replacements:
+        template_name = template_name.replace(*replacement)
+    return template_name

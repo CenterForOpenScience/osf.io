@@ -1,4 +1,4 @@
-from framework import StoredObject, fields, storage, db
+from framework import StoredObject, fields
 from bson import ObjectId
 
 class Session(StoredObject):
@@ -7,5 +7,3 @@ class Session(StoredObject):
     date_created = fields.DateTimeField(auto_now_add=True)
     date_modified = fields.DateTimeField(auto_now=True)
     data = fields.DictionaryField()
-
-Session.set_storage(storage.MongoStorage(db, 'sessions'))

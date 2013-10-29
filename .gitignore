@@ -30,7 +30,6 @@ var
 sdist
 develop-eggs
 .installed.cfg
-lib
 lib64
 __pycache__
 pip-log.txt
@@ -42,8 +41,17 @@ nosetests.xml
 .hg
 .hgignore
 env/*
+.webassets-cache
 
-# OSF-specific 
+# OSF-specific
 #######################
 website/cache/*
 website/uploads/*
+# Local settings
+*/settings/local.py
+
+# Solr
+#######################
+scripts/solr-dev/logs/*
+scripts/solr-dev/solr-webapp/*
+scripts/solr-dev/solr/collection1/data/*

@@ -1,60 +1,6 @@
-<%inherit file="contentContainer.mako" />
-<link rel="stylesheet" type="text/css" href="/static/css/jquery.tagsinput.css" />
-<script src="/static/js/jquery.tagsinput.min.js"></script>
-<script src="/static/jquery.tagcloud.js"></script>
-<%
-    import framework
-    import re
-%>
-<style>
-    .nested
-        {
-            padding-left: 25px;
-        }
-    .navigate
-        {
-            padding:25px;
-            font-size: 18px;
-        }
-
-    .result {
-            padding: 10px;
-    }
-
-    .highlight {
-            background-color: white;
-    }
-
-    .highlight em
-        {
-            font-style: normal;
-            background-color: #FFFFAA;
-        }
-
-    .label-info
-        {
-            margin: 3px;
-        }
-
-    .label-info[href]
-        {
-            background-color: #999999;
-        }
-
-    #whatever a {
-            margin-right: 6px;
-    }
-</style>
-<script>
-$.fn.tagcloud.defaults = {
-  size: {start: 12, end: 16, unit: 'pt'},
-  color: {start: '#999', end: '#0088cc'}
-};
-
-$(function () {
-  $('#whatever a').tagcloud();
-});
-</script>
+<%inherit file="base.mako"/>
+<%def name="title()">Search</%def>
+<%def name="content()">
 <section id="Search" xmlns="http://www.w3.org/1999/html">
     <div class="page-header">
         % if query:
@@ -62,13 +8,12 @@ $(function () {
             <%
                 components = query.split('AND')
             %>
-        <h1>Search<small> for
+        <h1>Search <small> for
 ##            for showing tags
             % for i, term in enumerate(components):
 ##              the first is not removable. we need it to query
                 % if i != 0:
-                      <button class="label label-default" style="cursor:default;">${term}<a href='/search/?q=${query.replace('AND'+term, '') | h }' class="label" style="cursor:pointer;"> X </a></button>
-##                    <a href='/search/?q=${query.replace('AND'+term, '') | h }' class="label label-default btn-mini"> ${term} </a>
+                    <a href='/search/?q=${query.replace('AND'+term, '') | h }' class="label label-success btn-mini"> ${term} <span class="badge">x</span></a>
                 % else:
                     ${term}
                 % endif
@@ -84,17 +29,16 @@ $(function () {
     </div>
 </section>
 <div class="row">
-    <div class="span3">
+    <div class="span2">
         % if query:
         <h3>
 ##            our search users query
             <a href="/search/?q=user:${query|h}"> Search users </a>
         </h3>
-        <br>
         % endif
 ##        our tag cloud!
         % if tags:
-        <h4>Improve Your Search: size and <span style="color: #33A0D6">saturation</span> convey relatedness</h4>
+        <h3> Improve Your Search:</h3>
             % for key, value in tags.iteritems():
                 % if not (u' tags:"{s}"'.format(s=key) in components or u' tags:"{s}" '.format(s=key) in components):
                     <span id="whatever">
@@ -103,8 +47,9 @@ $(function () {
                 % endif
             % endfor
         % endif
+
     </div>
-    <div class="span9">
+    <div class="span10">
             % if results:
 ##            iterate through our nice lists of results
                 % for result in results:
@@ -120,8 +65,7 @@ $(function () {
                                 % if result['url']:
                                     <a href=${result['url']}>${result['title']}</a>
                                 %else:
-                                      <span style='font-weight:normal;'><h3>Private parent project</h3></span>
-###                                    <span style='font-weight:normal; font-style:italic'>${result['title']}</span>
+                                    <span style='font-weight:normal; font-style:italic'>${result['title']}</span>
                                 % endif
 
                             </h4>
@@ -153,7 +97,7 @@ $(function () {
                         <div class="highlight">
                             % if result['highlight'] is not None:
                                 % for highlight in result['highlight']:
-                                   %if highlight:
+                                   %if hightlight:
                                        ${highlight}
                                    %endif
                                 % endfor
@@ -205,7 +149,7 @@ $(function () {
                                                 % for highlight in result['nest'][key]['highlight']:
                                                     ${highlight}
                                                 % endfor
-##                                               and link to wiki, if it's there
+##                                               and link to wiki, if its there
                                                 % if result['nest'][key]['wiki_link']:
                                                        <a href=${result['nest'][key]['wiki_link']}> jump to wiki </a>
                                                 % endif
@@ -229,9 +173,9 @@ $(function () {
                                 % endfor
                             % endif
                         </div>
+                        </div>
                         <br>
                     %endif
-                    </div>
                 % endfor
 ##            pagination! we're simply going to build a query by telling solr which 'row' we want to start on
                 <div class="navigate">
@@ -250,9 +194,11 @@ $(function () {
                             <a href="?q=${query | h}&pagination=${(current_page)+10}">Next</a>
                         % endif
                     % endif
+
                 </div>
             % else:
                 No results found. <br />
             %endif
     </div>
 </div>
+</%def>

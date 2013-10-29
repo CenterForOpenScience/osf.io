@@ -1,48 +1,103 @@
-from framework.mongo import ObjectId, db
-from framework.auth import User, get_user
-from framework.analytics import get_basic_counters, increment_user_activity_counters
-from framework.search import Keyword, generate_keywords
-from framework.git.exceptions import FileNotModified
-from framework.forms.utils import sanitize
-from framework.auth import get_api_key
-
-from website import settings
-
-from framework import StoredObject, fields, storage
-
+# -*- coding: utf-8 -*-
+import subprocess
 import uuid
 import hashlib
-import datetime
-import markdown
-from markdown.extensions import wikilinks
 import calendar
+import datetime
 import os
 import unicodedata
+import logging
 
+import markdown
+from markdown.extensions import wikilinks
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 
-import subprocess
-
+from framework.mongo import ObjectId
+from framework.auth import User, get_user
+from framework.analytics import get_basic_counters, increment_user_activity_counters
+from framework.git.exceptions import FileNotModified
+from framework.forms.utils import sanitize
+from framework import StoredObject, fields
 from framework.search.solr import update_solr, delete_solr_doc
+from framework import GuidStoredObject, Q
+
+from website.project.metadata.schemas import OSF_META_SCHEMAS
+from website import settings
+
 
 def utc_datetime_to_timestamp(dt):
     return float(
         str(calendar.timegm(dt.utcnow().utctimetuple())) + '.' + str(dt.microsecond)
     )
 
+
 def normalize_unicode(ustr):
     return unicodedata.normalize('NFKD', ustr)\
         .encode('ascii', 'ignore')
 
+
+class MetaSchema(StoredObject):
+
+    _id = fields.StringField(default=lambda: str(ObjectId()))
+    schema = fields.DictionaryField()
+    category = fields.StringField()
+    version = fields.StringField()
+
+
+def ensure_schemas():
+    for key, value in OSF_META_SCHEMAS.items():
+        try:
+            MetaSchema.find_one(Q('_id', 'eq', key))
+        except:
+            schema_obj = MetaSchema(_id=key, **value)
+            schema_obj.save()
+
+
+class MetaData(GuidStoredObject):
+
+    _id = fields.StringField()
+    target = fields.AbstractForeignField(backref='annotated')
+
+    # Annotation category: Comment, review, registration, etc.
+    category = fields.StringField()
+
+    # Annotation data
+    schema = fields.ForeignField('MetaSchema')
+    payload = fields.DictionaryField()
+
+    # Annotation provenance
+    user = fields.ForeignField('User', backref='annotated')
+    date = fields.DateTimeField(auto_now_add=True)
+
+    def __init__(self, *args, **kwargs):
+        super(MetaData, self).__init__(*args, **kwargs)
+        if self.category and not self.schema:
+            if self.category in OSF_META_SCHEMAS:
+                self.schema = self.category
+
+
 class ApiKey(StoredObject):
+
+    # The key is also its primary key
     _id = fields.StringField(
         primary=True,
         default=lambda: str(ObjectId()) + str(uuid.uuid4())
     )
+    # A display name
     label = fields.StringField()
 
+    @property
+    def user(self):
+        return self.user__keyed[0] if self.user__keyed else None
+
+    @property
+    def node(self):
+        return self.node__keyed[0] if self.node__keyed else None
+
+
 class NodeLog(StoredObject):
+
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
     date = fields.DateTimeField(default=datetime.datetime.utcnow)
@@ -52,8 +107,15 @@ class NodeLog(StoredObject):
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
 
-class NodeFile(StoredObject):
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    @property
+    def node(self):
+        return Node.load(self.params.get('node')) or \
+            Node.load(self.params.get('project'))
+
+
+class NodeFile(GuidStoredObject):
+
+    _id = fields.StringField(primary=True)
 
     path = fields.StringField()
     filename = fields.StringField()
@@ -69,29 +131,35 @@ class NodeFile(StoredObject):
     date_uploaded = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
+    node = fields.ForeignField('node', backref='uploads')
     uploader = fields.ForeignField('user', backref='uploads')
 
-class Tag(StoredObject):
+    @property
+    def url(self):
+        return '{}files/{}/'.format(self.node.url, self.filename)
 
-    schema = {
-        '_id':{},
-        'count_public':{"default":0},
-        'count_total':{"default":0},
-    }
-    _doc = {
-        'name':'tag',
-        'version':1,
-    }
+class Tag(GuidStoredObject):
 
     _id = fields.StringField(primary=True)
     count_public = fields.IntegerField(default=0)
     count_total = fields.IntegerField(default=0)
 
-class Node(StoredObject):
+    @property
+    def url(self):
+        return '/search/?q=tags:{}'.format(self._id)
+
+
+class Node(GuidStoredObject):
     _id = fields.StringField(primary=True)
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+
+    # Permissions
     is_public = fields.BooleanField()
+    is_title_public = fields.BooleanField(default=True)
+    are_contributors_public = fields.BooleanField(default=True)
+    are_files_public = fields.BooleanField(default=False)
+    are_logs_public = fields.BooleanField(default=True)
 
     is_deleted = fields.BooleanField(default=False)
     deleted_date = fields.DateTimeField()
@@ -102,11 +170,11 @@ class Node(StoredObject):
     is_fork = fields.BooleanField(default=False)
     forked_date = fields.DateTimeField()
 
-    title = fields.StringField()
+    title = fields.StringField(versioned=True)
     description = fields.StringField()
     category = fields.StringField()
 
-    _terms = fields.DictionaryField(list=True)
+    #_terms = fields.DictionaryField(list=True)
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
     registered_meta = fields.DictionaryField()
@@ -118,6 +186,8 @@ class Node(StoredObject):
 
     creator = fields.ForeignField('user', backref='created')
     contributors = fields.ForeignField('user', list=True, backref='contributed')
+    # Dict list that includes registered AND unregsitered users
+    # Example: [{u'id': u've4nx'}, {u'nr_name': u'Joe Dirt', u'nr_email': u'joe@example.com'}]
     contributor_list = fields.DictionaryField(list=True)
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
 
@@ -130,21 +200,55 @@ class Node(StoredObject):
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
-    _meta = {'optimistic' : True}
+    ## Meta-data
+    #comment_schema = OSF_META_SCHEMAS['osf_comment']
+
+    _meta = {'optimistic': True}
+
+    def can_edit(self, user, api_key=None):
+
+        return (
+            self.is_public
+            or self.is_contributor(user)
+            or (api_key is not None and self is api_key.node)
+            or (user and user == self.creator)
+        )
 
     def save(self, *args, **kwargs):
-        # function to overrwrite the save method so
-        # that we can send relevant info to solr
         rv = super(Node, self).save(*args, **kwargs)
         self.update_solr()
         return rv
 
+    def set_title(self, title, user, api_key=None, save=False):
+        '''Sets the title of this Node and logs it.
+
+        :param title: A string, the new title
+        :param user: A User object
+        :param api_key: An ApiKey object
+        '''
+        original_title = self.title
+        self.title = title
+        self.add_log(
+            action='edit_title',
+            params={
+                'project': self.node__parent[0]._primary_key if self.node__parent else None,
+                'node': self._primary_key,
+                'title_new': self.title,
+                'title_original': original_title,
+            },
+            user=user,
+            api_key=api_key,
+        )
+        if save:
+            self.save()
+        return None
+
     def update_solr(self):
         """Send the current state of the object to Solr, or delete it from Solr
         as appropriate
-        """
 
-        if not settings.use_solr:
+        """
+        if not settings.USE_SOLR:
             return
 
         if self.category == 'project':
@@ -181,7 +285,7 @@ class Node(StoredObject):
                 '{}_public'.format(self._id): self.is_public,
                 '{}_tags'.format(self._id): [x._id for x in self.tags],
                 '{}_description'.format(self._id): self.description,
-                '{}_url'.format(self._id): self.url(),
+                '{}_url'.format(self._id): self.url,
                 }
 
             for wiki in [
@@ -194,13 +298,12 @@ class Node(StoredObject):
 
             update_solr(solr_document)
 
-
     def remove_node(self, user, date=None):
         if not date:
             date = datetime.datetime.utcnow()
 
         node_objects = []
- 
+
         if self.nodes and len(self.nodes) > 0:
             node_objects = self.nodes
 
@@ -210,7 +313,7 @@ class Node(StoredObject):
         for node in node_objects:
             #if not node.user_is_contributor(user):
             #    return False
-            
+
             if not node.category == 'project':
                 if not node.remove_node(user, date=date):
                     return False
@@ -238,39 +341,24 @@ class Node(StoredObject):
 
         return True
 
-    def generate_keywords(self, save=True):
-        source = []
-        keywords = []
-        source.append(self.title)
-        for k,v in self.wiki_pages_current.items():
-            page = NodeWikiPage.load(v)
-            source.append(page.content)
-        for t in self.tags:
-            source.append(t._id)
-        self._terms = []
-        # TODO force tags, add users, files
-        self._terms = generate_keywords(source)
-        if save:
-            self.save()
-        return 
+    def fork_node(self, user, api_key=None, title='Fork of '):
 
-    def fork_node(self, user, title='Fork of '):
-        if not (self.is_contributor(user) or self.is_public):
+        # todo: should this raise an error?
+        if not self.can_edit(user, api_key):
             return
 
-        folder_old = os.path.join(settings.uploads_path, self._primary_key)
+        folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
         when = datetime.datetime.utcnow()
 
         original = self.load(self._primary_key)
         forked = original.clone()
 
-        forked.nodes = []
-        forked.contributors = []
-        forked.contributor_list = []
+        forked.logs = self.logs
+        forked.tags = self.tags
 
         for i, node_contained in enumerate(original.nodes):
-            forked_node = node_contained.fork_node(user, title='')
+            forked_node = node_contained.fork_node(user, api_key=api_key, title='')
             if forked_node is not None:
                 forked.nodes.append(forked_node)
 
@@ -279,16 +367,19 @@ class Node(StoredObject):
         forked.forked_date = when
         forked.forked_from = original
         forked.is_public = False
+        forked.contributor_list = []
 
         forked.add_contributor(user, log=False, save=False)
 
-        forked.add_log('node_forked',
+        forked.add_log(
+            action='node_forked',
             params={
-                'project':original.node__parent[0]._primary_key if original.node__parent else None,
+                'project':original.parent_id,
                 'node':original._primary_key,
                 'registration':forked._primary_key,
-            }, 
+            },
             user=user,
+            api_key=api_key,
             log_date=when,
             do_save=False,
         )
@@ -296,7 +387,7 @@ class Node(StoredObject):
         forked.save()
 
         if os.path.exists(folder_old):
-            folder_new = os.path.join(settings.uploads_path, forked._primary_key)
+            folder_new = os.path.join(settings.UPLOADS_PATH, forked._primary_key)
             Repo(folder_old).clone(folder_new)
 
         original.fork_list.append(forked._primary_key)
@@ -304,33 +395,45 @@ class Node(StoredObject):
 
         return forked#self
 
-    def register_node(self, user, template, data):
-        folder_old = os.path.join(settings.uploads_path, self._primary_key)
+    def register_node(self, user, api_key, template, data):
+        folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
         when = datetime.datetime.utcnow()
 
         original = self.load(self._primary_key)
         registered = original.clone()
+
+        registered.contributors = self.contributors
+        registered.forked_from = self.forked_from
+        registered.creator = self.creator
+        registered.logs = self.logs
+        registered.tags = self.tags
+
         registered.save()
-        # registered._optimistic_insert()
 
         if os.path.exists(folder_old):
-            folder_new = os.path.join(settings.uploads_path, registered._primary_key)
+            folder_new = os.path.join(settings.UPLOADS_PATH, registered._primary_key)
             Repo(folder_old).clone(folder_new)
 
         registered.nodes = []
 
         # todo: should be recursive; see Node.fork_node()
         for i, original_node_contained in enumerate(original.nodes):
-            
+
             node_contained = original_node_contained.clone()
             node_contained.save()
 
-            folder_old = os.path.join(settings.uploads_path, original_node_contained._primary_key)
+            folder_old = os.path.join(settings.UPLOADS_PATH, original_node_contained._primary_key)
 
             if os.path.exists(folder_old):
-                folder_new = os.path.join(settings.uploads_path, node_contained._primary_key)
+                folder_new = os.path.join(settings.UPLOADS_PATH, node_contained._primary_key)
                 Repo(folder_old).clone(folder_new)
+
+            node_contained.contributors = original_node_contained.contributors
+            node_contained.forked_from = original_node_contained.forked_from
+            node_contained.creator = original_node_contained.creator
+            node_contained.logs = original_node_contained.logs
+            node_contained.tags = original_node_contained.tags
 
             node_contained.is_registration = True
             node_contained.registered_date = when
@@ -350,13 +453,15 @@ class Node(StoredObject):
         registered.registered_meta[template] = data
         registered.save()
 
-        original.add_log('project_registered', 
+        original.add_log(
+            action='project_registered',
             params={
-                'project':original.node__parent[0]._primary_key if original.node__parent else None,
+                'project':original.parent_id,
                 'node':original._primary_key,
                 'registration':registered._primary_key,
-            }, 
+            },
             user=user,
+            api_key=api_key,
             log_date=when
         )
         original.registration_list.append(registered._id)
@@ -364,54 +469,63 @@ class Node(StoredObject):
 
         return registered
 
-    def remove_tag(self, tag, user):
+    def remove_tag(self, tag, user, api_key):
         if tag in self.tags:
-            new_tag = Tag.load(tag)
             self.tags.remove(tag)
             self.save()
-            self.add_log('tag_removed', {
-                'project':self.node__parent[0]._primary_key if self.node__parent else None,
-                'node':self._primary_key,
-                'tag':tag,
-            }, user)
+            self.add_log(
+                action='tag_removed',
+                params={
+                    'project':self.parent_id,
+                    'node':self._primary_key,
+                    'tag':tag,
+                },
+                user=user,
+                api_key=api_key
+            )
 
-    def add_tag(self, tag, user):
+    def add_tag(self, tag, user, api_key):
         if tag not in self.tags:
             new_tag = Tag.load(tag)
             if not new_tag:
                 new_tag = Tag(_id=tag)
-            new_tag.count_total+=1
+            new_tag.count_total += 1
             if self.is_public:
-                new_tag.count_public+=1
+                new_tag.count_public += 1
             new_tag.save()
             self.tags.append(new_tag)
             self.save()
-            self.add_log('tag_added', {
-                'project':self.node__parent[0]._primary_key if self.node__parent else None,
-                'node':self._primary_key,
-                'tag':tag,
-            }, user)
+            self.add_log(
+                action='tag_added',
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'tag': tag,
+                },
+                user=user,
+                api_key=api_key
+            )
 
     def get_file(self, path, version=None):
-        if not version == None:
-            folder_name = os.path.join(settings.uploads_path, self._primary_key)
+        if version is not None:
+            folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
             if os.path.exists(os.path.join(folder_name, ".git")):
-                file_object =  NodeFile.load(self.files_versions[path.replace('.', '_')][version])
+                file_object = NodeFile.load(self.files_versions[path.replace('.', '_')][version])
                 repo = Repo(folder_name)
                 tree = repo.commit(file_object.git_commit).tree
-                (mode,sha) = tree_lookup_path(repo.get_object,tree,path)
+                (mode, sha) = tree_lookup_path(repo.get_object, tree, path)
                 return repo[sha].data, file_object.content_type
-        return None,None
+        return None, None
 
     def get_file_object(self, path, version=None):
         if version is not None:
-            directory = os.path.join(settings.uploads_path, self._primary_key)
+            directory = os.path.join(settings.UPLOADS_PATH, self._primary_key)
             if os.path.exists(os.path.join(directory, '.git')):
                 return NodeFile.load(self.files_versions[path.replace('.', '_')][version])
             # TODO: Raise exception here
         return None, None # TODO: Raise exception here
 
-    def remove_file(self, user, path):
+    def remove_file(self, user, api_key, path):
         '''Removes a file from the filesystem, NodeFile collection, and does a git delete ('git rm <file>')
 
         :param user:
@@ -423,7 +537,7 @@ class Node(StoredObject):
         #FIXME: encoding the filename this way is flawed. For instance - foo.bar resolves to the same string as foo_bar.
         file_name_key = path.replace('.', '_')
 
-        repo_path = os.path.join(settings.uploads_path, self._primary_key)
+        repo_path = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
         # TODO make sure it all works, otherwise rollback as needed
         # Do a git delete, which also removes from working filesystem.
@@ -437,12 +551,9 @@ class Node(StoredObject):
             repo = Repo(repo_path)
 
             message = '{path} deleted'.format(path=path)
-            committer = u'{fullname} <user-{id}@openscienceframework.org>'.format(
-                fullname=user.fullname,
-                id=user._primary_key
-            )
-            ascii_committer = normalize_unicode(committer)
-            commit_id = repo.do_commit(message, ascii_committer)
+            committer = self._get_committer(user, api_key)
+
+            commit_id = repo.do_commit(message, committer)
 
         except subprocess.CalledProcessError:
             return False
@@ -467,16 +578,57 @@ class Node(StoredObject):
         # Updates self.date_modified
         self.save()
 
-        self.add_log('file_removed', {
-                'project':self.node__parent[0]._primary_key if self.node__parent else None,
+        self.add_log(
+            action='file_removed',
+            params={
+                'project':self.parent_id,
                 'node':self._primary_key,
                 'path':path
-            }, user, log_date=nf.date_modified)
+            },
+            user=user,
+            api_key=api_key,
+            log_date=nf.date_modified
+        )
 
         # self.save()
         return True
 
-    def add_file(self, user, file_name, content, size, content_type):
+    @staticmethod
+    def _get_committer(user, api_key):
+
+        if api_key:
+            commit_key_msg = ':{}'.format(api_key.label)
+            if api_key.user:
+                commit_name = api_key.user.fullname
+                commit_id = api_key.user._primary_key
+                commit_category = 'user'
+            if api_key.node:
+                commit_name = api_key.node.title
+                commit_id = api_key.node._primary_key
+                commit_category = 'node'
+
+        elif user:
+            commit_key_msg = ''
+            commit_name = user.fullname
+            commit_id = user._primary_key
+            commit_category = 'user'
+
+        else:
+            raise Exception('Must provide either user or api_key.')
+
+        committer = u'{name}{key_msg} <{category}-{id}@openscienceframework.org>'.format(
+            name=commit_name,
+            key_msg=commit_key_msg,
+            category=commit_category,
+            id=commit_id,
+        )
+
+        committer = normalize_unicode(committer)
+
+        return committer
+
+
+    def add_file(self, user, api_key, file_name, content, size, content_type):
         """
         Instantiates a new NodeFile object, and adds it to the current Node as
         necessary.
@@ -484,12 +636,12 @@ class Node(StoredObject):
         # TODO: Reading the whole file into memory is not scalable. Fix this.
 
         # This node's folder
-        folder_name = os.path.join(settings.uploads_path, self._primary_key)
+        folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
         # TODO: This should be part of the build phase, not here.
         # verify the upload root exists
-        if not os.path.isdir(settings.uploads_path):
-            os.mkdir(settings.uploads_path)
+        if not os.path.isdir(settings.UPLOADS_PATH):
+            os.mkdir(settings.UPLOADS_PATH)
 
         # Make sure the upload directory contains a git repo.
         if os.path.exists(folder_name):
@@ -526,16 +678,13 @@ class Node(StoredObject):
 
         # Deal with git
         repo.stage([file_name])
-        committer = u'{name} <user-{id}@openscienceframework.org>'.format(
-            name=user.fullname,
-            id=user._primary_key,
-        )
-        ascii_committer = normalize_unicode(committer)
+
+        committer = self._get_committer(user, api_key)
 
         commit_id = repo.do_commit(
             message=unicode(file_name +
                             (' added' if file_is_new else ' updated')),
-            committer=ascii_committer,
+            committer=committer,
         )
 
         # Deal with creating a NodeFile in the database
@@ -544,6 +693,7 @@ class Node(StoredObject):
         node_file.filename = file_name
         node_file.size = size
         node_file.is_public = self.is_public
+        node_file.node = self
         node_file.uploader = user
         node_file.git_commit = commit_id
         node_file.content_type = content_type
@@ -566,28 +716,26 @@ class Node(StoredObject):
         # Save the Node
         self.save()
 
-        if file_is_new:
-            self.add_log('file_added', {
-                'project': self.node__parent[0]._primary_key if self.node__parent else None,
+        self.add_log(
+            action='file_added' if file_is_new else 'file_updated',
+            params={
+                'project': self.parent_id,
                 'node': self._primary_key,
                 'path': node_file.path,
                 'version': len(self.files_versions)
-            }, user, log_date=node_file.date_uploaded)
-        else:
-            self.add_log('file_updated', {
-                'project': self.node__parent[0]._primary_key if self.node__parent else None,
-                'node': self._primary_key,
-                'path': node_file.path,
-                'version': len(self.files_versions)
-            }, user, log_date=node_file.date_uploaded)
+            },
+            user=user,
+            api_key=api_key,
+            log_date=node_file.date_uploaded
+        )
 
         return node_file
-    
-    def add_log(self, action, params, user, log_date=None, api_key=None, do_save=True):
+
+    def add_log(self, action, params, user, api_key=None, log_date=None, do_save=True):
         log = NodeLog()
         log.action=action
         log.user=user
-        log.api_key = api_key or get_api_key()
+        log.api_key = api_key
         if log_date:
             log.date=log_date
         log.params=params
@@ -603,99 +751,159 @@ class Node(StoredObject):
             parent.save()
         return log
 
+    @property
+    def public_title(self):
+        """ Get publicly available title. """
+
+        # Return full title if public
+        if self.is_title_public:
+            return self.title
+
+        # Else return node type and privacy warning
+        if self.is_registration:
+            return 'Title unavailable (private component; registration of {})'.format(self.registered_from.title)
+        if self.is_fork:
+            return 'Title unavailable (private component; fork of {})'.format(self.forked_from.title)
+        return 'Title unavailable (private component)'
+
+    @property
     def url(self):
         if self.category == 'project':
-            return '/project/' + self._primary_key
+            return '/project/{}/'.format(self._primary_key)
         else:
             if self.node__parent and self.node__parent[0].category == 'project':
-                return '/project/' + self.node__parent[0]._primary_key + '/node/' + self._primary_key # todo just get this directly
+                return '/project/{}/node/{}/'.format(
+                    self.node__parent[0]._primary_key,
+                    self._primary_key
+                )
+        logging.error("Node {0} has a parent that is not a project".format(self._id))
+        return None
 
+    @property
+    def api_url(self):
+        return '/api/v1' + self.url
+
+    @property
+    def watch_url(self):
+        return os.path.join(self.api_url, "watch/")
+
+    @property
+    def parent_id(self):
+        if self.node__parent:
+            return self.node__parent[0]._id
+        return None
 
     def is_contributor(self, user):
-        if user:
-            if str(user._id) in self.contributors:
-                return True
-        return False
-    
-    def remove_nonregistered_contributor(self, user, name, hash):
+        return (user is not None) and ((user in self.contributors) or user == self.creator)
+
+    def remove_nonregistered_contributor(self, user, api_key, name, hash_id):
         for d in self.contributor_list:
-            if d.get('nr_name') == name and hashlib.md5(d.get('nr_email')).hexdigest() == hash:
+            if d.get('nr_name') == name and hashlib.md5(d.get('nr_email')).hexdigest() == hash_id:
                 email = d.get('nr_email')
         self.contributor_list[:] = [d for d in self.contributor_list if not (d.get('nr_email') == email)]
         self.save()
-        self.add_log('remove_contributor', 
+        self.add_log(
+            action='contributor_removed',
             params={
-                'project':self.node__parent[0]._primary_key if self.node__parent else None,
+                'project':self.parent_id,
                 'node':self._primary_key,
                 'contributor':{"nr_name":name, "nr_email":email},
-            }, 
+            },
             user=user,
+            api_key=api_key,
         )
         return True
 
-    def remove_contributor(self, user, user_id_to_be_removed):
-        if not user._primary_key == user_id_to_be_removed:
-            self.contributors.remove(user_id_to_be_removed)
-            self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != user_id_to_be_removed]
-            self.save()
-            # # todo allow backref mechanism to handle this; not implemented
-            removed_user = get_user(user_id_to_be_removed)
-            # removed_user._b_node_contributed.remove(self._primary_key)
-            # removed_user.save()
+    def remove_contributor(self, user, contributor, api_key=None):
+        '''Remove a contributor from this project.
 
-            self.add_log('remove_contributor', 
+        :param user: User object, the user who is removing the contributor.
+        :param contributor: User object, the contributor to be removed
+        '''
+        if not user._primary_key == contributor._id:
+            self.contributors.remove(contributor._id)
+            self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != contributor._id]
+            self.save()
+            removed_user = get_user(contributor._id)
+
+            self.add_log(
+                action='contributor_removed',
                 params={
-                    'project':self.node__parent[0]._primary_key if self.node__parent else None,
+                    'project':self.parent_id,
                     'node':self._primary_key,
                     'contributor':removed_user._primary_key,
-                }, 
+                },
                 user=user,
+                api_key=api_key,
             )
             return True
         else:
             return False
 
-    def add_contributor(self, user, log=True, save=False):
-        if user._primary_key not in self.contributors:
-            self.contributors.append(user)
-            self.contributor_list.append({'id':user._primary_key})
+    def add_contributor(self, contributor, user=None, log=True, api_key=None, save=False):
+        '''Add a contributor to the project.
+
+        :param contributor: A User object, the contributor to be added
+        :param user: A User object, the user who added the contributor or None.
+        '''
+        if contributor._primary_key not in self.contributors:
+            self.contributors.append(contributor)
+            self.contributor_list.append({'id': contributor._primary_key})
+            if log:
+                self.add_log(
+                    action='contributor_added',
+                    params={
+                        'project': self.node__parent[0]._primary_key if self.node__parent else None,
+                        'node': self._primary_key,
+                        'contributors': [contributor._primary_key],
+                    },
+                    user=user,
+                    api_key=api_key
+                )
             if save:
                 self.save()
-            if log:
-                pass
-            #self.add_log('contributor_added', 
-            #    params={
-            #        'project':self.node_parent._primary_key if self.node_parent else None,
-            #        'node':self._primary_key,
-            #        'contributors':[user._primary_key],
-            #    }, 
-            #    user=user,
-            #)
+            return True
+        else:
+            return False
 
-    def makePublic(self, user):
-        if not self.is_public:
+    def add_nonregistered_contributor(self, name, email, user, api_key=None, save=False):
+        '''Add a non-registered contributor to the project.
+
+        :param name: A string, the full name of the person.
+        :param email: A string, the email address of the person.
+        :param user: A User object, the user who added the person.
+        '''
+        self.contributor_list.append({'nr_name': name, 'nr_email':email})
+        self.add_log(
+            action='contributor_added',
+            params={
+                'project':self.node__parent[0]._primary_key if self.node__parent else None,
+                'node':self._primary_key,
+                'contributors':[{"nr_name": name, "nr_email":email}],
+            },
+            user=user,
+            api_key=api_key
+        )
+        if save:
+            self.save()
+        return None
+
+    def set_permissions(self, permissions, user, api_key):
+        if permissions == 'public' and not self.is_public:
             self.is_public = True
-            self.save()
-            self.add_log('made_public', 
-                params={
-                    'project':self.node__parent[0]._primary_key if self.node__parent else None,
-                    'node':self._primary_key,
-                }, 
-                user=user,
-            )
-        return True
-
-    def makePrivate(self, user):
-        if self.is_public:
+        elif permissions == 'private' and self.is_public:
             self.is_public = False
-            self.save()
-            self.add_log('made_private',
-                params={
-                    'project':self.node__parent[0]._primary_key if self.node__parent else None,
-                    'node':self._primary_key,
-                },
-                user=user,
-            )
+        else:
+            return False
+        self.add_log(
+            action='made_{}'.format(permissions),
+            params={
+                'project':self.parent_id,
+                'node':self._primary_key,
+            },
+            user=user,
+            api_key=api_key
+        )
         return True
 
     def get_wiki_page(self, page, version=None):
@@ -721,10 +929,17 @@ class Node(StoredObject):
             pw = NodeWikiPage.load(self.wiki_pages_current[page])
         else:
             pw = None
-        
+
         return pw
 
-    def updateNodeWikiPage(self, page, content, user):
+    def update_node_wiki(self, page, content, user, api_key):
+        '''Update a the node's wiki page with new content.
+
+        :param page: A string, the page's name, e.g. ``"home"``.
+        :param content: A string, the posted content.
+        :param user: A `User` object.
+        :param api_key: A string, the api key. Can be ``None``.
+        '''
         page = str(page).lower()
 
         if page not in self.wiki_pages_current:
@@ -749,18 +964,18 @@ class Node(StoredObject):
         self.wiki_pages_versions[page].append(v._primary_key)
         self.wiki_pages_current[page] = v._primary_key
 
-        self.generate_keywords(save=False)
-
         self.save()
 
-        self.add_log('wiki_updated', 
+        self.add_log(
+            action='wiki_updated',
             params={
-                'project':self.node__parent[0]._primary_key if self.node__parent else None,
-                'node':self._primary_key,
-                'page':v.page_name,
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'page': v.page_name,
                 'version': v.version,
-            }, 
+            },
             user=user,
+            api_key=api_key,
             log_date=v.date
         )
 
@@ -774,9 +989,10 @@ class Node(StoredObject):
             return get_basic_counters('node:%s' % self._primary_key)
 
 
-class NodeWikiPage(StoredObject):
+class NodeWikiPage(GuidStoredObject):
 
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    _id = fields.StringField(primary=True)
+
     page_name = fields.StringField()
     version = fields.IntegerField()
     date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -786,7 +1002,9 @@ class NodeWikiPage(StoredObject):
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')
 
-    _meta = {'optimistic' : True}
+    @property
+    def url(self):
+        return '{}wiki/{}/'.format(self.node.url, self.page_name)
 
     @property
     def html(self):
@@ -801,7 +1019,7 @@ class NodeWikiPage(StoredObject):
             ]
         )
 
-        return sanitize(html_output, **settings.wiki_whitelist)
+        return sanitize(html_output, **settings.WIKI_WHITELIST)
 
     @property
     def raw_text(self):
@@ -811,5 +1029,13 @@ class NodeWikiPage(StoredObject):
 
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
-        self.node.update_solr()
+        if self.node:
+            self.node.update_solr()
         return rv
+
+class WatchConfig(StoredObject):
+
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    node = fields.ForeignField('Node', backref='watched')
+    digest = fields.BooleanField(default=False)
+    immediate = fields.BooleanField(default=False)

@@ -1,0 +1,6 @@
+-r requirements.txt
+# Requirements that are used in the development environment only
+nose
+factory-boy==2.2.1
+webtest-plus
+invoke

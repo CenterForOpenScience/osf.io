@@ -1,0 +1,149 @@
+<%inherit file="base.mako"/>
+<%def name="content()">
+<div mod-meta='{"tpl": "include/subnav.mako", "replace": true}'></div>
+
+<h2>Dataverse Credentials</h2>
+
+% if addon:
+
+    <p>Addon already configured: ${addon['dataverse_alias']} | ${addon['study_global_id']}</p>
+    <a class="remove-credentials" data-dataverse-alias="${addon['dataverse_alias']}" data-study-global-id="${addon['study_global_id']}">Remove</a>
+
+    <div>
+        <h3>Files</h3>
+        <ul>
+        % for file in addon['files']:
+            <li>${file['name']} | <a href="${file['link']}">Download</a></li>
+        % endfor
+        </ul>
+    </div>
+
+% elif user_addons:
+
+    <p>Add Dataverse credentials</p>
+
+    <form id="add-credentials" method="POST">
+
+        <div>
+            <select name="user_settings_id">
+                <option value="">-----</option>
+                % for user_addon in user_addons:
+                    <option value="${user_addon['key']}">${user_addon['label']}</option>
+                % endfor
+            </select>
+        </div>
+
+        <div>
+            <select name="dataverse_alias"></select>
+        </div>
+
+        <div>
+            <select name="study_global_id"></select>
+        </div>
+
+        <div>
+            <input type="submit" value="Submit" />
+        </div>
+
+    </form>
+
+% else:
+
+    <h2>No user credentials added! Go add some.</h2>
+
+% endif
+
+<script type="text/javascript">
+
+    var user_settings_select = $('select[name="user_settings_id"'),
+        dataverse_alias_select = $('select[name="dataverse_alias"'),
+        study_global_id_select = $('select[name="study_global_id"');
+
+    user_settings_select.on('change', function() {
+        var user_settings_id = $(this).val();
+        dataverse_alias_select.html('');
+        study_global_id_select.html('');
+        if (user_settings_id) {
+            $.get(
+                '/api/v1/dataverse/list_dataverses/',
+                {
+                    user_settings_id : user_settings_id,
+                },
+                function(response) {
+                    dataverse_alias_select
+                        .append($('<option value="">-----</option>'));
+                    $.each(response, function(idx, elm) {
+                        $('select[name="dataverse_alias"]')
+                            .append(
+                                $('<option></option>')
+                                    .attr('value', elm['title'])
+                                    .text(elm['title'])
+                            );
+                    });
+                },
+                'json'
+            )
+        }
+    });
+
+    dataverse_alias_select.on('change', function() {
+        var user_settings_id = user_settings_select.val(),
+            dataverse_alias = $(this).val();
+        study_global_id_select.html('');
+        if (user_settings_id && dataverse_alias) {
+            $.get(
+                '/api/v1/dataverse/list_studies/',
+                {
+                    user_settings_id : user_settings_id,
+                    dataverse_alias : dataverse_alias,
+                },
+                function(response) {
+                    study_global_id_select
+                        .append($('<option value="">-----</option>'));
+                    $.each(response, function(idx, elm) {
+                        study_global_id_select
+                            .append(
+                                $('<option></option>')
+                                    .attr('value', elm['title'])
+                                    .text(elm['title'])
+                            );
+                    });
+                },
+                'json'
+            )
+        }
+    });
+    $('#add-credentials').on('submit', function() {
+        $.post(
+            '/api/v1/project/${node_to_use._primary_key}/dataverse/add_node_settings/',
+            $(this).serialize(),
+            function(response) {
+                if (response.status === 'success') {
+                    window.location.reload();
+                } else {
+                    alert(response.message);
+                }
+            },
+            'json'
+        );
+        return false;
+    });
+    $('.remove-credentials').on('click', function() {
+        $.post(
+            '/api/v1/project/${node_to_use._primary_key}/dataverse/remove_node_settings/',
+            {
+                dataverse_alias : $(this).attr('data-dataverse-alias'),
+                study_global_id : $(this).attr('data-study-global-id'),
+            },
+            function(response) {
+                if (response.status === 'success') {
+                    window.location.reload();
+                } else {
+                    alert(response.message);
+                }
+            },
+            'json'
+        )
+    });
+</script>
+</%def>
