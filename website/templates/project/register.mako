@@ -105,19 +105,20 @@
                     data[question.id] = question.value;
                 });
             });
-
             // Send data to OSF
-                        $.post(
-                '${node_api_url}' + 'register/' + '${template_name if template_name else ''}/',
-                {data: JSON.stringify(data)},
-                function(response) {
+            $.ajax({
+                url: '${node_api_url}' + 'register/' + '${template_name if template_name else ''}/',
+                type: "POST",
+                data: JSON.stringify(data),
+                contentType: "application/json",
+                success: function(response) {
                     if (response.status === 'success')
                         window.location.href = response.result;
                     else if (response.status === 'error')
                         window.location.reload();
                 },
-                'json'
-            );
+                dataType: 'json'
+            });
 
             // Stop event propagation
             return false;

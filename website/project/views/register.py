@@ -1,4 +1,8 @@
 
+import os
+import json
+import logging
+
 from framework import request, push_status_message
 from framework.auth import must_have_session_auth
 from ..decorators import must_not_be_registration, must_be_valid_project, must_be_contributor, must_be_contributor_or_public
@@ -10,8 +14,7 @@ from framework import Q
 
 from .. import clean_template_name
 
-import os
-import json
+logger = logging.getLogger(__name__)
 
 @must_have_session_auth
 @must_be_valid_project
@@ -79,11 +82,10 @@ def node_register_template_page_post(*args, **kwargs):
     api_key = kwargs['api_key']
 
     node_to_use = node or project
+    logger.error(request.json)
+    data = request.json
 
-    data = request.form['data']
-    parsed_data = json.loads(data)
-
-    for k, v in parsed_data.items():
+    for k, v in data.items():
         if v is not None and v != sanitize(v):
             # todo interface needs to deal with this
             push_status_message('Invalid submission.')
@@ -92,8 +94,10 @@ def node_register_template_page_post(*args, **kwargs):
             })
 
     template = kwargs['template']
-
-    register = node_to_use.register_node(user, api_key, template, data)
+    # TODO: Using json.dumps because node_to_use.registered_meta's values are
+    # expected to be strings (not dicts). Eventually migrate all these to be
+    # dicts, as this is unnecessary
+    register = node_to_use.register_node(user, api_key, template, json.dumps(data))
 
     return {
         'status': 'success',
