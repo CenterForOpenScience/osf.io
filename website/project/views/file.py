@@ -215,6 +215,7 @@ def view_file(*args, **kwargs):
             is_img = True
             break
 
+    # TODO: this logic belongs in model
     # todo: add bzip, etc
     if is_img:
         rendered="<img src='{node_url}files/download/{fid}/' />".format(node_url=node_to_use.api_url, fid=file_name)
@@ -239,15 +240,21 @@ def view_file(*args, **kwargs):
         except IOError:
             raise HTTPError(http.NOT_FOUND)
 
+    download_path = "{api_url}files/download/{fid}/version/{version}/".format(
+            api_url=node_to_use.api_url,
+            fid=file_name,
+            version=versions[-1]['number']
+        )
+    download_html = '<p><a href="{path}">Download file</a></p>'.format(path=download_path)
     if renderer == 'pygments':
         try:
-            rendered = pygments.highlight(
+            rendered = download_html + pygments.highlight(
                 file_contents,
                 pygments.lexers.guess_lexer_for_filename(file_path, file_contents),
                 pygments.formatters.HtmlFormatter()
             )
         except pygments.util.ClassNotFound:
-            rendered = 'This type of file cannot be rendered online.  Please download the file to view it locally.'
+            rendered = download_html
 
     rv = {
         'file_name' : file_name,
@@ -262,7 +269,6 @@ def view_file(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
 def download_file(*args, **kwargs):
-    print 'IN DF'
     project = kwargs['project']
     node = kwargs['node']
     user = kwargs['user']
@@ -271,9 +277,9 @@ def download_file(*args, **kwargs):
 
     kwargs["vid"] = len(node_to_use.files_versions[filename.replace('.', '_')])
 
-    return redirect('{node_url}files/download/{fid}/version/{vid}/'.format(
+    return redirect('{node_url}files/download/${fid}/version/{vid}/'.format(
         node_url=node_to_use.api_url,
-        fid=kwargs['fid'],
+        fid=filename,
         vid=kwargs['vid'],
     ))
 
