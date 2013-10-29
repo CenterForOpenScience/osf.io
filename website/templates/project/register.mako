@@ -64,7 +64,7 @@
                         </div>
                     </div>
 
-                    <button id="register-submit" class="btn btn-success" data-bind="visible:$parent.continueFlag">
+                    <button id="register-submit" class="btn btn-success" data-bind="visible:$parent.continueFlag, focus:$parent.continueFlag">
                         Register
                     </button>
 
