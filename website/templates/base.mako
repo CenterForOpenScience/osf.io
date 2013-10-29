@@ -12,7 +12,7 @@
     <![endif]-->
 
     <!-- Le styles -->
-
+    <link rel="stylesheet" href="/static/vendor/bootstrap2/css/bootstrap.min.css">
     % for url in css_all:
         <link rel="stylesheet" href="${url}">
     % endfor
