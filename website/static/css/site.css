@@ -180,13 +180,13 @@ footer {
 }
 
 .headline > .container > h1 {
-    font-size: 130px;
+    font-size: 100px;
     background: #ffffff;
     background: rgba(255, 255, 255, 0.9);
 }
 
 .headline > .container > h2 {
-    font-size: 77px;
+    font-size: 60px;
     background: #ffffff;
     background: rgba(255, 255, 255, 0.9);
 }
@@ -323,14 +323,11 @@ footer {
 /* Universal
 -------------------------------------------------- */
 
-/* Custom container */
-.container-narrow {
-  margin: 0 auto;
-  max-width: 700px;
-}
-
-.container-narrow > hr {
-  margin: 30px 0;
+/* Customize container */
+@media (min-width: 1150px) {
+  .container {
+    max-width: 1100px;
+  }
 }
 
 .centered{
