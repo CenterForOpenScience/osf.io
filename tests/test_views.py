@@ -10,6 +10,7 @@ from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
 import website.app
+from website.models import Node
 
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
@@ -132,6 +133,18 @@ class TestProjectViews(DbTestCase):
         res = self.app.post_json(url, {}, auth=self.auth)
         self.project.reload()
         assert_not_in("footag", self.project.tags)
+
+    def test_register_template_page(self):
+        url = "/api/v1/project/{0}/register/FooBar_Template/".format(self.project._primary_key)
+        res = self.app.post_json(url, {}, auth=self.auth)
+        self.project.reload()
+        # A registration was added to the project's registration list
+        assert_equal(len(self.project.registration_list), 1)
+        # A log event was saved
+        assert_equal(self.project.logs[-1].action, "project_registered")
+        # Most recent node is a registration
+        reg = Node.load(self.project.registration_list[-1])
+        assert_true(reg.is_registration)
 
 class TestWatchViews(DbTestCase):
 
