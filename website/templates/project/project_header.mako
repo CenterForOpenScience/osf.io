@@ -117,7 +117,7 @@
         </ul>
     </nav>
 </header>
-<div class="modal" id="addContributors" role="dialog" aria-hidden="true">
+<div class="modal fade" id="addContributors" role="dialog" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
