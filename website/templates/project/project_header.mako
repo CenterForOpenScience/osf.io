@@ -101,7 +101,6 @@
     </p>
 
 </header>
-    <!-- <div class="subnav"> -->
     <nav class="navbar navbar-default ">
 
         <ul class="nav navbar-nav">
@@ -117,6 +116,7 @@
         </ul>
     </nav>
 </header>
+
 <div class="modal fade" id="addContributors" role="dialog" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">

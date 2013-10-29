@@ -109,7 +109,7 @@ class TestProjectViews(DbTestCase):
         assert_equal(res.json['status'], 'success')
 
     def test_make_private(self):
-        self.project.is_public = False
+        self.project.is_public = True
         self.project.save()
         url = "/api/v1/project/{0}/permissions/private/".format(self.project._id)
         res = self.app.post_json(url, {}, auth=self.auth)
@@ -117,6 +117,21 @@ class TestProjectViews(DbTestCase):
         assert_false(self.project.is_public)
         assert_equal(res.json['status'], 'success')
 
+    def test_add_tag(self):
+        url = "/api/v1/project/{0}/addtag/{tag}/".format(self.project._primary_key,
+                                                        tag="footag")
+        res = self.app.post_json(url, {}, auth=self.auth)
+        self.project.reload()
+        assert_in("footag", self.project.tags)
+
+    def test_remove_tag(self):
+        self.project.add_tag("footag", user=self.user1, api_key=None, save=True)
+        assert_in("footag", self.project.tags)
+        url = "/api/v1/project/{0}/removetag/{tag}/".format(self.project._primary_key,
+                                                        tag="footag")
+        res = self.app.post_json(url, {}, auth=self.auth)
+        self.project.reload()
+        assert_not_in("footag", self.project.tags)
 
 class TestWatchViews(DbTestCase):
 

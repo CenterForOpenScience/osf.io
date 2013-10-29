@@ -488,10 +488,9 @@ class Node(GuidStoredObject):
 
         return registered
 
-    def remove_tag(self, tag, user, api_key):
+    def remove_tag(self, tag, user, api_key, save=True):
         if tag in self.tags:
             self.tags.remove(tag)
-            self.save()
             self.add_log(
                 action='tag_removed',
                 params={
@@ -502,8 +501,10 @@ class Node(GuidStoredObject):
                 user=user,
                 api_key=api_key
             )
+            if save:
+                self.save()
 
-    def add_tag(self, tag, user, api_key):
+    def add_tag(self, tag, user, api_key, save=True):
         if tag not in self.tags:
             new_tag = Tag.load(tag)
             if not new_tag:
@@ -513,7 +514,6 @@ class Node(GuidStoredObject):
                 new_tag.count_public += 1
             new_tag.save()
             self.tags.append(new_tag)
-            self.save()
             self.add_log(
                 action='tag_added',
                 params={
@@ -524,6 +524,8 @@ class Node(GuidStoredObject):
                 user=user,
                 api_key=api_key
             )
+            if save:
+                self.save()
 
     def get_file(self, path, version=None):
         if version is not None:

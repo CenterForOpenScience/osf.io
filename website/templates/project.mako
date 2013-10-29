@@ -30,14 +30,16 @@
             interactive:${'true' if user_can_edit else 'false'},
             onAddTag:function(tag){
                 $.ajax({
-                    url:"${node_api_url}" + "addtag/" + tag,
-                    type:"GET",
+                    url:"${node_api_url}" + "addtag/" + tag + "/",
+                    type:"POST",
+                    contentType: "application/json"
                 });
             },
             onRemoveTag:function(tag){
                 $.ajax({
-                    url:"${node_api_url}" + "removetag/" + tag,
-                    type:"GET",
+                    url:"${node_api_url}" + "removetag/" + tag + "/",
+                    type:"POST",
+                    contentType: "application/json"
                 });
             },
         });

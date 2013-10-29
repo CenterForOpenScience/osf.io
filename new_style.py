@@ -266,11 +266,10 @@ def make_url_map(app):
         ], 'get', project_views.node.component_remove, WebRenderer('', render_mako_string)),
 
         # Permissions
-        # TODO: Should be a POST
         Rule([
             '/project/<pid>/permissions/<permissions>/',
             '/project/<pid>/node/<nid>/permissions/<permissions>/',
-        ], 'get', project_views.node.project_set_permissions, OsfWebRenderer('project.mako')),
+        ], 'post', project_views.node.project_set_permissions, OsfWebRenderer('project.mako')),
 
         ### Logs ###
 
@@ -437,16 +436,14 @@ def make_url_map(app):
         ], 'post', project_views.node.edit_node, json_renderer),
 
         # Tags
-        # TODO: Should be a POST
         Rule([
             '/project/<pid>/addtag/<tag>/',
             '/project/<pid>/node/<nid>/addtag/<tag>/',
-        ], 'get', project_views.tag.project_addtag, json_renderer),
-        # TODO: Should be a POST
+        ], 'post', project_views.tag.project_addtag, json_renderer),
         Rule([
             '/project/<pid>/removetag/<tag>/',
             '/project/<pid>/node/<nid>/removetag/<tag>/',
-        ], 'get', project_views.tag.project_removetag, json_renderer),
+        ], 'post', project_views.tag.project_removetag, json_renderer),
 
         ### Files ###
         Rule([
