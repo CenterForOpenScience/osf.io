@@ -46,8 +46,8 @@ env/*
 ########
 .webassets-cache
 websi
-website/static/public/css/*
-website/static/public/js/*
+website/static/public/css/*.css
+website/static/public/js/*.js
 
 # OSF-specific
 #######################
