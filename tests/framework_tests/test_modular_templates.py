@@ -18,6 +18,8 @@ from framework.routing import (
     Renderer, JSONRenderer, WebRenderer,
     render_mako_string,
 )
+from new_style import OsfWebRenderer
+
 from tests.base import AppTestCase, DbTestCase
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -99,7 +101,8 @@ class WebRendererTestCase(AppTestCase):
 
     def setUp(self):
         super(WebRendererTestCase, self).setUp()
-        self.r = WebRenderer(
+        # Use OsfRenderer so that global vars are included
+        self.r = OsfWebRenderer(
             os.path.join(TEMPLATES_PATH, 'main.html'),
             render_mako_string
         )
