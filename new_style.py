@@ -12,6 +12,7 @@ from website.search import views as search_views
 from website.discovery import views as discovery_views
 from website.profile import views as profile_views
 from website.project import views as project_views
+from website.assets import env as assets_env
 
 
 import httplib as http
@@ -27,6 +28,7 @@ def get_globals():
         'dev_mode' : settings.DEV_MODE,
         'allow_login' : settings.ALLOW_LOGIN,
         'status' : framework.status.pop_status_messages(),
+        "js_all": assets_env['js_vendor'].urls() + assets_env['js'].urls()
     }
 
 
@@ -51,7 +53,7 @@ def view_index():
 
 def favicon():
     return framework.send_from_directory(
-        settings.STATIC_PATH,
+        settings.STATIC_FOLDER,
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'
     )

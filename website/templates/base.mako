@@ -29,23 +29,9 @@
     <link href="/static/css/site.css" rel="stylesheet">
     ${self.stylesheets()}
 
-
-    %if use_cdn:
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-        <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.12/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.0.0/bootbox.min.js"></script>
-    %else:
-        <script src="/static/vendor/jquery/jquery.min.js"></script>
-        <script src="/static/vendor/jquery-ui/js/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="/static/vendor/bootbox/bootbox.min.js"></script>
-    %endif
-    <script src="/static/vendor/jquery-tagsinput/js/jquery.tagsinput.min.js"></script>
-    <script src="/static/vendor/jquery-tagcloud/jquery.tagcloud.js"></script>
-    <script src="/static/vendor/jquery-treeview/jquery.treeview.js" type="text/javascript"></script>
-    <script src="/static/vendor/bootstrap2/js/bootstrap.min.js"></script>
-    <script src="/static/vendor/bootstrap-editable/js/bootstrap-editable.min.js"></script>
-    <script src="/static/vendor/jquery-tagit/js/tag-it.js"></script>
-    <script src="/static/js/site.js"></script>
+    % for url in js_all:
+        <script src="${url}"></script>
+    % endfor
     ${self.javascript()}
 
 </head>
