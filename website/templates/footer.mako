@@ -17,15 +17,15 @@
                 <ul>
                     <li><a href="http://centerforopenscience.org">Home</a></li>
                     <li><a href="http://centerforopenscience.org/#contact">Contact</a></li>
-                    <li><a href="/project/EZcUj/wiki/home">Reproducibility Project: Psychology</a></li>
-                    <li><a href="/project/e81xl/wiki/home/">Reproducibility Project: Cancer Biology</a></li>
+                    <li><a href="https://openscienceframework.org/project/EZcUj/wiki/home">Reproducibility Project: Psychology</a></li>
+                    <li><a href="https://openscienceframework.org/project/e81xl/wiki/home/">Reproducibility Project: Cancer Biology</a></li>
                 </ul>
             </div>
             <div class="span2">
                 <h4>Documentation</h4>
                 <ul>
                     <li><a href="/getting-started">Getting Started</a></li>
-                    <li>Developer API</li>
+                    <li><a href="https://openscienceframework.org/project/4znZP/node/QB0Du/">Developer API</a></li>
                 </ul>
             </div>
             <div class="span2">
