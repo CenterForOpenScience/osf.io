@@ -15,7 +15,6 @@ STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 TEMPLATES_PATH = os.path.join(BASE_PATH, "templates")
 
-
 # User management & registration
 CONFIRM_REGISTRATIONS_BY_EMAIL = False # Not fully implemented
 ALLOW_REGISTRATION = True
@@ -41,9 +40,6 @@ MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
-STATIC_PATH = os.path.join(BASE_PATH, 'static')
-
-# TODO: Set me up in local.py in production
 try:
     os.environ['OSF_PRODUCTION']
     CACHE_PATH = '/opt/data/osf_cache'

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import httplib as http
+
 import framework
 from framework import HTTPError
 from framework import (Rule, process_rules,
@@ -12,21 +14,22 @@ from website.search import views as search_views
 from website.discovery import views as discovery_views
 from website.profile import views as profile_views
 from website.project import views as project_views
+from website.assets import env as assets_env
 
-
-import httplib as http
 
 def get_globals():
     user = framework.auth.get_current_user()
     return {
-        'user_name' : user.username if user else '',
-        'user_full_name' : user.fullname if user else '',
-        'user_id' : user._primary_key if user else '',
-        'display_name' : framework.auth.get_display_name(user.username) if user else '',
-        'use_cdn' : settings.USE_CDN_FOR_CLIENT_LIBS,
-        'dev_mode' : settings.DEV_MODE,
-        'allow_login' : settings.ALLOW_LOGIN,
-        'status' : framework.status.pop_status_messages(),
+        'user_name': user.username if user else '',
+        'user_full_name': user.fullname if user else '',
+        'user_id': user._primary_key if user else '',
+        'display_name': framework.auth.get_display_name(user.username) if user else '',
+        'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
+        'dev_mode': settings.DEV_MODE,
+        'allow_login': settings.ALLOW_LOGIN,
+        'status': framework.status.pop_status_messages(),
+        "js_all": assets_env['js_vendor'].urls() + assets_env['js'].urls(),
+        "css_all": assets_env['css_vendor'].urls() + assets_env['css'].urls()
     }
 
 
@@ -51,7 +54,7 @@ def view_index():
 
 def favicon():
     return framework.send_from_directory(
-        settings.STATIC_PATH,
+        settings.STATIC_FOLDER,
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'
     )

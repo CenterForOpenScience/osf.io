@@ -12,43 +12,15 @@
     <![endif]-->
 
     <!-- Le styles -->
-    %if use_cdn:
-        <link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1/themes/flick/jquery-ui.css">
-    %else:
-        <link rel="stylesheet" type="text/css" href="/static/vendor/jquery-ui/css/jquery-ui.css">
-    %endif
-    <link rel="stylesheet" type="text/css" href="/static/vendor/jquery-tagit/css/jquery.tagit.css">
-    <link rel="stylesheet" type="text/css" href="/static/vendor/jquery-tagsinput/css/jquery.tagsinput.css" />
-    <link href="/static/vendor/jquery-tagit/css/tagit.ui-zendesk.css" rel="stylesheet" type="stylesheet">
-    <link href="/static/vendor/bootstrap3/css/bootstrap.css" rel="stylesheet">
-    <link href="/static/vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet">
-    <link href="/static/vendor/jquery-treeview/jquery.treeview.css" rel="stylesheet" type="text/css" media="screen" />
-    <!--uploads-->
-    <link rel="stylesheet" href="/static/vendor/jquery-fileupload/css/jquery.fileupload-ui.css">
-    <link rel="stylesheet" href="/static/vendor/pygments.css" />
-    <link href="/static/vendor/bootstrap3-editable/css/bootstrap-editable.css" rel="stylesheet">
-    <link href="/static/css/site.css" rel="stylesheet">
+    % for url in css_all:
+        <link rel="stylesheet" href="${url}">
+    % endfor
+    <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
     ${self.stylesheets()}
 
-
-    %if use_cdn:
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-        <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.12/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.0.0/bootbox.min.js"></script>
-    %else:
-        <script src="/static/vendor/jquery/jquery.min.js"></script>
-        <script src="/static/vendor/jquery-ui/js/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="/static/vendor/bootbox/bootbox.min.js"></script>
-    %endif
-    <script src="/static/vendor/jquery-tagsinput/js/jquery.tagsinput.min.js"></script>
-    <script src="/static/vendor/jquery-tagcloud/jquery.tagcloud.js"></script>
-    <script src="/static/vendor/jquery-treeview/jquery.treeview.js" type="text/javascript"></script>
-    <script src="/static/vendor/bootstrap3/js/bootstrap.min.js"></script>
-    <script src="/static/vendor/bootbox/bootbox.min.js"></script>
-    <script src="/static/vendor/bootstrap3-editable/js/bootstrap-editable.min.js"></script>
-
-    <script src="/static/vendor/jquery-tagit/js/tag-it.js"></script>
-    <script src="/static/js/site.js"></script>
+    % for url in js_all:
+        <script src="${url}"></script>
+    % endfor
     ${self.javascript()}
 
 </head>
