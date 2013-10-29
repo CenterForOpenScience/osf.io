@@ -17,7 +17,8 @@
                 <ul>
                     <li><a href="http://centerforopenscience.org">Home</a></li>
                     <li><a href="http://centerforopenscience.org/#contact">Contact</a></li>
-                    <li><a href="/project/EZcUj/wiki/home">Reproducibility Project</a></li>
+                    <li><a href="/project/EZcUj/wiki/home">Reproducibility Project: Psychology</a></li>
+                    <li><a href="/project/e81xl/wiki/home/">Reproducibility Project: Cancer Biology</a></li>
                 </ul>
             </div>
             <div class="col-md-2">

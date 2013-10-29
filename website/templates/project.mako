@@ -1,5 +1,10 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Project</%def>
+<<<<<<< HEAD
+=======
+<%def name="stylesheets()">
+</%def>
+>>>>>>> develop
 
 <%def name="javascript_bottom()">
 <script>

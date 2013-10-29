@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
+import logging
+
 from webassets import Environment, Bundle
 
 from website import settings
+
+logger = logging.getLogger(__name__)
 
 env = Environment(settings.STATIC_FOLDER, settings.STATIC_URL_PATH)
 
@@ -43,5 +47,6 @@ js = Bundle(
 )
 
 
+logger.debug("Registering asset bundles")
 env.register("js", js)
 env.register("css", css)
