@@ -41,7 +41,8 @@ js = Bundle(
                 "vendor/jquery-tagsinput/js/jquery.tagsinput.min.js",
                 "vendor/jquery-tagcloud/jquery.tagcloud.js",
                 "vendor/jquery-treeview/jquery.treeview.js",
-                "vendor/jquery-tagit/js/tag-it.js"),
+                "vendor/jquery-tagit/js/tag-it.js",
+                "vendor/knockout/knockout-min.js"),
         # Site-specific JS
         Bundle("js/site.js", filters="jsmin"),
         output="public/js/common.js"

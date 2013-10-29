@@ -41,7 +41,13 @@ nosetests.xml
 .hg
 .hgignore
 env/*
+
+# Assets
+########
 .webassets-cache
+websi
+website/static/public/css/*
+website/static/public/js/*
 
 # OSF-specific
 #######################
