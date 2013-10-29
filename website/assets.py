@@ -2,6 +2,7 @@
 import logging
 
 from webassets import Environment, Bundle
+from webassets.filter import get_filter
 
 from website import settings
 
