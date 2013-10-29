@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 '''Functional tests using WebTest.'''
 import unittest
+import datetime as dt
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
@@ -184,6 +185,18 @@ class TestAUser(DbTestCase):
         res = self.app.get("/project/{0}/wiki/home/".format(project._primary_key), auth=self.auth)
         # Sees a message indicating no content
         assert_in("No wiki content", res)
+
+    def test_cant_delete_registration(self):
+        original = ProjectFactory(creator=self.user, is_public=True)
+        # A registration
+        project = ProjectFactory(is_registration=True,
+                                registered_from=original,
+                                registered_date=dt.datetime.now(),
+                                creator=self.user)
+        # Goes to project's page
+        res = self.app.get("/project/{0}/".format(project._primary_key), auth=self.auth).maybe_follow()
+        # Can't get to settings
+        assert_not_in("Settings", res)
 
 
 if __name__ == '__main__':

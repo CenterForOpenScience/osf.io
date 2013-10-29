@@ -21,7 +21,7 @@
                         Help<b class='caret'></b>
                     </a>
                     <ul class='dropdown-menu'>
-                        <li><a href="/project/4znZP/wiki/home">About</a></li>
+                        <li><a href="https://openscienceframework.org/project/4znZP/wiki/home">About</a></li>
                         <li><a href="/faq">FAQ</a></li>
                         <li><a href="/getting-started">Getting Started</a></li>
                     </ul>

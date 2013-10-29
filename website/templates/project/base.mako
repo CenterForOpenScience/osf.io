@@ -107,7 +107,7 @@
             <li><a href="${node_url}files/">Files</a></li>
             <li><a href="${node_url}registrations/">Registrations</a></li>
             <li><a href="${node_url}forks/">Forks</a></li>
-            % if user_is_contributor:
+            % if user_is_contributor and not node_is_registration:
             <li><a href="${node_url}settings/">Settings</a></li>
             %endif
         </ul>
