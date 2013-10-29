@@ -6,7 +6,7 @@ from nose.tools import *  # PEP8 asserts
 from tests.base import DbTestCase
 from framework.auth import User
 from framework.bcrypt import check_password_hash
-from website.project.model import ApiKey
+from website.project.model import ApiKey, NodeFile
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
     TagFactory)
@@ -95,6 +95,28 @@ class TestMetaData(DbTestCase):
 
     def test_referent(self):
         pass
+
+class TestNodeFile(DbTestCase):
+
+    def setUp(self):
+        self.node = ProjectFactory()
+        self.node_file = NodeFile(node=self.node, path="foo.py", filename="foo.py", size=128)
+        self.node.files_versions[self.node_file.clean_filename] = [self.node_file._primary_key]
+        self.node.save()
+
+    def test_url(self):
+        assert_equal(self.node_file.api_url,
+            "{0}files/{1}/".format(self.node.api_url, self.node_file.filename))
+
+    def test_clean(self):
+        assert_equal(self.node_file.clean_filename, "foo_py")
+
+    def test_latest_version_number(self):
+        assert_equal(self.node_file.latest_version_number, 1)
+
+    def test_download_url(self):
+        assert_equal(self.node_file.download_url,
+            self.node.api_url + "files/download/{0}/version/1/".format(self.node_file.filename))
 
 
 class TestApiKey(DbTestCase):

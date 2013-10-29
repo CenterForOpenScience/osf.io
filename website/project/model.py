@@ -136,7 +136,25 @@ class NodeFile(GuidStoredObject):
 
     @property
     def url(self):
-        return '{}files/{}/'.format(self.node.url, self.filename)
+        return '{0}files/{1}/'.format(self.node.url, self.filename)
+
+    @property
+    def api_url(self):
+        return '{0}files/{1}/'.format(self.node.api_url, self.filename)
+
+    @property
+    def clean_filename(self):
+        return self.filename.replace('.', '_')
+
+    @property
+    def latest_version_number(self):
+        return len(self.node.files_versions[self.clean_filename])
+
+    @property
+    def download_url(self):
+        return "{0}files/download/{1}/version/{2}/".format(
+            self.node.api_url, self.filename, self.latest_version_number)
+
 
 class Tag(GuidStoredObject):
 
@@ -179,6 +197,7 @@ class Node(GuidStoredObject):
     fork_list = fields.StringField(list=True)
     registered_meta = fields.DictionaryField()
 
+    # TODO: move these to NodeFile
     files_current = fields.DictionaryField()
     files_versions = fields.DictionaryField()
     wiki_pages_current = fields.DictionaryField()
@@ -701,7 +720,7 @@ class Node(GuidStoredObject):
         node_file.save()
 
         # Add references to the NodeFile to the Node object
-        file_name_key = file_name.replace('.', '_')
+        file_name_key = node_file.clean_filename
 
         # Reference the current file version
         self.files_current[file_name_key] = node_file._primary_key

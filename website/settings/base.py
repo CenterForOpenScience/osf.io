@@ -51,10 +51,7 @@ except KeyError:
 # TODO: Set me up in local.py in production
 DB_PORT = 20771
 DB_NAME = "osf20130903"
-if os.environ.get("OSF_PRODUCTION", False):
-    MONGO_URI = 'mongodb://osf:osfosfosfosf0$f@localhost:{0}/{1}'.format(DB_PORT, DB_NAME)
-else:
-    MONGO_URI = 'mongodb://localhost:{0}/{1}'.format(DB_PORT, DB_NAME)
+MONGO_URI = 'mongodb://osf:osfosfosfosf0$f@localhost:{0}/{1}'.format(DB_PORT, DB_NAME)
 
 #TODO: Configuration should not change between deploys - this should be dynamic.
 CANONICAL_DOMAIN = 'openscienceframework.org'

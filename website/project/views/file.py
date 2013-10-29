@@ -176,6 +176,7 @@ def view_file(*args, **kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     versions = []
+
     for idx, version in enumerate(list(reversed(node_to_use.files_versions[file_name_clean]))):
         node_file = NodeFile.load(version)
         number = len(node_to_use.files_versions[file_name_clean]) - idx
@@ -240,11 +241,9 @@ def view_file(*args, **kwargs):
         except IOError:
             raise HTTPError(http.NOT_FOUND)
 
-    download_path = "{api_url}files/download/{fid}/version/{version}/".format(
-            api_url=node_to_use.api_url,
-            fid=file_name,
-            version=versions[-1]['number']
-        )
+    latest_node_file_id = node_to_use.files_versions[file_name_clean][-1]
+    latest_node_file = NodeFile.load(latest_node_file_id)
+    download_path = latest_node_file.download_url
     download_html = '<p><a href="{path}">Download file</a></p>'.format(path=download_path)
     if renderer == 'pygments':
         try:
