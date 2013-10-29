@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
+import logging
+
 from webassets import Environment, Bundle
 
 from website import settings
+
+logger = logging.getLogger(__name__)
 
 env = Environment(settings.STATIC_FOLDER, settings.STATIC_URL_PATH)
 
@@ -16,7 +20,6 @@ css_vendor = Bundle(
             "vendor/jquery-tagit/css/jquery.tagit.css",
             "vendor/jquery-tagsinput/css/jquery.tagsinput.css",
             "vendor/jquery-tagit/css/tagit.ui-zendesk.css",
-            "vendor/bootstrap2/css/bootstrap.css",
             "vendor/jquery-treeview/jquery.treeview.css",
             "vendor/jquery-fileupload/css/jquery.fileupload-ui.css",
             "vendor/pygments.css",
@@ -44,6 +47,7 @@ js_vendor = Bundle(
         output="public/js/vendor.js"
 )
 
+logger.debug("Registering asset bundles")
 env.register("js", js)
 env.register("js_vendor", js_vendor)
 env.register("css", css)
