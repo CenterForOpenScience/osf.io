@@ -12,6 +12,8 @@ import httplib as http
 
 from website import settings
 
+from hurry.filesize import size, alternative
+import json
 import re
 import pygments
 import pygments.lexers
@@ -29,43 +31,96 @@ def prune_file_list(file_list, max_depth):
     return [file for file in file_list if len([c for c in file if c == '/']) <= max_depth]
 
 
+def get_file_tree(node_to_use, user):
+    tree = []
+    for node in node_to_use.nodes:
+        if not node.is_deleted:
+            tree.append(get_file_tree(node, user))
+
+    if node_to_use.is_contributor(user):
+        for i,v in node_to_use.files_current.items():
+            v = NodeFile.load(v)
+            tree.append(v)
+
+    return (node_to_use, tree)
+
 @must_be_valid_project # returns project
+@must_be_contributor_or_public
 def get_files(*args, **kwargs):
 
-    user = get_current_user()
-    api_key = get_api_key()
+    # Get arguments
     node_to_use = kwargs['node'] or kwargs['project']
+    user = get_current_user()
 
-    can_edit = node_to_use.can_edit(user, api_key)
+    filetree = get_file_tree(node_to_use, user)
+    parent_id = node_to_use.parent_id
 
-    tree = {
-        'title' : node_to_use.title if can_edit else node_to_use.public_title,
-        'url' : node_to_use.url,
-        'files' : [],
-    }
+    rv = _get_files(filetree, parent_id, 0)
+    if not kwargs.get('dash', False):
+        rv.update(_view_project(node_to_use, user))
+    return rv
 
-    # Display children and files if public
-    if can_edit or node_to_use.are_files_public:
+def _get_files(filetree, parent_id, check):
+    if parent_id is not None:
+        parent_uid = 'node-{}'.format(parent_id)
+    else:
+        parent_uid = 'null'
 
-        # Add child nodes
-        for child in node_to_use.nodes:
-            if not child.is_deleted:
-                tree['files'].append({
-                    'type': 'dir',
-                    'url': child.url,
-                    'api_url': child.api_url,
-                })
-
-        # Add files
-        for key, value in node_to_use.files_current.iteritems():
-            node_file = NodeFile.load(value)
-            tree['files'].append({
-                'type': 'file',
-                'filename': node_file.filename,
-                'path': node_file.path,
-            })
-
-    return tree
+    info = []
+    itemParent = {}
+    itemParent['uid'] = '-'.join([
+        "node",  # node or nodefile
+        str(filetree[0]._id)  # ObjectId from pymongo
+    ])
+    itemParent['isComponent'] = "true"
+    itemParent['parent_uid'] = parent_uid
+    if str(filetree[0].category)=="project" or itemParent['parent_uid']=="null":
+        itemParent['uploadUrl'] = str(itemParent['uid'].split('-')[1]).join([ #join
+            '/project/',
+            '/files/upload'
+        ])
+    else:
+        parent_id = itemParent['parent_uid'].split('-')[1]
+        itemParent['uploadUrl'] = str('/').join([
+            '/project',
+            str(parent_id),
+            'node',
+            str(filetree[0]._id),
+            'files/upload'
+        ])
+    itemParent['type'] = "folder"
+    itemParent['size'] = "0"
+    itemParent['sizeRead'] = "--"
+    itemParent['name'] = str(filetree[0].title)
+    if check == 0:
+        itemParent['parent_uid']="null"
+    info.append(itemParent)
+    for tmp in filetree[1]:
+        if isinstance(tmp, tuple):
+            info = info + _get_files(
+                filetree=tmp,
+                parent_id=filetree[0]._id,
+                check=1
+            )['info']
+        else:
+            item = {}
+            item['uid'] = '-'.join([
+                "nodefile",  # node or nodefile
+                str(tmp._id)  # ObjectId from pymongo
+            ])
+            item['isComponent'] = "false"
+            item['parent_uid'] = str(itemParent['uid'])
+            item['type'] = "file"
+            item['name'] = str(tmp.path)
+            item['ext'] = str(tmp.path.split('.')[-1])
+            item['sizeRead'] = size(tmp.size, system=alternative)
+            item['size'] = str(tmp.size)
+            item['url'] = 'files/'.join([
+                str(filetree[0].url),
+                item['name']
+            ])
+            info.append(item)
+    return {'info': info}
 
 
 @must_be_valid_project # returns project

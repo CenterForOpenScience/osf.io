@@ -22,7 +22,7 @@
     <link href="/static/tagit.ui-zendesk.css" rel="stylesheet" type="stylesheet">
     <link rel="stylesheet" type="text/css" href="/static/pagedown/demo.css" />
     <link href="/static/bootstrap/css/bootstrap.css" rel="stylesheet">
-    <link href="/static/jquery-treeview/jquery.treeview.css" rel="stylesheet" type="text/css" media="screen" />
+##    <link href="/static/jquery-treeview/jquery.treeview.css" rel="stylesheet" type="text/css" media="screen" />
     <link href="/static/site.css" rel="stylesheet">
     <style type="text/css">
       body {
