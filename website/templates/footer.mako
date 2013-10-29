@@ -7,7 +7,7 @@
              <div class="col-md-2">
                 <h4>OSF</h4>
                 <ul>
-                    <li><a href="/project/4znZP/wiki/home">About</a></li>
+                    <li><a href="http://openscienceframework.org/project/4znZP/wiki/home">About</a></li>
                     <li><a href="/faq">FAQ</a></li>
                     <li><a href="/explore">Explore</a></li>
                 </ul>
@@ -17,8 +17,8 @@
                 <ul>
                     <li><a href="http://centerforopenscience.org">Home</a></li>
                     <li><a href="http://centerforopenscience.org/#contact">Contact</a></li>
-                    <li><a href="/project/EZcUj/wiki/home">Reproducibility Project: Psychology</a></li>
-                    <li><a href="/project/e81xl/wiki/home/">Reproducibility Project: Cancer Biology</a></li>
+                    <li><a href="http://openscienceframework.org/project/EZcUj/wiki/home">Reproducibility Project: Psychology</a></li>
+                    <li><a href="http://openscienceframework.org/project/e81xl/wiki/home/">Reproducibility Project: Cancer Biology</a></li>
                 </ul>
             </div>
             <div class="col-md-2">
