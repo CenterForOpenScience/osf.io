@@ -279,7 +279,10 @@ class JSONRenderer(Renderer):
     class Encoder(json.JSONEncoder):
         def default(self, obj):
             if hasattr(obj, 'to_json'):
-                return obj.to_json()
+                try:
+                    return obj.to_json()
+                except ValueError:  # BS4 objects have to_json that isn't callable
+                    return unicode(obj)
             if isinstance(obj, StoredObject):
                 return obj._primary_key
             return json.JSONEncoder.default(self, obj)
