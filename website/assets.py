@@ -45,6 +45,7 @@ js = Bundle(
                 "vendor/knockout/knockout-min.js"),
         # Site-specific JS
         Bundle("js/site.js", filters="jsmin"),
+        Bundle("js/project.coffee", filters="coffeescript", output="js/project.js"),
         output="public/js/common.js"
 )
 
@@ -52,3 +53,5 @@ js = Bundle(
 logger.debug("Registering asset bundles")
 env.register("js", js)
 env.register("css", css)
+# Don't bundle in debug mode
+env.debug = settings.DEBUG_MODE
