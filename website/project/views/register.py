@@ -82,7 +82,6 @@ def node_register_template_page_post(*args, **kwargs):
     api_key = kwargs['api_key']
 
     node_to_use = node or project
-    logger.error(request.json)
     data = request.json
 
     for k, v in data.items():

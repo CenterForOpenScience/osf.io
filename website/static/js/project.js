@@ -34,48 +34,23 @@ nodeToUse = function(){
  */
 nodeToUseUrl = function(){
   if (location.pathname.match("\/project\/.*\/node\/.*")) {
-    return '/api/v1' + location.pathname.match("(\/project\/.*?\/node\/.*?)\/.*")[1];
+    return '/api/v1' + location.pathname.match("(\/project\/.*?\/node\/.*?)\/.*")[1] + "/";
   } else {
-    return '/api/v1' + location.pathname.match("(\/project\/.*?)\/.*")[1];
+    return '/api/v1' + location.pathname.match("(\/project\/.*?)\/.*")[1] + "/";
   }
 }
 
-// TODO: Move Watch and Fork click handlers to this file so that NodeActions
-// doesn't need to be in global namespace
-window.NodeActions = {};  // Namespace for NodeActions
 
+window.NodeActions = {};  // Namespace for NodeActions
+// TODO: move me to the ProjectViewModel
 NodeActions.forkNode = function(){
     $.ajax({
-        url: nodeToUseUrl() + "/fork/",
+        url: nodeToUseUrl() + "fork/",
         type: "POST",
     }).done(function(response) {
         window.location = response;
     });
 };
-
-/*
-Toggles the watch mode ("watched" or "unwatched") when for a node at the
-project view page.
-*/
-NodeActions.toggleWatch = function () {
-    // Send POST request to node's watch API url and update the watch count
-    $.ajax({
-        url: nodeToUseUrl() + "/togglewatch/",
-        type: "POST",
-        dataType: "json",
-        data: JSON.stringify({}),
-        contentType: "application/json",
-        success: function(data, status, xhr) {
-            // Update watch count in DOM
-            $watchCount = $("#watchCount");
-            if (data["watched"]) { // If the user is watching
-                $watchCount.html("Unwatch&nbsp;" + data["watchCount"]);
-            } else {
-                $watchCount.html("Watch&nbsp;" + data["watchCount"]);
-            };
-        }
-    });
-}
 
 NodeActions.addNodeToProject = function(node, project){
     $.ajax({
@@ -93,7 +68,7 @@ NodeActions.removeUser = function(userid, name) {
         if (result) {
             $.ajax({
                 type: "POST",
-                url: nodeToUseUrl() + "/removecontributors/",
+                url: nodeToUseUrl() + "removecontributors/",
                 contentType: "application/json",
                 dataType: "json",
                 data: JSON.stringify({
@@ -151,42 +126,66 @@ NodeActions.openCloseNode = function(node_id){
 /**
  * The project model.
  */
-// var Project = function(params) {
-//     this._id =  params._id
-//     this.api_url = params.api_url
-// }
+var Project = function(params) {
+    var self = this;
+    self._id =  params._id;
+    self.apiUrl = params.apiUrl;
+    self.watchedCount = ko.observable(params.watchCount);
+    self.userIsWatching = ko.observable(params.userIsWatching);
+    // TODO: Finish me
+
+
+    // The button to display (e.g. "Watch" if not watching)
+    self.watchButtonDisplay = ko.computed(function() {
+        var text = self.userIsWatching() ? "Unwatch" : "Watch"
+        var full = text + " " +self.watchedCount().toString();
+        return full;
+    });
+}
 
 var ProjectViewModel = function() {
     var self = this;
-    self.project = {};
-
-    $.getJSON(nodeToUseUrl(), function(data){
-        self.project = data;
+    self.projects = ko.observableArray([{"watchButtonDisplay": ""}]);
+    // Get the project data via AJAX
+    $.ajax({
+        url: nodeToUseUrl(),
+        type: "get", contentType: "application/json",
+        dataType: "json",
+        success: function(data){
+            project = new Project({
+                "_id": data.node_id,
+                "apiUrl": data.node_api_url,
+                "watchCount": data.node_watched_count,
+                "userIsWatching": data.user_is_watching
+            });
+            self.projects([project]);
+        }
     });
 
-
+    /**
+     * Toggle the watch status for this project.
+     * @return {[type]} [description]
+     */
     self.toggleWatch = function() {
         // Send POST request to node's watch API url and update the watch count
         $.ajax({
-            url: nodeToUseUrl() + "/togglewatch/",
+            url: self.projects()[0].apiUrl + "togglewatch/",
             type: "POST",
             dataType: "json",
             data: JSON.stringify({}),
             contentType: "application/json",
             success: function(data, status, xhr) {
                 // Update watch count in DOM
-                $watchCount = $("#watchCount");
-                if (data["watched"]) { // If the user is watching
-                    $watchCount.html("Unwatch&nbsp;" + data["watchCount"]);
-                } else {
-                    $watchCount.html("Watch&nbsp;" + data["watchCount"]);
-                };
+                self.projects()[0].userIsWatching(data['watched']);
+                self.projects()[0].watchedCount(data['watchCount']);
             }
         });
-    }
+    };
+
 }
 
-var addContributorModel = function(initial) {
+
+var AddContributorViewModel = function(initial) {
 
     var self = this;
 
@@ -239,7 +238,7 @@ var addContributorModel = function(initial) {
             return elm.id;
         });
         $.ajax(
-            nodeToUseUrl() + '/addcontributors/',
+            nodeToUseUrl() + 'addcontributors/',
             {
                 type: 'post',
                 data: JSON.stringify({user_ids: user_ids}),
@@ -267,7 +266,7 @@ $(document).ready(function() {
 
     // Initiated addContributorsModel
     var $addContributors = $('#addContributors');
-    viewModel = new addContributorModel();
+    viewModel = new AddContributorViewModel();
     ko.applyBindings(viewModel, $addContributors[0]);
     ko.applyBindings(new ProjectViewModel(), $("#projectScope")[0]);
 

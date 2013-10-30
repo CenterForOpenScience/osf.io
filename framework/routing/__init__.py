@@ -281,7 +281,7 @@ class JSONRenderer(Renderer):
             if hasattr(obj, 'to_json'):
                 try:
                     return obj.to_json()
-                except ValueError:  # BS4 objects have to_json that isn't callable
+                except TypeError:  # BS4 objects have to_json that isn't callable
                     return unicode(obj)
             if isinstance(obj, StoredObject):
                 return obj._primary_key

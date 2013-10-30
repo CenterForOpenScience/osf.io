@@ -29,19 +29,15 @@
 
                 <div class="btn-group">
                     % if user_name:
-                        <a rel="tooltip" title="Watch" class="btn btn-default" href="#" onclick="NodeActions.toggleWatch()">
+                        <a rel="tooltip" title="Watch" class="btn btn-default" href="#" data-bind="click: toggleWatch">
                     % else:
                         <a rel="tooltip" title="Watch" class="btn btn-default disabled" href="#">
                     % endif
-
-                        <i class="icon-eye-open"></i>
-                        % if not user_is_watching:
-                            <span id="watchCount">Watch&nbsp;${node_watched_count}</span>
-                        % else:
-                            <span id="watchCount">Unwatch&nbsp;${node_watched_count}</span>
-                        % endif
+                    <i class="icon-eye-open"></i>
+                    <span data-bind="text: projects()[0].watchButtonDisplay" id="watchCount"></span>
 
                     </a>
+
 
                     <a
                         rel="tooltip"
@@ -59,6 +55,7 @@
 
                 </div><!-- end btn-grp -->
             </div>
+
 
             <div class="col-md-8">
                 %if parent_id:

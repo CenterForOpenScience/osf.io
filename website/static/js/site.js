@@ -62,6 +62,8 @@ $(document).ready(function(){
               singleField: true
     });
 
+    // Build tooltips on user activity widgets
+    $('.ua-meter').tooltip();
     $("[rel=tooltip]").tooltip({
         placement:'bottom',
     });

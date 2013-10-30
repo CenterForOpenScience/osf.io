@@ -308,7 +308,6 @@ def component_remove(*args, **kwargs):
 @must_be_contributor_or_public
 def view_project(*args, **kwargs):
     user = get_current_user()
-    logger.error(user)
     node_to_use = kwargs['node'] or kwargs['project']
     return _view_project(node_to_use, user)
 
