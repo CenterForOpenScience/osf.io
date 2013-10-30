@@ -11,7 +11,7 @@
 <script src="/static/js/hgrid.js"></script>
 
 <div class="container" style="position:relative;">
-    <h3 style="max-width: 65%;">Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName">TITLE</element>!</h3>
+    <h3 style="max-width: 65%;">Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element>!</h3>
     <div id="totalProgressActive" style="width: 35%; position: absolute; top: 4px; right: 0;">
         <div id="totalProgress" class="bar" style="width: 0%;"></div>
     </div>
@@ -74,6 +74,8 @@ var Buttons = function(row, cell, value, columnDef, dataContext) {
         return delButton + " " + downButton;
     }
 };
+
+$('#componentName').text(${info}[0]['name']);
 
 
 var myGrid = HGrid.create({
@@ -145,9 +147,10 @@ myGrid.hGridBeforeDelete.subscribe(function(e, args){
     if(args['items'][0]['type']!=='fake'){
         var confirm_delete = confirm("Are you sure you want to delete this file?");
         if (confirm_delete==true){
-            var url = args['items'][0]['url'].replace('/files/', '/files/delete/');
+            var url = '/api/v1' + args['items'][0]['url'].replace('/files/', '/files/delete/');
             $.post(url, function(data) {
-                if(!data.success) {
+                console.log(data);
+                if(!data['status']=='success') {
                     alert('Error!');
                     return false;
                 } else {

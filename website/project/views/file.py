@@ -76,17 +76,17 @@ def _get_files(filetree, parent_id, check):
     itemParent['parent_uid'] = parent_uid
     if str(filetree[0].category)=="project" or itemParent['parent_uid']=="null":
         itemParent['uploadUrl'] = str(itemParent['uid'].split('-')[1]).join([ #join
-            '/project/',
-            '/files/upload'
+            '/api/v1/project/',
+            '/files/upload/'
         ])
     else:
         parent_id = itemParent['parent_uid'].split('-')[1]
         itemParent['uploadUrl'] = str('/').join([
-            '/project',
+            '/api/v1/project',
             str(parent_id),
             'node',
             str(filetree[0]._id),
-            'files/upload'
+            'files/upload/'
         ])
     itemParent['type'] = "folder"
     itemParent['size'] = "0"
@@ -117,7 +117,7 @@ def _get_files(filetree, parent_id, check):
             item['size'] = str(tmp.size)
             item['url'] = 'files/'.join([
                 str(filetree[0].url),
-                item['name']
+                item['name'] + '/'
             ])
             info.append(item)
     return {'info': info}
@@ -173,7 +173,7 @@ def upload_file_public(*args, **kwargs):
     node_to_use = node or project
     api_key = get_api_key()
 
-    uploaded_file = request.files.get('files[]')
+    uploaded_file = request.files.get('file')
     uploaded_file_content = uploaded_file.read()
     uploaded_file.seek(0, os.SEEK_END)
     uploaded_file_size = uploaded_file.tell()
@@ -201,14 +201,24 @@ def upload_file_public(*args, **kwargs):
 
     file_info = {
         "name":uploaded_filename,
+        "sizeRead":size(uploaded_file_size, system=alternative),
         "size":uploaded_file_size,
         "url":node_to_use.url + "files/" + uploaded_filename + "/",
-        "type":uploaded_file_content_type,
+        "ext":uploaded_file_content_type.split('/')[1],
+        "type":"file",
         "download_url":node_to_use.url + "/files/download/" + file_object.path,
         "date_uploaded": file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
         "downloads": str(total) if total else str(0),
         "user_id": None,
         "user_fullname":None,
+        "uid": '-'.join([
+            str(file_object._name), #node or nodefile
+            str(file_object._id) #objectId
+        ]),
+        "parent_uid": '-'.join([
+            "node",
+            str(node_to_use._id)
+        ])
     }
     return [file_info], 201
 
