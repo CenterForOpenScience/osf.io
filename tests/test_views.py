@@ -39,6 +39,18 @@ class TestProjectViews(DbTestCase):
         self.project.api_keys.append(api_key)
         self.project.save()
 
+    def test_project_api_url(self):
+        url = self.project.api_url
+        res = self.app.get(url, auth=self.auth)
+        data = res.json
+        assert_equal(data['node_category'], 'project')
+        assert_equal(data['node_title'], self.project.title)
+        assert_equal(data['node_is_public'], self.project.is_public)
+        assert_equal(data['node_is_registration'], False)
+        assert_equal(data['node_id'], self.project._primary_key)
+        assert_equal(data['node_watched_count'], 0)
+        assert_true(data['user_is_contributor'])
+
     def test_add_contributor_post(self):
         # A user is added as a contributor via a POST request
         user = UserFactory()
