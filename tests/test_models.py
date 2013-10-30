@@ -56,6 +56,44 @@ class TestUser(DbTestCase):
         assert_false(user.check_password("ghostride"))
 
 
+class TestMergingUsers(DbTestCase):
+
+    def setUp(self):
+        self.master = UserFactory(username="joe@example.com",
+                            fullname="Joe Shmo",
+                            is_registered=True,
+                            emails=["joe@example.com"])
+        self.dupe = UserFactory(username="joseph123@hotmail.com",
+                            fullname="Joseph Shmo",
+                            emails=["joseph123@hotmail.com"])
+
+    def _merge_dupe(self):
+        '''Do the actual merge.'''
+        self.master.merge_user(self.dupe)
+        self.master.save()
+
+    def test_dupe_is_merged(self):
+        self._merge_dupe()
+        assert_true(self.dupe.is_merged)
+
+    def test_dupe_email_is_appended(self):
+        self._merge_dupe()
+        assert_in("joseph123@hotmail.com", self.master.emails)
+
+    def test_inherits_projects_contributed_by_dupe(self):
+        project = ProjectFactory()
+        project.contributors.append(self.dupe)
+        project.save()
+        self._merge_dupe()
+        print(self.dupe.node__contributed[0])
+        assert_in(self.master._id, project.contributors)
+
+    def test_inherits_projects_created_by_dupe(self):
+        project = ProjectFactory(creator=self.dupe)
+        self._merge_dupe()
+        assert_equal(project.creator, self.master)
+
+
 class TestGUID(DbTestCase):
 
     def setUp(self):

@@ -24,14 +24,17 @@ class User(GuidStoredObject):
 
     _id = fields.StringField(primary=True)
 
+    # NOTE: In the OSF, username is an email
     username = fields.StringField()
     password = fields.StringField()
     fullname = fields.StringField()
     is_registered = fields.BooleanField()
-    is_claimed = fields.BooleanField()
+    is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
+    # Whether this account was merged with another account
+    is_merged = fields.BooleanField(default=False)
     verification_key = fields.StringField()
     emails = fields.StringField(list=True)
-    email_verifications = fields.DictionaryField()
+    email_verifications = fields.DictionaryField()  # TODO: Unused. Remove me?
     aka = fields.StringField(list=True)
     date_registered = fields.DateTimeField()#auto_now_add=True)
     # Watched nodes are stored via a list of WatchConfigs
@@ -122,7 +125,8 @@ class User(GuidStoredObject):
         except:
             return []
 
-    # TODO: This is OSF specific. Move to website package
+    ###### OSF-Specific methods ######
+
     def watch(self, watch_config, save=False):
         '''Watch a node by adding its WatchConfig to this user's ``watched``
         list. Raises ``ValueError`` if the node is already watched.
@@ -192,6 +196,26 @@ class User(GuidStoredObject):
         midnight = dt.datetime(utcnow.year, utcnow.month, utcnow.day,
                             0, 0, 0, tzinfo=pytz.utc)
         return self.get_recent_log_ids(since=midnight)
+
+    def merge_user(self, user):
+        '''Merge a registered user into this account. This user will be
+        a contributor on any project
+
+        :param user: A User object to be merged.
+        '''
+        # Inherit emails
+        self.emails.extend(user.emails)
+        # Inherit projects the user was a contributor for
+        for node in user.node__contributed:
+            node.contributors.append(self)
+            node.save()
+        # Inherits project the user created
+        for node in user.node__created:
+            node.creator = self
+            node.save()
+        user.is_merged = True
+        user.save()
+        return None
 
 
 def _merge_into_reversed(*iterables):

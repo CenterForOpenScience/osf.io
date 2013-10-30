@@ -152,6 +152,7 @@ def register(username, password, fullname):
     username = username.strip().lower()
     fullname = fullname.strip()
 
+    # TODO: This validation should occur at the database level, not the view
     if not get_user(username=username):
         newUser = User(
             username=username,

@@ -143,6 +143,9 @@ var Project = function(params) {
     });
 }
 
+/**
+ * The project VM, scoped to the project header.
+ */
 var ProjectViewModel = function() {
     var self = this;
     self.projects = ko.observableArray([{"watchButtonDisplay": ""}]);
@@ -184,7 +187,9 @@ var ProjectViewModel = function() {
 
 }
 
-
+/**
+ * The add contributor VM, scoped to the add contributor modal dialog.
+ */
 var AddContributorViewModel = function(initial) {
 
     var self = this;
@@ -300,7 +305,7 @@ $(document).ready(function() {
     );
 
     /* Modal Click handlers for project page */
-
+    // TODO(sloria): Move these to the ProjectViewModel
     // Private Button confirm dlg
     $('#privateButton').on('click', function() {
         var url = $(this).data("target");

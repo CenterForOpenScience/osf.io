@@ -14,7 +14,7 @@ from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 
 from framework.mongo import ObjectId
-from framework.auth import User, get_user
+from framework.auth import get_user
 from framework.analytics import get_basic_counters, increment_user_activity_counters
 from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
