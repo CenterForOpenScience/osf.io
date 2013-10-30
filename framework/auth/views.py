@@ -1,17 +1,26 @@
+# -*- coding: utf-8 -*-
+import httplib as http
+import logging
+
 import framework
-from framework import goback, set_previous_url, push_status_message
+from framework import goback, set_previous_url, push_status_message, request
 from framework.email.tasks import send_email
 import framework.status as status
 import framework.forms as forms
+
 
 import website.settings  # TODO: Use framework settings module instead
 import settings
 
 import helper
 
-from framework.auth import register, login, logout, DuplicateEmailError, get_user
+import framework.auth
+from framework.auth import  register, login, logout, DuplicateEmailError, get_user, must_have_session_auth
 from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm
 
+Q = framework.Q
+User = framework.auth.model.User
+logger = logging.getLogger(__name__)
 
 def reset_password(*args, **kwargs):
 
@@ -148,6 +157,25 @@ def auth_register_post():
         forms.push_errors_to_status(form.errors)
 
         return auth_login(registration_form=form)
+
+
+@must_have_session_auth
+def merge_user_post(**kwargs):
+    '''API view for merging an account.
+
+    Request JSON data should include a "username" and "password" properties
+    for the account to be merged in.
+    '''
+    master = kwargs['user']
+    merged_username = request.json.get("username")
+    merged_password = request.json.get("password")
+    merged_user = User.find_one(Q("username", "eq", merged_username))
+    if master and merged_user:
+        if merged_user.check_password(merged_password):
+            master.merge_user(merged_user)
+            master.save()
+    else:
+        raise framework.exceptions.HTTPError(http.BAD_REQUEST)
 
 
 def auth_registerbeta():

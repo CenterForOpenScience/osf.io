@@ -569,5 +569,9 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/togglewatch/'
         ], 'post', project_views.node.togglewatch_post, json_renderer),
 
+        ### Accounts ###
+        Rule([
+            '/user/merge/'
+        ], 'post', auth_views.merge_user_post, json_renderer),
 
     ], prefix='/api/v1')

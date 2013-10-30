@@ -263,5 +263,29 @@ class TestPublicViews(DbTestCase):
         res = self.app.get("/explore/").maybe_follow()
         assert_equal(res.status_code, 200)
 
+class TestAuthViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = UserFactory.build()
+        # Add an API key for quicker authentication
+        api_key = ApiKeyFactory()
+        self.user.api_keys.append(api_key)
+        self.user.save()
+        self.auth = ('test', api_key._primary_key)
+
+    def test_merge_user(self):
+        dupe = UserFactory(username="copy@cat.com",
+                            emails=['copy@cat.com'],
+                            is_merged=False)
+        dupe.set_password("copycat")
+        dupe.save()
+        url = "/api/v1/user/merge/"
+        res = self.app.post_json(url, {"username": "copy@cat.com",
+                                        "password": "copycat"}, auth=self.auth)
+        self.user.reload()
+        dupe.reload()
+        assert_true(dupe.is_merged)
+
 if __name__ == '__main__':
     unittest.main()

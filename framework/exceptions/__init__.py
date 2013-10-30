@@ -5,9 +5,6 @@ import httplib as http
 from framework.flask import request
 
 
-class ConnectionError(Exception):
-    pass
-
 class HTTPError(Exception):
 
     error_msgs = {
