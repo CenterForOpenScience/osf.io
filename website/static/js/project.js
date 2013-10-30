@@ -148,6 +148,44 @@ NodeActions.openCloseNode = function(node_id){
 // Knockout Models //
 /////////////////////
 
+/**
+ * The project model.
+ */
+// var Project = function(params) {
+//     this._id =  params._id
+//     this.api_url = params.api_url
+// }
+
+var ProjectViewModel = function() {
+    var self = this;
+    self.project = {};
+
+    $.getJSON(nodeToUseUrl(), function(data){
+        self.project = data;
+    });
+
+
+    self.toggleWatch = function() {
+        // Send POST request to node's watch API url and update the watch count
+        $.ajax({
+            url: nodeToUseUrl() + "/togglewatch/",
+            type: "POST",
+            dataType: "json",
+            data: JSON.stringify({}),
+            contentType: "application/json",
+            success: function(data, status, xhr) {
+                // Update watch count in DOM
+                $watchCount = $("#watchCount");
+                if (data["watched"]) { // If the user is watching
+                    $watchCount.html("Unwatch&nbsp;" + data["watchCount"]);
+                } else {
+                    $watchCount.html("Watch&nbsp;" + data["watchCount"]);
+                };
+            }
+        });
+    }
+}
+
 var addContributorModel = function(initial) {
 
     var self = this;
@@ -231,6 +269,7 @@ $(document).ready(function() {
     var $addContributors = $('#addContributors');
     viewModel = new addContributorModel();
     ko.applyBindings(viewModel, $addContributors[0]);
+    ko.applyBindings(new ProjectViewModel(), $("#projectScope")[0]);
 
     // Clear user search modal when dismissed; catches dismiss by escape key
     // or cancel button.
