@@ -211,7 +211,7 @@ class Node(GuidStoredObject):
             self.is_public
             or self.is_contributor(user)
             or (api_key is not None and self is api_key.node)
-            or (user and user == self.creator)
+            or (bool(user) and user == self.creator)
         )
 
     def save(self, *args, **kwargs):
