@@ -281,8 +281,8 @@ class TestAuthViews(DbTestCase):
         dupe.set_password("copycat")
         dupe.save()
         url = "/api/v1/user/merge/"
-        res = self.app.post_json(url, {"username": "copy@cat.com",
-                                        "password": "copycat"}, auth=self.auth)
+        res = self.app.post_json(url, {"merged_username": "copy@cat.com",
+                                        "merged_password": "copycat"}, auth=self.auth)
         self.user.reload()
         dupe.reload()
         assert_true(dupe.is_merged)

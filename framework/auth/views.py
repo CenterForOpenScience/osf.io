@@ -7,6 +7,7 @@ from framework import goback, set_previous_url, push_status_message, request
 from framework.email.tasks import send_email
 import framework.status as status
 import framework.forms as forms
+from modularodm.exceptions import NoResultsFound
 
 
 import website.settings  # TODO: Use framework settings module instead
@@ -16,7 +17,7 @@ import helper
 
 import framework.auth
 from framework.auth import  register, login, logout, DuplicateEmailError, get_user, must_have_session_auth
-from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm
+from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm, MergeAccountForm
 
 Q = framework.Q
 User = framework.auth.model.User
@@ -88,7 +89,7 @@ def auth_login(
         registration_form=None,
         forgot_password_form=None
 ):
-    direct_call = True if registration_form or forgot_password_form else False
+    direct_call = registration_form or forgot_password_form
 
     if framework.request.method == 'POST' and not direct_call:
         form = SignInForm(framework.request.form)
@@ -158,22 +159,55 @@ def auth_register_post():
 
         return auth_login(registration_form=form)
 
+@must_have_session_auth
+def merge_user_get(**kwargs):
+    '''Web view for merging an account. Renders the form for confirmation.
+    '''
+    return {}
 
 @must_have_session_auth
 def merge_user_post(**kwargs):
-    '''API view for merging an account.
+    '''View for merging an account. Takes either JSON or form data.
 
-    Request JSON data should include a "username" and "password" properties
+    Request data should include a "merged_username" and "merged_password" properties
     for the account to be merged in.
     '''
     master = kwargs['user']
-    merged_username = request.json.get("username")
-    merged_password = request.json.get("password")
-    merged_user = User.find_one(Q("username", "eq", merged_username))
+    if request.json:
+        merged_username = request.json.get("merged_username")
+        merged_password = request.json.get("merged_password")
+    else:
+        form = MergeAccountForm(request.form)
+        if not form.validate():
+            forms.push_errors_to_status(form.errors)
+            return merge_user_get(**kwargs)
+        master_password = form.user_password.data
+        if not master.check_password(master_password):
+            push_status_message("Could not authenticate. Please check your username and password.")
+            return merge_user_get(**kwargs)
+        merged_username = form.merged_username.data
+        merged_password = form.merged_password.data
+        logging.debug("MERGED EMAIL and PW")
+        logging.debug(merged_username)
+        logger.debug(merged_password)
+
+    try:
+        logging.debug("Finding user to merge")
+        merged_user = User.find_one(Q("username", "eq", merged_username))
+    except NoResultsFound as err:
+        push_status_message("Could not find that user. Please check the username and password.")
+        return merge_user_get(**kwargs)
     if master and merged_user:
         if merged_user.check_password(merged_password):
             master.merge_user(merged_user)
             master.save()
+            if request.form:
+                push_status_message("Successfully merged with {0}".format(merged_username))
+                return framework.redirect("/settings/")
+            return {"status": "success"}
+        else:
+            push_status_message("Could not find that user. Please check the username and password.")
+            return merge_user_get(**kwargs)
     else:
         raise framework.exceptions.HTTPError(http.BAD_REQUEST)
 

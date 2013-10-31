@@ -10,12 +10,12 @@ from tests.base import DbTestCase
 from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
                             NodeLogFactory, ApiKeyFactory)
 
-from framework import app
+# from framework import app
 from website import settings
 
 # Only uncomment if running these tests in isolation
-# from website.app import init_app
-# app = init_app(set_backends=False, routes=True)
+from website.app import init_app
+app = init_app(set_backends=False, routes=True)
 
 class TestAnUnregisteredUser(DbTestCase):
 
@@ -221,6 +221,15 @@ class TestAUser(DbTestCase):
         res = self.app.get("/project/{0}/".format(project._primary_key), auth=self.auth).maybe_follow()
         # Can't get to settings
         assert_not_in("Settings", res)
+
+    def test_merging_account(self):
+        # User logs in
+        res = self._login(self.user.username, "science")
+        # Goes to settings
+        res = self.app.get("/settings/").maybe_follow()
+        # Clicks merge link
+        res = res.click("Merge with duplicate account")
+        assert False, 'finish me'
 
 
 # TODO: These affect search in development environment. So need to migrate solr after running.
