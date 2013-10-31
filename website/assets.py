@@ -44,7 +44,7 @@ js = Bundle(
                 "vendor/jquery-tagit/js/tag-it.js",
                 "vendor/knockout/knockout-min.js"),
         # Site-specific JS
-        Bundle("js/site.js", "js/project.js", filters="jsmin"),
+        Bundle("js/site.js", "js/app.js", "js/project.js", filters="jsmin"),
         output="public/js/common.js"
 )
 
