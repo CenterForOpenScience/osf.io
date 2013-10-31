@@ -30,11 +30,37 @@ var Log = function(params) {
     self.action = params.action;
     self.date = params.date;
     self.nodeCategory = params.nodeCategory;
+    self.nodeTitle = params.nodeTitle;
     self.contributor = params.contributor;
     self.contributors = params.contributors;
     self.nodeUrl = params.nodeUrl;
     self.userFullName = params.userFullName;
     self.apiKey = params.apiKey;
+    self.params = params.params; // Extra log params
+    self._actionTemplates = {
+        project_created: "created " + self.nodeCategory +
+                                "<a href='" + self.nodeUrl + "'>" +
+                                    self.nodeTitle +
+                                "</a>",
+        node_created: "created " + self.nodeCategory +
+                                "<a href='" + self.nodeUrl + "'>" +
+                                    self.nodeTitle +
+                                "</a>",
+        wiki_updated: "updated wiki page <a href='" +
+                                self.nodeUrl + "wiki/" + self.params.page + "/'>" +
+                                self.params.page + "</a>",
+        contributor_added: ""
+    };
+
+    self.displayHTML = ko.computed(function() {
+        var agent = self.userFullName ? self.userFullName : self.apiKey;
+        var action = self._actionTemplates[self.action] || "";
+        return agent + " " + action;
+    });
+
+    self.wikiUrl = ko.computed(function() {
+        return self.nodeUrl + "wiki/" + self.params.page;
+    })
 }
 
 
@@ -62,11 +88,12 @@ var LogsViewModel = function(params) {
                     "contributors": item.contributors,
                     "nodeUrl": item.node_url,
                     "userFullName": item.user_fullname,
-                    "apiKey": item.api_key
+                    "apiKey": item.api_key,
+                    "params": item.params,
+                    "nodeTitle": item.node_title
                 })
             })
             self.logs(mappedLogs);
-            console.log(self.logs());
         }
     })
 }

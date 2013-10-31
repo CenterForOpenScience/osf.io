@@ -141,15 +141,19 @@
     <div class="col-md-5">
         <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node_tags]) if node_tags else ''}" />
             <div id='main-log'>
-                <dl class="dl-horizontal activity-log" data-bind="foreach: logs">
-                    <dt><span class="date" data-bind="text: date"></span></dt>
-                </dl>
+                <dl class="dl-horizontal activity-log"
+                    data-bind="foreach: {data: logs, as: 'log'}">
+                  <div data-bind="template: {name: 'logTemplate', data: log}"></div>
+                </dl><!-- end foreach logs -->
             </div>
             ## Hide More widget until paging for logs is implemented
             ##<div class="paginate pull-right">more</div>
         </section>
     </div>
   </div>
+
+<%include file="log_template.mako"/>
+
 ##<!-- Include Knockout and view model -->
 ##<div mod-meta='{
 ##        "tpl": "metadata/knockout.mako",
