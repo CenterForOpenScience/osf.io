@@ -42,7 +42,8 @@ js = Bundle(
                 "vendor/jquery-tagcloud/jquery.tagcloud.js",
                 "vendor/jquery-treeview/jquery.treeview.js",
                 "vendor/jquery-tagit/js/tag-it.js",
-                "vendor/knockout/knockout-min.js"),
+                "vendor/knockout/knockout-min.js",
+                "vendor/moment/moment.min.js"),
         # Site-specific JS
         Bundle("js/site.js", "js/app.js", "js/project.js", filters="jsmin"),
         output="public/js/common.js"

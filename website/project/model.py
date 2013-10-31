@@ -122,7 +122,7 @@ class NodeLog(StoredObject):
         'action': self.action,
         'params': self.params,
         'category': self.node.category if self.node else '',
-        'date': self.date.strftime('%m/%d/%y %I:%M %p'),
+        'date': self.date.strftime('%m/%d/%y %I:%M %p UTC'),
         'contributors': [self._render_log_contributor(contributor) for contributor in self.params.get('contributors', [])],
         'contributor': self._render_log_contributor(self.params.get('contributor', {})),
     }

@@ -39,6 +39,10 @@ var Log = function(params) {
     self.wikiUrl = ko.computed(function() {
         return self.nodeUrl + "wiki/" + self.params.page;
     })
+
+    self.localDatetime = ko.computed(function() {
+        return moment(self.date).format("l h:mm A")
+    })
 }
 
 
@@ -208,6 +212,9 @@ var AddContributorViewModel = function(initial) {
 //////////////////
 
 
-
-
+ko.bindingHandlers.tooltip = {
+    init: function(elem, valueAccessor) {
+        $(elem).tooltip(valueAccessor())
+    }
+}
 
