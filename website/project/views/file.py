@@ -242,7 +242,7 @@ def view_file(*args, **kwargs):
 
     renderer = 'default'
 
-    file_path = os.path.join(settings.uploads_path, node_to_use._primary_key, file_name)
+    file_path = os.path.join(settings.UPLOADS_PATH, node_to_use._primary_key, file_name)
 
     if not os.path.isfile(file_path):
         raise HTTPError(http.NOT_FOUND)
@@ -265,7 +265,7 @@ def view_file(*args, **kwargs):
         })
 
     file_size = os.stat(file_path).st_size
-    if file_size > settings.max_render_size:
+    if file_size > settings.MAX_RENDER_SIZE:
 
         rv = {
             'file_name' : file_name,
@@ -281,7 +281,7 @@ def view_file(*args, **kwargs):
     _, file_ext = os.path.splitext(file_path.lower())
 
     is_img = False
-    for fmt in settings.img_fmts:
+    for fmt in settings.IMG_FMTS:
         fmt_ptn = '^.{0}$'.format(fmt)
         if re.search(fmt_ptn, file_ext):
             is_img = True
@@ -292,14 +292,14 @@ def view_file(*args, **kwargs):
         rendered="<img src='{node_url}files/download/{fid}/' />".format(node_url=node_to_use.api_url, fid=file_name)
     elif file_ext == '.zip':
         archive = zipfile.ZipFile(file_path)
-        archive_files = prune_file_list(archive.namelist(), settings.archive_depth)
+        archive_files = prune_file_list(archive.namelist(), settings.ARCHIVE_DEPTH)
         archive_files = [secure_filename(fi) for fi in archive_files]
         file_contents = '\n'.join(['This archive contains the following files:'] + archive_files)
         file_path = 'temp.txt'
         renderer = 'pygments'
     elif file_path.lower().endswith('.tar') or file_path.endswith('.tar.gz'):
         archive = tarfile.open(file_path)
-        archive_files = prune_file_list(archive.getnames(), settings.archive_depth)
+        archive_files = prune_file_list(archive.getnames(), settings.ARCHIVE_DEPTH)
         archive_files = [secure_filename(fi) for fi in archive_files]
         file_contents = '\n'.join(['This archive contains the following files:'] + archive_files)
         file_path = 'temp.txt'
@@ -334,6 +334,7 @@ def view_file(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
 def download_file(*args, **kwargs):
+    print 'IN DF'
     project = kwargs['project']
     node = kwargs['node']
     user = kwargs['user']
@@ -355,22 +356,25 @@ def download_file(*args, **kwargs):
 @update_counters('download:{pid}:{fid}')
 @update_counters('download:{nid}:{fid}')
 def download_file_by_version(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
-    user = kwargs['user']
+    node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
+
     version_number = int(kwargs['vid']) - 1
-
-    node_to_use = node or project
-
-    current_version = len(node_to_use.files_versions[filename.replace('.', '_')])
-    if version_number == current_version:
-        file_path = os.path.join(settings.uploads_path, node_to_use._primary_key, filename)
-        return send_file(file_path)
+    current_version = len(node_to_use.files_versions[filename.replace('.', '_')]) - 1
 
     content, content_type = node_to_use.get_file(filename, version=version_number)
     if content is None:
         raise HTTPError(http.NOT_FOUND)
+
+    if version_number == current_version:
+        file_path = os.path.join(settings.UPLOADS_PATH, node_to_use._primary_key, filename)
+        return send_file(
+            file_path,
+            mimetype=content_type,
+            as_attachment=True,
+            attachment_filename=filename,
+        )
+
     file_object = node_to_use.get_file_object(filename, version=version_number)
     filename_base, file_extension = os.path.splitext(file_object.path)
     returned_filename = '{base}_{tmstp}{ext}'.format(

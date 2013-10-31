@@ -1,13 +1,12 @@
 from flask import Flask, request, jsonify, render_template, \
     render_template_string, Blueprint, send_file, abort, make_response, \
-    redirect, url_for, send_from_directory
+    redirect, url_for, send_from_directory, current_app
 from werkzeug.utils import secure_filename
 from website import settings
 
 import os
 
 # Create app
-# todo: move to app factory
 app = Flask(
     __name__,
     static_folder=os.path.abspath("website/static"),
@@ -15,4 +14,4 @@ app = Flask(
 )
 
 # Pull debug mode from settings
-app.debug = settings.debug_mode
+app.debug = settings.DEBUG_MODE

@@ -192,3 +192,51 @@ def create_result(highlights, results):
                         tags[tag] += 1
             result_search.append(container)
     return result_search, tags
+
+import ast
+import urllib
+import urlparse
+import requests
+
+from website import settings
+from website.filters import gravatar
+from website.models import User
+
+def search_contributor():
+    """Search for contributors to add to a project using Solr. Request must
+    include JSON data with a "query" field.
+
+    :return: List of dictionaries, each containing the ID, full name, and
+        gravatar URL of an OSF user
+
+    """
+    # Prepare query
+    query = request.args.get('query', '')
+    q = u'user:{}'.format(query).encode('utf-8')
+
+    solr_params = {
+        'q': q,
+        'wt': 'python',
+    }
+    solr_url = '{}?{}'.format(
+        urlparse.urljoin(settings.solr, 'spell'),
+        urllib.urlencode(solr_params)
+    )
+
+    raw_output = requests.get(solr_url).content
+    parsed_output = ast.literal_eval(raw_output)
+
+    try:
+        response = parsed_output['response']['docs']
+    except KeyError:
+        return []
+
+    for idx in range(len(response)):
+        user = User.load(response[idx]['id'])
+        response[idx]['gravatar'] = gravatar(
+            user,
+            use_ssl=True,
+            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+        )
+
+    return response

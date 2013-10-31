@@ -1,22 +1,26 @@
 # -*- coding: utf-8 -*-
-import werkzeug.wrappers
-from werkzeug.exceptions import NotFound
-from framework import StoredObject
-
-from framework import HTTPError
-from framework.flask import app, redirect, make_response
-from mako.template import Template
-
-from framework import session
-
 import os
 import copy
 import json
 import pystache
 import httplib as http
-from bs4 import BeautifulSoup
+import logging
 
-TEMPLATE_DIR = 'static/templates/'
+import lxml.html
+import werkzeug.wrappers
+from werkzeug.exceptions import NotFound
+from mako.template import Template
+from mako.lookup import TemplateLookup
+
+from framework import StoredObject, HTTPError, session
+from framework.flask import app, redirect, make_response
+from website import settings
+
+logger = logging.getLogger(__name__)
+
+TEMPLATE_DIR = settings.TEMPLATES_PATH
+_tpl_lookup = TemplateLookup(directories=[TEMPLATE_DIR],
+                             module_directory='/tmp/mako_modules')
 REDIRECT_CODES = [
     http.MOVED_PERMANENTLY,
     http.FOUND,
@@ -160,10 +164,13 @@ def render_jinja_string(tpl, data):
     pass
 
 mako_cache = {}
-def render_mako_string(tplname, data):
-    tpl = mako_cache.get(tplname)
-    if tpl is None:
-        tpl = Template(tplname)
+def render_mako_string(tpldir, tplname, data):
+
+    tpl = mako_cache.get(tplname,
+                        Template(open(os.path.join(tpldir, tplname)).read(), lookup=_tpl_lookup))
+    # Don't cache in debug mode
+    if not app.debug:
+        logger.debug("Caching template: {0}".format(tplname))
         mako_cache[tplname] = tpl
     return tpl.render(**data)
 
@@ -355,17 +362,6 @@ class WebRenderer(Renderer):
             template_name=self.error_template
         ), error.code
 
-    def load_file(self, template_file):
-        """Load template file from template directory.
-
-        :param template_file: Name of template file.
-        :return: Template file
-
-        """
-        with open(os.path.join(self.template_dir, template_file), 'r') as f:
-            loaded = f.read()
-        return loaded
-
     def render_element(self, element, data):
         """Render an embedded template.
 
@@ -375,8 +371,7 @@ class WebRenderer(Renderer):
         :return: 2-tuple: (<result>, <flag: replace div>)
         """
 
-        element_attributes = element.attrs
-        attributes_string = element_attributes['mod-meta']
+        attributes_string = element.get("mod-meta")
 
         # Return debug <div> if JSON cannot be parsed
         try:
@@ -390,8 +385,10 @@ class WebRenderer(Renderer):
         is_replace = element_meta.get('replace', False)
         kwargs = element_meta.get('kwargs', {})
         view_kwargs = element_meta.get('view_kwargs', {})
+        error_msg = element_meta.get('error', None)
 
-        render_data = copy.deepcopy(data)
+        # TODO: Is copy enough? Discuss.
+        render_data = copy.copy(data)
         render_data.update(kwargs)
 
         if uri:
@@ -403,6 +400,8 @@ class WebRenderer(Renderer):
             except NotFound:
                 return '<div>URI {} not found</div>'.format(uri), is_replace
             except Exception as error:
+                if error_msg:
+                    return '<div>{}</div>'.format(error_msg), is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(
                     uri,
                     repr(error)
@@ -443,37 +442,51 @@ class WebRenderer(Renderer):
         # Catch errors and return appropriate debug divs
         # todo: add debug parameter
         try:
-            template_file = self.load_file(template_name)
+            rendered = renderer(self.template_dir, template_name, data)
         except IOError:
             return '<div>Template {} not found.</div>'.format(template_name)
 
-        rendered = renderer(template_file, data)
+        html = lxml.html.fragment_fromstring(rendered, create_parent='remove')
 
-        # Parse HTML using html5lib; lxml is too strict and e.g. throws
-        # errors if missing parent container; htmlparser mangles whitespace
-        # and breaks replacement
-        parsed = BeautifulSoup(rendered, 'html5lib')
-        subtemplates = parsed.find_all(
-            lambda tag: tag.has_attr('mod-meta')
-        )
-
-        for element in subtemplates:
-
-            # Extract HTML of original element
-            element_html = str(element)
+        for element in html.findall('.//*[@mod-meta]'):
 
             # Render nested template
             template_rendered, is_replace = self.render_element(element, data)
 
-            # Build replacement
+            original = lxml.html.tostring(element)
             if is_replace:
                 replacement = template_rendered
             else:
-                element.string = template_rendered
-                replacement = str(element)
+                replacement = original
+                replacement = replacement.replace('><', '>' + template_rendered + '<')
 
-            # Replace
-            rendered = rendered.replace(element_html, replacement)
+            rendered = rendered.replace(original, replacement)
+
+        ## Parse HTML using html5lib; lxml is too strict and e.g. throws
+        ## errors if missing parent container; htmlparser mangles whitespace
+        ## and breaks replacement
+        #parsed = BeautifulSoup(rendered, 'html5lib')
+        #subtemplates = parsed.find_all(
+        #    lambda tag: tag.has_attr('mod-meta')
+        #)
+        #
+        #for element in subtemplates:
+        #
+        #    # Extract HTML of original element
+        #    element_html = str(element)
+        #
+        #    # Render nested template
+        #    template_rendered, is_replace = self.render_element(element, data)
+        #
+        #    # Build replacement
+        #    if is_replace:
+        #        replacement = template_rendered
+        #    else:
+        #        element.string = template_rendered
+        #        replacement = str(element)
+        #
+        #    # Replace
+        #    rendered = rendered.replace(element_html, replacement)
 
         return rendered
 

@@ -25,6 +25,7 @@ seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
             raise RuntimeError, "unexpected opcode"
     return ''.join(output)
 
+# TODO: These belong in framework.auth
 def new_project(title, description, user):
     project = new_node('project', title, user, description)
     project.add_log('project_created',
@@ -47,12 +48,10 @@ def new_node(category, title, user, description=None, project=None):
     new_node.title=title
     new_node.description=description
     new_node.is_public=False
-    new_node.generate_keywords()
 
     new_node.creator = user
-    # new_node._optimistic_insert()
     new_node.contributors.append(user)
-    new_node.contributor_list.append({'id':user._primary_key})
+    new_node.contributor_list.append({'id': user._primary_key})
     new_node.save()
 
     if project:
@@ -60,8 +59,8 @@ def new_node(category, title, user, description=None, project=None):
         project.save()
         new_node.add_log('node_created',
             params={
-                'node':new_node._primary_key,
-                'project':project._primary_key,
+                'node': new_node._primary_key,
+                'project': project._primary_key,
             },
             user=user,
             log_date=new_node.date_created
@@ -81,19 +80,6 @@ def get_wiki_page(project, node, wid):
 
 def get_node(id):
     return Node.load(id)
-
-def watch_node(id, uid):
-    user = get_user(id=uid)
-    project = Node.load(id)
-    if not user.watchingNodes:
-        user.watchingNodes = []
-    else:
-        if ref('projects', id) in user.watchingNodes:
-            return False
-    user.watchingNodes.append(ref('projects', id, backref=(project, "watchingUsers")))
-    user.save()
-    return True
-
 
 template_name_replacements = {
     ('.txt', ''),

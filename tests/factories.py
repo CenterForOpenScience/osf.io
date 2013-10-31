@@ -14,11 +14,11 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
 
-from factory import base, Sequence, SubFactory, PostGenerationMethodCall
+from factory import base, Sequence, SubFactory, PostGenerationMethodCall, post_generation
 
 from framework.auth import User
-from website.project.model import ApiKey, Node, NodeLog, WatchConfig
-
+from website.project.model import (ApiKey, Node, NodeLog, WatchConfig,
+                                   MetaData, Tag)
 
 class ModularOdmFactory(base.Factory):
 
@@ -51,6 +51,12 @@ class UserFactory(ModularOdmFactory):
     api_keys = []
 
 
+class TagFactory(ModularOdmFactory):
+    FACTORY_FOR = Tag
+
+    _id = Sequence(lambda n: "scientastic-{}".format(n))
+
+
 class ApiKeyFactory(ModularOdmFactory):
     FACTORY_FOR = ApiKey
 
@@ -70,6 +76,17 @@ class ProjectFactory(NodeFactory):
     category = 'project'
     creator = SubFactory(UserFactory)
 
+    @post_generation
+    def add_created_log(self, create, extracted):
+        '''Add a log after creating a new project.'''
+        self.add_log('project_created',
+            params={
+                'project': self._primary_key,
+            },
+            user=self.creator,
+            log_date=self.date_created
+        )
+
 
 class NodeLogFactory(ModularOdmFactory):
     FACTORY_FOR = NodeLog
@@ -80,3 +97,7 @@ class NodeLogFactory(ModularOdmFactory):
 class WatchConfigFactory(ModularOdmFactory):
     FACTORY_FOR = WatchConfig
     node = SubFactory(NodeFactory)
+
+
+class MetaDataFactory(ModularOdmFactory):
+    FACTORY_FOR = MetaData

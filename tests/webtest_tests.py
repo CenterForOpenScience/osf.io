@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 '''Functional tests using WebTest.'''
 import unittest
+import datetime as dt
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
@@ -11,7 +12,56 @@ from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
 
 from framework import app
 
-import new_style  # This import sets up the routes
+# Only uncomment if running these tests in isolation
+# from website.app import init_app
+# app = init_app(set_backends=False, routes=True)
+
+class TestAnUnregisteredUser(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+
+    def test_can_register(self):
+        # Goes to home page
+        res = self.app.get("/").maybe_follow()
+        # Clicks sign in button
+        res = res.click("Create an Account or Sign-In").maybe_follow()
+        # Fills out registration form
+        form = res.forms['registerForm']
+        form['register-fullname'] = "Nicholas Cage"
+        form['register-username'] = "nickcage@example.com"
+        form['register-username2'] = "nickcage@example.com"
+        form['register-password'] = "example"
+        form['register-password2'] = "example"
+        # Submits
+        res = form.submit().follow()
+        # There's a flash message
+        assert_in("You may now log in", res)
+        # User logs in
+        form = res.forms['signinForm']
+        form['username'] = "nickcage@example.com"
+        form['password'] = "example"
+        # Submits
+        res = form.submit().maybe_follow()
+
+    def test_sees_error_if_email_is_already_registered(self):
+        # A user is already registered
+        user = UserFactory(username="foo@bar.com")
+        # Goes to home page
+        res = self.app.get("/").maybe_follow()
+        # Clicks sign in button
+        res = res.click("Create an Account or Sign-In").maybe_follow()
+        # Fills out registration form
+        form = res.forms['registerForm']
+        form['register-fullname'] = "Foo Bar"
+        form['register-username'] = "foo@bar.com"
+        form['register-username2'] = "foo@bar.com"
+        form['register-password'] = "example"
+        form['register-password2'] = "example"
+        # submits
+        res = form.submit().maybe_follow()
+        # sees error message because email is already registered
+        assert_in("has already been registered.", res)
 
 
 class TestAUser(DbTestCase):
@@ -33,7 +83,7 @@ class TestAUser(DbTestCase):
         form['username'] = self.user.username
         form['password'] = 'science'
         # submits
-        res = form.submit().follow()
+        res = form.submit().maybe_follow()
         return res
 
     def test_can_see_homepage(self):
@@ -45,21 +95,20 @@ class TestAUser(DbTestCase):
         # Goes to home page
         res = self.app.get("/").follow()
         # Clicks sign in button
-        res = res.click("Create an Account or Sign-In").follow()
+        res = res.click("Create an Account or Sign-In").maybe_follow()
         # Fills out login info
         form = res.forms['signinForm']  # Get the form from its ID
         form['username'] = self.user.username
         form['password'] = 'science'
         # submits
-        # res.showbrowser()
-        res = form.submit().follow()
+        res = form.submit().maybe_follow()
         # Sees dashboard with projects and watched projects
         assert_in("Projects", res)
         assert_in("Watched Projects", res)
 
     def test_sees_flash_message_on_bad_login(self):
         # Goes to log in page
-        res = self.app.get("/account/").follow()
+        res = self.app.get("/account/").maybe_follow()
         # Fills the form with incorrect password
         form  = res.forms['signinForm']
         form['username'] = self.user.username
@@ -76,7 +125,7 @@ class TestAUser(DbTestCase):
         project.save()
         # Goes to homepage, already logged in
         res = self._login(self.user.username, 'science')
-        res = self.app.get("/", auto_follow=True)
+        res = self.app.get("/").maybe_follow()
         # Clicks Dashboard link in navbar
         res = res.click("Dashboard")
         assert_in("Projects", res)  # Projects heading
@@ -108,6 +157,46 @@ class TestAUser(DbTestCase):
         # The log action is in the feed
         assert_in("added file test.html", res)
         assert_in(project.title, res)
+
+    def test_sees_correct_title_home_page(self):
+        # User goes to homepage
+        res = self.app.get("/", auto_follow=True)
+        title = res.html.title.string
+        # page title is correct
+        assert_equal("Open Science Framework | Home", title)
+
+    def test_sees_correct_title_on_dashboard(self):
+        # User goes to dashboard
+        res = self.app.get("/dashboard/", auth=self.auth, auto_follow=True)
+        title = res.html.title.string
+        assert_equal("Open Science Framework | Dashboard", title)
+
+    def test_sees_logs_on_a_project(self):
+        project = ProjectFactory(is_public=True)
+        # User goes to the project's page
+        res = self.app.get("/project/{0}/".format(project._primary_key), auth=self.auth).maybe_follow()
+        # Can see log event
+        # res.showbrowser()
+        assert_in("created", res)
+
+    def test_no_wiki_content_message(self):
+        project = ProjectFactory(creator=self.user)
+        # Goes to project's wiki, where there is no content
+        res = self.app.get("/project/{0}/wiki/home/".format(project._primary_key), auth=self.auth)
+        # Sees a message indicating no content
+        assert_in("No wiki content", res)
+
+    def test_cant_delete_registration(self):
+        original = ProjectFactory(creator=self.user, is_public=True)
+        # A registration
+        project = ProjectFactory(is_registration=True,
+                                registered_from=original,
+                                registered_date=dt.datetime.now(),
+                                creator=self.user)
+        # Goes to project's page
+        res = self.app.get("/project/{0}/".format(project._primary_key), auth=self.auth).maybe_follow()
+        # Can't get to settings
+        assert_not_in("Settings", res)
 
 
 if __name__ == '__main__':

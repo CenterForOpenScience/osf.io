@@ -4,8 +4,10 @@
 from __future__ import absolute_import
 import unittest
 import datetime as dt
+
 from pytz import utc
 from nose.tools import *  # PEP8 asserts
+import bson
 
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ProjectFactory, ApiKeyFactory,
@@ -27,8 +29,10 @@ class TestWatching(DbTestCase):
         # A log added 100 days ago
         self.project.add_log('project_created',
                         params={'project': self.project._primary_key},
-                        user=self.user, log_date=dt.datetime.utcnow(),
+                        user=self.user,
+                        log_date=dt.datetime.utcnow() - dt.timedelta(days=100),
                         do_save=True, api_key=api_key)
+        # Set the ObjectId to correspond with the log date
         # A log added now
         self.last_log = self.project.add_log('tag_added', params={'project': self.project._primary_key},
                         user=self.user, log_date=dt.datetime.utcnow(),
@@ -70,6 +74,11 @@ class TestWatching(DbTestCase):
         since = dt.datetime.utcnow().replace(tzinfo=utc) - dt.timedelta(days=101)
         log_ids = list(self.user.get_recent_log_ids(since=since))
         assert_equal(len(log_ids), 2)
+
+    def test_get_daily_digest_log_ids(self):
+        self._watch_project(self.project)
+        day_log_ids = list(self.user.get_daily_digest_log_ids())
+        assert_in(self.last_log._id, day_log_ids)
 
     def _watch_project(self, project):
         watch_config = WatchConfigFactory(node=project)

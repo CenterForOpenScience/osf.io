@@ -14,10 +14,6 @@ from framework.mongo import db, set_up_storage
 ##### Sessions
 from framework.sessions import goback, set_previous_url, session, create_session
 
-###### Celery
-from framework.celery import celery
-from framework.celery.tasks import error_handler
-
 ##### Exceptions
 from exceptions import HTTPError
 
@@ -25,6 +21,9 @@ from exceptions import HTTPError
 from framework.routing import (Rule, process_rules,
                                WebRenderer, json_renderer,
                                render_mako_string)
+
+##### GUID
+from framework.guid.model import GuidStoredObject
 
 ###### Auth
 from framework.auth import get_current_username, get_current_user_id, get_user, \
@@ -36,11 +35,6 @@ from framework.forms import Form, PasswordField, BooleanField, IntegerField, \
     SelectMultipleField, SubmitField, TextAreaField, TextField, validators, \
     push_errors_to_status, MyTextInput, FieldList
 
-##### Search
-from framework.search import generate_keywords, search
-
-##### Email
-from framework.email.tasks import send_email
 
 ##### Status
 from framework.status import push_status_message

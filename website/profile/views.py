@@ -21,6 +21,7 @@ def get_public_projects(uid=None, user=None):
         for node in user.node__contributed
         if node.category == 'project'
             and node.is_public
+            and not node.is_registration
             and not node.is_deleted
     ])
 
@@ -32,6 +33,7 @@ def get_public_components(uid=None, user=None):
         for node in user.node__contributed
         if node.category != 'project'
             and node.is_public
+            and not node.is_registration
             and not node.is_deleted
     ])
 
@@ -55,18 +57,18 @@ def _profile_view(uid=None):
         gravatar_url = filters.gravatar(
             profile,
             use_ssl=True,
-            size=settings.gravatar_size_profile
+            size=settings.GRAVATAR_SIZE_PROFILE
         )
         return {
             'user_id': profile._id,
-            'user_full_name' : profile.fullname,
-            'user_is_profile' : user == profile,
-            'activity_points' : get_total_activity_count(profile._primary_key),
-            'number_projects' : len(projects),
-            'number_public_projects' : len(public_projects),
+            'user_full_name': profile.fullname,
+            'user_is_profile': user is not None and user == profile,
+            'activity_points': get_total_activity_count(profile._primary_key),
+            'number_projects': len(projects),
+            'number_public_projects': len(public_projects),
             'fullname': profile.fullname,
             'date_registered': profile.date_registered.strftime("%Y-%m-%d"),
-            'gravatar_url' : gravatar_url,
+            'gravatar_url': gravatar_url,
         }
     raise HTTPError(http.NOT_FOUND)
 
