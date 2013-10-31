@@ -37,7 +37,8 @@ def get_file_tree(node_to_use, user):
         if not node.is_deleted:
             tree.append(get_file_tree(node, user))
 
-    if node_to_use.is_contributor(user):
+    #means can_view, not can_edit
+    if node_to_use.can_edit(user):
         for i,v in node_to_use.files_current.items():
             v = NodeFile.load(v)
             tree.append(v)
@@ -55,12 +56,12 @@ def get_files(*args, **kwargs):
     filetree = get_file_tree(node_to_use, user)
     parent_id = node_to_use.parent_id
 
-    rv = _get_files(filetree, parent_id, 0)
+    rv = _get_files(filetree, parent_id, 0, user)
     if not kwargs.get('dash', False):
         rv.update(_view_project(node_to_use, user))
     return rv
 
-def _get_files(filetree, parent_id, check):
+def _get_files(filetree, parent_id, check, user):
     if parent_id is not None:
         parent_uid = 'node-{}'.format(parent_id)
     else:
@@ -92,6 +93,9 @@ def _get_files(filetree, parent_id, check):
     itemParent['size'] = "0"
     itemParent['sizeRead'] = "--"
     itemParent['name'] = str(filetree[0].title)
+    itemParent['can_edit'] = str(filetree[0].is_contributor(user)).lower()
+    #can_edit is can_view
+    itemParent['can_view'] = str(filetree[0].can_edit(user)).lower()
     if check == 0:
         itemParent['parent_uid']="null"
     info.append(itemParent)
@@ -100,14 +104,17 @@ def _get_files(filetree, parent_id, check):
             info = info + _get_files(
                 filetree=tmp,
                 parent_id=filetree[0]._id,
-                check=1
+                check=1,
+                user=user
             )['info']
         else:
+            unique, total = get_basic_counters('download:' + str(filetree[0]._id) + ':' + tmp.path.replace('.', '_') )
             item = {}
             item['uid'] = '-'.join([
                 "nodefile",  # node or nodefile
                 str(tmp._id)  # ObjectId from pymongo
             ])
+            item['downloads'] = str(total) if total else '0'
             item['isComponent'] = "false"
             item['parent_uid'] = str(itemParent['uid'])
             item['type'] = "file"

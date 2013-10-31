@@ -33,6 +33,10 @@
     background: url('../img/hgrid/fatcowicons/folder_horizontal_closed.png') no-repeat left top;
 }
 
+.folder-delete {
+    background: url('../img/hgrid/fatcowicons/folder_delete.png') no-repeat left top;
+}
+
 .file {
     background: url('../img/hgrid/file.png') no-repeat left top;
 }
@@ -47,6 +51,10 @@
 
 .slick-row.dragger-guide {
     background-color: rgba(0,0,255,0.5);
+}
+
+.slick-row.row-hover {
+    background-color: rgba(230, 230, 230, 0.50);
 }
 
 .slick-viewport.dragger-guide1{

@@ -10,12 +10,14 @@
 <script src="/static/js/slickgrid.custom.min.js"></script>
 <script src="/static/js/hgrid.js"></script>
 
+%if user_can_edit:
 <div class="container" style="position:relative;">
     <h3 style="max-width: 65%;">Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element>!</h3>
     <div id="totalProgressActive" style="width: 35%; position: absolute; top: 4px; right: 0;">
         <div id="totalProgress" class="bar" style="width: 0%;"></div>
     </div>
 </div>
+%endif
 <div id="myGridBreadcrumbs" style="margin-top: 10px"></div>
 <div id="myGrid" class="dropzone files-page" style="width: 100%;"></div>
 </div>
@@ -35,14 +37,22 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
     var spacer = "<span style='display:inline-block;height:1px;width:" + (18 * dataContext["indent"]) + "px'></span>";
     if (dataContext['type']=='folder') {
         if (dataContext._collapsed) {
-            var returner;
-            if(myGrid.hasChildren(dataContext['uid']))
-                returner = spacer + " <span class='toggle expand nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span>";
-            else
-                returner = spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span>";
-            return returner + "</span><span class='folder folder-open'></span>&nbsp;" + value + "</a>";
+##            if(myGrid.hasChildren(dataContext['uid']))
+##                returner = spacer + " <span class='toggle expand nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span>";
+##            else
+            if(dataContext['can_view']!="false"){
+                return spacer + " <span class='toggle expand nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-open'></span>&nbsp;" + value + "</a>";
+            }
+            else{
+                return spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-delete'></span>&nbsp;" + value + "</a>";
+            }
         } else {
-            return spacer + " <span class='toggle collapse nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-close'></span>&nbsp;" + value + "</a>";
+            if(dataContext['can_view']!="false"){
+                return spacer + " <span class='toggle collapse nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-close'></span>&nbsp;" + value + "</a>";
+            }
+            else {
+                return spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-delete'></span>&nbsp;" + value + "</a>";
+            }
         }
     } else {
         var link = "<a href=" + dataContext['url'] + ">" + value + "</a>";
@@ -67,11 +77,19 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
 };
 
 var Buttons = function(row, cell, value, columnDef, dataContext) {
+##    console.log(myGrid.Slick.grid.getCellNode(myGrid.Slick.dataView.getRowById(dataContext['id']), myGrid.Slick.grid.getColumnIndex("downloads")).parentNode);
     if(dataContext['url'] && !dataContext['uploadBar']){
         var delButton = "<button type='button' class='btn btn-danger btn-mini' onclick='myGrid.deleteItems([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-trash icon-white'></i></button>"
         var url = dataContext['url'].replace('/files/', '/files/download/');
+        url = '/api/v1' + url;
         var downButton = "<a href=" + JSON.stringify(url) + "><button type='button' class='btn btn-success btn-mini'><i class='icon-download-alt icon-white'></i></button></a>";
-        return delButton + " " + downButton;
+        if(myGrid.getItemByValue(myGrid.data, dataContext['parent_uid'], 'uid')['can_edit']=='false'){
+            return downButton;
+##            return value + "\t" + downButton;
+        }
+##        else return value + "\t" + downButton + " " + delButton;
+        else return downButton + " " + delButton;
+
     }
 };
 
@@ -101,6 +119,7 @@ var myGrid = HGrid.create({
     autoHeight: true,
     forceFitColumns: true,
     largeGuide: false,
+    dropZone: ${int(user_can_edit)},
     dropZonePreviewsContainer: false,
     rowHeight: 30,
     navLevel: ${info}[0]['uid'],
@@ -111,22 +130,23 @@ var myGrid = HGrid.create({
 });
 
 
-myGrid.updateBreadcrumbsBox(myGrid.data[0]['uid']);
 
-var oldColumns = myGrid.options.columns;
-var newColumns = oldColumns.concat(
-            {id: "downloads", name: "Actions", field: "downloads", width: 70, formatter: Buttons}
-);
-myGrid.Slick.grid.setColumns(newColumns);
+myGrid.updateBreadcrumbsBox(myGrid.data[0]['uid']);
+myGrid.addColumn({id: "downloads", name: "Downloads", field: "downloads", width: 90, sortable: true});
+myGrid.addColumn({id: "actions", name: "", field: "actions", width: 70, formatter: Buttons});
 
 myGrid.hGridBeforeUpload.subscribe(function(e, args){
-    myGrid.removeDraggerGuide();
-    var path = args.parent['path'].slice();
-    path.push("nodefile-" +args.item.name);
-    var item = {name: args.item.name, parent_uid: args.parent['uid'], uid: "nodefile-" + args.item.name, type:"fake", uploadBar: true, path: path, sortpath: path.join("/"), ext: "py"};
-    myGrid.addItem(item);
-    return true;
+    if(args.parent['can_edit']=='true'){
+        myGrid.removeDraggerGuide();
+        var path = args.parent['path'].slice();
+        path.push("nodefile-" +args.item.name);
+        var item = {name: args.item.name, parent_uid: args.parent['uid'], uid: "nodefile-" + args.item.name, type:"fake", uploadBar: true, path: path, sortpath: path.join("/"), ext: "py"};
+        myGrid.addItem(item);
+        return true;
+    }
+    else return false;
 });
+
 
 myGrid.hGridAfterUpload.subscribe(function(e, args){
     if(args['success']==true){
@@ -164,11 +184,20 @@ myGrid.hGridBeforeDelete.subscribe(function(e, args){
     }
 });
 
+myGrid.hGridOnMouseEnter.subscribe(function (e, args){
+    $(myGrid.options.container).find(".row-hover").removeClass("row-hover");
+    $(args.e.target.parentNode).addClass("row-hover");
+});
+
+myGrid.hGridOnMouseLeave.subscribe(function (e, args){
+    $(myGrid.options.container).find(".row-hover").removeClass("row-hover");
+});
+
 myGrid.hGridOnUpload.subscribe(function(e, args){
             var value = {};
             // Check if the server says that the file exists already
             var newSlickInfo = JSON.parse(args.xhr.response)[0];
-
+            console.log(newSlickInfo);
             if (newSlickInfo['action_taken']===null){
                 var item = myGrid.getItemByValue(myGrid.data, args.name, "name");
                 myGrid.deleteItems([item['uid']]);
@@ -185,5 +214,6 @@ myGrid.hGridOnUpload.subscribe(function(e, args){
 
             }
 });
+
 </script>
 <div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>

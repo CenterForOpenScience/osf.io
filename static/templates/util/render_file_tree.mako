@@ -21,31 +21,39 @@
         "qbw", "qxd", "ram", "rar", "rm", "rmvb", "rtf", "sea", "ses", "sit", "sitx", "ss", "swf", "tgz", "thm",
         "tif", "tmp", "torrent", "ttf", "txt", "vcd", "vob", "wav", "wma", "wmv", "wps", "xls", "xpi", "zip"];
 
-    var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
-        value = value.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-        var spacer = "<span style='display:inline-block;height:1px;width:" + (18 * dataContext["indent"]) + "px'></span>";
-        if (dataContext['type']=='folder') {
-            if (dataContext._collapsed) {
-                var returner;
-                if(myGrid.hasChildren(dataContext['uid']))
-                    returner = spacer + " <span class='toggle expand nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span>";
-                else
-                    returner = spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span>";
-                return returner + "</span><span class='folder folder-open'></span>&nbsp;" + value + "</a>";
-            } else {
-                return spacer + " <span class='toggle collapse nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-close'></span>&nbsp;" + value + "</a>";
+var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
+    value = value.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    var spacer = "<span style='display:inline-block;height:1px;width:" + (18 * dataContext["indent"]) + "px'></span>";
+    if (dataContext['type']=='folder') {
+        if (dataContext._collapsed) {
+##            if(myGrid.hasChildren(dataContext['uid']))
+##                returner = spacer + " <span class='toggle expand nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span>";
+##            else
+            if(dataContext['can_view']!="false"){
+                return spacer + " <span class='toggle expand nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-open'></span>&nbsp;" + value + "</a>";
+            }
+            else{
+                return spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-delete'></span>&nbsp;" + value + "</a>";
             }
         } else {
-            var link = "<a href=" + dataContext['url'] + ">" + value + "</a>";
-            var imageUrl = "/static\/img\/hgrid\/fatcowicons\/file_extension_" + dataContext['ext'] + ".png";
-            if(extensions.indexOf(dataContext['ext'])==-1){
-                imageUrl = "/static\/img\/hgrid\/file.png";
+            if(dataContext['can_view']!="false"){
+                return spacer + " <span class='toggle collapse nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-close'></span>&nbsp;" + value + "</a>";
             }
-                    ##        var element = spacer + " <span class='toggle'></span><span class='file-" + dataContext['ext'] + "'></span>&nbsp;" + link;
-            var element = spacer + " <span class='toggle'></span><span class='file' style='background: url(" + imageUrl+ ") no-repeat left top;'></span>&nbsp;" + link;
-            return element;
+            else {
+                return spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-delete'></span>&nbsp;" + value + "</a>";
+            }
         }
-    };
+    } else {
+        var link = "<a href=" + dataContext['url'] + ">" + value + "</a>";
+        var imageUrl = "/static\/img\/hgrid\/fatcowicons\/file_extension_" + dataContext['ext'] + ".png";
+        if(extensions.indexOf(dataContext['ext'])==-1){
+            imageUrl = "/static\/img\/hgrid\/file.png";
+        }
+                ##        var element = spacer + " <span class='toggle'></span><span class='file-" + dataContext['ext'] + "'></span>&nbsp;" + link;
+        var element = spacer + " <span class='toggle'></span><span class='file' style='background: url(" + imageUrl+ ") no-repeat left top;'></span>&nbsp;" + link;
+        return element;
+    }
+};
 
     var myGrid = HGrid.create({
         container: "#myGrid",

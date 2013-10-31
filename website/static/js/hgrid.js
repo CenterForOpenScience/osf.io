@@ -125,6 +125,10 @@ var HGrid = {
         }
         self.initialize();
         $.extend(this, {
+
+            hGridOnMouseEnter: new self.Slick.Event(),
+            hGridOnMouseLeave: new self.Slick.Event(),
+
             /**
              Fired before a move occurs
 
@@ -448,6 +452,7 @@ var HGrid = {
             if(currentDropCell===null){
                 dropHighlight = null;
                 myDropzone.options.dropDestination = null;
+                hGrid.draggerGuide(dropHighlight);
             }
             else{
                 currentDropCell.insertBefore = currentDropCell['row'];
@@ -461,11 +466,13 @@ var HGrid = {
                     dropHighlight = hGrid.getItemByValue(hGrid.data, childDropHighlight['parent_uid'], 'uid');
                     myDropzone.options.dropDestination = dropHighlight['uid'];
                 }
+                if(dropHighlight['permission']=="true" || typeof dropHighlight['permission'] == 'undefined')
+                    hGrid.draggerGuide(dropHighlight);
             }
             if(bool){
                 myDropzone.options.url = hGrid.options['urlAdd'][myDropzone.options.dropDestination];
             }
-            hGrid.draggerGuide(dropHighlight);
+
         });
 
         myDropzone.on("addedfile", function(file){
@@ -625,12 +632,6 @@ var HGrid = {
         _this.currentlyRendered=[];
         _this.Slick.grid.render();
         return true;
-
-//        else{
-//            value['success'] = false;
-//            _this.hGridAfterAdd.notify(value);
-//            return false;
-//        }
     },
 
     hasChildren: function(itemUid) {
@@ -1142,6 +1143,16 @@ var HGrid = {
         });
 
         //Before rows are moved, make sure their dest is valid, document source and target
+        _this.Slick.grid.onMouseEnter.subscribe(function(e, args){
+            args['e'] = e;
+            _this.hGridOnMouseEnter.notify(args);
+        });
+
+        _this.Slick.grid.onMouseLeave.subscribe(function(e, args){
+            args['e'] = e;
+            _this.hGridOnMouseLeave.notify(args);
+        });
+
         moveRowsPlugin.onBeforeMoveRows.subscribe(function (e, args) {
             src = [];
             dest = "";
@@ -1259,7 +1270,7 @@ var HGrid = {
         });
 
         grid.onClick.subscribe(function (e, args) {
-            if ($(e.target).hasClass("toggle")) {
+            if ($(e.target).hasClass("toggle") || $(e.target).hasClass("folder")) {
                 var item = dataView.getItem(args.row);
                 if (item) {
                     var i=args.row;
