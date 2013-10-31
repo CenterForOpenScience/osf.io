@@ -112,6 +112,33 @@ class NodeLog(StoredObject):
         return Node.load(self.params.get('node')) or \
             Node.load(self.params.get('project'))
 
+    def serialize(self):
+        return {
+        'user_id': self.user._primary_key if self.user else '',
+        'user_fullname': self.user.fullname if self.user else '',
+        'api_key': self.api_key.label if self.api_key else '',
+        'node_url': self.node.url if self.node else '',
+        'node_title': self.node.title if self.node else '',
+        'action': self.action,
+        'params': self.params,
+        'category': self.node.category if self.node else '',
+        'date': self.date.strftime('%m/%d/%y %I:%M %p'),
+        'contributors': [self._render_log_contributor(contributor) for contributor in self.params.get('contributors', [])],
+        'contributor': self._render_log_contributor(self.params.get('contributor', {})),
+    }
+
+    def _render_log_contributor(self, contributor):
+        if isinstance(contributor, dict):
+            rv = contributor.copy()
+            rv.update({'registered' : False})
+            return rv
+        user = User.load(contributor)
+        return {
+            'id' : user._primary_key,
+            'fullname' : user.fullname,
+            'registered' : True,
+        }
+
 
 class NodeFile(GuidStoredObject):
 
@@ -223,6 +250,15 @@ class Node(GuidStoredObject):
     #comment_schema = OSF_META_SCHEMAS['osf_comment']
 
     _meta = {'optimistic': True}
+
+    def serialize(self):
+        return {
+            'title': self.title,
+            'date_created': self.date_created,
+            "is_public": self.is_public,
+            "creator": self.creator,
+            "contributors": self.contributors
+        }
 
     def can_edit(self, user, api_key=None):
 

@@ -7,7 +7,7 @@
         <dd>${log['api_key']}
     % endif
     %if log['action'] == 'project_created':
-        created <a href="${log['project_url']}">project</a>
+        created <a href="${log['node_url']}">project</a>
     %elif log['action'] == 'node_created':
         created ${log['category']}
         <a href="${log['node_url']}">${log['node_title']}</a>

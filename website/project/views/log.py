@@ -6,17 +6,6 @@ from ..decorators import must_be_valid_project
 from framework import HTTPError
 import httplib as http
 
-def _render_log_contributor(contributor):
-    if isinstance(contributor, dict):
-        rv = contributor.copy()
-        rv.update({'registered' : False})
-        return rv
-    user = User.load(contributor)
-    return {
-        'id' : user._primary_key,
-        'fullname' : user.fullname,
-        'registered' : True,
-    }
 
 def get_log(log_id):
 
@@ -27,30 +16,7 @@ def get_log(log_id):
 
     if not node_to_use.can_edit(user, api_key) and not node_to_use.are_logs_public:
         raise HTTPError(http.FORBIDDEN)
-
-    project = Node.load(log.params.get('project'))
-    node = Node.load(log.params.get('node'))
-    # TODO: this logic should be in the Log model
-    log_json = {
-        'user_id': log.user._primary_key if log.user else '',
-        'user_fullname': log.user.fullname if log.user else '',
-        'api_key': log.api_key.label if log.api_key else '',
-        'project_url': project.url if project else '',
-        'node_url': node.url if node else '',
-        'project_title': project.title if project else '',
-        'node_title': node.title if node else '',
-        'action': log.action,
-        'params': log.params,
-        # params['project'] contains node's parent ID or None; node is a
-        # project if params['project'] is None
-        'category': 'project'
-            if node_to_use.category == 'project'
-            else 'component',
-        'date': log.date.strftime('%m/%d/%y %I:%M %p'),
-        'contributors': [_render_log_contributor(contributor) for contributor in log.params.get('contributors', [])],
-        'contributor': _render_log_contributor(log.params.get('contributor', {})),
-    }
-    return {'log': log_json}
+    return {'log': log.serialize()}
 
 
 #todo: hide private logs of children

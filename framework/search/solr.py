@@ -68,4 +68,4 @@ def delete_solr_doc(args=None):
         solr.commit()
     except IndexError:
         # Document ID doesn't exist in Solr
-        print 'id {} not found in Solr'.format(args['_id'])
+        logger.warn('id {} not found in Solr'.format(args['_id']))
