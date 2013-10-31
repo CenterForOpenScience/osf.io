@@ -3,6 +3,7 @@
 <%def name="content()">
 
 <% import website.settings %>
+<div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
 
 ##<script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.0.0/bootbox.min.js"></script>
@@ -238,7 +239,7 @@ myGrid.hGridOnUpload.subscribe(function(e, args){
 
 </script>
 </%def>
-<%def name="css()">
+<%def name="stylesheets()">
 <link rel="stylesheet" href="/static/css/hgrid-base.css" type="text/css" />
 </%def>
 
