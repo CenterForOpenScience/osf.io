@@ -17,9 +17,6 @@ var Project = function(params) {
     self.apiUrl = params.apiUrl;
     self.watchedCount = ko.observable(params.watchCount);
     self.userIsWatching = ko.observable(params.userIsWatching);
-    // TODO: Finish me
-
-
     // The button to display (e.g. "Watch" if not watching)
     self.watchButtonDisplay = ko.computed(function() {
         var text = self.userIsWatching() ? "Unwatch" : "Watch"
@@ -28,11 +25,51 @@ var Project = function(params) {
     });
 }
 
+var Log = function(params) {
+    var self = this;
+    self.action = params.action;
+    self.date = params.date;
+    self.nodeCategory = params.nodeCategory;
+    self.contributor = params.contributor;
+    self.contributors = params.contributors;
+    self.nodeUrl = params.nodeUrl;
+    self.userFullName = params.userFullName;
+    self.apiKey = params.apiKey;
+}
 
 
 ////////////////
 // ViewModels //
 ////////////////
+
+
+var LogsViewModel = function(params) {
+    var self = this;
+    self.logs = ko.observableArray([]);
+    // Get log data via AJAX
+    $.ajax({
+        url: nodeToUseUrl() + "log/",
+        type: "get",
+        dataType: "json",
+        success: function(data){
+            var logs = data['logs'];
+            var mappedLogs = $.map(logs, function(item) {
+                return new Log({
+                    "action": item.action,
+                    "date": item.date,
+                    "nodeCategory": item.category,
+                    "contributor": item.contributor,
+                    "contributors": item.contributors,
+                    "nodeUrl": item.node_url,
+                    "userFullName": item.user_fullname,
+                    "apiKey": item.api_key
+                })
+            })
+            self.logs(mappedLogs);
+            console.log(self.logs());
+        }
+    })
+}
 
 /**
  * The project VM, scoped to the project page header.
@@ -40,7 +77,6 @@ var Project = function(params) {
 var ProjectViewModel = function() {
     var self = this;
     self.projects = ko.observableArray([{"watchButtonDisplay": ""}]);
-    // Get the project data via AJAX
     $.ajax({
         url: nodeToUseUrl(),
         type: "get", contentType: "application/json",
@@ -50,7 +86,8 @@ var ProjectViewModel = function() {
                 "_id": data.node_id,
                 "apiUrl": data.node_api_url,
                 "watchCount": data.node_watched_count,
-                "userIsWatching": data.user_is_watching
+                "userIsWatching": data.user_is_watching,
+                "logs": data.logs
             });
             self.projects([project]);
         }
@@ -155,10 +192,10 @@ var AddContributorViewModel = function(initial) {
 
 };
 
-
 //////////////////
 // Data binders //
 //////////////////
+
 
 
 
@@ -179,6 +216,8 @@ $(document).ready(function() {
     // Initiate ProjectViewModel
     ko.applyBindings(new ProjectViewModel(), $("#projectScope")[0]);
 
+    // Initiate LogsViewModel
+    ko.applyBindings(new LogsViewModel(), $("#main-log")[0]);
 });
 
 }).call(this);

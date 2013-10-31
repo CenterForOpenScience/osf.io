@@ -14,7 +14,7 @@ from website.models import Node
 
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
-                            WatchConfigFactory, NodeFactory)
+                            WatchConfigFactory, NodeFactory, NodeLogFactory)
 
 
 app = website.app.init_app(routes=True, set_backends=False,
@@ -50,6 +50,7 @@ class TestProjectViews(DbTestCase):
         assert_equal(data['node_id'], self.project._primary_key)
         assert_equal(data['node_watched_count'], 0)
         assert_true(data['user_is_contributor'])
+        assert_equal(data['logs'][-1]['action'], 'project_created')
 
     def test_add_contributor_post(self):
         # A user is added as a contributor via a POST request
@@ -157,6 +158,46 @@ class TestProjectViews(DbTestCase):
         # Most recent node is a registration
         reg = Node.load(self.project.registration_list[-1])
         assert_true(reg.is_registration)
+
+    def test_get_logs(self):
+        # Add some logs
+        for _ in range(5):
+            self.project.logs.append(NodeLogFactory(user=self.user1, action="file_added"))
+        self.project.save()
+        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
+        res = self.app.get(url, auth=self.auth)
+        self.project.reload()
+        data = res.json
+        assert_equal(len(data['logs']), len(self.project.logs))
+        most_recent = data['logs'][0]
+        assert_equal(most_recent['action'], "file_added")
+
+    def test_get_logs_with_count_param(self):
+        # Add some logs
+        for _ in range(5):
+            self.project.logs.append(NodeLogFactory(user=self.user1, action="file_added"))
+        self.project.save()
+        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
+        res = self.app.get(url, {"count": 3}, auth=self.auth)
+        assert_equal(len(res.json['logs']), 3)
+
+    def test_get_logs_defaults_to_ten(self):
+        # Add some logs
+        for _ in range(12):
+            self.project.logs.append(NodeLogFactory(user=self.user1, action="file_added"))
+        self.project.save()
+        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(res.json['logs']), 10)
+
+    def test_logs_from_api_url(self):
+        # Add some logs
+        for _ in range(12):
+            self.project.logs.append(NodeLogFactory(user=self.user1, action="file_added"))
+        self.project.save()
+        url = "/api/v1/project/{0}/".format(self.project._primary_key)
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(res.json['logs']), 10)
 
 class TestWatchViews(DbTestCase):
 

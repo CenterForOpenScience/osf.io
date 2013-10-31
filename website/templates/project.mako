@@ -55,7 +55,7 @@
 </%def>
 
 <%def name="content()">
-<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
+  <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
   <div class="row">
     <div class="col-md-7" id='containment'>
@@ -111,9 +111,6 @@
               </div><!-- end modal-dialog -->
             </div><!-- end modal -->
 
-          <script type="text/javascript">
-            //$('#addContributor').modal('hide')
-          </script>
           % if node_children:
               <div mod-meta='{
                       "tpl" : "util/render_nodes.mako",
@@ -144,21 +141,15 @@
     <div class="col-md-5">
         <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node_tags]) if node_tags else ''}" />
             <div id='main-log'>
-                <div mod-meta='{
-                        "tpl": "util/render_logs.mako",
-                        "uri": "${node_api_url}log/",
-                        "view_kwargs": {
-                            "count": 10
-                        },
-                        "replace": true
-                    }'></div>
+                <dl class="dl-horizontal activity-log" data-bind="foreach: logs">
+                    <dt><span class="date" data-bind="text: date"></span></dt>
+                </dl>
             </div>
             ## Hide More widget until paging for logs is implemented
             ##<div class="paginate pull-right">more</div>
         </section>
     </div>
   </div>
-
 ##<!-- Include Knockout and view model -->
 ##<div mod-meta='{
 ##        "tpl": "metadata/knockout.mako",
@@ -180,6 +171,5 @@
 ##        "tpl": "metadata/comment_js.mako",
 ##        "replace": true
 ##    }'></div>
-
 
 </%def>

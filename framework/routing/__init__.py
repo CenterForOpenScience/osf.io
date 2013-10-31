@@ -88,6 +88,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
         except HTTPError as error:
             rv = error
         except Exception as error:
+            logger.debug("Exception raised in wrap_with_renderer")
             logger.error(error)
             if debug_mode:
                 raise
