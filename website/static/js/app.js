@@ -36,27 +36,6 @@ var Log = function(params) {
     self.userFullName = params.userFullName;
     self.apiKey = params.apiKey;
     self.params = params.params; // Extra log params
-    self._actionTemplates = {
-        project_created: "created " + self.nodeCategory +
-                                "<a href='" + self.nodeUrl + "'>" +
-                                    self.nodeTitle +
-                                "</a>",
-        node_created: "created " + self.nodeCategory +
-                                "<a href='" + self.nodeUrl + "'>" +
-                                    self.nodeTitle +
-                                "</a>",
-        wiki_updated: "updated wiki page <a href='" +
-                                self.nodeUrl + "wiki/" + self.params.page + "/'>" +
-                                self.params.page + "</a>",
-        contributor_added: ""
-    };
-
-    self.displayHTML = ko.computed(function() {
-        var agent = self.userFullName ? self.userFullName : self.apiKey;
-        var action = self._actionTemplates[self.action] || "";
-        return agent + " " + action;
-    });
-
     self.wikiUrl = ko.computed(function() {
         return self.nodeUrl + "wiki/" + self.params.page;
     })
