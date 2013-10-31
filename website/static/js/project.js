@@ -33,11 +33,15 @@ window.nodeToUse = function(){
  * Return the api url for the current node by parsing the current URL.
  */
 window.nodeToUseUrl = function(){
-  if (location.pathname.match("\/project\/.*\/node\/.*")) {
-    return '/api/v1' + location.pathname.match("(\/project\/.*?\/node\/.*?)\/.*")[1] + "/";
-  } else {
-    return '/api/v1' + location.pathname.match("(\/project\/.*?)\/.*")[1] + "/";
-  }
+    try{
+        if (location.pathname.match("\/project\/.*\/node\/.*")) {
+            return '/api/v1' + location.pathname.match("(\/project\/.*?\/node\/.*?)\/.*")[1] + "/";
+        } else {
+            return '/api/v1' + location.pathname.match("(\/project\/.*?)\/.*")[1] + "/";
+        }
+    } catch(err) {
+        return undefined;
+    }
 }
 
 

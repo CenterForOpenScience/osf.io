@@ -2,7 +2,6 @@
  * app.js
  * Knockout models, ViewModels, and custom binders.
  */
-(function(){
 
 ////////////
 // Models //
@@ -69,12 +68,18 @@ var Log = function(params) {
 ////////////////
 
 
-var LogsViewModel = function(params) {
+var LogsViewModel = function(url) {
     var self = this;
     self.logs = ko.observableArray([]);
     // Get log data via AJAX
+    var getUrl = '';
+    if (url) {
+        getUrl = url;
+    } else {
+        getUrl = nodeToUseUrl() + "log/";
+    };
     $.ajax({
-        url: nodeToUseUrl() + "log/",
+        url: getUrl,
         type: "get",
         dataType: "json",
         success: function(data){
@@ -226,25 +231,4 @@ var AddContributorViewModel = function(initial) {
 
 
 
-////////////////////
-// Initialization //
-////////////////////
-$(document).ready(function() {
-    // Initiated addContributorsModel
-    var $addContributors = $('#addContributors');
-    viewModel = new AddContributorViewModel();
-    ko.applyBindings(viewModel, $addContributors[0]);
-    // Clear user search modal when dismissed; catches dismiss by escape key
-    // or cancel button.
-    $addContributors.on('hidden', function() {
-        viewModel.clear();
-    });
 
-    // Initiate ProjectViewModel
-    ko.applyBindings(new ProjectViewModel(), $("#projectScope")[0]);
-
-    // Initiate LogsViewModel
-    ko.applyBindings(new LogsViewModel(), $("#main-log")[0]);
-});
-
-}).call(this);

@@ -20,15 +20,24 @@
            <div class="page-header">
             <h3>Watched Projects</h3>
             </div>
-            % for log in logs:
-                <div mod-meta='{
-                        "tpl": "util/render_log.mako",
-                        "uri": "/api/v1/log/${log}/",
-                        "replace": true,
-                        "error": "Log unavailable (private component)"
-                    }'></div>
-            % endfor
+            <div id="logScope" data-target="/api/v1/watched/logs/">
+                 <dl class="dl-horizontal activity-log"
+                    data-bind="foreach: {data: logs, as: 'log'}">
+                  <div data-bind="template: {name: 'logTemplate', data: log}"></div>
+                </dl><!-- end foreach logs -->
+            </div>
         </div>
     </div>
 </div>
+
+<%include file="log_template.mako"/>
+</%def>
+
+<%def name="javascript_bottom()">
+<script>
+    // Initiate LogsViewModel
+    $logScope = $("#logScope");
+    ko.cleanNode($logScope[0]);
+    ko.applyBindings(new LogsViewModel($logScope.data("target")), $logScope[0]);
+</script>
 </%def>

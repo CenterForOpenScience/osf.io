@@ -199,6 +199,7 @@ class TestProjectViews(DbTestCase):
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), 10)
 
+
 class TestWatchViews(DbTestCase):
 
     def setUp(self):
@@ -294,6 +295,20 @@ class TestWatchViews(DbTestCase):
         # The user is now watching the sub-node
         assert_true(res.json['watched'])
         assert_true(self.user.is_watching(node))
+
+    def test_get_watched_logs(self):
+        project = ProjectFactory()
+        # Add some logs
+        for _ in range(12):
+            project.logs.append(NodeLogFactory(user=self.user, action="file_added"))
+        project.save()
+        watch_cfg = WatchConfigFactory(node=project)
+        self.user.watch(watch_cfg)
+        self.user.save()
+        url = "/api/v1/watched/logs/"
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(res.json['logs']), len(project.logs))
+        assert_equal(res.json['logs'][0]['action'], 'file_added')
 
 class TestPublicViews(DbTestCase):
 

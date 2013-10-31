@@ -569,5 +569,9 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/togglewatch/'
         ], 'post', project_views.node.togglewatch_post, json_renderer),
 
+        Rule([
+            '/watched/logs/'
+        ], 'get', website_routes.watched_logs_get, json_renderer)
+
 
     ], prefix='/api/v1')

@@ -12,6 +12,7 @@ from framework.auth.forms import (RegistrationForm, SignInForm,
 from website.models import Guid, Node, MetaData
 from framework import redirect, HTTPError, get_current_user
 from website.project.forms import NewProjectForm
+from website.project import model
 from website import settings
 
 logger = logging.getLogger(__name__)
@@ -95,10 +96,16 @@ def get_dashboard_nodes(*args, **kwargs):
 
 @framework.must_be_logged_in
 def dashboard(*args, **kwargs):
+    return {}
+
+@must_have_session_auth
+def watched_logs_get(*args, **kwargs):
     user = kwargs['user']
     recent_log_ids = list(user.get_recent_log_ids())
+    logs = [model.NodeLog.load(id) for id in recent_log_ids]
+    logger.debug([log.action for log in logs])
     return {
-        'logs': recent_log_ids
+        "logs": [log.serialize() for log in logs]
     }
 
 def reproducibility():

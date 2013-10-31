@@ -1,58 +1,6 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Project</%def>
 
-<%def name="javascript_bottom()">
-<script>
-    $(function(){
-
-        ### Editable Title ###
-        %if user_can_edit:
-                $(function() {
-                    $('#node-title-editable').editable({
-                       type:  'text',
-                       pk:    '${node_id}',
-                       name:  'title',
-                       url:   '${node_api_url}edit/',
-                       title: 'Edit Title',
-                       placement: 'bottom',
-                       value: "${ '\\\''.join(node_title.split('\'')) }",
-                       success: function(data){
-                            document.location.reload(true);
-                       }
-                    });
-                });
-        %endif
-
-        ### Tag Input ###
-
-        $('#node-tags').tagsInput({
-            width: "100%",
-            interactive:${'true' if user_can_edit else 'false'},
-            onAddTag:function(tag){
-                $.ajax({
-                    url:"${node_api_url}" + "addtag/" + tag + "/",
-                    type:"POST",
-                    contentType: "application/json"
-                });
-            },
-            onRemoveTag:function(tag){
-                $.ajax({
-                    url:"${node_api_url}" + "removetag/" + tag + "/",
-                    type:"POST",
-                    contentType: "application/json"
-                });
-            },
-        });
-        % if not user_can_edit:
-            // Remove delete UI if not contributor
-            $('a[title="Removing tag"]').remove();
-            $('span.tag span').each(function(idx, elm) {
-                $(elm).text($(elm).text().replace(/\s*$/, ''))
-            });
-        % endif
-    });
-</script>
-</%def>
 
 <%def name="content()">
   <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
@@ -140,7 +88,7 @@
     </div>
     <div class="col-md-5">
         <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node_tags]) if node_tags else ''}" />
-            <div id='main-log'>
+            <div id='logScope'>
                 <dl class="dl-horizontal activity-log"
                     data-bind="foreach: {data: logs, as: 'log'}">
                   <div data-bind="template: {name: 'logTemplate', data: log}"></div>
@@ -176,4 +124,72 @@
 ##        "replace": true
 ##    }'></div>
 
+</%def>
+
+<%def name="javascript_bottom()">
+<script>
+    $(document).ready(function() {
+
+        ### Editable Title ###
+        %if user_can_edit:
+                $(function() {
+                    $('#node-title-editable').editable({
+                       type:  'text',
+                       pk:    '${node_id}',
+                       name:  'title',
+                       url:   '${node_api_url}edit/',
+                       title: 'Edit Title',
+                       placement: 'bottom',
+                       value: "${ '\\\''.join(node_title.split('\'')) }",
+                       success: function(data){
+                            document.location.reload(true);
+                       }
+                    });
+                });
+        %endif
+
+        ### Tag Input ###
+
+        $('#node-tags').tagsInput({
+            width: "100%",
+            interactive:${'true' if user_can_edit else 'false'},
+            onAddTag:function(tag){
+                $.ajax({
+                    url:"${node_api_url}" + "addtag/" + tag + "/",
+                    type:"POST",
+                    contentType: "application/json"
+                });
+            },
+            onRemoveTag:function(tag){
+                $.ajax({
+                    url:"${node_api_url}" + "removetag/" + tag + "/",
+                    type:"POST",
+                    contentType: "application/json"
+                });
+            },
+        });
+        % if not user_can_edit:
+            // Remove delete UI if not contributor
+            $('a[title="Removing tag"]').remove();
+            $('span.tag span').each(function(idx, elm) {
+                $(elm).text($(elm).text().replace(/\s*$/, ''))
+            });
+        % endif
+
+        // TODO: Find a better place to put this initialization code
+        // Initiate addContributorsModel
+        var $addContributors = $('#addContributors');
+        viewModel = new AddContributorViewModel();
+        ko.applyBindings(viewModel, $addContributors[0]);
+        // Clear user search modal when dismissed; catches dismiss by escape key
+        // or cancel button.
+        $addContributors.on('hidden', function() {
+            viewModel.clear();
+        });
+        ko.applyBindings(new ProjectViewModel(), $("#projectScope")[0]);
+        // Initiate LogsViewModel
+        $logScope = $("#logScope");
+        ko.applyBindings(new LogsViewModel($logScope.data("target")), $logScope[0]);
+    });
+</script>
 </%def>

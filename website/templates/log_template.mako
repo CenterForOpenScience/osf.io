@@ -38,6 +38,15 @@
       from <a data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
     </span>
 
+    <span data-bind="visible: action === 'edit_title'">
+      changed the title from <span data-bind="text: params.title_original"></span>
+      to <a data-bind="attr: {href: nodeUrl}, text: params.title_new"></a>
+    </span>
+
+    <span data-bind="visible: action === 'project_registered'">
+      registered <a data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+    </span>
+
     <span data-bind="visible: action === 'file_added'">
       added file <span data-bind="text: params.path"> to
       <a data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
@@ -47,24 +56,15 @@
       removed file <span data-bind="text: params.path"> to
       <a data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
     </span>
-
     <span data-bind="visible: action === 'file_updated'">
       updated file <span data-bind="text: params.path"> to
       <a data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
     </span>
 
-    <span data-bind="visible: action === 'edit_title'">
-      changed the title from <span data-bind="text: params.title_original"></span> to
-      <a data-bind="attr: {href: nodeUrl}, text: params.title_new"></a>
-    </span>
-
-    <span data-bind="visible: action === 'project_registered'">
-      registered <a data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
-    </span>
-
     <span data-bind="visible: action === 'node_forked'">
-      created fork from <span data-bind="text: category"></span>
+      created fork from <span data-bind="text: nodeCategory"></span>
       <a data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
     </span>
+
   </dd>
 </script>
