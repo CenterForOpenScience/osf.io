@@ -227,16 +227,28 @@ def search_contributor():
     parsed_output = ast.literal_eval(raw_output)
 
     try:
-        response = parsed_output['response']['docs']
+        docs = parsed_output['response']['docs']
     except KeyError:
         return []
 
-    for idx in range(len(response)):
-        user = User.load(response[idx]['id'])
-        response[idx]['gravatar'] = gravatar(
-            user,
-            use_ssl=True,
-            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
-        )
+    users = []
+    for doc in docs:
+        users.append({
+            'fullname': doc['user'],
+            'id': doc['id'],
+            'gravatar': gravatar(
+                User.load(doc['id']),
+                use_ssl=True,
+                size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,
+            )
+        })
 
-    return response
+    #for idx in range(len(response)):
+    #    user = User.load(response[idx]['id'])
+    #    response[idx]['gravatar'] = gravatar(
+    #        user,
+    #        use_ssl=True,
+    #        size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+    #    )
+
+    return {'users': users}

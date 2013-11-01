@@ -113,66 +113,109 @@
         </ul>
     </div>
 </header>
+
 <div class="modal hide fade" id="addContributors">
 
     <div class="modal-header">
-        <h3>Add Contributors</h3>
+        <h3 data-bind="text:pageTitle"></h3>
     </div>
 
     <div class="modal-body">
 
-        <!-- Search box -->
-        <form class="form-inline">
-            <input data-bind="value:query" />
-            <button class="btn" data-bind="click:search">Search</button>
-        </form>
+        <!-- Whom to add -->
 
-        <hr />
+        <div data-bind="if:page()=='whom'">
 
-        <div class="row-fluid">
+            <!-- Find contributors -->
+            <form>
+                <div class="row-fluid">
+                    <div class="span6">
+                        <div>
+                            <input data-bind="value:query" />
+                            <button class="btn" data-bind="click:search">Search</button>
+                        </div>
+                    </div>
+                    <div class="span6 offset2" data-bind="if:parentId">
+                        <button class="btn" data-bind="click:importFromParent, text:'Import from ' + $data.parentTitle"></button>
+                    </div>
+                </div>
+            </form>
+
+            <hr />
+
+            <!-- Choose which to add -->
+            <div class="row-fluid">
+
+                <div class="span6">
+                    <h3>Results</h3>
+                    <a class="btn" data-bind="click:addAll">Add all</a>
+                    <table>
+                        <tbody data-bind="foreach:{data:results, afterRender:addTips}">
+                            <tr data-bind="if:!($root.selected($data))">
+                                <td style="padding-right: 10px;">
+                                    <a
+                                            class="btn btn-default contrib-button"
+                                            data-bind="click:$root.add"
+                                            rel="tooltip"
+                                            title="Add contributor"
+                                        >+</a>
+                                </td>
+                                <td>
+                                    <img data-bind="attr:{src:gravatar}" />
+                                </td>
+                                <td data-bind="text:fullname"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="span6">
+                    <h3>Adding</h3>
+                    <a class="btn" data-bind="click:removeAll">Remove all</a>
+                    <table>
+                        <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
+                            <tr>
+                                <td style="padding-right: 10px;">
+                                    <a
+                                            class="btn btn-default contrib-button"
+                                            data-bind="click:$root.remove"
+                                            rel="tooltip"
+                                            title="Remove contributor"
+                                        >-</a>
+                                </td>
+                                <td>
+                                    <img data-bind="attr:{src:gravatar}" />
+                                </td>
+                                <td data-bind="text:fullname"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="row-fluid" data-bind="if:page()=='which'">
 
             <div class="span6">
-                <h3>Search Results</h3>
-                <table>
-                    <tbody data-bind="foreach:{data:results, afterRender:addTips}">
-                        <tr data-bind="if:!($root.selected($data))">
-                            <td style="padding-right: 10px;">
-                                <a
-                                        class="btn btn-default contrib-button"
-                                        data-bind="click:$root.add"
-                                        rel="tooltip"
-                                        title="Add contributor"
-                                    >+</a>
-                            </td>
-                            <td>
-                                <img data-bind="attr:{src:$data.gravatar}" />
-                            </td>
-                            <td data-bind="text:user"></td>
-                        </tr>
-                    </tbody>
-                </table>
+                <input type="checkbox" checked disabled />
+                <span data-bind="text:title"></span> (current component)
+                <div data-bind="foreach:nodes">
+                    <div data-bind="style:{'margin-left':margin}">
+                        <input type="checkbox" data-bind="checked:$parent.nodesToChange, value:id" />
+                        <span data-bind="text:title"></span>
+                    </div>
+                </div>
             </div>
 
             <div class="span6">
-                <h3>Contributors to Add</h3>
-                <table>
-                    <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
-                        <tr>
-                            <td style="padding-right: 10px;">
-                                <a
-                                        class="btn btn-default contrib-button"
-                                        data-bind="click:$root.remove"
-                                        rel="tooltip"
-                                        title="Remove contributor"
-                                    >-</a>
-                            </td>
-                            <td>
-                                <img data-bind="attr:{src:$data.gravatar}" />
-                            </td>
-                            <td data-bind="text:user"></td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div>
+                    <button class="btn" data-bind="click:selectNodes, disable:cantSelectNodes()">Select all</button>
+                </div>
+                <div>
+                    <button class="btn" data-bind="click:deselectNodes, disable:cantDeselectNodes()">De-select all</button>
+                </div>
             </div>
 
         </div>
@@ -180,55 +223,144 @@
     </div>
 
     <div class="modal-footer">
+
         <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
-        <span data-bind="if:selection().length">
-            <a class="btn btn-primary" data-bind="click:submit">Add</a>
+
+        <span data-bind="if:selection().length && page() == 'whom'">
+            <a class="btn btn-primary" data-bind="visible:nodes().length==0, click:submit">Submit</a>
+            <a class="btn" data-bind="visible:nodes().length, click:selectWhich">Select components</a>
         </span>
+
+        <span data-bind="if:page() == 'which'">
+            <a class="btn" data-bind="click:selectWhom">Back</a>
+            <a class="btn btn-primary" data-bind="click:submit">Submit</a>
+        </span>
+
     </div>
+
 </div>
 
 <script src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>
 
 ## todo: move to static
 <script>
-    var addContributorModel = function(initial) {
+
+    function attrMap(list, attr) {
+        return $.map(list, function(item) {
+            return item[attr];
+        });
+    }
+
+    NODE_OFFSET = 25;
+
+    var addContributorModel = function(title, parentId, parentTitle) {
 
         var self = this;
 
-        self.query = ko.observable('');
-        self.results = ko.observableArray(initial);
-        self.selection = ko.observableArray([]);
+        self.title = title;
+        self.parentId = parentId;
+        self.parentTitle = parentTitle;
+
+        self.page = ko.observable('whom');
+        self.pageTitle = ko.computed(function() {
+            return {
+                whom: 'Select contributors',
+                which: 'Select components'
+            }[self.page()];
+        });
+
+        self.query = ko.observable();
+        self.results = ko.observableArray();
+        self.selection = ko.observableArray();
+
+        self.nodes = ko.observableArray([]);
+        self.nodesToChange = ko.observableArray();
+        $.getJSON(
+            nodeToUseUrl() + '/get_editable_children/',
+            {},
+            function(result) {
+                $.each(result['children'], function(idx, child) {
+                    child['margin'] = NODE_OFFSET + child['indent'] * NODE_OFFSET + 'px';
+                });
+                self.nodes(result['children']);
+            }
+        );
+
+        self.selectWhom = function() {
+            self.page('whom');
+        };
+        self.selectWhich = function() {
+            self.page('which');
+        };
 
         self.search = function() {
             $.getJSON(
                 '/api/v1/user/search/',
                 {query: self.query()},
                 function(result) {
-                    self.results(result);
+                    self.results(result['users']);
                 }
             )
         };
 
-        self.addTips = function(elements, data) {
+        self.importFromParent = function() {
+            $.getJSON(
+                nodeToUseUrl() + '/get_contributors_from_parent/',
+                {},
+                function(result) {
+                    self.results(result['contributors']);
+                }
+            )
+        };
+
+        self.addTips = function(elements) {
             elements.forEach(function(element) {
                 $(element).find('.contrib-button').tooltip();
             });
         };
 
-        self.add = function(data, element) {
+        self.add = function(data) {
             self.selection.push(data);
             // Hack: Hide and refresh tooltips
             $('.tooltip').hide();
             $('.contrib-button').tooltip();
         };
 
-        self.remove = function(data, element) {
+        self.remove = function(data) {
             self.selection.splice(
                 self.selection.indexOf(data), 1
             );
             // Hack: Hide and refresh tooltips
             $('.tooltip').hide();
             $('.contrib-button').tooltip();
+        };
+
+        self.addAll = function() {
+            $.each(self.results(), function(idx, result) {
+                if (!(result in self.selection())) {
+                    self.add(result);
+                }
+            });
+        };
+
+        self.removeAll = function() {
+            $.each(self.selection(), function(idx, selected) {
+                self.remove(selected);
+            });
+        };
+
+        self.cantSelectNodes = function() {
+            return self.nodesToChange().length == self.nodes().length;
+        };
+        self.cantDeselectNodes = function() {
+            return self.nodesToChange().length == 0;
+        };
+
+        self.selectNodes = function() {
+            self.nodesToChange(attrMap(self.nodes(), 'id'));
+        };
+        self.deselectNodes = function() {
+            self.nodesToChange([]);
         };
 
         self.selected = function(data) {
@@ -240,14 +372,15 @@
         };
 
         self.submit = function() {
-            var user_ids = self.selection().map(function(elm) {
-                return elm.id;
-            });
+            var user_ids = attrMap(self.selection(), 'id');
             $.ajax(
-                '${node_api_url}addcontributors/',
+                nodeToUseUrl() + '/addcontributors/',
                 {
                     type: 'post',
-                    data: JSON.stringify({user_ids: user_ids}),
+                    data: JSON.stringify({
+                        user_ids: user_ids,
+                        node_ids: self.nodesToChange()
+                    }),
                     contentType: 'application/json',
                     dataType: 'json',
                     success: function(response) {
@@ -260,16 +393,18 @@
         };
 
         self.clear = function() {
+            self.page('whom');
             self.query('');
             self.results([]);
             self.selection([]);
+            self.nodesToChange([]);
         };
 
     };
 
     var $addContributors = $('#addContributors');
 
-    viewModel = new addContributorModel();
+    viewModel = new addContributorModel('${node_title}', '${parent_id}', '${parent_title}');
     ko.applyBindings(viewModel, $addContributors[0]);
 
     // Clear user search modal when dismissed; catches dismiss by escape key
@@ -277,4 +412,5 @@
     $addContributors.on('hidden', function() {
         viewModel.clear();
     });
+
 </script>

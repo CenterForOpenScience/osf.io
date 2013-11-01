@@ -401,6 +401,16 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/get_contributors/',
         ], 'get', project_views.contributor.get_contributors, json_renderer),
 
+        Rule([
+            '/project/<pid>/get_contributors_from_parent/',
+            '/project/<pid>/node/<nid>/get_contributors_from_parent/',
+        ], 'get', project_views.contributor.get_contributors_from_parent, json_renderer),
+
+        Rule([
+            '/project/<pid>/get_editable_children/',
+            '/project/<pid>/node/<nid>/get_editable_children/',
+        ], 'get', project_views.node.get_editable_children, json_renderer),
+
         # Create
         Rule([
             '/project/new/',

@@ -8,22 +8,32 @@ Messages = {
     makePrivateWarning: 'Making a project will prevent users from viewing it on this site, ' +
                         'but will have no impact on external sites, including Google\'s cache. ' +
                         'Would you like to continue?'
+};
+
+function nodeToUse(){
+    if (location.pathname.match("\/project\/.*\/node\/.*")) {
+        return location.pathname.match("\/project\/.*?\/node\/(.*?)\/.*")[1];
+    } else {
+        return location.pathname.match("\/project\/(.*?)\/.*")[1];
+    }
 }
 
-var nodeToUse = function(){
-  if(location.pathname.match("\/project\/.*\/node\/.*")){
-    return location.pathname.match("\/project\/.*?\/node\/(.*?)\/.*")[1];
-  }else{
-    return location.pathname.match("\/project\/(.*?)\/.*")[1];
-  }
+function nodeToUseUrl(){
+    if (location.pathname.match("\/project\/.*\/node\/.*")) {
+        return '/api/v1' + location.pathname.match("(\/project\/.*?\/node\/.*?)\/.*")[1];
+    } else {
+        return '/api/v1' + location.pathname.match("(\/project\/.*?)\/.*")[1];
+    }
 }
 
-var nodeToUseUrl = function(){
-  if (location.pathname.match("\/project\/.*\/node\/.*")) {
-    return '/api/v1' + location.pathname.match("(\/project\/.*?\/node\/.*?)\/.*")[1];
-  } else {
-    return '/api/v1' + location.pathname.match("(\/project\/.*?)\/.*")[1];
-  }
+function nodeParent() {
+    var match = location.pathname.match(/\/project\/(.*?)\/node/);
+    return match ? match[1] : null;
+}
+
+function parentUrl() {
+    var parent = nodeParent();
+    return parent ? '/api/v1/project/' + parent + '/' : null;
 }
 
 var setStatus = function(status){
