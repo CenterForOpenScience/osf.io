@@ -74,6 +74,7 @@ def get_contributors(*args, **kwargs):
             and not node_to_use.are_contributors_public:
         raise HTTPError(http.FORBIDDEN)
 
+    # TODO: this logic should be in the Node model
     contributors = []
     for contributor in node_to_use.contributor_list:
         if 'id' in contributor:
@@ -89,7 +90,6 @@ def get_contributors(*args, **kwargs):
                 'id' : hashlib.md5(contributor['nr_email']).hexdigest(),
                 'fullname' : contributor['nr_name'],
             })
-
     return {'contributors' : contributors}
 
 

@@ -331,7 +331,7 @@ def _view_project(node_to_use, user):
             and not node_to_use.node__parent[0].is_deleted \
             else None
 
-    return {
+    data = {
         'node_id': node_to_use._primary_key,
         'node_title': node_to_use.title,
         'node_category': 'project'

@@ -133,9 +133,7 @@ def make_url_map(app):
         Rule('/forms/signin/', 'get', website_routes.signin_form, json_renderer),
         Rule('/forms/forgot_password/', 'get', website_routes.forgot_password_form, json_renderer),
         Rule('/forms/reset_password/', 'get', website_routes.reset_password_form, json_renderer),
-        Rule('/forms/new_project/', 'get', website_routes.new_project_form, json_renderer),
-        Rule('/forms/merge_accounts/', 'get', website_routes.merge_accounts_form, json_renderer)
-
+        Rule('/forms/new_project/', 'get', website_routes.new_project_form, json_renderer)
     ], prefix='/api/v1')
 
     ### Discovery ###

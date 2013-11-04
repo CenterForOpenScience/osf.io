@@ -16,7 +16,7 @@ import settings
 import helper
 
 import framework.auth
-from framework.auth import  register, login, logout, DuplicateEmailError, get_user, must_have_session_auth
+from framework.auth import register, login, logout, DuplicateEmailError, get_user, must_have_session_auth, get_current_user
 from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm, MergeAccountForm
 
 Q = framework.Q
@@ -159,20 +159,20 @@ def auth_register_post():
 
         return auth_login(registration_form=form)
 
-@must_have_session_auth
+
 def merge_user_get(**kwargs):
     '''Web view for merging an account. Renders the form for confirmation.
     '''
-    return {}
+    return forms.utils.jsonify(MergeAccountForm())
 
-@must_have_session_auth
+
 def merge_user_post(**kwargs):
     '''View for merging an account. Takes either JSON or form data.
 
     Request data should include a "merged_username" and "merged_password" properties
     for the account to be merged in.
     '''
-    master = kwargs['user']
+    master = get_current_user()
     if request.json:
         merged_username = request.json.get("merged_username")
         merged_password = request.json.get("merged_password")
@@ -187,14 +187,10 @@ def merge_user_post(**kwargs):
             return merge_user_get(**kwargs)
         merged_username = form.merged_username.data
         merged_password = form.merged_password.data
-        logging.debug("MERGED EMAIL and PW")
-        logging.debug(merged_username)
-        logger.debug(merged_password)
-
     try:
-        logging.debug("Finding user to merge")
         merged_user = User.find_one(Q("username", "eq", merged_username))
-    except NoResultsFound as err:
+    except NoResultsFound:
+        logger.debug("Failed to find user to merge")
         push_status_message("Could not find that user. Please check the username and password.")
         return merge_user_get(**kwargs)
     if master and merged_user:
@@ -202,7 +198,7 @@ def merge_user_post(**kwargs):
             master.merge_user(merged_user)
             master.save()
             if request.form:
-                push_status_message("Successfully merged with {0}".format(merged_username))
+                push_status_message("Successfully merged {0} with this account".format(merged_username))
                 return framework.redirect("/settings/")
             return {"status": "success"}
         else:

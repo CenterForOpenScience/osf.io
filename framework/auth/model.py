@@ -197,7 +197,7 @@ class User(GuidStoredObject):
                             0, 0, 0, tzinfo=pytz.utc)
         return self.get_recent_log_ids(since=midnight)
 
-    def merge_user(self, user):
+    def merge_user(self, user, save=False):
         '''Merge a registered user into this account. This user will be
         a contributor on any project
 
@@ -207,14 +207,17 @@ class User(GuidStoredObject):
         self.emails.extend(user.emails)
         # Inherit projects the user was a contributor for
         for node in user.node__contributed:
-            node.contributors.append(self)
+            node.add_contributor(contributor=self, log=False)
+            node.remove_contributor(user=self, contributor=user, log=False)
             node.save()
-        # Inherits project the user created
+        # Inherits projects the user created
         for node in user.node__created:
             node.creator = self
             node.save()
         user.is_merged = True
         user.save()
+        if save:
+            self.save()
         return None
 
 

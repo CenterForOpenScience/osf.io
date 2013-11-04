@@ -119,8 +119,6 @@ def reset_password_form():
 def new_project_form():
     return utils.jsonify(NewProjectForm())
 
-def merge_accounts_form():
-    return utils.jsonify(MergeAccountForm())
 
 ### GUID ###
 
