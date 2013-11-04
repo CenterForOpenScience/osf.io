@@ -5,33 +5,6 @@
 <% import website.settings %>
 <div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
 
-
-##<script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.0.0/bootbox.min.js"></script>
-##<script type="text/javascript">
-##    function deleteFile(button) {
-##        var $button = $(button),
-##            filename = $button.attr('data-filename');
-##        bootbox.confirm(
-##            'Are you sure you want to delete the file "' + filename + '"?',
-##            function(result) {
-##                if (result) {
-##                    $.post(
-##                        '${node_api_url}files/delete/' + filename + '/'
-##                    ).always(function(response) {
-##                        if (response.status !== 'success') {
-##                            bootbox.alert('File could not be deleted');
-##                        } else {
-##                            $button.parents('.template-download').fadeOut();
-##                        }
-##                    });
-##                }
-##            }
-##        )
-##    }
-##</script>
-
-
-
 %if user_can_edit:
 <div class="container" style="position:relative;">
     <h3 style="max-width: 65%;">Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element>!</h3>
@@ -59,9 +32,6 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
     var spacer = "<span style='display:inline-block;height:1px;width:" + (18 * dataContext["indent"]) + "px'></span>";
     if (dataContext['type']=='folder') {
         if (dataContext._collapsed) {
-##            if(myGrid.hasChildren(dataContext['uid']))
-##                returner = spacer + " <span class='toggle expand nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span>";
-##            else
             if(dataContext['can_view']!="false"){
                 return spacer + " <span class='toggle expand nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-open'></span>&nbsp;" + value + "</a>";
             }
@@ -185,24 +155,31 @@ myGrid.hGridBeforeMove.subscribe(function(e, args){
     return true;
 });
 
-myGrid.hGridBeforeDelete.subscribe(function(e, args){
-    if(args['items'][0]['type']!=='fake'){
-        var confirm_delete = confirm("Are you sure you want to delete this file?");
-        if (confirm_delete==true){
-            var url = '/api/v1' + args['items'][0]['url'].replace('/files/', '/files/delete/');
-            $.post(url, function(data) {
-                console.log(data);
-                if(!data['status']=='success') {
-                    alert('Error!');
-                    return false;
+myGrid.hGridBeforeDelete.subscribe(function(e, args) {
+    if (args['items'][0]['type'] !== 'fake') {
+        var msg = 'Are you sure you want to delete the file "' + args['items'][0]['name'] + '"?';
+        var d = $.Deferred();
+        bootbox.confirm(
+            msg,
+            function(result) {
+                if (result) {
+                    var url = '/api/v1' + args['items'][0]['url'].replace('/files/', '/files/delete/');
+                    $.post(
+                        url
+                    ).done(function(response) {
+                        if (response['status'] != 'success') {
+                            bootbox.alert('Error deleting file');
+                            d.resolve(false);
+                        } else {
+                            d.resolve(true);
+                        }
+                    });
                 } else {
-                    return true;
+                    d.resolve(false);
                 }
-            });
-        }
-        else{
-            return false;
-        }
+            }
+        );
+        return d;
     }
 });
 

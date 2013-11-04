@@ -705,37 +705,39 @@ var HGrid = {
             value['items'].push(_this.getItemByValue(_this.data, rowsToDelete[j], 'uid'));
             valueAfter['items'].push(_this.getItemByValue(_this.data, rowsToDelete[j], 'uid'));
         }
-        var event_status = _this.hGridBeforeDelete.notify(value);
-        if(event_status || typeof(event_status)==='undefined'){
-            for(var i=0; i<rowsToDelete.length; i++){
-                var rows=[];
-                var check = _this.getItemByValue(_this.data, rowsToDelete[i], 'uid')['id'];
-                var j = check;
-                do{
-                    rows.push(j);
-                    j+=1;
-                }while(_this.data[j] && _this.data[j]['indent']>_this.data[check]['indent']);
+        var promise = $.when(_this.hGridBeforeDelete.notify(value));
+        promise.done(function(event_status) {
+            if(event_status || typeof(event_status)==='undefined'){
+                for(var i=0; i<rowsToDelete.length; i++){
+                    var rows=[];
+                    var check = _this.getItemByValue(_this.data, rowsToDelete[i], 'uid')['id'];
+                    var j = check;
+                    do{
+                        rows.push(j);
+                        j+=1;
+                    }while(_this.data[j] && _this.data[j]['indent']>_this.data[check]['indent']);
 
-                _this.data.splice(rows[0], rows.length);
+                    _this.data.splice(rows[0], rows.length);
+                    _this.Slick.dataView.setItems(_this.data);
+                }
+                _this.prepJava(_this.data);
                 _this.Slick.dataView.setItems(_this.data);
+                _this.Slick.grid.invalidate();
+                _this.Slick.grid.setSelectedRows([]);
+                _this.currentlyRendered=[];
+                _this.Slick.grid.render();
+                valueAfter['success']=true;
+                _this.updateNav();
+                _this.hGridAfterDelete.notify(valueAfter);
+                return true;
             }
-            _this.prepJava(_this.data);
-            _this.Slick.dataView.setItems(_this.data);
-            _this.Slick.grid.invalidate();
-            _this.Slick.grid.setSelectedRows([]);
-            _this.currentlyRendered=[];
-            _this.Slick.grid.render();
-            valueAfter['success']=true;
-            _this.updateNav();
-            _this.hGridAfterDelete.notify(valueAfter);
-            return true;
-        }
-        else{
-            valueAfter['success']=false;
-            _this.updateNav();
-            _this.hGridAfterDelete.notify(valueAfter);
-            return false;
-        }
+            else{
+                valueAfter['success']=false;
+                _this.updateNav();
+                _this.hGridAfterDelete.notify(valueAfter);
+                return false;
+            }
+        });
     },
 
     /**
