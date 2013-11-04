@@ -69,6 +69,7 @@ def _profile_view(uid=None):
             'fullname': profile.fullname,
             'date_registered': profile.date_registered.strftime("%Y-%m-%d"),
             'gravatar_url': gravatar_url,
+            'user_is_merged': profile.is_merged
         }
     raise HTTPError(http.NOT_FOUND)
 

@@ -25,6 +25,11 @@
 </%def>
 
 <%def name="content()">
+% if user_is_merged:
+<div class="alert alert-info">This account has been merged with another account.
+</div>
+% endif
+
 
 <div class="page-header">
     <img src="${gravatar_url}" />

@@ -10,12 +10,12 @@ from tests.base import DbTestCase
 from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
                             NodeLogFactory, ApiKeyFactory)
 
-from framework import app
 from website import settings
+# from framework import app
 
 # Only uncomment if running these tests in isolation
-# from website.app import init_app
-# app = init_app(set_backends=False, routes=True)
+from website.app import init_app
+app = init_app(set_backends=False, routes=True)
 
 class TestAnUnregisteredUser(DbTestCase):
 
@@ -314,6 +314,15 @@ class TestMergingAccounts(DbTestCase):
         res = self.app.get(project.url).maybe_follow()
         assert_in(self.user.fullname, res)
         assert_not_in(self.dupe.fullname, res)
+
+    def test_merged_user_has_alert_message_on_profile(self):
+        # Master merges dupe
+        self.user.merge_user(self.dupe)
+        self.user.save()
+        # At the dupe user's profile there is an alert message at the top
+        # indicating that the user is merged
+        res = self.app.get("/profile/{0}/".format(self.dupe._primary_key)).maybe_follow()
+        assert_in("This account has been merged", res)
 
 
 # FIXME: These affect search in development environment. So need to migrate solr after running.
