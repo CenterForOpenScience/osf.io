@@ -8,6 +8,17 @@
     </style>
 % endif
 
+<style>
+    .modal-subheader {
+        font-size: 30px;
+        margin-right: 10px;
+    }
+    .disabled {
+        cursor: default !important;
+        pointer-events: none;
+    }
+</style>
+
 <header class="jumbotron subhead" id="overview">
     <div class="row">
         <div class="btn-toolbar" style="float:right;">
@@ -136,7 +147,7 @@
                         </div>
                     </div>
                     <div class="span6 offset2" data-bind="if:parentId">
-                        <button class="btn" data-bind="click:importFromParent, text:'Import from ' + $data.parentTitle"></button>
+                        <a data-bind="click:importFromParent, text:'Import results from ' + parentTitle"></a>
                     </div>
                 </div>
             </form>
@@ -147,8 +158,10 @@
             <div class="row-fluid">
 
                 <div class="span6">
-                    <h3>Results</h3>
-                    <a class="btn" data-bind="click:addAll">Add all</a>
+                    <div>
+                        <span class="modal-subheader">Results</span>
+                        <a data-bind="click:addAll">Add all</a>
+                    </div>
                     <table>
                         <tbody data-bind="foreach:{data:results, afterRender:addTips}">
                             <tr data-bind="if:!($root.selected($data))">
@@ -170,8 +183,10 @@
                 </div>
 
                 <div class="span6">
-                    <h3>Adding</h3>
-                    <a class="btn" data-bind="click:removeAll">Remove all</a>
+                    <div>
+                        <span class="modal-subheader">Adding</span>
+                        <a data-bind="click:removeAll">Remove all</a>
+                    </div>
                     <table>
                         <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
                             <tr>
@@ -196,26 +211,44 @@
 
         </div>
 
-        <div class="row-fluid" data-bind="if:page()=='which'">
+        <div data-bind="if:page()=='which'">
 
-            <div class="span6">
-                <input type="checkbox" checked disabled />
-                <span data-bind="text:title"></span> (current component)
-                <div data-bind="foreach:nodes">
-                    <div data-bind="style:{'margin-left':margin}">
-                        <input type="checkbox" data-bind="checked:$parent.nodesToChange, value:id" />
-                        <span data-bind="text:title"></span>
-                    </div>
-                </div>
+            <div>
+                Adding contributor(s)
+                <span data-bind="text:addingSummary()"></span>
+                to component
+                <span data-bind="text:title"></span>.
             </div>
 
-            <div class="span6">
-                <div>
-                    <button class="btn" data-bind="click:selectNodes, disable:cantSelectNodes()">Select all</button>
+            <hr />
+
+            <div style="margin-bottom:10px;">
+                Would you like to add these contributor(s) to any children of
+                the current component?
+            </div>
+
+            <div class="row-fluid">
+
+                <div class="span6">
+                    <input type="checkbox" checked disabled />
+                    <span data-bind="text:title"></span> (current component)
+                    <div data-bind="foreach:nodes">
+                        <div data-bind="style:{'margin-left':margin}">
+                            <input type="checkbox" data-bind="checked:$parent.nodesToChange, value:id" />
+                            <span data-bind="text:title"></span>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <button class="btn" data-bind="click:deselectNodes, disable:cantDeselectNodes()">De-select all</button>
+
+                <div class="span6">
+                    <div>
+                        <a data-bind="click:selectNodes, css:{disabled:cantSelectNodes()}">Select all</a>
+                    </div>
+                    <div>
+                        <a data-bind="click:deselectNodes, css:{disabled:cantDeselectNodes()}">De-select all</a>
+                    </div>
                 </div>
+
             </div>
 
         </div>
@@ -228,7 +261,7 @@
 
         <span data-bind="if:selection().length && page() == 'whom'">
             <a class="btn btn-primary" data-bind="visible:nodes().length==0, click:submit">Submit</a>
-            <a class="btn" data-bind="visible:nodes().length, click:selectWhich">Select components</a>
+            <a class="btn" data-bind="visible:nodes().length, click:selectWhich">Next</a>
         </span>
 
         <span data-bind="if:page() == 'which'">
@@ -264,7 +297,7 @@
         self.page = ko.observable('whom');
         self.pageTitle = ko.computed(function() {
             return {
-                whom: 'Select contributors',
+                whom: 'Add contributors',
                 which: 'Select components'
             }[self.page()];
         });
@@ -370,6 +403,13 @@
             }
             return false;
         };
+
+        self.addingSummary = ko.computed(function() {
+            var names = $.map(self.selection(), function(result) {
+                return result.fullname
+            });
+            return names.join(', ');
+        });
 
         self.submit = function() {
             var user_ids = attrMap(self.selection(), 'id');
