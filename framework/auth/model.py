@@ -30,8 +30,8 @@ class User(GuidStoredObject):
     fullname = fields.StringField()
     is_registered = fields.BooleanField()
     is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
-    # Whether this account was merged with another account
-    is_merged = fields.BooleanField(default=False)
+    # The user who merged this account
+    merged_by = fields.ForeignField('user', default=None, backref="merged")
     verification_key = fields.StringField()
     emails = fields.StringField(list=True)
     email_verifications = fields.DictionaryField()  # TODO: Unused. Remove me?
@@ -56,6 +56,12 @@ class User(GuidStoredObject):
     @property
     def url(self):
         return '/profile/{}/'.format(self._primary_key)
+
+    @property
+    def is_merged(self):
+        '''Whether or not this account has been merged into another account.
+        '''
+        return self.merged_by is not None
 
     @property
     def surname(self):
@@ -214,7 +220,7 @@ class User(GuidStoredObject):
         for node in user.node__created:
             node.creator = self
             node.save()
-        user.is_merged = True
+        user.merged_by = self
         user.save()
         if save:
             self.save()

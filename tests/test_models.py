@@ -31,6 +31,7 @@ class TestUser(DbTestCase):
         assert_equal(another_user.username, "joe@example.com")
         assert_equal(User.find().count(), 2)
         assert_true(user.check_password("myprecious"))
+        assert_true(user.date_registered)
 
     def test_is_watching(self):
         # User watches a node
@@ -75,6 +76,7 @@ class TestMergingUsers(DbTestCase):
     def test_dupe_is_merged(self):
         self._merge_dupe()
         assert_true(self.dupe.is_merged)
+        assert_equal(self.dupe.merged_by, self.master)
 
     def test_dupe_email_is_appended(self):
         self._merge_dupe()
@@ -92,6 +94,7 @@ class TestMergingUsers(DbTestCase):
         project = ProjectFactory(creator=self.dupe)
         self._merge_dupe()
         assert_equal(project.creator, self.master)
+
 
 
 class TestGUID(DbTestCase):
@@ -299,6 +302,14 @@ class TestProject(DbTestCase):
 
     def test_creator_is_contributor(self):
         assert_true(self.project.is_contributor(self.user))
+
+    def test_cant_add_same_contributor_twice(self):
+        contrib = UserFactory()
+        self.project.add_contributor(contributor=contrib)
+        self.project.save()
+        self.project.add_contributor(contributor=contrib)
+        self.project.save()
+        assert_equal(len(self.project.contributors), 1)
 
 class TestNodeLog(DbTestCase):
 
