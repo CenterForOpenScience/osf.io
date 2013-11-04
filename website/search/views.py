@@ -193,6 +193,7 @@ def create_result(highlights, results):
             result_search.append(container)
     return result_search, tags
 
+import re
 import ast
 import urllib
 import urlparse
@@ -212,7 +213,14 @@ def search_contributor():
     """
     # Prepare query
     query = request.args.get('query', '')
-    q = u'user:{}'.format(query).encode('utf-8')
+
+    # Prepend "user:" to each token in the query; else Solr will search for
+    # e.g. user:Barack AND Obama. Could also wrap entire query in "user:{}",
+    # but would get fewer relevant results
+    q = ' '.join([
+        u'user:{}'.format(token).encode('utf-8')
+        for token in re.split(r'\s+', query)
+    ])
 
     solr_params = {
         'q': q,
