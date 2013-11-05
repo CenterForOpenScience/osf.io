@@ -126,6 +126,7 @@ def _get_files(filetree, parent_id, check, user):
                 str(filetree[0].url),
                 item['name'] + '/'
             ])
+            item['dateModified'] = tmp.date_modified.strftime('%Y/%m/%d %I:%M %p')
             info.append(item)
     return {'info': info}
 

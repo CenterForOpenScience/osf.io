@@ -104,6 +104,7 @@ var myGrid = HGrid.create({
     url: ${info}[0]['uploadUrl'],
     columns:[
         {id: "name", name: "Name", field: "name", width: 550, cssClass: "cell-title", formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
+        {id: "date", name: "Date Modified", field: "dateModified", width: 140},
         {id: "size", name: "Size", field: "sizeRead", width: 90, formatter: UploadBars, sortable: true}
     ],
     enableCellNavigation: false,
@@ -124,8 +125,10 @@ var myGrid = HGrid.create({
 
 
 myGrid.updateBreadcrumbsBox(myGrid.data[0]['uid']);
-myGrid.addColumn({id: "downloads", name: "Downloads", field: "downloads", width: 90, sortable: true});
+myGrid.addColumn({id: "downloads", name: "Downloads", field: "downloads", width: 90});
 myGrid.addColumn({id: "actions", name: "", field: "actions", width: 70, formatter: Buttons});
+
+
 
 myGrid.hGridBeforeUpload.subscribe(function(e, args){
     if(args.parent['can_edit']=='true'){
@@ -155,33 +158,33 @@ myGrid.hGridBeforeMove.subscribe(function(e, args){
     return true;
 });
 
-myGrid.hGridBeforeDelete.subscribe(function(e, args) {
-    if (args['items'][0]['type'] !== 'fake') {
-        var msg = 'Are you sure you want to delete the file "' + args['items'][0]['name'] + '"?';
-        var d = $.Deferred();
-        bootbox.confirm(
-            msg,
-            function(result) {
-                if (result) {
-                    var url = '/api/v1' + args['items'][0]['url'].replace('/files/', '/files/delete/');
-                    $.post(
-                        url
-                    ).done(function(response) {
-                        if (response['status'] != 'success') {
-                            bootbox.alert('Error deleting file');
-                            d.resolve(false);
-                        } else {
-                            d.resolve(true);
-                        }
-                    });
-                } else {
-                    d.resolve(false);
-                }
-            }
-        );
-        return d;
-    }
-});
+##myGrid.hGridBeforeDelete.subscribe(function(e, args) {
+##    if (args['items'][0]['type'] !== 'fake') {
+##        var msg = 'Are you sure you want to delete the file "' + args['items'][0]['name'] + '"?';
+##        var d = $.Deferred();
+##        bootbox.confirm(
+##            msg,
+##            function(result) {
+##                if (result) {
+##                    var url = '/api/v1' + args['items'][0]['url'].replace('/files/', '/files/delete/');
+##                    $.post(
+##                        url
+##                    ).done(function(response) {
+##                        if (response['status'] != 'success') {
+##                            bootbox.alert('Error deleting file');
+##                            d.resolve(false);
+##                        } else {
+##                            d.resolve(true);
+##                        }
+##                    });
+##                } else {
+##                    d.resolve(false);
+##                }
+##            }
+##        );
+##        return d;
+##    }
+##});
 
 myGrid.hGridOnMouseEnter.subscribe(function (e, args){
     $(myGrid.options.container).find(".row-hover").removeClass("row-hover");
