@@ -1,7 +1,7 @@
 import httplib as http
-from framework import HTTPError
 
-from framework import get_current_user, push_status_message, redirect
+from framework import get_current_user
+from framework.exceptions import HTTPError
 from framework.auth import get_api_key
 from website.project import get_node
 

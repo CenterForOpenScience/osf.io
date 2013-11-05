@@ -4,13 +4,14 @@ import httplib as http
 import datetime
 
 import framework
+from framework import Q, request, redirect, get_current_user
+from framework.exceptions import HTTPError
 from framework.auth import must_have_session_auth
-from framework import Q, request
 from framework.forms import utils
 from framework.auth.forms import (RegistrationForm, SignInForm,
-                                  ForgotPasswordForm, ResetPasswordForm, MergeAccountForm)
+                                  ForgotPasswordForm, ResetPasswordForm)
+
 from website.models import Guid, Node, MetaData
-from framework import redirect, HTTPError, get_current_user
 from website.project.forms import NewProjectForm
 from website.project import model
 from website import settings
@@ -39,9 +40,9 @@ def _render_node(node):
     :return:
     """
     return {
-        'id' : node._primary_key,
-        'url' : node.url,
-        'api_url' : node.api_url,
+        'id': node._primary_key,
+        'url': node.url,
+        'api_url': node.api_url,
     }
 
 
@@ -79,6 +80,7 @@ def _get_user_activity(node, user, rescale_ratio):
 
     return ua_count, ua, non_ua
 
+
 @must_have_session_auth
 def get_dashboard_nodes(*args, **kwargs):
     user = kwargs['user']
@@ -94,6 +96,7 @@ def get_dashboard_nodes(*args, **kwargs):
     ]
     return _render_nodes(nodes)
 
+
 @framework.must_be_logged_in
 def dashboard(*args, **kwargs):
     return {}
@@ -108,20 +111,26 @@ def watched_logs_get(*args, **kwargs):
         "logs": [log.serialize() for log in logs]
     }
 
+
 def reproducibility():
     return framework.redirect('/project/EZcUj/wiki')
+
 
 def registration_form():
     return utils.jsonify(RegistrationForm(prefix='register'))
 
+
 def signin_form():
     return utils.jsonify(SignInForm())
+
 
 def forgot_password_form():
     return utils.jsonify(ForgotPasswordForm(prefix='forgot_password'))
 
+
 def reset_password_form():
     return utils.jsonify(ResetPasswordForm())
+
 
 def new_project_form():
     return utils.jsonify(NewProjectForm())

@@ -4,8 +4,8 @@ import logging
 
 from framework import storage, db, app
 from framework.mongo import set_up_storage
-from new_style import make_url_map
 import website.models
+from website.routes import make_url_map
 
 logger = logging.getLogger(__name__)
 

@@ -1,4 +1,4 @@
-from new_style import process_rules, render, jsonify, render_mako_string
+from website.routes import process_rules, render, jsonify, render_mako_string
 from framework import app
 import view
 

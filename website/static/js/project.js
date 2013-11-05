@@ -113,6 +113,7 @@ NodeActions.openCloseNode = function(node_id){
             logs.attr('data-uri'),
             {count: 3},
             function(response) {
+                console.log(response);
                 logs.html(response);
                 NodeActions._openCloseNode(node_id);
             }

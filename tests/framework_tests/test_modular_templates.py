@@ -18,12 +18,11 @@ from framework.routing import (
     Renderer, JSONRenderer, WebRenderer,
     render_mako_string,
 )
-from new_style import OsfWebRenderer
 
 from tests.base import AppTestCase, DbTestCase
 
 # Need to use OsfWebRenderer to get global variables
-from new_style import OsfWebRenderer
+from website.routes import OsfWebRenderer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_PATH = os.path.join(HERE, 'templates')

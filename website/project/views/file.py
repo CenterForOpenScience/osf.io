@@ -1,26 +1,25 @@
-from framework import request, redirect, secure_filename, send_file, get_basic_counters, update_counters
-from ..decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public
-from framework.auth import must_have_session_auth
-from framework.git.exceptions import FileNotModified
-from framework.auth import get_current_user, get_api_key
-from ..model import NodeFile
-from .node import _view_project
-
-from framework import HTTPError
-import httplib as http
-
-from website import settings
-
 import re
+import os
 import pygments
 import pygments.lexers
 import pygments.formatters
 import zipfile
 import tarfile
 from cStringIO import StringIO
+import httplib as http
 
-import os
+from framework import request, redirect, secure_filename, send_file
+from framework.auth import must_have_session_auth
+from framework.git.exceptions import FileNotModified
+from framework.auth import get_current_user, get_api_key
+from framework.exceptions import HTTPError
+from framework.analytics import get_basic_counters, update_counters
+
+from website.project.views.node import _view_project
+from website.project.decorators import must_not_be_registration, must_be_valid_project, \
+    must_be_contributor, must_be_contributor_or_public
+from website.project.model import NodeFile
+from website import settings
 
 
 def prune_file_list(file_list, max_depth):
@@ -29,7 +28,7 @@ def prune_file_list(file_list, max_depth):
     return [file for file in file_list if len([c for c in file if c == '/']) <= max_depth]
 
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # returns project
 def get_files(*args, **kwargs):
 
     user = get_current_user()

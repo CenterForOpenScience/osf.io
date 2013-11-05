@@ -3,15 +3,15 @@
 import unittest
 from nose.tools import *  # PEP8 asserts
 
-from tests.base import DbTestCase
 from framework.auth import User
 from framework.bcrypt import check_password_hash
 from website.project.model import ApiKey, NodeFile
+
+from tests.base import DbTestCase, Guid
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
     TagFactory)
 
-from .base import Guid
 
 GUID_FACTORIES = (UserFactory, TagFactory, NodeFactory, ProjectFactory,
                   MetaDataFactory)
@@ -94,6 +94,13 @@ class TestMergingUsers(DbTestCase):
         project = ProjectFactory(creator=self.dupe)
         self._merge_dupe()
         assert_equal(project.creator, self.master)
+
+    def test_adding_merged_user_as_contributor_adds_master(self):
+        project = ProjectFactory(creator=UserFactory())
+        self._merge_dupe()
+        project.add_contributor(contributor=self.dupe)
+        assert_true(project.is_contributor(self.master))
+        assert_false(project.is_contributor(self.dupe))
 
 
 class TestGUID(DbTestCase):
@@ -309,6 +316,16 @@ class TestProject(DbTestCase):
         self.project.add_contributor(contributor=contrib)
         self.project.save()
         assert_equal(len(self.project.contributors), 1)
+
+    def test_add_contributors(self):
+        user1 = UserFactory()
+        user2 = UserFactory()
+        self.project.add_contributors([user1, user2], user=self.user)
+        self.project.save()
+        assert_equal(len(self.project.contributors), 2)
+        assert_equal(len(self.project.contributor_list), 2)
+        assert_equal(self.project.logs[-1].params['contributors'],
+                        [user1._id, user2._id])
 
 class TestNodeLog(DbTestCase):
 

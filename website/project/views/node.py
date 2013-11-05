@@ -1,36 +1,35 @@
 # -*- coding: utf-8 -*-
-import re
 import json
 import logging
 import httplib as http
 
+from bs4 import BeautifulSoup
 from framework import (
-    request, redirect, must_be_logged_in, push_status_message,
-    push_errors_to_status, get_current_user, update_counters, Q
+    request, redirect, must_be_logged_in,
+    push_errors_to_status, get_current_user, Q,
+    analytics
 )
-from framework import HTTPError
-from .. import new_node, new_project
-from ..decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public
-from ..forms import NewProjectForm, NewNodeForm
-from website.models import User, WatchConfig
+from framework.analytics import update_counters
+import framework.status as status
+from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
 from framework.auth import must_have_session_auth, get_api_key
-from bs4 import BeautifulSoup
 
-from .. import clean_template_name
-
+from website.project import new_node, new_project, clean_template_name
+from website.project.decorators import must_not_be_registration, must_be_valid_project, \
+    must_be_contributor, must_be_contributor_or_public
+from website.project.forms import NewProjectForm, NewNodeForm
+from website.models import WatchConfig
 from website import settings
-from website import filters
 from website.views import _render_nodes
 
-from framework import analytics
 
 logger = logging.getLogger(__name__)
 
-@must_have_session_auth #
-@must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+
+@must_have_session_auth
+@must_be_valid_project  # returns project
+@must_be_contributor  # returns user, project
 @must_not_be_registration
 def edit_node(*args, **kwargs):
     project = kwargs['project']
@@ -98,7 +97,7 @@ def node_fork_page(*args, **kwargs):
 
     if node:
         node_to_use = node
-        push_status_message('At this time, only projects can be forked; however, this behavior is coming soon.')
+        status.push_status_message('At this time, only projects can be forked; however, this behavior is coming soon.')
         # todo discuss
         # return redirect(node_to_use.url)
         raise HTTPError(
@@ -295,7 +294,7 @@ def component_remove(*args, **kwargs):
             if node_to_use.category == 'project' \
             else 'component'
         message = '{} deleted'.format(category.capitalize())
-        push_status_message(message)
+        status.push_status_message(message)
         return {
             'status' : 'success',
             'message' : message,

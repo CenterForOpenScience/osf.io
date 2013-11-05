@@ -905,16 +905,18 @@ class Node(GuidStoredObject):
         :param contributor: A User object, the contributor to be added
         :param user: A User object, the user who added the contributor or None.
         '''
-        if contributor._primary_key not in self.contributors:
-            self.contributors.append(contributor)
-            self.contributor_list.append({'id': contributor._primary_key})
+        # If user is merged into another account, use master account
+        contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
+        if contrib_to_add._primary_key not in self.contributors:
+            self.contributors.append(contrib_to_add)
+            self.contributor_list.append({'id': contrib_to_add._primary_key})
             if log:
                 self.add_log(
                     action='contributor_added',
                     params={
                         'project': self.node__parent[0]._primary_key if self.node__parent else None,
                         'node': self._primary_key,
-                        'contributors': [contributor._primary_key],
+                        'contributors': [contrib_to_add._primary_key],
                     },
                     user=user,
                     api_key=api_key
@@ -924,6 +926,29 @@ class Node(GuidStoredObject):
             return True
         else:
             return False
+
+    def add_contributors(self, contributors, user=None, log=True, api_key=None, save=False):
+        '''Add multiple contributors
+
+        :param contributors: A list of User objects to add as contributors.
+        :param user: A User object, the user who added the contributors.
+        '''
+        for contrib in contributors:
+            self.add_contributor(contributor=contrib, user=user, log=False, save=False)
+        if log:
+            self.add_log(
+                action='contributor_added',
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'contributors': [c._id for c in contributors],
+                },
+                user=user,
+                api_key=api_key,
+            )
+        if save:
+            self.save()
+        return None
 
     def add_nonregistered_contributor(self, name, email, user, api_key=None, save=False):
         '''Add a non-registered contributor to the project.
