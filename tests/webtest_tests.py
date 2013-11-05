@@ -11,11 +11,11 @@ from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
                             NodeLogFactory, ApiKeyFactory)
 
 from website import settings
-from framework import app
+# from framework import app
 
 # Only uncomment if running these tests in isolation
-# from website.app import init_app
-# app = init_app(set_backends=False, routes=True)
+from website.app import init_app
+app = init_app(set_backends=False, routes=True)
 
 class TestAnUnregisteredUser(DbTestCase):
 
@@ -211,18 +211,37 @@ class TestAUser(DbTestCase):
         # Sees a message indicating no content
         assert_in("No wiki content", res)
 
-    def test_cant_delete_registration(self):
-        original = ProjectFactory(creator=self.user, is_public=True)
+
+class TestRegistrations(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = UserFactory(password='science')
+        # Add an API key for quicker authentication
+        api_key = ApiKeyFactory()
+        self.user.api_keys.append(api_key)
+        self.user.save()
+        self.auth = ('test', api_key._primary_key)
+        self.original = ProjectFactory(creator=self.user, is_public=True)
         # A registration
-        project = ProjectFactory(is_registration=True,
-                                registered_from=original,
+        self.project = ProjectFactory(is_registration=True,
+                                registered_from=self.original,
                                 registered_date=dt.datetime.now(),
                                 creator=self.user)
+
+    def test_cant_be_deleted(self):
         # Goes to project's page
-        res = self.app.get("/project/{0}/".format(project._primary_key), auth=self.auth).maybe_follow()
+        res = self.app.get("/project/{0}/".format(self.project._primary_key), auth=self.auth).maybe_follow()
         # Settings is not in the project navigation bar
         subnav = res.html.select("#projectSubnav")[0]
         assert_not_in("Settings", subnav.text)
+
+    def test_dont_have_registration_in_nav(self):
+        # Goes to project's page
+        res = self.app.get("/project/{0}/".format(self.project._primary_key), auth=self.auth).maybe_follow()
+        # Can't see Registrations in project nav bar
+        subnav = res.html.select("#projectSubnav")[0]
+        assert_not_in("Registrations", subnav.text)
 
 class TestMergingAccounts(DbTestCase):
 
