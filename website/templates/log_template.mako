@@ -48,16 +48,16 @@
     </span>
 
     <span data-bind="visible: action === 'file_added'">
-      added file <span data-bind="text: params.path"> to
+      added file <span data-bind="text: params.path"></span> to
       <a data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
     </span>
 
     <span data-bind="visible: action === 'file_removed'">
-      removed file <span data-bind="text: params.path"> to
+      removed file <span data-bind="text: params.path"></span> from
       <a data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
     </span>
     <span data-bind="visible: action === 'file_updated'">
-      updated file <span data-bind="text: params.path"> to
+      updated file <span data-bind="text: params.path"></span> to
       <a data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
     </span>
 
