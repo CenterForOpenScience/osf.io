@@ -114,6 +114,7 @@ class NodeLog(StoredObject):
 
     def serialize(self):
         return {
+        'id': self._primary_key,
         'user_id': self.user._primary_key if self.user else '',
         'user_fullname': self.user.fullname if self.user else '',
         'api_key': self.api_key.label if self.api_key else '',
