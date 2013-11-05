@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-'''Consolidates settings from base.py and local.py.
+'''Consolidates settings from defaults.py and local.py.
 
 ::
     >>> from website import settings
     >>> settings.MAIL_SERVER
     'smtp.sendgrid.net'
 '''
-from .base import *
+from .defaults import *
 
 try:
     from .local import *

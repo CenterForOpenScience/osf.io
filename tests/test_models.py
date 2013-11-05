@@ -3,15 +3,15 @@
 import unittest
 from nose.tools import *  # PEP8 asserts
 
-from tests.base import DbTestCase
 from framework.auth import User
 from framework.bcrypt import check_password_hash
 from website.project.model import ApiKey, NodeFile
+
+from tests.base import DbTestCase, Guid
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
     TagFactory)
 
-from .base import Guid
 
 GUID_FACTORIES = (UserFactory, TagFactory, NodeFactory, ProjectFactory,
                   MetaDataFactory)
