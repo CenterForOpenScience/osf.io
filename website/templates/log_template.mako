@@ -4,7 +4,8 @@
     <span data-bind="text: userFullName || apiKey"></span>
 
     <span data-bind="visible: action === 'project_created' || action === 'node_created'">
-      created <a data-bind="text: nodeCategory, attr: {href: nodeUrl}"></a>
+      created <span data-bind="text: nodeCategory"></span>
+      <a data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
     </span>
 
     <span data-bind="visible: action === 'wiki_updated'">updated wiki page <a data-bind="attr: {href: wikiUrl}, text: params.page"></a>
