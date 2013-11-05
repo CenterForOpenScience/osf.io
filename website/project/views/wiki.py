@@ -3,9 +3,11 @@ import logging
 import httplib as http
 import difflib
 
-from framework import request, get_current_user, update_counters, status
+from framework import request, get_current_user, status
+from framework.analytics import update_counters
 from framework.auth import must_have_session_auth
 from framework.forms.utils import sanitize
+from framework.exceptions import HTTPError
 
 from website.project.views.node import _view_project
 from website.project.model import NodeWikiPage
@@ -13,7 +15,6 @@ from website.project import show_diff
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 
-from framework import HTTPError
 
 logger = logging.getLogger(__name__)
 

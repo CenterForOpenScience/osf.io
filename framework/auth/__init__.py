@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from framework import session, create_session, HTTPError
+from framework import session, create_session
+from framework.exceptions import HTTPError
 import framework.flask as web
 import framework.bcrypt as bcrypt
 from modularodm.query.querydialect import DefaultQueryDialect as Q

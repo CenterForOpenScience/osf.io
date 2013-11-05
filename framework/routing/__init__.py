@@ -5,7 +5,6 @@ import copy
 import json
 import pystache
 import httplib as http
-import logging
 
 import lxml.html
 import werkzeug.wrappers
@@ -13,7 +12,8 @@ from werkzeug.exceptions import NotFound
 from mako.template import Template
 from mako.lookup import TemplateLookup
 
-from framework import StoredObject, session, HTTPError
+from framework import StoredObject, session
+from framework.exceptions import HTTPError
 from framework.flask import app, redirect, make_response
 from website import settings
 

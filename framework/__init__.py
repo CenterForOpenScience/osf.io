@@ -14,9 +14,6 @@ from framework.mongo import db, set_up_storage
 ##### Sessions
 from framework.sessions import goback, set_previous_url, session, create_session
 
-##### Exceptions
-from exceptions import HTTPError
-
 ##### Routing
 from framework.routing import (Rule, process_rules,
                                WebRenderer, json_renderer,
@@ -34,13 +31,3 @@ from framework.forms import Form, PasswordField, BooleanField, IntegerField, \
     DateField, DateTimeField, FileField, HiddenField, RadioField, SelectField,\
     SelectMultipleField, SubmitField, TextAreaField, TextField, validators, \
     push_errors_to_status, MyTextInput, FieldList
-
-##### Analytics
-from framework.analytics import update_counters, get_basic_counters
-
-import pytz
-
-def convert_datetime(date, to='US/Eastern'):
-    to_zone = pytz.timezone(to)
-    date = date.replace(tzinfo=pytz.utc)
-    return to_zone.normalize(date.astimezone(to_zone))

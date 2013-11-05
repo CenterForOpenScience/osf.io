@@ -1,10 +1,13 @@
+import httplib as http
+
 from framework import User, request, get_current_user
 from framework.auth import get_api_key
-from ..model import Node, NodeLog
-from ..decorators import must_be_valid_project
+from framework.exceptions import HTTPError
 
-from framework import HTTPError
-import httplib as http
+from website.project.model import Node, NodeLog
+from website.project.decorators import must_be_valid_project
+
+
 
 def _render_log_contributor(contributor):
     if isinstance(contributor, dict):

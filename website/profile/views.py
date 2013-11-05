@@ -1,11 +1,12 @@
 import httplib as http
+
 from framework import (
     get_current_user,
     get_user,
     must_be_logged_in,
-    request,
-    HTTPError,
+    request
 )
+from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
 
 from website.models import ApiKey, User
@@ -13,6 +14,7 @@ from framework.analytics import get_total_activity_count
 from website import settings
 from website import filters
 from website.views import _render_nodes
+
 
 def get_public_projects(uid=None, user=None):
     user = user or User.load(uid)

@@ -2,7 +2,7 @@
 import httplib as http
 
 import framework
-from framework import HTTPError
+from framework.exceptions import HTTPError
 from framework import (Rule, process_rules,
                        WebRenderer, json_renderer,
                        render_mako_string)

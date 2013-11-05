@@ -4,7 +4,8 @@ import hashlib
 import logging
 
 import framework
-from framework import request, User, Q, HTTPError
+from framework import request, User, Q
+from framework.exceptions import HTTPError
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from framework.auth import must_have_session_auth, get_current_user, get_api_key
