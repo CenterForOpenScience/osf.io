@@ -2,7 +2,7 @@
 % for log in logs:
     <div mod-meta='{
             "tpl": "util/render_log.mako",
-            "uri": "/api/v1/log/${log}/",
+            "uri": "/api/v1/log/${log['id']}/",
             "replace": true,
             "error": "Log unavailable (private component)"
         }'></div>
