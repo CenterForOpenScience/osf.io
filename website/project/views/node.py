@@ -13,7 +13,7 @@ from .. import new_node, new_project
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from ..forms import NewProjectForm, NewNodeForm
-from ..model import User, WatchConfig
+from website.models import User, WatchConfig
 from framework.forms.utils import sanitize
 from framework.auth import must_have_session_auth, get_api_key
 from bs4 import BeautifulSoup
@@ -330,8 +330,7 @@ def _view_project(node_to_use, user):
         if node_to_use.node__parent \
             and not node_to_use.node__parent[0].is_deleted \
             else None
-    # TODO(sloria): Move to Node.serialize() method
-    return {
+    data = {
         'node_id': node_to_use._primary_key,
         'node_title': node_to_use.title,
         'node_category': 'project'

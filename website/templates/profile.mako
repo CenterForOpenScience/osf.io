@@ -25,6 +25,11 @@
 </%def>
 
 <%def name="content()">
+% if user_is_merged:
+<div class="alert alert-info">This account has been merged with <a class="alert-link" href="${user_merged_by_url}">${user_merged_by_url}</a>
+</div>
+% endif
+
 
 <div class="page-header">
     <img src="${gravatar_url}" />

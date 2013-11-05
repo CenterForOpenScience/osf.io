@@ -98,7 +98,7 @@
             % endif
         </p>
 
-        <nav class="navbar navbar-default ">
+        <nav id="projectSubnav" class="navbar navbar-default ">
 
             <ul class="nav navbar-nav">
                 <li><a href="${node_url}">Dashboard</a></li>

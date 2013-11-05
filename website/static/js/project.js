@@ -123,7 +123,6 @@ NodeActions.openCloseNode = function(node_id){
 };
 
 
-
 $(document).ready(function() {
 
     $("#browser").treeview();  // Initiate filebrowser
@@ -148,7 +147,7 @@ $(document).ready(function() {
     );
 
     /* Modal Click handlers for project page */
-
+    // TODO(sloria): Move these to the ProjectViewModel
     // Private Button confirm dlg
     $('#privateButton').on('click', function() {
         var url = $(this).data("target");

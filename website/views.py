@@ -8,7 +8,7 @@ from framework.auth import must_have_session_auth
 from framework import Q, request
 from framework.forms import utils
 from framework.auth.forms import (RegistrationForm, SignInForm,
-                                  ForgotPasswordForm, ResetPasswordForm)
+                                  ForgotPasswordForm, ResetPasswordForm, MergeAccountForm)
 from website.models import Guid, Node, MetaData
 from framework import redirect, HTTPError, get_current_user
 from website.project.forms import NewProjectForm
@@ -125,6 +125,7 @@ def reset_password_form():
 
 def new_project_form():
     return utils.jsonify(NewProjectForm())
+
 
 ### GUID ###
 

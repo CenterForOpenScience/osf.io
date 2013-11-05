@@ -10,8 +10,8 @@ from tests.base import DbTestCase
 from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
                             NodeLogFactory, ApiKeyFactory)
 
-from framework import app
 from website import settings
+from framework import app
 
 # Only uncomment if running these tests in isolation
 # from website.app import init_app
@@ -133,6 +133,7 @@ class TestAUser(DbTestCase):
         # The project title is listed
         assert_in(project.title, res)
 
+    @unittest.skip("Can't test this, since logs are dynamically loaded")
     def test_sees_log_events_on_watched_projects(self):
         # Another user has a public project
         u2 = UserFactory(username="bono@u2.com", fullname="Bono")
@@ -219,11 +220,113 @@ class TestAUser(DbTestCase):
                                 creator=self.user)
         # Goes to project's page
         res = self.app.get("/project/{0}/".format(project._primary_key), auth=self.auth).maybe_follow()
-        # Can't get to settings
-        assert_not_in("Settings", res)
+        # Settings is not in the project navigation bar
+        subnav = res.html.select("#projectSubnav")[0]
+        assert_not_in("Settings", subnav.text)
+
+class TestMergingAccounts(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = UserFactory.build()
+        self.user.set_password("science")
+        self.user.save()
+        self.dupe = UserFactory.build()
+        self.dupe.set_password("example")
+        self.dupe.save()
+
+    def _login(self, username, password):
+        '''Log in a user via at the login page.'''
+        res = self.app.get("/account/").maybe_follow()
+        # Fills out login info
+        form = res.forms['signinForm']
+        form['username'] = self.user.username
+        form['password'] = 'science'
+        # submits
+        res = form.submit().maybe_follow()
+        return res
+
+    def test_can_merge_accounts(self):
+        res = self._login(self.user.username, "science")
+        # Goes to settings
+        res = self.app.get("/settings/").maybe_follow()
+        # Clicks merge link
+        res = res.click("Merge with duplicate account")
+        # Fills out form
+        form = res.forms['mergeAccountsForm']
+        form['merged_username'] = self.dupe.username
+        form['merged_password'] = 'example'
+        form['user_password'] = 'science'
+        # Submits
+        res = form.submit().maybe_follow()
+        # Back at the settings page
+        assert_equal(res.request.path, "/settings/")
+        # Sees a flash message
+        assert_in("Successfully merged {0} with this account".format(self.dupe.username), res)
+        # User is merged in database
+        self.dupe.reload()
+        assert_true(self.dupe.is_merged)
+
+    def test_sees_error_message_when_merged_password_is_wrong(self):
+        # User logs in
+        res = self._login(self.user.username, "science")
+        res = self.app.get("/user/merge/")
+        # Fills out form
+        form = res.forms['mergeAccountsForm']
+        form['merged_username'] = self.dupe.username
+        form['merged_password'] = 'WRONG'
+        form['user_password'] = 'science'
+        # Submits
+        res = form.submit().maybe_follow()
+        # Sees flash message
+        assert_in("Could not find that user. Please check the username and password.", res)
+
+    def test_sees_error_message_when_own_password_is_wrong(self):
+        # User logs in
+        res = self._login(self.user.username, "science")
+        # Goes to settings
+        res = self.app.get("/settings/").maybe_follow()
+        # Clicks merge link
+        res = res.click("Merge with duplicate account")
+        # Fills out form
+        form = res.forms['mergeAccountsForm']
+        form['merged_username'] = self.dupe.username
+        form['merged_password'] = 'example'
+        form['user_password'] = 'BAD'
+        # Submits
+        res = form.submit().maybe_follow()
+        # Sees flash message
+        assert_in("Could not authenticate. Please check your username and password.", res)
+
+    def test_merged_user_is_not_shown_as_a_contributor(self):
+        project = ProjectFactory(is_public=True)
+        # Both the master and dupe are contributors
+        project.add_contributor(self.dupe, log=False)
+        project.add_contributor(self.user, log=False)
+        project.save()
+        # At the project page, both are listed as contributors
+        res = self.app.get(project.url).maybe_follow()
+        assert_in(self.user.fullname, res)
+        assert_in(self.dupe.fullname, res)
+        # The accounts are merged
+        self.user.merge_user(self.dupe)
+        self.user.save()
+        # Now only the master user is shown at the project page
+        res = self.app.get(project.url).maybe_follow()
+        assert_in(self.user.fullname, res)
+        assert_not_in(self.dupe.fullname, res)
+
+    def test_merged_user_has_alert_message_on_profile(self):
+        # Master merges dupe
+        self.user.merge_user(self.dupe)
+        self.user.save()
+        # At the dupe user's profile there is an alert message at the top
+        # indicating that the user is merged
+        res = self.app.get("/profile/{0}/".format(self.dupe._primary_key)).maybe_follow()
+        assert_in("This account has been merged", res)
 
 
-# TODO: These affect search in development environment. So need to migrate solr after running.
+# FIXME: These affect search in development environment. So need to migrate solr after running.
 # # Remove this side effect.
 @unittest.skipIf(not settings.USE_SOLR, "Skipping because USE_SOLR is False")
 class TestSearching(DbTestCase):

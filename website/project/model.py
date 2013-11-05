@@ -14,7 +14,7 @@ from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 
 from framework.mongo import ObjectId
-from framework.auth import User, get_user
+from framework.auth import get_user, User
 from framework.analytics import get_basic_counters, increment_user_activity_counters
 from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
@@ -871,7 +871,7 @@ class Node(GuidStoredObject):
         )
         return True
 
-    def remove_contributor(self, user, contributor, api_key=None):
+    def remove_contributor(self, user, contributor, api_key=None, log=True):
         '''Remove a contributor from this project.
 
         :param user: User object, the user who is removing the contributor.
@@ -883,21 +883,22 @@ class Node(GuidStoredObject):
             self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != contributor._id]
             self.save()
             removed_user = get_user(contributor._id)
-
-            self.add_log(
-                action='contributor_removed',
-                params={
-                    'project':self.parent_id,
-                    'node':self._primary_key,
-                    'contributor':removed_user._primary_key,
-                },
-                user=user,
-                api_key=api_key,
-            )
+            if log:
+                self.add_log(
+                    action='contributor_removed',
+                    params={
+                        'project':self.parent_id,
+                        'node':self._primary_key,
+                        'contributor':removed_user._primary_key,
+                    },
+                    user=user,
+                    api_key=api_key,
+                )
             return True
         else:
             return False
 
+    # FIXME(sloria): Inconsistent ordering of args between add_contributor and remove_contributor
     def add_contributor(self, contributor, user=None, log=True, api_key=None, save=False):
         '''Add a contributor to the project.
 

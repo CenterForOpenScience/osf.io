@@ -13,6 +13,7 @@ Example usage: ::
 Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
+import datetime as dt
 
 from factory import base, Sequence, SubFactory, PostGenerationMethodCall, post_generation
 
@@ -45,10 +46,16 @@ class UserFactory(ModularOdmFactory):
     username = Sequence(lambda n: "fred{0}@example.com".format(n))
     # Sets the password upon generation but before saving
     password = PostGenerationMethodCall("set_password", "defaultpassword")
-    fullname = Sequence(lambda n: "Freddie Mercury the {0}".format(n))
+    fullname = Sequence(lambda n: "Freddie Mercury{0}".format(n))
     is_registered = True
     is_claimed = True
     api_keys = []
+
+    @post_generation
+    def set_date_registered(self, create, extracted):
+        self.date_registered = dt.datetime.utcnow()
+        if create:
+            self.save()
 
 
 class TagFactory(ModularOdmFactory):

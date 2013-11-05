@@ -31,6 +31,7 @@ class TestUser(DbTestCase):
         assert_equal(another_user.username, "joe@example.com")
         assert_equal(User.find().count(), 2)
         assert_true(user.check_password("myprecious"))
+        assert_true(user.date_registered)
 
     def test_is_watching(self):
         # User watches a node
@@ -54,6 +55,45 @@ class TestUser(DbTestCase):
         user.save()
         assert_true(user.check_password("ghostrider"))
         assert_false(user.check_password("ghostride"))
+
+
+class TestMergingUsers(DbTestCase):
+
+    def setUp(self):
+        self.master = UserFactory(username="joe@example.com",
+                            fullname="Joe Shmo",
+                            is_registered=True,
+                            emails=["joe@example.com"])
+        self.dupe = UserFactory(username="joseph123@hotmail.com",
+                            fullname="Joseph Shmo",
+                            emails=["joseph123@hotmail.com"])
+
+    def _merge_dupe(self):
+        '''Do the actual merge.'''
+        self.master.merge_user(self.dupe)
+        self.master.save()
+
+    def test_dupe_is_merged(self):
+        self._merge_dupe()
+        assert_true(self.dupe.is_merged)
+        assert_equal(self.dupe.merged_by, self.master)
+
+    def test_dupe_email_is_appended(self):
+        self._merge_dupe()
+        assert_in("joseph123@hotmail.com", self.master.emails)
+
+    def test_inherits_projects_contributed_by_dupe(self):
+        project = ProjectFactory()
+        project.contributors.append(self.dupe)
+        project.save()
+        self._merge_dupe()
+        assert_true(project.is_contributor(self.master))
+        assert_false(project.is_contributor(self.dupe))
+
+    def test_inherits_projects_created_by_dupe(self):
+        project = ProjectFactory(creator=self.dupe)
+        self._merge_dupe()
+        assert_equal(project.creator, self.master)
 
 
 class TestGUID(DbTestCase):
@@ -261,6 +301,14 @@ class TestProject(DbTestCase):
 
     def test_creator_is_contributor(self):
         assert_true(self.project.is_contributor(self.user))
+
+    def test_cant_add_same_contributor_twice(self):
+        contrib = UserFactory()
+        self.project.add_contributor(contributor=contrib)
+        self.project.save()
+        self.project.add_contributor(contributor=contrib)
+        self.project.save()
+        assert_equal(len(self.project.contributors), 1)
 
 class TestNodeLog(DbTestCase):
 
