@@ -78,53 +78,50 @@
 
     <!-- Apply view model -->
     <script type="text/javascript">
-        var viewModel = new ViewModel(${schema}, ${int(registered)});
-        ko.applyBindings(viewModel, $('#registration_template')[0]);
-    </script>
+        $(document).ready(function() {
+            var viewModel = new ViewModel(${schema}, ${int(registered)});
+            ko.applyBindings(viewModel, $('#registration_template')[0]);
+            $('#register-submit').on('click', function() {
+                var $this = $(this);
+                if (!$this.hasClass('disabled')) {
+                    $this.addClass('disabled');
+                    $this.closest('form').submit();
+                }
+                return false;
+            });
 
-    <script type="text/javascript">
+            $('#registration_template').on('submit', function(event) {
 
-        $('#register-submit').on('click', function() {
-            var $this = $(this);
-            if (!$this.hasClass('disabled')) {
-                $this.addClass('disabled');
-                $this.closest('form').submit();
-            }
-            return false;
-        });
+                // Initialize variables
+                var $this = $(this),
+                    data = {};
 
-        $('#registration_template').on('submit', function(event) {
-
-            // Initialize variables
-            var $this = $(this),
-                data = {};
-
-            // Grab data from view model
-            $.each(viewModel.pages(), function(_, page) {
-                $.each(page.questions, function(_, question) {
-                    data[question.id] = question.value;
+                // Grab data from view model
+                $.each(viewModel.pages(), function(_, page) {
+                    $.each(page.questions, function(_, question) {
+                        data[question.id] = question.value;
+                    });
                 });
-            });
-            // Send data to OSF
-            $.ajax({
-                url: '${node_api_url}' + 'register/' + '${template_name if template_name else ''}/',
-                type: "POST",
-                data: JSON.stringify(data),
-                contentType: "application/json",
-                success: function(response) {
-                    if (response.status === 'success')
-                        window.location.href = response.result;
-                    else if (response.status === 'error')
-                        window.location.reload();
-                },
-                dataType: 'json'
-            });
+                // Send data to OSF
+                $.ajax({
+                    url: '${node_api_url}' + 'register/' + '${template_name if template_name else ''}/',
+                    type: "POST",
+                    data: JSON.stringify(data),
+                    contentType: "application/json",
+                    success: function(response) {
+                        if (response.status === 'success')
+                            window.location.href = response.result;
+                        else if (response.status === 'error')
+                            window.location.reload();
+                    },
+                    dataType: 'json'
+                });
 
-            // Stop event propagation
-            return false;
+                // Stop event propagation
+                return false;
 
+            });
         });
-
     </script>
 
 % else:
