@@ -155,7 +155,7 @@ If you have all the above services installed, you can start *everything* up with
 ```bash
 invoke mongo -d  # Runs mongod as a daemon
 invoke mailserver
-invoke rabbit_mq
+invoke rabbitmq
 invoke celery_worker
 invoke solr
 invoke server

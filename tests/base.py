@@ -11,6 +11,7 @@ from framework.sessions.model import Session
 from framework.guid.model import Guid
 from website.project.model import (ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
                                    Tag, WatchConfig, MetaData)
+from website import settings
 
 
 # All Models
@@ -27,9 +28,9 @@ class DbTestCase(unittest.TestCase):
     '''Base TestCase for tests that require a temporary MongoDB database.
     '''
     # DB settings
-    db_name = os.environ.get('MONGO_DATABASE', 'osf_test')
-    db_host = os.environ.get('MONGO_HOST', 'localhost')
-    db_port = int(os.environ.get('MONGO_PORT', '20771'))
+    db_name = getattr(settings, 'TEST_DB_NAME', 'osf_test')
+    db_host = getattr(settings, 'MONGO_HOST', 'localhost')
+    db_port = int(getattr(settings, 'DB_PORT', '20771'))
 
     @classmethod
     def setUpClass(klass):

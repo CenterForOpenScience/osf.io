@@ -96,7 +96,6 @@ class TestMergingUsers(DbTestCase):
         assert_equal(project.creator, self.master)
 
 
-
 class TestGUID(DbTestCase):
 
     def setUp(self):

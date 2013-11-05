@@ -276,8 +276,7 @@ class TestAuthViews(DbTestCase):
 
     def test_merge_user(self):
         dupe = UserFactory(username="copy@cat.com",
-                            emails=['copy@cat.com'],
-                            is_merged=False)
+                            emails=['copy@cat.com'])
         dupe.set_password("copycat")
         dupe.save()
         url = "/api/v1/user/merge/"
