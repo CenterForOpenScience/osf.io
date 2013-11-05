@@ -14,6 +14,7 @@ celery==3.0.21
 decorator==3.4.0
 dulwich==0.8.7
 httplib2==0.8
+hurry.filesize==0.9
 itsdangerous==0.23
 kombu==2.5.12
 lxml==3.2.3
