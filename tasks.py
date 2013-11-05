@@ -7,9 +7,9 @@ import os
 from invoke import task, run, ctask
 
 from website import settings
-from framework.tasks import celery
 
 SOLR_DEV_PATH = os.path.join("scripts", "solr-dev")  # Path to example solr app
+
 
 @task
 def server():
