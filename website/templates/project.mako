@@ -176,19 +176,9 @@
             });
         % endif
 
-        // TODO: Find a better place to put this initialization code
-        // Initiate addContributorsModel
-        var $addContributors = $('#addContributors');
-        viewModel = new AddContributorViewModel();
-        ko.applyBindings(viewModel, $addContributors[0]);
-        // Clear user search modal when dismissed; catches dismiss by escape key
-        // or cancel button.
-        $addContributors.on('hidden', function() {
-            viewModel.clear();
-        });
-        ko.applyBindings(new ProjectViewModel(), $("#projectScope")[0]);
         // Initiate LogsViewModel
         $logScope = $("#logScope");
+        ko.cleanNode($logScope[0]);
         ko.applyBindings(new LogsViewModel($logScope.data("target")), $logScope[0]);
     });
 </script>

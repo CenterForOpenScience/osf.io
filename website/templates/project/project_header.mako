@@ -99,7 +99,6 @@
         </p>
 
         <nav id="projectSubnav" class="navbar navbar-default ">
-
             <ul class="nav navbar-nav">
                 <li><a href="${node_url}">Dashboard</a></li>
                 <li><a href="${node_url}wiki/">Wiki</a></li>
@@ -115,3 +114,18 @@
     </header>
 </div>
 <%include file="modal_add_contributor.mako"/>
+## TODO: Find a better place to put this initialization code
+<script>
+    $(document).ready(function(){
+        // Initiate addContributorsModel
+        var $addContributors = $('#addContributors');
+        viewModel = new AddContributorViewModel();
+        ko.applyBindings(viewModel, $addContributors[0]);
+        // Clear user search modal when dismissed; catches dismiss by escape key
+        // or cancel button.
+        $addContributors.on('hidden', function() {
+            viewModel.clear();
+        });
+        ko.applyBindings(new ProjectViewModel(), $("#projectScope")[0]);
+    });
+</script>
