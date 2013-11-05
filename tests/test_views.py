@@ -54,7 +54,6 @@ class TestProjectViews(DbTestCase):
     def test_add_contributor_post(self):
         # A user is added as a contributor via a POST request
         project = ProjectFactory(creator=self.user1, is_public=True)
-        print(project.contributors)
         user = UserFactory()
         user2 = UserFactory()
         url = "/api/v1/project/{0}/addcontributors/".format(project._id)
@@ -62,7 +61,6 @@ class TestProjectViews(DbTestCase):
                             content_type="application/json",
                             auth=self.auth).maybe_follow()
         project.reload()
-        print(project.contributors)
         assert_in(user._id, project.contributors)
         # A log event was added
         assert_equal(project.logs[-1].action, "contributor_added")

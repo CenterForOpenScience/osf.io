@@ -3,11 +3,11 @@ import httplib as http
 import hashlib
 import logging
 
-from framework import request, User, Q
+import framework
+from framework import request, User, Q, HTTPError
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from framework.auth import must_have_session_auth, get_current_user, get_api_key
-from framework import HTTPError
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +117,7 @@ def project_removecontributor(*args, **kwargs):
             user, contributor, api_key=api_key
         )
     if outcome:
-        # TODO(sloria): Add flash message
+        framework.status.push_status_message("Contributor removed", "info")
         return {'status': 'success'}
     raise HTTPError(http.BAD_REQUEST)
 
