@@ -69,7 +69,8 @@ class TestAUser(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.user = UserFactory(password='science')
+        self.user = UserFactory()
+        self.user.set_password('science')
         # Add an API key for quicker authentication
         api_key = ApiKeyFactory()
         self.user.api_keys.append(api_key)
@@ -216,7 +217,7 @@ class TestRegistrations(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.user = UserFactory(password='science')
+        self.user = UserFactory()
         # Add an API key for quicker authentication
         api_key = ApiKeyFactory()
         self.user.api_keys.append(api_key)

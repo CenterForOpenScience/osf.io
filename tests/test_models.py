@@ -24,13 +24,12 @@ class TestUser(DbTestCase):
     def test_factory(self):
         # Clear users
         User.remove()
-        user = UserFactory(password="myprecious")
+        user = UserFactory()
         assert_equal(User.find().count(), 1)
         assert_true(user.username)
         another_user = UserFactory(username="joe@example.com")
         assert_equal(another_user.username, "joe@example.com")
         assert_equal(User.find().count(), 2)
-        assert_true(user.check_password("myprecious"))
         assert_true(user.date_registered)
 
     def test_is_watching(self):

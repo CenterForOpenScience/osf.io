@@ -44,8 +44,9 @@ class UserFactory(ModularOdmFactory):
     FACTORY_FOR = User
 
     username = Sequence(lambda n: "fred{0}@example.com".format(n))
-    # Sets the password upon generation but before saving
-    password = PostGenerationMethodCall("set_password", "defaultpassword")
+    # Don't use post generation call to set_password because
+    # It slows down the tests dramatically
+    password = "password"
     fullname = Sequence(lambda n: "Freddie Mercury{0}".format(n))
     is_registered = True
     is_claimed = True
