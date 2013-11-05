@@ -7,7 +7,8 @@
 
 %if user_can_edit:
 <div class="container" style="position:relative;">
-    <h3 style="max-width: 65%;">Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element>!</h3>
+    <h3 style="max-width: 65%;"><span class="btn btn-success fileinput-button" id="clickable"><i class="icon-plus icon-white"></i><span>Add files...</span></span></h3>
+    Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element>!
     <div id="totalProgressActive" style="width: 35%; position: absolute; top: 4px; right: 0;">
         <div id="totalProgress" class="bar" style="width: 0%;"></div>
     </div>
@@ -119,7 +120,8 @@ var myGrid = HGrid.create({
     topCrumb: false,
     clickUploadElement: "#clickable",
     dragToRoot: false,
-    dragDrop: false
+    dragDrop: false,
+    namePath: false
 });
 
 
@@ -127,15 +129,14 @@ var myGrid = HGrid.create({
 myGrid.updateBreadcrumbsBox(myGrid.data[0]['uid']);
 myGrid.addColumn({id: "downloads", name: "Downloads", field: "downloads", width: 90});
 myGrid.addColumn({id: "actions", name: "", field: "actions", width: 65, formatter: Buttons});
-
-
+myGrid.Slick.grid.setSortColumn("name");
 
 myGrid.hGridBeforeUpload.subscribe(function(e, args){
     if(args.parent['can_edit']=='true'){
         myGrid.removeDraggerGuide();
         var path = args.parent['path'].slice();
         path.push("nodefile-" +args.item.name);
-        var item = {name: args.item.name, parent_uid: args.parent['uid'], uid: "nodefile-" + args.item.name, type:"fake", uploadBar: true, path: path, sortpath: path.join("/"), ext: "py"};
+        var item = {name: args.item.name, parent_uid: args.parent['uid'], uid: "nodefile-" + args.item.name, type:"fake", uploadBar: true, path: path, sortpath: path.join("/"), ext: "py", size: args.item.size.toString()};
         myGrid.addItem(item);
         return true;
     }
@@ -158,33 +159,33 @@ myGrid.hGridBeforeMove.subscribe(function(e, args){
     return true;
 });
 
-##myGrid.hGridBeforeDelete.subscribe(function(e, args) {
-##    if (args['items'][0]['type'] !== 'fake') {
-##        var msg = 'Are you sure you want to delete the file "' + args['items'][0]['name'] + '"?';
-##        var d = $.Deferred();
-##        bootbox.confirm(
-##            msg,
-##            function(result) {
-##                if (result) {
-##                    var url = '/api/v1' + args['items'][0]['url'].replace('/files/', '/files/delete/');
-##                    $.post(
-##                        url
-##                    ).done(function(response) {
-##                        if (response['status'] != 'success') {
-##                            bootbox.alert('Error deleting file');
-##                            d.resolve(false);
-##                        } else {
-##                            d.resolve(true);
-##                        }
-##                    });
-##                } else {
-##                    d.resolve(false);
-##                }
-##            }
-##        );
-##        return d;
-##    }
-##});
+myGrid.hGridBeforeDelete.subscribe(function(e, args) {
+    if (args['items'][0]['type'] !== 'fake') {
+        var msg = 'Are you sure you want to delete the file "' + args['items'][0]['name'] + '"?';
+        var d = $.Deferred();
+        bootbox.confirm(
+            msg,
+            function(result) {
+                if (result) {
+                    var url = '/api/v1' + args['items'][0]['url'].replace('/files/', '/files/delete/');
+                    $.post(
+                        url
+                    ).done(function(response) {
+                        if (response['status'] != 'success') {
+                            bootbox.alert('Error deleting file');
+                            d.resolve(false);
+                        } else {
+                            d.resolve(true);
+                        }
+                    });
+                } else {
+                    d.resolve(false);
+                }
+            }
+        );
+        return d;
+    }
+});
 
 myGrid.hGridOnMouseEnter.subscribe(function (e, args){
     $(myGrid.options.container).find(".row-hover").removeClass("row-hover");

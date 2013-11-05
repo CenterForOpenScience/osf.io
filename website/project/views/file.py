@@ -216,6 +216,7 @@ def upload_file_public(*args, **kwargs):
         "type":"file",
         "download_url":node_to_use.url + "/files/download/" + file_object.path,
         "date_uploaded": file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
+        "dateModified": file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
         "downloads": str(total) if total else str(0),
         "user_id": None,
         "user_fullname":None,

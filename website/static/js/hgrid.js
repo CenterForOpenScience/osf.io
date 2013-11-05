@@ -56,7 +56,8 @@ var HGrid = {
         topCrumb: true,
         forceFitColumns: true,
         autoHeight: true,
-        navigation: true
+        navigation: true,
+        namePath: false
     },
 
     Slick: {
@@ -287,6 +288,7 @@ var HGrid = {
                 Dropzone.autoDiscover = false;
             }
         }
+
     },
 
     defaultTaskNameFormatter: function(row, cell, value, columnDef, dataContext) {
@@ -582,7 +584,33 @@ var HGrid = {
                 item['sortpath']=item['path'].join('/');
                 if(!item['type']) item['type']='file';
             }
-            _this.data.splice(parent['id']+1, 0,item);
+            var sortCol = _this.Slick.grid.getSortColumns()[0]['columnId'];
+            var spliceId = null;
+            if(_this.data[parent['id']+1]){
+                var comp = _this.data[parent['id']+1];
+                var compValue = typeof(comp[sortCol]) == 'string' ? comp[sortCol].toLowerCase() : comp[sortCol];
+                var itemValue = typeof(item[sortCol]) == 'string' ? item[sortCol].toLowerCase() : item[sortCol];
+                while(compValue < itemValue && comp['indent']>parent['indent']){
+                    if(typeof(_this.data[comp['id']+1])==='undefined'){
+                        spliceId = comp['id']+1;
+                        break;
+                    }
+                    comp = _this.data[comp['id']+1];
+                    while(typeof(comp)!=='undefined' && comp['parent_uid']!=parent['uid']){
+                        comp = _this.data[comp['id']+1];
+                    }
+                    compValue = typeof(comp[sortCol]) == 'string' ? comp[sortCol].toLowerCase() : comp[sortCol];
+                    if(typeof(_this.data[comp['id']+1])==='undefined'){
+                        spliceId = comp['id']+1;
+                        break;
+                    }
+                    spliceId = comp['id'];
+                }
+            }
+            else{
+                spliceId = parent['id']+1;
+            }
+            _this.data.splice(spliceId, 0,item);
             _this.prepJava(_this.data);
             _this.Slick.dataView.setItems(_this.data);
             _this.Slick.grid.setSelectedRows([]);
@@ -850,27 +878,39 @@ var HGrid = {
 
         for(var l=0; l<output.length; l++){
             var path = [];
+            var namePath = [];
             path.push(output[l]['uid']);
+            namePath.push(output[l]['name']);
             if(output[l]['parent_uid']!="null"){
                 for(var m=0; m<l; m++){
                     if(output[m]['uid']==output[l]['parent_uid']){
 //                        var x = m;
                         while(output[m]['parent_uid']!="null"){
                             path.push(output[m]['uid']);
+                            namePath.push(output[m]['name']);
                             m = output[m]['parent'];
                         }
                         path.push(output[m]['uid']);
+                        namePath.push(output[m]['name']);
                         break;
                     }
                 }
             }
             path.reverse();
+            namePath.reverse();
+            output[l]['namePath'] = namePath;
             output[l]['path']=path;
             output[l]['sortpath']=path.join('/');
+            output[l]['namePath']=namePath.join('/');
         }
-        var sortingCol='sortpath';
+        if(namePath){
+            var sortingCol='namePath';
+        }
+        else{
+            var sortingCol='sortPath';
+        }
         output.sort(function(a, b){
-            var x = a[sortingCol], y = b[sortingCol];
+            var x = a[sortingCol].toLowerCase(), y = b[sortingCol].toLowerCase();
 
             if(x == y){
                 return 0;
@@ -1103,10 +1143,10 @@ var HGrid = {
                 return 0;
             }
             if(_this.options.sortAsc){
-                return x > y ? 1 : -1;
+                return x < y ? 1 : -1;
             }
             else{
-                return x < y ? 1 : -1;
+                return x > y ? 1 : -1;
             }
         });
         var hierarchical = [];
