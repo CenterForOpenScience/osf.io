@@ -869,16 +869,18 @@ class Node(GuidStoredObject):
         :param contributor: A User object, the contributor to be added
         :param user: A User object, the user who added the contributor or None.
         '''
-        if contributor._primary_key not in self.contributors:
-            self.contributors.append(contributor)
-            self.contributor_list.append({'id': contributor._primary_key})
+        # If user is merged into another account, use master account
+        contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
+        if contrib_to_add._primary_key not in self.contributors:
+            self.contributors.append(contrib_to_add)
+            self.contributor_list.append({'id': contrib_to_add._primary_key})
             if log:
                 self.add_log(
                     action='contributor_added',
                     params={
                         'project': self.node__parent[0]._primary_key if self.node__parent else None,
                         'node': self._primary_key,
-                        'contributors': [contributor._primary_key],
+                        'contributors': [contrib_to_add._primary_key],
                     },
                     user=user,
                     api_key=api_key

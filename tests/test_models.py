@@ -95,6 +95,13 @@ class TestMergingUsers(DbTestCase):
         self._merge_dupe()
         assert_equal(project.creator, self.master)
 
+    def test_adding_merged_user_as_contributor_adds_master(self):
+        project = ProjectFactory(creator=UserFactory())
+        self._merge_dupe()
+        project.add_contributor(contributor=self.dupe)
+        assert_true(project.is_contributor(self.master))
+        assert_false(project.is_contributor(self.dupe))
+
 
 class TestGUID(DbTestCase):
 
