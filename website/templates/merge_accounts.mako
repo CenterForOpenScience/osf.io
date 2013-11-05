@@ -1,7 +1,7 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Merge Accounts</%def>
 <%def name="content()">
-<h1 class="page-header">Merge with Duplicate Account</h1>
+<h1 class="page-header text-center">Merge with Duplicate Account</h1>
 
 <div class="row">
     ## Center the form
