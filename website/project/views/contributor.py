@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+import hashlib
 import logging
 
 from framework import request, User, Q
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from framework.auth import must_have_session_auth, get_current_user, get_api_key
-from framework.forms.utils import sanitize
-import hashlib
-import json
-
 from framework import HTTPError
 
 logger = logging.getLogger(__name__)
@@ -131,30 +128,11 @@ def project_removecontributor(*args, **kwargs):
 @must_not_be_registration
 def project_addcontributors_post(*args, **kwargs):
     """ Add contributors to a node. """
-
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     api_key = get_api_key()
     user_ids = request.json.get('user_ids', [])
-    # TODO: Move to model
-
-    for user_id in user_ids:
-        if user_id not in node_to_use.contributors:
-            added_user = User.load(user_id)
-            node_to_use.contributors.append(added_user)
-            node_to_use.contributor_list.append({
-                'id': added_user._primary_key,
-            })
+    contributors = [User.load(uid) for uid in user_ids]
+    node_to_use.add_contributors(contributors=contributors, user=user, api_key=api_key)
     node_to_use.save()
-
-    node_to_use.add_log(
-        action='contributor_added',
-        params={
-            'project': node_to_use.parent_id,
-            'node': node_to_use._primary_key,
-            'contributors': user_ids,
-        },
-        user=user,
-        api_key=api_key,
-    )
     return {'status': 'success'}, 201

@@ -310,6 +310,16 @@ class TestProject(DbTestCase):
         self.project.save()
         assert_equal(len(self.project.contributors), 1)
 
+    def test_add_contributors(self):
+        user1 = UserFactory()
+        user2 = UserFactory()
+        self.project.add_contributors([user1, user2], user=self.user)
+        self.project.save()
+        assert_equal(len(self.project.contributors), 2)
+        assert_equal(len(self.project.contributor_list), 2)
+        assert_equal(self.project.logs[-1].params['contributors'],
+                        [user1._id, user2._id])
+
 class TestNodeLog(DbTestCase):
 
     def setUp(self):

@@ -53,15 +53,21 @@ class TestProjectViews(DbTestCase):
 
     def test_add_contributor_post(self):
         # A user is added as a contributor via a POST request
+        project = ProjectFactory(creator=self.user1, is_public=True)
+        print(project.contributors)
         user = UserFactory()
-        url = "/api/v1/project/{0}/addcontributors/".format(self.project._id)
-        res = self.app.post(url, json.dumps({"user_ids": [user._id]}),
+        user2 = UserFactory()
+        url = "/api/v1/project/{0}/addcontributors/".format(project._id)
+        res = self.app.post(url, json.dumps({"user_ids": [user._id, user2._id]}),
                             content_type="application/json",
                             auth=self.auth).maybe_follow()
-        self.project.reload()
-        assert_in(user._id, self.project.contributors)
+        project.reload()
+        print(project.contributors)
+        assert_in(user._id, project.contributors)
         # A log event was added
-        assert_equal(self.project.logs[-1].action, "contributor_added")
+        assert_equal(project.logs[-1].action, "contributor_added")
+        assert_equal(len(project.contributors), 2)
+        assert_equal(len(project.contributor_list), 2)
 
     @unittest.skip('Adding non-registered contributors is on hold until '
                    'invitations and account merging are done.')

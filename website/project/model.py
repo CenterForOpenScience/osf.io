@@ -889,6 +889,29 @@ class Node(GuidStoredObject):
         else:
             return False
 
+    def add_contributors(self, contributors, user=None, log=True, api_key=None, save=False):
+        '''Add multiple contributors
+
+        :param contributors: A list of User objects to add as contributors.
+        :param user: A User object, the user who added the contributors.
+        '''
+        for contrib in contributors:
+            self.add_contributor(contributor=contrib, user=user, log=False, save=False)
+        if log:
+            self.add_log(
+                action='contributor_added',
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'contributors': [c._id for c in contributors],
+                },
+                user=user,
+                api_key=api_key,
+            )
+        if save:
+            self.save()
+        return None
+
     def add_nonregistered_contributor(self, name, email, user, api_key=None, save=False):
         '''Add a non-registered contributor to the project.
 
