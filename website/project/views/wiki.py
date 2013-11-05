@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 import logging
 import httplib as http
+import difflib
 
-from framework import request, redirect, get_current_user, update_counters, push_status_message
-from ..decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public
+from framework import request, get_current_user, update_counters, status
 from framework.auth import must_have_session_auth
 from framework.forms.utils import sanitize
-from ..model import NodeWikiPage
-from .node import _view_project
 
-import difflib
-from .. import show_diff
+from website.project.views.node import _view_project
+from website.project.model import NodeWikiPage
+from website.project import show_diff
+from website.project.decorators import must_not_be_registration, must_be_valid_project, \
+    must_be_contributor, must_be_contributor_or_public
 
 from framework import HTTPError
 
@@ -211,7 +211,7 @@ def project_wiki_edit_post(*args, **kwargs):
                                                           wid=wid))
 
     if wid != sanitize(wid):
-        push_status_message("This is an invalid wiki page name")
+        status.push_status_message("This is an invalid wiki page name")
         raise HTTPError(http.BAD_REQUEST, redirect_url='{}wiki/'.format(node_to_use.url))
 
     node_to_use.update_node_wiki(wid, request.form['content'], user, api_key=None)

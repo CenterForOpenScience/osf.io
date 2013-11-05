@@ -3,7 +3,7 @@ import httplib as http
 import logging
 
 import framework
-from framework import goback, set_previous_url, push_status_message, request
+from framework import goback, set_previous_url, request
 from framework.email.tasks import send_email
 import framework.status as status
 import framework.forms as forms
@@ -30,7 +30,7 @@ def reset_password(*args, **kwargs):
 
     user_obj = get_user(verification_key=verification_key)
     if not user_obj:
-        push_status_message('Invalid verification key')
+        status.push_status_message('Invalid verification key')
         return {
             'verification_key': verification_key
         }
@@ -183,7 +183,7 @@ def merge_user_post(**kwargs):
             return merge_user_get(**kwargs)
         master_password = form.user_password.data
         if not master.check_password(master_password):
-            push_status_message("Could not authenticate. Please check your username and password.")
+            status.push_status_message("Could not authenticate. Please check your username and password.")
             return merge_user_get(**kwargs)
         merged_username = form.merged_username.data
         merged_password = form.merged_password.data
@@ -191,18 +191,18 @@ def merge_user_post(**kwargs):
         merged_user = User.find_one(Q("username", "eq", merged_username))
     except NoResultsFound:
         logger.debug("Failed to find user to merge")
-        push_status_message("Could not find that user. Please check the username and password.")
+        status.push_status_message("Could not find that user. Please check the username and password.")
         return merge_user_get(**kwargs)
     if master and merged_user:
         if merged_user.check_password(merged_password):
             master.merge_user(merged_user)
             master.save()
             if request.form:
-                push_status_message("Successfully merged {0} with this account".format(merged_username))
+                status.push_status_message("Successfully merged {0} with this account".format(merged_username))
                 return framework.redirect("/settings/")
             return {"status": "success"}
         else:
-            push_status_message("Could not find that user. Please check the username and password.")
+            status.push_status_message("Could not find that user. Please check the username and password.")
             return merge_user_get(**kwargs)
     else:
         raise framework.exceptions.HTTPError(http.BAD_REQUEST)

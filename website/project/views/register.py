@@ -3,7 +3,7 @@ import os
 import json
 import logging
 
-from framework import request, push_status_message
+from framework import request, status
 from framework.auth import must_have_session_auth
 from ..decorators import must_not_be_registration, must_be_valid_project, must_be_contributor, must_be_contributor_or_public
 from framework.forms.utils import sanitize
@@ -87,7 +87,7 @@ def node_register_template_page_post(*args, **kwargs):
     for k, v in data.items():
         if v is not None and v != sanitize(v):
             # todo interface needs to deal with this
-            push_status_message('Invalid submission.')
+            status.push_status_message('Invalid submission.')
             return json.dumps({
                 'status': 'error',
             })
