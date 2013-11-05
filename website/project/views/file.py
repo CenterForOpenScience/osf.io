@@ -210,7 +210,7 @@ def upload_file_public(*args, **kwargs):
     file_info = {
         "name":uploaded_filename,
         "sizeRead":size(uploaded_file_size, system=alternative),
-        "size":uploaded_file_size,
+        "size":str(uploaded_file_size),
         "url":node_to_use.url + "files/" + uploaded_filename + "/",
         "ext":uploaded_file_content_type.split('/')[1],
         "type":"file",

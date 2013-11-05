@@ -487,13 +487,15 @@ var HGrid = {
                 parent = hGrid.getItemByValue(hGrid.data, myDropzone.options.dropDestination, 'uid');
             }
             var value = {item: file, parent: parent};
-            var event_status = hGrid.hGridBeforeUpload.notify(value);
-            if(event_status===false){
-                myDropzone.removeFile(file);
-                value['success'] = false;
-                hGrid.updateNav();
-                hGrid.hGridAfterUpload.notify(value);
-            }
+            var promise = $.when(hGrid.hGridBeforeUpload.notify(value));
+            promise.done(function(event_status){
+                if(event_status===false){
+                    myDropzone.removeFile(file);
+                    value['success'] = false;
+                    hGrid.updateNav();
+                    hGrid.hGridAfterUpload.notify(value);
+                }
+            });
         });
 
         myDropzone.on("dragleave", function(e){
@@ -522,18 +524,20 @@ var HGrid = {
 // Hook the drop success to the grid view update
         myDropzone.on("success", function(file) {
             var value;
-            var event_status = hGrid.hGridOnUpload.notify(file);
-            if (event_status || typeof(event_status)=='undefined'){
-                value = {item: JSON.parse(file.xhr.response)[0], success: true};
-                value['item']['name'] = file.name;
-                hGrid.updateNav();
-                hGrid.hGridAfterUpload.notify(value);
-            }
-            else{
-                value = {item: file, success: false};
-                hGrid.updateNav();
-                hGrid.hGridAfterUpload.notify(value);
-            }
+            var promise = $.when(hGrid.hGridOnUpload.notify(file));
+            promise.done(function(event_status){
+                if (event_status || typeof(event_status)=='undefined'){
+                    value = {item: JSON.parse(file.xhr.response)[0], success: true};
+                    value['item']['name'] = file.name;
+                    hGrid.updateNav();
+                    hGrid.hGridAfterUpload.notify(value);
+                }
+                else{
+                    value = {item: file, success: false};
+                    hGrid.updateNav();
+                    hGrid.hGridAfterUpload.notify(value);
+                }
+            });
         });
     },
 
@@ -584,32 +588,64 @@ var HGrid = {
                 item['sortpath']=item['path'].join('/');
                 if(!item['type']) item['type']='file';
             }
-            var sortCol = _this.Slick.grid.getSortColumns()[0]['columnId'];
+            var sortCol = _this.Slick.grid.getSortColumns()[0];
+            var sortId = sortCol['columnId'];
+            var asc = sortCol['sortAsc'];
             var spliceId = null;
-            if(_this.data[parent['id']+1]){
-                var comp = _this.data[parent['id']+1];
-                var compValue = typeof(comp[sortCol]) == 'string' ? comp[sortCol].toLowerCase() : comp[sortCol];
-                var itemValue = typeof(item[sortCol]) == 'string' ? item[sortCol].toLowerCase() : item[sortCol];
-                while(compValue < itemValue && comp['indent']>parent['indent']){
-                    if(typeof(_this.data[comp['id']+1])==='undefined'){
-                        spliceId = comp['id']+1;
-                        break;
+            var searchData = _this.getItemsByValue(_this.data, parent['uid'], "parent_uid");
+
+            if(searchData.length != 0){
+                var comp = null;
+                var compValue = null;
+                var itemValue = typeof(item[sortId]) == 'string' ? item[sortId].toLowerCase() : item[sortId];
+                itemValue = sortId == 'size' ? parseInt(itemValue) : itemValue;
+                for(var i=0; i<searchData.length; i++){
+                    comp = searchData[i];
+                    compValue = typeof(comp[sortId]) == 'string' ? comp[sortId].toLowerCase() : comp[sortId];
+                    compValue = sortId == 'size' ? parseInt(compValue) : compValue;
+                    spliceId = comp['id']+1;
+                    if(asc){
+                        if(compValue > itemValue){
+                            spliceId = comp['id'];
+                            break;
+                        }
                     }
-                    comp = _this.data[comp['id']+1];
-                    while(typeof(comp)!=='undefined' && comp['parent_uid']!=parent['uid']){
-                        comp = _this.data[comp['id']+1];
+                    else{
+                        if(compValue < itemValue){
+                            spliceId = comp['id'];
+                            break;
+                        }
                     }
-                    compValue = typeof(comp[sortCol]) == 'string' ? comp[sortCol].toLowerCase() : comp[sortCol];
-                    if(typeof(_this.data[comp['id']+1])==='undefined'){
-                        spliceId = comp['id']+1;
-                        break;
-                    }
-                    spliceId = comp['id'];
                 }
             }
             else{
                 spliceId = parent['id']+1;
             }
+
+//            if(_this.data[parent['id']+1]){
+//                var comp = _this.data[parent['id']+1];
+//                var compValue = typeof(comp[sortCol]) == 'string' ? comp[sortCol].toLowerCase() : comp[sortCol];
+//                var itemValue = typeof(item[sortCol]) == 'string' ? item[sortCol].toLowerCase() : item[sortCol];
+//                while(compValue < itemValue && comp['indent']>parent['indent']){
+//                    if(typeof(_this.data[comp['id']+1])==='undefined'){
+//                        spliceId = comp['id']+1;
+//                        break;
+//                    }
+//                    comp = _this.data[comp['id']+1];
+//                    while(typeof(comp)!=='undefined' && comp['parent_uid']!=parent['uid']){
+//                        comp = _this.data[comp['id']+1];
+//                    }
+//                    if(typeof(_this.data[comp['id']+1])==='undefined'){
+//                        spliceId = comp['id']+1;
+//                        break;
+//                    }
+//                    compValue = typeof(comp[sortCol]) == 'string' ? comp[sortCol].toLowerCase() : comp[sortCol];
+//                    spliceId = comp['id'];
+//                }
+//            }
+//            else{
+//                spliceId = parent['id']+1;
+//            }
             _this.data.splice(spliceId, 0,item);
             _this.prepJava(_this.data);
             _this.Slick.dataView.setItems(_this.data);
@@ -1373,8 +1409,11 @@ var HGrid = {
 
         grid.onDblClick.subscribe(function (e, args) {
             var navId = $(e.target).find('span.nav-filter-item').attr('data-hgrid-nav');
+            var item = _this.getItemByValue(_this.data, navId, "uid");
             if(navId && _this.options.navigation){
                 _this.navLevelFilter(navId);
+                _this.dropZoneObj.options.url = item['uploadUrl'];
+                _this.dropZoneObj.options.dropDestination = item['uid'];
             }
             e.preventDefault();
         });
@@ -1382,6 +1421,9 @@ var HGrid = {
         // When a Breadcrumb is clicked, the grid filters
         $(_this.options.breadcrumbBox).on("click", ".hgrid-breadcrumb>a", function(e) {
             var navId = $(this).attr('data-hgrid-nav');
+            var item = _this.getItemByValue(_this.data, navId, "uid");
+            _this.dropZoneObj.options.url = item['uploadUrl'];
+            _this.dropZoneObj.options.dropDestination = item['uid'];
             _this.navLevelFilter(navId);
             e.preventDefault();
 

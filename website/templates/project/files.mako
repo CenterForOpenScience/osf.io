@@ -137,8 +137,10 @@ myGrid.hGridBeforeUpload.subscribe(function(e, args){
         var path = args.parent['path'].slice();
         path.push("nodefile-" +args.item.name);
         var item = {name: args.item.name, parent_uid: args.parent['uid'], uid: "nodefile-" + args.item.name, type:"fake", uploadBar: true, path: path, sortpath: path.join("/"), ext: "py", size: args.item.size.toString()};
-        myGrid.addItem(item);
-        return true;
+        var promise = $.when(myGrid.addItem(item));
+        promise.done(function(bool){
+            return true;
+        });
     }
     else return false;
 });
