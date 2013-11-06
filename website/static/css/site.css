@@ -843,3 +843,10 @@ form.form-horizontal.form-horizontal-narrow .control-group {
   }
 }
 
+/* Dates */
+
+dt span.date {
+    font-size: 13px;
+}
+
+
