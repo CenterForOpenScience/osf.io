@@ -127,13 +127,14 @@
           <div class="page-header">
               <h1>Files</h1>
           </div>
-          <ul id="browser" class="filetree">
-              <div mod-meta='{
-                      "tpl": "util/render_file_tree.mako",
-                      "uri": "${node_api_url}get_files/",
-                      "replace": true
-                  }'></div>
-          </ul>
+          <div mod-meta='{
+                  "tpl": "util/render_file_tree.mako",
+                  "uri": "${node_api_url}get_files/",
+                  "view_kwargs": {
+                      "dash": true
+                  },
+                  "replace": true
+              }'></div>
         </div>
       </section>
     </div>

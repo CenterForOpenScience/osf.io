@@ -286,7 +286,7 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/files/',
             '/project/<pid>/node/<nid>/files/',
-        ], 'get', project_views.file.list_files, OsfWebRenderer('project/files.mako')),
+        ], 'get', project_views.file.get_files, OsfWebRenderer('project/files.mako')),
 
         Rule([
             '/project/<pid>/files/<fid>/',
