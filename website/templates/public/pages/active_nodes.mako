@@ -61,7 +61,7 @@
                 month=node.date_created.date().strftime('%B')
             )
         %>
-        <li class="project list-group-item">
+        <li class="project list-group-item list-group-item-node">
             <h4 class="list-group-item-heading">
                 <a href="${node.url}">${node.title}</a>
             </h4>
