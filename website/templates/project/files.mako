@@ -105,7 +105,7 @@ var myGrid = HGrid.create({
     url: ${info}[0]['uploadUrl'],
     columns:[
         {id: "name", name: "Name", field: "name", width: 550, cssClass: "cell-title", formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
-        {id: "date", name: "Date Modified", field: "dateModified", width: 140},
+        {id: "date", name: "Date Modified", field: "dateModified", width: 160},
         {id: "size", name: "Size", field: "sizeRead", width: 90, formatter: UploadBars, sortable: true}
     ],
     enableCellNavigation: false,

@@ -1420,8 +1420,10 @@ var HGrid = {
             var item = _this.getItemByValue(_this.data, navId, "uid");
             if(navId && _this.options.navigation){
                 _this.navLevelFilter(navId);
-                _this.dropZoneObj.options.url = item['uploadUrl'];
-                _this.dropZoneObj.options.dropDestination = item['uid'];
+                if(_this.dropZoneObj!=null){
+                    _this.dropZoneObj.options.url = item['uploadUrl'];
+                    _this.dropZoneObj.options.dropDestination = item['uid'];
+                }
             }
             e.preventDefault();
         });
@@ -1430,8 +1432,10 @@ var HGrid = {
         $(_this.options.breadcrumbBox).on("click", ".hgrid-breadcrumb>a", function(e) {
             var navId = $(this).attr('data-hgrid-nav');
             var item = _this.getItemByValue(_this.data, navId, "uid");
-            _this.dropZoneObj.options.url = item['uploadUrl'];
-            _this.dropZoneObj.options.dropDestination = item['uid'];
+            if(_this.dropZoneObj!=null){
+                _this.dropZoneObj.options.url = item['uploadUrl'];
+                _this.dropZoneObj.options.dropDestination = item['uid'];
+            }
             _this.navLevelFilter(navId);
             e.preventDefault();
 
