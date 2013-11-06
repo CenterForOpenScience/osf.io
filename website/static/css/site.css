@@ -158,8 +158,10 @@ h4 {
 }
 
 /* Footer Styles */
-footer {
-  margin: 50px 0;
+
+
+.footer a i {
+    color: #666666;
 }
 
 .header-image {
@@ -209,9 +211,6 @@ footer {
     font-size: 50px;
 }
 
-footer {
-    margin: 50px 0;
-}
 
 /* RESPONSIVE CSS */
 

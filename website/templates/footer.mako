@@ -1,4 +1,4 @@
-<div class="footer">
+<footer class="footer">
     <div class="container">
         <div class="row">
             <div class="col-md-1">
@@ -40,7 +40,7 @@
             </div> <!-- column -->
         </div>
     </div>
-</div><!-- end footer -->
+</footer><!-- end footer -->
 <div class="container copyright">
     <div class="row">
         <div class="col-md-12">
