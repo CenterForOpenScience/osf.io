@@ -1,10 +1,7 @@
 <footer class="footer">
     <div class="container">
         <div class="row">
-            <div class="col-md-1">
-                &nbsp;
-            </div>
-             <div class="col-md-2">
+             <div class="col-md-2 col-md-offset-1">
                 <h4>OSF</h4>
                 <ul>
                     <li><a href="http://openscienceframework.org/project/4znZP/wiki/home">About</a></li>
