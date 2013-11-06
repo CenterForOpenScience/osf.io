@@ -6,9 +6,11 @@ from framework import request, User, Q
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from framework.auth import must_have_session_auth, get_current_user, get_api_key
-from framework.forms.utils import sanitize
 import hashlib
-import json
+
+from website import settings
+from website.filters import gravatar
+from website.models import Node
 
 from framework import HTTPError
 
@@ -63,6 +65,34 @@ def get_node_contributors_abbrev(*args, **kwargs):
         'others_suffix': others_suffix,
     }
 
+
+def _jsonify_contribs(contribs):
+
+    data = []
+
+    for contrib in contribs:
+        if 'id' in contrib:
+            user = User.load(contrib['id'])
+            data.append({
+                'registered': True,
+                'id': user._primary_key,
+                'fullname': user.fullname,
+                'gravatar': gravatar(
+                    user,
+                    use_ssl=True,
+                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+                ),
+            })
+        else:
+            contribs.append({
+                'registered': False,
+                'id': hashlib.md5(contrib['nr_email']).hexdigest(),
+                'fullname': contrib['nr_name'],
+            })
+
+    return data
+
+
 @must_be_valid_project
 def get_contributors(*args, **kwargs):
 
@@ -74,23 +104,33 @@ def get_contributors(*args, **kwargs):
             and not node_to_use.are_contributors_public:
         raise HTTPError(http.FORBIDDEN)
 
-    contributors = []
-    for contributor in node_to_use.contributor_list:
-        if 'id' in contributor:
-            user = User.load(contributor['id'])
-            contributors.append({
-                'registered' : True,
-                'id' : user._primary_key,
-                'fullname' : user.fullname,
-            })
-        else:
-            contributors.append({
-                'registered' : False,
-                'id' : hashlib.md5(contributor['nr_email']).hexdigest(),
-                'fullname' : contributor['nr_name'],
-            })
+    contribs = _jsonify_contribs(node_to_use.contributor_list)
 
-    return {'contributors' : contributors}
+    return {'contributors': contribs}
+
+
+@must_be_valid_project
+def get_contributors_from_parent(*args, **kwargs):
+
+    user = get_current_user()
+    api_key = get_api_key()
+    node_to_use = kwargs['node'] or kwargs['project']
+
+    parent = node_to_use.node__parent[0] if node_to_use.node__parent else None
+    if not parent:
+        raise HTTPError(http.BAD_REQUEST)
+
+    if not node_to_use.can_edit(user, api_key) or \
+            not parent.can_edit(user, api_key):
+        raise HTTPError(http.FORBIDDEN)
+
+    contribs = _jsonify_contribs([
+        contrib
+        for contrib in parent.contributor_list
+        if contrib not in node_to_use.contributor_list
+    ])
+
+    return {'contributors': contribs}
 
 
 @must_have_session_auth
@@ -125,22 +165,10 @@ def project_removecontributor(*args, **kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 
-@must_have_session_auth # returns user
-@must_be_valid_project # returns project
-@must_be_contributor # returns user, project
-@must_not_be_registration
-def project_addcontributors_post(*args, **kwargs):
-    """ Add contributors to a node. """
+def _add_contributors(node_to_use, users_to_add, user, api_key):
 
-    node_to_use = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
-    api_key = get_api_key()
-    user_ids = request.json.get('user_ids', [])
-    # TODO: Move to model
-
-    for user_id in user_ids:
-        if user_id not in node_to_use.contributors:
-            added_user = User.load(user_id)
+    for added_user in users_to_add:
+        if added_user not in node_to_use.contributors:
             node_to_use.contributors.append(added_user)
             node_to_use.contributor_list.append({
                 'id': added_user._primary_key,
@@ -152,9 +180,40 @@ def project_addcontributors_post(*args, **kwargs):
         params={
             'project': node_to_use.parent_id,
             'node': node_to_use._primary_key,
-            'contributors': user_ids,
+            'contributors': [added_user._id for added_user in users_to_add],
         },
         user=user,
         api_key=api_key,
     )
+
+
+@must_have_session_auth # returns user
+@must_be_valid_project # returns project
+@must_be_contributor # returns user, project
+@must_not_be_registration
+def project_addcontributors_post(*args, **kwargs):
+    """ Add contributors to a node. """
+
+    node_to_use = kwargs['node'] or kwargs['project']
+    user = kwargs['user']
+    api_key = get_api_key()
+    user_ids = request.json.get('user_ids', [])
+    node_ids = request.json.get('node_ids', [])
+    # TODO: Move to model
+
+    users = [
+        User.load(user_id)
+        for user_id in user_ids
+    ]
+
+    status = _add_contributors(
+        node_to_use, users, user, api_key
+    )
+
+    for node_id in node_ids:
+        node = Node.load(node_id)
+        status = _add_contributors(
+            node, users, user, api_key
+        )
+
     return {'status': 'success'}, 201
