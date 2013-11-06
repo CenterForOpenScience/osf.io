@@ -238,7 +238,15 @@ var HGrid = {
              @param {Object} e Event object
              @param {Object} args File object response
              **/
-            hGridOnUpload: new self.Slick.Event()
+            hGridOnUpload: new self.Slick.Event(),
+             /**
+             Fired on success response from server on upload
+
+             @event hGridAfterNav
+             @param {Object} e Event object
+             @param {Object} args nav level
+             **/
+            hGridAfterNav: new self.Slick.Event()
         });
         return self;
     },
@@ -348,7 +356,8 @@ var HGrid = {
     },
 
     updateNav: function(){
-        var nav = this.options.navLevel;
+        var _this = this;
+        var nav = _this.options.navLevel;
         nav = nav.split("/");
         nav = nav.pop();
         this.navLevelFilter(nav);
@@ -383,6 +392,7 @@ var HGrid = {
         _this.Slick.dataView.setFilter(_this.myFilter);
         _this.Slick.grid.invalidate();
         _this.updateBreadcrumbsBox(itemUid);
+        _this.hGridAfterNav.notify(item);
     },
 
      /**
@@ -1159,17 +1169,18 @@ var HGrid = {
 
     //Function called when sort is clicked
     onSort: function (e, args, grid, dataView, data){
-        this.options.sortAsc = !this.options.sortAsc;
+        var _this = this;
+        _this.options.sortAsc = !_this.options.sortAsc;
         var sortingCol = args.sortCol.field;
         if (sortingCol=="sizeRead"){
             sortingCol="size";
         }
-        var sorted = this.sortHierarchy(data, sortingCol, dataView, grid);
-        var new_data = this.prepJava(sorted, {'sorting': true});
-        this.data = new_data;
+        var sorted = _this.sortHierarchy(data, sortingCol, dataView, grid);
+        var new_data = _this.prepJava(sorted, {'sorting': true});
+        _this.data = new_data;
         dataView.setItems(new_data);
-        this.currentlyRendered=[];
-        this.updateNav();
+        _this.currentlyRendered=[];
+        _this.updateNav();
     },
 
     sortHierarchy: function (data, sortingCol, dataView, grid){
@@ -1185,10 +1196,10 @@ var HGrid = {
                 return 0;
             }
             if(_this.options.sortAsc){
-                return x < y ? 1 : -1;
+                return x > y ? 1 : -1;
             }
             else{
-                return x > y ? 1 : -1;
+                return x < y ? 1 : -1;
             }
         });
         var hierarchical = [];
