@@ -4,37 +4,6 @@
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 <form id="fileupload" action="${node_api_url + 'files/upload/'}" method="POST" enctype="multipart/form-data">
-        <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
-        <div class="row fileupload-buttonbar">
-            <div class="col-md-7">
-                <!-- The fileinput-button span is used to style the file input field as button -->
-                <span class="btn btn-success fileinput-button${'' if user_can_edit else ' disabled'}">
-                    <i class="icon-plus icon-white"></i>
-                    <span>Add files...</span>
-                    <input type="file" name="files[]" multiple>
-                </span>
-                <button type="submit" class="btn btn-primary start${'' if user_can_edit else ' disabled'}">
-                    <i class="icon-upload icon-white"></i>
-                    <span>Start upload</span>
-                </button>
-            </div>
-            <!-- The global progress information -->
-            <div class="col-md-5 fileupload-progress fade">
-                <!-- The global progress bar -->
-                <div style='margin-bottom:0' class="progress progress-success progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-                    <div class="bar" style="width:0%;"></div>
-                </div>
-                <!-- The extended global progress information -->
-                <div class="progress-extended">&nbsp;</div>
-            </div>
-        </div>
-        <!-- The loading indicator is shown during file processing -->
-        <div class="fileupload-loading"></div>
-        <br>
-        <!-- The table listing the files available for upload/download -->
-        <div id='fileWidgetLoadingIndicator' class="progress progress-striped active">
-            <div class="bar" style="width: 100%;">Loading...</div>
-        </div>
         <table id='filesTable' role="presentation" class="table table-striped" style='display:none'>
             <thead>
                 <tr>
@@ -115,7 +84,7 @@
 %if user_can_edit:
 <div class="container" style="position:relative;">
 ##    <h3 style="max-width: 65%;"><span class="btn btn-success fileinput-button" id="clickable"><i class="icon-plus icon-white"></i><span>Add files...</span></span></h3>
-    <h3 style="max-width: 65%;">Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element>!</h3>
+    <h3 >Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element></h3>
     <div id="totalProgressActive" style="width: 35%; position: absolute; top: 4px; right: 0;">
         <div id="totalProgress" class="bar" style="width: 0%;"></div>
     </div>
