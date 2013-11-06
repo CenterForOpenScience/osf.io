@@ -180,9 +180,9 @@ var myGrid = HGrid.create({
     },
     url: ${info}[0]['uploadUrl'],
     columns:[
-        {id: "name", name: "Name", field: "name", width: 550, cssClass: "cell-title", formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
-        {id: "date", name: "Date Modified", field: "dateModified", width: 160},
-        {id: "size", name: "Size", field: "sizeRead", width: 90, formatter: UploadBars, sortable: true}
+        {id: "name", name: "Name", field: "name", width: 300, cssClass: "cell-title", formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
+        {id: "date", name: "Date Modified", field: "dateModified", width: 100},
+        {id: "size", name: "Size", field: "sizeRead", width: 60, formatter: UploadBars, sortable: true}
     ],
     enableCellNavigation: false,
     breadcrumbBox: "#myGridBreadcrumbs",
@@ -309,7 +309,7 @@ myGrid.hGridOnUpload.subscribe(function(e, args){
 <%def name="javascript()">
 <script src="/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js"></script>
 <script src="/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js"></script>
-<script src="/static/js/vendor/dropzone.js"></script>
+<script src="/static/vendor/dropzone/dropzone.js"></script>
 <script src="/static/js/slickgrid.custom.min.js"></script>
 <script src="/static/js/hgrid.js"></script>
 </%def>
