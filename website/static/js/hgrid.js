@@ -288,7 +288,6 @@ var HGrid = {
                 Dropzone.autoDiscover = false;
             }
         }
-
     },
 
     defaultTaskNameFormatter: function(row, cell, value, columnDef, dataContext) {
