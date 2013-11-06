@@ -147,7 +147,7 @@
                         </div>
                     </div>
                     <div class="span6 offset2" data-bind="if:parentId">
-                        <a data-bind="click:importFromParent, text:'Import results from ' + parentTitle"></a>
+                        <a data-bind="click:importFromParent, text:'List contributors from ' + parentTitle"></a>
                     </div>
                 </div>
             </form>
