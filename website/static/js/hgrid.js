@@ -485,19 +485,21 @@ var HGrid = {
                 parent = hGrid.getItemByValue(hGrid.data, myDropzone.options.dropDestination, 'uid');
             }
             var value = {item: file, parent: parent};
-            var event_status = hGrid.hGridBeforeUpload.notify(value);
-            if(event_status===false){
-                myDropzone.removeFile(file);
-                value['success'] = false;
-                hGrid.updateNav();
-                hGrid.hGridAfterUpload.notify(value);
-            }
+            var promise = $.when(hGrid.hGridBeforeUpload.notify(value));
+            promise.done(function(event_status) {
+                if(event_status===false){
+                    myDropzone.removeFile(file);
+                    value['success'] = false;
+                    hGrid.updateNav();
+                    hGrid.hGridAfterUpload.notify(value);
+                }
+            });
         });
 
         myDropzone.on("dragleave", function(e){
             hGrid.removeDraggerGuide();
         });
-// Pass the destination folder to the server
+        // Pass the destination folder to the server
         myDropzone.on("sending", function(file, xhr, formData){
             hGrid.updateNav();
             $('#totalProgressActive').addClass('active progress-striped progress');
@@ -516,22 +518,24 @@ var HGrid = {
                     $('#totalProgressActive').removeClass('active progress-striped progress');
                 },(1*1000));
             }
-        })
-// Hook the drop success to the grid view update
+        });
+        // Hook the drop success to the grid view update
         myDropzone.on("success", function(file) {
             var value;
-            var event_status = hGrid.hGridOnUpload.notify(file);
-            if (event_status || typeof(event_status)=='undefined'){
-                value = {item: JSON.parse(file.xhr.response)[0], success: true};
-                value['item']['name'] = file.name;
-                hGrid.updateNav();
-                hGrid.hGridAfterUpload.notify(value);
-            }
-            else{
-                value = {item: file, success: false};
-                hGrid.updateNav();
-                hGrid.hGridAfterUpload.notify(value);
-            }
+            var promise = $.when(hGrid.hGridOnUpload.notify(file));
+            promise.done(function(event_status) {
+                if (event_status || typeof(event_status)=='undefined'){
+                    value = {item: JSON.parse(file.xhr.response)[0], success: true};
+                    value['item']['name'] = file.name;
+                    hGrid.updateNav();
+                    hGrid.hGridAfterUpload.notify(value);
+                }
+                else{
+                    value = {item: file, success: false};
+                    hGrid.updateNav();
+                    hGrid.hGridAfterUpload.notify(value);
+                }
+            })
         });
     },
 
@@ -573,30 +577,32 @@ var HGrid = {
         var parent= _this.getItemByValue(_this.data, item['parent_uid'], 'uid');
         var value = {'item': item, 'parent':parent};
         var valueAfter = {'item': item, 'parent':parent};
-        var event_status = _this.hGridBeforeAdd.notify(value);
-        if(event_status || typeof(event_status)==='undefined'){
-            if(item['parent_uid']!="null" && !item['uploadBar']){
-                var parent_path = parent['path'];
-                item['path']=[];
-                item['path']=item['path'].concat(parent_path, item['uid']);
-                item['sortpath']=item['path'].join('/');
-                if(!item['type']) item['type']='file';
+        var promise = $.when(_this.hGridBeforeAdd.notify(value));
+        promise.done(function(event_status) {
+            if(event_status || typeof(event_status)==='undefined'){
+                if(item['parent_uid']!="null" && !item['uploadBar']){
+                    var parent_path = parent['path'];
+                    item['path']=[];
+                    item['path']=item['path'].concat(parent_path, item['uid']);
+                    item['sortpath']=item['path'].join('/');
+                    if(!item['type']) item['type']='file';
+                }
+                _this.data.splice(parent['id']+1, 0,item);
+                _this.prepJava(_this.data);
+                _this.Slick.dataView.setItems(_this.data);
+                _this.Slick.grid.setSelectedRows([]);
+                _this.currentlyRendered=[];
+                valueAfter['success'] = true;
+                _this.hGridAfterAdd.notify(value);
+                return true;
             }
-            _this.data.splice(parent['id']+1, 0,item);
-            _this.prepJava(_this.data);
-            _this.Slick.dataView.setItems(_this.data);
-            _this.Slick.grid.setSelectedRows([]);
-            _this.currentlyRendered=[];
-            valueAfter['success'] = true;
-            _this.hGridAfterAdd.notify(value);
-            return true;
-        }
-        else{
-            valueAfter['success'] = false;
-            _this.updateNav();
-            _this.hGridAfterAdd.notify(value);
-            return false;
-        }
+            else{
+                valueAfter['success'] = false;
+                _this.updateNav();
+                _this.hGridAfterAdd.notify(value);
+                return false;
+            }
+        });
     },
 
     /**
@@ -667,27 +673,29 @@ var HGrid = {
         }
 
         value['insertBefore']=destination['id']+1;
-        var event_status = _this.hGridBeforeMove.notify(value);
-        if(event_status || typeof(event_status)==='undefined'){
-            if(_this.itemMover(value, url, src_id, dest_path)){
-                value['success']=true;
-                _this.updateNav();
-                _this.hGridAfterMove.notify(value);
-                return true;
+        var promise = $.when(_this.hGridBeforeMove.notify(value));
+        promise.done(function(event_status) {
+            if(event_status || typeof(event_status)==='undefined'){
+                if(_this.itemMover(value, url, src_id, dest_path)){
+                    value['success']=true;
+                    _this.updateNav();
+                    _this.hGridAfterMove.notify(value);
+                    return true;
+                }
+                else {
+                    value['success']="There was an error with the grid";
+                    _this.updateNav();
+                    _this.hGridAfterMove.notify(value);
+                    return false;
+                }
             }
-            else {
-                value['success']="There was an error with the grid";
+            else{
+                value['success']=false;
                 _this.updateNav();
                 _this.hGridAfterMove.notify(value);
                 return false;
             }
-        }
-        else{
-            value['success']=false;
-            _this.updateNav();
-            _this.hGridAfterMove.notify(value);
-            return false;
-        }
+        });
     },
 
     /**
@@ -753,19 +761,21 @@ var HGrid = {
         var src = this.getItemByValue(this.data, src_uid, 'uid');
         var value = {'item': src, 'name': name};
         var valueAfter = {'item': src, 'name': name};
-        var event_status = this.hGridBeforeEdit.notify(value);
-        if(event_status || typeof(event_status)==='undefined'){
-            src['name']=name;
-            this.Slick.dataView.updateItem(src['id'], src);
-            valueAfter['success']=true;
-            this.hGridAfterEdit.notify(valueAfter);
-            return true;
-        }
-        else{
-            valueAfter['success']=false;
-            this.hGridAfterEdit.notify(valueAfter);
-            return false;
-        }
+        var promise = $.when(this.hGridBeforeEdit.notify(value));
+        promise.done(function(event_status) {
+            if(event_status || typeof(event_status)==='undefined'){
+                src['name']=name;
+                this.Slick.dataView.updateItem(src['id'], src);
+                valueAfter['success']=true;
+                this.hGridAfterEdit.notify(valueAfter);
+                return true;
+            }
+            else{
+                valueAfter['success']=false;
+                this.hGridAfterEdit.notify(valueAfter);
+                return false;
+            }
+        });
     },
 
     /**
@@ -1237,20 +1247,22 @@ var HGrid = {
                 value['rows'].push(src_id[j]);
             }
             value['insertBefore']=args['insertBefore'];
-            var event_status = _this.hGridBeforeMove.notify(value);
-            if(event_status || typeof(event_status)==='undefined'){
-                _this.itemMover(value, "/sg_move", src, dest);
-                value['success']=true;
-                _this.updateNav();
-                _this.hGridAfterMove.notify(value);
-            }
-            else {
-                _this.removeDraggerGuide();
-                alert("Move failed");
-                value['success']=false;
-                _this.updateNav();
-                _this.hGridAfterMove.notify(value);
-            }
+            var promise = $.when(_this.hGridBeforeMove.notify(value));
+            promise.done(function(event_status) {
+                if(event_status || typeof(event_status)==='undefined'){
+                    _this.itemMover(value, "/sg_move", src, dest);
+                    value['success']=true;
+                    _this.updateNav();
+                    _this.hGridAfterMove.notify(value);
+                }
+                else {
+                    _this.removeDraggerGuide();
+                    alert("Move failed");
+                    value['success']=false;
+                    _this.updateNav();
+                    _this.hGridAfterMove.notify(value);
+                }
+            });
         });
 
         grid.registerPlugin(moveRowsPlugin);
