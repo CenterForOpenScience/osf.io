@@ -9,6 +9,18 @@
     </style>
 % endif
 
+<style>
+    .modal-subheader {
+        font-size: 30px;
+        margin-right: 10px;
+    }
+    .disabled {
+        cursor: default !important;
+        pointer-events: none;
+    }
+</style>
+
+
 <div id="projectScope">
     <header class="subhead" id="overview">
         <div class="row">
@@ -121,7 +133,8 @@
     $(document).ready(function(){
         // Initiate addContributorsModel
         var $addContributors = $('#addContributors');
-        viewModel = new AddContributorViewModel();
+        // TODO: Title and parent should be retrieved from AJAX, not mako
+        viewModel = new AddContributorViewModel('${node_title}', '${parent_id}', '${parent_title}');
         ko.applyBindings(viewModel, $addContributors[0]);
         // Clear user search modal when dismissed; catches dismiss by escape key
         // or cancel button.

@@ -91,7 +91,7 @@
 </div>
 %endif
 <div id="myGridBreadcrumbs" style="margin-top: 10px"></div>
-<div id="myGrid" class="dropzone files-page" style="width: 100%;"></div>
+<div id="myGrid" class="dropzone files-page"></div>
 </div>
 
 <script>
@@ -204,7 +204,7 @@ var myGrid = HGrid.create({
 
 myGrid.updateBreadcrumbsBox(myGrid.data[0]['uid']);
 myGrid.addColumn({id: "downloads", name: "Downloads", field: "downloads", width: 90});
-myGrid.addColumn({id: "actions", name: "", field: "actions", width: 65, formatter: Buttons});
+myGrid.addColumn({id: "actions", name: "", field: "actions", width: 80, formatter: Buttons});
 myGrid.Slick.grid.setSortColumn("name");
 
 myGrid.hGridBeforeUpload.subscribe(function(e, args){

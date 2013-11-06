@@ -93,7 +93,7 @@ classes should alter those!
   overflow: hidden;
   -o-text-overflow: ellipsis;
   text-overflow: ellipsis;
-  height: 16px;
+  height: 20px;
   line-height: 16px;
   margin: 0;
   padding: 4px;
