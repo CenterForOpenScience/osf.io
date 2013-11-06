@@ -1,11 +1,9 @@
 ## http://www.webappers.com/2011/10/14/how-to-create-collapsible-tree-menu-with-pure-css/
 
-##<script src="/static/js/vendor/jquery-1.7.min.js"></script>
-##<script src="/static/js/vendor/jquery-ui-1.8.16.custom.min.js"></script>
 <link rel="stylesheet" href="/static/css/hgrid-base.css" type="text/css" />
-<script src="/static/js/vendor/jquery.event.drag-2.2.js"></script>
-<script src="/static/js/vendor/jquery.event.drop-2.2.js"></script>
-<script src="/static/js/vendor/dropzone.js"></script>
+<script src="/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js"></script>
+<script src="/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js"></script>
+
 <script src="/static/js/slickgrid.custom.min.js"></script>
 <script src="/static/js/hgrid.js"></script>
 
