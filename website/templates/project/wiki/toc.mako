@@ -1,6 +1,7 @@
-<div class="list-group">
+<div class="osf-sidebar hidden-print" role="complementary">
+    <ul class="nav bs-sidenav">
 
-        <h4 class="list-group-item"><a href="/project/${node_id}/wiki/home">Project</a></h4>
+        <li><a href="/project/${node_id}/wiki/home">Project</a></li>
 
         % for k in pages_current:
             % if not k == 'home':
@@ -9,9 +10,9 @@
         % endfor
 
         % for child in toc:
-                <h4 class="list-group-item">
+                <li>
                     <a href="/project/${node_id}/node/${child['id']}/wiki/home">${child['title']} (${child['category']})</a>
-                </h4>
+                </li>
             % for k in child['pages']:
                 % if k != 'home':
                         <a class="list-group-item" href="/project/${node_id}/node/${child['id']}/wiki/${k}">${k}</a>
