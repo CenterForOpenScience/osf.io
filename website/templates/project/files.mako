@@ -7,8 +7,8 @@
 
 %if user_can_edit:
 <div class="container" style="position:relative;">
-    <h3 style="max-width: 65%;"><span class="btn btn-success fileinput-button" id="clickable"><i class="icon-plus icon-white"></i><span>Add files...</span></span></h3>
-    Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element>!
+##    <h3 style="max-width: 65%;"><span class="btn btn-success fileinput-button" id="clickable"><i class="icon-plus icon-white"></i><span>Add files...</span></span></h3>
+    <h3 style="max-width: 65%;">Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element>!</h3>
     <div id="totalProgressActive" style="width: 35%; position: absolute; top: 4px; right: 0;">
         <div id="totalProgress" class="bar" style="width: 0%;"></div>
     </div>

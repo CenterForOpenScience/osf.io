@@ -579,48 +579,49 @@ var HGrid = {
         var parent= _this.getItemByValue(_this.data, item['parent_uid'], 'uid');
         var value = {'item': item, 'parent':parent};
         var valueAfter = {'item': item, 'parent':parent};
-        var event_status = _this.hGridBeforeAdd.notify(value);
-        if(event_status || typeof(event_status)==='undefined'){
-            if(item['parent_uid']!="null" && !item['uploadBar']){
-                var parent_path = parent['path'];
-                item['path']=[];
-                item['path']=item['path'].concat(parent_path, item['uid']);
-                item['sortpath']=item['path'].join('/');
-                if(!item['type']) item['type']='file';
-            }
-            var sortCol = _this.Slick.grid.getSortColumns()[0];
-            var sortId = sortCol['columnId'];
-            var asc = sortCol['sortAsc'];
-            var spliceId = null;
-            var searchData = _this.getItemsByValue(_this.data, parent['uid'], "parent_uid");
+        var promise = $.when(_this.hGridBeforeAdd.notify(value));
+        promise.done(function(event_status){
+            if(event_status || typeof(event_status)==='undefined'){
+                if(item['parent_uid']!="null" && !item['uploadBar']){
+                    var parent_path = parent['path'];
+                    item['path']=[];
+                    item['path']=item['path'].concat(parent_path, item['uid']);
+                    item['sortpath']=item['path'].join('/');
+                    if(!item['type']) item['type']='file';
+                }
+                var sortCol = _this.Slick.grid.getSortColumns()[0];
+                var sortId = sortCol['columnId'];
+                var asc = sortCol['sortAsc'];
+                var spliceId = null;
+                var searchData = _this.getItemsByValue(_this.data, parent['uid'], "parent_uid");
 
-            if(searchData.length != 0){
-                var comp = null;
-                var compValue = null;
-                var itemValue = typeof(item[sortId]) == 'string' ? item[sortId].toLowerCase() : item[sortId];
-                itemValue = sortId == 'size' ? parseInt(itemValue) : itemValue;
-                for(var i=0; i<searchData.length; i++){
-                    comp = searchData[i];
-                    compValue = typeof(comp[sortId]) == 'string' ? comp[sortId].toLowerCase() : comp[sortId];
-                    compValue = sortId == 'size' ? parseInt(compValue) : compValue;
-                    spliceId = comp['id']+1;
-                    if(asc){
-                        if(compValue > itemValue){
-                            spliceId = comp['id'];
-                            break;
+                if(searchData.length != 0){
+                    var comp = null;
+                    var compValue = null;
+                    var itemValue = typeof(item[sortId]) == 'string' ? item[sortId].toLowerCase() : item[sortId];
+                    itemValue = sortId == 'size' ? parseInt(itemValue) : itemValue;
+                    for(var i=0; i<searchData.length; i++){
+                        comp = searchData[i];
+                        compValue = typeof(comp[sortId]) == 'string' ? comp[sortId].toLowerCase() : comp[sortId];
+                        compValue = sortId == 'size' ? parseInt(compValue) : compValue;
+                        spliceId = comp['id']+1;
+                        if(asc){
+                            if(compValue > itemValue){
+                                spliceId = comp['id'];
+                                break;
+                            }
                         }
-                    }
-                    else{
-                        if(compValue < itemValue){
-                            spliceId = comp['id'];
-                            break;
+                        else{
+                            if(compValue < itemValue){
+                                spliceId = comp['id'];
+                                break;
+                            }
                         }
                     }
                 }
-            }
-            else{
-                spliceId = parent['id']+1;
-            }
+                else{
+                    spliceId = parent['id']+1;
+                }
 
 //            if(_this.data[parent['id']+1]){
 //                var comp = _this.data[parent['id']+1];
@@ -646,21 +647,22 @@ var HGrid = {
 //            else{
 //                spliceId = parent['id']+1;
 //            }
-            _this.data.splice(spliceId, 0,item);
-            _this.prepJava(_this.data);
-            _this.Slick.dataView.setItems(_this.data);
-            _this.Slick.grid.setSelectedRows([]);
-            _this.currentlyRendered=[];
-            valueAfter['success'] = true;
-            _this.hGridAfterAdd.notify(value);
-            return true;
-        }
-        else{
-            valueAfter['success'] = false;
-            _this.updateNav();
-            _this.hGridAfterAdd.notify(value);
-            return false;
-        }
+                _this.data.splice(spliceId, 0,item);
+                _this.prepJava(_this.data);
+                _this.Slick.dataView.setItems(_this.data);
+                _this.Slick.grid.setSelectedRows([]);
+                _this.currentlyRendered=[];
+                valueAfter['success'] = true;
+                _this.hGridAfterAdd.notify(value);
+                return true;
+            }
+            else{
+                valueAfter['success'] = false;
+                _this.updateNav();
+                _this.hGridAfterAdd.notify(value);
+                return false;
+            }
+        });
     },
 
     /**
@@ -731,27 +733,29 @@ var HGrid = {
         }
 
         value['insertBefore']=destination['id']+1;
-        var event_status = _this.hGridBeforeMove.notify(value);
-        if(event_status || typeof(event_status)==='undefined'){
-            if(_this.itemMover(value, url, src_id, dest_path)){
-                value['success']=true;
-                _this.updateNav();
-                _this.hGridAfterMove.notify(value);
-                return true;
+        var promise = $.when(_this.hGridBeforeMove.notify(value));
+        promise.done(function(event_status){
+            if(event_status || typeof(event_status)==='undefined'){
+                if(_this.itemMover(value, url, src_id, dest_path)){
+                    value['success']=true;
+                    _this.updateNav();
+                    _this.hGridAfterMove.notify(value);
+                    return true;
+                }
+                else {
+                    value['success']="There was an error with the grid";
+                    _this.updateNav();
+                    _this.hGridAfterMove.notify(value);
+                    return false;
+                }
             }
-            else {
-                value['success']="There was an error with the grid";
+            else{
+                value['success']=false;
                 _this.updateNav();
                 _this.hGridAfterMove.notify(value);
                 return false;
             }
-        }
-        else{
-            value['success']=false;
-            _this.updateNav();
-            _this.hGridAfterMove.notify(value);
-            return false;
-        }
+        });
     },
 
     /**
@@ -814,22 +818,25 @@ var HGrid = {
      * @return {Boolean}
      */
     editItem: function(src_uid, name) {
-        var src = this.getItemByValue(this.data, src_uid, 'uid');
+        var _this = this;
+        var src = _this.getItemByValue(_this.data, src_uid, 'uid');
         var value = {'item': src, 'name': name};
         var valueAfter = {'item': src, 'name': name};
-        var event_status = this.hGridBeforeEdit.notify(value);
-        if(event_status || typeof(event_status)==='undefined'){
-            src['name']=name;
-            this.Slick.dataView.updateItem(src['id'], src);
-            valueAfter['success']=true;
-            this.hGridAfterEdit.notify(valueAfter);
-            return true;
-        }
-        else{
-            valueAfter['success']=false;
-            this.hGridAfterEdit.notify(valueAfter);
-            return false;
-        }
+        var promise = $.when(_this.hGridBeforeEdit.notify(value));
+        promise.done(function(event_status){
+            if(event_status || typeof(event_status)==='undefined'){
+                src['name']=name;
+                _this.Slick.dataView.updateItem(src['id'], src);
+                valueAfter['success']=true;
+                _this.hGridAfterEdit.notify(valueAfter);
+                return true;
+            }
+            else{
+                valueAfter['success']=false;
+                _this.hGridAfterEdit.notify(valueAfter);
+                return false;
+            }
+        });
     },
 
     /**
@@ -1313,20 +1320,22 @@ var HGrid = {
                 value['rows'].push(src_id[j]);
             }
             value['insertBefore']=args['insertBefore'];
-            var event_status = _this.hGridBeforeMove.notify(value);
-            if(event_status || typeof(event_status)==='undefined'){
-                _this.itemMover(value, "/sg_move", src, dest);
-                value['success']=true;
-                _this.updateNav();
-                _this.hGridAfterMove.notify(value);
-            }
-            else {
-                _this.removeDraggerGuide();
-                alert("Move failed");
-                value['success']=false;
-                _this.updateNav();
-                _this.hGridAfterMove.notify(value);
-            }
+            var promise = $.when(_this.hGridBeforeMove.notify(value));
+            promise.done(function(event_status){
+                if(event_status || typeof(event_status)==='undefined'){
+                    _this.itemMover(value, "/sg_move", src, dest);
+                    value['success']=true;
+                    _this.updateNav();
+                    _this.hGridAfterMove.notify(value);
+                }
+                else {
+                    _this.removeDraggerGuide();
+                    alert("Move failed");
+                    value['success']=false;
+                    _this.updateNav();
+                    _this.hGridAfterMove.notify(value);
+                }
+            });
         });
 
         grid.registerPlugin(moveRowsPlugin);
