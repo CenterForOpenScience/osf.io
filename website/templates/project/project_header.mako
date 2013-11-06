@@ -29,7 +29,7 @@
                 %if not node_is_public:
                     <button class='btn btn-default disabled'>Private</button>
                     % if user_is_contributor:
-                        <a class="btn btn-primary" id="publicButton" data-target="${node_api_url}permissions/public/">Make public</a>
+                        <a class="btn btn-default" id="publicButton" data-target="${node_api_url}permissions/public/">Make public</a>
                     % endif
                 %else:
                     % if user_is_contributor:
