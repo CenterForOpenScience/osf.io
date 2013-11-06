@@ -21,6 +21,7 @@ css = Bundle(
             "vendor/jquery-fileupload/css/jquery.fileupload-ui.css",
             "vendor/pygments.css",
             "vendor/bootstrap3-editable/css/bootstrap-editable.css",
+            "vendor/bootstrap3/css/bootstrap-theme.css",
             filters="cssmin"),
         # Site-specific CSS
         Bundle(
