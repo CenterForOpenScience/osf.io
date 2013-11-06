@@ -31,11 +31,11 @@
             <div class="col-md-2">
                 <h4>Socialize</h4>
                 <div class="social">
-                    <a href="http://twitter.com/OSFramework"><img src="/static/img/twitter_alt.png" alt="Twitter" height="24" width="24"></a>
-                    <a href="https://www.facebook.com/OpenScienceFramework"><img src="/static/img/facebook.png" alt="Facebook" height="24" width="24"></a>
-                    <a href="https://groups.google.com/forum/#!forum/openscienceframework"><img src="/static/img/google.png" alt="Google Group" height="24" width="24"></a>
-                    <a href="https://www.github.com/centerforopenscience"><img src="/static/img/github_alt.png" alt="GitHub" height="24" width="24"></a>
-                    <a href="https://plus.google.com/103557785986281627994" rel="publisher"><img src="/static/img/googleplus.png" alt="Google Plus" height="24" width="24"></a>
+                    <a href="http://twitter.com/OSFramework"><i class="icon-twitter icon-2x"></i></a>
+                    <a href="https://www.facebook.com/OpenScienceFramework"><i class="icon-facebook icon-2x"></i></a>
+                    <a href="https://groups.google.com/forum/#!forum/openscienceframework"><i class="icon-google-plus icon-2x"></i></a>
+                    <a href="https://www.github.com/centerforopenscience"><i class="icon-github icon-2x"></i></a>
+                    <a href="https://plus.google.com/103557785986281627994" rel="publisher"><i class="icon-google-plus-sign icon-2x"></i></a>
                 </div>
             </div> <!-- column -->
         </div>
