@@ -8,9 +8,10 @@
         <form action="${node_url}wiki/${pageName}/edit/" method="POST">
             <div class="form-group wmd-panel">
                 <div id="wmd-button-bar"></div>
-                <textarea class="wmd-input" id="wmd-input" name="content">${wiki_content}</textarea>
-                <input type="submit" class="btn btn-primary" value="Save">
+                <textarea class="form-control wmd-input" rows="12" id="wmd-input" name="content">${wiki_content}</textarea>
             </div>
+            <input type="submit" class="btn btn-primary pull-right" value="Save">
+            <p class="help-block">Preview</p>
             <div id="wmd-preview" class="wmd-panel wmd-preview"></div>
         </form>
     </div>
@@ -26,7 +27,7 @@
                 }'></div>
         </div>
     </div>
-</div>
+</div><!-- end row -->
 </%def>
 
 <%def name="javascript_bottom()">
