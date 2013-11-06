@@ -240,8 +240,12 @@ def view_file(*args, **kwargs):
 
     file_name = kwargs['fid']
     file_name_clean = file_name.replace('.', '_')
-
     renderer = 'default'
+
+    latest_node_file_id = node_to_use.files_versions[file_name_clean][-1]
+    latest_node_file = NodeFile.load(latest_node_file_id)
+    download_path = latest_node_file.download_url
+    download_html = '<a href="{path}">Download file</a>'.format(path=download_path)
 
     file_path = os.path.join(settings.UPLOADS_PATH, node_to_use._primary_key, file_name)
 
@@ -271,7 +275,9 @@ def view_file(*args, **kwargs):
 
         rv = {
             'file_name' : file_name,
-            'rendered' : 'This file is too large to be rendered online. Please download the file to view it locally.',
+            'rendered' : ('<p>This file is too large to be rendered online. '
+                        'Please <a href={path}>download the file</a> to view it locally.</p>'
+                        .format(path=download_path)),
             'renderer' : renderer,
             'versions' : versions,
 
@@ -288,6 +294,7 @@ def view_file(*args, **kwargs):
         if re.search(fmt_ptn, file_ext):
             is_img = True
             break
+
 
     # TODO: this logic belongs in model
     # todo: add bzip, etc
@@ -314,10 +321,6 @@ def view_file(*args, **kwargs):
         except IOError:
             raise HTTPError(http.NOT_FOUND)
 
-    latest_node_file_id = node_to_use.files_versions[file_name_clean][-1]
-    latest_node_file = NodeFile.load(latest_node_file_id)
-    download_path = latest_node_file.download_url
-    download_html = '<p><a href="{path}">Download file</a></p>'.format(path=download_path)
     if renderer == 'pygments':
         try:
             rendered = download_html + pygments.highlight(
@@ -326,7 +329,9 @@ def view_file(*args, **kwargs):
                 pygments.formatters.HtmlFormatter()
             )
         except pygments.util.ClassNotFound:
-            rendered = download_html
+            rendered = ('<p>This file cannot be rendered online. '
+                        'Please <a href={path}>download the file</a> to view it locally.</p>'
+                        .format(path=download_path))
 
     rv = {
         'file_name' : file_name,
