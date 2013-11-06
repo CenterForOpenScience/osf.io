@@ -167,28 +167,6 @@ def project_removecontributor(*args, **kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 
-def _add_contributors(node_to_use, users_to_add, user, api_key):
-
-    for added_user in users_to_add:
-        if added_user not in node_to_use.contributors:
-            node_to_use.contributors.append(added_user)
-            node_to_use.contributor_list.append({
-                'id': added_user._primary_key,
-            })
-    node_to_use.save()
-
-    node_to_use.add_log(
-        action='contributor_added',
-        params={
-            'project': node_to_use.parent_id,
-            'node': node_to_use._primary_key,
-            'contributors': [added_user._id for added_user in users_to_add],
-        },
-        user=user,
-        api_key=api_key,
-    )
-
-
 @must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
@@ -201,21 +179,14 @@ def project_addcontributors_post(*args, **kwargs):
     api_key = get_api_key()
     user_ids = request.json.get('user_ids', [])
     node_ids = request.json.get('node_ids', [])
-    # TODO: Move to model
-
     users = [
         User.load(user_id)
         for user_id in user_ids
     ]
-
-    status = _add_contributors(
-        node_to_use, users, user, api_key
-    )
-
+    node_to_use.add_contributors(contributors=users, user=user, api_key=api_key)
+    node_to_use.save()
     for node_id in node_ids:
         node = Node.load(node_id)
-        status = _add_contributors(
-            node, users, user, api_key
-        )
-
+        node.add_contributors(contributors=users, user=user, api_key=api_key)
+        node.save()
     return {'status': 'success'}, 201

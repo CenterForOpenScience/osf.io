@@ -53,7 +53,7 @@ class TestProjectViews(DbTestCase):
         assert_equal(data['logs'][-1]['action'], 'project_created')
 
     def test_add_contributor_post(self):
-        # A user is added as a contributor via a POST request
+        # Two users are added as a contributor via a POST request
         project = ProjectFactory(creator=self.user1, is_public=True)
         user = UserFactory()
         user2 = UserFactory()
