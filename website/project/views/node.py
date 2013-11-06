@@ -329,6 +329,7 @@ def _view_project(node_to_use, user):
         if node_to_use.node__parent \
             and not node_to_use.node__parent[0].is_deleted \
             else None
+
     data = {
         'node_id': node_to_use._primary_key,
         'node_title': node_to_use.title,
@@ -364,10 +365,10 @@ def _view_project(node_to_use, user):
         'node_fork_count': len(node_to_use.fork_list),
 
         'node_watched_count': len(node_to_use.watchconfig__watched),
-        'parent_id':parent._primary_key if parent else None,
-        'parent_title': parent.title if parent else None,
-        'parent_url': parent.url if parent else None,
-
+        'parent_id': parent._primary_key if parent else '',
+        'parent_title': parent.title if parent else '',
+        'parent_url': parent.url if parent else '',
+        'parent_api_url': parent.api_url if parent else '',
         'user_is_contributor': node_to_use.is_contributor(user),
         'user_can_edit': node_to_use.is_contributor(user) and not node_to_use.is_registration,
         'user_is_watching': user.is_watching(node_to_use) if user else False,
@@ -384,6 +385,37 @@ def _view_project(node_to_use, user):
             }
         )
     return data
+
+
+def _get_children(node, user, indent=0):
+
+    children = []
+
+    for child in node.nodes:
+        if node.can_edit(user):
+            children.append({
+                'id': child._primary_key,
+                'title': child.title,
+                'indent': indent,
+            })
+            children.extend(_get_children(child, user, indent+1))
+
+    return children
+
+
+@must_be_valid_project
+def get_editable_children(*args, **kwargs):
+
+    node_to_use = kwargs['node'] or kwargs['project']
+    user = get_current_user()
+
+    if not node_to_use.can_edit(user):
+        raise HTTPError(http.UNAUTHORIZED)
+
+    children = _get_children(node_to_use, user)
+
+    return {'children': children}
+
 
 def _get_user_activity(node, user, rescale_ratio):
 

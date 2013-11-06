@@ -134,6 +134,7 @@ def make_url_map(app):
         Rule('/forms/forgot_password/', 'get', website_routes.forgot_password_form, json_renderer),
         Rule('/forms/reset_password/', 'get', website_routes.reset_password_form, json_renderer),
         Rule('/forms/new_project/', 'get', website_routes.new_project_form, json_renderer)
+
     ], prefix='/api/v1')
 
     ### Discovery ###
@@ -286,7 +287,7 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/files/',
             '/project/<pid>/node/<nid>/files/',
-        ], 'get', project_views.file.list_files, OsfWebRenderer('project/files.mako')),
+        ], 'get', project_views.file.get_files, OsfWebRenderer('project/files.mako')),
 
         Rule([
             '/project/<pid>/files/<fid>/',
@@ -400,6 +401,16 @@ def make_url_map(app):
             '/project/<pid>/get_contributors/',
             '/project/<pid>/node/<nid>/get_contributors/',
         ], 'get', project_views.contributor.get_contributors, json_renderer),
+
+        Rule([
+            '/project/<pid>/get_contributors_from_parent/',
+            '/project/<pid>/node/<nid>/get_contributors_from_parent/',
+        ], 'get', project_views.contributor.get_contributors_from_parent, json_renderer),
+
+        Rule([
+            '/project/<pid>/get_editable_children/',
+            '/project/<pid>/node/<nid>/get_editable_children/',
+        ], 'get', project_views.node.get_editable_children, json_renderer),
 
         # Create
         Rule([

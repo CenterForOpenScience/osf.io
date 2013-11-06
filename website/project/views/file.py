@@ -1,12 +1,14 @@
 import re
 import os
-import pygments
-import pygments.lexers
-import pygments.formatters
 import zipfile
 import tarfile
 from cStringIO import StringIO
 import httplib as http
+
+import pygments
+import pygments.lexers
+import pygments.formatters
+from hurry.filesize import size, alternative
 
 from framework import request, redirect, secure_filename, send_file
 from framework.auth import must_have_session_auth
@@ -14,7 +16,6 @@ from framework.git.exceptions import FileNotModified
 from framework.auth import get_current_user, get_api_key
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
-
 from website.project.views.node import _view_project
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
@@ -28,43 +29,105 @@ def prune_file_list(file_list, max_depth):
     return [file for file in file_list if len([c for c in file if c == '/']) <= max_depth]
 
 
-@must_be_valid_project  # returns project
+def get_file_tree(node_to_use, user):
+    tree = []
+    for node in node_to_use.nodes:
+        if not node.is_deleted:
+            tree.append(get_file_tree(node, user))
+
+    #means can_view, not can_edit
+    if node_to_use.can_edit(user):
+        for i,v in node_to_use.files_current.items():
+            v = NodeFile.load(v)
+            tree.append(v)
+
+    return (node_to_use, tree)
+
+
+@must_be_valid_project # returns project
+@must_be_contributor_or_public
 def get_files(*args, **kwargs):
 
-    user = get_current_user()
-    api_key = get_api_key()
+    # Get arguments
     node_to_use = kwargs['node'] or kwargs['project']
+    user = get_current_user()
 
-    can_edit = node_to_use.can_edit(user, api_key)
+    filetree = get_file_tree(node_to_use, user)
+    parent_id = node_to_use.parent_id
 
-    tree = {
-        'title' : node_to_use.title if can_edit else node_to_use.public_title,
-        'url' : node_to_use.url,
-        'files' : [],
-    }
+    rv = _get_files(filetree, parent_id, 0, user)
+    if not kwargs.get('dash', False):
+        rv.update(_view_project(node_to_use, user))
+    return rv
 
-    # Display children and files if public
-    if can_edit or node_to_use.are_files_public:
+def _get_files(filetree, parent_id, check, user):
+    if parent_id is not None:
+        parent_uid = 'node-{}'.format(parent_id)
+    else:
+        parent_uid = 'null'
 
-        # Add child nodes
-        for child in node_to_use.nodes:
-            if not child.is_deleted:
-                tree['files'].append({
-                    'type': 'dir',
-                    'url': child.url,
-                    'api_url': child.api_url,
-                })
-
-        # Add files
-        for key, value in node_to_use.files_current.iteritems():
-            node_file = NodeFile.load(value)
-            tree['files'].append({
-                'type': 'file',
-                'filename': node_file.filename,
-                'path': node_file.path,
-            })
-
-    return tree
+    info = []
+    itemParent = {}
+    itemParent['uid'] = '-'.join([
+        "node",  # node or nodefile
+        str(filetree[0]._id)  # ObjectId from pymongo
+    ])
+    itemParent['isComponent'] = "true"
+    itemParent['parent_uid'] = parent_uid
+    if str(filetree[0].category)=="project" or itemParent['parent_uid']=="null":
+        itemParent['uploadUrl'] = str(itemParent['uid'].split('-')[1]).join([ #join
+            '/api/v1/project/',
+            '/files/upload/'
+        ])
+    else:
+        parent_id = itemParent['parent_uid'].split('-')[1]
+        itemParent['uploadUrl'] = str('/').join([
+            '/api/v1/project',
+            str(parent_id),
+            'node',
+            str(filetree[0]._id),
+            'files/upload/'
+        ])
+    itemParent['type'] = "folder"
+    itemParent['size'] = "0"
+    itemParent['sizeRead'] = "--"
+    itemParent['name'] = str(filetree[0].title)
+    itemParent['can_edit'] = str(filetree[0].is_contributor(user)).lower()
+    #can_edit is can_view
+    itemParent['can_view'] = str(filetree[0].can_edit(user)).lower()
+    if check == 0:
+        itemParent['parent_uid']="null"
+    info.append(itemParent)
+    for tmp in filetree[1]:
+        if isinstance(tmp, tuple):
+            info = info + _get_files(
+                filetree=tmp,
+                parent_id=filetree[0]._id,
+                check=1,
+                user=user
+            )['info']
+        else:
+            unique, total = get_basic_counters('download:' + str(filetree[0]._id) + ':' + tmp.path.replace('.', '_') )
+            item = {}
+            item['uid'] = '-'.join([
+                "nodefile",  # node or nodefile
+                str(tmp._id)  # ObjectId from pymongo
+            ])
+            item['downloads'] = str(total) if total else '0'
+            item['isComponent'] = "false"
+            item['parent_uid'] = str(itemParent['uid'])
+            item['type'] = "file"
+            item['name'] = str(tmp.path)
+            item['ext'] = str(tmp.path.split('.')[-1])
+            item['sizeRead'] = size(tmp.size, system=alternative)
+            item['size'] = str(tmp.size)
+            item['url'] = 'files/'.join([
+                str(filetree[0].url),
+                item['name'] + '/'
+            ])
+            item['dateModified'] = tmp.date_modified.strftime('%Y/%m/%d %I:%M %p')
+            info.append(item)
+    return {'info': info}
 
 
 @must_be_valid_project # returns project
@@ -117,7 +180,7 @@ def upload_file_public(*args, **kwargs):
     node_to_use = node or project
     api_key = get_api_key()
 
-    uploaded_file = request.files.get('files[]')
+    uploaded_file = request.files.get('file')
     uploaded_file_content = uploaded_file.read()
     uploaded_file.seek(0, os.SEEK_END)
     uploaded_file_size = uploaded_file.tell()
@@ -145,14 +208,25 @@ def upload_file_public(*args, **kwargs):
 
     file_info = {
         "name":uploaded_filename,
-        "size":uploaded_file_size,
+        "sizeRead":size(uploaded_file_size, system=alternative),
+        "size":str(uploaded_file_size),
         "url":node_to_use.url + "files/" + uploaded_filename + "/",
-        "type":uploaded_file_content_type,
+        "ext":uploaded_file_content_type.split('/')[1],
+        "type":"file",
         "download_url":node_to_use.url + "/files/download/" + file_object.path,
         "date_uploaded": file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
+        "dateModified": file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
         "downloads": str(total) if total else str(0),
         "user_id": None,
         "user_fullname":None,
+        "uid": '-'.join([
+            str(file_object._name), #node or nodefile
+            str(file_object._id) #objectId
+        ]),
+        "parent_uid": '-'.join([
+            "node",
+            str(node_to_use._id)
+        ])
     }
     return [file_info], 201
 

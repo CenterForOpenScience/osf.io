@@ -192,6 +192,7 @@ def create_result(highlights, results):
             result_search.append(container)
     return result_search, tags
 
+import re
 import ast
 import urllib
 import urlparse
@@ -211,7 +212,14 @@ def search_contributor():
     """
     # Prepare query
     query = request.args.get('query', '')
-    q = u'user:{}'.format(query).encode('utf-8')
+
+    # Prepend "user:" to each token in the query; else Solr will search for
+    # e.g. user:Barack AND Obama. Could also wrap entire query in "user:{}",
+    # but would get fewer relevant results
+    q = ' '.join([
+        u'user:{}'.format(token).encode('utf-8')
+        for token in re.split(r'\s+', query)
+    ])
 
     solr_params = {
         'q': q,
@@ -226,16 +234,20 @@ def search_contributor():
     parsed_output = ast.literal_eval(raw_output)
 
     try:
-        response = parsed_output['response']['docs']
+        docs = parsed_output['response']['docs']
     except KeyError:
         return []
 
-    for idx in range(len(response)):
-        user = User.load(response[idx]['id'])
-        response[idx]['gravatar'] = gravatar(
-            user,
-            use_ssl=True,
-            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
-        )
+    users = []
+    for doc in docs:
+        users.append({
+            'fullname': doc['user'],
+            'id': doc['id'],
+            'gravatar': gravatar(
+                User.load(doc['id']),
+                use_ssl=True,
+                size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,
+            )
+        })
 
-    return response
+    return {'users': users}
