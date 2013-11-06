@@ -31,6 +31,7 @@ css_vendor = Bundle(
 
 js = Bundle(
             "js/site.js",
+            "js/app.js",
             filters="jsmin",
             output="public/js/common.js")
 
