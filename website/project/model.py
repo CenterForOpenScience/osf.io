@@ -872,11 +872,11 @@ class Node(GuidStoredObject):
         )
         return True
 
-    def remove_contributor(self, user, contributor, api_key=None, log=True):
+    def remove_contributor(self, contributor, user=None, api_key=None, log=True):
         '''Remove a contributor from this project.
 
-        :param user: User object, the user who is removing the contributor.
         :param contributor: User object, the contributor to be removed
+        :param user: User object, the user who is removing the contributor.
         :param api_key: ApiKey object
         '''
         if not user._primary_key == contributor._id:
@@ -899,7 +899,6 @@ class Node(GuidStoredObject):
         else:
             return False
 
-    # FIXME(sloria): Inconsistent ordering of args between add_contributor and remove_contributor
     def add_contributor(self, contributor, user=None, log=True, api_key=None, save=False):
         '''Add a contributor to the project.
 

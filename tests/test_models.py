@@ -273,7 +273,7 @@ class TestProject(DbTestCase):
         self.project.add_contributor(contributor=user2, user=self.user)
         self.project.save()
         # The user is removed
-        self.project.remove_contributor(self.user, contributor=user2, api_key=None)
+        self.project.remove_contributor(user=self.user, contributor=user2, api_key=None)
         assert_not_in(user2, self.project.contributors)
 
     def test_set_title(self):

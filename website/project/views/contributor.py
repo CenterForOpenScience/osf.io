@@ -159,7 +159,7 @@ def project_removecontributor(*args, **kwargs):
             logger.error(err)
             raise HTTPError(http.BAD_REQUEST)
         outcome = node_to_use.remove_contributor(
-            user, contributor, api_key=api_key
+            contributor=contributor, user=user, api_key=api_key
         )
     if outcome:
         framework.status.push_status_message("Contributor removed", "info")

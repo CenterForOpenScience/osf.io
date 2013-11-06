@@ -214,7 +214,7 @@ class User(GuidStoredObject):
         # Inherit projects the user was a contributor for
         for node in user.node__contributed:
             node.add_contributor(contributor=self, log=False)
-            node.remove_contributor(user=self, contributor=user, log=False)
+            node.remove_contributor(contributor=user, user=self, log=False)
             node.save()
         # Inherits projects the user created
         for node in user.node__created:
