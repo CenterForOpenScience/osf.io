@@ -126,6 +126,7 @@ def _get_files(filetree, parent_id, check, user):
                 str(filetree[0].url),
                 item['name'] + '/'
             ])
+            item['dateModified'] = tmp.date_modified.strftime('%Y/%m/%d %I:%M %p')
             info.append(item)
     return {'info': info}
 
@@ -209,12 +210,13 @@ def upload_file_public(*args, **kwargs):
     file_info = {
         "name":uploaded_filename,
         "sizeRead":size(uploaded_file_size, system=alternative),
-        "size":uploaded_file_size,
+        "size":str(uploaded_file_size),
         "url":node_to_use.url + "files/" + uploaded_filename + "/",
         "ext":uploaded_file_content_type.split('/')[1],
         "type":"file",
         "download_url":node_to_use.url + "/files/download/" + file_object.path,
         "date_uploaded": file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
+        "dateModified": file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
         "downloads": str(total) if total else str(0),
         "user_id": None,
         "user_fullname":None,

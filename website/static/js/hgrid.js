@@ -56,7 +56,8 @@ var HGrid = {
         topCrumb: true,
         forceFitColumns: true,
         autoHeight: true,
-        navigation: true
+        navigation: true,
+        namePath: false
     },
 
     Slick: {
@@ -237,7 +238,15 @@ var HGrid = {
              @param {Object} e Event object
              @param {Object} args File object response
              **/
-            hGridOnUpload: new self.Slick.Event()
+            hGridOnUpload: new self.Slick.Event(),
+             /**
+             Fired on success response from server on upload
+
+             @event hGridAfterNav
+             @param {Object} e Event object
+             @param {Object} args nav level
+             **/
+            hGridAfterNav: new self.Slick.Event()
         });
         return self;
     },
@@ -347,7 +356,8 @@ var HGrid = {
     },
 
     updateNav: function(){
-        var nav = this.options.navLevel;
+        var _this = this;
+        var nav = _this.options.navLevel;
         nav = nav.split("/");
         nav = nav.pop();
         this.navLevelFilter(nav);
@@ -382,6 +392,7 @@ var HGrid = {
         _this.Slick.dataView.setFilter(_this.myFilter);
         _this.Slick.grid.invalidate();
         _this.updateBreadcrumbsBox(itemUid);
+        _this.hGridAfterNav.notify(item);
     },
 
      /**
@@ -486,7 +497,7 @@ var HGrid = {
             }
             var value = {item: file, parent: parent};
             var promise = $.when(hGrid.hGridBeforeUpload.notify(value));
-            promise.done(function(event_status) {
+            promise.done(function(event_status){
                 if(event_status===false){
                     myDropzone.removeFile(file);
                     value['success'] = false;
@@ -499,7 +510,7 @@ var HGrid = {
         myDropzone.on("dragleave", function(e){
             hGrid.removeDraggerGuide();
         });
-        // Pass the destination folder to the server
+// Pass the destination folder to the server
         myDropzone.on("sending", function(file, xhr, formData){
             hGrid.updateNav();
             $('#totalProgressActive').addClass('active progress-striped progress');
@@ -518,12 +529,12 @@ var HGrid = {
                     $('#totalProgressActive').removeClass('active progress-striped progress');
                 },(1*1000));
             }
-        });
-        // Hook the drop success to the grid view update
+        })
+// Hook the drop success to the grid view update
         myDropzone.on("success", function(file) {
             var value;
             var promise = $.when(hGrid.hGridOnUpload.notify(file));
-            promise.done(function(event_status) {
+            promise.done(function(event_status){
                 if (event_status || typeof(event_status)=='undefined'){
                     value = {item: JSON.parse(file.xhr.response)[0], success: true};
                     value['item']['name'] = file.name;
@@ -535,7 +546,7 @@ var HGrid = {
                     hGrid.updateNav();
                     hGrid.hGridAfterUpload.notify(value);
                 }
-            })
+            });
         });
     },
 
@@ -578,7 +589,7 @@ var HGrid = {
         var value = {'item': item, 'parent':parent};
         var valueAfter = {'item': item, 'parent':parent};
         var promise = $.when(_this.hGridBeforeAdd.notify(value));
-        promise.done(function(event_status) {
+        promise.done(function(event_status){
             if(event_status || typeof(event_status)==='undefined'){
                 if(item['parent_uid']!="null" && !item['uploadBar']){
                     var parent_path = parent['path'];
@@ -587,7 +598,65 @@ var HGrid = {
                     item['sortpath']=item['path'].join('/');
                     if(!item['type']) item['type']='file';
                 }
-                _this.data.splice(parent['id']+1, 0,item);
+                var sortCol = _this.Slick.grid.getSortColumns()[0];
+                var sortId = sortCol['columnId'];
+                var asc = sortCol['sortAsc'];
+                var spliceId = null;
+                var searchData = _this.getItemsByValue(_this.data, parent['uid'], "parent_uid");
+
+                if(searchData.length != 0){
+                    var comp = null;
+                    var compValue = null;
+                    var itemValue = typeof(item[sortId]) == 'string' ? item[sortId].toLowerCase() : item[sortId];
+                    itemValue = sortId == 'size' ? parseInt(itemValue) : itemValue;
+                    for(var i=0; i<searchData.length; i++){
+                        comp = searchData[i];
+                        compValue = typeof(comp[sortId]) == 'string' ? comp[sortId].toLowerCase() : comp[sortId];
+                        compValue = sortId == 'size' ? parseInt(compValue) : compValue;
+                        spliceId = comp['id']+1;
+                        if(asc){
+                            if(compValue > itemValue){
+                                spliceId = comp['id'];
+                                break;
+                            }
+                        }
+                        else{
+                            if(compValue < itemValue){
+                                spliceId = comp['id'];
+                                break;
+                            }
+                        }
+                    }
+                }
+                else{
+                    spliceId = parent['id']+1;
+                }
+
+//            if(_this.data[parent['id']+1]){
+//                var comp = _this.data[parent['id']+1];
+//                var compValue = typeof(comp[sortCol]) == 'string' ? comp[sortCol].toLowerCase() : comp[sortCol];
+//                var itemValue = typeof(item[sortCol]) == 'string' ? item[sortCol].toLowerCase() : item[sortCol];
+//                while(compValue < itemValue && comp['indent']>parent['indent']){
+//                    if(typeof(_this.data[comp['id']+1])==='undefined'){
+//                        spliceId = comp['id']+1;
+//                        break;
+//                    }
+//                    comp = _this.data[comp['id']+1];
+//                    while(typeof(comp)!=='undefined' && comp['parent_uid']!=parent['uid']){
+//                        comp = _this.data[comp['id']+1];
+//                    }
+//                    if(typeof(_this.data[comp['id']+1])==='undefined'){
+//                        spliceId = comp['id']+1;
+//                        break;
+//                    }
+//                    compValue = typeof(comp[sortCol]) == 'string' ? comp[sortCol].toLowerCase() : comp[sortCol];
+//                    spliceId = comp['id'];
+//                }
+//            }
+//            else{
+//                spliceId = parent['id']+1;
+//            }
+                _this.data.splice(spliceId, 0,item);
                 _this.prepJava(_this.data);
                 _this.Slick.dataView.setItems(_this.data);
                 _this.Slick.grid.setSelectedRows([]);
@@ -674,7 +743,7 @@ var HGrid = {
 
         value['insertBefore']=destination['id']+1;
         var promise = $.when(_this.hGridBeforeMove.notify(value));
-        promise.done(function(event_status) {
+        promise.done(function(event_status){
             if(event_status || typeof(event_status)==='undefined'){
                 if(_this.itemMover(value, url, src_id, dest_path)){
                     value['success']=true;
@@ -758,21 +827,22 @@ var HGrid = {
      * @return {Boolean}
      */
     editItem: function(src_uid, name) {
-        var src = this.getItemByValue(this.data, src_uid, 'uid');
+        var _this = this;
+        var src = _this.getItemByValue(_this.data, src_uid, 'uid');
         var value = {'item': src, 'name': name};
         var valueAfter = {'item': src, 'name': name};
-        var promise = $.when(this.hGridBeforeEdit.notify(value));
-        promise.done(function(event_status) {
+        var promise = $.when(_this.hGridBeforeEdit.notify(value));
+        promise.done(function(event_status){
             if(event_status || typeof(event_status)==='undefined'){
                 src['name']=name;
-                this.Slick.dataView.updateItem(src['id'], src);
+                _this.Slick.dataView.updateItem(src['id'], src);
                 valueAfter['success']=true;
-                this.hGridAfterEdit.notify(valueAfter);
+                _this.hGridAfterEdit.notify(valueAfter);
                 return true;
             }
             else{
                 valueAfter['success']=false;
-                this.hGridAfterEdit.notify(valueAfter);
+                _this.hGridAfterEdit.notify(valueAfter);
                 return false;
             }
         });
@@ -860,27 +930,39 @@ var HGrid = {
 
         for(var l=0; l<output.length; l++){
             var path = [];
+            var namePath = [];
             path.push(output[l]['uid']);
+            namePath.push(output[l]['name']);
             if(output[l]['parent_uid']!="null"){
                 for(var m=0; m<l; m++){
                     if(output[m]['uid']==output[l]['parent_uid']){
 //                        var x = m;
                         while(output[m]['parent_uid']!="null"){
                             path.push(output[m]['uid']);
+                            namePath.push(output[m]['name']);
                             m = output[m]['parent'];
                         }
                         path.push(output[m]['uid']);
+                        namePath.push(output[m]['name']);
                         break;
                     }
                 }
             }
             path.reverse();
+            namePath.reverse();
+            output[l]['namePath'] = namePath;
             output[l]['path']=path;
             output[l]['sortpath']=path.join('/');
+            output[l]['namePath']=namePath.join('/');
         }
-        var sortingCol='sortpath';
+        if(namePath){
+            var sortingCol='namePath';
+        }
+        else{
+            var sortingCol='sortPath';
+        }
         output.sort(function(a, b){
-            var x = a[sortingCol], y = b[sortingCol];
+            var x = a[sortingCol].toLowerCase(), y = b[sortingCol].toLowerCase();
 
             if(x == y){
                 return 0;
@@ -1087,17 +1169,18 @@ var HGrid = {
 
     //Function called when sort is clicked
     onSort: function (e, args, grid, dataView, data){
-        this.options.sortAsc = !this.options.sortAsc;
+        var _this = this;
+        _this.options.sortAsc = !_this.options.sortAsc;
         var sortingCol = args.sortCol.field;
         if (sortingCol=="sizeRead"){
             sortingCol="size";
         }
-        var sorted = this.sortHierarchy(data, sortingCol, dataView, grid);
-        var new_data = this.prepJava(sorted, {'sorting': true});
-        this.data = new_data;
+        var sorted = _this.sortHierarchy(data, sortingCol, dataView, grid);
+        var new_data = _this.prepJava(sorted, {'sorting': true});
+        _this.data = new_data;
         dataView.setItems(new_data);
-        this.currentlyRendered=[];
-        this.updateNav();
+        _this.currentlyRendered=[];
+        _this.updateNav();
     },
 
     sortHierarchy: function (data, sortingCol, dataView, grid){
@@ -1248,7 +1331,7 @@ var HGrid = {
             }
             value['insertBefore']=args['insertBefore'];
             var promise = $.when(_this.hGridBeforeMove.notify(value));
-            promise.done(function(event_status) {
+            promise.done(function(event_status){
                 if(event_status || typeof(event_status)==='undefined'){
                     _this.itemMover(value, "/sg_move", src, dest);
                     value['success']=true;
@@ -1345,8 +1428,13 @@ var HGrid = {
 
         grid.onDblClick.subscribe(function (e, args) {
             var navId = $(e.target).find('span.nav-filter-item').attr('data-hgrid-nav');
+            var item = _this.getItemByValue(_this.data, navId, "uid");
             if(navId && _this.options.navigation){
                 _this.navLevelFilter(navId);
+                if(_this.dropZoneObj!=null){
+                    _this.dropZoneObj.options.url = item['uploadUrl'];
+                    _this.dropZoneObj.options.dropDestination = item['uid'];
+                }
             }
             e.preventDefault();
         });
@@ -1354,6 +1442,11 @@ var HGrid = {
         // When a Breadcrumb is clicked, the grid filters
         $(_this.options.breadcrumbBox).on("click", ".hgrid-breadcrumb>a", function(e) {
             var navId = $(this).attr('data-hgrid-nav');
+            var item = _this.getItemByValue(_this.data, navId, "uid");
+            if(_this.dropZoneObj!=null){
+                _this.dropZoneObj.options.url = item['uploadUrl'];
+                _this.dropZoneObj.options.dropDestination = item['uid'];
+            }
             _this.navLevelFilter(navId);
             e.preventDefault();
 

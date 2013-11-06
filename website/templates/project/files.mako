@@ -7,6 +7,7 @@
 
 %if user_can_edit:
 <div class="container" style="position:relative;">
+##    <h3 style="max-width: 65%;"><span class="btn btn-success fileinput-button" id="clickable"><i class="icon-plus icon-white"></i><span>Add files...</span></span></h3>
     <h3 style="max-width: 65%;">Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element>!</h3>
     <div id="totalProgressActive" style="width: 35%; position: absolute; top: 4px; right: 0;">
         <div id="totalProgress" class="bar" style="width: 0%;"></div>
@@ -104,6 +105,7 @@ var myGrid = HGrid.create({
     url: ${info}[0]['uploadUrl'],
     columns:[
         {id: "name", name: "Name", field: "name", width: 550, cssClass: "cell-title", formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
+        {id: "date", name: "Date Modified", field: "dateModified", width: 160},
         {id: "size", name: "Size", field: "sizeRead", width: 90, formatter: UploadBars, sortable: true}
     ],
     enableCellNavigation: false,
@@ -118,23 +120,27 @@ var myGrid = HGrid.create({
     topCrumb: false,
     clickUploadElement: "#clickable",
     dragToRoot: false,
-    dragDrop: false
+    dragDrop: false,
+    namePath: false
 });
 
 
 
 myGrid.updateBreadcrumbsBox(myGrid.data[0]['uid']);
-myGrid.addColumn({id: "downloads", name: "Downloads", field: "downloads", width: 90, sortable: true});
-myGrid.addColumn({id: "actions", name: "", field: "actions", width: 70, formatter: Buttons});
+myGrid.addColumn({id: "downloads", name: "Downloads", field: "downloads", width: 90});
+myGrid.addColumn({id: "actions", name: "", field: "actions", width: 65, formatter: Buttons});
+myGrid.Slick.grid.setSortColumn("name");
 
 myGrid.hGridBeforeUpload.subscribe(function(e, args){
     if(args.parent['can_edit']=='true'){
         myGrid.removeDraggerGuide();
         var path = args.parent['path'].slice();
         path.push("nodefile-" +args.item.name);
-        var item = {name: args.item.name, parent_uid: args.parent['uid'], uid: "nodefile-" + args.item.name, type:"fake", uploadBar: true, path: path, sortpath: path.join("/"), ext: "py"};
-        myGrid.addItem(item);
-        return true;
+        var item = {name: args.item.name, parent_uid: args.parent['uid'], uid: "nodefile-" + args.item.name, type:"fake", uploadBar: true, path: path, sortpath: path.join("/"), ext: "py", size: args.item.size.toString()};
+        var promise = $.when(myGrid.addItem(item));
+        promise.done(function(bool){
+            return true;
+        });
     }
     else return false;
 });
@@ -181,6 +187,10 @@ myGrid.hGridBeforeDelete.subscribe(function(e, args) {
         );
         return d;
     }
+});
+
+myGrid.hGridAfterNav.subscribe(function (e, args){
+    $('#componentName').text(args['name']);
 });
 
 myGrid.hGridOnMouseEnter.subscribe(function (e, args){
