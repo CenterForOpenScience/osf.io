@@ -13,7 +13,7 @@ Messages = {
     makePrivateWarning: 'Making a project will prevent users from viewing it on this site, ' +
                         'but will have no impact on external sites, including Google\'s cache. ' +
                         'Would you like to continue?'
-}
+};
 
 /* Utility functions */
 
@@ -21,12 +21,12 @@ Messages = {
  * Return the id of the current node by parsing the current URL.
  */
 window.nodeToUse = function(){
-  if(location.pathname.match("\/project\/.*\/node\/.*")){
-    return location.pathname.match("\/project\/.*?\/node\/(.*?)\/.*")[1];
-  }else{
-    return location.pathname.match("\/project\/(.*?)\/.*")[1];
-  }
+    if (location.pathname.match("\/project\/.*\/node\/.*")) {
+        return location.pathname.match("\/project\/.*?\/node\/(.*?)\/.*")[1];
+    } else {
+        return location.pathname.match("\/project\/(.*?)\/.*")[1];
 }
+};
 
 
 /**
@@ -42,7 +42,7 @@ window.nodeToUseUrl = function(){
     } catch(err) {
         return undefined;
     }
-}
+};
 
 
 window.NodeActions = {};  // Namespace for NodeActions
@@ -101,7 +101,7 @@ NodeActions._openCloseNode = function(node_id) {
         icon.removeClass('icon-plus');
         icon.addClass('icon-minus');
     }
-}
+};
 
 /*
 Display recent logs for for a node on the project view page.
@@ -191,6 +191,6 @@ $(document).ready(function() {
         )
     });
 
-})
+});
 
 }).call(this);
