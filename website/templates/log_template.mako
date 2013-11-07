@@ -75,7 +75,7 @@
       <a data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
     </span>
     <span data-bind="visible: action === 'file_updated'">
-      updated file <span data-bind="text: params.path"></span> to
+      updated file <span data-bind="text: params.path"></span> in
       <span data-bind="text: nodeCategory"></span>
       <a data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
     </span>
