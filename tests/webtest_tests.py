@@ -8,7 +8,7 @@ from webtest_plus import TestApp
 
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
-                            NodeLogFactory, ApiKeyFactory)
+                            NodeLogFactory, ApiKeyFactory, NodeFactory)
 
 from website import settings
 from framework import app
@@ -243,6 +243,30 @@ class TestRegistrations(DbTestCase):
         # Can't see Registrations in project nav bar
         subnav = res.html.select("#projectSubnav")[0]
         assert_not_in("Registrations", subnav.text)
+
+
+class TestComponents(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = UserFactory(username="test@test.com")
+        # Add an API key for quicker authentication
+        api_key = ApiKeyFactory()
+        self.user.api_keys.append(api_key)
+        self.user.save()
+        self.auth = ('test', api_key._primary_key)
+        self.project = ProjectFactory(creator=self.user)
+        # A non-project componenet
+        self.component = NodeFactory(category="hypothesis", creator=self.user)
+        self.project.nodes.append(self.component)
+        self.component.save()
+        self.project.save()
+
+    def test_cannot_create_component_from_a_component(self):
+        # At the component's page
+        res = self.app.get(self.component.url, auth=self.auth).maybe_follow()
+        assert_not_in("Add Component", res)
+
 
 class TestMergingAccounts(DbTestCase):
 

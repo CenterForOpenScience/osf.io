@@ -343,7 +343,7 @@ def _view_project(node_to_use, user):
         'node_api_url': node_to_use.api_url,
         'node_is_public': node_to_use.is_public,
         'node_date_created': node_to_use.date_created.strftime('%Y/%m/%d %I:%M %p'),
-        'node_date_modified': node_to_use.logs[-1].date.strftime('%Y/%m/%d %I:%M %p'),
+        'node_date_modified': node_to_use.logs[-1].date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.logs else '',
 
         'node_tags': [tag._primary_key for tag in node_to_use.tags],
         'node_children': bool(node_to_use.nodes),
