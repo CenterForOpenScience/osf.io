@@ -8,7 +8,9 @@
       <a data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
     </span>
 
-    <span data-bind="visible: action === 'wiki_updated'">updated wiki page <a data-bind="attr: {href: wikiUrl}, text: params.page"></a>
+    <span data-bind="visible: action === 'wiki_updated'">updated wiki page
+        <a data-bind="attr: {href: wikiUrl}, text: params.page"></a>
+        to version <span data-bind="text: params.version"></span>
     </span>
 
     <span data-bind="visible: action === 'contributor_added'">
