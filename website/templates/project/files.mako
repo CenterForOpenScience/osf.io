@@ -63,7 +63,7 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
     }
     else{
         var id = dataContext['name'].replace(/[\s\.#\'\"]/g, '');
-        return "<div class='progress progress-striped active'><div id='" + id + "'class='progress-bar progress-bar-success' style='width: 0%;'></div></div>";
+        return "<div style='height: 20px;' class='progress progress-striped active'><div id='" + id + "'class='progress-bar progress-bar-success' style='width: 0%;'></div></div>";
     }
 };
 
