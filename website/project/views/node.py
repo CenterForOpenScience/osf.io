@@ -372,9 +372,6 @@ def _view_project(node_to_use, user):
         'user_is_contributor': node_to_use.is_contributor(user),
         'user_can_edit': node_to_use.is_contributor(user) and not node_to_use.is_registration,
         'user_is_watching': user.is_watching(node_to_use) if user else False,
-        'logs': list(reversed([log.serialize()
-                                for i, log in enumerate(node_to_use.logs)
-                                                if i < 10]))  # 10 most recent logs
     }
     if user:
         data.update(
