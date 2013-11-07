@@ -30,11 +30,13 @@
 </section>
 <div class="row">
     <div class="col-md-2">
-        % if query:
+        % if query and not searching_users:
         <h3>
 ##            our search users query
             <a href="/search/?q=user:${query|h}"> Search users </a>
         </h3>
+        % else:
+        <h3>Searching users</h3>
         % endif
 ##        our tag cloud!
         % if tags:
