@@ -1,6 +1,6 @@
 % if log:
 
-    <dt><span class="date">${log['date']}</span></dt>
+    <dt><span class="date log-date">${log['date']}</span></dt>
     % if log['user_fullname']:
         <dd><a href="/profile/${log['user_id']}/">${log['user_fullname']}</a>
     % elif log['api_key']:
