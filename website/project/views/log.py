@@ -34,8 +34,6 @@ def get_logs(*args, **kwargs):
 
     if not node_to_use.can_edit(user, api_key) and not node_to_use.are_logs_public:
         raise HTTPError(http.FORBIDDEN)
-    # logs in reverse chronological order
-    logs = list(reversed([log.serialize() for log in node_to_use.logs]))
     if 'count' in request.args:
         count = int(request.args['count'])
     elif 'count' in kwargs:
@@ -44,5 +42,11 @@ def get_logs(*args, **kwargs):
         count = request.json['count']
     else:
         count = 10
-    logs = logs[:count]
-    return {'logs' : logs}
+    # logs in reverse chronological order
+    chrono_logs = reversed(node_to_use.logs)
+    log_data = [
+        log.serialize()
+        for log in chrono_logs[:count]
+        if log
+    ]
+    return {'logs': log_data}
