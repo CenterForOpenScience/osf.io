@@ -1,5 +1,6 @@
 import re
 import os
+import time
 import zipfile
 import tarfile
 from cStringIO import StringIO
@@ -92,7 +93,10 @@ def _get_files(filetree, parent_id, check, user):
     itemParent['size'] = "0"
     itemParent['sizeRead'] = "--"
     itemParent['name'] = str(filetree[0].title)
-    itemParent['can_edit'] = str(filetree[0].is_contributor(user)).lower()
+    itemParent['can_edit'] = str(
+        filetree[0].is_contributor(user) and
+        not filetree[0].is_registration
+    ).lower()
     #can_edit is can_view
     itemParent['can_view'] = str(filetree[0].can_edit(user)).lower()
     if check == 0:
@@ -119,13 +123,19 @@ def _get_files(filetree, parent_id, check, user):
             item['type'] = "file"
             item['name'] = str(tmp.path)
             item['ext'] = str(tmp.path.split('.')[-1])
-            item['sizeRead'] = size(tmp.size, system=alternative)
+            item['sizeRead'] = [
+                tmp.size,
+                size(tmp.size, system=alternative)
+            ]
             item['size'] = str(tmp.size)
             item['url'] = 'files/'.join([
                 str(filetree[0].url),
                 item['name'] + '/'
             ])
-            item['dateModified'] = tmp.date_modified.strftime('%Y/%m/%d %I:%M %p')
+            item['dateModified'] = [
+                time.mktime(tmp.date_modified.timetuple()),
+                tmp.date_modified.strftime('%Y/%m/%d %I:%M %p')
+            ]
             info.append(item)
     return {'info': info}
 
@@ -208,14 +218,20 @@ def upload_file_public(*args, **kwargs):
 
     file_info = {
         "name":uploaded_filename,
-        "sizeRead":size(uploaded_file_size, system=alternative),
+        "sizeRead": [
+            uploaded_file_size,
+            size(uploaded_file_size, system=alternative),
+        ],
         "size":str(uploaded_file_size),
         "url":node_to_use.url + "files/" + uploaded_filename + "/",
         "ext":uploaded_file_content_type.split('/')[1],
         "type":"file",
         "download_url":node_to_use.url + "/files/download/" + file_object.path,
         "date_uploaded": file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
-        "dateModified": file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
+        "dateModified": [
+            time.mktime(file_object.date_uploaded.timetuple()),
+            file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
+        ],
         "downloads": str(total) if total else str(0),
         "user_id": None,
         "user_fullname":None,
