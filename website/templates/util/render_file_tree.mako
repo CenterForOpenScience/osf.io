@@ -9,7 +9,7 @@
 <script src="/static/js/slickgrid.custom.min.js"></script>
 <script src="/static/js/hgrid.js"></script>
 
-<div id="myGrid" class="dash-page hgrid" style="width: 100%;"></div>
+<div id="myGrid" class="dash-page hgrid" style="width: 100%; height: 50px"></div>
 
 <script>
 
@@ -64,15 +64,21 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         dragDrop: false,
         enableCellNavigation: false,
         dropZone: false,
-        autoHeight: true,
         forceFitColumns: true,
         navigation: false
     });
 
+    myGrid.Slick.dataView.onRowCountChanged.subscribe(function (e, args){
+        var numRows = myGrid.currentlyRendered.length;
+        if(numRows!=${info}.length+1){
+            $('#myGrid').css('height', numRows*25);
+        }
+    });
     for (var i=0; i<myGrid.data.length; i++){
         if (myGrid.data[i]['type']=="folder"){
             myGrid.data[i]._collapsed = true;
             myGrid.Slick.dataView.updateItem(myGrid.data[i].id, myGrid.data[i]);
         }
+        myGrid.currentlyRendered=[myGrid.data[0]];
     }
 </script>

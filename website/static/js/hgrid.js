@@ -129,7 +129,7 @@ var HGrid = {
 
             hGridOnMouseEnter: new self.Slick.Event(),
             hGridOnMouseLeave: new self.Slick.Event(),
-
+            hGridOnClick: new self.Slick.Event(),
             /**
              Fired before a move occurs
 
@@ -1367,6 +1367,7 @@ var HGrid = {
         });
 
         grid.onClick.subscribe(function (e, args) {
+            _this.hGridOnClick.notify({e: e, args: args});
             if ($(e.target).hasClass("toggle") || $(e.target).hasClass("folder")) {
                 var item = dataView.getItem(args.row);
                 if (item) {
@@ -1377,7 +1378,7 @@ var HGrid = {
                         i+=1;
                     }
                     while(data[i] && data[i]['indent']>data[args.row]['indent']);
-
+                    _this.currentlyRendered = [];
                     if (!item._collapsed) {
                         item._collapsed = true;
                     } else {
@@ -1419,12 +1420,6 @@ var HGrid = {
             _this.onSort(e, args, grid, _this.Slick.dataView, _this.data);
         });
 
-//        //When a cell is double clicked, make it editable (unless it's uploads)
-//        grid.onDblClick.subscribe(function (e, args) {
-//            if(data[grid.getActiveCell().row]['uid']!="uploads" && grid.getActiveCell().cell==grid.getColumnIndex('name')){
-//                grid.getOptions().editable=true;
-//            }
-//        });
 
         grid.onDblClick.subscribe(function (e, args) {
             var navId = $(e.target).find('span.nav-filter-item').attr('data-hgrid-nav');
