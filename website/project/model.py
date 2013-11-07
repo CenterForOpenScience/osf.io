@@ -9,6 +9,7 @@ import unicodedata
 import logging
 
 import markdown
+import pytz
 from markdown.extensions import wikilinks
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
@@ -107,11 +108,27 @@ class NodeLog(StoredObject):
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
 
+    DATE_FORMAT = '%m/%d/%Y %I:%M %p UTC'
+
     @property
     def node(self):
         return Node.load(self.params.get('node')) or \
             Node.load(self.params.get('project'))
 
+    @property
+    def tz_date(self):
+        '''Return the timezone-aware date.
+        '''
+        return self.date.replace(tzinfo=pytz.UTC)
+
+    @property
+    def formatted_date(self):
+        '''Return the timezone-aware, ISO-formatted string representation of
+        this log's date.
+        '''
+        return self.tz_date.isoformat()
+
+    # FIXME: Serialization (presentation) doesn't belong in model (domain)
     def serialize(self):
         return {
         'id': self._primary_key,
@@ -123,7 +140,8 @@ class NodeLog(StoredObject):
         'action': self.action,
         'params': self.params,
         'category': self.node.category if self.node else '',
-        'date': self.date.strftime('%m/%d/%y %I:%M %p UTC'),
+        # TODO: Use self.formatted_date when Recent Activity Logs are generated dynamically
+        'date': self.tz_date.strftime("%m/%d/%Y %I:%M %p UTC'"),
         'contributors': [self._render_log_contributor(contributor) for contributor in self.params.get('contributors', [])],
         'contributor': self._render_log_contributor(self.params.get('contributor', {})),
     }

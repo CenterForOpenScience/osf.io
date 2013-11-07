@@ -1,5 +1,5 @@
 <script type="text/html" id="logTemplate">
-  <dt><span class="date log-date" data-bind="text: localDatetime, tooltip: {title: date}"></span></dt>
+  <dt><span class="date log-date" data-bind="text: localDatetime, tooltip: {title: utcDatetime}"></span></dt>
   <dd>
     <span data-bind="text: userFullName || apiKey"></span>
 
