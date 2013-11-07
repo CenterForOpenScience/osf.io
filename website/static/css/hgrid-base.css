@@ -9,6 +9,15 @@
   line-height: 14px;
 }
 
+/*https://github.com/mleibman/SlickGrid/issues/742*/
+[class*="slickgrid_"],
+[class*="slickgrid_"] div {
+  -webkit-box-sizing: content-box;
+     -moz-box-sizing: content-box;
+          box-sizing: content-box;
+}
+
+
 .slick-cell.cell-reorder {
     cursor: move;
     background: url('../img/hgrid/drag-handle.png') no-repeat center center;

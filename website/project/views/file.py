@@ -93,8 +93,8 @@ def _get_files(filetree, parent_id, check, user):
         ])
     itemParent['type'] = "folder"
     itemParent['size'] = "0"
-    itemParent['sizeRead'] = "--"
-    itemParent['name'] = str(filetree[0].title)
+    parent_type = 'Project' if filetree[0].category == 'project' else 'Component'
+    itemParent['name'] = parent_type + ': ' + str(filetree[0].title)
     itemParent['can_edit'] = str(
         filetree[0].is_contributor(user) and
         not filetree[0].is_registration
@@ -372,7 +372,7 @@ def download_file(*args, **kwargs):
 
     kwargs["vid"] = len(node_to_use.files_versions[filename.replace('.', '_')])
 
-    return redirect('{node_url}files/download/${fid}/version/{vid}/'.format(
+    return redirect('{node_url}files/download/{fid}/version/{vid}/'.format(
         node_url=node_to_use.api_url,
         fid=filename,
         vid=kwargs['vid'],

@@ -62,15 +62,23 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         dragDrop: false,
         enableCellNavigation: false,
         dropZone: false,
-        autoHeight: true,
         forceFitColumns: true,
+        autoHeight: true,
         navigation: false
     });
 
+##  Saved code in case autoHeight does not work
+##    myGrid.Slick.dataView.onRowCountChanged.subscribe(function (e, args){
+##        var numRows = myGrid.currentlyRendered.length;
+##        if(numRows!=${info}.length+1){
+##            $('#myGrid').css('height', numRows*25);
+##        }
+##    });
     for (var i=0; i<myGrid.data.length; i++){
         if (myGrid.data[i]['type']=="folder"){
             myGrid.data[i]._collapsed = true;
             myGrid.Slick.dataView.updateItem(myGrid.data[i].id, myGrid.data[i]);
         }
+        myGrid.currentlyRendered=[myGrid.data[0]];
     }
 </script>

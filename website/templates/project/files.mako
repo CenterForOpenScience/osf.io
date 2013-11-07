@@ -3,90 +3,12 @@
 <%def name="content()">
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
-<form id="fileupload" action="${node_api_url + 'files/upload/'}" method="POST" enctype="multipart/form-data">
-        <table id='filesTable' role="presentation" class="table table-striped" style='display:none'>
-            <thead>
-                <tr>
-                    <th>Filename</th>
-                    <th>Date Modified</th>
-                    <th>File Size</th>
-                    <th colspan=2>Downloads</th>
-                </tr>
-            </thead>
-            <tbody class="files">
-            </tbody>
-        </table>
-</form>
-<!-- The template to display files available for upload -->
-<script id="template-upload" type="text/x-tmpl">
-{% for (var i=0, file; file=o.files[i]; i++) { %}
-    <tr class="template-upload fade">
-        <td class="name"><span>{%=file.name%}</span></td>
-        <td class="modified"><span></span></td>
-        <td class="size"><span>{%=o.formatFileSize(file.size)%}</span></td>
-        {% if (file.error) { %}
-            <td class="error" colspan="2"><span class="label label-important">{%=locale.fileupload.error%}</span> {%=locale.fileupload.errors[file.error] || file.error%}</td>
-        {% } else if (o.files.valid && !i) { %}
-            <td colspan="2">
-                <div class="progress progress-success progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="bar" style="width:0%;"></div></div>
-            </td>
-            <td class="start">{% if (!o.options.autoUpload) { %}
-                <button class="btn btn-primary">
-                    <i class="icon-upload icon-white"></i>
-                    <span>{%=locale.fileupload.start%}</span>
-                </button>
-            {% } %}</td>
-        {% } else { %}
-            <td colspan="2"></td>
-        {% } %}
-    </tr>
-{% } %}
-</script>
-<!-- The template to display files available for download -->
-<script id="template-download" type="text/x-tmpl">
-{% for (var i=0, file; file=o.files[i]; i++) { %}
-    <tr class="template-download fade">
-        {% if (file.error) { %}
-            <td class="name"><span>{%=file.name%}</span></td>
-            <td></td>
-            <td class="size"><span>{%=o.formatFileSize(file.size)%}</span></td>
-            <td class="error" colspan="3"><span class="label label-important">{%=locale.fileupload.error%}</span> {%=locale.fileupload.errors[file.error] || file.error%}</td>
-        {% } else { %}
-            <td class="name">
-                <a href="{%=file.url%}" title="{%=file.name%}">{%=file.name%}</a>
-            </td>
-            {% if (file.hasOwnProperty('action_taken') && file.action_taken === null) { %}
-                    <td colspan=5>
-                        <span class='label label-info'>No Action Taken</span> {%= file.message %}
-                    </td>
-            {% } else { %}
-            <td>{%=file.date_uploaded%}</td>
-            <td class="size"><span>{%=o.formatFileSize(file.size)%}</span></td>
-            <td>{%=file.downloads%}</td>
-            <td><a href="{%=file.download_url%}" download="{%=file.name%}"><i class="icon-download-alt"></i></a></td>
-            <td><form class="fileDeleteForm" style="margin: 0;">
-                % if user_can_edit:
-                    <button type="button" class="btn btn-danger btn-delete delete-file" data-filename="{%=file.name%}" onclick="deleteFile(this)">
-                        <i class="icon-trash icon-white"></i>
-                    </button>
-                % else:
-                    <button type="button" class="btn btn-danger btn-delete disabled">
-                        <i class="icon-trash icon-white"></i>
-                    </button>
-                % endif
-            </form>
-            </td>
-            {% } %}
-        {% } %}
-    </tr>
-{% } %}
-</script>
 %if user_can_edit:
 <div class="container" style="position:relative;">
 ##    <h3 style="max-width: 65%;"><span class="btn btn-success fileinput-button" id="clickable"><i class="icon-plus icon-white"></i><span>Add files...</span></span></h3>
     <h3 >Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element></h3>
     <div id="totalProgressActive" style="width: 35%; position: absolute; top: 4px; right: 0;">
-        <div id="totalProgress" class="bar" style="width: 0%;"></div>
+        <div id="totalProgress" class="bar" role="progressbar" style="width: 0%;"></div>
     </div>
 </div>
 %endif
@@ -110,17 +32,17 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
     if (dataContext['type']=='folder') {
         if (dataContext._collapsed) {
             if(dataContext['can_view']!="false"){
-                return spacer + " <span class='toggle expand nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-open'></span>&nbsp;Component: " + value + "</a>";
+                return spacer + " <span class='toggle expand nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-open'></span>&nbsp;" + value + "</a>";
             }
             else{
-                return spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-delete'></span>&nbsp;Component: " + value + "</a>";
+                return spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-delete'></span>&nbsp;" + value + "</a>";
             }
         } else {
             if(dataContext['can_view']!="false"){
-                return spacer + " <span class='toggle collapse nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-close'></span>&nbsp;Component: " + value + "</a>";
+                return spacer + " <span class='toggle collapse nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-close'></span>&nbsp;" + value + "</a>";
             }
             else {
-                return spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-delete'></span>&nbsp;Component: " + value + "</a>";
+                return spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-delete'></span>&nbsp;" + value + "</a>";
             }
         }
     } else {
@@ -147,7 +69,7 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
 
 var PairFormatter = function(row, cell, value, columnDef, dataContext) {
     if (value) {
-        return '<span style="display:none;">' + value[0] + '</span>' + value[1];
+        return value[1];
     }
     return '';
 };
@@ -203,13 +125,13 @@ var myGrid = HGrid.create({
     topCrumb: false,
     clickUploadElement: "#clickable",
     dragToRoot: false,
-    dragDrop: false,
-    namePath: false
+    dragDrop: false
 });
 
 
 
 myGrid.updateBreadcrumbsBox(myGrid.data[0]['uid']);
+
 myGrid.addColumn({id: "downloads", name: "Downloads", field: "downloads", width: 150, sortable: true});
 myGrid.addColumn({id: "actions", name: "", field: "actions", width: 80, formatter: Buttons});
 myGrid.Slick.grid.setSortColumn("name");
