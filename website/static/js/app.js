@@ -43,6 +43,9 @@ var Log = function(params) {
     self.localDatetime = ko.computed(function() {
         return moment(self.date).format("l h:mm A ZZ")
     })
+    self.utcDatetime = ko.computed(function() {
+        return moment(self.date).format("l H:mm UTC")
+    })
 }
 
 

@@ -348,7 +348,6 @@ class TestNodeLog(DbTestCase):
         assert_equal(parsed, self.log.tz_date)
 
 
-
 class TestWatchConfig(DbTestCase):
 
     def tearDown(self):
