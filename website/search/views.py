@@ -43,6 +43,8 @@ def search_search():
     # results so that it is easier for us to displa
     result_search, tags = create_result(highlights, results['docs'])
     total = results['numFound']
+    # Whether or not the user is searching for users
+    searching_users = query.startswith("user:")
     return {
         'highlight': highlights,
         'results': result_search,
@@ -52,6 +54,7 @@ def search_search():
         'current_page': start,
         'time': round(time.time() - tick, 2),
         'tags': tags,
+        "searching_users": searching_users
     }
 
 

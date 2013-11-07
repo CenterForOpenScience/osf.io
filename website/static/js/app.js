@@ -34,6 +34,7 @@ var Log = function(params) {
     self.contributors = params.contributors;
     self.nodeUrl = params.nodeUrl;
     self.userFullName = params.userFullName;
+    self.userURL = params.userURL;
     self.apiKey = params.apiKey;
     self.params = params.params; // Extra log params
     self.wikiUrl = ko.computed(function() {
@@ -79,6 +80,7 @@ var LogsViewModel = function(url) {
                     "contributors": item.contributors,
                     "nodeUrl": item.node_url,
                     "userFullName": item.user_fullname,
+                    "userURL": item.user_url,
                     "apiKey": item.api_key,
                     "params": item.params,
                     "nodeTitle": item.node_title
