@@ -46,7 +46,7 @@ js = Bundle(
                 "vendor/knockout/knockout-min.js",
                 "vendor/moment/moment.min.js"),
         # Site-specific JS
-        Bundle("js/site.js", "js/app.js", "js/project.js", filters="jsmin"),
+        Bundle("js/site.js", "js/project.js", "js/app.js", filters="jsmin"),
         output="public/js/common.js"
 )
 
