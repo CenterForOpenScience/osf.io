@@ -99,7 +99,7 @@
 var extensions = ["3gp", "7z", "ace", "ai", "aif", "aiff", "amr", "asf", "asx", "bat", "bin", "bmp", "bup",
     "cab", "cbr", "cda", "cdl", "cdr", "chm", "dat", "divx", "dll", "dmg", "doc", "docx", "dss", "dvf", "dwg",
     "eml", "eps", "exe", "fla", "flv", "gif", "gz", "hqx", "htm", "html", "ifo", "indd", "iso", "jar",
-    "jpeg", "jpg", "lnk", "log", "m4a", "m4b", "m4p", "m4v", "mcd", "mdb", "mid", "mov", "mp2", , "mp3", "mp4",
+    "jpeg", "jpg", "lnk", "log", "m4a", "m4b", "m4p", "m4v", "mcd", "mdb", "mid", "mov", "mp2", "mp3", "mp4",
     "mpeg", "mpg", "msi", "mswmm", "ogg", "pdf", "png", "pps", "ps", "psd", "pst", "ptb", "pub", "qbb",
     "qbw", "qxd", "ram", "rar", "rm", "rmvb", "rtf", "sea", "ses", "sit", "sitx", "ss", "swf", "tgz", "thm",
     "tif", "tmp", "torrent", "ttf", "txt", "vcd", "vob", "wav", "wma", "wmv", "wps", "xls", "xpi", "zip"];
@@ -110,17 +110,17 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
     if (dataContext['type']=='folder') {
         if (dataContext._collapsed) {
             if(dataContext['can_view']!="false"){
-                return spacer + " <span class='toggle expand nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-open'></span>&nbsp;" + value + "</a>";
+                return spacer + " <span class='toggle expand nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-open'></span>&nbsp;Component: " + value + "</a>";
             }
             else{
-                return spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-delete'></span>&nbsp;" + value + "</a>";
+                return spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-delete'></span>&nbsp;Component: " + value + "</a>";
             }
         } else {
             if(dataContext['can_view']!="false"){
-                return spacer + " <span class='toggle collapse nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-close'></span>&nbsp;" + value + "</a>";
+                return spacer + " <span class='toggle collapse nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-close'></span>&nbsp;Component: " + value + "</a>";
             }
             else {
-                return spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-delete'></span>&nbsp;" + value + "</a>";
+                return spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-delete'></span>&nbsp;Component: " + value + "</a>";
             }
         }
     } else {
@@ -143,6 +143,13 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
         var id = dataContext['name'].replace(/[\s\.#\'\"]/g, '');
         return "<div class='progress progress-striped active'><div id='" + id + "'class='bar' style='width: 0%;'></div></div>";
     }
+};
+
+var PairFormatter = function(row, cell, value, columnDef, dataContext) {
+    if (value) {
+        return '<span style="display:none;">' + value[0] + '</span>' + value[1];
+    }
+    return '';
 };
 
 var Buttons = function(row, cell, value, columnDef, dataContext) {
@@ -181,8 +188,8 @@ var myGrid = HGrid.create({
     url: ${info}[0]['uploadUrl'],
     columns:[
         {id: "name", name: "Name", field: "name", width: 550, cssClass: "cell-title", formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
-        {id: "date", name: "Date Modified", field: "dateModified", width: 160},
-        {id: "size", name: "Size", field: "sizeRead", width: 90, formatter: UploadBars, sortable: true}
+        {id: "date", name: "Date Modified", field: "dateModified", width: 160, sortable: true, formatter: PairFormatter},
+        {id: "size", name: "Size", field: "sizeRead", width: 90, formatter: UploadBars, sortable: true, formatter: PairFormatter}
     ],
     enableCellNavigation: false,
     breadcrumbBox: "#myGridBreadcrumbs",
@@ -203,7 +210,7 @@ var myGrid = HGrid.create({
 
 
 myGrid.updateBreadcrumbsBox(myGrid.data[0]['uid']);
-myGrid.addColumn({id: "downloads", name: "Downloads", field: "downloads", width: 90});
+myGrid.addColumn({id: "downloads", name: "Downloads", field: "downloads", width: 150, sortable: true});
 myGrid.addColumn({id: "actions", name: "", field: "actions", width: 80, formatter: Buttons});
 myGrid.Slick.grid.setSortColumn("name");
 
