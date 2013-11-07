@@ -1,6 +1,7 @@
 <%inherit file="base.mako"/>
 <%def name="title()">FAQ</%def>
 <%def name="content()">
+<h1 class="page-title">Frequently Asked Questions</h1>
 <h3>How much does the OSF service cost?</h3>
 
 <p>It's free!</p><h3>How can it be free? How are you funded?</h3><p>OSF is

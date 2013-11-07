@@ -3,15 +3,15 @@
 import unittest
 from nose.tools import *  # PEP8 asserts
 
-from tests.base import DbTestCase
 from framework.auth import User
 from framework.bcrypt import check_password_hash
-from website.project.model import ApiKey
+from website.project.model import ApiKey, NodeFile
+
+from tests.base import DbTestCase, Guid
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
     TagFactory)
 
-from .base import Guid
 
 GUID_FACTORIES = (UserFactory, TagFactory, NodeFactory, ProjectFactory,
                   MetaDataFactory)
@@ -24,13 +24,13 @@ class TestUser(DbTestCase):
     def test_factory(self):
         # Clear users
         User.remove()
-        user = UserFactory(password="myprecious")
+        user = UserFactory()
         assert_equal(User.find().count(), 1)
         assert_true(user.username)
         another_user = UserFactory(username="joe@example.com")
         assert_equal(another_user.username, "joe@example.com")
         assert_equal(User.find().count(), 2)
-        assert_true(user.check_password("myprecious"))
+        assert_true(user.date_registered)
 
     def test_is_watching(self):
         # User watches a node
@@ -54,6 +54,52 @@ class TestUser(DbTestCase):
         user.save()
         assert_true(user.check_password("ghostrider"))
         assert_false(user.check_password("ghostride"))
+
+
+class TestMergingUsers(DbTestCase):
+
+    def setUp(self):
+        self.master = UserFactory(username="joe@example.com",
+                            fullname="Joe Shmo",
+                            is_registered=True,
+                            emails=["joe@example.com"])
+        self.dupe = UserFactory(username="joseph123@hotmail.com",
+                            fullname="Joseph Shmo",
+                            emails=["joseph123@hotmail.com"])
+
+    def _merge_dupe(self):
+        '''Do the actual merge.'''
+        self.master.merge_user(self.dupe)
+        self.master.save()
+
+    def test_dupe_is_merged(self):
+        self._merge_dupe()
+        assert_true(self.dupe.is_merged)
+        assert_equal(self.dupe.merged_by, self.master)
+
+    def test_dupe_email_is_appended(self):
+        self._merge_dupe()
+        assert_in("joseph123@hotmail.com", self.master.emails)
+
+    def test_inherits_projects_contributed_by_dupe(self):
+        project = ProjectFactory()
+        project.contributors.append(self.dupe)
+        project.save()
+        self._merge_dupe()
+        assert_true(project.is_contributor(self.master))
+        assert_false(project.is_contributor(self.dupe))
+
+    def test_inherits_projects_created_by_dupe(self):
+        project = ProjectFactory(creator=self.dupe)
+        self._merge_dupe()
+        assert_equal(project.creator, self.master)
+
+    def test_adding_merged_user_as_contributor_adds_master(self):
+        project = ProjectFactory(creator=UserFactory())
+        self._merge_dupe()
+        project.add_contributor(contributor=self.dupe)
+        assert_true(project.is_contributor(self.master))
+        assert_false(project.is_contributor(self.dupe))
 
 
 class TestGUID(DbTestCase):
@@ -95,6 +141,28 @@ class TestMetaData(DbTestCase):
 
     def test_referent(self):
         pass
+
+class TestNodeFile(DbTestCase):
+
+    def setUp(self):
+        self.node = ProjectFactory()
+        self.node_file = NodeFile(node=self.node, path="foo.py", filename="foo.py", size=128)
+        self.node.files_versions[self.node_file.clean_filename] = [self.node_file._primary_key]
+        self.node.save()
+
+    def test_url(self):
+        assert_equal(self.node_file.api_url,
+            "{0}files/{1}/".format(self.node.api_url, self.node_file.filename))
+
+    def test_clean(self):
+        assert_equal(self.node_file.clean_filename, "foo_py")
+
+    def test_latest_version_number(self):
+        assert_equal(self.node_file.latest_version_number, 1)
+
+    def test_download_url(self):
+        assert_equal(self.node_file.download_url,
+            self.node.api_url + "files/download/{0}/version/1/".format(self.node_file.filename))
 
 
 class TestApiKey(DbTestCase):
@@ -205,7 +273,7 @@ class TestProject(DbTestCase):
         self.project.add_contributor(contributor=user2, user=self.user)
         self.project.save()
         # The user is removed
-        self.project.remove_contributor(self.user, contributor=user2, api_key=None)
+        self.project.remove_contributor(user=self.user, contributor=user2, api_key=None)
         assert_not_in(user2, self.project.contributors)
 
     def test_set_title(self):
@@ -239,6 +307,24 @@ class TestProject(DbTestCase):
 
     def test_creator_is_contributor(self):
         assert_true(self.project.is_contributor(self.user))
+
+    def test_cant_add_same_contributor_twice(self):
+        contrib = UserFactory()
+        self.project.add_contributor(contributor=contrib)
+        self.project.save()
+        self.project.add_contributor(contributor=contrib)
+        self.project.save()
+        assert_equal(len(self.project.contributors), 1)
+
+    def test_add_contributors(self):
+        user1 = UserFactory()
+        user2 = UserFactory()
+        self.project.add_contributors([user1, user2], user=self.user)
+        self.project.save()
+        assert_equal(len(self.project.contributors), 2)
+        assert_equal(len(self.project.contributor_list), 2)
+        assert_equal(self.project.logs[-1].params['contributors'],
+                        [user1._id, user2._id])
 
 class TestNodeLog(DbTestCase):
 

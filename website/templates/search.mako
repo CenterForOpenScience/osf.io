@@ -29,7 +29,7 @@
     </div>
 </section>
 <div class="row">
-    <div class="span2">
+    <div class="col-md-2">
         % if query:
         <h3>
 ##            our search users query
@@ -49,7 +49,7 @@
         % endif
 
     </div>
-    <div class="span10">
+    <div class="col-md-10">
             % if results:
 ##            iterate through our nice lists of results
                 % for result in results:

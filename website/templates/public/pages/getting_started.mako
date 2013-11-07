@@ -1,6 +1,7 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Getting Started</%def>
 <%def name="content()">
+<h1 class="page-title">Getting Started</h1>
 <style>
     .staticpage img {
         border:2px solid black;
@@ -79,6 +80,4 @@
     workflow, send comments <a href="mailto:feedback@openscienceframework.org">here</a>.
 </p>
 </div>
-
 </%def>
-

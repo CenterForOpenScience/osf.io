@@ -1,3 +1,135 @@
+/**
+ * app.js
+ * Knockout models, ViewModels, and custom binders.
+ */
+
+////////////
+// Models //
+////////////
+
+/**
+ * The project model.
+ */
+var Project = function(params) {
+    var self = this;
+    self._id =  params._id;
+    self.apiUrl = params.apiUrl;
+    self.watchedCount = ko.observable(params.watchCount);
+    self.userIsWatching = ko.observable(params.userIsWatching);
+    // The button to display (e.g. "Watch" if not watching)
+    self.watchButtonDisplay = ko.computed(function() {
+        var text = self.userIsWatching() ? "Unwatch" : "Watch"
+        var full = text + " " +self.watchedCount().toString();
+        return full;
+    });
+}
+
+var Log = function(params) {
+    var self = this;
+    self.action = params.action;
+    self.date = params.date;
+    self.nodeCategory = params.nodeCategory;
+    self.nodeTitle = params.nodeTitle;
+    self.contributor = params.contributor;
+    self.contributors = params.contributors;
+    self.nodeUrl = params.nodeUrl;
+    self.userFullName = params.userFullName;
+    self.apiKey = params.apiKey;
+    self.params = params.params; // Extra log params
+    self.wikiUrl = ko.computed(function() {
+        return self.nodeUrl + "wiki/" + self.params.page;
+    })
+
+    self.localDatetime = ko.computed(function() {
+        return moment(self.date).format("l h:mm A ZZ")
+    })
+}
+
+
+////////////////
+// ViewModels //
+////////////////
+
+
+var LogsViewModel = function(url) {
+    var self = this;
+    self.logs = ko.observableArray([]);
+    // Get log data via AJAX
+    var getUrl = '';
+    if (url) {
+        getUrl = url;
+    } else {
+        getUrl = nodeToUseUrl() + "log/";
+    };
+    $.ajax({
+        url: getUrl,
+        type: "get",
+        dataType: "json",
+        success: function(data){
+            var logs = data['logs'];
+            var mappedLogs = $.map(logs, function(item) {
+                return new Log({
+                    "action": item.action,
+                    "date": item.date,
+                    "nodeCategory": item.category,
+                    "contributor": item.contributor,
+                    "contributors": item.contributors,
+                    "nodeUrl": item.node_url,
+                    "userFullName": item.user_fullname,
+                    "apiKey": item.api_key,
+                    "params": item.params,
+                    "nodeTitle": item.node_title
+                })
+            })
+            self.logs(mappedLogs);
+        }
+    })
+}
+
+/**
+ * The project VM, scoped to the project page header.
+ */
+var ProjectViewModel = function() {
+    var self = this;
+    self.projects = ko.observableArray([{"watchButtonDisplay": ""}]);
+    $.ajax({
+        url: nodeToUseUrl(),
+        type: "get", contentType: "application/json",
+        dataType: "json",
+        success: function(data){
+            project = new Project({
+                "_id": data.node_id,
+                "apiUrl": data.node_api_url,
+                "watchCount": data.node_watched_count,
+                "userIsWatching": data.user_is_watching,
+                "logs": data.logs
+            });
+            self.projects([project]);
+        }
+    });
+
+    /**
+     * Toggle the watch status for this project.
+     */
+    self.toggleWatch = function() {
+        // Send POST request to node's watch API url and update the watch count
+        $.ajax({
+            url: self.projects()[0].apiUrl + "togglewatch/",
+            type: "POST",
+            dataType: "json",
+            data: JSON.stringify({}),
+            contentType: "application/json",
+            success: function(data, status, xhr) {
+                // Update watch count in DOM
+                self.projects()[0].userIsWatching(data['watched']);
+                self.projects()[0].watchedCount(data['watchCount']);
+            }
+        });
+    };
+}
+
+
+
 
 function attrMap(list, attr) {
     return $.map(list, function(item) {
@@ -7,7 +139,10 @@ function attrMap(list, attr) {
 
 NODE_OFFSET = 25;
 
-var addContributorModel = function(title, parentId, parentTitle) {
+/**
+ * The add contributor VM, scoped to the add contributor modal dialog.
+ */
+var AddContributorViewModel = function(title, parentId, parentTitle) {
 
     var self = this;
 
@@ -30,7 +165,7 @@ var addContributorModel = function(title, parentId, parentTitle) {
     self.nodes = ko.observableArray([]);
     self.nodesToChange = ko.observableArray();
     $.getJSON(
-        nodeToUseUrl() + '/get_editable_children/',
+        nodeToUseUrl() + 'get_editable_children/',
         {},
         function(result) {
             $.each(result['children'], function(idx, child) {
@@ -59,7 +194,7 @@ var addContributorModel = function(title, parentId, parentTitle) {
 
     self.importFromParent = function() {
         $.getJSON(
-            nodeToUseUrl() + '/get_contributors_from_parent/',
+            nodeToUseUrl() + 'get_contributors_from_parent/',
             {},
             function(result) {
                 self.results(result['contributors']);
@@ -67,11 +202,13 @@ var addContributorModel = function(title, parentId, parentTitle) {
         )
     };
 
+
     self.addTips = function(elements) {
         elements.forEach(function(element) {
             $(element).find('.contrib-button').tooltip();
         });
     };
+
 
     self.add = function(data) {
         self.selection.push(data);
@@ -79,6 +216,7 @@ var addContributorModel = function(title, parentId, parentTitle) {
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
     };
+
 
     self.remove = function(data) {
         self.selection.splice(
@@ -91,7 +229,7 @@ var addContributorModel = function(title, parentId, parentTitle) {
 
     self.addAll = function() {
         $.each(self.results(), function(idx, result) {
-            if (!(result in self.selection())) {
+            if (self.selection().indexOf(result) == -1) {
                 self.add(result);
             }
         });
@@ -125,6 +263,7 @@ var addContributorModel = function(title, parentId, parentTitle) {
         return false;
     };
 
+
     self.addingSummary = ko.computed(function() {
         var names = $.map(self.selection(), function(result) {
             return result.fullname
@@ -135,7 +274,7 @@ var addContributorModel = function(title, parentId, parentTitle) {
     self.submit = function() {
         var user_ids = attrMap(self.selection(), 'id');
         $.ajax(
-            nodeToUseUrl() + '/addcontributors/',
+            nodeToUseUrl() + 'addcontributors/',
             {
                 type: 'post',
                 data: JSON.stringify({
@@ -162,3 +301,15 @@ var addContributorModel = function(title, parentId, parentTitle) {
     };
 
 };
+
+//////////////////
+// Data binders //
+//////////////////
+
+
+ko.bindingHandlers.tooltip = {
+    init: function(elem, valueAccessor) {
+        $(elem).tooltip(valueAccessor())
+    }
+}
+

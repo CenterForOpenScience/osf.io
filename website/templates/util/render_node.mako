@@ -1,6 +1,5 @@
-<li id="projects-widget" node_id="${summary['id']}" class="project list-group-item" style="display: list-item;">
-
-    <h3 style="line-height:18px;">
+<li node_id="${summary['id']}" class="project list-group-item list-group-item-node">
+    <h4 class="list-group-item-heading">
         <span style="display:inline-block">
         <a href="${summary['url']}">${summary['title']}</a>
         % if summary['is_registration']:
@@ -8,9 +7,10 @@
         % endif
         </span>
         % if summary['show_logs']:
-            <i style="float:right;" id="icon-${summary['id']}" class="icon-plus" onclick="openCloseNode('${summary['id']}');"></i>
+            <i id="icon-${summary['id']}" class="icon-plus pull-right" onclick="NodeActions.openCloseNode('${summary['id']}');"></i>
         % endif
-    </h3>
+    </h4>
+    <div class="list-group-item-text"></div>
 
     <!-- Show abbreviated contributors list -->
     % if summary['show_contributors']:
@@ -24,11 +24,10 @@
             }'>
         </div>
     % else:
-        <div style="padding: 0px 10px 10px 10px;">Contributors unavailable</div>
+        <span>Contributors unavailable</span>
     % endif
 
     % if summary['show_logs']:
-
         <!--Stacked bar to visualize user activity level against total activity level of a project -->
         <!--Length of the stacked bar is normalized over all projects -->
         <div class="user-activity-meter">
@@ -40,6 +39,7 @@
         </div>
 
         <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
+            <hr>
             Recent Activity
             <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['url']}log/"></div>
         </div>

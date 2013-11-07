@@ -1,4 +1,4 @@
-<div class="project-authors" style="padding: 0 10px 10px 10px;">
+<div class="project-authors">
     % for contributor in contributors:
         <div mod-meta='{
                 "tpl": "util/render_user.mako",

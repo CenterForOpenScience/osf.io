@@ -14,7 +14,7 @@ from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 
 from framework.mongo import ObjectId
-from framework.auth import User, get_user
+from framework.auth import get_user, User
 from framework.analytics import get_basic_counters, increment_user_activity_counters
 from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
@@ -112,6 +112,34 @@ class NodeLog(StoredObject):
         return Node.load(self.params.get('node')) or \
             Node.load(self.params.get('project'))
 
+    def serialize(self):
+        return {
+        'id': self._primary_key,
+        'user_id': self.user._primary_key if self.user else '',
+        'user_fullname': self.user.fullname if self.user else '',
+        'api_key': self.api_key.label if self.api_key else '',
+        'node_url': self.node.url if self.node else '',
+        'node_title': self.node.title if self.node else '',
+        'action': self.action,
+        'params': self.params,
+        'category': self.node.category if self.node else '',
+        'date': self.date.strftime('%m/%d/%y %I:%M %p UTC'),
+        'contributors': [self._render_log_contributor(contributor) for contributor in self.params.get('contributors', [])],
+        'contributor': self._render_log_contributor(self.params.get('contributor', {})),
+    }
+
+    def _render_log_contributor(self, contributor):
+        if isinstance(contributor, dict):
+            rv = contributor.copy()
+            rv.update({'registered' : False})
+            return rv
+        user = User.load(contributor)
+        return {
+            'id' : user._primary_key,
+            'fullname' : user.fullname,
+            'registered' : True,
+        }
+
 
 class NodeFile(GuidStoredObject):
 
@@ -136,7 +164,25 @@ class NodeFile(GuidStoredObject):
 
     @property
     def url(self):
-        return '{}files/{}/'.format(self.node.url, self.filename)
+        return '{0}files/{1}/'.format(self.node.url, self.filename)
+
+    @property
+    def api_url(self):
+        return '{0}files/{1}/'.format(self.node.api_url, self.filename)
+
+    @property
+    def clean_filename(self):
+        return self.filename.replace('.', '_')
+
+    @property
+    def latest_version_number(self):
+        return len(self.node.files_versions[self.clean_filename])
+
+    @property
+    def download_url(self):
+        return "{0}files/download/{1}/version/{2}/".format(
+            self.node.api_url, self.filename, self.latest_version_number)
+
 
 class Tag(GuidStoredObject):
 
@@ -179,6 +225,7 @@ class Node(GuidStoredObject):
     fork_list = fields.StringField(list=True)
     registered_meta = fields.DictionaryField()
 
+    # TODO: move these to NodeFile
     files_current = fields.DictionaryField()
     files_versions = fields.DictionaryField()
     wiki_pages_current = fields.DictionaryField()
@@ -204,6 +251,15 @@ class Node(GuidStoredObject):
     #comment_schema = OSF_META_SCHEMAS['osf_comment']
 
     _meta = {'optimistic': True}
+
+    def serialize(self):
+        return {
+            'title': self.title,
+            'date_created': self.date_created,
+            "is_public": self.is_public,
+            "creator": self.creator,
+            "contributors": self.contributors
+        }
 
     def can_edit(self, user, api_key=None):
 
@@ -469,10 +525,9 @@ class Node(GuidStoredObject):
 
         return registered
 
-    def remove_tag(self, tag, user, api_key):
+    def remove_tag(self, tag, user, api_key, save=True):
         if tag in self.tags:
             self.tags.remove(tag)
-            self.save()
             self.add_log(
                 action='tag_removed',
                 params={
@@ -483,8 +538,10 @@ class Node(GuidStoredObject):
                 user=user,
                 api_key=api_key
             )
+            if save:
+                self.save()
 
-    def add_tag(self, tag, user, api_key):
+    def add_tag(self, tag, user, api_key, save=True):
         if tag not in self.tags:
             new_tag = Tag.load(tag)
             if not new_tag:
@@ -494,7 +551,6 @@ class Node(GuidStoredObject):
                 new_tag.count_public += 1
             new_tag.save()
             self.tags.append(new_tag)
-            self.save()
             self.add_log(
                 action='tag_added',
                 params={
@@ -505,6 +561,8 @@ class Node(GuidStoredObject):
                 user=user,
                 api_key=api_key
             )
+            if save:
+                self.save()
 
     def get_file(self, path, version=None):
         if version is not None:
@@ -701,7 +759,7 @@ class Node(GuidStoredObject):
         node_file.save()
 
         # Add references to the NodeFile to the Node object
-        file_name_key = file_name.replace('.', '_')
+        file_name_key = node_file.clean_filename
 
         # Reference the current file version
         self.files_current[file_name_key] = node_file._primary_key
@@ -814,28 +872,29 @@ class Node(GuidStoredObject):
         )
         return True
 
-    def remove_contributor(self, user, contributor, api_key=None):
+    def remove_contributor(self, contributor, user=None, api_key=None, log=True):
         '''Remove a contributor from this project.
 
-        :param user: User object, the user who is removing the contributor.
         :param contributor: User object, the contributor to be removed
+        :param user: User object, the user who is removing the contributor.
+        :param api_key: ApiKey object
         '''
         if not user._primary_key == contributor._id:
             self.contributors.remove(contributor._id)
             self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != contributor._id]
             self.save()
             removed_user = get_user(contributor._id)
-
-            self.add_log(
-                action='contributor_removed',
-                params={
-                    'project':self.parent_id,
-                    'node':self._primary_key,
-                    'contributor':removed_user._primary_key,
-                },
-                user=user,
-                api_key=api_key,
-            )
+            if log:
+                self.add_log(
+                    action='contributor_removed',
+                    params={
+                        'project':self.parent_id,
+                        'node':self._primary_key,
+                        'contributor':removed_user._primary_key,
+                    },
+                    user=user,
+                    api_key=api_key,
+                )
             return True
         else:
             return False
@@ -846,16 +905,18 @@ class Node(GuidStoredObject):
         :param contributor: A User object, the contributor to be added
         :param user: A User object, the user who added the contributor or None.
         '''
-        if contributor._primary_key not in self.contributors:
-            self.contributors.append(contributor)
-            self.contributor_list.append({'id': contributor._primary_key})
+        # If user is merged into another account, use master account
+        contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
+        if contrib_to_add._primary_key not in self.contributors:
+            self.contributors.append(contrib_to_add)
+            self.contributor_list.append({'id': contrib_to_add._primary_key})
             if log:
                 self.add_log(
                     action='contributor_added',
                     params={
                         'project': self.node__parent[0]._primary_key if self.node__parent else None,
                         'node': self._primary_key,
-                        'contributors': [contributor._primary_key],
+                        'contributors': [contrib_to_add._primary_key],
                     },
                     user=user,
                     api_key=api_key
@@ -865,6 +926,29 @@ class Node(GuidStoredObject):
             return True
         else:
             return False
+
+    def add_contributors(self, contributors, user=None, log=True, api_key=None, save=False):
+        '''Add multiple contributors
+
+        :param contributors: A list of User objects to add as contributors.
+        :param user: A User object, the user who added the contributors.
+        '''
+        for contrib in contributors:
+            self.add_contributor(contributor=contrib, user=user, log=False, save=False)
+        if log:
+            self.add_log(
+                action='contributor_added',
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'contributors': [c._id for c in contributors],
+                },
+                user=user,
+                api_key=api_key,
+            )
+        if save:
+            self.save()
+        return None
 
     def add_nonregistered_contributor(self, name, email, user, api_key=None, save=False):
         '''Add a non-registered contributor to the project.

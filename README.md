@@ -133,6 +133,12 @@ $ invoke solr
 $ invoke solr_migrate
 ```
 
+- In your `website/settings/local.py` file, set `USE_SOLR` to True.
+
+```python
+USE_SOLR = True
+```
+
 ### Starting A Local Solr Server
 
 ```bash
@@ -149,7 +155,7 @@ If you have all the above services installed, you can start *everything* up with
 ```bash
 invoke mongo -d  # Runs mongod as a daemon
 invoke mailserver
-invoke rabbit_mq
+invoke rabbitmq
 invoke celery_worker
 invoke solr
 invoke server

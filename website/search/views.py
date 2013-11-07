@@ -1,11 +1,10 @@
-from framework import request
-
-from framework.status import push_status_message
-from solr_search import search_solr
 import time
 from urllib2 import HTTPError
-
 import logging
+
+from framework import request, status
+from website.search.solr_search import search_solr
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('search.routes')
 
@@ -21,7 +20,7 @@ def search_search():
     query = request.args.get('q')
     # if there is not a query, tell our users to enter a search
     if query == '':
-        push_status_message('Enter a search!')
+        status.push_status_message('Enter a search!')
         return {
             'results': [],
             'tags': [],
@@ -34,7 +33,7 @@ def search_search():
     try:
         results, highlights, spellcheck_results = search_solr(query, start)
     except HTTPError:
-        push_status_message('Malformed query. Please try again')
+        status.push_status_message('Malformed query. Please try again')
         return {
             'results': [],
             'tags': [],

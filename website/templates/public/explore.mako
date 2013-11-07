@@ -10,7 +10,7 @@
 </%def>
 <%def name="content()">
 <div class="row">
-  <div class="span12">
+  <div class="col-md-12">
     <h1>Collaborator Network for Public Projects</h1>
     <p>Projects with more than 10 connections are used to represent the connections between each of the collaborators on that project for clarity. Node radius represents total collaboration overall, while number of lines connecting to a node represent the individuals they collaborate with.</p>
     <div style="font: 10px sans-serif;margin: 0px auto 22px;clear: both;width">

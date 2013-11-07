@@ -1,28 +1,27 @@
-from framework import request, redirect, secure_filename, send_file, get_basic_counters, update_counters
-from ..decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public
-from framework.auth import must_have_session_auth
-from framework.git.exceptions import FileNotModified
-from framework.auth import get_current_user, get_api_key
-from ..model import NodeFile
-from .node import _view_project
-
-from framework import HTTPError
-import httplib as http
-
-from website import settings
-
-from hurry.filesize import size, alternative
-import json
 import re
-import pygments
-import pygments.lexers
-import pygments.formatters
+import os
+import time
 import zipfile
 import tarfile
 from cStringIO import StringIO
+import httplib as http
 
-import os
+import pygments
+import pygments.lexers
+import pygments.formatters
+from hurry.filesize import size, alternative
+
+from framework import request, redirect, secure_filename, send_file
+from framework.auth import must_have_session_auth
+from framework.git.exceptions import FileNotModified
+from framework.auth import get_current_user, get_api_key
+from framework.exceptions import HTTPError
+from framework.analytics import get_basic_counters, update_counters
+from website.project.views.node import _view_project
+from website.project.decorators import must_not_be_registration, must_be_valid_project, \
+    must_be_contributor, must_be_contributor_or_public
+from website.project.model import NodeFile
+from website import settings
 
 
 def prune_file_list(file_list, max_depth):
@@ -44,6 +43,7 @@ def get_file_tree(node_to_use, user):
             tree.append(v)
 
     return (node_to_use, tree)
+
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public
@@ -93,7 +93,10 @@ def _get_files(filetree, parent_id, check, user):
     itemParent['size'] = "0"
     itemParent['sizeRead'] = "--"
     itemParent['name'] = str(filetree[0].title)
-    itemParent['can_edit'] = str(filetree[0].is_contributor(user)).lower()
+    itemParent['can_edit'] = str(
+        filetree[0].is_contributor(user) and
+        not filetree[0].is_registration
+    ).lower()
     #can_edit is can_view
     itemParent['can_view'] = str(filetree[0].can_edit(user)).lower()
     if check == 0:
@@ -120,13 +123,19 @@ def _get_files(filetree, parent_id, check, user):
             item['type'] = "file"
             item['name'] = str(tmp.path)
             item['ext'] = str(tmp.path.split('.')[-1])
-            item['sizeRead'] = size(tmp.size, system=alternative)
+            item['sizeRead'] = [
+                float(tmp.size),
+                size(tmp.size, system=alternative)
+            ]
             item['size'] = str(tmp.size)
             item['url'] = 'files/'.join([
                 str(filetree[0].url),
                 item['name'] + '/'
             ])
-            item['dateModified'] = tmp.date_modified.strftime('%Y/%m/%d %I:%M %p')
+            item['dateModified'] = [
+                time.mktime(tmp.date_modified.timetuple()),
+                tmp.date_modified.strftime('%Y/%m/%d %I:%M %p')
+            ]
             info.append(item)
     return {'info': info}
 
@@ -209,14 +218,20 @@ def upload_file_public(*args, **kwargs):
 
     file_info = {
         "name":uploaded_filename,
-        "sizeRead":size(uploaded_file_size, system=alternative),
+        "sizeRead": [
+            float(uploaded_file_size),
+            size(uploaded_file_size, system=alternative),
+        ],
         "size":str(uploaded_file_size),
         "url":node_to_use.url + "files/" + uploaded_filename + "/",
         "ext":uploaded_file_content_type.split('/')[1],
         "type":"file",
         "download_url":node_to_use.url + "/files/download/" + file_object.path,
         "date_uploaded": file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
-        "dateModified": file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
+        "dateModified": [
+            time.mktime(file_object.date_uploaded.timetuple()),
+            file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
+        ],
         "downloads": str(total) if total else str(0),
         "user_id": None,
         "user_fullname":None,
@@ -241,8 +256,12 @@ def view_file(*args, **kwargs):
 
     file_name = kwargs['fid']
     file_name_clean = file_name.replace('.', '_')
-
     renderer = 'default'
+
+    latest_node_file_id = node_to_use.files_versions[file_name_clean][-1]
+    latest_node_file = NodeFile.load(latest_node_file_id)
+    download_path = latest_node_file.download_url
+    download_html = '<a href="{path}">Download file</a>'.format(path=download_path)
 
     file_path = os.path.join(settings.UPLOADS_PATH, node_to_use._primary_key, file_name)
 
@@ -250,6 +269,7 @@ def view_file(*args, **kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     versions = []
+
     for idx, version in enumerate(list(reversed(node_to_use.files_versions[file_name_clean]))):
         node_file = NodeFile.load(version)
         number = len(node_to_use.files_versions[file_name_clean]) - idx
@@ -271,7 +291,9 @@ def view_file(*args, **kwargs):
 
         rv = {
             'file_name' : file_name,
-            'rendered' : 'This file is too large to be rendered online. Please download the file to view it locally.',
+            'rendered' : ('<p>This file is too large to be rendered online. '
+                        'Please <a href={path}>download the file</a> to view it locally.</p>'
+                        .format(path=download_path)),
             'renderer' : renderer,
             'versions' : versions,
 
@@ -289,6 +311,8 @@ def view_file(*args, **kwargs):
             is_img = True
             break
 
+
+    # TODO: this logic belongs in model
     # todo: add bzip, etc
     if is_img:
         rendered="<img src='{node_url}files/download/{fid}/' />".format(node_url=node_to_use.api_url, fid=file_name)
@@ -315,13 +339,15 @@ def view_file(*args, **kwargs):
 
     if renderer == 'pygments':
         try:
-            rendered = pygments.highlight(
+            rendered = download_html + pygments.highlight(
                 file_contents,
                 pygments.lexers.guess_lexer_for_filename(file_path, file_contents),
                 pygments.formatters.HtmlFormatter()
             )
         except pygments.util.ClassNotFound:
-            rendered = 'This type of file cannot be rendered online.  Please download the file to view it locally.'
+            rendered = ('<p>This file cannot be rendered online. '
+                        'Please <a href={path}>download the file</a> to view it locally.</p>'
+                        .format(path=download_path))
 
     rv = {
         'file_name' : file_name,
@@ -336,7 +362,6 @@ def view_file(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
 def download_file(*args, **kwargs):
-    print 'IN DF'
     project = kwargs['project']
     node = kwargs['node']
     user = kwargs['user']
@@ -345,9 +370,9 @@ def download_file(*args, **kwargs):
 
     kwargs["vid"] = len(node_to_use.files_versions[filename.replace('.', '_')])
 
-    return redirect('{node_url}files/download/{fid}/version/{vid}/'.format(
+    return redirect('{node_url}files/download/${fid}/version/{vid}/'.format(
         node_url=node_to_use.api_url,
-        fid=kwargs['fid'],
+        fid=filename,
         vid=kwargs['vid'],
     ))
 

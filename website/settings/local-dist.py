@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 '''Example settings/local.py file.
-These settings override what's in website/settings/base.py
+These settings override what's in website/settings/defaults.py
 
 NOTE: local.py will not be added to source control.
 '''
 
-from . import base
+from . import defaults
 
-# TODO: not sure if both of these are necessary
 DEV_MODE = True
-DEBUG_MODE = True  # Sets the Flask app to Debug mode
+DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 
 # Change to whatever port and db you want
 DB_PORT = 20771
@@ -41,5 +40,7 @@ CELERY_IMPORTS = (
     "framework.celery.tasks"
 )
 
-# Example of extending base settings
-# base.IMG_FMTS += ["pdf"]
+USE_CDN_FOR_CLIENT_LIBS = False
+
+# Example of extending default settings
+# defaults.IMG_FMTS += ["pdf"]

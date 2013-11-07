@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
+import logging
 import copy
 import json
 import pystache
 import httplib as http
-import logging
 
 import lxml.html
 import werkzeug.wrappers
@@ -12,7 +12,8 @@ from werkzeug.exceptions import NotFound
 from mako.template import Template
 from mako.lookup import TemplateLookup
 
-from framework import StoredObject, HTTPError, session
+from framework import StoredObject, session
+from framework.exceptions import HTTPError
 from framework.flask import app, redirect, make_response
 from website import settings
 
@@ -27,7 +28,7 @@ REDIRECT_CODES = [
 ]
 
 class Rule(object):
-    """ Container for routing and rendering rules. """
+    """ Container for routing and rendering rules."""
 
     @staticmethod
     def _ensure_list(value):
@@ -87,6 +88,8 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
         except HTTPError as error:
             rv = error
         except Exception as error:
+            logger.debug("Exception raised in wrap_with_renderer")
+            logger.error(error)
             if debug_mode:
                 raise
             rv = HTTPError(
@@ -277,7 +280,10 @@ class JSONRenderer(Renderer):
     class Encoder(json.JSONEncoder):
         def default(self, obj):
             if hasattr(obj, 'to_json'):
-                return obj.to_json()
+                try:
+                    return obj.to_json()
+                except TypeError:  # BS4 objects have to_json that isn't callable
+                    return unicode(obj)
             if isinstance(obj, StoredObject):
                 return obj._primary_key
             return json.JSONEncoder.default(self, obj)
@@ -370,7 +376,6 @@ class WebRenderer(Renderer):
         :param data: Dictionary to be passed to the template as context
         :return: 2-tuple: (<result>, <flag: replace div>)
         """
-
         attributes_string = element.get("mod-meta")
 
         # Return debug <div> if JSON cannot be parsed
