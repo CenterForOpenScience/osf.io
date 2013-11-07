@@ -226,7 +226,7 @@ def upload_file_public(*args, **kwargs):
         ],
         "size":str(uploaded_file_size),
         "url":node_to_use.url + "files/" + uploaded_filename + "/",
-        "ext":uploaded_file_content_type.split('/')[1],
+        "ext":str(uploaded_filename.split('.')[-1]),
         "type":"file",
         "download_url":node_to_use.url + "/files/download/" + file_object.path,
         "date_uploaded": file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),

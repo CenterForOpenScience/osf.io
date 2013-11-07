@@ -7,8 +7,8 @@
 <div class="container" style="position:relative;">
 ##    <h3 style="max-width: 65%;"><span class="btn btn-success fileinput-button" id="clickable"><i class="icon-plus icon-white"></i><span>Add files...</span></span></h3>
     <h3 >Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element></h3>
-    <div id="totalProgressActive" style="width: 35%; position: absolute; top: 4px; right: 0;">
-        <div id="totalProgress" class="bar" role="progressbar" style="width: 0%;"></div>
+    <div id="totalProgressActive" style="width: 35%; height: 20px; position: absolute; top: 25px; right: 0;" class>
+        <div id="totalProgress" class="progress-bar progress-bar-success" style="width: 0%;"></div>
     </div>
 </div>
 %endif
@@ -63,7 +63,7 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
     }
     else{
         var id = dataContext['name'].replace(/[\s\.#\'\"]/g, '');
-        return "<div class='progress progress-striped active'><div id='" + id + "'class='bar' style='width: 0%;'></div></div>";
+        return "<div style='height: 20px;' class='progress progress-striped active'><div id='" + id + "'class='progress-bar progress-bar-success' style='width: 0%;'></div></div>";
     }
 };
 
@@ -132,7 +132,7 @@ var myGrid = HGrid.create({
 
 myGrid.updateBreadcrumbsBox(myGrid.data[0]['uid']);
 
-myGrid.addColumn({id: "downloads", name: "Downloads", field: "downloads", width: 150, sortable: true});
+myGrid.addColumn({id: "downloads", name: "Downloads", field: "downloads", width: 150, sortable: true, formatter: UploadBars});
 myGrid.addColumn({id: "actions", name: "", field: "actions", width: 80, formatter: Buttons});
 myGrid.Slick.grid.setSortColumn("name");
 

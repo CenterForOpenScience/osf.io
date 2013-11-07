@@ -496,7 +496,7 @@ var HGrid = {
             }
             var value = {item: file, parent: parent};
             var promise = $.when(hGrid.hGridBeforeUpload.notify(value));
-            promise.done(function(event_status){
+            promise.always(function(event_status){
                 if(event_status===false){
                     myDropzone.removeFile(file);
                     value['success'] = false;
@@ -512,8 +512,8 @@ var HGrid = {
 // Pass the destination folder to the server
         myDropzone.on("sending", function(file, xhr, formData){
             hGrid.updateNav();
-            $('#totalProgressActive').addClass('active progress-striped progress');
-            $('#totalProgress').addClass('progress-bar progress-bar-success');
+            $('#totalProgress').show();
+            $('#totalProgressActive').addClass('progress progress-striped active');
             formData.append("destination", myDropzone.options.dropDestination);
         });
 
@@ -526,7 +526,7 @@ var HGrid = {
             $('#totalProgress').css('width', progress + "%");
             if (progress==100){
                 setTimeout(function(){
-                    $('#totalProgressActive').removeClass('active progress-striped progress');
+
                 },(1*1000));
             }
         })
@@ -534,7 +534,10 @@ var HGrid = {
         myDropzone.on("success", function(file) {
             var value;
             var promise = $.when(hGrid.hGridOnUpload.notify(file));
-            promise.done(function(event_status){
+            promise.always(function(event_status){
+                $('#totalProgressActive').removeClass('progress progress-striped active');
+                $('#totalProgress').hide();
+                $('#totalProgress').css('width', "0%");
                 if (event_status || typeof(event_status)=='undefined'){
                     value = {item: JSON.parse(file.xhr.response)[0], success: true};
                     value['item']['name'] = file.name;
@@ -589,7 +592,7 @@ var HGrid = {
         var value = {'item': item, 'parent':parent};
         var valueAfter = {'item': item, 'parent':parent};
         var promise = $.when(_this.hGridBeforeAdd.notify(value));
-        promise.done(function(event_status){
+        promise.always(function(event_status){
             if(event_status || typeof(event_status)==='undefined'){
                 if(item['parent_uid']!="null" && !item['uploadBar']){
                     var parent_path = parent['path'];
@@ -743,7 +746,7 @@ var HGrid = {
 
         value['insertBefore']=destination['id']+1;
         var promise = $.when(_this.hGridBeforeMove.notify(value));
-        promise.done(function(event_status){
+        promise.always(function(event_status){
             if(event_status || typeof(event_status)==='undefined'){
                 if(_this.itemMover(value, url, src_id, dest_path)){
                     value['success']=true;
@@ -783,7 +786,7 @@ var HGrid = {
             valueAfter['items'].push(_this.getItemByValue(_this.data, rowsToDelete[j], 'uid'));
         }
         var promise = $.when(_this.hGridBeforeDelete.notify(value));
-        promise.done(function(event_status) {
+        promise.always(function(event_status) {
             if(event_status || typeof(event_status)==='undefined'){
                 for(var i=0; i<rowsToDelete.length; i++){
                     var rows=[];
@@ -832,7 +835,7 @@ var HGrid = {
         var value = {'item': src, 'name': name};
         var valueAfter = {'item': src, 'name': name};
         var promise = $.when(_this.hGridBeforeEdit.notify(value));
-        promise.done(function(event_status){
+        promise.always(function(event_status){
             if(event_status || typeof(event_status)==='undefined'){
                 src['name']=name;
                 _this.Slick.dataView.updateItem(src['id'], src);
@@ -1322,7 +1325,7 @@ var HGrid = {
             }
             value['insertBefore']=args['insertBefore'];
             var promise = $.when(_this.hGridBeforeMove.notify(value));
-            promise.done(function(event_status){
+            promise.always(function(event_status){
                 if(event_status || typeof(event_status)==='undefined'){
                     _this.itemMover(value, "/sg_move", src, dest);
                     value['success']=true;
