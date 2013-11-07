@@ -33,7 +33,9 @@
         % if query:
         <h3>
 ##            our search users query
-            <a href="/search/?q=user:${query|h}"> Search users </a>
+            % if 'user:' not in query:
+                <a href="/search/?q=user:(${query|h})"> Search users </a>
+            % endif
         </h3>
         % endif
 ##        our tag cloud!
