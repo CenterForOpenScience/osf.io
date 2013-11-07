@@ -1,7 +1,7 @@
 <script type="text/html" id="logTemplate">
   <dt><span class="date log-date" data-bind="text: localDatetime, tooltip: {title: utcDatetime}"></span></dt>
   <dd>
-    <span data-bind="text: userFullName || apiKey"></span>
+    <a data-bind="text: userFullName || apiKey, attr: {href: userURL}"></a>
 
     <span data-bind="visible: action === 'project_created' || action === 'node_created'">
       created <span data-bind="text: nodeCategory"></span>

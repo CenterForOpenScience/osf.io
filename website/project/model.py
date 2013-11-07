@@ -130,10 +130,12 @@ class NodeLog(StoredObject):
 
     # FIXME: Serialization (presentation) doesn't belong in model (domain)
     def serialize(self):
+        # TODO: Nest serialized user.
         return {
         'id': self._primary_key,
         'user_id': self.user._primary_key if self.user else '',
         'user_fullname': self.user.fullname if self.user else '',
+        'user_url': self.user.url if self.user else '',
         'api_key': self.api_key.label if self.api_key else '',
         'node_url': self.node.url if self.node else '',
         'node_title': self.node.title if self.node else '',
