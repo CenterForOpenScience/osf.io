@@ -443,6 +443,14 @@ li.list-group-item-node {
     margin-bottom: 10px;
 }
 
+li .project-meta {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-weight: normal;
+    font-style: italic;
+}
+
 /*****************************************************/
 
 li.node{
