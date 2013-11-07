@@ -5,6 +5,7 @@ import zipfile
 import tarfile
 from cStringIO import StringIO
 import httplib as http
+import logging
 
 import pygments
 import pygments.lexers
@@ -23,6 +24,7 @@ from website.project.decorators import must_not_be_registration, must_be_valid_p
 from website.project.model import NodeFile
 from website import settings
 
+logger = logging.getLogger(__name__)
 
 def prune_file_list(file_list, max_depth):
     if max_depth is None:
