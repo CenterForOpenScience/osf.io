@@ -17,15 +17,17 @@
     </div>
     <div class="row">
         <div class="col-md-6">
-           <div class="page-header">
-            <h3>Watched Projects</h3>
-            </div>
-            <div id="logScope" data-target="/api/v1/watched/logs/">
-                 <dl class="dl-horizontal activity-log"
-                    data-bind="foreach: {data: logs, as: 'log'}">
-                  <div data-bind="template: {name: 'logTemplate', data: log}"></div>
-                </dl><!-- end foreach logs -->
-            </div>
+           <div id="watchFeed">
+               <div class="page-header">
+                <h3>Watched Projects</h3>
+                </div>
+                <div id="logScope" data-target="/api/v1/watched/logs/">
+                     <dl class="dl-horizontal activity-log"
+                        data-bind="foreach: {data: logs, as: 'log'}">
+                      <div data-bind="template: {name: 'logTemplate', data: log}"></div>
+                    </dl><!-- end foreach logs -->
+                </div><!-- end #logScope -->
+            </div><!-- end #watchFeed -->
         </div>
     </div>
 </div>
