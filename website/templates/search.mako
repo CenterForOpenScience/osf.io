@@ -33,7 +33,9 @@
         % if query and not searching_users:
         <h3>
 ##            our search users query
-            <a href="/search/?q=user:${query|h}"> Search users </a>
+            % if 'user:' not in query:
+                <a href="/search/?q=user:(${query|h})"> Search users </a>
+            % endif
         </h3>
         % else:
         <h3>Searching users</h3>
