@@ -27,12 +27,12 @@ def get_node_contributors_abbrev(*args, **kwargs):
 
     max_count = kwargs.get('max_count', 3)
     if 'user_ids' in kwargs:
-        user_ids = [
-            user for user in kwargs['user_ids']
-            if user in node_to_use.contributors
+        users = [
+            User.load(user_id) for user_id in kwargs['user_ids']
+            if user_id in node_to_use.contributors
         ]
     else:
-        user_ids = node_to_use.contributors
+        users = node_to_use.contributors
 
     if not node_to_use.can_edit(user, api_key) \
             and not node_to_use.are_contributors_public:
@@ -40,24 +40,24 @@ def get_node_contributors_abbrev(*args, **kwargs):
 
     contributors = []
 
-    n_contributors = len(user_ids)
+    n_contributors = len(users)
     others_count, others_suffix = '', ''
 
-    for index, user_id in enumerate(user_ids[:max_count]):
+    for index, user in enumerate(users[:max_count]):
 
-        if index == max_count - 1 and len(user_ids) > max_count:
+        if index == max_count - 1 and len(users) > max_count:
             separator = ' &'
             others_count = n_contributors - 3
             others_suffix = 's' if others_count > 1 else ''
-        elif index == len(user_ids) - 1:
+        elif index == len(users) - 1:
             separator = ''
-        elif index == len(user_ids) - 2:
+        elif index == len(users) - 2:
             separator = ' &'
         else:
             separator = ','
 
         contributors.append({
-            'user_id': user_id,
+            'user_id': user._primary_key,
             'separator': separator,
         })
 
