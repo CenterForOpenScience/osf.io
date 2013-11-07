@@ -39,7 +39,6 @@ a.disabled {
 }
 
 h4 {
-    padding-right:40px;
     padding-bottom: 10px;
 }
 
@@ -796,4 +795,10 @@ form.form-horizontal.form-horizontal-narrow .control-group {
     font-family: trebuchet MS, helvetica, sans-serif;
     font-size: 0.8em;
     font-weight: bold;
+}
+
+/* Logs */
+
+.log-date {
+    font-size: 13px;
 }
