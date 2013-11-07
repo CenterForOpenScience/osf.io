@@ -124,7 +124,7 @@ def _get_files(filetree, parent_id, check, user):
             item['name'] = str(tmp.path)
             item['ext'] = str(tmp.path.split('.')[-1])
             item['sizeRead'] = [
-                tmp.size,
+                float(tmp.size),
                 size(tmp.size, system=alternative)
             ]
             item['size'] = str(tmp.size)
@@ -219,7 +219,7 @@ def upload_file_public(*args, **kwargs):
     file_info = {
         "name":uploaded_filename,
         "sizeRead": [
-            uploaded_file_size,
+            float(uploaded_file_size),
             size(uploaded_file_size, system=alternative),
         ],
         "size":str(uploaded_file_size),
