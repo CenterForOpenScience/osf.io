@@ -229,7 +229,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
 
     self.addAll = function() {
         $.each(self.results(), function(idx, result) {
-            if (!(result in self.selection())) {
+            if (self.selection().indexOf(result) == -1) {
                 self.add(result);
             }
         });
