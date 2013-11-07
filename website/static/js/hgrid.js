@@ -514,6 +514,7 @@ var HGrid = {
         myDropzone.on("sending", function(file, xhr, formData){
             hGrid.updateNav();
             $('#totalProgressActive').addClass('active progress-striped progress');
+            $('#totalProgress').addClass('progress-bar progress-bar-success');
             formData.append("destination", myDropzone.options.dropDestination);
         });
 
@@ -1172,9 +1173,6 @@ var HGrid = {
         var _this = this;
         _this.options.sortAsc = !_this.options.sortAsc;
         var sortingCol = args.sortCol.field;
-        if (sortingCol=="sizeRead"){
-            sortingCol="size";
-        }
         var sorted = _this.sortHierarchy(data, sortingCol, dataView, grid);
         var new_data = _this.prepJava(sorted, {'sorting': true});
         _this.data = new_data;
@@ -1183,23 +1181,26 @@ var HGrid = {
         _this.updateNav();
     },
 
+    compare: function(a, b) {
+        var _this = this;
+        if (a instanceof Array && b instanceof Array) {
+            for (var r, i=0, l=Math.min(a.length, b.length); i<l; i++)
+                if (r = _this.compare(a[i], b[i]))
+                    return r;
+            return a.length - b.length;
+        } else // use native comparison algorithm, including ToPrimitive conversion
+            return (a > b) - (a < b);
+    },
+
     sortHierarchy: function (data, sortingCol, dataView, grid){
         var _this = this;
         var sorted = data.sort(function(a, b){
             var x = a[sortingCol], y = b[sortingCol];
-            if(sortingCol=='size'){
-                x = parseInt(x);
-                y = parseInt(y);
-            }
-
-            if(x == y){
-                return 0;
-            }
             if(_this.options.sortAsc){
-                return x > y ? 1 : -1;
+                return _this.compare(x,y);
             }
             else{
-                return x < y ? 1 : -1;
+                return -(_this.compare(x,y));
             }
         });
         var hierarchical = [];
@@ -1219,8 +1220,12 @@ var HGrid = {
                 parentId = undefined;
             }
             if(item.parent == parentId){
-                hierarchical.push(sorted[i]);
-                this.buildHierarchy(sorted, hierarchical, sorted[i]);
+                hierarchical.push(item);
+//                // Remove item from sorted
+//                sorted.splice(i, 1);
+                if (item['type'] == 'folder') {
+                    this.buildHierarchy(sorted, hierarchical, item);
+                }
             }
         }
     },
