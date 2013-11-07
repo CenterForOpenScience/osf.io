@@ -75,6 +75,9 @@ def _jsonify_contribs(contribs):
     for contrib in contribs:
         if 'id' in contrib:
             user = User.load(contrib['id'])
+            if user is None:
+                logger.error('User {} not found'.format(contrib['id']))
+                continue
             data.append({
                 'registered': True,
                 'id': user._primary_key,
