@@ -1186,7 +1186,7 @@ var HGrid = {
     sortHierarchy: function (data, sortingCol, dataView, grid){
         var _this = this;
         var sorted = data.sort(function(a, b){
-            var x = a[sortingCol].toLowerCase(), y = b[sortingCol].toLowerCase();
+            var x = a[sortingCol], y = b[sortingCol];
             if(sortingCol=='size'){
                 x = parseInt(x);
                 y = parseInt(y);
