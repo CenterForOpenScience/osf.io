@@ -201,6 +201,7 @@ class TestProjectViews(DbTestCase):
         self.project.save()
         url = "/api/v1/project/{0}/".format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
+        print(res.json)
         assert_equal(len(res.json['logs']), 10)
 
 
