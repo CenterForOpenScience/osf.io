@@ -1,7 +1,5 @@
 ## http://www.webappers.com/2011/10/14/how-to-create-collapsible-tree-menu-with-pure-css/
 
-##<script src="/static/js/vendor/jquery-1.7.min.js"></script>
-##<script src="/static/js/vendor/jquery-ui-1.8.16.custom.min.js"></script>
 <link rel="stylesheet" href="/static/css/hgrid-base.css" type="text/css" />
 <script src="/static/js/vendor/jquery.event.drag-2.2.js"></script>
 <script src="/static/js/vendor/jquery.event.drop-2.2.js"></script>
@@ -9,7 +7,7 @@
 <script src="/static/js/slickgrid.custom.min.js"></script>
 <script src="/static/js/hgrid.js"></script>
 
-<div id="myGrid" class="dash-page hgrid" style="width: 100%; height: 50px"></div>
+<div id="myGrid" class="dash-page hgrid" style="width: 100%;"></div>
 
 <script>
 
@@ -65,15 +63,17 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         enableCellNavigation: false,
         dropZone: false,
         forceFitColumns: true,
+        autoHeight: true,
         navigation: false
     });
 
-    myGrid.Slick.dataView.onRowCountChanged.subscribe(function (e, args){
-        var numRows = myGrid.currentlyRendered.length;
-        if(numRows!=${info}.length+1){
-            $('#myGrid').css('height', numRows*25);
-        }
-    });
+##  Saved code in case autoHeight does not work
+##    myGrid.Slick.dataView.onRowCountChanged.subscribe(function (e, args){
+##        var numRows = myGrid.currentlyRendered.length;
+##        if(numRows!=${info}.length+1){
+##            $('#myGrid').css('height', numRows*25);
+##        }
+##    });
     for (var i=0; i<myGrid.data.length; i++){
         if (myGrid.data[i]['type']=="folder"){
             myGrid.data[i]._collapsed = true;
