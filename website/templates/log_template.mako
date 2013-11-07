@@ -11,9 +11,12 @@
     <span data-bind="visible: action === 'wiki_updated'">updated wiki page <a data-bind="attr: {href: wikiUrl}, text: params.page"></a>
     </span>
 
-    <span data-bind="visible: action === 'contributor_added', foreach: {data: contributors, as: 'person'}">
-      added <a data-bind="attr: {href: '/profile/' + person.id + '/'}, text: person.fullname"></a>
-      <span data-bind="visible: $index != $parent.contributors.length"></span>
+    <span data-bind="visible: action === 'contributor_added'">
+      added
+      <span data-bind="foreach: {data: contributors, as: 'person'}">
+        <a data-bind="attr: {href: '/profile/' + person.id + '/'}, text: person.fullname"></a>
+        <span data-bind="visible: $index() < $parent.contributors.length - 1">,</span>
+      </span>
 
       to <a data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
     </span><!-- end foreach contributor -->
