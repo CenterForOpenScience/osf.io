@@ -125,16 +125,16 @@ var myGrid = HGrid.create({
     topCrumb: false,
     clickUploadElement: "#clickable",
     dragToRoot: false,
-    dragDrop: false,
-    namePath: false
+    dragDrop: false
 });
 
 
 
 myGrid.updateBreadcrumbsBox(myGrid.data[0]['uid']);
+
 myGrid.addColumn({id: "downloads", name: "Downloads", field: "downloads", width: 150, sortable: true});
 myGrid.addColumn({id: "actions", name: "", field: "actions", width: 80, formatter: Buttons});
-myGrid.Slick.grid.setSortColumn("name");
+##myGrid.Slick.grid.setSortColumn("name");
 
 myGrid.hGridBeforeUpload.subscribe(function(e, args){
     if(args.parent['can_edit']=='true'){

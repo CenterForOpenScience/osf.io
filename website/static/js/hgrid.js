@@ -56,8 +56,7 @@ var HGrid = {
         topCrumb: true,
         forceFitColumns: true,
         autoHeight: true,
-        navigation: true,
-        namePath: false
+        navigation: true
     },
 
     Slick: {
@@ -129,7 +128,7 @@ var HGrid = {
 
             hGridOnMouseEnter: new self.Slick.Event(),
             hGridOnMouseLeave: new self.Slick.Event(),
-
+            hGridOnClick: new self.Slick.Event(),
             /**
              Fired before a move occurs
 
@@ -933,35 +932,24 @@ var HGrid = {
             var path = [];
             var namePath = [];
             path.push(output[l]['uid']);
-            namePath.push(output[l]['name']);
             if(output[l]['parent_uid']!="null"){
                 for(var m=0; m<l; m++){
                     if(output[m]['uid']==output[l]['parent_uid']){
 //                        var x = m;
                         while(output[m]['parent_uid']!="null"){
                             path.push(output[m]['uid']);
-                            namePath.push(output[m]['name']);
                             m = output[m]['parent'];
                         }
                         path.push(output[m]['uid']);
-                        namePath.push(output[m]['name']);
                         break;
                     }
                 }
             }
             path.reverse();
-            namePath.reverse();
-            output[l]['namePath'] = namePath;
             output[l]['path']=path;
             output[l]['sortpath']=path.join('/');
-            output[l]['namePath']=namePath.join('/');
         }
-        if(namePath){
-            var sortingCol='namePath';
-        }
-        else{
-            var sortingCol='sortPath';
-        }
+        var sortingCol='sortpath';
         output.sort(function(a, b){
             var x = a[sortingCol].toLowerCase(), y = b[sortingCol].toLowerCase();
 
@@ -1372,6 +1360,7 @@ var HGrid = {
         });
 
         grid.onClick.subscribe(function (e, args) {
+            _this.hGridOnClick.notify({e: e, args: args});
             if ($(e.target).hasClass("toggle") || $(e.target).hasClass("folder")) {
                 var item = dataView.getItem(args.row);
                 if (item) {
@@ -1382,7 +1371,7 @@ var HGrid = {
                         i+=1;
                     }
                     while(data[i] && data[i]['indent']>data[args.row]['indent']);
-
+                    _this.currentlyRendered = [];
                     if (!item._collapsed) {
                         item._collapsed = true;
                     } else {
@@ -1424,12 +1413,6 @@ var HGrid = {
             _this.onSort(e, args, grid, _this.Slick.dataView, _this.data);
         });
 
-//        //When a cell is double clicked, make it editable (unless it's uploads)
-//        grid.onDblClick.subscribe(function (e, args) {
-//            if(data[grid.getActiveCell().row]['uid']!="uploads" && grid.getActiveCell().cell==grid.getColumnIndex('name')){
-//                grid.getOptions().editable=true;
-//            }
-//        });
 
         grid.onDblClick.subscribe(function (e, args) {
             var navId = $(e.target).find('span.nav-filter-item').attr('data-hgrid-nav');
