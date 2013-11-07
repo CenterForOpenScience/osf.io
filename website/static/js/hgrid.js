@@ -512,8 +512,8 @@ var HGrid = {
 // Pass the destination folder to the server
         myDropzone.on("sending", function(file, xhr, formData){
             hGrid.updateNav();
-            $('#totalProgressActive').addClass('active progress-striped progress');
-            $('#totalProgress').addClass('progress-bar progress-bar-success');
+            $('#totalProgress').show();
+            $('#totalProgressActive').addClass('progress progress-striped active');
             formData.append("destination", myDropzone.options.dropDestination);
         });
 
@@ -526,7 +526,9 @@ var HGrid = {
             $('#totalProgress').css('width', progress + "%");
             if (progress==100){
                 setTimeout(function(){
-                    $('#totalProgressActive').removeClass('active progress-striped progress');
+                    $('#totalProgressActive').removeClass('progress progress-striped active');
+                    $('#totalProgress').hide();
+                    $('#totalProgress').css('width', "0%");
                 },(1*1000));
             }
         })
@@ -1211,9 +1213,9 @@ var HGrid = {
                 hierarchical.push(item);
 //                // Remove item from sorted
 //                sorted.splice(i, 1);
-                if (item['type'] == 'folder') {
+//                if (item['type'] == 'folder') {
                     this.buildHierarchy(sorted, hierarchical, item);
-                }
+//                }
             }
         }
     },
