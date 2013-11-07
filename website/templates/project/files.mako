@@ -59,11 +59,21 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
 
 var UploadBars = function(row, cell, value, columnDef, dataContext) {
     if (!dataContext['uploadBar']){
-        return value;
+        var spacer = "<span style='display:inline-block;height:1px;width:30px'></span>";
+        if(dataContext['url']){
+            var delButton = "<button type='button' class='btn btn-danger btn-mini' onclick='myGrid.deleteItems([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-trash icon-white'></i></button>"
+            var url = dataContext['url'].replace('/files/', '/files/download/');
+            url = '/api/v1' + url;
+            var downButton = "<a href=" + JSON.stringify(url) + "><button type='button' class='btn btn-success btn-mini'><i class='icon-download-alt icon-white'></i></button></a>";
+            if(myGrid.getItemByValue(myGrid.data, dataContext['parent_uid'], 'uid')['can_edit']=='false'){
+                return value + spacer + "<div class='hGridButton' style='text-align: right; display:none;'" + downButton + "</div></span>";
+            }
+            else return value + spacer + "<div class='hGridButton' style='text-align: right; display:none;'" + downButton + " " + delButton + "</div></span>";
+        }
     }
     else{
         var id = dataContext['name'].replace(/[\s\.#\'\"]/g, '');
-        return "<div style='height: 20px;' class='progress progress-striped active'><div id='" + id + "'class='progress-bar progress-bar-success' style='width: 0%;'></div></div>";
+        return "<div style='height: 20px;' class='progress progress-striped active'><div id='" + id + "'class='progress-bar progress-bar-success' style='width: 0%;'></div>";
     }
 };
 
@@ -76,19 +86,7 @@ var PairFormatter = function(row, cell, value, columnDef, dataContext) {
 
 var Buttons = function(row, cell, value, columnDef, dataContext) {
 ##    console.log(myGrid.Slick.grid.getCellNode(myGrid.Slick.dataView.getRowById(dataContext['id']), myGrid.Slick.grid.getColumnIndex("downloads")).parentNode);
-    if(dataContext['url'] && !dataContext['uploadBar']){
-        var delButton = "<button type='button' class='btn btn-danger btn-mini' onclick='myGrid.deleteItems([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-trash icon-white'></i></button>"
-        var url = dataContext['url'].replace('/files/', '/files/download/');
-        url = '/api/v1' + url;
-        var downButton = "<a href=" + JSON.stringify(url) + "><button type='button' class='btn btn-success btn-mini'><i class='icon-download-alt icon-white'></i></button></a>";
-        if(myGrid.getItemByValue(myGrid.data, dataContext['parent_uid'], 'uid')['can_edit']=='false'){
-            return downButton;
-##            return value + "\t" + downButton;
-        }
-##        else return value + "\t" + downButton + " " + delButton;
-        else return downButton + " " + delButton;
 
-    }
 };
 
 $('#componentName').text(${info}[0]['name']);
@@ -133,7 +131,7 @@ var myGrid = HGrid.create({
 myGrid.updateBreadcrumbsBox(myGrid.data[0]['uid']);
 
 myGrid.addColumn({id: "downloads", name: "Downloads", field: "downloads", width: 150, sortable: true, formatter: UploadBars});
-myGrid.addColumn({id: "actions", name: "", field: "actions", width: 80, formatter: Buttons});
+##myGrid.addColumn({id: "actions", name: "", field: "actions", width: 80, formatter: Buttons});
 myGrid.Slick.grid.setSortColumn("name");
 
 myGrid.hGridBeforeUpload.subscribe(function(e, args){
@@ -200,11 +198,15 @@ myGrid.hGridAfterNav.subscribe(function (e, args){
 
 myGrid.hGridOnMouseEnter.subscribe(function (e, args){
     $(myGrid.options.container).find(".row-hover").removeClass("row-hover");
-    $(args.e.target.parentNode).addClass("row-hover");
+    $(myGrid.options.container).find(".hGridButton").css('display', 'none');
+    var parent = args.e.target.parentNode;
+    $(parent).addClass("row-hover");
+    $(parent).find('.hGridButton').css('display', 'inline');
 });
 
 myGrid.hGridOnMouseLeave.subscribe(function (e, args){
     $(myGrid.options.container).find(".row-hover").removeClass("row-hover");
+    $(myGrid.options.container).find(".hGridButton").css('display', 'none');
 });
 
 myGrid.hGridOnUpload.subscribe(function(e, args){
