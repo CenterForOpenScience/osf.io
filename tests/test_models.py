@@ -3,6 +3,9 @@
 import unittest
 from nose.tools import *  # PEP8 asserts
 
+import pytz
+from dateutil import parser
+
 from framework.auth import User
 from framework.bcrypt import check_password_hash
 from website.project.model import ApiKey, NodeFile
@@ -329,11 +332,21 @@ class TestProject(DbTestCase):
 class TestNodeLog(DbTestCase):
 
     def setUp(self):
-        pass
+        self.log = NodeLogFactory()
 
     def test_node_log_factory(self):
         log = NodeLogFactory()
         assert_true(log.action)
+
+    def test_tz_date(self):
+        assert_equal(self.log.tz_date.tzinfo, pytz.UTC)
+
+    def test_formatted_date(self):
+        iso_formatted = self.log.formatted_date  # The string version in iso format
+        # Reparse the date
+        parsed = parser.parse(iso_formatted)
+        assert_equal(parsed, self.log.tz_date)
+
 
 
 class TestWatchConfig(DbTestCase):
