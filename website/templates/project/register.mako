@@ -8,11 +8,11 @@
         "replace": true
     }'></div>
 
-<legend>Register</legend>
+<legend class="text-center">Register</legend>
 
 % if schema:
 
-    <div id="registration_template" data-bind="with:currentPage">
+    <div class="col-md-6 col-md-offset-3" id="registration_template" data-bind="with:currentPage">
 
         <h2 data-bind="text:$data.title"></h2>
         <br />
@@ -74,7 +74,7 @@
 
         </form>
 
-    </div>
+    </div><!-- end #registration_template -->
 
     <!-- Apply view model -->
     <script type="text/javascript">

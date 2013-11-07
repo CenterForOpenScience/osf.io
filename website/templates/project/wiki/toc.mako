@@ -1,4 +1,4 @@
-<div class="osf-sidebar hidden-print" role="complementary">
+<div class="osf-sidenav hidden-print" role="complementary">
     <ul class="nav bs-sidenav">
 
         <li><a href="/project/${node_id}/wiki/home">Project</a></li>

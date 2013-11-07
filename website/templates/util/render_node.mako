@@ -6,10 +6,10 @@
             | Registered: ${summary['registered_date']}
         % endif
         </span>
-    </h4>
         % if summary['show_logs']:
             <i id="icon-${summary['id']}" class="icon-plus pull-right" onclick="NodeActions.openCloseNode('${summary['id']}');"></i>
         % endif
+    </h4>
     <div class="list-group-item-text"></div>
 
     <!-- Show abbreviated contributors list -->
@@ -28,7 +28,6 @@
     % endif
 
     % if summary['show_logs']:
-
         <!--Stacked bar to visualize user activity level against total activity level of a project -->
         <!--Length of the stacked bar is normalized over all projects -->
         <div class="user-activity-meter">
@@ -40,6 +39,7 @@
         </div>
 
         <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
+            <hr>
             Recent Activity
             <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['url']}log/"></div>
         </div>

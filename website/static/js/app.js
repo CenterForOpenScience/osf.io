@@ -41,7 +41,7 @@ var Log = function(params) {
     })
 
     self.localDatetime = ko.computed(function() {
-        return moment(self.date).format("l h:mm A")
+        return moment(self.date).format("l h:mm A ZZ")
     })
 }
 

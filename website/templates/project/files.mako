@@ -314,9 +314,9 @@ myGrid.hGridOnUpload.subscribe(function(e, args){
 </%def>
 
 <%def name="javascript()">
-<script src="/static/js/vendor/jquery.event.drag-2.2.js"></script>
-<script src="/static/js/vendor/jquery.event.drop-2.2.js"></script>
-<script src="/static/js/vendor/dropzone.js"></script>
+<script src="/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js"></script>
+<script src="/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js"></script>
+<script src="/static/vendor/dropzone/dropzone.js"></script>
 <script src="/static/js/slickgrid.custom.min.js"></script>
 <script src="/static/js/hgrid.js"></script>
 </%def>

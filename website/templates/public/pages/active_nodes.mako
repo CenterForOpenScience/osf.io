@@ -6,16 +6,18 @@
 %>
 
   <div class="row">
-    <div class="col-md-3 col-sm-4 sidebar">
-        <ul class="nav nav-stacked nav-pills">
-            <li><a href='#newPublicProjects'>Newest Public Projects</a></li>
-            <li><a href='#newPublicRegistrations'>Newest Public Registrations</a></li>
-            <li><a href='#popularPublicProjects'>Most Viewed Public Projects</a></li>
-            <li><a href='#popularPublicRegistrations'>Most Viewed Public Registrations</a></li>
-        </ul>
-    </div><!-- end sidebar -->
+    <div class="col-md-3">
+        <div class="sidebar affix hidden-print" role="complementary">
+            <ul class="nav nav-stacked nav-pills">
+                <li><a href='#newPublicProjects'>Newest Public Projects</a></li>
+                <li><a href='#newPublicRegistrations'>Newest Public Registrations</a></li>
+                <li><a href='#popularPublicProjects'>Most Viewed Public Projects</a></li>
+                <li><a href='#popularPublicRegistrations'>Most Viewed Public Registrations</a></li>
+            </ul>
+        </div><!-- end sidebar -->
+    </div>
 
-    <div class="col-md-9 col-sm-8">
+    <div class="col-md-9" role="main">
       <h1 class="page-header">Public Activity</h1>
         <section id='newPublicProjects'>
             <h3>Newest Public Projects</h3>
@@ -61,16 +63,16 @@
                 month=node.date_created.date().strftime('%B')
             )
         %>
-        <li class="project list-group-item">
+        <li class="project list-group-item list-group-item-node">
             <h4 class="list-group-item-heading">
                 <a href="${node.url}">${node.title}</a>
             </h4>
                 % if metric == 'hits':
-                    <span class="badge" rel='tooltip' data-original-title='${hits} hits (${unique_hits} unique)'>
+                    <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='${hits} hits (${unique_hits} unique)'>
                         ${hits} views
                     </span>
                 % elif metric == 'date_created':
-                    <span class="badge" rel='tooltip' data-original-title='Created: ${explicit_date}'>
+                    <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='Created: ${explicit_date}'>
                         ${node.date_created.date()}
                     </span>
                 % endif
