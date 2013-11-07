@@ -761,7 +761,7 @@ form.form-horizontal.form-horizontal-narrow .control-group {
 }
 
 /* Sidenav */
-.osf-sidebar.affix {
+.osf-sidenav.affix {
   position: static;
 }
 
@@ -777,22 +777,22 @@ form.form-horizontal.form-horizontal-narrow .control-group {
 }
 
 /* All levels of nav */
-.osf-sidebar .nav > li > a {
+.osf-sidenav .nav > li > a {
   display: block;
   /*color: #716b7a;*/
   color: #006699;
   padding: 5px 20px;
   font-weight: bold;
 }
-.osf-sidebar .nav > li > a:hover,
-.osf-sidebar .nav > li > a:focus {
+.osf-sidenav .nav > li > a:hover,
+.osf-sidenav .nav > li > a:focus {
   text-decoration: none;
   background-color: #e5e3e9;
   border-right: 1px solid #dbd8e0;
 }
-.osf-sidebar .nav > .active > a,
-.osf-sidebar .nav > .active:hover > a,
-.osf-sidebar .nav > .active:focus > a {
+.osf-sidenav .nav > .active > a,
+.osf-sidenav .nav > .active:hover > a,
+.osf-sidenav .nav > .active:focus > a {
   font-weight: bold;
   color: #563d7c;
   background-color: transparent;
@@ -800,11 +800,11 @@ form.form-horizontal.form-horizontal-narrow .control-group {
 }
 
 /* Nav: second level (shown on .active) */
-.osf-sidebar .nav .nav {
+.osf-sidenav .nav .nav {
   display: none; /* Hide by default, but at >768px, show it */
   margin-bottom: 8px;
 }
-.osf-sidebar .nav .nav > li > a {
+.osf-sidenav .nav .nav > li > a {
   padding-top:    3px;
   padding-bottom: 3px;
   padding-left: 30px;
@@ -813,34 +813,36 @@ form.form-horizontal.form-horizontal-narrow .control-group {
 
 /* Show and affix the side nav when space allows it */
 @media (min-width: 992px) {
-  .osf-sidebar .nav > .active > ul {
+  .osf-sidenav .nav > .active > ul {
     display: block;
   }
   /* Widen the fixed sidebar */
-  .osf-sidebar.affix,
-  .osf-sidebar.affix-bottom {
+  .osf-sidenav.affix,
+  .osf-sidenav.affix-bottom {
     width: 213px;
   }
-  .osf-sidebar.affix {
+  .osf-sidenav.affix {
     position: fixed; /* Undo the static from mobile first approach */
     top: 80px;
   }
-  .osf-sidebar.affix-bottom {
+  .osf-sidenav.affix-bottom {
     position: absolute; /* Undo the static from mobile first approach */
   }
-  .osf-sidebar.affix-bottom .bs-sidenav,
-  .osf-sidebar.affix .bs-sidenav {
+  .osf-sidenav.affix-bottom .bs-sidenav,
+  .osf-sidenav.affix .bs-sidenav {
     margin-top: 0;
     margin-bottom: 0;
   }
 }
 @media (min-width: 1200px) {
   /* Widen the fixed sidebar again */
-  .osf-sidebar.affix-bottom,
-  .osf-sidebar.affix {
+  .osf-sidenav.affix-bottom,
+  .osf-sidenav.affix {
     width: 263px;
   }
 }
+
+
 
 /* Dates */
 

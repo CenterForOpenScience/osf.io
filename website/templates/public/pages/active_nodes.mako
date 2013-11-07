@@ -6,16 +6,18 @@
 %>
 
   <div class="row">
-    <div class="col-md-3 col-sm-4 sidebar">
-        <ul class="nav nav-stacked nav-pills">
-            <li><a href='#newPublicProjects'>Newest Public Projects</a></li>
-            <li><a href='#newPublicRegistrations'>Newest Public Registrations</a></li>
-            <li><a href='#popularPublicProjects'>Most Viewed Public Projects</a></li>
-            <li><a href='#popularPublicRegistrations'>Most Viewed Public Registrations</a></li>
-        </ul>
-    </div><!-- end sidebar -->
+    <div class="col-md-3">
+        <div class="sidebar affix hidden-print" role="complementary">
+            <ul class="nav nav-stacked nav-pills">
+                <li><a href='#newPublicProjects'>Newest Public Projects</a></li>
+                <li><a href='#newPublicRegistrations'>Newest Public Registrations</a></li>
+                <li><a href='#popularPublicProjects'>Most Viewed Public Projects</a></li>
+                <li><a href='#popularPublicRegistrations'>Most Viewed Public Registrations</a></li>
+            </ul>
+        </div><!-- end sidebar -->
+    </div>
 
-    <div class="col-md-9 col-sm-8">
+    <div class="col-md-9" role="main">
       <h1 class="page-header">Public Activity</h1>
         <section id='newPublicProjects'>
             <h3>Newest Public Projects</h3>
