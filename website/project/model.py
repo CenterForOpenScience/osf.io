@@ -131,6 +131,10 @@ class NodeLog(StoredObject):
     # FIXME: Serialization (presentation) doesn't belong in model (domain)
     def serialize(self):
         # TODO: Nest serialized user.
+        if self.node:
+            category = "project" if self.node.category == 'project' else 'component'
+        else:
+            category = ''
         return {
         'id': self._primary_key,
         'user_id': self.user._primary_key if self.user else '',
@@ -141,7 +145,7 @@ class NodeLog(StoredObject):
         'node_title': self.node.title if self.node else '',
         'action': self.action,
         'params': self.params,
-        'category': self.node.category if self.node else '',
+        'category': category,
         # TODO: Use self.formatted_date when Recent Activity Logs are generated dynamically
         'date': self.tz_date.strftime("%m/%d/%Y %I:%M %p UTC'"),
         'contributors': [self._render_log_contributor(contributor) for contributor in self.params.get('contributors', [])],
