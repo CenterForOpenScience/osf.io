@@ -1209,8 +1209,6 @@ var HGrid = {
             }
             if(item.parent == parentId){
                 hierarchical.push(item);
-//                // Remove item from sorted
-//                sorted.splice(i, 1);
                 if (item['type'] == 'folder') {
                     this.buildHierarchy(sorted, hierarchical, item);
                 }
