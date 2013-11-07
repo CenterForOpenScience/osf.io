@@ -370,7 +370,7 @@ def download_file(*args, **kwargs):
 
     kwargs["vid"] = len(node_to_use.files_versions[filename.replace('.', '_')])
 
-    return redirect('{node_url}files/download/${fid}/version/{vid}/'.format(
+    return redirect('{node_url}files/download/{fid}/version/{vid}/'.format(
         node_url=node_to_use.api_url,
         fid=filename,
         vid=kwargs['vid'],
