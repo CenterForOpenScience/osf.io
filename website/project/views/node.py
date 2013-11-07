@@ -329,7 +329,8 @@ def _view_project(node_to_use, user):
         if node_to_use.node__parent \
             and not node_to_use.node__parent[0].is_deleted \
             else None
-
+    recent_logs = list(reversed(node_to_use.logs))[:10]
+    recent_logs_dicts = [log.serialize() for log in recent_logs]
     data = {
         'node_id': node_to_use._primary_key,
         'node_title': node_to_use.title,
@@ -373,7 +374,7 @@ def _view_project(node_to_use, user):
         'user_can_edit': node_to_use.is_contributor(user) and not node_to_use.is_registration,
         'user_is_watching': user.is_watching(node_to_use) if user else False,
         # 10 most recent logs
-        'logs': list(reversed([log.serialize() for log in node_to_use.logs[:10] if log]))
+        'logs': recent_logs_dicts
     }
     if user:
         data.update(
