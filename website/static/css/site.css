@@ -39,7 +39,6 @@ a.disabled {
 }
 
 h4 {
-    padding-right:40px;
     padding-bottom: 10px;
 }
 
@@ -850,12 +849,8 @@ form.form-horizontal.form-horizontal-narrow .control-group {
   }
 }
 
+/* Logs */
 
-
-/* Dates */
-
-dt span.date {
+.log-date {
     font-size: 13px;
 }
-
-
