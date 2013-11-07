@@ -854,3 +854,7 @@ form.form-horizontal.form-horizontal-narrow .control-group {
 .log-date {
     font-size: 13px;
 }
+
+.alert a.alert-link {
+    text-decoration: underline;
+}

@@ -1,5 +1,5 @@
 % if node_is_registration:
-    <div class="alert alert-info">This node is a registration of <a class="alert-link" href="${node_registered_from_url}">this node</a>; the content of the node has been frozen and cannot be edited.
+    <div class="alert alert-info">This ${node_category} is a registration of <a class="alert-link" href="${node_registered_from_url}">this ${node_category}</a>; the content of the ${node_category} has been frozen and cannot be edited.
     </div>
     <style type="text/css">
     .watermarked {
