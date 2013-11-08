@@ -56,7 +56,7 @@
     <div class="col-md-4 col-md-offset-4">
         <h2>
            ${activity_points or "No"} activity point${'s' if activity_points != 1 else ''}<br />
-           ##${number_projects} project${'s' if number_projects !=1  else ''}, ${number_public_projects} public
+           ${number_projects} project${'s' if number_projects != 1  else ''}, ${number_public_projects} public
         </h2>
     </div>
 </div><!-- end row -->

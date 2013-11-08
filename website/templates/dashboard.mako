@@ -25,7 +25,7 @@
                     <div data-bind="if:tzname">
                         All times displayed at
                         <span data-bind="text:tzname"></span>
-                        <a href="http://en.wikipedia.org/wiki/Coordinated_Universal_Time">UTC</a> offset.
+                        <a href="http://en.wikipedia.org/wiki/Coordinated_Universal_Time" target="_blank">UTC</a> offset.
                     </div>
                      <dl class="dl-horizontal activity-log"
                         data-bind="foreach: {data: logs, as: 'log'}">
