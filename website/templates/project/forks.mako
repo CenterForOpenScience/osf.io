@@ -10,6 +10,6 @@
             "replace": true
         }'></div>
 % else:
-    There have been no forks.
+    <div>There have been no forks of this specific project.</div>
 % endif
 </%def>
