@@ -63,6 +63,11 @@
     <div class="col-md-5">
         <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node_tags]) if node_tags else ''}" />
             <div id='logScope'>
+                <div data-bind="if:tzname">
+                    All times displayed at
+                    <span data-bind="text:tzname"></span>
+                    <a href="http://en.wikipedia.org/wiki/Coordinated_Universal_Time">UTC</a> offset.
+                </div>
                  <dl class="dl-horizontal activity-log"
                     data-bind="foreach: {data: logs, as: 'log'}">
                     <dt><span class="date log-date" data-bind="text: log.localDatetime, tooltip: {title: log.utcDatetime}"></span></dt>

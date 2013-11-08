@@ -22,7 +22,7 @@ var Project = function(params) {
         var full = text + " " +self.watchedCount().toString();
         return full;
     });
-}
+};
 
 var Log = function(params) {
     var self = this;
@@ -39,14 +39,14 @@ var Log = function(params) {
     self.params = params.params; // Extra log params
     self.wikiUrl = ko.computed(function() {
         return self.nodeUrl + "wiki/" + self.params.page;
-    })
+    });
 
     self.localDatetime = ko.computed(function() {
-        return moment(self.date).format("l h:mm A ZZ")
-    })
+        return moment(self.date).format("l h:mm A")
+    });
     self.utcDatetime = ko.computed(function() {
         return moment(self.date).format("l H:mm UTC")
-    })
+    });
 
     /**
      * Given an item in self.contributors, return its anchor element representation.
@@ -54,7 +54,7 @@ var Log = function(params) {
     self._asContribLink = function(person) {
         return '<a class="contrib-link" href="/profile/' + person.id + '/">'
                 + person.fullname + "</a>"
-    }
+    };
 
     /**
      * Return the html for a comma-delimited list of contributor links, formatted
@@ -77,7 +77,7 @@ var Log = function(params) {
         }
         return ret;
     })
-}
+};
 
 
 ////////////////
@@ -88,13 +88,20 @@ var Log = function(params) {
 var LogsViewModel = function(url) {
     var self = this;
     self.logs = ko.observableArray([]);
+    self.tzname = ko.computed(function() {
+        var logs = self.logs();
+        if (logs.length) {
+            return moment(logs[0].date).format('ZZ');
+        }
+        return '';
+    });
     // Get log data via AJAX
     var getUrl = '';
     if (url) {
         getUrl = url;
     } else {
         getUrl = nodeToUseUrl() + "log/";
-    };
+    }
     $.ajax({
         url: getUrl,
         type: "get",
@@ -115,11 +122,11 @@ var LogsViewModel = function(url) {
                     "params": item.params,
                     "nodeTitle": item.node_title
                 })
-            })
+            });
             self.logs(mappedLogs);
         }
-    })
-}
+    });
+};
 
 /**
  * The project VM, scoped to the project page header.
@@ -161,7 +168,7 @@ var ProjectViewModel = function() {
             }
         });
     };
-}
+};
 
 
 
@@ -346,5 +353,5 @@ ko.bindingHandlers.tooltip = {
     init: function(elem, valueAccessor) {
         $(elem).tooltip(valueAccessor())
     }
-}
+};
 

@@ -645,6 +645,10 @@ form.form-horizontal.form-horizontal-narrow .control-group {
     border-spacing: 5px;
 }
 
+#node-tags_tagsinput {
+    margin-bottom: 20px;
+}
+
 
 /* Search */
 .nested
