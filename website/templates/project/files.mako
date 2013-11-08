@@ -66,9 +66,9 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
             url = '/api/v1' + url;
             var downButton = "<a href=" + JSON.stringify(url) + "><button type='button' class='btn btn-success btn-mini'><i class='icon-download-alt icon-white'></i></button></a>";
             if(myGrid.getItemByValue(myGrid.data, dataContext['parent_uid'], 'uid')['can_edit']=='false'){
-                return value + spacer + "<div class='hGridButton' style='text-align: right; display:none;'" + downButton + "</div></span>";
+                return value + spacer + "<div class='hGridButton' style='text-align: right; display:none;'>" + downButton + "</div>";
             }
-            else return value + spacer + "<div class='hGridButton' style='text-align: right; display:none;'" + downButton + " " + delButton + "</div></span>";
+            else return value + spacer + "<div class='hGridButton' style='text-align: right; display:none;'>" + downButton + " " + delButton + "</div>";
         }
     }
     else{
