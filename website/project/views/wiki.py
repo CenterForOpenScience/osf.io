@@ -5,7 +5,7 @@ import difflib
 
 from framework import request, get_current_user, status
 from framework.analytics import update_counters
-from framework.auth import must_have_session_auth
+from framework.auth import must_have_session_auth, get_api_key
 from framework.forms.utils import sanitize
 from framework.exceptions import HTTPError
 
@@ -123,6 +123,7 @@ def project_wiki_page(*args, **kwargs):
     wid = kwargs['wid']
 
     user = get_current_user()
+    api_key = get_api_key()
     node_to_use = node or project
 
     pw = node_to_use.get_wiki_page(wid)
@@ -147,6 +148,7 @@ def project_wiki_page(*args, **kwargs):
         }
         for child in node_to_use.nodes
         if not child.is_deleted
+            and child.can_edit(user, api_key)
     ]
 
     rv = {
