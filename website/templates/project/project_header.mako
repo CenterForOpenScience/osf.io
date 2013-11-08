@@ -35,7 +35,7 @@
                     % if user_is_contributor:
                         <a class="btn btn-default" id="privateButton" data-target="${node_api_url}permissions/private/">Make private</a>
                     % endif
-                    <button class="btn btn-primary disabled">Public</button>
+                    <button class="btn btn-default disabled">Public</button>
                 %endif
                 </div><!-- end btn-group -->
 
