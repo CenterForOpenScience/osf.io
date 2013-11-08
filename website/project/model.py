@@ -221,7 +221,7 @@ class NodeFile(GuidStoredObject):
 
     @property
     def download_url(self):
-        return "{0}files/download/{1}/version/{2}/".format(
+        return "{}files/download/{}/version/{}/".format(
             self.node.api_url, self.filename, self.latest_version_number)
 
 

@@ -264,11 +264,23 @@ def view_file(*args, **kwargs):
 
     latest_node_file_id = node_to_use.files_versions[file_name_clean][-1]
     latest_node_file = NodeFile.load(latest_node_file_id)
+
+    # Ensure NodeFile is attached to Node; should be fixed by actions or
+    # improved data modeling in future
+    if not latest_node_file.node:
+        latest_node_file.node = node_to_use
+        latest_node_file.save()
+
     download_path = latest_node_file.download_url
     download_html = '<a href="{path}">Download file</a>'.format(path=download_path)
 
-    file_path = os.path.join(settings.UPLOADS_PATH, node_to_use._primary_key, file_name)
+    file_path = os.path.join(
+        settings.UPLOADS_PATH,
+        node_to_use._primary_key,
+        file_name
+    )
 
+    # Throw 404 if file not found
     if not os.path.isfile(file_path):
         raise HTTPError(http.NOT_FOUND)
 
