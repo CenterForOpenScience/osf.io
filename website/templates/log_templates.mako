@@ -16,11 +16,22 @@ to version <span data-bind="text: params.version"></span>
 
 <script type="text/html" id="contributor_added">
   added
-  <span data-bind="foreach: {data: contributors, as: 'person'}">
-    <a class="contrib-link" data-bind="attr: {href: '/profile/' + person.id + '/'}, text: person.fullname"></a>
-    <span
-        data-bind="visible:  $index() < $parent.contributors.length - 1 && $parent.contributors.length == 2">and</span>
-    <span data-bind="visible: $index() < $parent.contributors.length - 1 && $parent.contributors.length > 2">,</span>
+  <span class="ignore-whitespace" data-bind="foreach: {data: contributors, as: 'person'}">
+    <!-- Contributor link with logic for separators -->
+
+    <!-- ko if: ($index() == $parent.contributors.length -1 &&
+                    $parent.contributors.length > 2) -->
+            and
+    <!-- /ko -->
+
+    <a class="contrib-link" data-bind="attr: {href: '/profile/' + person.id + '/'}, text: person.fullname"></a><!-- ko if:
+            $index() < $parent.contributors.length - 1 &&
+            $parent.contributors.length > 2-->,
+            <!-- /ko -->
+    <!-- ko if: $index() < $parent.contributors.length - 1
+                    && $parent.contributors.length == 2 -->
+            and
+    <!-- /ko -->
   </span><!-- end foreach contributor -->
 
   to <span data-bind="text: nodeCategory"></span>
