@@ -12,7 +12,7 @@
                 <!-- This setup makes the nav background stretch the whole width of the screen. -->
                 <table width="650px" cellspacing="0" cellpadding="3" class="container">
                     <tr class="navbar navbar-inverse">
-                        <td colspan="4"><a class="brand" href="http://openscienceframework.org">Open Science Framework</a></td>
+                        <td colspan="4"><a class="brand" href="/">Open Science Framework</a></td>
                     </tr><!-- end navbar -->
                 </table>
             </td>
