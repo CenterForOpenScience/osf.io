@@ -22,11 +22,11 @@
                 <h3>Watched Projects</h3>
                 </div>
                 <div id="logScope" data-target="/api/v1/watched/logs/">
-                    <div data-bind="if:tzname">
+                    <p class="help-block" data-bind="if:tzname">
                         All times displayed at
                         <span data-bind="text:tzname"></span>
                         <a href="http://en.wikipedia.org/wiki/Coordinated_Universal_Time" target="_blank">UTC</a> offset.
-                    </div>
+                    </p>
                      <dl class="dl-horizontal activity-log"
                         data-bind="foreach: {data: logs, as: 'log'}">
                         <dt><span class="date log-date" data-bind="text: log.localDatetime, tooltip: {title: log.utcDatetime}"></span></dt>
