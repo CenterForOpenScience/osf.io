@@ -1,19 +1,19 @@
-<li node_id="${summary['id']}" class="project list-group-item list-group-item-node">
-    <h4 class="list-group-item-heading">
-        <span style="display:inline-block">
-        <a href="${summary['url']}">${summary['title']}</a>
-        % if summary['is_registration']:
-            | Registered: ${summary['registered_date']}
-        % endif
-        </span>
-        % if summary['show_logs']:
-            <i id="icon-${summary['id']}" class="icon-plus pull-right" onclick="NodeActions.openCloseNode('${summary['id']}');"></i>
-        % endif
-    </h4>
-    <div class="list-group-item-text"></div>
+% if summary['can_view']:
 
-    <!-- Show abbreviated contributors list -->
-    % if summary['show_contributors']:
+    <li node_id="${summary['id']}" class="project list-group-item list-group-item-node">
+
+        <h4 class="list-group-item-heading">
+            <span style="display:inline-block">
+            <a href="${summary['url']}">${summary['title']}</a>
+            % if summary['is_registration']:
+                | Registered: ${summary['registered_date']}
+            % endif
+            </span>
+            <i id="icon-${summary['id']}" class="icon-plus pull-right" onclick="NodeActions.openCloseNode('${summary['id']}');"></i>
+        </h4>
+        <div class="list-group-item-text"></div>
+
+        <!-- Show abbreviated contributors list -->
         <div mod-meta='{
                 "tpl": "util/render_users_abbrev.mako",
                 "uri": "${summary['api_url']}contributors_abbrev/",
@@ -23,11 +23,7 @@
                 "replace": true
             }'>
         </div>
-    % else:
-        <span>Contributors unavailable</span>
-    % endif
 
-    % if summary['show_logs']:
         <!--Stacked bar to visualize user activity level against total activity level of a project -->
         <!--Length of the stacked bar is normalized over all projects -->
         <div class="user-activity-meter">
@@ -39,11 +35,19 @@
         </div>
 
         <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
-            <hr>
+            <hr />
             Recent Activity
             <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['url']}log/"></div>
         </div>
 
-    % endif
+    </li>
 
-</li>
+% else:
+
+    <li class="project list-group-item list-group-item-node unavailable">
+        <h4 class="list-group-item-heading">
+            Private Component
+        </h4>
+    </li>
+
+% endif

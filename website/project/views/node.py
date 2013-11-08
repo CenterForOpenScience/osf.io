@@ -460,31 +460,32 @@ def get_summary(*args, **kwargs):
     rescale_ratio = kwargs.get('rescale_ratio')
     node_to_use = kwargs['node'] or kwargs['project']
 
-    can_edit = node_to_use.can_edit(user, api_key)
-
-    summary = {
-        'id': node_to_use._primary_key,
-        'url': node_to_use.url,
-        'api_url': node_to_use.api_url,
-        'title': node_to_use.title if can_edit else node_to_use.public_title,
-        'is_registration': node_to_use.is_registration,
-        'registered_date': node_to_use.registered_date.strftime('%m/%d/%y %I:%M %p') if node_to_use.is_registration else None,
-        'show_logs': can_edit or node_to_use.are_logs_public,
-        'show_contributors': can_edit or node_to_use.are_contributors_public,
-        'nlogs': None,
-        'ua_count': None,
-        'ua': None,
-        'non_ua': None,
-    }
-
-    if rescale_ratio and (can_edit or node_to_use.are_logs_public):
-        ua_count, ua, non_ua = _get_user_activity(node_to_use, user, rescale_ratio)
-        summary.update({
-            'nlogs': len(node_to_use.logs),
-            'ua_count': ua_count,
-            'ua': ua,
-            'non_ua': non_ua,
-        })
+    if node_to_use.can_edit(user, api_key):
+        summary = {
+            'can_view': True,
+            'id': node_to_use._primary_key,
+            'url': node_to_use.url,
+            'api_url': node_to_use.api_url,
+            'title': node_to_use.title,
+            'is_registration': node_to_use.is_registration,
+            'registered_date': node_to_use.registered_date.strftime('%m/%d/%y %I:%M %p') if node_to_use.is_registration else None,
+            'nlogs': None,
+            'ua_count': None,
+            'ua': None,
+            'non_ua': None,
+        }
+        if rescale_ratio:
+            ua_count, ua, non_ua = _get_user_activity(node_to_use, user, rescale_ratio)
+            summary.update({
+                'nlogs': len(node_to_use.logs),
+                'ua_count': ua_count,
+                'ua': ua,
+                'non_ua': non_ua,
+            })
+    else:
+        summary = {
+            'can_view': False,
+        }
     return {
         'summary': summary,
     }

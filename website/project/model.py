@@ -243,10 +243,6 @@ class Node(GuidStoredObject):
 
     # Permissions
     is_public = fields.BooleanField()
-    is_title_public = fields.BooleanField(default=True)
-    are_contributors_public = fields.BooleanField(default=True)
-    are_files_public = fields.BooleanField(default=False)
-    are_logs_public = fields.BooleanField(default=True)
 
     is_deleted = fields.BooleanField(default=False)
     deleted_date = fields.DateTimeField()
@@ -849,21 +845,6 @@ class Node(GuidStoredObject):
             parent.logs.append(log)
             parent.save()
         return log
-
-    @property
-    def public_title(self):
-        """ Get publicly available title. """
-
-        # Return full title if public
-        if self.is_title_public:
-            return self.title
-
-        # Else return node type and privacy warning
-        if self.is_registration:
-            return 'Title unavailable (private component; registration of {})'.format(self.registered_from.title)
-        if self.is_fork:
-            return 'Title unavailable (private component; fork of {})'.format(self.forked_from.title)
-        return 'Title unavailable (private component)'
 
     @property
     def url(self):

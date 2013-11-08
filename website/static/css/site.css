@@ -649,6 +649,9 @@ form.form-horizontal.form-horizontal-narrow .control-group {
     margin-bottom: 20px;
 }
 
+.unavailable {
+    background: #EEEEEE;
+}
 
 /* Search */
 .nested
