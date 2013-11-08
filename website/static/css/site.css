@@ -650,7 +650,7 @@ form.form-horizontal.form-horizontal-narrow .control-group {
 }
 
 .unavailable {
-    background: #EEEEEE;
+    border-style: dashed;
 }
 
 /* Search */
