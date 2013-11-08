@@ -217,7 +217,10 @@ myGrid.hGridOnUpload.subscribe(function(e, args){
     var newSlickInfo = JSON.parse(args.xhr.response)[0];
     console.log(newSlickInfo);
     if (newSlickInfo['action_taken']===null){
-        var item = myGrid.getItemByValue(myGrid.data, args.name, "name");
+##        var item = myGrid.getItemByValue(myGrid.data, args.name, "name");
+        var item = myGrid.getItemsByValue(myGrid.data, args.name, "name").filter(function(item) {
+            return item.type == 'fake'
+        })[0];
         myGrid.deleteItems([item['uid']]);
         return false;
     }
