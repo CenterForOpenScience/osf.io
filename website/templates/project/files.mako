@@ -113,7 +113,7 @@ var myGrid = HGrid.create({
     ],
     enableCellNavigation: false,
     breadcrumbBox: "#myGridBreadcrumbs",
-    autoHeight: false,
+    autoHeight: true,
     forceFitColumns: true,
     largeGuide: false,
     dropZone: ${int(user_can_edit)},
