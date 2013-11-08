@@ -63,9 +63,15 @@
     <div class="col-md-5">
         <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node_tags]) if node_tags else ''}" />
             <div id='logScope'>
-                <dl class="dl-horizontal activity-log"
+                 <dl class="dl-horizontal activity-log"
                     data-bind="foreach: {data: logs, as: 'log'}">
-                  <div data-bind="template: {name: 'logTemplate', data: log}"></div>
+                    <dt><span class="date log-date" data-bind="text: log.localDatetime, tooltip: {title: log.utcDatetime}"></span></dt>
+                  <dd class="log-content">
+                    <a data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
+                    <!-- log actions are the same as their template name -->
+                    <span data-bind="template: {name: log.action, data: log}"></span>
+                  </dd>
+
                 </dl><!-- end foreach logs -->
             </div>
             ## Hide More widget until paging for logs is implemented
@@ -74,7 +80,7 @@
     </div>
   </div>
 
-<%include file="log_template.mako"/>
+<%include file="log_templates.mako"/>
 
 ##<!-- Include Knockout and view model -->
 ##<div mod-meta='{

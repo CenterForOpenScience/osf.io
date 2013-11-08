@@ -24,7 +24,13 @@
                 <div id="logScope" data-target="/api/v1/watched/logs/">
                      <dl class="dl-horizontal activity-log"
                         data-bind="foreach: {data: logs, as: 'log'}">
-                      <div data-bind="template: {name: 'logTemplate', data: log}"></div>
+                        <dt><span class="date log-date" data-bind="text: log.localDatetime, tooltip: {title: log.utcDatetime}"></span></dt>
+                      <dd class="log-content">
+                        <a data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
+                        <!-- log actions are the same as their template name -->
+                        <span data-bind="template: {name: log.action, data: log}"></span>
+                      </dd>
+
                     </dl><!-- end foreach logs -->
                 </div><!-- end #logScope -->
             </div><!-- end #watchFeed -->
@@ -32,7 +38,7 @@
     </div>
 </div>
 
-<%include file="log_template.mako"/>
+<%include file="log_templates.mako"/>
 </%def>
 
 <%def name="javascript_bottom()">
