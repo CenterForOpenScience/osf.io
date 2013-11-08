@@ -329,6 +329,16 @@ class TestProject(DbTestCase):
         assert_equal(self.project.logs[-1].params['contributors'],
                         [user1._id, user2._id])
 
+    def test_set_permissions(self):
+        self.project.set_permissions('public', user=self.user)
+        self.project.save()
+        assert_true(self.project.is_public)
+        assert_equal(self.project.logs[-1].action, 'made_public')
+        self.project.set_permissions('private', user=self.user)
+        self.project.save()
+        assert_false(self.project.is_public)
+        assert_equal(self.project.logs[-1].action, 'made_private')
+
 class TestNodeLog(DbTestCase):
 
     def setUp(self):

@@ -110,6 +110,23 @@ class NodeLog(StoredObject):
 
     DATE_FORMAT = '%m/%d/%Y %I:%M %p UTC'
 
+    # Log action constants
+    PROJECT_CREATED = "project_created"
+    NODE_CREATED = "node_created"
+    WIKI_UPDATED = "wiki_updated"
+    CONTRIB_ADDED = "contributor_added"
+    CONTRIB_REMOVED = "contributor_removed"
+    MADE_PUBLIC = "made_public"
+    MADE_PRIVATE = "made_private"
+    TAG_ADDED = 'tag_added'
+    TAG_REMOVED = 'tag_removed'
+    EDITED_TITLE = "edit_title"
+    PROJECT_REGISTERED = 'project_registered'
+    FILE_ADDED = "file_added"
+    FILE_REMOVED = "file_removed"
+    FILE_UPDATED = 'file_updated'
+    NODE_FORKED = "node_forked"
+
     @property
     def node(self):
         return Node.load(self.params.get('node')) or \
@@ -147,7 +164,7 @@ class NodeLog(StoredObject):
         'params': self.params,
         'category': category,
         # TODO: Use self.formatted_date when Recent Activity Logs are generated dynamically
-        'date': self.tz_date.strftime("%m/%d/%Y %I:%M %p UTC"),
+        'date': self.tz_date.strftime(NodeLog.DATE_FORMAT),
         'contributors': [self._render_log_contributor(contributor) for contributor in self.params.get('contributors', [])],
         'contributor': self._render_log_contributor(self.params.get('contributor', {})),
     }
@@ -309,7 +326,7 @@ class Node(GuidStoredObject):
         original_title = self.title
         self.title = title
         self.add_log(
-            action='edit_title',
+            action=NodeLog.EDITED_TITLE,
             params={
                 'project': self.node__parent[0]._primary_key if self.node__parent else None,
                 'node': self._primary_key,
@@ -452,7 +469,7 @@ class Node(GuidStoredObject):
         forked.add_contributor(user, log=False, save=False)
 
         forked.add_log(
-            action='node_forked',
+            action=NodeLog.NODE_FORKED,
             params={
                 'project':original.parent_id,
                 'node':original._primary_key,
@@ -534,7 +551,7 @@ class Node(GuidStoredObject):
         registered.save()
 
         original.add_log(
-            action='project_registered',
+            action=NodeLog.PROJECT_REGISTERED,
             params={
                 'project':original.parent_id,
                 'node':original._primary_key,
@@ -553,7 +570,7 @@ class Node(GuidStoredObject):
         if tag in self.tags:
             self.tags.remove(tag)
             self.add_log(
-                action='tag_removed',
+                action=NodeLog.TAG_REMOVED,
                 params={
                     'project':self.parent_id,
                     'node':self._primary_key,
@@ -576,7 +593,7 @@ class Node(GuidStoredObject):
             new_tag.save()
             self.tags.append(new_tag)
             self.add_log(
-                action='tag_added',
+                action=NodeLog.TAG_ADDED,
                 params={
                     'project': self.parent_id,
                     'node': self._primary_key,
@@ -661,7 +678,7 @@ class Node(GuidStoredObject):
         self.save()
 
         self.add_log(
-            action='file_removed',
+            action=NodeLog.FILE_REMOVED,
             params={
                 'project':self.parent_id,
                 'node':self._primary_key,
@@ -799,7 +816,7 @@ class Node(GuidStoredObject):
         self.save()
 
         self.add_log(
-            action='file_added' if file_is_new else 'file_updated',
+            action=NodeLog.FILE_ADDED if file_is_new else NodeLog.FILE_UPDATED,
             params={
                 'project': self.parent_id,
                 'node': self._primary_key,
@@ -885,7 +902,7 @@ class Node(GuidStoredObject):
         self.contributor_list[:] = [d for d in self.contributor_list if not (d.get('nr_email') == email)]
         self.save()
         self.add_log(
-            action='contributor_removed',
+            action=NodeLog.CONTRIB_REMOVED,
             params={
                 'project':self.parent_id,
                 'node':self._primary_key,
@@ -910,7 +927,7 @@ class Node(GuidStoredObject):
             removed_user = get_user(contributor._id)
             if log:
                 self.add_log(
-                    action='contributor_removed',
+                    action=NodeLog.CONTRIB_REMOVED,
                     params={
                         'project':self.parent_id,
                         'node':self._primary_key,
@@ -936,7 +953,7 @@ class Node(GuidStoredObject):
             self.contributor_list.append({'id': contrib_to_add._primary_key})
             if log:
                 self.add_log(
-                    action='contributor_added',
+                    action=NodeLog.CONTRIB_ADDED,
                     params={
                         'project': self.node__parent[0]._primary_key if self.node__parent else None,
                         'node': self._primary_key,
@@ -961,7 +978,7 @@ class Node(GuidStoredObject):
             self.add_contributor(contributor=contrib, user=user, log=False, save=False)
         if log:
             self.add_log(
-                action='contributor_added',
+                action=NodeLog.CONTRIB_ADDED,
                 params={
                     'project': self.parent_id,
                     'node': self._primary_key,
@@ -983,7 +1000,7 @@ class Node(GuidStoredObject):
         '''
         self.contributor_list.append({'nr_name': name, 'nr_email':email})
         self.add_log(
-            action='contributor_added',
+            action=NodeLog.CONTRIB_ADDED,
             params={
                 'project':self.node__parent[0]._primary_key if self.node__parent else None,
                 'node':self._primary_key,
@@ -996,15 +1013,21 @@ class Node(GuidStoredObject):
             self.save()
         return None
 
-    def set_permissions(self, permissions, user, api_key):
+    def set_permissions(self, permissions, user=None, api_key=None):
+        '''Set the permissions for this node.
+
+        :param permissions: A string, either 'public' or 'private'.
+        :param user: A User object, the user who set the permissions.
+        '''
         if permissions == 'public' and not self.is_public:
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             self.is_public = False
         else:
             return False
+        action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
         self.add_log(
-            action='made_{}'.format(permissions),
+            action=action,
             params={
                 'project':self.parent_id,
                 'node':self._primary_key,
@@ -1075,7 +1098,7 @@ class Node(GuidStoredObject):
         self.save()
 
         self.add_log(
-            action='wiki_updated',
+            action=NodeLog.WIKI_UPDATED,
             params={
                 'project': self.parent_id,
                 'node': self._primary_key,

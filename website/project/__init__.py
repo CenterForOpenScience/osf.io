@@ -1,8 +1,7 @@
-from .model import Node, NodeFile, NodeWikiPage
+from .model import Node, NodeLog, NodeWikiPage
 from framework.forms.utils import sanitize
 
 
-import difflib
 def show_diff(seqm):
     """Unify operations between two compared strings
 seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
@@ -21,13 +20,13 @@ seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
         elif opcode == 'replace':
             output.append(del_el + seqm.a[a0:a1] + del_el_close + insert_el + seqm.b[b0:b1] + ins_el_close)
         else:
-            raise RuntimeError, "unexpected opcode"
+            raise RuntimeError("unexpected opcode")
     return ''.join(output)
 
 # TODO: These belong in framework.auth
 def new_project(title, description, user):
     project = new_node('project', title, user, description)
-    project.add_log('project_created',
+    project.add_log(NodeLog.PROJECT_CREATED,
         params={
             'project':project._primary_key,
         },
@@ -35,6 +34,7 @@ def new_project(title, description, user):
         log_date=project.date_created
     )
     return project
+
 
 def new_node(category, title, user, description=None, project=None):
     # tag: database
@@ -56,7 +56,7 @@ def new_node(category, title, user, description=None, project=None):
     if project:
         project.nodes.append(new_node)
         project.save()
-        new_node.add_log('node_created',
+        new_node.add_log(NodeLog.NODE_CREATED,
             params={
                 'node': new_node._primary_key,
                 'project': project._primary_key,

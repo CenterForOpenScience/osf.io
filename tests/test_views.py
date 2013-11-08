@@ -10,7 +10,7 @@ from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
 import website.app
-from website.models import Node
+from website.models import Node, NodeLog
 
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
@@ -219,13 +219,13 @@ class TestWatchViews(DbTestCase):
         self.project.save()
         # add some log objects
         # A log added 100 days ago
-        self.project.add_log('project_created',
+        self.project.add_log(NodeLog.PROJECT_CREATED,
                         params={'project': self.project._primary_key},
                         user=self.user, log_date=dt.datetime.utcnow() - dt.timedelta(days=100),
                         api_key=self.auth[1],
                         do_save=True)
         # A log added now
-        self.last_log = self.project.add_log('tag_added', params={'project': self.project._primary_key},
+        self.last_log = self.project.add_log(NodeLog.TAG_ADDED, params={'project': self.project._primary_key},
                         user=self.user, log_date=dt.datetime.utcnow(),
                         api_key=self.auth[1],
                         do_save=True)

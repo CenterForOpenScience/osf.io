@@ -87,7 +87,7 @@ class ProjectFactory(NodeFactory):
     @post_generation
     def add_created_log(self, create, extracted):
         '''Add a log after creating a new project.'''
-        self.add_log('project_created',
+        self.add_log(NodeLog.PROJECT_CREATED,
             params={
                 'project': self._primary_key,
             },
