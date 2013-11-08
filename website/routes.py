@@ -371,7 +371,10 @@ def make_url_map(app):
 
         Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, json_renderer),
 
-        Rule('/project/<pid>/', 'get', project_views.node.view_project, json_renderer),
+        Rule([
+            '/project/<pid>/',
+            '/project/<pid>/node/<nid>/',
+        ], 'get', project_views.node.view_project, json_renderer),
 
         Rule([
             '/project/<pid>/get_summary/',
