@@ -66,9 +66,11 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
             url = '/api/v1' + url;
             var downButton = "<a href=" + JSON.stringify(url) + "><button type='button' class='btn btn-success btn-mini'><i class='icon-download-alt icon-white'></i></button></a>";
             if(myGrid.getItemByValue(myGrid.data, dataContext['parent_uid'], 'uid')['can_edit']=='false'){
-                return value + spacer + "<div class='hGridButton' style='text-align: right; display:none;'>" + downButton + "</div>";
+##                return value + spacer + "<div class='hGridButton' style='text-align: right; display: none;'>" + downButton + "</div>";
+                return value + spacer + "<div class='hGridButton' style='text-align: right; display: inline;'>" + downButton + "</div>";
             }
-            else return value + spacer + "<div class='hGridButton' style='text-align: right; display:none;'>" + downButton + " " + delButton + "</div>";
+##            else return value + spacer + "<div class='hGridButton' style='text-align: right; display: none;'>" + downButton + " " + delButton + "</div>";
+            else return value + spacer + "<div class='hGridButton' style='text-align: right; display: inline;'>" + downButton + " " + delButton + "</div>";
         }
     }
     else{
@@ -197,16 +199,16 @@ myGrid.hGridAfterNav.subscribe(function (e, args){
 });
 
 myGrid.hGridOnMouseEnter.subscribe(function (e, args){
-    $(myGrid.options.container).find(".row-hover").removeClass("row-hover");
-    $(myGrid.options.container).find(".hGridButton").css('display', 'none');
+##    $(myGrid.options.container).find(".row-hover").removeClass("row-hover");
+##    $(myGrid.options.container).find(".hGridButton").css('display', 'none');
     var parent = args.e.target.parentNode;
     $(parent).addClass("row-hover");
-    $(parent).find('.hGridButton').css('display', 'inline');
+##    $(parent).find('.hGridButton').css('display', 'inline');
 });
 
 myGrid.hGridOnMouseLeave.subscribe(function (e, args){
     $(myGrid.options.container).find(".row-hover").removeClass("row-hover");
-    $(myGrid.options.container).find(".hGridButton").css('display', 'none');
+##    $(myGrid.options.container).find(".hGridButton").css('display', 'none');
 });
 
 myGrid.hGridOnUpload.subscribe(function(e, args){
