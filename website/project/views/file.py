@@ -262,7 +262,14 @@ def view_file(*args, **kwargs):
     file_name_clean = file_name.replace('.', '_')
     renderer = 'default'
 
-    latest_node_file_id = node_to_use.files_versions[file_name_clean][-1]
+    # Throw 404 and log error if file not found in files_versions
+    try:
+        latest_node_file_id = node_to_use.files_versions[file_name_clean][-1]
+    except KeyError:
+        logger.error('File {} not found in files_versions of component {}.'.format(
+            file_name_clean, node_to_use._id
+        ))
+        raise HTTPError(http.NOT_FOUND)
     latest_node_file = NodeFile.load(latest_node_file_id)
 
     # Ensure NodeFile is attached to Node; should be fixed by actions or
@@ -280,8 +287,9 @@ def view_file(*args, **kwargs):
         file_name
     )
 
-    # Throw 404 if file not found
+    # Throw 404 and log error if file not found on disk
     if not os.path.isfile(file_path):
+        logger.error('File {} not found on disk.'.format(file_path))
         raise HTTPError(http.NOT_FOUND)
 
     versions = []
@@ -316,7 +324,6 @@ def view_file(*args, **kwargs):
         }
         rv.update(_view_project(node_to_use, user))
         return rv
-        # .encode('utf-8', 'replace')
 
     _, file_ext = os.path.splitext(file_path.lower())
 
