@@ -24,7 +24,7 @@ def get_log(log_id):
     return {'log': log.serialize()}
 
 
-#todo: hide private logs of children
+# todo: test log visibility
 @must_be_valid_project
 def get_logs(*args, **kwargs):
     user = get_current_user()
@@ -42,11 +42,16 @@ def get_logs(*args, **kwargs):
         count = request.json['count']
     else:
         count = 10
-    # logs in reverse chronological order
+
+    # Serialize up to `count` logs in reverse chronological order; skip
+    # logs that the current user / API key cannot access
+    log_data = []
     chrono_logs = reversed(node_to_use.logs)
-    log_data = [
-        log.serialize()
-        for log in chrono_logs[:count]
-        if log
-    ]
+    for logidx in range(len(chrono_logs)):
+        log = chrono_logs[logidx]
+        if log and log.node.can_edit(user, api_key):
+            log_data.append(log.serialize())
+        if len(log_data) >= count:
+            break
+
     return {'logs': log_data}
