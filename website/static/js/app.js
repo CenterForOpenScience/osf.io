@@ -47,6 +47,36 @@ var Log = function(params) {
     self.utcDatetime = ko.computed(function() {
         return moment(self.date).format("l H:mm UTC")
     })
+
+    /**
+     * Given an item in self.contributors, return its anchor element representation.
+     */
+    self._asContribLink = function(person) {
+        return '<a class="contrib-link" href="/profile/' + person.id + '/">'
+                + person.fullname + "</a>"
+    }
+
+    /**
+     * Return the html for a comma-delimited list of contributor links, formatted
+     * with correct list grammar.
+     * e.g. "Dasher and Dancer", "Comet, Cupid, and Blitzen"
+     */
+    self.displayContributors = ko.computed(function(){
+        var ret = "";
+        for(var i=0; i < self.contributors.length; i++){
+            var person = self.contributors[i];
+            if(i == self.contributors.length - 1 && self.contributors.length > 2){
+                ret += " and ";
+            }
+            ret += self._asContribLink(person);
+            if (i < self.contributors.length - 1 && self.contributors.length > 2){
+                ret += ", ";
+            } else if (i < self.contributors.length - 1 && self.contributors.length == 2){
+                ret += " and ";
+            }
+        }
+        return ret;
+    })
 }
 
 

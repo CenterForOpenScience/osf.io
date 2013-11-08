@@ -16,24 +16,7 @@ to version <span data-bind="text: params.version"></span>
 
 <script type="text/html" id="contributor_added">
   added
-  <span class="ignore-whitespace" data-bind="foreach: {data: contributors, as: 'person'}">
-    <!-- Contributor link with logic for separators -->
-
-    <!-- ko if: ($index() == $parent.contributors.length -1 &&
-                    $parent.contributors.length > 2) -->
-            and
-    <!-- /ko -->
-
-    <a class="contrib-link" data-bind="attr: {href: '/profile/' + person.id + '/'}, text: person.fullname"></a><!-- ko if:
-            $index() < $parent.contributors.length - 1 &&
-            $parent.contributors.length > 2-->,
-            <!-- /ko -->
-    <!-- ko if: $index() < $parent.contributors.length - 1
-                    && $parent.contributors.length == 2 -->
-            and
-    <!-- /ko -->
-  </span><!-- end foreach contributor -->
-
+  <span data-bind="html: displayContributors"></span>
   to <span data-bind="text: nodeCategory"></span>
   <a data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
