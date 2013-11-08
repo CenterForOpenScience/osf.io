@@ -16,8 +16,10 @@
     <span data-bind="visible: action === 'contributor_added'">
       added
       <span data-bind="foreach: {data: contributors, as: 'person'}">
-        <a data-bind="attr: {href: '/profile/' + person.id + '/'}, text: person.fullname"></a>
-        <span data-bind="visible: $index() < $parent.contributors.length - 1">,</span>
+        <a class="contrib-link" data-bind="attr: {href: '/profile/' + person.id + '/'}, text: person.fullname"></a>
+        <span
+            data-bind="visible:  $index() < $parent.contributors.length - 1 && $parent.contributors.length == 2">and</span>
+        <span data-bind="visible: $index() < $parent.contributors.length - 1 && $parent.contributors.length > 2">,</span>
       </span>
 
       to <span data-bind="text: nodeCategory"></span>
