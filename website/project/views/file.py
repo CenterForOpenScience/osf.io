@@ -1,5 +1,6 @@
 import re
 import os
+import json
 import time
 import zipfile
 import tarfile
@@ -141,7 +142,7 @@ def _get_files(filetree, parent_id, check, user):
                 tmp.date_modified.strftime('%Y/%m/%d %I:%M %p')
             ]
             info.append(item)
-    return {'info': info}
+    return {'info': json.dumps(info)}
 
 
 @must_be_valid_project # returns project
