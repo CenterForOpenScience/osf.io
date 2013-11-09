@@ -60,6 +60,7 @@ def get_files(*args, **kwargs):
     parent_id = node_to_use.parent_id
 
     rv = _get_files(filetree, parent_id, 0, user)
+    rv['info'] = json.dumps(rv['info'])
     if not kwargs.get('dash', False):
         rv.update(_view_project(node_to_use, user))
     return rv
@@ -142,7 +143,7 @@ def _get_files(filetree, parent_id, check, user):
                 tmp.date_modified.strftime('%Y/%m/%d %I:%M %p')
             ]
             info.append(item)
-    return {'info': json.dumps(info)}
+    return {'info': info}
 
 
 @must_be_valid_project # returns project
