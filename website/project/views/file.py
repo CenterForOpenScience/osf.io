@@ -96,7 +96,7 @@ def _get_files(filetree, parent_id, check, user):
     itemParent['sizeRead'] = '--'
     itemParent['dateModified'] = '--'
     parent_type = 'Project' if filetree[0].category == 'project' else 'Component'
-    itemParent['name'] = parent_type + ': ' + str(filetree[0].title)
+    itemParent['name'] = parent_type + ': ' + unicode(filetree[0].title).encode('utf-8')
     itemParent['can_edit'] = str(
         filetree[0].is_contributor(user) and
         not filetree[0].is_registration
