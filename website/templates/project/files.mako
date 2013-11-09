@@ -7,9 +7,10 @@
 <div class="container" style="position:relative;">
 ##    <h3 style="max-width: 65%;"><span class="btn btn-success fileinput-button" id="clickable"><i class="icon-plus icon-white"></i><span>Add files...</span></span></h3>
     <h3 >Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element></h3>
-    <div id="totalProgressActive" style="width: 35%; height: 20px; position: absolute; top: 25px; right: 0;" class>
+    <div id="totalProgressActive" style="width: 35%; height: 20px; position: absolute; top: 73px; right: 0;" class>
         <div id="totalProgress" class="progress-bar progress-bar-success" style="width: 0%;"></div>
     </div>
+##    <span id="progressStats" style="display:none; position:relative; top:22px; color:black;">I want to put text here</span>
 </div>
 %endif
 <div id="myGridBreadcrumbs" style="margin-top: 10px"></div>
@@ -235,6 +236,23 @@ myGrid.hGridOnUpload.subscribe(function(e, args){
 
     }
 });
+
+##var date1=0;
+##
+##myGrid.dropZoneObj.on("sending", function(file, xhr, formData){
+##    date1=Date.now();
+##    $('#progressStats').css("display", "inline");
+##});
+##
+##myGrid.dropZoneObj.on("uploadprogress", function(file, progress, bytesSent){
+##    var time = (Date.now() - date1) / 1000;
+##    var text = "Upload Speed: " + Math.round(bytesSent/time/1024) + " kb/s | Progress: " + progress + "%";
+##    $('#progressStats').text(text);
+##    console.log("Bytes Sent: " + bytesSent);
+##    console.log("Seconds since start: " + time);
+##    console.log("Bytes/sec: " + bytesSent/time/1024);
+##
+##});
 
 </script>
 </%def>
