@@ -217,10 +217,11 @@ def search_contributor():
     query = request.args.get('query', '')
 
     # Prepend "user:" to each token in the query; else Solr will search for
-    # e.g. user:Barack AND Obama. Could also wrap entire query in "user:{}",
-    # but would get fewer relevant results
+    # e.g. user:Barack AND Obama. Also append * to each token so that "Josh"
+    # will also match "Joshua". Could also wrap entire query in "user:{}",
+    # but would get fewer relevant results.
     q = ' '.join([
-        u'user:{}'.format(token).encode('utf-8')
+        u'user:{}*'.format(token).encode('utf-8')
         for token in re.split(r'\s+', query)
     ])
 
