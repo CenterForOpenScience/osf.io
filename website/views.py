@@ -89,11 +89,6 @@ def get_dashboard_nodes(*args, **kwargs):
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False)
     )
-    nodes = [
-        node
-        for node in nodes
-        if node.category != 'project' or node.parent_id is None
-    ]
     return _render_nodes(nodes)
 
 
