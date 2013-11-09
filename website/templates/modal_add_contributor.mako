@@ -14,14 +14,12 @@
                     <!-- Find contributors -->
                     <form>
                         <div class="row">
-                            <div class="col-md-6"col-md->
-                                <div>
-                                    <input data-bind="value:query" />
-                                    <button class="btn btn-default" data-bind="click:search">Search</button>
-                                </div>
+                            <div class="col-md-6">
+                                <input style="margin-bottom: 8px;" data-bind="value:query" />
+                                <div><button class="btn btn-default" data-bind="click:search">Search</button></div>
                             </div>
-                            <div class="col-md-6 col-md-offset-2" data-bind="if:parentId">
-                                <a data-bind="click:importFromParent, text:'List contributors from ' + parentTitle"></a>
+                            <div class="col-md-6" data-bind="if:parentId">
+                                <a data-bind="click:importFromParent, text:'Import contributors from ' + parentTitle"></a>
                             </div>
                         </div>
                     </form>
