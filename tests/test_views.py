@@ -166,7 +166,9 @@ class TestProjectViews(DbTestCase):
     def test_get_logs(self):
         # Add some logs
         for _ in range(5):
-            self.project.logs.append(NodeLogFactory(user=self.user1, action="file_added"))
+            self.project.logs.append(NodeLogFactory(user=self.user1,
+                                                action="file_added",
+                                                params={"project": self.project._id}))
         self.project.save()
         url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
@@ -179,7 +181,9 @@ class TestProjectViews(DbTestCase):
     def test_get_logs_with_count_param(self):
         # Add some logs
         for _ in range(5):
-            self.project.logs.append(NodeLogFactory(user=self.user1, action="file_added"))
+            self.project.logs.append(NodeLogFactory(user=self.user1,
+                                                    action="file_added",
+                                                    params={"project": self.project._id}))
         self.project.save()
         url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
         res = self.app.get(url, {"count": 3}, auth=self.auth)
@@ -188,7 +192,9 @@ class TestProjectViews(DbTestCase):
     def test_get_logs_defaults_to_ten(self):
         # Add some logs
         for _ in range(12):
-            self.project.logs.append(NodeLogFactory(user=self.user1, action="file_added"))
+            self.project.logs.append(NodeLogFactory(user=self.user1,
+                                                    action="file_added",
+                                                    params={"project": self.project._id}))
         self.project.save()
         url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
@@ -197,7 +203,8 @@ class TestProjectViews(DbTestCase):
     def test_logs_from_api_url(self):
         # Add some logs
         for _ in range(12):
-            self.project.logs.append(NodeLogFactory(user=self.user1, action="file_added"))
+            self.project.logs.append(NodeLogFactory(user=self.user1, action="file_added",
+                                                    params={"project": self.project._id}))
         self.project.save()
         url = "/api/v1/project/{0}/".format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
