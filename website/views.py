@@ -101,7 +101,7 @@ def watched_logs_get(*args, **kwargs):
     user = kwargs['user']
     recent_log_ids = list(user.get_recent_log_ids())
     logs = [model.NodeLog.load(id) for id in recent_log_ids]
-    logger.debug([log.action for log in logs])
+    #logger.debug([log.action for log in logs])
     return {
         "logs": [log.serialize() for log in logs]
     }

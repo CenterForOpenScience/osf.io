@@ -173,7 +173,7 @@ def render_mako_string(tpldir, tplname, data):
                         Template(open(os.path.join(tpldir, tplname)).read(), lookup=_tpl_lookup))
     # Don't cache in debug mode
     if not app.debug:
-        logger.debug("Caching template: {0}".format(tplname))
+        #logger.debug("Caching template: {0}".format(tplname))
         mako_cache[tplname] = tpl
     return tpl.render(**data)
 
