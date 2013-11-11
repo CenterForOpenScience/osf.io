@@ -237,13 +237,6 @@ class TestRegistrations(DbTestCase):
         subnav = res.html.select("#projectSubnav")[0]
         assert_not_in("Settings", subnav.text)
 
-    def test_dont_have_registration_in_nav(self):
-        # Goes to project's page
-        res = self.app.get("/project/{0}/".format(self.project._primary_key), auth=self.auth).maybe_follow()
-        # Can't see Registrations in project nav bar
-        subnav = res.html.select("#projectSubnav")[0]
-        assert_not_in("Registrations", subnav.text)
-
 
 class TestComponents(DbTestCase):
 

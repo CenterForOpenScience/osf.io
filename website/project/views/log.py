@@ -47,8 +47,7 @@ def get_logs(*args, **kwargs):
     # logs that the current user / API key cannot access
     log_data = []
     chrono_logs = reversed(node_to_use.logs)
-    for logidx in range(len(chrono_logs)):
-        log = chrono_logs[logidx]
+    for log in chrono_logs:
         if log and log.node.can_edit(user, api_key):
             log_data.append(log.serialize())
         if len(log_data) >= count:
