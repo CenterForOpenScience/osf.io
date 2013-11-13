@@ -52,7 +52,7 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         return element;
     }
 };
-
+    $('#myGrid').css('height', 25);
     var myGrid = HGrid.create({
         container: "#myGrid",
         info: ${info},
@@ -63,17 +63,10 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         enableCellNavigation: false,
         dropZone: false,
         forceFitColumns: true,
-        autoHeight: true,
+##        autoHeight: false,
         navigation: false
     });
 
-##  Saved code in case autoHeight does not work
-##    myGrid.Slick.dataView.onRowCountChanged.subscribe(function (e, args){
-##        var numRows = myGrid.currentlyRendered.length;
-##        if(numRows!=${info}.length+1){
-##            $('#myGrid').css('height', numRows*25);
-##        }
-##    });
     for (var i=0; i<myGrid.data.length; i++){
         if (myGrid.data[i]['type']=="folder"){
             myGrid.data[i]._collapsed = true;
@@ -81,4 +74,11 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         }
         myGrid.currentlyRendered=[myGrid.data[0]];
     }
+##  Saved code in case autoHeight does not work
+    myGrid.Slick.dataView.onRowCountChanged.subscribe(function (e, args){
+        var numRows = myGrid.currentlyRendered.length;
+        if(numRows!=${info}.length+1){
+            $('#myGrid').css('height', numRows*25);
+        }
+    });
 </script>
