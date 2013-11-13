@@ -641,8 +641,12 @@ form.form-horizontal.form-horizontal-narrow .control-group {
 
 
 #addContributors table {
-    border-collapse:separate;
+    border-collapse: separate;
     border-spacing: 5px;
+}
+
+#addContributors .error {
+    color: red;
 }
 
 #node-tags_tagsinput {

@@ -203,6 +203,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
     self.query = ko.observable();
     self.results = ko.observableArray();
     self.selection = ko.observableArray();
+    self.errorMsg = ko.observable('');
 
     self.nodes = ko.observableArray([]);
     self.nodesToChange = ko.observableArray();
@@ -225,20 +226,28 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
     };
 
     self.search = function() {
+        self.errorMsg('');
         $.getJSON(
             '/api/v1/user/search/',
             {query: self.query()},
             function(result) {
+                if (!result.users.length) {
+                    self.errorMsg('No results found.');
+                }
                 self.results(result['users']);
             }
         )
     };
 
     self.importFromParent = function() {
+        self.errorMsg('');
         $.getJSON(
             nodeToUseUrl() + 'get_contributors_from_parent/',
             {},
             function(result) {
+                if (!result.contributors.length) {
+                    self.errorMsg('All contributors from parent already included.');
+                }
                 self.results(result['contributors']);
             }
         )
