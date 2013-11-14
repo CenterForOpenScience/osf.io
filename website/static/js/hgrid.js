@@ -601,63 +601,43 @@ var HGrid = {
                     if(!item['type']) item['type']='file';
                 }
                 var sortCol = _this.Slick.grid.getSortColumns()[0];
-                var sortId = sortCol['columnId'];
-                var asc = sortCol['sortAsc'];
                 var spliceId = null;
-                var searchData = _this.getItemsByValue(_this.data, parent['uid'], "parent_uid");
+                if(typeof(sortCol)!=='undefined'){
+                    var sortId = sortCol['columnId'];
+                    var asc = sortCol['sortAsc'];
+                    var searchData = _this.getItemsByValue(_this.data, parent['uid'], "parent_uid");
 
-                if(searchData.length != 0){
-                    var comp = null;
-                    var compValue = null;
-                    var itemValue = typeof(item[sortId]) == 'string' ? item[sortId].toLowerCase() : item[sortId];
-                    itemValue = sortId == 'size' ? parseInt(itemValue) : itemValue;
-                    for(var i=0; i<searchData.length; i++){
-                        comp = searchData[i];
-                        compValue = typeof(comp[sortId]) == 'string' ? comp[sortId].toLowerCase() : comp[sortId];
-                        compValue = sortId == 'size' ? parseInt(compValue) : compValue;
-                        spliceId = comp['id']+1;
-                        if(asc){
-                            if(compValue > itemValue){
-                                spliceId = comp['id'];
-                                break;
+                    if(searchData.length != 0){
+                        var comp = null;
+                        var compValue = null;
+                        var itemValue = typeof(item[sortId]) == 'string' ? item[sortId].toLowerCase() : item[sortId];
+                        itemValue = sortId == 'size' ? parseInt(itemValue) : itemValue;
+                        for(var i=0; i<searchData.length; i++){
+                            comp = searchData[i];
+                            compValue = typeof(comp[sortId]) == 'string' ? comp[sortId].toLowerCase() : comp[sortId];
+                            compValue = sortId == 'size' ? parseInt(compValue) : compValue;
+                            spliceId = comp['id']+1;
+                            if(asc){
+                                if(compValue > itemValue){
+                                    spliceId = comp['id'];
+                                    break;
+                                }
+                            }
+                            else{
+                                if(compValue < itemValue){
+                                    spliceId = comp['id'];
+                                    break;
+                                }
                             }
                         }
-                        else{
-                            if(compValue < itemValue){
-                                spliceId = comp['id'];
-                                break;
-                            }
-                        }
+                    }
+                    else{
+                        spliceId = parent['id']+1;
                     }
                 }
                 else{
                     spliceId = parent['id']+1;
                 }
-
-//            if(_this.data[parent['id']+1]){
-//                var comp = _this.data[parent['id']+1];
-//                var compValue = typeof(comp[sortCol]) == 'string' ? comp[sortCol].toLowerCase() : comp[sortCol];
-//                var itemValue = typeof(item[sortCol]) == 'string' ? item[sortCol].toLowerCase() : item[sortCol];
-//                while(compValue < itemValue && comp['indent']>parent['indent']){
-//                    if(typeof(_this.data[comp['id']+1])==='undefined'){
-//                        spliceId = comp['id']+1;
-//                        break;
-//                    }
-//                    comp = _this.data[comp['id']+1];
-//                    while(typeof(comp)!=='undefined' && comp['parent_uid']!=parent['uid']){
-//                        comp = _this.data[comp['id']+1];
-//                    }
-//                    if(typeof(_this.data[comp['id']+1])==='undefined'){
-//                        spliceId = comp['id']+1;
-//                        break;
-//                    }
-//                    compValue = typeof(comp[sortCol]) == 'string' ? comp[sortCol].toLowerCase() : comp[sortCol];
-//                    spliceId = comp['id'];
-//                }
-//            }
-//            else{
-//                spliceId = parent['id']+1;
-//            }
                 _this.data.splice(spliceId, 0,item);
                 _this.prepJava(_this.data);
                 _this.Slick.dataView.setItems(_this.data);
