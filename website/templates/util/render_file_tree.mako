@@ -7,7 +7,7 @@
 <script src="/static/js/slickgrid.custom.min.js"></script>
 <script src="/static/js/hgrid.js"></script>
 
-<div id="myGrid" class="dash-page hgrid" style="width: 100%;"></div>
+<div id="myGrid" class="dash-page hgrid" style="width: 100%; height: 25px;"></div>
 
 <script>
 
@@ -63,17 +63,10 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         enableCellNavigation: false,
         dropZone: false,
         forceFitColumns: true,
-        autoHeight: true,
         navigation: false
     });
 
-##  Saved code in case autoHeight does not work
-##    myGrid.Slick.dataView.onRowCountChanged.subscribe(function (e, args){
-##        var numRows = myGrid.currentlyRendered.length;
-##        if(numRows!=${info}.length+1){
-##            $('#myGrid').css('height', numRows*25);
-##        }
-##    });
+
     for (var i=0; i<myGrid.data.length; i++){
         if (myGrid.data[i]['type']=="folder"){
             myGrid.data[i]._collapsed = true;
@@ -81,4 +74,10 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         }
         myGrid.currentlyRendered=[myGrid.data[0]];
     }
+
+    ##  Saved code in case autoHeight does not work
+    myGrid.Slick.dataView.onRowCountChanged.subscribe(function (e, args){
+        var numRows = myGrid.currentlyRendered.length;
+        $('#myGrid').css('height', numRows*25);
+    });
 </script>

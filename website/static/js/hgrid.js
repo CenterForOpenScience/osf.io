@@ -323,7 +323,6 @@ var HGrid = {
         var data = args[0];
         var _this = args[1];
         if (_this.options.navLevel != "null") {
-//            if (item["sortpath"].indexOf(_this.options.navLevel) != 0) {
             if ( item["sortpath"].indexOf(_this.options.navLevel) != 0 ) {
                 return false;
             }
@@ -1349,15 +1348,6 @@ var HGrid = {
             _this.options.editable=false;
             var src=args.item;
             _this.Slick.dataView.updateItem(src.id, src);
-//            $.post('/sg_edit', {grid_item: JSON.stringify(src)}, function(new_title){
-//                if(new_title!="fail"){
-//                }
-//                else{
-//                    src['name']=src['uid'];
-//                    alert("You can't change the uploads folder!");
-//                    dataView.updateItem(src.id, src);
-//                }
-//            });
         });
 
         grid.onClick.subscribe(function (e, args) {
@@ -1365,21 +1355,12 @@ var HGrid = {
             if ($(e.target).hasClass("toggle") || $(e.target).hasClass("folder")) {
                 var item = dataView.getItem(args.row);
                 if (item) {
-                    var i=args.row;
-                    var counter = -1;
-                    do{
-                        counter+=1;
-                        i+=1;
-                    }
-                    while(data[i] && data[i]['indent']>data[args.row]['indent']);
                     _this.currentlyRendered = [];
                     if (!item._collapsed) {
                         item._collapsed = true;
                     } else {
                         item._collapsed = false;
-                        counter=-counter;
                     }
-
                     dataView.updateItem(item.id, item);
                 }
                 e.stopImmediatePropagation();
