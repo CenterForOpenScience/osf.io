@@ -259,6 +259,19 @@ class TestNodeWiki(DbTestCase):
         assert_equal(self.node.get_wiki_page("home", 2).content, "Hola mundo")
         assert_equal(self.node.get_wiki_page("home", 1).content, "Hello world")
 
+    def test_update_two_node_wikis(self):
+        # user updates the wiki
+        self.node.update_node_wiki("home", "Hello world", self.user, api_key=None)
+        versions = self.node.wiki_pages_versions
+        # user updates a second wiki for the same node
+        self.node.update_node_wiki("second", "Hola mundo", self.user, api_key=None)
+        # each wiki only has one version
+        assert_equal(len(versions['home']), 1)
+        assert_equal(len(versions['second']), 1)
+        # each wiki has the expected content
+        assert_equal(self.node.get_wiki_page("home").content, "Hello world")
+        assert_equal(self.node.get_wiki_page("second").content, "Hola mundo")
+
 
 class TestProject(DbTestCase):
 
