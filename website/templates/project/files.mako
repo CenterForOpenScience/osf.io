@@ -144,21 +144,12 @@ myGrid.hGridBeforeUpload.subscribe(function(e, args){
     if(args.parent['can_edit']=='true'){
         myGrid.removeDraggerGuide();
         var path = args.parent['path'].slice();
-        path.push("nodefile-" +args.item.name);
-        var item = {name: args.item.name, parent_uid: args.parent['uid'], uid: "nodefile-" + args.item.name, type:"fake", uploadBar: true, path: path, sortpath: path.join("/"), ext: "py", size: args.item.size.toString()};
+        path.push(args.item.name);
+        var item = {name: args.item.name, parent_uid: args.parent['uid'], uid: args.item.name, type:"fake", uploadBar: true, path: path, sortpath: path.join("/"), ext: "py", size: args.item.size.toString()};
         var promise = $.when(myGrid.addItem(item));
         promise.done(function(bool){
             return true;
         });
-    }
-    else return false;
-});
-
-
-myGrid.hGridAfterUpload.subscribe(function(e, args){
-    if(args['success']==true){
-        myGrid.deleteItems(["nodefile-" + args.item.name]);
-        return true;
     }
     else return false;
 });
@@ -219,25 +210,15 @@ myGrid.hGridOnUpload.subscribe(function(e, args){
     var value = {};
     // Check if the server says that the file exists already
     var newSlickInfo = JSON.parse(args.xhr.response)[0];
-    console.log(newSlickInfo);
-    if (newSlickInfo['action_taken']===null){
-##        var item = myGrid.getItemByValue(myGrid.data, args.name, "name");
-        var item = myGrid.getItemsByValue(myGrid.data, args.name, "name").filter(function(item) {
-            return item.type == 'fake'
-        })[0];
-        myGrid.deleteItems([item['uid']]);
-        return false;
-    }
-    else{
-        var item = myGrid.getItemByValue(myGrid.data, newSlickInfo['url'], "url");
-        if(item){
-            item['type']='fake';
-            myGrid.deleteItems([item['uid']]);
-        }
+    // Delete fake item
+    var item = myGrid.getItemByValue(myGrid.data, args.name, "uid");
+    myGrid.deleteItems([item['uid']]);
+    // If action taken is not null, create new item
+    if (newSlickInfo['action_taken']!==null){
         myGrid.addItem(newSlickInfo);
         return true;
-
     }
+    return false;
 });
 
 ##var date1=0;

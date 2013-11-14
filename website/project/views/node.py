@@ -329,7 +329,7 @@ def _view_project(node_to_use, user):
         if node_to_use.node__parent \
             and not node_to_use.node__parent[0].is_deleted \
             else None
-    recent_logs = list(reversed(node_to_use.logs))[:10]
+    recent_logs = list(reversed(node_to_use.logs)[:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
     data = {
         'node_id': node_to_use._primary_key,
