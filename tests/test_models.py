@@ -216,17 +216,48 @@ class TestNode(DbTestCase):
                                 .format(self.parent._primary_key,
                                         self.node._primary_key))
 
+
+class TestNodeWiki(DbTestCase):
+
+    def setUp(self):
+        self.user = UserFactory()
+        self.parent = ProjectFactory()
+        self.node = NodeFactory.build(creator=self.user)
+        self.node.contributors.append(self.user)
+        self.node.save()
+        self.parent.nodes.append(self.node)
+        self.parent.save()
+
+    def test_new_wiki(self):
+        # There is no default wiki
+        assert_equal(self.node.get_wiki_page("home"), None)
+
     def test_update_node_wiki(self):
         # user updates the wiki
         self.node.update_node_wiki("home", "Hello world", self.user, api_key=None)
         versions = self.node.wiki_pages_versions
+        # There is now one version, logged, with the correct content
         assert_equal(len(versions['home']), 1)
+        assert_equal(self.node.logs[-1].action, "wiki_updated")
+        assert_equal(self.node.get_wiki_page("home").content, "Hello world")
+
+    def test_update_node_wiki_twice(self):
+        # user updates the wiki
+        self.node.update_node_wiki("home", "Hello world", self.user, api_key=None)
+        versions = self.node.wiki_pages_versions
         # Makes another update
         self.node.update_node_wiki('home', "Hola mundo", self.user, api_key=None)
         # Now there are 2 versions
         assert_equal(len(versions['home']), 2)
-        # A log event was saved
+        # There are 2 logs saved
         assert_equal(self.node.logs[-1].action, "wiki_updated")
+        assert_equal(self.node.logs[-2].action, "wiki_updated")
+        # The new version is current, the old version is not
+        assert_true(self.node.get_wiki_page("home", 2).is_current)
+        assert_false(self.node.get_wiki_page("home", 1).is_current)
+        # Both versions have the expected content
+        assert_equal(self.node.get_wiki_page("home", 2).content, "Hola mundo")
+        assert_equal(self.node.get_wiki_page("home", 1).content, "Hello world")
 
 
 class TestProject(DbTestCase):
