@@ -148,6 +148,19 @@ def _get_files(filetree, parent_id, check, user):
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
+def list_file_paths(*args, **kwargs):
+
+    node_to_use = kwargs['node'] or kwargs['project']
+    user = kwargs['user']
+
+    return {'files': [
+        NodeFile.load(fid).path
+        for fid in node_to_use.files_current.values()
+    ]}
+
+
+@must_be_valid_project # returns project
+@must_be_contributor_or_public # returns user, project
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
 def list_files(*args, **kwargs):
@@ -157,6 +170,7 @@ def list_files(*args, **kwargs):
     node_to_use = node or project
 
     return _view_project(node_to_use, user)
+
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public  # returns user, project

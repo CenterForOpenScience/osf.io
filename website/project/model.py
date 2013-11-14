@@ -43,7 +43,11 @@ class MetaSchema(StoredObject):
     _id = fields.StringField(default=lambda: str(ObjectId()))
     schema = fields.DictionaryField()
     category = fields.StringField()
+
+    # Version information
     version = fields.StringField()
+    appjs = fields.StringField()
+    apphtml = fields.StringField()
 
 
 def ensure_schemas():

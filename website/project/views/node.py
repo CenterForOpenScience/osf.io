@@ -347,6 +347,7 @@ def _view_project(node_to_use, user):
 
         'node_tags': [tag._primary_key for tag in node_to_use.tags],
         'node_children': bool(node_to_use.nodes),
+        'node_children_ids': [child._primary_key for child in node_to_use.nodes],
 
         'node_is_registration': node_to_use.is_registration,
         'node_registered_from_url': node_to_use.registered_from.url if node_to_use.is_registration else '',

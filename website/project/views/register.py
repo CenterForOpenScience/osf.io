@@ -55,18 +55,23 @@ def node_register_template_page(*args, **kwargs):
 
     if node_to_use.is_registration and node_to_use.registered_meta:
         registered = True
-        payload = json.loads(node_to_use.registered_meta.get(template_name))
-        for page in schema['pages']:
-            for question in page['questions']:
-                question['value'] = payload.get(question['id'], '')
+        payload = node_to_use.registered_meta.get(template_name)
+        #for page in schema['pages']:
+        #    for question in page['questions']:
+        #        question['value'] = payload.get(question['id'], '')
 
     else:
         registered = False
+        payload = None
+    #registered = False
 
     rv = {
         'template_name': template_name,
         'schema': json.dumps(schema),
+        'appjs': meta_schema.appjs,
+        'apphtml': meta_schema.apphtml,
         'registered': registered,
+        'payload': payload,
     }
     rv.update(_view_project(node_to_use, user))
     return rv
@@ -84,13 +89,13 @@ def node_register_template_page_post(*args, **kwargs):
     node_to_use = node or project
     data = request.json
 
-    for k, v in data.items():
-        if v is not None and v != sanitize(v):
-            # todo interface needs to deal with this
-            status.push_status_message('Invalid submission.')
-            return json.dumps({
-                'status': 'error',
-            })
+    #for k, v in data.items():
+    #    if v is not None and v != sanitize(v):
+    #        # todo interface needs to deal with this
+    #        status.push_status_message('Invalid submission.')
+    #        return json.dumps({
+    #            'status': 'error',
+    #        })
 
     template = kwargs['template']
     # TODO: Using json.dumps because node_to_use.registered_meta's values are

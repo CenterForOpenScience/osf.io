@@ -126,7 +126,7 @@ NodeActions.openCloseNode = function(node_id){
 
 $(document).ready(function() {
 
-    $("#browser").treeview();  // Initiate filebrowser
+//    $("#browser").treeview();  // Initiate filebrowser
 
     ////////////////////
     // Event Handlers //

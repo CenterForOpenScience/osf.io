@@ -35,16 +35,17 @@ js = Bundle(
         # Vendorized libraries that are already minified
         Bundle(
                 "vendor/jquery/jquery.min.js",
-                "vendor/jquery-ui/js/jquery-ui.min.js",
+                "vendor/knockout/knockout-min.js",
                 "vendor/bootstrap3/js/bootstrap.min.js",
                 "vendor/bootstrap3-editable/js/bootstrap-editable.min.js",
                 "vendor/bootbox/bootbox.min.js",
+                "vendor/jquery-ui/js/jquery-ui.min.js",
                 "vendor/jquery-tagsinput/js/jquery.tagsinput.min.js",
                 "vendor/jquery-tagcloud/jquery.tagcloud.js",
-                "vendor/jquery-treeview/jquery.treeview.js",
+                #"vendor/jquery-treeview/jquery.treeview.js",
                 "vendor/jquery-tagit/js/tag-it.js",
-                "vendor/knockout/knockout-min.js",
-                "vendor/moment/moment.min.js"),
+                "vendor/moment/moment.min.js"
+        ),
         # Site-specific JS
         Bundle("js/site.js", "js/project.js", "js/app.js", filters="jsmin"),
         output="public/js/common.js"
