@@ -116,6 +116,7 @@ def _get_files(filetree, parent_id, check, user):
     ).lower()
     if itemParent['can_edit'] =='false':
         itemParent['uid'] = 'Private'
+        itemParent['name'] = 'Private Component'
     #can_edit is can_view
     itemParent['can_view'] = str(filetree[0].can_edit(user)).lower()
     if check == 0:
