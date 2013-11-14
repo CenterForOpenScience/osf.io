@@ -81,9 +81,9 @@ def _get_files(filetree, parent_id, check, user):
     info = []
     itemParent = {}
     itemParent['uid'] = '-'.join([
-        "node",  # node or nodefile
-        str(filetree[0]._id)  # ObjectId from pymongo
-    ])
+            "node",  # node or nodefile
+            str(filetree[0]._id)  # ObjectId from pymongo
+        ])
     itemParent['isComponent'] = "true"
     itemParent['parent_uid'] = parent_uid
     if str(filetree[0].category)=="project" or itemParent['parent_uid']=="null":
@@ -114,6 +114,8 @@ def _get_files(filetree, parent_id, check, user):
         filetree[0].is_contributor(user) and
         not filetree[0].is_registration
     ).lower()
+    if itemParent['can_edit'] =='false':
+        itemParent['uid'] = 'Private'
     #can_edit is can_view
     itemParent['can_view'] = str(filetree[0].can_edit(user)).lower()
     if check == 0:
