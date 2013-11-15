@@ -237,6 +237,18 @@ class Tag(GuidStoredObject):
 
 
 class Node(GuidStoredObject):
+
+    # Node fields that trigger an update to Solr on save
+    SOLR_UPDATE_FIELDS = {
+        'title',
+        'category',
+        'description',
+        'contributors',
+        'tags',
+        'is_fork',
+        'is_registration',
+    }
+
     _id = fields.StringField(primary=True)
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -309,7 +321,9 @@ class Node(GuidStoredObject):
 
     def save(self, *args, **kwargs):
         rv = super(Node, self).save(*args, **kwargs)
-        self.update_solr()
+        # Only update Solr if at least one watched field has changed
+        if self.SOLR_UPDATE_FIELDS.intersection(rv['saved_fields']):
+            self.update_solr()
         return rv
 
     def set_title(self, title, user, api_key=None, save=False):
