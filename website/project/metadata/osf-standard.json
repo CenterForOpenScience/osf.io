@@ -2,6 +2,8 @@
     "schema": {
         "pages": [
             {
+                "title": "page1",
+                "id": "page1",
                 "contents": [
                     {
                         "id": "whoami",
@@ -15,7 +17,5 @@
         ]
     },
     "category": "registration",
-    "version": "1",
-    "appjs": "/static/js/metadata.js",
-    "apphtml": "metadata/metadata.mako"
+    "version": "1"
 }

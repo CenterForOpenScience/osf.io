@@ -68,7 +68,7 @@ def node_register_template_page(*args, **kwargs):
     rv = {
         'template_name': template_name,
         'schema': json.dumps(schema),
-        'appjs': meta_schema.appjs,
+        'version': meta_schema.version,
         'apphtml': meta_schema.apphtml,
         'registered': registered,
         'payload': payload,

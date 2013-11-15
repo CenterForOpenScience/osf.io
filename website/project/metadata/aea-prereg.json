@@ -574,7 +574,5 @@
         ]
     },
     "category": "registration",
-    "version": "1",
-    "appjs": "/static/js/metadata.js",
-    "apphtml": "metadata/metadata.mako"
+    "version": "1"
 }
