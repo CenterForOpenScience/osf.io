@@ -53,7 +53,7 @@ def project_new_post(*args, **kwargs):
     user = kwargs['user']
     form = NewProjectForm(request.form)
     if form.validate():
-        project = new_project(form.title.data, form.description.data, user)
+        project = new_node('project', form.title.data, user, form.description.data)
         return redirect('/project/' + str(project._primary_key))
     else:
         push_errors_to_status(form.errors)

@@ -242,7 +242,7 @@ class Node(GuidStoredObject):
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
 
     # Permissions
-    is_public = fields.BooleanField()
+    is_public = fields.BooleanField(default=False)
 
     is_deleted = fields.BooleanField(default=False)
     deleted_date = fields.DateTimeField()
@@ -288,6 +288,35 @@ class Node(GuidStoredObject):
     #comment_schema = OSF_META_SCHEMAS['osf_comment']
 
     _meta = {'optimistic': True}
+
+    def __init__(self, *args, **kwargs):
+        super(Node, self).__init__(*args, **kwargs)
+        # refactored code from new_node
+
+        self.contributors.append(self.creator)
+        self.contributor_list.append({'id': self._primary_key})
+        self.save()
+
+        project = kwargs.get('project')
+        if project:
+            project.nodes.append(self)
+            project.save()
+            log_action = NodeLog.NODE_CREATED
+            log_params = {
+                'node': self._primary_key,
+                'project': project._primary_key,
+            }
+        else:
+            log_action = NodeLog.PROJECT_CREATED
+            log_params = {
+                'project': self._primary_key,
+            }
+
+        self.add_log(log_action,
+                     params=log_params,
+                     user=self.creator,
+                     log_date=self.date_created,
+        )
 
     def serialize(self):
         return {
@@ -827,6 +856,7 @@ class Node(GuidStoredObject):
         return node_file
 
     def add_log(self, action, params, user, api_key=None, log_date=None, do_save=True):
+        print 'in add_log!'
         log = NodeLog()
         log.action=action
         log.user=user

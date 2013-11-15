@@ -75,7 +75,6 @@ class NodeFactory(ModularOdmFactory):
     category = 'hypothesis'
     title = 'The meaning of life'
     description = "The meaning of life is 42."
-    is_public = False
     is_registration = False
 
 
@@ -84,16 +83,16 @@ class ProjectFactory(NodeFactory):
     category = 'project'
     creator = SubFactory(UserFactory)
 
-    @post_generation
-    def add_created_log(self, create, extracted):
-        '''Add a log after creating a new project.'''
-        self.add_log(NodeLog.PROJECT_CREATED,
-            params={
-                'project': self._primary_key,
-            },
-            user=self.creator,
-            log_date=self.date_created
-        )
+    #@post_generation
+    #def add_created_log(self, create, extracted):
+    #    '''Add a log after creating a new project.'''
+    #    self.add_log(NodeLog.PROJECT_CREATED,
+    #        params={
+    #            'project': self._primary_key,
+    #        },
+    #        user=self.creator,
+    #        log_date=self.date_created
+    #    )
 
 
 class NodeLogFactory(ModularOdmFactory):

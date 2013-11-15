@@ -187,10 +187,10 @@ class TestNode(DbTestCase):
     def setUp(self):
         self.user = UserFactory()
         self.parent = ProjectFactory()
-        self.node = NodeFactory.build(creator=self.user)
+        self.node = NodeFactory.build(creator=self.user, project=self.parent)
         self.node.contributors.append(self.user)
         self.node.save()
-        self.parent.nodes.append(self.node)
+        #self.parent.nodes.append(self.node)
         self.parent.save()
 
     def test_node_factory(self):
@@ -222,10 +222,10 @@ class TestNodeWiki(DbTestCase):
     def setUp(self):
         self.user = UserFactory()
         self.parent = ProjectFactory()
-        self.node = NodeFactory.build(creator=self.user)
+        self.node = NodeFactory.build(creator=self.user, project=self.parent)
         self.node.contributors.append(self.user)
         self.node.save()
-        self.parent.nodes.append(self.node)
+        #self.parent.nodes.append(self.node)
         self.parent.save()
 
     def test_new_wiki(self):
@@ -336,9 +336,11 @@ class TestProject(DbTestCase):
 
     def test_contributor_can_edit(self):
         contributor = UserFactory()
+        other_guy = UserFactory()
         self.project.add_contributor(contributor=contributor, user=self.user)
         self.project.save()
         assert_true(self.project.can_edit(contributor))
+        assert_false(self.project.can_edit(other_guy))
 
     def test_creator_can_edit(self):
         assert_true(self.project.can_edit(self.user))
@@ -355,21 +357,26 @@ class TestProject(DbTestCase):
     def test_creator_is_contributor(self):
         assert_true(self.project.is_contributor(self.user))
 
+    def test_cant_add_creator_as_contributor(self):
+        self.project.add_contributor(contributor=self.user)
+        self.project.save()
+        assert_equal(len(self.project.contributors), 1)
+
     def test_cant_add_same_contributor_twice(self):
         contrib = UserFactory()
         self.project.add_contributor(contributor=contrib)
         self.project.save()
         self.project.add_contributor(contributor=contrib)
         self.project.save()
-        assert_equal(len(self.project.contributors), 1)
+        assert_equal(len(self.project.contributors), 2)
 
     def test_add_contributors(self):
         user1 = UserFactory()
         user2 = UserFactory()
         self.project.add_contributors([user1, user2], user=self.user)
         self.project.save()
-        assert_equal(len(self.project.contributors), 2)
-        assert_equal(len(self.project.contributor_list), 2)
+        assert_equal(len(self.project.contributors), 3)
+        assert_equal(len(self.project.contributor_list), 3)
         assert_equal(self.project.logs[-1].params['contributors'],
                         [user1._id, user2._id])
 
