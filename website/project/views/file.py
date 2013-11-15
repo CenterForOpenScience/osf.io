@@ -123,7 +123,7 @@ def _get_files(filetree, parent_id, check, user):
                 "nodefile",  # node or nodefile
                 str(tmp._id)  # ObjectId from pymongo
             ])
-            item['downloads'] = str(total) if total else '0'
+            item['downloads'] = total if total else 0
             item['isComponent'] = "false"
             item['parent_uid'] = str(itemParent['uid'])
             item['type'] = "file"
@@ -178,7 +178,7 @@ def upload_file_get(*args, **kwargs):
                 "type": v.content_type,
                 "download_url": node_to_use.api_url + "files/download/" + v.path,
                 "date_uploaded": v.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
-                "downloads": str(total) if total else str(0),
+                "downloads": total if total else 0,
                 "user_id": None,
                 "user_fullname": None,
                 "delete": v.is_deleted,
@@ -238,7 +238,7 @@ def upload_file_public(*args, **kwargs):
             time.mktime(file_object.date_uploaded.timetuple()),
             file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
         ],
-        "downloads": str(total) if total else str(0),
+        "downloads": total if total else 0,
         "user_id": None,
         "user_fullname":None,
         "uid": '-'.join([

@@ -47,7 +47,10 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
             }
         }
     } else {
-        var link = "<a href=" + dataContext['url'] + ">" + value + "</a>";
+        var link = value;
+        if(dataContext['url']){
+            link = "<a href=" + dataContext['url'] + ">" + value + "</a>";
+        }
         var imageUrl = "/static\/img\/hgrid\/fatcowicons\/file_extension_" + dataContext['ext'] + ".png";
         if(extensions.indexOf(dataContext['ext'])==-1){
             imageUrl = "/static\/img\/hgrid\/file.png";
