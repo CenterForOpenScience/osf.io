@@ -10,7 +10,7 @@
         <a class="navbar-brand" href="/">Open Science Framework<span class="brand-version"> BETA</span></a>
       </div><!-- end navbar-header -->
 
-      <div class="collapse navbar-collapse navbar-ex1-collapse">
+      <div class="collapse navbar-collapse">
         <ul class="nav navbar-nav">
           %if user_name:
           <li><a rel="tooltip" title="My Dashboard" href="/dashboard/">Dashboard</a></li>
