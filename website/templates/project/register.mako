@@ -10,9 +10,9 @@
 
 <legend class="text-center">Register</legend>
 
+<div class="col-md-6 col-md-offset-3" id="registration_template" data-bind="with:currentPage">
 % if schema:
 
-    <div class="col-md-6 col-md-offset-3" id="registration_template" data-bind="with:currentPage">
 
         <h2 data-bind="text:$data.title"></h2>
         <br />
@@ -74,7 +74,6 @@
 
         </form>
 
-    </div><!-- end #registration_template -->
 
     <!-- Apply view model -->
     <script type="text/javascript">
@@ -151,5 +150,6 @@
     </script>
 
 % endif
+</div><!-- end #registration_template -->
 
 </%def>
