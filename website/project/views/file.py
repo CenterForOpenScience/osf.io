@@ -1,5 +1,6 @@
 import re
 import os
+import cgi
 import json
 import time
 import zipfile
@@ -65,6 +66,12 @@ def get_files(*args, **kwargs):
         rv.update(_view_project(node_to_use, user))
     return rv
 
+def _clean_file_name(name):
+    " HTML-escape file name and encode to UTF-8. "
+    escaped = cgi.escape(name)
+    encoded = unicode(escaped).encode('utf-8')
+    return encoded
+
 def _get_files(filetree, parent_id, check, user):
     if parent_id is not None:
         parent_uid = 'node-{}'.format(parent_id)
@@ -98,7 +105,11 @@ def _get_files(filetree, parent_id, check, user):
     itemParent['sizeRead'] = '--'
     itemParent['dateModified'] = '--'
     parent_type = 'Project' if filetree[0].category == 'project' else 'Component'
-    itemParent['name'] = parent_type + ': ' + unicode(filetree[0].title).encode('utf-8')
+    itemParent['name'] = _clean_file_name(
+        '{}: {}'.format(
+            parent_type, filetree[0].title
+        )
+    )
     itemParent['can_edit'] = str(
         filetree[0].is_contributor(user) and
         not filetree[0].is_registration

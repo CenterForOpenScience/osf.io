@@ -196,10 +196,6 @@ def create_result(highlights, results):
     return result_search, tags
 
 import re
-import ast
-import urllib
-import urlparse
-import requests
 
 from website import settings
 from website.filters import gravatar

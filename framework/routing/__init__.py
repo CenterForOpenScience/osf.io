@@ -101,7 +101,13 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
 
 
 def data_to_lambda(data):
-    return lambda *args, **kwargs: data
+    """Create a lambda function that takes arbitrary arguments and returns
+    a deep copy of the passed data. This function must deep copy the data,
+    else other code operating on the returned data can change the return value
+    of the lambda.
+
+    """
+    return lambda *args, **kwargs: copy.deepcopy(data)
 
 
 view_functions = {}
