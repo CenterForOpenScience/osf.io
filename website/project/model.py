@@ -247,6 +247,9 @@ class Node(GuidStoredObject):
         'tags',
         'is_fork',
         'is_registration',
+        'is_public',
+        'is_deleted',
+        'wiki_pages_current',
     }
 
     _id = fields.StringField(primary=True)
@@ -1156,6 +1159,7 @@ class NodeWikiPage(GuidStoredObject):
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
         if self.node:
+            print 'updating my node'
             self.node.update_solr()
         return rv
 
