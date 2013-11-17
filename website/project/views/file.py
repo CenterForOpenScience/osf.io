@@ -106,7 +106,7 @@ def _get_files(filetree, parent_id, check, user):
     itemParent['dateModified'] = '--'
     parent_type = 'Project' if filetree[0].category == 'project' else 'Component'
     itemParent['name'] = _clean_file_name(
-        '{}: {}'.format(
+        u'{}: {}'.format(
             parent_type, filetree[0].title
         )
     )
@@ -138,8 +138,8 @@ def _get_files(filetree, parent_id, check, user):
             item['isComponent'] = "false"
             item['parent_uid'] = str(itemParent['uid'])
             item['type'] = "file"
-            item['name'] = str(tmp.path)
-            item['ext'] = str(tmp.path.split('.')[-1])
+            item['name'] = _clean_file_name(tmp.path)
+            item['ext'] = _clean_file_name(tmp.path.split('.')[-1])
             item['sizeRead'] = [
                 float(tmp.size),
                 size(tmp.size, system=alternative)
