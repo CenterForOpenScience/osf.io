@@ -1,3 +1,5 @@
+<div class="container">
+
 % if node_is_registration:
     <div class="alert alert-info">This ${node_category} is a registration of <a class="alert-link" href="${node_registered_from_url}">this ${node_category}</a>; the content of the ${node_category} has been frozen and cannot be edited.
     </div>
@@ -142,3 +144,4 @@
         ko.applyBindings(new ProjectViewModel(), $("#projectScope")[0]);
     });
 </script>
+</div><!-- end container -->
