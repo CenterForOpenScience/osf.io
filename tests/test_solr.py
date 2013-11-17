@@ -111,13 +111,13 @@ class TestPublicProject(SolrTestCase):
 
         tag_text = 'stonecoldcrazy'
 
-        results, _, _ = search_solr('"{}"'.format(tag_text))
-        assert_equal(len(results['docs']), 0)
+        docs = query(tag_text)
+        assert_equal(len(docs), 0)
 
         self.project.add_tag(tag_text, self.user, None)
 
-        results, _, _ = search_solr('"{}"'.format(tag_text))
-        assert_equal(len(results['docs']), 1)
+        docs = query(tag_text)
+        assert_equal(len(docs), 1)
 
     def test_remove_tag(self):
 
@@ -126,39 +126,55 @@ class TestPublicProject(SolrTestCase):
         self.project.add_tag(tag_text, self.user, None)
         self.project.remove_tag(tag_text, self.user, None)
 
-        results, _, _ = search_solr('"{}"'.format(tag_text))
-        assert_equal(len(results['docs']), 0)
+        docs = query(tag_text)
+        assert_equal(len(docs), 0)
 
     def test_update_wiki(self):
-        """
+        """Add text to a wiki page, then verify that project is found when
+        searching for wiki text.
 
         """
         wiki_content = 'Hammer to fall'
 
-        results, _, _ = search_solr('"{}"'.format(wiki_content))
-        assert_equal(len(results['docs']), 0)
+        docs = query(wiki_content)
+        assert_equal(len(docs), 0)
 
         self.project.update_node_wiki('home', wiki_content, self.user, None)
 
-        results, _, _ = search_solr('"{}"'.format(wiki_content))
-        assert_equal(len(results['docs']), 1)
+        docs = query(wiki_content)
+        assert_equal(len(docs), 1)
+
+    def test_clear_wiki(self):
+        """Add wiki text to page, then delete, then verify that project is not
+        found when searching for wiki text.
+
+        """
+        wiki_content = 'Hammer to fall'
+        self.project.update_node_wiki('home', wiki_content, self.user, None)
+        self.project.update_node_wiki('home', '', self.user, None)
+
+        docs = query(wiki_content)
+        assert_equal(len(docs), 0)
+
 
     def test_add_contributor(self):
-        """
+        """Add a contributor, then verify that project is found when searching
+        for contributor.
 
         """
         user2 = UserFactory()
 
-        results, _, _ = search_solr('"{}"'.format(user2.fullname))
-        assert_equal(len(results['docs']), 0)
+        docs = query(user2.fullname)
+        assert_equal(len(docs), 0)
 
         self.project.add_contributor(user2, save=True)
 
-        results, _, _ = search_solr('"{}"'.format(user2.fullname))
-        assert_equal(len(results['docs']), 1)
+        docs = query(user2.fullname)
+        assert_equal(len(docs), 1)
 
     def test_remove_contributor(self):
-        """
+        """Add and remove a contributor, then verify that project is not found
+        when searching for contributor.
 
         """
         user2 = UserFactory()
@@ -166,5 +182,5 @@ class TestPublicProject(SolrTestCase):
         self.project.add_contributor(user2, save=True)
         self.project.remove_contributor(user2, self.user)
 
-        results, _, _ = search_solr('"{}"'.format(user2.fullname))
-        assert_equal(len(results['docs']), 0)
+        docs = query(user2.fullname)
+        assert_equal(len(docs), 0)
