@@ -106,7 +106,7 @@ def _get_files(filetree, parent_id, check, user):
     itemParent['dateModified'] = '--'
     parent_type = 'Project' if filetree[0].category == 'project' else 'Component'
     itemParent['name'] = _clean_file_name(
-        '{}: {}'.format(
+        u'{}: {}'.format(
             parent_type, filetree[0].title
         )
     )
