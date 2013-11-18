@@ -105,6 +105,7 @@ var LogsViewModel = function(url) {
     $.ajax({
         url: getUrl,
         type: "get",
+        cache: false,
         dataType: "json",
         success: function(data){
             var logs = data['logs'];
