@@ -41,21 +41,25 @@ def normalize_unicode(ustr):
 class MetaSchema(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
+    name = fields.StringField()
     schema = fields.DictionaryField()
     category = fields.StringField()
 
     # Version information
-    version = fields.StringField()
-    appjs = fields.StringField()
-    apphtml = fields.StringField()
+    metadata_version = fields.IntegerField()
+    schema_version = fields.IntegerField()
 
 
 def ensure_schemas():
-    for key, value in OSF_META_SCHEMAS.items():
+    for schema in OSF_META_SCHEMAS:
         try:
-            MetaSchema.find_one(Q('_id', 'eq', key))
+            MetaSchema.find_one(
+                Q('name', 'eq', schema['name'])
+                &
+                Q('schema_version', 'eq', schema['schema_version'])
+            )
         except:
-            schema_obj = MetaSchema(_id=key, **value)
+            schema_obj = MetaSchema(**schema)
             schema_obj.save()
 
 
@@ -253,6 +257,9 @@ class Node(GuidStoredObject):
 
     is_registration = fields.BooleanField(default=False)
     registered_date = fields.DateTimeField()
+    registered_user = fields.ForeignField('user', backref='registered')
+    registered_schema = fields.ForeignField('metaschema', backref='registered')
+    registered_meta = fields.DictionaryField()
 
     is_fork = fields.BooleanField(default=False)
     forked_date = fields.DateTimeField()
@@ -261,10 +268,8 @@ class Node(GuidStoredObject):
     description = fields.StringField()
     category = fields.StringField()
 
-    #_terms = fields.DictionaryField(list=True)
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
-    registered_meta = fields.DictionaryField()
 
     # TODO: move these to NodeFile
     files_current = fields.DictionaryField()
@@ -492,7 +497,7 @@ class Node(GuidStoredObject):
 
         return forked#self
 
-    def register_node(self, user, api_key, template, data):
+    def register_node(self, schema, user, api_key, template, data):
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
         when = datetime.datetime.utcnow()
@@ -534,6 +539,8 @@ class Node(GuidStoredObject):
 
             node_contained.is_registration = True
             node_contained.registered_date = when
+            node_contained.registered_user = user
+            node_contained.registered_schema = schema
             node_contained.registered_from = original_node_contained
             if not node_contained.registered_meta:
                 node_contained.registered_meta = {}
@@ -544,6 +551,8 @@ class Node(GuidStoredObject):
 
         registered.is_registration = True
         registered.registered_date = when
+        registered.registered_user = user
+        registered.registered_schema = schema
         registered.registered_from = original
         if not registered.registered_meta:
             registered.registered_meta = {}

@@ -9,6 +9,8 @@ from ..decorators import must_not_be_registration, must_be_valid_project, must_b
 from framework.forms.utils import sanitize
 from .node import _view_project
 
+from website.project.metadata.schemas import OSF_META_SCHEMAS
+
 from website.models import MetaSchema
 from framework import Q
 
@@ -28,10 +30,10 @@ def node_register_page(*args, **kwargs):
     rv = {
         'options': [
             {
-                'template_name': metaschema._id,
-                'template_name_clean': clean_template_name(metaschema._id)
+                'template_name': metaschema['name'],
+                'template_name_clean': clean_template_name(metaschema['name'])
             }
-            for metaschema in MetaSchema.find(Q('category', 'eq', 'registration'))
+            for metaschema in OSF_META_SCHEMAS
         ]
     }
     rv.update(_view_project(node_to_use, user))
@@ -42,34 +44,40 @@ def node_register_page(*args, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
 def node_register_template_page(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
+
+    node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
 
-    node_to_use = node or project
-
-    template_name = kwargs['template'].replace(' ', '_').replace('.txt', '')
-
-    meta_schema = MetaSchema.find_one(Q('_id', 'eq', template_name))
-    schema = meta_schema.schema
+    template_name = kwargs['template']\
+        .replace(' ', '_')\
+        .replace('.txt', '')
 
     if node_to_use.is_registration and node_to_use.registered_meta:
         registered = True
         payload = node_to_use.registered_meta.get(template_name)
-        #for page in schema['pages']:
-        #    for question in page['questions']:
-        #        question['value'] = payload.get(question['id'], '')
-
+        if node_to_use.registered_schema:
+            meta_schema = node_to_use.registered_schema
+        else:
+            meta_schema = MetaSchema.find_one(
+                Q('name', 'eq', template_name) &
+                Q('schema_version', 'eq', 1)
+            )
     else:
         registered = False
         payload = None
-    #registered = False
+        meta_schema = MetaSchema.find(
+            Q('name', 'eq', template_name)
+        ).sort('-schema_version')[0]
+
+    #meta_query = Q('name', 'eq', template_name)
+    #meta_schema = MetaSchema.find_one(Q('name', 'eq', template_name))
+    schema = meta_schema.schema
 
     rv = {
         'template_name': template_name,
         'schema': json.dumps(schema),
-        'version': meta_schema.version,
-        'apphtml': meta_schema.apphtml,
+        'metadata_version': meta_schema.metadata_version,
+        'schema_version': meta_schema.schema_version,
         'registered': registered,
         'payload': payload,
     }
@@ -81,12 +89,11 @@ def node_register_template_page(*args, **kwargs):
 @must_be_contributor # returns user, project
 @must_not_be_registration
 def node_register_template_page_post(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
+
+    node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     api_key = kwargs['api_key']
 
-    node_to_use = node or project
     data = request.json
 
     #for k, v in data.items():
@@ -101,7 +108,12 @@ def node_register_template_page_post(*args, **kwargs):
     # TODO: Using json.dumps because node_to_use.registered_meta's values are
     # expected to be strings (not dicts). Eventually migrate all these to be
     # dicts, as this is unnecessary
-    register = node_to_use.register_node(user, api_key, template, json.dumps(data))
+    schema = MetaSchema.find(
+        Q('name', 'eq', template)
+    ).sort('-schema_version')[0]
+    register = node_to_use.register_node(
+        schema, user, api_key, template, json.dumps(data)
+    )
 
     return {
         'status': 'success',

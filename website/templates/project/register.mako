@@ -7,7 +7,7 @@
 
 % if schema:
 
-    <%include file="metadata/register_${version}.mako" />
+    <%include file="metadata/register_${str(metadata_version)}.mako" />
 
 % else:
 
@@ -30,7 +30,7 @@
         $('#select-registration-template').on('change', function() {
             var $this = $(this),
                 val = $this.val();
-            if (val)
+            if (val != 'Please select')
                 window.location.href += val;
         });
     </script>

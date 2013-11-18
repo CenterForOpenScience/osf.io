@@ -2,7 +2,7 @@
 
 <div class="col-md-6 col-md-offset-3" id="registration_template">
 
-    <%include file="metadata_1.mako" />
+    <%include file="metadata_1.html" />
 
     <form class="form">
 

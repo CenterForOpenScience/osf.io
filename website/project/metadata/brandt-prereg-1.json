@@ -1,4 +1,5 @@
 {
+    "name": "Brandt_Preregistration",
     "schema": {
         "pages": [
             {
@@ -77,5 +78,6 @@
         ]
     },
     "category": "registration",
-    "version": "1"
+    "metadata_version": 1,
+    "schema_version": 1
 }

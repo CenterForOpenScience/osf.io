@@ -1,9 +1,10 @@
 {
+    "name": "AEA_Preregistration",
     "schema": {
         "pages": [
             {
                 "id": "page1",
-                "title": "page1",
+                "title": "",
                 "contents": [
                     {
                         "id": "general",
@@ -574,5 +575,6 @@
         ]
     },
     "category": "registration",
-    "version": "1"
+    "metadata_version": 1,
+    "schema_version": 1
 }

@@ -68,7 +68,7 @@
 <script id="checkbox" type="text/html">
     <div data-bind="foreach:options">
         <div>
-            <input type="checkbox" data-bind="value:$data, checked:$parent.value, disable:$parent.disable || $root.disable" />
+            <input type="checkbox" data-bind="value:$data, checked:$parent.value, disable:$parent.disable || $parent.$root.disable" />
             <span data-bind="text:$data"></span>
         </div>
     </div>

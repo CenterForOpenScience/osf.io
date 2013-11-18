@@ -1,9 +1,10 @@
 {
+    "name": "Open-Ended_Registration",
     "schema": {
         "pages": [
             {
                 "id": "page1",
-                "title": "page1",
+                "title": "",
                 "contents": [
                     {
                         "id": "summary",
@@ -15,5 +16,6 @@
         ]
     },
     "category": "registration",
-    "version": "1"
+    "metadata_version": 1,
+    "schema_version": 1
 }
