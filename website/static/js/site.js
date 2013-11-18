@@ -51,8 +51,14 @@ var modalConfirm = function(message, url){
 
 $(document).ready(function(){
     // Highlight active tabs and nav labels
-    $('.nav a[href="' + location.pathname + '"]').parent().addClass('active');
-    $('.tabs a[href="' + location.pathname + '"]').parent().addClass('active');
+    var node = nodeToUse(),
+        page = location.pathname.split(node)[1]
+            .split('/')[1];
+    $('#projectSubnav a').filter(function() {
+        return page == $(this).attr('href')
+            .split(node)[1]
+            .replace(/\//g, '');
+    }).parent().addClass('active');
 
     // Initiate tag input
     $('#tagitfy').tagit({
