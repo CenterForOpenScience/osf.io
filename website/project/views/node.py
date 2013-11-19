@@ -2,7 +2,7 @@
 import json
 import logging
 import httplib as http
-
+from website.project.model import NodeLog
 from bs4 import BeautifulSoup
 from framework import (
     request, redirect, must_be_logged_in,
@@ -22,7 +22,7 @@ from website.project.forms import NewProjectForm, NewNodeForm
 from website.models import WatchConfig
 from website import settings
 from website.views import _render_nodes
-
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -288,18 +288,41 @@ def component_remove(*args, **kwargs):
     else:
         node_to_use = project
 
-    if node_to_use.remove_node(user=user):
-        category = 'project' \
-            if node_to_use.category == 'project' \
-            else 'component'
-        message = '{} deleted'.format(category.capitalize())
-        status.push_status_message(message)
-        return {
-            'status' : 'success',
-            'message' : message,
-        }, None, None, '/dashboard/'
+    if len(node_to_use.node__parent) == 0:
+        if node_to_use.remove_node(user=user):
+            category = 'project' \
+                if node_to_use.category == 'project' \
+                else 'component'
+            message = '{} deleted'.format(category.capitalize())
+            status.push_status_message(message)
+            return {
+                'status': 'success',
+                'message': message,
+            }, None, None, '/dashboard/'
+        else:
+            raise HTTPError(http.BAD_REQUEST, message='Could not delete component')
     else:
-        raise HTTPError(http.BAD_REQUEST, message='Could not delete component')
+
+        if node_to_use.remove_node(user=user):
+            category = 'project' \
+                if node_to_use.category == 'project' \
+                else 'component'
+            message = '{} deleted'.format(category.capitalize())
+            status.push_status_message(message)
+            node_to_use.node__parent[0].add_log(
+                NodeLog.NODE_REMOVED,
+                params={
+                    'project': node_to_use._primary_key,
+                    },
+                user=user,
+                log_date=datetime.datetime.utcnow()
+            )
+            return {
+                'status': 'success',
+                'message': message,
+            }, None, None, '/dashboard/'
+        else:
+            raise HTTPError(http.BAD_REQUEST, message='Could not delete component')
 
 
 @must_be_valid_project
@@ -308,6 +331,7 @@ def view_project(*args, **kwargs):
     user = get_current_user()
     node_to_use = kwargs['node'] or kwargs['project']
     return _view_project(node_to_use, user)
+
 
 def _view_project(node_to_use, user):
     '''Build a JSON object containing everything needed to render
