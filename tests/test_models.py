@@ -185,10 +185,10 @@ class TestApiKey(DbTestCase):
 class TestNode(DbTestCase):
 
     def setUp(self):
+        # Create project with component
         self.user = UserFactory()
         self.parent = ProjectFactory()
         self.node = NodeFactory.build(creator=self.user, project=self.parent)
-        self.node.contributors.append(self.user)
         self.node.save()
         self.parent.save()
 
@@ -219,10 +219,10 @@ class TestNode(DbTestCase):
 class TestNodeWiki(DbTestCase):
 
     def setUp(self):
+        # Create project with component
         self.user = UserFactory()
         self.parent = ProjectFactory()
         self.node = NodeFactory.build(creator=self.user, project=self.parent)
-        self.node.contributors.append(self.user)
         self.node.save()
         self.parent.save()
 
@@ -268,7 +268,7 @@ class TestNodeWiki(DbTestCase):
         # There are 2 logs saved
         assert_equal(self.node.logs[-1].action, "wiki_updated")
         assert_equal(self.node.logs[-2].action, "wiki_updated")
-        # each wiki has the expected content
+        # Each wiki has the expected content
         assert_equal(self.node.get_wiki_page("home").content, "Hello world")
         assert_equal(self.node.get_wiki_page("second").content, "Hola mundo")
 
@@ -276,6 +276,7 @@ class TestNodeWiki(DbTestCase):
 class TestProject(DbTestCase):
 
     def setUp(self):
+        # Create project
         self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user)
 

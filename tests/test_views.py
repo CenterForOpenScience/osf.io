@@ -223,13 +223,6 @@ class TestWatchViews(DbTestCase):
         # A public project
         self.project = ProjectFactory(is_public=True)
         self.project.save()
-        # add some log objects
-        # A log added 100 days ago
-        #self.project.add_log(NodeLog.PROJECT_CREATED,
-        #                     params={'project': self.project._primary_key},
-        #                     user=self.user, log_date=dt.datetime.utcnow() - dt.timedelta(days=100),
-        #                     api_key=self.auth[1],
-        #                     do_save=True)
         # Manually reset log date to 100 days ago so it won't show up in feed
         self.project.logs[0].date = dt.datetime.utcnow() - dt.timedelta(days=100)
         self.project.logs[0].save()
