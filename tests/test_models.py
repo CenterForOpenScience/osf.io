@@ -242,11 +242,10 @@ class TestNodeWiki(DbTestCase):
         assert_equal(self.node.get_wiki_page("home").content, "Hello world")
 
     def test_update_node_wiki_twice(self):
-        # user updates the wiki
+        # user updates the wiki twice
         self.node.update_node_wiki("home", "Hello world", self.user, api_key=None)
-        versions = self.node.wiki_pages_versions
-        # Makes another update
         self.node.update_node_wiki('home', "Hola mundo", self.user, api_key=None)
+        versions = self.node.wiki_pages_versions
         # Now there are 2 versions
         assert_equal(len(versions['home']), 2)
         # There are 2 logs saved
@@ -268,6 +267,9 @@ class TestNodeWiki(DbTestCase):
         # each wiki only has one version
         assert_equal(len(versions['home']), 1)
         assert_equal(len(versions['second']), 1)
+        # There are 2 logs saved
+        assert_equal(self.node.logs[-1].action, "wiki_updated")
+        assert_equal(self.node.logs[-2].action, "wiki_updated")
         # each wiki has the expected content
         assert_equal(self.node.get_wiki_page("home").content, "Hello world")
         assert_equal(self.node.get_wiki_page("second").content, "Hola mundo")
@@ -356,6 +358,7 @@ class TestProject(DbTestCase):
 
     def test_creator_is_contributor(self):
         assert_true(self.project.is_contributor(self.user))
+        assert_in(self.user, self.project.contributors)
 
     def test_cant_add_creator_as_contributor(self):
         self.project.add_contributor(contributor=self.user)
