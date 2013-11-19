@@ -41,7 +41,7 @@ def _get_wiki_versions(node, wid):
         {
             'version': version.version,
             'user_fullname': version.user.fullname,
-            'date': version.date,
+            'date': version.date.replace(microsecond=0),
         }
         for version in reversed(versions)
     ]
