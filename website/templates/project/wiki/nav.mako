@@ -10,6 +10,10 @@
                 <li><a class="disabled">Edit</a></li>
             % endif
         %endif
-        <li><a href="${node_url}wiki/${pageName}/compare/1">History</a></li>
+        % if version == 'NA':
+            <li><a class="disabled">History</a></li>
+        % else:
+            <li><a href="${node_url}wiki/${pageName}/compare/1">History</a> </li>
+        % endif
     </ul>
 </nav>
