@@ -118,6 +118,7 @@ def project_wiki_version(*args, **kwargs):
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
 def project_wiki_page(*args, **kwargs):
+
     project = kwargs['project']
     node = kwargs['node']
     wid = kwargs['wid']
@@ -161,7 +162,8 @@ def project_wiki_page(*args, **kwargs):
         'is_edit': False,
         'pages_current': node_to_use.wiki_pages_versions.keys(),
         'toc': toc,
-        'url': node_to_use.url
+        'url': node_to_use.url,
+        'category': node_to_use.category
     }
 
     rv.update(_view_project(node_to_use, user))
