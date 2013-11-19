@@ -148,14 +148,17 @@ class TestMetaData(DbTestCase):
 class TestNodeFile(DbTestCase):
 
     def setUp(self):
+        # Create a project with a NodeFile
         self.node = ProjectFactory()
         self.node_file = NodeFile(node=self.node, path="foo.py", filename="foo.py", size=128)
         self.node.files_versions[self.node_file.clean_filename] = [self.node_file._primary_key]
         self.node.save()
 
     def test_url(self):
-        assert_equal(self.node_file.api_url,
-            "{0}files/{1}/".format(self.node.api_url, self.node_file.filename))
+        assert_equal(
+            self.node_file.api_url,
+            "{0}files/{1}/".format(self.node.api_url, self.node_file.filename),
+        )
 
     def test_clean(self):
         assert_equal(self.node_file.clean_filename, "foo_py")
@@ -167,6 +170,44 @@ class TestNodeFile(DbTestCase):
         assert_equal(self.node_file.download_url,
             self.node.api_url + "files/download/{0}/version/1/".format(self.node_file.filename))
 
+
+class TestFiles(DbTestCase):
+
+    def setUp(self):
+        # Create a project
+        self.user1 = UserFactory()
+        api_key = ApiKeyFactory()
+        self.user1.api_keys.append(api_key)
+        self.project = ProjectFactory(creator=self.user1)
+        # Add a file
+        self.file_name = "foo.py"
+        self.file_key = self.file_name.replace(".", "_")
+        self.project.add_file(
+            self.user1,
+            self.user1.api_keys[0],
+            self.file_name,
+            "Content",
+            128,
+            "Type",
+        )
+        self.project.save()
+
+    def test_uploaded(self):
+        assert_equal(len(self.project.files_versions), 1)
+
+    def test_are_revised(self):
+        self.project.add_file(
+            self.user1,
+            self.user1.api_keys[0],
+            self.file_name,
+            "Content 2",
+            129,
+            "Type",
+        )
+        assert_equal(
+            len(self.project.files_versions[self.file_key]),
+            2,
+        )
 
 class TestApiKey(DbTestCase):
 
