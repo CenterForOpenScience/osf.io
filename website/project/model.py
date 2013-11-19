@@ -293,6 +293,9 @@ class Node(GuidStoredObject):
         super(Node, self).__init__(*args, **kwargs)
         # refactored code from new_node
 
+        if kwargs.get('_is_loaded', False):
+            return
+
         self.contributors.append(self.creator)
         self.contributor_list.append({'id': self._primary_key})
         self.save()
@@ -312,10 +315,11 @@ class Node(GuidStoredObject):
                 'project': self._primary_key,
             }
 
-        self.add_log(log_action,
-                     params=log_params,
-                     user=self.creator,
-                     log_date=self.date_created,
+        self.add_log(
+            log_action,
+            params=log_params,
+            user=self.creator,
+            log_date=self.date_created,
         )
 
     def serialize(self):
@@ -856,7 +860,6 @@ class Node(GuidStoredObject):
         return node_file
 
     def add_log(self, action, params, user, api_key=None, log_date=None, do_save=True):
-        print 'in add_log!'
         log = NodeLog()
         log.action=action
         log.user=user
