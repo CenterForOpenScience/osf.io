@@ -21,11 +21,14 @@ Messages = {
  * Return the id of the current node by parsing the current URL.
  */
 window.nodeToUse = function(){
-    if (location.pathname.match("\/project\/.*\/node\/.*")) {
-        return location.pathname.match("\/project\/.*?\/node\/(.*?)\/.*")[1];
-    } else {
-        return location.pathname.match("\/project\/(.*?)\/.*")[1];
-}
+    var match;
+    match = location.pathname.match("\/project\/.*?\/node\/(.*?)\/.*");
+    if (match)
+        return match[1];
+    match = location.pathname.match("\/project\/(.*?)\/.*");
+    if (match)
+        return match[1];
+    return undefined;
 };
 
 
@@ -33,15 +36,14 @@ window.nodeToUse = function(){
  * Return the api url for the current node by parsing the current URL.
  */
 window.nodeToUseUrl = function(){
-    try{
-        if (location.pathname.match("\/project\/.*\/node\/.*")) {
-            return '/api/v1' + location.pathname.match("(\/project\/.*?\/node\/.*?)\/.*")[1] + "/";
-        } else {
-            return '/api/v1' + location.pathname.match("(\/project\/.*?)\/.*")[1] + "/";
-        }
-    } catch(err) {
-        return undefined;
-    }
+    var match;
+    match = location.pathname.match("(\/project\/.*?\/node\/.*?)\/.*");
+    if (match)
+        return '/api/v1' + match[1] + '/';
+    match = location.pathname.match("(\/project\/.*?)\/.*");
+    if (match)
+        return '/api/v1' + match[1] + '/';
+    return undefined;
 };
 
 
