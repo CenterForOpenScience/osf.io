@@ -118,7 +118,6 @@ def node_fork_page(*args, **kwargs):
 
     return fork.url
 
-@must_have_session_auth
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
 @update_counters('node:{pid}')

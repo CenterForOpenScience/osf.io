@@ -196,10 +196,6 @@ def create_result(highlights, results):
     return result_search, tags
 
 import re
-import ast
-import urllib
-import urlparse
-import requests
 
 from website import settings
 from website.filters import gravatar
@@ -215,6 +211,7 @@ def search_contributor():
     """
     # Prepare query
     query = request.args.get('query', '')
+    query = re.sub(r'[\-\+]', ' ', query)
 
     # Prepend "user:" to each token in the query; else Solr will search for
     # e.g. user:Barack AND Obama. Also append * to each token so that "Josh"
@@ -225,22 +222,8 @@ def search_contributor():
         for token in re.split(r'\s+', query)
     ])
 
-    solr_params = {
-        'q': q,
-        'wt': 'python',
-    }
-    solr_url = '{}?{}'.format(
-        urlparse.urljoin(settings.solr, 'spell'),
-        urllib.urlencode(solr_params)
-    )
-
-    raw_output = requests.get(solr_url).content
-    parsed_output = ast.literal_eval(raw_output)
-
-    try:
-        docs = parsed_output['response']['docs']
-    except KeyError:
-        return []
+    result, highlight, spellcheck_result = search_solr(q)
+    docs = result.get('docs', [])
 
     users = []
     for doc in docs:

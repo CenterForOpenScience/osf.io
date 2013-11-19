@@ -1,5 +1,6 @@
 import re
 import os
+import cgi
 import json
 import time
 import zipfile
@@ -65,6 +66,12 @@ def get_files(*args, **kwargs):
         rv.update(_view_project(node_to_use, user))
     return rv
 
+def _clean_file_name(name):
+    " HTML-escape file name and encode to UTF-8. "
+    escaped = cgi.escape(name)
+    encoded = unicode(escaped).encode('utf-8')
+    return encoded
+
 def _get_files(filetree, parent_id, check, user):
     if parent_id is not None:
         parent_uid = 'node-{}'.format(parent_id)
@@ -98,7 +105,11 @@ def _get_files(filetree, parent_id, check, user):
     itemParent['sizeRead'] = '--'
     itemParent['dateModified'] = '--'
     parent_type = 'Project' if filetree[0].category == 'project' else 'Component'
-    itemParent['name'] = parent_type + ': ' + unicode(filetree[0].title).encode('utf-8')
+    itemParent['name'] = _clean_file_name(
+        u'{}: {}'.format(
+            parent_type, filetree[0].title
+        )
+    )
     itemParent['can_edit'] = str(
         filetree[0].is_contributor(user) and
         not filetree[0].is_registration
@@ -123,12 +134,12 @@ def _get_files(filetree, parent_id, check, user):
                 "nodefile",  # node or nodefile
                 str(tmp._id)  # ObjectId from pymongo
             ])
-            item['downloads'] = str(total) if total else '0'
+            item['downloads'] = total if total else 0
             item['isComponent'] = "false"
             item['parent_uid'] = str(itemParent['uid'])
             item['type'] = "file"
-            item['name'] = str(tmp.path)
-            item['ext'] = str(tmp.path.split('.')[-1])
+            item['name'] = _clean_file_name(tmp.path)
+            item['ext'] = _clean_file_name(tmp.path.split('.')[-1])
             item['sizeRead'] = [
                 float(tmp.size),
                 size(tmp.size, system=alternative)
@@ -178,7 +189,7 @@ def upload_file_get(*args, **kwargs):
                 "type": v.content_type,
                 "download_url": node_to_use.api_url + "files/download/" + v.path,
                 "date_uploaded": v.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
-                "downloads": str(total) if total else str(0),
+                "downloads": total if total else 0,
                 "user_id": None,
                 "user_fullname": None,
                 "delete": v.is_deleted,
@@ -238,7 +249,7 @@ def upload_file_public(*args, **kwargs):
             time.mktime(file_object.date_uploaded.timetuple()),
             file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
         ],
-        "downloads": str(total) if total else str(0),
+        "downloads": total if total else 0,
         "user_id": None,
         "user_fullname":None,
         "uid": '-'.join([

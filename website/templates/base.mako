@@ -13,7 +13,7 @@
 
     <!-- Le styles -->
     ## Don't bundle Bootstrap or else Glyphicons won't work
-    <link rel="stylesheet" href="/static/vendor/bootstrap3/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/vendor/bootstrap3/css/bootstrap-custom.css">
     <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
     % for url in css_all:
     <link rel="stylesheet" href="${url}">

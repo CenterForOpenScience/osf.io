@@ -1,0 +1,7 @@
+[run]
+include =
+    website/*
+    framework/*
+[report]
+exclude_lines =
+    raise NotImplementedError

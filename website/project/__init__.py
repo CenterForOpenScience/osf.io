@@ -23,7 +23,7 @@ seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
             raise RuntimeError("unexpected opcode")
     return ''.join(output)
 
-# TODO: These belong in framework.auth
+# TODO: These belong in project model
 def new_project(title, description, user):
     project = new_node('project', title, user, description)
     return project

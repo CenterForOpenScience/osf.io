@@ -41,6 +41,7 @@ nosetests.xml
 .hg
 .hgignore
 env/*
+cover/
 
 # Assets
 ########
