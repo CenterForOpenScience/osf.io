@@ -6,7 +6,7 @@
 
         % for k in pages_current:
             <li>
-                <a href="/project/${node_id}/wiki/${k}">${k}</a>
+                <a href="${url}wiki/${k}">${k}</a>
             </li>
         % endfor
 
@@ -21,7 +21,7 @@
                     % for k in child['pages']:
                         % if k != 'home':
                             <li class="">
-                                <a class= href="/project/${node_id}/node/${child['id']}/wiki/${k}">${k}</a>
+                                <a href="/project/${node_id}/node/${child['id']}/wiki/${k}">${k}</a>
                             </li>
                         % endif
                     % endfor

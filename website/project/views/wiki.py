@@ -161,7 +161,9 @@ def project_wiki_page(*args, **kwargs):
         'is_edit': False,
         'pages_current': node_to_use.wiki_pages_versions.keys(),
         'toc': toc,
+        'url': node_to_use.url
     }
+
     rv.update(_view_project(node_to_use, user))
     return rv
 
