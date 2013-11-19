@@ -52,7 +52,11 @@ def get_file_tree(node_to_use, user):
 @must_be_valid_project # returns project
 @must_be_contributor_or_public
 def get_files(*args, **kwargs):
+    """Build list of files for HGrid, ignoring contents of components to which
+    the user does not have access. Note: This view hides the titles of
+    inaccessible components but includes their GUIDs.
 
+    """
     # Get arguments
     node_to_use = kwargs['node'] or kwargs['project']
     user = get_current_user()
@@ -114,49 +118,49 @@ def _get_files(filetree, parent_id, check, user):
         filetree[0].is_contributor(user) and
         not filetree[0].is_registration
     ).lower()
-    if itemParent['can_edit'] =='false':
-        itemParent['uid'] = 'Private'
+    itemParent['can_view'] = str(filetree[0].can_edit(user)).lower()
+    if itemParent['can_view'] == 'false':
         itemParent['name'] = 'Private Component'
     #can_edit is can_view
-    itemParent['can_view'] = str(filetree[0].can_edit(user)).lower()
     if check == 0:
-        itemParent['parent_uid']="null"
+        itemParent['parent_uid'] = "null"
     info.append(itemParent)
-    for tmp in filetree[1]:
-        if isinstance(tmp, tuple):
-            info = info + _get_files(
-                filetree=tmp,
-                parent_id=filetree[0]._id,
-                check=1,
-                user=user
-            )['info']
-        else:
-            unique, total = get_basic_counters('download:' + str(filetree[0]._id) + ':' + tmp.path.replace('.', '_') )
-            item = {}
-            item['uid'] = '-'.join([
-                "nodefile",  # node or nodefile
-                str(tmp._id)  # ObjectId from pymongo
-            ])
-            item['downloads'] = total if total else 0
-            item['isComponent'] = "false"
-            item['parent_uid'] = str(itemParent['uid'])
-            item['type'] = "file"
-            item['name'] = _clean_file_name(tmp.path)
-            item['ext'] = _clean_file_name(tmp.path.split('.')[-1])
-            item['sizeRead'] = [
-                float(tmp.size),
-                size(tmp.size, system=alternative)
-            ]
-            item['size'] = str(tmp.size)
-            item['url'] = 'files/'.join([
-                str(filetree[0].url),
-                item['name'] + '/'
-            ])
-            item['dateModified'] = [
-                time.mktime(tmp.date_modified.timetuple()),
-                tmp.date_modified.strftime('%Y/%m/%d %I:%M %p')
-            ]
-            info.append(item)
+    if itemParent['can_view'] == 'true':
+        for tmp in filetree[1]:
+            if isinstance(tmp, tuple):
+                info = info + _get_files(
+                    filetree=tmp,
+                    parent_id=filetree[0]._id,
+                    check=1,
+                    user=user
+                )['info']
+            else:
+                unique, total = get_basic_counters('download:' + str(filetree[0]._id) + ':' + tmp.path.replace('.', '_') )
+                item = {}
+                item['uid'] = '-'.join([
+                    "nodefile",  # node or nodefile
+                    str(tmp._id)  # ObjectId from pymongo
+                ])
+                item['downloads'] = total if total else 0
+                item['isComponent'] = "false"
+                item['parent_uid'] = str(itemParent['uid'])
+                item['type'] = "file"
+                item['name'] = _clean_file_name(tmp.path)
+                item['ext'] = _clean_file_name(tmp.path.split('.')[-1])
+                item['sizeRead'] = [
+                    float(tmp.size),
+                    size(tmp.size, system=alternative)
+                ]
+                item['size'] = str(tmp.size)
+                item['url'] = 'files/'.join([
+                    str(filetree[0].url),
+                    item['name'] + '/'
+                ])
+                item['dateModified'] = [
+                    time.mktime(tmp.date_modified.timetuple()),
+                    tmp.date_modified.strftime('%Y/%m/%d %I:%M %p')
+                ]
+                info.append(item)
     return {'info': info}
 
 
