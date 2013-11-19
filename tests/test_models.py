@@ -171,7 +171,7 @@ class TestNodeFile(DbTestCase):
             self.node.api_url + "files/download/{0}/version/1/".format(self.node_file.filename))
 
 
-class TestFiles(DbTestCase):
+class TestAddFile(DbTestCase):
 
     def setUp(self):
         # Create a project
@@ -192,10 +192,10 @@ class TestFiles(DbTestCase):
         )
         self.project.save()
 
-    def test_uploaded(self):
+    def test_added(self):
         assert_equal(len(self.project.files_versions), 1)
 
-    def test_are_revised(self):
+    def test_revised(self):
         self.project.add_file(
             self.user1,
             self.user1.api_keys[0],
