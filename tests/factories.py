@@ -19,7 +19,7 @@ from factory import base, Sequence, SubFactory, PostGenerationMethodCall, post_g
 
 from framework.auth import User
 from website.project.model import (ApiKey, Node, NodeLog, WatchConfig,
-                                   MetaData, Tag)
+                                   MetaData, Tag, NodeWikiPage)
 
 class ModularOdmFactory(base.Factory):
 
@@ -38,6 +38,8 @@ class ModularOdmFactory(base.Factory):
         instance = target_class(*args, **kwargs)
         instance.save()
         return instance
+
+
 
 
 class UserFactory(ModularOdmFactory):
@@ -109,3 +111,13 @@ class WatchConfigFactory(ModularOdmFactory):
 
 class MetaDataFactory(ModularOdmFactory):
     FACTORY_FOR = MetaData
+
+
+class NodeWikiFactory(ModularOdmFactory):
+    FACTORY_FOR = NodeWikiPage
+
+    page_name = 'home'
+    version = 1
+    user = SubFactory(UserFactory)
+    node = SubFactory(NodeFactory)
+

@@ -13,7 +13,7 @@ from website.project.model import ApiKey, NodeFile
 from tests.base import DbTestCase, Guid
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
-    TagFactory)
+    TagFactory, NodeWikiFactory)
 
 
 GUID_FACTORIES = (UserFactory, TagFactory, NodeFactory, ProjectFactory,
@@ -170,9 +170,6 @@ class TestNodeFile(DbTestCase):
 
 class TestApiKey(DbTestCase):
 
-    def setUp(self):
-        pass
-
     def test_factory(self):
         key = ApiKeyFactory()
         user = UserFactory()
@@ -180,6 +177,27 @@ class TestApiKey(DbTestCase):
         user.save()
         assert_equal(len(user.api_keys), 1)
         assert_equal(ApiKey.find().count(), 1)
+
+
+class TestNodeWikiPage(DbTestCase):
+
+    def setUp(self):
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.wiki = NodeWikiFactory(user=self.user, node=self.project)
+
+    def test_factory(self):
+        wiki = NodeWikiFactory()
+        assert_true(wiki.page_name)
+        assert_true(wiki.version)
+        assert_true(hasattr(wiki, "is_current"))
+        assert_true(hasattr(wiki, "content"))
+        assert_true(wiki.user)
+        assert_true(wiki.node)
+
+    def test_url(self):
+        assert_equal(self.wiki.url, "{project_url}wiki/home/"
+                                    .format(project_url=self.project.url))
 
 
 class TestNode(DbTestCase):
