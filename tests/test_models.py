@@ -190,7 +190,6 @@ class TestNode(DbTestCase):
         self.node = NodeFactory.build(creator=self.user, project=self.parent)
         self.node.contributors.append(self.user)
         self.node.save()
-        #self.parent.nodes.append(self.node)
         self.parent.save()
 
     def test_node_factory(self):
@@ -225,7 +224,6 @@ class TestNodeWiki(DbTestCase):
         self.node = NodeFactory.build(creator=self.user, project=self.parent)
         self.node.contributors.append(self.user)
         self.node.save()
-        #self.parent.nodes.append(self.node)
         self.parent.save()
 
     def test_new_wiki(self):

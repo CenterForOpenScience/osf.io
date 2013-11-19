@@ -26,13 +26,6 @@ seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
 # TODO: These belong in framework.auth
 def new_project(title, description, user):
     project = new_node('project', title, user, description)
-    #project.add_log(NodeLog.PROJECT_CREATED,
-    #    params={
-    #        'project':project._primary_key,
-    #    },
-    #    user=user,
-    #    log_date=project.date_created
-    #)
     return project
 
 
@@ -50,27 +43,6 @@ def new_node(category, title, user, description=None, project=None):
         description=description,
         project=project,
     )
-    #new_node = Node(category=category)
-    #new_node.title=title
-    #new_node.description=description
-    #new_node.is_public=False
-    #
-    #new_node.creator = user
-    #new_node.contributors.append(user)
-    #new_node.contributor_list.append({'id': user._primary_key})
-    #new_node.save()
-    #
-    #if project:
-    #    project.nodes.append(new_node)
-    #    project.save()
-    #    new_node.add_log(NodeLog.NODE_CREATED,
-    #        params={
-    #            'node': new_node._primary_key,
-    #            'project': project._primary_key,
-    #        },
-    #        user=user,
-    #        log_date=new_node.date_created
-    #    )
 
     return new_node
 

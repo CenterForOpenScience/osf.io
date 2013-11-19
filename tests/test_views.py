@@ -34,7 +34,6 @@ class TestProjectViews(DbTestCase):
         self.user2 = UserFactory()
         # A project has 2 contributors
         self.project = ProjectFactory(title="Ham", creator=self.user1)
-        #self.project.add_contributor(self.user1)
         self.project.add_contributor(self.user2)
         self.project.api_keys.append(api_key)
         self.project.save()
@@ -235,10 +234,12 @@ class TestWatchViews(DbTestCase):
         self.project.logs[0].date = dt.datetime.utcnow() - dt.timedelta(days=100)
         self.project.logs[0].save()
         # A log added now
-        self.last_log = self.project.add_log(NodeLog.TAG_ADDED, params={'project': self.project._primary_key},
-                                             user=self.user, log_date=dt.datetime.utcnow(),
-                                             api_key=self.auth[1],
-                                             do_save=True)
+        self.last_log = self.project.add_log(
+            NodeLog.TAG_ADDED, params={'project': self.project._primary_key},
+            user=self.user, log_date=dt.datetime.utcnow(),
+            api_key=self.auth[1],
+            do_save=True,
+        )
         # Clear watched list
         self.user.watched = []
         self.user.save()
