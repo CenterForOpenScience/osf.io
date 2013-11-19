@@ -217,8 +217,16 @@ def project_wiki_edit_post(*args, **kwargs):
         status.push_status_message("This is an invalid wiki page name")
         raise HTTPError(http.BAD_REQUEST, redirect_url='{}wiki/'.format(node_to_use.url))
 
-    node_to_use.update_node_wiki(wid, request.form['content'], user, api_key=None)
+    pw = node_to_use.get_wiki_page(wid)
 
-    return {
-        'status' : 'success',
-    }, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
+    if pw:
+        content = pw.content
+    else:
+        content = ''
+    if request.form['content'] != content:
+        node_to_use.update_node_wiki(wid, request.form['content'], user, api_key=None)
+        return {
+            'status' : 'success',
+        }, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
+    else:
+        return {}, None, None, '{}wiki/{}/'.format(node_to_use.url,wid)
