@@ -48,7 +48,7 @@
                         <a rel="tooltip" title="Watch" class="btn btn-default disabled" href="#">
                     % endif
                     <i class="icon-eye-open"></i>
-                    <span data-bind="text: projects()[0].watchButtonDisplay" id="watchCount"></span>
+                    <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
 
                     </a>
 
@@ -99,9 +99,9 @@
                 % endfor
             % endif
             <br />Date Created:
-                <span class="date node-date-created">${node['date_created']}</span>
+                <span data-bind="text: dateCreated()" class="date node-date-created"></span>
             | Last Updated:
-            <span class="date node-last-modified-date">${node['date_modified']}</span>
+            <span data-bind="text: dateModified()" class="date node-last-modified-date"></span>
 
             % if node:
                 <br />Category: <span class="node-category">${node['category']}</span>
@@ -126,7 +126,7 @@
             </ul>
         </nav>
     </header>
-</div>
+</div><!-- end projectScope -->
 <%include file="modal_add_contributor.mako"/>
 ## TODO: Find a better place to put this initialization code
 <script>

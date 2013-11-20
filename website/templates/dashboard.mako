@@ -29,7 +29,7 @@
                     </p>
                      <dl class="dl-horizontal activity-log"
                         data-bind="foreach: {data: logs, as: 'log'}">
-                        <dt><span class="date log-date" data-bind="text: log.localDatetime, tooltip: {title: log.utcDatetime}"></span></dt>
+                        <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
                       <dd class="log-content">
                         <a data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
                         <!-- log actions are the same as their template name -->
