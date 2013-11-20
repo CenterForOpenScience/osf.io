@@ -221,6 +221,18 @@ myGrid.hGridOnUpload.subscribe(function(e, args){
     return false;
 });
 
+myGrid.dropZoneObj.options.maxFilesize = 250;
+
+myGrid.dropZoneObj.on("error", function(file, errorMessage, xhr){
+    if(errorMessage.indexOf("Max filesize")!=-1){
+        alert(errorMessage);
+        var item = myGrid.getItemByValue(myGrid.data, file.name, "uid")
+        if(item){
+            myGrid.deleteItems([item['uid']]);
+        }
+    }
+});
+
 ##var date1=0;
 ##
 ##myGrid.dropZoneObj.on("sending", function(file, xhr, formData){
