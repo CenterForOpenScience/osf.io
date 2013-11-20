@@ -113,6 +113,7 @@ class NodeLog(StoredObject):
     # Log action constants
     PROJECT_CREATED = "project_created"
     NODE_CREATED = "node_created"
+    NODE_REMOVED = "node_removed"
     WIKI_UPDATED = "wiki_updated"
     CONTRIB_ADDED = "contributor_added"
     CONTRIB_REMOVED = "contributor_removed"

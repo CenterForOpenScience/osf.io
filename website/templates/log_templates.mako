@@ -8,6 +8,11 @@ created <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 
+<script type="text/html" id="node_removed">
+removed <span data-bind="text: nodeCategory"></span>
+<span data-bind="text: nodeTitle"></span>
+</script>
+
 <script type="text/html" id="wiki_updated">
 updated wiki page
 <a data-bind="attr: {href: wikiUrl}, text: params.page"></a>
