@@ -9,17 +9,17 @@
     <div class="col-md-7" id='containment'>
       <section id="Wiki Home">
         <div>
-            ${ wiki_home }
-            <p><a href="${node_url}wiki/home">read more</a></p>
+            ${ node["wiki_home"] }
+            <p><a href="${node['url']}wiki/home">read more</a></p>
         </div>
       </section>
-       %if not node:
+       %if node:
       <section id="Nodes">
 
           <div class="page-header">
-            % if node_category == 'project':
+            % if node["category"] == 'project':
               <div class="pull-right">
-                  % if user_can_edit:
+                  % if user["can_edit"]:
                   <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">
                   % else:
                   <a class="btn btn-default disabled">
@@ -31,10 +31,10 @@
             % endif
               <h1>Components</h1>
           </div>
-          % if node_children:
+          % if node["children"]:
               <div mod-meta='{
                       "tpl" : "util/render_nodes.mako",
-                      "uri" : "${node_api_url}get_children/",
+                      "uri" : "${node["api_url"]}get_children/",
                       "replace" : true,
                       "kwargs" : {"sortable" : true}
                   }'></div>
@@ -51,7 +51,7 @@
           </div>
           <div mod-meta='{
                   "tpl": "util/render_file_tree.mako",
-                  "uri": "${node_api_url}get_files/",
+                  "uri": "${node["api_url"]}get_files/",
                   "view_kwargs": {
                       "dash": true
                   },
@@ -61,7 +61,7 @@
       </section>
     </div>
     <div class="col-md-5">
-        <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node_tags]) if node_tags else ''}" />
+        <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
             <div id='logScope'>
                 <p class="help-block" data-bind="if:tzname">
                     All times displayed at
@@ -97,7 +97,7 @@
 ##<div mod-meta='{
 ##        "tpl": "metadata/comment_group.mako",
 ##        "kwargs": {
-##            "guid": "${node_id}",
+##            "guid": "${node['id']}",
 ##            "top": true
 ##        },
 ##        "replace": true
@@ -116,16 +116,16 @@
     $(document).ready(function() {
 
         ### Editable Title ###
-        %if user_can_edit:
+        %if user["can_edit"]:
                 $(function() {
                     $('#node-title-editable').editable({
                        type:  'text',
-                       pk:    '${node_id}',
+                       pk:    '${node["id"]}',
                        name:  'title',
-                       url:   '${node_api_url}edit/',
+                       url:   '${node["api_url"]}edit/',
                        title: 'Edit Title',
                        placement: 'bottom',
-                       value: "${ '\\\''.join(node_title.split('\'')) }",
+                       value: "${ '\\\''.join(node['title'].split('\'')) }",
                        success: function(data){
                             document.location.reload(true);
                        }
@@ -137,23 +137,23 @@
 
         $('#node-tags').tagsInput({
             width: "100%",
-            interactive:${'true' if user_can_edit else 'false'},
+            interactive:${'true' if user["can_edit"] else 'false'},
             onAddTag:function(tag){
                 $.ajax({
-                    url:"${node_api_url}" + "addtag/" + tag + "/",
+                    url:"${node['api_url']}" + "addtag/" + tag + "/",
                     type:"POST",
                     contentType: "application/json"
                 });
             },
             onRemoveTag:function(tag){
                 $.ajax({
-                    url:"${node_api_url}" + "removetag/" + tag + "/",
+                    url:"${node['api_url']}" + "removetag/" + tag + "/",
                     type:"POST",
                     contentType: "application/json"
                 });
             },
         });
-        % if not user_can_edit:
+        % if not user["can_edit"]:
             // Remove delete UI if not contributor
             $('a[title="Removing tag"]').remove();
             $('span.tag span').each(function(idx, elm) {

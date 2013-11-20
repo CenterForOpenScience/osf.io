@@ -140,10 +140,10 @@ var ProjectViewModel = function() {
         dataType: "json",
         success: function(data){
             project = new Project({
-                "_id": data.node_id,
-                "apiUrl": data.node_api_url,
-                "watchCount": data.node_watched_count,
-                "userIsWatching": data.user_is_watching,
+                "_id": data.node.id,
+                "apiUrl": data.node.api_url,
+                "watchCount": data.node.watched_count,
+                "userIsWatching": data.user.is_watching,
                 "logs": data.logs
             });
             self.projects([project]);

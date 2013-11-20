@@ -39,11 +39,11 @@ def _render_node(node):
     :param node:
     :return:
     """
-    return {
-        'id': node._primary_key,
+    return {'id': node._primary_key,
         'url': node.url,
-        'api_url': node.api_url,
-    }
+        'api_url': node.api_url
+        }
+
 
 
 def _render_nodes(nodes):
@@ -52,13 +52,15 @@ def _render_nodes(nodes):
     :param nodes:
     :return:
     """
-    return {
+    ret = {
         'nodes' : [
             _render_node(node)
             for node in nodes
         ],
         'rescale_ratio' : _rescale_ratio(nodes),
     }
+    logging.error(ret)
+    return ret
 
 
 def _get_user_activity(node, user, rescale_ratio):
