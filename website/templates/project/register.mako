@@ -84,7 +84,7 @@
                 var $this = $(this);
                 if (!$this.hasClass('disabled')) {
                     $this.addClass('disabled');
-                    $this.text("Registing");
+                    $this.text("Registering");
                     $this.closest('form').submit();
                 }
                 return false;
