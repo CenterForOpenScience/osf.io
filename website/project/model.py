@@ -108,7 +108,7 @@ class NodeLog(StoredObject):
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
 
-    DATE_FORMAT = '%m/%d/%Y %I:%M %p UTC'
+    DATE_FORMAT = '%m/%d/%Y %H:%M  UTC'
 
     # Log action constants
     PROJECT_CREATED = "project_created"

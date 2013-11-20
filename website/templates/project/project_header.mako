@@ -106,7 +106,7 @@
             <span data-bind="text: dateModified.local,
                             tooltip: {title: dateModified.utc}"
                    class="date node-last-modified-date"></span>
-            % if node:
+            % if parent['id']:
                 <br />Category: <span class="node-category">${node['category']}</span>
             % else:
                 % if node['description']:

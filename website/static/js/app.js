@@ -18,7 +18,7 @@ UTC_DATEFORMAT = "l H:mm UTC";
 var FormattableDate = function(date) {
     this.date = date;
     this.local = moment(date).format(LOCAL_DATEFORMAT);
-    this.utc = moment(date).format(UTC_DATEFORMAT);
+    this.utc = moment.utc(date).format(UTC_DATEFORMAT);
 }
 
 var Log = function(params) {
