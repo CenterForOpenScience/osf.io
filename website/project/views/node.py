@@ -280,35 +280,20 @@ def togglewatch_post(*args, **kwargs):
 @must_be_contributor # returns user, project
 @must_not_be_registration
 def component_remove(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
+    """Remove component, and recursively remove its children. If node has a
+    parent, add log and redirect to parent; else redirect to user dashboard.
+
+    """
+    node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
 
-    if len(node_to_use.node__parent) == 0:
-        if node_to_use.remove_node(user=user):
-            category = 'project' \
-                if node_to_use.category == 'project' \
-                else 'component'
-            message = '{} deleted'.format(category.capitalize())
-            status.push_status_message(message)
-            return {
-                'status': 'success',
-                'message': message,
-            }, None, None, '/dashboard/'
-        else:
-            raise HTTPError(http.BAD_REQUEST, message='Could not delete component')
-    else:
-
-        if node_to_use.remove_node(user=user):
-            category = 'project' \
-                if node_to_use.category == 'project' \
-                else 'component'
-            message = '{} deleted'.format(category.capitalize())
-            status.push_status_message(message)
+    if node_to_use.remove_node(user=user):
+        category = 'project' \
+            if node_to_use.category == 'project' \
+            else 'component'
+        message = '{} deleted'.format(category.capitalize())
+        status.push_status_message(message)
+        if node_to_use.node__parent:
             node_to_use.node__parent[0].add_log(
                 NodeLog.NODE_REMOVED,
                 params={
@@ -317,12 +302,15 @@ def component_remove(*args, **kwargs):
                 user=user,
                 log_date=datetime.datetime.utcnow()
             )
-            return {
-                'status': 'success',
-                'message': message,
-            }, None, None, '/dashboard/'
+            redirect_url = node_to_use.node__parent[0].url
         else:
-            raise HTTPError(http.BAD_REQUEST, message='Could not delete component')
+            redirect_url = '/dashboard/'
+        return {
+            'status': 'success',
+            'message': message,
+        }, None, None, redirect_url
+    else:
+        raise HTTPError(http.BAD_REQUEST, message='Could not delete component')
 
 
 @must_be_valid_project
