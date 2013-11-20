@@ -19,8 +19,12 @@
             "uri": "${node_api_url}get_registrations/",
             "replace": true
         }'></div>
-% else:
+% elif node_category == 'project':
 	There have been no registrations of this specific project.
+    For a list of the most viewed and most recent public registrations on the
+    Open Science Framework, click <a href="/explore/activity/">here</a>.
+% elif node_category == 'component':
+    There have been no registrations of this specific component.
     For a list of the most viewed and most recent public registrations on the
     Open Science Framework, click <a href="/explore/activity/">here</a>.
 % endif
