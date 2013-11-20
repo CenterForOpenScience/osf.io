@@ -315,13 +315,14 @@ class Node(GuidStoredObject):
         }
 
     def can_edit(self, user, api_key=None):
-
         return (
-            self.is_public
-            or self.is_contributor(user)
+            self.is_contributor(user)
             or (api_key is not None and self is api_key.node)
             or (bool(user) and user == self.creator)
         )
+
+    def can_view(self, user, api_key=None):
+        return self.is_public or self.can_edit(user, api_key)
 
     def save(self, *args, **kwargs):
         rv = super(Node, self).save(*args, **kwargs)
@@ -409,29 +410,42 @@ class Node(GuidStoredObject):
 
             update_solr(solr_document)
 
-    def remove_node(self, user, date=None):
-        if not date:
-            date = datetime.datetime.utcnow()
+    def remove_node(self, user, api_key=None, date=None, top=True):
+        """Remove node and recursively remove its children. Does not remove
+        nodes from database; instead, removed nodes are flagged as deleted.
+        Git repos are also not deleted. Adds a log to the parent node if top
+        is True.
 
-        node_objects = []
+        :param user: User removing the node
+        :param api_key: API key used to remove the node
+        :param date: Date node was removed
+        :param top: Is this the first node being removed?
 
-        if self.nodes and len(self.nodes) > 0:
-            node_objects = self.nodes
+        """
+        if not self.can_edit(user, api_key):
+            return False
 
-        #if self.node_registations and len(self.node_registrations) > 0:
-        #    return False
+        date = date or datetime.datetime.utcnow()
 
-        for node in node_objects:
-            #if not node.user_is_contributor(user):
-            #    return False
-
+        # Remove child nodes
+        for node in self.nodes:
             if not node.category == 'project':
-                if not node.remove_node(user, date=date):
+                if not node.remove_node(user, api_key, date=date, top=False):
                     return False
+
+        # Add log to parent
+        if top and self.node__parent:
+            self.node__parent[0].add_log(
+                NodeLog.NODE_REMOVED,
+                params={
+                    'project': self._primary_key,
+                },
+                user=user,
+                log_date=datetime.datetime.utcnow(),
+            )
 
         # Remove self from parent registration list
         if self.is_registration:
-            # registered_from = Node.load(self.registered_from)
             try:
                 self.registered_from.registration_list.remove(self._primary_key)
                 self.registered_from.save()
@@ -455,7 +469,7 @@ class Node(GuidStoredObject):
     def fork_node(self, user, api_key=None, title='Fork of '):
 
         # todo: should this raise an error?
-        if not self.can_edit(user, api_key):
+        if not self.can_view(user, api_key):
             return
 
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)

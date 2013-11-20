@@ -294,14 +294,6 @@ def component_remove(*args, **kwargs):
         message = '{} deleted'.format(category.capitalize())
         status.push_status_message(message)
         if node_to_use.node__parent:
-            node_to_use.node__parent[0].add_log(
-                NodeLog.NODE_REMOVED,
-                params={
-                    'project': node_to_use._primary_key,
-                    },
-                user=user,
-                log_date=datetime.datetime.utcnow()
-            )
             redirect_url = node_to_use.node__parent[0].url
         else:
             redirect_url = '/dashboard/'
@@ -402,7 +394,7 @@ def _get_children(node, user, indent=0):
     children = []
 
     for child in node.nodes:
-        if node.can_edit(user):
+        if node.can_view(user):
             children.append({
                 'id': child._primary_key,
                 'title': child.title,
@@ -470,7 +462,7 @@ def get_summary(*args, **kwargs):
     rescale_ratio = kwargs.get('rescale_ratio')
     node_to_use = kwargs['node'] or kwargs['project']
 
-    if node_to_use.can_edit(user, api_key):
+    if node_to_use.can_view(user, api_key):
         summary = {
             'can_view': True,
             'id': node_to_use._primary_key,

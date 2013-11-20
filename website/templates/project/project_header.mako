@@ -72,12 +72,12 @@
 
 
             <div class="col-md-8">
-                %if parent['id']:
-                    <h1 style="display:inline-block" class="node-parent-title">
-                        <a href="/project/${parent['id']}/">${parent['title']}</a> /
+                %if parent_id:
+                    <h1 style="display:inline-block;word-wrap:break-word;width:100%" class="node-parent-title">
+                        <a href="/project/${parent_id}/">${parent_title}</a> /
                     </h1>
                 %endif
-                <h1 id="${'node-title-editable' if user['can_edit'] else 'node-title'}" class='node-title' style="display:inline-block">${node['title']}</h1>
+                <h1 id="${'node-title-editable' if user_can_edit else 'node-title'}" class='node-title' style="display:inline-block;word-wrap:break-word;width:100%;">${node_title}</h1>
             </div>
 
         </div><!-- end row -->
