@@ -92,6 +92,8 @@ var LogsViewModel = function(url) {
     } else {
         getUrl = nodeToUseUrl() + "log/";
     }
+    self.progressBar = $("#logProgressBar")
+    self.progressBar.show();
     $.ajax({
         url: getUrl,
         type: "get",
@@ -114,6 +116,7 @@ var LogsViewModel = function(url) {
                     "nodeTitle": item.node_title
                 })
             });
+            self.progressBar.hide();
             self.logs(mappedLogs);
         }
     });
@@ -129,6 +132,7 @@ var ProjectViewModel = function(params) {
     self.apiUrl = params.node.api_url;
     self.dateCreated = new FormattableDate(params.node.date_created);
     self.dateModified = new FormattableDate(params.node.date_modified);
+    self.dateForked = new FormattableDate(params.node.forked_date);
     self.watchedCount = ko.observable(params.node.watched_count);
     self.userIsWatching = ko.observable(params.user.is_watching);
     // The button text to display (e.g. "Watch" if not watching)

@@ -22,6 +22,12 @@
                 <h3>Watched Projects</h3>
                 </div>
                 <div id="logScope" data-target="/api/v1/watched/logs/">
+                <div id="logProgressBar" class="progress progress-striped active">
+                  <div class="progress-bar"  role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+                    <span class="sr-only">Loading</span>
+                  </div>
+                </div>
+                <%include file="log_templates.mako"/>
                     <p class="help-block" data-bind="if:tzname">
                         All times displayed at
                         <span data-bind="text:tzname"></span>
@@ -35,7 +41,6 @@
                         <!-- log actions are the same as their template name -->
                         <span data-bind="template: {name: log.action, data: log}"></span>
                       </dd>
-
                     </dl><!-- end foreach logs -->
                 </div><!-- end #logScope -->
             </div><!-- end #watchFeed -->
@@ -43,7 +48,6 @@
     </div>
 </div>
 
-<%include file="log_templates.mako"/>
 </%def>
 
 <%def name="javascript_bottom()">

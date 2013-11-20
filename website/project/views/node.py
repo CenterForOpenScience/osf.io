@@ -22,7 +22,6 @@ from website.project.forms import NewProjectForm, NewNodeForm
 from website.models import WatchConfig
 from website import settings
 from website.views import _render_nodes
-import datetime
 
 logger = logging.getLogger(__name__)
 
