@@ -84,13 +84,25 @@
                 var $this = $(this);
                 if (!$this.hasClass('disabled')) {
                     $this.addClass('disabled');
+                    $this.text("Registing");
                     $this.closest('form').submit();
                 }
                 return false;
             });
 
             $('#registration_template').on('submit', function(event) {
-
+                $.blockUI({
+                    css: {
+                        border: 'none',
+                        padding: '15px',
+                        backgroundColor: '#000',
+                        '-webkit-border-radius': '10px',
+                        '-moz-border-radius': '10px',
+                        opacity: .5,
+                        color: '#fff'
+                    },
+                    message: 'Please wait'
+                });
                 // Initialize variables
                 var $this = $(this),
                     data = {};
@@ -108,10 +120,14 @@
                     data: JSON.stringify(data),
                     contentType: "application/json",
                     success: function(response) {
-                        if (response.status === 'success')
+                        if (response.status === 'success'){
                             window.location.href = response.result;
-                        else if (response.status === 'error')
+                        }
+                        else if (response.status === 'error'){
+                            $.unblockUI();
                             window.location.reload();
+                            bootbox.alert('Registration failed');
+                        }
                     },
                     dataType: 'json'
                 });

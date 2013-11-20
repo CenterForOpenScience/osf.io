@@ -80,7 +80,7 @@ $(document).ready(function(){
     // Build tooltips on user activity widgets
     $('.ua-meter').tooltip();
     $("[rel=tooltip]").tooltip({
-        placement:'bottom',
+        placement:'bottom'
     });
 
     //  Initiate tag cloud (on search page)
@@ -92,7 +92,6 @@ $(document).ready(function(){
     $(function () {
       $('#whatever a').tagcloud();
     });
-
 
 
 });

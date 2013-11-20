@@ -50,15 +50,34 @@ window.nodeToUseUrl = function(){
 window.NodeActions = {};  // Namespace for NodeActions
 // TODO: move me to the ProjectViewModel
 NodeActions.forkNode = function(){
+
+    $.blockUI({
+            css: {
+                border: 'none',
+                padding: '15px',
+                backgroundColor: '#000',
+                '-webkit-border-radius': '10px',
+                '-moz-border-radius': '10px',
+                opacity: .5,
+                color: '#fff'
+            },
+            message: 'Please wait'
+        });
+
     $.ajax({
         url: nodeToUseUrl() + "fork/",
-        type: "POST",
+        type: "POST"
     }).done(function(response) {
         window.location = response;
+    }).fail(function() {
+        $.unblockUI();
+        bootbox.alert('Forking failed');
     });
 };
 
 NodeActions.addNodeToProject = function(node, project){
+
+
     $.ajax({
        url:"/project/" + project + "/addnode/" + node,
        type:"POST",
@@ -67,7 +86,30 @@ NodeActions.addNodeToProject = function(node, project){
            $('#node'+node).onclick = function(){};
            $('#node'+node).html('Added');
        });
+
 };
+
+$(function(){
+    $('#newComponent form').on('submit', function(e) {
+          e.preventDefault();
+
+          $(e.target)
+              .find("#add-component-submit")
+              .attr("disabled", "disabled")
+              .text("Adding");
+
+          $.ajax({
+               url: $(e.target).attr("action"),
+               type:"POST",
+               data:$(e.target).serialize()
+          }).done(function(){
+              location.reload();
+          }).fail(function() {
+               location.reload();
+               bootbox.alert('Adding component failed');
+          });
+     });
+});
 
 NodeActions.removeUser = function(userid, name) {
     bootbox.confirm('Remove ' + name + ' from contributor list?', function(result) {
