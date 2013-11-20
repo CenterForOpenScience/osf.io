@@ -16,7 +16,7 @@
     </div>
     <div class="col-md-4">
       	<ol class="breadcrumb">
-            <li><a class="overflow" href="${node_url}files/">${node_title}</a></li>
+            <li><a href="${node_url}files/">${node_title}</a></li>
   			<li class="active overflow" >${file_name}</li>
 		</ol>
 		<table class="table table-striped" id='file-version-history'>
