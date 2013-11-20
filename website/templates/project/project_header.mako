@@ -99,10 +99,13 @@
                 % endfor
             % endif
             <br />Date Created:
-                <span data-bind="text: dateCreated()" class="date node-date-created"></span>
+                <span data-bind="text: dateCreated.local,
+                                tooltip: {title: dateCreated.utc}"
+                     class="date node-date-created"></span>
             | Last Updated:
-            <span data-bind="text: dateModified()" class="date node-last-modified-date"></span>
-
+            <span data-bind="text: dateModified.local,
+                            tooltip: {title: dateModified.utc}"
+                   class="date node-last-modified-date"></span>
             % if node:
                 <br />Category: <span class="node-category">${node['category']}</span>
             % else:
@@ -141,7 +144,18 @@
         $addContributors.on('hidden', function() {
             viewModel.clear();
         });
-        ko.applyBindings(new ProjectViewModel(), $("#projectScope")[0]);
+
+        // Get project data from the server and initiate the ProjectViewModel
+        $.ajax({
+            url: nodeToUseUrl(),
+            type: "get", contentType: "application/json",
+            dataType: "json",
+            cache: false,
+            success: function(data){
+                // Initialize ProjectViewModel with returned data
+                ko.applyBindings(new ProjectViewModel(data), $("#projectScope")[0]);
+            }
+        });
     });
 </script>
 </div><!-- end container -->

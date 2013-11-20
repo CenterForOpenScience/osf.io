@@ -119,39 +119,23 @@ var LogsViewModel = function(url) {
 };
 
 /**
- * The project VM, scoped to the project page header.
+ * The ProjectViewModel, scoped to the project header.
+ * @param {Object} params The parsed project data returned from the server
  */
-var ProjectViewModel = function() {
+var ProjectViewModel = function(params) {
     var self = this;
-    self._id = null;
-    self.apiUrl = "";
-    self.dateCreated = ko.observable();
-    self.dateModified = ko.observable();
-    self.watchedCount = ko.observable(0);
-    self.userIsWatching = ko.observable(false);
+    self._id = params.node.id;
+    self.apiUrl = params.node.api_url;
+    self.dateCreated = new FormattableDate(params.node.date_created);
+    self.dateModified = new FormattableDate(params.node.date_modified);
+    self.watchedCount = ko.observable(params.node.watched_count);
+    self.userIsWatching = ko.observable(params.user.is_watching);
     // The button text to display (e.g. "Watch" if not watching)
     self.watchButtonDisplay = ko.computed(function() {
         var text = self.userIsWatching() ? "Unwatch" : "Watch"
         var full = text + " " +self.watchedCount().toString();
         return full;
     });
-    // Get data from server and update ViewModel on success
-    $.ajax({
-        url: nodeToUseUrl(),
-        type: "get", contentType: "application/json",
-        dataType: "json",
-        cache: false,
-        success: function(data){
-            // Update all properties from JSON data
-            self._id =  data.node.id;
-            self.apiUrl = data.node.api_url;
-            self.dateCreated(data.node.date_created);
-            self.dateModified(data.node.date_modified);
-            self.watchedCount(data.node.watched_count);
-            self.userIsWatching(data.user.is_watching);
-        }
-    });
-
 
     /**
      * Toggle the watch status for this project.
