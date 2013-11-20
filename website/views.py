@@ -53,13 +53,12 @@ def _render_nodes(nodes):
     :return:
     """
     ret = {
-        'nodes' : [
+        'nodes': [
             _render_node(node)
             for node in nodes
         ],
-        'rescale_ratio' : _rescale_ratio(nodes),
+        'rescale_ratio': _rescale_ratio(nodes),
     }
-    logging.error(ret)
     return ret
 
 

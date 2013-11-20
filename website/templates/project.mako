@@ -63,29 +63,14 @@
     <div class="col-md-5">
         <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
             <div id='logScope'>
-                <p class="help-block" data-bind="if:tzname">
-                    All times displayed at
-                    <span data-bind="text:tzname"></span>
-                    <a href="http://en.wikipedia.org/wiki/Coordinated_Universal_Time" target="_blank">UTC</a> offset.
-                </p>
-                 <dl class="dl-horizontal activity-log"
-                    data-bind="foreach: {data: logs, as: 'log'}">
-                    <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
-                  <dd class="log-content">
-                    <a data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
-                    <!-- log actions are the same as their template name -->
-                    <span data-bind="template: {name: log.action, data: log}"></span>
-                  </dd>
-
-                </dl><!-- end foreach logs -->
-            </div>
+                <%include file="log_list.mako"/>
+            </div><!-- end #logScope -->
             ## Hide More widget until paging for logs is implemented
             ##<div class="paginate pull-right">more</div>
         </section>
     </div>
   </div>
 
-<%include file="log_templates.mako"/>
 
 ##<!-- Include Knockout and view model -->
 ##<div mod-meta='{
