@@ -35,6 +35,10 @@ class TestUser(DbTestCase):
         assert_equal(User.find().count(), 2)
         assert_true(user.date_registered)
 
+    def test_absolute_url(self):
+        expected = "http://osf.io/profile/{0}/".format(self.user._primary_key)
+        assert_equal(self.user.absolute_url, expected)
+
     def test_is_watching(self):
         # User watches a node
         watched_node = NodeFactory()

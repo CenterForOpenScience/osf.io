@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import itertools
 import datetime as dt
+import urlparse
 
 import pytz
 import bson
@@ -56,6 +57,10 @@ class User(GuidStoredObject):
     @property
     def url(self):
         return '/profile/{}/'.format(self._primary_key)
+
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin("http://" + settings.SHORT_DOMAIN, self.url)
 
     @property
     def is_merged(self):
