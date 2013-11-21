@@ -87,3 +87,7 @@ updated file <span data-bind="text: params.path"></span> in
 created fork from <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
+
+<script type="text/html" id="edit_description">
+edited description of <span data-bind="text: nodeCategory"></span> <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>

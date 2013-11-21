@@ -100,26 +100,49 @@
 <script>
     $(document).ready(function() {
 
-        ### Editable Title ###
+        ### Editable Title and Description ###
         %if user["can_edit"]:
-                $(function() {
-                    $('#node-title-editable').editable({
-                       type:  'text',
-                       pk:    '${node["id"]}',
-                       name:  'title',
-                       url:   '${node["api_url"]}edit/',
-                       ajaxOptions: {
-                            "dataType": "json",
-                            "contentType": "application/json"
-                       }
-                       title: 'Edit Title',
-                       placement: 'bottom',
-                       value: "${ '\\\''.join(node['title'].split('\'')) }",
-                       success: function(data){
-                            document.location.reload(true);
-                       }
-                    });
-                });
+            $('#node-title-editable').editable({
+               type:  'text',
+               pk:    '${node["id"]}',
+               name:  'title',
+               url:   '${node["api_url"]}edit/',
+               ajaxOptions: {
+                    "dataType": "json",
+                    "contentType": "application/json"
+               },
+               params: function(params){
+                    // Send JSON data
+                    return JSON.stringify(params);
+               },
+               title: 'Edit Title',
+               placement: 'bottom',
+               value: "${ '\\\''.join(node['title'].split('\'')) }",
+               success: function(data){
+                    document.location.reload(true);
+               }
+            });
+
+            $('#nodeDescriptionEditable').editable({
+                   type:  'text',
+                   pk:    '${node["id"]}',
+                   name:  'description',
+                   value: "${ '\\\''.join(node['description'].split('\'')) }",
+                   url:   '${node["api_url"]}edit/',
+                   ajaxOptions: {
+                        "dataType": "json",
+                        "contentType": "application/json"
+                   },
+                   params: function(params){
+                        // Send JSON data
+                        return JSON.stringify(params);
+                   },
+                   title: 'Edit Description',
+                   placement: 'bottom',
+                   success: function(data){
+                        document.location.reload(true);
+                   }
+            });
         %endif
 
         ### Tag Input ###

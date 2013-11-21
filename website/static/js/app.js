@@ -26,6 +26,7 @@ var Log = function(params) {
     self.action = params.action;
     self.date = new FormattableDate(params.date);
     self.nodeCategory = params.nodeCategory;
+    self.nodeDescription = params.nodeDescription;
     self.nodeTitle = params.nodeTitle;
     self.contributor = params.contributor;
     self.contributors = params.contributors;
@@ -113,7 +114,8 @@ var LogsViewModel = function(url) {
                     "userURL": item.user_url,
                     "apiKey": item.api_key,
                     "params": item.params,
-                    "nodeTitle": item.node_title
+                    "nodeTitle": item.node_title,
+                    "nodeDescription": item.params.description_new
                 })
             });
             self.progressBar.hide();
@@ -135,6 +137,7 @@ var ProjectViewModel = function(params) {
     self.dateForked = new FormattableDate(params.node.forked_date);
     self.watchedCount = ko.observable(params.node.watched_count);
     self.userIsWatching = ko.observable(params.user.is_watching);
+    self.description = params.node.description;
     // The button text to display (e.g. "Watch" if not watching)
     self.watchButtonDisplay = ko.computed(function() {
         var text = self.userIsWatching() ? "Unwatch" : "Watch"
