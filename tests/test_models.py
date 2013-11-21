@@ -455,6 +455,38 @@ class TestProject(DbTestCase):
     def test_creator_can_edit(self):
         assert_true(self.project.can_edit(self.user))
 
+    def test_noncontributor_cant_edit_public(self):
+        user1 = UserFactory()
+        # Change project to public
+        self.project.set_permissions('public')
+        self.project.save()
+        # Noncontributor can't edit
+        assert_false(self.project.can_edit(user1))
+
+    def test_can_view_private(self):
+        # Create contributor and noncontributor
+        contributor = UserFactory()
+        other_guy = UserFactory()
+        self.project.add_contributor(contributor=contributor, user=self.user)
+        self.project.save()
+        # Only creator and contributor can view
+        assert_true(self.project.can_view(self.user))
+        assert_true(self.project.can_view(contributor))
+        assert_false(self.project.can_view(other_guy))
+
+    def test_can_view_public(self):
+        # Create contributor and noncontributor
+        contributor = UserFactory()
+        other_guy = UserFactory()
+        self.project.add_contributor(contributor=contributor, user=self.user)
+        # Change project to public
+        self.project.set_permissions('public')
+        self.project.save()
+        # Creator, contributor, and noncontributor can view
+        assert_true(self.project.can_view(self.user))
+        assert_true(self.project.can_view(contributor))
+        assert_true(self.project.can_view(other_guy))
+
     def test_is_contributor(self):
         contributor = UserFactory()
         other_guy = UserFactory()
