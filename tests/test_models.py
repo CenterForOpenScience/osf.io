@@ -231,10 +231,10 @@ class TestNodeWikiPage(DbTestCase):
 
     def test_wiki_factory(self):
         wiki = NodeWikiFactory()
-        assert_true(wiki.page_name)
-        assert_true(wiki.version)
+        assert_equal(wiki.page_name, "home")
+        assert_equal(wiki.version, 1)
         assert_true(hasattr(wiki, "is_current"))
-        assert_true(hasattr(wiki, "content"))
+        assert_equal(wiki.content, 'Some content')
         assert_true(wiki.user)
         assert_true(wiki.node)
 
@@ -258,6 +258,12 @@ class TestUpdateNodeWiki(DbTestCase):
         # There is no default wiki
         project1 = ProjectFactory()
         assert_equal(project1.get_wiki_page("home"), None)
+
+    def test_default_is_current(self):
+        assert_true(self.project.get_wiki_page('home').is_current)
+        self.project.update_node_wiki("home", "Hello world 2", self.user, api_key=None)
+        assert_true(self.project.get_wiki_page('home').is_current)
+        self.project.update_node_wiki("home", "Hello world 3", self.user, api_key=None)
 
     def test_wiki_content(self):
         # Wiki has correct content

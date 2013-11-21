@@ -109,6 +109,7 @@ class NodeWikiFactory(ModularOdmFactory):
     FACTORY_FOR = NodeWikiPage
 
     page_name = 'home'
+    content = 'Some content'
     version = 1
     user = SubFactory(UserFactory)
     node = SubFactory(NodeFactory)
