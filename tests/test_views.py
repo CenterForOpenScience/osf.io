@@ -33,11 +33,21 @@ class TestProjectViews(DbTestCase):
         self.auth = ('test', api_key._primary_key)
         self.user2 = UserFactory()
         # A project has 2 contributors
-        self.project = ProjectFactory(title="Ham", creator=self.user1)
+        self.project = ProjectFactory(title="Ham",
+                                        description='Honey-baked',
+                                        creator=self.user1)
         self.project.add_contributor(self.user1)
         self.project.add_contributor(self.user2)
         self.project.api_keys.append(api_key)
         self.project.save()
+
+    def test_edit_description(self):
+        url = "/api/v1/project/{0}/edit/".format(self.project._id)
+        self.app.post_json(url,
+                            {"name": "description", "value": "Deep-fried"},
+                            auth=self.auth)
+        self.project.reload()
+        assert_equal(self.project.description, "Deep-fried")
 
     def test_project_api_url(self):
         url = self.project.api_url
