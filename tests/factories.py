@@ -71,6 +71,15 @@ class ApiKeyFactory(ModularOdmFactory):
     FACTORY_FOR = ApiKey
 
 
+class ProjectFactory(ModularOdmFactory):
+    FACTORY_FOR = Node
+
+    category = 'project'
+    title = 'My Little Project'
+    description = 'My little description'
+    creator = SubFactory(UserFactory)
+
+
 class NodeFactory(ModularOdmFactory):
     FACTORY_FOR = Node
 
@@ -78,24 +87,7 @@ class NodeFactory(ModularOdmFactory):
     title = 'The meaning of life'
     description = "The meaning of life is 42."
     creator = SubFactory(UserFactory)
-
-
-class ProjectFactory(NodeFactory):
-    FACTORY_FOR = Node
-    category = 'project'
-    title = 'My Little Project'
-    creator = SubFactory(UserFactory)
-
-    #@post_generation
-    #def add_created_log(self, create, extracted):
-    #    '''Add a log after creating a new project.'''
-    #    self.add_log(NodeLog.PROJECT_CREATED,
-    #        params={
-    #            'project': self._primary_key,
-    #        },
-    #        user=self.creator,
-    #        log_date=self.date_created
-    #    )
+    project = SubFactory(ProjectFactory)
 
 
 class NodeLogFactory(ModularOdmFactory):

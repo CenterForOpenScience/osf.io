@@ -319,42 +319,22 @@ class TestNode(DbTestCase):
 
     def test_node_factory(self):
         node = NodeFactory()
-        assert_true(node._id)
-        assert_almost_equal(
-            node.date_created, datetime.datetime.utcnow(),
-            delta=datetime.timedelta(seconds=5),
-        )
-        assert_false(node.is_public)
-        assert_false(node.is_deleted)
-        assert_true(hasattr(node, 'deleted_date'))
-        assert_false(node.is_registration)
-        assert_true(hasattr(node, 'registered_date'))
-        assert_false(node.is_fork)
-        assert_true(hasattr(node, 'forked_date'))
-        assert_true(node.title)
-        assert_true(hasattr(node, 'description'))
-        assert_true(hasattr(node, 'category'))
-        assert_true(hasattr(node, 'registration_list'))
-        assert_true(hasattr(node, 'fork_list'))
-        assert_true(hasattr(node, 'registered_meta'))
-        assert_true(node.creator)
-        assert_true(node.contributors)
-        assert_true(node.contributor_list)
-        assert_equal(len(node.logs), 1)
-        assert_true(hasattr(node, 'tags'))
-        assert_true(hasattr(node, 'nodes'))
-        assert_true(hasattr(node, 'forked_from'))
-        assert_true(hasattr(node, 'registered_from'))
-        assert_true(hasattr(node, 'api_keys'))
+        assert_equal(node.category, 'hypothesis')
+        assert_true(node.node__parent)
+        assert_equal(node.logs[-1].action, 'node_created')
 
-
-    def test_watching(self):
-        # A user watched a node
-        user = UserFactory()
-        config1 = WatchConfigFactory(node=self.node)
-        user.watched.append(config1)
-        user.save()
-        assert_in(config1._id, self.node.watchconfig__watched)
+    def test_remove_node(self):
+        # Add some components and delete the project
+        component = NodeFactory(creator=self.user, project=self.node)
+        subproject = ProjectFactory(creator=self.user, project=self.node)
+        self.node.remove_node(self.user)
+        # The correct nodes were deleted
+        assert_true(self.node.is_deleted)
+        assert_true(component.is_deleted)
+        assert_false(subproject.is_deleted)
+        assert_false(self.parent.is_deleted)
+        # A log was saved
+        assert_equal(self.parent.logs[-1].action, 'node_removed')
 
     def test_url(self):
         url = self.node.url
@@ -378,6 +358,32 @@ class TestProject(DbTestCase):
     def test_project_factory(self):
         node = ProjectFactory()
         assert_equal(node.category, 'project')
+        assert_true(node._id)
+        assert_almost_equal(
+            node.date_created, datetime.datetime.utcnow(),
+            delta=datetime.timedelta(seconds=5),
+        )
+        assert_false(node.is_public)
+        assert_false(node.is_deleted)
+        assert_true(hasattr(node, 'deleted_date'))
+        assert_false(node.is_registration)
+        assert_true(hasattr(node, 'registered_date'))
+        assert_false(node.is_fork)
+        assert_true(hasattr(node, 'forked_date'))
+        assert_true(node.title)
+        assert_true(hasattr(node, 'description'))
+        assert_true(hasattr(node, 'registration_list'))
+        assert_true(hasattr(node, 'fork_list'))
+        assert_true(hasattr(node, 'registered_meta'))
+        assert_true(node.creator)
+        assert_true(node.contributors)
+        assert_true(node.contributor_list)
+        assert_equal(len(node.logs), 1)
+        assert_true(hasattr(node, 'tags'))
+        assert_true(hasattr(node, 'nodes'))
+        assert_true(hasattr(node, 'forked_from'))
+        assert_true(hasattr(node, 'registered_from'))
+        assert_true(hasattr(node, 'api_keys'))
         assert_equal(node.logs[-1].action, 'project_created')
 
     def test_url(self):
@@ -392,14 +398,13 @@ class TestProject(DbTestCase):
         watch_url = self.project.watch_url
         assert_equal(watch_url, "/api/v1/project/{0}/watch/".format(self.project._primary_key))
 
-    def test_remove_node(self):
-        node = NodeFactory(creator=self.user, project=self.project)
-        #subproject = ProjectFactory(creator=self.user, project=self.project)
-
-        self.project.remove_node(self.user)
-        assert_true(self.project.is_deleted)
-        assert_true(node.is_deleted)
-        #assert_true(subproject.is_deleted)
+    def test_watching(self):
+        # A user watched a node
+        user = UserFactory()
+        config1 = WatchConfigFactory(node=self.project)
+        user.watched.append(config1)
+        user.save()
+        assert_in(config1._id, self.project.watchconfig__watched)
 
     def test_add_contributor(self):
         # A user is added as a contributor
