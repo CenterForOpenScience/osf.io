@@ -5,8 +5,9 @@ from nose.tools import *  # PEP8 asserts
 
 import pytz
 from dateutil import parser
-
 import datetime
+import hashlib
+
 from framework.auth import User
 from framework.bcrypt import check_password_hash
 from website.project.model import ApiKey, NodeFile
@@ -347,6 +348,9 @@ class TestNode(DbTestCase):
                                 .format(self.parent._primary_key,
                                         self.node._primary_key))
 
+    def test_parent_id(self):
+        assert_equal(self.node.parent_id, self.parent._id)
+
 
 class TestProject(DbTestCase):
 
@@ -398,6 +402,9 @@ class TestProject(DbTestCase):
         watch_url = self.project.watch_url
         assert_equal(watch_url, "/api/v1/project/{0}/watch/".format(self.project._primary_key))
 
+    def test_parent_id(self):
+        assert_false(self.project.parent_id)
+
     def test_watching(self):
         # A user watched a node
         user = UserFactory()
@@ -432,6 +439,22 @@ class TestProject(DbTestCase):
         # The user is removed
         self.project.remove_contributor(user=self.user, contributor=user2, api_key=None)
         assert_not_in(user2, self.project.contributors)
+        assert_not_in(user2._id, [contrib.get('id') for contrib in self.project.contributor_list])
+        assert_equal(self.project.logs[-1].action, "contributor_removed")
+
+    def test_remove_nonregistered_contributor(self):
+        self.project.add_nonregistered_contributor(email="foo@bar.com", name="Weezy F. Baby", user=self.user)
+        self.project.save()
+        # Nonregistered contributor is removed
+        self.project.remove_nonregistered_contributor(
+            user=self.user,
+            api_key=None,
+            name="Weezy F. Baby",
+            hash_id=hashlib.md5("foo@bar.com").hexdigest(),
+        )
+        # List does not contain nonregistered contributor
+        assert_not_in("Weezy F. Baby", [contrib.get('nr_name') for contrib in self.project.contributor_list])
+        assert_equal(self.project.logs[-1].action, "contributor_removed")
 
     def test_set_title(self):
         proj = ProjectFactory(title="That Was Then", creator=self.user)
