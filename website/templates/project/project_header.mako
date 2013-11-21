@@ -77,7 +77,7 @@
                         <a href="/project/${parent['id']}/">${parent['title']}</a> /
                     </h1>
                 %endif
-                <h1 id="${'node-title-editable' if user['can_edit'] else 'node-title'}" class='node-title' style="display:inline-block;word-wrap:break-word;width:100%;">${node['title']}</h1>
+                <h1 id="nodeTitleEditable" class='node-title' style="display:inline-block;word-wrap:break-word;width:100%;">${node['title']}</h1>
             </div>
 
         </div><!-- end row -->

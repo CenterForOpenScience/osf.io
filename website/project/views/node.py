@@ -2,7 +2,6 @@
 import json
 import logging
 import httplib as http
-from website.project.model import NodeLog
 from bs4 import BeautifulSoup
 from framework import (
     request, redirect, must_be_logged_in,
