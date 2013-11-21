@@ -146,6 +146,8 @@
         });
 
         // Get project data from the server and initiate the ProjectViewModel
+        progressBar = $("#logProgressBar")
+        progressBar.show();
         $.ajax({
             url: nodeToUseUrl(),
             type: "get", contentType: "application/json",
@@ -154,6 +156,28 @@
             success: function(data){
                 // Initialize ProjectViewModel with returned data
                 ko.applyBindings(new ProjectViewModel(data), $("#projectScope")[0]);
+                // Initialize LogViewModel
+                var logs = data['node']['logs'];
+                var mappedLogs = $.map(logs, function(item) {
+                    return new Log({
+                        "action": item.action,
+                        "date": item.date,
+                        "nodeCategory": item.category,
+                        "contributor": item.contributor,
+                        "contributors": item.contributors,
+                        "nodeUrl": item.node_url,
+                        "userFullName": item.user_fullname,
+                        "userURL": item.user_url,
+                        "apiKey": item.api_key,
+                        "params": item.params,
+                        "nodeTitle": item.node_title,
+                        "nodeDescription": item.params.description_new
+                    })
+                });
+                $logScope = $("#logScope");
+                ko.cleanNode($logScope[0]);
+                progressBar.hide();
+                ko.applyBindings(new LogsViewModel(mappedLogs), $logScope[0]);
             }
         });
     });

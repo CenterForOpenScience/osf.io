@@ -76,9 +76,13 @@ var Log = function(params) {
 ////////////////
 
 
-var LogsViewModel = function(url) {
+/**
+ * View model for a log list.
+ * @param {Log[]} logs An array of Log model objects to render.
+ */
+var LogsViewModel = function(logs) {
     var self = this;
-    self.logs = ko.observableArray([]);
+    self.logs = ko.observableArray(logs);
     self.tzname = ko.computed(function() {
         var logs = self.logs();
         if (logs.length) {
@@ -86,42 +90,7 @@ var LogsViewModel = function(url) {
         }
         return '';
     });
-    // Get log data via AJAX
-    var getUrl = '';
-    if (url) {
-        getUrl = url;
-    } else {
-        getUrl = nodeToUseUrl() + "log/";
-    }
-    self.progressBar = $("#logProgressBar")
-    self.progressBar.show();
-    $.ajax({
-        url: getUrl,
-        type: "get",
-        cache: false,
-        dataType: "json",
-        success: function(data){
-            var logs = data['logs'];
-            var mappedLogs = $.map(logs, function(item) {
-                return new Log({
-                    "action": item.action,
-                    "date": item.date,
-                    "nodeCategory": item.category,
-                    "contributor": item.contributor,
-                    "contributors": item.contributors,
-                    "nodeUrl": item.node_url,
-                    "userFullName": item.user_fullname,
-                    "userURL": item.user_url,
-                    "apiKey": item.api_key,
-                    "params": item.params,
-                    "nodeTitle": item.node_title,
-                    "nodeDescription": item.params.description_new
-                })
-            });
-            self.progressBar.hide();
-            self.logs(mappedLogs);
-        }
-    });
+
 };
 
 /**

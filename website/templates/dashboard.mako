@@ -36,6 +36,37 @@
     // Initiate LogsViewModel
     $logScope = $("#logScope");
     ko.cleanNode($logScope[0]);
-    ko.applyBindings(new LogsViewModel($logScope.data("target")), $logScope[0]);
+    progressBar = $("#logProgressBar")
+    progressBar.show();
+    $.ajax({
+        url: $logScope.data("target"),
+        type: "get", contentType: "application/json",
+        dataType: "json",
+        cache: false,
+        success: function(data){
+            // Initialize LogViewModel
+            var logs = data['logs'];
+            var mappedLogs = $.map(logs, function(item) {
+                return new Log({
+                    "action": item.action,
+                    "date": item.date,
+                    "nodeCategory": item.category,
+                    "contributor": item.contributor,
+                    "contributors": item.contributors,
+                    "nodeUrl": item.node_url,
+                    "userFullName": item.user_fullname,
+                    "userURL": item.user_url,
+                    "apiKey": item.api_key,
+                    "params": item.params,
+                    "nodeTitle": item.node_title,
+                    "nodeDescription": item.params.description_new
+                })
+            });
+            $logScope = $("#logScope");
+            ko.cleanNode($logScope[0]);
+            progressBar.hide();
+            ko.applyBindings(new LogsViewModel(mappedLogs), $logScope[0]);
+        }
+    });
 </script>
 </%def>
