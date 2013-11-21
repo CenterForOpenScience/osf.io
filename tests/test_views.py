@@ -109,7 +109,7 @@ class TestProjectViews(DbTestCase):
     def test_edit_node_title(self):
         url = "/api/v1/project/{0}/edit/".format(self.project._id)
         # The title is changed though posting form data
-        res = self.app.post(url, {"name": "title", "value": "Bacon"},
+        res = self.app.post_json(url, {"name": "title", "value": "Bacon"},
                             auth=self.auth).maybe_follow()
         self.project.reload()
         # The title was changed

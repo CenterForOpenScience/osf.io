@@ -108,6 +108,10 @@
                        pk:    '${node["id"]}',
                        name:  'title',
                        url:   '${node["api_url"]}edit/',
+                       ajaxOptions: {
+                            "dataType": "json",
+                            "contentType": "application/json"
+                       }
                        title: 'Edit Title',
                        placement: 'bottom',
                        value: "${ '\\\''.join(node['title'].split('\'')) }",
