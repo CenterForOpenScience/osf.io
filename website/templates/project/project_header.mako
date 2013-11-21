@@ -134,18 +134,8 @@
 ## TODO: Find a better place to put this initialization code
 <script>
     $(document).ready(function(){
-        // Initiate addContributorsModel
-        var $addContributors = $('#addContributors');
-        // TODO: Title and parent should be retrieved from AJAX, not mako
-        viewModel = new AddContributorViewModel('${node["title"]}', '${parent["id"]}', '${parent["title"]}');
-        ko.applyBindings(viewModel, $addContributors[0]);
-        // Clear user search modal when dismissed; catches dismiss by escape key
-        // or cancel button.
-        $addContributors.on('hidden', function() {
-            viewModel.clear();
-        });
 
-        // Get project data from the server and initiate the ProjectViewModel
+        // Get project data from the server and initiate the ViewModels
         progressBar = $("#logProgressBar")
         progressBar.show();
         $.ajax({
@@ -156,6 +146,7 @@
             success: function(data){
                 // Initialize ProjectViewModel with returned data
                 ko.applyBindings(new ProjectViewModel(data), $("#projectScope")[0]);
+
                 // Initialize LogViewModel
                 var logs = data['node']['logs'];
                 // Create an array of Log model objects from the returned log data
@@ -164,6 +155,18 @@
                 ko.cleanNode($logScope[0]);
                 progressBar.hide();
                 ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
+
+                // Initiate AddContributorViewModel
+                var $addContributors = $('#addContributors');
+                viewModel = new AddContributorViewModel(data['node']['title'],
+                                                        data['parent']['id'],
+                                                        data['parent']['title']);
+                ko.applyBindings(viewModel, $addContributors[0]);
+                // Clear user search modal when dismissed; catches dismiss by escape key
+                // or cancel button.
+                $addContributors.on('hidden', function() {
+                    viewModel.clear();
+                });
             }
         });
     });
