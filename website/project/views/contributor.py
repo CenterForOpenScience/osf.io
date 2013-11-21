@@ -34,8 +34,7 @@ def get_node_contributors_abbrev(*args, **kwargs):
     else:
         users = node_to_use.contributors
 
-    if not node_to_use.can_edit(user, api_key) \
-            and not node_to_use.are_contributors_public:
+    if not node_to_use.can_view(user, api_key):
         raise HTTPError(http.FORBIDDEN)
 
     contributors = []
@@ -105,8 +104,7 @@ def get_contributors(*args, **kwargs):
     api_key = get_api_key()
     node_to_use = kwargs['node'] or kwargs['project']
 
-    if not node_to_use.can_edit(user, api_key) \
-            and not node_to_use.are_contributors_public:
+    if not node_to_use.can_view(user, api_key):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = _jsonify_contribs(node_to_use.contributor_list)
@@ -125,8 +123,7 @@ def get_contributors_from_parent(*args, **kwargs):
     if not parent:
         raise HTTPError(http.BAD_REQUEST)
 
-    if not node_to_use.can_edit(user, api_key) or \
-            not parent.can_edit(user, api_key):
+    if not node_to_use.can_view(user, api_key):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = _jsonify_contribs([

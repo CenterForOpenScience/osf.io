@@ -2,7 +2,7 @@
 import json
 import logging
 import httplib as http
-
+from website.project.model import NodeLog
 from bs4 import BeautifulSoup
 from framework import (
     request, redirect, must_be_logged_in,
@@ -22,7 +22,7 @@ from website.project.forms import NewProjectForm, NewNodeForm
 from website.models import WatchConfig
 from website import settings
 from website.views import _render_nodes
-
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -280,13 +280,12 @@ def togglewatch_post(*args, **kwargs):
 @must_be_contributor # returns user, project
 @must_not_be_registration
 def component_remove(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
+    """Remove component, and recursively remove its children. If node has a
+    parent, add log and redirect to parent; else redirect to user dashboard.
+
+    """
+    node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
-    if node:
-        node_to_use = node
-    else:
-        node_to_use = project
 
     if node_to_use.remove_node(user=user):
         category = 'project' \
@@ -294,10 +293,14 @@ def component_remove(*args, **kwargs):
             else 'component'
         message = '{} deleted'.format(category.capitalize())
         status.push_status_message(message)
+        if node_to_use.node__parent:
+            redirect_url = node_to_use.node__parent[0].url
+        else:
+            redirect_url = '/dashboard/'
         return {
-            'status' : 'success',
-            'message' : message,
-        }, None, None, '/dashboard/'
+            'status': 'success',
+            'message': message,
+        }, None, None, redirect_url
     else:
         raise HTTPError(http.BAD_REQUEST, message='Could not delete component')
 
@@ -308,6 +311,7 @@ def view_project(*args, **kwargs):
     user = get_current_user()
     node_to_use = kwargs['node'] or kwargs['project']
     return _view_project(node_to_use, user)
+
 
 def _view_project(node_to_use, user):
     '''Build a JSON object containing everything needed to render
@@ -391,7 +395,7 @@ def _get_children(node, user, indent=0):
     children = []
 
     for child in node.nodes:
-        if node.can_edit(user):
+        if node.can_view(user):
             children.append({
                 'id': child._primary_key,
                 'title': child.title,
@@ -459,7 +463,7 @@ def get_summary(*args, **kwargs):
     rescale_ratio = kwargs.get('rescale_ratio')
     node_to_use = kwargs['node'] or kwargs['project']
 
-    if node_to_use.can_edit(user, api_key):
+    if node_to_use.can_view(user, api_key):
         summary = {
             'can_view': True,
             'id': node_to_use._primary_key,
