@@ -145,9 +145,12 @@
             viewModel.clear();
         });
 
+        $logScope = $("#logScope");
+        if ($logScope.length > 0) {
+            progressBar = $("#logProgressBar")
+            progressBar.show();
+        };
         // Get project data from the server and initiate the ProjectViewModel
-        progressBar = $("#logProgressBar")
-        progressBar.show();
         $.ajax({
             url: nodeToUseUrl(),
             type: "get", contentType: "application/json",
@@ -157,13 +160,15 @@
                 // Initialize ProjectViewModel with returned data
                 ko.applyBindings(new ProjectViewModel(data), $("#projectScope")[0]);
                 // Initialize LogViewModel
-                var logs = data['node']['logs'];
-                // Create an array of Log model objects from the returned log data
-                var logModelObjects = createLogs(logs);
-                $logScope = $("#logScope");
-                ko.cleanNode($logScope[0]);
-                progressBar.hide();
-                ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
+                if ($logScope.length > 0) {
+                    progressBar.hide();
+                    var logs = data['node']['logs'];
+                    // Create an array of Log model objects from the returned log data
+                    var logModelObjects = createLogs(logs);
+                    ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
+
+                };
+
             }
         });
     });
