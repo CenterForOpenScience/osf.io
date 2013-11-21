@@ -6,6 +6,7 @@ from nose.tools import *  # PEP8 asserts
 import pytz
 from dateutil import parser
 
+import datetime
 from framework.auth import User
 from framework.bcrypt import check_password_hash
 from website.project.model import ApiKey, NodeFile
@@ -227,7 +228,7 @@ class TestNodeWikiPage(DbTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.wiki = NodeWikiFactory(user=self.user, node=self.project)
 
-    def test_factory(self):
+    def test_wiki_factory(self):
         wiki = NodeWikiFactory()
         assert_true(wiki.page_name)
         assert_true(wiki.version)
@@ -240,48 +241,67 @@ class TestNodeWikiPage(DbTestCase):
         assert_equal(self.wiki.url, "{project_url}wiki/home/"
                                     .format(project_url=self.project.url))
 
-    def test_new_wiki(self):
-        # There is no default wiki
-        assert_equal(self.project.get_wiki_page("home"), None)
 
-    def test_update_node_wiki(self):
+class TestUpdateNodeWiki(DbTestCase):
+
+    def setUp(self):
+        # Create project with component
+        self.user = UserFactory()
+        self.project = ProjectFactory()
+        self.node = NodeFactory(creator=self.user, project=self.project)
         # user updates the wiki
         self.project.update_node_wiki("home", "Hello world", self.user, api_key=None)
-        versions = self.project.wiki_pages_versions
-        # There is now one version, logged, with the correct content
-        assert_equal(len(versions['home']), 1)
-        assert_equal(self.project.logs[-1].action, "wiki_updated")
-        assert_equal(self.project.get_wiki_page("home").content, "Hello world")
+        self.versions = self.project.wiki_pages_versions
 
-    def test_update_node_wiki_twice(self):
-        # user updates the wiki twice
-        self.project.update_node_wiki("home", "Hello world", self.user, api_key=None)
+    def test_default_wiki(self):
+        # There is no default wiki
+        project1 = ProjectFactory()
+        assert_equal(project1.get_wiki_page("home"), None)
+
+    def test_wiki_content(self):
+        # Wiki has correct content
+        assert_equal(self.project.get_wiki_page("home").content, "Hello world")
+        # user updates the wiki a second time
         self.project.update_node_wiki('home', "Hola mundo", self.user, api_key=None)
-        versions = self.project.wiki_pages_versions
-        # Now there are 2 versions
-        assert_equal(len(versions['home']), 2)
-        # There are 2 logs saved
-        assert_equal(self.project.logs[-1].action, "wiki_updated")
-        assert_equal(self.project.logs[-2].action, "wiki_updated")
-        # The new version is current, the old version is not
-        assert_true(self.project.get_wiki_page("home", 2).is_current)
-        assert_false(self.project.get_wiki_page("home", 1).is_current)
         # Both versions have the expected content
         assert_equal(self.project.get_wiki_page("home", 2).content, "Hola mundo")
         assert_equal(self.project.get_wiki_page("home", 1).content, "Hello world")
 
-    def test_update_two_node_wikis(self):
-        # user updates the wiki
+    def test_current(self):
+        # Wiki is current
+        assert_true(self.project.get_wiki_page("home", 1).is_current)
+        # user updates the wiki a second time
+        self.project.update_node_wiki('home', "Hola mundo", self.user, api_key=None)
+        # New version is current, old version is not
+        assert_true(self.project.get_wiki_page("home", 2).is_current)
+        assert_false(self.project.get_wiki_page("home", 1).is_current)
+
+    def test_update_log(self):
+        # Updates are logged
+        assert_equal(self.project.logs[-1].action, "wiki_updated")
+        # user updates the wiki a second time
+        self.project.update_node_wiki('home', "Hola mundo", self.user, api_key=None)
+        # There are two update logs
+        assert_equal([log.action for log in self.project.logs].count('wiki_updated'), 2)
+
+    def test_wiki_versions(self):
+        # Number of versions is correct
+        assert_equal(len(self.versions['home']), 1)
+        # Update wiki
         self.project.update_node_wiki("home", "Hello world", self.user, api_key=None)
-        versions = self.project.wiki_pages_versions
+        # Number of versions is correct
+        assert_equal(len(self.versions['home']), 2)
+        # Versions are different
+        assert_not_equal(self.versions['home'][0], self.versions['home'][1])
+
+    def test_update_two_node_wikis(self):
         # user updates a second wiki for the same node
         self.project.update_node_wiki("second", "Hola mundo", self.user, api_key=None)
         # each wiki only has one version
-        assert_equal(len(versions['home']), 1)
-        assert_equal(len(versions['second']), 1)
+        assert_equal(len(self.versions['home']), 1)
+        assert_equal(len(self.versions['second']), 1)
         # There are 2 logs saved
-        assert_equal(self.project.logs[-1].action, "wiki_updated")
-        assert_equal(self.project.logs[-2].action, "wiki_updated")
+        assert_equal([log.action for log in self.project.logs].count('wiki_updated'), 2)
         # Each wiki has the expected content
         assert_equal(self.project.get_wiki_page("home").content, "Hello world")
         assert_equal(self.project.get_wiki_page("second").content, "Hola mundo")
@@ -299,7 +319,27 @@ class TestNode(DbTestCase):
 
     def test_node_factory(self):
         node = NodeFactory()
+        assert_true(node._id)
+        assert_almost_equal(
+            node.date_created, datetime.datetime.utcnow(),
+            delta=datetime.timedelta(seconds=5),
+        )
         assert_false(node.is_public)
+        assert_false(node.is_deleted)
+        assert_true(hasattr(node, 'deleted_date'))
+        assert_false(node.is_registration)
+        assert_true(hasattr(node, 'registered_date'))
+        assert_false(node.is_fork)
+        assert_true(hasattr(node, 'forked_date'))
+        assert_true(node.title)
+        assert_true(hasattr(node, 'description'))
+        assert_true(hasattr(node, 'category'))
+        assert_true(hasattr(node, 'registration_list'))
+        assert_true(hasattr(node, 'fork_list'))
+        assert_true(hasattr(node, 'registered_meta'))
+        assert_true(node.creator)
+        assert_true(hasattr(node, 'contributors'))
+
 
     def test_watching(self):
         # A user watched a node
@@ -319,19 +359,6 @@ class TestNode(DbTestCase):
         assert_equal(url, "/api/v1/project/{0}/node/{1}/watch/"
                                 .format(self.parent._primary_key,
                                         self.node._primary_key))
-
-
-class TestNodeWiki(DbTestCase):
-
-    def setUp(self):
-        # Create project with component
-        self.user = UserFactory()
-        self.parent = ProjectFactory()
-        self.node = NodeFactory.build(creator=self.user, project=self.parent)
-        self.node.save()
-        self.parent.save()
-
-
 
 
 class TestProject(DbTestCase):

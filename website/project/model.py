@@ -1192,7 +1192,6 @@ class NodeWikiPage(GuidStoredObject):
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
         if self.node:
-            print 'updating my node'
             self.node.update_solr()
         return rv
 

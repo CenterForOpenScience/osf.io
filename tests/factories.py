@@ -77,12 +77,13 @@ class NodeFactory(ModularOdmFactory):
     category = 'hypothesis'
     title = 'The meaning of life'
     description = "The meaning of life is 42."
-    is_registration = False
+    creator = SubFactory(UserFactory)
 
 
 class ProjectFactory(NodeFactory):
     FACTORY_FOR = Node
     category = 'project'
+    title = 'My Little Project'
     creator = SubFactory(UserFactory)
 
     #@post_generation
