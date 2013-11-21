@@ -338,7 +338,14 @@ class TestNode(DbTestCase):
         assert_true(hasattr(node, 'fork_list'))
         assert_true(hasattr(node, 'registered_meta'))
         assert_true(node.creator)
-        assert_true(hasattr(node, 'contributors'))
+        assert_true(node.contributors)
+        assert_true(node.contributor_list)
+        assert_equal(len(node.logs), 1)
+        assert_true(hasattr(node, 'tags'))
+        assert_true(hasattr(node, 'nodes'))
+        assert_true(hasattr(node, 'forked_from'))
+        assert_true(hasattr(node, 'registered_from'))
+        assert_true(hasattr(node, 'api_keys'))
 
 
     def test_watching(self):
@@ -384,6 +391,15 @@ class TestProject(DbTestCase):
     def test_watch_url(self):
         watch_url = self.project.watch_url
         assert_equal(watch_url, "/api/v1/project/{0}/watch/".format(self.project._primary_key))
+
+    def test_remove_node(self):
+        node = NodeFactory(creator=self.user, project=self.project)
+        #subproject = ProjectFactory(creator=self.user, project=self.project)
+
+        self.project.remove_node(self.user)
+        assert_true(self.project.is_deleted)
+        assert_true(node.is_deleted)
+        #assert_true(subproject.is_deleted)
 
     def test_add_contributor(self):
         # A user is added as a contributor
