@@ -30,6 +30,11 @@ a.disabled {
     cursor: default;
 }
 
+.disabled {
+    cursor: default !important;
+    pointer-events: none;
+}
+
 .editing .display,
 .edit {
     display: none;
@@ -521,6 +526,11 @@ table tbody.files td {
 /* Modal forms */
 div.modal form {
     margin:0;
+}
+
+.modal-subheader {
+    font-size: 30px;
+    margin-right: 10px;
 }
 
 div.modal div.modal-header h3.img-add {

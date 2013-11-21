@@ -11,18 +11,6 @@
     </style>
 % endif
 
-<style>
-    .modal-subheader {
-        font-size: 30px;
-        margin-right: 10px;
-    }
-    .disabled {
-        cursor: default !important;
-        pointer-events: none;
-    }
-</style>
-
-
 <div id="projectScope">
     <header class="subhead" id="overview">
         <div class="row">
