@@ -134,10 +134,12 @@
 ## TODO: Find a better place to put this initialization code
 <script>
     $(document).ready(function(){
-
-        // Get project data from the server and initiate the ViewModels
-        progressBar = $("#logProgressBar")
-        progressBar.show();
+        $logScope = $("#logScope");
+        if ($logScope.length > 0) {
+            progressBar = $("#logProgressBar")
+            progressBar.show();
+        };
+        // Get project data from the server and initiate the ProjectViewModel
         $.ajax({
             url: nodeToUseUrl(),
             type: "get", contentType: "application/json",
@@ -147,26 +149,26 @@
                 // Initialize ProjectViewModel with returned data
                 ko.applyBindings(new ProjectViewModel(data), $("#projectScope")[0]);
 
-                // Initialize LogViewModel
-                var logs = data['node']['logs'];
-                // Create an array of Log model objects from the returned log data
-                var logModelObjects = createLogs(logs);
-                $logScope = $("#logScope");
-                ko.cleanNode($logScope[0]);
-                progressBar.hide();
-                ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
-
                 // Initiate AddContributorViewModel
                 var $addContributors = $('#addContributors');
-                viewModel = new AddContributorViewModel(data['node']['title'],
+                var addContribVM = new AddContributorViewModel(data['node']['title'],
                                                         data['parent']['id'],
                                                         data['parent']['title']);
-                ko.applyBindings(viewModel, $addContributors[0]);
+                ko.applyBindings(addContribVM, $addContributors[0]);
                 // Clear user search modal when dismissed; catches dismiss by escape key
                 // or cancel button.
                 $addContributors.on('hidden', function() {
                     viewModel.clear();
                 });
+
+                // Initialize LogsViewModel when appropriate
+                if ($logScope.length > 0) {
+                    progressBar.hide();
+                    var logs = data['node']['logs'];
+                    // Create an array of Log model objects from the returned log data
+                    var logModelObjects = createLogs(logs);
+                    ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
+                };
             }
         });
     });
