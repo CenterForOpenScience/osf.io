@@ -21,7 +21,7 @@
                <div class="page-header">
                     <h3>Watched Projects</h3>
                 </div>
-                <div id="logScope" data-target="/api/v1/watched/logs/">
+                <div id="logScope">
                     <%include file="log_list.mako"/>
                 </div><!-- end #logScope -->
             </div><!-- end #watchFeed -->
@@ -33,40 +33,7 @@
 
 <%def name="javascript_bottom()">
 <script>
-    // Initiate LogsViewModel
-    $logScope = $("#logScope");
-    ko.cleanNode($logScope[0]);
-    progressBar = $("#logProgressBar")
-    progressBar.show();
-    $.ajax({
-        url: $logScope.data("target"),
-        type: "get", contentType: "application/json",
-        dataType: "json",
-        cache: false,
-        success: function(data){
-            // Initialize LogViewModel
-            var logs = data['logs'];
-            var mappedLogs = $.map(logs, function(item) {
-                return new Log({
-                    "action": item.action,
-                    "date": item.date,
-                    "nodeCategory": item.category,
-                    "contributor": item.contributor,
-                    "contributors": item.contributors,
-                    "nodeUrl": item.node_url,
-                    "userFullName": item.user_fullname,
-                    "userURL": item.user_url,
-                    "apiKey": item.api_key,
-                    "params": item.params,
-                    "nodeTitle": item.node_title,
-                    "nodeDescription": item.params.description_new
-                })
-            });
-            $logScope = $("#logScope");
-            ko.cleanNode($logScope[0]);
-            progressBar.hide();
-            ko.applyBindings(new LogsViewModel(mappedLogs), $logScope[0]);
-        }
-    });
+    // Initialize the LogsViewModel
+    initializeLogs("#logScope", "/api/v1/watched/logs/");
 </script>
 </%def>

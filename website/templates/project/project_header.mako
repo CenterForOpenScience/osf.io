@@ -158,26 +158,12 @@
                 ko.applyBindings(new ProjectViewModel(data), $("#projectScope")[0]);
                 // Initialize LogViewModel
                 var logs = data['node']['logs'];
-                var mappedLogs = $.map(logs, function(item) {
-                    return new Log({
-                        "action": item.action,
-                        "date": item.date,
-                        "nodeCategory": item.category,
-                        "contributor": item.contributor,
-                        "contributors": item.contributors,
-                        "nodeUrl": item.node_url,
-                        "userFullName": item.user_fullname,
-                        "userURL": item.user_url,
-                        "apiKey": item.api_key,
-                        "params": item.params,
-                        "nodeTitle": item.node_title,
-                        "nodeDescription": item.params.description_new
-                    })
-                });
+                // Create an array of Log model objects from the returned log data
+                var logModelObjects = createLogs(logs);
                 $logScope = $("#logScope");
                 ko.cleanNode($logScope[0]);
                 progressBar.hide();
-                ko.applyBindings(new LogsViewModel(mappedLogs), $logScope[0]);
+                ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
             }
         });
     });

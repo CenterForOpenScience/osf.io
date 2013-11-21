@@ -93,6 +93,62 @@ var LogsViewModel = function(logs) {
 
 };
 
+
+/**
+ * Create an Array of Log model objects from data returned from an endpoint
+ * @param  {Object[]} logData Log data returned from an endpoint.
+ * @return {Log[]}         Array of Log objects.
+ */
+var createLogs = function(logData){
+    var mappedLogs = $.map(logData, function(item) {
+        return new Log({
+            "action": item.action,
+            "date": item.date,
+            "nodeCategory": item.category,
+            "contributor": item.contributor,
+            "contributors": item.contributors,
+            "nodeUrl": item.node_url,
+            "userFullName": item.user_fullname,
+            "userURL": item.user_url,
+            "apiKey": item.api_key,
+            "params": item.params,
+            "nodeTitle": item.node_title,
+            "nodeDescription": item.params.description_new
+        })
+    });
+    return mappedLogs;
+}
+
+/**
+ * Initialize the LogsViewModel. Fetches the logs data from the specified url
+ * and binds the LogsViewModel.
+ * @param  {String} scopeSelector CSS selector for the scope of the LogsViewModel.
+ * @param  {String} url           The url from which to get the logs data.
+ *                                The returned object must have a "logs" property mapped to
+ *                                an Array of log objects.
+ */
+var initializeLogs = function(scopeSelector, url){
+    // Initiate LogsViewModel
+    $logScope = $(scopeSelector);
+    ko.cleanNode($logScope[0]);
+    progressBar = $("#logProgressBar")
+    progressBar.show();
+    $.ajax({
+        url: url,
+        type: "get", contentType: "application/json",
+        dataType: "json",
+        cache: false,
+        success: function(data){
+            // Initialize LogViewModel
+            var logs = data['logs'];
+            ko.cleanNode($logScope[0]);
+            var logModelObjects = createLogs(logs);  // Array of Log model objects
+            progressBar.hide();
+            ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
+        }
+    });
+}
+
 /**
  * The ProjectViewModel, scoped to the project header.
  * @param {Object} params The parsed project data returned from the project's API url.
