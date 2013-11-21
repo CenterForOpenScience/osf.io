@@ -188,7 +188,9 @@ var ProjectViewModel = function(params) {
             placement: 'bottom',
             success: function(data){
                 document.location.reload(true);
-            }
+            },
+            emptytext: "No description",
+            emptyclass: "text-muted"
         });
     };
 

@@ -111,9 +111,7 @@
             % if parent['id']:
                 <br />Category: <span class="node-category">${node['category']}</span>
             % else:
-                % if node['description']:
-                    <br />Description: <span id="nodeDescriptionEditable" class="node-description">${node['description']}</span>
-                % endif
+                 <br />Description: <span id="nodeDescriptionEditable" class="node-description">${node['description']}</span>
             % endif
         </p>
 
