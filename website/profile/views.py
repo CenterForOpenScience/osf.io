@@ -62,19 +62,25 @@ def _profile_view(uid=None):
             size=settings.GRAVATAR_SIZE_PROFILE
         )
         return {
-            'user_id': profile._id,
-            'user': {"can_edit": None},
-            'user_absolute_url': profile.absolute_url,
-            'user_full_name': profile.fullname,
-            'user_is_profile': user is not None and user == profile,
-            'activity_points': get_total_activity_count(profile._primary_key),
-            'number_projects': len(projects),
-            'number_public_projects': len(public_projects['nodes']),
-            'fullname': profile.fullname,
-            'date_registered': profile.date_registered.strftime("%Y-%m-%d"),
-            'gravatar_url': gravatar_url,
-            'user_is_merged': profile.is_merged,
-            'user_merged_by_url': profile.merged_by.url if profile.is_merged else None
+            'profile': {
+                'id': profile._id,
+                "url": profile.url,
+                "absolute_url": profile.absolute_url,
+                "full_name": profile.fullname,
+                "activity_points": get_total_activity_count(profile._primary_key),
+                "number_projects": len(projects),
+                "number_public_projects": len(public_projects['nodes']),
+                "date_registered": profile.date_registered.strftime("%Y-%m-%d"),
+                'gravatar_url': gravatar_url,
+                'is_merged': profile.is_merged,
+                'merged_by_url': profile.merged_by.url if profile.is_merged else None,
+                'merged_by_absolute_url': (profile.merged_by.absolute_url
+                                            if profile.is_merged else None)
+            },
+            'user': {
+                "can_edit": None,  # necessary for rendering nodes
+                "is_profile": user == profile,
+            },
         }
     raise HTTPError(http.NOT_FOUND)
 
