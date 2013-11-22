@@ -47,9 +47,12 @@ var modalConfirm = function(message, url){
         }
     )
 };
-
-
 $(document).ready(function(){
+    //block the create new project button when the form is submitted
+    $("#projectForm").on("submit",function(){
+        $("button[type='submit']",this).attr("disabled","disabled").text("Creating New Project");
+    });
+
     // Highlight active tabs and nav labels
     var node = nodeToUse();
     if (node) {
