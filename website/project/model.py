@@ -162,7 +162,7 @@ class NodeLog(StoredObject):
     def serialize(self):
         # TODO: Nest serialized user.
         if self.node:
-            category = "project" if self.node.category == 'project' else 'component'
+            category = self.node.project_or_component
         else:
             category = ''
         return {
@@ -890,6 +890,10 @@ class Node(GuidStoredObject):
         if self.node__parent:
             return self.node__parent[0]._id
         return None
+
+    @property
+    def project_or_component(self):
+        return 'project' if self.category == 'project' else 'component'
 
     def is_contributor(self, user):
         return (user is not None) and ((user in self.contributors) or user == self.creator)
