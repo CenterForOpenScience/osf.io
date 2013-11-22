@@ -288,10 +288,9 @@ def component_remove(*args, **kwargs):
     user = kwargs['user']
 
     if node_to_use.remove_node(user=user):
-        category = 'project' \
-            if node_to_use.category == 'project' \
-            else 'component'
-        message = '{} deleted'.format(category.capitalize())
+        message = '{} deleted'.format(
+            node_to_use.project_or_component.capitalize()
+        )
         status.push_status_message(message)
         if node_to_use.node__parent:
             redirect_url = node_to_use.node__parent[0].url
@@ -337,9 +336,7 @@ def _view_project(node_to_use, user):
     data = {
         'node_id': node_to_use._primary_key,
         'node_title': node_to_use.title,
-        'node_category': 'project'
-            if node_to_use.category == 'project'
-            else 'component',
+        'node_category': node_to_use.project_or_component,
         'node_description': node_to_use.description,
         'wiki_home': wiki_home,
         'node_url': node_to_use.url,
