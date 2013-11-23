@@ -146,7 +146,7 @@
                 // Clear user search modal when dismissed; catches dismiss by escape key
                 // or cancel button.
                 $addContributors.on('hidden', function() {
-                    viewModel.clear();
+                    addContribVM.clear();
                 });
 
                 // Initialize LogsViewModel when appropriate

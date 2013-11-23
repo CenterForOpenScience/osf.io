@@ -83,4 +83,6 @@
             }'></div>
     </div>
 </div><!-- end row -->
+
+<%include file="log_templates.mako"/>
 </%def>
