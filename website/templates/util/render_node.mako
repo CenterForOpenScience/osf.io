@@ -1,24 +1,24 @@
-% if summary['can_view']:
+% if user['can_view']:
 
-    <li node_id="${summary['id']}" class="project list-group-item list-group-item-node">
+    <li node_id="${node['id']}" class="project list-group-item list-group-item-node">
 
         <h4 class="list-group-item-heading">
             <span style="display:inline-block;word-wrap:break-word;width:100%;">
-            <a href="${summary['url']}">${summary['title']}</a>
-            % if summary['is_registration']:
-                | Registered: ${summary['registered_date']}
+            <a href="${node['url']}">${node['title']}</a>
+            % if node['is_registration']:
+                | Registered: ${node['registered_date']}
             % endif
             </span>
-            <i id="icon-${summary['id']}" class="icon-plus pull-right" onclick="NodeActions.openCloseNode('${summary['id']}');"></i>
+            <i id="icon-${node['id']}" class="icon-plus pull-right" onclick="NodeActions.openCloseNode('${node['id']}');"></i>
         </h4>
         <div class="list-group-item-text"></div>
 
         <!-- Show abbreviated contributors list -->
         <div mod-meta='{
                 "tpl": "util/render_users_abbrev.mako",
-                "uri": "${summary['api_url']}contributors_abbrev/",
+                "uri": "${node['api_url']}contributors_abbrev/",
                 "kwargs": {
-                    "node_url": "${summary['url']}"
+                    "node_url": "${node['url']}"
                 },
                 "replace": true
             }'>
@@ -34,10 +34,10 @@
             </ul>
         </div>
 
-        <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
+        <div class="body hide" id="body-${node['id']}" style="overflow:hidden;">
             <hr />
             Recent Activity
-            <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['url']}log/"></div>
+            <div id="logs-${node['id']}" class="log-container" data-uri="${node['url']}log/"></div>
         </div>
 
     </li>

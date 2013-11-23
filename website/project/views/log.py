@@ -32,7 +32,6 @@ def get_logs(*args, **kwargs):
     api_key = get_api_key()
     node_to_use = kwargs['node'] or kwargs['project']
 
-
     if not node_to_use.can_view(user, api_key):
         raise HTTPError(http.FORBIDDEN)
     if 'count' in request.args:
