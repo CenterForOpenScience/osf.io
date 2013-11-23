@@ -20,7 +20,7 @@
             "replace": true
         }'></div>
 % else:
-	There have been no registrations of this specific ${node_category}.
+	There have been no registrations of this specific ${node['category']}.
     For a list of the most viewed and most recent public registrations on the
     Open Science Framework, click <a href="/explore/activity/">here</a>.
 
