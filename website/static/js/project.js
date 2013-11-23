@@ -111,8 +111,11 @@ $(function(){
           }).done(function(){
               location.reload();
           }).fail(function() {
-              location.reload();
               bootbox.alert('Adding component failed');
+              $(e.target)
+                  .find("#add-component-submit")
+                  .removeAttr("disabled","disabled")
+                  .text("OK");
           });
      });
 });
