@@ -1,7 +1,7 @@
 import unittest
 from nose.tools import *  # PEP8 asserts
 
-from marshmallow import types
+from marshmallow import utils
 
 from website.project import serializers
 
@@ -16,11 +16,13 @@ class TestSerializers(DbTestCase):
         log = NodeLogFactory(params={'node': node._primary_key})
         node.logs.append(log)
         node.save()
-        d = serializers.LogSerializer(log).data
+        serialized = serializers.LogSerializer(log)
+        assert_true(serialized.is_valid())
+        d = serialized.data
         assert_equal(d['action'], log.action)
         assert_equal(d['node']['category'], 'component')
         assert_equal(d['node']['url'], log.node.url)
-        assert_equal(d['date'], types.rfcformat(log.date))
+        assert_equal(d['date'], utils.rfcformat(log.date))
         assert_in('contributors', d)
         assert_equal(d['user']['fullname'], log.user.fullname)
         assert_equal(d['user']['url'], log.user.url)
@@ -34,7 +36,9 @@ class TestSerializers(DbTestCase):
         node.logs.append(log)
         node.save()
         date_modified = node.logs[-1].date
-        d = serializers.NodeSerializer(node).data
+        serialized = serializers.NodeSerializer(node)
+        assert_true(serialized.is_valid())
+        d = serialized.data
         assert_equal(d['id'], node._id)
         assert_equal(d['title'], node.title)
         assert_equal(d['category'], node.project_or_component)
@@ -53,8 +57,8 @@ class TestSerializers(DbTestCase):
         assert_in('forked_date', d)
         assert_in('watched_count', d)
         assert_equal(d['logs'], serializers.LogSerializer(node.get_recent_logs()).data)
-        assert_equal(d['date_created'], types.rfcformat(node.date_created))
-        assert_equal(d['date_modified'], types.rfcformat(date_modified))
+        assert_equal(d['date_created'], utils.rfcformat(node.date_created))
+        assert_equal(d['date_modified'], utils.rfcformat(date_modified))
 
     def test_user_serializer(self):
         user = UserFactory()

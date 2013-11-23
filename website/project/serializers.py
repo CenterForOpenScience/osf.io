@@ -62,7 +62,7 @@ class BaseNodeSerializer(Serializer):
         return obj.registered_from.url if obj.is_registration else ''
 
     def get_registered_date(self, obj):
-        return obj.project.registered_date.strftime(DATE_FORMAT) \
+        return obj.project.registered_date.strftime('%m/%d/%y %I:%M %p') \
                 if obj.is_registration else ''
 
     def get_registered_meta(self, obj):

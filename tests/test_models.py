@@ -418,11 +418,6 @@ class TestNodeLog(DbTestCase):
         parsed = parser.parse(iso_formatted)
         assert_equal(parsed, self.log.tz_date)
 
-    def test_serialized_user_url(self):
-        data = self.log.serialize()
-        assert_equal(data['user_url'], self.log.user.url)
-
-
 
 class TestWatchConfig(DbTestCase):
 
