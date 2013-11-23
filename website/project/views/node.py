@@ -347,7 +347,7 @@ def _view_project(node_to_use, user, api_key=None):
         if node_to_use.node__parent \
             and not node_to_use.node__parent[0].is_deleted \
             else None
-    recent_logs = list(reversed(node_to_use.logs)[:10])
+    recent_logs = node_to_use.get_recent_logs(n=10)
     recent_logs_dicts = LogSerializer(recent_logs).data
     data = {
         'node': {

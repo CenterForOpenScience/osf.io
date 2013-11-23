@@ -313,6 +313,22 @@ class Node(GuidStoredObject):
             self.update_solr()
         return rv
 
+    def get_recent_logs(self, n=10):
+        '''Return a list of the n most recent logs, in reverse chronological
+        order.
+        '''
+        return list(reversed(self.logs)[:n])
+
+    @property
+    def date_modified(self):
+        '''The most recent datetime when this node was modified, based on
+        the logs.
+        '''
+        try:
+            return self.logs[-1].date
+        except IndexError:
+            return None
+
     def set_title(self, title, user, api_key=None, save=False):
         '''Set the title of this Node and log it.
 

@@ -257,6 +257,18 @@ class TestNode(DbTestCase):
         node = NodeFactory()
         assert_equal(node.parent, None)
 
+    def test_get_recent_logs(self):
+        node = NodeFactory.build()
+        for _ in range(5):
+            node.logs.append(NodeLogFactory())
+        node.save()
+        assert_equal(node.get_recent_logs(n=10), list(reversed(node.logs)))
+
+    def test_date_modified(self):
+        node = NodeFactory.build()
+        node.logs.append(NodeLogFactory())
+        assert_equal(node.date_modified, node.logs[-1].date)
+
 
 class TestProject(DbTestCase):
 
