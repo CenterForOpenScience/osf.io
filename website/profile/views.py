@@ -10,8 +10,6 @@ from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
 
 from website.models import ApiKey, User
-from website import settings
-from website import filters
 from website.views import _render_nodes
 from website.project.serializers import UserSerializer
 
