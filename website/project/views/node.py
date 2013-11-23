@@ -212,7 +212,7 @@ def project_set_permissions(*args, **kwargs):
 
     node_to_use.set_permissions(permissions, user, api_key)
 
-    return {'status' : 'success', "permissions": permissions, "redirect_url": node_to_use.url}, None, None
+    return {'status' : 'success', 'permissions': permissions, 'redirect_url': node_to_use.url}, None, None
 
 
 @must_have_session_auth  # returns user or api_node
@@ -223,7 +223,7 @@ def watch_post(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     watch_config = WatchConfig(node=node_to_use,
-                               digest=request.json.get("digest", False),
+                               digest=request.json.get('digest', False),
                                immediate=request.json.get('immediate', False))
     try:
         user.watch(watch_config)
@@ -241,7 +241,7 @@ def unwatch_post(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     watch_config = WatchConfig(node=node_to_use,
-                                digest=request.json.get("digest", False),
+                                digest=request.json.get('digest', False),
                                 immediate=request.json.get('immediate', False))
     try:
         user.unwatch(watch_config, save=True)
@@ -259,7 +259,7 @@ def togglewatch_post(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     watch_config = WatchConfig(node=node,
-                                digest=request.json.get("digest", False),
+                                digest=request.json.get('digest', False),
                                 immediate=request.json.get('immediate', False))
     try:
         if user.is_watching(node):
@@ -270,7 +270,7 @@ def togglewatch_post(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     return {'status': 'success',
             'watchCount': len(node.watchconfig__watched),
-            "watched": user.is_watching(node)
+            'watched': user.is_watching(node)
             }
 
 
@@ -312,7 +312,7 @@ def view_project(*args, **kwargs):
     return _view_project(node_to_use, user)
 
 
-def _view_project(node_to_use, user):
+def _view_project(node_to_use, user, api_key=None):
     '''Build a JSON object containing everything needed to render
     project.view.mako.
 
@@ -325,7 +325,7 @@ def _view_project(node_to_use, user):
         else:
             wiki_home = BeautifulSoup(wiki_home)
     else:
-        wiki_home = "<p><em>No wiki content</em></p>"
+        wiki_home = '<p><em>No wiki content</em></p>'
 
     parent = node_to_use.node__parent[0] \
         if node_to_use.node__parent \
@@ -334,7 +334,7 @@ def _view_project(node_to_use, user):
     recent_logs = list(reversed(node_to_use.logs)[:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
     data = {
-        "node": {
+        'node': {
             'id': node_to_use._primary_key,
             'title': node_to_use.title,
             'category': 'project'
@@ -377,9 +377,9 @@ def _view_project(node_to_use, user):
             'url': parent.url if parent else '',
             'api_url': parent.api_url if parent else '',
         },
-        "user": {
+        'user': {
             'is_contributor': node_to_use.is_contributor(user),
-            'can_edit': (node_to_use.is_contributor(user)
+            'can_edit': (node_to_use.can_edit(user, api_key)
                                 and not node_to_use.is_registration),
             'is_watching': user.is_watching(node_to_use) if user else False
         }
