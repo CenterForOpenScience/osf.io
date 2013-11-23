@@ -3,7 +3,7 @@
 <%def name="content()">
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
-<div class="col-md-9">
+<div class="col-md-9 image-overflow">
     ${wiki_content}
 </div>
 
