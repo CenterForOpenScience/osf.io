@@ -61,13 +61,35 @@ class TestSerializers(DbTestCase):
         assert_equal(d['date_modified'], utils.rfcformat(date_modified))
 
     def test_user_serializer(self):
-        user = UserFactory()
-        d = serializers.UserSerializer(user).data
+        master = UserFactory.build()
+        user = UserFactory.build()
+        master.merge_user(user)
+        master.save()
+        user.save()
+        serialized = serializers.UserSerializer(user)
+        assert_true(serialized.is_valid())
+        d = serialized.data
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
         assert_equal(d['fullname'], user.fullname)
         assert_equal(d['registered'], user.is_registered)
-        assert_equal(d['gravatar'], user.gravatar_url)
+        assert_equal(d['gravatar_url'], user.gravatar_url)
+        assert_equal(d['absolute_url'], user.absolute_url)
+        assert_equal(d['date_registered'], user.date_registered.strftime("%Y-%m-%d"))
+        assert_equal(d['activity_points'], user.activity_points)
+        assert_equal(d['is_merged'], user.is_merged)
+        assert_equal(d['merged_by']['url'], user.merged_by.url)
+        assert_equal(d['merged_by']['absolute_url'], user.merged_by.absolute_url)
+        projects = [
+            node
+            for node in user.node__contributed
+            if node.category == 'project'
+            and not node.is_registration
+            and not node.is_deleted
+        ]
+        public_projects = [p for p in projects if p.is_public]
+        assert_equal(d['number_projects'], len(projects))
+        assert_equal(d['number_public_projects'], len(public_projects))
 
 if __name__ == '__main__':
     unittest.main()

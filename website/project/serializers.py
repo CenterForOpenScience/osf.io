@@ -1,22 +1,50 @@
 # -*- coding: utf-8 -*-
 '''Serializers for the project-related models.'''
 
-import logging
 from marshmallow import Serializer, fields
 import hashlib
 
 from framework.auth.model import User
-from website.project.model import NodeLog
 from website.project import clean_template_name
+
+
+class MergedUserSerializer(Serializer):
+    id = fields.String(attribute="_primary_key")
+    url = fields.Url(relative=True)
+    absolute_url = fields.Url()
 
 
 class UserSerializer(Serializer):
     id = fields.String(attribute="_primary_key", default='')
-    url = fields.String(default='')
+    url = fields.Url(relative=True)
+    absolute_url = fields.Url()
+    activity_points = fields.Integer()
     username = fields.String(default='')
     fullname = fields.String(default='')
+    date_registered = fields.DateTime(format="%Y-%m-%d")
     registered = fields.Boolean(attribute="is_registered")
-    gravatar = fields.Url(attribute="gravatar_url")
+    gravatar_url = fields.Url()
+    is_merged = fields.Boolean()
+    merged_by = fields.Nested(MergedUserSerializer)
+    number_projects = fields.Method("get_number_projects")
+    number_public_projects = fields.Method("get_number_public_projects")
+
+    def _get_projects(self, user):
+        '''Return a list of a user's projects, excluding registrations.'''
+        return [
+            node
+            for node in user.node__contributed
+            if node.category == 'project'
+            and not node.is_registration
+            and not node.is_deleted
+        ]
+
+    def get_number_projects(self, user):
+        return len(self._get_projects(user))
+
+    def get_number_public_projects(self, user):
+        public_projects = [p for p in self._get_projects(user) if p.is_public]
+        return len(public_projects)
 
 
 class UnregUserSerializer(Serializer):

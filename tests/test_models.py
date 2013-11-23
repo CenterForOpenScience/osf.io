@@ -77,7 +77,6 @@ class TestUser(DbTestCase):
                     get_total_activity_count(self.user._primary_key))
 
 
-
 class TestMergingUsers(DbTestCase):
 
     def setUp(self):

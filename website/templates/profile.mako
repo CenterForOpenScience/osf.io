@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
-<%def name="title()">${profile["full_name"]}'s Profile</%def>
+<%def name="title()">${profile["fullname"]}'s Profile</%def>
 
 <%def name="javascript_bottom()">
 % if user["is_profile"]:
@@ -12,7 +12,7 @@
                 url:   '/api/v1/profile/${profile["id"]}/edit/',
                 title: 'Edit Full Name',
                 placement: 'bottom',
-                value: '${profile["full_name"]}',
+                value: '${profile["fullname"]}',
                 mode: "inline",
                 success: function(data) {
                     // Also change the display name in the user info table
@@ -27,14 +27,14 @@
 
 <%def name="content()">
 % if profile['is_merged']:
-<div class="alert alert-info">This account has been merged with <a class="alert-link" href="${profile['merged_by_url']}">${profile['merged_by_absolute_url']}</a>
+<div class="alert alert-info">This account has been merged with <a class="alert-link" href="${profile['merged_by']['url']}">${profile['merged_by']['absolute_url']}</a>
 </div>
 % endif
 
 
 <div class="page-header">
     <img src="${profile['gravatar_url']}" />
-    <h1 id="profile-fullname" style="display:inline-block">${profile["full_name"]}</h1>
+    <h1 id="profile-fullname" style="display:inline-block">${profile["fullname"]}</h1>
 </div><!-- end-page-header -->
 
 <div class="row">
@@ -42,7 +42,7 @@
         <table class="table table-plain">
             <tr>
               <td>Name</td>
-              <td class="fullname">${profile["full_name"]}</td>
+              <td class="fullname">${profile["fullname"]}</td>
             </tr>
             <tr>
               <td>Member Since</td>
