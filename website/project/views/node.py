@@ -83,7 +83,7 @@ def project_new_node(*args, **kwargs):
             project = project,
         )
         return {
-            'status' : 'success',
+            'status': 'success',
         }, 201, None, project.url
         # return redirect('/project/' + str(project._primary_key))
     else:
@@ -173,9 +173,9 @@ def project_reorder_components(*args, **kwargs):
     if len(old_list) == len(new_list) and set(new_list) == set(old_list):
         node_to_use.nodes = new_list
         if node_to_use.save():
-            return {'status' : 'success'}
+            return {'status': 'success'}
     # todo log impossibility
-    return {'status' : 'failure'}
+    return {'status': 'failure'}
 
 ##############################################################################
 
@@ -217,7 +217,11 @@ def project_set_permissions(*args, **kwargs):
 
     node_to_use.set_permissions(permissions, user, api_key)
 
-    return {'status' : 'success', "permissions": permissions, "redirect_url": node_to_use.url}, None, None
+    return {
+        'status': 'success',
+        'permissions': permissions,
+        'redirect_url': node_to_use.url
+    }, None, None
 
 
 @must_have_session_auth  # returns user or api_node
@@ -228,7 +232,7 @@ def watch_post(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     watch_config = WatchConfig(node=node_to_use,
-                               digest=request.json.get("digest", False),
+                               digest=request.json.get('digest', False),
                                immediate=request.json.get('immediate', False))
     try:
         user.watch(watch_config)
@@ -236,7 +240,10 @@ def watch_post(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     watch_config.save()
     user.save()
-    return {'status': 'success', 'watchCount': len(node_to_use.watchconfig__watched)}
+    return {
+        'status': 'success',
+        'watchCount': len(node_to_use.watchconfig__watched)
+    }
 
 @must_have_session_auth  # returns user or api_node
 @must_be_valid_project  # returns project
@@ -246,13 +253,16 @@ def unwatch_post(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     watch_config = WatchConfig(node=node_to_use,
-                                digest=request.json.get("digest", False),
+                                digest=request.json.get('digest', False),
                                 immediate=request.json.get('immediate', False))
     try:
         user.unwatch(watch_config, save=True)
     except ValueError:  # Node isn't being watched
         raise HTTPError(http.BAD_REQUEST)
-    return {'status': 'success', 'watchCount': len(node_to_use.watchconfig__watched)}
+    return {
+        'status': 'success',
+        'watchCount': len(node_to_use.watchconfig__watched)
+    }
 
 
 @must_have_session_auth  # returns user or api_node
@@ -264,7 +274,7 @@ def togglewatch_post(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     watch_config = WatchConfig(node=node,
-                                digest=request.json.get("digest", False),
+                                digest=request.json.get('digest', False),
                                 immediate=request.json.get('immediate', False))
     try:
         if user.is_watching(node):
@@ -273,10 +283,11 @@ def togglewatch_post(*args, **kwargs):
             user.watch(watch_config, save=True)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
-    return {'status': 'success',
-            'watchCount': len(node.watchconfig__watched),
-            "watched": user.is_watching(node)
-            }
+    return {
+        'status': 'success',
+        'watchCount': len(node.watchconfig__watched),
+        'watched': user.is_watching(node)
+    }
 
 
 @must_have_session_auth # returns user or api_node
@@ -292,10 +303,9 @@ def component_remove(*args, **kwargs):
     user = kwargs['user']
 
     if node_to_use.remove_node(user=user):
-        category = 'project' \
-            if node_to_use.category == 'project' \
-            else 'component'
-        message = '{} deleted'.format(category.capitalize())
+        message = '{} deleted'.format(
+            node_to_use.project_or_component.capitalize()
+        )
         status.push_status_message(message)
         if node_to_use.node__parent:
             redirect_url = node_to_use.node__parent[0].url
@@ -317,7 +327,7 @@ def view_project(*args, **kwargs):
     return _view_project(node_to_use, user)
 
 
-def _view_project(node_to_use, user):
+def _view_project(node_to_use, user, api_key=None):
     '''Build a JSON object containing everything needed to render
     project.view.mako.
 
@@ -330,7 +340,7 @@ def _view_project(node_to_use, user):
         else:
             wiki_home = BeautifulSoup(wiki_home)
     else:
-        wiki_home = "<p><em>No wiki content</em></p>"
+        wiki_home = '<p><em>No wiki content</em></p>'
 
     parent = node_to_use.node__parent[0] \
         if node_to_use.node__parent \
@@ -339,12 +349,10 @@ def _view_project(node_to_use, user):
     recent_logs = list(reversed(node_to_use.logs)[:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
     data = {
-        "node": {
+        'node': {
             'id': node_to_use._primary_key,
             'title': node_to_use.title,
-            'category': 'project'
-                if node_to_use.category == 'project'
-                else 'component',
+            'category': node_to_use.project_or_component,
             'description': node_to_use.description,
             'wiki_home': wiki_home,
             'url': node_to_use.url,
@@ -382,13 +390,12 @@ def _view_project(node_to_use, user):
             'url': parent.url if parent else '',
             'api_url': parent.api_url if parent else '',
         },
-        "user": {
+        'user': {
             'is_contributor': node_to_use.is_contributor(user),
-            'can_edit': (node_to_use.is_contributor(user)
+            'can_edit': (node_to_use.can_edit(user, api_key)
                                 and not node_to_use.is_registration),
             'is_watching': user.is_watching(node_to_use) if user else False
         }
-
     }
     return data
 

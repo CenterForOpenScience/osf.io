@@ -138,20 +138,25 @@ class NodeLog(StoredObject):
     def tz_date(self):
         '''Return the timezone-aware date.
         '''
-        return self.date.replace(tzinfo=pytz.UTC)
+        # Date should always be defined, but a few logs in production are
+        # missing dates; return None and log error if date missing
+        if self.date:
+            return self.date.replace(tzinfo=pytz.UTC)
+        logging.error('Date missing on NodeLog {}'.format(self._primary_key))
 
     @property
     def formatted_date(self):
         '''Return the timezone-aware, ISO-formatted string representation of
         this log's date.
         '''
-        return self.tz_date.isoformat()
+        if self.tz_date:
+            return self.tz_date.isoformat()
 
     # FIXME: Serialization (presentation) doesn't belong in model (domain)
     def serialize(self):
         # TODO: Nest serialized user.
         if self.node:
-            category = "project" if self.node.category == 'project' else 'component'
+            category = self.node.project_or_component
         else:
             category = ''
         return {
@@ -166,7 +171,7 @@ class NodeLog(StoredObject):
         'params': self.params,
         'category': category,
         # TODO: Use self.formatted_date when Recent Activity Logs are generated dynamically
-        'date': self.tz_date.strftime(NodeLog.DATE_FORMAT),
+        'date': self.tz_date.strftime(NodeLog.DATE_FORMAT) if self.tz_date else '',
         'contributors': [self._render_log_contributor(contributor) for contributor in self.params.get('contributors', [])],
         'contributor': self._render_log_contributor(self.params.get('contributor', {})),
     }
@@ -938,6 +943,10 @@ class Node(GuidStoredObject):
         if self.node__parent:
             return self.node__parent[0]._id
         return None
+
+    @property
+    def project_or_component(self):
+        return 'project' if self.category == 'project' else 'component'
 
     def is_contributor(self, user):
         return (user is not None) and ((user in self.contributors) or user == self.creator)
