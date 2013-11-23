@@ -111,6 +111,7 @@ $(function(){
           }).done(function(){
               location.reload();
           }).fail(function() {
+              location.reload();
               bootbox.alert('Adding component failed');
           });
      });
