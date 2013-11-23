@@ -100,24 +100,6 @@
 <script>
     $(document).ready(function() {
 
-        ### Editable Title ###
-        %if user["can_edit"]:
-                $(function() {
-                    $('#node-title-editable').editable({
-                       type:  'text',
-                       pk:    '${node["id"]}',
-                       name:  'title',
-                       url:   '${node["api_url"]}edit/',
-                       title: 'Edit Title',
-                       placement: 'bottom',
-                       value: "${ '\\\''.join(node['title'].split('\'')) }",
-                       success: function(data){
-                            document.location.reload(true);
-                       }
-                    });
-                });
-        %endif
-
         ### Tag Input ###
 
         $('#node-tags').tagsInput({

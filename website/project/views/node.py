@@ -33,11 +33,17 @@ def edit_node(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
     node_to_use = node or project
-    form = request.form
-    if form.get('name') == 'title' and form.get('value'):
-        new_title = sanitize(form['value'])
-        node_to_use.set_title(new_title, user=get_current_user(),
-                              api_key=get_api_key())
+    post_data = request.json
+    edited_field = post_data.get('name')
+    value = sanitize(post_data.get("value"))
+    user = get_current_user()
+    api_key = get_api_key()
+    if value:
+        if edited_field == 'title':
+            node_to_use.set_title(value, user=user,
+                                  api_key=api_key)
+        elif edited_field == 'description':
+            node_to_use.set_description(value, user=user, api_key=api_key)
         node_to_use.save()
     return {'status': 'success'}
 

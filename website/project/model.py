@@ -122,6 +122,7 @@ class NodeLog(StoredObject):
     TAG_ADDED = 'tag_added'
     TAG_REMOVED = 'tag_removed'
     EDITED_TITLE = "edit_title"
+    EDITED_DESCRIPTION = 'edit_description'
     PROJECT_REGISTERED = 'project_registered'
     FILE_ADDED = "file_added"
     FILE_REMOVED = "file_removed"
@@ -337,11 +338,11 @@ class Node(GuidStoredObject):
         return rv
 
     def set_title(self, title, user, api_key=None, save=False):
-        '''Sets the title of this Node and logs it.
+        '''Set the title of this Node and log it.
 
-        :param title: A string, the new title
-        :param user: A User object
-        :param api_key: An ApiKey object
+        :param str title: The new title.
+        :param User user: User who made the action.
+        :param ApiKey api_key: Optional API key.
         '''
         original_title = self.title
         self.title = title
@@ -358,6 +359,30 @@ class Node(GuidStoredObject):
         )
         if save:
             self.save()
+        return None
+
+    def set_description(self, description, user, api_key=None, save=False):
+        '''Set the description and log the event.
+
+        :param str description: The new description
+        :param User user: The user who changed the description.
+        :param ApiKey api_key: Optional API key.
+        '''
+        original = self.description
+        self.description = description
+        if save:
+            self.save()
+        self.add_log(
+            action=NodeLog.EDITED_DESCRIPTION,
+            params={
+                'project': self.parent,  # None if no parent
+                'node': self._primary_key,
+                'description_new': self.description,
+                'description_original': original
+            },
+            user=user,
+            api_key=api_key
+        )
         return None
 
     def update_solr(self):
@@ -894,6 +919,15 @@ class Node(GuidStoredObject):
                     self._primary_key
                 )
         logging.error("Node {0} has a parent that is not a project".format(self._id))
+        return None
+
+    @property
+    def parent(self):
+        '''The parent node, if it exists, otherwise ``None``.'''
+        try:
+            return self.node__parent[0]
+        except IndexError:
+            pass
         return None
 
     @property
