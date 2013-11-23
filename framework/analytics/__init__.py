@@ -2,15 +2,12 @@ from framework import db, session
 
 from decorator import decorator
 from datetime import datetime
-import re
 
-collectionName = 'pagecounters'
-collection = db[collectionName]
+collection = db['pagecounters']
 
 
 def increment_user_activity_counters(user_id, action, date):
-    collectionName = 'useractivitycounters'
-    collection = db[collectionName]
+    collection = db['useractivitycounters']
     date = date.strftime('%Y/%m/%d') # todo remove slashes
     d = {'$inc': {}}
     d['$inc']['total'] = 1
@@ -22,8 +19,7 @@ def increment_user_activity_counters(user_id, action, date):
 
 
 def get_total_activity_count(user_id):
-    collectionName = 'useractivitycounters'
-    collection = db[collectionName]
+    collection = db['useractivitycounters']
     result = collection.find_one(
         {'_id': user_id}, {'total': 1}
     )
@@ -36,30 +32,28 @@ def update_counters(rex):
     def wrapped(func, *args, **kwargs):
         date = datetime.utcnow()
         date = date.strftime('%Y/%m/%d')
-        #path = request.path
         try:
-            page = rex.format(**kwargs).replace('.',
-                                                '_') #re.search(rex, path).group(0)
+            page = rex.format(**kwargs).replace('.', '_')
         except KeyError:
             return func(*args, **kwargs)
 
         d = {'$inc': {}}
 
-        visitedByDate = session.data.get('visited_by_date')
-        if not visitedByDate:
-            visitedByDate = {'date': date, 'pages': []}
+        visited_by_date = session.data.get('visited_by_date')
+        if not visited_by_date:
+            visited_by_date = {'date': date, 'pages': []}
 
-        if date == visitedByDate['date']:
-            if page not in visitedByDate['pages']:
+        if date == visited_by_date['date']:
+            if page not in visited_by_date['pages']:
                 d['$inc']['date.%s.unique' % date] = 1
-                visitedByDate['pages'].append(page)
-                session.data['visited_by_date'] = visitedByDate
+                visited_by_date['pages'].append(page)
+                session.data['visited_by_date'] = visited_by_date
         else:
-            visitedByDate['date'] = date
-            visitedByDate['pages'] = []
+            visited_by_date['date'] = date
+            visited_by_date['pages'] = []
             d['$inc']['date.%s.unique' % date] = 1
-            visitedByDate['pages'].append(page)
-            session.data['visited_by_date'] = visitedByDate
+            visited_by_date['pages'].append(page)
+            session.data['visited_by_date'] = visited_by_date
 
         d['$inc']['date.%s.total' % date] = 1
 
@@ -122,12 +116,12 @@ def get_day_total_list(page):
         {'_id': page}, {'date': 1}
     )
     dates = {}
-    if 'date' in result:
+
+    if result and 'date' in result:
         for k, v in result['date'].items():
             dates[k] = 0
             if 'total' in v:
                 dates[k] = v['total']
         sorted_dates = sorted(dates.keys())
         return zip(sorted_dates, map(dates.get, sorted_dates))
-    else:
-        return None
+    return []
