@@ -122,7 +122,8 @@ def get_day_total_list(page):
         {'_id': page}, {'date': 1}
     )
     dates = {}
-    if 'date' in result:
+
+    if result and 'date' in result:
         for k, v in result['date'].items():
             dates[k] = 0
             if 'total' in v:
@@ -130,4 +131,4 @@ def get_day_total_list(page):
         sorted_dates = sorted(dates.keys())
         return zip(sorted_dates, map(dates.get, sorted_dates))
     else:
-        return None
+        return list()
