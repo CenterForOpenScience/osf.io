@@ -10,6 +10,11 @@
             </li>
         % endfor
 
+        % if user['can_edit']:
+                <li><a href="${node['url']}wiki/${pageName}/edit">Add Wiki Page</a></li>
+            % else:
+                <li><a class="disabled">Add Wiki Page</a></li>
+        % endif
 
         % if category == 'project':
             <hr />

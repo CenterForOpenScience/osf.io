@@ -878,7 +878,7 @@ form.form-horizontal.form-horizontal-narrow .control-group {
     width: 100%;
 }
 
-.col-md-7 .preview-overflow{
+.preview-overflow{
     overflow:hidden;
     width:100%;
     height:500px;
