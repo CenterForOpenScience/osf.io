@@ -15,6 +15,7 @@ from website.models import Guid, Node, MetaData
 from website.project.forms import NewProjectForm
 from website.project import model
 from website import settings
+from website.project.serializers import LogSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +105,7 @@ def watched_logs_get(*args, **kwargs):
     logs = [model.NodeLog.load(id) for id in recent_log_ids]
     #logger.debug([log.action for log in logs])
     return {
-        "logs": [log.serialize() for log in logs]
+        "logs": LogSerializer(logs).data
     }
 
 

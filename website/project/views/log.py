@@ -8,6 +8,7 @@ from framework.exceptions import HTTPError
 
 from website.project.model import NodeLog
 from website.project.decorators import must_be_valid_project
+from website.project.serializers import LogSerializer
 
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ def get_log(log_id):
 
     if not node_to_use.can_view(user, api_key):
         raise HTTPError(http.FORBIDDEN)
-    return {'log': log.serialize()}
+    return {'log': LogSerializer(log).data}
 
 
 # todo: test log visibility
@@ -49,7 +50,7 @@ def get_logs(*args, **kwargs):
     chrono_logs = reversed(node_to_use.logs)
     for log in chrono_logs:
         if log and log.node.can_view(user, api_key):
-            log_data.append(log.serialize())
+            log_data.append(LogSerializer(log).data)
         if len(log_data) >= count:
             break
 
