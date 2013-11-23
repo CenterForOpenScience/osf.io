@@ -917,7 +917,8 @@ class Node(GuidStoredObject):
     def parent(self):
         '''The parent node, if it exists, otherwise ``None``.'''
         try:
-            return self.node__parent[0]
+            if not self.node__parent[0].is_deleted:
+                return self.node__parent[0]
         except IndexError:
             pass
         return None

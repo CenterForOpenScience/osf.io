@@ -8,6 +8,7 @@ from dateutil import parser
 
 from framework.auth import User
 from framework.bcrypt import check_password_hash
+from website import settings, filters
 from website.project.model import ApiKey, NodeFile, NodeLog
 
 from tests.base import DbTestCase, Guid
@@ -61,6 +62,15 @@ class TestUser(DbTestCase):
         user.save()
         assert_true(user.check_password("ghostrider"))
         assert_false(user.check_password("ghostride"))
+
+    def test_gravatar_url(self):
+        user = User()
+        expected = filters.gravatar(
+                    user,
+                    use_ssl=True,
+                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+                )
+        assert_equal(user.gravatar_url, expected)
 
 
 class TestMergingUsers(DbTestCase):
