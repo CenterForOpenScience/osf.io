@@ -21,7 +21,7 @@ from website.project.forms import NewProjectForm, NewNodeForm
 from website.models import WatchConfig
 from website import settings
 from website.views import _render_nodes
-from website.project.serializers import LogSerializer
+from website.project.serializers import NodeSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -343,54 +343,10 @@ def _view_project(node_to_use, user, api_key=None):
     else:
         wiki_home = '<p><em>No wiki content</em></p>'
 
-    parent = node_to_use.node__parent[0] \
-        if node_to_use.node__parent \
-            and not node_to_use.node__parent[0].is_deleted \
-            else None
-    recent_logs = node_to_use.get_recent_logs(n=10)
-    recent_logs_dicts = LogSerializer(recent_logs).data
     data = {
-        'node': {
-            'id': node_to_use._primary_key,
-            'title': node_to_use.title,
-            'category': node_to_use.project_or_component,
-            'description': node_to_use.description,
-            'wiki_home': wiki_home,
-            'url': node_to_use.url,
-            'api_url': node_to_use.api_url,
-            'is_public': node_to_use.is_public,
-            'date_created': node_to_use.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
-            'date_modified': node_to_use.logs[-1].date.strftime('%m/%d/%Y %I:%M %p UTC') if node_to_use.logs else '',
-
-            'tags': [tag._primary_key for tag in node_to_use.tags],
-            'children': bool(node_to_use.nodes),
-
-            'is_registration': node_to_use.is_registration,
-            'registered_from_url': node_to_use.registered_from.url if node_to_use.is_registration else '',
-            'registered_date': node_to_use.registered_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_registration else '',
-            'registered_meta': [
-                {
-                    'name_no_ext': meta.replace('.txt', ''),
-                    'name_clean': clean_template_name(meta),
-                }
-                for meta in node_to_use.registered_meta or []
-            ],
-            'registration_count': len(node_to_use.registration_list),
-
-            'is_fork': node_to_use.is_fork,
-            'forked_from_url': node_to_use.forked_from.url if node_to_use.is_fork else '',
-            'forked_date': node_to_use.forked_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_fork else '',
-            'fork_count': len(node_to_use.fork_list),
-
-            'watched_count': len(node_to_use.watchconfig__watched),
-            'logs': recent_logs_dicts
-        },
-        'parent': {
-            'id': parent._primary_key if parent else '',
-            'title': parent.title if parent else '',
-            'url': parent.url if parent else '',
-            'api_url': parent.api_url if parent else '',
-        },
+        'node': NodeSerializer(node_to_use, extra={"wiki_home": wiki_home}).data,
+        'parent': NodeSerializer(node_to_use.parent,
+                                only=('id', 'title', 'url', 'api_url')).data,
         'user': {
             'is_contributor': node_to_use.is_contributor(user),
             'can_edit': (node_to_use.can_edit(user, api_key)
