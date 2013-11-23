@@ -7,27 +7,24 @@
 // Models //
 ////////////
 
+LOCAL_DATEFORMAT = "l h:mm A";
+UTC_DATEFORMAT = "l H:mm UTC";
+
 /**
- * The project model.
+ * A date object with two formats: local time or UTC time.
+ * @param {String} date The original date as a string. Should be an standard
+ *                      format such as RFC or ISO.
  */
-var Project = function(params) {
-    var self = this;
-    self._id =  params._id;
-    self.apiUrl = params.apiUrl;
-    self.watchedCount = ko.observable(params.watchCount);
-    self.userIsWatching = ko.observable(params.userIsWatching);
-    // The button to display (e.g. "Watch" if not watching)
-    self.watchButtonDisplay = ko.computed(function() {
-        var text = self.userIsWatching() ? "Unwatch" : "Watch"
-        var full = text + " " +self.watchedCount().toString();
-        return full;
-    });
-};
+var FormattableDate = function(date) {
+    this.date = date;
+    this.local = moment(date).format(LOCAL_DATEFORMAT);
+    this.utc = moment.utc(date).format(UTC_DATEFORMAT);
+}
 
 var Log = function(params) {
     var self = this;
     self.action = params.action;
-    self.date = params.date;
+    self.date = new FormattableDate(params.date);
     self.nodeCategory = params.nodeCategory;
     self.nodeTitle = params.nodeTitle;
     self.contributor = params.contributor;
@@ -39,13 +36,6 @@ var Log = function(params) {
     self.params = params.params; // Extra log params
     self.wikiUrl = ko.computed(function() {
         return self.nodeUrl + "wiki/" + self.params.page;
-    });
-
-    self.localDatetime = ko.computed(function() {
-        return moment(self.date).format("l h:mm A")
-    });
-    self.utcDatetime = ko.computed(function() {
-        return moment(self.date).format("l H:mm UTC")
     });
 
     /**
@@ -102,6 +92,8 @@ var LogsViewModel = function(url) {
     } else {
         getUrl = nodeToUseUrl() + "log/";
     }
+    self.progressBar = $("#logProgressBar")
+    self.progressBar.show();
     $.ajax({
         url: getUrl,
         type: "get",
@@ -124,31 +116,30 @@ var LogsViewModel = function(url) {
                     "nodeTitle": item.node_title
                 })
             });
+            self.progressBar.hide();
             self.logs(mappedLogs);
         }
     });
 };
 
 /**
- * The project VM, scoped to the project page header.
+ * The ProjectViewModel, scoped to the project header.
+ * @param {Object} params The parsed project data returned from the server
  */
-var ProjectViewModel = function() {
+var ProjectViewModel = function(params) {
     var self = this;
-    self.projects = ko.observableArray([{"watchButtonDisplay": ""}]);
-    $.ajax({
-        url: nodeToUseUrl(),
-        type: "get", contentType: "application/json",
-        dataType: "json",
-        success: function(data){
-            project = new Project({
-                "_id": data.node_id,
-                "apiUrl": data.node_api_url,
-                "watchCount": data.node_watched_count,
-                "userIsWatching": data.user_is_watching,
-                "logs": data.logs
-            });
-            self.projects([project]);
-        }
+    self._id = params.node.id;
+    self.apiUrl = params.node.api_url;
+    self.dateCreated = new FormattableDate(params.node.date_created);
+    self.dateModified = new FormattableDate(params.node.date_modified);
+    self.dateForked = new FormattableDate(params.node.forked_date);
+    self.watchedCount = ko.observable(params.node.watched_count);
+    self.userIsWatching = ko.observable(params.user.is_watching);
+    // The button text to display (e.g. "Watch" if not watching)
+    self.watchButtonDisplay = ko.computed(function() {
+        var text = self.userIsWatching() ? "Unwatch" : "Watch"
+        var full = text + " " +self.watchedCount().toString();
+        return full;
     });
 
     /**
@@ -157,21 +148,19 @@ var ProjectViewModel = function() {
     self.toggleWatch = function() {
         // Send POST request to node's watch API url and update the watch count
         $.ajax({
-            url: self.projects()[0].apiUrl + "togglewatch/",
+            url: self.apiUrl + "togglewatch/",
             type: "POST",
             dataType: "json",
             data: JSON.stringify({}),
             contentType: "application/json",
             success: function(data, status, xhr) {
                 // Update watch count in DOM
-                self.projects()[0].userIsWatching(data['watched']);
-                self.projects()[0].watchedCount(data['watchCount']);
+                self.userIsWatching(data['watched']);
+                self.watchedCount(data['watchCount']);
             }
         });
     };
 };
-
-
 
 
 function attrMap(list, attr) {
@@ -358,7 +347,12 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
 // Data binders //
 //////////////////
 
-
+/**
+ * Tooltip data binder. The value accessor should be an object containing
+ * parameters for the tooltip.
+ * Example:
+ * <span data-bind="tooltip: {title: 'Tooltip text here'}"></span>
+ */
 ko.bindingHandlers.tooltip = {
     init: function(elem, valueAccessor) {
         $(elem).tooltip(valueAccessor())

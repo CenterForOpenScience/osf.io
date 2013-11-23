@@ -19,31 +19,16 @@
         <div class="col-md-6">
            <div id="watchFeed">
                <div class="page-header">
-                <h3>Watched Projects</h3>
+                    <h3>Watched Projects</h3>
                 </div>
                 <div id="logScope" data-target="/api/v1/watched/logs/">
-                    <p class="help-block" data-bind="if:tzname">
-                        All times displayed at
-                        <span data-bind="text:tzname"></span>
-                        <a href="http://en.wikipedia.org/wiki/Coordinated_Universal_Time" target="_blank">UTC</a> offset.
-                    </p>
-                     <dl class="dl-horizontal activity-log"
-                        data-bind="foreach: {data: logs, as: 'log'}">
-                        <dt><span class="date log-date" data-bind="text: log.localDatetime, tooltip: {title: log.utcDatetime}"></span></dt>
-                      <dd class="log-content">
-                        <a data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
-                        <!-- log actions are the same as their template name -->
-                        <span data-bind="template: {name: log.action, data: log}"></span>
-                      </dd>
-
-                    </dl><!-- end foreach logs -->
+                    <%include file="log_list.mako"/>
                 </div><!-- end #logScope -->
             </div><!-- end #watchFeed -->
         </div>
     </div>
 </div>
 
-<%include file="log_templates.mako"/>
 </%def>
 
 <%def name="javascript_bottom()">
