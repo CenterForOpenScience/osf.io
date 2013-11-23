@@ -16,10 +16,10 @@
             <li><a href="${node['url']}wiki/${pageName}/compare/1">History</a> </li>
         % endif
         % if user['can_edit']:
-                <li><a data-toggle="modal" data-target="#newWiki">Add Wiki Page</a></li>
+                <li><a data-toggle="modal" data-target="#newWiki">New Page</a></li>
                 <%include file="project/wiki/add_wiki_page.mako"/>
             % else:
-                <li><a class="disabled">Add Wiki Page</a></li>
+                <li><a class="disabled">New Wiki</a></li>
         % endif
     </ul>
 </nav>
