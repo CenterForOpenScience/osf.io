@@ -6,6 +6,7 @@ from nose.tools import *  # PEP8 asserts
 import pytz
 from dateutil import parser
 
+from framework.analytics import get_total_activity_count
 from framework.auth import User
 from framework.bcrypt import check_password_hash
 from website import settings, filters
@@ -64,13 +65,17 @@ class TestUser(DbTestCase):
         assert_false(user.check_password("ghostride"))
 
     def test_gravatar_url(self):
-        user = User()
         expected = filters.gravatar(
-                    user,
+                    self.user,
                     use_ssl=True,
                     size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
                 )
-        assert_equal(user.gravatar_url, expected)
+        assert_equal(self.user.gravatar_url, expected)
+
+    def test_activity_points(self):
+        assert_equal(self.user.activity_points,
+                    get_total_activity_count(self.user._primary_key))
+
 
 
 class TestMergingUsers(DbTestCase):

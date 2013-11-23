@@ -7,7 +7,7 @@ import pytz
 import bson
 
 from framework.bcrypt import generate_password_hash, check_password_hash
-from framework import fields,  Q
+from framework import fields,  Q, analytics
 from framework import GuidStoredObject
 from framework.search import solr
 from website import settings, filters
@@ -69,6 +69,10 @@ class User(GuidStoredObject):
                     use_ssl=True,
                     size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
                 )
+
+    @property
+    def activity_points(self):
+        return analytics.get_total_activity_count(self._primary_key)
 
     @property
     def is_merged(self):

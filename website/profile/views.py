@@ -67,7 +67,7 @@ def _profile_view(uid=None):
                 "url": profile.url,
                 "absolute_url": profile.absolute_url,
                 "full_name": profile.fullname,
-                "activity_points": get_total_activity_count(profile._primary_key),
+                "activity_points": profile.activity_points,
                 "number_projects": len(projects),
                 "number_public_projects": len(public_projects['nodes']),
                 "date_registered": profile.date_registered.strftime("%Y-%m-%d"),
