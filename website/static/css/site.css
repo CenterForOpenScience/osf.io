@@ -274,8 +274,8 @@ h4 {
 
 }
 
-/* Make all images responsive */
-img {
+/* Make wiki images responsive */
+.wiki img {
   vertical-align: middle;
   display: block;
   max-width: 100%;
