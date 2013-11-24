@@ -91,18 +91,10 @@
             });
 
             $('#registration_template').on('submit', function(event) {
-                $.blockUI({
-                    css: {
-                        border: 'none',
-                        padding: '15px',
-                        backgroundColor: '#000',
-                        '-webkit-border-radius': '10px',
-                        '-moz-border-radius': '10px',
-                        opacity: .5,
-                        color: '#fff'
-                    },
-                    message: 'Please wait'
-                });
+
+                // Block page
+                block();
+
                 // Initialize variables
                 var $this = $(this),
                     data = {};
@@ -113,12 +105,13 @@
                         data[question.id] = question.value;
                     });
                 });
+
                 // Send data to OSF
                 $.ajax({
                     url: '${node["api_url"]}' + 'register/' + '${template_name if template_name else ''}/',
-                    type: "POST",
+                    type: 'POST',
                     data: JSON.stringify(data),
-                    contentType: "application/json",
+                    contentType: 'application/json',
                     success: function(response) {
                         if (response.status === 'success'){
                             window.location.href = response.result;
