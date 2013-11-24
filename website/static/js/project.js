@@ -102,12 +102,12 @@ $(function(){
           $("#add-component-submit")
               .attr("disabled", "disabled")
               .text("Adding");
-
+          if("#title")
           $.ajax({
                url: $(e.target).attr("action"),
-               type:"get",
+               type:"POST",
                data:$(e.target).serialize()
-          }).done(function(){
+          }).success(function(){
               location.reload();
           }).fail(function() {
               $("#alert").text('Adding component failed');
