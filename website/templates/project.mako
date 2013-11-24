@@ -8,7 +8,7 @@
   <div class="row">
     <div class="col-md-7" id='containment'>
       <section id="Wiki Home">
-        <div>
+        <div class="wiki">
             ${ node["wiki_home"] }
             <p><a href="${node['url']}wiki/home">read more</a></p>
         </div>

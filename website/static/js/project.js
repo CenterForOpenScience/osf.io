@@ -46,28 +46,75 @@ window.nodeToUseUrl = function(){
     return undefined;
 };
 
+window.block = function() {
+    $.blockUI({
+        css: {
+            border: 'none',
+            padding: '15px',
+            backgroundColor: '#000',
+            '-webkit-border-radius': '10px',
+            '-moz-border-radius': '10px',
+            opacity: .5,
+            color: '#fff'
+        },
+        message: 'Please wait'
+    });
+};
 
 window.NodeActions = {};  // Namespace for NodeActions
 // TODO: move me to the ProjectViewModel
 NodeActions.forkNode = function(){
+
+    // Block page
+    block();
+
+    // Fork node
     $.ajax({
-        url: nodeToUseUrl() + "fork/",
-        type: "POST",
+        url: nodeToUseUrl() + 'fork/',
+        type: 'POST'
     }).done(function(response) {
         window.location = response;
+    }).fail(function() {
+        $.unblockUI();
+        bootbox.alert('Forking failed');
+    });
+
+};
+
+// todo: discuss; this code not used
+NodeActions.addNodeToProject = function(node, project) {
+    $.ajax({
+        url: '/project/' + project + '/addnode/' + node,
+        type: 'POST',
+        data: 'node=' + node + '&project=' + project
+    }).done(function(msg) {
+        var $node = $('#node' + node);
+        $node.removeClass('primary').addClass('success');
+        $node.onclick = function(){};
+        $node.html('Added');
     });
 };
 
-NodeActions.addNodeToProject = function(node, project){
-    $.ajax({
-       url:"/project/" + project + "/addnode/" + node,
-       type:"POST",
-       data:"node="+node+"&project="+project}).done(function(msg){
-           $('#node'+node).removeClass('primary').addClass('success');
-           $('#node'+node).onclick = function(){};
-           $('#node'+node).html('Added');
-       });
-};
+$(function(){
+    $('#newComponent form').on('submit', function(e) {
+          e.preventDefault();
+
+          $(e.target)
+              .find("#add-component-submit")
+              .attr("disabled", "disabled")
+              .text("Adding");
+
+          $.ajax({
+               url: $(e.target).attr("action"),
+               type:"POST",
+               data:$(e.target).serialize()
+          }).done(function(){
+              location.reload();
+          }).fail(function() {
+              bootbox.alert('Adding component failed');
+          });
+     });
+});
 
 NodeActions.removeUser = function(userid, name) {
     bootbox.confirm('Remove ' + name + ' from contributor list?', function(result) {
@@ -133,8 +180,6 @@ NodeActions.openCloseNode = function(node_id){
 
 
 $(document).ready(function() {
-
-    $("#browser").treeview();  // Initiate filebrowser
 
     ////////////////////
     // Event Handlers //

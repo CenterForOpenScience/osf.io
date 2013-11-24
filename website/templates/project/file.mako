@@ -6,7 +6,7 @@
 <div id='file-container' class="row">
     <div class="col-md-8">
       	<section>
-          	<div class="page-header">
+          	<div class="page-header overflow">
               	<h1>${file_name} (current)</h1>
           	</div>
       	</section>
@@ -17,7 +17,7 @@
     <div class="col-md-4">
       	<ol class="breadcrumb">
             <li><a href="${node['url']}files/">${node['title']}</a></li>
-  			<li class="active">${file_name}</li>
+  			<li class="active overflow" >${file_name}</li>
 		</ol>
 		<table class="table table-striped" id='file-version-history'>
 			<thead>
