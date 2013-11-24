@@ -87,7 +87,6 @@ h4 {
 }
 
 .item,
-.active,
 .carousel-inner {
   height: 100%;
 }
@@ -499,6 +498,10 @@ h1.node-title, h1.node-parent-title {
   border-bottom: none;
 }
 
+.editable {
+    border-bottom: none;
+}
+
 .editable:hover{
   background-color:#F3F3F3;
 }
@@ -866,9 +869,10 @@ form.form-horizontal.form-horizontal-narrow .control-group {
     font-size: 13px;
 }
 
-/*.log-node-title-link {
-    color: #468847;
-}*/
+.log-node-title-link {
+    word-wrap:break-word;
+    width:100%;
+}
 
 .alert a.alert-link {
     text-decoration: underline;

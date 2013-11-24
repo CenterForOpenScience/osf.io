@@ -40,8 +40,7 @@ def get_file_tree(node_to_use, user):
         if not node.is_deleted:
             tree.append(get_file_tree(node, user))
 
-    #means can_view, not can_edit
-    if node_to_use.can_edit(user):
+    if node_to_use.can_view(user):
         for i,v in node_to_use.files_current.items():
             v = NodeFile.load(v)
             tree.append(v)
@@ -108,7 +107,7 @@ def _get_files(filetree, parent_id, check, user):
     itemParent['size'] = "0"
     itemParent['sizeRead'] = '--'
     itemParent['dateModified'] = '--'
-    parent_type = 'Project' if filetree[0].category == 'project' else 'Component'
+    parent_type = filetree[0].project_or_component.capitalize()
     itemParent['name'] = _clean_file_name(
         u'{}: {}'.format(
             parent_type, filetree[0].title
@@ -118,10 +117,9 @@ def _get_files(filetree, parent_id, check, user):
         filetree[0].is_contributor(user) and
         not filetree[0].is_registration
     ).lower()
-    itemParent['can_view'] = str(filetree[0].can_edit(user)).lower()
+    itemParent['can_view'] = str(filetree[0].can_view(user)).lower()
     if itemParent['can_view'] == 'false':
         itemParent['name'] = 'Private Component'
-    #can_edit is can_view
     if check == 0:
         itemParent['parent_uid'] = "null"
     info.append(itemParent)

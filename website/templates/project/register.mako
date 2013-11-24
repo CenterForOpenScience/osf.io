@@ -115,7 +115,7 @@
                 });
                 // Send data to OSF
                 $.ajax({
-                    url: '${node_api_url}' + 'register/' + '${template_name if template_name else ''}/',
+                    url: '${node["api_url"]}' + 'register/' + '${template_name if template_name else ''}/',
                     type: "POST",
                     data: JSON.stringify(data),
                     contentType: "application/json",

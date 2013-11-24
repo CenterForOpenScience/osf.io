@@ -108,7 +108,7 @@ class NodeLog(StoredObject):
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
 
-    DATE_FORMAT = '%m/%d/%Y %I:%M %p UTC'
+    DATE_FORMAT = '%m/%d/%Y %H:%M  UTC'
 
     # Log action constants
     PROJECT_CREATED = "project_created"
@@ -122,6 +122,7 @@ class NodeLog(StoredObject):
     TAG_ADDED = 'tag_added'
     TAG_REMOVED = 'tag_removed'
     EDITED_TITLE = "edit_title"
+    EDITED_DESCRIPTION = 'edit_description'
     PROJECT_REGISTERED = 'project_registered'
     FILE_ADDED = "file_added"
     FILE_REMOVED = "file_removed"
@@ -137,20 +138,25 @@ class NodeLog(StoredObject):
     def tz_date(self):
         '''Return the timezone-aware date.
         '''
-        return self.date.replace(tzinfo=pytz.UTC)
+        # Date should always be defined, but a few logs in production are
+        # missing dates; return None and log error if date missing
+        if self.date:
+            return self.date.replace(tzinfo=pytz.UTC)
+        logging.error('Date missing on NodeLog {}'.format(self._primary_key))
 
     @property
     def formatted_date(self):
         '''Return the timezone-aware, ISO-formatted string representation of
         this log's date.
         '''
-        return self.tz_date.isoformat()
+        if self.tz_date:
+            return self.tz_date.isoformat()
 
     # FIXME: Serialization (presentation) doesn't belong in model (domain)
     def serialize(self):
         # TODO: Nest serialized user.
         if self.node:
-            category = "project" if self.node.category == 'project' else 'component'
+            category = self.node.project_or_component
         else:
             category = ''
         return {
@@ -165,7 +171,7 @@ class NodeLog(StoredObject):
         'params': self.params,
         'category': category,
         # TODO: Use self.formatted_date when Recent Activity Logs are generated dynamically
-        'date': self.tz_date.strftime(NodeLog.DATE_FORMAT),
+        'date': self.tz_date.strftime(NodeLog.DATE_FORMAT) if self.tz_date else '',
         'contributors': [self._render_log_contributor(contributor) for contributor in self.params.get('contributors', [])],
         'contributor': self._render_log_contributor(self.params.get('contributor', {})),
     }
@@ -315,13 +321,14 @@ class Node(GuidStoredObject):
         }
 
     def can_edit(self, user, api_key=None):
-
         return (
-            self.is_public
-            or self.is_contributor(user)
+            self.is_contributor(user)
             or (api_key is not None and self is api_key.node)
             or (bool(user) and user == self.creator)
         )
+
+    def can_view(self, user, api_key=None):
+        return self.is_public or self.can_edit(user, api_key)
 
     def save(self, *args, **kwargs):
         rv = super(Node, self).save(*args, **kwargs)
@@ -331,11 +338,11 @@ class Node(GuidStoredObject):
         return rv
 
     def set_title(self, title, user, api_key=None, save=False):
-        '''Sets the title of this Node and logs it.
+        '''Set the title of this Node and log it.
 
-        :param title: A string, the new title
-        :param user: A User object
-        :param api_key: An ApiKey object
+        :param str title: The new title.
+        :param User user: User who made the action.
+        :param ApiKey api_key: Optional API key.
         '''
         original_title = self.title
         self.title = title
@@ -352,6 +359,30 @@ class Node(GuidStoredObject):
         )
         if save:
             self.save()
+        return None
+
+    def set_description(self, description, user, api_key=None, save=False):
+        '''Set the description and log the event.
+
+        :param str description: The new description
+        :param User user: The user who changed the description.
+        :param ApiKey api_key: Optional API key.
+        '''
+        original = self.description
+        self.description = description
+        if save:
+            self.save()
+        self.add_log(
+            action=NodeLog.EDITED_DESCRIPTION,
+            params={
+                'project': self.parent,  # None if no parent
+                'node': self._primary_key,
+                'description_new': self.description,
+                'description_original': original
+            },
+            user=user,
+            api_key=api_key
+        )
         return None
 
     def update_solr(self):
@@ -409,29 +440,42 @@ class Node(GuidStoredObject):
 
             update_solr(solr_document)
 
-    def remove_node(self, user, date=None):
-        if not date:
-            date = datetime.datetime.utcnow()
+    def remove_node(self, user, api_key=None, date=None, top=True):
+        """Remove node and recursively remove its children. Does not remove
+        nodes from database; instead, removed nodes are flagged as deleted.
+        Git repos are also not deleted. Adds a log to the parent node if top
+        is True.
 
-        node_objects = []
+        :param user: User removing the node
+        :param api_key: API key used to remove the node
+        :param date: Date node was removed
+        :param top: Is this the first node being removed?
 
-        if self.nodes and len(self.nodes) > 0:
-            node_objects = self.nodes
+        """
+        if not self.can_edit(user, api_key):
+            return False
 
-        #if self.node_registations and len(self.node_registrations) > 0:
-        #    return False
+        date = date or datetime.datetime.utcnow()
 
-        for node in node_objects:
-            #if not node.user_is_contributor(user):
-            #    return False
-
+        # Remove child nodes
+        for node in self.nodes:
             if not node.category == 'project':
-                if not node.remove_node(user, date=date):
+                if not node.remove_node(user, api_key, date=date, top=False):
                     return False
+
+        # Add log to parent
+        if top and self.node__parent:
+            self.node__parent[0].add_log(
+                NodeLog.NODE_REMOVED,
+                params={
+                    'project': self._primary_key,
+                },
+                user=user,
+                log_date=datetime.datetime.utcnow(),
+            )
 
         # Remove self from parent registration list
         if self.is_registration:
-            # registered_from = Node.load(self.registered_from)
             try:
                 self.registered_from.registration_list.remove(self._primary_key)
                 self.registered_from.save()
@@ -455,7 +499,7 @@ class Node(GuidStoredObject):
     def fork_node(self, user, api_key=None, title='Fork of '):
 
         # todo: should this raise an error?
-        if not self.can_edit(user, api_key):
+        if not self.can_view(user, api_key):
             return
 
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
@@ -878,6 +922,15 @@ class Node(GuidStoredObject):
         return None
 
     @property
+    def parent(self):
+        '''The parent node, if it exists, otherwise ``None``.'''
+        try:
+            return self.node__parent[0]
+        except IndexError:
+            pass
+        return None
+
+    @property
     def api_url(self):
         return '/api/v1' + self.url
 
@@ -890,6 +943,10 @@ class Node(GuidStoredObject):
         if self.node__parent:
             return self.node__parent[0]._id
         return None
+
+    @property
+    def project_or_component(self):
+        return 'project' if self.category == 'project' else 'component'
 
     def is_contributor(self, user):
         return (user is not None) and ((user in self.contributors) or user == self.creator)
