@@ -73,9 +73,15 @@
 
             <div class="col-md-8">
                 %if parent['id']:
-                    <h1 style="display:inline-block;" class="node-parent-title overflow">
-                        <a href="/project/${parent['id']}/">${parent['title']}</a> /
-                    </h1>
+                    % if parent['is_public'] or parent['is_contributor']:
+                         <h1 style="display:inline-block;" class="node-parent-title overflow">
+                             <a href="/project/${parent['id']}/">${parent['title']}</a> /
+                         </h1>
+                    % else:
+                         <h1 style="display:inline-block;" class="node-parent-title overflow">
+                             <span> Private Project</span> /
+                         </h1>
+                    %endif
                 %endif
                 <h1 id="nodeTitleEditable" class="node-title overflow" style="display:inline-block;">${node['title']}</h1>
             </div>
