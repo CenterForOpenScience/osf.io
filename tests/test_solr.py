@@ -1,10 +1,56 @@
+import unittest
 from nose.tools import *  # PEP8 asserts
 
 from tests.base import DbTestCase
 from tests.factories import UserFactory, ProjectFactory, TagFactory
 
 from framework.search.solr import solr
+from framework.search.utils import clean_solr_doc
 from website.search.solr_search import search_solr
+
+class TestCleanSolr(unittest.TestCase):
+
+    def test_clean_string(self):
+        dirty_string = u'roger\x0btaylor'
+        assert_equal(
+            clean_solr_doc(dirty_string),
+            'rogertaylor'
+        )
+
+    def test_clean_list(self):
+        dirty_strings = [
+            u'slightly\x0bmad',
+            [
+                u'banana\x0ctree',
+            ]
+        ]
+        assert_equal(
+            clean_solr_doc(dirty_strings),
+            [
+                'slightlymad',
+                [
+                    'bananatree',
+                ]
+            ]
+        )
+
+    def test_clean_dict(self):
+        dirty_strings = {
+            'bass': u'john\x0bdeacon',
+            'guitar' : {
+                'brian': u'may\x0b',
+            },
+        }
+        assert_equal(
+            clean_solr_doc(dirty_strings),
+            {
+                'bass': 'johndeacon',
+                'guitar': {
+                    'brian': 'may',
+                }
+            }
+        )
+
 
 class SolrTestCase(DbTestCase):
 
@@ -12,13 +58,16 @@ class SolrTestCase(DbTestCase):
         solr.delete_all()
         solr.commit()
 
+
 def query(term):
     results, _, _ = search_solr(term)
     return results.get('docs', [])
 
+
 def query_user(name):
     term = 'user:"{}"'.format(name)
     return query(term)
+
 
 class TestUserUpdate(SolrTestCase):
 
@@ -67,6 +116,7 @@ class TestProject(SolrTestCase):
         self.project.set_permissions('public')
         docs = query(self.project.title)
         assert_equal(len(docs), 1)
+
 
 class TestPublicProject(SolrTestCase):
 

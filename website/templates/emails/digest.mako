@@ -13,6 +13,8 @@
         %elif log['action'] == 'node_created':
             created ${log['category']}
             <a href="${log['node_url']}">${log['node_title']}</a>
+        %elif log['action'] == 'node_removed':
+            removed ${log['category']} ${log['node_title']}
         %elif log['action'] == 'wiki_updated':
             updated wiki page <a href="${log['node_url']}wiki/${log['params']['page']}/">${log['params']['page']}</a> to version ${log['params']['version']}
         %elif log['action'] == 'contributor_added':

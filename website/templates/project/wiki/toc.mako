@@ -6,18 +6,18 @@
 
         % for k in pages_current:
             <li>
-                <a href="${url}wiki/${k}">${k}</a>
+                <a href="/project/${node['id']}/wiki/${k}">${k}</a>
             </li>
         % endfor
 
 
-        % if category== 'project':
+        % if category == 'project':
             <hr />
             <h4 style="margin-left: 10px;">Component Wiki Pages</h4>
 
             % for child in toc:
                 <li class="nav-header">
-                    <a href="/project/${node_id}/node/${child['id']}/wiki/home">${child['title']} (${child['category']})</a>
+                    <a href="/project/${node['id']}/node/${child['id']}/wiki/home">${child['title']} (${child['category']})</a>
                     <ul style="list-style-type: none;">
                         % for k in child['pages']:
                             % if k != 'home':

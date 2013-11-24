@@ -282,7 +282,6 @@ class JSONRenderer(Renderer):
 
     CONTENT_TYPE = "application/json"
 
-    # todo: remove once storedobjects are no longer passed from view functions
     class Encoder(json.JSONEncoder):
         def default(self, obj):
             if hasattr(obj, 'to_json'):
@@ -290,8 +289,6 @@ class JSONRenderer(Renderer):
                     return obj.to_json()
                 except TypeError:  # BS4 objects have to_json that isn't callable
                     return unicode(obj)
-            if isinstance(obj, StoredObject):
-                return obj._primary_key
             return json.JSONEncoder.default(self, obj)
 
     def handle_error(self, error):
