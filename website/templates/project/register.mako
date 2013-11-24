@@ -60,7 +60,7 @@
                             Type "continue" if you are sure you want to continue
                         </label>
                         <div class="controls">
-                            <input class="form-control" data-bind="value:$parent.continueText, valueUpdate: 'afterkeydown'" />
+                            <input id="comfirm" class="form-control" data-bind="value:$parent.continueText, valueUpdate: 'afterkeydown'" />
                         </div>
                     </div>
 
@@ -108,19 +108,29 @@
 
                 // Send data to OSF
                 $.ajax({
-                    url: '${node["api_url"]}' + 'register/' + '${template_name if template_name else ''}/',
+##                    url: '${node["api_url"]}' + 'register/' + '${template_name if template_name else ''}/',
+                    url: 'register/' + '${template_name if template_name else ''}/',
                     type: 'POST',
                     data: JSON.stringify(data),
                     contentType: 'application/json',
+                    timeout: 30000,
                     success: function(response) {
-                        if (response.status === 'success'){
-                            window.location.href = response.result;
+
+                        window.location.href = response.result;
+
+                    },
+                    error: function(jqXHR, textStatus, errorThrown){
+                        if(textStatus==="timeout") {
+                            bootbox.alert("Create registration timed out"); //Handle the timeout
+                        }else{
+##                            bootbox.alert("Status: " + textStatus + '\n' + "Error: " + errorThrown);
                         }
-                        else if (response.status === 'error'){
-                            $.unblockUI();
-                            window.location.reload();
-                            bootbox.alert('Registration failed');
-                        }
+                        $.unblockUI();
+                        $('#register-submit')
+                                .removeClass("disabled")
+                                .text('Register');
+                        $("#comfirm").val("")
+                        bootbox.alert('Registration failed');
                     },
                     dataType: 'json'
                 });
