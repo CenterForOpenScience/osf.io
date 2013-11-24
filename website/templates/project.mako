@@ -127,11 +127,6 @@
                 $(elm).text($(elm).text().replace(/\s*$/, ''))
             });
         % endif
-
-        // Initiate LogsViewModel
-        $logScope = $("#logScope");
-        ko.cleanNode($logScope[0]);
-        ko.applyBindings(new LogsViewModel($logScope.data("target")), $logScope[0]);
     });
 </script>
 </%def>

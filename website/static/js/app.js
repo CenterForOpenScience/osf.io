@@ -76,9 +76,13 @@ var Log = function(params) {
 ////////////////
 
 
-var LogsViewModel = function(url) {
+/**
+ * View model for a log list.
+ * @param {Log[]} logs An array of Log model objects to render.
+ */
+var LogsViewModel = function(logs) {
     var self = this;
-    self.logs = ko.observableArray([]);
+    self.logs = ko.observableArray(logs);
     self.tzname = ko.computed(function() {
         var logs = self.logs();
         if (logs.length) {
@@ -86,43 +90,64 @@ var LogsViewModel = function(url) {
         }
         return '';
     });
-    // Get log data via AJAX
-    var getUrl = '';
-    if (url) {
-        getUrl = url;
-    } else {
-        getUrl = nodeToUseUrl() + "log/";
-    }
-    self.progressBar = $("#logProgressBar")
-    self.progressBar.show();
+
+};
+
+
+/**
+ * Create an Array of Log model objects from data returned from an endpoint
+ * @param  {Object[]} logData Log data returned from an endpoint.
+ * @return {Log[]}         Array of Log objects.
+ */
+var createLogs = function(logData){
+    var mappedLogs = $.map(logData, function(item) {
+        return new Log({
+            "action": item.action,
+            "date": item.date,
+            "nodeCategory": item.category,
+            "contributor": item.contributor,
+            "contributors": item.contributors,
+            "nodeUrl": item.node_url,
+            "userFullName": item.user_fullname,
+            "userURL": item.user_url,
+            "apiKey": item.api_key,
+            "params": item.params,
+            "nodeTitle": item.node_title,
+            "nodeDescription": item.params.description_new
+        })
+    });
+    return mappedLogs;
+}
+
+/**
+ * Initialize the LogsViewModel. Fetches the logs data from the specified url
+ * and binds the LogsViewModel.
+ * @param  {String} scopeSelector CSS selector for the scope of the LogsViewModel.
+ * @param  {String} url           The url from which to get the logs data.
+ *                                The returned object must have a "logs" property mapped to
+ *                                an Array of log objects.
+ */
+var initializeLogs = function(scopeSelector, url){
+    // Initiate LogsViewModel
+    $logScope = $(scopeSelector);
+    ko.cleanNode($logScope[0]);
+    progressBar = $("#logProgressBar")
+    progressBar.show();
     $.ajax({
-        url: getUrl,
-        type: "get",
-        cache: false,
+        url: url,
+        type: "get", contentType: "application/json",
         dataType: "json",
+        cache: false,
         success: function(data){
+            // Initialize LogViewModel
             var logs = data['logs'];
-            var mappedLogs = $.map(logs, function(item) {
-                return new Log({
-                    "action": item.action,
-                    "date": item.date,
-                    "nodeCategory": item.category,
-                    "contributor": item.contributor,
-                    "contributors": item.contributors,
-                    "nodeUrl": item.node_url,
-                    "userFullName": item.user_fullname,
-                    "userURL": item.user_url,
-                    "apiKey": item.api_key,
-                    "params": item.params,
-                    "nodeTitle": item.node_title,
-                    "nodeDescription": item.params.description_new
-                })
-            });
-            self.progressBar.hide();
-            self.logs(mappedLogs);
+            ko.cleanNode($logScope[0]);
+            var logModelObjects = createLogs(logs);  // Array of Log model objects
+            progressBar.hide();
+            ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
         }
     });
-};
+}
 
 /**
  * The ProjectViewModel, scoped to the project header.

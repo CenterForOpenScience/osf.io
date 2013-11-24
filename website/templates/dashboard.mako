@@ -21,7 +21,7 @@
                <div class="page-header">
                     <h3>Watched Projects</h3>
                 </div>
-                <div id="logScope" data-target="/api/v1/watched/logs/">
+                <div id="logScope">
                     <%include file="log_list.mako"/>
                 </div><!-- end #logScope -->
             </div><!-- end #watchFeed -->
@@ -33,9 +33,7 @@
 
 <%def name="javascript_bottom()">
 <script>
-    // Initiate LogsViewModel
-    $logScope = $("#logScope");
-    ko.cleanNode($logScope[0]);
-    ko.applyBindings(new LogsViewModel($logScope.data("target")), $logScope[0]);
+    // Initialize the LogsViewModel
+    initializeLogs("#logScope", "/api/v1/watched/logs/");
 </script>
 </%def>
