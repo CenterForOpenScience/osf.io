@@ -84,12 +84,16 @@
                 var $this = $(this);
                 if (!$this.hasClass('disabled')) {
                     $this.addClass('disabled');
+                    $this.text("Registering");
                     $this.closest('form').submit();
                 }
                 return false;
             });
 
             $('#registration_template').on('submit', function(event) {
+
+                // Block page
+                block();
 
                 // Initialize variables
                 var $this = $(this),
@@ -101,17 +105,22 @@
                         data[question.id] = question.value;
                     });
                 });
+
                 // Send data to OSF
                 $.ajax({
                     url: '${node["api_url"]}' + 'register/' + '${template_name if template_name else ''}/',
-                    type: "POST",
+                    type: 'POST',
                     data: JSON.stringify(data),
-                    contentType: "application/json",
+                    contentType: 'application/json',
                     success: function(response) {
-                        if (response.status === 'success')
+                        if (response.status === 'success'){
                             window.location.href = response.result;
-                        else if (response.status === 'error')
+                        }
+                        else if (response.status === 'error'){
+                            $.unblockUI();
                             window.location.reload();
+                            bootbox.alert('Registration failed');
+                        }
                     },
                     dataType: 'json'
                 });

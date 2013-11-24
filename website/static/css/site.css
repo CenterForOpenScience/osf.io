@@ -886,11 +886,11 @@ form.form-horizontal.form-horizontal-narrow .control-group {
     font-size: 13px;
 }
 
-.log-node-title-link {
-    word-wrap:break-word;
-    width:100%;
-}
-
 .alert a.alert-link {
     text-decoration: underline;
+}
+
+.overflow {
+    word-wrap: break-word;
+    width: 100%;
 }

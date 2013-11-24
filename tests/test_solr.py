@@ -7,8 +7,13 @@ from tests.factories import UserFactory, ProjectFactory, TagFactory
 from framework.search.solr import solr
 from framework.search.utils import clean_solr_doc
 from website.search.solr_search import search_solr
+from website.search.views import _search_contributor
 
 class TestCleanSolr(unittest.TestCase):
+    """Ensure that invalid XML characters are appropriately removed from
+    Solr data documents.
+
+    """
 
     def test_clean_string(self):
         dirty_string = u'roger\x0btaylor'
@@ -234,3 +239,50 @@ class TestPublicProject(SolrTestCase):
 
         docs = query(user2.fullname)
         assert_equal(len(docs), 0)
+
+
+# todo: write these
+class TestSearchSearch(SolrTestCase):
+    pass
+
+
+class TestAddContributor(SolrTestCase):
+    """Tests of the _search_contributor helper.
+
+    """
+
+    def setUp(self):
+        self.name1 = 'Roger Taylor'
+        self.name2 = 'John Deacon'
+        self.user = UserFactory(fullname=self.name1)
+
+    def test_search_fullname(self):
+        """Verify that searching for full name yields exactly one result.
+
+        """
+        contribs = _search_contributor(self.name1)
+        assert_equal(len(contribs['users']), 1)
+
+        contribs = _search_contributor(self.name2)
+        assert_equal(len(contribs['users']), 0)
+
+    def test_search_firstname(self):
+        """Verify that searching for first name yields exactly one result.
+
+        """
+        contribs = _search_contributor(self.name1.split(' ')[0])
+        assert_equal(len(contribs['users']), 1)
+
+        contribs = _search_contributor(self.name2.split(' ')[0])
+        assert_equal(len(contribs['users']), 0)
+
+    def test_search_partial(self):
+        """Verify that searching for part of first name yields exactly one
+        result.
+
+        """
+        contribs = _search_contributor(self.name1.split(' ')[0][:-1])
+        assert_equal(len(contribs['users']), 1)
+
+        contribs = _search_contributor(self.name2.split(' ')[0][:-1])
+        assert_equal(len(contribs['users']), 0)
