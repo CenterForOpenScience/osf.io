@@ -10,10 +10,12 @@ from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
 import website.app
+from website.models import Node, NodeLog
 
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
-                            WatchConfigFactory, NodeFactory)
+                            WatchConfigFactory, NodeFactory, NodeLogFactory)
+
 
 app = website.app.init_app(routes=True, set_backends=False,
                             settings_module="website.settings")
@@ -31,23 +33,50 @@ class TestProjectViews(DbTestCase):
         self.auth = ('test', api_key._primary_key)
         self.user2 = UserFactory()
         # A project has 2 contributors
-        self.project = ProjectFactory(title="Ham", creator=self.user1)
+        self.project = ProjectFactory(title="Ham",
+                                        description='Honey-baked',
+                                        creator=self.user1)
         self.project.add_contributor(self.user1)
         self.project.add_contributor(self.user2)
         self.project.api_keys.append(api_key)
         self.project.save()
 
+    def test_edit_description(self):
+        url = "/api/v1/project/{0}/edit/".format(self.project._id)
+        self.app.post_json(url,
+                            {"name": "description", "value": "Deep-fried"},
+                            auth=self.auth)
+        self.project.reload()
+        assert_equal(self.project.description, "Deep-fried")
+
+    def test_project_api_url(self):
+        url = self.project.api_url
+        res = self.app.get(url, auth=self.auth)
+        data = res.json
+        assert_equal(data['node']['category'], 'project')
+        assert_equal(data['node']['title'], self.project.title)
+        assert_equal(data['node']['is_public'], self.project.is_public)
+        assert_equal(data['node']['is_registration'], False)
+        assert_equal(data['node']['id'], self.project._primary_key)
+        assert_equal(data['node']['watched_count'], 0)
+        assert_true(data['user']['is_contributor'])
+        assert_equal(data['node']['logs'][-1]['action'], 'project_created')
+
     def test_add_contributor_post(self):
-        # A user is added as a contributor via a POST request
+        # Two users are added as a contributor via a POST request
+        project = ProjectFactory(creator=self.user1, is_public=True)
         user = UserFactory()
-        url = "/api/v1/project/{0}/addcontributors/".format(self.project._id)
-        res = self.app.post(url, json.dumps({"user_ids": [user._id]}),
+        user2 = UserFactory()
+        url = "/api/v1/project/{0}/addcontributors/".format(project._id)
+        res = self.app.post(url, json.dumps({"user_ids": [user._id, user2._id]}),
                             content_type="application/json",
                             auth=self.auth).maybe_follow()
-        self.project.reload()
-        assert_in(user._id, self.project.contributors)
+        project.reload()
+        assert_in(user._id, project.contributors)
         # A log event was added
-        assert_equal(self.project.logs[-1].action, "contributor_added")
+        assert_equal(project.logs[-1].action, "contributor_added")
+        assert_equal(len(project.contributors), 2)
+        assert_equal(len(project.contributor_list), 2)
 
     @unittest.skip('Adding non-registered contributors is on hold until '
                    'invitations and account merging are done.')
@@ -90,7 +119,7 @@ class TestProjectViews(DbTestCase):
     def test_edit_node_title(self):
         url = "/api/v1/project/{0}/edit/".format(self.project._id)
         # The title is changed though posting form data
-        res = self.app.post(url, {"name": "title", "value": "Bacon"},
+        res = self.app.post_json(url, {"name": "title", "value": "Bacon"},
                             auth=self.auth).maybe_follow()
         self.project.reload()
         # The title was changed
@@ -108,13 +137,88 @@ class TestProjectViews(DbTestCase):
         assert_equal(res.json['status'], 'success')
 
     def test_make_private(self):
-        self.project.is_public = False
+        self.project.is_public = True
         self.project.save()
         url = "/api/v1/project/{0}/permissions/private/".format(self.project._id)
         res = self.app.post_json(url, {}, auth=self.auth)
         self.project.reload()
         assert_false(self.project.is_public)
         assert_equal(res.json['status'], 'success')
+
+    def test_add_tag(self):
+        url = "/api/v1/project/{0}/addtag/{tag}/".format(self.project._primary_key,
+                                                        tag="footag")
+        res = self.app.post_json(url, {}, auth=self.auth)
+        self.project.reload()
+        assert_in("footag", self.project.tags)
+
+    def test_remove_tag(self):
+        self.project.add_tag("footag", user=self.user1, api_key=None, save=True)
+        assert_in("footag", self.project.tags)
+        url = "/api/v1/project/{0}/removetag/{tag}/".format(self.project._primary_key,
+                                                        tag="footag")
+        res = self.app.post_json(url, {}, auth=self.auth)
+        self.project.reload()
+        assert_not_in("footag", self.project.tags)
+
+    def test_register_template_page(self):
+        url = "/api/v1/project/{0}/register/FooBar_Template/".format(self.project._primary_key)
+        res = self.app.post_json(url, {}, auth=self.auth)
+        self.project.reload()
+        # A registration was added to the project's registration list
+        assert_equal(len(self.project.registration_list), 1)
+        # A log event was saved
+        assert_equal(self.project.logs[-1].action, "project_registered")
+        # Most recent node is a registration
+        reg = Node.load(self.project.registration_list[-1])
+        assert_true(reg.is_registration)
+
+    def test_get_logs(self):
+        # Add some logs
+        for _ in range(5):
+            self.project.logs.append(NodeLogFactory(user=self.user1,
+                                                action="file_added",
+                                                params={"project": self.project._id}))
+        self.project.save()
+        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
+        res = self.app.get(url, auth=self.auth)
+        self.project.reload()
+        data = res.json
+        assert_equal(len(data['logs']), len(self.project.logs))
+        most_recent = data['logs'][0]
+        assert_equal(most_recent['action'], "file_added")
+
+    def test_get_logs_with_count_param(self):
+        # Add some logs
+        for _ in range(5):
+            self.project.logs.append(NodeLogFactory(user=self.user1,
+                                                    action="file_added",
+                                                    params={"project": self.project._id}))
+        self.project.save()
+        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
+        res = self.app.get(url, {"count": 3}, auth=self.auth)
+        assert_equal(len(res.json['logs']), 3)
+
+    def test_get_logs_defaults_to_ten(self):
+        # Add some logs
+        for _ in range(12):
+            self.project.logs.append(NodeLogFactory(user=self.user1,
+                                                    action="file_added",
+                                                    params={"project": self.project._id}))
+        self.project.save()
+        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(res.json['logs']), 10)
+
+    def test_logs_from_api_url(self):
+        # Add some logs
+        for _ in range(12):
+            self.project.logs.append(NodeLogFactory(user=self.user1, action="file_added",
+                                                    params={"project": self.project._id}))
+        self.project.save()
+        url = "/api/v1/project/{0}/".format(self.project._primary_key)
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(res.json['node']['logs']), 10)
 
 
 class TestWatchViews(DbTestCase):
@@ -131,13 +235,13 @@ class TestWatchViews(DbTestCase):
         self.project.save()
         # add some log objects
         # A log added 100 days ago
-        self.project.add_log('project_created',
+        self.project.add_log(NodeLog.PROJECT_CREATED,
                         params={'project': self.project._primary_key},
                         user=self.user, log_date=dt.datetime.utcnow() - dt.timedelta(days=100),
                         api_key=self.auth[1],
                         do_save=True)
         # A log added now
-        self.last_log = self.project.add_log('tag_added', params={'project': self.project._primary_key},
+        self.last_log = self.project.add_log(NodeLog.TAG_ADDED, params={'project': self.project._primary_key},
                         user=self.user, log_date=dt.datetime.utcnow(),
                         api_key=self.auth[1],
                         do_save=True)
@@ -213,6 +317,20 @@ class TestWatchViews(DbTestCase):
         assert_true(res.json['watched'])
         assert_true(self.user.is_watching(node))
 
+    def test_get_watched_logs(self):
+        project = ProjectFactory()
+        # Add some logs
+        for _ in range(12):
+            project.logs.append(NodeLogFactory(user=self.user, action="file_added"))
+        project.save()
+        watch_cfg = WatchConfigFactory(node=project)
+        self.user.watch(watch_cfg)
+        self.user.save()
+        url = "/api/v1/watched/logs/"
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(res.json['logs']), len(project.logs))
+        assert_equal(res.json['logs'][0]['action'], 'file_added')
+
 class TestPublicViews(DbTestCase):
 
     def setUp(self):
@@ -221,6 +339,29 @@ class TestPublicViews(DbTestCase):
     def test_explore(self):
         res = self.app.get("/explore/").maybe_follow()
         assert_equal(res.status_code, 200)
+
+class TestAuthViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = UserFactory.build()
+        # Add an API key for quicker authentication
+        api_key = ApiKeyFactory()
+        self.user.api_keys.append(api_key)
+        self.user.save()
+        self.auth = ('test', api_key._primary_key)
+
+    def test_merge_user(self):
+        dupe = UserFactory(username="copy@cat.com",
+                            emails=['copy@cat.com'])
+        dupe.set_password("copycat")
+        dupe.save()
+        url = "/api/v1/user/merge/"
+        res = self.app.post_json(url, {"merged_username": "copy@cat.com",
+                                        "merged_password": "copycat"}, auth=self.auth)
+        self.user.reload()
+        dupe.reload()
+        assert_true(dupe.is_merged)
 
 if __name__ == '__main__':
     unittest.main()

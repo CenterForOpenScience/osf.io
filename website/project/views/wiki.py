@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
 import logging
 import httplib as http
-
-from framework import request, redirect, get_current_user, update_counters, push_status_message
-from ..decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public
-from framework.auth import must_have_session_auth
-from framework.forms.utils import sanitize
-from ..model import NodeWikiPage
-from .node import _view_project
-
 import difflib
-from .. import show_diff
 
-from framework import HTTPError
+from framework import request, get_current_user, status
+from framework.analytics import update_counters
+from framework.auth import must_have_session_auth, get_api_key
+from framework.forms.utils import sanitize
+from framework.exceptions import HTTPError
+
+from website.project.views.node import _view_project
+from website.project.model import NodeWikiPage
+from website.project import show_diff
+from website.project.decorators import must_not_be_registration, must_be_valid_project, \
+    must_be_contributor, must_be_contributor_or_public
+
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ def _get_wiki_versions(node, wid):
         {
             'version': version.version,
             'user_fullname': version.user.fullname,
-            'date': version.date,
+            'date': version.date.replace(microsecond=0),
         }
         for version in reversed(versions)
     ]
@@ -117,11 +118,13 @@ def project_wiki_version(*args, **kwargs):
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
 def project_wiki_page(*args, **kwargs):
+
     project = kwargs['project']
     node = kwargs['node']
     wid = kwargs['wid']
 
     user = get_current_user()
+    api_key = get_api_key()
     node_to_use = node or project
 
     pw = node_to_use.get_wiki_page(wid)
@@ -146,6 +149,7 @@ def project_wiki_page(*args, **kwargs):
         }
         for child in node_to_use.nodes
         if not child.is_deleted
+            and child.can_view(user, api_key)
     ]
 
     rv = {
@@ -158,7 +162,10 @@ def project_wiki_page(*args, **kwargs):
         'is_edit': False,
         'pages_current': node_to_use.wiki_pages_versions.keys(),
         'toc': toc,
+        'url': node_to_use.url,
+        'category': node_to_use.category
     }
+
     rv.update(_view_project(node_to_use, user))
     return rv
 
@@ -211,11 +218,19 @@ def project_wiki_edit_post(*args, **kwargs):
                                                           wid=wid))
 
     if wid != sanitize(wid):
-        push_status_message("This is an invalid wiki page name")
+        status.push_status_message("This is an invalid wiki page name")
         raise HTTPError(http.BAD_REQUEST, redirect_url='{}wiki/'.format(node_to_use.url))
 
-    node_to_use.update_node_wiki(wid, request.form['content'], user, api_key=None)
+    pw = node_to_use.get_wiki_page(wid)
 
-    return {
-        'status' : 'success',
-    }, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
+    if pw:
+        content = pw.content
+    else:
+        content = ''
+    if request.form['content'] != content:
+        node_to_use.update_node_wiki(wid, request.form['content'], user, api_key=None)
+        return {
+            'status' : 'success',
+        }, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
+    else:
+        return {}, None, None, '{}wiki/{}/'.format(node_to_use.url,wid)

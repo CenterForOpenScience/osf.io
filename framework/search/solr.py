@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import logging
-
 import sunburnt
 
 from website import settings
-
+from .utils import clean_solr_doc
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +25,8 @@ def update_solr(args=None):
     except IndexError:
         new = dict()
 
-    new.update(args)
+    if args:
+        new.update(clean_solr_doc(args))
     solr.add(new)
     solr.commit()
 
@@ -68,4 +68,4 @@ def delete_solr_doc(args=None):
         solr.commit()
     except IndexError:
         # Document ID doesn't exist in Solr
-        print 'id {} not found in Solr'.format(args['_id'])
+        logger.warn('id {} not found in Solr'.format(args['_id']))

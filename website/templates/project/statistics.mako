@@ -1,14 +1,14 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Project Statistics</%def>
 <%def name="content()">
-<div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
+<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 <%
     import website.settings
 %>
 
-<div class="row">
-	<div class="span12">
+<div>
+	<div>
     <h1>Visits Per Day</h1>
 		<div style="font: 10px sans-serif;margin: 0px auto 22px;clear: both;width">
 			<div id='chart'></div>

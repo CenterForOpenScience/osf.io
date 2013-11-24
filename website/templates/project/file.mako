@@ -1,12 +1,12 @@
 <%inherit file="base.mako"/>
 <%def name="title()">${file_name}</%def>
 <%def name="content()">
-<div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
+<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 <div id='file-container' class="row">
-    <div class="span8">
+    <div class="col-md-8">
       	<section>
-          	<div class="page-header">
+          	<div class="page-header overflow">
               	<h1>${file_name} (current)</h1>
           	</div>
       	</section>
@@ -14,11 +14,11 @@
       		${rendered}
       	</div>
     </div>
-    <div class="span4">
-      	<ul class="breadcrumb">
-            <li><a href="${node_url}files/">${node_title}</a> <span class="divider">/</span></li>
-  			<li class="active">${file_name}</li>
-		</ul>
+    <div class="col-md-4">
+      	<ol class="breadcrumb">
+            <li><a href="${node['url']}files/">${node['title']}</a></li>
+  			<li class="active overflow" >${file_name}</li>
+		</ol>
 		<table class="table table-striped" id='file-version-history'>
 			<thead>
 				<tr>
@@ -40,7 +40,7 @@
                         ${version['total']}
                     </td>
                     <td>
-                        <a href="${node_api_url}files/download/${file_name}/version/${version['number']}/"><i class="icon-download-alt"></i></
+                        <a href="${node['api_url']}files/download/${file_name}/version/${version['number']}/"><i class="icon-download-alt"></i></
                     </td>
                 </tr>
 			%endfor

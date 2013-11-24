@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
+import logging
 import copy
 import json
 import pystache
 import httplib as http
-import logging
 
 import lxml.html
 import werkzeug.wrappers
@@ -12,7 +12,8 @@ from werkzeug.exceptions import NotFound
 from mako.template import Template
 from mako.lookup import TemplateLookup
 
-from framework import StoredObject, HTTPError, session
+from framework import StoredObject, session
+from framework.exceptions import HTTPError
 from framework.flask import app, redirect, make_response
 from website import settings
 
@@ -27,7 +28,7 @@ REDIRECT_CODES = [
 ]
 
 class Rule(object):
-    """ Container for routing and rendering rules. """
+    """ Container for routing and rendering rules."""
 
     @staticmethod
     def _ensure_list(value):
@@ -87,6 +88,8 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
         except HTTPError as error:
             rv = error
         except Exception as error:
+            logger.debug("Exception raised in wrap_with_renderer")
+            logger.error(error)
             if debug_mode:
                 raise
             rv = HTTPError(
@@ -98,7 +101,13 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
 
 
 def data_to_lambda(data):
-    return lambda *args, **kwargs: data
+    """Create a lambda function that takes arbitrary arguments and returns
+    a deep copy of the passed data. This function must deep copy the data,
+    else other code operating on the returned data can change the return value
+    of the lambda.
+
+    """
+    return lambda *args, **kwargs: copy.deepcopy(data)
 
 
 view_functions = {}
@@ -170,7 +179,7 @@ def render_mako_string(tpldir, tplname, data):
                         Template(open(os.path.join(tpldir, tplname)).read(), lookup=_tpl_lookup))
     # Don't cache in debug mode
     if not app.debug:
-        logger.debug("Caching template: {0}".format(tplname))
+        #logger.debug("Caching template: {0}".format(tplname))
         mako_cache[tplname] = tpl
     return tpl.render(**data)
 
@@ -273,13 +282,13 @@ class JSONRenderer(Renderer):
 
     CONTENT_TYPE = "application/json"
 
-    # todo: remove once storedobjects are no longer passed from view functions
     class Encoder(json.JSONEncoder):
         def default(self, obj):
             if hasattr(obj, 'to_json'):
-                return obj.to_json()
-            if isinstance(obj, StoredObject):
-                return obj._primary_key
+                try:
+                    return obj.to_json()
+                except TypeError:  # BS4 objects have to_json that isn't callable
+                    return unicode(obj)
             return json.JSONEncoder.default(self, obj)
 
     def handle_error(self, error):
@@ -370,7 +379,6 @@ class WebRenderer(Renderer):
         :param data: Dictionary to be passed to the template as context
         :return: 2-tuple: (<result>, <flag: replace div>)
         """
-
         attributes_string = element.get("mod-meta")
 
         # Return debug <div> if JSON cannot be parsed

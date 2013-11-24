@@ -8,8 +8,9 @@ from webtest_plus import TestApp
 
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
-                            NodeLogFactory, ApiKeyFactory)
+                            NodeLogFactory, ApiKeyFactory, NodeFactory)
 
+from website import settings
 from framework import app
 
 # Only uncomment if running these tests in isolation
@@ -68,7 +69,8 @@ class TestAUser(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.user = UserFactory(password='science')
+        self.user = UserFactory()
+        self.user.set_password('science')
         # Add an API key for quicker authentication
         api_key = ApiKeyFactory()
         self.user.api_keys.append(api_key)
@@ -127,12 +129,12 @@ class TestAUser(DbTestCase):
         res = self._login(self.user.username, 'science')
         res = self.app.get("/").maybe_follow()
         # Clicks Dashboard link in navbar
-        res = res.click("Dashboard")
+        res = res.click("Dashboard", index=0)
         assert_in("Projects", res)  # Projects heading
         # The project title is listed
         assert_in(project.title, res)
 
-
+    @unittest.skip("Can't test this, since logs are dynamically loaded")
     def test_sees_log_events_on_watched_projects(self):
         # Another user has a public project
         u2 = UserFactory(username="bono@u2.com", fullname="Bono")
@@ -158,6 +160,21 @@ class TestAUser(DbTestCase):
         assert_in("added file test.html", res)
         assert_in(project.title, res)
 
+    def test_can_create_a_project(self):
+        res = self._login(self.user.username, 'science')
+        # Goes to dashboard (already logged in)
+        res = res.click("My Dashboard", index=0)
+        # Clicks New Project
+        res = res.click("New Project").maybe_follow()
+        # Fills out the form
+        form = res.forms['projectForm']
+        form['title'] = "My new project"
+        form['description'] = "Just testing"
+        # Submits
+        res = form.submit().maybe_follow()
+        # Taken to the project's page
+        assert_in("My new project", res)
+
     def test_sees_correct_title_home_page(self):
         # User goes to homepage
         res = self.app.get("/", auto_follow=True)
@@ -170,6 +187,15 @@ class TestAUser(DbTestCase):
         res = self.app.get("/dashboard/", auth=self.auth, auto_follow=True)
         title = res.html.title.string
         assert_equal("Open Science Framework | Dashboard", title)
+
+    def test_can_see_make_public_button_if_contributor(self):
+        # User is a contributor on a project
+        project = ProjectFactory()
+        project.add_contributor(self.user)
+        project.save()
+        # User goes to the project page
+        res = self.app.get("/project/{0}/".format(project._primary_key), auth=self.auth).maybe_follow()
+        assert_in("Make public", res)
 
     def test_sees_logs_on_a_project(self):
         project = ProjectFactory(is_public=True)
@@ -186,17 +212,198 @@ class TestAUser(DbTestCase):
         # Sees a message indicating no content
         assert_in("No wiki content", res)
 
-    def test_cant_delete_registration(self):
-        original = ProjectFactory(creator=self.user, is_public=True)
+
+class TestRegistrations(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = UserFactory()
+        # Add an API key for quicker authentication
+        api_key = ApiKeyFactory()
+        self.user.api_keys.append(api_key)
+        self.user.save()
+        self.auth = ('test', api_key._primary_key)
+        self.original = ProjectFactory(creator=self.user, is_public=True)
         # A registration
-        project = ProjectFactory(is_registration=True,
-                                registered_from=original,
+        self.project = ProjectFactory(is_registration=True,
+                                registered_from=self.original,
                                 registered_date=dt.datetime.now(),
                                 creator=self.user)
+
+    def test_cant_be_deleted(self):
         # Goes to project's page
-        res = self.app.get("/project/{0}/".format(project._primary_key), auth=self.auth).maybe_follow()
-        # Can't get to settings
-        assert_not_in("Settings", res)
+        res = self.app.get("/project/{0}/".format(self.project._primary_key), auth=self.auth).maybe_follow()
+        # Settings is not in the project navigation bar
+        subnav = res.html.select("#projectSubnav")[0]
+        assert_not_in("Settings", subnav.text)
+
+
+class TestComponents(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = UserFactory(username="test@test.com")
+        # Add an API key for quicker authentication
+        api_key = ApiKeyFactory()
+        self.user.api_keys.append(api_key)
+        self.user.save()
+        self.auth = ('test', api_key._primary_key)
+        self.project = ProjectFactory(creator=self.user)
+        # A non-project componenet
+        self.component = NodeFactory(category="hypothesis", creator=self.user)
+        self.project.nodes.append(self.component)
+        self.component.save()
+        self.project.save()
+
+    def test_cannot_create_component_from_a_component(self):
+        # At the component's page
+        res = self.app.get(self.component.url, auth=self.auth).maybe_follow()
+        assert_not_in("Add Component", res)
+
+
+class TestMergingAccounts(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = UserFactory.build()
+        self.user.set_password("science")
+        self.user.save()
+        self.dupe = UserFactory.build()
+        self.dupe.set_password("example")
+        self.dupe.save()
+
+    def _login(self, username, password):
+        '''Log in a user via at the login page.'''
+        res = self.app.get("/account/").maybe_follow()
+        # Fills out login info
+        form = res.forms['signinForm']
+        form['username'] = self.user.username
+        form['password'] = 'science'
+        # submits
+        res = form.submit().maybe_follow()
+        return res
+
+    def test_can_merge_accounts(self):
+        res = self._login(self.user.username, "science")
+        # Goes to settings
+        res = self.app.get("/settings/").maybe_follow()
+        # Clicks merge link
+        res = res.click("Merge with duplicate account")
+        # Fills out form
+        form = res.forms['mergeAccountsForm']
+        form['merged_username'] = self.dupe.username
+        form['merged_password'] = 'example'
+        form['user_password'] = 'science'
+        # Submits
+        res = form.submit().maybe_follow()
+        # Back at the settings page
+        assert_equal(res.request.path, "/settings/")
+        # Sees a flash message
+        assert_in("Successfully merged {0} with this account".format(self.dupe.username), res)
+        # User is merged in database
+        self.dupe.reload()
+        assert_true(self.dupe.is_merged)
+
+    def test_sees_error_message_when_merged_password_is_wrong(self):
+        # User logs in
+        res = self._login(self.user.username, "science")
+        res = self.app.get("/user/merge/")
+        # Fills out form
+        form = res.forms['mergeAccountsForm']
+        form['merged_username'] = self.dupe.username
+        form['merged_password'] = 'WRONG'
+        form['user_password'] = 'science'
+        # Submits
+        res = form.submit().maybe_follow()
+        # Sees flash message
+        assert_in("Could not find that user. Please check the username and password.", res)
+
+    def test_sees_error_message_when_own_password_is_wrong(self):
+        # User logs in
+        res = self._login(self.user.username, "science")
+        # Goes to settings
+        res = self.app.get("/settings/").maybe_follow()
+        # Clicks merge link
+        res = res.click("Merge with duplicate account")
+        # Fills out form
+        form = res.forms['mergeAccountsForm']
+        form['merged_username'] = self.dupe.username
+        form['merged_password'] = 'example'
+        form['user_password'] = 'BAD'
+        # Submits
+        res = form.submit().maybe_follow()
+        # Sees flash message
+        assert_in("Could not authenticate. Please check your username and password.", res)
+
+    def test_merged_user_is_not_shown_as_a_contributor(self):
+        project = ProjectFactory(is_public=True)
+        # Both the master and dupe are contributors
+        project.add_contributor(self.dupe, log=False)
+        project.add_contributor(self.user, log=False)
+        project.save()
+        # At the project page, both are listed as contributors
+        res = self.app.get(project.url).maybe_follow()
+        assert_in(self.user.fullname, res)
+        assert_in(self.dupe.fullname, res)
+        # The accounts are merged
+        self.user.merge_user(self.dupe)
+        self.user.save()
+        # Now only the master user is shown at the project page
+        res = self.app.get(project.url).maybe_follow()
+        assert_in(self.user.fullname, res)
+        assert_not_in(self.dupe.fullname, res)
+
+    def test_merged_user_has_alert_message_on_profile(self):
+        # Master merges dupe
+        self.user.merge_user(self.dupe)
+        self.user.save()
+        # At the dupe user's profile there is an alert message at the top
+        # indicating that the user is merged
+        res = self.app.get("/profile/{0}/".format(self.dupe._primary_key)).maybe_follow()
+        assert_in("This account has been merged", res)
+
+
+# FIXME: These affect search in development environment. So need to migrate solr after running.
+# # Remove this side effect.
+@unittest.skipIf(not settings.USE_SOLR, "Skipping because USE_SOLR is False")
+class TestSearching(DbTestCase):
+
+    '''Test searching using the search bar. NOTE: These may affect the
+    Solr database. May need to migrate after running these.
+    '''
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = UserFactory()
+        # Add an API key for quicker authentication
+        api_key = ApiKeyFactory()
+        self.user.api_keys.append(api_key)
+        self.user.save()
+        self.auth = ('test', api_key._primary_key)
+
+    def test_a_user_from_home_page(self):
+        user = UserFactory()
+        # Goes to home page
+        res = self.app.get("/").maybe_follow()
+        # Fills search form
+        form = res.forms['searchBar']
+        form['q'] = user.fullname
+        res = form.submit().maybe_follow()
+        # No results, so clicks Search Users
+        res = res.click("Search users")
+        # The username shows as a search result
+        assert_in(user.fullname, res)
+
+    def test_a_public_project_from_home_page(self):
+        project = ProjectFactory(title="Foobar Project", is_public=True)
+        # Searches a part of the name
+        res = self.app.get('/').maybe_follow()
+        project.reload()
+        form = res.forms['searchBar']
+        form['q'] = "Foobar"
+        res = form.submit().maybe_follow()
+        # A link to the project is shown as a result
+        assert_in("Foobar Project", res)
 
 
 if __name__ == '__main__':

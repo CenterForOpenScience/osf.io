@@ -12,14 +12,16 @@
     <![endif]-->
 
     <!-- Le styles -->
-    <link rel="stylesheet" href="/static/vendor/bootstrap2/css/bootstrap.min.css">
+    ## Don't bundle Bootstrap or else Glyphicons won't work
+    <link rel="stylesheet" href="/static/vendor/bootstrap3/css/bootstrap-custom.css">
+    <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
     % for url in css_all:
-        <link rel="stylesheet" href="${url}">
+    <link rel="stylesheet" href="${url}">
     % endfor
     ${self.stylesheets()}
 
     % for url in js_all:
-        <script src="${url}"></script>
+    <script src="${url}"></script>
     % endfor
     ${self.javascript()}
 
@@ -62,6 +64,18 @@
               js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
               fjs.parentNode.insertBefore(js, fjs);
             }(document, 'script', 'facebook-jssdk'));</script>
+
+            <script>
+            var _prum = [['id', '526076f6abe53d9e35000000'],
+                         ['mark', 'firstbyte', (new Date()).getTime()]];
+            (function() {
+                var s = document.getElementsByTagName('script')[0]
+                  , p = document.createElement('script');
+                p.async = 'async';
+                p.src = '//rum-static.pingdom.net/prum.min.js';
+                s.parentNode.insertBefore(p, s);
+            })();
+            </script>
 
             <script type="text/javascript">
 

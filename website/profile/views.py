@@ -1,11 +1,12 @@
 import httplib as http
+
 from framework import (
     get_current_user,
     get_user,
     must_be_logged_in,
-    request,
-    HTTPError,
+    request
 )
+from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
 
 from website.models import ApiKey, User
@@ -13,6 +14,7 @@ from framework.analytics import get_total_activity_count
 from website import settings
 from website import filters
 from website.views import _render_nodes
+
 
 def get_public_projects(uid=None, user=None):
     user = user or User.load(uid)
@@ -61,14 +63,17 @@ def _profile_view(uid=None):
         )
         return {
             'user_id': profile._id,
+            'user': {"can_edit": None},
             'user_full_name': profile.fullname,
             'user_is_profile': user is not None and user == profile,
             'activity_points': get_total_activity_count(profile._primary_key),
             'number_projects': len(projects),
-            'number_public_projects': len(public_projects),
+            'number_public_projects': len(public_projects['nodes']),
             'fullname': profile.fullname,
             'date_registered': profile.date_registered.strftime("%Y-%m-%d"),
             'gravatar_url': gravatar_url,
+            'user_is_merged': profile.is_merged,
+            'user_merged_by_url': profile.merged_by.url if profile.is_merged else None
         }
     raise HTTPError(http.NOT_FOUND)
 
@@ -85,12 +90,12 @@ def edit_profile(*args, **kwargs):
 
     form = request.form
 
+    response_data = {'response' : 'success'}
     if form.get('name') == 'fullname' and form.get('value', '').strip():
         user.fullname = sanitize(form['value'])
         user.save()
-
-    return {'response' : 'success'}
-
+        response_data['name'] = user.fullname
+    return response_data
 
 def get_profile_summary(user_id, formatter='long'):
 

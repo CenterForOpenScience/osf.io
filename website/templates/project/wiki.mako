@@ -1,37 +1,30 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Wiki</%def>
 <%def name="content()">
-<div mod-meta='{"tpl": "project/base.mako", "replace": true}'></div>
+<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
-<div>
-
-    <div style="width:200px; float:right; margin-left:30px;">
-
-        <div mod-meta='{
-                "tpl": "project/wiki/status.mako",
-                "replace": true
-            }'></div>
-        <div mod-meta='{
-                "tpl": "project/wiki/nav.mako",
-                "replace": true
-            }'></div>
-        <div mod-meta='{
-                "tpl": "project/wiki/toc.mako",
-                "replace": true
-            }'></div>
-
-    </div>
-
+<div class="col-md-9">
     ${wiki_content}
+</div>
+
+<div class="col-md-3">
+    <div mod-meta='{
+            "tpl": "project/wiki/status.mako",
+            "replace": true
+        }'></div>
+    <div mod-meta='{
+            "tpl": "project/wiki/nav.mako",
+            "replace": true
+        }'></div>
+
+    <div mod-meta='{
+            "tpl": "project/wiki/toc.mako",
+            "replace": true
+        }'></div>
 
 </div>
 
-##<div mod-meta='{
-##        "tpl": "metadata/knockout.mako",
-##        "replace": true
-##    }'></div>
-##
-##
+
 ##<div mod-meta='{
 ##        "tpl": "metadata/comment_group.mako",
 ##        "kwargs": {

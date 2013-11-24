@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from framework import session, create_session, HTTPError
-import framework.status as status
+from framework import session, create_session
+from framework.exceptions import HTTPError
 import framework.flask as web
 import framework.bcrypt as bcrypt
 from modularodm.query.querydialect import DefaultQueryDialect as Q
@@ -152,6 +152,7 @@ def register(username, password, fullname):
     username = username.strip().lower()
     fullname = fullname.strip()
 
+    # TODO: This validation should occur at the database level, not the view
     if not get_user(username=username):
         newUser = User(
             username=username,
@@ -183,8 +184,6 @@ def must_be_logged_in(fn):
             return func(*args, **kwargs)
         else:
             raise HTTPError(http.UNAUTHORIZED)
-            # status.push_status_message('You are not logged in')
-            # return web.redirect('/account')
     return decorator(wrapped, fn)
 
 

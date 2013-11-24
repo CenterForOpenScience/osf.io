@@ -26,15 +26,19 @@
         % if spellcheck:
            <h4> Did you mean <a href='/search/?q=${spellcheck}'> ${spellcheck} </a>? </h4>
         % endif
-    </div>
+    </div><!-- end page-header -->
 </section>
 <div class="row">
-    <div class="span2">
-        % if query:
+    <div class="col-md-2">
+        % if query and not searching_users:
         <h3>
 ##            our search users query
-            <a href="/search/?q=user:${query|h}"> Search users </a>
+            % if 'user:' not in query:
+                <a href="/search/?q=user:(${query|h})"> Search users </a>
+            % endif
         </h3>
+        % else:
+        <h3>Searching users</h3>
         % endif
 ##        our tag cloud!
         % if tags:
@@ -47,9 +51,8 @@
                 % endif
             % endfor
         % endif
-
-    </div>
-    <div class="span10">
+    </div><!-- end col-md -->
+    <div class="col-md-10">
             % if results:
 ##            iterate through our nice lists of results
                 % for result in results:
@@ -59,122 +62,123 @@
                             <div class="user">
                             <a href=${result['user_url']}>${result['user']}</a>
                             </div>
+                    </div><!-- end result -->
                         % else:
-                        <div class="title">
-                            <h4>
-                                % if result['url']:
-                                    <a href=${result['url']}>${result['title']}</a>
-                                %else:
-                                    <span style='font-weight:normal; font-style:italic'>${result['title']}</span>
-                                % endif
-
-                            </h4>
-                        </div>
-##                            jeff's nice logic for displaying users
-                        <div class="contributors">
-                            % for index, (contributor, url) in enumerate(zip(result['contributors'][:3], result['contributors_url'][:3])):
-                                <%
-                                    if index == 2 and len(result['contributors']) > 3:
-                                        # third item, > 3 total items
-                                        sep = ' & <a href="{url}">{num} other{plural}</a>'.format(
-                                            num=len(result['contributors']) - 3,
-                                            plural='s' if len(result['contributors']) - 3 else '',
-                                            url=result['url']
-                                        )
-                                    elif index == len(result['contributors']) - 1:
-                                        # last item
-                                        sep = ''
-                                    elif index == len(result['contributors']) - 2:
-                                        # second to last item
-                                        sep = ' & '
-                                    else:
-                                        sep = ','
-                                %>
-                                <a href=${url}>${contributor}</a>${sep}
-                            % endfor
-                        </div>
-##                      our highlight
-                        <div class="highlight">
-                            % if result['highlight'] is not None:
-                                % for highlight in result['highlight']:
-                                   %if hightlight:
-                                       ${highlight}
-                                   %endif
-                                % endfor
-##                      if there is a wiki link, display that
-                                % if result['wiki_link']:
-                                    <a href=${result['wiki_link']}> jump to wiki </a>
-                                % endif
-                            % endif
-                        </div>
-##                      if we have nested, we have to iterate by keys
-##                      because many different nodes can be displayed in the nest
-##                      section of the dictionary
-                            % if result['nest']:
-                                <div class="nested">
-                                    % for i, key in enumerate(result['nest'].iterkeys()):
-##                                      dont show more than 5 nodes
-                                        % if i < 5:
-                                            <div class="sub_title">
-                                                <h4>
-                                                    <a href=${result['nest'][key]['url']}>${result['nest'][key]['title']}</a>
-                                                </h4>
-                                            </div>
-##                                           jeffs nice logic for displaying users, again
-                                            <div class="contributors">
-                                                % for index, (contributor, url) in enumerate(zip(result['nest'][key]['contributors'][:3], result['nest'][key]['contributors_url'][:3])):
-                                                    <%
-                                                        if index == 2 and len(result['nest'][key]['contributors']) > 3:
-                                                            # third item, > 3 total items
-                                                            sep = ' & <a href="{url}">{num} other{plural}</a>'.format(
-                                                                num=len(result['nest'][key]['contributors']) - 3,
-                                                                plural='s' if len(result['nest'][key]['contributors']) - 3 else '',
-                                                                url=result['nest'][key]['url']
-                                                            )
-                                                        elif index == len(result['nest'][key]['contributors']) - 1:
-                                                            # last item
-                                                            sep = ''
-                                                        elif index == len(result['nest'][key]['contributors']) - 2:
-                                                            # second to last item
-                                                            sep = ' & '
-                                                        else:
-                                                            sep = ','
-                                                    %>
-                                                    <a href=${url}>${contributor}</a>${sep}
-                                                % endfor
-                                            </div>
-                                            % if result['nest'][key]['highlight'] is not None:
-                                            <div class="highlight">
-##                                               show our highlights
-                                                % for highlight in result['nest'][key]['highlight']:
-                                                    ${highlight}
-                                                % endfor
-##                                               and link to wiki, if its there
-                                                % if result['nest'][key]['wiki_link']:
-                                                       <a href=${result['nest'][key]['wiki_link']}> jump to wiki </a>
-                                                % endif
-                                            </div>
-                                             % endif
-                                    % else:
-##                                           if we've shown more than 5 nested nodes, link to project and break
-                                            <h4> <a href=${result['url']}> and ${len(result['nest'].keys()) - i} more... </a>  </h4>
-                                            <%
-                                                break
-                                            %>
+                            <div class="title">
+                                <h4>
+                                    % if result['url']:
+                                        <a href=${result['url']}>${result['title']}</a>
+                                    %else:
+                                        <span style='font-weight:normal; font-style:italic'>${result['title']}</span>
                                     % endif
-                                    % endfor
-                                </div>
-                                % endif
-##                      show all the tags for the project
-                        <div class="tags">
-                            % if 'tags' in result:
-                                % for tag in result['tags']:
-                                <a href=/search/?q=${tag} class="label label-info btn-mini"> ${tag} </a>
+
+                                </h4>
+                            </div><!-- end title -->
+    ##                            jeff's nice logic for displaying users
+                            <div class="contributors">
+                                % for index, (contributor, url) in enumerate(zip(result['contributors'][:3], result['contributors_url'][:3])):
+                                    <%
+                                        if index == 2 and len(result['contributors']) > 3:
+                                            # third item, > 3 total items
+                                            sep = ' & <a href="{url}">{num} other{plural}</a>'.format(
+                                                num=len(result['contributors']) - 3,
+                                                plural='s' if len(result['contributors']) - 3 else '',
+                                                url=result['url']
+                                            )
+                                        elif index == len(result['contributors']) - 1:
+                                            # last item
+                                            sep = ''
+                                        elif index == len(result['contributors']) - 2:
+                                            # second to last item
+                                            sep = ' & '
+                                        else:
+                                            sep = ','
+                                    %>
+                                    <a href=${url}>${contributor}</a>${sep}
                                 % endfor
-                            % endif
-                        </div>
-                        </div>
-                        <br>
+                            </div><!-- end contributors -->
+    ##                      our highlight
+                            <div class="highlight">
+                                % if result['highlight'] is not None:
+                                    % for highlight in result['highlight']:
+                                       %if hightlight:
+                                           ${highlight}
+                                       %endif
+                                    % endfor
+    ##                      if there is a wiki link, display that
+                                    % if result['wiki_link']:
+                                        <a href=${result['wiki_link']}> jump to wiki </a>
+                                    % endif
+                                % endif
+                            </div><!-- end highlight -->
+    ##                      if we have nested, we have to iterate by keys
+    ##                      because many different nodes can be displayed in the nest
+    ##                      section of the dictionary
+                                % if result['nest']:
+                                    <div class="nested">
+                                        % for i, key in enumerate(result['nest'].iterkeys()):
+    ##                                      dont show more than 5 nodes
+                                            % if i < 5:
+                                                <div class="sub_title">
+                                                    <h4>
+                                                        <a href=${result['nest'][key]['url']}>${result['nest'][key]['title']}</a>
+                                                    </h4>
+                                                </div>
+    ##                                           jeffs nice logic for displaying users, again
+                                                <div class="contributors">
+                                                    % for index, (contributor, url) in enumerate(zip(result['nest'][key]['contributors'][:3], result['nest'][key]['contributors_url'][:3])):
+                                                        <%
+                                                            if index == 2 and len(result['nest'][key]['contributors']) > 3:
+                                                                # third item, > 3 total items
+                                                                sep = ' & <a href="{url}">{num} other{plural}</a>'.format(
+                                                                    num=len(result['nest'][key]['contributors']) - 3,
+                                                                    plural='s' if len(result['nest'][key]['contributors']) - 3 else '',
+                                                                    url=result['nest'][key]['url']
+                                                                )
+                                                            elif index == len(result['nest'][key]['contributors']) - 1:
+                                                                # last item
+                                                                sep = ''
+                                                            elif index == len(result['nest'][key]['contributors']) - 2:
+                                                                # second to last item
+                                                                sep = ' & '
+                                                            else:
+                                                                sep = ','
+                                                        %>
+                                                        <a href=${url}>${contributor}</a>${sep}
+                                                    % endfor
+                                                </div>
+                                                % if result['nest'][key]['highlight'] is not None:
+                                                <div class="highlight">
+    ##                                               show our highlights
+                                                    % for highlight in result['nest'][key]['highlight']:
+                                                        ${highlight}
+                                                    % endfor
+    ##                                               and link to wiki, if its there
+                                                    % if result['nest'][key]['wiki_link']:
+                                                           <a href=${result['nest'][key]['wiki_link']}> jump to wiki </a>
+                                                    % endif
+                                                </div>
+                                                 % endif
+                                        % else:
+    ##                                           if we've shown more than 5 nested nodes, link to project and break
+                                                <h4> <a href=${result['url']}> and ${len(result['nest'].keys()) - i} more... </a>  </h4>
+                                                <%
+                                                    break
+                                                %>
+                                        % endif
+                                        % endfor
+                                    </div><!-- end nested -->
+                                    % endif
+    ##                      show all the tags for the project
+                            <div class="tags">
+                                % if 'tags' in result:
+                                    % for tag in result['tags']:
+                                    <a href=/search/?q=${tag} class="label label-info btn-mini"> ${tag} </a>
+                                    % endfor
+                                % endif
+                            </div>
+                    </div><!-- end result-->
+                    <br>
                     %endif
                 % endfor
 ##            pagination! we're simply going to build a query by telling solr which 'row' we want to start on
@@ -195,10 +199,10 @@
                         % endif
                     % endif
 
-                </div>
+                </div><!-- end navigate -->
             % else:
                 No results found. <br />
             %endif
-    </div>
-</div>
+    </div><!--end col-md -->
+</div><!-- end row -->
 </%def>

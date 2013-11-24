@@ -4,10 +4,10 @@
 <div mod-meta='{"tpl": "include/subnav.mako", "replace": true}'></div>
 
 <div class="row">
-    <div class="span6">
+    <div class="col-md-6">
         <div class="page-header">
-            <div style="float:right;"><a class="btn" href="/project/new">New Project</a></div>
-            <h3 style="margin-bottom:10px;">Projects</h3>
+            <div class="pull-right"><a class="btn btn-default" href="/project/new">New Project</a></div>
+            <h3>Projects</h3>
         </div>
         <div mod-meta='{
                  "tpl": "util/render_nodes.mako",
@@ -16,19 +16,24 @@
             }'></div>
     </div>
     <div class="row">
-        <div class="span6">
-            <div class="page-header">
-            <h3 style="margin-bottom:10px;">Watched Projects</h3>
-            </div>
-            % for log in logs:
-                <div mod-meta='{
-                        "tpl": "util/render_log.mako",
-                        "uri": "/api/v1/log/${log}/",
-                        "replace": true,
-                        "error": "Log unavailable (private component)"
-                    }'></div>
-            % endfor
+        <div class="col-md-6">
+           <div id="watchFeed">
+               <div class="page-header">
+                    <h3>Watched Projects</h3>
+                </div>
+                <div id="logScope">
+                    <%include file="log_list.mako"/>
+                </div><!-- end #logScope -->
+            </div><!-- end #watchFeed -->
         </div>
     </div>
 </div>
+
+</%def>
+
+<%def name="javascript_bottom()">
+<script>
+    // Initialize the LogsViewModel
+    initializeLogs("#logScope", "/api/v1/watched/logs/");
+</script>
 </%def>

@@ -7,9 +7,9 @@ import os
 from invoke import task, run, ctask
 
 from website import settings
-from framework.tasks import celery
 
 SOLR_DEV_PATH = os.path.join("scripts", "solr-dev")  # Path to example solr app
+
 
 @task
 def server():
@@ -80,12 +80,16 @@ def requirements():
 @ctask(help={
     'module': "Just runs tests/STRING.py.",
 })
-def test(ctx, module=None):
+def test(ctx, module=None, coverage=False, browse=False):
     """
     Run the test suite.
     """
     # Allow selecting specific submodule
     specific_module = " --tests=tests/%s.py" % module
     args = (specific_module if module else " tests/")
+    if coverage:
+        args += " --with-coverage --cover-html"
     # Use pty so the process buffers "correctly"
     ctx.run("nosetests" + args, pty=True)
+    if coverage and browse:
+        ctx.run("open cover/index.html")

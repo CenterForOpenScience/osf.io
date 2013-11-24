@@ -1,16 +1,18 @@
 % if log:
 
-    <dt><span class="date">${log['date']}</span></dt>
+    <dt><span class="date log-date">${log['date']}</span></dt>
     % if log['user_fullname']:
         <dd><a href="/profile/${log['user_id']}/">${log['user_fullname']}</a>
     % elif log['api_key']:
         <dd>${log['api_key']}
     % endif
     %if log['action'] == 'project_created':
-        created <a href="${log['project_url']}">project</a>
+        created <a href="${log['node_url']}">project</a>
     %elif log['action'] == 'node_created':
         created ${log['category']}
         <a href="${log['node_url']}">${log['node_title']}</a>
+    %elif log['action'] == 'node_removed':
+        ${log['category']} ${log['node_title']}
     %elif log['action'] == 'wiki_updated':
         updated wiki page <a href="${log['node_url']}wiki/${log['params']['page']}/">${log['params']['page']}</a> to version ${log['params']['version']}
     %elif log['action'] == 'contributor_added':

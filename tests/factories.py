@@ -13,12 +13,13 @@ Example usage: ::
 Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
+import datetime as dt
 
 from factory import base, Sequence, SubFactory, PostGenerationMethodCall, post_generation
 
 from framework.auth import User
 from website.project.model import (ApiKey, Node, NodeLog, WatchConfig,
-                                   MetaData, Tag)
+                                   MetaData, Tag, NodeWikiPage)
 
 class ModularOdmFactory(base.Factory):
 
@@ -39,16 +40,25 @@ class ModularOdmFactory(base.Factory):
         return instance
 
 
+
+
 class UserFactory(ModularOdmFactory):
     FACTORY_FOR = User
 
     username = Sequence(lambda n: "fred{0}@example.com".format(n))
-    # Sets the password upon generation but before saving
-    password = PostGenerationMethodCall("set_password", "defaultpassword")
-    fullname = Sequence(lambda n: "Freddie Mercury the {0}".format(n))
+    # Don't use post generation call to set_password because
+    # It slows down the tests dramatically
+    password = "password"
+    fullname = Sequence(lambda n: "Freddie Mercury{0}".format(n))
     is_registered = True
     is_claimed = True
     api_keys = []
+
+    @post_generation
+    def set_date_registered(self, create, extracted):
+        self.date_registered = dt.datetime.utcnow()
+        if create:
+            self.save()
 
 
 class TagFactory(ModularOdmFactory):
@@ -79,7 +89,7 @@ class ProjectFactory(NodeFactory):
     @post_generation
     def add_created_log(self, create, extracted):
         '''Add a log after creating a new project.'''
-        self.add_log('project_created',
+        self.add_log(NodeLog.PROJECT_CREATED,
             params={
                 'project': self._primary_key,
             },
@@ -101,3 +111,13 @@ class WatchConfigFactory(ModularOdmFactory):
 
 class MetaDataFactory(ModularOdmFactory):
     FACTORY_FOR = MetaData
+
+
+class NodeWikiFactory(ModularOdmFactory):
+    FACTORY_FOR = NodeWikiPage
+
+    page_name = 'home'
+    version = 1
+    user = SubFactory(UserFactory)
+    node = SubFactory(NodeFactory)
+

@@ -9,18 +9,18 @@ import os
 
 import flask
 from lxml.html import fragment_fromstring
-from modularodm import fields
 import werkzeug.wrappers
 
-from framework import StoredObject
 from framework.exceptions import HTTPError, http
 from framework.routing import (
     Renderer, JSONRenderer, WebRenderer,
     render_mako_string,
 )
-from new_style import OsfWebRenderer
 
 from tests.base import AppTestCase, DbTestCase
+
+# Need to use OsfWebRenderer to get global variables
+from website.routes import OsfWebRenderer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_PATH = os.path.join(HERE, 'templates')
@@ -101,6 +101,7 @@ class WebRendererTestCase(AppTestCase):
 
     def setUp(self):
         super(WebRendererTestCase, self).setUp()
+
         # Use OsfRenderer so that global vars are included
         self.r = OsfWebRenderer(
             os.path.join(TEMPLATES_PATH, 'main.html'),
@@ -337,18 +338,6 @@ class JSONRendererEncoderTestCase(unittest.TestCase):
         self.assertEqual(
             '"<JSON representation>"',
             json.dumps(test_object, cls=JSONRenderer.Encoder),
-        )
-
-    def test_stored_object(self):
-        class TestClass(StoredObject):
-            _id = fields.StringField(primary=True)
-
-        test_object = TestClass()
-        test_object._id = 'FakeID'
-
-        self.assertEqual(
-            '"FakeID"',
-            json.dumps(test_object, cls=JSONRenderer.Encoder)
         )
 
     def test_string(self):

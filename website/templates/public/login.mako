@@ -6,8 +6,7 @@
 </div>
 
 <div class="row">
-    <div class="span1">&nbsp;</div>
-    <div class="span6">
+    <div class="col-md-5">
         <h2>Create Account</h2>
         <div mod-meta='{
                 "tpl": "util/render_form.mako",
@@ -19,13 +18,14 @@
                     "action_string": "/register/",
                     "form_class": "form-stacked",
                     "submit_string": "Create Account",
-                    "field_name_prefix": "register_"
+                    "field_name_prefix": "register_",
+                    "submit_btn_class": "btn-success"
                 },
                 "replace": true
-            }'></div>
-
+            }'>
+        </div>
     </div>
-    <div class="span4">
+    <div class="col-md-5 col-md-offset-2">
         <h2>Sign-In</h2>
         <div mod-meta='{
                 "tpl": "util/render_form.mako",
@@ -36,7 +36,8 @@
                     "method_string": "POST",
                     "action_string": "/login/",
                     "form_class": "form-stacked",
-                    "submit_string": "Sign In"
+                    "submit_string": "Sign In",
+                    "submit_btn_class": "btn-primary"
                 },
                 "replace": true
             }'></div>
@@ -53,15 +54,14 @@
                     "method_string": "POST",
                     "action_string": "/forgotpassword/",
                     "form_class": "form-stacked",
-                    "submit_string": "Reset Password"
+                    "submit_string": "Reset Password",
+                    "submit_btn_class": "btn-default"
                 },
                 "replace": true
             }'></div>
 
     </div>
-
-    <div class="span1">&nbsp;</div>
+    <div class="col-md-1">&nbsp;</div>
 
 </div>
 </%def>
-

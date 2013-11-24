@@ -1,11 +1,10 @@
-from framework import request
-
-from framework.status import push_status_message
-from solr_search import search_solr
 import time
 from urllib2 import HTTPError
-
 import logging
+
+from framework import request, status
+from website.search.solr_search import search_solr
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('search.routes')
 
@@ -21,7 +20,7 @@ def search_search():
     query = request.args.get('q')
     # if there is not a query, tell our users to enter a search
     if query == '':
-        push_status_message('Enter a search!')
+        status.push_status_message('Enter a search!')
         return {
             'results': [],
             'tags': [],
@@ -34,16 +33,18 @@ def search_search():
     try:
         results, highlights, spellcheck_results = search_solr(query, start)
     except HTTPError:
-        push_status_message('Malformed query. Please try again')
+        status.push_status_message('Malformed query. Please try again')
         return {
             'results': [],
             'tags': [],
             'query': '',
         }
     # with our highlights and search result 'documents' we build the search
-    # results so that it is easier for us to displa
+    # results so that it is easier for us to display
     result_search, tags = create_result(highlights, results['docs'])
     total = results['numFound']
+    # Whether or not the user is searching for users
+    searching_users = query.startswith("user:")
     return {
         'highlight': highlights,
         'results': result_search,
@@ -53,6 +54,7 @@ def search_search():
         'current_page': start,
         'time': round(time.time() - tick, 2),
         'tags': tags,
+        'searching_users': searching_users
     }
 
 
@@ -193,50 +195,50 @@ def create_result(highlights, results):
             result_search.append(container)
     return result_search, tags
 
-import ast
-import urllib
-import urlparse
-import requests
+import re
 
 from website import settings
 from website.filters import gravatar
 from website.models import User
 
-def search_contributor():
+def _search_contributor(query):
     """Search for contributors to add to a project using Solr. Request must
     include JSON data with a "query" field.
 
+    :param: Search query
     :return: List of dictionaries, each containing the ID, full name, and
         gravatar URL of an OSF user
 
     """
     # Prepare query
-    query = request.args.get('query', '')
-    q = u'user:{}'.format(query).encode('utf-8')
+    query = re.sub(r'[\-\+]', ' ', query)
 
-    solr_params = {
-        'q': q,
-        'wt': 'python',
-    }
-    solr_url = '{}?{}'.format(
-        urlparse.urljoin(settings.solr, 'spell'),
-        urllib.urlencode(solr_params)
-    )
+    # Prepend "user:" to each token in the query; else Solr will search for
+    # e.g. user:Barack AND Obama. Also search for tokens plus wildcard so that
+    # Bar will match Barack. Note: in Solr, Barack* does not match Barack,
+    # so must search for (Barack OR Barack*).
+    q = ' AND '.join([
+        u'user:({token} OR {token}*)'.format(token=token).encode('utf-8')
+        for token in re.split(r'\s+', query)
+    ])
 
-    raw_output = requests.get(solr_url).content
-    parsed_output = ast.literal_eval(raw_output)
+    result, highlight, spellcheck_result = search_solr(q)
+    docs = result.get('docs', [])
 
-    try:
-        response = parsed_output['response']['docs']
-    except KeyError:
-        return []
+    users = []
+    for doc in docs:
+        users.append({
+            'fullname': doc['user'],
+            'id': doc['id'],
+            'gravatar': gravatar(
+                User.load(doc['id']),
+                use_ssl=True,
+                size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,
+            )
+        })
 
-    for idx in range(len(response)):
-        user = User.load(response[idx]['id'])
-        response[idx]['gravatar'] = gravatar(
-            user,
-            use_ssl=True,
-            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
-        )
+    return {'users': users}
 
-    return response
+def search_contributor():
+    return _search_contributor(request.args.get('query', ''))
+

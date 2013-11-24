@@ -1,18 +1,22 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+import hashlib
 import logging
 
+import framework
 from framework import request, User, Q
+from framework.exceptions import HTTPError
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from framework.auth import must_have_session_auth, get_current_user, get_api_key
-from framework.forms.utils import sanitize
-import hashlib
-import json
 
-from framework import HTTPError
+
+from website import settings
+from website.filters import gravatar
+from website.models import Node
 
 logger = logging.getLogger(__name__)
+
 
 @must_be_valid_project
 def get_node_contributors_abbrev(*args, **kwargs):
@@ -23,37 +27,36 @@ def get_node_contributors_abbrev(*args, **kwargs):
 
     max_count = kwargs.get('max_count', 3)
     if 'user_ids' in kwargs:
-        user_ids = [
-            user for user in kwargs['user_ids']
-            if user in node_to_use.contributors
+        users = [
+            User.load(user_id) for user_id in kwargs['user_ids']
+            if user_id in node_to_use.contributors
         ]
     else:
-        user_ids = node_to_use.contributors
+        users = node_to_use.contributors
 
-    if not node_to_use.can_edit(user, api_key) \
-            and not node_to_use.are_contributors_public:
+    if not node_to_use.can_view(user, api_key):
         raise HTTPError(http.FORBIDDEN)
 
     contributors = []
 
-    n_contributors = len(user_ids)
+    n_contributors = len(users)
     others_count, others_suffix = '', ''
 
-    for index, user_id in enumerate(user_ids[:max_count]):
+    for index, user in enumerate(users[:max_count]):
 
-        if index == max_count - 1 and len(user_ids) > max_count:
+        if index == max_count - 1 and len(users) > max_count:
             separator = ' &'
             others_count = n_contributors - 3
             others_suffix = 's' if others_count > 1 else ''
-        elif index == len(user_ids) - 1:
+        elif index == len(users) - 1:
             separator = ''
-        elif index == len(user_ids) - 2:
+        elif index == len(users) - 2:
             separator = ' &'
         else:
             separator = ','
 
         contributors.append({
-            'user_id': user_id,
+            'user_id': user._primary_key,
             'separator': separator,
         })
 
@@ -63,6 +66,37 @@ def get_node_contributors_abbrev(*args, **kwargs):
         'others_suffix': others_suffix,
     }
 
+
+def _jsonify_contribs(contribs):
+
+    data = []
+    # TODO(sloria): Put into User.serialize()
+    for contrib in contribs:
+        if 'id' in contrib:
+            user = User.load(contrib['id'])
+            if user is None:
+                logger.error('User {} not found'.format(contrib['id']))
+                continue
+            data.append({
+                'registered': True,
+                'id': user._primary_key,
+                'fullname': user.fullname,
+                'gravatar': gravatar(
+                    user,
+                    use_ssl=True,
+                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+                ),
+            })
+        else:
+            contribs.append({
+                'registered': False,
+                'id': hashlib.md5(contrib['nr_email']).hexdigest(),
+                'fullname': contrib['nr_name'],
+            })
+
+    return data
+
+
 @must_be_valid_project
 def get_contributors(*args, **kwargs):
 
@@ -70,27 +104,35 @@ def get_contributors(*args, **kwargs):
     api_key = get_api_key()
     node_to_use = kwargs['node'] or kwargs['project']
 
-    if not node_to_use.can_edit(user, api_key) \
-            and not node_to_use.are_contributors_public:
+    if not node_to_use.can_view(user, api_key):
         raise HTTPError(http.FORBIDDEN)
 
-    contributors = []
-    for contributor in node_to_use.contributor_list:
-        if 'id' in contributor:
-            user = User.load(contributor['id'])
-            contributors.append({
-                'registered' : True,
-                'id' : user._primary_key,
-                'fullname' : user.fullname,
-            })
-        else:
-            contributors.append({
-                'registered' : False,
-                'id' : hashlib.md5(contributor['nr_email']).hexdigest(),
-                'fullname' : contributor['nr_name'],
-            })
+    contribs = _jsonify_contribs(node_to_use.contributor_list)
 
-    return {'contributors' : contributors}
+    return {'contributors': contribs}
+
+
+@must_be_valid_project
+def get_contributors_from_parent(*args, **kwargs):
+
+    user = get_current_user()
+    api_key = get_api_key()
+    node_to_use = kwargs['node'] or kwargs['project']
+
+    parent = node_to_use.node__parent[0] if node_to_use.node__parent else None
+    if not parent:
+        raise HTTPError(http.BAD_REQUEST)
+
+    if not node_to_use.can_view(user, api_key):
+        raise HTTPError(http.FORBIDDEN)
+
+    contribs = _jsonify_contribs([
+        contrib
+        for contrib in parent.contributor_list
+        if contrib not in node_to_use.contributor_list
+    ])
+
+    return {'contributors': contribs}
 
 
 @must_have_session_auth
@@ -117,14 +159,14 @@ def project_removecontributor(*args, **kwargs):
             logger.error(err)
             raise HTTPError(http.BAD_REQUEST)
         outcome = node_to_use.remove_contributor(
-            user, contributor, api_key=api_key
+            contributor=contributor, user=user, api_key=api_key
         )
     if outcome:
-        # TODO(sloria): Add flash message
+        framework.status.push_status_message("Contributor removed", "info")
         return {'status': 'success'}
     raise HTTPError(http.BAD_REQUEST)
 
-# TODO: This should accept json--not form--data
+
 @must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
@@ -136,27 +178,15 @@ def project_addcontributors_post(*args, **kwargs):
     user = kwargs['user']
     api_key = get_api_key()
     user_ids = request.json.get('user_ids', [])
-    # TODO: Move to model
-
-    for user_id in user_ids:
-        if user_id not in node_to_use.contributors:
-            added_user = User.load(user_id)
-            node_to_use.contributors.append(added_user)
-            node_to_use.contributor_list.append({
-                'id': added_user._primary_key,
-            })
-
+    node_ids = request.json.get('node_ids', [])
+    users = [
+        User.load(user_id)
+        for user_id in user_ids
+    ]
+    node_to_use.add_contributors(contributors=users, user=user, api_key=api_key)
     node_to_use.save()
-
-    node_to_use.add_log(
-        action='contributor_added',
-        params={
-            'project': node_to_use.parent_id,
-            'node': node_to_use._primary_key,
-            'contributors': user_ids,
-        },
-        user=user,
-        api_key=api_key,
-    )
-
+    for node_id in node_ids:
+        node = Node.load(node_id)
+        node.add_contributors(contributors=users, user=user, api_key=api_key)
+        node.save()
     return {'status': 'success'}, 201
