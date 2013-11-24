@@ -60,7 +60,7 @@
                             Type "continue" if you are sure you want to continue
                         </label>
                         <div class="controls">
-                            <input id="comfirm" class="form-control" data-bind="value:$parent.continueText, valueUpdate: 'afterkeydown'" />
+                            <input id="confirm" class="form-control" data-bind="value:$parent.continueText, valueUpdate: 'afterkeydown'" />
                         </div>
                     </div>
 
@@ -108,12 +108,11 @@
 
                 // Send data to OSF
                 $.ajax({
-##                    url: '${node["api_url"]}' + 'register/' + '${template_name if template_name else ''}/',
-                    url: 'register/' + '${template_name if template_name else ''}/',
+                    url: '${node["api_url"]}' + 'register/' + '${template_name if template_name else ''}/',
                     type: 'POST',
                     data: JSON.stringify(data),
                     contentType: 'application/json',
-                    timeout: 30000,
+                    timeout: 60000,
                     success: function(response) {
 
                         window.location.href = response.result;
@@ -123,14 +122,13 @@
                         if(textStatus==="timeout") {
                             bootbox.alert("Create registration timed out"); //Handle the timeout
                         }else{
-##                            bootbox.alert("Status: " + textStatus + '\n' + "Error: " + errorThrown);
+                            bootbox.alert('Registration failed');
                         }
                         $.unblockUI();
                         $('#register-submit')
                                 .removeClass("disabled")
                                 .text('Register');
-                        $("#comfirm").val("")
-                        bootbox.alert('Registration failed');
+                        $("#confirm").val("");
                     },
                     dataType: 'json'
                 });
