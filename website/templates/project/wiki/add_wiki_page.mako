@@ -28,10 +28,9 @@
       $('#newWiki form').on('submit', function(e) {
           e.preventDefault();
 
-          $(e.target)
-              .find("#add-wiki-submit")
-              .attr("disabled", "disabled")
-              .text("Creating New Wiki page");
+          $("#add-wiki-submit")
+                  .attr("disabled", "disabled")
+                  .text("Creating New Wiki page");
 
           try{
               var url=document.location.href;
@@ -40,10 +39,9 @@
 
           }catch(error){
 
-              $(e.target)
-                  .find("#add-wiki-submit")
-                  .removeAttr("disabled", "disabled")
-                  .text("OK");
+              $("#add-wiki-submit")
+                      .removeAttr("disabled", "disabled")
+                      .text("OK");
 
           }
      });
