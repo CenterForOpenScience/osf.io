@@ -99,8 +99,7 @@ $(function(){
     $('#newComponent form').on('submit', function(e) {
           e.preventDefault();
 
-          $(e.target)
-              .find("#add-component-submit")
+          $("#add-component-submit")
               .attr("disabled", "disabled")
               .text("Adding");
 
@@ -112,8 +111,7 @@ $(function(){
               location.reload();
           }).fail(function() {
               bootbox.alert('Adding component failed');
-              $(e.target)
-                  .find("#add-component-submit")
+              $("#add-component-submit")
                   .removeAttr("disabled","disabled")
                   .text("OK");
           });
