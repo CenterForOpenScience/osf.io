@@ -16,7 +16,7 @@
     </div>
     <div class="col-md-4">
       	<ol class="breadcrumb">
-            <li><a href="${node_url}files/">${node_title}</a></li>
+            <li><a href="${node['url']}files/">${node['title']}</a></li>
   			<li class="active overflow" >${file_name}</li>
 		</ol>
 		<table class="table table-striped" id='file-version-history'>
@@ -40,7 +40,7 @@
                         ${version['total']}
                     </td>
                     <td>
-                        <a href="${node_api_url}files/download/${file_name}/version/${version['number']}/"><i class="icon-download-alt"></i></
+                        <a href="${node['api_url']}files/download/${file_name}/version/${version['number']}/"><i class="icon-download-alt"></i></
                     </td>
                 </tr>
 			%endfor

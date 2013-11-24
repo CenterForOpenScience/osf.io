@@ -2,11 +2,11 @@
 import httplib as http
 import logging
 
-from framework import User, request, get_current_user
+from framework import request, get_current_user
 from framework.auth import get_api_key
 from framework.exceptions import HTTPError
 
-from website.project.model import Node, NodeLog
+from website.project.model import NodeLog
 from website.project.decorators import must_be_valid_project
 
 

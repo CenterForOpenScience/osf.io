@@ -7,28 +7,26 @@
 // Models //
 ////////////
 
+LOCAL_DATEFORMAT = "l h:mm A";
+UTC_DATEFORMAT = "l H:mm UTC";
+
 /**
- * The project model.
+ * A date object with two formats: local time or UTC time.
+ * @param {String} date The original date as a string. Should be an standard
+ *                      format such as RFC or ISO.
  */
-var Project = function(params) {
-    var self = this;
-    self._id =  params._id;
-    self.apiUrl = params.apiUrl;
-    self.watchedCount = ko.observable(params.watchCount);
-    self.userIsWatching = ko.observable(params.userIsWatching);
-    // The button to display (e.g. "Watch" if not watching)
-    self.watchButtonDisplay = ko.computed(function() {
-        var text = self.userIsWatching() ? "Unwatch" : "Watch"
-        var full = text + " " +self.watchedCount().toString();
-        return full;
-    });
-};
+var FormattableDate = function(date) {
+    this.date = date;
+    this.local = moment(date).format(LOCAL_DATEFORMAT);
+    this.utc = moment.utc(date).format(UTC_DATEFORMAT);
+}
 
 var Log = function(params) {
     var self = this;
     self.action = params.action;
-    self.date = params.date;
+    self.date = new FormattableDate(params.date);
     self.nodeCategory = params.nodeCategory;
+    self.nodeDescription = params.nodeDescription;
     self.nodeTitle = params.nodeTitle;
     self.contributor = params.contributor;
     self.contributors = params.contributors;
@@ -39,13 +37,6 @@ var Log = function(params) {
     self.params = params.params; // Extra log params
     self.wikiUrl = ko.computed(function() {
         return self.nodeUrl + "wiki/" + self.params.page;
-    });
-
-    self.localDatetime = ko.computed(function() {
-        return moment(self.date).format("l h:mm A")
-    });
-    self.utcDatetime = ko.computed(function() {
-        return moment(self.date).format("l H:mm UTC")
     });
 
     /**
@@ -85,9 +76,13 @@ var Log = function(params) {
 ////////////////
 
 
-var LogsViewModel = function(url) {
+/**
+ * View model for a log list.
+ * @param {Log[]} logs An array of Log model objects to render.
+ */
+var LogsViewModel = function(logs) {
     var self = this;
-    self.logs = ko.observableArray([]);
+    self.logs = ko.observableArray(logs);
     self.tzname = ko.computed(function() {
         var logs = self.logs();
         if (logs.length) {
@@ -95,61 +90,134 @@ var LogsViewModel = function(url) {
         }
         return '';
     });
-    // Get log data via AJAX
-    var getUrl = '';
-    if (url) {
-        getUrl = url;
-    } else {
-        getUrl = nodeToUseUrl() + "log/";
-    }
-    $.ajax({
-        url: getUrl,
-        type: "get",
-        cache: false,
-        dataType: "json",
-        success: function(data){
-            var logs = data['logs'];
-            var mappedLogs = $.map(logs, function(item) {
-                return new Log({
-                    "action": item.action,
-                    "date": item.date,
-                    "nodeCategory": item.category,
-                    "contributor": item.contributor,
-                    "contributors": item.contributors,
-                    "nodeUrl": item.node_url,
-                    "userFullName": item.user_fullname,
-                    "userURL": item.user_url,
-                    "apiKey": item.api_key,
-                    "params": item.params,
-                    "nodeTitle": item.node_title
-                })
-            });
-            self.logs(mappedLogs);
-        }
-    });
+
 };
 
+
 /**
- * The project VM, scoped to the project page header.
+ * Create an Array of Log model objects from data returned from an endpoint
+ * @param  {Object[]} logData Log data returned from an endpoint.
+ * @return {Log[]}         Array of Log objects.
  */
-var ProjectViewModel = function() {
-    var self = this;
-    self.projects = ko.observableArray([{"watchButtonDisplay": ""}]);
+var createLogs = function(logData){
+    var mappedLogs = $.map(logData, function(item) {
+        return new Log({
+            "action": item.action,
+            "date": item.date,
+            "nodeCategory": item.category,
+            "contributor": item.contributor,
+            "contributors": item.contributors,
+            "nodeUrl": item.node_url,
+            "userFullName": item.user_fullname,
+            "userURL": item.user_url,
+            "apiKey": item.api_key,
+            "params": item.params,
+            "nodeTitle": item.node_title,
+            "nodeDescription": item.params.description_new
+        })
+    });
+    return mappedLogs;
+}
+
+/**
+ * Initialize the LogsViewModel. Fetches the logs data from the specified url
+ * and binds the LogsViewModel.
+ * @param  {String} scopeSelector CSS selector for the scope of the LogsViewModel.
+ * @param  {String} url           The url from which to get the logs data.
+ *                                The returned object must have a "logs" property mapped to
+ *                                an Array of log objects.
+ */
+var initializeLogs = function(scopeSelector, url){
+    // Initiate LogsViewModel
+    $logScope = $(scopeSelector);
+    ko.cleanNode($logScope[0]);
+    progressBar = $("#logProgressBar")
+    progressBar.show();
     $.ajax({
-        url: nodeToUseUrl(),
+        url: url,
         type: "get", contentType: "application/json",
         dataType: "json",
+        cache: false,
         success: function(data){
-            project = new Project({
-                "_id": data.node_id,
-                "apiUrl": data.node_api_url,
-                "watchCount": data.node_watched_count,
-                "userIsWatching": data.user_is_watching,
-                "logs": data.logs
-            });
-            self.projects([project]);
+            // Initialize LogViewModel
+            var logs = data['logs'];
+            ko.cleanNode($logScope[0]);
+            var logModelObjects = createLogs(logs);  // Array of Log model objects
+            progressBar.hide();
+            ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
         }
     });
+}
+
+/**
+ * The ProjectViewModel, scoped to the project header.
+ * @param {Object} params The parsed project data returned from the project's API url.
+ */
+var ProjectViewModel = function(params) {
+    var self = this;
+    self._id = params.node.id;
+    self.apiUrl = params.node.api_url;
+    self.dateCreated = new FormattableDate(params.node.date_created);
+    self.dateModified = new FormattableDate(params.node.date_modified);
+    self.dateForked = new FormattableDate(params.node.forked_date);
+    self.watchedCount = ko.observable(params.node.watched_count);
+    self.userIsWatching = ko.observable(params.user.is_watching);
+    self.userCanEdit = params.user.can_edit;
+    self.description = params.node.description;
+    self.title = params.node.title;
+    // The button text to display (e.g. "Watch" if not watching)
+    self.watchButtonDisplay = ko.computed(function() {
+        var text = self.userIsWatching() ? "Unwatch" : "Watch"
+        var full = text + " " +self.watchedCount().toString();
+        return full;
+    });
+
+    // Editable Title and Description
+    if (self.userCanEdit) {
+        $('#nodeTitleEditable').editable({
+            type:  'text',
+            pk:    self._id,
+            name:  'title',
+            url:   self.apiUrl + 'edit/',
+            ajaxOptions: {
+                'type': 'POST',
+                "dataType": "json",
+                "contentType": "application/json"
+            },
+            params: function(params){
+                // Send JSON data
+                return JSON.stringify(params);
+            },
+            title: 'Edit Title',
+            placement: 'bottom',
+            success: function(data){
+                document.location.reload(true);
+            }
+        });
+        // TODO(sloria): Repetition here. Rethink.
+        $('#nodeDescriptionEditable').editable({
+            type:  'text',
+            pk:    self._id,
+            name:  'description',
+            url:   self.apiUrl + 'edit/',
+            ajaxOptions: {
+                'type': 'POST',
+                "dataType": "json",
+                "contentType": "application/json"
+            },
+            params: function(params){
+                // Send JSON data
+                return JSON.stringify(params);
+            },
+            title: 'Edit Description',
+            placement: 'bottom',
+            success: function(data){
+                document.location.reload(true);
+            },
+            emptytext: "No description",
+            emptyclass: "text-muted"
+        });
+    };
 
     /**
      * Toggle the watch status for this project.
@@ -157,21 +225,19 @@ var ProjectViewModel = function() {
     self.toggleWatch = function() {
         // Send POST request to node's watch API url and update the watch count
         $.ajax({
-            url: self.projects()[0].apiUrl + "togglewatch/",
+            url: self.apiUrl + "togglewatch/",
             type: "POST",
             dataType: "json",
             data: JSON.stringify({}),
             contentType: "application/json",
             success: function(data, status, xhr) {
                 // Update watch count in DOM
-                self.projects()[0].userIsWatching(data['watched']);
-                self.projects()[0].watchedCount(data['watchCount']);
+                self.userIsWatching(data['watched']);
+                self.watchedCount(data['watchCount']);
             }
         });
     };
 };
-
-
 
 
 function attrMap(list, attr) {
@@ -358,7 +424,12 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
 // Data binders //
 //////////////////
 
-
+/**
+ * Tooltip data binder. The value accessor should be an object containing
+ * parameters for the tooltip.
+ * Example:
+ * <span data-bind="tooltip: {title: 'Tooltip text here'}"></span>
+ */
 ko.bindingHandlers.tooltip = {
     init: function(elem, valueAccessor) {
         $(elem).tooltip(valueAccessor())

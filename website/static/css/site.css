@@ -87,7 +87,6 @@ h4 {
 }
 
 .item,
-.active,
 .carousel-inner {
   height: 100%;
 }
@@ -497,6 +496,10 @@ h1.node-title, h1.node-parent-title {
   font-size: 40px;
   line-height: 36px;
   border-bottom: none;
+}
+
+.editable {
+    border-bottom: none;
 }
 
 .editable:hover{

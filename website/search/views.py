@@ -218,7 +218,7 @@ def search_contributor():
     # will also match "Joshua". Could also wrap entire query in "user:{}",
     # but would get fewer relevant results.
     q = ' '.join([
-        u'user:{}*'.format(token).encode('utf-8')
+        u'user:({token} OR {token}*)'.format(token).encode('utf-8')
         for token in re.split(r'\s+', query)
     ])
 

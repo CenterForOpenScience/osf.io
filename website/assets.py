@@ -16,7 +16,6 @@ css = Bundle(
             "vendor/jquery-tagit/css/jquery.tagit.css",
             "vendor/jquery-tagsinput/css/jquery.tagsinput.css",
             "vendor/jquery-tagit/css/tagit.ui-zendesk.css",
-            "vendor/jquery-treeview/jquery.treeview.css",
             "vendor/jquery-fileupload/css/jquery.fileupload-ui.css",
             "vendor/pygments.css",
             "vendor/bootstrap3-editable/css/bootstrap-editable.css",
@@ -40,10 +39,10 @@ js = Bundle(
                 "vendor/bootbox/bootbox.min.js",
                 "vendor/jquery-tagsinput/js/jquery.tagsinput.min.js",
                 "vendor/jquery-tagcloud/jquery.tagcloud.js",
-                "vendor/jquery-treeview/jquery.treeview.js",
                 "vendor/jquery-tagit/js/tag-it.js",
                 "vendor/knockout/knockout-min.js",
-                "vendor/moment/moment.min.js"),
+                "vendor/moment/moment.min.js",
+                "vendor/jquery-blockui/jquery.blockui.js"),
         # Site-specific JS
         Bundle("js/site.js", "js/project.js", "js/app.js", filters="jsmin"),
         output="public/js/common.js"
