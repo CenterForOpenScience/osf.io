@@ -105,12 +105,12 @@ $(function(){
 
           $.ajax({
                url: $(e.target).attr("action"),
-               type:"POST",
+               type:"get",
                data:$(e.target).serialize()
           }).done(function(){
               location.reload();
           }).fail(function() {
-              bootbox.alert('Adding component failed');
+              $("#alert").text('Adding component failed');
               $("#add-component-submit")
                   .removeAttr("disabled","disabled")
                   .text("OK");
