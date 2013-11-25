@@ -72,7 +72,7 @@
 
 
             <div class="col-md-8">
-                %if parent_id:
+                %if parent['id']:
                     <h1 style="display:inline-block;" class="node-parent-title overflow">
                         <a href="/project/${parent['id']}/">${parent['title']}</a> /
                     </h1>
