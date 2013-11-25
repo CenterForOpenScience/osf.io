@@ -12,59 +12,62 @@
 <div id="projectScope">
     <header class="subhead" id="overview">
         <div class="row">
-            <div class="btn-toolbar pull-right">
-                <div class="btn-group">
-                %if not node["is_public"]:
-                    <button class='btn btn-default disabled'>Private</button>
-                    % if user["is_contributor"]:
-                        <a class="btn btn-default" id="publicButton" data-target="${node['api_url']}permissions/public/">Make public</a>
-                    % endif
-                %else:
-                    % if user["is_contributor"]:
-                        <a class="btn btn-default" id="privateButton" data-target="${node['api_url']}permissions/private/">Make private</a>
-                    % endif
-                    <button class="btn btn-default disabled">Public</button>
-                %endif
-                </div><!-- end btn-group -->
-
-                <div class="btn-group">
-                    % if user_name:
-                        <a rel="tooltip" title="Watch" class="btn btn-default" href="#" data-bind="click: toggleWatch">
-                    % else:
-                        <a rel="tooltip" title="Watch" class="btn btn-default disabled" href="#">
-                    % endif
-                    <i class="icon-eye-open"></i>
-                    <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
-
-                    </a>
-
-
-                    <a
-                        rel="tooltip"
-                        title="Number of times this node has been forked (copied)"
-                        % if node["category"] == 'project' and user_name:
-                            href="#"
-                            class="btn btn-default node-fork-btn"
-                            onclick="NodeActions.forkNode();"
-                        % else:
-                            class="btn btn-default disabled node-fork-btn"
-                        % endif
-                    >
-                        <i class="icon-code-fork"></i>&nbsp;${node['fork_count']}
-                    </a>
-
-                </div><!-- end btn-grp -->
-            </div><!-- end btn-toolbar -->
-
 
             <div class="col-md-8">
                 %if parent['id']:
-                    <h1 style="display:inline-block;" class="node-parent-title overflow">
+                    <h1 class="node-parent-title">
                         <a href="/project/${parent['id']}/">${parent['title']}</a> /
                     </h1>
                 %endif
-                <h1 id="nodeTitleEditable" class="node-title overflow" style="display:inline-block;">${node['title']}</h1>
-            </div>
+                <h1 id="nodeTitleEditable" class="node-title">${node['title']}</h1>
+            </div><!-- end col-md -->
+
+            <div class="col-md-4">
+                <div class="btn-toolbar node-control pull-right">
+                    <div class="btn-group">
+                    %if not node["is_public"]:
+                        <button class='btn btn-default disabled'>Private</button>
+                        % if user["is_contributor"]:
+                            <a class="btn btn-default" id="publicButton" data-target="${node['api_url']}permissions/public/">Make public</a>
+                        % endif
+                    %else:
+                        % if user["is_contributor"]:
+                            <a class="btn btn-default" id="privateButton" data-target="${node['api_url']}permissions/private/">Make private</a>
+                        % endif
+                        <button class="btn btn-default disabled">Public</button>
+                    %endif
+                    </div><!-- end btn-group -->
+
+                    <div class="btn-group">
+                        % if user_name:
+                            <a rel="tooltip" title="Watch" class="btn btn-default" href="#" data-bind="click: toggleWatch">
+                        % else:
+                            <a rel="tooltip" title="Watch" class="btn btn-default disabled" href="#">
+                        % endif
+                        <i class="icon-eye-open"></i>
+                        <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
+
+                        </a>
+
+
+                        <a
+                            rel="tooltip"
+                            title="Number of times this node has been forked (copied)"
+                            % if node["category"] == 'project' and user_name:
+                                href="#"
+                                class="btn btn-default node-fork-btn"
+                                onclick="NodeActions.forkNode();"
+                            % else:
+                                class="btn btn-default disabled node-fork-btn"
+                            % endif
+                        >
+                            <i class="icon-code-fork"></i>&nbsp;${node['fork_count']}
+                        </a>
+
+                    </div><!-- end btn-grp -->
+                </div><!-- end btn-toolbar -->
+            </div><!-- end col-md-->
+
 
         </div><!-- end row -->
 
