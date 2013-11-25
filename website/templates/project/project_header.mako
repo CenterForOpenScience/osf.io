@@ -1,5 +1,3 @@
-<div class="container">
-
 % if node['is_registration']:
     <div class="alert alert-info">This ${node['category']} is a registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node["category"]}</a>; the content of the ${node["category"]} has been frozen and cannot be edited.
     </div>
@@ -161,4 +159,3 @@
         });
     });
 </script>
-</div><!-- end container -->
