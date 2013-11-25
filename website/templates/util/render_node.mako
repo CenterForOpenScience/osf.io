@@ -3,7 +3,7 @@
     <li node_id="${node['id']}" class="project list-group-item list-group-item-node">
 
         <h4 class="list-group-item-heading">
-            <span style="display:inline-block;word-wrap:break-word;width:100%;">
+            <span class="overflow" style="display:inline-block;">
             <a href="${node['url']}">${node['title']}</a>
             % if node['is_registration']:
                 | Registered: ${node['registered_date']}

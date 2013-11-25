@@ -22,7 +22,7 @@
             </div><!-- end modal-body -->
             <div class="modal-footer">
                <a href="#" class="btn btn-default" data-dismiss="modal">Close</a>
-              <button type="submit" class="btn btn-primary">OK</button>
+              <button id="add-component-submit" type="submit" class="btn btn-primary">OK</button>
             </div><!-- end modal-footer -->
         </form>
         </div><!-- end modal- content -->

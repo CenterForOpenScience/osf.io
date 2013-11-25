@@ -60,12 +60,12 @@
 
 
             <div class="col-md-8">
-                %if parent['id']:
-                    <h1 style="display:inline-block;word-wrap:break-word;width:100%" class="node-parent-title">
+                %if parent_id:
+                    <h1 style="display:inline-block;" class="node-parent-title overflow">
                         <a href="/project/${parent['id']}/">${parent['title']}</a> /
                     </h1>
                 %endif
-                <h1 id="nodeTitleEditable" class='node-title' style="display:inline-block;word-wrap:break-word;width:100%;">${node['title']}</h1>
+                <h1 id="nodeTitleEditable" class="node-title overflow" style="display:inline-block;">${node['title']}</h1>
             </div>
 
         </div><!-- end row -->
@@ -146,7 +146,7 @@
                 // Clear user search modal when dismissed; catches dismiss by escape key
                 // or cancel button.
                 $addContributors.on('hidden', function() {
-                    viewModel.clear();
+                    addContribVM.clear();
                 });
 
                 // Initialize LogsViewModel when appropriate

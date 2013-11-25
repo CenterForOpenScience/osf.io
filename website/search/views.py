@@ -40,7 +40,7 @@ def search_search():
             'query': '',
         }
     # with our highlights and search result 'documents' we build the search
-    # results so that it is easier for us to displa
+    # results so that it is easier for us to display
     result_search, tags = create_result(highlights, results['docs'])
     total = results['numFound']
     # Whether or not the user is searching for users
@@ -54,7 +54,7 @@ def search_search():
         'current_page': start,
         'time': round(time.time() - tick, 2),
         'tags': tags,
-        "searching_users": searching_users
+        'searching_users': searching_users
     }
 
 
@@ -201,24 +201,24 @@ from website import settings
 from website.filters import gravatar
 from website.models import User
 
-def search_contributor():
+def _search_contributor(query):
     """Search for contributors to add to a project using Solr. Request must
     include JSON data with a "query" field.
 
+    :param: Search query
     :return: List of dictionaries, each containing the ID, full name, and
         gravatar URL of an OSF user
 
     """
     # Prepare query
-    query = request.args.get('query', '')
     query = re.sub(r'[\-\+]', ' ', query)
 
     # Prepend "user:" to each token in the query; else Solr will search for
-    # e.g. user:Barack AND Obama. Also append * to each token so that "Josh"
-    # will also match "Joshua". Could also wrap entire query in "user:{}",
-    # but would get fewer relevant results.
-    q = ' '.join([
-        u'user:{}*'.format(token).encode('utf-8')
+    # e.g. user:Barack AND Obama. Also search for tokens plus wildcard so that
+    # Bar will match Barack. Note: in Solr, Barack* does not match Barack,
+    # so must search for (Barack OR Barack*).
+    q = ' AND '.join([
+        u'user:({token} OR {token}*)'.format(token=token).encode('utf-8')
         for token in re.split(r'\s+', query)
     ])
 
@@ -238,3 +238,7 @@ def search_contributor():
         })
 
     return {'users': users}
+
+def search_contributor():
+    return _search_contributor(request.args.get('query', ''))
+
