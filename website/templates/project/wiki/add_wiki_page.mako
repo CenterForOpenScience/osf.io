@@ -51,18 +51,9 @@
                       .text("OK");
           }
           else{
-              try{
-                  var url=document.location.href;
-                  var url_root = url.substr(0, url.indexOf('wiki')+5);
-                  document.location= url_root + $("#data").val()+ '/edit/';
-
-              }catch(error){
-
-                  $("#add-wiki-submit")
-                          .removeAttr("disabled", "disabled")
-                          .text("OK");
-
-              }
+              var url=document.location.href;
+              var url_root = url.substr(0, url.indexOf('wiki')+5);
+              document.location= url_root + $("#data").val()+ '/edit/';
           }
      });
 
