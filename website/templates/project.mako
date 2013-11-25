@@ -29,7 +29,7 @@
               </div>
               <%include file="modal_add_component.mako"/>
             % endif
-              <h1>Components</h1>
+              <h2>Components</h2>
           </div>
           % if node["children"]:
               <div mod-meta='{
@@ -47,7 +47,7 @@
       <section id="Files">
         <div>
           <div class="page-header">
-              <h1>Files</h1>
+              <h2>Files</h2>
           </div>
           <div mod-meta='{
                   "tpl": "util/render_file_tree.mako",
