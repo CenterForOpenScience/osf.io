@@ -4,7 +4,7 @@
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 <div class="row">
-    <div class="col-md-9">
+    <div class="col-md-9 wiki">
         ${wiki_content}
     </div>
 
