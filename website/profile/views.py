@@ -11,6 +11,7 @@ from framework.forms.utils import sanitize
 
 from website.models import ApiKey, User
 from website.views import _render_nodes
+from website import settings, filters
 from website.project.serializers import UserSerializer
 
 
@@ -47,6 +48,11 @@ def _profile_view(uid=None):
 
     if profile:
         profile_user_data = UserSerializer(profile).data
+        profile_user_data['gravatar_url'] = filters.gravatar(
+            profile,
+            use_ssl=True,
+            size=settings.GRAVATAR_SIZE_PROFILE
+        )
         return {
             'profile': profile_user_data,
             'user': {
