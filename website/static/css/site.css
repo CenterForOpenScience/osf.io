@@ -507,11 +507,11 @@ li.node p.date{
 h1.node-title, h1.node-parent-title {
   line-height: 36px;
   border-bottom: none;
-  margin-top: 0.5em;
+  margin-top: 0.3em;
 }
 
 .btn-toolbar.node-control {
-    margin-top: 1.2em;
+    margin-top: 0.9em;
 }
 
 .editable {
