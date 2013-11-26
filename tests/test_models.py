@@ -587,6 +587,12 @@ class TestForkNode(DbTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.fork = self.project.fork_node(self.user)
 
+    def test_forked_title(self):
+        assert_equal(self.fork.title, 'Fork of {}'.format(self.project.title))
+
+    def test_is_forked(self):
+        assert_true(self.fork.is_fork)
+
     def test_forked_date(self):
         # The fork date is now
         assert_almost_equal(
@@ -595,6 +601,49 @@ class TestForkNode(DbTestCase):
         )
         # The fork date is not the project date
         assert_not_equal(self.fork.forked_date, self.project.date_created)
+
+    def test_forked_from(self):
+        assert_equal(self.fork.forked_from, self.project)
+
+    def test_fork_not_public(self):
+        self.project.set_permissions('public')
+        fork = self.project.fork_node(self.user)
+        assert_false(fork.is_public)
+
+    def test_contributors(self):
+        assert_equal(len(self.fork.contributors), 1)
+        assert_in(self.user, self.fork.contributors)
+
+    def test_contributor_list(self):
+        assert_equal(len(self.fork.contributor_list), 1)
+        assert_in(
+            self.user._id,
+            [user.get('id') for user in self.fork.contributor_list]
+        )
+
+    def test_fork_log(self):
+        assert_equal(self.fork.logs[-1].action, 'node_forked')
+
+    def test_fork_in_list(self):
+        assert_in(self.fork._id, self.project.fork_list)
+
+    def test_cannot_fork_private_node(self):
+        user2 = UserFactory()
+        fork = self.project.fork_node(user2)
+        assert_false(fork)
+
+    def test_can_fork_public_node(self):
+        self.project.set_permissions('public')
+        user2 = UserFactory()
+        fork = self.project.fork_node(user2)
+        assert_true(fork)
+
+    def test_contributor_can_fork(self):
+        user2 = UserFactory()
+        self.project.add_contributor(user2)
+        fork = self.project.fork_node(user2)
+        assert_true(fork)
+
 
 
 class TestNodeLog(DbTestCase):

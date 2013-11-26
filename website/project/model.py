@@ -318,8 +318,9 @@ class Node(GuidStoredObject):
         if kwargs.get('_is_loaded', False):
             return
 
-        self.contributors.append(self.creator)
-        self.contributor_list.append({'id': self._primary_key})
+        if self.creator:
+            self.contributors.append(self.creator)
+            self.contributor_list.append({'id': self.creator._primary_key})
         self.save()
 
         project = kwargs.get('project')
