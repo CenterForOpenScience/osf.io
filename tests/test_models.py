@@ -10,7 +10,7 @@ import hashlib
 
 from framework.auth import User
 from framework.bcrypt import check_password_hash
-from website.project.model import ApiKey, NodeFile
+from website.project.model import ApiKey, NodeFile, NodeLog
 
 from tests.base import DbTestCase, Guid
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
@@ -357,13 +357,20 @@ class TestNode(DbTestCase):
     def test_parent_id(self):
         assert_equal(self.node.parent_id, self.parent._id)
 
+    def test_parent(self):
+        assert_equal(self.node.parent, self.parent)
+
+    def test_no_parent(self):
+        node = NodeFactory()
+        assert_equal(node.parent, None)
+
 
 class TestProject(DbTestCase):
 
     def setUp(self):
         # Create project
         self.user = UserFactory()
-        self.project = ProjectFactory(creator=self.user)
+        self.project = ProjectFactory(creator=self.user, description='foobar')
 
     def test_project_factory(self):
         node = ProjectFactory()
@@ -560,7 +567,17 @@ class TestProject(DbTestCase):
         self.project.set_permissions('private', user=self.user)
         self.project.save()
         assert_false(self.project.is_public)
-        assert_equal(self.project.logs[-1].action, 'made_private')
+        assert_equal(self.project.logs[-1].action, NodeLog.MADE_PRIVATE)
+
+    def test_set_description(self):
+        old_desc = self.project.description
+        self.project.set_description("new description", user=self.user)
+        self.project.save()
+        assert_equal(self.project.description, 'new description')
+        latest_log = self.project.logs[-1]
+        assert_equal(latest_log.action, NodeLog.EDITED_DESCRIPTION)
+        assert_equal(latest_log.params['description_original'], old_desc)
+        assert_equal(latest_log.params['description_new'], 'new description')
 
 class TestNodeLog(DbTestCase):
 

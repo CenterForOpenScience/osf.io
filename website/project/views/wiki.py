@@ -41,7 +41,7 @@ def _get_wiki_versions(node, wid):
         {
             'version': version.version,
             'user_fullname': version.user.fullname,
-            'date': version.date,
+            'date': version.date.replace(microsecond=0),
         }
         for version in reversed(versions)
     ]
@@ -118,6 +118,7 @@ def project_wiki_version(*args, **kwargs):
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
 def project_wiki_page(*args, **kwargs):
+
     project = kwargs['project']
     node = kwargs['node']
     wid = kwargs['wid']
@@ -161,7 +162,10 @@ def project_wiki_page(*args, **kwargs):
         'is_edit': False,
         'pages_current': node_to_use.wiki_pages_versions.keys(),
         'toc': toc,
+        'url': node_to_use.url,
+        'category': node_to_use.category
     }
+
     rv.update(_view_project(node_to_use, user))
     return rv
 
@@ -217,8 +221,16 @@ def project_wiki_edit_post(*args, **kwargs):
         status.push_status_message("This is an invalid wiki page name")
         raise HTTPError(http.BAD_REQUEST, redirect_url='{}wiki/'.format(node_to_use.url))
 
-    node_to_use.update_node_wiki(wid, request.form['content'], user, api_key=None)
+    pw = node_to_use.get_wiki_page(wid)
 
-    return {
-        'status' : 'success',
-    }, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
+    if pw:
+        content = pw.content
+    else:
+        content = ''
+    if request.form['content'] != content:
+        node_to_use.update_node_wiki(wid, request.form['content'], user, api_key=None)
+        return {
+            'status' : 'success',
+        }, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
+    else:
+        return {}, None, None, '{}wiki/{}/'.format(node_to_use.url,wid)

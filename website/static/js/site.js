@@ -47,9 +47,14 @@ var modalConfirm = function(message, url){
         }
     )
 };
-
-
 $(document).ready(function(){
+    //block the create new project button when the form is submitted
+    $('#projectForm').on('submit',function(){
+        $('button[type="submit"]', this)
+            .attr('disabled', 'disabled')
+            .text('Creating');
+    });
+
     // Highlight active tabs and nav labels
     var node = nodeToUse();
     if (node) {
@@ -80,7 +85,7 @@ $(document).ready(function(){
     // Build tooltips on user activity widgets
     $('.ua-meter').tooltip();
     $("[rel=tooltip]").tooltip({
-        placement:'bottom',
+        placement:'bottom'
     });
 
     //  Initiate tag cloud (on search page)
@@ -92,7 +97,6 @@ $(document).ready(function(){
     $(function () {
       $('#whatever a').tagcloud();
     });
-
 
 
 });

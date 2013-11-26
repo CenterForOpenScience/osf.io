@@ -3,7 +3,7 @@
 <%def name="content()">
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
-%if user_can_edit:
+%if user['can_edit']:
 <div class="container" style="position:relative;">
 ##    <h3 style="max-width: 65%;"><span class="btn btn-success fileinput-button" id="clickable"><i class="icon-plus icon-white"></i><span>Add files...</span></span></h3>
     <h3 >Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element></h3>
@@ -122,7 +122,7 @@ var myGrid = HGrid.create({
     autoHeight: true,
     forceFitColumns: true,
     largeGuide: false,
-    dropZone: ${int(user_can_edit)},
+    dropZone: ${int(user['can_edit'])},
     dropZonePreviewsContainer: false,
     rowHeight: 30,
     navLevel: ${info}[0]['uid'],

@@ -4,15 +4,15 @@
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 <!-- Delete node -->
-<button id="delete-node" class="btn btn-danger">Delete ${node_category}</button>
+<button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
 
 ##<!-- Show API key settings -->
 ##<div mod-meta='{
 ##        "tpl": "util/render_keys.mako",
-##        "uri": "${node_api_url}keys/",
+##        "uri": "${node["api_url"]}keys/",
 ##        "replace": true,
 ##        "kwargs": {
-##            "route": "${node_url}"
+##            "route": "${node["url"]}"
 ##        }
 ##    }'></div>
 </%def>
@@ -34,11 +34,11 @@
     $('#delete-node').on('click', function() {
         var key = randomString();
         bootbox.prompt(
-            '<div>Delete this ${node_category} and all non-project children? This is IRREVERSIBLE.</div>' +
+            '<div>Delete this ${node["category"]} and all non-project children? This is IRREVERSIBLE.</div>' +
                 '<p style="font-weight: normal; font-size: medium; line-height: normal;">If you want to continue, type <strong>' + key + '</strong> and click OK.</p>',
             function(result) {
                 if (result === key) {
-                    window.location.href = '${node_url}remove/';
+                    window.location.href = '${node["url"]}remove/';
                 }
             }
         )

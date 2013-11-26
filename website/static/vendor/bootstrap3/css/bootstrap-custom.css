@@ -4180,6 +4180,9 @@ textarea.input-group-sm > .input-group-btn > .btn {
 }
 .breadcrumb > li {
   display: inline-block;
+  text-overflow:ellipsis;
+  overflow:hidden;
+  width:100%
 }
 .breadcrumb > li + li:before {
   content: "/\00a0";
