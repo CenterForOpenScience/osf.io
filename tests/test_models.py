@@ -580,6 +580,23 @@ class TestProject(DbTestCase):
         assert_equal(self.project.parent, None)
 
 
+class TestForkNode(DbTestCase):
+
+    def setUp(self):
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.fork = self.project.fork_node(self.user)
+
+    def test_forked_date(self):
+        # The fork date is now
+        assert_almost_equal(
+            self.fork.forked_date, datetime.datetime.utcnow(),
+            delta=datetime.timedelta(seconds=5),
+        )
+        # The fork date is not the project date
+        assert_not_equal(self.fork.forked_date, self.project.date_created)
+
+
 class TestNodeLog(DbTestCase):
 
     def setUp(self):
@@ -601,7 +618,6 @@ class TestNodeLog(DbTestCase):
     def test_serialized_user_url(self):
         data = self.log.serialize()
         assert_equal(data['user_url'], self.log.user.url)
-
 
 
 class TestWatchConfig(DbTestCase):
