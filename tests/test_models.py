@@ -147,6 +147,7 @@ class TestMetaData(DbTestCase):
     def test_referent(self):
         pass
 
+
 class TestNodeFile(DbTestCase):
 
     def setUp(self):
@@ -359,10 +360,6 @@ class TestNode(DbTestCase):
 
     def test_parent(self):
         assert_equal(self.node.parent, self.parent)
-
-    def test_no_parent(self):
-        node = NodeFactory()
-        assert_equal(node.parent, None)
 
 
 class TestProject(DbTestCase):
@@ -578,6 +575,10 @@ class TestProject(DbTestCase):
         assert_equal(latest_log.action, NodeLog.EDITED_DESCRIPTION)
         assert_equal(latest_log.params['description_original'], old_desc)
         assert_equal(latest_log.params['description_new'], 'new description')
+
+    def test_no_parent(self):
+        assert_equal(self.project.parent, None)
+
 
 class TestNodeLog(DbTestCase):
 

@@ -219,12 +219,12 @@ class TestPublicProject(SolrTestCase):
         """
         user2 = UserFactory()
 
-        docs = query(user2.fullname)
+        docs = query('"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
 
         self.project.add_contributor(user2, save=True)
 
-        docs = query(user2.fullname)
+        docs = query('"{}"'.format(user2.fullname))
         assert_equal(len(docs), 1)
 
     def test_remove_contributor(self):
@@ -237,7 +237,7 @@ class TestPublicProject(SolrTestCase):
         self.project.add_contributor(user2, save=True)
         self.project.remove_contributor(user2, self.user)
 
-        docs = query(user2.fullname)
+        docs = query('"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
 
 
