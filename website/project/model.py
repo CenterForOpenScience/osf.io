@@ -522,6 +522,7 @@ class Node(GuidStoredObject):
         forked.forked_date = when
         forked.forked_from = original
         forked.is_public = False
+        forked.creator = user
         forked.contributor_list = []
 
         forked.add_contributor(user, log=False, save=False)
@@ -529,9 +530,9 @@ class Node(GuidStoredObject):
         forked.add_log(
             action=NodeLog.NODE_FORKED,
             params={
-                'project':original.parent_id,
-                'node':original._primary_key,
-                'registration':forked._primary_key,
+                'project': original.parent_id,
+                'node': original._primary_key,
+                'registration': forked._primary_key,
             },
             user=user,
             api_key=api_key,
