@@ -78,8 +78,8 @@
                              <a href="/project/${parent['id']}/">${parent['title']}</a> /
                          </h1>
                     % else:
-                         <h1 style="display:inline-block;" class="node-parent-title overflow">
-                             <span> Private Project</span> /
+                         <h1 style="display:inline-block;" class="node-parent-title overflow unavailable">
+                             <span>Private Project</span> /
                          </h1>
                     %endif
                 %endif
