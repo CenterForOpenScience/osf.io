@@ -19,7 +19,7 @@ def impute_creator(dry_run=True):
         Q('contributors', 'ne', [])
     )
     for node in no_creator:
-        print 'Imputing creator {} for node title {}'.format(
+        print u'Imputing creator {} for node title {}'.format(
             node.contributors[0].fullname,
             node.title,
         )
