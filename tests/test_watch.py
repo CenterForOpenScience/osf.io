@@ -31,12 +31,12 @@ class TestWatching(DbTestCase):
                         params={'project': self.project._primary_key},
                         user=self.user,
                         log_date=dt.datetime.utcnow() - dt.timedelta(days=100),
-                        do_save=True, api_key=api_key)
+                        save=True, api_key=api_key)
         # Set the ObjectId to correspond with the log date
         # A log added now
         self.last_log = self.project.add_log('tag_added', params={'project': self.project._primary_key},
                         user=self.user, log_date=dt.datetime.utcnow(),
-                        do_save=True, api_key=api_key)
+                        save=True, api_key=api_key)
         # Clear watched list
         self.user.watched = []
         self.user.save()

@@ -260,6 +260,12 @@ class TestComponents(DbTestCase):
         res = self.app.get(self.component.url, auth=self.auth).maybe_follow()
         assert_not_in("Add Component", res)
 
+    def test_sees_parent(self):
+        res = self.app.get(self.component.url, auth=self.auth).maybe_follow()
+        parent_title = res.html.find_all('h1', class_='node-parent-title')
+        assert_equal(len(parent_title), 1)
+        assert_in(self.project.title, parent_title[0].text)
+
 
 class TestMergingAccounts(DbTestCase):
 

@@ -241,7 +241,7 @@ class TestWatchViews(DbTestCase):
             NodeLog.TAG_ADDED, params={'project': self.project._primary_key},
             user=self.user, log_date=dt.datetime.utcnow(),
             api_key=self.auth[1],
-            do_save=True,
+            save=True,
         )
         # Clear watched list
         self.user.watched = []
