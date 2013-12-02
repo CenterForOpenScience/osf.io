@@ -514,6 +514,7 @@ class Node(GuidStoredObject):
         forked.forked_date = when
         forked.forked_from = original
         forked.is_public = False
+        forked.creator = user
         forked.contributor_list = []
 
         forked.add_contributor(user, log=False, save=False)
@@ -521,14 +522,14 @@ class Node(GuidStoredObject):
         forked.add_log(
             action=NodeLog.NODE_FORKED,
             params={
-                'project':original.parent_id,
-                'node':original._primary_key,
-                'registration':forked._primary_key,
+                'project': original.parent_id,
+                'node': original._primary_key,
+                'registration': forked._primary_key,
             },
             user=user,
             api_key=api_key,
             log_date=when,
-            do_save=False,
+            save=False,
         )
 
         forked.save()
@@ -880,7 +881,7 @@ class Node(GuidStoredObject):
 
         return node_file
 
-    def add_log(self, action, params, user, api_key=None, log_date=None, do_save=True):
+    def add_log(self, action, params, user, api_key=None, log_date=None, save=True):
         log = NodeLog()
         log.action=action
         log.user=user
@@ -890,7 +891,7 @@ class Node(GuidStoredObject):
         log.params=params
         log.save()
         self.logs.append(log)
-        if do_save:
+        if save:
             self.save()
         if user:
             increment_user_activity_counters(user._primary_key, action, log.date)
@@ -990,11 +991,15 @@ class Node(GuidStoredObject):
             return False
 
     def add_contributor(self, contributor, user=None, log=True, api_key=None, save=False):
-        '''Add a contributor to the project.
+        """Add a contributor to the project.
 
         :param contributor: A User object, the contributor to be added
         :param user: A User object, the user who added the contributor or None.
-        '''
+        :param log: Add log to self
+        :param api_key: API key used to add contributors
+        :param save: Save after adding contributor
+        :return: Boolean--whether contributor was added
+        """
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
         if contrib_to_add._primary_key not in self.contributors:
@@ -1009,7 +1014,8 @@ class Node(GuidStoredObject):
                         'contributors': [contrib_to_add._primary_key],
                     },
                     user=user,
-                    api_key=api_key
+                    api_key=api_key,
+                    save=save,
                 )
             if save:
                 self.save()
@@ -1018,11 +1024,14 @@ class Node(GuidStoredObject):
             return False
 
     def add_contributors(self, contributors, user=None, log=True, api_key=None, save=False):
-        '''Add multiple contributors
+        """Add multiple contributors
 
         :param contributors: A list of User objects to add as contributors.
         :param user: A User object, the user who added the contributors.
-        '''
+        :param log: Add log to self
+        :param api_key: API key used to add contributors
+        :param save: Save after adding contributor
+        """
         for contrib in contributors:
             self.add_contributor(contributor=contrib, user=user, log=False, save=False)
         if log:
@@ -1035,10 +1044,10 @@ class Node(GuidStoredObject):
                 },
                 user=user,
                 api_key=api_key,
+                save=save,
             )
         if save:
             self.save()
-        return None
 
     def add_nonregistered_contributor(self, name, email, user, api_key=None, save=False):
         '''Add a non-registered contributor to the project.
@@ -1210,7 +1219,6 @@ class NodeWikiPage(GuidStoredObject):
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
         if self.node:
-            print 'updating my node'
             self.node.update_solr()
         return rv
 

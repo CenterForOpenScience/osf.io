@@ -337,7 +337,7 @@ def _view_project(node_to_use, user, api_key=None):
     if pw:
         wiki_home = pw.html
         if len(wiki_home) > 500:
-            wiki_home = BeautifulSoup(wiki_home[:500] + '...')
+            wiki_home = BeautifulSoup(wiki_home[:500] + '...', "html.parser")
         else:
             wiki_home = BeautifulSoup(wiki_home)
     else:

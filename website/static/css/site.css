@@ -898,3 +898,8 @@ form.form-horizontal.form-horizontal-narrow .control-group {
     word-wrap: break-word;
     width: 100%;
 }
+
+.preview-overflow{
+    overflow:hidden;
+    width:100%;
+}

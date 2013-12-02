@@ -6,12 +6,6 @@ from pymongo import DESCENDING
 
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
-#@framework.get('/api/discovery/points/<pid>')
-#def get_points(**kwargs):
-    #project_id = kwargs['pid']
-    #project = Node.load(project_id)
-    #return framework.jsonify({'count':len(project.logs)))
-
 def activity():
     # Projects
 
@@ -20,6 +14,10 @@ def activity():
         Q('is_public', 'eq', True) &
         Q('is_deleted', 'eq', False)
     )
+
+    # Temporary bug fix: Skip projects with empty contributor lists
+    # Todo: Fix underlying bug and remove this selector
+    recent_query = recent_query & Q('contributors', 'ne', [])
 
     recent_public_projects = Node.find(
         recent_query &
