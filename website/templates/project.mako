@@ -7,7 +7,7 @@
 
   <div class="row">
     <div class="col-md-7" id='containment'>
-      <section id="Wiki Home">
+      <section id="Wiki Home" class="preview-overflow">
         <div>
             ${ node["wiki_home"] }
             <p><a href="${node['url']}wiki/home">read more</a></p>
