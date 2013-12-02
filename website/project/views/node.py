@@ -389,6 +389,8 @@ def _view_project(node_to_use, user, api_key=None):
             'title': parent.title if parent else '',
             'url': parent.url if parent else '',
             'api_url': parent.api_url if parent else '',
+            'is_public': parent.is_public if parent else '',
+            'is_contributor': parent.is_contributor(user) if parent else ''
         },
         'user': {
             'is_contributor': node_to_use.is_contributor(user),

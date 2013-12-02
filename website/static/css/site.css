@@ -655,8 +655,12 @@ form.form-horizontal.form-horizontal-narrow .control-group {
     margin-bottom: 20px;
 }
 
-.unavailable {
+li.unavailable {
     border-style: dashed;
+}
+
+h1.unavailable {
+    font-style: italic;
 }
 
 /* Search */
