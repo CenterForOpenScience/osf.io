@@ -10,7 +10,6 @@
             </li>
         % endfor
 
-
         % if category == 'project':
             <hr />
             <h4 style="margin-left: 10px;">Component Wiki Pages</h4>
