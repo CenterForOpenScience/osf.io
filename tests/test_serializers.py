@@ -50,7 +50,7 @@ class TestSerializers(DbTestCase):
         assert_equal(d['children'], bool(node.nodes))
         assert_equal(d['is_registration'], node.is_registration)
         assert_in('registered_from_url', d)
-        assert_equal(d['registration_count'], 0)
+        assert_equal(d['registration_count'], len(node.registration_list))
         assert_equal(d['is_fork'], node.is_fork)
         assert_in('forked_from_url', d)
         assert_equal(d['fork_count'], 0)
@@ -71,6 +71,7 @@ class TestSerializers(DbTestCase):
         d = serialized.data
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
+        assert_equal(d['username'], user.username)
         assert_equal(d['fullname'], user.fullname)
         assert_equal(d['registered'], user.is_registered)
         assert_equal(d['gravatar_url'], user.gravatar_url)

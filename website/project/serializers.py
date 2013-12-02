@@ -18,16 +18,15 @@ class UserSerializer(Serializer):
     id = fields.String(attribute="_primary_key", default='')
     url = fields.Url(relative=True)
     absolute_url = fields.Url()
-    activity_points = fields.Integer()
-    username = fields.String(default='')
-    fullname = fields.String(default='')
     date_registered = fields.DateTime(format="%Y-%m-%d")
     registered = fields.Boolean(attribute="is_registered")
     gravatar_url = fields.Url()
-    is_merged = fields.Boolean()
     merged_by = fields.Nested(MergedUserSerializer)
     number_projects = fields.Method("get_number_projects")
     number_public_projects = fields.Method("get_number_public_projects")
+
+    class Meta:
+        additional = ('username', 'fullname', 'activity_points', 'is_merged')
 
     def _get_projects(self, user):
         '''Return a list of a user's projects, excluding registrations.'''
@@ -65,26 +64,23 @@ class ParentSerializer(Serializer):
 class BaseNodeSerializer(Serializer):
     id = fields.String(attribute="_primary_key")
     url = fields.Url(relative=True)
-    title = fields.String()
     category = fields.String(attribute='project_or_component')
-    description = fields.String()
     api_url = fields.Url(relative=True)
-    is_public = fields.Boolean()
-    date_created = fields.DateTime()
-    date_modified = fields.DateTime()
-    is_fork = fields.Boolean()
     tags = fields.List(fields.String, default=[], attribute="tag_keys")
     children = fields.Boolean(attribute="nodes")  # Whether or not the node has children
-    is_registration = fields.Boolean()
     registered_from_url = fields.Method("get_registered_from_url")
     registered_date = fields.Method("get_registered_date")
     registered_meta = fields.Method("get_registered_meta")
-    registration_count = fields.Integer()
+    registration_count = fields.Function(lambda node: len(node.registration_list))
     parent = fields.Nested(ParentSerializer, attribute="parent_node")
     forked_from_url = fields.Method("get_forked_from_url")
     forked_date = fields.DateTime(default='')
     fork_count = fields.Function(lambda node: len(node.fork_list))
     watched_count = fields.Function(lambda node: len(node.watchconfig__watched))
+
+    class Meta:
+        additional = ('title', 'description', "is_public", "date_created",
+                      'date_modified', 'is_fork', 'is_registration')
 
     def get_registered_from_url(self, obj):
         return obj.registered_from.url if obj.is_registration else ''
@@ -113,12 +109,12 @@ class LogSerializer(Serializer):
     user = fields.Nested(UserSerializer,
                         only=("id", "fullname", "registered", "url"))
     node = fields.Nested(BaseNodeSerializer, only=("id", 'category', "url", "api_url", "title"))
-    action = fields.String()
-    params = fields.Raw()
-    date = fields.DateTime()
     contributors = fields.Method("get_contributors")
     contributor = fields.Method("get_contributor")
     api_key = fields.Function(lambda log: log.api_key.label if log.api_key else '')
+
+    class Meta:
+        additional = ('action', 'params', 'date')
 
     def get_contributor(self, obj):
         return self._render_log_contributor(obj.params.get("contributor", {}))

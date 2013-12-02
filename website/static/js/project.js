@@ -156,20 +156,26 @@ NodeActions._openCloseNode = function(node_id) {
 Display recent logs for for a node on the project view page.
 */
 NodeActions.openCloseNode = function(node_id){
-    var logs = $('#logs-' + node_id);
-    if (logs.html() === "") {
-        $.get(
-            logs.attr('data-uri'),
-            {count: 3},
-            function(response) {
-                // Response is the rendered HTML
-                logs.html(response);
-                NodeActions._openCloseNode(node_id);
-            }
-        );
+    var $logs = $('#logs-' + node_id);
+    if (!$logs.hasClass("active")) {
+        if (!$logs.hasClass("served")) {
+            $.getJSON(
+                $logs.attr('data-uri'),
+                {count: 3},
+                function(response) {
+                    var logModelObjects = createLogs(response["logs"]);
+                    var logsVM = new LogsViewModel(logModelObjects);
+                    ko.applyBindings(logsVM, $logs[0]);
+                    $logs.addClass("served")
+                }
+            );
+        };
+        $logs.addClass("active");
     } else {
-        NodeActions._openCloseNode(node_id);
+        $logs.removeClass("active");
     }
+    // Hide/show the html
+    NodeActions._openCloseNode(node_id);
 };
 
 
