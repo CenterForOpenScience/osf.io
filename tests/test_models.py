@@ -816,6 +816,41 @@ class TestRegisterNode(DbTestCase):
     def test_registration_log(self):
         assert_equal(self.project.logs[-1].action, 'project_registered')
 
+    def test_tags(self):
+        assert_equal(self.registration.tags, self.project.tags)
+
+    def test_nodes(self):
+        # Create some nodes
+        self.component = NodeFactory(
+            creator=self.user,
+            project=self.project,
+            title='Title1',
+        )
+        self.subproject = ProjectFactory(
+            creator=self.user,
+            project=self.project,
+            title='Title2',
+        )
+
+        # Make a registration
+        registration = self.project.register_node(
+            user=self.user,
+            api_key=None,
+            template="Some Format",
+            data="Some words or something",
+        )
+
+        # Registration has the nodes
+        assert_equal(len(registration.nodes), 2)
+        assert_equal(
+            [node.title for node in registration.nodes],
+            [node.title for node in self.project.nodes],
+        )
+        # Nodes are copies and not the original versions
+        for node in registration.nodes:
+            assert_not_in(node, self.project.nodes)
+            assert_true(node.is_registration)
+
     def test_is_registered(self):
         assert_true(self.registration.is_registration)
 
