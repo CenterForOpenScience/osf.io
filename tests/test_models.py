@@ -362,9 +362,7 @@ class TestNode(DbTestCase):
         assert_equal(self.node.parent, self.parent)
 
     def test_add_file(self):
-        pass
-
-    def test_register(self):
+        #todo Add file series of tests
         pass
 
 
@@ -848,7 +846,7 @@ class TestRegisterNode(DbTestCase):
             assert_not_in(node, self.project.nodes)
             assert_true(node.is_registration)
 
-    def test_is_registered(self):
+    def test_is_registration(self):
         assert_true(self.registration.is_registration)
 
     def test_registered_date(self):
@@ -857,6 +855,16 @@ class TestRegisterNode(DbTestCase):
             datetime.datetime.utcnow(),
             delta=datetime.timedelta(seconds=5),
         )
+
+    def test_meta(self):
+        #todo Implement metadata tests
+        pass
+
+    def test_registered_from(self):
+        assert_equal(self.registration.registered_from, self.project)
+
+    def test_registration_list(self):
+        assert_in(self.registration._id, self.project.registration_list)
 
 
 class TestNodeLog(DbTestCase):
