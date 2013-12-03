@@ -364,77 +364,6 @@ class TestNode(DbTestCase):
     def test_add_file(self):
         pass
 
-    def _cmp_fork_original(self, fork_user, fork_date, fork, original,
-                           title_prepend='Fork of '):
-        """Compare forked node with original node. Verify copied fields,
-        modified fields, and files; recursively compare child nodes.
-
-        :param fork_user: User who forked the original nodes
-        :param fork_date: Datetime (UTC) at which the original node was forked
-        :param fork: Forked node
-        :param original: Original node
-        :param title_prepend: String prepended to fork title
-
-        """
-        # Test copied fields
-        assert_equal(title_prepend + original.title, fork.title)
-        assert_equal(original.category, fork.category)
-        assert_equal(original.description, fork.description)
-        assert_equal(original.logs, fork.logs[:-1])
-        assert_true(len(fork.logs) == len(original.logs) + 1)
-        assert_equal(fork.logs[-1].action, NodeLog.NODE_FORKED)
-        assert_equal(original.tags, fork.tags)
-
-        # Test modified fields
-        # Note: Must cast ForeignList to list for comparison
-        assert_equal(list(fork.contributors), [fork_user])
-        assert_true((fork_date - fork.date_created) < datetime.timedelta(seconds=2))
-
-        # Test that files were copied correctly
-        for fname in original.files_versions:
-            assert_true(fname in original.files_versions)
-            assert_true(fname in fork.files_versions)
-            assert_equal(
-                len(original.files_versions[fname]),
-                len(fork.files_versions[fname]),
-             )
-            for vidx in range(len(original.files_versions[fname])):
-                file_original = NodeFile.load(original.files_versions[fname][vidx])
-                file_fork = NodeFile.load(original.files_versions[fname][vidx])
-                data_original = original.get_file(file_original.path, vidx)
-                data_fork = fork.get_file(file_fork.path, vidx)
-                assert_equal(data_original, data_fork)
-
-        # Recursively compare children
-        for idx, child in enumerate(original.nodes):
-            if child.can_view(fork_user):
-                self._cmp_fork_original(fork_user, fork_date, fork.nodes[idx],
-                                        child, title_prepend='')
-
-    def test_fork(self):
-        """Omnibus test for forking.
-
-        """
-        # Add user as contributor
-        self.parent.add_contributor(self.user, self.parent.creator)
-
-        # Add file to test copying
-        self.parent.add_file(self.user, None, 'test.txt', 'test content', 4,
-                             'text/plain')
-        self.node.add_file(self.user, None, 'test2.txt', 'test content2', 4,
-                             'text/plain')
-        self.node.add_file(self.user, None, 'test3.txt', 'test content3', 4,
-                             'text/plain')
-
-        # Log time
-        fork_date = datetime.datetime.utcnow()
-
-        # Fork node
-        fork = self.parent.fork_node(user=self.user)
-
-        # Compare fork to original
-        self._cmp_fork_original(self.user, fork_date, fork, self.parent)
-
     def test_register(self):
         pass
 
@@ -662,6 +591,120 @@ class TestForkNode(DbTestCase):
         self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.fork = self.project.fork_node(self.user)
+
+    def _cmp_fork_original(self, fork_user, fork_date, fork, original,
+                           title_prepend='Fork of '):
+        """Compare forked node with original node. Verify copied fields,
+        modified fields, and files; recursively compare child nodes.
+
+        :param fork_user: User who forked the original nodes
+        :param fork_date: Datetime (UTC) at which the original node was forked
+        :param fork: Forked node
+        :param original: Original node
+        :param title_prepend: String prepended to fork title
+
+        """
+        # Test copied fields
+        assert_equal(title_prepend + original.title, fork.title)
+        assert_equal(original.category, fork.category)
+        assert_equal(original.description, fork.description)
+        assert_equal(original.logs, fork.logs[:-1])
+        assert_true(len(fork.logs) == len(original.logs) + 1)
+        assert_equal(fork.logs[-1].action, NodeLog.NODE_FORKED)
+        assert_equal(original.tags, fork.tags)
+
+        # Test modified fields
+        # Note: Must cast ForeignList to list for comparison
+        assert_equal(list(fork.contributors), [fork_user])
+        assert_true((fork_date - fork.date_created) < datetime.timedelta(seconds=5))
+
+        # Test that files were copied correctly
+        for fname in original.files_versions:
+            assert_true(fname in original.files_versions)
+            assert_true(fname in fork.files_versions)
+            assert_equal(
+                len(original.files_versions[fname]),
+                len(fork.files_versions[fname]),
+             )
+            for vidx in range(len(original.files_versions[fname])):
+                file_original = NodeFile.load(original.files_versions[fname][vidx])
+                file_fork = NodeFile.load(original.files_versions[fname][vidx])
+                data_original = original.get_file(file_original.path, vidx)
+                data_fork = fork.get_file(file_fork.path, vidx)
+                assert_equal(data_original, data_fork)
+
+        # Recursively compare children
+        for idx, child in enumerate(original.nodes):
+            if child.can_view(fork_user):
+                self._cmp_fork_original(fork_user, fork_date, fork.nodes[idx],
+                                        child, title_prepend='')
+
+    def test_fork_recursion(self):
+        """Omnibus test for forking.
+
+        """
+        # Make a some children
+        self.component = NodeFactory(creator=self.user, project=self.project)
+        self.subproject = ProjectFactory(creator=self.user, project=self.project)
+
+        # Add files to test copying
+        self.project.add_file(self.user, None, 'test.txt', 'test content',
+                              4, 'text/plain')
+        self.component.add_file(self.user, None, 'test2.txt', 'test content2',
+                                4, 'text/plain')
+        self.subproject.add_file(self.user, None, 'test3.txt', 'test content3',
+                                 4, 'text/plain')
+
+        # Log time
+        fork_date = datetime.datetime.utcnow()
+
+        # Fork node
+        fork = self.project.fork_node(user=self.user)
+
+        # Compare fork to original
+        self._cmp_fork_original(self.user, fork_date, fork, self.project)
+
+    def test_fork_private_children(self):
+        """Tests that only public components are created
+
+        """
+        # Make project public
+        self.project.set_permissions('public')
+        # Make some children
+        self.public_component = NodeFactory(
+            creator=self.user,
+            project=self.project,
+            title='Forked',
+            is_public=True,
+        )
+        self.public_subproject = ProjectFactory(
+            creator=self.user,
+            project=self.project,
+            title='Forked',
+            is_public=True,
+        )
+        self.private_component = NodeFactory(
+            creator=self.user,
+            project=self.project,
+            title='Not Forked',
+        )
+        self.private_subproject = ProjectFactory(
+            creator=self.user,
+            project=self.project,
+            title='Not Forked',
+        )
+        self.public_subproject_component = NodeFactory(
+            creator=self.user,
+            project=self.private_subproject,
+            title='Not Forked',
+        )
+
+        # New user forks the project
+        fork = self.project.fork_node(user=UserFactory())
+
+        # fork correct children
+        assert_equal(len(fork.nodes), 2)
+        assert_not_in('Not Forked', [node.title for node in fork.nodes])
 
     def test_forked_title(self):
         assert_equal(self.fork.title, 'Fork of {}'.format(self.project.title))
