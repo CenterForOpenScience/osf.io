@@ -784,7 +784,6 @@ class TestRegisterNode(DbTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.registration = self.project.register_node(
             user=self.user,
-            api_key=None,
             template="Some Format",
             data="Some words or something",
         )
@@ -803,7 +802,6 @@ class TestRegisterNode(DbTestCase):
         self.project.add_contributor(user2)
         registration = self.project.register_node(
             user=user2,
-            api_key=None,
             template="Some Format",
             data="Some words or something",
         )
@@ -835,7 +833,6 @@ class TestRegisterNode(DbTestCase):
         # Make a registration
         registration = self.project.register_node(
             user=self.user,
-            api_key=None,
             template="Some Format",
             data="Some words or something",
         )

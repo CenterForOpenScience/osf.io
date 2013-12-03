@@ -585,7 +585,7 @@ class Node(GuidStoredObject):
 
         return forked#self
 
-    def register_node(self, user, api_key, template, data):
+    def register_node(self, user, template, data, api_key=None):
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
         when = datetime.datetime.utcnow()

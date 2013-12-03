@@ -95,7 +95,7 @@ def node_register_template_page_post(*args, **kwargs):
     # TODO: Using json.dumps because node_to_use.registered_meta's values are
     # expected to be strings (not dicts). Eventually migrate all these to be
     # dicts, as this is unnecessary
-    register = node_to_use.register_node(user, api_key, template, json.dumps(data))
+    register = node_to_use.register_node(user, template, json.dumps(data), api_key)
 
     return {
         'status': 'success',
