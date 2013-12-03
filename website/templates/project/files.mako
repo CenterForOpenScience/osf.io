@@ -83,11 +83,19 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
             url = '/api/v1' + url;
             var downButton = "<a href=" + JSON.stringify(url) + "><button type='button' class='btn btn-success btn-mini'><i class='icon-download-alt icon-white'></i></button></a>";
             if(myGrid.getItemByValue(myGrid.data, dataContext['parent_uid'], 'uid')['can_edit']=='false'){
-##                return value + spacer + "<div class='hGridButton' style='text-align: right; display: none;'>" + downButton + "</div>";
-                return value + spacer + "<div class='hGridButton' style='text-align: right; display: inline;'>" + downButton + "</div>";
+                return "<div class='col-xs-6' style='padding-left:0;padding-right:0'>" +
+                        value +
+                        "</div>" +
+                        "<div class='hGridButton col-xs-6' style='padding-left:0; padding-right:0; text-align: right; display: inline;'>"
+                        + downButton +
+                        "</div>";
             }
-##            else return value + spacer + "<div class='hGridButton' style='text-align: right; display: none;'>" + downButton + " " + delButton + "</div>";
-            else return value + spacer + "<div class='hGridButton' style='text-align: right; display: inline;'>" + downButton + " " + delButton + "</div>";
+            else return "<div class='col-xs-6' style='padding-left:0;padding-right:0'>" +
+                        value +
+                        "</div>" +
+                        "<div class='hGridButton col-xs-6' style='padding-left:0; padding-right:0; text-align: right; display: inline;'>" +
+                        downButton + " " + delButton +
+                        "</div>";
         }
     }
     else{
@@ -114,7 +122,7 @@ if(typeof(browserComp) === 'undefined'){
     browserComp = true;
 }
 
-var useDropZone = ${user['can_edit']} && browserComp;
+var useDropZone = ${int(user['can_edit'])} && browserComp;
 
 var myGrid = HGrid.create({
     container: "#myGrid",
