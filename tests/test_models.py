@@ -367,6 +367,7 @@ class TestNode(DbTestCase):
     def test_register(self):
         pass
 
+
 class TestProject(DbTestCase):
 
     def setUp(self):
@@ -763,6 +764,37 @@ class TestForkNode(DbTestCase):
         fork = self.project.fork_node(user2)
         assert_true(fork)
 
+
+class TestRegisterNode(DbTestCase):
+
+    def setUp(self):
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.registration = self.project.register_node(
+            user=self.user,
+            api_key=None,
+            template="Some Format",
+            data="Some words or something",
+        )
+
+    def test_title(self):
+        assert_equal(self.registration.title, self.project.title)
+
+    def test_contributors(self):
+        assert_equal(self.registration.contributors, self.project.contributors)
+
+    def test_forked_from(self):
+        assert_equal(self.registration.forked_from, None)
+
+    def test_is_registered(self):
+        assert_true(self.registration.is_registration)
+
+    def test_registered_date(self):
+        assert_almost_equal(
+            self.registration.registered_date,
+            datetime.datetime.utcnow(),
+            delta=datetime.timedelta(seconds=5),
+        )
 
 
 class TestNodeLog(DbTestCase):
