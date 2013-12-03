@@ -421,11 +421,11 @@ var HGrid = {
             }
         }
         if (_this.options.topCrumb){
-            var topCrumb = '<span class="hgrid-breadcrumb"><a href="#" data-hgrid-nav="">' + "HGrid" + '</a></span>';
+            var topCrumb = '<span class="hgrid-breadcrumb overflow"><a href="#" data-hgrid-nav="">' + "HGrid" + '</a></span>';
             crumbs.push(topCrumb);
         }
         for (var i = 0; i<levels.length; i++) {
-            var crumb = '<span class="hgrid-breadcrumb"><a href="#" data-hgrid-nav="' + levels[i] + '">' + _this.getItemByValue(_this.data, levels[i], 'uid')['name'] + '</a></span>';
+            var crumb = '<span class="hgrid-breadcrumb overflow"><a href="#" data-hgrid-nav="' + levels[i] + '">' + _this.getItemByValue(_this.data, levels[i], 'uid')['name'] + '</a></span>';
             crumbs.push(crumb);
         }
         for (var i = 0; i<crumbs.length; i++) {

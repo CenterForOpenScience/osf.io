@@ -108,7 +108,7 @@ class NodeLog(StoredObject):
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
 
-    DATE_FORMAT = '%m/%d/%Y %I:%M %p UTC'
+    DATE_FORMAT = '%m/%d/%Y %H:%M  UTC'
 
     # Log action constants
     PROJECT_CREATED = "project_created"
@@ -122,6 +122,7 @@ class NodeLog(StoredObject):
     TAG_ADDED = 'tag_added'
     TAG_REMOVED = 'tag_removed'
     EDITED_TITLE = "edit_title"
+    EDITED_DESCRIPTION = 'edit_description'
     PROJECT_REGISTERED = 'project_registered'
     FILE_ADDED = "file_added"
     FILE_REMOVED = "file_removed"
@@ -137,20 +138,25 @@ class NodeLog(StoredObject):
     def tz_date(self):
         '''Return the timezone-aware date.
         '''
-        return self.date.replace(tzinfo=pytz.UTC)
+        # Date should always be defined, but a few logs in production are
+        # missing dates; return None and log error if date missing
+        if self.date:
+            return self.date.replace(tzinfo=pytz.UTC)
+        logging.error('Date missing on NodeLog {}'.format(self._primary_key))
 
     @property
     def formatted_date(self):
         '''Return the timezone-aware, ISO-formatted string representation of
         this log's date.
         '''
-        return self.tz_date.isoformat()
+        if self.tz_date:
+            return self.tz_date.isoformat()
 
     # FIXME: Serialization (presentation) doesn't belong in model (domain)
     def serialize(self):
         # TODO: Nest serialized user.
         if self.node:
-            category = "project" if self.node.category == 'project' else 'component'
+            category = self.node.project_or_component
         else:
             category = ''
         return {
@@ -165,7 +171,7 @@ class NodeLog(StoredObject):
         'params': self.params,
         'category': category,
         # TODO: Use self.formatted_date when Recent Activity Logs are generated dynamically
-        'date': self.tz_date.strftime(NodeLog.DATE_FORMAT),
+        'date': self.tz_date.strftime(NodeLog.DATE_FORMAT) if self.tz_date else '',
         'contributors': [self._render_log_contributor(contributor) for contributor in self.params.get('contributors', [])],
         'contributor': self._render_log_contributor(self.params.get('contributor', {})),
     }
@@ -332,11 +338,11 @@ class Node(GuidStoredObject):
         return rv
 
     def set_title(self, title, user, api_key=None, save=False):
-        '''Sets the title of this Node and logs it.
+        '''Set the title of this Node and log it.
 
-        :param title: A string, the new title
-        :param user: A User object
-        :param api_key: An ApiKey object
+        :param str title: The new title.
+        :param User user: User who made the action.
+        :param ApiKey api_key: Optional API key.
         '''
         original_title = self.title
         self.title = title
@@ -353,6 +359,30 @@ class Node(GuidStoredObject):
         )
         if save:
             self.save()
+        return None
+
+    def set_description(self, description, user, api_key=None, save=False):
+        '''Set the description and log the event.
+
+        :param str description: The new description
+        :param User user: The user who changed the description.
+        :param ApiKey api_key: Optional API key.
+        '''
+        original = self.description
+        self.description = description
+        if save:
+            self.save()
+        self.add_log(
+            action=NodeLog.EDITED_DESCRIPTION,
+            params={
+                'project': self.parent,  # None if no parent
+                'node': self._primary_key,
+                'description_new': self.description,
+                'description_original': original
+            },
+            user=user,
+            api_key=api_key
+        )
         return None
 
     def update_solr(self):
@@ -492,6 +522,7 @@ class Node(GuidStoredObject):
         forked.forked_date = when
         forked.forked_from = original
         forked.is_public = False
+        forked.creator = user
         forked.contributor_list = []
 
         forked.add_contributor(user, log=False, save=False)
@@ -499,14 +530,14 @@ class Node(GuidStoredObject):
         forked.add_log(
             action=NodeLog.NODE_FORKED,
             params={
-                'project':original.parent_id,
-                'node':original._primary_key,
-                'registration':forked._primary_key,
+                'project': original.parent_id,
+                'node': original._primary_key,
+                'registration': forked._primary_key,
             },
             user=user,
             api_key=api_key,
             log_date=when,
-            do_save=False,
+            save=False,
         )
 
         forked.save()
@@ -858,7 +889,7 @@ class Node(GuidStoredObject):
 
         return node_file
 
-    def add_log(self, action, params, user, api_key=None, log_date=None, do_save=True):
+    def add_log(self, action, params, user, api_key=None, log_date=None, save=True):
         log = NodeLog()
         log.action=action
         log.user=user
@@ -868,7 +899,7 @@ class Node(GuidStoredObject):
         log.params=params
         log.save()
         self.logs.append(log)
-        if do_save:
+        if save:
             self.save()
         if user:
             increment_user_activity_counters(user._primary_key, action, log.date)
@@ -892,6 +923,15 @@ class Node(GuidStoredObject):
         return None
 
     @property
+    def parent(self):
+        '''The parent node, if it exists, otherwise ``None``.'''
+        try:
+            return self.node__parent[0]
+        except IndexError:
+            pass
+        return None
+
+    @property
     def api_url(self):
         return '/api/v1' + self.url
 
@@ -904,6 +944,10 @@ class Node(GuidStoredObject):
         if self.node__parent:
             return self.node__parent[0]._id
         return None
+
+    @property
+    def project_or_component(self):
+        return 'project' if self.category == 'project' else 'component'
 
     def is_contributor(self, user):
         return (user is not None) and ((user in self.contributors) or user == self.creator)
@@ -954,11 +998,15 @@ class Node(GuidStoredObject):
             return False
 
     def add_contributor(self, contributor, user=None, log=True, api_key=None, save=False):
-        '''Add a contributor to the project.
+        """Add a contributor to the project.
 
         :param contributor: A User object, the contributor to be added
         :param user: A User object, the user who added the contributor or None.
-        '''
+        :param log: Add log to self
+        :param api_key: API key used to add contributors
+        :param save: Save after adding contributor
+        :return: Boolean--whether contributor was added
+        """
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
         if contrib_to_add._primary_key not in self.contributors:
@@ -973,7 +1021,8 @@ class Node(GuidStoredObject):
                         'contributors': [contrib_to_add._primary_key],
                     },
                     user=user,
-                    api_key=api_key
+                    api_key=api_key,
+                    save=save,
                 )
             if save:
                 self.save()
@@ -982,11 +1031,14 @@ class Node(GuidStoredObject):
             return False
 
     def add_contributors(self, contributors, user=None, log=True, api_key=None, save=False):
-        '''Add multiple contributors
+        """Add multiple contributors
 
         :param contributors: A list of User objects to add as contributors.
         :param user: A User object, the user who added the contributors.
-        '''
+        :param log: Add log to self
+        :param api_key: API key used to add contributors
+        :param save: Save after adding contributor
+        """
         for contrib in contributors:
             self.add_contributor(contributor=contrib, user=user, log=False, save=False)
         if log:
@@ -999,10 +1051,10 @@ class Node(GuidStoredObject):
                 },
                 user=user,
                 api_key=api_key,
+                save=save,
             )
         if save:
             self.save()
-        return None
 
     def add_nonregistered_contributor(self, name, email, user, api_key=None, save=False):
         '''Add a non-registered contributor to the project.
@@ -1174,7 +1226,6 @@ class NodeWikiPage(GuidStoredObject):
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
         if self.node:
-            print 'updating my node'
             self.node.update_solr()
         return rv
 

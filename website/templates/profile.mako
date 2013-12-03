@@ -22,6 +22,7 @@
         });
     </script>
 % endif
+
 </%def>
 
 <%def name="content()">

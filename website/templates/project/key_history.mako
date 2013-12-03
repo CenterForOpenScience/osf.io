@@ -5,9 +5,9 @@
 
 <div mod-meta='{
         "tpl": "util/render_key_history.html",
-        "uri": "${node_api_url}keys/",
+        "uri": "${node["api_url"]}keys/",
         "kwargs": {
-            "route": "${node_api_url}"
+            "route": "${node["api_url"]}"
         },
         "replace": true
     }'></div>

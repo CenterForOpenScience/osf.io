@@ -5,7 +5,7 @@
 
 <div class="row">
     <div class="col-md-9">
-        <form action="${node_url}wiki/${pageName}/edit/" method="POST">
+        <form action="${node['url']}wiki/${pageName}/edit/" method="POST">
             <div class="form-group wmd-panel">
                 <div id="wmd-button-bar"></div>
                 <textarea class="form-control wmd-input" rows="12" id="wmd-input" name="content">${wiki_content}</textarea>

@@ -1,10 +1,61 @@
+import unittest
 from nose.tools import *  # PEP8 asserts
 
 from tests.base import DbTestCase
 from tests.factories import UserFactory, ProjectFactory, TagFactory
 
 from framework.search.solr import solr
+from framework.search.utils import clean_solr_doc
 from website.search.solr_search import search_solr
+from website.search.views import _search_contributor
+
+class TestCleanSolr(unittest.TestCase):
+    """Ensure that invalid XML characters are appropriately removed from
+    Solr data documents.
+
+    """
+
+    def test_clean_string(self):
+        dirty_string = u'roger\x0btaylor'
+        assert_equal(
+            clean_solr_doc(dirty_string),
+            'rogertaylor'
+        )
+
+    def test_clean_list(self):
+        dirty_strings = [
+            u'slightly\x0bmad',
+            [
+                u'banana\x0ctree',
+            ]
+        ]
+        assert_equal(
+            clean_solr_doc(dirty_strings),
+            [
+                'slightlymad',
+                [
+                    'bananatree',
+                ]
+            ]
+        )
+
+    def test_clean_dict(self):
+        dirty_strings = {
+            'bass': u'john\x0bdeacon',
+            'guitar' : {
+                'brian': u'may\x0b',
+            },
+        }
+        assert_equal(
+            clean_solr_doc(dirty_strings),
+            {
+                'bass': 'johndeacon',
+                'guitar': {
+                    'brian': 'may',
+                }
+            }
+        )
+
 
 class SolrTestCase(DbTestCase):
 
@@ -12,13 +63,16 @@ class SolrTestCase(DbTestCase):
         solr.delete_all()
         solr.commit()
 
+
 def query(term):
     results, _, _ = search_solr(term)
     return results.get('docs', [])
 
+
 def query_user(name):
     term = 'user:"{}"'.format(name)
     return query(term)
+
 
 class TestUserUpdate(SolrTestCase):
 
@@ -67,6 +121,7 @@ class TestProject(SolrTestCase):
         self.project.set_permissions('public')
         docs = query(self.project.title)
         assert_equal(len(docs), 1)
+
 
 class TestPublicProject(SolrTestCase):
 
@@ -184,3 +239,50 @@ class TestPublicProject(SolrTestCase):
 
         docs = query(user2.fullname)
         assert_equal(len(docs), 0)
+
+
+# todo: write these
+class TestSearchSearch(SolrTestCase):
+    pass
+
+
+class TestAddContributor(SolrTestCase):
+    """Tests of the _search_contributor helper.
+
+    """
+
+    def setUp(self):
+        self.name1 = 'Roger Taylor'
+        self.name2 = 'John Deacon'
+        self.user = UserFactory(fullname=self.name1)
+
+    def test_search_fullname(self):
+        """Verify that searching for full name yields exactly one result.
+
+        """
+        contribs = _search_contributor(self.name1)
+        assert_equal(len(contribs['users']), 1)
+
+        contribs = _search_contributor(self.name2)
+        assert_equal(len(contribs['users']), 0)
+
+    def test_search_firstname(self):
+        """Verify that searching for first name yields exactly one result.
+
+        """
+        contribs = _search_contributor(self.name1.split(' ')[0])
+        assert_equal(len(contribs['users']), 1)
+
+        contribs = _search_contributor(self.name2.split(' ')[0])
+        assert_equal(len(contribs['users']), 0)
+
+    def test_search_partial(self):
+        """Verify that searching for part of first name yields exactly one
+        result.
+
+        """
+        contribs = _search_contributor(self.name1.split(' ')[0][:-1])
+        assert_equal(len(contribs['users']), 1)
+
+        contribs = _search_contributor(self.name2.split(' ')[0][:-1])
+        assert_equal(len(contribs['users']), 0)
