@@ -1097,6 +1097,11 @@ class Node(GuidStoredObject):
         # len(wiki_pages_versions) == 1, version 1
         # len() == 2, version 1, 2
 
+        if "." in page:
+            page = page.replace(".", "__!dot!__")
+        if "$" in page:
+            page = page.replace("$", "__!dollar!__")
+
         page = str(page).lower()
         if version:
             try:
@@ -1127,6 +1132,13 @@ class Node(GuidStoredObject):
         :param user: A `User` object.
         :param api_key: A string, the api key. Can be ``None``.
         '''
+
+        temp_page = page
+        if "." in page:
+            page = page.replace(".", "__!dot!__")
+        if "$" in page:
+            page = page.replace("$", "__!dollar!__")
+
         page = str(page).lower()
 
         if page not in self.wiki_pages_current:
@@ -1138,7 +1150,7 @@ class Node(GuidStoredObject):
             current.save()
 
         v = NodeWikiPage()
-        v.page_name = page
+        v.page_name = temp_page
         v.version = version
         v.user = user
         v.is_current = True

@@ -6,7 +6,14 @@
 
         % for k in pages_current:
             <li>
+                % if "__!dot!__" in k:
+                <% k = k.replace("__!dot!__",".") %>
+                % endif
+                % if "__!dollar!__" in k:
+                <% k = k.replace("__!dollar!__","$") %>
+                % endif
                 <a href="/project/${node['id']}/wiki/${k}">${k}</a>
+
             </li>
         % endfor
 

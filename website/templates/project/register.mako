@@ -60,7 +60,7 @@
                             Type "continue" if you are sure you want to continue
                         </label>
                         <div class="controls">
-                            <input class="form-control" data-bind="value:$parent.continueText, valueUpdate: 'afterkeydown'" />
+                            <input id="confirm" class="form-control" data-bind="value:$parent.continueText, valueUpdate: 'afterkeydown'" />
                         </div>
                     </div>
 
@@ -112,15 +112,23 @@
                     type: 'POST',
                     data: JSON.stringify(data),
                     contentType: 'application/json',
+                    timeout: 60000,
                     success: function(response) {
-                        if (response.status === 'success'){
-                            window.location.href = response.result;
-                        }
-                        else if (response.status === 'error'){
-                            $.unblockUI();
-                            window.location.reload();
+
+                        window.location.href = response.result;
+
+                    },
+                    error: function(jqXHR, textStatus, errorThrown){
+                        if(textStatus==="timeout") {
+                            bootbox.alert("Create registration timed out"); //Handle the timeout
+                        }else{
                             bootbox.alert('Registration failed');
                         }
+                        $.unblockUI();
+                        $('#register-submit')
+                                .removeClass("disabled")
+                                .text('Register');
+                        $("#confirm").val("");
                     },
                     dataType: 'json'
                 });
