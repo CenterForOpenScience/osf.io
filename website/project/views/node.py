@@ -349,6 +349,50 @@ def _view_project(node_to_use, user, api_key=None):
     recent_logs = list(reversed(node_to_use.logs)[:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
     data = {
+#<<<<<<< HEAD
+#        'node_id': node_to_use._primary_key,
+#        'node_title': node_to_use.title,
+#        'node_category': node_to_use.project_or_component,
+#        'node_description': node_to_use.description,
+#        'wiki_home': wiki_home,
+#        'node_url': node_to_use.url,
+#        'node_api_url': node_to_use.api_url,
+#        'node_is_public': node_to_use.is_public,
+#        'node_date_created': node_to_use.date_created.strftime('%Y/%m/%d %I:%M %p'),
+#        'node_date_modified': node_to_use.logs[-1].date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.logs else '',
+#
+#        'node_tags': [tag._primary_key for tag in node_to_use.tags],
+#        'node_children': bool(node_to_use.nodes),
+#        'node_children_ids': [child._primary_key for child in node_to_use.nodes],
+#
+#        'node_is_registration': node_to_use.is_registration,
+#        'node_registered_from_url': node_to_use.registered_from.url if node_to_use.is_registration else '',
+#        'node_registered_date': node_to_use.registered_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_registration else '',
+#        'node_registered_meta': [
+#            {
+#                'name_no_ext': meta.replace('.txt', ''),
+#                'name_clean': clean_template_name(meta),
+#            }
+#            for meta in node_to_use.registered_meta or []
+#        ],
+#        'node_registration_count': len(node_to_use.registration_list),
+#
+#        'node_is_fork': node_to_use.is_fork,
+#        'node_forked_from_url': node_to_use.forked_from.url if node_to_use.is_fork else '',
+#        'node_forked_date': node_to_use.forked_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_fork else '',
+#        'node_fork_count': len(node_to_use.fork_list),
+#
+#        'node_watched_count': len(node_to_use.watchconfig__watched),
+#        'parent_id': parent._primary_key if parent else '',
+#        'parent_title': parent.title if parent else '',
+#        'parent_url': parent.url if parent else '',
+#        'parent_api_url': parent.api_url if parent else '',
+#        'user_is_contributor': node_to_use.is_contributor(user),
+#        'user_can_edit': node_to_use.is_contributor(user) and not node_to_use.is_registration,
+#        'user_is_watching': user.is_watching(node_to_use) if user else False,
+#        # 10 most recent logs
+#        'logs': recent_logs_dicts
+#=======
         'node': {
             'id': node_to_use._primary_key,
             'title': node_to_use.title,
@@ -363,6 +407,7 @@ def _view_project(node_to_use, user, api_key=None):
 
             'tags': [tag._primary_key for tag in node_to_use.tags],
             'children': bool(node_to_use.nodes),
+            'children_ids': [child._primary_key for child in node_to_use.nodes],
 
             'is_registration': node_to_use.is_registration,
             'registered_from_url': node_to_use.registered_from.url if node_to_use.is_registration else '',
@@ -398,6 +443,7 @@ def _view_project(node_to_use, user, api_key=None):
                                 and not node_to_use.is_registration),
             'is_watching': user.is_watching(node_to_use) if user else False
         }
+#>>>>>>> develop
     }
     return data
 

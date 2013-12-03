@@ -41,17 +41,26 @@ def normalize_unicode(ustr):
 class MetaSchema(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
+    name = fields.StringField()
     schema = fields.DictionaryField()
     category = fields.StringField()
-    version = fields.StringField()
+
+    # Version of the Knockout metadata renderer to use (e.g. if data binds
+    # change)
+    metadata_version = fields.IntegerField()
+    # Version of the schema to use (e.g. if questions, responses change)
+    schema_version = fields.IntegerField()
 
 
 def ensure_schemas():
-    for key, value in OSF_META_SCHEMAS.items():
+    for schema in OSF_META_SCHEMAS:
         try:
-            MetaSchema.find_one(Q('_id', 'eq', key))
+            MetaSchema.find_one(
+                Q('name', 'eq', schema['name']) &
+                Q('schema_version', 'eq', schema['schema_version'])
+            )
         except:
-            schema_obj = MetaSchema(_id=key, **value)
+            schema_obj = MetaSchema(**schema)
             schema_obj.save()
 
 
@@ -108,26 +117,26 @@ class NodeLog(StoredObject):
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
 
-    DATE_FORMAT = '%m/%d/%Y %H:%M  UTC'
+    DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
     # Log action constants
-    PROJECT_CREATED = "project_created"
-    NODE_CREATED = "node_created"
-    NODE_REMOVED = "node_removed"
-    WIKI_UPDATED = "wiki_updated"
-    CONTRIB_ADDED = "contributor_added"
-    CONTRIB_REMOVED = "contributor_removed"
-    MADE_PUBLIC = "made_public"
-    MADE_PRIVATE = "made_private"
+    PROJECT_CREATED = 'project_created'
+    NODE_CREATED = 'node_created'
+    NODE_REMOVED = 'node_removed'
+    WIKI_UPDATED = 'wiki_updated'
+    CONTRIB_ADDED = 'contributor_added'
+    CONTRIB_REMOVED = 'contributor_removed'
+    MADE_PUBLIC = 'made_public'
+    MADE_PRIVATE = 'made_private'
     TAG_ADDED = 'tag_added'
     TAG_REMOVED = 'tag_removed'
-    EDITED_TITLE = "edit_title"
+    EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
     PROJECT_REGISTERED = 'project_registered'
-    FILE_ADDED = "file_added"
-    FILE_REMOVED = "file_removed"
+    FILE_ADDED = 'file_added'
+    FILE_REMOVED = 'file_removed'
     FILE_UPDATED = 'file_updated'
-    NODE_FORKED = "node_forked"
+    NODE_FORKED = 'node_forked'
 
     @property
     def node(self):
@@ -228,7 +237,7 @@ class NodeFile(GuidStoredObject):
 
     @property
     def download_url(self):
-        return "{}files/download/{}/version/{}/".format(
+        return '{}files/download/{}/version/{}/'.format(
             self.node.api_url, self.filename, self.latest_version_number)
 
 
@@ -271,6 +280,9 @@ class Node(GuidStoredObject):
 
     is_registration = fields.BooleanField(default=False)
     registered_date = fields.DateTimeField()
+    registered_user = fields.ForeignField('user', backref='registered')
+    registered_schema = fields.ForeignField('metaschema', backref='registered')
+    registered_meta = fields.DictionaryField()
 
     is_fork = fields.BooleanField(default=False)
     forked_date = fields.DateTimeField()
@@ -279,10 +291,8 @@ class Node(GuidStoredObject):
     description = fields.StringField()
     category = fields.StringField()
 
-    #_terms = fields.DictionaryField(list=True)
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
-    registered_meta = fields.DictionaryField()
 
     # TODO: move these to NodeFile
     files_current = fields.DictionaryField()
@@ -315,9 +325,9 @@ class Node(GuidStoredObject):
         return {
             'title': self.title,
             'date_created': self.date_created,
-            "is_public": self.is_public,
-            "creator": self.creator,
-            "contributors": self.contributors
+            'is_public': self.is_public,
+            'creator': self.creator,
+            'contributors': self.contributors
         }
 
     def can_edit(self, user, api_key=None):
@@ -512,7 +522,7 @@ class Node(GuidStoredObject):
         forked.logs = self.logs
         forked.tags = self.tags
 
-        for i, node_contained in enumerate(original.nodes):
+        for node_contained in original.nodes:
             forked_node = node_contained.fork_node(user, api_key=api_key, title='')
             if forked_node is not None:
                 forked.nodes.append(forked_node)
@@ -551,7 +561,16 @@ class Node(GuidStoredObject):
 
         return forked#self
 
-    def register_node(self, user, api_key, template, data):
+    def register_node(self, schema, user, api_key, template, data):
+        """Make a frozen copy of a node.
+
+        :param schema: Schema object
+        :param user: User registering the node
+        :param api_key: API key registering the node
+        :template: Template name
+        :data: Form data
+
+        """
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
         when = datetime.datetime.utcnow()
@@ -574,7 +593,7 @@ class Node(GuidStoredObject):
         registered.nodes = []
 
         # todo: should be recursive; see Node.fork_node()
-        for i, original_node_contained in enumerate(original.nodes):
+        for original_node_contained in original.nodes:
 
             node_contained = original_node_contained.clone()
             node_contained.save()
@@ -593,6 +612,8 @@ class Node(GuidStoredObject):
 
             node_contained.is_registration = True
             node_contained.registered_date = when
+            node_contained.registered_user = user
+            node_contained.registered_schema = schema
             node_contained.registered_from = original_node_contained
             if not node_contained.registered_meta:
                 node_contained.registered_meta = {}
@@ -603,6 +624,8 @@ class Node(GuidStoredObject):
 
         registered.is_registration = True
         registered.registered_date = when
+        registered.registered_user = user
+        registered.registered_schema = schema
         registered.registered_from = original
         if not registered.registered_meta:
             registered.registered_meta = {}
