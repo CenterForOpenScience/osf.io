@@ -9,10 +9,8 @@ import os
 
 import flask
 from lxml.html import fragment_fromstring
-from modularodm import fields
 import werkzeug.wrappers
 
-from framework import StoredObject
 from framework.exceptions import HTTPError, http
 from framework.routing import (
     Renderer, JSONRenderer, WebRenderer,
@@ -340,18 +338,6 @@ class JSONRendererEncoderTestCase(unittest.TestCase):
         self.assertEqual(
             '"<JSON representation>"',
             json.dumps(test_object, cls=JSONRenderer.Encoder),
-        )
-
-    def test_stored_object(self):
-        class TestClass(StoredObject):
-            _id = fields.StringField(primary=True)
-
-        test_object = TestClass()
-        test_object._id = 'FakeID'
-
-        self.assertEqual(
-            '"FakeID"',
-            json.dumps(test_object, cls=JSONRenderer.Encoder)
         )
 
     def test_string(self):

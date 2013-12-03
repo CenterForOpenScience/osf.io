@@ -1,5 +1,6 @@
 import re
 import os
+import cgi
 import json
 import time
 import zipfile
@@ -39,8 +40,7 @@ def get_file_tree(node_to_use, user):
         if not node.is_deleted:
             tree.append(get_file_tree(node, user))
 
-    #means can_view, not can_edit
-    if node_to_use.can_edit(user):
+    if node_to_use.can_view(user):
         for i,v in node_to_use.files_current.items():
             v = NodeFile.load(v)
             tree.append(v)
@@ -51,7 +51,11 @@ def get_file_tree(node_to_use, user):
 @must_be_valid_project # returns project
 @must_be_contributor_or_public
 def get_files(*args, **kwargs):
+    """Build list of files for HGrid, ignoring contents of components to which
+    the user does not have access. Note: This view hides the titles of
+    inaccessible components but includes their GUIDs.
 
+    """
     # Get arguments
     node_to_use = kwargs['node'] or kwargs['project']
     user = get_current_user()
@@ -65,6 +69,12 @@ def get_files(*args, **kwargs):
         rv.update(_view_project(node_to_use, user))
     return rv
 
+def _clean_file_name(name):
+    " HTML-escape file name and encode to UTF-8. "
+    escaped = cgi.escape(name)
+    encoded = unicode(escaped).encode('utf-8')
+    return encoded
+
 def _get_files(filetree, parent_id, check, user):
     if parent_id is not None:
         parent_uid = 'node-{}'.format(parent_id)
@@ -74,9 +84,9 @@ def _get_files(filetree, parent_id, check, user):
     info = []
     itemParent = {}
     itemParent['uid'] = '-'.join([
-        "node",  # node or nodefile
-        str(filetree[0]._id)  # ObjectId from pymongo
-    ])
+            "node",  # node or nodefile
+            str(filetree[0]._id)  # ObjectId from pymongo
+        ])
     itemParent['isComponent'] = "true"
     itemParent['parent_uid'] = parent_uid
     if str(filetree[0].category)=="project" or itemParent['parent_uid']=="null":
@@ -98,51 +108,57 @@ def _get_files(filetree, parent_id, check, user):
     itemParent['sizeRead'] = '--'
     itemParent['dateModified'] = '--'
     parent_type = filetree[0].project_or_component.capitalize()
-    itemParent['name'] = parent_type + ': ' + unicode(filetree[0].title).encode('utf-8')
+    itemParent['name'] = _clean_file_name(
+        u'{}: {}'.format(
+            parent_type, filetree[0].title
+        )
+    )
     itemParent['can_edit'] = str(
         filetree[0].is_contributor(user) and
         not filetree[0].is_registration
     ).lower()
-    #can_edit is can_view
-    itemParent['can_view'] = str(filetree[0].can_edit(user)).lower()
+    itemParent['can_view'] = str(filetree[0].can_view(user)).lower()
+    if itemParent['can_view'] == 'false':
+        itemParent['name'] = 'Private Component'
     if check == 0:
-        itemParent['parent_uid']="null"
+        itemParent['parent_uid'] = "null"
     info.append(itemParent)
-    for tmp in filetree[1]:
-        if isinstance(tmp, tuple):
-            info = info + _get_files(
-                filetree=tmp,
-                parent_id=filetree[0]._id,
-                check=1,
-                user=user
-            )['info']
-        else:
-            unique, total = get_basic_counters('download:' + str(filetree[0]._id) + ':' + tmp.path.replace('.', '_') )
-            item = {}
-            item['uid'] = '-'.join([
-                "nodefile",  # node or nodefile
-                str(tmp._id)  # ObjectId from pymongo
-            ])
-            item['downloads'] = str(total) if total else '0'
-            item['isComponent'] = "false"
-            item['parent_uid'] = str(itemParent['uid'])
-            item['type'] = "file"
-            item['name'] = str(tmp.path)
-            item['ext'] = str(tmp.path.split('.')[-1])
-            item['sizeRead'] = [
-                float(tmp.size),
-                size(tmp.size, system=alternative)
-            ]
-            item['size'] = str(tmp.size)
-            item['url'] = 'files/'.join([
-                str(filetree[0].url),
-                item['name'] + '/'
-            ])
-            item['dateModified'] = [
-                time.mktime(tmp.date_modified.timetuple()),
-                tmp.date_modified.strftime('%Y/%m/%d %I:%M %p')
-            ]
-            info.append(item)
+    if itemParent['can_view'] == 'true':
+        for tmp in filetree[1]:
+            if isinstance(tmp, tuple):
+                info = info + _get_files(
+                    filetree=tmp,
+                    parent_id=filetree[0]._id,
+                    check=1,
+                    user=user
+                )['info']
+            else:
+                unique, total = get_basic_counters('download:' + str(filetree[0]._id) + ':' + tmp.path.replace('.', '_') )
+                item = {}
+                item['uid'] = '-'.join([
+                    "nodefile",  # node or nodefile
+                    str(tmp._id)  # ObjectId from pymongo
+                ])
+                item['downloads'] = total if total else 0
+                item['isComponent'] = "false"
+                item['parent_uid'] = str(itemParent['uid'])
+                item['type'] = "file"
+                item['name'] = _clean_file_name(tmp.path)
+                item['ext'] = _clean_file_name(tmp.path.split('.')[-1])
+                item['sizeRead'] = [
+                    float(tmp.size),
+                    size(tmp.size, system=alternative)
+                ]
+                item['size'] = str(tmp.size)
+                item['url'] = 'files/'.join([
+                    str(filetree[0].url),
+                    item['name'] + '/'
+                ])
+                item['dateModified'] = [
+                    time.mktime(tmp.date_modified.timetuple()),
+                    tmp.date_modified.strftime('%Y/%m/%d %I:%M %p')
+                ]
+                info.append(item)
     return {'info': info}
 
 
@@ -192,7 +208,7 @@ def upload_file_get(*args, **kwargs):
                 "type": v.content_type,
                 "download_url": node_to_use.api_url + "files/download/" + v.path,
                 "date_uploaded": v.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
-                "downloads": str(total) if total else str(0),
+                "downloads": total if total else 0,
                 "user_id": None,
                 "user_fullname": None,
                 "delete": v.is_deleted,
@@ -252,7 +268,7 @@ def upload_file_public(*args, **kwargs):
             time.mktime(file_object.date_uploaded.timetuple()),
             file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
         ],
-        "downloads": str(total) if total else str(0),
+        "downloads": total if total else 0,
         "user_id": None,
         "user_fullname":None,
         "uid": '-'.join([

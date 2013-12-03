@@ -46,13 +46,33 @@ var modalConfirm = function(message, url){
             }
         }
     )
-}
-
-
+};
 $(document).ready(function(){
+    //block the create new project button when the form is submitted
+    $('#projectForm').on('submit',function(){
+        $('button[type="submit"]', this)
+            .attr('disabled', 'disabled')
+            .text('Creating');
+    });
+
     // Highlight active tabs and nav labels
-    $('.nav a[href="' + location.pathname + '"]').parent().addClass('active');
-    $('.tabs a[href="' + location.pathname + '"]').parent().addClass('active');
+    var node = nodeToUse();
+    if (node) {
+        // Works for project pages; code used below won't highlight wiki tab
+        // on wiki pages because URLs (e.g. wiki/home) aren't contained in
+        // tab URLs (e.g. wiki)
+        var page = location.pathname.split(node)[1]
+            .split('/')[1];
+        $('#projectSubnav a').filter(function() {
+            return page == $(this).attr('href')
+                .split(node)[1]
+                .replace(/\//g, '');
+        }).parent().addClass('active');
+    } else {
+         // Works for user dashboard page
+         $('.nav a[href="' + location.pathname + '"]').parent().addClass('active');
+         $('.tabs a[href="' + location.pathname + '"]').parent().addClass('active');
+    }
 
     // Initiate tag input
     $('#tagitfy').tagit({
@@ -65,7 +85,7 @@ $(document).ready(function(){
     // Build tooltips on user activity widgets
     $('.ua-meter').tooltip();
     $("[rel=tooltip]").tooltip({
-        placement:'bottom',
+        placement:'bottom'
     });
 
     //  Initiate tag cloud (on search page)
@@ -77,7 +97,6 @@ $(document).ready(function(){
     $(function () {
       $('#whatever a').tagcloud();
     });
-
 
 
 });

@@ -101,7 +101,13 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
 
 
 def data_to_lambda(data):
-    return lambda *args, **kwargs: data
+    """Create a lambda function that takes arbitrary arguments and returns
+    a deep copy of the passed data. This function must deep copy the data,
+    else other code operating on the returned data can change the return value
+    of the lambda.
+
+    """
+    return lambda *args, **kwargs: copy.deepcopy(data)
 
 
 view_functions = {}
@@ -276,7 +282,6 @@ class JSONRenderer(Renderer):
 
     CONTENT_TYPE = "application/json"
 
-    # todo: remove once storedobjects are no longer passed from view functions
     class Encoder(json.JSONEncoder):
         def default(self, obj):
             if hasattr(obj, 'to_json'):
@@ -284,8 +289,6 @@ class JSONRenderer(Renderer):
                     return obj.to_json()
                 except TypeError:  # BS4 objects have to_json that isn't callable
                     return unicode(obj)
-            if isinstance(obj, StoredObject):
-                return obj._primary_key
             return json.JSONEncoder.default(self, obj)
 
     def handle_error(self, error):

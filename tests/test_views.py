@@ -11,6 +11,7 @@ from webtest_plus import TestApp
 
 import website.app
 from website.models import Node, NodeLog
+from website.project.model import ensure_schemas
 
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
@@ -24,6 +25,7 @@ app = website.app.init_app(routes=True, set_backends=False,
 class TestProjectViews(DbTestCase):
 
     def setUp(self):
+        ensure_schemas()
         self.app = TestApp(app)
         self.user1 = UserFactory.build()
         # Add an API key for quicker authentication
@@ -33,24 +35,34 @@ class TestProjectViews(DbTestCase):
         self.auth = ('test', api_key._primary_key)
         self.user2 = UserFactory()
         # A project has 2 contributors
-        self.project = ProjectFactory(title="Ham", creator=self.user1)
+        self.project = ProjectFactory(title="Ham",
+                                        description='Honey-baked',
+                                        creator=self.user1)
         self.project.add_contributor(self.user1)
         self.project.add_contributor(self.user2)
         self.project.api_keys.append(api_key)
         self.project.save()
 
+    def test_edit_description(self):
+        url = "/api/v1/project/{0}/edit/".format(self.project._id)
+        self.app.post_json(url,
+                            {"name": "description", "value": "Deep-fried"},
+                            auth=self.auth)
+        self.project.reload()
+        assert_equal(self.project.description, "Deep-fried")
+
     def test_project_api_url(self):
         url = self.project.api_url
         res = self.app.get(url, auth=self.auth)
         data = res.json
-        assert_equal(data['node_category'], 'project')
-        assert_equal(data['node_title'], self.project.title)
-        assert_equal(data['node_is_public'], self.project.is_public)
-        assert_equal(data['node_is_registration'], False)
-        assert_equal(data['node_id'], self.project._primary_key)
-        assert_equal(data['node_watched_count'], 0)
-        assert_true(data['user_is_contributor'])
-        assert_equal(data['logs'][-1]['action'], 'project_created')
+        assert_equal(data['node']['category'], 'project')
+        assert_equal(data['node']['title'], self.project.title)
+        assert_equal(data['node']['is_public'], self.project.is_public)
+        assert_equal(data['node']['is_registration'], False)
+        assert_equal(data['node']['id'], self.project._primary_key)
+        assert_equal(data['node']['watched_count'], 0)
+        assert_true(data['user']['is_contributor'])
+        assert_equal(data['node']['logs'][-1]['action'], 'project_created')
 
     def test_add_contributor_post(self):
         # Two users are added as a contributor via a POST request
@@ -109,7 +121,7 @@ class TestProjectViews(DbTestCase):
     def test_edit_node_title(self):
         url = "/api/v1/project/{0}/edit/".format(self.project._id)
         # The title is changed though posting form data
-        res = self.app.post(url, {"name": "title", "value": "Bacon"},
+        res = self.app.post_json(url, {"name": "title", "value": "Bacon"},
                             auth=self.auth).maybe_follow()
         self.project.reload()
         # The title was changed
@@ -152,7 +164,7 @@ class TestProjectViews(DbTestCase):
         assert_not_in("footag", self.project.tags)
 
     def test_register_template_page(self):
-        url = "/api/v1/project/{0}/register/FooBar_Template/".format(self.project._primary_key)
+        url = "/api/v1/project/{0}/register/Brandt_Preregistration/".format(self.project._primary_key)
         res = self.app.post_json(url, {}, auth=self.auth)
         self.project.reload()
         # A registration was added to the project's registration list
@@ -208,8 +220,7 @@ class TestProjectViews(DbTestCase):
         self.project.save()
         url = "/api/v1/project/{0}/".format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
-        print(res.json)
-        assert_equal(len(res.json['logs']), 10)
+        assert_equal(len(res.json['node']['logs']), 10)
 
 
 class TestWatchViews(DbTestCase):
@@ -230,12 +241,12 @@ class TestWatchViews(DbTestCase):
                         params={'project': self.project._primary_key},
                         user=self.user, log_date=dt.datetime.utcnow() - dt.timedelta(days=100),
                         api_key=self.auth[1],
-                        do_save=True)
+                        save=True)
         # A log added now
         self.last_log = self.project.add_log(NodeLog.TAG_ADDED, params={'project': self.project._primary_key},
                         user=self.user, log_date=dt.datetime.utcnow(),
                         api_key=self.auth[1],
-                        do_save=True)
+                        save=True)
         # Clear watched list
         self.user.watched = []
         self.user.save()

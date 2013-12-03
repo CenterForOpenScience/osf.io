@@ -64,7 +64,7 @@
             )
         %>
         <li class="project list-group-item list-group-item-node">
-            <h4 class="list-group-item-heading">
+            <h4 class="list-group-item-heading overflow" style="width:85%">
                 <a href="${node.url}">${node.title}</a>
             </h4>
                 % if metric == 'hits':

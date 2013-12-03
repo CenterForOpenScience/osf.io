@@ -44,62 +44,66 @@
 
 <!-- Apply view model -->
 <script type="text/javascript">
+
+    /**
+     * Unblock UI and display error modal
+     */
+    function registration_failed() {
+        unblock();
+        bootbox.alert('Registration failed');
+    }
+
     $(document).ready(function() {
-        schema = ${schema};
-        viewModel = new MetaData.ViewModel(${schema}, ${int(registered)}, ${[str(node_id)] + node_children_ids});
-        ko.applyBindings(viewModel, $('#registration_template')[0]);
-        viewModel.updateIdx('add', true);
+
+        registrationViewModel = new MetaData.ViewModel(
+            ${schema},
+            ${int(registered)},
+            ${[str(node['id'])] + node['children_ids']}
+        );
+        ko.applyBindings(registrationViewModel, $('#registration_template')[0]);
+        registrationViewModel.updateIdx('add', true);
+
         % if registered:
-            viewModel.unserialize(${payload});
+            registrationViewModel.unserialize(${payload});
         % endif
-##        $('#register-submit').on('click', function() {
-##            var $this = $(this);
-##            if (!$this.hasClass('disabled')) {
-##                $this.addClass('disabled');
-##                $this.closest('form').submit();
-##            }
-##            return false;
-##        });
 
         $('#registration_template form').on('submit', function() {
 
-            var submitBtn = $('#register-submit');
-            if (submitBtn.hasClass('disabled')) {
-                return false;
-            }
-
-            var serialized = viewModel.serialize(),
+            // Serialize responses
+            var serialized = registrationViewModel.serialize(),
                 data = serialized.data,
                 complete = serialized.complete;
 
+            // Clear continue text and stop if incomplete
             if (!complete) {
-                viewModel.continueText('');
+                registrationViewModel.continueText('');
                 return false;
             }
 
-            submitBtn.addClass('disabled');
+            // Block UI until request completes
+            block();
 
-            // Send data to OSF
+            // POST data
             $.ajax({
-                url: '${node_api_url}' + 'register/' + '${template_name if template_name else ''}/',
+                url: '${node['api_url']}' + 'register/' + '${template_name if template_name else ''}/',
                 type: "POST",
                 data: JSON.stringify(data),
                 contentType: "application/json",
-                success: function(response) {
-                    if (response.status === 'success')
-                        window.location.href = response.result;
-                    else if (response.status === 'error')
-                        window.location.reload();
-                },
-                fail: function() {
-                    submitBtn.removeClass('disabled');
-                },
                 dataType: 'json'
+            }).done(function(response) {
+                if (response.status === 'success')
+                    window.location.href = response.result;
+                else if (response.status === 'error')
+                    registration_failed();
+            }).fail(function() {
+                registration_failed();
             });
 
             // Stop event propagation
             return false;
 
         });
+
     });
+
 </script>

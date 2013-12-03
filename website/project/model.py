@@ -45,8 +45,10 @@ class MetaSchema(StoredObject):
     schema = fields.DictionaryField()
     category = fields.StringField()
 
-    # Version information
+    # Version of the Knockout metadata renderer to use (e.g. if data binds
+    # change)
     metadata_version = fields.IntegerField()
+    # Version of the schema to use (e.g. if questions, responses change)
     schema_version = fields.IntegerField()
 
 
@@ -54,8 +56,7 @@ def ensure_schemas():
     for schema in OSF_META_SCHEMAS:
         try:
             MetaSchema.find_one(
-                Q('name', 'eq', schema['name'])
-                &
+                Q('name', 'eq', schema['name']) &
                 Q('schema_version', 'eq', schema['schema_version'])
             )
         except:
@@ -116,24 +117,26 @@ class NodeLog(StoredObject):
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
 
-    DATE_FORMAT = '%m/%d/%Y %I:%M %p UTC'
+    DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
     # Log action constants
-    PROJECT_CREATED = "project_created"
-    NODE_CREATED = "node_created"
-    WIKI_UPDATED = "wiki_updated"
-    CONTRIB_ADDED = "contributor_added"
-    CONTRIB_REMOVED = "contributor_removed"
-    MADE_PUBLIC = "made_public"
-    MADE_PRIVATE = "made_private"
+    PROJECT_CREATED = 'project_created'
+    NODE_CREATED = 'node_created'
+    NODE_REMOVED = 'node_removed'
+    WIKI_UPDATED = 'wiki_updated'
+    CONTRIB_ADDED = 'contributor_added'
+    CONTRIB_REMOVED = 'contributor_removed'
+    MADE_PUBLIC = 'made_public'
+    MADE_PRIVATE = 'made_private'
     TAG_ADDED = 'tag_added'
     TAG_REMOVED = 'tag_removed'
-    EDITED_TITLE = "edit_title"
+    EDITED_TITLE = 'edit_title'
+    EDITED_DESCRIPTION = 'edit_description'
     PROJECT_REGISTERED = 'project_registered'
-    FILE_ADDED = "file_added"
-    FILE_REMOVED = "file_removed"
+    FILE_ADDED = 'file_added'
+    FILE_REMOVED = 'file_removed'
     FILE_UPDATED = 'file_updated'
-    NODE_FORKED = "node_forked"
+    NODE_FORKED = 'node_forked'
 
     @property
     def node(self):
@@ -234,7 +237,7 @@ class NodeFile(GuidStoredObject):
 
     @property
     def download_url(self):
-        return "{}files/download/{}/version/{}/".format(
+        return '{}files/download/{}/version/{}/'.format(
             self.node.api_url, self.filename, self.latest_version_number)
 
 
@@ -250,6 +253,21 @@ class Tag(GuidStoredObject):
 
 
 class Node(GuidStoredObject):
+
+    # Node fields that trigger an update to Solr on save
+    SOLR_UPDATE_FIELDS = {
+        'title',
+        'category',
+        'description',
+        'contributors',
+        'tags',
+        'is_fork',
+        'is_registration',
+        'is_public',
+        'is_deleted',
+        'wiki_pages_current',
+    }
+
     _id = fields.StringField(primary=True)
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -307,31 +325,34 @@ class Node(GuidStoredObject):
         return {
             'title': self.title,
             'date_created': self.date_created,
-            "is_public": self.is_public,
-            "creator": self.creator,
-            "contributors": self.contributors
+            'is_public': self.is_public,
+            'creator': self.creator,
+            'contributors': self.contributors
         }
 
     def can_edit(self, user, api_key=None):
-
         return (
-            self.is_public
-            or self.is_contributor(user)
+            self.is_contributor(user)
             or (api_key is not None and self is api_key.node)
             or (bool(user) and user == self.creator)
         )
 
+    def can_view(self, user, api_key=None):
+        return self.is_public or self.can_edit(user, api_key)
+
     def save(self, *args, **kwargs):
         rv = super(Node, self).save(*args, **kwargs)
-        self.update_solr()
+        # Only update Solr if at least one watched field has changed
+        if self.SOLR_UPDATE_FIELDS.intersection(rv['saved_fields']):
+            self.update_solr()
         return rv
 
     def set_title(self, title, user, api_key=None, save=False):
-        '''Sets the title of this Node and logs it.
+        '''Set the title of this Node and log it.
 
-        :param title: A string, the new title
-        :param user: A User object
-        :param api_key: An ApiKey object
+        :param str title: The new title.
+        :param User user: User who made the action.
+        :param ApiKey api_key: Optional API key.
         '''
         original_title = self.title
         self.title = title
@@ -348,6 +369,30 @@ class Node(GuidStoredObject):
         )
         if save:
             self.save()
+        return None
+
+    def set_description(self, description, user, api_key=None, save=False):
+        '''Set the description and log the event.
+
+        :param str description: The new description
+        :param User user: The user who changed the description.
+        :param ApiKey api_key: Optional API key.
+        '''
+        original = self.description
+        self.description = description
+        if save:
+            self.save()
+        self.add_log(
+            action=NodeLog.EDITED_DESCRIPTION,
+            params={
+                'project': self.parent,  # None if no parent
+                'node': self._primary_key,
+                'description_new': self.description,
+                'description_original': original
+            },
+            user=user,
+            api_key=api_key
+        )
         return None
 
     def update_solr(self):
@@ -405,29 +450,42 @@ class Node(GuidStoredObject):
 
             update_solr(solr_document)
 
-    def remove_node(self, user, date=None):
-        if not date:
-            date = datetime.datetime.utcnow()
+    def remove_node(self, user, api_key=None, date=None, top=True):
+        """Remove node and recursively remove its children. Does not remove
+        nodes from database; instead, removed nodes are flagged as deleted.
+        Git repos are also not deleted. Adds a log to the parent node if top
+        is True.
 
-        node_objects = []
+        :param user: User removing the node
+        :param api_key: API key used to remove the node
+        :param date: Date node was removed
+        :param top: Is this the first node being removed?
 
-        if self.nodes and len(self.nodes) > 0:
-            node_objects = self.nodes
+        """
+        if not self.can_edit(user, api_key):
+            return False
 
-        #if self.node_registations and len(self.node_registrations) > 0:
-        #    return False
+        date = date or datetime.datetime.utcnow()
 
-        for node in node_objects:
-            #if not node.user_is_contributor(user):
-            #    return False
-
+        # Remove child nodes
+        for node in self.nodes:
             if not node.category == 'project':
-                if not node.remove_node(user, date=date):
+                if not node.remove_node(user, api_key, date=date, top=False):
                     return False
+
+        # Add log to parent
+        if top and self.node__parent:
+            self.node__parent[0].add_log(
+                NodeLog.NODE_REMOVED,
+                params={
+                    'project': self._primary_key,
+                },
+                user=user,
+                log_date=datetime.datetime.utcnow(),
+            )
 
         # Remove self from parent registration list
         if self.is_registration:
-            # registered_from = Node.load(self.registered_from)
             try:
                 self.registered_from.registration_list.remove(self._primary_key)
                 self.registered_from.save()
@@ -451,7 +509,7 @@ class Node(GuidStoredObject):
     def fork_node(self, user, api_key=None, title='Fork of '):
 
         # todo: should this raise an error?
-        if not self.can_edit(user, api_key):
+        if not self.can_view(user, api_key):
             return
 
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
@@ -464,7 +522,7 @@ class Node(GuidStoredObject):
         forked.logs = self.logs
         forked.tags = self.tags
 
-        for i, node_contained in enumerate(original.nodes):
+        for node_contained in original.nodes:
             forked_node = node_contained.fork_node(user, api_key=api_key, title='')
             if forked_node is not None:
                 forked.nodes.append(forked_node)
@@ -474,6 +532,7 @@ class Node(GuidStoredObject):
         forked.forked_date = when
         forked.forked_from = original
         forked.is_public = False
+        forked.creator = user
         forked.contributor_list = []
 
         forked.add_contributor(user, log=False, save=False)
@@ -481,14 +540,14 @@ class Node(GuidStoredObject):
         forked.add_log(
             action=NodeLog.NODE_FORKED,
             params={
-                'project':original.parent_id,
-                'node':original._primary_key,
-                'registration':forked._primary_key,
+                'project': original.parent_id,
+                'node': original._primary_key,
+                'registration': forked._primary_key,
             },
             user=user,
             api_key=api_key,
             log_date=when,
-            do_save=False,
+            save=False,
         )
 
         forked.save()
@@ -503,6 +562,15 @@ class Node(GuidStoredObject):
         return forked#self
 
     def register_node(self, schema, user, api_key, template, data):
+        """Make a frozen copy of a node.
+
+        :param schema: Schema object
+        :param user: User registering the node
+        :param api_key: API key registering the node
+        :template: Template name
+        :data: Form data
+
+        """
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
         when = datetime.datetime.utcnow()
@@ -525,7 +593,7 @@ class Node(GuidStoredObject):
         registered.nodes = []
 
         # todo: should be recursive; see Node.fork_node()
-        for i, original_node_contained in enumerate(original.nodes):
+        for original_node_contained in original.nodes:
 
             node_contained = original_node_contained.clone()
             node_contained.save()
@@ -844,7 +912,7 @@ class Node(GuidStoredObject):
 
         return node_file
 
-    def add_log(self, action, params, user, api_key=None, log_date=None, do_save=True):
+    def add_log(self, action, params, user, api_key=None, log_date=None, save=True):
         log = NodeLog()
         log.action=action
         log.user=user
@@ -854,7 +922,7 @@ class Node(GuidStoredObject):
         log.params=params
         log.save()
         self.logs.append(log)
-        if do_save:
+        if save:
             self.save()
         if user:
             increment_user_activity_counters(user._primary_key, action, log.date)
@@ -875,6 +943,15 @@ class Node(GuidStoredObject):
                     self._primary_key
                 )
         logging.error("Node {0} has a parent that is not a project".format(self._id))
+        return None
+
+    @property
+    def parent(self):
+        '''The parent node, if it exists, otherwise ``None``.'''
+        try:
+            return self.node__parent[0]
+        except IndexError:
+            pass
         return None
 
     @property
@@ -944,11 +1021,15 @@ class Node(GuidStoredObject):
             return False
 
     def add_contributor(self, contributor, user=None, log=True, api_key=None, save=False):
-        '''Add a contributor to the project.
+        """Add a contributor to the project.
 
         :param contributor: A User object, the contributor to be added
         :param user: A User object, the user who added the contributor or None.
-        '''
+        :param log: Add log to self
+        :param api_key: API key used to add contributors
+        :param save: Save after adding contributor
+        :return: Boolean--whether contributor was added
+        """
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
         if contrib_to_add._primary_key not in self.contributors:
@@ -963,7 +1044,8 @@ class Node(GuidStoredObject):
                         'contributors': [contrib_to_add._primary_key],
                     },
                     user=user,
-                    api_key=api_key
+                    api_key=api_key,
+                    save=save,
                 )
             if save:
                 self.save()
@@ -972,11 +1054,14 @@ class Node(GuidStoredObject):
             return False
 
     def add_contributors(self, contributors, user=None, log=True, api_key=None, save=False):
-        '''Add multiple contributors
+        """Add multiple contributors
 
         :param contributors: A list of User objects to add as contributors.
         :param user: A User object, the user who added the contributors.
-        '''
+        :param log: Add log to self
+        :param api_key: API key used to add contributors
+        :param save: Save after adding contributor
+        """
         for contrib in contributors:
             self.add_contributor(contributor=contrib, user=user, log=False, save=False)
         if log:
@@ -989,10 +1074,10 @@ class Node(GuidStoredObject):
                 },
                 user=user,
                 api_key=api_key,
+                save=save,
             )
         if save:
             self.save()
-        return None
 
     def add_nonregistered_contributor(self, name, email, user, api_key=None, save=False):
         '''Add a non-registered contributor to the project.

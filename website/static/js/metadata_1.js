@@ -1,3 +1,8 @@
+/**
+ * Knockout models for controlling meta-data; bound to HTML in
+ * website/templates/metadata/metadata_*.mako
+ */
+
 var MetaData = (function() {
 
     var SEPARATOR = '-';

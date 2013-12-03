@@ -21,11 +21,14 @@ Messages = {
  * Return the id of the current node by parsing the current URL.
  */
 window.nodeToUse = function(){
-    if (location.pathname.match("\/project\/.*\/node\/.*")) {
-        return location.pathname.match("\/project\/.*?\/node\/(.*?)\/.*")[1];
-    } else {
-        return location.pathname.match("\/project\/(.*?)\/.*")[1];
-}
+    var match;
+    match = location.pathname.match("\/project\/.*?\/node\/(.*?)\/.*");
+    if (match)
+        return match[1];
+    match = location.pathname.match("\/project\/(.*?)\/.*");
+    if (match)
+        return match[1];
+    return undefined;
 };
 
 
@@ -33,39 +36,113 @@ window.nodeToUse = function(){
  * Return the api url for the current node by parsing the current URL.
  */
 window.nodeToUseUrl = function(){
-    try{
-        if (location.pathname.match("\/project\/.*\/node\/.*")) {
-            return '/api/v1' + location.pathname.match("(\/project\/.*?\/node\/.*?)\/.*")[1] + "/";
-        } else {
-            return '/api/v1' + location.pathname.match("(\/project\/.*?)\/.*")[1] + "/";
-        }
-    } catch(err) {
-        return undefined;
-    }
+    var match;
+    match = location.pathname.match("(\/project\/.*?\/node\/.*?)\/.*");
+    if (match)
+        return '/api/v1' + match[1] + '/';
+    match = location.pathname.match("(\/project\/.*?)\/.*");
+    if (match)
+        return '/api/v1' + match[1] + '/';
+    return undefined;
 };
 
+window.block = function() {
+    $.blockUI({
+        css: {
+            border: 'none',
+            padding: '15px',
+            backgroundColor: '#000',
+            '-webkit-border-radius': '10px',
+            '-moz-border-radius': '10px',
+            opacity: .5,
+            color: '#fff'
+        },
+        message: 'Please wait'
+    });
+};
+
+window.unblock = function() {
+    $.unblockUI();
+};
 
 window.NodeActions = {};  // Namespace for NodeActions
 // TODO: move me to the ProjectViewModel
 NodeActions.forkNode = function(){
+
+    // Block page
+    block();
+
+    // Fork node
     $.ajax({
-        url: nodeToUseUrl() + "fork/",
-        type: "POST",
+        url: nodeToUseUrl() + 'fork/',
+        type: 'POST'
     }).done(function(response) {
         window.location = response;
+    }).fail(function() {
+        unblock();
+        bootbox.alert('Forking failed');
+    });
+
+};
+
+// todo: discuss; this code not used
+NodeActions.addNodeToProject = function(node, project) {
+    $.ajax({
+        url: '/project/' + project + '/addnode/' + node,
+        type: 'POST',
+        data: 'node=' + node + '&project=' + project
+    }).done(function(msg) {
+        var $node = $('#node' + node);
+        $node.removeClass('primary').addClass('success');
+        $node.onclick = function(){};
+        $node.html('Added');
     });
 };
 
-NodeActions.addNodeToProject = function(node, project){
-    $.ajax({
-       url:"/project/" + project + "/addnode/" + node,
-       type:"POST",
-       data:"node="+node+"&project="+project}).done(function(msg){
-           $('#node'+node).removeClass('primary').addClass('success');
-           $('#node'+node).onclick = function(){};
-           $('#node'+node).html('Added');
-       });
-};
+$(function(){
+    $('#newComponent form').on('submit', function(e) {
+          e.preventDefault();
+
+          $("#add-component-submit")
+              .attr("disabled", "disabled")
+              .text("Adding");
+
+          if ($.trim($("#title").val())==''){
+
+              $("#alert").text("The new component title cannot be empty");
+
+              $("#add-component-submit")
+                      .removeAttr("disabled","disabled")
+                      .text("OK");
+          }
+          else if ($(e.target).find("#title").val().length>200){
+              $("#alert").text("The new component title cannot be more than 200 characters.");
+
+              $("#add-component-submit")
+                      .removeAttr("disabled","disabled")
+                      .text("OK");
+          }
+          else{
+              $.ajax({
+                   url: $(e.target).attr("action"),
+                   type:"POST",
+                   timeout:60000,
+                   data:$(e.target).serialize()
+              }).success(function(){
+                  location.reload();
+              }).fail(function(jqXHR, textStatus, errorThrown){
+                    if(textStatus==="timeout") {
+                        $("#alert").text("Add component timed out"); //Handle the timeout
+                    }else{
+                        $("#alert").text('Add component failed');
+                    }
+                    $("#add-component-submit")
+                      .removeAttr("disabled","disabled")
+                      .text("OK");
+              });
+          }
+     });
+});
 
 NodeActions.removeUser = function(userid, name) {
     bootbox.confirm('Remove ' + name + ' from contributor list?', function(result) {
@@ -125,8 +202,6 @@ NodeActions.openCloseNode = function(node_id){
 
 
 $(document).ready(function() {
-
-//    $("#browser").treeview();  // Initiate filebrowser
 
     ////////////////////
     // Event Handlers //

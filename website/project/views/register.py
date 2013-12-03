@@ -1,12 +1,12 @@
-
-import os
+# -*- coding: utf-8 -*-
 import json
 import logging
 
 from framework import request, status
 from framework.auth import must_have_session_auth
 from ..decorators import must_not_be_registration, must_be_valid_project, must_be_contributor, must_be_contributor_or_public
-from framework.forms.utils import sanitize
+from framework.forms.utils import sanitize_payload
+from framework.exceptions import SanitizeError
 from .node import _view_project
 
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -69,8 +69,6 @@ def node_register_template_page(*args, **kwargs):
             Q('name', 'eq', template_name)
         ).sort('-schema_version')[0]
 
-    #meta_query = Q('name', 'eq', template_name)
-    #meta_schema = MetaSchema.find_one(Q('name', 'eq', template_name))
     schema = meta_schema.schema
 
     rv = {
@@ -84,6 +82,7 @@ def node_register_template_page(*args, **kwargs):
     rv.update(_view_project(node_to_use, user))
     return rv
 
+
 @must_have_session_auth
 @must_be_valid_project
 @must_be_contributor # returns user, project
@@ -96,13 +95,14 @@ def node_register_template_page_post(*args, **kwargs):
 
     data = request.json
 
-    #for k, v in data.items():
-    #    if v is not None and v != sanitize(v):
-    #        # todo interface needs to deal with this
-    #        status.push_status_message('Invalid submission.')
-    #        return json.dumps({
-    #            'status': 'error',
-    #        })
+    # Sanitize payload data
+    try:
+        sanitize_payload(data)
+    except SanitizeError:
+        return {
+            'status': 'error',
+            'msg': 'Invalid submission',  # todo: use error message
+        }
 
     template = kwargs['template']
     # TODO: Using json.dumps because node_to_use.registered_meta's values are
