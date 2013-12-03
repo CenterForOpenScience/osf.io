@@ -32,6 +32,7 @@ var HGrid = {
     @param defaultOptions.forceFitColumns true
     @param defaultOptions.autoHeight true
     @param defaultOptions.navigation true
+    @param defaultOptions.maxFileSize 256
     **/
     defaultOptions: {
         container: null,
@@ -56,7 +57,8 @@ var HGrid = {
         topCrumb: true,
         forceFitColumns: true,
         autoHeight: true,
-        navigation: true
+        navigation: true,
+        maxFileSize: 256
     },
 
     Slick: {
@@ -451,7 +453,8 @@ var HGrid = {
             clickable: hGrid.options.clickUploadElement,
             previewsContainer: hGrid.options.dropZonePreviewsContainer,
             addRemoveLinks: true,
-            dropDestination: null
+            dropDestination: null,
+            maxFilesize: hGrid.options.maxFileSize
         } );
 
         hGrid.dropZoneObj = myDropzone;
