@@ -786,6 +786,24 @@ class TestRegisterNode(DbTestCase):
     def test_forked_from(self):
         assert_equal(self.registration.forked_from, None)
 
+    def test_creator(self):
+        user2 = UserFactory()
+        self.project.add_contributor(user2)
+        registration = self.project.register_node(
+            user=user2,
+            api_key=None,
+            template="Some Format",
+            data="Some words or something",
+        )
+        assert_equal(registration.creator, self.user)
+
+    def test_logs(self):
+        # Registered node has all logs except the Project Registered log
+        assert_equal(self.registration.logs, self.project.logs[:-1])
+
+    def test_registration_log(self):
+        assert_equal(self.project.logs[-1].action, 'project_registered')
+
     def test_is_registered(self):
         assert_true(self.registration.is_registration)
 
