@@ -710,6 +710,18 @@ class TestForkNode(DbTestCase):
     def test_forked_title(self):
         assert_equal(self.fork.title, 'Fork of {}'.format(self.project.title))
 
+    def test_forked_category(self):
+        assert_equal(self.project.category, self.fork.category)
+
+    def test_forked_description(self):
+        assert_equal(self.project.description, self.fork.description)
+
+    def test_logs(self):
+        assert_equal(self.project.logs, self.fork.logs[:-1])
+
+    def test_tags(self):
+        assert_equal(self.project.tags, self.fork.tags)
+
     def test_is_forked(self):
         assert_true(self.fork.is_fork)
 
