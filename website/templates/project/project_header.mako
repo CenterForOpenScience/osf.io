@@ -15,12 +15,18 @@
 
             <div class="col-md-8">
                 %if parent['id']:
+                    % if parent['is_public'] or parent['is_contributor']:
                     <h1 class="node-parent-title">
                         <a href="/project/${parent['id']}/">${parent['title']}</a> /
                     </h1>
+                    % else:
+                         <h1 class="node-parent-title unavailable">
+                             <span>Private Project</span> /
+                         </h1>
+                    %endif
                 %endif
                 <h1 id="nodeTitleEditable" class="node-title">${node['title']}</h1>
-            </div><!-- end col-md -->
+            </div><!-- end col-md-->
 
             <div class="col-md-4">
                 <div class="btn-toolbar node-control pull-right">
@@ -49,7 +55,6 @@
 
                         </a>
 
-
                         <a
                             rel="tooltip"
                             title="Number of times this node has been forked (copied)"
@@ -67,7 +72,6 @@
                     </div><!-- end btn-grp -->
                 </div><!-- end btn-toolbar -->
             </div><!-- end col-md-->
-
 
         </div><!-- end row -->
 

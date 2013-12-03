@@ -342,11 +342,14 @@ def _view_project(node_to_use, user, api_key=None):
             wiki_home = BeautifulSoup(wiki_home)
     else:
         wiki_home = '<p><em>No wiki content</em></p>'
-
+    parent = node_to_use.parent
     data = {
         'node': NodeSerializer(node_to_use, extra={"wiki_home": wiki_home}).data,
-        'parent': NodeSerializer(node_to_use.parent,
-                                only=('id', 'title', 'url', 'api_url')).data,
+        'parent': NodeSerializer(parent,
+                                only=('id', 'title', 'url', 'api_url', 'is_public'),
+                                extra={
+                                    'is_contributor': parent.is_contributor(user) if parent else ''
+                                }).data,
         'user': {
             'is_contributor': node_to_use.is_contributor(user),
             'can_edit': (node_to_use.can_edit(user, api_key)
