@@ -24,11 +24,6 @@ seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
     return ''.join(output)
 
 # TODO: These belong in project model
-def new_project(title, description, user):
-    project = new_node('project', title, user, description)
-    return project
-
-
 def new_node(category, title, user, description=None, project=None):
     # tag: database
     category = category.strip().lower()

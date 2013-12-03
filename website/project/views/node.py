@@ -14,7 +14,7 @@ from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
 from framework.auth import must_have_session_auth, get_api_key
 
-from website.project import new_node, new_project, clean_template_name
+from website.project import new_node, clean_template_name
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from website.project.forms import NewProjectForm, NewNodeForm
