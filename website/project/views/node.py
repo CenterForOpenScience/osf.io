@@ -473,11 +473,14 @@ def get_summary(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
 
     if node_to_use.can_view(user, api_key):
-        node_data = NodeSerializer(node_to_use, only=('id', 'url', 'api_url',
-                                                'title', 'is_registration',
-                                                'registered_date')).data
-        user_data = {"can_view": True}
         summary = {
+            'can_view': True,
+            'id': node_to_use._primary_key,
+            'url': node_to_use.url,
+            'api_url': node_to_use.api_url,
+            'title': node_to_use.title,
+            'is_registration': node_to_use.is_registration,
+            'registered_date': node_to_use.registered_date.strftime('%m/%d/%y %I:%M %p') if node_to_use.is_registration else None,
             'nlogs': None,
             'ua_count': None,
             'ua': None,
@@ -492,14 +495,10 @@ def get_summary(*args, **kwargs):
                 'non_ua': non_ua,
             })
     else:
-        node_data = {}
-        user_data = {
+        summary = {
             'can_view': False,
         }
-        summary = {}
     return {
-        "node": node_data,
-        "user": user_data,
         'summary': summary,
     }
 
