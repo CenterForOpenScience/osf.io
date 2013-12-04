@@ -1,5 +1,5 @@
 {
-    "name": "Brandt_Preregistration",
+    "name": "Replication Recipe (Brandt et al., 2013): Pre-Registration",
     "schema": {
         "pages": [
             {
@@ -52,27 +52,6 @@
                     {"type": "textarea", "id": "item26", "label": "My exclusion criteria are (e.g., handling outliers, removing participants from analysis)"},
                     {"type": "textarea", "id": "item27", "label": "My analysis plan is (justify differences from the original)"},
                     {"type": "textarea", "id": "item28", "label": "A successful replication is defined as"}
-                ]
-            },
-            {
-                "id": "page5",
-                "title": "Registering the Replication Attempt",
-                "contents": [
-                    {"type": "textfield", "id": "item29", "label": "The finalized materials, procedures, analysis plan etc of the replication are registered here"}
-                ]
-            },
-            {
-                "id": "page6",
-                "title": "Reporting the Replication",
-                "contents": [
-                    {"type": "textfield", "id": "item30", "label": "The effect size of the replication is"},
-                    {"type": "textfield", "id": "item31", "label": "The confidence interval of the replication effect size is"},
-                    {"type": "select",    "id": "item32", "label": "The replication effect size is", "options": ["significantly different from the original effect size", "not significantly different from the original effect size"], "caption": "Choose..."},
-                    {"type": "select",    "id": "item33", "label": "I judge the replication to be a(n)", "options": ["success", "informative failure to replicate", "practical failure to replicate", "inconclusive"], "caption": "Choose..."},
-                    {"type": "textarea",  "id": "item34", "label": "I judge it so because"},
-                    {"type": "textfield", "id": "item35", "label": "Interested experts can obtain my data and syntax here"},
-                    {"type": "textfield", "id": "item36", "label": "All of the analyses were reported in the report or are available here"},
-                    {"type": "textarea",  "id": "item37", "label": "The limitations of my replication study are"}
                 ]
             }
         ]

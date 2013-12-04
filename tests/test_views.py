@@ -173,7 +173,7 @@ class TestProjectViews(DbTestCase):
         assert_not_in("footag", self.project.tags)
 
     def test_register_template_page(self):
-        url = "/api/v1/project/{0}/register/Brandt_Preregistration/".format(self.project._primary_key)
+        url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(self.project._primary_key)
         res = self.app.post_json(url, {}, auth=self.auth)
         self.project.reload()
         # A registration was added to the project's registration list

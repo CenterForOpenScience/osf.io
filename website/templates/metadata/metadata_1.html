@@ -1,4 +1,3 @@
-
 <style>
 
     .metadata-content {
@@ -34,7 +33,7 @@
 
 <!-- Item container template -->
 <script id="item" type="text/html">
-    <div class="control-group" data-bind="attr:{id:uidFmt}">
+    <div class="form-group" data-bind="attr:{id:uidFmt}">
         <label class="control-label" data-bind="css:{required:required}">
             <span data-bind="if:required">* </span>
             <span data-bind="text:label, attr:{for:id}"></span>
@@ -49,13 +48,13 @@
 
 <!-- Item templates -->
 <script id="textfield" type="text/html">
-    <input type="text" data-bind="value:value, valueUpdate:'onblur', attr:{name:id, id:id}, disable:disable || $root.disable" />
+    <input type="text" class="form-control" data-bind="value:value, valueUpdate:'onblur', attr:{name:id, id:id}, disable:disable || $root.disable" />
 </script>
 <script id="textarea" type="text/html">
-    <textarea data-bind="value:value, valueUpdate:'onblur', attr:{name:id, id:id}, disable:disable || $root.disable"></textarea>
+    <textarea class="form-control" data-bind="value:value, valueUpdate:'onblur', attr:{name:id, id:id}, disable:disable || $root.disable"></textarea>
 </script>
 <script id="select" type="text/html">
-    <select data-bind="options: options, value:value, attr:{name:id, id:id, multiple:multiple}, optionsCaption:caption, disable:disable || $root.disable"></select>
+    <select class="form-control" data-bind="options: options, value:value, attr:{name:id, id:id, multiple:multiple}, optionsCaption:caption, disable:disable || $root.disable"></select>
 </script>
 <script id="radio" type="text/html">
     <div data-bind="foreach:options">
@@ -68,14 +67,14 @@
 <script id="checkbox" type="text/html">
     <div data-bind="foreach:options">
         <div>
-            <input type="checkbox" data-bind="value:$data, checked:$parent.value, disable:$parent.disable || $parent.$root.disable" />
+            <input type="checkbox" class="form-control" data-bind="value:$data, checked:$parent.value, disable:$parent.disable || $parent.$root.disable" />
             <span data-bind="text:$data"></span>
         </div>
     </div>
 </script>
 <script id="file" type="text/html">
-    <select data-bind="value:node, options:nodes, optionsCaption:caption, disable:disable || $root.disable"></select>
-    <select data-bind="visible:files, value:value, options:files, optionsCaption:caption, disable:disable || $root.disable"></select>
+    <select class="form-control" data-bind="value:node, options:nodes, optionsCaption:caption, disable:disable || $root.disable"></select>
+    <select class="form-control" data-bind="visible:files, value:value, options:files, optionsCaption:caption, disable:disable || $root.disable"></select>
 </script>
 
 <div id="meta-data-container">
@@ -88,7 +87,7 @@
 
     <!-- Pagination -->
     <div data-bind="if:npages > 1">
-        <div class="control-group">
+        <div class="form-group">
             <div class="controls">
                 <button class="btn btn-default" data-bind="click:previous, disable:isFirst">Previous</button>
                 <span class="progress-meter" style="padding: 0px 10px 0px 10px;">
