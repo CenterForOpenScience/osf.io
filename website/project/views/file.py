@@ -211,6 +211,7 @@ def upload_file_public(*args, **kwargs):
     user = kwargs['user']
     node_to_use = node or project
     api_key = get_api_key()
+    do_redirect = request.form.get('redirect', False)
 
     uploaded_file = request.files.get('file')
     uploaded_file_content = uploaded_file.read()
@@ -266,6 +267,10 @@ def upload_file_public(*args, **kwargs):
             str(node_to_use._id)
         ])
     }
+
+    if do_redirect:
+        return redirect(request.referrer)
+
     return [file_info], 201
 
 @must_be_valid_project # returns project
