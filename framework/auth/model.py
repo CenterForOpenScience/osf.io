@@ -148,6 +148,14 @@ class User(GuidStoredObject):
         except:
             return []
 
+    def serialize(self):
+        return {
+            'id': self._primary_key,
+            'fullname': self.fullname,
+            'registered': self.is_registered,
+            'url': self.url
+        }
+
     ###### OSF-Specific methods ######
 
     def watch(self, watch_config, save=False):

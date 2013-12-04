@@ -8,7 +8,6 @@ from framework.exceptions import HTTPError
 
 from website.project.model import NodeLog
 from website.project.decorators import must_be_valid_project
-from website.project.serializers import LogSerializer
 
 
 logger = logging.getLogger(__name__)
@@ -22,7 +21,7 @@ def get_log(log_id):
 
     if not node_to_use.can_view(user, api_key):
         raise HTTPError(http.FORBIDDEN)
-    return {'log': LogSerializer(log).data}
+    return {'log': log.serialize()}
 
 
 @must_be_valid_project
@@ -47,4 +46,4 @@ def get_logs(*args, **kwargs):
     chrono_logs = reversed(node_to_use.logs)
     logs = [log for log in chrono_logs[:count]
                     if log and log.node.can_view(user, api_key)]
-    return {'logs': LogSerializer(logs).data}
+    return {'logs': [log.serialize() for log in logs]}

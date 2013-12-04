@@ -21,7 +21,7 @@ from framework.auth import get_user, User
 from framework.analytics import get_basic_counters, increment_user_activity_counters
 from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
-from framework import StoredObject, fields
+from framework import StoredObject, fields, utils
 from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
 
@@ -184,6 +184,20 @@ class NodeLog(StoredObject):
             'registered' : True,
         }
 
+    def serialize(self):
+        '''Return a dictionary representation of the log.'''
+        return {
+            'id': str(self._primary_key),
+            'user': self.user.serialize() if self.user else None,
+            'contributors': [self._render_log_contributor(c) for c in self.params.get("contributors", [])],
+            'contributor': self._render_log_contributor(self.params.get("contributor", {})),
+            'api_key': self.api_key.label if self.api_key else '',
+            'action': self.action,
+            'params': self.params,
+            'date': utils.rfcformat(self.date),
+            'node': self.node.serialize() if self.node else None
+        }
+
 
 class NodeFile(GuidStoredObject):
 
@@ -307,15 +321,6 @@ class Node(GuidStoredObject):
     #comment_schema = OSF_META_SCHEMAS['osf_comment']
 
     _meta = {'optimistic': True}
-
-    def serialize(self):
-        return {
-            'title': self.title,
-            'date_created': self.date_created,
-            'is_public': self.is_public,
-            'creator': self.creator,
-            'contributors': self.contributors
-        }
 
     def can_edit(self, user, api_key=None):
         return (
@@ -1222,6 +1227,17 @@ class Node(GuidStoredObject):
         else:
             return get_basic_counters('node:%s' % self._primary_key)
 
+    def serialize(self):
+        # TODO: incomplete implementation
+        return {
+            'id': str(self._primary_key),
+            'category': self.project_or_component,
+            'url': self.url,
+            'title': self.title,
+            'api_url': self.api_url,
+            'is_public': self.is_public
+        }
+
 
 class NodeWikiPage(GuidStoredObject):
 
@@ -1266,6 +1282,8 @@ class NodeWikiPage(GuidStoredObject):
         if self.node:
             self.node.update_solr()
         return rv
+
+
 
 class WatchConfig(StoredObject):
 

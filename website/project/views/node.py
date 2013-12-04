@@ -22,7 +22,6 @@ from website.project.forms import NewProjectForm, NewNodeForm
 from website.models import WatchConfig
 from website import settings
 from website.views import _render_nodes
-from website.project.serializers import LogSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -345,7 +344,7 @@ def _view_project(node_to_use, user, api_key=None):
         wiki_home = '<p><em>No wiki content</em></p>'
     parent = node_to_use.parent
     recent_logs = list(reversed(node_to_use.logs)[:10])
-    recent_logs_dicts = LogSerializer(recent_logs).data
+    recent_logs_dicts = [log.serialize() for log in recent_logs]
     data = {
         'node': {
             'id': node_to_use._primary_key,

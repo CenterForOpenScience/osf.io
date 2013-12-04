@@ -32,8 +32,7 @@ bleach==1.2.2
 pystache==0.5.3
 # Development version of modular-odm
 -e git://github.com/CenterForOpenScience/modular-odm.git@develop#egg=modular-odm
-# Development version of marshmallow
--e git://github.com/sloria/marshmallow.git@dev#egg=marshmallow
+
 
 # Assets
 webassets==0.9

@@ -9,6 +9,7 @@ from dateutil import parser
 
 from framework.analytics import get_total_activity_count
 from framework.auth import User
+from framework import utils
 from framework.bcrypt import check_password_hash
 from website import settings, filters
 from website.project.model import ApiKey, NodeFile, NodeLog
@@ -51,6 +52,13 @@ class TestUser(DbTestCase):
         self.user.save()
         assert_true(self.user.is_watching(watched_node))
         assert_false(self.user.is_watching(unwatched_node))
+
+    def test_serialize(self):
+        d = self.user.serialize()
+        assert_equal(d['id'], str(self.user._primary_key))
+        assert_equal(d['fullname'], self.user.fullname)
+        assert_equal(d['registered'], self.user.is_registered)
+        assert_equal(d['url'], self.user.url)
 
     def test_set_password(self):
         user = User(username="nick@cage.com", fullname="Nick Cage", is_registered=True)
@@ -489,6 +497,23 @@ class TestNodeLog(DbTestCase):
     def test_node_log_factory(self):
         log = NodeLogFactory()
         assert_true(log.action)
+
+    def test_serialize(self):
+        node = NodeFactory(category="hypothesis")
+        log = NodeLogFactory(params={'node': node._primary_key})
+        node.logs.append(log)
+        node.save()
+        d = log.serialize()
+        assert_equal(d['action'], log.action)
+        assert_equal(d['node']['category'], 'component')
+        assert_equal(d['node']['url'], log.node.url)
+        assert_equal(d['date'], utils.rfcformat(log.date))
+        assert_in('contributors', d)
+        assert_equal(d['user']['fullname'], log.user.fullname)
+        assert_equal(d['user']['url'], log.user.url)
+        assert_in('api_key', d)
+        assert_equal(d['params'], log.params)
+        assert_equal(d['node']['title'], log.node.title)
 
     def test_tz_date(self):
         assert_equal(self.log.tz_date.tzinfo, pytz.UTC)
