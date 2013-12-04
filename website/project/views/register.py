@@ -49,8 +49,7 @@ def node_register_template_page(*args, **kwargs):
     user = kwargs['user']
 
     template_name = kwargs['template']\
-        .replace(' ', '_')\
-        .replace('.txt', '')
+        .replace(' ', '_')
 
     if node_to_use.is_registration and node_to_use.registered_meta:
         registered = True

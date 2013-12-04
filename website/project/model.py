@@ -54,7 +54,15 @@ class MetaSchema(StoredObject):
     schema_version = fields.IntegerField()
 
 
-def ensure_schemas():
+def ensure_schemas(clear=True):
+    """Import meta-data schemas from JSON to database, optionally clearing
+    database first.
+
+    :param clear: Clear schema database before import
+
+    """
+    if clear:
+        MetaSchema.remove()
     for schema in OSF_META_SCHEMAS:
         try:
             MetaSchema.find_one(
@@ -62,6 +70,7 @@ def ensure_schemas():
                 Q('schema_version', 'eq', schema['schema_version'])
             )
         except:
+            schema['name'] = schema['name'].replace(' ', '_')
             schema_obj = MetaSchema(**schema)
             schema_obj.save()
 
