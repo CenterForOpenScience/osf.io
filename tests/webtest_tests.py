@@ -11,11 +11,13 @@ from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
                             NodeLogFactory, ApiKeyFactory, NodeFactory)
 
 from website import settings
+from website.project.metadata.schemas import OSF_META_SCHEMAS
 from framework import app
 
+
 # Only uncomment if running these tests in isolation
-# from website.app import init_app
-# app = init_app(set_backends=False, routes=True)
+#from website.app import init_app
+#app = init_app(set_backends=False, routes=True)
 
 class TestAnUnregisteredUser(DbTestCase):
 
@@ -236,10 +238,43 @@ class TestRegistrations(DbTestCase):
 
     def test_cant_be_deleted(self):
         # Goes to project's page
-        res = self.app.get("/project/{0}/".format(self.project._primary_key), auth=self.auth).maybe_follow()
+        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
         # Settings is not in the project navigation bar
-        subnav = res.html.select("#projectSubnav")[0]
-        assert_not_in("Settings", subnav.text)
+        subnav = res.html.select('#projectSubnav')[0]
+        assert_not_in('Settings', subnav.text)
+
+    def test_sees_registration_templates(self):
+
+        # Browse to original project
+        res = self.app.get(
+            '{}register/'.format(self.original.url),
+            auth=self.auth
+        ).maybe_follow()
+
+        # Find registration options
+        options = res.html.find('select', id='select-registration-template')\
+            .find_all('option')
+
+        # Should see number of options equal to number of registration
+        # templates, plus one for "Select..."
+        assert_equal(
+            len(options),
+            len(OSF_META_SCHEMAS) + 1
+        )
+
+        # First option should have empty value
+        assert_equal(options[0].get('value'), None)
+
+        # All registration templates should be listed in <option>s
+        option_values = [
+            option.get('value')
+            for option in options[1:]
+        ]
+        for schema in OSF_META_SCHEMAS:
+            assert_in(
+                schema['name'],
+                option_values
+            )
 
 
 class TestComponents(DbTestCase):

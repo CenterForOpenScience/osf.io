@@ -17,7 +17,7 @@
             </form>
         </div>
         <div class="col-md-3">
-            <div style="width:200px; float:right; margin-left:30px;">
+            <div style="width:250px; float:right; margin-left:30px;">
                 <div mod-meta='{
                         "tpl": "project/wiki/nav.mako",
                         "replace": true

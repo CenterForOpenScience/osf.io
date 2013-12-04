@@ -11,6 +11,7 @@ from webtest_plus import TestApp
 
 import website.app
 from website.models import Node, NodeLog
+from website.project.model import ensure_schemas
 
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
@@ -24,6 +25,7 @@ app = website.app.init_app(routes=True, set_backends=False,
 class TestProjectViews(DbTestCase):
 
     def setUp(self):
+        ensure_schemas()
         self.app = TestApp(app)
         self.user1 = UserFactory.build()
         # Add an API key for quicker authentication
@@ -162,7 +164,7 @@ class TestProjectViews(DbTestCase):
         assert_not_in("footag", self.project.tags)
 
     def test_register_template_page(self):
-        url = "/api/v1/project/{0}/register/FooBar_Template/".format(self.project._primary_key)
+        url = "/api/v1/project/{0}/register/Brandt_Preregistration/".format(self.project._primary_key)
         res = self.app.post_json(url, {}, auth=self.auth)
         self.project.reload()
         # A registration was added to the project's registration list
