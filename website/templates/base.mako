@@ -20,6 +20,8 @@
     % endfor
     ${self.stylesheets()}
 
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/knockout/3.0.0/knockout-min.js"></script>
     % for url in js_all:
     <script src="${url}"></script>
     % endfor
