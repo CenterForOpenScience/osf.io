@@ -258,6 +258,12 @@ if(myGrid.dropZoneObj){
     });
 }
 
+// Prompt user before changing URL if files are uploading
+$(window).on('beforeunload', function() {
+    if (myGrid.dropZoneObj.getUploadingFiles().length)
+        return 'Uploads(s) still in progress. Are you sure you want to leave this page?';
+});
+
 ##var date1=0;
 ##
 ##myGrid.dropZoneObj.on("sending", function(file, xhr, formData){
