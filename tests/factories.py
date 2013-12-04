@@ -15,7 +15,7 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 """
 import datetime as dt
 
-from factory import base, Sequence, SubFactory, PostGenerationMethodCall, post_generation
+from factory import base, Sequence, SubFactory, post_generation
 
 from framework.auth import User
 from website.project.model import (ApiKey, Node, NodeLog, WatchConfig,
@@ -38,8 +38,6 @@ class ModularOdmFactory(base.Factory):
         instance = target_class(*args, **kwargs)
         instance.save()
         return instance
-
-
 
 
 class UserFactory(ModularOdmFactory):

@@ -37,7 +37,17 @@
         <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
             <hr />
             Recent Activity
-            <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['url']}log/"></div>
+            <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/">
+             <dl class="dl-horizontal activity-log"
+                    data-bind="foreach: {data: logs, as: 'log'}">
+                    <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
+                  <dd class="log-content">
+                    <a data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
+                    <!-- log actions are the same as their template name -->
+                    <span data-bind="template: {name: log.action, data: log}"></span>
+                  </dd>
+                </dl><!-- end foreach logs -->
+            </div>
         </div>
 
     </li>

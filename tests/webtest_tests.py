@@ -90,6 +90,10 @@ class TestAUser(DbTestCase):
         res = form.submit().maybe_follow()
         return res
 
+    def test_can_see_profile_url(self):
+        res = self.app.get(self.user.url).maybe_follow()
+        assert_in(self.user.url, res)
+
     def test_can_see_homepage(self):
         # Goes to homepage
         res = self.app.get("/").follow()  # Redirects

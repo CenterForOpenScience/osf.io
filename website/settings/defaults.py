@@ -56,6 +56,7 @@ MONGO_URI = 'mongodb://osf:osfosfosfosf0$f@localhost:{0}/{1}'.format(DB_PORT, DB
 #TODO: Configuration should not change between deploys - this should be dynamic.
 CANONICAL_DOMAIN = 'openscienceframework.org'
 COOKIE_DOMAIN = '.openscienceframework.org' # Beaker
+SHORT_DOMAIN = 'osf.io'
 
 # Gravatar options
 GRAVATAR_SIZE_PROFILE = 120

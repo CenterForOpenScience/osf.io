@@ -7,8 +7,10 @@ import pytz
 import datetime
 from dateutil import parser
 
+from framework.analytics import get_total_activity_count
 from framework.auth import User
 from framework.bcrypt import check_password_hash
+from website import settings, filters
 from website.project.model import ApiKey, NodeFile, NodeLog
 
 from tests.base import DbTestCase, Guid
@@ -36,6 +38,10 @@ class TestUser(DbTestCase):
         assert_equal(User.find().count(), 2)
         assert_true(user.date_registered)
 
+    def test_absolute_url(self):
+        expected = "http://osf.io/profile/{0}/".format(self.user._primary_key)
+        assert_equal(self.user.absolute_url, expected)
+
     def test_is_watching(self):
         # User watches a node
         watched_node = NodeFactory()
@@ -58,6 +64,18 @@ class TestUser(DbTestCase):
         user.save()
         assert_true(user.check_password("ghostrider"))
         assert_false(user.check_password("ghostride"))
+
+    def test_gravatar_url(self):
+        expected = filters.gravatar(
+                    self.user,
+                    use_ssl=True,
+                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+                )
+        assert_equal(self.user.gravatar_url, expected)
+
+    def test_activity_points(self):
+        assert_equal(self.user.activity_points,
+                    get_total_activity_count(self.user._primary_key))
 
 
 class TestMergingUsers(DbTestCase):
@@ -254,6 +272,18 @@ class TestNode(DbTestCase):
         node = NodeFactory()
         assert_equal(node.parent, None)
 
+    def test_get_recent_logs(self):
+        node = NodeFactory.build()
+        for _ in range(5):
+            node.logs.append(NodeLogFactory())
+        node.save()
+        assert_equal(node.get_recent_logs(n=10), list(reversed(node.logs)))
+
+    def test_date_modified(self):
+        node = NodeFactory.build()
+        node.logs.append(NodeLogFactory())
+        assert_equal(node.date_modified, node.logs[-1].date)
+
     def test_add_file(self):
         pass
 
@@ -330,7 +360,6 @@ class TestNode(DbTestCase):
 
     def test_register(self):
         pass
-
 
 class TestProject(DbTestCase):
 
@@ -469,11 +498,6 @@ class TestNodeLog(DbTestCase):
         # Reparse the date
         parsed = parser.parse(iso_formatted)
         assert_equal(parsed, self.log.tz_date)
-
-    def test_serialized_user_url(self):
-        data = self.log.serialize()
-        assert_equal(data['user_url'], self.log.user.url)
-
 
 
 class TestWatchConfig(DbTestCase):

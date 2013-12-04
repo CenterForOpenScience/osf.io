@@ -4,9 +4,11 @@
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 <div>
+    <div class="col-md-9 wiki">
+        ${wiki_content}
+    </div>
 
-    <div style="width:200px; float:right; margin-left:30px;">
-
+    <div class="col-md-3">
         <div mod-meta='{
                 "tpl": "project/wiki/nav.mako",
                 "replace": true
@@ -15,10 +17,8 @@
                 "tpl": "project/wiki/history.mako",
                 "replace": true
             }'></div>
-
     </div>
 
-    ${wiki_content}
 
 </div>
 </%def>
