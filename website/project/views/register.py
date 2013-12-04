@@ -6,6 +6,7 @@ from framework import request, status
 from framework.auth import must_have_session_auth
 from ..decorators import must_not_be_registration, must_be_valid_project, must_be_contributor, must_be_contributor_or_public
 from framework.forms.utils import sanitize_payload
+from framework.mongo.utils import to_mongo
 from framework.exceptions import SanitizeError
 from .node import _view_project
 
@@ -53,7 +54,7 @@ def node_register_template_page(*args, **kwargs):
 
     if node_to_use.is_registration and node_to_use.registered_meta:
         registered = True
-        payload = node_to_use.registered_meta.get(template_name)
+        payload = node_to_use.registered_meta.get(to_mongo(template_name))
         if node_to_use.registered_schema:
             meta_schema = node_to_use.registered_schema
         else:
