@@ -1,29 +1,33 @@
 import bleach
-from framework.exceptions import SanitizeError
+import urllib
 
 
 def sanitize(s, **kwargs):
     return bleach.clean(s, **kwargs)
 
 
-def _sanitize(value):
-    """Sanitize a single value; raise SanitizeError if sanitizing fails.
+def process_payload(data, func):
+    if isinstance(data, dict):
+        return {
+            key: process_payload(value, func)
+            for key, value in data.items()
+        }
+    elif isinstance(data, list):
+        return [
+            process_payload(value, func)
+            for value in data
+        ]
+    return func(data)
+
+
+def prepare_payload(data):
+    """Recursively quote payload.
+
+    :param data: Payload dictionary
+    :return: Quoted payload
 
     """
-    if value is not None and value != sanitize(value):
-        raise SanitizeError('Value "{0}" not allowed'.format(value))
-
-
-def sanitize_payload(data):
-    """Sanitize a payload dictionary; raise SanitizeError if sanitizing fails
-    for any value or nested value.
-    """
-    for key, value in data.items():
-        if isinstance(value, list):
-            for item in value:
-                _sanitize(item)
-        else:
-            _sanitize(value)
+    return process_payload(data, urllib.quote_plus)
 
 
 def jsonify(form):
