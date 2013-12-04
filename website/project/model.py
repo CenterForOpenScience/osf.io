@@ -6,6 +6,7 @@ import calendar
 import datetime
 import os
 import unicodedata
+import urllib
 import logging
 
 import markdown
@@ -15,6 +16,7 @@ from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 
 from framework.mongo import ObjectId
+from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
 from framework.analytics import get_basic_counters, increment_user_activity_counters
 from framework.git.exceptions import FileNotModified
@@ -845,16 +847,17 @@ class Node(GuidStoredObject):
         )
 
         # Deal with creating a NodeFile in the database
-        node_file = NodeFile()
-        node_file.path = file_name
-        node_file.filename = file_name
-        node_file.size = size
-        node_file.is_public = self.is_public
-        node_file.node = self
-        node_file.uploader = user
-        node_file.git_commit = commit_id
-        node_file.content_type = content_type
-        node_file.is_deleted = False
+        node_file = NodeFile(
+            path=file_name,
+            filename=file_name,
+            size=size,
+            is_public=self.is_public,
+            node=self,
+            uploader=user,
+            git_commit=commit_id,
+            content_type=content_type,
+            is_deleted=False,
+        )
         node_file.save()
 
         # Add references to the NodeFile to the Node object
@@ -869,9 +872,6 @@ class Node(GuidStoredObject):
 
         # Add reference to the version history
         self.files_versions[file_name_key].append(node_file._primary_key)
-
-        # Save the Node
-        self.save()
 
         self.add_log(
             action=NodeLog.FILE_ADDED if file_is_new else NodeLog.FILE_UPDATED,
@@ -1045,7 +1045,6 @@ class Node(GuidStoredObject):
             )
         if save:
             self.save()
-        return None
 
     def add_nonregistered_contributor(self, name, email, user, api_key=None, save=False):
         '''Add a non-registered contributor to the project.
@@ -1067,14 +1066,15 @@ class Node(GuidStoredObject):
         )
         if save:
             self.save()
-        return None
 
     def set_permissions(self, permissions, user=None, api_key=None):
-        '''Set the permissions for this node.
+        """Set the permissions for this node.
 
-        :param permissions: A string, either 'public' or 'private'.
-        :param user: A User object, the user who set the permissions.
-        '''
+        :param permissions: A string, either 'public' or 'private'
+        :param user: A User object, the user who set the permissions
+        :param api_key: API key used to change permissions
+
+        """
         if permissions == 'public' and not self.is_public:
             self.is_public = True
         elif permissions == 'private' and self.is_public:
@@ -1097,10 +1097,8 @@ class Node(GuidStoredObject):
         # len(wiki_pages_versions) == 1, version 1
         # len() == 2, version 1, 2
 
-        if "." in page:
-            page = page.replace(".", "__!dot!__")
-        if "$" in page:
-            page = page.replace("$", "__!dollar!__")
+        page = urllib.unquote_plus(page)
+        page = to_mongo(page)
 
         page = str(page).lower()
         if version:
@@ -1125,20 +1123,18 @@ class Node(GuidStoredObject):
         return pw
 
     def update_node_wiki(self, page, content, user, api_key):
-        '''Update a the node's wiki page with new content.
+        """Update the node's wiki page with new content.
 
         :param page: A string, the page's name, e.g. ``"home"``.
         :param content: A string, the posted content.
         :param user: A `User` object.
         :param api_key: A string, the api key. Can be ``None``.
-        '''
 
+        """
         temp_page = page
-        if "." in page:
-            page = page.replace(".", "__!dot!__")
-        if "$" in page:
-            page = page.replace("$", "__!dollar!__")
 
+        page = urllib.unquote_plus(page)
+        page = to_mongo(page)
         page = str(page).lower()
 
         if page not in self.wiki_pages_current:
@@ -1149,21 +1145,20 @@ class Node(GuidStoredObject):
             version = current.version + 1
             current.save()
 
-        v = NodeWikiPage()
-        v.page_name = temp_page
-        v.version = version
-        v.user = user
-        v.is_current = True
-        v.node = self
-        v.content = content
+        v = NodeWikiPage(
+            page_name=temp_page,
+            version=version,
+            user=user,
+            is_current=True,
+            node=self,
+            content=content
+        )
         v.save()
 
         if page not in self.wiki_pages_versions:
             self.wiki_pages_versions[page] = []
         self.wiki_pages_versions[page].append(v._primary_key)
         self.wiki_pages_current[page] = v._primary_key
-
-        self.save()
 
         self.add_log(
             action=NodeLog.WIKI_UPDATED,

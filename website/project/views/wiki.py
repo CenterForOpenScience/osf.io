@@ -7,6 +7,7 @@ from framework import request, get_current_user, status
 from framework.analytics import update_counters
 from framework.auth import must_have_session_auth, get_api_key
 from framework.forms.utils import sanitize
+from framework.mongo.utils import from_mongo
 from framework.exceptions import HTTPError
 
 from website.project.views.node import _view_project
@@ -160,7 +161,10 @@ def project_wiki_page(*args, **kwargs):
         'wiki_content': content,
         'is_current': is_current,
         'is_edit': False,
-        'pages_current': node_to_use.wiki_pages_versions.keys(),
+        'pages_current': [
+            from_mongo(version)
+            for version in node_to_use.wiki_pages_versions
+        ],
         'toc': toc,
         'url': node_to_use.url,
         'category': node_to_use.category
