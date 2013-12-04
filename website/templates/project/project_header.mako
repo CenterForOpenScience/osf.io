@@ -1,5 +1,3 @@
-<div class="container">
-
 % if node['is_registration']:
     <div class="alert alert-info">This ${node['category']} is a registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node["category"]}</a>; the content of the ${node["category"]} has been frozen and cannot be edited.
     </div>
@@ -11,80 +9,69 @@
     </style>
 % endif
 
-<style>
-    .modal-subheader {
-        font-size: 30px;
-        margin-right: 10px;
-    }
-    .disabled {
-        cursor: default !important;
-        pointer-events: none;
-    }
-</style>
-
-
 <div id="projectScope">
     <header class="subhead" id="overview">
         <div class="row">
-            <div class="btn-toolbar pull-right">
-                <div class="btn-group">
-                %if not node["is_public"]:
-                    <button class='btn btn-default disabled'>Private</button>
-                    % if user["is_contributor"]:
-                        <a class="btn btn-default" id="publicButton" data-target="${node['api_url']}permissions/public/">Make public</a>
-                    % endif
-                %else:
-                    % if user["is_contributor"]:
-                        <a class="btn btn-default" id="privateButton" data-target="${node['api_url']}permissions/private/">Make private</a>
-                    % endif
-                    <button class="btn btn-default disabled">Public</button>
-                %endif
-                </div><!-- end btn-group -->
-
-                <div class="btn-group">
-                    % if user_name:
-                        <a rel="tooltip" title="Watch" class="btn btn-default" href="#" data-bind="click: toggleWatch">
-                    % else:
-                        <a rel="tooltip" title="Watch" class="btn btn-default disabled" href="#">
-                    % endif
-                    <i class="icon-eye-open"></i>
-                    <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
-
-                    </a>
-
-
-                    <a
-                        rel="tooltip"
-                        title="Number of times this node has been forked (copied)"
-                        % if node["category"] == 'project' and user_name:
-                            href="#"
-                            class="btn btn-default node-fork-btn"
-                            onclick="NodeActions.forkNode();"
-                        % else:
-                            class="btn btn-default disabled node-fork-btn"
-                        % endif
-                    >
-                        <i class="icon-code-fork"></i>&nbsp;${node['fork_count']}
-                    </a>
-
-                </div><!-- end btn-grp -->
-            </div><!-- end btn-toolbar -->
-
 
             <div class="col-md-8">
                 %if parent['id']:
                     % if parent['is_public'] or parent['is_contributor']:
-                         <h1 style="display:inline-block;" class="node-parent-title overflow">
-                             <a href="/project/${parent['id']}/">${parent['title']}</a> /
-                         </h1>
+                    <h1 class="node-parent-title">
+                        <a href="/project/${parent['id']}/">${parent['title']}</a> /
+                    </h1>
                     % else:
-                         <h1 style="display:inline-block;" class="node-parent-title overflow unavailable">
+                         <h1 class="node-parent-title unavailable">
                              <span>Private Project</span> /
                          </h1>
                     %endif
                 %endif
-                <h1 id="nodeTitleEditable" class="node-title overflow" style="display:inline-block;">${node['title']}</h1>
-            </div>
+                <h1 id="nodeTitleEditable" class="node-title">${node['title']}</h1>
+            </div><!-- end col-md-->
+
+            <div class="col-md-4">
+                <div class="btn-toolbar node-control pull-right">
+                    <div class="btn-group">
+                    %if not node["is_public"]:
+                        <button class='btn btn-default disabled'>Private</button>
+                        % if user["is_contributor"]:
+                            <a class="btn btn-default" id="publicButton" data-target="${node['api_url']}permissions/public/">Make public</a>
+                        % endif
+                    %else:
+                        % if user["is_contributor"]:
+                            <a class="btn btn-default" id="privateButton" data-target="${node['api_url']}permissions/private/">Make private</a>
+                        % endif
+                        <button class="btn btn-default disabled">Public</button>
+                    %endif
+                    </div><!-- end btn-group -->
+
+                    <div class="btn-group">
+                        % if user_name:
+                            <a rel="tooltip" title="Watch" class="btn btn-default" href="#" data-bind="click: toggleWatch">
+                        % else:
+                            <a rel="tooltip" title="Watch" class="btn btn-default disabled" href="#">
+                        % endif
+                        <i class="icon-eye-open"></i>
+                        <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
+
+                        </a>
+
+                        <a
+                            rel="tooltip"
+                            title="Number of times this node has been forked (copied)"
+                            % if node["category"] == 'project' and user_name:
+                                href="#"
+                                class="btn btn-default node-fork-btn"
+                                onclick="NodeActions.forkNode();"
+                            % else:
+                                class="btn btn-default disabled node-fork-btn"
+                            % endif
+                        >
+                            <i class="icon-code-fork"></i>&nbsp;${node['fork_count']}
+                        </a>
+
+                    </div><!-- end btn-grp -->
+                </div><!-- end btn-toolbar -->
+            </div><!-- end col-md-->
 
         </div><!-- end row -->
 
@@ -164,7 +151,7 @@
                 // Clear user search modal when dismissed; catches dismiss by escape key
                 // or cancel button.
                 $addContributors.on('hidden', function() {
-                    viewModel.clear();
+                    addContribVM.clear();
                 });
 
                 // Initialize LogsViewModel when appropriate
@@ -179,4 +166,3 @@
         });
     });
 </script>
-</div><!-- end container -->

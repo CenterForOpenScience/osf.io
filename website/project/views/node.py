@@ -22,6 +22,7 @@ from website.project.forms import NewProjectForm, NewNodeForm
 from website.models import WatchConfig
 from website import settings
 from website.views import _render_nodes
+from website.project.serializers import NodeSerializer, LogSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -342,13 +343,9 @@ def _view_project(node_to_use, user, api_key=None):
             wiki_home = BeautifulSoup(wiki_home)
     else:
         wiki_home = '<p><em>No wiki content</em></p>'
-
-    parent = node_to_use.node__parent[0] \
-        if node_to_use.node__parent \
-            and not node_to_use.node__parent[0].is_deleted \
-            else None
+    parent = node_to_use.parent
     recent_logs = list(reversed(node_to_use.logs)[:10])
-    recent_logs_dicts = [log.serialize() for log in recent_logs]
+    recent_logs_dicts = LogSerializer(recent_logs).data
     data = {
         'node': {
             'id': node_to_use._primary_key,
@@ -365,7 +362,6 @@ def _view_project(node_to_use, user, api_key=None):
             'tags': [tag._primary_key for tag in node_to_use.tags],
             'children': bool(node_to_use.nodes),
             'children_ids': [str(child._primary_key) for child in node_to_use.nodes],
-
             'is_registration': node_to_use.is_registration,
             'registered_from_url': node_to_use.registered_from.url if node_to_use.is_registration else '',
             'registered_date': node_to_use.registered_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_registration else '',

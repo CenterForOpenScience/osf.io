@@ -172,30 +172,6 @@ class NodeLog(StoredObject):
         if self.tz_date:
             return self.tz_date.isoformat()
 
-    # FIXME: Serialization (presentation) doesn't belong in model (domain)
-    def serialize(self):
-        # TODO: Nest serialized user.
-        if self.node:
-            category = self.node.project_or_component
-        else:
-            category = ''
-        return {
-        'id': self._primary_key,
-        'user_id': self.user._primary_key if self.user else '',
-        'user_fullname': self.user.fullname if self.user else '',
-        'user_url': self.user.url if self.user else '',
-        'api_key': self.api_key.label if self.api_key else '',
-        'node_url': self.node.url if self.node else '',
-        'node_title': self.node.title if self.node else '',
-        'action': self.action,
-        'params': self.params,
-        'category': category,
-        # TODO: Use self.formatted_date when Recent Activity Logs are generated dynamically
-        'date': self.tz_date.strftime(NodeLog.DATE_FORMAT) if self.tz_date else '',
-        'contributors': [self._render_log_contributor(contributor) for contributor in self.params.get('contributors', [])],
-        'contributor': self._render_log_contributor(self.params.get('contributor', {})),
-    }
-
     def _render_log_contributor(self, contributor):
         if isinstance(contributor, dict):
             rv = contributor.copy()
@@ -357,6 +333,22 @@ class Node(GuidStoredObject):
         if self.SOLR_UPDATE_FIELDS.intersection(rv['saved_fields']):
             self.update_solr()
         return rv
+
+    def get_recent_logs(self, n=10):
+        '''Return a list of the n most recent logs, in reverse chronological
+        order.
+        '''
+        return list(reversed(self.logs)[:n])
+
+    @property
+    def date_modified(self):
+        '''The most recent datetime when this node was modified, based on
+        the logs.
+        '''
+        try:
+            return self.logs[-1].date
+        except IndexError:
+            return None
 
     def set_title(self, title, user, api_key=None, save=False):
         '''Set the title of this Node and log it.
@@ -960,14 +952,18 @@ class Node(GuidStoredObject):
     def parent(self):
         '''The parent node, if it exists, otherwise ``None``.'''
         try:
-            return self.node__parent[0]
+            if not self.node__parent[0].is_deleted:
+                return self.node__parent[0]
         except IndexError:
             pass
         return None
 
     @property
     def api_url(self):
-        return '/api/v1' + self.url
+        if not self.url:
+            logging.error("Node {0} has a parent that is not a project".format(self._id))
+            return None
+        return '/api/v1{0}'.format(self.url)
 
     @property
     def watch_url(self):

@@ -11,9 +11,8 @@ from ..decorators import must_not_be_registration, must_be_valid_project, \
 from framework.auth import must_have_session_auth, get_current_user, get_api_key
 
 
-from website import settings
-from website.filters import gravatar
 from website.models import Node
+from website.project.serializers import UserSerializer, UnregUserSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -77,22 +76,9 @@ def _jsonify_contribs(contribs):
             if user is None:
                 logger.error('User {} not found'.format(contrib['id']))
                 continue
-            data.append({
-                'registered': True,
-                'id': user._primary_key,
-                'fullname': user.fullname,
-                'gravatar': gravatar(
-                    user,
-                    use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
-                ),
-            })
+            data.append(UserSerializer(user).data)
         else:
-            contribs.append({
-                'registered': False,
-                'id': hashlib.md5(contrib['nr_email']).hexdigest(),
-                'fullname': contrib['nr_name'],
-            })
+            contribs.append(UnregUserSerializer(contrib).data)
 
     return data
 

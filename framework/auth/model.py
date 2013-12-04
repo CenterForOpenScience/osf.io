@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 import itertools
 import datetime as dt
+import urlparse
 
 import pytz
 import bson
 
 from framework.bcrypt import generate_password_hash, check_password_hash
-from framework import fields,  Q
+from framework import fields,  Q, analytics
 from framework import GuidStoredObject
 from framework.search import solr
-from website import settings
+from website import settings, filters
 
 name_formatters = {
    'long': lambda user: user.fullname,
@@ -56,6 +57,22 @@ class User(GuidStoredObject):
     @property
     def url(self):
         return '/profile/{}/'.format(self._primary_key)
+
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin("http://" + settings.SHORT_DOMAIN, self.url)
+
+    @property
+    def gravatar_url(self):
+        return filters.gravatar(
+                    self,
+                    use_ssl=True,
+                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+                )
+
+    @property
+    def activity_points(self):
+        return analytics.get_total_activity_count(self._primary_key)
 
     @property
     def is_merged(self):
