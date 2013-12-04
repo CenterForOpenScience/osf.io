@@ -55,6 +55,12 @@
 
     $(document).ready(function() {
 
+        // Don't submit form on enter; must use $.delegate rather than $.on
+        // to catch dynamically created form elements
+        $('#registration_template').delegate('input, select', 'keypress', function(event) {
+            return event.keyCode != 13;
+        });
+
         registrationViewModel = new MetaData.ViewModel(
             ${schema},
             ${int(registered)},
