@@ -823,8 +823,26 @@ class TestRegisterNode(DbTestCase):
     def test_title(self):
         assert_equal(self.registration.title, self.project.title)
 
+    def test_description(self):
+        assert_equal(self.registration.description, self.project.description)
+
+    def test_category(self):
+        assert_equal(self.registration.category, self.project.category)
+
+    def test_permissions(self):
+        assert_false(self.registration.is_public)
+        self.project.set_permissions('public')
+        registration = RegistrationFactory(project=self.project)
+        assert_true(registration.is_public)
+
     def test_contributors(self):
         assert_equal(self.registration.contributors, self.project.contributors)
+
+    def test_contributors_list(self):
+        assert_equal(
+            self.registration.contributor_list,
+            self.project.contributor_list,
+        )
 
     def test_forked_from(self):
         # A a node that is not a fork
@@ -883,7 +901,7 @@ class TestRegisterNode(DbTestCase):
             assert_not_in(node, self.project.nodes)
             assert_true(node.is_registration)
 
-    def test_register_permissions(self):
+    def test_partial_contributor_registration(self):
 
         # Create some nodes
         self.component = NodeFactory(
@@ -920,7 +938,10 @@ class TestRegisterNode(DbTestCase):
 
         # The correct subprojects were registered
         assert_equal(len(registration.nodes), 2)
-        assert_not_in('Not Registered', [node.title for node in registration.nodes])
+        assert_not_in(
+            'Not Registered',
+            [node.title for node in registration.nodes],
+        )
 
     def test_is_registration(self):
         assert_true(self.registration.is_registration)
