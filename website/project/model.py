@@ -332,7 +332,7 @@ class Node(GuidStoredObject):
 
     _meta = {'optimistic': True}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, project=None, *args, **kwargs):
         super(Node, self).__init__(*args, **kwargs)
         # refactored code from new_node
 
@@ -344,7 +344,6 @@ class Node(GuidStoredObject):
             self.contributor_list.append({'id': self.creator._primary_key})
         self.save()
 
-        project = kwargs.get('project')
         if project:
             project.nodes.append(self)
             project.save()
@@ -1254,7 +1253,6 @@ class Node(GuidStoredObject):
             api_key=api_key,
             log_date=v.date
         )
-
 
     def get_stats(self, detailed=False):
         if detailed:

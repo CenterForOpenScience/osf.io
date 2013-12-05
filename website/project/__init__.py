@@ -32,7 +32,7 @@ def new_node(category, title, user, description=None, project=None):
     if description:
         description = sanitize(description.strip())
 
-    new_node = Node(
+    the_node = Node(
         title=title,
         category=category,
         creator=user,
@@ -40,7 +40,7 @@ def new_node(category, title, user, description=None, project=None):
         project=project,
     )
 
-    return new_node
+    return the_node
 
 def get_wiki_page(project, node, wid):
     if node and node.wiki and wid in node.wiki:

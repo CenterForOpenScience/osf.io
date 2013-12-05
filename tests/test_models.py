@@ -361,6 +361,18 @@ class TestNode(DbTestCase):
     def test_parent(self):
         assert_equal(self.node.parent, self.parent)
 
+    def test_in_parent_nodes(self):
+        assert_in(self.node, self.parent.nodes)
+
+    def test_log(self):
+        latest_log = self.node.logs[-1]
+        assert_equal(latest_log.action, 'node_created')
+        assert_equal(latest_log.params, {
+            'node': self.node._primary_key,
+            'project': self.parent._primary_key,
+        })
+        assert_equal(latest_log.user, self.user)
+
     def test_add_file(self):
         #todo Add file series of tests
         pass
@@ -405,6 +417,12 @@ class TestProject(DbTestCase):
         assert_true(hasattr(node, 'registered_from'))
         assert_true(hasattr(node, 'api_keys'))
         assert_equal(node.logs[-1].action, 'project_created')
+
+    def test_log(self):
+        latest_log = self.project.logs[-1]
+        assert_equal(latest_log.action, 'project_created')
+        assert_equal(latest_log.params['project'], self.project._primary_key)
+        assert_equal(latest_log.user, self.user)
 
     def test_url(self):
         url = self.project.url

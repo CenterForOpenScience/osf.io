@@ -104,16 +104,21 @@ class RegistrationFactory(ModularOdmFactory):
         raise Exception("Cannot build registration without saving.")
 
     @classmethod
-    def _create(cls, target_class, *args, **kwargs):
-        parent = kwargs.get('project') or target_class(*args, **kwargs)
-        schema = kwargs.get('schema') or MetaSchema.find_one(
+    def _create(cls, target_class, project=None, schema=None, user=None,
+                template=None, data=None, *args, **kwargs):
+
+        # Original project to be registered
+        project = project or target_class(*args, **kwargs)
+
+        # Default registration parameters
+        schema = schema or MetaSchema.find_one(
             Q('name', 'eq', 'Open-Ended_Registration')
         )
-        # user is the passed user or the parent's creator
-        user = kwargs.get('user') or parent.creator
-        template = kwargs.get('template') or "Template1"
-        data = kwargs.get('data') or "Some words"
-        return parent.register_node(
+        user = user or project.creator
+        template = template or "Template1"
+        data = data or "Some words"
+
+        return project.register_node(
             schema=schema,
             user=user,
             template=template,
