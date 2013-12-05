@@ -393,6 +393,8 @@ class TestProject(DbTestCase):
         assert_true(hasattr(node, 'registration_list'))
         assert_true(hasattr(node, 'fork_list'))
         assert_true(hasattr(node, 'registered_meta'))
+        assert_true(hasattr(node, 'registered_user'))
+        assert_true(hasattr(node, 'registered_schema'))
         assert_true(node.creator)
         assert_true(node.contributors)
         assert_true(node.contributor_list)
@@ -870,9 +872,17 @@ class TestRegisterNode(DbTestCase):
             delta=datetime.timedelta(seconds=5),
         )
 
-    def test_meta(self):
-        #todo Implement metadata tests
-        pass
+    def test_registered_meta(self):
+        assert_equal(self.registration.registered_meta['Template1'],
+                     'Some words')
+
+    def test_registered_user(self):
+        # Add a second contributor
+        user2 = UserFactory()
+        self.project.add_contributor(user2)
+        # Second contributor registers project
+        registration = RegistrationFactory(project=self.project, user=user2)
+        assert_equal(registration.registered_user, user2)
 
     def test_registered_from(self):
         assert_equal(self.registration.registered_from, self.project)
