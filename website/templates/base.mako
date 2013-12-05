@@ -39,7 +39,7 @@
             padding:.5em;
         }
     </style>
-    <div id='devmode'><strong>WARNING</strong>: This site is running in development mode.</div>
+##    <div id='devmode'><strong>WARNING</strong>: This site is running in development mode.</div>
     % endif
 
     <div mod-meta='{"tpl": "nav.mako", "replace": true}'></div>
