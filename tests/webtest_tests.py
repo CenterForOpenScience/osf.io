@@ -272,6 +272,12 @@ class TestRegistrations(DbTestCase):
                 option_values
             )
 
+    def test_registration_nav_not_seen(self):
+        # Goes to project's page
+        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
+        # Settings is not in the project navigation bar
+        subnav = res.html.select('#projectSubnav')[0]
+        assert_not_in('Registrations', subnav.text)
 
 class TestComponents(DbTestCase):
 
