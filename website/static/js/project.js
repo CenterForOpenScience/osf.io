@@ -61,6 +61,10 @@ window.block = function() {
     });
 };
 
+window.unblock = function() {
+    $.unblockUI();
+};
+
 window.NodeActions = {};  // Namespace for NodeActions
 // TODO: move me to the ProjectViewModel
 NodeActions.forkNode = function(){
@@ -75,7 +79,7 @@ NodeActions.forkNode = function(){
     }).done(function(response) {
         window.location = response;
     }).fail(function() {
-        $.unblockUI();
+        unblock();
         bootbox.alert('Forking failed');
     });
 

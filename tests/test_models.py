@@ -8,9 +8,9 @@ from dateutil import parser
 import datetime
 import hashlib
 
-from framework.auth import User
+from framework.auth import User, Q
 from framework.bcrypt import check_password_hash
-from website.project.model import ApiKey, NodeFile, NodeLog
+from website.project.model import ApiKey, NodeFile, NodeLog, MetaSchema, ensure_schemas
 
 from tests.base import DbTestCase, Guid
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
@@ -780,7 +780,12 @@ class TestRegisterNode(DbTestCase):
     def setUp(self):
         self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user)
+        ensure_schemas()
+        self.schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Open-Ended_Registration')
+        )
         self.registration = self.project.register_node(
+            schema=self.schema,
             user=self.user,
             template="Some Format",
             data="Some words or something",
@@ -799,6 +804,7 @@ class TestRegisterNode(DbTestCase):
         user2 = UserFactory()
         self.project.add_contributor(user2)
         registration = self.project.register_node(
+            schema=self.schema,
             user=user2,
             template="Some Format",
             data="Some words or something",
@@ -830,6 +836,7 @@ class TestRegisterNode(DbTestCase):
 
         # Make a registration
         registration = self.project.register_node(
+            schema=self.schema,
             user=self.user,
             template="Some Format",
             data="Some words or something",

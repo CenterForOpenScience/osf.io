@@ -1,5 +1,6 @@
 from .model import Node, NodeLog, NodeWikiPage
 from framework.forms.utils import sanitize
+from framework.mongo.utils import from_mongo
 
 
 def show_diff(seqm):
@@ -59,6 +60,7 @@ template_name_replacements = {
     ('_', ' '),
 }
 def clean_template_name(template_name):
+    template_name = from_mongo(template_name)
     for replacement in template_name_replacements:
         template_name = template_name.replace(*replacement)
     return template_name

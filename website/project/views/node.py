@@ -12,6 +12,7 @@ from framework.analytics import update_counters
 import framework.status as status
 from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
+from framework.mongo.utils import from_mongo
 from framework.auth import must_have_session_auth, get_api_key
 
 from website.project import new_node, clean_template_name
@@ -363,13 +364,14 @@ def _view_project(node_to_use, user, api_key=None):
 
             'tags': [tag._primary_key for tag in node_to_use.tags],
             'children': bool(node_to_use.nodes),
+            'children_ids': [str(child._primary_key) for child in node_to_use.nodes],
 
             'is_registration': node_to_use.is_registration,
             'registered_from_url': node_to_use.registered_from.url if node_to_use.is_registration else '',
             'registered_date': node_to_use.registered_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_registration else '',
             'registered_meta': [
                 {
-                    'name_no_ext': meta.replace('.txt', ''),
+                    'name_no_ext': from_mongo(meta),
                     'name_clean': clean_template_name(meta),
                 }
                 for meta in node_to_use.registered_meta or []

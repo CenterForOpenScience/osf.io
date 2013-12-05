@@ -6,7 +6,8 @@
 %if user['can_edit']:
 <div class="container" style="position:relative;">
 ##    <h3 style="max-width: 65%;"><span class="btn btn-success fileinput-button" id="clickable"><i class="icon-plus icon-white"></i><span>Add files...</span></span></h3>
-    <h3 >Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element></h3>
+    <h3 id="dropZoneHeader">Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element></h3>
+    <div id="fallback"></div>
     <div id="totalProgressActive" style="width: 35%; height: 20px; position: absolute; top: 73px; right: 0;" class>
         <div id="totalProgress" class="progress-bar progress-bar-success" style="width: 0%;"></div>
     </div>
@@ -17,6 +18,18 @@
 <div id="myGrid" class="dropzone files-page"></div>
 </div>
 
+<!--[if lte IE 9]>
+<script>
+    browserComp = false;
+    var htmlString = "    <form action='" + ${info}[0]['uploadUrl'] + "' method='POST' enctype=multipart/form-data>" +
+            "<p><input type=file name=file>" +
+            "<input type=submit value=Upload>" +
+            "<input type='hidden' name='redirect' value='true' />" +
+            "</form>"
+    $('#dropZoneHeader').css('display', 'none');
+    $('#fallback').html(htmlString);
+</script>
+<![endif]-->
 <script>
 
 var extensions = ["3gp", "7z", "ace", "ai", "aif", "aiff", "amr", "asf", "asx", "bat", "bin", "bmp", "bup",
@@ -70,11 +83,19 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
             url = '/api/v1' + url;
             var downButton = "<a href=" + JSON.stringify(url) + "><button type='button' class='btn btn-success btn-mini'><i class='icon-download-alt icon-white'></i></button></a>";
             if(myGrid.getItemByValue(myGrid.data, dataContext['parent_uid'], 'uid')['can_edit']=='false'){
-##                return value + spacer + "<div class='hGridButton' style='text-align: right; display: none;'>" + downButton + "</div>";
-                return value + spacer + "<div class='hGridButton' style='text-align: right; display: inline;'>" + downButton + "</div>";
+                return "<div class='col-xs-6' style='padding-left:0;padding-right:0'>" +
+                        value +
+                        "</div>" +
+                        "<div class='hGridButton col-xs-6' style='padding-left:0; padding-right:0; text-align: right; display: inline;'>"
+                        + downButton +
+                        "</div>";
             }
-##            else return value + spacer + "<div class='hGridButton' style='text-align: right; display: none;'>" + downButton + " " + delButton + "</div>";
-            else return value + spacer + "<div class='hGridButton' style='text-align: right; display: inline;'>" + downButton + " " + delButton + "</div>";
+            else return "<div class='col-xs-6' style='padding-left:0;padding-right:0'>" +
+                        value +
+                        "</div>" +
+                        "<div class='hGridButton col-xs-6' style='padding-left:0; padding-right:0; text-align: right; display: inline;'>" +
+                        downButton + " " + delButton +
+                        "</div>";
         }
     }
     else{
@@ -97,6 +118,11 @@ var Buttons = function(row, cell, value, columnDef, dataContext) {
 
 $('#componentName').text(${info}[0]['name']);
 
+if(typeof(browserComp) === 'undefined'){
+    browserComp = true;
+}
+
+var useDropZone = ${int(user['can_edit'])} && browserComp;
 
 var myGrid = HGrid.create({
     container: "#myGrid",
@@ -122,7 +148,7 @@ var myGrid = HGrid.create({
     autoHeight: true,
     forceFitColumns: true,
     largeGuide: false,
-    dropZone: ${int(user['can_edit'])},
+    dropZone: useDropZone,
     dropZonePreviewsContainer: false,
     rowHeight: 30,
     navLevel: ${info}[0]['uid'],
@@ -131,7 +157,6 @@ var myGrid = HGrid.create({
     dragToRoot: false,
     dragDrop: false
 });
-
 
 
 myGrid.updateBreadcrumbsBox(myGrid.data[0]['uid']);
@@ -219,6 +244,24 @@ myGrid.hGridOnUpload.subscribe(function(e, args){
         return true;
     }
     return false;
+});
+
+if(myGrid.dropZoneObj){
+    myGrid.dropZoneObj.on("error", function(file, errorMessage, xhr){
+        if(errorMessage.indexOf("Max filesize")!=-1){
+            alert(errorMessage);
+            var item = myGrid.getItemByValue(myGrid.data, file.name, "uid")
+            if(item){
+                myGrid.deleteItems([item['uid']]);
+            }
+        }
+    });
+}
+
+// Prompt user before changing URL if files are uploading
+$(window).on('beforeunload', function() {
+    if (myGrid.dropZoneObj.getUploadingFiles().length)
+        return 'Uploads(s) still in progress. Are you sure you want to leave this page?';
 });
 
 ##var date1=0;

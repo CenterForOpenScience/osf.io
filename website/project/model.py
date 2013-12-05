@@ -6,6 +6,7 @@ import calendar
 import datetime
 import os
 import unicodedata
+import urllib
 import logging
 
 import markdown
@@ -15,6 +16,7 @@ from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 
 from framework.mongo import ObjectId
+from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
 from framework.analytics import get_basic_counters, increment_user_activity_counters
 from framework.git.exceptions import FileNotModified
@@ -41,17 +43,35 @@ def normalize_unicode(ustr):
 class MetaSchema(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
+    name = fields.StringField()
     schema = fields.DictionaryField()
     category = fields.StringField()
-    version = fields.StringField()
+
+    # Version of the Knockout metadata renderer to use (e.g. if data binds
+    # change)
+    metadata_version = fields.IntegerField()
+    # Version of the schema to use (e.g. if questions, responses change)
+    schema_version = fields.IntegerField()
 
 
-def ensure_schemas():
-    for key, value in OSF_META_SCHEMAS.items():
+def ensure_schemas(clear=True):
+    """Import meta-data schemas from JSON to database, optionally clearing
+    database first.
+
+    :param clear: Clear schema database before import
+
+    """
+    if clear:
+        MetaSchema.remove()
+    for schema in OSF_META_SCHEMAS:
         try:
-            MetaSchema.find_one(Q('_id', 'eq', key))
+            MetaSchema.find_one(
+                Q('name', 'eq', schema['name']) &
+                Q('schema_version', 'eq', schema['schema_version'])
+            )
         except:
-            schema_obj = MetaSchema(_id=key, **value)
+            schema['name'] = schema['name'].replace(' ', '_')
+            schema_obj = MetaSchema(**schema)
             schema_obj.save()
 
 
@@ -108,26 +128,26 @@ class NodeLog(StoredObject):
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
 
-    DATE_FORMAT = '%m/%d/%Y %H:%M  UTC'
+    DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
     # Log action constants
-    PROJECT_CREATED = "project_created"
-    NODE_CREATED = "node_created"
-    NODE_REMOVED = "node_removed"
-    WIKI_UPDATED = "wiki_updated"
-    CONTRIB_ADDED = "contributor_added"
-    CONTRIB_REMOVED = "contributor_removed"
-    MADE_PUBLIC = "made_public"
-    MADE_PRIVATE = "made_private"
+    PROJECT_CREATED = 'project_created'
+    NODE_CREATED = 'node_created'
+    NODE_REMOVED = 'node_removed'
+    WIKI_UPDATED = 'wiki_updated'
+    CONTRIB_ADDED = 'contributor_added'
+    CONTRIB_REMOVED = 'contributor_removed'
+    MADE_PUBLIC = 'made_public'
+    MADE_PRIVATE = 'made_private'
     TAG_ADDED = 'tag_added'
     TAG_REMOVED = 'tag_removed'
-    EDITED_TITLE = "edit_title"
+    EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
     PROJECT_REGISTERED = 'project_registered'
-    FILE_ADDED = "file_added"
-    FILE_REMOVED = "file_removed"
+    FILE_ADDED = 'file_added'
+    FILE_REMOVED = 'file_removed'
     FILE_UPDATED = 'file_updated'
-    NODE_FORKED = "node_forked"
+    NODE_FORKED = 'node_forked'
 
     @property
     def node(self):
@@ -228,7 +248,7 @@ class NodeFile(GuidStoredObject):
 
     @property
     def download_url(self):
-        return "{}files/download/{}/version/{}/".format(
+        return '{}files/download/{}/version/{}/'.format(
             self.node.api_url, self.filename, self.latest_version_number)
 
 
@@ -271,6 +291,9 @@ class Node(GuidStoredObject):
 
     is_registration = fields.BooleanField(default=False)
     registered_date = fields.DateTimeField()
+    registered_user = fields.ForeignField('user', backref='registered')
+    registered_schema = fields.ForeignField('metaschema', backref='registered')
+    registered_meta = fields.DictionaryField()
 
     is_fork = fields.BooleanField(default=False)
     forked_date = fields.DateTimeField()
@@ -279,10 +302,8 @@ class Node(GuidStoredObject):
     description = fields.StringField()
     category = fields.StringField()
 
-    #_terms = fields.DictionaryField(list=True)
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
-    registered_meta = fields.DictionaryField()
 
     # TODO: move these to NodeFile
     files_current = fields.DictionaryField()
@@ -349,9 +370,9 @@ class Node(GuidStoredObject):
         return {
             'title': self.title,
             'date_created': self.date_created,
-            "is_public": self.is_public,
-            "creator": self.creator,
-            "contributors": self.contributors
+            'is_public': self.is_public,
+            'creator': self.creator,
+            'contributors': self.contributors
         }
 
     def can_edit(self, user, api_key=None):
@@ -546,7 +567,7 @@ class Node(GuidStoredObject):
         forked.logs = self.logs
         forked.tags = self.tags
 
-        for i, node_contained in enumerate(original.nodes):
+        for node_contained in original.nodes:
             forked_node = node_contained.fork_node(user, api_key=api_key, title='')
             if forked_node is not None:
                 forked.nodes.append(forked_node)
@@ -583,10 +604,21 @@ class Node(GuidStoredObject):
         original.fork_list.append(forked._primary_key)
         original.save()
 
-        return forked#self
+        return forked
 
-    def register_node(self, user, template, data, api_key=None):
+    def register_node(self, schema, user, template, data, api_key=None):
+        """Make a frozen copy of a node.
+
+        :param schema: Schema object
+        :param user: User registering the node
+        :param api_key: API key registering the node
+        :template: Template name
+        :data: Form data
+
+        """
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
+        template = urllib.unquote_plus(template)
+        template = to_mongo(template)
 
         when = datetime.datetime.utcnow()
 
@@ -608,7 +640,7 @@ class Node(GuidStoredObject):
         registered.nodes = []
 
         # todo: should be recursive; see Node.fork_node()
-        for i, original_node_contained in enumerate(original.nodes):
+        for original_node_contained in original.nodes:
 
             node_contained = original_node_contained.clone()
             node_contained.save()
@@ -627,6 +659,8 @@ class Node(GuidStoredObject):
 
             node_contained.is_registration = True
             node_contained.registered_date = when
+            node_contained.registered_user = user
+            node_contained.registered_schema = schema
             node_contained.registered_from = original_node_contained
             if not node_contained.registered_meta:
                 node_contained.registered_meta = {}
@@ -637,6 +671,8 @@ class Node(GuidStoredObject):
 
         registered.is_registration = True
         registered.registered_date = when
+        registered.registered_user = user
+        registered.registered_schema = schema
         registered.registered_from = original
         if not registered.registered_meta:
             registered.registered_meta = {}
@@ -880,16 +916,17 @@ class Node(GuidStoredObject):
         )
 
         # Deal with creating a NodeFile in the database
-        node_file = NodeFile()
-        node_file.path = file_name
-        node_file.filename = file_name
-        node_file.size = size
-        node_file.is_public = self.is_public
-        node_file.node = self
-        node_file.uploader = user
-        node_file.git_commit = commit_id
-        node_file.content_type = content_type
-        node_file.is_deleted = False
+        node_file = NodeFile(
+            path=file_name,
+            filename=file_name,
+            size=size,
+            is_public=self.is_public,
+            node=self,
+            uploader=user,
+            git_commit=commit_id,
+            content_type=content_type,
+            is_deleted=False,
+        )
         node_file.save()
 
         # Add references to the NodeFile to the Node object
@@ -904,9 +941,6 @@ class Node(GuidStoredObject):
 
         # Add reference to the version history
         self.files_versions[file_name_key].append(node_file._primary_key)
-
-        # Save the Node
-        self.save()
 
         self.add_log(
             action=NodeLog.FILE_ADDED if file_is_new else NodeLog.FILE_UPDATED,
@@ -1110,14 +1144,15 @@ class Node(GuidStoredObject):
         )
         if save:
             self.save()
-        return None
 
     def set_permissions(self, permissions, user=None, api_key=None):
-        '''Set the permissions for this node.
+        """Set the permissions for this node.
 
-        :param permissions: A string, either 'public' or 'private'.
-        :param user: A User object, the user who set the permissions.
-        '''
+        :param permissions: A string, either 'public' or 'private'
+        :param user: A User object, the user who set the permissions
+        :param api_key: API key used to change permissions
+
+        """
         if permissions == 'public' and not self.is_public:
             self.is_public = True
         elif permissions == 'private' and self.is_public:
@@ -1139,6 +1174,9 @@ class Node(GuidStoredObject):
     def get_wiki_page(self, page, version=None):
         # len(wiki_pages_versions) == 1, version 1
         # len() == 2, version 1, 2
+
+        page = urllib.unquote_plus(page)
+        page = to_mongo(page)
 
         page = str(page).lower()
         if version:
@@ -1163,13 +1201,18 @@ class Node(GuidStoredObject):
         return pw
 
     def update_node_wiki(self, page, content, user, api_key):
-        '''Update a the node's wiki page with new content.
+        """Update the node's wiki page with new content.
 
         :param page: A string, the page's name, e.g. ``"home"``.
         :param content: A string, the posted content.
         :param user: A `User` object.
         :param api_key: A string, the api key. Can be ``None``.
-        '''
+
+        """
+        temp_page = page
+
+        page = urllib.unquote_plus(page)
+        page = to_mongo(page)
         page = str(page).lower()
 
         if page not in self.wiki_pages_current:
@@ -1180,21 +1223,20 @@ class Node(GuidStoredObject):
             version = current.version + 1
             current.save()
 
-        v = NodeWikiPage()
-        v.page_name = page
-        v.version = version
-        v.user = user
-        v.is_current = True
-        v.node = self
-        v.content = content
+        v = NodeWikiPage(
+            page_name=temp_page,
+            version=version,
+            user=user,
+            is_current=True,
+            node=self,
+            content=content
+        )
         v.save()
 
         if page not in self.wiki_pages_versions:
             self.wiki_pages_versions[page] = []
         self.wiki_pages_versions[page].append(v._primary_key)
         self.wiki_pages_current[page] = v._primary_key
-
-        self.save()
 
         self.add_log(
             action=NodeLog.WIKI_UPDATED,
