@@ -17,9 +17,9 @@ import datetime as dt
 
 from factory import base, Sequence, SubFactory, PostGenerationMethodCall, post_generation
 
-from framework.auth import User
+from framework.auth import User, Q
 from website.project.model import (ApiKey, Node, NodeLog, WatchConfig,
-                                   MetaData, Tag, NodeWikiPage)
+                                   MetaData, Tag, NodeWikiPage, MetaSchema)
 
 class ModularOdmFactory(base.Factory):
 
@@ -89,6 +89,36 @@ class NodeFactory(ModularOdmFactory):
     creator = SubFactory(UserFactory)
     project = SubFactory(ProjectFactory)
 
+
+class RegistrationFactory(ModularOdmFactory):
+    FACTORY_FOR = Node
+
+    # Arguments given to the original project
+    category = 'project'
+    title = "Original Project"
+    description = "This is the default."
+    creator = SubFactory(UserFactory)
+
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        '''Build an object without saving it.'''
+        raise Exception("Cannot build registration without saving.")
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        parent = kwargs.get('project') or target_class(*args, **kwargs)
+        schema = kwargs.get('schema') or MetaSchema.find_one(
+            Q('name', 'eq', 'Open-Ended_Registration')
+        )
+        user = kwargs.get('user') or kwargs['creator']
+        template = kwargs.get('template') or "Template1"
+        data = kwargs.get('data') or "Some words"
+        return parent.register_node(
+            schema=schema,
+            user=user,
+            template=template,
+            data=data,
+        )
 
 class NodeLogFactory(ModularOdmFactory):
     FACTORY_FOR = NodeLog

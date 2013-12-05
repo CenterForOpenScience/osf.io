@@ -15,7 +15,7 @@ from website.project.model import ApiKey, NodeFile, NodeLog, MetaSchema, ensure_
 from tests.base import DbTestCase, Guid
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
-    TagFactory, NodeWikiFactory)
+    TagFactory, NodeWikiFactory, RegistrationFactory)
 
 
 GUID_FACTORIES = (UserFactory, TagFactory, NodeFactory, ProjectFactory,
@@ -778,18 +778,35 @@ class TestForkNode(DbTestCase):
 class TestRegisterNode(DbTestCase):
 
     def setUp(self):
+        ensure_schemas()
         self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user)
-        ensure_schemas()
-        self.schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Open-Ended_Registration')
+        self.registration = RegistrationFactory(project=self.project)
+
+    def test_factory(self):
+        # Create a registration with kwargs
+        registration1 = RegistrationFactory(
+            title="t1", description="d1", creator=self.user,
         )
-        self.registration = self.project.register_node(
-            schema=self.schema,
-            user=self.user,
-            template="Some Format",
-            data="Some words or something",
+        assert_equal(registration1.title, "t1")
+        assert_equal(registration1.description, "d1")
+        assert_equal(len(registration1.contributors), 1)
+        assert_in(self.user, registration1.contributors)
+        assert_equal(registration1.registered_user, self.user)
+        assert_equal(registration1.registered_meta["Template1"], "Some words")
+        assert_true(registration1.registered_schema)
+        # Create a registration from a project
+        user2 = UserFactory()
+        self.project.add_contributor(user2)
+        registration2 = RegistrationFactory(
+            project=self.project,
+            user=user2,
+            template="Template2",
+            data="Something else",
         )
+        assert_equal(registration2.registered_from, self.project)
+        assert_equal(registration2.registered_user, user2)
+        assert_equal(registration2.registered_meta["Template2"], "Something else")
 
     def test_title(self):
         assert_equal(self.registration.title, self.project.title)
@@ -803,12 +820,7 @@ class TestRegisterNode(DbTestCase):
     def test_creator(self):
         user2 = UserFactory()
         self.project.add_contributor(user2)
-        registration = self.project.register_node(
-            schema=self.schema,
-            user=user2,
-            template="Some Format",
-            data="Some words or something",
-        )
+        registration = RegistrationFactory(project=self.project)
         assert_equal(registration.creator, self.user)
 
     def test_logs(self):
@@ -835,12 +847,7 @@ class TestRegisterNode(DbTestCase):
         )
 
         # Make a registration
-        registration = self.project.register_node(
-            schema=self.schema,
-            user=self.user,
-            template="Some Format",
-            data="Some words or something",
-        )
+        registration = RegistrationFactory(project=self.project)
 
         # Registration has the nodes
         assert_equal(len(registration.nodes), 2)
