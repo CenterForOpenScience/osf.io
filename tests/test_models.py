@@ -694,10 +694,15 @@ class TestForkNode(DbTestCase):
             project=self.project,
             title='Not Forked',
         )
-        self.public_subproject_component = NodeFactory(
+        self.private_subproject_public_component = NodeFactory(
             creator=self.user,
             project=self.private_subproject,
             title='Not Forked',
+        )
+        self.public_subproject_public_component = NodeFactory(
+            creator=self.user,
+            project=self.private_subproject,
+            title='Forked',
         )
 
         # New user forks the project
@@ -797,6 +802,7 @@ class TestRegisterNode(DbTestCase):
         assert_equal(registration1.registered_user, self.user)
         assert_equal(registration1.registered_meta["Template1"], "Some words")
         assert_true(registration1.registered_schema)
+
         # Create a registration from a project
         user2 = UserFactory()
         self.project.add_contributor(user2)
@@ -817,7 +823,12 @@ class TestRegisterNode(DbTestCase):
         assert_equal(self.registration.contributors, self.project.contributors)
 
     def test_forked_from(self):
+        # A a node that is not a fork
         assert_equal(self.registration.forked_from, None)
+        # A node that is a fork
+        fork = self.project.fork_node(self.user)
+        registration = RegistrationFactory(project=fork)
+        assert_equal(registration.forked_from, self.project)
 
     def test_creator(self):
         user2 = UserFactory()
@@ -846,6 +857,11 @@ class TestRegisterNode(DbTestCase):
             creator=self.user,
             project=self.project,
             title='Title2',
+        )
+        self.subproject_component = NodeFactory(
+            creator=self.user,
+            project=self.subproject,
+            title='Title3',
         )
 
         # Make a registration
