@@ -642,6 +642,10 @@ class Node(GuidStoredObject):
         # todo: should be recursive; see Node.fork_node()
         for original_node_contained in original.nodes:
 
+            if not original_node_contained.can_edit(user):
+                # todo: inform user that node can't be registered
+                continue
+
             node_contained = original_node_contained.clone()
             node_contained.save()
 

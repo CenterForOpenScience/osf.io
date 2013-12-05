@@ -101,7 +101,6 @@ class RegistrationFactory(ModularOdmFactory):
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
-        '''Build an object without saving it.'''
         raise Exception("Cannot build registration without saving.")
 
     @classmethod
@@ -110,7 +109,8 @@ class RegistrationFactory(ModularOdmFactory):
         schema = kwargs.get('schema') or MetaSchema.find_one(
             Q('name', 'eq', 'Open-Ended_Registration')
         )
-        user = kwargs.get('user') or kwargs['creator']
+        # user is the passed user or the parent's creator
+        user = kwargs.get('user') or parent.creator
         template = kwargs.get('template') or "Template1"
         data = kwargs.get('data') or "Some words"
         return parent.register_node(
@@ -119,6 +119,7 @@ class RegistrationFactory(ModularOdmFactory):
             template=template,
             data=data,
         )
+
 
 class NodeLogFactory(ModularOdmFactory):
     FACTORY_FOR = NodeLog

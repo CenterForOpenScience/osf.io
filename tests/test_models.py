@@ -816,6 +816,10 @@ class TestRegisterNode(DbTestCase):
         assert_equal(registration2.registered_user, user2)
         assert_equal(registration2.registered_meta["Template2"], "Something else")
 
+        # Test default user
+        assert_equal(self.registration.registered_user, self.user)
+
+
     def test_title(self):
         assert_equal(self.registration.title, self.project.title)
 
@@ -847,6 +851,7 @@ class TestRegisterNode(DbTestCase):
         assert_equal(self.registration.tags, self.project.tags)
 
     def test_nodes(self):
+
         # Create some nodes
         self.component = NodeFactory(
             creator=self.user,
@@ -877,6 +882,45 @@ class TestRegisterNode(DbTestCase):
         for node in registration.nodes:
             assert_not_in(node, self.project.nodes)
             assert_true(node.is_registration)
+
+    def test_register_permissions(self):
+
+        # Create some nodes
+        self.component = NodeFactory(
+            creator=self.user,
+            project=self.project,
+            title='Not Registered',
+        )
+        self.subproject = ProjectFactory(
+            creator=self.user,
+            project=self.project,
+            title='Not Registered',
+        )
+
+        # Create some nodes to share
+        self.shared_component = NodeFactory(
+            creator=self.user,
+            project=self.project,
+            title='Registered',
+        )
+        self.shared_subproject = ProjectFactory(
+            creator=self.user,
+            project=self.project,
+            title='Registered',
+        )
+
+        # Share the project and some nodes
+        user2 = UserFactory()
+        self.project.add_contributor(user2)
+        self.shared_component.add_contributor(user2)
+        self.shared_subproject.add_contributor(user2)
+
+        # Partial contributor registers the node
+        registration = RegistrationFactory(project=self.project, user=user2)
+
+        # The correct subprojects were registered
+        assert_equal(len(registration.nodes), 2)
+        assert_not_in('Not Registered', [node.title for node in registration.nodes])
 
     def test_is_registration(self):
         assert_true(self.registration.is_registration)
