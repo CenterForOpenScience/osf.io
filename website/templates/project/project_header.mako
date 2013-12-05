@@ -127,7 +127,9 @@
                 <li><a href="${node['url']}wiki/">Wiki</a></li>
                 <li><a href="${node['url']}statistics/">Statistics</a></li>
                 <li><a href="${node['url']}files/">Files</a></li>
-                <li><a href="${node['url']}registrations/">Registrations</a></li>
+                % if not node['is_registration']:
+                    <li><a href="${node['url']}registrations/">Registrations</a></li>
+                % endif
                 <li><a href="${node['url']}forks/">Forks</a></li>
                 % if user['is_contributor'] and not node['is_registration']:
                 <li><a href="${node['url']}settings/">Settings</a></li>
