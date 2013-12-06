@@ -54,6 +54,10 @@ def edit_node(*args, **kwargs):
 ##############################################################################
 
 @must_be_logged_in
+def project_new(*args, **kwargs):
+    return {}
+
+@must_be_logged_in
 def project_new_post(*args, **kwargs):
     user = kwargs['user']
     form = NewProjectForm(request.form)
