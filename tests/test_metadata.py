@@ -29,13 +29,17 @@ class TestMetaData(DbTestCase):
             len(OSF_META_SCHEMAS)
         )
 
-    def test_sanitize_clean(self):
+    def test_process(self):
         processed = process_payload({'foo': 'bar&baz'})
         assert_equal(processed['foo'], 'bar%26baz')
 
-    def test_sanitize_clean_list(self):
+    def test_process_list(self):
         processed = process_payload({'foo': ['bar', 'baz&bob']})
         assert_equal(processed['foo'][1], 'baz%26bob')
+
+    def test_process_whitespace(self):
+        processed = process_payload({'foo': 'bar baz'})
+        assert_equal(processed['foo'], 'bar baz')
 
 if __name__ == '__main__':
     unittest.main()
