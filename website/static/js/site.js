@@ -56,7 +56,7 @@ $(document).ready(function(){
     });
 
     // Highlight active tabs and nav labels
-    if (nodeId) {
+    if (typeof(nodeId) !== 'undefined' && nodeId) {
         // Works for project pages; code used below won't highlight wiki tab
         // on wiki pages because URLs (e.g. wiki/home) aren't contained in
         // tab URLs (e.g. wiki)
