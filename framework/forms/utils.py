@@ -20,8 +20,12 @@ def process_data(data, func):
     return func(data)
 
 
+def _quote(value):
+    return urllib.quote(value, safe=' ')
+
+
 def process_payload(data):
-    return process_data(data, urllib.quote_plus)
+    return process_data(data, _quote)
 
 
 def jsonify(form):
