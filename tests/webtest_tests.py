@@ -197,13 +197,13 @@ class TestAUser(DbTestCase):
         project.add_contributor(self.user)
         project.save()
         # User goes to the project page
-        res = self.app.get(project.url), auth=self.auth).maybe_follow()
+        res = self.app.get(project.url, auth=self.auth).maybe_follow()
         assert_in("Make public", res)
 
     def test_sees_logs_on_a_project(self):
         project = ProjectFactory(is_public=True)
         # User goes to the project's page
-        res = self.app.get(project.url), auth=self.auth).maybe_follow()
+        res = self.app.get(project.url, auth=self.auth).maybe_follow()
         # Can see log event
         # res.showbrowser()
         assert_in("created", res)
