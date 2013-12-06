@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import itertools
+import urlparse
 import datetime as dt
 
 import pytz
@@ -58,6 +59,10 @@ class User(GuidStoredObject):
     @property
     def url(self):
         return '/{}/'.format(self._primary_key)
+
+    @property
+    def abs_url(self):
+        return urlparse.urljoin(settings.DOMAIN, self.url)
 
     @property
     def deep_url(self):

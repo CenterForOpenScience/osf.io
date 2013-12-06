@@ -50,7 +50,7 @@
             </tr>
             <tr>
               <td>Public Profile</td>
-              <td><a href="/profile/${user_id}/">/profile/${user_id}/</a></td>
+              <td><a href="/${user_id}/">${user_abs_url}</a></td>
             </tr>
         </table>
     </div>

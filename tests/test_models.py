@@ -5,11 +5,13 @@ from nose.tools import *  # PEP8 asserts
 
 import pytz
 import datetime
+import urlparse
 from dateutil import parser
 
 from framework.auth import User
 from framework.bcrypt import check_password_hash
 from website.project.model import ApiKey, NodeFile, NodeLog
+from website import settings
 
 from tests.base import DbTestCase, Guid
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
@@ -58,6 +60,18 @@ class TestUser(DbTestCase):
         user.save()
         assert_true(user.check_password("ghostrider"))
         assert_false(user.check_password("ghostride"))
+
+    def test_url(self):
+        assert_equal(
+            self.user.url,
+            '/{0}/'.format(self.user._primary_key)
+        )
+
+    def test_abs_url(self):
+        assert_equal(
+            self.user.abs_url,
+            urlparse.urljoin(settings.DOMAIN, '/{0}/'.format(self.user._primary_key))
+        )
 
 
 class TestMergingUsers(DbTestCase):

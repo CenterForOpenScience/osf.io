@@ -99,7 +99,7 @@
                     "replace": true
                 }'></div>
             % if node['is_fork']:
-                <br />Forked from <a class="node-forked-from" href="${node['forked_from_url']}">${node['forked_from_url']}</a> on
+                <br />Forked from <a class="node-forked-from" href="${node['forked_from_id']}">${node['forked_from_abs_url']}</a> on
                 <span data-bind="text: dateForked.local,
                                 tooltip: {title: dateForked.utc}"></span>
             % endif

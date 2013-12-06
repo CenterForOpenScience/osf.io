@@ -23,6 +23,7 @@ def get_globals():
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
         'user_id': user._primary_key if user else '',
+        'user_abs_url': user.abs_url,
         'display_name': framework.auth.get_display_name(user.username) if user else '',
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'dev_mode': settings.DEV_MODE,
