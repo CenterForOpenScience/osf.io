@@ -151,7 +151,7 @@ def _get_files(filetree, parent_id, check, user):
                 ]
                 item['size'] = str(tmp.size)
                 item['url'] = 'files/'.join([
-                    str(filetree[0].url),
+                    str(filetree[0].deep_url),
                     item['name'] + '/'
                 ])
                 item['dateModified'] = [
