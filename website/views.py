@@ -29,7 +29,7 @@ def _rescale_ratio(nodes):
         return 0
     return float(max([
         len(node.logs)
-        for node in nodes
+        for node in nodes if node.can_view(get_current_user())
     ]))
 
 
