@@ -110,7 +110,7 @@ def watched_logs_get(*args, **kwargs):
 
 
 def reproducibility():
-    return framework.redirect('/project/EZcUj/wiki')
+    return framework.redirect('/EZcUj/wiki')
 
 
 def registration_form():

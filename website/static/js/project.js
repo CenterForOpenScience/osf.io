@@ -59,7 +59,7 @@ NodeActions.forkNode = function(){
 // todo: discuss; this code not used
 NodeActions.addNodeToProject = function(node, project) {
     $.ajax({
-        url: '/project/' + project + '/addnode/' + node,
+        url: '/' + project + '/addnode/' + node,
         type: 'POST',
         data: 'node=' + node + '&project=' + project
     }).done(function(msg) {

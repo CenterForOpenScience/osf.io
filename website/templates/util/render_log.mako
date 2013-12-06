@@ -62,7 +62,7 @@
     %elif log['action'] == 'edit_title':
         changed the title from ${log['params']['title_original']} to <a href="${log['node_url']}">${log['params']['title_new']}</a>
     %elif log['action'] == 'project_registered':
-        <a href="/project/${log['params']['registration']}/">registered</a> ${log['category']}
+        <a href="/${log['params']['registration']}/">registered</a> ${log['category']}
         <a href="${log['node_url']}">${log['node_title']}</a>
     %elif log['action'] == 'node_forked':
         created fork from ${log['category']}

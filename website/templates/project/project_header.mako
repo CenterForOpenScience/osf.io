@@ -75,7 +75,7 @@
                 %if parent['id']:
                     % if parent['is_public'] or parent['is_contributor']:
                          <h1 style="display:inline-block;" class="node-parent-title overflow">
-                             <a href="/project/${parent['id']}/">${parent['title']}</a> /
+                             <a href="/${parent['id']}/">${parent['title']}</a> /
                          </h1>
                     % else:
                          <h1 style="display:inline-block;" class="node-parent-title overflow unavailable">

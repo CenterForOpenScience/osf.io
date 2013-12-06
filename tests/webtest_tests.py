@@ -197,13 +197,13 @@ class TestAUser(DbTestCase):
         project.add_contributor(self.user)
         project.save()
         # User goes to the project page
-        res = self.app.get("/project/{0}/".format(project._primary_key), auth=self.auth).maybe_follow()
+        res = self.app.get(project.url), auth=self.auth).maybe_follow()
         assert_in("Make public", res)
 
     def test_sees_logs_on_a_project(self):
         project = ProjectFactory(is_public=True)
         # User goes to the project's page
-        res = self.app.get("/project/{0}/".format(project._primary_key), auth=self.auth).maybe_follow()
+        res = self.app.get(project.url), auth=self.auth).maybe_follow()
         # Can see log event
         # res.showbrowser()
         assert_in("created", res)
@@ -211,7 +211,7 @@ class TestAUser(DbTestCase):
     def test_no_wiki_content_message(self):
         project = ProjectFactory(creator=self.user)
         # Goes to project's wiki, where there is no content
-        res = self.app.get("/project/{0}/wiki/home/".format(project._primary_key), auth=self.auth)
+        res = self.app.get("/{0}/wiki/home/".format(project._primary_key), auth=self.auth)
         # Sees a message indicating no content
         assert_in("No wiki content", res)
 
