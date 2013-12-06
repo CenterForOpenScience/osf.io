@@ -6,6 +6,7 @@ import re
 import datetime as dt
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
+from webtest import AppError
 
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
@@ -67,6 +68,16 @@ class TestAnUnregisteredUser(DbTestCase):
         res = form.submit().maybe_follow()
         # sees error message because email is already registered
         assert_in("has already been registered.", res)
+
+    def test_cant_see_new_project_form(self):
+        """ Can't see new project form if not logged in. """
+        with assert_raises(AppError):
+            self.app.get('/project/new/').maybe_follow()
+
+    def test_cant_see_profile(self):
+        """ Can't see profile if not logged in. """
+        with assert_raises(AppError):
+            self.app.get('/profile/').maybe_follow()
 
 
 class TestAUser(DbTestCase):
