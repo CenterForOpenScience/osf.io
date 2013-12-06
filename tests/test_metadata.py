@@ -3,8 +3,7 @@
 import unittest
 from nose.tools import *  # PEP8 asserts
 
-from framework.forms.utils import sanitize_payload
-from framework.exceptions import SanitizeError
+from framework.forms.utils import process_payload
 
 from website.project.model import MetaSchema
 from website.project.model import ensure_schemas
@@ -30,25 +29,17 @@ class TestMetaData(DbTestCase):
             len(OSF_META_SCHEMAS)
         )
 
-    def test_sanitize_clean(self):
-        try:
-            sanitize_payload({'foo': 'bar'})
-        except SanitizeError:
-            assert False
+    def test_process(self):
+        processed = process_payload({'foo': 'bar&baz'})
+        assert_equal(processed['foo'], 'bar%26baz')
 
-    def test_sanitize_clean_list(self):
-        try:
-            sanitize_payload({'foo': ['bar', 'baz']})
-        except SanitizeError:
-            assert False
+    def test_process_list(self):
+        processed = process_payload({'foo': ['bar', 'baz&bob']})
+        assert_equal(processed['foo'][1], 'baz%26bob')
 
-    def test_sanitize_dirty_value(self):
-        with assert_raises(SanitizeError):
-            sanitize_payload({'foo': '<bar />'})
-
-    def test_sanitize_dirty_list(self):
-        with assert_raises(SanitizeError):
-            sanitize_payload(({'foo': ['bar', '<baz />']}))
+    def test_process_whitespace(self):
+        processed = process_payload({'foo': 'bar baz'})
+        assert_equal(processed['foo'], 'bar baz')
 
 if __name__ == '__main__':
     unittest.main()

@@ -20,8 +20,10 @@ from website import settings
 logger = logging.getLogger(__name__)
 
 TEMPLATE_DIR = settings.TEMPLATES_PATH
-_tpl_lookup = TemplateLookup(directories=[TEMPLATE_DIR],
-                             module_directory='/tmp/mako_modules')
+_tpl_lookup = TemplateLookup(
+    directories=[TEMPLATE_DIR],
+    module_directory='/tmp/mako_modules'
+)
 REDIRECT_CODES = [
     http.MOVED_PERMANENTLY,
     http.FOUND,
@@ -175,8 +177,15 @@ def render_jinja_string(tpl, data):
 mako_cache = {}
 def render_mako_string(tpldir, tplname, data):
 
-    tpl = mako_cache.get(tplname,
-                        Template(open(os.path.join(tpldir, tplname)).read(), lookup=_tpl_lookup))
+    tpl = mako_cache.get(
+        tplname,
+        Template(
+            open(os.path.join(tpldir, tplname)).read(),
+            lookup=_tpl_lookup,
+            input_encoding='utf-8',
+            output_encoding='utf-8',
+        )
+    )
     # Don't cache in debug mode
     if not app.debug:
         #logger.debug("Caching template: {0}".format(tplname))

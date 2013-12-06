@@ -8,7 +8,7 @@
     maintained and developed by the Center for Open Science (COS), a non-profit
     organization. COS is supported by grants from <a
             href="http://www.arnoldfoundation.org/">The Laura and John Arnold
-        Foundation </a>, <a href="http://www.sloan.org/">Alfred P. Sloan
+        Foundation</a>, <a href="http://www.sloan.org/">Alfred P. Sloan
         Foundation</a>, and an anonymous donor.</p>
 
 <h3>How will the OSF be useful to my research?</h3><p>The OSF integrates with

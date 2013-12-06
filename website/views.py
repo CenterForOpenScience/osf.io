@@ -20,16 +20,18 @@ logger = logging.getLogger(__name__)
 
 
 def _rescale_ratio(nodes):
-    """
+    """Get scaling denominator for log lists across a sequence of nodes.
 
-    :param nodes:
-    :return:
+    :param nodes: Nodes
+    :return: Max number of logs
+
     """
     if not nodes:
         return 0
+    user = get_current_user()
     return float(max([
         len(node.logs)
-        for node in nodes
+        for node in nodes if node.can_view(user)
     ]))
 
 
