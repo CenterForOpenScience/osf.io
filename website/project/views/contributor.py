@@ -12,7 +12,7 @@ from framework.auth import must_have_session_auth, get_current_user, get_api_key
 
 
 from website.models import Node
-from website.project.serializers import UserSerializer, UnregUserSerializer
+from website.profile import utils
 
 logger = logging.getLogger(__name__)
 
@@ -76,9 +76,9 @@ def _jsonify_contribs(contribs):
             if user is None:
                 logger.error('User {} not found'.format(contrib['id']))
                 continue
-            data.append(UserSerializer(user).data)
+            data.append(utils.serialize_user(user))
         else:
-            contribs.append(UnregUserSerializer(contrib).data)
+            contribs.append(utils.serialize_unreg_user(user))
 
     return data
 

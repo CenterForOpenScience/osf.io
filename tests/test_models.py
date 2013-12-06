@@ -12,6 +12,7 @@ from framework.auth import User
 from framework import utils
 from framework.bcrypt import check_password_hash
 from website import settings, filters
+from website.profile.utils import serialize_user
 from website.project.model import ApiKey, NodeFile, NodeLog
 
 from tests.base import DbTestCase, Guid
@@ -84,6 +85,36 @@ class TestUser(DbTestCase):
     def test_activity_points(self):
         assert_equal(self.user.activity_points,
                     get_total_activity_count(self.user._primary_key))
+
+    def test_serialize_user(self):
+        master = UserFactory.build()
+        user = UserFactory.build()
+        master.merge_user(user)
+        master.save()
+        user.save()
+        d = serialize_user(user)
+        assert_equal(d['id'], user._primary_key)
+        assert_equal(d['url'], user.url)
+        assert_equal(d['username'], user.username)
+        assert_equal(d['fullname'], user.fullname)
+        assert_equal(d['registered'], user.is_registered)
+        assert_equal(d['gravatar_url'], user.gravatar_url)
+        assert_equal(d['absolute_url'], user.absolute_url)
+        assert_equal(d['date_registered'], user.date_registered.strftime("%Y-%m-%d"))
+        assert_equal(d['activity_points'], user.activity_points)
+        assert_equal(d['is_merged'], user.is_merged)
+        assert_equal(d['merged_by']['url'], user.merged_by.url)
+        assert_equal(d['merged_by']['absolute_url'], user.merged_by.absolute_url)
+        projects = [
+            node
+            for node in user.node__contributed
+            if node.category == 'project'
+            and not node.is_registration
+            and not node.is_deleted
+        ]
+        public_projects = [p for p in projects if p.is_public]
+        assert_equal(d['number_projects'], len(projects))
+        assert_equal(d['number_public_projects'], len(public_projects))
 
 
 class TestMergingUsers(DbTestCase):

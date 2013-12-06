@@ -184,6 +184,7 @@ class NodeLog(StoredObject):
             'registered' : True,
         }
 
+    # TODO: Move to separate utility function
     def serialize(self):
         '''Return a dictionary representation of the log.'''
         return {
