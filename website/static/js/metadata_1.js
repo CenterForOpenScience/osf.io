@@ -392,7 +392,7 @@ var MetaData = (function() {
                 self.$root.fileDict[selectedNode] = ko.observableArray();
                 self.$root.fileDict[selectedNode]();
                 $.getJSON(
-                    nodeToUseUrl() + 'file_paths/',
+                    nodeApiUrl + 'file_paths/',
                     function(response) {
                         self.$root.fileDict[selectedNode](response.files);
                     }

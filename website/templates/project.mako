@@ -60,15 +60,42 @@
         </div>
       </section>
     </div>
+
     <div class="col-md-5">
-        <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
+
+        <div class="citations">
+            <span class="citation-label">Citation:</span>
+            <span>${node['abs_url']}</span>
+            <br />
+            <a class="btn btn-default citation-toggle">Show formatted citations</a>
+            <dl class="citation-list">
+                <dt>APA</dt>
+                    <dd>${node['citations']['apa']}</dd>
+                <dt>MLA</dt>
+                    <dd>${node['citations']['mla']}</dd>
+                <dt>Chicago</dt>
+                    <dd>${node['citations']['chicago']}</dd>
+            </dl>
+        </div>
+
+        <hr />
+
+        <div class="tags">
+            <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
+        </div>
+
+        <hr />
+
+        <div class="logs">
             <div id='logScope'>
                 <%include file="log_list.mako"/>
             </div><!-- end #logScope -->
             ## Hide More widget until paging for logs is implemented
             ##<div class="paginate pull-right">more</div>
-        </section>
+        </div>
+
     </div>
+
   </div>
 
 

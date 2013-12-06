@@ -77,21 +77,18 @@ def project_new_node(*args, **kwargs):
     project = kwargs['project']
     user = kwargs['user']
     if form.validate():
-        node = new_node(
+        new_node(
             title=form.title.data,
             user=user,
             category=form.category.data,
-            project = project,
+            project=project,
         )
         return {
             'status': 'success',
         }, 201, None, project.url
-        # return redirect('/project/' + str(project._primary_key))
     else:
         push_errors_to_status(form.errors)
-    # todo: raise error
     raise HTTPError(http.BAD_REQUEST, redirect_url=project.url)
-    # return redirect('/project/' + str(project._primary_key))
 
 @must_be_valid_project
 def node_fork_page(*args, **kwargs):
@@ -103,8 +100,6 @@ def node_fork_page(*args, **kwargs):
     if node:
         node_to_use = node
         status.push_status_message('At this time, only projects can be forked; however, this behavior is coming soon.')
-        # todo discuss
-        # return redirect(node_to_use.url)
         raise HTTPError(
             http.FORBIDDEN,
             message='At this time, only projects can be forked; however, this behavior is coming soon.',
@@ -115,9 +110,6 @@ def node_fork_page(*args, **kwargs):
 
     if node_to_use.is_registration:
         raise HTTPError(http.FORBIDDEN)
-        # push_status_message('At this time, only projects that are not registrations can be forked; however, this behavior is coming soon.')
-        # # todo discuss
-        # return node_to_use.url
 
     fork = node_to_use.fork_node(user, api_key=api_key)
 
@@ -358,6 +350,12 @@ def _view_project(node_to_use, user, api_key=None):
             'wiki_home': wiki_home,
             'url': node_to_use.url,
             'api_url': node_to_use.api_url,
+            'abs_url': node_to_use.abs_url,
+            'citations': {
+                'apa': node_to_use.citation_apa,
+                'mla': node_to_use.citation_mla,
+                'chicago': node_to_use.citation_chicago,
+            },
             'is_public': node_to_use.is_public,
             'date_created': node_to_use.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
             'date_modified': node_to_use.logs[-1].date.strftime('%m/%d/%Y %I:%M %p UTC') if node_to_use.logs else '',

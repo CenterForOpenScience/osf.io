@@ -29,6 +29,14 @@ a.disabled {
     cursor: default;
 }
 
+.citation-label {
+    font-weight: bold;
+}
+
+.citation-list {
+    display: none;
+}
+
 .editing .display,
 .edit {
     display: none;
@@ -878,7 +886,7 @@ h1.unavailable {
 
 .overflow {
     word-wrap: break-word;
-    width: 100%;
+    max-width: 100%;
 }
 
 .preview-overflow{

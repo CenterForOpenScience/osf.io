@@ -13,6 +13,9 @@ class Guid(StoredObject):
 
 class GuidStoredObject(StoredObject):
 
+    # Redirect to content using URL redirect by default
+    redirect_mode = 'redirect'
+
     def __init__(self, *args, **kwargs):
         """Overridden constructor. When a GuidStoredObject is instantiated,
         create a new Guid if the object doesn't already have one, then attach

@@ -74,6 +74,14 @@ def make_url_map(app):
              HTTPError(http.NOT_FOUND), json_renderer),
     ])
 
+    ### GUID ###
+    process_rules(app, [
+        Rule([
+            '/<guid>/',
+            '/<guid>/<path:suffix>',
+        ], ['get', 'post'], website_routes.resolve_guid, OsfWebRenderer('', render_mako_string)),
+    ])
+
     process_rules(app, [
         Rule('/favicon.ico', 'get', favicon, json_renderer),
     ])
@@ -99,14 +107,6 @@ def make_url_map(app):
         Rule('/dashboard/get_nodes/', 'get', website_routes.get_dashboard_nodes, json_renderer),
 
     ], prefix='/api/v1')
-
-    ### GUID ###
-
-    process_rules(app, [
-
-        Rule('/guid/<guid>/', 'get', website_routes.resolve_guid, OsfWebRenderer('', render_mako_string)),
-
-    ])
 
     ### Meta-data ###
 

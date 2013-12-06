@@ -225,9 +225,10 @@ class TestNode(DbTestCase):
         assert_in(config1._id, self.node.watchconfig__watched)
 
     def test_url(self):
-        url = self.node.url
-        assert_equal(url, "/project/{0}/node/{1}/".format(self.parent._primary_key,
-                                                        self.node._primary_key))
+        assert_equal(
+            self.node.url,
+            '/{0}/'.format(self.node._primary_key)
+        )
 
     def test_watch_url(self):
         url = self.node.watch_url
@@ -344,8 +345,10 @@ class TestProject(DbTestCase):
         assert_equal(node.logs[-1].action, 'project_created')
 
     def test_url(self):
-        url = self.project.url
-        assert_equal(url, "/project/{0}/".format(self.project._primary_key))
+        assert_equal(
+            self.project.url,
+            '/{0}/'.format(self.project._primary_key)
+        )
 
     def test_api_url(self):
         api_url = self.project.api_url

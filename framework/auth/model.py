@@ -22,6 +22,8 @@ name_formatters = {
 
 class User(GuidStoredObject):
 
+    redirect_mode = 'proxy'
+
     _id = fields.StringField(primary=True)
 
     # NOTE: In the OSF, username is an email
@@ -55,6 +57,10 @@ class User(GuidStoredObject):
 
     @property
     def url(self):
+        return '/{}/'.format(self._primary_key)
+
+    @property
+    def deep_url(self):
         return '/profile/{}/'.format(self._primary_key)
 
     @property
@@ -72,6 +78,14 @@ class User(GuidStoredObject):
         """
         # TODO: Give users the ability to specify this via their profile
         return self.fullname.split(' ')[-1]
+
+    @property
+    def biblio_name(self):
+        given_name = self.given_name
+        surname = self.surname
+        if surname != given_name:
+            return u'{0}, {1}.'.format(surname, given_name[0])
+        return surname
 
     @property
     def given_name(self):

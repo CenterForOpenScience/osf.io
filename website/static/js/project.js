@@ -17,35 +17,6 @@ Messages = {
 
 /* Utility functions */
 
-/**
- * Return the id of the current node by parsing the current URL.
- */
-window.nodeToUse = function(){
-    var match;
-    match = location.pathname.match("\/project\/.*?\/node\/(.*?)\/.*");
-    if (match)
-        return match[1];
-    match = location.pathname.match("\/project\/(.*?)\/.*");
-    if (match)
-        return match[1];
-    return undefined;
-};
-
-
-/**
- * Return the api url for the current node by parsing the current URL.
- */
-window.nodeToUseUrl = function(){
-    var match;
-    match = location.pathname.match("(\/project\/.*?\/node\/.*?)\/.*");
-    if (match)
-        return '/api/v1' + match[1] + '/';
-    match = location.pathname.match("(\/project\/.*?)\/.*");
-    if (match)
-        return '/api/v1' + match[1] + '/';
-    return undefined;
-};
-
 window.block = function() {
     $.blockUI({
         css: {
@@ -74,7 +45,7 @@ NodeActions.forkNode = function(){
 
     // Fork node
     $.ajax({
-        url: nodeToUseUrl() + 'fork/',
+        url: nodeApiUrl + 'fork/',
         type: 'POST'
     }).done(function(response) {
         window.location = response;
@@ -149,7 +120,7 @@ NodeActions.removeUser = function(userid, name) {
         if (result) {
             $.ajax({
                 type: "POST",
-                url: nodeToUseUrl() + "removecontributors/",
+                url: nodeApiUrl + "removecontributors/",
                 contentType: "application/json",
                 dataType: "json",
                 data: JSON.stringify({
@@ -206,6 +177,10 @@ $(document).ready(function() {
     ////////////////////
     // Event Handlers //
     ////////////////////
+
+    $('.citation-toggle').on('click', function() {
+        $(this).closest('.citations').find('.citation-list').slideToggle();
+    });
 
     $('.user-quickedit').hover(
         function(){

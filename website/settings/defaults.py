@@ -14,6 +14,7 @@ BASE_PATH = parent_dir(HERE)  # website/ directory
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 TEMPLATES_PATH = os.path.join(BASE_PATH, "templates")
+DOMAIN = 'https://openscienceframework.org/'
 
 # User management & registration
 CONFIRM_REGISTRATIONS_BY_EMAIL = False # Not fully implemented

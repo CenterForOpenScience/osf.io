@@ -71,7 +71,7 @@
             </div><!-- end btn-toolbar -->
 
 
-            <div class="col-md-8">
+            <div class="col-md-8 cite-container">
                 %if parent['id']:
                     % if parent['is_public'] or parent['is_contributor']:
                          <h1 style="display:inline-block;" class="node-parent-title overflow">
@@ -83,7 +83,10 @@
                          </h1>
                     %endif
                 %endif
-                <h1 id="nodeTitleEditable" class="node-title overflow" style="display:inline-block;">${node['title']}</h1>
+                <h1 class="node-title overflow" style="display:inline-block;">
+                    <span id="nodeTitleEditable">${node['title']}</span>
+                </h1>
+
             </div>
 
         </div><!-- end row -->
@@ -139,15 +142,19 @@
 <%include file="modal_add_contributor.mako"/>
 ## TODO: Find a better place to put this initialization code
 <script>
+
+    var nodeId = '${node['id']}';
+    var nodeApiUrl = '${node['api_url']}';
+
     $(document).ready(function(){
         $logScope = $("#logScope");
         if ($logScope.length > 0) {
             progressBar = $("#logProgressBar")
             progressBar.show();
-        };
+        }
         // Get project data from the server and initiate the ProjectViewModel
         $.ajax({
-            url: nodeToUseUrl(),
+            url: nodeApiUrl,
             type: "get", contentType: "application/json",
             dataType: "json",
             cache: false,
@@ -178,5 +185,6 @@
             }
         });
     });
+
 </script>
 </div><!-- end container -->

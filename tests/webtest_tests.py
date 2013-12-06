@@ -8,7 +8,8 @@ from webtest_plus import TestApp
 
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
-                            NodeLogFactory, ApiKeyFactory, NodeFactory)
+                            NodeLogFactory, ApiKeyFactory, NodeFactory,
+                            NodeWikiFactory)
 
 from website import settings
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -288,6 +289,8 @@ class TestComponents(DbTestCase):
         self.component = NodeFactory(category="hypothesis", creator=self.user)
         self.project.nodes.append(self.component)
         self.component.save()
+        self.component.set_permissions('public', self.user)
+        self.component.set_permissions('private', self.user)
         self.project.save()
 
     def test_cannot_create_component_from_a_component(self):
@@ -445,6 +448,64 @@ class TestSearching(DbTestCase):
         res = form.submit().maybe_follow()
         # A link to the project is shown as a result
         assert_in("Foobar Project", res)
+
+
+class TestShortUrls(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = UserFactory(username="test@test.com")
+        # Add an API key for quicker authentication
+        api_key = ApiKeyFactory()
+        self.user.api_keys.append(api_key)
+        self.user.save()
+        self.auth = ('test', api_key._primary_key)
+        self.project = ProjectFactory(creator=self.user)
+        # A non-project componenet
+        self.component = NodeFactory(category="hypothesis", creator=self.user)
+        self.project.nodes.append(self.component)
+        self.component.save()
+        # Hack: Add some logs to component; should be unnecessary pending
+        # improvements to factories from @rliebz
+        self.component.set_permissions('public', user=self.user)
+        self.component.set_permissions('private', user=self.user)
+        self.project.save()
+        self.wiki = NodeWikiFactory(user=self.user, node=self.component)
+
+    def _url_to_body(self, url):
+        return self.app.get(url, auth=self.auth).maybe_follow().normal_body
+
+    def test_profile_url(self):
+        assert_equal(
+            self.app.get('/{}/'.format(self.user._primary_key)).maybe_follow().normal_body,
+            self.app.get('/profile/{}/'.format(self.user._primary_key)).maybe_follow().normal_body
+        )
+
+    def test_project_url(self):
+        assert_equal(
+            self._url_to_body(self.project.deep_url),
+            self._url_to_body(self.project.url),
+        )
+
+    def test_component_url(self):
+        assert_equal(
+            self._url_to_body(self.component.deep_url),
+            self._url_to_body(self.component.url),
+        )
+
+    def test_file_url(self):
+        node_file = self.component.add_file(self.user, None, 'test.txt',
+                                         'test content', 4, 'text/plain')
+        assert_equal(
+            self._url_to_body(node_file.deep_url),
+            self._url_to_body(node_file.url),
+        )
+
+    def test_wiki_url(self):
+        assert_equal(
+            self._url_to_body(self.wiki.deep_url),
+            self._url_to_body(self.wiki.url),
+        )
 
 
 if __name__ == '__main__':
