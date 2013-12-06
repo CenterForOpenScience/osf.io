@@ -63,6 +63,7 @@ def _profile_view(uid=None):
         )
         return {
             'user_id': profile._id,
+            'user_abs_url': profile.abs_url,
             'user': {"can_edit": None},
             'user_full_name': profile.fullname,
             'user_is_profile': user is not None and user == profile,

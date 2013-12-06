@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 '''Functional tests using WebTest.'''
 import unittest
+import re
 import datetime as dt
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
@@ -17,8 +18,8 @@ from framework import app
 
 
 # Only uncomment if running these tests in isolation
-#from website.app import init_app
-#app = init_app(set_backends=False, routes=True)
+from website.app import init_app
+app = init_app(set_backends=False, routes=True)
 
 class TestAnUnregisteredUser(DbTestCase):
 
@@ -214,6 +215,19 @@ class TestAUser(DbTestCase):
         res = self.app.get("/{0}/wiki/home/".format(project._primary_key), auth=self.auth)
         # Sees a message indicating no content
         assert_in("No wiki content", res)
+
+    def test_sees_own_profile(self):
+        res = self.app.get('/profile/', auth=self.auth)
+        td1 = res.html.find('td', text=re.compile(r'Public Profile'))
+        td2 = td1.find_next_sibling('td')
+        assert_equal(td2.text, self.user.abs_url)
+
+    def test_sees_another_profile(self):
+        user2 = UserFactory()
+        res = self.app.get(user2.url, auth=self.auth)
+        td1 = res.html.find('td', text=re.compile(r'Public Profile'))
+        td2 = td1.find_next_sibling('td')
+        assert_equal(td2.text, user2.abs_url)
 
 
 class TestRegistrations(DbTestCase):
