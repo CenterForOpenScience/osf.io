@@ -12,7 +12,7 @@ from werkzeug.exceptions import NotFound
 from mako.template import Template
 from mako.lookup import TemplateLookup
 
-from framework import StoredObject, session, request
+from framework import StoredObject, session, request, make_response
 from framework.exceptions import HTTPError
 from framework.flask import app, redirect, make_response
 from website import settings
@@ -214,12 +214,13 @@ def proxy_url(url):
     """Call Flask view function for a given URL.
 
     :param url: URL to follow
-    :return: Return value of view function
+    :return: Return value of view function, wrapped in Werkzeug Response
 
     """
     # Get URL map, passing current request method; else method defaults to GET
     match = app.url_map.bind('').match(url, method=request.method)
-    return app.view_functions[match[0]](**match[1])
+    response = app.view_functions[match[0]](**match[1])
+    return make_response(response)
 
 
 def call_url(url, view_kwargs=None):
