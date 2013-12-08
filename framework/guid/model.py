@@ -4,10 +4,10 @@ from framework import StoredObject, fields
 class Guid(StoredObject):
 
     _id = fields.StringField()
-    referent = fields.AbstractForeignField(backref='guid')
+    referent = fields.AbstractForeignField()
 
     _meta = {
-        'optimistic': True
+        'optimistic': True,
     }
 
 
@@ -16,20 +16,11 @@ class GuidStoredObject(StoredObject):
     # Redirect to content using URL redirect by default
     redirect_mode = 'redirect'
 
-    def __init__(self, *args, **kwargs):
-        """Overridden constructor. When a GuidStoredObject is instantiated,
-        create a new Guid if the object doesn't already have one, then attach
-        the Guid to the StoredObject.
-
-        Note: This requires saving the StoredObject once and the Guid twice to
-        ensure correct back-references; this could be made more efficient if
-        modular-odm could handle back-references of objects that have not been
-        saved.
+    def _ensure_guid(self):
+        """Create GUID record if current record doesn't already have one, then
+        point GUID to self.
 
         """
-        # Call superclass constructor
-        super(GuidStoredObject, self).__init__(*args, **kwargs)
-
         # Create GUID with specified ID if ID provided
         if self._primary_key:
 
@@ -51,14 +42,16 @@ class GuidStoredObject(StoredObject):
             # Create GUID
             guid = Guid()
             guid.save()
+            guid.referent = (guid._primary_key, self._name)
+            guid.save()
 
             # Set primary key to GUID key
             self._primary_key = guid._primary_key
-            self.save()
 
-            # Add self to GUID
-            guid.referent = self
-            guid.save()
+    def __init__(self, *args, **kwargs):
+        """ Ensure GUID after initialization. """
+        super(GuidStoredObject, self).__init__(*args, **kwargs)
+        self._ensure_guid()
 
     @property
     def annotations(self):
