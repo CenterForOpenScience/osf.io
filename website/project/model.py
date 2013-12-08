@@ -259,7 +259,7 @@ class NodeFile(GuidStoredObject):
             self.node.api_url, self.filename, self.latest_version_number)
 
 
-class Tag(GuidStoredObject):
+class Tag(StoredObject):
 
     _id = fields.StringField(primary=True)
     count_public = fields.IntegerField(default=0)
