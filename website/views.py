@@ -150,6 +150,9 @@ def resolve_guid(guid, suffix=None):
     guid_object = Guid.load(guid)
     if guid_object:
         referent = guid_object.referent
+        if referent is None:
+            logger.error('Referent of GUID {} not found'.format(guid))
+            raise HTTPError(http.NOT_FOUND)
         mode = referent.redirect_mode
         url = referent.deep_url if mode == 'proxy' else referent.url
         url += suffix or ''
