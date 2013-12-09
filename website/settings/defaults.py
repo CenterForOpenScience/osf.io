@@ -9,6 +9,9 @@ def parent_dir(path):
     '''Return the parent of a directory.'''
     return os.path.abspath(os.path.join(path, os.pardir))
 
+# TODO: Override in local.py in production
+DEV_MODE = True
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = parent_dir(HERE)  # website/ directory
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
@@ -22,11 +25,12 @@ ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 
 USE_SOLR = True
-solr = 'http://localhost:8983/solr/'
+SOLR_URI = 'http://localhost:8983/solr/'
 
 # Sessions
+# TODO: Override SECRET_KEY in local.py in production
 COOKIE_NAME = 'osf'
-SECRET_KEY = "CHANGEME"
+SECRET_KEY = 'CHANGEME'
 
 # May set these to True in local.py for development
 DEV_MODE = False
@@ -36,27 +40,25 @@ DEBUG_MODE = False
 USE_CDN_FOR_CLIENT_LIBS = True
 
 
-FROM_EMAIL = "openscienceframework-noreply@openscienceframework.org"
+FROM_EMAIL = 'openscienceframework-noreply@openscienceframework.org'
 MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
-try:
-    os.environ['OSF_PRODUCTION']
-    CACHE_PATH = '/opt/data/osf_cache'
-    UPLOADS_PATH = '/opt/data/uploads'
-except KeyError:
-    CACHE_PATH = os.path.join(BASE_PATH, 'cache')
-    UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
+# TODO: Override in local.py in production
+CACHE_PATH = os.path.join(BASE_PATH, 'cache')
+UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
 
-# TODO: Set me up in local.py in production
+# TODO: Override in local.py in production
 DB_PORT = 20771
-DB_NAME = "osf20130903"
-MONGO_URI = 'mongodb://osf:osfosfosfosf0$f@localhost:{0}/{1}'.format(DB_PORT, DB_NAME)
+DB_NAME = 'osf20130903'
+DB_USER = None
+DB_PASS = None
 
-#TODO: Configuration should not change between deploys - this should be dynamic.
+# TODO: Configuration should not change between deploys - this should be dynamic.
 CANONICAL_DOMAIN = 'openscienceframework.org'
 COOKIE_DOMAIN = '.openscienceframework.org' # Beaker
+SHORT_DOMAIN = 'osf.io'
 
 # Gravatar options
 GRAVATAR_SIZE_PROFILE = 120
@@ -111,6 +113,6 @@ CELERY_RESULT_BACKEND = 'amqp://'
 
 # Modules to import when celery launches
 CELERY_IMPORTS = (
-    "framework.email.tasks",
-    "framework.tasks"
+    'framework.email.tasks',
+    'framework.tasks'
 )

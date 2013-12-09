@@ -10,7 +10,7 @@
         <a class="btn btn-default disabled" type="button">New Registration</a>
     % endif
     </div>
-	<h1>Registrations</h1>
+	<h2>Registrations</h2>
 </div>
 
 % if node["registration_count"]:

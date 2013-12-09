@@ -7,8 +7,8 @@
 
   <div class="row">
     <div class="col-md-7" id='containment'>
-      <section id="Wiki Home" class="preview-overflow">
-        <div>
+      <section id="Wiki Home">
+        <div class="wiki">
             ${ node["wiki_home"] }
             <p><a href="${node['url']}wiki/home">read more</a></p>
         </div>
@@ -29,7 +29,7 @@
               </div>
               <%include file="modal_add_component.mako"/>
             % endif
-              <h1>Components</h1>
+              <h2>Components</h2>
           </div>
           % if node["children"]:
               <div mod-meta='{
@@ -47,7 +47,7 @@
       <section id="Files">
         <div>
           <div class="page-header">
-              <h1>Files</h1>
+              <h2>Files</h2>
           </div>
           <div mod-meta='{
                   "tpl": "util/render_file_tree.mako",
@@ -65,7 +65,7 @@
 
         <div class="citations">
             <span class="citation-label">Citation:</span>
-            <span>${node['abs_url']}</span>
+            <span>${node['absolute_url']}</span>
             <br />
             <a class="btn btn-default citation-toggle">Show formatted citations</a>
             <dl class="citation-list">

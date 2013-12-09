@@ -103,6 +103,10 @@ class TestAUser(DbTestCase):
         res = form.submit().maybe_follow()
         return res
 
+    def test_can_see_profile_url(self):
+        res = self.app.get(self.user.url).maybe_follow()
+        assert_in(self.user.url, res)
+
     def test_can_see_homepage(self):
         # Goes to homepage
         res = self.app.get("/").follow()  # Redirects
@@ -231,14 +235,14 @@ class TestAUser(DbTestCase):
         res = self.app.get('/profile/', auth=self.auth)
         td1 = res.html.find('td', text=re.compile(r'Public Profile'))
         td2 = td1.find_next_sibling('td')
-        assert_equal(td2.text, self.user.abs_url)
+        assert_equal(td2.text, self.user.absolute_url)
 
     def test_sees_another_profile(self):
         user2 = UserFactory()
         res = self.app.get(user2.url, auth=self.auth)
         td1 = res.html.find('td', text=re.compile(r'Public Profile'))
         td2 = td1.find_next_sibling('td')
-        assert_equal(td2.text, user2.abs_url)
+        assert_equal(td2.text, user2.absolute_url)
 
 
 class TestRegistrations(DbTestCase):
@@ -298,6 +302,12 @@ class TestRegistrations(DbTestCase):
                 option_values
             )
 
+    def test_registration_nav_not_seen(self):
+        # Goes to project's page
+        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
+        # Settings is not in the project navigation bar
+        subnav = res.html.select('#projectSubnav')[0]
+        assert_not_in('Registrations', subnav.text)
 
 class TestComponents(DbTestCase):
 

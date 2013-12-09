@@ -2,15 +2,16 @@
 import itertools
 import urlparse
 import datetime as dt
+import urlparse
 
 import pytz
 import bson
 
 from framework.bcrypt import generate_password_hash, check_password_hash
-from framework import fields,  Q
+from framework import fields,  Q, analytics
 from framework import GuidStoredObject
 from framework.search import solr
-from website import settings
+from website import settings, filters
 
 name_formatters = {
    'long': lambda user: user.fullname,
@@ -61,12 +62,24 @@ class User(GuidStoredObject):
         return '/{}/'.format(self._primary_key)
 
     @property
-    def abs_url(self):
+    def absolute_url(self):
         return urlparse.urljoin(settings.DOMAIN, self.url)
 
     @property
     def deep_url(self):
         return '/profile/{}/'.format(self._primary_key)
+
+    @property
+    def gravatar_url(self):
+        return filters.gravatar(
+                    self,
+                    use_ssl=True,
+                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+                )
+
+    @property
+    def activity_points(self):
+        return analytics.get_total_activity_count(self._primary_key)
 
     @property
     def is_merged(self):
@@ -149,6 +162,14 @@ class User(GuidStoredObject):
             return [user]
         except:
             return []
+
+    def serialize(self):
+        return {
+            'id': self._primary_key,
+            'fullname': self.fullname,
+            'registered': self.is_registered,
+            'url': self.url
+        }
 
     ###### OSF-Specific methods ######
 

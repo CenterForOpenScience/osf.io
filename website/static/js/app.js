@@ -104,15 +104,15 @@ var createLogs = function(logData){
         return new Log({
             "action": item.action,
             "date": item.date,
-            "nodeCategory": item.category,
+            "nodeCategory": item.node.category,
             "contributor": item.contributor,
             "contributors": item.contributors,
-            "nodeUrl": item.node_url,
-            "userFullName": item.user_fullname,
-            "userURL": item.user_url,
+            "nodeUrl": item.node.url,
+            "userFullName": item.user.fullname,
+            "userURL": item.user.url,
             "apiKey": item.api_key,
             "params": item.params,
-            "nodeTitle": item.node_title,
+            "nodeTitle": item.node.title,
             "nodeDescription": item.params.description_new
         })
     });

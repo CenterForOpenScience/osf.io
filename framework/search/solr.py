@@ -9,8 +9,9 @@ logger = logging.getLogger(__name__)
 
 if settings.USE_SOLR:
     try:
-        solr = sunburnt.SolrInterface(settings.solr)
-    except Exception:
+        solr = sunburnt.SolrInterface(settings.SOLR_URI)
+    except Exception as e:
+        logger.error(e)
         logger.warn("The USE_SOLR setting is enabled but there was a problem "
                     "starting the Solr interface. Is the Solr server running?")
         solr = None

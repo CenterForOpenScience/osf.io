@@ -37,6 +37,11 @@ a.disabled {
     display: none;
 }
 
+.disabled {
+    cursor: default !important;
+    pointer-events: none;
+}
+
 .editing .display,
 .edit {
     display: none;
@@ -276,6 +281,13 @@ h4 {
 
 }
 
+/* Make wiki images responsive */
+.wiki img {
+  vertical-align: middle;
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
 
 
 
@@ -500,9 +512,13 @@ li.node p.date{
 /***********/
 
 h1.node-title, h1.node-parent-title {
-  font-size: 40px;
   line-height: 36px;
   border-bottom: none;
+  margin-top: 0.3em;
+}
+
+.btn-toolbar.node-control {
+    margin-top: 0.9em;
 }
 
 .editable {
@@ -528,6 +544,11 @@ table tbody.files td {
 /* Modal forms */
 div.modal form {
     margin:0;
+}
+
+.modal-subheader {
+    font-size: 30px;
+    margin-right: 10px;
 }
 
 div.modal div.modal-header h3.img-add {

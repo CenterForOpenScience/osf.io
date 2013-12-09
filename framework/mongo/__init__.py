@@ -1,15 +1,16 @@
 from pymongo import MongoClient
-from bson.objectid import ObjectId
-from bson.dbref import DBRef
+from bson import ObjectId
 
 from website import settings
-from urlparse import urlsplit
 
-client = MongoClient(settings.MONGO_URI)
+mongo_uri = 'mongodb://localhost:{port}'.format(port=settings.DB_PORT)
+client = MongoClient(mongo_uri)
 
-db_name = urlsplit(settings.MONGO_URI).path[1:] # Slices off the leading slash of the path (database name)
+db = client[settings.DB_NAME]
 
-db = client[db_name]
+if settings.DB_USER and settings.DB_PASS:
+    db.authenticate(settings.DB_USER, settings.DB_PASS)
+
 
 def set_up_storage(schemas, storage_class, prefix='', *args, **kwargs):
     '''Setup the storage backend for each schema in ``schemas``.

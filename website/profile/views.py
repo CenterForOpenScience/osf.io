@@ -10,10 +10,9 @@ from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
 
 from website.models import ApiKey, User
-from framework.analytics import get_total_activity_count
-from website import settings
-from website import filters
 from website.views import _render_nodes
+from website import settings, filters
+from website.profile import utils
 
 
 def get_public_projects(uid=None, user=None):
@@ -41,49 +40,38 @@ def get_public_components(uid=None, user=None):
 
 
 def _profile_view(uid=None):
+
     user = get_current_user()
-    profile = get_user(id=uid or user)
+    profile = get_user(id=uid) if uid else user
 
     if not (uid or user):
         raise HTTPError(http.UNAUTHORIZED)
 
     if profile:
-        projects = [
-            node
-            for node in profile.node__contributed
-            if node.category == 'project'
-            and not node.is_registration
-            and not node.is_deleted
-        ]
-        public_projects = get_public_projects(user=profile)
-        gravatar_url = filters.gravatar(
+        profile_user_data = utils.serialize_user(profile)
+        profile_user_data['gravatar_url'] = filters.gravatar(
             profile,
             use_ssl=True,
             size=settings.GRAVATAR_SIZE_PROFILE
         )
         return {
-            'user_id': profile._id,
-            'user_abs_url': profile.abs_url,
-            'user': {"can_edit": None},
-            'user_full_name': profile.fullname,
-            'user_is_profile': user is not None and user == profile,
-            'activity_points': get_total_activity_count(profile._primary_key),
-            'number_projects': len(projects),
-            'number_public_projects': len(public_projects['nodes']),
-            'fullname': profile.fullname,
-            'date_registered': profile.date_registered.strftime("%Y-%m-%d"),
-            'gravatar_url': gravatar_url,
-            'user_is_merged': profile.is_merged,
-            'user_merged_by_url': profile.merged_by.url if profile.is_merged else None
+            'profile': profile_user_data,
+            'user': {
+                "can_edit": None,  # necessary for rendering nodes
+                "is_profile": user == profile,
+            },
         }
+
     raise HTTPError(http.NOT_FOUND)
 
 
 def profile_view():
     return _profile_view()
 
+
 def profile_view_id(uid):
     return _profile_view(uid)
+
 
 @must_be_logged_in
 def edit_profile(*args, **kwargs):

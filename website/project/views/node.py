@@ -338,11 +338,7 @@ def _view_project(node_to_use, user, api_key=None):
             wiki_home = BeautifulSoup(wiki_home)
     else:
         wiki_home = '<p><em>No wiki content</em></p>'
-
-    parent = node_to_use.node__parent[0] \
-        if node_to_use.node__parent \
-            and not node_to_use.node__parent[0].is_deleted \
-            else None
+    parent = node_to_use.parent
     recent_logs = list(reversed(node_to_use.logs)[:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
     data = {
@@ -354,7 +350,7 @@ def _view_project(node_to_use, user, api_key=None):
             'wiki_home': wiki_home,
             'url': node_to_use.url,
             'api_url': node_to_use.api_url,
-            'abs_url': node_to_use.abs_url,
+            'absolute_url': node_to_use.absolute_url,
             'citations': {
                 'apa': node_to_use.citation_apa,
                 'mla': node_to_use.citation_mla,
@@ -367,7 +363,6 @@ def _view_project(node_to_use, user, api_key=None):
             'tags': [tag._primary_key for tag in node_to_use.tags],
             'children': bool(node_to_use.nodes),
             'children_ids': [str(child._primary_key) for child in node_to_use.nodes],
-
             'is_registration': node_to_use.is_registration,
             'registered_from_url': node_to_use.registered_from.url if node_to_use.is_registration else '',
             'registered_date': node_to_use.registered_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_registration else '',
@@ -382,7 +377,7 @@ def _view_project(node_to_use, user, api_key=None):
 
             'is_fork': node_to_use.is_fork,
             'forked_from_id': node_to_use.forked_from._primary_key if node_to_use.is_fork else '',
-            'forked_from_abs_url': node_to_use.forked_from.abs_url if node_to_use.is_fork else '',
+            'forked_from_absolute_url': node_to_use.forked_from.absolute_url if node_to_use.is_fork else '',
             'forked_date': node_to_use.forked_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_fork else '',
             'fork_count': len(node_to_use.fork_list),
 
@@ -394,6 +389,7 @@ def _view_project(node_to_use, user, api_key=None):
             'title': parent.title if parent else '',
             'url': parent.url if parent else '',
             'api_url': parent.api_url if parent else '',
+            'absolute_url':  parent.absolute_url if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else ''
         },
@@ -506,6 +502,7 @@ def get_summary(*args, **kwargs):
         summary = {
             'can_view': False,
         }
+    # TODO: Make output format consistent with _view_project
     return {
         'summary': summary,
     }
