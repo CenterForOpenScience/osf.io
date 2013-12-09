@@ -199,8 +199,10 @@ def migrate_guid_wiki(wiki):
 
 if __name__ == '__main__':
 
+    # Lower-case PKs and ensure GUIDs
     migrate_guid(guid_models)
 
+    # Manual migrations
     for node in models.Node.find():
         print 'Migrating node', node._primary_key
         migrate_guid_node(node)
