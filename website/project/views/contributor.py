@@ -78,7 +78,7 @@ def _jsonify_contribs(contribs):
                 continue
             data.append(utils.serialize_user(user))
         else:
-            contribs.append(utils.serialize_unreg_user(user))
+            contribs.append(utils.serialize_unreg_user(contrib))
 
     return data
 
