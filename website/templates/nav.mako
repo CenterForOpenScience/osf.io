@@ -7,11 +7,12 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand" href="/">Open Science Framework<span class="brand-version"> BETA</span></a>
+        <a class="navbar-brand hidden-xs" href="/">Open Science Framework<span class="brand-version"> BETA</span></a>
       </div><!-- end navbar-header -->
 
       <div class="collapse navbar-collapse navbar-ex1-collapse">
         <ul class="nav navbar-nav">
+          <li class="visible-xs"><a href="/">Home</a></li>
           %if user_name:
           <li><a rel="tooltip" title="My Dashboard" href="/dashboard/">Dashboard</a></li>
           %endif
