@@ -342,11 +342,7 @@ def _view_project(node_to_use, user, api_key=None):
             wiki_home = BeautifulSoup(wiki_home)
     else:
         wiki_home = '<p><em>No wiki content</em></p>'
-
-    parent = node_to_use.node__parent[0] \
-        if node_to_use.node__parent \
-            and not node_to_use.node__parent[0].is_deleted \
-            else None
+    parent = node_to_use.parent
     recent_logs = list(reversed(node_to_use.logs)[:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
     data = {
@@ -365,7 +361,6 @@ def _view_project(node_to_use, user, api_key=None):
             'tags': [tag._primary_key for tag in node_to_use.tags],
             'children': bool(node_to_use.nodes),
             'children_ids': [str(child._primary_key) for child in node_to_use.nodes],
-
             'is_registration': node_to_use.is_registration,
             'registered_from_url': node_to_use.registered_from.url if node_to_use.is_registration else '',
             'registered_date': node_to_use.registered_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_registration else '',
@@ -503,6 +498,7 @@ def get_summary(*args, **kwargs):
         summary = {
             'can_view': False,
         }
+    # TODO: Make output format consistent with _view_project
     return {
         'summary': summary,
     }

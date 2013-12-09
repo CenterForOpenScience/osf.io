@@ -21,7 +21,7 @@ from framework.auth import get_user, User
 from framework.analytics import get_basic_counters, increment_user_activity_counters
 from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
-from framework import StoredObject, fields
+from framework import StoredObject, fields, utils
 from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
 
@@ -172,30 +172,6 @@ class NodeLog(StoredObject):
         if self.tz_date:
             return self.tz_date.isoformat()
 
-    # FIXME: Serialization (presentation) doesn't belong in model (domain)
-    def serialize(self):
-        # TODO: Nest serialized user.
-        if self.node:
-            category = self.node.project_or_component
-        else:
-            category = ''
-        return {
-        'id': self._primary_key,
-        'user_id': self.user._primary_key if self.user else '',
-        'user_fullname': self.user.fullname if self.user else '',
-        'user_url': self.user.url if self.user else '',
-        'api_key': self.api_key.label if self.api_key else '',
-        'node_url': self.node.url if self.node else '',
-        'node_title': self.node.title if self.node else '',
-        'action': self.action,
-        'params': self.params,
-        'category': category,
-        # TODO: Use self.formatted_date when Recent Activity Logs are generated dynamically
-        'date': self.tz_date.strftime(NodeLog.DATE_FORMAT) if self.tz_date else '',
-        'contributors': [self._render_log_contributor(contributor) for contributor in self.params.get('contributors', [])],
-        'contributor': self._render_log_contributor(self.params.get('contributor', {})),
-    }
-
     def _render_log_contributor(self, contributor):
         if isinstance(contributor, dict):
             rv = contributor.copy()
@@ -206,6 +182,21 @@ class NodeLog(StoredObject):
             'id' : user._primary_key,
             'fullname' : user.fullname,
             'registered' : True,
+        }
+
+    # TODO: Move to separate utility function
+    def serialize(self):
+        '''Return a dictionary representation of the log.'''
+        return {
+            'id': str(self._primary_key),
+            'user': self.user.serialize() if self.user else None,
+            'contributors': [self._render_log_contributor(c) for c in self.params.get("contributors", [])],
+            'contributor': self._render_log_contributor(self.params.get("contributor", {})),
+            'api_key': self.api_key.label if self.api_key else '',
+            'action': self.action,
+            'params': self.params,
+            'date': utils.rfcformat(self.date),
+            'node': self.node.serialize() if self.node else None
         }
 
 
@@ -332,15 +323,6 @@ class Node(GuidStoredObject):
 
     _meta = {'optimistic': True}
 
-    def serialize(self):
-        return {
-            'title': self.title,
-            'date_created': self.date_created,
-            'is_public': self.is_public,
-            'creator': self.creator,
-            'contributors': self.contributors
-        }
-
     def can_edit(self, user, api_key=None):
         return (
             self.is_contributor(user)
@@ -357,6 +339,22 @@ class Node(GuidStoredObject):
         if self.SOLR_UPDATE_FIELDS.intersection(rv['saved_fields']):
             self.update_solr()
         return rv
+
+    def get_recent_logs(self, n=10):
+        '''Return a list of the n most recent logs, in reverse chronological
+        order.
+        '''
+        return list(reversed(self.logs)[:n])
+
+    @property
+    def date_modified(self):
+        '''The most recent datetime when this node was modified, based on
+        the logs.
+        '''
+        try:
+            return self.logs[-1].date
+        except IndexError:
+            return None
 
     def set_title(self, title, user, api_key=None, save=False):
         '''Set the title of this Node and log it.
@@ -960,14 +958,18 @@ class Node(GuidStoredObject):
     def parent(self):
         '''The parent node, if it exists, otherwise ``None``.'''
         try:
-            return self.node__parent[0]
+            if not self.node__parent[0].is_deleted:
+                return self.node__parent[0]
         except IndexError:
             pass
         return None
 
     @property
     def api_url(self):
-        return '/api/v1' + self.url
+        if not self.url:
+            logging.error("Node {0} has a parent that is not a project".format(self._id))
+            return None
+        return '/api/v1{0}'.format(self.url)
 
     @property
     def watch_url(self):
@@ -1226,6 +1228,17 @@ class Node(GuidStoredObject):
         else:
             return get_basic_counters('node:%s' % self._primary_key)
 
+    def serialize(self):
+        # TODO: incomplete implementation
+        return {
+            'id': str(self._primary_key),
+            'category': self.project_or_component,
+            'url': self.url,
+            'title': self.title,
+            'api_url': self.api_url,
+            'is_public': self.is_public
+        }
+
 
 class NodeWikiPage(GuidStoredObject):
 
@@ -1270,6 +1283,8 @@ class NodeWikiPage(GuidStoredObject):
         if self.node:
             self.node.update_solr()
         return rv
+
+
 
 class WatchConfig(StoredObject):
 

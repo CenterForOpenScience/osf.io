@@ -24,13 +24,11 @@ def get_log(log_id):
     return {'log': log.serialize()}
 
 
-# todo: test log visibility
 @must_be_valid_project
 def get_logs(*args, **kwargs):
     user = get_current_user()
     api_key = get_api_key()
     node_to_use = kwargs['node'] or kwargs['project']
-
 
     if not node_to_use.can_view(user, api_key):
         raise HTTPError(http.FORBIDDEN)
@@ -45,12 +43,7 @@ def get_logs(*args, **kwargs):
 
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
-    log_data = []
     chrono_logs = reversed(node_to_use.logs)
-    for log in chrono_logs:
-        if log and log.node.can_view(user, api_key):
-            log_data.append(log.serialize())
-        if len(log_data) >= count:
-            break
-
-    return {'logs': log_data}
+    logs = [log for log in chrono_logs[:count]
+                    if log and log.node.can_view(user, api_key)]
+    return {'logs': [log.serialize() for log in logs]}

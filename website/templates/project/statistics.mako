@@ -9,7 +9,7 @@
 
 <div>
 	<div>
-    <h1>Visits Per Day</h1>
+    <h2>Visits Per Day</h2>
 		<div style="font: 10px sans-serif;margin: 0px auto 22px;clear: both;width">
 			<div id='chart'></div>
 		</div>

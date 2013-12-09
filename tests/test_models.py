@@ -7,8 +7,12 @@ import pytz
 import datetime
 from dateutil import parser
 
+from framework.analytics import get_total_activity_count
 from framework.auth import User
+from framework import utils
 from framework.bcrypt import check_password_hash
+from website import settings, filters
+from website.profile.utils import serialize_user
 from website.project.model import ApiKey, NodeFile, NodeLog
 
 from tests.base import DbTestCase, Guid
@@ -36,6 +40,10 @@ class TestUser(DbTestCase):
         assert_equal(User.find().count(), 2)
         assert_true(user.date_registered)
 
+    def test_absolute_url(self):
+        expected = "http://osf.io/profile/{0}/".format(self.user._primary_key)
+        assert_equal(self.user.absolute_url, expected)
+
     def test_is_watching(self):
         # User watches a node
         watched_node = NodeFactory()
@@ -45,6 +53,13 @@ class TestUser(DbTestCase):
         self.user.save()
         assert_true(self.user.is_watching(watched_node))
         assert_false(self.user.is_watching(unwatched_node))
+
+    def test_serialize(self):
+        d = self.user.serialize()
+        assert_equal(d['id'], str(self.user._primary_key))
+        assert_equal(d['fullname'], self.user.fullname)
+        assert_equal(d['registered'], self.user.is_registered)
+        assert_equal(d['url'], self.user.url)
 
     def test_set_password(self):
         user = User(username="nick@cage.com", fullname="Nick Cage", is_registered=True)
@@ -58,6 +73,49 @@ class TestUser(DbTestCase):
         user.save()
         assert_true(user.check_password("ghostrider"))
         assert_false(user.check_password("ghostride"))
+
+    def test_gravatar_url(self):
+        expected = filters.gravatar(
+                    self.user,
+                    use_ssl=True,
+                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+                )
+        assert_equal(self.user.gravatar_url, expected)
+
+    def test_activity_points(self):
+        assert_equal(self.user.activity_points,
+                    get_total_activity_count(self.user._primary_key))
+
+    def test_serialize_user(self):
+        master = UserFactory.build()
+        user = UserFactory.build()
+        master.save()
+        master.merge_user(user)
+        master.save()
+        user.save()
+        d = serialize_user(user)
+        assert_equal(d['id'], user._primary_key)
+        assert_equal(d['url'], user.url)
+        assert_equal(d['username'], user.username)
+        assert_equal(d['fullname'], user.fullname)
+        assert_equal(d['registered'], user.is_registered)
+        assert_equal(d['gravatar_url'], user.gravatar_url)
+        assert_equal(d['absolute_url'], user.absolute_url)
+        assert_equal(d['date_registered'], user.date_registered.strftime("%Y-%m-%d"))
+        assert_equal(d['activity_points'], user.activity_points)
+        assert_equal(d['is_merged'], user.is_merged)
+        assert_equal(d['merged_by']['url'], user.merged_by.url)
+        assert_equal(d['merged_by']['absolute_url'], user.merged_by.absolute_url)
+        projects = [
+            node
+            for node in user.node__contributed
+            if node.category == 'project'
+            and not node.is_registration
+            and not node.is_deleted
+        ]
+        public_projects = [p for p in projects if p.is_public]
+        assert_equal(d['number_projects'], len(projects))
+        assert_equal(d['number_public_projects'], len(public_projects))
 
 
 class TestMergingUsers(DbTestCase):
@@ -254,6 +312,18 @@ class TestNode(DbTestCase):
         node = NodeFactory()
         assert_equal(node.parent, None)
 
+    def test_get_recent_logs(self):
+        node = NodeFactory.build()
+        for _ in range(5):
+            node.logs.append(NodeLogFactory())
+        node.save()
+        assert_equal(node.get_recent_logs(n=10), list(reversed(node.logs)))
+
+    def test_date_modified(self):
+        node = NodeFactory.build()
+        node.logs.append(NodeLogFactory())
+        assert_equal(node.date_modified, node.logs[-1].date)
+
     def test_add_file(self):
         pass
 
@@ -330,7 +400,6 @@ class TestNode(DbTestCase):
 
     def test_register(self):
         pass
-
 
 class TestProject(DbTestCase):
 
@@ -461,6 +530,23 @@ class TestNodeLog(DbTestCase):
         log = NodeLogFactory()
         assert_true(log.action)
 
+    def test_serialize(self):
+        node = NodeFactory(category="hypothesis")
+        log = NodeLogFactory(params={'node': node._primary_key})
+        node.logs.append(log)
+        node.save()
+        d = log.serialize()
+        assert_equal(d['action'], log.action)
+        assert_equal(d['node']['category'], 'component')
+        assert_equal(d['node']['url'], log.node.url)
+        assert_equal(d['date'], utils.rfcformat(log.date))
+        assert_in('contributors', d)
+        assert_equal(d['user']['fullname'], log.user.fullname)
+        assert_equal(d['user']['url'], log.user.url)
+        assert_in('api_key', d)
+        assert_equal(d['params'], log.params)
+        assert_equal(d['node']['title'], log.node.title)
+
     def test_tz_date(self):
         assert_equal(self.log.tz_date.tzinfo, pytz.UTC)
 
@@ -469,11 +555,6 @@ class TestNodeLog(DbTestCase):
         # Reparse the date
         parsed = parser.parse(iso_formatted)
         assert_equal(parsed, self.log.tz_date)
-
-    def test_serialized_user_url(self):
-        data = self.log.serialize()
-        assert_equal(data['user_url'], self.log.user.url)
-
 
 
 class TestWatchConfig(DbTestCase):

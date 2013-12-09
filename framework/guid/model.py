@@ -4,7 +4,7 @@ from framework import StoredObject, fields
 class Guid(StoredObject):
 
     _id = fields.StringField()
-    referent = fields.AbstractForeignField(backref='guid')
+    referent = fields.AbstractForeignField()
 
     _meta = {
         'optimistic': True
