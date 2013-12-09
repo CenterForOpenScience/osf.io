@@ -5,13 +5,11 @@
 
 %if user['can_edit']:
 <div class="container" style="position:relative;">
-##    <h3 style="max-width: 65%;"><span class="btn btn-success fileinput-button" id="clickable"><i class="icon-plus icon-white"></i><span>Add files...</span></span></h3>
     <h3 id="dropZoneHeader">Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element></h3>
     <div id="fallback"></div>
     <div id="totalProgressActive" style="width: 35%; height: 20px; position: absolute; top: 73px; right: 0;" class>
         <div id="totalProgress" class="progress-bar progress-bar-success" style="width: 0%;"></div>
     </div>
-##    <span id="progressStats" style="display:none; position:relative; top:22px; color:black;">I want to put text here</span>
 </div>
 %endif
 <div id="myGridBreadcrumbs" style="margin-top: 10px"></div>
@@ -263,6 +261,9 @@ $(window).on('beforeunload', function() {
     if (myGrid.dropZoneObj.getUploadingFiles().length)
         return 'Uploads(s) still in progress. Are you sure you want to leave this page?';
 });
+
+window.ondragover = function(e) { e.preventDefault(); };
+window.ondrop = function(e) { e.preventDefault(); };
 
 ##var date1=0;
 ##
