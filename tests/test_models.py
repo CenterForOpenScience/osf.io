@@ -89,6 +89,7 @@ class TestUser(DbTestCase):
     def test_serialize_user(self):
         master = UserFactory.build()
         user = UserFactory.build()
+        master.save()
         master.merge_user(user)
         master.save()
         user.save()
