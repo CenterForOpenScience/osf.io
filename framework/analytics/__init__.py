@@ -25,7 +25,7 @@ def get_total_activity_count(user_id):
     )
     if result and 'total' in result:
         return result['total']
-    return None
+    return 0
 
 
 def update_counters(rex):
