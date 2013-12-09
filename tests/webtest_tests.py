@@ -19,8 +19,8 @@ from framework import app
 
 
 # Only uncomment if running these tests in isolation
-from website.app import init_app
-app = init_app(set_backends=False, routes=True)
+#from website.app import init_app
+#app = init_app(set_backends=False, routes=True)
 
 class TestAnUnregisteredUser(DbTestCase):
 

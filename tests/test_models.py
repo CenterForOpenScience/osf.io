@@ -19,7 +19,7 @@ from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
     TagFactory, NodeWikiFactory)
 
 
-GUID_FACTORIES = (UserFactory, TagFactory, NodeFactory, ProjectFactory,
+GUID_FACTORIES = (UserFactory, NodeFactory, ProjectFactory,
                   MetaDataFactory)
 
 class TestUser(DbTestCase):
