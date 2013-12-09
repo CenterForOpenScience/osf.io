@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import httplib as http
-import hashlib
 import logging
 
 import framework
@@ -69,7 +68,6 @@ def get_node_contributors_abbrev(*args, **kwargs):
 def _jsonify_contribs(contribs):
 
     data = []
-    # TODO(sloria): Put into User.serialize()
     for contrib in contribs:
         if 'id' in contrib:
             user = User.load(contrib['id'])
@@ -78,8 +76,7 @@ def _jsonify_contribs(contribs):
                 continue
             data.append(utils.serialize_user(user))
         else:
-            contribs.append(utils.serialize_unreg_user(contrib))
-
+            data.append(utils.serialize_unreg_user(contrib))
     return data
 
 
@@ -94,7 +91,6 @@ def get_contributors(*args, **kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = _jsonify_contribs(node_to_use.contributor_list)
-
     return {'contributors': contribs}
 
 

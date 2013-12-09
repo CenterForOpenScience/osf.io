@@ -16,8 +16,8 @@ from framework import app
 
 
 # Only uncomment if running these tests in isolation
-#from website.app import init_app
-#app = init_app(set_backends=False, routes=True)
+# from website.app import init_app
+# app = init_app(set_backends=False, routes=True)
 
 class TestAnUnregisteredUser(DbTestCase):
 
@@ -287,7 +287,11 @@ class TestComponents(DbTestCase):
         self.user.api_keys.append(api_key)
         self.user.save()
         self.auth = ('test', api_key._primary_key)
-        self.project = ProjectFactory(creator=self.user)
+        self.project = ProjectFactory.build(creator=self.user)
+        self.project.add_contributor(contributor=self.user)
+        # project has a non-registered contributor
+        self.nr_user = {"nr_name": "Foo Bar", "nr_email": "foo@example.com"}
+        self.project.contributor_list.append(self.nr_user)
         # A non-project componenet
         self.component = NodeFactory(category="hypothesis", creator=self.user)
         self.project.nodes.append(self.component)
@@ -304,6 +308,13 @@ class TestComponents(DbTestCase):
         parent_title = res.html.find_all('h1', class_='node-parent-title')
         assert_equal(len(parent_title), 1)
         assert_in(self.project.title, parent_title[0].text)
+
+    def test_sees_non_registered_contributor(self):
+        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
+        # Sees unregeisterd user's name
+        assert_in(self.nr_user['nr_name'], res)
+        # Sees registred user's name
+        assert_in(self.user.fullname, res)
 
 
 class TestMergingAccounts(DbTestCase):
