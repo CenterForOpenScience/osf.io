@@ -4,8 +4,10 @@ skip; if record has an ID but not a GUID, create a GUID matching the ID. Newly
 created records will have optimistically generated GUIDs.
 """
 
+import time
 import collections
 
+from framework import StoredObject
 from website import models
 from website.app import init_app
 
@@ -73,7 +75,12 @@ def migrate_guid(conflict_models):
 
     for model in conflict_models:
 
+        print 'Working on model', model._name
+
         for obj in model.find():
+
+            if obj is None:
+                continue
 
             # Check for existing GUID
             guid = models.Guid.load(obj._primary_key)
@@ -100,6 +107,57 @@ def migrate_guid(conflict_models):
 
             # Update GUID
             obj._ensure_guid()
+
+            check_pk_change(obj)
+
+
+def check_pk_change(obj):
+
+    for backref in obj._backrefs_flat:
+        pk = backref[1]
+        if backref[0][1] == 'guid':
+            continue
+        Schema = StoredObject.get_collection(backref[0][1])
+        record = Schema.load(pk)
+        if record is None:
+            print 'Error: Backref {} not found'.format(pk)
+        field = getattr(record, backref[0][2])
+        if isinstance(field, list):
+            if obj not in field:
+                print 'Error: Object {} not in backref list'.format(pk)
+        else:
+            if field != obj:
+                print 'Error: Object {} not equal to backref'.format(pk)
+
+    for fname, fobj in obj._fields.items():
+        if fobj._is_foreign:
+            if fobj._list:
+                key = fobj._field_instance._backref_field_name
+            else:
+                key = fobj._backref_field_name
+            if not key:
+                continue
+            backref_key = '__'.join([
+                obj._name,
+                key,
+                fname,
+                ])
+            value = getattr(obj, fname)
+            if not value:
+                continue
+            if fobj._list:
+                for item in value:
+                    if item is None:
+                        continue
+                    if obj not in getattr(item, backref_key):
+                        print 'Error: Obj {} not in backrefs of referent {}'.format(
+                            obj._primary_key, fname
+                        )
+            else:
+                if obj not in getattr(value, backref_key):
+                    print 'Error: Obj {} not in backrefs of referent {}'.format(
+                        obj._primary_key, fname
+                    )
 
 
 def migrate_guid_log(log):
@@ -207,18 +265,22 @@ def migrate_guid_wiki(wiki):
 
 if __name__ == '__main__':
 
+    t0 = time.time()
+
     # Lower-case PKs and ensure GUIDs
     migrate_guid(guid_models)
 
     # Manual migrations
     for node in models.Node.find():
-        print 'Migrating node', node._primary_key
+        #print 'Migrating node', node._primary_key
         migrate_guid_node(node)
 
     for log in models.NodeLog.find():
-        print 'Migrating log', log._primary_key
+        #print 'Migrating log', log._primary_key
         migrate_guid_log(log)
 
     for wiki in models.NodeWikiPage.find():
-        print 'Migrating wiki', wiki._primary_key
+        #print 'Migrating wiki', wiki._primary_key
         migrate_guid_wiki(wiki)
+
+    print 'Took {}'.format(time.time() - t0)

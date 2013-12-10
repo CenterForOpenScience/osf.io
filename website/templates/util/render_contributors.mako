@@ -1,6 +1,6 @@
 % for contributor in contributors:
     <span class="contributor">
-        <a href="/profile/${contributor['id']}/"
+        <a href="/${contributor['id']}/"
             % if user['can_edit']:
                 class="user-quickedit" data-userid="${contributor['id']}" data-fullname="${contributor['fullname']}"
             % endif

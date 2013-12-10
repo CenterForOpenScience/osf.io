@@ -10,7 +10,7 @@ from website.project.model import (ApiKey, Node, NodeLog, NodeFile, NodeWikiPage
                                    Tag, WatchConfig, MetaData, MetaSchema)
 
 # All models
-MODELS = (User, ApiKey, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
-          Tag, WatchConfig, Session, Guid, MetaData, MetaSchema, Guid)
+MODELS = (User, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
+          Tag, WatchConfig, Session, Guid, MetaData, MetaSchema)
 
 GUID_MODELS = (User, Node, NodeFile, NodeWikiPage, Tag, MetaData)

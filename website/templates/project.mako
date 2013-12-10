@@ -66,15 +66,14 @@
         <div class="citations">
             <span class="citation-label">Citation:</span>
             <span>${node['absolute_url']}</span>
-            <br />
-            <a class="btn btn-default citation-toggle">Show formatted citations</a>
+            <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
             <dl class="citation-list">
                 <dt>APA</dt>
-                    <dd>${node['citations']['apa']}</dd>
+                    <dd class="citation-text">${node['citations']['apa']}</dd>
                 <dt>MLA</dt>
-                    <dd>${node['citations']['mla']}</dd>
+                    <dd class="citation-text">${node['citations']['mla']}</dd>
                 <dt>Chicago</dt>
-                    <dd>${node['citations']['chicago']}</dd>
+                    <dd class="citation-text">${node['citations']['chicago']}</dd>
             </dl>
         </div>
 

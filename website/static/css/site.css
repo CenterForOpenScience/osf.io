@@ -37,6 +37,11 @@ a.disabled {
     display: none;
 }
 
+.citation-text {
+    text-indent: -3em;
+    margin-left: 3em;
+}
+
 .disabled {
     cursor: default !important;
     pointer-events: none;

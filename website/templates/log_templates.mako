@@ -27,7 +27,7 @@ to version <span data-bind="text: params.version"></span>
 </script>
 
 <script type="text/html" id="contributor_removed">
-removed <a data-bind="attr: {href: '/profile/' + contributor.id + '/'}, text: contributor.fullname"></a> as a contributor from
+removed <a data-bind="attr: {href: '/' + contributor.id + '/'}, text: contributor.fullname"></a> as a contributor from
 <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
