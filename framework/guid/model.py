@@ -50,9 +50,8 @@ class GuidStoredObject(StoredObject):
 
     def save(self, *args, **kwargs):
         """ Ensure GUID on save initialization. """
-        rv = super(GuidStoredObject, self).save(*args, **kwargs)
         self._ensure_guid()
-        return rv
+        return super(GuidStoredObject, self).save(*args, **kwargs)
 
     @property
     def annotations(self):
