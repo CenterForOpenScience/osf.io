@@ -126,6 +126,14 @@ def migrate_guid_log(log):
                 if record:
                     log.params['contributors'][idx] = record._primary_key
 
+    # Shouldn't have to do this, but some logs users weren't correctly
+    # migrated; may have to do with inconsistent backrefs
+    data = log.to_storage()
+    if data['user']:
+        record = models.User.load(data['user'].lower())
+        if record:
+            log.user = record
+
     log.save()
 
 
