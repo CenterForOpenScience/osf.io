@@ -149,6 +149,7 @@ def resolve_guid(guid, suffix=None):
     :return: Werkzeug response
 
     """
+    # Look up GUID
     guid_object = Guid.load(guid)
     if guid_object:
         referent = guid_object.referent
@@ -161,6 +162,13 @@ def resolve_guid(guid, suffix=None):
         if not url.endswith('/'):
             url += '/'
         return proxy_url(url) if mode == 'proxy' else redirect(url)
+
+    # GUID not found; try lower-cased and redirect if exists
+    guid_object_lower = Guid.load(guid.lower())
+    if guid_object_lower:
+        return redirect('{0}/{1}'.format(guid.lower(), suffix or ''))
+
+    # GUID not found
     raise HTTPError(http.NOT_FOUND)
 
 ### Meta-data ###
