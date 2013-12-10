@@ -48,10 +48,11 @@ class GuidStoredObject(StoredObject):
             # Set primary key to GUID key
             self._primary_key = guid._primary_key
 
-    def __init__(self, *args, **kwargs):
-        """ Ensure GUID after initialization. """
-        super(GuidStoredObject, self).__init__(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        """ Ensure GUID on save initialization. """
+        rv = super(GuidStoredObject, self).save(*args, **kwargs)
         self._ensure_guid()
+        return rv
 
     @property
     def annotations(self):
