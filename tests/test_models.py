@@ -18,7 +18,7 @@ from website.project.model import ApiKey, NodeFile, NodeLog
 from tests.base import DbTestCase, Guid
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
-    TagFactory, NodeWikiFactory)
+    TagFactory, NodeWikiFactory, UnregUserFactory)
 
 
 GUID_FACTORIES = (UserFactory, TagFactory, NodeFactory, ProjectFactory,
@@ -567,6 +567,15 @@ class TestWatchConfig(DbTestCase):
         assert_true(config.digest)
         assert_false(config.immediate)
         assert_true(config.node._id)
+
+
+class TestUnregisteredUser(unittest.TestCase):
+    def test_factory(self):
+        u1 = UnregUserFactory()
+        assert_true(u1['nr_name'])
+        assert_true(u1['nr_email'])
+        u2 = UnregUserFactory()
+        assert_not_equal(u1['nr_name'], u2['nr_name'])
 
 if __name__ == '__main__':
     unittest.main()
