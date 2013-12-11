@@ -175,13 +175,13 @@ class NodeLog(StoredObject):
     def _render_log_contributor(self, contributor):
         if isinstance(contributor, dict):
             rv = contributor.copy()
-            rv.update({'registered' : False})
+            rv.update({'registered': False})
             return rv
         user = User.load(contributor)
         return {
-            'id' : user._primary_key,
-            'fullname' : user.fullname,
-            'registered' : True,
+            'id': user._primary_key,
+            'fullname': user.fullname,
+            'registered': True,
         }
 
     # TODO: Move to separate utility function
@@ -989,17 +989,21 @@ class Node(GuidStoredObject):
         return (user is not None) and ((user in self.contributors) or user == self.creator)
 
     def remove_nonregistered_contributor(self, user, api_key, name, hash_id):
-        for d in self.contributor_list:
-            if d.get('nr_name') == name and hashlib.md5(d.get('nr_email')).hexdigest() == hash_id:
-                email = d.get('nr_email')
-        self.contributor_list[:] = [d for d in self.contributor_list if not (d.get('nr_email') == email)]
+        deleted = False
+        for idx, contrib in enumerate(self.contributor_list):
+            if contrib.get('nr_name') == name and hashlib.md5(contrib.get('nr_email')).hexdigest() == hash_id:
+                del self.contributor_list[idx]
+                deleted = True
+                break
+        if not deleted:
+            return False
         self.save()
         self.add_log(
             action=NodeLog.CONTRIB_REMOVED,
             params={
-                'project':self.parent_id,
-                'node':self._primary_key,
-                'contributor':{"nr_name":name, "nr_email":email},
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'contributor': contrib,
             },
             user=user,
             api_key=api_key,

@@ -20,14 +20,21 @@ to version <span data-bind="text: params.version"></span>
 </script>
 
 <script type="text/html" id="contributor_added">
-  added
-  <span data-bind="html: displayContributors"></span>
-  to <span data-bind="text: nodeCategory"></span>
-  <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+added
+<span data-bind="html: displayContributors"></span>
+to <span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
 <script type="text/html" id="contributor_removed">
-removed <a data-bind="attr: {href: '/profile/' + contributor.id + '/'}, text: contributor.fullname"></a> as a contributor from
+removed
+<span data-bind="if: contributor.registered">
+    <a data-bind="attr: {href: '/profile/' + contributor.id + '/'}, text: contributor.fullname"></a>
+</span>
+<span data-bind="ifnot: contributor.registered">
+    <span data-bind="text: contributor.nr_name"></span>
+</span>
+as a contributor from
 <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
