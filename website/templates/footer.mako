@@ -14,7 +14,7 @@
                 <ul>
                     <li><a href="http://centerforopenscience.org">Home</a></li>
                     <li><a href="http://centerforopenscience.org/#contact">Contact</a></li>
-                    <li><a href="/EZcUj/wiki/home">Reproducibility Project: Psychology</a></li>
+                    <li><a href="/ezcuj/wiki/home/">Reproducibility Project: Psychology</a></li>
                     <li><a href="/e81xl/wiki/home/">Reproducibility Project: Cancer Biology</a></li>
                 </ul>
             </div>
@@ -22,7 +22,7 @@
                 <h4>Documentation</h4>
                 <ul>
                     <li><a href="/getting-started">Getting Started</a></li>
-                    <li><a href="/4znZP/node/QB0Du/">Developer API</a></li>
+                    <li><a href="/qb0du/">Developer API</a></li>
                 </ul>
             </div>
             <div class="col-md-2">
