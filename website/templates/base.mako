@@ -92,6 +92,36 @@
               })();
             </script>
         %endif
+
+        % if piwik_host:
+            <% is_public = node.get('is_public', 'ERROR') if node else True %>
+            <script type="text/javascript">
+              var _paq = _paq || [];
+              % if user_id:
+              _paq.push(["setCustomVariable", 1, "User ID", "${ user_id }", "visit"]);
+              _paq.push(["setCustomVariable", 2, "User Name", "${ user_full_name }", "visit"]);
+              % endif
+              _paq.push(["setCustomVariable", 1, "Public", "${ is_public }", "page"]);
+              % if node:
+              <% parent_project = parent.get('id') if parent else node.get('id') %>
+              _paq.push(["setCustomVariable", 2, "Project ID", "${ parent_project }", "page"]);
+              _paq.push(["setCustomVariable", 3, "Node ID", "${ node.get('id') }", "page"]);
+              _paq.push(["setCustomVariable", 4, "Tags", "${ ','.join(node.get('tags')) }", "page"]);
+              % endif
+
+              _paq.push(["trackPageView"]);
+              _paq.push(["enableLinkTracking"]);
+
+              (function() {
+                var u=(("https:" == document.location.protocol) ? "https" : "http") + "://${ piwik_host }/";
+                _paq.push(["setTrackerUrl", u+"piwik.php"]);
+
+                _paq.push(["setSiteId", "2"]);
+                var d=document, g=d.createElement("script"), s=d.getElementsByTagName("script")[0]; g.type="text/javascript";
+                g.defer=true; g.async=true; g.src=u+"piwik.js"; s.parentNode.insertBefore(g,s);
+              })();
+            </script>
+        % endif
         ${self.javascript_bottom()}
     </body>
 </html>

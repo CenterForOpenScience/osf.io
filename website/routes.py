@@ -28,6 +28,7 @@ def get_globals():
         'user_api_url': user.api_url if user else '',
         'display_name': framework.auth.get_display_name(user.username) if user else '',
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
+        'piwik_host': settings.PIWIK_HOST,
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
         'status': framework.status.pop_status_messages(),

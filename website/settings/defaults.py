@@ -119,3 +119,7 @@ CELERY_IMPORTS = (
     'framework.email.tasks',
     'framework.tasks'
 )
+
+# Piwik (analytics)
+# TODO: Override in local.py in production
+PIWIK_HOST = '' # Domain only - no http:// or trailing slash
