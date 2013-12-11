@@ -8,6 +8,7 @@ from framework import Q, request, redirect, get_current_user
 from framework.exceptions import HTTPError
 from framework.auth import must_have_session_auth
 from framework.forms import utils
+from framework.routing import proxy_url
 from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm)
 
@@ -114,7 +115,7 @@ def watched_logs_get(*args, **kwargs):
 
 
 def reproducibility():
-    return framework.redirect('/project/EZcUj/wiki')
+    return framework.redirect('/EZcUj/wiki')
 
 
 def registration_form():
@@ -139,11 +140,36 @@ def new_project_form():
 
 ### GUID ###
 
-def resolve_guid(guid):
+def resolve_guid(guid, suffix=None):
+    """Resolve GUID to corresponding URL and return result of appropriate
+    view function. This effectively yields a redirect without changing the
+    displayed URL of the page.
 
+    :param guid: GUID value (not the object)
+    :param suffix: String to append to GUID route
+    :return: Werkzeug response
+
+    """
+    # Look up GUID
     guid_object = Guid.load(guid)
     if guid_object:
-        return redirect(guid_object.referent.url)
+        referent = guid_object.referent
+        if referent is None:
+            logger.error('Referent of GUID {} not found'.format(guid))
+            raise HTTPError(http.NOT_FOUND)
+        mode = referent.redirect_mode
+        url = referent.deep_url if mode == 'proxy' else referent.url
+        url += suffix or ''
+        if not url.endswith('/'):
+            url += '/'
+        return proxy_url(url) if mode == 'proxy' else redirect(url)
+
+    # GUID not found; try lower-cased and redirect if exists
+    guid_object_lower = Guid.load(guid.lower())
+    if guid_object_lower:
+        return redirect('{0}/{1}'.format(guid.lower(), suffix or ''))
+
+    # GUID not found
     raise HTTPError(http.NOT_FOUND)
 
 ### Meta-data ###

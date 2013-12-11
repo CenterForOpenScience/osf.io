@@ -13,12 +13,12 @@
     <header class="subhead" id="overview">
         <div class="row">
 
-            <div class="col-md-8">
+            <div class="col-md-8 cite-container">
                 %if parent['id']:
                     % if parent['is_public'] or parent['is_contributor']:
-                    <h1 class="node-parent-title">
-                        <a href="/project/${parent['id']}/">${parent['title']}</a> /
-                    </h1>
+                        <h1 class="node-parent-title">
+                            <a href="${parent['absolute_url']}">${parent['title']}</a> /
+                        </h1>
                     % else:
                          <h1 class="node-parent-title unavailable">
                              <span>Private Project</span> /
@@ -83,7 +83,7 @@
                     "replace": true
                 }'></div>
             % if node['is_fork']:
-                <br />Forked from <a class="node-forked-from" href="${node['forked_from_url']}">${node['forked_from_url']}</a> on
+                <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
                 <span data-bind="text: dateForked.local,
                                 tooltip: {title: dateForked.utc}"></span>
             % endif
@@ -128,15 +128,19 @@
 <%include file="modal_add_contributor.mako"/>
 ## TODO: Find a better place to put this initialization code
 <script>
+
+    var nodeId = '${node['id']}';
+    var nodeApiUrl = '${node['api_url']}';
+
     $(document).ready(function(){
         $logScope = $("#logScope");
         if ($logScope.length > 0) {
             progressBar = $("#logProgressBar")
             progressBar.show();
-        };
+        }
         // Get project data from the server and initiate the ProjectViewModel
         $.ajax({
-            url: nodeToUseUrl(),
+            url: nodeApiUrl,
             type: "get", contentType: "application/json",
             dataType: "json",
             cache: false,
@@ -167,4 +171,5 @@
             }
         });
     });
+
 </script>

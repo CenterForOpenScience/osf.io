@@ -5,8 +5,10 @@ import hashlib
 import calendar
 import datetime
 import os
+import re
 import unicodedata
 import urllib
+import urlparse
 import logging
 
 import markdown
@@ -202,6 +204,8 @@ class NodeLog(StoredObject):
 
 class NodeFile(GuidStoredObject):
 
+    redirect_mode = 'redirect'
+
     _id = fields.StringField(primary=True)
 
     path = fields.StringField()
@@ -226,6 +230,10 @@ class NodeFile(GuidStoredObject):
         return '{0}files/{1}/'.format(self.node.url, self.filename)
 
     @property
+    def deep_url(self):
+        return '{0}files/{1}/'.format(self.node.deep_url, self.filename)
+
+    @property
     def api_url(self):
         return '{0}files/{1}/'.format(self.node.api_url, self.filename)
 
@@ -243,7 +251,7 @@ class NodeFile(GuidStoredObject):
             self.node.api_url, self.filename, self.latest_version_number)
 
 
-class Tag(GuidStoredObject):
+class Tag(StoredObject):
 
     _id = fields.StringField(primary=True)
     count_public = fields.IntegerField(default=0)
@@ -255,6 +263,8 @@ class Tag(GuidStoredObject):
 
 
 class Node(GuidStoredObject):
+
+    redirect_mode = 'proxy'
 
     # Node fields that trigger an update to Solr on save
     SOLR_UPDATE_FIELDS = {
@@ -943,6 +953,30 @@ class Node(GuidStoredObject):
 
     @property
     def url(self):
+        return '/{}/'.format(self._primary_key)
+
+    @property
+    def absolute_url(self):
+        if not self.url:
+            logging.error("Node {0} has a parent that is not a project".format(self._id))
+            return None
+        return urlparse.urljoin(settings.DOMAIN, self.url)
+
+    @property
+    def display_absolute_url(self):
+        url = self.absolute_url
+        if url is not None:
+            return re.sub(r'https?:', '', url).strip('/')
+
+    @property
+    def api_url(self):
+        if not self.url:
+            logging.error("Node {0} has a parent that is not a project".format(self._id))
+            return None
+        return '/api/v1{0}'.format(self.deep_url)
+
+    @property
+    def deep_url(self):
         if self.category == 'project':
             return '/project/{}/'.format(self._primary_key)
         else:
@@ -952,7 +986,50 @@ class Node(GuidStoredObject):
                     self._primary_key
                 )
         logging.error("Node {0} has a parent that is not a project".format(self._id))
-        return None
+
+    def author_list(self, and_delim='&'):
+        author_names = [
+            author.biblio_name
+            for author in self.contributors
+        ]
+        if len(author_names) < 2:
+            return ' {0} '.format(and_delim).join(author_names)
+        if len(author_names) > 7:
+            author_names = author_names[:7]
+            author_names.append('et al.')
+            return ', '.join(author_names)
+        return u'{0}, {1} {2}'.format(
+            ', '.join(author_names[:-1]),
+            and_delim,
+            author_names[-1]
+        )
+
+    @property
+    def citation_apa(self):
+        return u'{authors}, ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{url}</a>'.format(
+            authors=self.author_list(and_delim='&'),
+            year=self.logs[-1].date.year,
+            title=self.title,
+            url=self.display_absolute_url,
+        )
+
+    @property
+    def citation_mla(self):
+        return u'{authors}. "{title}". Open Science Framework, {year}. <a href="{url}">{url}</a>'.format(
+            authors=self.author_list(and_delim='and'),
+            year=self.logs[-1].date.year,
+            title=self.title,
+            url=self.display_absolute_url,
+        )
+
+    @property
+    def citation_chicago(self):
+        return u'{authors}. "{title}". Open Science Framework ({year}). <a href="{url}">{url}</a>'.format(
+            authors=self.author_list(and_delim='and'),
+            year=self.logs[-1].date.year,
+            title=self.title,
+            url=self.display_absolute_url,
+        )
 
     @property
     def parent(self):
@@ -963,13 +1040,6 @@ class Node(GuidStoredObject):
         except IndexError:
             pass
         return None
-
-    @property
-    def api_url(self):
-        if not self.url:
-            logging.error("Node {0} has a parent that is not a project".format(self._id))
-            return None
-        return '/api/v1{0}'.format(self.url)
 
     @property
     def watch_url(self):
@@ -1247,6 +1317,8 @@ class Node(GuidStoredObject):
 
 class NodeWikiPage(GuidStoredObject):
 
+    redirect_mode = 'redirect'
+
     _id = fields.StringField(primary=True)
 
     page_name = fields.StringField()
@@ -1257,6 +1329,10 @@ class NodeWikiPage(GuidStoredObject):
 
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')
+
+    @property
+    def deep_url(self):
+        return '{}wiki/{}/'.format(self.node.deep_url, self.page_name)
 
     @property
     def url(self):

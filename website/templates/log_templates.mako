@@ -29,7 +29,7 @@ to <span data-bind="text: nodeCategory"></span>
 <script type="text/html" id="contributor_removed">
 removed
 <span data-bind="if: contributor.registered">
-    <a data-bind="attr: {href: '/profile/' + contributor.id + '/'}, text: contributor.fullname"></a>
+    <a data-bind="attr: {href: '/' + contributor.id + '/'}, text: contributor.fullname"></a>
 </span>
 <span data-bind="ifnot: contributor.registered">
     <span data-bind="text: contributor.nr_name"></span>

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
+import re
 import itertools
-import datetime as dt
 import urlparse
+import datetime as dt
 
 import pytz
 import bson
@@ -22,6 +23,8 @@ name_formatters = {
 }
 
 class User(GuidStoredObject):
+
+    redirect_mode = 'proxy'
 
     _id = fields.StringField(primary=True)
 
@@ -56,11 +59,21 @@ class User(GuidStoredObject):
 
     @property
     def url(self):
-        return '/profile/{}/'.format(self._primary_key)
+        return '/{}/'.format(self._primary_key)
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin("http://" + settings.SHORT_DOMAIN, self.url)
+        return urlparse.urljoin(settings.DOMAIN, self.url)
+
+    @property
+    def display_absolute_url(self):
+        url = self.absolute_url
+        if url is not None:
+            return re.sub(r'https?:', '', url).strip('/')
+
+    @property
+    def deep_url(self):
+        return '/profile/{}/'.format(self._primary_key)
 
     @property
     def gravatar_url(self):
@@ -91,6 +104,14 @@ class User(GuidStoredObject):
         return self.fullname.split(' ')[-1]
 
     @property
+    def biblio_name(self):
+        given_name = self.given_name
+        surname = self.surname
+        if surname != given_name:
+            return u'{0}, {1}.'.format(surname, given_name[0])
+        return surname
+
+    @property
     def given_name(self):
         """
         The user's preferred given name, as they would be addressed personally.
@@ -119,7 +140,7 @@ class User(GuidStoredObject):
 
     @property
     def profile_url(self):
-        return '/profile/{}/'.format(self._id)
+        return '/{}/'.format(self._id)
 
     def get_summary(self, formatter='long'):
         return {

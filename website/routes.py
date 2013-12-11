@@ -23,6 +23,7 @@ def get_globals():
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
         'user_id': user._primary_key if user else '',
+        'user_url': user.url if user else '',
         'display_name': framework.auth.get_display_name(user.username) if user else '',
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'dev_mode': settings.DEV_MODE,
@@ -74,6 +75,14 @@ def make_url_map(app):
              HTTPError(http.NOT_FOUND), json_renderer),
     ])
 
+    ### GUID ###
+    process_rules(app, [
+        Rule([
+            '/<guid>/',
+            '/<guid>/<path:suffix>',
+        ], ['get', 'post'], website_routes.resolve_guid, OsfWebRenderer('', render_mako_string)),
+    ])
+
     process_rules(app, [
         Rule('/favicon.ico', 'get', favicon, json_renderer),
     ])
@@ -99,14 +108,6 @@ def make_url_map(app):
         Rule('/dashboard/get_nodes/', 'get', website_routes.get_dashboard_nodes, json_renderer),
 
     ], prefix='/api/v1')
-
-    ### GUID ###
-
-    process_rules(app, [
-
-        Rule('/guid/<guid>/', 'get', website_routes.resolve_guid, OsfWebRenderer('', render_mako_string)),
-
-    ])
 
     ### Meta-data ###
 
@@ -251,7 +252,7 @@ def make_url_map(app):
 
         Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
-        Rule('/project/new/', 'get', {}, OsfWebRenderer('project/new.mako')),
+        Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
         Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.mako')),
 
         Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('project.mako')),
@@ -419,7 +420,7 @@ def make_url_map(app):
         Rule([
             '/project/new/',
             '/project/<pid>/newnode/',
-        ], 'post', project_views.node.project_new_post, json_renderer),
+        ], 'post', project_views.node.project_new_node, json_renderer),
 
         # Remove
         Rule([
