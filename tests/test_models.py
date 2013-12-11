@@ -4,6 +4,7 @@ import unittest
 from nose.tools import *  # PEP8 asserts
 
 import pytz
+import hashlib
 import datetime
 from dateutil import parser
 
@@ -450,6 +451,18 @@ class TestProject(DbTestCase):
         # The user is removed
         self.project.remove_contributor(user=self.user, contributor=user2, api_key=None)
         assert_not_in(user2, self.project.contributors)
+
+    def test_remove_nonregistered_contributor(self):
+        nr_user = {
+            'email': 'foo@bar.com',
+            'name': 'Weezy F. Baby',
+        }
+        self.project.add_nonregistered_contributor(user=self.user, **nr_user)
+        self.project.save()
+        # The user is removed
+        hash_id = hashlib.md5(nr_user['email']).hexdigest()
+        self.project.remove_nonregistered_contributor(self.user, None, nr_user['name'], hash_id)
+        assert_not_in(nr_user, self.project.contributors)
 
     def test_set_title(self):
         proj = ProjectFactory(title="That Was Then", creator=self.user)

@@ -175,13 +175,13 @@ class NodeLog(StoredObject):
     def _render_log_contributor(self, contributor):
         if isinstance(contributor, dict):
             rv = contributor.copy()
-            rv.update({'registered' : False})
+            rv.update({'registered': False})
             return rv
         user = User.load(contributor)
         return {
-            'id' : user._primary_key,
-            'fullname' : user.fullname,
-            'registered' : True,
+            'id': user._primary_key,
+            'fullname': user.fullname,
+            'registered': True,
         }
 
     # TODO: Move to separate utility function
@@ -368,7 +368,7 @@ class Node(GuidStoredObject):
         self.add_log(
             action=NodeLog.EDITED_TITLE,
             params={
-                'project': self.node__parent[0]._primary_key if self.node__parent else None,
+                'project': self.parent_id,
                 'node': self._primary_key,
                 'title_new': self.title,
                 'title_original': original_title,
@@ -417,8 +417,8 @@ class Node(GuidStoredObject):
             solr_document_id = self._id
         else:
             try:
-                # Components must have a project for a parent; use it's ID.
-                solr_document_id = self.node__parent[0]._id
+                # Components must have a project for a parent; use its ID.
+                solr_document_id = self.parent_id
             except IndexError:
                 # Skip orphaned components. There are some in the DB...
                 return
@@ -948,7 +948,7 @@ class Node(GuidStoredObject):
         else:
             if self.node__parent and self.node__parent[0].category == 'project':
                 return '/project/{}/node/{}/'.format(
-                    self.node__parent[0]._primary_key,
+                    self.parent_id,
                     self._primary_key
                 )
         logging.error("Node {0} has a parent that is not a project".format(self._id))
@@ -978,7 +978,7 @@ class Node(GuidStoredObject):
     @property
     def parent_id(self):
         if self.node__parent:
-            return self.node__parent[0]._id
+            return self.node__parent[0]._primary_key
         return None
 
     @property
@@ -989,17 +989,21 @@ class Node(GuidStoredObject):
         return (user is not None) and ((user in self.contributors) or user == self.creator)
 
     def remove_nonregistered_contributor(self, user, api_key, name, hash_id):
-        for d in self.contributor_list:
-            if d.get('nr_name') == name and hashlib.md5(d.get('nr_email')).hexdigest() == hash_id:
-                email = d.get('nr_email')
-        self.contributor_list[:] = [d for d in self.contributor_list if not (d.get('nr_email') == email)]
+        deleted = False
+        for idx, contrib in enumerate(self.contributor_list):
+            if contrib.get('nr_name') == name and hashlib.md5(contrib.get('nr_email')).hexdigest() == hash_id:
+                del self.contributor_list[idx]
+                deleted = True
+                break
+        if not deleted:
+            return False
         self.save()
         self.add_log(
             action=NodeLog.CONTRIB_REMOVED,
             params={
-                'project':self.parent_id,
-                'node':self._primary_key,
-                'contributor':{"nr_name":name, "nr_email":email},
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'contributor': contrib,
             },
             user=user,
             api_key=api_key,
@@ -1052,7 +1056,7 @@ class Node(GuidStoredObject):
                 self.add_log(
                     action=NodeLog.CONTRIB_ADDED,
                     params={
-                        'project': self.node__parent[0]._primary_key if self.node__parent else None,
+                        'project': self.parent_id,
                         'node': self._primary_key,
                         'contributors': [contrib_to_add._primary_key],
                     },
@@ -1093,19 +1097,20 @@ class Node(GuidStoredObject):
             self.save()
 
     def add_nonregistered_contributor(self, name, email, user, api_key=None, save=False):
-        '''Add a non-registered contributor to the project.
+        """Add a non-registered contributor to the project.
 
         :param name: A string, the full name of the person.
         :param email: A string, the email address of the person.
         :param user: A User object, the user who added the person.
-        '''
-        self.contributor_list.append({'nr_name': name, 'nr_email':email})
+
+        """
+        self.contributor_list.append({'nr_name': name, 'nr_email': email})
         self.add_log(
             action=NodeLog.CONTRIB_ADDED,
             params={
-                'project':self.node__parent[0]._primary_key if self.node__parent else None,
-                'node':self._primary_key,
-                'contributors':[{"nr_name": name, "nr_email":email}],
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'contributors': [{"nr_name": name, "nr_email": email}],
             },
             user=user,
             api_key=api_key

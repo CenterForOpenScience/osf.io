@@ -129,16 +129,14 @@ def project_removecontributor(*args, **kwargs):
     api_key = get_api_key()
     node_to_use = node or project
 
-    # FIXME: this isn't working
     if request.json['id'].startswith('nr-'):
         outcome = node_to_use.remove_nonregistered_contributor(
-            user, request.json['name'], request.json['id'].replace('nr-', '')
+            user, api_key, request.json['name'],
+            request.json['id'].replace('nr-', '')
         )
     else:
-        try:
-            contributor = User.find_one(Q("_id", "eq", request.json['id']))
-        except Exception as err:
-            logger.error(err)
+        contributor = User.load(request.json['id'])
+        if contributor is None:
             raise HTTPError(http.BAD_REQUEST)
         outcome = node_to_use.remove_contributor(
             contributor=contributor, user=user, api_key=api_key
