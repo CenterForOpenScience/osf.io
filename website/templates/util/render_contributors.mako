@@ -1,10 +1,18 @@
 % for contributor in contributors:
     <span class="contributor">
-        <a href="/profile/${contributor['id']}/"
-            % if user['can_edit']:
-                class="user-quickedit" data-userid="${contributor['id']}" data-fullname="${contributor['fullname']}"
-            % endif
+        % if contributor['registered']:
+            <a href="/profile/${contributor['id']}/"
+                % if user['can_edit']:
+                    class="user-quickedit" data-userid="${contributor['id']}" data-fullname="${contributor['fullname']}"
+                % endif
                 >${contributor['fullname']}</a>${', ' if not loop.last else ''}
+        % else:
+            <span
+                % if user['can_edit']:
+                    class="user-quickedit" data-userid="nr-${contributor['id']}" data-fullname="${contributor['fullname']}"
+                % endif
+                >${contributor['fullname']}</span>${', ' if not loop.last else ''}
+        % endif
     </span>
 % endfor
 
