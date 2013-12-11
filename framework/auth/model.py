@@ -140,7 +140,7 @@ class User(GuidStoredObject):
 
     @property
     def profile_url(self):
-        return '/profile/{}/'.format(self._id)
+        return '/{}/'.format(self._id)
 
     def get_summary(self, formatter='long'):
         return {
