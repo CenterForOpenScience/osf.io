@@ -328,6 +328,8 @@ class Node(GuidStoredObject):
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
+    piwik_credentials = fields.DictionaryField()
+
     ## Meta-data
     #comment_schema = OSF_META_SCHEMAS['osf_comment']
 

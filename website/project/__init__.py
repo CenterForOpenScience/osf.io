@@ -1,7 +1,7 @@
 from .model import Node, NodeLog, NodeWikiPage
+from framework.analytics.provisioning import provision_node
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
-
 
 def show_diff(seqm):
     """Unify operations between two compared strings
@@ -65,6 +65,8 @@ def new_node(category, title, user, description=None, project=None):
             user=user,
             log_date=new_node.date_created
         )
+
+    provision_node(new_node)
 
     return new_node
 
