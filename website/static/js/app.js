@@ -59,7 +59,10 @@ var Log = function(params) {
             if(i == self.contributors.length - 1 && self.contributors.length > 2){
                 ret += " and ";
             }
-            ret += self._asContribLink(person);
+            if (person.registered)
+                ret += self._asContribLink(person);
+            else
+                ret += '<span>' + person.nr_name + '</span>';
             if (i < self.contributors.length - 1 && self.contributors.length > 2){
                 ret += ", ";
             } else if (i < self.contributors.length - 1 && self.contributors.length == 2){
