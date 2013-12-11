@@ -1,6 +1,6 @@
 % if summary['can_view']:
 
-    <li node_id="${summary['id']}" class="project list-group-item list-group-item-node">
+    <li node_id="${summary['id']}" class="project list-group-item list-group-item-node cite-container">
 
         <h4 class="list-group-item-heading">
             <span class="overflow" style="display:inline-block;">

@@ -278,7 +278,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
     self.nodes = ko.observableArray([]);
     self.nodesToChange = ko.observableArray();
     $.getJSON(
-        nodeToUseUrl() + 'get_editable_children/',
+        nodeApiUrl + 'get_editable_children/',
         {},
         function(result) {
             $.each(result['children'], function(idx, child) {
@@ -312,7 +312,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
     self.importFromParent = function() {
         self.errorMsg('');
         $.getJSON(
-            nodeToUseUrl() + 'get_contributors_from_parent/',
+            nodeApiUrl + 'get_contributors_from_parent/',
             {},
             function(result) {
                 if (!result.contributors.length) {
@@ -395,7 +395,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
     self.submit = function() {
         var user_ids = attrMap(self.selection(), 'id');
         $.ajax(
-            nodeToUseUrl() + 'addcontributors/',
+            nodeApiUrl + 'addcontributors/',
             {
                 type: 'post',
                 data: JSON.stringify({

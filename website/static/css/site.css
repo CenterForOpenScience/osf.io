@@ -29,6 +29,19 @@ a.disabled {
     cursor: default;
 }
 
+.citation-label {
+    font-weight: bold;
+}
+
+.citation-list {
+    display: none;
+}
+
+.citation-text {
+    text-indent: -3em;
+    margin-left: 3em;
+}
+
 .disabled {
     cursor: default !important;
     pointer-events: none;
@@ -899,7 +912,7 @@ h1.unavailable {
 
 .overflow {
     word-wrap: break-word;
-    width: 100%;
+    max-width: 100%;
 }
 
 .preview-overflow{

@@ -36,6 +36,7 @@ def serialize_user(user):
         'id': str(user._primary_key),
         'url': user.url,
         'absolute_url': user.absolute_url,
+        'display_absolute_url': user.display_absolute_url,
         'date_registered': user.date_registered.strftime("%Y-%m-%d"),
         'registered': user.is_registered,
         'gravatar_url': user.gravatar_url,
