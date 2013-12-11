@@ -420,7 +420,7 @@ def make_url_map(app):
         Rule([
             '/project/new/',
             '/project/<pid>/newnode/',
-        ], 'post', project_views.node.project_new_post, json_renderer),
+        ], 'post', project_views.node.project_new_node, json_renderer),
 
         # Remove
         Rule([
