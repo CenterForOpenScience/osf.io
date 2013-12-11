@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
+import re
 import itertools
 import urlparse
 import datetime as dt
-import urlparse
 
 import pytz
 import bson
@@ -64,6 +64,12 @@ class User(GuidStoredObject):
     @property
     def absolute_url(self):
         return urlparse.urljoin(settings.DOMAIN, self.url)
+
+    @property
+    def display_absolute_url(self):
+        url = self.absolute_url
+        if url is not None:
+            return re.sub(r'https?:', '', url).strip('/')
 
     @property
     def deep_url(self):

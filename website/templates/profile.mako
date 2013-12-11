@@ -50,7 +50,7 @@
             </tr>
             <tr>
               <td>Public Profile</td>
-              <td><a href="${profile['url']}">${profile['absolute_url']}</a></td>
+              <td><a href="${profile['url']}">${profile['display_absolute_url']}</a></td>
             </tr>
         </table>
     </div>

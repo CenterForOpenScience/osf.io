@@ -351,6 +351,7 @@ def _view_project(node_to_use, user, api_key=None):
             'url': node_to_use.url,
             'api_url': node_to_use.api_url,
             'absolute_url': node_to_use.absolute_url,
+            'display_absolute_url': node_to_use.display_absolute_url,
             'citations': {
                 'apa': node_to_use.citation_apa,
                 'mla': node_to_use.citation_mla,

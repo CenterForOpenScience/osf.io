@@ -65,7 +65,7 @@
 
         <div class="citations">
             <span class="citation-label">Citation:</span>
-            <span>${node['absolute_url']}</span>
+            <span>${node['display_absolute_url']}</span>
             <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
             <dl class="citation-list">
                 <dt>APA</dt>
