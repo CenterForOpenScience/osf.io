@@ -19,8 +19,8 @@ from framework import app
 
 
 # Only uncomment if running these tests in isolation
-# from website.app import init_app
-# app = init_app(set_backends=False, routes=True)
+#from website.app import init_app
+#app = init_app(set_backends=False, routes=True)
 
 class TestAnUnregisteredUser(DbTestCase):
 
@@ -235,14 +235,14 @@ class TestAUser(DbTestCase):
         res = self.app.get('/profile/', auth=self.auth)
         td1 = res.html.find('td', text=re.compile(r'Public Profile'))
         td2 = td1.find_next_sibling('td')
-        assert_equal(td2.text, self.user.absolute_url)
+        assert_equal(td2.text, self.user.display_absolute_url)
 
     def test_sees_another_profile(self):
         user2 = UserFactory()
         res = self.app.get(user2.url, auth=self.auth)
         td1 = res.html.find('td', text=re.compile(r'Public Profile'))
         td2 = td1.find_next_sibling('td')
-        assert_equal(td2.text, user2.absolute_url)
+        assert_equal(td2.text, user2.display_absolute_url)
 
 
 class TestRegistrations(DbTestCase):
