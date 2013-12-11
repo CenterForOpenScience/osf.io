@@ -30,12 +30,13 @@ def _rescale_ratio(nodes):
     if not nodes:
         return 0
     user = get_current_user()
-    log_counts = [
+    counts = [
         len(node.logs)
-        for node in nodes if node.can_view(user)
+        for node in nodes
+        if node.can_view(user)
     ]
-    if log_counts:
-        return float(max(log_counts))
+    if counts:
+        return float(max(counts))
     return 0.0
 
 
