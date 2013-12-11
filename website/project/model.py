@@ -1006,7 +1006,7 @@ class Node(GuidStoredObject):
 
     @property
     def citation_apa(self):
-        return u'{authors}, ({year}). {title}. Retrieved from Open Science Framework, {url}'.format(
+        return u'{authors}, ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{url}</a>'.format(
             authors=self.author_list(and_delim='&'),
             year=self.logs[-1].date.year,
             title=self.title,
@@ -1015,7 +1015,7 @@ class Node(GuidStoredObject):
 
     @property
     def citation_mla(self):
-        return u'{authors}. "{title}". Open Science Framework, {year}. {url}'.format(
+        return u'{authors}. "{title}". Open Science Framework, {year}. <a href="{url}">{url}</a>'.format(
             authors=self.author_list(and_delim='and'),
             year=self.logs[-1].date.year,
             title=self.title,
@@ -1024,7 +1024,7 @@ class Node(GuidStoredObject):
 
     @property
     def citation_chicago(self):
-        return u'{authors}. "{title}". Open Science Framework ({year}). {url}'.format(
+        return u'{authors}. "{title}". Open Science Framework ({year}). <a href="{url}">{url}</a>'.format(
             authors=self.author_list(and_delim='and'),
             year=self.logs[-1].date.year,
             title=self.title,

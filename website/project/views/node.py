@@ -378,7 +378,7 @@ def _view_project(node_to_use, user, api_key=None):
 
             'is_fork': node_to_use.is_fork,
             'forked_from_id': node_to_use.forked_from._primary_key if node_to_use.is_fork else '',
-            'forked_from_absolute_url': node_to_use.forked_from.absolute_url if node_to_use.is_fork else '',
+            'forked_from_display_absolute_url': node_to_use.forked_from.display_absolute_url if node_to_use.is_fork else '',
             'forked_date': node_to_use.forked_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_fork else '',
             'fork_count': len(node_to_use.fork_list),
 
