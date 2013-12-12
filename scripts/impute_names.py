@@ -9,9 +9,9 @@ from website.app import init_app
 from website import models
 from website import settings
 
-app = init_app('website.settings', set_backends=True, routes=True)
+#app = init_app('website.settings', set_backends=True, routes=True)
 
-email_template = '''Hello, {fullname},\n
+email_template = u'''Hello, {fullname},\n
 \n
 Along with a shorter domain name (https://osf.io), the Open Science Framework
 has recently introduced a citation widget on project and component dashboards.\n
@@ -41,13 +41,14 @@ The OSF Robot.
 
 def email_name(user):
 
-    names = parse_name(user)
+    names = {'fullname': user.fullname}
+    names.update(parse_name(user.fullname))
 
     send_email.delay(
         from_addr=settings.FROM_EMAIL,
         to_addr=user.username,
         subject='OSF: Verify your citation information',
-        message=email_template.format(**names),
+        message=email_template.format(**names).encode('utf-8'),
     )
 
 #def email_names():
