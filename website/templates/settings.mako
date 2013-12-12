@@ -27,6 +27,9 @@
                         <div style="font-weight: bold;">APA Citation Format</div>
                         <div data-bind="text:$root.citation_name"></div>
                         <hr />
+                        <button id="profile-impute" class="btn btn-default">
+                            Guess fields below
+                        </button>
                         <button id="profile-submit" class="btn btn-success">
                             Submit
                         </button>

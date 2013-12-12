@@ -105,7 +105,9 @@ profile_schema = {
                     'id': 'fullname',
                     'type': 'textfield',
                     'label': 'Full name',
-                    'helpText': '',
+                    'helpText': 'Your full name is the name that will be '
+                                'displayed in your profile, but ...'
+                    ,
                 },
                 {
                     'id': 'given_name',
