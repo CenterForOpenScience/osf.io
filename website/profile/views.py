@@ -10,6 +10,7 @@ from framework import (
 from framework.auth import must_have_session_auth
 from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
+from framework.auth.utils import parse_name
 
 from website.models import ApiKey, User
 from website.views import _render_nodes
@@ -76,7 +77,7 @@ def profile_view_id(uid):
 
 
 @must_be_logged_in
-def edit_profile(*args, **kwargs):
+def edit_profile(**kwargs):
     user = kwargs['user']
 
     form = request.form
@@ -105,27 +106,38 @@ profile_schema = {
                     'id': 'fullname',
                     'type': 'textfield',
                     'label': 'Full name',
+                    'required': True,
                     'helpText': 'Your full name is the name that will be '
-                                'displayed in your profile, but ...'
-                    ,
+                                'displayed in your profile, but we are also '
+                                'generating common citation formats for your '
+                                'work using the Citation Style Language '
+                                'definition. Use the fields below to adjust the '
+                                'way your name will appear in citations.',
+                },
+                {
+                    'id': 'impute',
+                    'type': 'htmlfield',
+                    'label': '',
+                    'content': '<button id="profile-impute" class="btn btn-default">Guess fields below</button>',
                 },
                 {
                     'id': 'given_name',
                     'type': 'textfield',
                     'label': 'Given name',
-                    'helpText': 'First name; e.g., Barack',
+                    'helpText': 'First name; e.g., Stephen',
                 },
                 {
                     'id': 'middle_names',
                     'type': 'textfield',
                     'label': 'Middle name(s)',
-                    'helpText': 'Middle names; e.g., Hussein',
+                    'helpText': 'Middle names; e.g., Jay',
                 },
                 {
                     'id': 'family_name',
                     'type': 'textfield',
                     'label': 'Family name',
-                    'helpText': 'Surname; e.g., Obama',
+                    'required': True,
+                    'helpText': 'Surname; e.g., Gould',
                 },
                 {
                     'id': 'suffix',
@@ -140,7 +152,7 @@ profile_schema = {
 
 
 @must_be_logged_in
-def profile_settings(*args, **kwargs):
+def profile_settings(**kwargs):
     user = kwargs['user']
     return {
         'user_id': user._primary_key,
@@ -156,7 +168,7 @@ def profile_settings(*args, **kwargs):
 
 
 @must_be_logged_in
-def profile_addons(*args, **kwargs):
+def profile_addons(**kwargs):
     user = kwargs['user']
     return {
         'user_id': user._primary_key,
@@ -164,7 +176,7 @@ def profile_addons(*args, **kwargs):
 
 
 @must_be_logged_in
-def get_keys(*args, **kwargs):
+def get_keys(**kwargs):
     user = kwargs['user']
     return {
         'keys': [
@@ -178,7 +190,7 @@ def get_keys(*args, **kwargs):
 
 
 @must_be_logged_in
-def create_user_key(*args, **kwargs):
+def create_user_key(**kwargs):
 
     # Generate key
     api_key = ApiKey(label=request.form['label'])
@@ -196,7 +208,7 @@ def create_user_key(*args, **kwargs):
 
 
 @must_be_logged_in
-def revoke_user_key(*args, **kwargs):
+def revoke_user_key(**kwargs):
 
     # Load key
     api_key = ApiKey.load(request.form['key'])
@@ -211,7 +223,7 @@ def revoke_user_key(*args, **kwargs):
 
 
 @must_be_logged_in
-def user_key_history(*args, **kwargs):
+def user_key_history(**kwargs):
 
     api_key = ApiKey.load(kwargs['kid'])
     return {
@@ -227,6 +239,13 @@ def user_key_history(*args, **kwargs):
             for log in api_key.nodelog__created
         ]
     }
+
+
+@must_have_session_auth
+@must_be_logged_in
+def parse_names(**kwargs):
+    name = request.json.get('fullname', '')
+    return parse_name(name)
 
 
 @must_have_session_auth

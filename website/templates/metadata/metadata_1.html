@@ -1,8 +1,8 @@
 <style>
 
     .metadata-content {
-        padding-top: 15px;
-        padding-bottom: 15px;
+        margin-top: 25px;
+        margin-bottom: 25px;
     }
 
     .repeat-subsection {
@@ -33,15 +33,20 @@
 
 <!-- Item container template -->
 <script id="item" type="text/html">
-    <div class="form-group" data-bind="attr:{id:uidFmt}">
-        <label class="control-label" data-bind="css:{required:required}">
-            <span data-bind="if:required">* </span>
-            <span data-bind="text:label, attr:{for:id}"></span>
-        </label>
-        <div class="controls">
-            <span class="help-block" data-bind="text:helpText"></span>
-            <div data-bind='item:$data, attr:{id:id}'></div>
-            <div data-bind="text:validateText"></div>
+    <div data-bind="if:type=='htmlfield'">
+        <div data-bind="item:$data"></div>
+    </div>
+    <div data-bind="ifnot:type=='htmlfield'">
+        <div class="form-group" data-bind="attr:{id:uidFmt}">
+            <label class="control-label" data-bind="css:{required:required}">
+                <span data-bind="if:required">* </span>
+                <span data-bind="text:label, attr:{for:id}"></span>
+            </label>
+            <div class="controls">
+                <span class="help-block" data-bind="text:helpText"></span>
+                <div data-bind='item:$data, attr:{id:id}'></div>
+                <div data-bind="text:validateText"></div>
+            </div>
         </div>
     </div>
 </script>
@@ -75,6 +80,11 @@
 <script id="file" type="text/html">
     <select class="form-control" data-bind="value:node, options:nodes, optionsCaption:caption, disable:disable || $root.disable"></select>
     <select class="form-control" data-bind="visible:files, value:value, options:files, optionsCaption:caption, disable:disable || $root.disable"></select>
+</script>
+
+<!--  -->
+<script id="htmlfield" type="text/html">
+    <div data-bind="html:content"></div>
 </script>
 
 <div id="meta-data-container">

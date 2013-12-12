@@ -7,13 +7,13 @@ import datetime as dt
 import pytz
 import bson
 
-from nameparser.parser import HumanName
-
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import fields,  Q, analytics
 from framework import GuidStoredObject
 from framework.search import solr
 from website import settings, filters
+
+from .utils import parse_name
 
 name_formatters = {
    'long': lambda user: user.fullname,
@@ -68,13 +68,7 @@ class User(GuidStoredObject):
     @property
     def parsed_name(self):
         if not getattr(self, '_name_parsed', None):
-            human = HumanName(self.fullname)
-            self._name_parsed = {
-                'given_name': human.first,
-                'middle_names': human.middle,
-                'family_name': human.last,
-                'suffix': human.suffix,
-            }
+            self._name_parsed = parse_name(self.fullname)
         return self._name_parsed
 
     @property
