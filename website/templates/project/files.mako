@@ -156,6 +156,9 @@ var myGrid = HGrid.create({
     dragDrop: false
 });
 
+// Only allow one upload at a time until Git collisions are resolved; see
+// issue #196
+myGrid.dropZoneObj.options.parallelUploads = 1;
 
 myGrid.updateBreadcrumbsBox(myGrid.data[0]['uid']);
 
