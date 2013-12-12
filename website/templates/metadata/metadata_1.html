@@ -79,14 +79,13 @@
 
 <div id="meta-data-container">
 
-    <form data-bind="with:currentPage">
+    <div data-bind="with:currentPage">
         <div data-bind="template:{name:'section', data:$data}"></div>
-    </form>
-
-    <hr />
+    </div>
 
     <!-- Pagination -->
     <div data-bind="if:npages > 1">
+        <hr />
         <div class="form-group">
             <div class="controls">
                 <button class="btn btn-default" data-bind="click:previous, disable:isFirst">Previous</button>
@@ -98,7 +97,5 @@
             </div>
         </div>
     </div>
-
-    <hr />
 
 </div>

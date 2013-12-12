@@ -7,6 +7,8 @@ import datetime as dt
 import pytz
 import bson
 
+from nameparser.parser import HumanName
+
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import fields,  Q, analytics
 from framework import GuidStoredObject
@@ -15,9 +17,9 @@ from website import settings, filters
 
 name_formatters = {
    'long': lambda user: user.fullname,
-   'surname': lambda user: user.surname,
+   'surname': lambda user: user.family_name,
    'initials': lambda user: u'{surname}, {initial}.'.format(
-       surname=user.surname,
+       surname=user.family_name,
        initial=user.given_name_initial
    ),
 }
@@ -44,6 +46,12 @@ class User(GuidStoredObject):
     # Watched nodes are stored via a list of WatchConfigs
     watched = fields.ForeignField("WatchConfig", list=True, backref="watched")
 
+    # CSL names
+    _given_name = fields.StringField()
+    _middle_names = fields.StringField()
+    _family_name = fields.StringField()
+    _suffix = fields.StringField()
+
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
     _meta = {'optimistic' : True}
@@ -58,8 +66,82 @@ class User(GuidStoredObject):
         return check_password_hash(self.password, raw_password)
 
     @property
+    def parsed_name(self):
+        if not getattr(self, '_name_parsed', None):
+            human = HumanName(self.fullname)
+            self._name_parsed = {
+                'given_name': human.first,
+                'middle_names': human.middle,
+                'family_name': human.last,
+                'suffix': human.suffix,
+            }
+        return self._name_parsed
+
+    @property
+    def family_name(self):
+        """
+        The user's preferred surname or family name, as they would prefer it to
+        appear in print.
+        e.g.: "Jeffrey Spies" would be "Spies".
+        """
+        if self._family_name is not None:
+            return self._family_name
+        return self.parsed_name['family_name']
+
+    @property
+    def suffix(self):
+        if self._suffix is not None:
+            return self._suffix
+        return self.parsed_name['suffix']
+
+    @property
+    def biblio_name(self):
+        given_name = self.given_name
+        surname = self.family_name
+        if surname != given_name:
+            return u'{0}, {1}.'.format(surname, given_name[0])
+        return surname
+
+    @property
+    def given_name(self):
+        """
+        The user's preferred given name, as they would be addressed personally.
+        e.g.: "Jeffrey Spies" would be "Jeffrey" (or "Jeff")
+        """
+        if self._given_name is not None:
+            return self._given_name
+        return self.parsed_name['given_name']
+
+    @property
+    def middle_names(self):
+        if self._middle_names is not None:
+            return self._middle_names
+        return self.parsed_name['middle_names']
+
+    @property
+    def given_name_initial(self):
+        """
+        The user's preferred initialization of their given name.
+
+        Some users with common names may choose to distinguish themselves from
+        their colleagues in this way. For instance, there could be two
+        well-known researchers in a single field named "Robert Walker".
+        "Walker, R" could then refer to either of them. "Walker, R.H." could
+        provide easy disambiguation.
+
+        NOTE: The internal representation for this should never end with a
+              period. "R" and "R.H" would be correct in the prior case, but
+              "R.H." would not.
+        """
+        return self.given_name[0]
+
+    @property
     def url(self):
         return '/{}/'.format(self._primary_key)
+
+    @property
+    def api_url(self):
+        return '/api/v1/{0}/'.format(self._primary_key)
 
     @property
     def absolute_url(self):
@@ -92,51 +174,6 @@ class User(GuidStoredObject):
         '''Whether or not this account has been merged into another account.
         '''
         return self.merged_by is not None
-
-    @property
-    def surname(self):
-        """
-        The user's preferred surname or family name, as they would prefer it to
-        appear in print.
-        e.g.: "Jeffrey Spies" would be "Spies".
-        """
-        # TODO: Give users the ability to specify this via their profile
-        return self.fullname.split(' ')[-1]
-
-    @property
-    def biblio_name(self):
-        given_name = self.given_name
-        surname = self.surname
-        if surname != given_name:
-            return u'{0}, {1}.'.format(surname, given_name[0])
-        return surname
-
-    @property
-    def given_name(self):
-        """
-        The user's preferred given name, as they would be addressed personally.
-        e.g.: "Jeffrey Spies" would be "Jeffrey" (or "Jeff")
-        """
-        # TODO: Give users the ability to specify this via their profile
-        return self.fullname.split(' ')[0]
-
-    @property
-    def given_name_initial(self):
-        """
-        The user's preferred initialization of their given name.
-
-        Some users with common names may choose to distinguish themselves from
-        their colleagues in this way. For instance, there could be two
-        well-known researchers in a single field named "Robert Walker".
-        "Walker, R" could then refer to either of them. "Walker, R.H." could
-        provide easy disambiguation.
-
-        NOTE: The internal representation for this should never end with a
-              period. "R" and "R.H" would be correct in the prior case, but
-              "R.H." would not.
-        """
-        #TODO: Give users the ability to specify this via their profile.
-        return self.given_name[0]
 
     @property
     def profile_url(self):
