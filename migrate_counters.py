@@ -38,7 +38,7 @@ def migrate_pagecounters(dry_run=True):
             counter['_id'] = new_id
             if not dry_run:
                 try:
-                    collection.insert(counter)
+                    collection.update(counter, upsert=True)
                 except DuplicateKeyError:
                     logging.debug('Key exists')
 
@@ -54,7 +54,7 @@ def migrate_pagecounters(dry_run=True):
             counter['_id'] = new_id
             if not dry_run:
                 try:
-                    collection.insert(counter)
+                    collection.update(counter, upsert=True)
                 except DuplicateKeyError:
                     logging.debug('Key exists')
 
@@ -75,7 +75,7 @@ def migrate_useractivitycounters(dry_run=True):
         ))
         if not dry_run:
             try:
-                collection.insert(counter)
+                collection.update(counter, upsert=True)
             except DuplicateKeyError:
                 logging.debug('Key exists')
 
