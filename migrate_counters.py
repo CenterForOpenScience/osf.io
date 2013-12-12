@@ -1,10 +1,19 @@
 """
 Ensure that all node IDs embedded in the analytics collections (page counters,
 user activity counters) are lower-cased following GUID migration.
+
+Examples:
+    Dry run:
+        python migrate_counters.py
+    Real:
+        python migrate_counters.py false
+
 """
 
 import re
 import logging
+from pymongo.errors import DuplicateKeyError
+
 from framework import db
 
 logging.basicConfig(level=logging.DEBUG)
@@ -28,7 +37,10 @@ def migrate_pagecounters(dry_run=True):
             ))
             counter['_id'] = new_id
             if not dry_run:
-                collection.insert(counter)
+                try:
+                    collection.update({'_id': new_id}, counter, upsert=True)
+                except DuplicateKeyError:
+                    logging.debug('Key exists')
 
         match = re.search(r'download:(\w{5}):(.*)', _id)
         if match:
@@ -41,7 +53,10 @@ def migrate_pagecounters(dry_run=True):
             ))
             counter['_id'] = new_id
             if not dry_run:
-                collection.insert(counter)
+                try:
+                    collection.update({'_id': new_id}, counter, upsert=True)
+                except DuplicateKeyError:
+                    logging.debug('Key exists')
 
 def migrate_useractivitycounters(dry_run=True):
 
@@ -59,13 +74,16 @@ def migrate_useractivitycounters(dry_run=True):
             _id, _id.lower()
         ))
         if not dry_run:
-            collection.insert(counter)
+            try:
+                collection.update({'_id': _id.lower()}, counter, upsert=True)
+            except DuplicateKeyError:
+                logging.debug('Key exists')
 
 if __name__ == '__main__':
 
     import sys
     try:
-        dry_run = sys.argv[2].lower() not in ['f', 'false']
+        dry_run = sys.argv[1].lower() not in ['f', 'false']
     except IndexError:
         dry_run = True
 
