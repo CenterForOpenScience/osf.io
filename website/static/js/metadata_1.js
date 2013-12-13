@@ -643,7 +643,9 @@ var MetaData = (function() {
                 data[name] = value;
                 if (complete && model.required && model.isDisplayed() && !value) {
                     self.currentIndex(model.getPage());
-                    model.scrollToTop();
+                    try {
+                        model.scrollToTop();
+                    } catch(e) {}
                     complete = false;
                 }
             });

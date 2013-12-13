@@ -40,12 +40,12 @@
         </form>
         <ul class="nav navbar-nav navbar-right">
           %if user_name and display_name:
-          <li><a href="/profile">${display_name}</a></li>
-          ## <li><a rel="tooltip" title="Settings" href="/settings"><span class="icon-cog"></span></a></li>
-          <li><a rel='tooltip' title='Log out' href='/logout'><span class="icon-signout"></span></a></li>
+          <li><a href="/profile/">${display_name}</a></li>
+          <li><a rel="tooltip" title="Settings" href="/settings/"><span class="icon-cog"></span></a></li>
+          <li><a rel="tooltip" title="Log out" href="/logout/"><span class="icon-signout"></span></a></li>
           %else:
               %if allow_login:
-              <a class="btn btn-primary navbar-btn" href="/account">Create an Account or Sign-In</a>
+              <a class="btn btn-primary navbar-btn" href="/account/">Create an Account or Sign-In</a>
               %else:
               %endif
           %endif
