@@ -2,6 +2,8 @@
 import logging
 
 from framework import session, create_session
+from framework import goback
+from framework import status
 from framework.exceptions import HTTPError
 import framework.flask as web
 import framework.bcrypt as bcrypt
@@ -107,12 +109,25 @@ def login(username, password):
                 logging.debug("User is not claimed")
                 return False
             else:
-                response = web.redirect('/dashboard/')
-                response = create_session(response, data={
+                is_first_login = user.date_last_login is None
+                user.date_last_login = datetime.datetime.utcnow()
+                user.save()
+                if not is_first_login:
+                    response = goback()
+                else:
+                    # Direct user to settings page if first login; need to
+                    # verify imputed names
+                    status.push_status_message('Welcome to the OSF! Please update the '
+                                        'following settings. If you need assistance '
+                                        'in getting started, please visit the '
+                                        '<a href="/getting-started/">Getting Started</a> '
+                                        'page.')
+                    response = web.redirect('/settings/')
+                response = create_session(response, data=session.data.update(**{
                     'auth_user_username': user.username,
                     'auth_user_id': user._primary_key,
                     'auth_user_fullname': user.fullname,
-                })
+                }))
                 return response
     return False
 

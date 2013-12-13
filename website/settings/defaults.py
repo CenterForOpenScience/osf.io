@@ -9,9 +9,6 @@ def parent_dir(path):
     '''Return the parent of a directory.'''
     return os.path.abspath(os.path.join(path, os.pardir))
 
-# TODO: Override in local.py in production
-DEV_MODE = True
-
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = parent_dir(HERE)  # website/ directory
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
@@ -39,6 +36,8 @@ DEBUG_MODE = False
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
 
+# URLs to ignore in history
+URL_HISTORY_IGNORE = ['/login/', '/account/']
 
 FROM_EMAIL = 'openscienceframework-noreply@openscienceframework.org'
 MAIL_SERVER = 'smtp.sendgrid.net'
