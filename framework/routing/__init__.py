@@ -177,18 +177,16 @@ def render_jinja_string(tpl, data):
 mako_cache = {}
 def render_mako_string(tpldir, tplname, data):
 
-    tpl = mako_cache.get(
-        tplname,
-        Template(
+    tpl = mako_cache.get(tplname)
+    if tpl is None:
+        tpl = Template(
             open(os.path.join(tpldir, tplname)).read(),
             lookup=_tpl_lookup,
             input_encoding='utf-8',
             output_encoding='utf-8',
         )
-    )
     # Don't cache in debug mode
     if not app.debug:
-        #logger.debug("Caching template: {0}".format(tplname))
         mako_cache[tplname] = tpl
     return tpl.render(**data)
 
@@ -255,7 +253,7 @@ def call_url(url, view_kwargs=None):
 
 class Renderer(object):
 
-    CONTENT_TYPE = "text/html"
+    CONTENT_TYPE = 'text/html'
 
     def render(self, data, redirect_url, *args, **kwargs):
         raise NotImplementedError
@@ -329,7 +327,7 @@ class WebRenderer(Renderer):
 
     """
 
-    CONTENT_TYPE = "text/html"
+    CONTENT_TYPE = 'text/html'
     error_template = 'error.mako'
 
     def detect_renderer(self, renderer, filename):
