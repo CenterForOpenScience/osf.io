@@ -51,12 +51,7 @@ def _profile_view(uid=None):
         raise HTTPError(http.UNAUTHORIZED)
 
     if profile:
-        profile_user_data = utils.serialize_user(profile)
-        profile_user_data['gravatar_url'] = filters.gravatar(
-            profile,
-            use_ssl=True,
-            size=settings.GRAVATAR_SIZE_PROFILE
-        )
+        profile_user_data = utils.serialize_user(profile, full=True)
         return {
             'profile': profile_user_data,
             'user': {
