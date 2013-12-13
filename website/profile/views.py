@@ -1,3 +1,4 @@
+import json
 import httplib as http
 
 from framework import (
@@ -6,8 +7,10 @@ from framework import (
     must_be_logged_in,
     request
 )
+from framework.auth import must_have_session_auth
 from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
+from framework.auth.utils import parse_name
 
 from website.models import ApiKey, User
 from website.views import _render_nodes
@@ -74,7 +77,7 @@ def profile_view_id(uid):
 
 
 @must_be_logged_in
-def edit_profile(*args, **kwargs):
+def edit_profile(**kwargs):
     user = kwargs['user']
 
     form = request.form
@@ -86,42 +89,108 @@ def edit_profile(*args, **kwargs):
         response_data['name'] = user.fullname
     return response_data
 
+
 def get_profile_summary(user_id, formatter='long'):
 
     user = User.load(user_id)
     return user.get_summary(formatter)
 
+
+profile_schema = {
+    'pages': [
+        {
+            'id': 'null',
+            'title': 'Names',
+            'contents': [
+                {
+                    'id': 'fullname',
+                    'type': 'textfield',
+                    'label': 'Full name',
+                    'required': True,
+                    'helpText': 'Your full name is the name that will be '
+                                'displayed in your profile, but we are also '
+                                'generating common citation formats for your '
+                                'work using the Citation Style Language '
+                                'definition. Use the fields below to adjust the '
+                                'way your name will appear in citations.',
+                },
+                {
+                    'id': 'impute',
+                    'type': 'htmlfield',
+                    'label': '',
+                    'content': '<button id="profile-impute" class="btn btn-default">Guess fields below</button>',
+                },
+                {
+                    'id': 'given_name',
+                    'type': 'textfield',
+                    'label': 'Given name',
+                    'helpText': 'First name; e.g., Stephen',
+                },
+                {
+                    'id': 'middle_names',
+                    'type': 'textfield',
+                    'label': 'Middle name(s)',
+                    'helpText': 'Middle names; e.g., Jay',
+                },
+                {
+                    'id': 'family_name',
+                    'type': 'textfield',
+                    'label': 'Family name',
+                    'required': True,
+                    'helpText': 'Surname; e.g., Gould',
+                },
+                {
+                    'id': 'suffix',
+                    'type': 'textfield',
+                    'label': 'Suffix',
+                    'helpText': 'E.g., Sr., Jr., III',
+                },
+            ]
+        }
+    ]
+}
+
+
 @must_be_logged_in
-def profile_settings(*args, **kwargs):
+def profile_settings(**kwargs):
     user = kwargs['user']
     return {
-        'user_id' : user._primary_key,
+        'user_id': user._primary_key,
+        'names': json.dumps({
+            'fullname': user.fullname,
+            'given_name': user._given_name,
+            'middle_names': user._middle_names,
+            'family_name': user._family_name,
+            'suffix': user._suffix,
+        }),
+        'schema': json.dumps(profile_schema),
     }
 
 
 @must_be_logged_in
-def profile_addons(*args, **kwargs):
+def profile_addons(**kwargs):
     user = kwargs['user']
     return {
-        'user_id' : user._primary_key,
+        'user_id': user._primary_key,
     }
 
 
 @must_be_logged_in
-def get_keys(*args, **kwargs):
+def get_keys(**kwargs):
     user = kwargs['user']
     return {
-        'keys' : [
+        'keys': [
             {
-                'key' : key._id,
-                'label' : key.label,
+                'key': key._id,
+                'label': key.label,
             }
             for key in user.api_keys
         ]
     }
 
+
 @must_be_logged_in
-def create_user_key(*args, **kwargs):
+def create_user_key(**kwargs):
 
     # Generate key
     api_key = ApiKey(label=request.form['label'])
@@ -134,11 +203,12 @@ def create_user_key(*args, **kwargs):
 
     # Return response
     return {
-        'response' : 'success',
+        'response': 'success',
     }
 
+
 @must_be_logged_in
-def revoke_user_key(*args, **kwargs):
+def revoke_user_key(**kwargs):
 
     # Load key
     api_key = ApiKey.load(request.form['key'])
@@ -149,22 +219,42 @@ def revoke_user_key(*args, **kwargs):
     user.save()
 
     # Return response
-    return {'response' : 'success'}
+    return {'response': 'success'}
+
 
 @must_be_logged_in
-def user_key_history(*args, **kwargs):
+def user_key_history(**kwargs):
 
     api_key = ApiKey.load(kwargs['kid'])
     return {
-        'key' : api_key._id,
-        'label' : api_key.label,
-        'route' : '/settings',
-        'logs' : [
+        'key': api_key._id,
+        'label': api_key.label,
+        'route': '/settings',
+        'logs': [
             {
-                'lid' : log._id,
-                'nid' : log.node__logged[0]._id,
-                'route' : log.node__logged[0].url,
+                'lid': log._id,
+                'nid': log.node__logged[0]._id,
+                'route': log.node__logged[0].url,
             }
             for log in api_key.nodelog__created
         ]
     }
+
+
+@must_have_session_auth
+@must_be_logged_in
+def parse_names(**kwargs):
+    name = request.json.get('fullname', '')
+    return parse_name(name)
+
+
+@must_have_session_auth
+@must_be_logged_in
+def post_names(**kwargs):
+    user = kwargs['user']
+    user.fullname = request.json['fullname']
+    user._given_name = request.json['given_name']
+    user._middle_names = request.json['middle_names']
+    user._family_name = request.json['family_name']
+    user._suffix = request.json['suffix']
+    user.save()

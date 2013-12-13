@@ -11,6 +11,7 @@ from dateutil import parser
 
 from framework.analytics import get_total_activity_count
 from framework.auth import User
+from framework.auth.utils import parse_name
 from framework import utils
 from framework.bcrypt import check_password_hash
 from website import settings, filters
@@ -127,6 +128,19 @@ class TestUser(DbTestCase):
         public_projects = [p for p in projects if p.is_public]
         assert_equal(d['number_projects'], len(projects))
         assert_equal(d['number_public_projects'], len(public_projects))
+
+
+class TestUserParse(unittest.TestCase):
+
+    def test_parse_first_last(self):
+        parsed = parse_name('John Darnielle')
+        assert_equal(parsed['given_name'], 'John')
+        assert_equal(parsed['family_name'], 'Darnielle')
+
+    def test_parse_first_last_particles(self):
+        parsed = parse_name('John van der Slice')
+        assert_equal(parsed['given_name'], 'John')
+        assert_equal(parsed['family_name'], 'van der Slice')
 
 
 class TestMergingUsers(DbTestCase):

@@ -24,6 +24,7 @@ def get_globals():
         'user_full_name': user.fullname if user else '',
         'user_id': user._primary_key if user else '',
         'user_url': user.url if user else '',
+        'user_api_url': user.api_url if user else '',
         'display_name': framework.auth.get_display_name(user.username) if user else '',
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'dev_mode': settings.DEV_MODE,
@@ -207,6 +208,9 @@ def make_url_map(app):
         Rule('/settings/create_key/', 'post', profile_views.create_user_key, json_renderer),
         Rule('/settings/revoke_key/', 'post', profile_views.revoke_user_key, json_renderer),
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, json_renderer),
+
+        Rule('/settings/names/parse/', 'post', profile_views.parse_names, json_renderer),
+        Rule('/settings/names/', 'post', profile_views.post_names, json_renderer),
 
         Rule('/profile/<user_id>/summary/', 'get', profile_views.get_profile_summary, json_renderer),
 

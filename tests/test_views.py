@@ -374,5 +374,23 @@ class TestAuthViews(DbTestCase):
         dupe.reload()
         assert_true(dupe.is_merged)
 
+    def test_change_names(self):
+        self.app.post(
+            '/api/v1/settings/names/',
+            json.dumps({
+                'fullname': 'Lyndon Baines Johnson',
+                'given_name': 'Lyndon',
+                'middle_names': 'Baines',
+                'family_name': 'Johnson',
+                'suffix': '',
+            }),
+            content_type='application/json',
+            auth=self.auth
+        ).maybe_follow()
+        self.user.reload()
+        assert_equal(self.user.given_name, 'Lyndon')
+        assert_equal(self.user.middle_names, 'Baines')
+        assert_equal(self.user.family_name, 'Johnson')
+
 if __name__ == '__main__':
     unittest.main()
