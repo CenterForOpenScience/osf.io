@@ -53,7 +53,7 @@
 
 <!-- Item templates -->
 <script id="textfield" type="text/html">
-    <input type="text" class="form-control" data-bind="value:value, valueUpdate:'onblur', attr:{name:id, id:id}, disable:disable || $root.disable" />
+    <input type="text" class="form-control" data-bind="value:value, valueUpdate:'onblur', attr:{name:id, id:id, required:required || null}, disable:disable || $root.disable" />
 </script>
 <script id="textarea" type="text/html">
     <textarea class="form-control" data-bind="value:value, valueUpdate:'onblur', attr:{name:id, id:id}, disable:disable || $root.disable"></textarea>
