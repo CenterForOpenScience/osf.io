@@ -16,31 +16,41 @@ from .model import Session
 def set_previous_url(url=None):
     if url is None:
         url = request.referrer
-    session.data['url_previous'] = url
+    if url not in settings.URL_HISTORY_IGNORE:
+        session.data['url_previous'] = url
 
 
 def goback():
     url_previous = session.data.get('url_previous')
     if url_previous:
         del session.data['url_previous']
-        return redirect(url_previous)
-
-
-def create_session(response, data=None):
-    session_id = str(bson.objectid.ObjectId())
-    cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(session_id)
-    response.set_cookie(settings.COOKIE_NAME, value=cookie_value)
-    session = Session(_id=session_id, data=data or {})
-    session.save()
-    sessions[request._get_current_object()] = session
-    return response
+    else:
+        url_previous = '/dashboard/'
+    return redirect(url_previous)
 
 
 def get_session():
-    try:
-        return sessions[request._get_current_object()]
-    except:
-        return None
+    return sessions.get(request._get_current_object())
+
+
+def set_session(session):
+    sessions[request._get_current_object()] = session
+
+
+def create_session(response, data=None):
+    current_session = get_session()
+    if current_session:
+        current_session.data.update(data or {})
+        current_session.save()
+        cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(current_session._id)
+    else:
+        session_id = str(bson.objectid.ObjectId())
+        session = Session(_id=session_id, data=data or {})
+        session.save()
+        cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(session_id)
+        set_session(session)
+    response.set_cookie(settings.COOKIE_NAME, value=cookie_value)
+    return response
 
 
 from weakref import WeakKeyDictionary
@@ -91,7 +101,7 @@ def before_request():
             # Invalid key: Not found in database
             session.data['auth_error_code'] = http.FORBIDDEN
 
-        sessions[request._get_current_object()] = session
+        set_session(session)
         return
 
     cookie = request.cookies.get(settings.COOKIE_NAME)
@@ -99,7 +109,7 @@ def before_request():
         try:
             session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
             session = Session.load(session_id) or Session(_id=session_id)
-            sessions[request._get_current_object()] = session
+            set_session(session)
             return
         except:
             pass
@@ -112,6 +122,7 @@ def before_request():
 @app.after_request
 def after_request(response):
     # Save if session exists and not authenticated by API
+    set_previous_url()
     if session._get_current_object() is not None \
             and not session.data.get('auth_api_key'):
         session.save()

@@ -30,8 +30,8 @@ def get_globals():
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
         'status': framework.status.pop_status_messages(),
-        "js_all": assets_env['js'].urls(),
-        "css_all": assets_env['css'].urls()
+        'js_all': assets_env['js'].urls(),
+        'css_all': assets_env['css'].urls()
     }
 
 
@@ -41,18 +41,6 @@ class OsfWebRenderer(WebRenderer):
         kwargs['data'] = get_globals
         super(OsfWebRenderer, self).__init__(*args, **kwargs)
 
-
-def view_index():
-
-    display_name = username = framework.get_current_username()
-    if username and len(username) > 22:
-        display_name = framework.auth.get_display_name(username)
-
-    return {
-        'user_name': username,
-        'display_name': display_name,
-        'status': framework.status.pop_status_messages(),
-    }
 
 def favicon():
     return framework.send_from_directory(
@@ -242,7 +230,7 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/', 'get', view_index, OsfWebRenderer('index.mako')),
+        Rule('/', 'get', {}, OsfWebRenderer('index.mako')),
 
         Rule([
             '/project/<pid>/',

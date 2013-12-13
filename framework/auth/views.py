@@ -5,7 +5,7 @@ import logging
 import framework
 from framework import goback, set_previous_url, request
 from framework.email.tasks import send_email
-import framework.status as status
+from framework import status
 import framework.forms as forms
 from modularodm.exceptions import NoResultsFound
 
