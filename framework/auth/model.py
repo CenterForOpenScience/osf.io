@@ -92,10 +92,15 @@ class User(GuidStoredObject):
 
     @property
     def biblio_name(self):
-        given_name = self.given_name
+        given_names = self.given_name + ' ' + self.middle_names
         surname = self.family_name
-        if surname != given_name:
-            return u'{0}, {1}.'.format(surname, given_name[0])
+        if surname != given_names:
+            initials = [
+                name[0].upper() + '.'
+                for name in given_names.split(' ')
+                if name and re.search(r'\w', name[0], re.I)
+            ]
+            return u'{0}, {1}'.format(surname, ' '.join(initials))
         return surname
 
     @property
