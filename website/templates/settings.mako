@@ -20,7 +20,7 @@
     <div class="col-md-3">
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
-                <li><a href='#userProfile'>User Profile</a></li>
+                <li><a href='#userProfile'>Profile Information</a></li>
             </ul>
         </div><!-- end sidebar -->
     </div>
@@ -34,8 +34,8 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th>Format</th>
-                                    <th>Citation</th>
+                                    <th>Style</th>
+                                    <th>Citation Format</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -59,6 +59,10 @@
                         <button id="profile-submit" class="btn btn-success">
                             Submit
                         </button>
+                        <div>
+                            <br />
+                            <div id="profile-message" style="display: none;"></div>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -66,6 +70,7 @@
     </div>
 </div>
 
+## TODO: Review and un-comment
 ##<div mod-meta='{
 ##        "tpl": "util/render_keys.mako",
 ##        "uri": "/api/v1/settings/keys/",
@@ -78,18 +83,18 @@
 
 <script type="text/javascript">
 
-    function getNames() {
-        var names = {};
-        $.each(profileViewModel.serialize().data, function(key, value) {
-            names[key] = $.trim(value);
-        });
-        return names;
-    }
-
     $(document).ready(function() {
 
+        function getNames() {
+            var names = {};
+            $.each(profileViewModel.serialize().data, function(key, value) {
+                names[key] = $.trim(value);
+            });
+            return names;
+        }
+
         // Set up view model
-        profileViewModel = new MetaData.ViewModel(${schema});
+        var profileViewModel = new MetaData.ViewModel(${schema});
         profileViewModel.updateIdx('add', true);
 
         // Create computed for sample citation
@@ -138,8 +143,11 @@
         ko.applyBindings(profileViewModel, $('#profile')[0]);
 
         $('#profile form').delegate('#profile-impute', 'click', function() {
+
             var modelData = profileViewModel.observedData;
             var fullname = modelData['fullname'].value();
+
+            // POST data asynchronously
             $.ajax({
                 url: '/api/v1/settings/names/parse/',
                 type: 'POST',
@@ -153,6 +161,10 @@
                     modelData['suffix'].value(response['suffix']);
                 }
             });
+
+            // Don't submit the form
+            return false;
+
         });
 
         $('#profile form').on('submit', function() {
@@ -167,7 +179,7 @@
                 return false;
             }
 
-            // POST data
+            // POST data asynchronously
             $.ajax({
                 url: '/api/v1/settings/names/',
                 type: 'POST',
@@ -175,12 +187,16 @@
                 contentType: 'application/json',
                 dataType: 'json'
             }).done(function(response) {
-                console.log('Success');
+                $('#profile-message').text('Names updated')
+                    .removeClass('text-danger').addClass('text-success')
+                    .fadeOut(100).fadeIn();
             }).fail(function() {
-                console.log('Failure');
+                $('#profile-message').text('Error: Names not updated')
+                    .removeClass('text-success').addClass('text-danger')
+                    .fadeOut(100).fadeIn();
             });
 
-            // Stop event propagation
+            // Don't resubmit the form
             return false;
 
         });
