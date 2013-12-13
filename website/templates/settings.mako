@@ -52,8 +52,8 @@
                         <div>
                             If you have any questions or comments about how
                             your name will appear in citations, please let us
-                            know at <a href="mailto:feedback@osf.io">
-                            feedback@osf.io</a>.
+                            know at <a href="mailto:feedback+citations@osf.io">
+                            feedback+citations@osf.io</a>.
                         </div>
                         <br />
                         <button id="profile-submit" class="btn btn-success">
@@ -83,6 +83,17 @@
 
 <script type="text/javascript">
 
+    function getInitials(names) {
+        return names
+            .split(' ')
+            .map(function(name) {
+                return name[0].toUpperCase() + '.';
+            })
+            .filter(function(initial) {
+                return initial.match(/^[a-z]/i);
+            }).join(' ');
+    }
+
     $(document).ready(function() {
 
         function getNames() {
@@ -93,45 +104,47 @@
             return names;
         }
 
+        function getSuffix(suffix) {
+            var suffixLower = suffix.toLowerCase();
+            if ($.inArray(suffixLower, ['jr', 'sr']) != -1) {
+                suffix = suffix + '.';
+                suffix = suffix.charAt(0).toUpperCase() + suffix.slice(1);
+            } else if ($.inArray(suffixLower, ['ii', 'iii', 'iv', 'v']) != -1) {
+                suffix = suffix.toUpperCase();
+            }
+            return suffix;
+        }
+
         // Set up view model
         var profileViewModel = new MetaData.ViewModel(${schema});
         profileViewModel.updateIdx('add', true);
 
-        // Create computed for sample citation
+        // Patch computed for APA citation
         profileViewModel.citation_apa = ko.computed(function() {
             var names = getNames();
             var citation_name = names['family_name'];
-            var given_names = $.trim(names['given_name'] + names['middle_names']);
+            var given_names = $.trim(names['given_name'] + ' ' + names['middle_names']);
             if (given_names) {
-                var initials = given_names
-                    .split(' ')
-                    .map(function(name) {
-                        return name[0] + '.';
-                    }).join(' ');
-                citation_name = citation_name + ', ' + initials;
+                citation_name = citation_name + ', ' + getInitials(given_names);
             }
             if (names['suffix']) {
-                citation_name = citation_name + ', ' + names['suffix'];
+                citation_name = citation_name + ', ' + getSuffix(names['suffix']);
             }
             return citation_name;
         });
 
-        // Create computed for sample citation
+        // Patch computed for MLA citation
         profileViewModel.citation_mla = ko.computed(function() {
             var names = getNames();
             var citation_name = names['family_name'];
             if (names['given_name']) {
                 citation_name = citation_name + ', ' + names['given_name'];
                 if (names['middle_names']) {
-                    var initials = names['middle_names'].split(' ')
-                        .map(function(name) {
-                            return name[0] + '.';
-                        }).join(' ');
-                    citation_name = citation_name + ' ' + initials;
+                    citation_name = citation_name + ' ' + getInitials(names['middle_names']);
                 }
             }
             if (names['suffix']) {
-                citation_name = citation_name + ', ' + names['suffix'];
+                citation_name = citation_name + ', ' + getSuffix(names['suffix']);
             }
             return citation_name;
         });
