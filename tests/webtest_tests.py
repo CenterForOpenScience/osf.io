@@ -373,6 +373,7 @@ class TestMergingAccounts(DbTestCase):
         res = form.submit().maybe_follow()
         return res
 
+    @unittest.skip('Disabled for now')
     def test_can_merge_accounts(self):
         res = self._login(self.user.username, "science")
         # Goes to settings
@@ -408,6 +409,7 @@ class TestMergingAccounts(DbTestCase):
         # Sees flash message
         assert_in("Could not find that user. Please check the username and password.", res)
 
+    @unittest.skip('Disabled for now')
     def test_sees_error_message_when_own_password_is_wrong(self):
         # User logs in
         res = self._login(self.user.username, "science")
