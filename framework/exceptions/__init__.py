@@ -9,24 +9,24 @@ class HTTPError(Exception):
 
     error_msgs = {
         http.BAD_REQUEST : {
-            'message_short' : 'Bad request.',
-            'message_long' : '',
+            'message_short': 'Bad request.',
+            'message_long': '',
         },
         http.UNAUTHORIZED : {
-            'message_short' : 'Unauthorized.',
-            'message_long' : 'You must log in to access this resource.',
+            'message_short': 'Unauthorized.',
+            'message_long': 'You must <a href="/login/">log in</a> to access this resource.',
         },
         http.FORBIDDEN : {
-            'message_short' : 'Forbidden.',
-            'message_long' : 'You do not have permission to perform this action.',
+            'message_short': 'Forbidden.',
+            'message_long': 'You do not have permission to perform this action.',
         },
         http.NOT_FOUND : {
-            'message_short' : 'Page not found.',
-            'message_long' : 'The requested resource could not be found.',
+            'message_short': 'Page not found.',
+            'message_long': 'The requested resource could not be found.',
         },
         http.GONE : {
-            'message_short' : 'Resource deleted.',
-            'message_long' : 'The requested resource has been deleted.',
+            'message_short': 'Resource deleted.',
+            'message_long': 'The requested resource has been deleted.',
         },
     }
 

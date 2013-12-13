@@ -54,6 +54,8 @@ class User(GuidStoredObject):
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
+    date_last_login = fields.DateTimeField()
+
     _meta = {'optimistic' : True}
 
     def set_password(self, raw_password):

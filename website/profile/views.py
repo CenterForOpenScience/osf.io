@@ -100,14 +100,15 @@ profile_schema = {
                 {
                     'id': 'fullname',
                     'type': 'textfield',
-                    'label': 'Full name',
+                    'label': 'Full/display name',
                     'required': True,
-                    'helpText': 'Your full name is the name that will be '
-                                'displayed in your profile, but we are also '
+                    'helpText': 'The field below is your full name and the name that will be '
+                                'displayed in your profile. We are also '
                                 'generating common citation formats for your '
                                 'work using the Citation Style Language '
-                                'definition. Use the fields below to adjust the '
-                                'way your name will appear in citations.',
+                                'definition. You can use the "Guess fields below" button '
+                                'or edit them directly in order to accurately generate '
+                                'citations.',
                 },
                 {
                     'id': 'impute',
