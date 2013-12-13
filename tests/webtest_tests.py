@@ -112,11 +112,11 @@ class TestAUser(DbTestCase):
         res = self.app.get("/").follow()  # Redirects
         assert_equal(res.status_code, 200)
 
-    def test_can_log_in(self):
+    def test_can_log_in_first_time(self):
         # Goes to home page
-        res = self.app.get("/").follow()
+        res = self.app.get('/').maybe_follow()
         # Clicks sign in button
-        res = res.click("Create an Account or Sign-In").maybe_follow()
+        res = res.click('Create an Account or Sign-In').maybe_follow()
         # Fills out login info
         form = res.forms['signinForm']  # Get the form from its ID
         form['username'] = self.user.username
@@ -124,8 +124,25 @@ class TestAUser(DbTestCase):
         # submits
         res = form.submit().maybe_follow()
         # Sees dashboard with projects and watched projects
-        assert_in("Projects", res)
-        assert_in("Watched Projects", res)
+        assert_in('Account Settings', res)
+
+    def test_can_log_in(self):
+        # Log in and out
+        self._login(self.user.username, 'science')
+        self.app.get('/logout/')
+        # Goes to home page
+        res = self.app.get('/').maybe_follow()
+        # Clicks sign in button
+        res = res.click('Create an Account or Sign-In').maybe_follow()
+        # Fills out login info
+        form = res.forms['signinForm']  # Get the form from its ID
+        form['username'] = self.user.username
+        form['password'] = 'science'
+        # submits
+        res = form.submit().maybe_follow()
+        # Sees dashboard with projects and watched projects
+        assert_in('Projects', res)
+        assert_in('Watched Projects', res)
 
     def test_sees_flash_message_on_bad_login(self):
         # Goes to log in page
