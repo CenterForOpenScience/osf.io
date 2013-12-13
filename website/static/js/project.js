@@ -10,7 +10,7 @@ Messages = {
                         'should assume that once a project is made public, it will always ' +
                         'be public. Are you absolutely sure you would like to continue?',
 
-    makePrivateWarning: 'Making a project will prevent users from viewing it on this site, ' +
+    makePrivateWarning: 'Making a project private will prevent users from viewing it on this site, ' +
                         'but will have no impact on external sites, including Google\'s cache. ' +
                         'Would you like to continue?'
 };
@@ -190,62 +190,53 @@ $(document).ready(function() {
 
     $('.user-quickedit').hover(
         function(){
-            me = $(this);
-            el = $('<i class="icon-remove"></i>');
+            var me = $(this);
+            var el = $('<i class="icon-remove"></i>');
             el.click(function(){
-                NodeActions.removeUser(me.attr("data-userid"), me.attr("data-fullname"));
+                NodeActions.removeUser(me.attr('data-userid'), me.attr('data-fullname'));
                 return false;
             });
             $(this).append(el);
         },
         function(){
-            $(this).find("i").remove();
+            $(this).find('i').remove();
         }
     );
+
+    function setPermissions(permissions) {
+        var url = $(this).data("target");
+        var msgKey = permissions == 'public' ?
+            'makePublicWarning' :
+            'makePrivateWarning';
+        bootbox.confirm(
+            Message[msgKey],
+            function(result) {
+                if (result) {
+                    $.ajax({
+                        url: url,
+                        type: 'POST',
+                        data: {permissions: permissions},
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        success: function(data){
+                            window.location.href = data['redirect_url'];
+                        }
+                    });
+                }
+            }
+        );
+    }
 
     /* Modal Click handlers for project page */
     // TODO(sloria): Move these to the ProjectViewModel
     // Private Button confirm dlg
     $('#privateButton').on('click', function() {
-        var url = $(this).data("target");
-        bootbox.confirm(Messages.makePrivateWarning,
-            function(result) {
-                if (result) {
-                    $.ajax({
-                        url: url,
-                        type: "POST",
-                        data: {"permissions": "public"},
-                        contentType: "application/json",
-                        dataType: "json",
-                        success: function(data){
-                            window.location.href = data["redirect_url"];
-                        }
-                    })
-                }
-            }
-        )
+        setPermissions('private');
     });
 
-    // TODO(sloria): Repetition here. Rethink.
     // Public Button confirm dlg
     $('#publicButton').on('click', function() {
-        var url = $(this).data("target");
-        bootbox.confirm(Messages.makePublicWarning,
-            function(result) {
-                if (result) {
-                    $.ajax({
-                        url: url,
-                        type: "POST",
-                        data: {"permissions": "private"},
-                        contentType: "application/json",
-                        dataType: "json",
-                        success: function(data){
-                            window.location.href = data["redirect_url"];
-                        }
-                    })
-                }
-            }
-        )
+        setPermissions('public');
     });
 
 });
