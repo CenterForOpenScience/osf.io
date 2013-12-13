@@ -158,10 +158,10 @@ def profile_settings(**kwargs):
         'user_id': user._primary_key,
         'names': json.dumps({
             'fullname': user.fullname,
-            'given_name': user._given_name,
-            'middle_names': user._middle_names,
-            'family_name': user._family_name,
-            'suffix': user._suffix,
+            'given_name': user.given_name,
+            'middle_names': user.middle_names,
+            'family_name': user.family_name,
+            'suffix': user.suffix,
         }),
         'schema': json.dumps(profile_schema),
     }
