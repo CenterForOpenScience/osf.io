@@ -47,10 +47,10 @@ class User(GuidStoredObject):
     watched = fields.ForeignField("WatchConfig", list=True, backref="watched")
 
     # CSL names
-    _given_name = fields.StringField()
-    _middle_names = fields.StringField()
-    _family_name = fields.StringField()
-    _suffix = fields.StringField()
+    given_name = fields.StringField()
+    middle_names = fields.StringField()
+    family_name = fields.StringField()
+    suffix = fields.StringField()
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
@@ -68,29 +68,6 @@ class User(GuidStoredObject):
         return check_password_hash(self.password, raw_password)
 
     @property
-    def parsed_name(self):
-        if not getattr(self, '_name_parsed', None):
-            self._name_parsed = parse_name(self.fullname)
-        return self._name_parsed
-
-    @property
-    def family_name(self):
-        """
-        The user's preferred surname or family name, as they would prefer it to
-        appear in print.
-        e.g.: "Jeffrey Spies" would be "Spies".
-        """
-        if self._family_name is not None:
-            return self._family_name
-        return self.parsed_name['family_name']
-
-    @property
-    def suffix(self):
-        if self._suffix is not None:
-            return self._suffix
-        return self.parsed_name['suffix']
-
-    @property
     def biblio_name(self):
         given_names = self.given_name + ' ' + self.middle_names
         surname = self.family_name
@@ -102,22 +79,6 @@ class User(GuidStoredObject):
             ]
             return u'{0}, {1}'.format(surname, ' '.join(initials))
         return surname
-
-    @property
-    def given_name(self):
-        """
-        The user's preferred given name, as they would be addressed personally.
-        e.g.: "Jeffrey Spies" would be "Jeffrey" (or "Jeff")
-        """
-        if self._given_name is not None:
-            return self._given_name
-        return self.parsed_name['given_name']
-
-    @property
-    def middle_names(self):
-        if self._middle_names is not None:
-            return self._middle_names
-        return self.parsed_name['middle_names']
 
     @property
     def given_name_initial(self):

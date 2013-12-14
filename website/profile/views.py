@@ -249,8 +249,8 @@ def parse_names(**kwargs):
 def post_names(**kwargs):
     user = kwargs['user']
     user.fullname = request.json['fullname']
-    user._given_name = request.json['given_name']
-    user._middle_names = request.json['middle_names']
-    user._family_name = request.json['family_name']
-    user._suffix = request.json['suffix']
+    user.given_name = request.json['given_name']
+    user.middle_names = request.json['middle_names']
+    user.family_name = request.json['family_name']
+    user.suffix = request.json['suffix']
     user.save()

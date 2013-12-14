@@ -1,5 +1,5 @@
 """
-
+Impute name parts for all existing users.
 """
 
 from framework.auth.utils import parse_name
@@ -15,8 +15,8 @@ def impute_names():
 
         parsed = parse_name(user.fullname)
         for field, value in parsed.items():
-            print field, value
-            setattr(user, field, value)
+            if getattr(user, field, None) is None:
+                setattr(user, field, value)
         user.save()
 
 if __name__ == '__main__':
