@@ -203,13 +203,12 @@ $(document).ready(function() {
         }
     );
 
-    function setPermissions(permissions) {
-        var url = $(this).data("target");
+    function setPermissions(url, permissions) {
         var msgKey = permissions == 'public' ?
             'makePublicWarning' :
             'makePrivateWarning';
         bootbox.confirm(
-            Message[msgKey],
+            Messages[msgKey],
             function(result) {
                 if (result) {
                     $.ajax({
@@ -231,12 +230,14 @@ $(document).ready(function() {
     // TODO(sloria): Move these to the ProjectViewModel
     // Private Button confirm dlg
     $('#privateButton').on('click', function() {
-        setPermissions('private');
+        var url = $(this).data("target");
+        setPermissions(url, 'private');
     });
 
     // Public Button confirm dlg
     $('#publicButton').on('click', function() {
-        setPermissions('public');
+        var url = $(this).data("target");
+        setPermissions(url, 'public');
     });
 
 });
