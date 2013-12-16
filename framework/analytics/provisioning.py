@@ -16,7 +16,10 @@ def provision_node(node):
             'format': 'json',
             'method': 'SitesManager.addSite',
             'siteName': 'Node: ' + node._id,
-            'urls': ['http://localhost:5000/' + node.url, ],
+            'urls': [
+                settings.CANONICAL_DOMAIN + node.url,
+                settings.SHORT_DOMAIN + node.url,
+            ],
         }
     )
 
@@ -29,6 +32,7 @@ def provision_node(node):
     piwik_password = hashlib.sha256(
         node._id + settings.SECRET_KEY
     ).hexdigest()[:6]
+    piwik_password_hash = hashlib.md5(piwik_password).hexdigest()
 
     response = requests.post(
         api_url,
@@ -75,7 +79,7 @@ def provision_node(node):
             'format': 'json',
             'method': 'UsersManager.getTokenAuth',
             'userLogin': piwik_user_id,
-            'md5Password': hashlib.md5(piwik_password).hexdigest()
+            'md5Password': piwik_password_hash
         }
     )
 
@@ -86,7 +90,8 @@ def provision_node(node):
 
     node.piwik_credentials = {
         'site_id': piwik_site_id,
-        'auth_token': piwik_user_token
+        'auth_token': piwik_user_token,
+        'password_hash': piwik_password_hash,
     }
 
     node.save()
