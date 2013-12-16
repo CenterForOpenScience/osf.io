@@ -2,13 +2,16 @@
 # -*- coding: utf-8 -*-
 '''Functional tests using WebTest.'''
 import unittest
+import re
 import datetime as dt
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
+from webtest import AppError
 
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
-                            NodeLogFactory, ApiKeyFactory, NodeFactory)
+                            NodeLogFactory, ApiKeyFactory, NodeFactory,
+                            NodeWikiFactory)
 
 from website import settings
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -66,6 +69,16 @@ class TestAnUnregisteredUser(DbTestCase):
         # sees error message because email is already registered
         assert_in("has already been registered.", res)
 
+    def test_cant_see_new_project_form(self):
+        """ Can't see new project form if not logged in. """
+        with assert_raises(AppError):
+            self.app.get('/project/new/').maybe_follow()
+
+    def test_cant_see_profile(self):
+        """ Can't see profile if not logged in. """
+        with assert_raises(AppError):
+            self.app.get('/profile/').maybe_follow()
+
 
 class TestAUser(DbTestCase):
 
@@ -90,16 +103,20 @@ class TestAUser(DbTestCase):
         res = form.submit().maybe_follow()
         return res
 
+    def test_can_see_profile_url(self):
+        res = self.app.get(self.user.url).maybe_follow()
+        assert_in(self.user.url, res)
+
     def test_can_see_homepage(self):
         # Goes to homepage
         res = self.app.get("/").follow()  # Redirects
         assert_equal(res.status_code, 200)
 
-    def test_can_log_in(self):
+    def test_can_log_in_first_time(self):
         # Goes to home page
-        res = self.app.get("/").follow()
+        res = self.app.get('/').maybe_follow()
         # Clicks sign in button
-        res = res.click("Create an Account or Sign-In").maybe_follow()
+        res = res.click('Create an Account or Sign-In').maybe_follow()
         # Fills out login info
         form = res.forms['signinForm']  # Get the form from its ID
         form['username'] = self.user.username
@@ -107,8 +124,25 @@ class TestAUser(DbTestCase):
         # submits
         res = form.submit().maybe_follow()
         # Sees dashboard with projects and watched projects
-        assert_in("Projects", res)
-        assert_in("Watched Projects", res)
+        assert_in('Account Settings', res)
+
+    def test_can_log_in(self):
+        # Log in and out
+        self._login(self.user.username, 'science')
+        self.app.get('/logout/')
+        # Goes to home page
+        res = self.app.get('/').maybe_follow()
+        # Clicks sign in button
+        res = res.click('Create an Account or Sign-In').maybe_follow()
+        # Fills out login info
+        form = res.forms['signinForm']  # Get the form from its ID
+        form['username'] = self.user.username
+        form['password'] = 'science'
+        # submits
+        res = form.submit().maybe_follow()
+        # Sees dashboard with projects and watched projects
+        assert_in('Projects', res)
+        assert_in('Watched Projects', res)
 
     def test_sees_flash_message_on_bad_login(self):
         # Goes to log in page
@@ -196,13 +230,13 @@ class TestAUser(DbTestCase):
         project.add_contributor(self.user)
         project.save()
         # User goes to the project page
-        res = self.app.get("/project/{0}/".format(project._primary_key), auth=self.auth).maybe_follow()
+        res = self.app.get(project.url, auth=self.auth).maybe_follow()
         assert_in("Make public", res)
 
     def test_sees_logs_on_a_project(self):
         project = ProjectFactory(is_public=True)
         # User goes to the project's page
-        res = self.app.get("/project/{0}/".format(project._primary_key), auth=self.auth).maybe_follow()
+        res = self.app.get(project.url, auth=self.auth).maybe_follow()
         # Can see log event
         # res.showbrowser()
         assert_in("created", res)
@@ -210,9 +244,22 @@ class TestAUser(DbTestCase):
     def test_no_wiki_content_message(self):
         project = ProjectFactory(creator=self.user)
         # Goes to project's wiki, where there is no content
-        res = self.app.get("/project/{0}/wiki/home/".format(project._primary_key), auth=self.auth)
+        res = self.app.get("/{0}/wiki/home/".format(project._primary_key), auth=self.auth)
         # Sees a message indicating no content
         assert_in("No wiki content", res)
+
+    def test_sees_own_profile(self):
+        res = self.app.get('/profile/', auth=self.auth)
+        td1 = res.html.find('td', text=re.compile(r'Public Profile'))
+        td2 = td1.find_next_sibling('td')
+        assert_equal(td2.text, self.user.display_absolute_url)
+
+    def test_sees_another_profile(self):
+        user2 = UserFactory()
+        res = self.app.get(user2.url, auth=self.auth)
+        td1 = res.html.find('td', text=re.compile(r'Public Profile'))
+        td2 = td1.find_next_sibling('td')
+        assert_equal(td2.text, user2.display_absolute_url)
 
 
 class TestRegistrations(DbTestCase):
@@ -272,6 +319,12 @@ class TestRegistrations(DbTestCase):
                 option_values
             )
 
+    def test_registration_nav_not_seen(self):
+        # Goes to project's page
+        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
+        # Settings is not in the project navigation bar
+        subnav = res.html.select('#projectSubnav')[0]
+        assert_not_in('Registrations', subnav.text)
 
 class TestComponents(DbTestCase):
 
@@ -283,11 +336,17 @@ class TestComponents(DbTestCase):
         self.user.api_keys.append(api_key)
         self.user.save()
         self.auth = ('test', api_key._primary_key)
-        self.project = ProjectFactory(creator=self.user)
+        self.project = ProjectFactory.build(creator=self.user)
+        self.project.add_contributor(contributor=self.user)
+        # project has a non-registered contributor
+        self.nr_user = {"nr_name": "Foo Bar", "nr_email": "foo@example.com"}
+        self.project.contributor_list.append(self.nr_user)
         # A non-project componenet
         self.component = NodeFactory(category="hypothesis", creator=self.user)
         self.project.nodes.append(self.component)
         self.component.save()
+        self.component.set_permissions('public', self.user)
+        self.component.set_permissions('private', self.user)
         self.project.save()
 
     def test_cannot_create_component_from_a_component(self):
@@ -300,6 +359,13 @@ class TestComponents(DbTestCase):
         parent_title = res.html.find_all('h1', class_='node-parent-title')
         assert_equal(len(parent_title), 1)
         assert_in(self.project.title, parent_title[0].text)
+
+    def test_sees_non_registered_contributor(self):
+        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
+        # Sees unregeisterd user's name
+        assert_in(self.nr_user['nr_name'], res)
+        # Sees registred user's name
+        assert_in(self.user.fullname, res)
 
 
 class TestMergingAccounts(DbTestCase):
@@ -324,6 +390,7 @@ class TestMergingAccounts(DbTestCase):
         res = form.submit().maybe_follow()
         return res
 
+    @unittest.skip('Disabled for now')
     def test_can_merge_accounts(self):
         res = self._login(self.user.username, "science")
         # Goes to settings
@@ -359,6 +426,7 @@ class TestMergingAccounts(DbTestCase):
         # Sees flash message
         assert_in("Could not find that user. Please check the username and password.", res)
 
+    @unittest.skip('Disabled for now')
     def test_sees_error_message_when_own_password_is_wrong(self):
         # User logs in
         res = self._login(self.user.username, "science")
@@ -445,6 +513,64 @@ class TestSearching(DbTestCase):
         res = form.submit().maybe_follow()
         # A link to the project is shown as a result
         assert_in("Foobar Project", res)
+
+
+class TestShortUrls(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = UserFactory(username="test@test.com")
+        # Add an API key for quicker authentication
+        api_key = ApiKeyFactory()
+        self.user.api_keys.append(api_key)
+        self.user.save()
+        self.auth = ('test', api_key._primary_key)
+        self.project = ProjectFactory(creator=self.user)
+        # A non-project componenet
+        self.component = NodeFactory(category="hypothesis", creator=self.user)
+        self.project.nodes.append(self.component)
+        self.component.save()
+        # Hack: Add some logs to component; should be unnecessary pending
+        # improvements to factories from @rliebz
+        self.component.set_permissions('public', user=self.user)
+        self.component.set_permissions('private', user=self.user)
+        self.project.save()
+        self.wiki = NodeWikiFactory(user=self.user, node=self.component)
+
+    def _url_to_body(self, url):
+        return self.app.get(url, auth=self.auth).maybe_follow().normal_body
+
+    def test_profile_url(self):
+        assert_equal(
+            self.app.get('/{}/'.format(self.user._primary_key)).maybe_follow().normal_body,
+            self.app.get('/profile/{}/'.format(self.user._primary_key)).maybe_follow().normal_body
+        )
+
+    def test_project_url(self):
+        assert_equal(
+            self._url_to_body(self.project.deep_url),
+            self._url_to_body(self.project.url),
+        )
+
+    def test_component_url(self):
+        assert_equal(
+            self._url_to_body(self.component.deep_url),
+            self._url_to_body(self.component.url),
+        )
+
+    def test_file_url(self):
+        node_file = self.component.add_file(self.user, None, 'test.txt',
+                                         'test content', 4, 'text/plain')
+        assert_equal(
+            self._url_to_body(node_file.deep_url),
+            self._url_to_body(node_file.url),
+        )
+
+    def test_wiki_url(self):
+        assert_equal(
+            self._url_to_body(self.wiki.deep_url),
+            self._url_to_body(self.wiki.url),
+        )
 
 
 if __name__ == '__main__':

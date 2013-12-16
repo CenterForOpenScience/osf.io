@@ -63,6 +63,15 @@ class TestProjectViews(DbTestCase):
         assert_equal(data['node']['watched_count'], 0)
         assert_true(data['user']['is_contributor'])
         assert_equal(data['node']['logs'][-1]['action'], 'project_created')
+        assert_equal(data['node']['children_ids'],
+                        [str(n._primary_key) for n in self.project.nodes])
+        assert_equal(data['node']['description'], self.project.description)
+        assert_equal(data['node']['url'], self.project.url)
+        assert_equal(data['node']['tags'], [t._primary_key for t in self.project.tags])
+        assert_in('forked_date', data['node'])
+        assert_in('watched_count', data['node'])
+        assert_in('registered_from_url', data['node'])
+        # TODO: Test "parent" and "user" output
 
     def test_add_contributor_post(self):
         # Two users are added as a contributor via a POST request
@@ -360,6 +369,24 @@ class TestAuthViews(DbTestCase):
         self.user.reload()
         dupe.reload()
         assert_true(dupe.is_merged)
+
+    def test_change_names(self):
+        self.app.post(
+            '/api/v1/settings/names/',
+            json.dumps({
+                'fullname': 'Lyndon Baines Johnson',
+                'given_name': 'Lyndon',
+                'middle_names': 'Baines',
+                'family_name': 'Johnson',
+                'suffix': '',
+            }),
+            content_type='application/json',
+            auth=self.auth
+        ).maybe_follow()
+        self.user.reload()
+        assert_equal(self.user.given_name, 'Lyndon')
+        assert_equal(self.user.middle_names, 'Baines')
+        assert_equal(self.user.family_name, 'Johnson')
 
 if __name__ == '__main__':
     unittest.main()

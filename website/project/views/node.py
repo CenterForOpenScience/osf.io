@@ -54,12 +54,18 @@ def edit_node(*args, **kwargs):
 ##############################################################################
 
 @must_be_logged_in
+def project_new(*args, **kwargs):
+    return {}
+
+@must_be_logged_in
 def project_new_post(*args, **kwargs):
     user = kwargs['user']
     form = NewProjectForm(request.form)
     if form.validate():
-        project = new_node('project', form.title.data, user, form.description.data)
-        return redirect('/project/' + str(project._primary_key))
+        project = new_node(
+            'project', form.title.data, user, form.description.data
+        )
+        return redirect(project.url)
     else:
         push_errors_to_status(form.errors)
     return {}, http.BAD_REQUEST
@@ -77,21 +83,18 @@ def project_new_node(*args, **kwargs):
     project = kwargs['project']
     user = kwargs['user']
     if form.validate():
-        node = new_node(
+        new_node(
             title=form.title.data,
             user=user,
             category=form.category.data,
-            project = project,
+            project=project,
         )
         return {
             'status': 'success',
         }, 201, None, project.url
-        # return redirect('/project/' + str(project._primary_key))
     else:
         push_errors_to_status(form.errors)
-    # todo: raise error
     raise HTTPError(http.BAD_REQUEST, redirect_url=project.url)
-    # return redirect('/project/' + str(project._primary_key))
 
 @must_be_valid_project
 def node_fork_page(*args, **kwargs):
@@ -103,8 +106,6 @@ def node_fork_page(*args, **kwargs):
     if node:
         node_to_use = node
         status.push_status_message('At this time, only projects can be forked; however, this behavior is coming soon.')
-        # todo discuss
-        # return redirect(node_to_use.url)
         raise HTTPError(
             http.FORBIDDEN,
             message='At this time, only projects can be forked; however, this behavior is coming soon.',
@@ -115,9 +116,6 @@ def node_fork_page(*args, **kwargs):
 
     if node_to_use.is_registration:
         raise HTTPError(http.FORBIDDEN)
-        # push_status_message('At this time, only projects that are not registrations can be forked; however, this behavior is coming soon.')
-        # # todo discuss
-        # return node_to_use.url
 
     fork = node_to_use.fork_node(user, api_key=api_key)
 
@@ -342,11 +340,7 @@ def _view_project(node_to_use, user, api_key=None):
             wiki_home = BeautifulSoup(wiki_home)
     else:
         wiki_home = '<p><em>No wiki content</em></p>'
-
-    parent = node_to_use.node__parent[0] \
-        if node_to_use.node__parent \
-            and not node_to_use.node__parent[0].is_deleted \
-            else None
+    parent = node_to_use.parent
     recent_logs = list(reversed(node_to_use.logs)[:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
     data = {
@@ -358,6 +352,13 @@ def _view_project(node_to_use, user, api_key=None):
             'wiki_home': wiki_home,
             'url': node_to_use.url,
             'api_url': node_to_use.api_url,
+            'absolute_url': node_to_use.absolute_url,
+            'display_absolute_url': node_to_use.display_absolute_url,
+            'citations': {
+                'apa': node_to_use.citation_apa,
+                'mla': node_to_use.citation_mla,
+                'chicago': node_to_use.citation_chicago,
+            },
             'is_public': node_to_use.is_public,
             'date_created': node_to_use.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
             'date_modified': node_to_use.logs[-1].date.strftime('%m/%d/%Y %I:%M %p UTC') if node_to_use.logs else '',
@@ -365,7 +366,6 @@ def _view_project(node_to_use, user, api_key=None):
             'tags': [tag._primary_key for tag in node_to_use.tags],
             'children': bool(node_to_use.nodes),
             'children_ids': [str(child._primary_key) for child in node_to_use.nodes],
-
             'is_registration': node_to_use.is_registration,
             'registered_from_url': node_to_use.registered_from.url if node_to_use.is_registration else '',
             'registered_date': node_to_use.registered_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_registration else '',
@@ -379,7 +379,8 @@ def _view_project(node_to_use, user, api_key=None):
             'registration_count': len(node_to_use.registration_list),
 
             'is_fork': node_to_use.is_fork,
-            'forked_from_url': node_to_use.forked_from.url if node_to_use.is_fork else '',
+            'forked_from_id': node_to_use.forked_from._primary_key if node_to_use.is_fork else '',
+            'forked_from_display_absolute_url': node_to_use.forked_from.display_absolute_url if node_to_use.is_fork else '',
             'forked_date': node_to_use.forked_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_fork else '',
             'fork_count': len(node_to_use.fork_list),
 
@@ -391,6 +392,7 @@ def _view_project(node_to_use, user, api_key=None):
             'title': parent.title if parent else '',
             'url': parent.url if parent else '',
             'api_url': parent.api_url if parent else '',
+            'absolute_url':  parent.absolute_url if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else ''
         },
@@ -503,6 +505,7 @@ def get_summary(*args, **kwargs):
         summary = {
             'can_view': False,
         }
+    # TODO: Make output format consistent with _view_project
     return {
         'summary': summary,
     }

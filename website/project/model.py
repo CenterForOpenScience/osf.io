@@ -5,8 +5,10 @@ import hashlib
 import calendar
 import datetime
 import os
+import re
 import unicodedata
 import urllib
+import urlparse
 import logging
 
 import markdown
@@ -21,7 +23,7 @@ from framework.auth import get_user, User
 from framework.analytics import get_basic_counters, increment_user_activity_counters
 from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
-from framework import StoredObject, fields
+from framework import StoredObject, fields, utils
 from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
 
@@ -172,44 +174,37 @@ class NodeLog(StoredObject):
         if self.tz_date:
             return self.tz_date.isoformat()
 
-    # FIXME: Serialization (presentation) doesn't belong in model (domain)
-    def serialize(self):
-        # TODO: Nest serialized user.
-        if self.node:
-            category = self.node.project_or_component
-        else:
-            category = ''
-        return {
-        'id': self._primary_key,
-        'user_id': self.user._primary_key if self.user else '',
-        'user_fullname': self.user.fullname if self.user else '',
-        'user_url': self.user.url if self.user else '',
-        'api_key': self.api_key.label if self.api_key else '',
-        'node_url': self.node.url if self.node else '',
-        'node_title': self.node.title if self.node else '',
-        'action': self.action,
-        'params': self.params,
-        'category': category,
-        # TODO: Use self.formatted_date when Recent Activity Logs are generated dynamically
-        'date': self.tz_date.strftime(NodeLog.DATE_FORMAT) if self.tz_date else '',
-        'contributors': [self._render_log_contributor(contributor) for contributor in self.params.get('contributors', [])],
-        'contributor': self._render_log_contributor(self.params.get('contributor', {})),
-    }
-
     def _render_log_contributor(self, contributor):
         if isinstance(contributor, dict):
             rv = contributor.copy()
-            rv.update({'registered' : False})
+            rv.update({'registered': False})
             return rv
         user = User.load(contributor)
         return {
-            'id' : user._primary_key,
-            'fullname' : user.fullname,
-            'registered' : True,
+            'id': user._primary_key,
+            'fullname': user.fullname,
+            'registered': True,
+        }
+
+    # TODO: Move to separate utility function
+    def serialize(self):
+        '''Return a dictionary representation of the log.'''
+        return {
+            'id': str(self._primary_key),
+            'user': self.user.serialize() if self.user else None,
+            'contributors': [self._render_log_contributor(c) for c in self.params.get("contributors", [])],
+            'contributor': self._render_log_contributor(self.params.get("contributor", {})),
+            'api_key': self.api_key.label if self.api_key else '',
+            'action': self.action,
+            'params': self.params,
+            'date': utils.rfcformat(self.date),
+            'node': self.node.serialize() if self.node else None
         }
 
 
 class NodeFile(GuidStoredObject):
+
+    redirect_mode = 'redirect'
 
     _id = fields.StringField(primary=True)
 
@@ -235,6 +230,10 @@ class NodeFile(GuidStoredObject):
         return '{0}files/{1}/'.format(self.node.url, self.filename)
 
     @property
+    def deep_url(self):
+        return '{0}files/{1}/'.format(self.node.deep_url, self.filename)
+
+    @property
     def api_url(self):
         return '{0}files/{1}/'.format(self.node.api_url, self.filename)
 
@@ -252,7 +251,7 @@ class NodeFile(GuidStoredObject):
             self.node.api_url, self.filename, self.latest_version_number)
 
 
-class Tag(GuidStoredObject):
+class Tag(StoredObject):
 
     _id = fields.StringField(primary=True)
     count_public = fields.IntegerField(default=0)
@@ -264,6 +263,8 @@ class Tag(GuidStoredObject):
 
 
 class Node(GuidStoredObject):
+
+    redirect_mode = 'proxy'
 
     # Node fields that trigger an update to Solr on save
     SOLR_UPDATE_FIELDS = {
@@ -365,15 +366,6 @@ class Node(GuidStoredObject):
             log_date=self.date_created,
         )
 
-    def serialize(self):
-        return {
-            'title': self.title,
-            'date_created': self.date_created,
-            'is_public': self.is_public,
-            'creator': self.creator,
-            'contributors': self.contributors
-        }
-
     def can_edit(self, user, api_key=None):
         return (
             self.is_contributor(user)
@@ -391,6 +383,22 @@ class Node(GuidStoredObject):
             self.update_solr()
         return rv
 
+    def get_recent_logs(self, n=10):
+        '''Return a list of the n most recent logs, in reverse chronological
+        order.
+        '''
+        return list(reversed(self.logs)[:n])
+
+    @property
+    def date_modified(self):
+        '''The most recent datetime when this node was modified, based on
+        the logs.
+        '''
+        try:
+            return self.logs[-1].date
+        except IndexError:
+            return None
+
     def set_title(self, title, user, api_key=None, save=False):
         '''Set the title of this Node and log it.
 
@@ -403,7 +411,7 @@ class Node(GuidStoredObject):
         self.add_log(
             action=NodeLog.EDITED_TITLE,
             params={
-                'project': self.node__parent[0]._primary_key if self.node__parent else None,
+                'project': self.parent_id,
                 'node': self._primary_key,
                 'title_new': self.title,
                 'title_original': original_title,
@@ -452,8 +460,8 @@ class Node(GuidStoredObject):
             solr_document_id = self._id
         else:
             try:
-                # Components must have a project for a parent; use it's ID.
-                solr_document_id = self.node__parent[0]._id
+                # Components must have a project for a parent; use its ID.
+                solr_document_id = self.parent_id
             except IndexError:
                 # Skip orphaned components. There are some in the DB...
                 return
@@ -982,29 +990,93 @@ class Node(GuidStoredObject):
 
     @property
     def url(self):
+        return '/{}/'.format(self._primary_key)
+
+    @property
+    def absolute_url(self):
+        if not self.url:
+            logging.error("Node {0} has a parent that is not a project".format(self._id))
+            return None
+        return urlparse.urljoin(settings.DOMAIN, self.url)
+
+    @property
+    def display_absolute_url(self):
+        url = self.absolute_url
+        if url is not None:
+            return re.sub(r'https?:', '', url).strip('/')
+
+    @property
+    def api_url(self):
+        if not self.url:
+            logging.error("Node {0} has a parent that is not a project".format(self._id))
+            return None
+        return '/api/v1{0}'.format(self.deep_url)
+
+    @property
+    def deep_url(self):
         if self.category == 'project':
             return '/project/{}/'.format(self._primary_key)
         else:
             if self.node__parent and self.node__parent[0].category == 'project':
                 return '/project/{}/node/{}/'.format(
-                    self.node__parent[0]._primary_key,
+                    self.parent_id,
                     self._primary_key
                 )
         logging.error("Node {0} has a parent that is not a project".format(self._id))
-        return None
+
+    def author_list(self, and_delim='&'):
+        author_names = [
+            author.biblio_name
+            for author in self.contributors
+        ]
+        if len(author_names) < 2:
+            return ' {0} '.format(and_delim).join(author_names)
+        if len(author_names) > 7:
+            author_names = author_names[:7]
+            author_names.append('et al.')
+            return ', '.join(author_names)
+        return u'{0}, {1} {2}'.format(
+            ', '.join(author_names[:-1]),
+            and_delim,
+            author_names[-1]
+        )
+
+    @property
+    def citation_apa(self):
+        return u'{authors}, ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{url}</a>'.format(
+            authors=self.author_list(and_delim='&'),
+            year=self.logs[-1].date.year,
+            title=self.title,
+            url=self.display_absolute_url,
+        )
+
+    @property
+    def citation_mla(self):
+        return u'{authors}. "{title}". Open Science Framework, {year}. <a href="{url}">{url}</a>'.format(
+            authors=self.author_list(and_delim='and'),
+            year=self.logs[-1].date.year,
+            title=self.title,
+            url=self.display_absolute_url,
+        )
+
+    @property
+    def citation_chicago(self):
+        return u'{authors}. "{title}". Open Science Framework ({year}). <a href="{url}">{url}</a>'.format(
+            authors=self.author_list(and_delim='and'),
+            year=self.logs[-1].date.year,
+            title=self.title,
+            url=self.display_absolute_url,
+        )
 
     @property
     def parent(self):
         '''The parent node, if it exists, otherwise ``None``.'''
         try:
-            return self.node__parent[0]
+            if not self.node__parent[0].is_deleted:
+                return self.node__parent[0]
         except IndexError:
             pass
         return None
-
-    @property
-    def api_url(self):
-        return '/api/v1' + self.url
 
     @property
     def watch_url(self):
@@ -1013,7 +1085,7 @@ class Node(GuidStoredObject):
     @property
     def parent_id(self):
         if self.node__parent:
-            return self.node__parent[0]._id
+            return self.node__parent[0]._primary_key
         return None
 
     @property
@@ -1024,17 +1096,21 @@ class Node(GuidStoredObject):
         return (user is not None) and ((user in self.contributors) or user == self.creator)
 
     def remove_nonregistered_contributor(self, user, api_key, name, hash_id):
-        for d in self.contributor_list:
-            if d.get('nr_name') == name and hashlib.md5(d.get('nr_email')).hexdigest() == hash_id:
-                email = d.get('nr_email')
-        self.contributor_list[:] = [d for d in self.contributor_list if not (d.get('nr_email') == email)]
+        deleted = False
+        for idx, contrib in enumerate(self.contributor_list):
+            if contrib.get('nr_name') == name and hashlib.md5(contrib.get('nr_email')).hexdigest() == hash_id:
+                del self.contributor_list[idx]
+                deleted = True
+                break
+        if not deleted:
+            return False
         self.save()
         self.add_log(
             action=NodeLog.CONTRIB_REMOVED,
             params={
-                'project':self.parent_id,
-                'node':self._primary_key,
-                'contributor':{"nr_name":name, "nr_email":email},
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'contributor': contrib,
             },
             user=user,
             api_key=api_key,
@@ -1087,7 +1163,7 @@ class Node(GuidStoredObject):
                 self.add_log(
                     action=NodeLog.CONTRIB_ADDED,
                     params={
-                        'project': self.node__parent[0]._primary_key if self.node__parent else None,
+                        'project': self.parent_id,
                         'node': self._primary_key,
                         'contributors': [contrib_to_add._primary_key],
                     },
@@ -1128,19 +1204,20 @@ class Node(GuidStoredObject):
             self.save()
 
     def add_nonregistered_contributor(self, name, email, user, api_key=None, save=False):
-        '''Add a non-registered contributor to the project.
+        """Add a non-registered contributor to the project.
 
         :param name: A string, the full name of the person.
         :param email: A string, the email address of the person.
         :param user: A User object, the user who added the person.
-        '''
-        self.contributor_list.append({'nr_name': name, 'nr_email':email})
+
+        """
+        self.contributor_list.append({'nr_name': name, 'nr_email': email})
         self.add_log(
             action=NodeLog.CONTRIB_ADDED,
             params={
-                'project':self.node__parent[0]._primary_key if self.node__parent else None,
-                'node':self._primary_key,
-                'contributors':[{"nr_name": name, "nr_email":email}],
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'contributors': [{"nr_name": name, "nr_email": email}],
             },
             user=user,
             api_key=api_key
@@ -1262,8 +1339,21 @@ class Node(GuidStoredObject):
         else:
             return get_basic_counters('node:%s' % self._primary_key)
 
+    def serialize(self):
+        # TODO: incomplete implementation
+        return {
+            'id': str(self._primary_key),
+            'category': self.project_or_component,
+            'url': self.url,
+            'title': self.title,
+            'api_url': self.api_url,
+            'is_public': self.is_public
+        }
+
 
 class NodeWikiPage(GuidStoredObject):
+
+    redirect_mode = 'redirect'
 
     _id = fields.StringField(primary=True)
 
@@ -1275,6 +1365,10 @@ class NodeWikiPage(GuidStoredObject):
 
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')
+
+    @property
+    def deep_url(self):
+        return '{}wiki/{}/'.format(self.node.deep_url, self.page_name)
 
     @property
     def url(self):
@@ -1306,6 +1400,8 @@ class NodeWikiPage(GuidStoredObject):
         if self.node:
             self.node.update_solr()
         return rv
+
+
 
 class WatchConfig(StoredObject):
 

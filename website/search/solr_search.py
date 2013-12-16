@@ -17,7 +17,7 @@ def search_solr(query, start=0):
         'spellcheck': 'true', 'spellcheck.collate': 'true',
         'start': start, 'rows': 10}
     encoded_args = urllib.urlencode(_encoded_dict(query_args))
-    url = '{}spell?{}&wt=python'.format(settings.solr, encoded_args)
+    url = '{}spell?{}&wt=python'.format(settings.SOLR_URI, encoded_args)
     # post to the url
     solrReq = urllib2.Request(url)
     solrReq.add_header('Content-Type', 'application/json')

@@ -5,8 +5,8 @@
 <div class="row">
     <div class="col-md-4">
         <h1>Scientists</h1>
-            <iframe style="padding-top: 20px;padding-right: 0px;padding-left: 0px;padding-bottom: 20px;" width="277" height="156" src="//www.youtube.com/embed/c6lCJFSnMcg" frameborder="0" allowfullscreen></iframe>
-        <p>Scientists can use OSF for free to archive, share, find, register research materials and data. Watch the videos, get <a href="/project/4znZP/wiki/home">background info</a>, get <a href="/getting-started">help</a>, or just <a href="/account">register</a> to get started.</p>
+            <iframe style="padding-top: 20px;padding-right: 0px;padding-left: 0px;padding-bottom: 20px;" src="//www.youtube.com/embed/c6lCJFSnMcg" frameborder="0" allowfullscreen></iframe>
+        <p>Scientists can use OSF for free to archive, share, find, register research materials and data. Watch the videos, get <a href="/4znZP/wiki/home">background info</a>, get <a href="/getting-started">help</a>, or just <a href="/account/">register</a> to get started.</p>
     </div>
     <div class="col-md-4">
         <h1>Journals, Funders, and Societies</h1>
@@ -15,7 +15,7 @@
     </div>
     <div class="col-md-4">
       <h1>Developers</h1>
-        <iframe style="padding-top: 20px;padding-right: 0px;padding-left: 0px;padding-bottom: 20px;" width="277" height="156" src="//www.youtube.com/embed/WRadGRdkAIQ" frameborder="0" allowfullscreen></iframe>
+        <iframe style="padding-top: 20px;padding-right: 0px;padding-left: 0px;padding-bottom: 20px;" src="//www.youtube.com/embed/WRadGRdkAIQ" frameborder="0" allowfullscreen></iframe>
       <p>Developers can contribute to OSF and other open-source projects, or connect their projects to OSF via API. To learn more you can watch the above video from SciPy, find us on <a href="https://github.com/centerforopenscience" target="_blank">GitHub</a>, or contact developer@centerforopenscience.org.</p>
         </div>
                   % if use_cdn:
@@ -25,4 +25,3 @@
     </div>
 </div>
 </%def>
-

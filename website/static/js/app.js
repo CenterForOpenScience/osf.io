@@ -59,7 +59,10 @@ var Log = function(params) {
             if(i == self.contributors.length - 1 && self.contributors.length > 2){
                 ret += " and ";
             }
-            ret += self._asContribLink(person);
+            if (person.registered)
+                ret += self._asContribLink(person);
+            else
+                ret += '<span>' + person.nr_name + '</span>';
             if (i < self.contributors.length - 1 && self.contributors.length > 2){
                 ret += ", ";
             } else if (i < self.contributors.length - 1 && self.contributors.length == 2){
@@ -104,15 +107,15 @@ var createLogs = function(logData){
         return new Log({
             "action": item.action,
             "date": item.date,
-            "nodeCategory": item.category,
+            "nodeCategory": item.node.category,
             "contributor": item.contributor,
             "contributors": item.contributors,
-            "nodeUrl": item.node_url,
-            "userFullName": item.user_fullname,
-            "userURL": item.user_url,
+            "nodeUrl": item.node.url,
+            "userFullName": item.user.fullname,
+            "userURL": item.user.url,
             "apiKey": item.api_key,
             "params": item.params,
-            "nodeTitle": item.node_title,
+            "nodeTitle": item.node.title,
             "nodeDescription": item.params.description_new
         })
     });
@@ -275,7 +278,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
     self.nodes = ko.observableArray([]);
     self.nodesToChange = ko.observableArray();
     $.getJSON(
-        nodeToUseUrl() + 'get_editable_children/',
+        nodeApiUrl + 'get_editable_children/',
         {},
         function(result) {
             $.each(result['children'], function(idx, child) {
@@ -309,7 +312,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
     self.importFromParent = function() {
         self.errorMsg('');
         $.getJSON(
-            nodeToUseUrl() + 'get_contributors_from_parent/',
+            nodeApiUrl + 'get_contributors_from_parent/',
             {},
             function(result) {
                 if (!result.contributors.length) {
@@ -392,7 +395,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
     self.submit = function() {
         var user_ids = attrMap(self.selection(), 'id');
         $.ajax(
-            nodeToUseUrl() + 'addcontributors/',
+            nodeApiUrl + 'addcontributors/',
             {
                 type: 'post',
                 data: JSON.stringify({

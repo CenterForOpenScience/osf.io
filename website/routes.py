@@ -23,13 +23,15 @@ def get_globals():
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
         'user_id': user._primary_key if user else '',
+        'user_url': user.url if user else '',
+        'user_api_url': user.api_url if user else '',
         'display_name': framework.auth.get_display_name(user.username) if user else '',
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
         'status': framework.status.pop_status_messages(),
-        "js_all": assets_env['js'].urls(),
-        "css_all": assets_env['css'].urls()
+        'js_all': assets_env['js'].urls(),
+        'css_all': assets_env['css'].urls()
     }
 
 
@@ -39,18 +41,6 @@ class OsfWebRenderer(WebRenderer):
         kwargs['data'] = get_globals
         super(OsfWebRenderer, self).__init__(*args, **kwargs)
 
-
-def view_index():
-
-    display_name = username = framework.get_current_username()
-    if username and len(username) > 22:
-        display_name = framework.auth.get_display_name(username)
-
-    return {
-        'user_name': username,
-        'display_name': display_name,
-        'status': framework.status.pop_status_messages(),
-    }
 
 def favicon():
     return framework.send_from_directory(
@@ -72,6 +62,14 @@ def make_url_map(app):
              OsfWebRenderer('', render_mako_string)),
         Rule('/api/v1/<path:_>', ['get', 'post'],
              HTTPError(http.NOT_FOUND), json_renderer),
+    ])
+
+    ### GUID ###
+    process_rules(app, [
+        Rule([
+            '/<guid>/',
+            '/<guid>/<path:suffix>',
+        ], ['get', 'post'], website_routes.resolve_guid, OsfWebRenderer('', render_mako_string)),
     ])
 
     process_rules(app, [
@@ -99,14 +97,6 @@ def make_url_map(app):
         Rule('/dashboard/get_nodes/', 'get', website_routes.get_dashboard_nodes, json_renderer),
 
     ], prefix='/api/v1')
-
-    ### GUID ###
-
-    process_rules(app, [
-
-        Rule('/guid/<guid>/', 'get', website_routes.resolve_guid, OsfWebRenderer('', render_mako_string)),
-
-    ])
 
     ### Meta-data ###
 
@@ -207,6 +197,9 @@ def make_url_map(app):
         Rule('/settings/revoke_key/', 'post', profile_views.revoke_user_key, json_renderer),
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, json_renderer),
 
+        Rule('/settings/names/parse/', 'post', profile_views.parse_names, json_renderer),
+        Rule('/settings/names/', 'post', profile_views.post_names, json_renderer),
+
         Rule('/profile/<user_id>/summary/', 'get', profile_views.get_profile_summary, json_renderer),
 
     ], prefix='/api/v1',)
@@ -237,7 +230,7 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/', 'get', view_index, OsfWebRenderer('index.mako')),
+        Rule('/', 'get', {}, OsfWebRenderer('index.mako')),
 
         Rule([
             '/project/<pid>/',
@@ -251,7 +244,7 @@ def make_url_map(app):
 
         Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
-        Rule('/project/new/', 'get', {}, OsfWebRenderer('project/new.mako')),
+        Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
         Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.mako')),
 
         Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('project.mako')),
@@ -419,7 +412,7 @@ def make_url_map(app):
         Rule([
             '/project/new/',
             '/project/<pid>/newnode/',
-        ], 'post', project_views.node.project_new_post, json_renderer),
+        ], 'post', project_views.node.project_new_node, json_renderer),
 
         # Remove
         Rule([

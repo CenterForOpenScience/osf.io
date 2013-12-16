@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import httplib as http
-import hashlib
 import logging
 
 import framework
@@ -11,9 +10,8 @@ from ..decorators import must_not_be_registration, must_be_valid_project, \
 from framework.auth import must_have_session_auth, get_current_user, get_api_key
 
 
-from website import settings
-from website.filters import gravatar
 from website.models import Node
+from website.profile import utils
 
 logger = logging.getLogger(__name__)
 
@@ -70,30 +68,15 @@ def get_node_contributors_abbrev(*args, **kwargs):
 def _jsonify_contribs(contribs):
 
     data = []
-    # TODO(sloria): Put into User.serialize()
     for contrib in contribs:
         if 'id' in contrib:
             user = User.load(contrib['id'])
             if user is None:
                 logger.error('User {} not found'.format(contrib['id']))
                 continue
-            data.append({
-                'registered': True,
-                'id': user._primary_key,
-                'fullname': user.fullname,
-                'gravatar': gravatar(
-                    user,
-                    use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
-                ),
-            })
+            data.append(utils.serialize_user(user))
         else:
-            contribs.append({
-                'registered': False,
-                'id': hashlib.md5(contrib['nr_email']).hexdigest(),
-                'fullname': contrib['nr_name'],
-            })
-
+            data.append(utils.serialize_unreg_user(contrib))
     return data
 
 
@@ -108,7 +91,6 @@ def get_contributors(*args, **kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = _jsonify_contribs(node_to_use.contributor_list)
-
     return {'contributors': contribs}
 
 
@@ -147,16 +129,14 @@ def project_removecontributor(*args, **kwargs):
     api_key = get_api_key()
     node_to_use = node or project
 
-    # FIXME: this isn't working
     if request.json['id'].startswith('nr-'):
         outcome = node_to_use.remove_nonregistered_contributor(
-            user, request.json['name'], request.json['id'].replace('nr-', '')
+            user, api_key, request.json['name'],
+            request.json['id'].replace('nr-', '')
         )
     else:
-        try:
-            contributor = User.find_one(Q("_id", "eq", request.json['id']))
-        except Exception as err:
-            logger.error(err)
+        contributor = User.load(request.json['id'])
+        if contributor is None:
             raise HTTPError(http.BAD_REQUEST)
         outcome = node_to_use.remove_contributor(
             contributor=contributor, user=user, api_key=api_key

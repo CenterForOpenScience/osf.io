@@ -8,7 +8,7 @@
     maintained and developed by the Center for Open Science (COS), a non-profit
     organization. COS is supported by grants from <a
             href="http://www.arnoldfoundation.org/">The Laura and John Arnold
-        Foundation </a>, <a href="http://www.sloan.org/">Alfred P. Sloan
+        Foundation</a>, <a href="http://www.sloan.org/">Alfred P. Sloan
         Foundation</a>, and an anonymous donor.</p>
 
 <h3>How will the OSF be useful to my research?</h3><p>The OSF integrates with
@@ -21,7 +21,7 @@
         introduction video</a>, read the <a
             href="/getting-started">Getting
         Started</a> page, or see the <a
-            href="/project/4znZP/wiki/home">OSF
+            href="/4znZP/wiki/home">OSF
         Features </a>page.</p>
 
 <h3>How can I use the OSF?</h3><p>OSF membership is open and free, so you can

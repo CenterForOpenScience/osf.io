@@ -1,18 +1,18 @@
 <%inherit file="base.mako"/>
-<%def name="title()">${fullname}'s Profile</%def>
+<%def name="title()">${profile["fullname"]}'s Profile</%def>
 
 <%def name="javascript_bottom()">
-% if user_is_profile:
+% if user["is_profile"]:
     <script>
         $(function() {
             $('#profile-fullname').editable({
                 type:  'text',
-                pk:    '${user_id}',
+                pk:    '${profile["id"]}',
                 name:  'fullname',
-                url:   '/api/v1/profile/${user_id}/edit/',
+                url:   '/api/v1/profile/${profile["id"]}/edit/',
                 title: 'Edit Full Name',
                 placement: 'bottom',
-                value: '${fullname}',
+                value: '${profile["fullname"]}',
                 mode: "inline",
                 success: function(data) {
                     // Also change the display name in the user info table
@@ -26,15 +26,15 @@
 </%def>
 
 <%def name="content()">
-% if user_is_merged:
-<div class="alert alert-info">This account has been merged with <a class="alert-link" href="${user_merged_by_url}">${user_merged_by_url}</a>
+% if profile['is_merged']:
+<div class="alert alert-info">This account has been merged with <a class="alert-link" href="${profile['merged_by']['url']}">${profile['merged_by']['absolute_url']}</a>
 </div>
 % endif
 
 
 <div class="page-header">
-    <img src="${gravatar_url}" />
-    <h1 id="${'profile-fullname' if user_is_profile else ''}" style="display:inline-block">${fullname}</h1>
+    <img src="${profile['gravatar_url']}" />
+    <h1 id="profile-fullname" style="display:inline-block">${profile["fullname"]}</h1>
 </div><!-- end-page-header -->
 
 <div class="row">
@@ -42,22 +42,22 @@
         <table class="table table-plain">
             <tr>
               <td>Name</td>
-              <td class="${'fullname' if user_is_profile else ''}">${fullname}</td>
+              <td class="fullname">${profile["fullname"]}</td>
             </tr>
             <tr>
               <td>Member Since</td>
-              <td>${date_registered}</td>
+              <td>${profile['date_registered']}</td>
             </tr>
             <tr>
               <td>Public Profile</td>
-              <td><a href="/profile/${user_id}/">/profile/${user_id}/</a></td>
+              <td><a href="${profile['url']}">${profile['display_absolute_url']}</a></td>
             </tr>
         </table>
     </div>
     <div class="col-md-4 col-md-offset-4">
         <h2>
-           ${activity_points or "No"} activity point${'s' if activity_points != 1 else ''}<br />
-           ${number_projects} project${'s' if number_projects != 1  else ''}, ${number_public_projects} public
+           ${profile['activity_points'] or "No"} activity point${'s' if profile['activity_points'] != 1 else ''}<br />
+           ${profile["number_projects"]} project${'s' if profile["number_projects"] != 1  else ''}, ${profile["number_public_projects"]} public
         </h2>
     </div>
 </div><!-- end row -->
@@ -68,7 +68,7 @@
         <h3>Public Projects</h3>
         <div mod-meta='{
                 "tpl" : "util/render_nodes.mako",
-                "uri" : "/api/v1/profile/${user_id}/public_projects/",
+                "uri" : "/api/v1/profile/${profile["id"]}/public_projects/",
                 "replace" : true,
                 "kwargs" : {"sortable" : true}
             }'></div>
@@ -77,10 +77,12 @@
         <h3>Public Components</h3>
         <div mod-meta='{
                 "tpl" : "util/render_nodes.mako",
-                "uri" : "/api/v1/profile/${user_id}/public_components/",
+                "uri" : "/api/v1/profile/${profile["id"]}/public_components/",
                 "replace" : true,
                 "kwargs" : {"sortable" : true}
             }'></div>
     </div>
 </div><!-- end row -->
+
+<%include file="log_templates.mako"/>
 </%def>

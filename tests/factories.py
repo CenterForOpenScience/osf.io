@@ -15,9 +15,10 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 """
 import datetime as dt
 
-from factory import base, Sequence, SubFactory, PostGenerationMethodCall, post_generation
+from factory import base, Sequence, SubFactory, post_generation
 
 from framework.auth import User, Q
+from framework.auth.utils import parse_name
 from website.project.model import (ApiKey, Node, NodeLog, WatchConfig,
                                    MetaData, Tag, NodeWikiPage, MetaSchema)
 
@@ -40,8 +41,6 @@ class ModularOdmFactory(base.Factory):
         return instance
 
 
-
-
 class UserFactory(ModularOdmFactory):
     FACTORY_FOR = User
 
@@ -57,6 +56,14 @@ class UserFactory(ModularOdmFactory):
     @post_generation
     def set_date_registered(self, create, extracted):
         self.date_registered = dt.datetime.utcnow()
+        if create:
+            self.save()
+
+    @post_generation
+    def set_names(self, create, extracted):
+        parsed = parse_name(self.fullname)
+        for key, value in parsed.items():
+            setattr(self, key, value)
         if create:
             self.save()
 

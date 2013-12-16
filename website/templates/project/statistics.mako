@@ -3,24 +3,21 @@
 <%def name="content()">
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
-<%
-    import website.settings
-%>
-
 <div>
 	<div>
-    <h1>Visits Per Day</h1>
+    <h2>Visits Per Day</h2>
 		<div style="font: 10px sans-serif;margin: 0px auto 22px;clear: both;width">
 			<div id='chart'></div>
 		</div>
 	</div>
 </div>
 
-%if website.settings.USE_CDN_FOR_CLIENT_LIBS:
-<script src="//cdnjs.cloudflare.com/ajax/libs/d3/2.10.0/d3.v2.min.js"></script>
+%if use_cdn:
+    <script src="//cdnjs.cloudflare.com/ajax/libs/d3/2.10.0/d3.v2.min.js"></script>
 %else:
-<script src="/static/vendor/d3/d3.v2.js"></script>
+    <script src="/static/vendor/d3/d3.v2.js"></script>
 %endif
+
 <style>
 
 svg {
