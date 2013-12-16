@@ -4,16 +4,20 @@ import unittest
 from nose.tools import *  # PEP8 asserts
 
 import pytz
+import hashlib
 import datetime
+import urlparse
 from dateutil import parser
 
 from framework.analytics import get_total_activity_count
 from framework.auth import User
+from framework.auth.utils import parse_name
 from framework import utils
 from framework.bcrypt import check_password_hash
 from website import settings, filters
 from website.profile.utils import serialize_user
 from website.project.model import ApiKey, NodeFile, NodeLog
+from website import settings
 
 from tests.base import DbTestCase, Guid
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
@@ -21,7 +25,7 @@ from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
     TagFactory, NodeWikiFactory, UnregUserFactory)
 
 
-GUID_FACTORIES = (UserFactory, TagFactory, NodeFactory, ProjectFactory,
+GUID_FACTORIES = (UserFactory, NodeFactory, ProjectFactory,
                   MetaDataFactory)
 
 class TestUser(DbTestCase):
@@ -39,10 +43,6 @@ class TestUser(DbTestCase):
         assert_equal(another_user.username, "joe@example.com")
         assert_equal(User.find().count(), 2)
         assert_true(user.date_registered)
-
-    def test_absolute_url(self):
-        expected = "http://osf.io/profile/{0}/".format(self.user._primary_key)
-        assert_equal(self.user.absolute_url, expected)
 
     def test_is_watching(self):
         # User watches a node
@@ -74,6 +74,18 @@ class TestUser(DbTestCase):
         assert_true(user.check_password("ghostrider"))
         assert_false(user.check_password("ghostride"))
 
+    def test_url(self):
+        assert_equal(
+            self.user.url,
+            '/{0}/'.format(self.user._primary_key)
+        )
+
+    def test_absolute_url(self):
+        assert_equal(
+            self.user.absolute_url,
+            urlparse.urljoin(settings.DOMAIN, '/{0}/'.format(self.user._primary_key))
+        )
+
     def test_gravatar_url(self):
         expected = filters.gravatar(
                     self.user,
@@ -99,6 +111,22 @@ class TestUser(DbTestCase):
         assert_equal(d['username'], user.username)
         assert_equal(d['fullname'], user.fullname)
         assert_equal(d['registered'], user.is_registered)
+        assert_equal(d['absolute_url'], user.absolute_url)
+        assert_equal(d['date_registered'], user.date_registered.strftime("%Y-%m-%d"))
+
+    def test_serialize_user_full(self):
+        master = UserFactory.build()
+        user = UserFactory.build()
+        master.save()
+        master.merge_user(user)
+        master.save()
+        user.save()
+        d = serialize_user(user, full=True)
+        assert_equal(d['id'], user._primary_key)
+        assert_equal(d['url'], user.url)
+        assert_equal(d['username'], user.username)
+        assert_equal(d['fullname'], user.fullname)
+        assert_equal(d['registered'], user.is_registered)
         assert_equal(d['gravatar_url'], user.gravatar_url)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime("%Y-%m-%d"))
@@ -116,6 +144,19 @@ class TestUser(DbTestCase):
         public_projects = [p for p in projects if p.is_public]
         assert_equal(d['number_projects'], len(projects))
         assert_equal(d['number_public_projects'], len(public_projects))
+
+
+class TestUserParse(unittest.TestCase):
+
+    def test_parse_first_last(self):
+        parsed = parse_name('John Darnielle')
+        assert_equal(parsed['given_name'], 'John')
+        assert_equal(parsed['family_name'], 'Darnielle')
+
+    def test_parse_first_last_particles(self):
+        parsed = parse_name('John van der Slice')
+        assert_equal(parsed['given_name'], 'John')
+        assert_equal(parsed['family_name'], 'van der Slice')
 
 
 class TestMergingUsers(DbTestCase):
@@ -283,9 +324,10 @@ class TestNode(DbTestCase):
         assert_in(config1._id, self.node.watchconfig__watched)
 
     def test_url(self):
-        url = self.node.url
-        assert_equal(url, "/project/{0}/node/{1}/".format(self.parent._primary_key,
-                                                        self.node._primary_key))
+        assert_equal(
+            self.node.url,
+            '/{0}/'.format(self.node._primary_key)
+        )
 
     def test_watch_url(self):
         url = self.node.watch_url
@@ -413,8 +455,10 @@ class TestProject(DbTestCase):
         assert_equal(node.logs[-1].action, 'project_created')
 
     def test_url(self):
-        url = self.project.url
-        assert_equal(url, "/project/{0}/".format(self.project._primary_key))
+        assert_equal(
+            self.project.url,
+            '/{0}/'.format(self.project._primary_key)
+        )
 
     def test_api_url(self):
         api_url = self.project.api_url
@@ -450,6 +494,18 @@ class TestProject(DbTestCase):
         # The user is removed
         self.project.remove_contributor(user=self.user, contributor=user2, api_key=None)
         assert_not_in(user2, self.project.contributors)
+
+    def test_remove_nonregistered_contributor(self):
+        nr_user = {
+            'email': 'foo@bar.com',
+            'name': 'Weezy F. Baby',
+        }
+        self.project.add_nonregistered_contributor(user=self.user, **nr_user)
+        self.project.save()
+        # The user is removed
+        hash_id = hashlib.md5(nr_user['email']).hexdigest()
+        self.project.remove_nonregistered_contributor(self.user, None, nr_user['name'], hash_id)
+        assert_not_in(nr_user, self.project.contributors)
 
     def test_set_title(self):
         proj = ProjectFactory(title="That Was Then", creator=self.user)

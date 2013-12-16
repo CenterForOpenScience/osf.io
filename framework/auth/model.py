@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
+import re
 import itertools
-import datetime as dt
 import urlparse
+import datetime as dt
 
 import pytz
 import bson
@@ -12,16 +13,20 @@ from framework import GuidStoredObject
 from framework.search import solr
 from website import settings, filters
 
+from .utils import parse_name
+
 name_formatters = {
    'long': lambda user: user.fullname,
-   'surname': lambda user: user.surname,
+   'surname': lambda user: user.family_name,
    'initials': lambda user: u'{surname}, {initial}.'.format(
-       surname=user.surname,
+       surname=user.family_name,
        initial=user.given_name_initial
    ),
 }
 
 class User(GuidStoredObject):
+
+    redirect_mode = 'proxy'
 
     _id = fields.StringField(primary=True)
 
@@ -41,7 +46,15 @@ class User(GuidStoredObject):
     # Watched nodes are stored via a list of WatchConfigs
     watched = fields.ForeignField("WatchConfig", list=True, backref="watched")
 
+    # CSL names
+    given_name = fields.StringField()
+    middle_names = fields.StringField()
+    family_name = fields.StringField()
+    suffix = fields.StringField()
+
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
+
+    date_last_login = fields.DateTimeField()
 
     _meta = {'optimistic' : True}
 
@@ -55,12 +68,56 @@ class User(GuidStoredObject):
         return check_password_hash(self.password, raw_password)
 
     @property
+    def biblio_name(self):
+        given_names = self.given_name + ' ' + self.middle_names
+        surname = self.family_name
+        if surname != given_names:
+            initials = [
+                name[0].upper() + '.'
+                for name in given_names.split(' ')
+                if name and re.search(r'\w', name[0], re.I)
+            ]
+            return u'{0}, {1}'.format(surname, ' '.join(initials))
+        return surname
+
+    @property
+    def given_name_initial(self):
+        """
+        The user's preferred initialization of their given name.
+
+        Some users with common names may choose to distinguish themselves from
+        their colleagues in this way. For instance, there could be two
+        well-known researchers in a single field named "Robert Walker".
+        "Walker, R" could then refer to either of them. "Walker, R.H." could
+        provide easy disambiguation.
+
+        NOTE: The internal representation for this should never end with a
+              period. "R" and "R.H" would be correct in the prior case, but
+              "R.H." would not.
+        """
+        return self.given_name[0]
+
+    @property
     def url(self):
-        return '/profile/{}/'.format(self._primary_key)
+        return '/{}/'.format(self._primary_key)
+
+    @property
+    def api_url(self):
+        return '/api/v1/{0}/'.format(self._primary_key)
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin("http://" + settings.SHORT_DOMAIN, self.url)
+        return urlparse.urljoin(settings.DOMAIN, self.url)
+
+    @property
+    def display_absolute_url(self):
+        url = self.absolute_url
+        if url is not None:
+            return re.sub(r'https?:', '', url).strip('/')
+
+    @property
+    def deep_url(self):
+        return '/profile/{}/'.format(self._primary_key)
 
     @property
     def gravatar_url(self):
@@ -81,45 +138,8 @@ class User(GuidStoredObject):
         return self.merged_by is not None
 
     @property
-    def surname(self):
-        """
-        The user's preferred surname or family name, as they would prefer it to
-        appear in print.
-        e.g.: "Jeffrey Spies" would be "Spies".
-        """
-        # TODO: Give users the ability to specify this via their profile
-        return self.fullname.split(' ')[-1]
-
-    @property
-    def given_name(self):
-        """
-        The user's preferred given name, as they would be addressed personally.
-        e.g.: "Jeffrey Spies" would be "Jeffrey" (or "Jeff")
-        """
-        # TODO: Give users the ability to specify this via their profile
-        return self.fullname.split(' ')[0]
-
-    @property
-    def given_name_initial(self):
-        """
-        The user's preferred initialization of their given name.
-
-        Some users with common names may choose to distinguish themselves from
-        their colleagues in this way. For instance, there could be two
-        well-known researchers in a single field named "Robert Walker".
-        "Walker, R" could then refer to either of them. "Walker, R.H." could
-        provide easy disambiguation.
-
-        NOTE: The internal representation for this should never end with a
-              period. "R" and "R.H" would be correct in the prior case, but
-              "R.H." would not.
-        """
-        #TODO: Give users the ability to specify this via their profile.
-        return self.given_name[0]
-
-    @property
     def profile_url(self):
-        return '/profile/{}/'.format(self._id)
+        return '/{}/'.format(self._id)
 
     def get_summary(self, formatter='long'):
         return {

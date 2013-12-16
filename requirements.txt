@@ -18,6 +18,7 @@ hurry.filesize==0.9
 itsdangerous==0.23
 kombu==2.5.12
 lxml==3.2.3
+nameparser==0.2.8
 py-bcrypt==0.3
 pymongo==2.5.1
 python-dateutil==2.1

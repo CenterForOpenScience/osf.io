@@ -56,16 +56,15 @@ $(document).ready(function(){
     });
 
     // Highlight active tabs and nav labels
-    var node = nodeToUse();
-    if (node) {
+    if (typeof(nodeId) !== 'undefined' && nodeId) {
         // Works for project pages; code used below won't highlight wiki tab
         // on wiki pages because URLs (e.g. wiki/home) aren't contained in
         // tab URLs (e.g. wiki)
-        var page = location.pathname.split(node)[1]
+        var page = location.pathname.split(nodeId)[1]
             .split('/')[1];
         $('#projectSubnav a').filter(function() {
             return page == $(this).attr('href')
-                .split(node)[1]
+                .split(nodeId)[1]
                 .replace(/\//g, '');
         }).parent().addClass('active');
     } else {

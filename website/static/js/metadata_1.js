@@ -392,7 +392,7 @@ var MetaData = (function() {
                 self.$root.fileDict[selectedNode] = ko.observableArray();
                 self.$root.fileDict[selectedNode]();
                 $.getJSON(
-                    nodeToUseUrl() + 'file_paths/',
+                    nodeApiUrl + 'file_paths/',
                     function(response) {
                         self.$root.fileDict[selectedNode](response.files);
                     }
@@ -540,7 +540,7 @@ var MetaData = (function() {
 
         self.continueText = ko.observable('');
         self.continueFlag = ko.computed(function() {
-            return self.continueText() === 'continue';
+            return self.continueText().toLowerCase() === 'continue';
         });
 
         var ids = {};
@@ -643,7 +643,9 @@ var MetaData = (function() {
                 data[name] = value;
                 if (complete && model.required && model.isDisplayed() && !value) {
                     self.currentIndex(model.getPage());
-                    model.scrollToTop();
+                    try {
+                        model.scrollToTop();
+                    } catch(e) {}
                     complete = false;
                 }
             });

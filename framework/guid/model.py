@@ -7,11 +7,14 @@ class Guid(StoredObject):
     referent = fields.AbstractForeignField()
 
     _meta = {
-        'optimistic': True
+        'optimistic': True,
     }
 
 
 class GuidStoredObject(StoredObject):
+
+    # Redirect to content using URL redirect by default
+    redirect_mode = 'redirect'
 
     def _ensure_guid(self):
         """Create GUID record if current record doesn't already have one, then
@@ -45,10 +48,10 @@ class GuidStoredObject(StoredObject):
             # Set primary key to GUID key
             self._primary_key = guid._primary_key
 
-    def __init__(self, *args, **kwargs):
-        """ Ensure GUID after initialization. """
-        super(GuidStoredObject, self).__init__(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        """ Ensure GUID on save initialization. """
         self._ensure_guid()
+        return super(GuidStoredObject, self).save(*args, **kwargs)
 
     @property
     def annotations(self):

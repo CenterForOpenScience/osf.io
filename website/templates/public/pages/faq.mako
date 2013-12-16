@@ -21,7 +21,7 @@
         introduction video</a>, read the <a
             href="/getting-started">Getting
         Started</a> page, or see the <a
-            href="/project/4znZP/wiki/home">OSF
+            href="/4znZP/wiki/home">OSF
         Features </a>page.</p>
 
 <h3>How can I use the OSF?</h3><p>OSF membership is open and free, so you can

@@ -12,7 +12,7 @@ from werkzeug.exceptions import NotFound
 from mako.template import Template
 from mako.lookup import TemplateLookup
 
-from framework import StoredObject, session
+from framework import StoredObject, session, request, make_response
 from framework.exceptions import HTTPError
 from framework.flask import app, redirect, make_response
 from website import settings
@@ -177,18 +177,16 @@ def render_jinja_string(tpl, data):
 mako_cache = {}
 def render_mako_string(tpldir, tplname, data):
 
-    tpl = mako_cache.get(
-        tplname,
-        Template(
+    tpl = mako_cache.get(tplname)
+    if tpl is None:
+        tpl = Template(
             open(os.path.join(tpldir, tplname)).read(),
             lookup=_tpl_lookup,
             input_encoding='utf-8',
             output_encoding='utf-8',
         )
-    )
     # Don't cache in debug mode
     if not app.debug:
-        #logger.debug("Caching template: {0}".format(tplname))
         mako_cache[tplname] = tpl
     return tpl.render(**data)
 
@@ -208,6 +206,20 @@ def unpack(data, n=4):
     if not isinstance(data, tuple):
         data = (data,)
     return data + (None,) * (n - len(data))
+
+
+def proxy_url(url):
+    """Call Flask view function for a given URL.
+
+    :param url: URL to follow
+    :return: Return value of view function, wrapped in Werkzeug Response
+
+    """
+    # Get URL map, passing current request method; else method defaults to GET
+    match = app.url_map.bind('').match(url, method=request.method)
+    response = app.view_functions[match[0]](**match[1])
+    return make_response(response)
+
 
 def call_url(url, view_kwargs=None):
     """Look up and call view function by URL.
@@ -241,7 +253,7 @@ def call_url(url, view_kwargs=None):
 
 class Renderer(object):
 
-    CONTENT_TYPE = "text/html"
+    CONTENT_TYPE = 'text/html'
 
     def render(self, data, redirect_url, *args, **kwargs):
         raise NotImplementedError
@@ -315,7 +327,7 @@ class WebRenderer(Renderer):
 
     """
 
-    CONTENT_TYPE = "text/html"
+    CONTENT_TYPE = 'text/html'
     error_template = 'error.mako'
 
     def detect_renderer(self, renderer, filename):
