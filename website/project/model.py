@@ -215,7 +215,7 @@ class NodeFile(GuidStoredObject):
     size = fields.IntegerField()
     content_type = fields.StringField()
     git_commit = fields.StringField()
-    is_deleted = fields.BooleanField()
+    is_deleted = fields.BooleanField(default=False)
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_uploaded = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -943,7 +943,6 @@ class Node(GuidStoredObject):
             uploader=user,
             git_commit=commit_id,
             content_type=content_type,
-            is_deleted=False,
         )
         node_file.save()
 
