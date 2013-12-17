@@ -61,13 +61,13 @@ class TestUser(DbTestCase):
         assert_equal(d['url'], self.user.url)
 
     def test_set_password(self):
-        user = User(username="nick@cage.com", fullname="Nick Cage", is_registered=True)
+        user = User(username="nick@cage.com", fullname="Nick Cage")
         user.set_password("ghostrider")
         user.save()
         assert_true(check_password_hash(user.password, 'ghostrider'))
 
     def test_check_password(self):
-        user = User(username="nick@cage.com", fullname="Nick Cage", is_registered=True)
+        user = User(username="nick@cage.com", fullname="Nick Cage")
         user.set_password("ghostrider")
         user.save()
         assert_true(user.check_password("ghostrider"))
@@ -87,10 +87,10 @@ class TestUser(DbTestCase):
 
     def test_gravatar_url(self):
         expected = filters.gravatar(
-                    self.user,
-                    use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
-                )
+            self.user,
+            use_ssl=True,
+            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+        )
         assert_equal(self.user.gravatar_url, expected)
 
     def test_activity_points(self):
@@ -98,12 +98,9 @@ class TestUser(DbTestCase):
                     get_total_activity_count(self.user._primary_key))
 
     def test_serialize_user(self):
-        master = UserFactory.build()
+        master = UserFactory()
         user = UserFactory.build()
-        master.save()
-        master.merge_user(user)
-        master.save()
-        user.save()
+        master.merge_user(user, save=True)
         d = serialize_user(user)
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
@@ -114,12 +111,9 @@ class TestUser(DbTestCase):
         assert_equal(d['date_registered'], user.date_registered.strftime("%Y-%m-%d"))
 
     def test_serialize_user_full(self):
-        master = UserFactory.build()
+        master = UserFactory()
         user = UserFactory.build()
-        master.save()
-        master.merge_user(user)
-        master.save()
-        user.save()
+        master.merge_user(user, save=True)
         d = serialize_user(user, full=True)
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
@@ -211,7 +205,6 @@ class TestGUID(DbTestCase):
         self.records = {}
         for factory in GUID_FACTORIES:
             record = factory()
-            record.save()
             self.records[record._name] = record
 
     def test_guid(self):
