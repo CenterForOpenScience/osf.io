@@ -214,7 +214,6 @@ class NodeFile(GuidStoredObject):
     sha = fields.StringField()
     size = fields.IntegerField()
     content_type = fields.StringField()
-    is_public = fields.BooleanField()
     git_commit = fields.StringField()
     is_deleted = fields.BooleanField()
 
@@ -940,7 +939,6 @@ class Node(GuidStoredObject):
             path=file_name,
             filename=file_name,
             size=size,
-            is_public=self.is_public,
             node=self,
             uploader=user,
             git_commit=commit_id,
