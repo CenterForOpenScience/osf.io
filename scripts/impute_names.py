@@ -3,15 +3,17 @@ Email users to verify citation information.
 """
 
 import re
+import logging
 
 from framework.auth.utils import parse_name
 from framework.email.tasks import send_email
 
 from website.app import init_app
 from website import models
-from website import settings
 
 app = init_app('website.settings', set_backends=True, routes=True)
+
+logging.basicConfig(filename='impute_names.log', level=logging.DEBUG)
 
 email_template = u'''Hello, {fullname},
 
@@ -47,7 +49,10 @@ http://osf.io/settings
 If you have any questions or comments, please contact us at feedback+citations@osf.io (don't reply to this email).
 
 
-I remain sincerely yours,
+I remain,
+
+
+Sincerely yours,
 
 
 The OSF Robot.
@@ -64,23 +69,30 @@ email_template = clean_template(email_template)
 
 def email_name(user):
 
+    logging.debug('Emailing user {0}'.format(user.fullname))
+
     names = {'fullname': user.fullname}
     names.update(parse_name(user.fullname))
 
     message=email_template.format(**names).encode('utf-8')
 
-    send_email(
-        from_addr=settings.FROM_EMAIL,
+    success = send_email(
+        from_addr='openscienceframework-robot@osf.io',
         to_addr=user.username,
-        subject='OSF: Verify your citation information',
+        subject='Open Science Framework: Verify your citation information',
         message=message,
         mimetype='plain',
     )
 
-#def email_names():
-#
-#    for user in models.User.find():
-#        email_name(user)
+    if success:
+        logging.debug('Emailing user {0}: Success'.format(user.fullname))
+    else:
+        logging.debug('Emailing user {0}: Failure'.format(user.fullname))
+
+def email_names():
+
+    for user in models.User.find():
+        email_name(user)
 
 #if __name__ == '__main__':
 #    impute_names('names.tsv')
