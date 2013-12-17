@@ -166,7 +166,7 @@
                     var logs = data['node']['logs'];
                     // Create an array of Log model objects from the returned log data
                     var logModelObjects = createLogs(logs);
-                    logsViewModel = new LogsViewModel(logModelObjects, nodeApiUrl+'watched/logs/');
+                    logsViewModel = new LogsViewModel(logModelObjects, nodeApiUrl+'more_logs/');
 
                     ko.applyBindings(logsViewModel, $logScope[0]);
                 }
