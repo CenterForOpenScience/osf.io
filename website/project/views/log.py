@@ -44,6 +44,6 @@ def get_logs(*args, **kwargs):
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
     chrono_logs = reversed(node_to_use.logs)
-    logs = [log for log in chrono_logs[:count]
+    logs = [log for log in chrono_logs
                     if log and log.node.can_view(user, api_key)]
     return {'logs': [log.serialize() for log in logs]}
