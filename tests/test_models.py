@@ -471,18 +471,6 @@ class TestNode(DbTestCase):
         })
         assert_equal(latest_log.user, self.user)
 
-    def test_get_recent_logs(self):
-        node = NodeFactory()
-        for _ in range(5):
-            node.logs.append(NodeLogFactory())
-        node.save()
-        assert_equal(node.get_recent_logs(n=10), list(reversed(node.logs)))
-
-    def test_date_modified(self):
-        node = NodeFactory()
-        node.logs.append(NodeLogFactory())
-        assert_equal(node.date_modified, node.logs[-1].date)
-
     def test_add_file(self):
         #todo Add file series of tests
         pass
@@ -720,6 +708,25 @@ class TestProject(DbTestCase):
 
     def test_no_parent(self):
         assert_equal(self.project.parent, None)
+
+    def test_get_recent_logs(self):
+        # Add some logs
+        for _ in range(5):
+            self.project.logs.append(NodeLogFactory())
+        # Expected logs appears
+        assert_equal(
+            self.project.get_recent_logs(3),
+            list(reversed(self.project.logs)[:3])
+        )
+        assert_equal(
+            self.project.get_recent_logs(),
+            list(reversed(self.project.logs))
+        )
+
+    def test_date_modified(self):
+        self.project.logs.append(NodeLogFactory())
+        assert_equal(self.project.date_modified, self.project.logs[-1].date)
+        assert_not_equal(self.project.date_modified, self.project.date_created)
 
 
 class TestForkNode(DbTestCase):
