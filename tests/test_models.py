@@ -275,16 +275,14 @@ class TestAddFile(DbTestCase):
 
     def setUp(self):
         # Create a project
-        self.user1 = UserFactory()
-        api_key = ApiKeyFactory()
-        self.user1.api_keys.append(api_key)
-        self.project = ProjectFactory(creator=self.user1)
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
         # Add a file
         self.file_name = "foo.py"
         self.file_key = self.file_name.replace(".", "_")
         self.project.add_file(
-            self.user1,
-            self.user1.api_keys[0],
+            self.user,
+            None,
             self.file_name,
             "Content",
             128,
@@ -297,8 +295,8 @@ class TestAddFile(DbTestCase):
 
     def test_revised(self):
         self.project.add_file(
-            self.user1,
-            self.user1.api_keys[0],
+            self.user,
+            None,
             self.file_name,
             "Content 2",
             129,
@@ -418,9 +416,7 @@ class TestNode(DbTestCase):
         # Create project with component
         self.user = UserFactory()
         self.parent = ProjectFactory()
-        self.node = NodeFactory.build(creator=self.user, project=self.parent)
-        self.node.save()
-        self.parent.save()
+        self.node = NodeFactory(creator=self.user, project=self.parent)
 
     def test_node_factory(self):
         node = NodeFactory()
