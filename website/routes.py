@@ -589,7 +589,7 @@ def make_url_map(app):
 
         Rule([
             '/watched/logs/'
-        ], 'get', website_routes.watched_logs_get, json_renderer),
+        ], ['get', 'post'], website_routes.watched_logs, json_renderer),
         ### Accounts ###
         Rule([
             '/user/merge/'
