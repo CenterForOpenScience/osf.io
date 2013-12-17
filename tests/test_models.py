@@ -14,6 +14,7 @@ from framework.auth import User
 from framework.auth.utils import parse_name
 from framework import utils
 from framework.bcrypt import check_password_hash
+from framework.git.exceptions import FileNotModified
 from website import settings, filters
 from website.profile.utils import serialize_user
 from website.project.model import ApiKey, NodeFile, NodeLog, ensure_schemas
@@ -273,32 +274,57 @@ class TestAddFile(DbTestCase):
         # Add a file
         self.file_name = "foo.py"
         self.file_key = self.file_name.replace(".", "_")
-        self.project.add_file(
-            self.user,
-            None,
-            self.file_name,
-            "Content",
-            128,
-            "Type",
+        self.node_file = self.project.add_file(
+            self.user, None, self.file_name, "Content", 128, "Type"
         )
         self.project.save()
 
     def test_added(self):
         assert_equal(len(self.project.files_versions), 1)
 
-    def test_revised(self):
-        self.project.add_file(
-            self.user,
+    def test_component_add_file(self):
+        # Add exact copy of parent project's file to component
+        component = NodeFactory(project=self.project, creator=self.user)
+        component_file = component.add_file(
+            self.user, None, self.file_name, "Content", 128, "Type"
+        )
+        # File is correctly assigned to component
+        assert_equal(component_file.node, component)
+        # File does not overwrite parent project's version
+        assert_equal(len(self.project.files_versions), 1)
+
+    def test_uploader_is_user(self):
+        assert_equal(self.node_file.uploader, self.user)
+
+    def test_revise_content(self):
+        user2 = UserFactory()
+        updated_file = self.project.add_file(
+            user2,
             None,
             self.file_name,
             "Content 2",
             129,
-            "Type",
+            "Type 2",
         )
-        assert_equal(
-            len(self.project.files_versions[self.file_key]),
-            2,
-        )
+        # There are two versions of the file
+        assert_equal(len(self.project.files_versions[self.file_key]), 2)
+        assert_equal(self.node_file.filename, updated_file.filename)
+        # Each version has the correct user, size, and type
+        assert_equal(self.node_file.uploader, self.user)
+        assert_equal(updated_file.uploader, user2)
+        assert_equal(self.node_file.size, 128)
+        assert_equal(updated_file.size, 129)
+        assert_equal(self.node_file.content_type, "Type")
+        assert_equal(updated_file.content_type, "Type 2")
+
+
+    @raises(FileNotModified)
+    def test_not_modified(self):
+        user2 = UserFactory()
+        # Modify user, size, and type, but not content
+        self.project.add_file(user2, None, self.file_name, "Content", 256,
+                              "Type 2")
+
 
 class TestApiKey(DbTestCase):
 
