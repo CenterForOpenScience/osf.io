@@ -937,7 +937,7 @@ class TestRegisterNode(DbTestCase):
         assert_equal(len(registration1.contributors), 1)
         assert_in(self.user, registration1.contributors)
         assert_equal(registration1.registered_user, self.user)
-        assert_equal(registration1.registered_meta["Template1"], "Some words")
+        assert_equal(len(registration1.registered_meta), 1)
         assert_true(registration1.registered_schema)
 
         # Create a registration from a project

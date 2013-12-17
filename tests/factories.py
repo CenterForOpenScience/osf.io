@@ -89,33 +89,27 @@ class ApiKeyFactory(ModularOdmFactory):
     FACTORY_FOR = ApiKey
 
 
-class ProjectFactory(ModularOdmFactory):
+class AbstractNodeFactory(ModularOdmFactory):
     FACTORY_FOR = Node
 
-    category = 'project'
-    title = 'My Little Project'
-    description = 'My little description'
-    creator = SubFactory(UserFactory)
-
-
-class NodeFactory(ModularOdmFactory):
-    FACTORY_FOR = Node
-
-    category = 'hypothesis'
     title = 'The meaning of life'
-    description = "The meaning of life is 42."
+    description = 'The meaning of life is 42.'
     creator = SubFactory(UserFactory)
+
+
+class ProjectFactory(AbstractNodeFactory):
+    category = 'project'
+
+
+class NodeFactory(AbstractNodeFactory):
+    category = 'hypothesis'
     project = SubFactory(ProjectFactory)
 
 
-class RegistrationFactory(ModularOdmFactory):
-    FACTORY_FOR = Node
+class RegistrationFactory(AbstractNodeFactory):
 
-    # Arguments given to the original project
+    # Default project is created if not provided
     category = 'project'
-    title = "Original Project"
-    description = "This is the default."
-    creator = SubFactory(UserFactory)
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
