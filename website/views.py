@@ -2,7 +2,7 @@
 import logging
 import httplib as http
 import datetime
-
+import json
 import framework
 from framework import Q, request, redirect, get_current_user
 from framework.exceptions import HTTPError
@@ -105,9 +105,13 @@ def dashboard(*args, **kwargs):
     return {}
 
 @must_have_session_auth
-def watched_logs_get(*args, **kwargs):
+def watched_logs(*args, **kwargs):
     user = kwargs['user']
-    recent_log_ids = list(user.get_recent_log_ids())
+    if request.method == 'POST' and request.json:
+        count = request.json.get('count', 0)
+    else:
+        count = 0
+    recent_log_ids = list(user.get_recent_log_ids())[count:][:10]
     logs = [model.NodeLog.load(id) for id in recent_log_ids]
     return {
         "logs": [log.serialize() for log in logs]
