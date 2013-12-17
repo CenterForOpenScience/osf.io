@@ -84,8 +84,39 @@ var Log = function(params) {
  * @param {Log[]} logs An array of Log model objects to render.
  */
 var LogsViewModel = function(logs) {
+    if (logs.length<10){
+        $(".moreLogs").css("display",'none');
+    }
     var self = this;
     self.logs = ko.observableArray(logs);
+    var count=  0;
+    self.url = url;
+    self.moreLogs = function(){
+        count+=10;
+        var data_to_send={
+            "count":count
+        };
+        $.ajax({
+            url: self.url,
+            type: "POST", contentType: "application/json",
+            data:JSON.stringify(data_to_send),
+            dataType: "json",
+            cache: false,
+            success: function(response){
+                // Initialize LogViewModel
+                var logs = response['logs'];
+                if (logs.length<10){
+                    $(".moreLogs").css("display",'none');
+                }
+                var logModelObjects = createLogs(logs);  // Array of Log model objects
+                for(var i=0;i<logModelObjects.length;i++)
+                {
+                    self.logs.push(logModelObjects[i]);
+                }
+            }
+        });
+    };
+
     self.tzname = ko.computed(function() {
         var logs = self.logs();
         if (logs.length) {
@@ -137,8 +168,9 @@ var initializeLogs = function(scopeSelector, url){
     progressBar = $("#logProgressBar")
     progressBar.show();
     $.ajax({
-        url: url,
-        type: "get", contentType: "application/json",
+        url: url+'watched/logs/',
+        type: "get",
+        contentType: "application/json",
         dataType: "json",
         cache: false,
         success: function(data){
@@ -147,7 +179,9 @@ var initializeLogs = function(scopeSelector, url){
             ko.cleanNode($logScope[0]);
             var logModelObjects = createLogs(logs);  // Array of Log model objects
             progressBar.hide();
-            ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
+            logsViewModel = new LogsViewModel(logModelObjects, url+'watched/logs/');
+
+            ko.applyBindings(logsViewModel, $logScope[0]);
         }
     });
 }
