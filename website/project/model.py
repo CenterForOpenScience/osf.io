@@ -1286,7 +1286,7 @@ class Node(GuidStoredObject):
 
         return pw
 
-    def update_node_wiki(self, page, content, user, api_key):
+    def update_node_wiki(self, page, content, user, api_key=None):
         """Update the node's wiki page with new content.
 
         :param page: A string, the page's name, e.g. ``"home"``.

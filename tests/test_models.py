@@ -366,7 +366,7 @@ class TestUpdateNodeWiki(DbTestCase):
         self.project = ProjectFactory()
         self.node = NodeFactory(creator=self.user, project=self.project)
         # user updates the wiki
-        self.project.update_node_wiki("home", "Hello world", self.user, api_key=None)
+        self.project.update_node_wiki("home", "Hello world", self.user)
         self.versions = self.project.wiki_pages_versions
 
     def test_default_wiki(self):
@@ -376,15 +376,15 @@ class TestUpdateNodeWiki(DbTestCase):
 
     def test_default_is_current(self):
         assert_true(self.project.get_wiki_page('home').is_current)
-        self.project.update_node_wiki("home", "Hello world 2", self.user, api_key=None)
+        self.project.update_node_wiki("home", "Hello world 2", self.user)
         assert_true(self.project.get_wiki_page('home').is_current)
-        self.project.update_node_wiki("home", "Hello world 3", self.user, api_key=None)
+        self.project.update_node_wiki("home", "Hello world 3", self.user)
 
     def test_wiki_content(self):
         # Wiki has correct content
         assert_equal(self.project.get_wiki_page("home").content, "Hello world")
         # user updates the wiki a second time
-        self.project.update_node_wiki('home', "Hola mundo", self.user, api_key=None)
+        self.project.update_node_wiki('home', "Hola mundo", self.user)
         # Both versions have the expected content
         assert_equal(self.project.get_wiki_page("home", 2).content, "Hola mundo")
         assert_equal(self.project.get_wiki_page("home", 1).content, "Hello world")
@@ -393,7 +393,7 @@ class TestUpdateNodeWiki(DbTestCase):
         # Wiki is current
         assert_true(self.project.get_wiki_page("home", 1).is_current)
         # user updates the wiki a second time
-        self.project.update_node_wiki('home', "Hola mundo", self.user, api_key=None)
+        self.project.update_node_wiki('home', "Hola mundo", self.user)
         # New version is current, old version is not
         assert_true(self.project.get_wiki_page("home", 2).is_current)
         assert_false(self.project.get_wiki_page("home", 1).is_current)
@@ -402,7 +402,7 @@ class TestUpdateNodeWiki(DbTestCase):
         # Updates are logged
         assert_equal(self.project.logs[-1].action, "wiki_updated")
         # user updates the wiki a second time
-        self.project.update_node_wiki('home', "Hola mundo", self.user, api_key=None)
+        self.project.update_node_wiki('home', "Hola mundo", self.user)
         # There are two update logs
         assert_equal([log.action for log in self.project.logs].count('wiki_updated'), 2)
 
@@ -410,7 +410,7 @@ class TestUpdateNodeWiki(DbTestCase):
         # Number of versions is correct
         assert_equal(len(self.versions['home']), 1)
         # Update wiki
-        self.project.update_node_wiki("home", "Hello world", self.user, api_key=None)
+        self.project.update_node_wiki("home", "Hello world", self.user)
         # Number of versions is correct
         assert_equal(len(self.versions['home']), 2)
         # Versions are different
@@ -418,7 +418,7 @@ class TestUpdateNodeWiki(DbTestCase):
 
     def test_update_two_node_wikis(self):
         # user updates a second wiki for the same node
-        self.project.update_node_wiki("second", "Hola mundo", self.user, api_key=None)
+        self.project.update_node_wiki("second", "Hola mundo", self.user)
         # each wiki only has one version
         assert_equal(len(self.versions['home']), 1)
         assert_equal(len(self.versions['second']), 1)
