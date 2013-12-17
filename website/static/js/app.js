@@ -83,7 +83,7 @@ var Log = function(params) {
  * View model for a log list.
  * @param {Log[]} logs An array of Log model objects to render.
  */
-var LogsViewModel = function(logs) {
+var LogsViewModel = function(logs, url) {
     if (logs.length<10){
         $(".moreLogs").css("display",'none');
     }
