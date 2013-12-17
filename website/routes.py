@@ -2,6 +2,7 @@
 import httplib as http
 
 import framework
+from framework import request, status
 from framework.exceptions import HTTPError
 from framework import (Rule, process_rules,
                        WebRenderer, json_renderer,
@@ -48,6 +49,11 @@ def favicon():
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'
     )
+
+
+def goodbye(**kwargs):
+    status.push_status_message('You have successfully logged out.')
+    return {}
 
 
 def make_url_map(app):
@@ -152,6 +158,7 @@ def make_url_map(app):
 
         Rule(['/login/', '/account/'], 'get', auth_views.auth_login, OsfWebRenderer('public/login.mako')),
         Rule('/login/', 'post', auth_views.auth_login, OsfWebRenderer('public/login.mako'), endpoint_suffix='__post'),
+        Rule('/login/first/', 'get', auth_views.auth_login, OsfWebRenderer('public/login.mako'), endpoint_suffix='__first', view_kwargs={'first': True}),
 
         Rule('/logout/', 'get', auth_views.auth_logout, OsfWebRenderer('', render_mako_string)),
 
@@ -231,6 +238,7 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/', 'get', {}, OsfWebRenderer('index.mako')),
+        Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('index.mako')),
 
         Rule([
             '/project/<pid>/',

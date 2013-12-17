@@ -1,6 +1,6 @@
 import httplib as http
 
-from framework import get_current_user
+from framework import get_current_user, request, redirect
 from framework.exceptions import HTTPError
 from framework.auth import get_api_key
 from website.project import get_node
@@ -36,8 +36,6 @@ def must_not_be_registration(fn):
 
         if node_to_use.is_registration:
             raise HTTPError(http.FORBIDDEN)
-            # push_status_message('Registrations are read-only')
-            # return redirect(node_to_use.url)
 
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)
@@ -52,15 +50,11 @@ def must_be_valid_project(fn):
 
         if not project or not project.category == 'project':
             raise HTTPError(http.NOT_FOUND)
-            # push_status_message('Not a valid project')
-            # return redirect('/')
 
         if project.is_deleted:
             raise HTTPError(http.GONE)
-            # push_status_message('This project has been deleted')
-            # return redirect('')
 
-        if "nid" in kwargs or "node" in kwargs:
+        if 'nid' in kwargs or 'node' in kwargs:
             if 'node' not in kwargs:
                 node = get_node(kwargs['nid'])
                 kwargs['node'] = node
@@ -69,13 +63,9 @@ def must_be_valid_project(fn):
 
             if not node:
                 raise HTTPError(http.NOT_FOUND)
-                # push_status_message('Not a valid component')
-                # return redirect('/')
 
             if node.is_deleted:
                 raise HTTPError(http.GONE)
-                # push_status_message('This component has been deleted')
-                # return redirect('/')
 
         else:
             kwargs['node'] = None
@@ -112,7 +102,7 @@ def must_be_contributor(fn):
         api_node = kwargs.get('api_node')
 
         if user is None:
-            raise HTTPError(http.UNAUTHORIZED)
+            return redirect('/login/?next={0}'.format(request.path))
         if not node_to_use.is_contributor(user) \
                 and api_node != node_to_use:
             raise HTTPError(http.FORBIDDEN)
@@ -156,7 +146,7 @@ def must_be_contributor_or_public(fn):
 
         if not node_to_use.is_public:
             if user is None:
-                raise HTTPError(http.UNAUTHORIZED)
+                return redirect('/login/?next={0}'.format(request.path))
             if not node_to_use.is_contributor(user) \
                     and api_node != node_to_use:
                 raise HTTPError(http.FORBIDDEN)

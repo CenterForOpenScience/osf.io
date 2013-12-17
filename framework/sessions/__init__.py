@@ -14,19 +14,30 @@ from .model import Session
 # todo actively_editing date
 
 def set_previous_url(url=None):
-    if url is None:
-        url = request.referrer
-    if url not in settings.URL_HISTORY_IGNORE:
-        session.data['url_previous'] = url
+    """Add current URL to session history if not in excluded list; cap history
+    at set length.
+
+    """
+    url = url or request.path
+    if any([rule(url) for rule in settings.SESSION_HISTORY_IGNORE_RULES]):
+        return
+    session.data['history'].append(url)
+    while len(session.data['history']) > settings.SESSION_HISTORY_LENGTH:
+        session.data['history'].pop(0)
 
 
-def goback():
-    url_previous = session.data.get('url_previous')
-    if url_previous:
-        del session.data['url_previous']
-    else:
-        url_previous = '/dashboard/'
-    return redirect(url_previous)
+def goback(n=1):
+    next_url = request.form.get('next_url')
+    if next_url:
+        return redirect(next_url)
+    if session._get_current_object() is None:
+        return redirect('/')
+    try:
+        for _ in range(n):
+            url = session.data['history'].pop()
+    except IndexError:
+        url = '/dashboard/'
+    return redirect(url)
 
 
 def get_session():
@@ -49,8 +60,9 @@ def create_session(response, data=None):
         session.save()
         cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(session_id)
         set_session(session)
-    response.set_cookie(settings.COOKIE_NAME, value=cookie_value)
-    return response
+    if response is not None:
+        response.set_cookie(settings.COOKIE_NAME, value=cookie_value)
+        return response
 
 
 from weakref import WeakKeyDictionary
@@ -113,10 +125,10 @@ def before_request():
             return
         except:
             pass
-    # TODO: Create session in before_request, cookie in after_request
-    # Retry request, preserving status code
-    response = redirect(request.path, code=307)
-    return create_session(response)
+    ## TODO: Create session in before_request, cookie in after_request
+    ## Retry request, preserving status code
+    #response = redirect(request.path, code=307)
+    return create_session(None)
 
 
 @app.after_request

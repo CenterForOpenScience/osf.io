@@ -34,10 +34,11 @@
                     "id": "signinForm",
                     "name": "signin",
                     "method_string": "POST",
-                    "action_string": "/login/",
+                    "action_string": "/login/?next=${next}",
                     "form_class": "form-stacked",
                     "submit_string": "Sign In",
-                    "submit_btn_class": "btn-primary"
+                    "submit_btn_class": "btn-primary",
+                    "next_url": "${next}"
                 },
                 "replace": true
             }'></div>
