@@ -323,8 +323,16 @@ def view_project(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     return _view_project(node_to_use, user)
 
+@must_be_valid_project
+@must_be_contributor_or_public
+def project_log(*args, **kwargs):
+    user = get_current_user()
+    node_to_use = kwargs['node'] or kwargs['project']
+    log_num = request.json["count"]
+    return {'logs': _view_project(node_to_use, user, None, log_num)['node']['logs']}
 
-def _view_project(node_to_use, user, api_key=None):
+
+def _view_project(node_to_use, user, api_key=None, count=0):
     '''Build a JSON object containing everything needed to render
     project.view.mako.
 
@@ -339,7 +347,7 @@ def _view_project(node_to_use, user, api_key=None):
     else:
         wiki_home = '<p><em>No wiki content</em></p>'
     parent = node_to_use.parent
-    recent_logs = list(reversed(node_to_use.logs)[:10])
+    recent_logs = list(reversed(node_to_use.logs)[count:][:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
     data = {
         'node': {
