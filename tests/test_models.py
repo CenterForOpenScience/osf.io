@@ -21,7 +21,7 @@ from website.project.model import ApiKey, NodeFile, NodeLog, ensure_schemas
 from tests.base import DbTestCase, Guid
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
-    TagFactory, NodeWikiFactory, RegistrationFactory)
+    NodeWikiFactory, RegistrationFactory)
 
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory, MetaDataFactory
@@ -749,6 +749,7 @@ class TestForkNode(DbTestCase):
         assert_true(len(fork.logs) == len(original.logs) + 1)
         assert_equal(fork.logs[-1].action, NodeLog.NODE_FORKED)
         assert_equal(original.tags, fork.tags)
+        assert_equal(original.parent is not None, fork.parent is not None)
 
         # Test modified fields
         # Note: Must cast ForeignList to list for comparison

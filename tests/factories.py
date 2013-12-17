@@ -17,10 +17,19 @@ import datetime as dt
 
 from factory import base, Sequence, SubFactory, post_generation
 
+from framework import StoredObject
 from framework.auth import User, Q
 from framework.auth.utils import parse_name
 from website.project.model import (ApiKey, Node, NodeLog, WatchConfig,
                                    MetaData, Tag, NodeWikiPage, MetaSchema)
+
+
+# TODO: This is a hack. Check whether FactoryBoy can do this better
+def save_kwargs(**kwargs):
+    for value in kwargs.itervalues():
+        if isinstance(value, StoredObject) and not value._is_loaded:
+            value.save()
+
 
 class ModularOdmFactory(base.Factory):
 
@@ -32,10 +41,12 @@ class ModularOdmFactory(base.Factory):
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
         '''Build an object without saving it.'''
+        save_kwargs(**kwargs)
         return target_class(*args, **kwargs)
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
+        save_kwargs(**kwargs)
         instance = target_class(*args, **kwargs)
         instance.save()
         return instance
@@ -114,8 +125,11 @@ class RegistrationFactory(ModularOdmFactory):
     def _create(cls, target_class, project=None, schema=None, user=None,
                 template=None, data=None, *args, **kwargs):
 
+        save_kwargs(**kwargs)
+
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
+        project.save()
 
         # Default registration parameters
         schema = schema or MetaSchema.find_one(

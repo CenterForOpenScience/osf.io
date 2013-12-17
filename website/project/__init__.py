@@ -24,7 +24,7 @@ seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
             raise RuntimeError("unexpected opcode")
     return ''.join(output)
 
-# TODO: These belong in project model
+
 def new_node(category, title, user, description=None, project=None):
     # tag: database
     category = category.strip().lower()
@@ -40,7 +40,10 @@ def new_node(category, title, user, description=None, project=None):
         project=project,
     )
 
+    the_node.save()
+
     return the_node
+
 
 def get_wiki_page(project, node, wid):
     if node and node.wiki and wid in node.wiki:
@@ -52,6 +55,7 @@ def get_wiki_page(project, node, wid):
 
     return pw
 
+
 def get_node(id):
     return Node.load(id)
 
@@ -59,6 +63,8 @@ template_name_replacements = {
     ('.txt', ''),
     ('_', ' '),
 }
+
+
 def clean_template_name(template_name):
     template_name = from_mongo(template_name)
     for replacement in template_name_replacements:

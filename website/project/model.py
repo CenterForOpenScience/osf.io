@@ -333,9 +333,8 @@ class Node(GuidStoredObject):
 
     _meta = {'optimistic': True}
 
-    def __init__(self, project=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(Node, self).__init__(*args, **kwargs)
-        # refactored code from new_node
 
         if kwargs.get('_is_loaded', False):
             return
@@ -343,28 +342,6 @@ class Node(GuidStoredObject):
         if self.creator:
             self.contributors.append(self.creator)
             self.contributor_list.append({'id': self.creator._primary_key})
-        self.save()
-
-        if project:
-            project.nodes.append(self)
-            project.save()
-            log_action = NodeLog.NODE_CREATED
-            log_params = {
-                'node': self._primary_key,
-                'project': project._primary_key,
-            }
-        else:
-            log_action = NodeLog.PROJECT_CREATED
-            log_params = {
-                'project': self._primary_key,
-            }
-
-        self.add_log(
-            log_action,
-            params=log_params,
-            user=self.creator,
-            log_date=self.date_created,
-        )
 
     def can_edit(self, user, api_key=None):
         return (
@@ -377,7 +354,41 @@ class Node(GuidStoredObject):
         return self.is_public or self.can_edit(user, api_key)
 
     def save(self, *args, **kwargs):
+        first_save = not self._is_loaded and not self.is_registration \
+            and not self.is_fork
+
         rv = super(Node, self).save(*args, **kwargs)
+
+        # Append to parent and create log on first save only
+        if first_save:
+            if getattr(self, 'project', None):
+                # Append log to parent
+                self.project.nodes.append(self)
+                self.project.save()
+
+                # Define log fields for component
+                log_action = NodeLog.NODE_CREATED
+                log_params = {
+                    'node': self._primary_key,
+                    'project': self.project._primary_key,
+                }
+
+            else:
+                # Define log fields for non-component project
+                log_action = NodeLog.PROJECT_CREATED
+                log_params = {
+                    'project': self._primary_key,
+                }
+
+            # Add log with appropriate fields
+            self.add_log(
+                log_action,
+                params=log_params,
+                user=self.creator,
+                log_date=self.date_created,
+                save=True,
+            )
+
         # Only update Solr if at least one watched field has changed
         if self.SOLR_UPDATE_FIELDS.intersection(rv['saved_fields']):
             self.update_solr()
@@ -637,8 +648,6 @@ class Node(GuidStoredObject):
         registered.creator = self.creator
         registered.logs = self.logs
         registered.tags = self.tags
-
-        registered.save()
 
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, registered._primary_key)

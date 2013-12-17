@@ -252,8 +252,8 @@ class TestAddContributor(SolrTestCase):
     """
 
     def setUp(self):
-        self.name1 = 'Roger Taylor'
-        self.name2 = 'John Deacon'
+        self.name1 = 'Roger1 Taylor1'
+        self.name2 = 'John2 Deacon2'
         self.user = UserFactory(fullname=self.name1)
 
     def test_search_fullname(self):
