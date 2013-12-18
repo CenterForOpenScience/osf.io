@@ -333,7 +333,7 @@ def project_log(*args, **kwargs):
 
 
 def _view_logs(node_to_use, user, api_key=None, offset=0):
-    recent_logs = list(reversed(node_to_use.logs)[offset:][:10])
+    recent_logs = list(reversed(node_to_use.logs))[offset:][:10]
     recent_logs_dicts = [log.serialize() for log in recent_logs]
     return {"logs": recent_logs_dicts}
 
@@ -353,7 +353,7 @@ def _view_project(node_to_use, user, api_key=None, offset=0):
     else:
         wiki_home = '<p><em>No wiki content</em></p>'
     parent = node_to_use.parent
-    recent_logs = list(reversed(node_to_use.logs)[offset:][:10])
+    recent_logs = list(reversed(node_to_use.logs))[offset:][:10]
     recent_logs_dicts = [log.serialize() for log in recent_logs]
     data = {
         'node': {

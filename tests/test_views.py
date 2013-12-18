@@ -229,9 +229,8 @@ class TestProjectViews(DbTestCase):
                                                     params={"project": self.project._id}))
         self.project.save()
         url = "/api/v1/project/{0}/more_logs/".format(self.project._primary_key)
-        url = '/api/v1/project/{0}/watch/'.format(self.project._id)
         res = self.app.post_json(url,{"offset": 10}, auth=self.auth)
-        assert_equal(len(res.json['logs']), 12)
+        assert_equal(len(res.json['logs']), 2)
 
     def test_logs_from_api_url(self):
         # Add some logs
@@ -365,7 +364,7 @@ class TestWatchViews(DbTestCase):
         self.user.save()
         url = "/api/v1/watched/logs/"
         res = self.app.post(url, {"offset": 10}, auth=self.auth)
-        assert_equal(len(res.json['logs']), 12)
+        assert_equal(len(res.json['logs']), 2)
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
 
