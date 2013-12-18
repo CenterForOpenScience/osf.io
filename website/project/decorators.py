@@ -73,6 +73,7 @@ def must_be_valid_project(fn):
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)
 
+
 def must_be_contributor(fn):
     def wrapped(func, *args, **kwargs):
         if 'project' not in kwargs:
@@ -92,7 +93,7 @@ def must_be_contributor(fn):
             kwargs['node'] = node
 
         node_to_use = node or project
-
+        link = request.args.get('key', '').strip('/')
         if 'user' in kwargs:
             user = kwargs['user']
         else:
@@ -101,13 +102,14 @@ def must_be_contributor(fn):
 
         api_node = kwargs.get('api_node')
 
-        if user is None:
-            return redirect('/login/?next={0}'.format(request.path))
-        if not node_to_use.is_contributor(user) \
-                and api_node != node_to_use:
-            raise HTTPError(http.FORBIDDEN)
+        if not (link != "" and link in node_to_use.private_link):
+            if user is None:
+                return redirect('/login/?next={0}'.format(request.path))
+            if not node_to_use.is_contributor(user) \
+                    and api_node != node_to_use:
+                raise HTTPError(http.FORBIDDEN)
 
-        return fn(*args, **kwargs)
+            return fn(*args, **kwargs)
     return decorator(wrapped, fn)
 
 
@@ -131,7 +133,7 @@ def must_be_contributor_or_public(fn):
             kwargs['node'] = node
 
         node_to_use = node or project
-
+        link = request.args.get('key', '').strip('/')
         if 'user' in kwargs:
             user = kwargs['user']
         else:
@@ -145,11 +147,12 @@ def must_be_contributor_or_public(fn):
             kwargs['api_node'] = api_node
 
         if not node_to_use.is_public:
-            if user is None:
-                return redirect('/login/?next={0}'.format(request.path))
-            if not node_to_use.is_contributor(user) \
-                    and api_node != node_to_use:
-                raise HTTPError(http.FORBIDDEN)
+            if not (link != "" and link in node_to_use.private_link):
+                if user is None:
+                    return redirect('/login/?next={0}'.format(request.path))
+                if not node_to_use.is_contributor(user) \
+                        and api_node != node_to_use:
+                    raise HTTPError(http.FORBIDDEN)
 
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)

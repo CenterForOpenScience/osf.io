@@ -5,7 +5,21 @@
 
 <!-- Delete node -->
 <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
+<div class="col-md-6">
 
+    <button id="private-link" class="private-link">Generate Private Link</button>
+    % for link in node['private_link']:
+        <li
+            % if user['can_edit']:
+               class="contributor-list-item list-group-item"
+            % endif
+                >
+            <a class="remove-contributor btn btn-default contrib-button" >-</a>
+            <a class="name" style="">${node['url']}?key=${link}/</a>
+
+        </li>
+    % endfor
+</div>
 ##<!-- Show API key settings -->
 ##<div mod-meta='{
 ##        "tpl": "util/render_keys.mako",
@@ -30,6 +44,18 @@
 
         return text;
     }
+
+    $('#private-link').on('click', function() {
+        $.ajax({
+                type:"get",
+                url:nodeApiUrl+"generate_private_link",
+                contentType:"application/json",
+                dataType:"json",
+                success:function(){
+                    window.location.reload();
+                }
+        });
+    });
 
     $('#delete-node').on('click', function() {
         var key = randomString();

@@ -110,16 +110,16 @@
 
         <nav id="projectSubnav" class="navbar navbar-default ">
             <ul class="nav navbar-nav">
-                <li><a href="${node['url']}">Dashboard</a></li>
-                <li><a href="${node['url']}wiki/">Wiki</a></li>
-                <li><a href="${node['url']}statistics/">Statistics</a></li>
-                <li><a href="${node['url']}files/">Files</a></li>
+                <li><a href="${node['url']}?key=${node['link']}">Dashboard</a></li>
+                <li><a href="${node['url']}wiki/?key=${node['link']}">Wiki</a></li>
+                <li><a href="${node['url']}statistics/?key=${node['link']}">Statistics</a></li>
+                <li><a href="${node['url']}files/?key=${node['link']}">Files</a></li>
                 % if not node['is_registration']:
-                    <li><a href="${node['url']}registrations/">Registrations</a></li>
+                    <li><a href="${node['url']}registrations/?key=${node['link']}">Registrations</a></li>
                 % endif
-                <li><a href="${node['url']}forks/">Forks</a></li>
+                <li><a href="${node['url']}forks/?key=${node['link']}">Forks</a></li>
                 % if user['is_contributor'] and not node['is_registration']:
-                <li><a href="${node['url']}settings/">Settings</a></li>
+                <li><a href="${node['url']}settings/?key=${node['link']}">Settings</a></li>
                 %endif
             </ul>
         </nav>
@@ -131,6 +131,7 @@
 
     var nodeId = '${node['id']}';
     var nodeApiUrl = '${node['api_url']}';
+    var nodeUrl = '${node['url']}';
 
     $(document).ready(function(){
         $logScope = $("#logScope");

@@ -10,7 +10,7 @@ from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from framework.exceptions import HTTPError
 
-from website.project.views.node import _view_project
+from website.project.views.node import _view_project, _view_private_project
 from website.project.model import NodeWikiPage
 from website.project import show_diff
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
@@ -19,11 +19,11 @@ from website.project.decorators import must_not_be_registration, must_be_valid_p
 
 logger = logging.getLogger(__name__)
 
-
 @must_be_valid_project
 def project_wiki_home(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
-    return {}, None, None, '{}wiki/home/'.format(node_to_use.url)
+    link = request.args.get('key', '').strip('/')
+    return {}, None, None, '{}wiki/home/?key={}'.format(node_to_use.url, link)
 
 
 def _get_wiki_versions(node, wid):
@@ -123,7 +123,7 @@ def project_wiki_page(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
     wid = kwargs['wid']
-
+    link = request.args.get('key', '').strip('/')
     user = get_current_user()
     api_key = get_api_key()
     node_to_use = node or project
@@ -169,8 +169,10 @@ def project_wiki_page(*args, **kwargs):
         'url': node_to_use.url,
         'category': node_to_use.category
     }
-
-    rv.update(_view_project(node_to_use, user))
+    if link != "" and link in node_to_use.private_link:
+        rv.update(_view_private_project(node_to_use, link, user))
+    else:
+        rv.update(_view_project(node_to_use, user))
     return rv
 
 

@@ -278,6 +278,7 @@ class Node(GuidStoredObject):
         'is_public',
         'is_deleted',
         'wiki_pages_current',
+        'private_link',
     }
 
     _id = fields.StringField(primary=True)
@@ -305,6 +306,7 @@ class Node(GuidStoredObject):
 
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
+    private_link = fields.StringField(list=True)
 
     # TODO: move these to NodeFile
     files_current = fields.DictionaryField()
@@ -457,6 +459,7 @@ class Node(GuidStoredObject):
                 '{}_tags'.format(self._id): [x._id for x in self.tags],
                 '{}_description'.format(self._id): self.description,
                 '{}_url'.format(self._id): self.url,
+                '{}_private_link'.format(self._id): self.private_link,
                 }
 
             for wiki in [
@@ -930,6 +933,12 @@ class Node(GuidStoredObject):
         )
 
         return node_file
+
+    def generate_private_link(self, save=True):
+        link = str(uuid.uuid4())
+        self.private_link.append(link)
+        self.save()
+        return link
 
     def add_log(self, action, params, user, api_key=None, log_date=None, save=True):
         log = NodeLog()

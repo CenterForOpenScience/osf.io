@@ -274,6 +274,11 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/permissions/<permissions>/',
         ], 'post', project_views.node.project_set_permissions, OsfWebRenderer('project.mako')),
 
+        #Rule([
+        #    '/project/<pid>/link/<link>',
+        #    '/project/<pid>/node/<nid>/link/<link>/',
+        #], 'get', project_views.node.view_private_link, OsfWebRenderer('project.mako')),
+
         ### Logs ###
 
         Rule('/log/<log_id>/', 'get', project_views.log.get_log, OsfWebRenderer('util/render_log.mako')),
@@ -421,6 +426,13 @@ def make_url_map(app):
             '/project/new/',
             '/project/<pid>/newnode/',
         ], 'post', project_views.node.project_new_node, json_renderer),
+
+
+        Rule([
+            '/project/<pid>/generate_private_link/',
+            '/project/<pid>/node/<nid>/generate_private_link/',
+        ], 'get', project_views.node.add_private_link, json_renderer),
+
 
         # Remove
         Rule([
