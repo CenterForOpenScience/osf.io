@@ -14,7 +14,7 @@
                class="contributor-list-item list-group-item"
             % endif
                 >
-            <a class="remove-contributor btn btn-default contrib-button" >-</a>
+            <a class="remove-private-link btn btn-default " >-</a>
             <a class="name" style="">${node['url']}?key=${link}/</a>
 
         </li>
@@ -57,6 +57,19 @@
         });
     });
 
+    $(".remove-private-link").on("click",function(){
+        
+        $.ajax({
+                type:"POST",
+                url:nodeApiUrl+"remove_private_link",
+                data:JSON.stringify()
+                contentType:"application/json",
+                dataType:"json",
+                success:function(){
+                    window.location.reload();
+                }
+        })
+    });
     $('#delete-node').on('click', function() {
         var key = randomString();
         bootbox.prompt(
