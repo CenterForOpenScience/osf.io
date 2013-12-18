@@ -336,6 +336,8 @@ def view_project(*args, **kwargs):
     link = request.args.get('key', '').strip('/')
     if link != "" and link in node_to_use.private_link:
         return _view_private_project(node_to_use, link, user)
+    #elif link != "" and link not in node_to_use.private_link:
+    #    raise HTTPError(http.FORBIDDEN)
     else:
         return _view_project(node_to_use, user)
 
@@ -352,10 +354,20 @@ def view_project(*args, **kwargs):
 @must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project
 @must_be_contributor
+@must_not_be_registration
 def add_private_link(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     link = node_to_use.generate_private_link()
     return json.dumps(link)
+
+@must_have_session_auth # returns user or api_node
+@must_be_valid_project # returns project
+@must_be_contributor
+@must_not_be_registration
+def remove_private_link(*args, **kwargs):
+    node_to_use = kwargs['node'] or kwargs['project']
+    link = request.json['private_link']
+    node_to_use.remove_private_link(link)
 
 
 def _view_private_project(node_to_use, link, user, api_key=None):

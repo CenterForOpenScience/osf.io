@@ -940,6 +940,10 @@ class Node(GuidStoredObject):
         self.save()
         return link
 
+    def remove_private_link(self, link, save=True):
+        self.private_link.remove(link)
+        self.save()
+
     def add_log(self, action, params, user, api_key=None, log_date=None, save=True):
         log = NodeLog()
         log.action=action

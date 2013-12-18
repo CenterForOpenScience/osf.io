@@ -14,7 +14,7 @@
                class="contributor-list-item list-group-item"
             % endif
                 >
-            <a class="remove-private-link btn btn-default " >-</a>
+            <a class="remove-private-link btn btn-default" data-link="${link}">-</a>
             <a class="name" style="">${node['url']}?key=${link}/</a>
 
         </li>
@@ -48,7 +48,7 @@
     $('#private-link').on('click', function() {
         $.ajax({
                 type:"get",
-                url:nodeApiUrl+"generate_private_link",
+                url:nodeApiUrl+"generatePrivateLink",
                 contentType:"application/json",
                 dataType:"json",
                 success:function(){
@@ -58,17 +58,23 @@
     });
 
     $(".remove-private-link").on("click",function(){
-
-        $.ajax({
-                type:"POST",
-                url:nodeApiUrl+"remove_private_link",
-                data:JSON.stringify()
-                contentType:"application/json",
-                dataType:"json",
-                success:function(){
+        var me = $(this);
+        var data_to_send={
+            'private_link': me.attr("data-link")
+        };
+        bootbox.confirm('Remove ' + name + ' from contributor list?', function(result) {
+            if (result) {
+                $.ajax({
+                    type: "POST",
+                    url: nodeApiUrl + "removePrivateLink/",
+                    contentType: "application/json",
+                    dataType: "json",
+                    data: JSON.stringify(data_to_send)
+                }).done(function(response) {
                     window.location.reload();
-                }
-        })
+                });
+            }
+         });
     });
     $('#delete-node').on('click', function() {
         var key = randomString();
