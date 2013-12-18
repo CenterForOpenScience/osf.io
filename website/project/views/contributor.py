@@ -111,8 +111,8 @@ def get_contributors_from_parent(*args, **kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = []
-    for contrib in user.recently_added:
-        if contrib._primary_key not in node_to_use.contributors:
+    for contrib in parent.contributors:
+        if contrib not in node_to_use.contributors:
             contribs.append({
                 'fullname': contrib.fullname,
                 'id': contrib._primary_key,

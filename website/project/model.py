@@ -1117,14 +1117,22 @@ class Node(GuidStoredObject):
         :param save: Save after adding contributor
         :return: Boolean--whether contributor was added
         """
+        MAX_RECENT_LENGTH = 15
+
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
         if contrib_to_add._primary_key not in self.contributors:
             self.contributors.append(contrib_to_add)
             self.contributor_list.append({'id': contrib_to_add._primary_key})
+
             # Add contributor to recently added list for user
-            if contrib_to_add not in user.recently_added:
-                user.recently_added.append(contrib_to_add)
+            if contrib_to_add in user.recently_added:
+                user.recently_added.remove(contrib_to_add)
+            if len(user.recently_added) == MAX_RECENT_LENGTH:
+                user.recently_added.pop()
+
+            user.recently_added.insert(0, contrib_to_add)
+
             if log:
                 self.add_log(
                     action=NodeLog.CONTRIB_ADDED,
