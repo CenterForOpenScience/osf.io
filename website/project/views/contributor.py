@@ -85,9 +85,10 @@ def get_contributors(*args, **kwargs):
     user = get_current_user()
     api_key = get_api_key()
     node_to_use = kwargs['node'] or kwargs['project']
-    if not user['can_view']:
-        if not node_to_use.can_view(user, api_key):
-            raise HTTPError(http.FORBIDDEN)
+    link = request.args.get('key', '').strip('/')
+    if not (link != "" and link in node_to_use.private_link):
+            if not node_to_use.can_view(user, api_key):
+                raise HTTPError(http.FORBIDDEN)
 
     contribs = _jsonify_contribs(node_to_use.contributor_list)
     return {'contributors': contribs}

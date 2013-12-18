@@ -138,14 +138,18 @@
         if ($logScope.length > 0) {
             progressBar = $("#logProgressBar")
             progressBar.show();
+            console.log("show")
+
         }
         // Get project data from the server and initiate the ProjectViewModel
         $.ajax({
-            url: nodeApiUrl,
+            url: nodeApiUrl+"?key=${node['link']}",
             type: "get", contentType: "application/json",
             dataType: "json",
             cache: false,
             success: function(data){
+                console.log("hide")
+                console.log(data)
                 // Initialize ProjectViewModel with returned data
                 ko.applyBindings(new ProjectViewModel(data), $("#projectScope")[0]);
 
