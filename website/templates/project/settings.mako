@@ -58,7 +58,7 @@
     });
 
     $(".remove-private-link").on("click",function(){
-        
+
         $.ajax({
                 type:"POST",
                 url:nodeApiUrl+"remove_private_link",
