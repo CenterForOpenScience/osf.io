@@ -89,12 +89,12 @@ var LogsViewModel = function(logs, url) {
     }
     var self = this;
     self.logs = ko.observableArray(logs);
-    var count=  0;
+    var offset=  0;
     self.url = url;
     self.moreLogs = function(){
-        count+=10;
+        offset+=10;
         var data_to_send={
-            "count":count
+            "offset":offset
         };
         $.ajax({
             url: self.url,

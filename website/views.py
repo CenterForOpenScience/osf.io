@@ -108,10 +108,10 @@ def dashboard(*args, **kwargs):
 def watched_logs(*args, **kwargs):
     user = kwargs['user']
     if request.method == 'POST' and request.json:
-        count = request.json.get('count', 0)
+        offset = request.json.get('offset', 0)
     else:
-        count = 0
-    recent_log_ids = list(user.get_recent_log_ids())[count:][:10]
+        offset = 0
+    recent_log_ids = list(user.get_recent_log_ids())[offset:][:10]
     logs = [model.NodeLog.load(id) for id in recent_log_ids]
     return {
         "logs": [log.serialize() for log in logs]
