@@ -1122,6 +1122,9 @@ class Node(GuidStoredObject):
         if contrib_to_add._primary_key not in self.contributors:
             self.contributors.append(contrib_to_add)
             self.contributor_list.append({'id': contrib_to_add._primary_key})
+            # Add contributor to recently added list for user
+            if contrib_to_add not in user.recently_added:
+                user.recently_added.append(contrib_to_add)
             if log:
                 self.add_log(
                     action=NodeLog.CONTRIB_ADDED,
