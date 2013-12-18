@@ -71,13 +71,17 @@ class TestAnUnregisteredUser(DbTestCase):
 
     def test_cant_see_new_project_form(self):
         """ Can't see new project form if not logged in. """
-        with assert_raises(AppError):
+        assert_in(
+            'You must log in to access this resource',
             self.app.get('/project/new/').maybe_follow()
+        )
 
     def test_cant_see_profile(self):
         """ Can't see profile if not logged in. """
-        with assert_raises(AppError):
+        assert_in(
+            'You must log in to access this resource',
             self.app.get('/profile/').maybe_follow()
+        )
 
 
 class TestAUser(DbTestCase):
@@ -109,7 +113,7 @@ class TestAUser(DbTestCase):
 
     def test_can_see_homepage(self):
         # Goes to homepage
-        res = self.app.get("/").follow()  # Redirects
+        res = self.app.get('/').maybe_follow()  # Redirects
         assert_equal(res.status_code, 200)
 
     def test_can_log_in_first_time(self):

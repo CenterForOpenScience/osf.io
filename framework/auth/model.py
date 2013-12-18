@@ -9,7 +9,7 @@ import bson
 
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import fields,  Q, analytics
-from framework import GuidStoredObject
+from framework.guid.model import GuidStoredObject
 from framework.search import solr
 from website import settings, filters
 

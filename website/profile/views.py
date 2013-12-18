@@ -5,7 +5,8 @@ from framework import (
     get_current_user,
     get_user,
     must_be_logged_in,
-    request
+    request,
+    redirect,
 )
 from framework.auth import must_have_session_auth
 from framework.exceptions import HTTPError
@@ -48,7 +49,7 @@ def _profile_view(uid=None):
     profile = get_user(id=uid) if uid else user
 
     if not (uid or user):
-        raise HTTPError(http.UNAUTHORIZED)
+        return redirect('/login/?next={0}'.format(request.path))
 
     if profile:
         profile_user_data = utils.serialize_user(profile, full=True)

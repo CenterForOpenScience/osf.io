@@ -14,6 +14,9 @@
                 % endif
             </div>
         % endfor
+        % if next_url:
+            <input type="hidden" name="next_url" value="${next_url}" />
+        % endif
         <div class="">
           <button type="submit" class="btn btn-submit ${submit_btn_class or 'btn-primary'}">${submit_string}</button>
         </div>
