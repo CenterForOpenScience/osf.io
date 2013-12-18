@@ -1126,12 +1126,13 @@ class Node(GuidStoredObject):
             self.contributor_list.append({'id': contrib_to_add._primary_key})
 
             # Add contributor to recently added list for user
-            if contrib_to_add in user.recently_added:
-                user.recently_added.remove(contrib_to_add)
-            if len(user.recently_added) == MAX_RECENT_LENGTH:
-                user.recently_added.pop()
+            if user is not None:
+                if contrib_to_add in user.recently_added:
+                    user.recently_added.remove(contrib_to_add)
+                if len(user.recently_added) == MAX_RECENT_LENGTH:
+                    user.recently_added.pop()
 
-            user.recently_added.insert(0, contrib_to_add)
+                user.recently_added.insert(0, contrib_to_add)
 
             if log:
                 self.add_log(
