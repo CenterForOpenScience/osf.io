@@ -45,7 +45,7 @@
                     </div><!-- end btn-group -->
 
                     <div class="btn-group">
-                        % if user_name:
+                        % if user['is_contributor'] or node['is_public']:
                             <a rel="tooltip" title="Watch" class="btn btn-default" href="#" data-bind="click: toggleWatch">
                         % else:
                             <a rel="tooltip" title="Watch" class="btn btn-default disabled" href="#">
@@ -54,11 +54,10 @@
                         <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
 
                         </a>
-
                         <a
                             rel="tooltip"
                             title="Number of times this node has been forked (copied)"
-                            % if node["category"] == 'project' and user_name:
+                            % if node["category"] == 'project' and (user['is_contributor'] or node['is_public']):
                                 href="#"
                                 class="btn btn-default node-fork-btn"
                                 onclick="NodeActions.forkNode();"

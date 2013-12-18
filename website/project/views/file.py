@@ -34,16 +34,16 @@ def prune_file_list(file_list, max_depth):
     return [file for file in file_list if len([c for c in file if c == '/']) <= max_depth]
 
 
-def get_file_tree(node_to_use, user):
+def get_file_tree(node_to_use, user, link=""):
     tree = []
     for node in node_to_use.nodes:
         if not node.is_deleted:
             tree.append(get_file_tree(node, user))
 
-    if node_to_use.can_view(user):
-        for i,v in node_to_use.files_current.items():
-            v = NodeFile.load(v)
-            tree.append(v)
+    if (link != "" and link in node_to_use.private_link) or node_to_use.can_view(user):
+            for i,v in node_to_use.files_current.items():
+                v = NodeFile.load(v)
+                tree.append(v)
 
     return (node_to_use, tree)
 
@@ -61,10 +61,10 @@ def get_files(*args, **kwargs):
     user = get_current_user()
     link = request.args.get('key', '').strip('/')
 
-    filetree = get_file_tree(node_to_use, user)
+    filetree = get_file_tree(node_to_use, user, link)
     parent_id = node_to_use.parent_id
 
-    rv = _get_files(filetree, parent_id, 0, user)
+    rv = _get_files(filetree, parent_id, 0, user, link)
     rv['info'] = json.dumps(rv['info'])
     if not kwargs.get('dash', False):
         if link != "" and link in node_to_use.private_link:
@@ -73,13 +73,15 @@ def get_files(*args, **kwargs):
             rv.update(_view_project(node_to_use, user))
     return rv
 
+
 def _clean_file_name(name):
     " HTML-escape file name and encode to UTF-8. "
     escaped = cgi.escape(name)
     encoded = unicode(escaped).encode('utf-8')
     return encoded
 
-def _get_files(filetree, parent_id, check, user):
+
+def _get_files(filetree, parent_id, check, user, link=""):
     if parent_id is not None:
         parent_uid = 'node-{}'.format(parent_id)
     else:
@@ -118,10 +120,11 @@ def _get_files(filetree, parent_id, check, user):
         )
     )
     itemParent['can_edit'] = str(
-        filetree[0].is_contributor(user) and
+         filetree[0].is_contributor(user) and
         not filetree[0].is_registration
     ).lower()
-    itemParent['can_view'] = str(filetree[0].can_view(user)).lower()
+    itemParent['can_view'] \
+        = str((link != "" and link in filetree[0].private_link) or filetree[0].can_view(user)).lower()
     if itemParent['can_view'] == 'false':
         itemParent['name'] = 'Private Component'
     if check == 0:
@@ -134,7 +137,8 @@ def _get_files(filetree, parent_id, check, user):
                     filetree=tmp,
                     parent_id=filetree[0]._id,
                     check=1,
-                    user=user
+                    user=user,
+                    link=link
                 )['info']
             else:
                 unique, total = get_basic_counters('download:' + str(filetree[0]._id) + ':' + tmp.path.replace('.', '_') )
