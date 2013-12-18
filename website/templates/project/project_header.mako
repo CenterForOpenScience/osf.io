@@ -161,6 +161,17 @@
                     addContribVM.clear();
                 });
 
+                var $privateLink = $('#private-link');
+                var privateLinkVM = new PrivateLinkViewModel(data['node']['title'],
+                                                        data['parent']['id'],
+                                                        data['parent']['title']);
+                ko.applyBindings(privateLinkVM, $privateLink[0]);
+                // Clear user search modal when dismissed; catches dismiss by escape key
+                // or cancel button.
+                $privateLink.on('hidden', function() {
+                    privateLinkVM.clear();
+                });
+
                 // Initialize LogsViewModel when appropriate
                 if ($logScope.length > 0) {
                     progressBar.hide();

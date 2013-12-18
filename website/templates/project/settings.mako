@@ -7,7 +7,7 @@
 <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
 <div class="col-md-6">
 
-    <button id="private-link" class="private-link">Generate Private Link</button>
+    <button id="generate-private-link" class="private-link" data-toggle="modal" href="#private-link">Generate Private Link</button>
     % for link in node['private_link']:
         <li
             % if user['can_edit']:
@@ -20,6 +20,9 @@
         </li>
     % endfor
 </div>
+<%include file="modal_generate_private_link.mako"/>
+
+
 ##<!-- Show API key settings -->
 ##<div mod-meta='{
 ##        "tpl": "util/render_keys.mako",
@@ -45,17 +48,17 @@
         return text;
     }
 
-    $('#private-link').on('click', function() {
-        $.ajax({
-                type:"get",
-                url:nodeApiUrl+"generatePrivateLink",
-                contentType:"application/json",
-                dataType:"json",
-                success:function(){
-                    window.location.reload();
-                }
-        });
-    });
+##    $('#private-link').on('click', function() {
+##        $.ajax({
+##                type:"get",
+##                url:nodeApiUrl+"generatePrivateLink",
+##                contentType:"application/json",
+##                dataType:"json",
+##                success:function(){
+##                    window.location.reload();
+##                }
+##        });
+##    });
 
     $(".remove-private-link").on("click",function(){
         var me = $(this);
