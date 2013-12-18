@@ -176,11 +176,7 @@
 % if node.get('piwik_credentials'):
 <script type="text/javascript">
     $(function() {
-        try {
-            var piwikTracker = Piwik.getTracker("http://${ piwik_host }/piwik.php", ${ node['piwik_credentials']['site_id'] });
-            piwikTracker.enableLinkTracking(true);
-            piwikTracker.trackPageView();
-        } catch( err ) {}
+        trackPiwik("${ piwik_host }", ${ node['piwik_credentials']['site_id'] });
     });
 </script>
 % endif

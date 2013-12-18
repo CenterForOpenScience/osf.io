@@ -99,24 +99,18 @@
             <script type="text/javascript">
 
                 $(function() {
-
-                        try {
-                            var piwikTracker = Piwik.getTracker("http://${ piwik_host }/piwik.php", ${ piwik_site_id });
-                            % if user_id:
-                                piwikTracker.setCustomVariable(1, "User ID", "${ user_id }", "visit");
-                                piwikTracker.setCustomVariable(2, "User Name", "${ user_full_name }", "visit");
-                            % endif
-                            % if node:
-                                <% parent_project = parent.get('id') if parent else node.get('id') %>
-                                piwikTracker.setCustomVariable(2, "Project ID", "${ parent_project }", "page");
-                                piwikTracker.setCustomVariable(3, "Node ID", "${ node.get('id') }", "page");
-                                piwikTracker.setCustomVariable(4, "Tags", "${ ','.join(node.get('tags')) }", "page");
-                            % endif
-                            piwikTracker.setCustomVariable(1, "Public", "${ is_public }", "page");
-                            piwikTracker.enableLinkTracking(true);
-                            piwikTracker.trackPageView();
-
-                        } catch( err ) {}
+                    var cvars = [];
+                    %if user_id:
+                        cvars.push([1, "User ID", "${ user_id }", "visit"])
+                        cvars.push([2, "User Name", "${ user_full_name }", "visit"])
+                    %endif
+                    %if node:
+                        <% parent_project = parent.get('id') or node.get('id') %>
+                        cvars.push([2, "Project ID", "${ parent_project }", "page"]);
+                        cvars.push([3, "Node ID", "${ node.get('id') }", "page"]);
+                        cvars.push([4, "Tags", "${ ','.join(node.get('tags')) }", "page"]);
+                    %endif
+                    var foo = trackPiwik("${ piwik_host }", ${ piwik_site_id }, cvars);
                 });
             </script>
         % endif
