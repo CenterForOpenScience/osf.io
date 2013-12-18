@@ -94,7 +94,7 @@
         %endif
 
         % if piwik_host:
-            <script src="http://${ piwik_host }/piwik.js" type="text/javascript"></script>
+            <script src="${ piwik_host }piwik.js" type="text/javascript"></script>
             <% is_public = node.get('is_public', 'ERROR') if node else True %>
             <script type="text/javascript">
 
