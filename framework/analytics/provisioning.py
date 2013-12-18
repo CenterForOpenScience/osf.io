@@ -5,11 +5,9 @@ import requests
 
 from website import settings
 
-api_url = 'http://' + settings.PIWIK_HOST
-
 def provision_node(node):
     response = requests.post(
-        api_url,
+        settings.PIWIK_HOST,
         data={
             'module': 'API',
             'token_auth': settings.PIWIK_ADMIN_TOKEN,
@@ -35,7 +33,7 @@ def provision_node(node):
     piwik_password_hash = hashlib.md5(piwik_password).hexdigest()
 
     response = requests.post(
-        api_url,
+        settings.PIWIK_HOST,
         data={
             'module': 'API',
             'token_auth': settings.PIWIK_ADMIN_TOKEN,
@@ -54,7 +52,7 @@ def provision_node(node):
         raise Exception('Piwik user creation failed')
 
     response = requests.post(
-        api_url,
+        settings.PIWIK_HOST,
         data={
             'module': 'API',
             'token_auth': settings.PIWIK_ADMIN_TOKEN,
@@ -73,7 +71,7 @@ def provision_node(node):
 
 
     response = requests.post(
-        api_url,
+        settings.PIWIK_HOST,
         data={
             'module': 'API',
             'format': 'json',

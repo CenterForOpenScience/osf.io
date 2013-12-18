@@ -20,7 +20,7 @@ from dulwich.object_store import tree_lookup_path
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
-from framework.analytics import get_basic_counters, increment_user_activity_counters
+from framework.analytics import get_basic_counters, increment_user_activity_counters, provisioning
 from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
 from framework import StoredObject, fields, utils
@@ -1200,6 +1200,9 @@ class Node(GuidStoredObject):
         """
         if permissions == 'public' and not self.is_public:
             self.is_public = True
+            # If the node doesn't have a piwik site, make one.
+            if not self.piwik_credentials:
+                provisioning.provision_node(self)
         elif permissions == 'private' and self.is_public:
             self.is_public = False
         else:
