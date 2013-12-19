@@ -71,6 +71,27 @@ NodeActions.addNodeToProject = function(node, project) {
 };
 
 $(function(){
+    
+    $(".remove-private-link").on("click",function(){
+        var me = $(this);
+        var data_to_send={
+            'private_link': me.attr("data-link")
+        };
+        bootbox.confirm('Remove ' + name + ' from contributor list?', function(result) {
+            if (result) {
+                $.ajax({
+                    type: "POST",
+                    url: nodeApiUrl + "removePrivateLink/",
+                    contentType: "application/json",
+                    dataType: "json",
+                    data: JSON.stringify(data_to_send)
+                }).done(function(response) {
+                    window.location.reload();
+                });
+            }
+         });
+    });
+
     $('#newComponent form').on('submit', function(e) {
           e.preventDefault();
 
