@@ -134,6 +134,7 @@
 
     $(document).ready(function(){
         $logScope = $("#logScope");
+        $linkScope= $("#linkScope");
         if ($logScope.length > 0) {
             progressBar = $("#logProgressBar")
             progressBar.show();
@@ -161,17 +162,6 @@
                     addContribVM.clear();
                 });
 
-                var $privateLink = $('#private-link');
-                var privateLinkVM = new PrivateLinkViewModel(data['node']['title'],
-                                                        data['parent']['id'],
-                                                        data['parent']['title']);
-                ko.applyBindings(privateLinkVM, $privateLink[0]);
-                // Clear user search modal when dismissed; catches dismiss by escape key
-                // or cancel button.
-                $privateLink.on('hidden', function() {
-                    privateLinkVM.clear();
-                });
-
                 // Initialize LogsViewModel when appropriate
                 if ($logScope.length > 0) {
                     progressBar.hide();
@@ -179,7 +169,22 @@
                     // Create an array of Log model objects from the returned log data
                     var logModelObjects = createLogs(logs);
                     ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
-                };
+                }
+
+                if ($linkScope.length >0){
+                    var $privateLink = $('#private-link');
+                    var privateLinkVM = new PrivateLinkViewModel(data['node']['title'],
+                                                            data['parent']['id'],
+                                                            data['parent']['title']);
+                    ko.applyBindings(privateLinkVM, $privateLink[0]);
+                    // Clear user search modal when dismissed; catches dismiss by escape key
+                    // or cancel button.
+                    $privateLink.on('hidden', function() {
+                        privateLinkVM.clear();
+                    });
+                }
+
+
             }
         });
     });

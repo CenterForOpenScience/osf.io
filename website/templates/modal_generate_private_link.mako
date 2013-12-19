@@ -7,11 +7,10 @@
 
             <div class="modal-body">
 
-
                 <div data-bind="if:page()=='which'">
 
                     <div>
-                        Adding contributor(s)
+                        Generating Private Link
                         <span data-bind="text:addingSummary()"></span>
                         to component
                         <span data-bind="text:title"></span>.
@@ -20,7 +19,7 @@
                     <hr />
 
                     <div style="margin-bottom:10px;">
-                        Would you like to add these contributor(s) to any children of
+                        Would you like to apply the link privilege to any children of
                         the current component?
                     </div>
 

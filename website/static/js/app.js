@@ -431,11 +431,10 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
     self.parentId = parentId;
     self.parentTitle = parentTitle;
 
-    self.page = ko.observable('whom');
+    self.page = ko.observable('which');
     self.pageTitle = ko.computed(function() {
         return {
-            whom: 'Add contributors',
-            which: 'Select components'
+            which: 'Generate New Private Link'
         }[self.page()];
     });
 
@@ -457,65 +456,23 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
         }
     );
 
-    self.selectWhom = function() {
-        self.page('whom');
-    };
     self.selectWhich = function() {
         self.page('which');
     };
 
-    self.search = function() {
-        self.errorMsg('');
-        $.getJSON(
-            '/api/v1/user/search/',
-            {query: self.query()},
-            function(result) {
-                if (!result.users.length) {
-                    self.errorMsg('No results found.');
-                }
-                self.results(result['users']);
-            }
-        )
-    };
-
-    self.importFromParent = function() {
-        self.errorMsg('');
-        $.getJSON(
-            nodeApiUrl + 'get_contributors_from_parent/',
-            {},
-            function(result) {
-                if (!result.contributors.length) {
-                    self.errorMsg('All contributors from parent already included.');
-                }
-                self.results(result['contributors']);
-            }
-        )
-    };
-
-
-    self.addTips = function(elements) {
-        elements.forEach(function(element) {
-            $(element).find('.contrib-button').tooltip();
-        });
-    };
-
-
-    self.add = function(data) {
-        self.selection.push(data);
-        // Hack: Hide and refresh tooltips
-        $('.tooltip').hide();
-        $('.contrib-button').tooltip();
-    };
-
-
-    self.remove = function(data) {
-        self.selection.splice(
-            self.selection.indexOf(data), 1
-        );
-        // Hack: Hide and refresh tooltips
-        $('.tooltip').hide();
-        $('.contrib-button').tooltip();
-    };
+//    self.importFromParent = function() {
+//        self.errorMsg('');
+//        $.getJSON(
+//            nodeApiUrl + 'get_contributors_from_parent/',
+//            {},
+//            function(result) {
+//                if (!result.contributors.length) {
+//                    self.errorMsg('All contributors from parent already included.');
+//                }
+//                self.results(result['contributors']);
+//            }
+//        )
+//    };
 
     self.addAll = function() {
         $.each(self.results(), function(idx, result) {
@@ -562,13 +519,12 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
     });
 
     self.submit = function() {
-        var user_ids = attrMap(self.selection(), 'id');
+        console.log("1");
         $.ajax(
-            nodeApiUrl + 'addcontributors/',
+            nodeApiUrl + 'generatePrivateLink/',
             {
                 type: 'post',
                 data: JSON.stringify({
-                    user_ids: user_ids,
                     node_ids: self.nodesToChange()
                 }),
                 contentType: 'application/json',
@@ -583,9 +539,7 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
     };
 
     self.clear = function() {
-        self.page('whom');
-        self.query('');
-        self.results([]);
+        self.page('which');
         self.selection([]);
         self.nodesToChange([]);
     };

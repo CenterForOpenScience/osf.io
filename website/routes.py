@@ -432,7 +432,7 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/generatePrivateLink/',
             '/project/<pid>/node/<nid>/generatePrivateLink/',
-        ], 'get', project_views.node.add_private_link, json_renderer),
+        ], 'post', project_views.node.project_generate_private_link_post, json_renderer),
 
         Rule([
             '/project/<pid>/removePrivateLink/',

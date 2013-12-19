@@ -14,7 +14,7 @@ from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from framework.auth import must_have_session_auth, get_api_key
-
+from website.models import Node
 from website.project import new_node, new_project, clean_template_name
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
@@ -664,3 +664,21 @@ def get_registrations(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     registrations = node_to_use.node__registrations
     return _render_nodes(registrations)
+
+@must_have_session_auth # returns user
+@must_be_valid_project # returns project
+@must_be_contributor # returns user, project
+def project_generate_private_link_post(*args, **kwargs):
+    """ Add contributors to a node. """
+
+    node_to_use = kwargs['node'] or kwargs['project']
+    user = kwargs['user']
+    api_key = get_api_key()
+    node_ids = request.json.get('node_ids', [])
+    link = node_to_use.add_private_link()
+
+    for node_id in node_ids:
+        node = Node.load(node_id)
+        node.add_private_link(link)
+
+    return {'status': 'success'}, 201

@@ -934,8 +934,10 @@ class Node(GuidStoredObject):
 
         return node_file
 
-    def generate_private_link(self, save=True):
-        link = str(uuid.uuid4())
+    def add_private_link(self, link='', save=True):
+        if link == '':
+            link = str(uuid.uuid4())
+
         self.private_link.append(link)
         self.save()
         return link

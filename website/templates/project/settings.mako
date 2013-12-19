@@ -5,8 +5,8 @@
 
 <!-- Delete node -->
 <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
-<div class="col-md-6">
-
+<div class="col-md-6" id="linkScope">
+    ${repr(node['private_link'])}
     <button id="generate-private-link" class="private-link" data-toggle="modal" href="#private-link">Generate Private Link</button>
     % for link in node['private_link']:
         <li
