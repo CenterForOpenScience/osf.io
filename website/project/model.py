@@ -277,7 +277,6 @@ class Node(GuidStoredObject):
         'is_public',
         'is_deleted',
         'wiki_pages_current',
-        'private_link',
     }
 
     _id = fields.StringField(primary=True)
@@ -508,7 +507,6 @@ class Node(GuidStoredObject):
                 '{}_tags'.format(self._id): [x._id for x in self.tags],
                 '{}_description'.format(self._id): self.description,
                 '{}_url'.format(self._id): self.url,
-                '{}_private_link'.format(self._id): self.private_link,
                 }
 
             for wiki in [
