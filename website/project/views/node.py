@@ -201,7 +201,7 @@ def project_statistics(*args, **kwargs):
     rv = {
         'csv' : csv,
     }
-    link = request.args.get('key', '').strip('/')
+    link = kwargs['link']
     rv.update(_view_project(node_to_use, user, link))
     return rv
 
@@ -329,7 +329,7 @@ def component_remove(*args, **kwargs):
 def view_project(*args, **kwargs):
     user = get_current_user()
     node_to_use = kwargs['node'] or kwargs['project']
-    link = request.args.get('key', '').strip('/')
+    link = kwargs['link']
     return _view_project(node_to_use, user, link)
 
 @must_have_session_auth # returns user or api_node

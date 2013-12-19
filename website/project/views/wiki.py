@@ -123,7 +123,7 @@ def project_wiki_page(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
     wid = kwargs['wid']
-    link = request.args.get('key', '').strip('/')
+    link = kwargs['link']
     user = get_current_user()
     api_key = get_api_key()
     node_to_use = node or project

@@ -94,6 +94,7 @@ def must_be_contributor(fn):
 
         node_to_use = node or project
         link = request.args.get('key', '').strip('/')
+        kwargs['link'] = link
         if 'user' in kwargs:
             user = kwargs['user']
         else:
@@ -134,6 +135,7 @@ def must_be_contributor_or_public(fn):
 
         node_to_use = node or project
         link = request.args.get('key', '').strip('/')
+        kwargs['link'] = link
         if 'user' in kwargs:
             user = kwargs['user']
         else:

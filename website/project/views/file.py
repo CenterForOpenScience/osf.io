@@ -59,7 +59,7 @@ def get_files(*args, **kwargs):
     # Get arguments
     node_to_use = kwargs['node'] or kwargs['project']
     user = get_current_user()
-    link = request.args.get('key', '').strip('/')
+    link = kwargs['link']
 
     filetree = get_file_tree(node_to_use, user, link)
     parent_id = node_to_use.parent_id
