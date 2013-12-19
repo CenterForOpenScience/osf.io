@@ -438,8 +438,6 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
         }[self.page()];
     });
 
-    self.query = ko.observable();
-    self.results = ko.observableArray();
     self.selection = ko.observableArray();
     self.errorMsg = ko.observable('');
 
@@ -459,20 +457,6 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
     self.selectWhich = function() {
         self.page('which');
     };
-
-//    self.importFromParent = function() {
-//        self.errorMsg('');
-//        $.getJSON(
-//            nodeApiUrl + 'get_contributors_from_parent/',
-//            {},
-//            function(result) {
-//                if (!result.contributors.length) {
-//                    self.errorMsg('All contributors from parent already included.');
-//                }
-//                self.results(result['contributors']);
-//            }
-//        )
-//    };
 
     self.addAll = function() {
         $.each(self.results(), function(idx, result) {

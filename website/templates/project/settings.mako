@@ -50,18 +50,6 @@
         return text;
     }
 
-##    $('#private-link').on('click', function() {
-##        $.ajax({
-##                type:"get",
-##                url:nodeApiUrl+"generatePrivateLink",
-##                contentType:"application/json",
-##                dataType:"json",
-##                success:function(){
-##                    window.location.reload();
-##                }
-##        });
-##    });
-
     $(".remove-private-link").on("click",function(){
         var me = $(this);
         var data_to_send={
@@ -81,6 +69,7 @@
             }
          });
     });
+    
     $('#delete-node').on('click', function() {
         var key = randomString();
         bootbox.prompt(

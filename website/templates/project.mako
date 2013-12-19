@@ -9,7 +9,6 @@
     <div class="col-md-7" id='containment'>
       <section id="Wiki Home">
         <div class="wiki">
-            ${ node["wiki_home"] }
             <p><a href="${node['url']}wiki/home/?key=${node['link']}">read more</a></p>
         </div>
       </section>
