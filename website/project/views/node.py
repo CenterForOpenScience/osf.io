@@ -133,10 +133,7 @@ def node_registrations(*args, **kwargs):
     user = get_current_user()
     node_to_use = kwargs['node'] or kwargs['project']
     link = request.args.get('key', '').strip('/')
-    if link != "" and link in node_to_use.private_link:
-        return _view_private_project(node_to_use, link, user)
-    else:
-        return _view_project(node_to_use, user)
+    return _view_project(node_to_use, user, link)
 
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
@@ -149,10 +146,7 @@ def node_forks(*args, **kwargs):
 
     node_to_use = node or project
     link = request.args.get('key', '').strip('/')
-    if link != "" and link in node_to_use.private_link:
-        return _view_private_project(node_to_use, link, user)
-    else:
-        return _view_project(node_to_use, user)
+    return _view_project(node_to_use, user, link)
 
 @must_be_valid_project
 @must_be_contributor # returns user, project
@@ -208,10 +202,7 @@ def project_statistics(*args, **kwargs):
         'csv' : csv,
     }
     link = request.args.get('key', '').strip('/')
-    if link != "" and link in node_to_use.private_link:
-        rv.update(_view_private_project(node_to_use, link, user))
-    else:
-        rv.update(_view_project(node_to_use, user))
+    rv.update(_view_project(node_to_use, user, link))
     return rv
 
 ###############################################################################
@@ -339,10 +330,7 @@ def view_project(*args, **kwargs):
     user = get_current_user()
     node_to_use = kwargs['node'] or kwargs['project']
     link = request.args.get('key', '').strip('/')
-    if link != "" and link in node_to_use.private_link:
-        return _view_private_project(node_to_use, link, user)
-    else:
-        return _view_project(node_to_use, user)
+    return _view_project(node_to_use, user, link)
 
 @must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project
@@ -353,7 +341,7 @@ def remove_private_link(*args, **kwargs):
     node_to_use.remove_private_link(link)
 
 
-def _view_private_project(node_to_use, link, user, api_key=None):
+def _view_project(node_to_use, user, link='', api_key=None):
     '''Build a JSON object containing everything needed to render
     project.view.mako.
 
@@ -370,6 +358,11 @@ def _view_private_project(node_to_use, link, user, api_key=None):
     parent = node_to_use.parent
     recent_logs = list(reversed(node_to_use.logs)[:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
+    view_flag = False
+    if link != "" and link in node_to_use.private_link:
+        view_flag = True
+    else:
+        view_flag = node_to_use.can_view(user, api_key)
     data = {
         'node': {
             'id': node_to_use._primary_key,
@@ -429,92 +422,8 @@ def _view_private_project(node_to_use, link, user, api_key=None):
             'is_contributor': node_to_use.is_contributor(user) or False,
             'can_edit': (node_to_use.can_edit(user, api_key)
                                 and not node_to_use.is_registration) or False,
-            'can_view': True,
+            'can_view': view_flag,
             'is_watching': user.is_watching(node_to_use) if user and not user == None else False
-        }
-    }
-    return data
-
-
-def _view_project(node_to_use, user, api_key=None):
-    '''Build a JSON object containing everything needed to render
-    project.view.mako.
-
-    '''
-    pw = node_to_use.get_wiki_page('home')
-    if pw:
-        wiki_home = pw.html
-        if len(wiki_home) > 500:
-            wiki_home = BeautifulSoup(wiki_home[:500] + '...', "html.parser")
-        else:
-            wiki_home = BeautifulSoup(wiki_home)
-    else:
-        wiki_home = '<p><em>No wiki content</em></p>'
-    parent = node_to_use.parent
-    recent_logs = list(reversed(node_to_use.logs)[:10])
-    recent_logs_dicts = [log.serialize() for log in recent_logs]
-    link = ''
-    data = {
-        'node': {
-            'id': node_to_use._primary_key,
-            'title': node_to_use.title,
-            'category': node_to_use.project_or_component,
-            'description': node_to_use.description,
-            'wiki_home': wiki_home,
-            'url': node_to_use.url,
-            'api_url': node_to_use.api_url,
-            'absolute_url': node_to_use.absolute_url,
-            'display_absolute_url': node_to_use.display_absolute_url,
-            'citations': {
-                'apa': node_to_use.citation_apa,
-                'mla': node_to_use.citation_mla,
-                'chicago': node_to_use.citation_chicago,
-            },
-            'is_public': node_to_use.is_public,
-            'date_created': node_to_use.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
-            'date_modified': node_to_use.logs[-1].date.strftime('%m/%d/%Y %I:%M %p UTC') if node_to_use.logs else '',
-
-            'tags': [tag._primary_key for tag in node_to_use.tags],
-            'children': bool(node_to_use.nodes),
-            'children_ids': [str(child._primary_key) for child in node_to_use.nodes],
-            'is_registration': node_to_use.is_registration,
-            'registered_from_url': node_to_use.registered_from.url if node_to_use.is_registration else '',
-            'registered_date': node_to_use.registered_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_registration else '',
-            'registered_meta': [
-                {
-                    'name_no_ext': from_mongo(meta),
-                    'name_clean': clean_template_name(meta),
-                }
-                for meta in node_to_use.registered_meta or []
-            ],
-            'registration_count': len(node_to_use.registration_list),
-
-            'is_fork': node_to_use.is_fork,
-            'forked_from_id': node_to_use.forked_from._primary_key if node_to_use.is_fork else '',
-            'forked_from_display_absolute_url': node_to_use.forked_from.display_absolute_url if node_to_use.is_fork else '',
-            'forked_date': node_to_use.forked_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_fork else '',
-            'fork_count': len(node_to_use.fork_list),
-
-            'watched_count': len(node_to_use.watchconfig__watched),
-            'logs': recent_logs_dicts,
-            'private_link': node_to_use.private_link,
-            'link': link
-        },
-        'parent': {
-            'id': parent._primary_key if parent else '',
-            'title': parent.title if parent else '',
-            'url': parent.url if parent else '',
-            'api_url': parent.api_url if parent else '',
-            'absolute_url':  parent.absolute_url if parent else '',
-            'is_public': parent.is_public if parent else '',
-            'is_contributor': parent.is_contributor(user) if parent else ''
-        },
-        'user': {
-            'is_contributor': node_to_use.is_contributor(user),
-            'can_edit': (node_to_use.can_edit(user, api_key)
-                                and not node_to_use.is_registration),
-            'can_view': node_to_use.can_view(user, api_key),
-            'is_watching': user.is_watching(node_to_use) if user else False
         }
     }
     return data
@@ -649,7 +558,6 @@ def get_registrations(*args, **kwargs):
     registrations = node_to_use.node__registrations
     return _render_nodes(registrations)
 
-@must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 def project_generate_private_link_post(*args, **kwargs):

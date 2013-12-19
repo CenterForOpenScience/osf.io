@@ -20,7 +20,7 @@ from framework.git.exceptions import FileNotModified
 from framework.auth import get_current_user, get_api_key
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
-from website.project.views.node import _view_project, _view_private_project
+from website.project.views.node import _view_project
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from website.project.model import NodeFile
@@ -67,10 +67,7 @@ def get_files(*args, **kwargs):
     rv = _get_files(filetree, parent_id, 0, user, link)
     rv['info'] = json.dumps(rv['info'])
     if not kwargs.get('dash', False):
-        if link != "" and link in node_to_use.private_link:
-            rv.update(_view_private_project(node_to_use, link, user))
-        else:
-            rv.update(_view_project(node_to_use, user))
+        rv.update(_view_project(node_to_use, user, link))
     return rv
 
 
