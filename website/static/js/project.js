@@ -77,7 +77,7 @@ $(function(){
         var data_to_send={
             'private_link': me.attr("data-link")
         };
-        bootbox.confirm('Remove ' + name + ' from contributor list?', function(result) {
+        bootbox.confirm('Are you sure to remove this private link?', function(result) {
             if (result) {
                 $.ajax({
                     type: "POST",
