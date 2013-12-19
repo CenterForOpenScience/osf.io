@@ -7,12 +7,10 @@
 
             <div class="modal-body">
 
-                <div data-bind="if:page()=='which'">
+                <div >
 
                     <div>
-                        Generating Private Link
-                        <span data-bind="text:addingSummary()"></span>
-                        to component
+                        Generating Private Link to Component
                         <span data-bind="text:title"></span>.
                     </div>
 

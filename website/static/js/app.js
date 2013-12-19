@@ -444,15 +444,7 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
     self.title = title;
     self.parentId = parentId;
     self.parentTitle = parentTitle;
-
-    self.page = ko.observable('which');
-    self.pageTitle = ko.computed(function() {
-        return {
-            which: 'Generate New Private Link'
-        }[self.page()];
-    });
-
-    self.selection = ko.observableArray();
+    self.pageTitle = 'Generate New Private Link';
     self.errorMsg = ko.observable('');
 
     self.nodes = ko.observableArray([]);
@@ -468,24 +460,6 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
         }
     );
 
-    self.selectWhich = function() {
-        self.page('which');
-    };
-
-    self.addAll = function() {
-        $.each(self.results(), function(idx, result) {
-            if (self.selection().indexOf(result) == -1) {
-                self.add(result);
-            }
-        });
-    };
-
-    self.removeAll = function() {
-        $.each(self.selection(), function(idx, selected) {
-            self.remove(selected);
-        });
-    };
-
     self.cantSelectNodes = function() {
         return self.nodesToChange().length == self.nodes().length;
     };
@@ -499,22 +473,6 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
     self.deselectNodes = function() {
         self.nodesToChange([]);
     };
-
-    self.selected = function(data) {
-        for (var idx=0; idx < self.selection().length; idx++) {
-            if (data.id == self.selection()[idx].id)
-                return true;
-        }
-        return false;
-    };
-
-
-    self.addingSummary = ko.computed(function() {
-        var names = $.map(self.selection(), function(result) {
-            return result.fullname
-        });
-        return names.join(', ');
-    });
 
     self.submit = function() {
         $.ajax(
@@ -536,8 +494,6 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
     };
 
     self.clear = function() {
-        self.page('which');
-        self.selection([]);
         self.nodesToChange([]);
     };
 
