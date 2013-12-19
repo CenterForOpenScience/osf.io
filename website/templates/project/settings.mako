@@ -17,7 +17,7 @@
             % endif
                 >
             <a class="remove-private-link btn btn-default" data-link="${link}">-</a>
-            <a class="name" style="">${node['url']}?key=${link}/</a>
+            <a class="link-name" >${node['url']}?key=${link}/</a>
 
         </li>
     % endfor
@@ -69,7 +69,7 @@
             }
          });
     });
-    
+
     $('#delete-node').on('click', function() {
         var key = randomString();
         bootbox.prompt(

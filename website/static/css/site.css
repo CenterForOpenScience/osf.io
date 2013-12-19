@@ -919,3 +919,7 @@ h1.unavailable {
     overflow:hidden;
     width:100%;
 }
+
+.link-name{
+    margin-left: 15px;
+}
