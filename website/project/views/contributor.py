@@ -22,6 +22,7 @@ def get_node_contributors_abbrev(*args, **kwargs):
     user = get_current_user()
     api_key = get_api_key()
     node_to_use = kwargs['node'] or kwargs['project']
+    link = request.args.get('key', '').strip('/')
 
     max_count = kwargs.get('max_count', 3)
     if 'user_ids' in kwargs:
@@ -31,9 +32,9 @@ def get_node_contributors_abbrev(*args, **kwargs):
         ]
     else:
         users = node_to_use.contributors
-
-    if not node_to_use.can_view(user, api_key):
-        raise HTTPError(http.FORBIDDEN)
+    if not (link != "" and link in node_to_use.private_link):
+        if not node_to_use.can_view(user, api_key):
+            raise HTTPError(http.FORBIDDEN)
 
     contributors = []
 

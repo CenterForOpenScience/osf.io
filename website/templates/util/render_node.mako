@@ -4,7 +4,7 @@
 
         <h4 class="list-group-item-heading">
             <span class="overflow" style="display:inline-block;">
-            <a href="${summary['url']}">${summary['title']}</a>
+            <a href="${summary['url']}?key=${node['link']}">${summary['title']}</a>
             % if summary['is_registration']:
                 | Registered: ${summary['registered_date']}
             % endif

@@ -351,19 +351,18 @@ def view_project(*args, **kwargs):
 #    else:
 #        raise HTTPError(http.FORBIDDEN)
 
-@must_have_session_auth # returns user or api_node
-@must_be_valid_project # returns project
-@must_be_contributor
-@must_not_be_registration
-def add_private_link(*args, **kwargs):
-    node_to_use = kwargs['node'] or kwargs['project']
-    link = node_to_use.generate_private_link()
-    return json.dumps(link)
+#@must_have_session_auth # returns user or api_node
+#@must_be_valid_project # returns project
+#@must_be_contributor
+#@must_not_be_registration
+#def add_private_link(*args, **kwargs):
+#    node_to_use = kwargs['node'] or kwargs['project']
+#    link = node_to_use.generate_private_link()
+#    return json.dumps(link)
 
 @must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project
 @must_be_contributor
-@must_not_be_registration
 def remove_private_link(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     link = request.json['private_link']
@@ -609,8 +608,9 @@ def get_summary(*args, **kwargs):
     api_key = get_api_key()
     rescale_ratio = kwargs.get('rescale_ratio')
     node_to_use = kwargs['node'] or kwargs['project']
+    link = request.args.get('key', '').strip('/')
 
-    if node_to_use.can_view(user, api_key):
+    if (link != "" and link in node_to_use.private_link) or node_to_use.can_view(user, api_key):
         summary = {
             'can_view': True,
             'id': node_to_use._primary_key,

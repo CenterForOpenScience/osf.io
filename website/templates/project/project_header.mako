@@ -15,9 +15,9 @@
 
             <div class="col-md-8 cite-container">
                 %if parent['id']:
-                    % if parent['is_public'] or parent['is_contributor']:
+                    % if (node['link'] !='' and node['link'] in node['private_link']) or parent['is_public'] or parent['is_contributor']:
                         <h1 class="node-parent-title">
-                            <a href="${parent['absolute_url']}">${parent['title']}</a> /
+                            <a href="${parent['url']}?key=${node['link']}">${parent['title']}</a> /
                         </h1>
                     % else:
                          <h1 class="node-parent-title unavailable">

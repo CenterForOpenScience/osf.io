@@ -519,7 +519,6 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
     });
 
     self.submit = function() {
-        console.log("1");
         $.ajax(
             nodeApiUrl + 'generatePrivateLink/',
             {
