@@ -147,10 +147,11 @@ def project_wiki_page(*args, **kwargs):
             'title': child.title,
             'category': child.category,
             'pages': child.wiki_pages_current.keys() if child.wiki_pages_current else [],
+            'link': link,
         }
         for child in node_to_use.nodes
         if not child.is_deleted
-            and child.can_view(user, api_key)
+            and ((link != "" and link in child.private_link) or child.can_view(user, api_key))
     ]
 
     rv = {

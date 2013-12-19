@@ -6,7 +6,7 @@
 
         % for k in pages_current:
             <li>
-                <a href="/${node['id']}/wiki/${k}">${k}</a>
+                <a href="/${node['id']}/wiki/${k}/?key=${node['link']}">${k}</a>
             </li>
         % endfor
 
@@ -16,12 +16,12 @@
 
             % for child in toc:
                 <li class="nav-header">
-                    <a href="/${node['id']}/node/${child['id']}/wiki/home">${child['title']} (${child['category']})</a>
+                    <a href="/${node['id']}/node/${child['id']}/wiki/home/?key=${child['link']}">${child['title']} (${child['category']})</a>
                     <ul style="list-style-type: none;">
                         % for k in child['pages']:
                             % if k != 'home':
                                 <li class="">
-                                    <a href="/${node_id}/node/${child['id']}/wiki/${k}">${k}</a>
+                                    <a href="/${node_id}/node/${child['id']}/wiki/${k}/?key=${child['link']}">${k}</a>
                                 </li>
                             % endif
                         % endfor
