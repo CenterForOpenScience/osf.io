@@ -71,7 +71,7 @@ NodeActions.addNodeToProject = function(node, project) {
 };
 
 $(function(){
-    
+
     $(".remove-private-link").on("click",function(){
         var me = $(this);
         var data_to_send={
