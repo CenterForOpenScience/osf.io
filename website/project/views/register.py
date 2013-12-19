@@ -47,7 +47,7 @@ def node_register_template_page(*args, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
-
+    link = kwargs['link']
     template_name = kwargs['template']\
         .replace(' ', '_')
 
@@ -78,7 +78,7 @@ def node_register_template_page(*args, **kwargs):
         'registered': registered,
         'payload': payload,
     }
-    rv.update(_view_project(node_to_use, user))
+    rv.update(_view_project(node_to_use, user, link))
     return rv
 
 

@@ -96,7 +96,13 @@
             % if node['is_registration'] and node['registered_meta']:
                 <br />Registration Supplement:
                 % for meta in node['registered_meta']:
-                    <a href="${node['url']}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
+                    <a
+                        %if node['link']:
+                           href="${node['url']}register/${meta['name_no_ext']}?key=${node['link']}"
+                       %else:
+                           href="${node['url']}register/${meta['name_no_ext']}"
+                       %endif
+                            >${meta['name_clean']}</a>
                 % endfor
             % endif
             <br />Date Created:
