@@ -18,6 +18,7 @@
                     % if (node['link'] !='' and node['link'] in node['private_link']) or parent['is_public'] or parent['is_contributor']:
                         <h1 class="node-parent-title">
                             <a href="${parent['url']}?key=${node['link']}">${parent['title']}</a> /
+
                         </h1>
                     % else:
                          <h1 class="node-parent-title unavailable">

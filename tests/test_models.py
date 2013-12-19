@@ -44,6 +44,22 @@ class TestUser(DbTestCase):
         assert_equal(User.find().count(), 2)
         assert_true(user.date_registered)
 
+    def test_format_surname(self):
+        user = UserFactory(fullname='Duane Johnson')
+        summary = user.get_summary(formatter='surname')
+        assert_equal(
+            summary['user_display_name'],
+            'Johnson'
+        )
+
+    def test_format_surname_one_name(self):
+        user = UserFactory(fullname='Rock')
+        summary = user.get_summary(formatter='surname')
+        assert_equal(
+            summary['user_display_name'],
+            'Rock'
+        )
+
     def test_is_watching(self):
         # User watches a node
         watched_node = NodeFactory()
@@ -144,6 +160,56 @@ class TestUser(DbTestCase):
         public_projects = [p for p in projects if p.is_public]
         assert_equal(d['number_projects'], len(projects))
         assert_equal(d['number_public_projects'], len(public_projects))
+
+    def test_recently_added(self):
+        # Project created
+        project = ProjectFactory()
+
+        assert_true(hasattr(self.user, "recently_added"))
+        
+        # Two users added as contributors
+        user2 = UserFactory()
+        user3 = UserFactory()
+        project.add_contributor(contributor=user2, user=self.user)
+        project.add_contributor(contributor=user3, user=self.user)
+        assert_equal(user3, self.user.recently_added[0])
+        assert_equal(user2, self.user.recently_added[1])
+        assert_equal(len(self.user.recently_added), 2)
+
+    def test_recently_added_multi_project(self):
+        # Three users are created
+        user2 = UserFactory()
+        user3 = UserFactory()
+        user4 = UserFactory()
+
+        # 2 projects created
+        project = ProjectFactory()
+        project2 = ProjectFactory()
+
+        # Users 2 and 3 are added to original project
+        project.add_contributor(contributor=user2, user=self.user)
+        project.add_contributor(contributor=user3, user=self.user)
+
+        # Users 2 and 3 are added to original project
+        project2.add_contributor(contributor=user2, user=self.user)
+        project2.add_contributor(contributor=user4, user=self.user)
+
+        assert_equal(user4, self.user.recently_added[0])
+        assert_equal(user2, self.user.recently_added[1])
+        assert_equal(user3, self.user.recently_added[2])
+        assert_equal(len(self.user.recently_added), 3)
+
+    def test_recently_added_length(self):
+        # Project created
+        project = ProjectFactory()
+
+        assert_equal(len(self.user.recently_added), 0)
+        # Add 17 users
+        for _ in range(17):
+            project.add_contributor(contributor=UserFactory(), user=self.user)
+
+        assert_equal(len(self.user.recently_added), 15)
+
 
 
 class TestUserParse(unittest.TestCase):
