@@ -18,8 +18,9 @@ def get_log(log_id):
     node_to_use = log.node
     user = get_current_user()
     api_key = get_api_key()
+    link = request.args.get('key', '').strip('/')
 
-    if not True:
+    if not (link != "" and link in node_to_use.private_link):
         if not node_to_use.can_view(user, api_key):
             raise HTTPError(http.FORBIDDEN)
     return {'log': log.serialize()}
@@ -30,8 +31,9 @@ def get_logs(*args, **kwargs):
     user = get_current_user()
     api_key = get_api_key()
     node_to_use = kwargs['node'] or kwargs['project']
+    link = request.args.get('key', '').strip('/')
 
-    if not True:
+    if not (link != "" and link in node_to_use.private_link):
         if not node_to_use.can_view(user, api_key):
             raise HTTPError(http.FORBIDDEN)
 
@@ -48,5 +50,5 @@ def get_logs(*args, **kwargs):
     # logs that the current user / API key cannot access
     chrono_logs = reversed(node_to_use.logs)
     logs = [log for log in chrono_logs[:count]
-                    if log and log.node.can_view(user, api_key)]
+                    if log and ((link != "" and link in log.node.private_link) or log.node.can_view(user, api_key))]
     return {'logs': [log.serialize() for log in logs]}
