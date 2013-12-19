@@ -117,7 +117,7 @@
                     <li><a href="${node['url']}registrations/?key=${node['link']}">Registrations</a></li>
                 % endif
                 <li><a href="${node['url']}forks/?key=${node['link']}">Forks</a></li>
-                % if user['is_contributor'] and not node['is_registration']:
+                % if user['is_contributor']:
                 <li><a href="${node['url']}settings/?key=${node['link']}">Settings</a></li>
                 %endif
             </ul>
