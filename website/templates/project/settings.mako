@@ -10,7 +10,7 @@
     % endif
 <div class="col-md-6" id="linkScope">
     <button id="generate-private-link" class="private-link" data-toggle="modal" href="#private-link">Generate Private Link</button>
-    % for link in node['private_link']:
+    % for link in node['private_links']:
         <li
             % if user['can_edit']:
                class="contributor-list-item list-group-item"

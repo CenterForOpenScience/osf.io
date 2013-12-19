@@ -304,7 +304,7 @@ class Node(GuidStoredObject):
 
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
-    private_link = fields.StringField(list=True)
+    private_links = fields.StringField(list=True)
 
     # TODO: move these to NodeFile
     files_current = fields.DictionaryField()
@@ -987,12 +987,12 @@ class Node(GuidStoredObject):
         if link == '':
             link = str(uuid.uuid4())
 
-        self.private_link.append(link)
+        self.private_links.append(link)
         self.save()
         return link
 
     def remove_private_link(self, link, save=True):
-        self.private_link.remove(link)
+        self.private_links.remove(link)
         self.save()
 
     def add_log(self, action, params, user, api_key=None, log_date=None, save=True):
