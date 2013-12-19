@@ -287,11 +287,14 @@ class TestRegistrations(DbTestCase):
         )
 
     def test_cant_be_deleted(self):
-        # Goes to project's page
-        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
-        # Settings is not in the project navigation bar
-        subnav = res.html.select('#projectSubnav')[0]
-        assert_not_in('Settings', subnav.text)
+        # Goes to settings page
+        res = self.app.get(
+            '{}settings/'.format(self.original.url),
+            auth=self.auth
+        ).maybe_follow()
+        #check the delete button doesn't show up
+        delete = res.html.find_all('button', id='delete-node')
+        assert_equal(len(delete), 0)
 
     def test_sees_registration_templates(self):
 
