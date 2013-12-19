@@ -15,9 +15,15 @@
 
             <div class="col-md-8 cite-container">
                 %if parent['id']:
-                    % if (node['link'] !='' and node['link'] in node['private_links']) or parent['is_public'] or parent['is_contributor']:
+                    % if node['link'] in node['private_links'] or parent['is_public'] or parent['is_contributor']:
                         <h1 class="node-parent-title">
-                            <a href="${parent['url']}?key=${node['link']}">${parent['title']}</a> /
+                            <a
+                               %if node['link']:
+                                   href="${parent['url']}?key=${node['link']}"
+                               %else:
+                                   href="${parent['url']}"
+                               %endif
+                                    >${parent['title']}</a> /
 
                         </h1>
                     % else:
@@ -110,17 +116,31 @@
 
         <nav id="projectSubnav" class="navbar navbar-default ">
             <ul class="nav navbar-nav">
-                <li><a href="${node['url']}?key=${node['link']}">Dashboard</a></li>
-                <li><a href="${node['url']}wiki/?key=${node['link']}">Wiki</a></li>
-                <li><a href="${node['url']}statistics/?key=${node['link']}">Statistics</a></li>
-                <li><a href="${node['url']}files/?key=${node['link']}">Files</a></li>
-                % if not node['is_registration']:
-                    <li><a href="${node['url']}registrations/?key=${node['link']}">Registrations</a></li>
+                % if node['link']:
+                    <li><a href="${node['url']}?key=${node['link']}">Dashboard</a></li>
+                    <li><a href="${node['url']}wiki/?key=${node['link']}">Wiki</a></li>
+                    <li><a href="${node['url']}statistics/?key=${node['link']}">Statistics</a></li>
+                    <li><a href="${node['url']}files/?key=${node['link']}">Files</a></li>
+                    % if not node['is_registration']:
+                        <li><a href="${node['url']}registrations/?key=${node['link']}">Registrations</a></li>
+                    % endif
+                    <li><a href="${node['url']}forks/?key=${node['link']}">Forks</a></li>
+                    % if user['is_contributor']:
+                    <li><a href="${node['url']}settings/?key=${node['link']}">Settings</a></li>
+                    % endif
+                % else:
+                    <li><a href="${node['url']}">Dashboard</a></li>
+                    <li><a href="${node['url']}wiki/">Wiki</a></li>
+                    <li><a href="${node['url']}statistics/">Statistics</a></li>
+                    <li><a href="${node['url']}files/">Files</a></li>
+                    % if not node['is_registration']:
+                        <li><a href="${node['url']}registrations/">Registrations</a></li>
+                    % endif
+                    <li><a href="${node['url']}forks/">Forks</a></li>
+                    % if user['is_contributor']:
+                    <li><a href="${node['url']}settings/">Settings</a></li>
+                    % endif
                 % endif
-                <li><a href="${node['url']}forks/?key=${node['link']}">Forks</a></li>
-                % if user['is_contributor']:
-                <li><a href="${node['url']}settings/?key=${node['link']}">Settings</a></li>
-                %endif
             </ul>
         </nav>
     </header>
