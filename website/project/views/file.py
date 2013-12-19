@@ -40,7 +40,7 @@ def get_file_tree(node_to_use, user, link=""):
         if not node.is_deleted:
             tree.append(get_file_tree(node, user))
 
-    if (link != "" and link in node_to_use.private_links) or node_to_use.can_view(user):
+    if link in node_to_use.private_links or node_to_use.can_view(user):
             for i,v in node_to_use.files_current.items():
                 v = NodeFile.load(v)
                 tree.append(v)

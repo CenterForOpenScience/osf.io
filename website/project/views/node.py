@@ -359,7 +359,7 @@ def _view_project(node_to_use, user, link='', api_key=None):
     recent_logs = list(reversed(node_to_use.logs)[:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
     view_flag = False
-    if link != "" and link in node_to_use.private_links:
+    if link in node_to_use.private_links:
         view_flag = True
     else:
         view_flag = node_to_use.can_view(user, api_key)
@@ -503,7 +503,7 @@ def get_summary(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     link = request.args.get('key', '').strip('/')
 
-    if (link != "" and link in node_to_use.private_links) or node_to_use.can_view(user, api_key):
+    if link in node_to_use.private_links or node_to_use.can_view(user, api_key):
         summary = {
             'can_view': True,
             'id': node_to_use._primary_key,

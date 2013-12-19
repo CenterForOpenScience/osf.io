@@ -102,7 +102,7 @@ def must_be_contributor(fn):
 
         api_node = kwargs.get('api_node')
 
-        if not (link != "" and link in node_to_use.private_links):
+        if link not in node_to_use.private_links:
             if user is None:
                 return redirect('/login/?next={0}'.format(request.path))
             if not node_to_use.is_contributor(user) \
@@ -147,7 +147,7 @@ def must_be_contributor_or_public(fn):
             kwargs['api_node'] = api_node
 
         if not node_to_use.is_public:
-            if not (link != "" and link in node_to_use.private_links):
+            if link not in node_to_use.private_links:
                 if user is None:
                     return redirect('/login/?next={0}'.format(request.path))
                 if not node_to_use.is_contributor(user) \

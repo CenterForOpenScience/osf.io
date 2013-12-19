@@ -20,7 +20,7 @@ def get_log(log_id):
     api_key = get_api_key()
     link = request.args.get('key', '').strip('/')
 
-    if not (link != "" and link in node_to_use.private_links):
+    if link not in node_to_use.private_links:
         if not node_to_use.can_view(user, api_key):
             raise HTTPError(http.FORBIDDEN)
     return {'log': log.serialize()}
@@ -33,7 +33,7 @@ def get_logs(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     link = request.args.get('key', '').strip('/')
 
-    if not (link != "" and link in node_to_use.private_links):
+    if link not in node_to_use.private_links:
         if not node_to_use.can_view(user, api_key):
             raise HTTPError(http.FORBIDDEN)
 
