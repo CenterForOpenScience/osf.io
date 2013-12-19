@@ -336,8 +336,6 @@ def view_project(*args, **kwargs):
     link = request.args.get('key', '').strip('/')
     if link != "" and link in node_to_use.private_link:
         return _view_private_project(node_to_use, link, user)
-    #elif link != "" and link not in node_to_use.private_link:
-    #    raise HTTPError(http.FORBIDDEN)
     else:
         return _view_project(node_to_use, user)
 
