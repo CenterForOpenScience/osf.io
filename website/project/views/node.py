@@ -358,11 +358,6 @@ def _view_project(node_to_use, user, link='', api_key=None):
     parent = node_to_use.parent
     recent_logs = list(reversed(node_to_use.logs)[:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
-    view_flag = False
-    if link in node_to_use.private_links:
-        view_flag = True
-    else:
-        view_flag = node_to_use.can_view(user, api_key)
     data = {
         'node': {
             'id': node_to_use._primary_key,
@@ -422,7 +417,7 @@ def _view_project(node_to_use, user, link='', api_key=None):
             'is_contributor': node_to_use.is_contributor(user) or False,
             'can_edit': (node_to_use.can_edit(user, api_key)
                                 and not node_to_use.is_registration) or False,
-            'can_view': view_flag,
+            'can_view': node_to_use.can_view(user, link, api_key),
             'is_watching': user.is_watching(node_to_use) if user and not user == None else False
         }
     }
@@ -503,7 +498,7 @@ def get_summary(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     link = request.args.get('key', '').strip('/')
 
-    if link in node_to_use.private_links or node_to_use.can_view(user, api_key):
+    if node_to_use.can_view(user, link, api_key):
         summary = {
             'can_view': True,
             'id': node_to_use._primary_key,

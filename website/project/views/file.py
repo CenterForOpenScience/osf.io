@@ -40,7 +40,7 @@ def get_file_tree(node_to_use, user, link=""):
         if not node.is_deleted:
             tree.append(get_file_tree(node, user))
 
-    if link in node_to_use.private_links or node_to_use.can_view(user):
+    if node_to_use.can_view(user, link):
             for i,v in node_to_use.files_current.items():
                 v = NodeFile.load(v)
                 tree.append(v)
@@ -121,7 +121,7 @@ def _get_files(filetree, parent_id, check, user, link=""):
         not filetree[0].is_registration
     ).lower()
     itemParent['can_view'] \
-        = str((link != "" and link in filetree[0].private_links) or filetree[0].can_view(user)).lower()
+        = str(filetree[0].can_view(user, link)).lower()
     if itemParent['can_view'] == 'false':
         itemParent['name'] = 'Private Component'
     if check == 0:

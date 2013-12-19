@@ -350,8 +350,11 @@ class Node(GuidStoredObject):
             or (bool(user) and user == self.creator)
         )
 
-    def can_view(self, user, api_key=None):
-        return self.is_public or self.can_edit(user, api_key)
+    def can_view(self, user, link='', api_key=None):
+        if link not in self.private_links:
+            return self.is_public or self.can_edit(user, api_key)
+        else:
+            return True
 
     def save(self, *args, **kwargs):
 
