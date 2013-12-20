@@ -33,3 +33,7 @@ USE_CDN_FOR_CLIENT_LIBS = False
 
 # Example of extending default settings
 # defaults.IMG_FMTS += ["pdf"]
+
+PIWIK_HOST = 'http://localhost:8889'
+PIWIK_SITE_ID = 1
+PIWIK_ADMIN_TOKEN = ''
