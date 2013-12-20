@@ -179,7 +179,6 @@ def list_file_paths(*args, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
-    link = kwargs['link']
 
     return {'files': [
         NodeFile.load(fid).path
