@@ -657,6 +657,16 @@ class TestProject(DbTestCase):
         assert_not_in(user2._id, [contrib.get('id') for contrib in self.project.contributor_list])
         assert_equal(self.project.logs[-1].action, "contributor_removed")
 
+    def test_add_private_link(self):
+        link = self.project.add_private_link()
+        assert_in(link, self.project.private_links)
+
+    def test_remove_ptivate_link(self):
+        link = self.project.add_private_link()
+        assert_in(link, self.project.private_links)
+        self.project.remove_private_link(link)
+        assert_not_in(link, self.project.private_links)
+
     def test_remove_nonregistered_contributor(self):
         nr_user = {
             'email': 'foo@bar.com',
@@ -712,11 +722,13 @@ class TestProject(DbTestCase):
         contributor = UserFactory()
         other_guy = UserFactory()
         self.project.add_contributor(contributor=contributor, user=self.user)
+        link = self.project.add_private_link()
         self.project.save()
         # Only creator and contributor can view
         assert_true(self.project.can_view(self.user))
         assert_true(self.project.can_view(contributor))
         assert_false(self.project.can_view(other_guy))
+        assert_true(self.project.can_view(other_guy, link))
 
     def test_can_view_public(self):
         # Create contributor and noncontributor
@@ -1208,7 +1220,6 @@ class TestWatchConfig(DbTestCase):
         assert_true(config.digest)
         assert_false(config.immediate)
         assert_true(config.node._id)
-
 
 class TestUnregisteredUser(unittest.TestCase):
     def test_factory(self):
