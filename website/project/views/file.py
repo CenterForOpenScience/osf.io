@@ -155,10 +155,16 @@ def _get_files(filetree, parent_id, check, user, link=""):
                     size(tmp.size, system=alternative)
                 ]
                 item['size'] = str(tmp.size)
-                item['url'] = 'files/'.join([
-                    str(filetree[0].deep_url),
-                    item['name'] + '/'
-                ])
+                if link:
+                    item['url'] = 'files/'.join([
+                        str(filetree[0].deep_url),
+                        item['name'] + '/?key='+link
+                    ])
+                else:
+                    item['url'] = 'files/'.join([
+                        str(filetree[0].deep_url),
+                        item['name'] + '/'
+                    ])
                 item['dateModified'] = [
                     time.mktime(tmp.date_modified.timetuple()),
                     tmp.date_modified.strftime('%Y/%m/%d %I:%M %p')
@@ -173,6 +179,7 @@ def list_file_paths(*args, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
+    link = kwargs['link']
 
     return {'files': [
         NodeFile.load(fid).path
@@ -287,7 +294,7 @@ def upload_file_public(*args, **kwargs):
 def view_file(*args, **kwargs):
     user = kwargs['user']
     node_to_use = kwargs['node'] or kwargs['project']
-
+    link = kwargs['link']
     file_name = kwargs['fid']
     file_name_clean = file_name.replace('.', '_')
     renderer = 'default'
@@ -353,7 +360,7 @@ def view_file(*args, **kwargs):
             'versions': versions,
 
         }
-        rv.update(_view_project(node_to_use, user))
+        rv.update(_view_project(node_to_use, user, link))
         return rv
 
     _, file_ext = os.path.splitext(file_path.lower())
@@ -413,7 +420,7 @@ def view_file(*args, **kwargs):
         'renderer': renderer,
         'versions': versions,
     }
-    rv.update(_view_project(node_to_use, user))
+    rv.update(_view_project(node_to_use, user, link))
     return rv
     # ).encode('utf-8', 'replace')
 
@@ -423,14 +430,21 @@ def download_file(*args, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
-
+    link = kwargs['link']
     vid = len(node_to_use.files_versions[filename.replace('.', '_')])
-
-    return redirect('{url}files/download/{fid}/version/{vid}/'.format(
-        url=node_to_use.api_url,
-        fid=filename,
-        vid=vid,
-    ))
+    if link:
+        return redirect('{url}files/download/{fid}/version/{vid}/?key={link}'.format(
+            url=node_to_use.api_url,
+            fid=filename,
+            vid=vid,
+            link=link,
+        ))
+    else:
+        return redirect('{url}files/download/{fid}/version/{vid}/'.format(
+            url=node_to_use.api_url,
+            fid=filename,
+            vid=vid,
+        ))
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
