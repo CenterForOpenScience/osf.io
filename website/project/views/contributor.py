@@ -67,6 +67,18 @@ def get_node_contributors_abbrev(*args, **kwargs):
     }
 
 
+def _add_contributor_json(user):
+
+    return {
+        'fullname': user.fullname,
+        'id': user._primary_key,
+        'gravatar': gravatar(
+            user, use_ssl=True,
+            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+        )
+    }
+
+
 def _jsonify_contribs(contribs):
 
     data = []
@@ -110,26 +122,14 @@ def get_contributors_from_parent(*args, **kwargs):
     if not node_to_use.can_view(user, api_key):
         raise HTTPError(http.FORBIDDEN)
 
-    contribs = []
-    for contrib in parent.contributors:
-        if contrib not in node_to_use.contributors:
-            contribs.append({
-                'fullname': contrib.fullname,
-                'id': contrib._primary_key,
-                'gravatar': gravatar(
-                    User.load(contrib._primary_key),
-                    use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,
-                )
-            })
-
-    #contribs = _jsonify_contribs([
-    #    contrib
-    #    for contrib in parent.contributor_list
-    #    if contrib not in node_to_use.contributor_list
-    #])
+    contribs = [
+        _add_contributor_json(contrib)
+        for contrib in parent.contributors
+        if contrib not in node_to_use.contributors
+    ]
 
     return {'contributors': contribs}
+
 
 @must_be_contributor
 def get_recently_added_contributors(*args, **kwargs):
@@ -141,26 +141,14 @@ def get_recently_added_contributors(*args, **kwargs):
     if not node_to_use.can_view(user, api_key):
         raise HTTPError(http.FORBIDDEN)
 
-    contribs = []
-    for contrib in user.recently_added:
-        if contrib._primary_key not in node_to_use.contributors:
-            contribs.append({
-                'fullname': contrib.fullname,
-                'id': contrib._primary_key,
-                'gravatar': gravatar(
-                    User.load(contrib._primary_key),
-                    use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,
-                )
-            })
-
-    #contribs = _jsonify_contribs([
-    #    {u'id': contrib._primary_key}
-    #    for contrib in user.recently_added
-    #    if contrib not in node_to_use.contributor_list
-    #])
+    contribs = [
+        _add_contributor_json(contrib)
+        for contrib in user.recently_added
+        if contrib not in node_to_use.contributors
+    ]
 
     return {'contributors': contribs}
+
 
 @must_have_session_auth
 @must_be_valid_project  # returns project
