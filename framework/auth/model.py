@@ -46,6 +46,9 @@ class User(GuidStoredObject):
     # Watched nodes are stored via a list of WatchConfigs
     watched = fields.ForeignField("WatchConfig", list=True, backref="watched")
 
+    # Recently added contributors stored via a list of users
+    recently_added = fields.ForeignField("user", list=True, backref="recently_added")
+
     # CSL names
     given_name = fields.StringField()
     middle_names = fields.StringField()
