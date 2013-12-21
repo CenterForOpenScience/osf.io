@@ -72,7 +72,6 @@ NodeActions.addNodeToProject = function(node, project) {
 
 $(function(){
     $('#newComponent form').on('submit', function(e) {
-          e.preventDefault();
 
           $("#add-component-submit")
               .attr("disabled", "disabled")
@@ -85,6 +84,8 @@ $(function(){
               $("#add-component-submit")
                       .removeAttr("disabled","disabled")
                       .text("OK");
+
+              e.preventDefault();
           }
           else if ($(e.target).find("#title").val().length>200){
               $("#alert").text("The new component title cannot be more than 200 characters.");
@@ -92,26 +93,30 @@ $(function(){
               $("#add-component-submit")
                       .removeAttr("disabled","disabled")
                       .text("OK");
+
+              e.preventDefault();
+
           }
-          else{
-              $.ajax({
-                   url: $(e.target).attr("action"),
-                   type:"POST",
-                   timeout:60000,
-                   data:$(e.target).serialize()
-              }).success(function(){
-                  location.reload();
-              }).fail(function(jqXHR, textStatus, errorThrown){
-                    if(textStatus==="timeout") {
-                        $("#alert").text("Add component timed out"); //Handle the timeout
-                    }else{
-                        $("#alert").text('Add component failed');
-                    }
-                    $("#add-component-submit")
-                      .removeAttr("disabled","disabled")
-                      .text("OK");
-              });
-          }
+//          else{
+//              $.ajax({
+//                   url: $(e.target).attr("action"),
+//                   type:"POST",
+//                   timeout:60000,
+//                   data:$(e.target).serialize()
+//              }).success(function(){
+//                  location.reload();
+//              }).fail(function(jqXHR, textStatus, errorThrown){
+//                    if(textStatus==="timeout") {
+//                        $("#alert").text("Add component timed out"); //Handle the timeout
+//                    }else{
+//                        $("#alert").text('Add component failed');
+//                    }
+//                    $("#add-component-submit")
+//                      .removeAttr("disabled","disabled")
+//                      .text("OK");
+//              });
+//          }
+
      });
 });
 
@@ -238,6 +243,26 @@ $(document).ready(function() {
     $('#publicButton').on('click', function() {
         var url = $(this).data("target");
         setPermissions(url, 'public');
+    });
+
+    // Widgets
+
+    $('.widget-disable').on('click', function() {
+
+        var $this = $(this);
+
+        $.ajax({
+            url: $this.attr('href'),
+            type: 'POST',
+            contentType: 'application/json',
+            dataType: 'json',
+            complete: function() {
+                window.location = '/' + nodeId + '/';
+            }
+        });
+
+        return false;
+
     });
 
 });

@@ -63,7 +63,12 @@ def project_new_post(*args, **kwargs):
     form = NewProjectForm(request.form)
     if form.validate():
         project = new_project(form.title.data, form.description.data, user)
-        return redirect(project.url)
+        status.push_status_message(
+            'Welcome to your new {category}! Please select and configure your add-ons below.'.format(
+                category=project.project_or_component,
+            )
+        )
+        return {}, 201, None, project.url + 'settings/'
     else:
         push_errors_to_status(form.errors)
     return {}, http.BAD_REQUEST
@@ -81,15 +86,20 @@ def project_new_node(*args, **kwargs):
     project = kwargs['project']
     user = kwargs['user']
     if form.validate():
-        new_node(
+        node = new_node(
             title=form.title.data,
             user=user,
             category=form.category.data,
             project=project,
         )
+        status.push_status_message(
+            'Welcome to your new {category}! Please select and configure your add-ons below.'.format(
+                category=node.project_or_component,
+            )
+        )
         return {
             'status': 'success',
-        }, 201, None, project.url
+        }, 201, None, node.url + 'settings/'
     else:
         push_errors_to_status(form.errors)
     raise HTTPError(http.BAD_REQUEST, redirect_url=project.url)
@@ -141,16 +151,84 @@ def node_forks(*args, **kwargs):
     node_to_use = node or project
     return _view_project(node_to_use, user)
 
+
 @must_be_valid_project
 @must_be_contributor # returns user, project
-def node_setting(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
+def node_setting(**kwargs):
+
     user = get_current_user()
+    node = kwargs.get('node') or kwargs.get('project')
 
-    node_to_use = node or project
+    rv = _view_project(node, user)
 
-    return _view_project(node_to_use, user)
+    addon_data = {}
+    addon_enabled_settings = []
+
+    for addon_name in node.addons_enabled:
+
+        registered_addon = settings.ADDONS_AVAILABLE_DICT[addon_name]
+
+        if registered_addon.schema is None or registered_addon.settings_model is None:
+            continue
+
+        Schema = registered_addon.settings_model
+        backref_key = '__'.join([Schema._name, 'addons'])
+
+        addons = getattr(node, backref_key)
+
+        if addons:
+
+            addon_data[addon_name] = {
+                'schema': json.dumps(registered_addon.schema),
+                'settings': addons[0].meta_json(),
+            }
+
+            addon_enabled_settings.append(addon_name)
+
+    rv['addon_settings'] = addon_data
+    rv['addon_categories'] = settings.ADDON_CATEGORIES
+
+    rv['addons_available'] = settings.ADDONS_AVAILABLE
+    rv['addons_enabled'] = node.addons_enabled
+    rv['addon_enabled_settings'] = addon_enabled_settings
+
+    return rv
+
+
+@must_be_contributor_or_public
+def node_choose_addons(**kwargs):
+
+    node = kwargs.get('node') or kwargs.get('project')
+
+    for addon, enabled in request.json.iteritems():
+
+        registered_addon = settings.ADDONS_AVAILABLE_DICT[addon]
+
+        if enabled:
+
+            Schema = registered_addon.settings_model
+            if Schema is None:
+                continue
+
+            if addon not in node.addons_enabled:
+                node.addons_enabled.append(addon)
+                node._order_addons()
+                node.save()
+
+            backref_key = '__'.join([Schema._name, 'addons'])
+            models = getattr(node, backref_key)
+            if not models:
+                model = Schema(node=node)
+                model.save()
+
+        else:
+
+            try:
+                node.addons_enabled.remove(addon)
+                node.save()
+            except ValueError:
+                pass
+
 
 ##############################################################################
 # View Project
@@ -324,30 +402,64 @@ def view_project(*args, **kwargs):
     return _view_project(node_to_use, user)
 
 
+def _render_addon(node):
+
+    widgets = {}
+    tabs = {}
+    icons = {}
+    js = []
+    css = []
+
+    for addon in node.addons_enabled:
+
+        registered_addon = settings.ADDONS_AVAILABLE_DICT[addon]
+        Schema = registered_addon.settings_model
+
+        if Schema is None:
+            continue
+
+        backref_key = '__'.join([Schema._name, 'addons'])
+        addons = getattr(node, backref_key)
+
+        if addons:
+
+            #try:
+            #    widgets[addon] = addons[0].render_widget()
+            #except NotImplementedError:
+            #    pass
+            widget = registered_addon.widget_json(addons[0])
+            if widget:
+                widgets[addon] = widget
+
+            try:
+                tabs[addon] = addons[0].render_tab()
+            except AttributeError:
+                pass
+
+            if registered_addon.icon:
+                icons[addon] = registered_addon.icon_url
+
+            js.extend(registered_addon.include_js.get('widget', []))
+            css.extend(registered_addon.include_css.get('widget', []))
+
+    return widgets, tabs, icons, js, css
+
+
 def _view_project(node_to_use, user, api_key=None):
-    '''Build a JSON object containing everything needed to render
+    """Build a JSON object containing everything needed to render
     project.view.mako.
 
-    '''
-    pw = node_to_use.get_wiki_page('home')
-    if pw:
-        wiki_home = pw.html
-        if len(wiki_home) > 500:
-            wiki_home = BeautifulSoup(wiki_home[:500] + '...', "html.parser")
-        else:
-            wiki_home = BeautifulSoup(wiki_home)
-    else:
-        wiki_home = '<p><em>No wiki content</em></p>'
+    """
     parent = node_to_use.parent
     recent_logs = list(reversed(node_to_use.logs)[:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
+    widgets, tabs, icons, js, css = _render_addon(node_to_use)
     data = {
         'node': {
             'id': node_to_use._primary_key,
             'title': node_to_use.title,
             'category': node_to_use.project_or_component,
             'description': node_to_use.description,
-            'wiki_home': wiki_home,
             'url': node_to_use.url,
             'api_url': node_to_use.api_url,
             'absolute_url': node_to_use.absolute_url,
@@ -399,7 +511,13 @@ def _view_project(node_to_use, user, api_key=None):
             'can_edit': (node_to_use.can_edit(user, api_key)
                                 and not node_to_use.is_registration),
             'is_watching': user.is_watching(node_to_use) if user else False
-        }
+        },
+        'addons_enabled': node_to_use.addons_enabled,
+        'addon_widgets': widgets,
+        'addon_tabs': tabs,
+        'addon_icons': icons,
+        'addon_widget_js': js,
+        'addon_widget_css': css,
     }
     return data
 
@@ -477,6 +595,8 @@ def get_summary(*args, **kwargs):
     rescale_ratio = kwargs.get('rescale_ratio')
     node_to_use = kwargs['node'] or kwargs['project']
 
+    widgets, tabs, icons, _, _ = _render_addon(node_to_use)
+
     if node_to_use.can_view(user, api_key):
         summary = {
             'can_view': True,
@@ -490,6 +610,8 @@ def get_summary(*args, **kwargs):
             'ua_count': None,
             'ua': None,
             'non_ua': None,
+            'icons': icons,
+            'addons_enabled': node_to_use.addons_enabled,
         }
         if rescale_ratio:
             ua_count, ua, non_ua = _get_user_activity(node_to_use, user, rescale_ratio)

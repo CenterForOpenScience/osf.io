@@ -25,7 +25,16 @@
                          </h1>
                     %endif
                 %endif
-                <h1 id="nodeTitleEditable" class="node-title">${node['title']}</h1>
+                <h1 class="node-title">
+                    <span class="addon-logos">
+                        % for addon in addons_enabled:
+                            % if addon in addon_icons:
+                                <img src="${addon_icons[addon]}" />
+                            % endif
+                        % endfor
+                    </span>
+                    <span id="nodeTitleEditable">${node['title']}</span>
+                </h1>
             </div><!-- end col-md-->
 
             <div class="col-md-4">
@@ -111,15 +120,21 @@
         <nav id="projectSubnav" class="navbar navbar-default ">
             <ul class="nav navbar-nav">
                 <li><a href="${node['url']}">Dashboard</a></li>
-                <li><a href="${node['url']}wiki/">Wiki</a></li>
+
+                <!-- Addon Tabs -->
+                % for addon in addons_enabled:
+                    % if addon in addon_tabs:
+                        <li>${addon_tabs[addon]}</li>
+                    % endif
+                % endfor
+
                 <li><a href="${node['url']}statistics/">Statistics</a></li>
-                <li><a href="${node['url']}files/">Files</a></li>
                 % if not node['is_registration']:
                     <li><a href="${node['url']}registrations/">Registrations</a></li>
                 % endif
-                <li><a href="${node['url']}forks/">Forks</a></li>
-                % if user['is_contributor'] and not node['is_registration']:
-                <li><a href="${node['url']}settings/">Settings</a></li>
+                    <li><a href="${node['url']}forks/">Forks</a></li>
+                % if user['is_contributor']:
+                    <li><a href="${node['url']}settings/">Settings</a></li>
                 %endif
             </ul>
         </nav>

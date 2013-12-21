@@ -245,6 +245,9 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, OsfWebRenderer('project.mako')),
 
+        # Create
+        Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('', render_mako_string)),
+
         Rule([
             '/project/<pid>/key_history/<kid>/',
             '/project/<pid>/node/<nid>/key_history/<kid>/',
@@ -255,12 +258,18 @@ def make_url_map(app):
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
         Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.mako')),
 
-        Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('project.mako')),
+        #Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('project.mako')),
 
         Rule([
             '/project/<pid>/settings/',
             '/project/<pid>/node/<nid>/settings/',
         ], 'get', project_views.node.node_setting, OsfWebRenderer('project/settings.mako')),
+
+        # TODO: Move to API routes below
+        Rule([
+            '/api/v1/project/<pid>/settings/addons/',
+            '/api/v1/project/<pid>/node/<nid>/settings/addons/',
+        ], 'post', project_views.node.node_choose_addons, json_renderer),
 
         # Remove
         Rule([

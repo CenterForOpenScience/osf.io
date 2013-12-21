@@ -4,6 +4,13 @@
 
         <h4 class="list-group-item-heading">
             <span class="overflow" style="display:inline-block;">
+            <span class="addon-logos">
+                % for addon in summary['addons_enabled']:
+                    % if addon in summary['icons']:
+                        <img src="${summary['icons'][addon]}" />
+                    % endif
+                % endfor
+            </span>
             <a href="${summary['url']}">${summary['title']}</a>
             % if summary['is_registration']:
                 | Registered: ${summary['registered_date']}

@@ -11,6 +11,9 @@ import urllib
 import urlparse
 import logging
 
+import glob
+import mimetypes
+
 import markdown
 import pytz
 from markdown.extensions import wikilinks
@@ -30,6 +33,13 @@ from framework import GuidStoredObject, Q
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
 
+from website.addons.base import init_addon
+
+#from website.addons.github.model.settings import AddonGitHubSettings
+#from website.addons.figshare.model.settings import AddonFigShareSettings
+#from website.addons.zotero.model.settings import AddonZoteroSettings
+#from website.addons.wiki.model.settings import AddonWikiSettings
+#from website.addons.files.model.settings import AddonFilesSettings
 
 def utc_datetime_to_timestamp(dt):
     return float(
@@ -262,6 +272,43 @@ class Tag(StoredObject):
         return '/search/?q=tags:{}'.format(self._id)
 
 
+class Addon(object):
+
+    def __init__(self, model, short_name, full_name, added_by_default, categories=None, schema=None):
+
+        self.model = model
+        self.short_name = short_name
+        self.full_name = full_name
+        self.added_by_default = added_by_default
+        self.categories = categories or []
+        self.schema = schema
+
+        self.backref_key = '__'.join([self.model._name, 'addons'])
+
+    def _is_image(self, filename):
+        mtype, _ = mimetypes.guess_type(filename)
+        return mtype and mtype.startswith('image')
+
+    @property
+    def icon(self):
+
+        try:
+            return self._icon
+        except:
+            static_path = os.path.join('website', 'addons', self.short_name, 'static')
+            static_files = glob.glob(os.path.join(static_path, 'comicon.*'))
+            image_files = [
+                os.path.split(filename)[1]
+                for filename in static_files
+                if self._is_image(filename)
+            ]
+            if len(image_files) == 1:
+                self._icon = image_files[0]
+            else:
+                self._icon = None
+            return self._icon
+
+
 class Node(GuidStoredObject):
 
     redirect_mode = 'proxy'
@@ -303,6 +350,9 @@ class Node(GuidStoredObject):
     description = fields.StringField()
     category = fields.StringField()
 
+    # AddonConfig settings
+    addons_enabled = fields.StringField(list=True)
+
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
 
@@ -343,12 +393,53 @@ class Node(GuidStoredObject):
     def can_view(self, user, api_key=None):
         return self.is_public or self.can_edit(user, api_key)
 
+    def _ensure_addons(self):
+
+        for addon in self.addons_enabled:
+
+            registered_addon = settings.ADDONS_AVAILABLE_DICT[addon]
+            Schema = registered_addon.settings_model
+            models = getattr(self, registered_addon.backref_key)
+            if not models:
+                model = Schema(node=self)
+                model.save()
+
+    def _order_addons(self):
+        """Ensure that addons in `addons_enabled` appear in the same order as
+        in `ADDONS_AVAILABLE`.
+
+        """
+        self.addons_enabled = [
+            addon.short_name
+            for addon in settings.ADDONS_AVAILABLE
+            if addon.short_name in self.addons_enabled
+        ]
+
     def save(self, *args, **kwargs):
-        rv = super(Node, self).save(*args, **kwargs)
-        # Only update Solr if at least one watched field has changed
-        if self.SOLR_UPDATE_FIELDS.intersection(rv['saved_fields']):
+
+        first_save = not self._is_loaded
+
+        saved_fields = super(Node, self).save(*args, **kwargs)
+
+        if first_save and not self.is_registration and not self.is_fork:
+            for addon in settings.ADDONS_AVAILABLE:
+                if addon.added_by_default and addon.short_name not in self.addons_enabled:
+                    self.addons_enabled.append(addon.short_name)
+            self._ensure_addons()
+
+        # Skip Solr update if private and unsaved, or private and privacy
+        # unchanged
+        if not self.is_public:
+            if first_save:
+                return
+            if 'is_public' not in saved_fields:
+                return
+        # Only update Solr if at least one stored field has changed
+        if self.SOLR_UPDATE_FIELDS.intersection(saved_fields):
+            print 'UPDATING SOLR'
             self.update_solr()
-        return rv
+
+        return saved_fields
 
     def get_recent_logs(self, n=10):
         '''Return a list of the n most recent logs, in reverse chronological
@@ -367,12 +458,13 @@ class Node(GuidStoredObject):
             return None
 
     def set_title(self, title, user, api_key=None, save=False):
-        '''Set the title of this Node and log it.
+        """Set the title of this Node and log it.
 
         :param str title: The new title.
         :param User user: User who made the action.
         :param ApiKey api_key: Optional API key.
-        '''
+
+        """
         original_title = self.title
         self.title = title
         self.add_log(
@@ -391,12 +483,13 @@ class Node(GuidStoredObject):
         return None
 
     def set_description(self, description, user, api_key=None, save=False):
-        '''Set the description and log the event.
+        """Set the description and log the event.
 
         :param str description: The new description
         :param User user: The user who changed the description.
         :param ApiKey api_key: Optional API key.
-        '''
+
+        """
         original = self.description
         self.description = description
         if save:
@@ -525,6 +618,23 @@ class Node(GuidStoredObject):
 
         return True
 
+    def _clone_addons_to_node(self, node):
+        """Clone all nodes on current node and point clones to provided node.
+        Used during forking and registration.
+
+        :param node: Node to which addons will be copied
+
+        """
+        for addon in settings.ADDONS_AVAILABLE:
+
+            records = getattr(self, addon.backref_key)
+
+            for record in records:
+
+                clone = record.clone()
+                clone.node = node
+                clone.save()
+
     def fork_node(self, user, api_key=None, title='Fork of '):
 
         # todo: should this raise an error?
@@ -571,6 +681,8 @@ class Node(GuidStoredObject):
 
         forked.save()
 
+        self._clone_addons_to_node(forked)
+
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, forked._primary_key)
             Repo(folder_old).clone(folder_new)
@@ -599,6 +711,15 @@ class Node(GuidStoredObject):
         original = self.load(self._primary_key)
         registered = original.clone()
 
+        registered.is_registration = True
+        registered.registered_date = when
+        registered.registered_user = user
+        registered.registered_schema = schema
+        registered.registered_from = original
+        if not registered.registered_meta:
+            registered.registered_meta = {}
+        registered.registered_meta[template] = data
+
         registered.contributors = self.contributors
         registered.forked_from = self.forked_from
         registered.creator = self.creator
@@ -606,6 +727,8 @@ class Node(GuidStoredObject):
         registered.tags = self.tags
 
         registered.save()
+
+        self._clone_addons_to_node(registered)
 
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, registered._primary_key)
@@ -641,16 +764,10 @@ class Node(GuidStoredObject):
             node_contained.registered_meta[template] = data
             node_contained.save()
 
+            original_node_contained._clone_addons_to_node(node_contained)
+
             registered.nodes.append(node_contained)
 
-        registered.is_registration = True
-        registered.registered_date = when
-        registered.registered_user = user
-        registered.registered_schema = schema
-        registered.registered_from = original
-        if not registered.registered_meta:
-            registered.registered_meta = {}
-        registered.registered_meta[template] = data
         registered.save()
 
         original.add_log(

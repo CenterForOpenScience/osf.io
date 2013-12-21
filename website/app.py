@@ -10,7 +10,7 @@ from website.routes import make_url_map
 logger = logging.getLogger(__name__)
 
 
-def init_app(settings_module="website.settings", set_backends=True, routes=True):
+def init_app(settings_module='website.settings', set_backends=True, routes=True):
     """Initializes the OSF. A sort of pseudo-app factory that allows you to
     bind settings, set up routing, and set storage backends, but only acts on
     a single app instance (rather than creating multiple instances).
@@ -23,8 +23,8 @@ def init_app(settings_module="website.settings", set_backends=True, routes=True)
     settings = importlib.import_module(settings_module)
     app.debug = settings.DEBUG_MODE
     if set_backends:
-        logger.debug("Setting storage backends")
-        set_up_storage(website.models.MODELS, storage.MongoStorage, db=db)
+        logger.debug('Setting storage backends')
+        set_up_storage(website.models.MODELS, storage.MongoStorage, addons=settings.ADDONS_AVAILABLE, db=db)
     if routes:
         make_url_map(app)
     return app

@@ -10,7 +10,7 @@ class Addon(object):
         self.node_model = node_model
 
     def __repr__(self):
-        return 'Addon({fullname}, {shortname}, {provider}, {user_model}, {node_model})'.format(
+        return 'AddonConfig({fullname}, {shortname}, {provider}, {user_model}, {node_model})'.format(
             fullname=self.fullname,
             shortname=self.shortname,
             provider=self.provider,

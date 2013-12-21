@@ -1,4 +1,7 @@
 <%inherit file="base.mako"/>
+
+<%namespace file="project/widget.mako" import="widget"/>
+
 <%def name="title()">Project</%def>
 
 
@@ -7,58 +10,19 @@
 
   <div class="row">
     <div class="col-md-7" id='containment'>
-      <section id="Wiki Home">
-        <div class="wiki">
-            ${ node["wiki_home"] }
-            <p><a href="${node['url']}wiki/home">read more</a></p>
-        </div>
-      </section>
-       %if node:
+        % if 'wiki' in addon_widgets:
+            ${widget(**addon_widgets['wiki'])}
+        % endif
+       % if node:
       <section id="Nodes">
 
-          <div class="page-header">
-            % if node["category"] == 'project':
-              <div class="pull-right">
-                  % if user["can_edit"]:
-                  <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">
-                  % else:
-                  <a class="btn btn-default disabled">
-                  % endif
-                    Add Component
-                  </a>
-              </div>
-              <%include file="modal_add_component.mako"/>
-            % endif
-              <h2>Components</h2>
-          </div>
-          % if node["children"]:
-              <div mod-meta='{
-                      "tpl" : "util/render_nodes.mako",
-                      "uri" : "${node["api_url"]}get_children/",
-                      "replace" : true,
-                      "kwargs" : {"sortable" : true}
-                  }'></div>
-          % else:
-              <p>No components have been added to this project.</p>
-          % endif
+      </section>
+      % endif
 
-      </section>
-      %endif
-      <section id="Files">
-        <div>
-          <div class="page-header">
-              <h2>Files</h2>
-          </div>
-          <div mod-meta='{
-                  "tpl": "util/render_file_tree.mako",
-                  "uri": "${node["api_url"]}get_files/",
-                  "view_kwargs": {
-                      "dash": true
-                  },
-                  "replace": true
-              }'></div>
-        </div>
-      </section>
+        % if 'files' in addon_widgets:
+            ${widget(**addon_widgets['files'])}
+        % endif
+
     </div>
 
     <div class="col-md-5">
@@ -78,6 +42,44 @@
         </div>
 
         <hr />
+
+          <div class="page-header">
+            % if node['category'] == 'project':
+              <div class="pull-right">
+                  % if user['can_edit']:
+                      <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">
+                  % else:
+                      <a class="btn btn-default disabled">
+                  % endif
+                          Add Component
+                  </a>
+              </div>
+              <%include file="modal_add_component.mako"/>
+            % endif
+            <h2>Components</h2>
+          </div>
+
+          % if node["children"]:
+              <div mod-meta='{
+                      "tpl" : "util/render_nodes.mako",
+                      "uri" : "${node["api_url"]}get_children/",
+                      "replace" : true,
+                      "kwargs" : {"sortable" : true}
+                  }'></div>
+          % else:
+              <p>No components have been added to this project.</p>
+          % endif
+
+        <!-- Addon Widgets -->
+        % for addon in addons_enabled:
+            % if addon in addon_widgets and addon not in ['wiki', 'files']:
+                ${widget(**addon_widgets[addon])}
+            % endif
+        % endfor
+
+        % if addons_enabled:
+            <hr />
+        % endif
 
         <div class="tags">
             <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
@@ -122,9 +124,24 @@
 
 </%def>
 
+<%def name="stylesheets()">
+    ${parent.stylesheets()}
+    % for style in addon_widget_css:
+        <link rel="stylesheet" href="${style}" />
+    % endfor
+</%def>
+
 <%def name="javascript_bottom()">
+
+% for script in addon_widget_js:
+    <script type="text/javascript" src="${script}"></script>
+% endfor
+
 <script>
     $(document).ready(function() {
+
+        // Tooltips
+        $('[data-toggle="tooltip"]').tooltip();
 
         ### Tag Input ###
 
