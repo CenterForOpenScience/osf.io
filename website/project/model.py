@@ -344,11 +344,11 @@ class Node(GuidStoredObject):
         return self.is_public or self.can_edit(user, api_key)
 
     def save(self, *args, **kwargs):
-        rv = super(Node, self).save(*args, **kwargs)
+        saved_fields = super(Node, self).save(*args, **kwargs)
         # Only update Solr if at least one watched field has changed
-        if self.SOLR_UPDATE_FIELDS.intersection(rv['saved_fields']):
+        if self.SOLR_UPDATE_FIELDS.intersection(saved_fields):
             self.update_solr()
-        return rv
+        return saved_fields
 
     def get_recent_logs(self, n=10):
         '''Return a list of the n most recent logs, in reverse chronological
@@ -367,12 +367,13 @@ class Node(GuidStoredObject):
             return None
 
     def set_title(self, title, user, api_key=None, save=False):
-        '''Set the title of this Node and log it.
+        """Set the title of this Node and log it.
 
         :param str title: The new title.
         :param User user: User who made the action.
         :param ApiKey api_key: Optional API key.
-        '''
+
+        """
         original_title = self.title
         self.title = title
         self.add_log(
@@ -391,12 +392,14 @@ class Node(GuidStoredObject):
         return None
 
     def set_description(self, description, user, api_key=None, save=False):
-        '''Set the description and log the event.
+        """Set the description and log the event.
 
         :param str description: The new description
         :param User user: The user who changed the description.
         :param ApiKey api_key: Optional API key.
-        '''
+        :param bool save: Save self after updating.
+
+        """
         original = self.description
         self.description = description
         if save:
@@ -416,7 +419,7 @@ class Node(GuidStoredObject):
 
     def update_solr(self):
         """Send the current state of the object to Solr, or delete it from Solr
-        as appropriate
+        as appropriate.
 
         """
         if not settings.USE_SOLR:
@@ -1117,11 +1120,22 @@ class Node(GuidStoredObject):
         :param save: Save after adding contributor
         :return: Boolean--whether contributor was added
         """
+        MAX_RECENT_LENGTH = 15
+
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
         if contrib_to_add._primary_key not in self.contributors:
             self.contributors.append(contrib_to_add)
             self.contributor_list.append({'id': contrib_to_add._primary_key})
+
+            # Add contributor to recently added list for user
+            if user is not None:
+                if contrib_to_add in user.recently_added:
+                    user.recently_added.remove(contrib_to_add)
+                user.recently_added.insert(0, contrib_to_add)
+                while len(user.recently_added) > MAX_RECENT_LENGTH:
+                    user.recently_added.pop()
+
             if log:
                 self.add_log(
                     action=NodeLog.CONTRIB_ADDED,
@@ -1148,6 +1162,7 @@ class Node(GuidStoredObject):
         :param log: Add log to self
         :param api_key: API key used to add contributors
         :param save: Save after adding contributor
+
         """
         for contrib in contributors:
             self.add_contributor(contributor=contrib, user=user, log=False, save=False)
