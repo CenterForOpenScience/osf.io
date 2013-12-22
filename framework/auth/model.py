@@ -8,16 +8,14 @@ import pytz
 import bson
 
 from framework.bcrypt import generate_password_hash, check_password_hash
-from framework import fields,  Q, analytics
+from framework import fields, Q, analytics
 from framework.guid.model import GuidStoredObject
 from framework.search import solr
 from website import settings, filters
 
-from .utils import parse_name
-
 name_formatters = {
    'long': lambda user: user.fullname,
-   'surname': lambda user: user.family_name,
+   'surname': lambda user: user.family_name if user.family_name else user.fullname,
    'initials': lambda user: u'{surname}, {initial}.'.format(
        surname=user.family_name,
        initial=user.given_name_initial

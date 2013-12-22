@@ -44,6 +44,22 @@ class TestUser(DbTestCase):
         assert_equal(User.find().count(), 2)
         assert_true(user.date_registered)
 
+    def test_format_surname(self):
+        user = UserFactory(fullname='Duane Johnson')
+        summary = user.get_summary(formatter='surname')
+        assert_equal(
+            summary['user_display_name'],
+            'Johnson'
+        )
+
+    def test_format_surname_one_name(self):
+        user = UserFactory(fullname='Rock')
+        summary = user.get_summary(formatter='surname')
+        assert_equal(
+            summary['user_display_name'],
+            'Rock'
+        )
+
     def test_is_watching(self):
         # User watches a node
         watched_node = NodeFactory()
