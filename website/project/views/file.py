@@ -176,31 +176,19 @@ def list_file_paths(*args, **kwargs):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor_or_public # returns user, project
-@update_counters('node:{pid}')
-@update_counters('node:{nid}')
-def list_files(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
-    user = kwargs['user']
-    node_to_use = node or project
-
-    return _view_project(node_to_use, user)
-
-
-@must_be_valid_project # returns project
 @must_be_contributor_or_public  # returns user, project
 def upload_file_get(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
-    user = kwargs['user']
-    node_to_use = node or project
+
+    node_to_use = kwargs['node'] or kwargs['project']
 
     file_infos = []
     for i, v in node_to_use.files_current.items():
         v = NodeFile.load(v)
         if not v.is_deleted:
-            unique, total = get_basic_counters('download:' + node_to_use._primary_key + ':' + v.path.replace('.', '_') )
+            unique, total = get_basic_counters('download:{0}:{1}'.format(
+                node_to_use._id,
+                v.path.replace('.', '_'),
+            ))
             file_infos.append({
                 "name": v.path,
                 "size": v.size,
@@ -352,12 +340,12 @@ def view_file(*args, **kwargs):
     if file_size > settings.MAX_RENDER_SIZE:
 
         rv = {
-            'file_name' : file_name,
-            'rendered' : ('<p>This file is too large to be rendered online. '
-                        'Please <a href={path}>download the file</a> to view it locally.</p>'
-                        .format(path=download_path)),
-            'renderer' : renderer,
-            'versions' : versions,
+            'file_name': file_name,
+            'rendered': ('<p>This file is too large to be rendered online. '
+                         'Please <a href={path}>download the file</a> to view it locally.</p>'
+                         .format(path=download_path)),
+            'renderer': renderer,
+            'versions': versions,
 
         }
         rv.update(_view_project(node_to_use, user))
@@ -423,18 +411,16 @@ def view_file(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
 def download_file(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
-    user = kwargs['user']
+
+    node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
-    node_to_use = node or project
 
-    kwargs["vid"] = len(node_to_use.files_versions[filename.replace('.', '_')])
+    vid = len(node_to_use.files_versions[filename.replace('.', '_')])
 
-    return redirect('{node_url}files/download/{fid}/version/{vid}/'.format(
-        node_url=node_to_use.api_url,
+    return redirect('{url}files/download/{fid}/version/{vid}/'.format(
+        url=node_to_use.api_url,
         fid=filename,
-        vid=kwargs['vid'],
+        vid=vid,
     ))
 
 @must_be_valid_project # returns project
@@ -493,5 +479,3 @@ def delete_file(*args, **kwargs):
         return {'status' : 'success'}
 
     raise HTTPError(http.BAD_REQUEST)
-    # return {'status' : 'failure'}
-

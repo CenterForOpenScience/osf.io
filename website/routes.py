@@ -470,17 +470,12 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/files/',
             '/project/<pid>/node/<nid>/files/',
-        ], 'get', project_views.file.list_files, json_renderer),
+        ], 'get', project_views.file.get_files, json_renderer),
 
         Rule([
             '/project/<pid>/file_paths/',
             '/project/<pid>/node/<nid>/file_paths/',
         ], 'get', project_views.file.list_file_paths, json_renderer),
-
-        Rule([
-            '/project/<pid>/get_files/',
-            '/project/<pid>/node/<nid>/get_files/',
-        ], 'get', project_views.file.get_files, json_renderer),
 
         # Download file
         Rule([
