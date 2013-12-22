@@ -213,7 +213,7 @@ def upload_file_get(*args, **kwargs):
                 "user_fullname": None,
                 "delete": v.is_deleted,
             })
-    return {'files' : file_infos}
+    return {'files': file_infos}
 
 @must_have_session_auth # returns user
 @must_be_valid_project # returns project
@@ -246,24 +246,24 @@ def upload_file_public(*args, **kwargs):
     except FileNotModified as e:
         # TODO: Should raise a 400 but this breaks BlueImp
         return [{
-            'action_taken' : None,
-            'message' : e.message,
-            'name' : uploaded_filename,
+            'action_taken': None,
+            'message': e.message,
+            'name': uploaded_filename,
         }]
 
     unique, total = get_basic_counters('download:' + node_to_use._primary_key + ':' + file_object.path.replace('.', '_') )
 
     file_info = {
-        "name":uploaded_filename,
+        "name": uploaded_filename,
         "sizeRead": [
             float(uploaded_file_size),
             size(uploaded_file_size, system=alternative),
         ],
-        "size":str(uploaded_file_size),
-        "url":node_to_use.url + "files/" + uploaded_filename + "/",
-        "ext":str(uploaded_filename.split('.')[-1]),
-        "type":"file",
-        "download_url":node_to_use.url + "/files/download/" + file_object.path,
+        "size": str(uploaded_file_size),
+        "url": node_to_use.url + "files/" + uploaded_filename + "/",
+        "ext": str(uploaded_filename.split('.')[-1]),
+        "type": "file",
+        "download_url": node_to_use.url + "/files/download/" + file_object.path,
         "date_uploaded": file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
         "dateModified": [
             time.mktime(file_object.date_uploaded.timetuple()),
@@ -271,7 +271,7 @@ def upload_file_public(*args, **kwargs):
         ],
         "downloads": total if total else 0,
         "user_id": None,
-        "user_fullname":None,
+        "user_fullname": None,
         "uid": '-'.join([
             str(file_object._name), #node or nodefile
             str(file_object._id) #objectId
@@ -316,7 +316,6 @@ def view_file(*args, **kwargs):
         latest_node_file.save()
 
     download_path = latest_node_file.download_url
-    download_html = '<a href="{path}">Download file</a>'.format(path=download_path)
 
     file_path = os.path.join(
         settings.UPLOADS_PATH,
@@ -340,11 +339,13 @@ def view_file(*args, **kwargs):
             number,
         ))
         versions.append({
-            'file_name' : file_name,
-            'number' : number,
-            'display_number' : number if idx > 0 else 'current',
-            'date_uploaded' : node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
-            'total' : total if total else 0,
+            'file_name': file_name,
+            'number': number,
+            'display_number': number if idx > 0 else 'current',
+            'date_uploaded': node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
+            'total': total if total else 0,
+            'committer_name': node_file.uploader.fullname,
+            'committer_url': node_file.uploader.url,
         })
 
     file_size = os.stat(file_path).st_size
@@ -399,7 +400,7 @@ def view_file(*args, **kwargs):
 
     if renderer == 'pygments':
         try:
-            rendered = download_html + pygments.highlight(
+            rendered = pygments.highlight(
                 file_contents,
                 pygments.lexers.guess_lexer_for_filename(file_path, file_contents),
                 pygments.formatters.HtmlFormatter()
@@ -410,10 +411,10 @@ def view_file(*args, **kwargs):
                         .format(path=download_path))
 
     rv = {
-        'file_name' : file_name,
-        'rendered' : rendered,
-        'renderer' : renderer,
-        'versions' : versions,
+        'file_name': file_name,
+        'rendered': rendered,
+        'renderer': renderer,
+        'versions': versions,
     }
     rv.update(_view_project(node_to_use, user))
     return rv
