@@ -38,12 +38,27 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
     }
 }
 
+var PairFormatter = function(row, cell, value, columnDef, dataContext) {
+    if (value) {
+        return value[1];
+    }
+    return '';
+};
+
+var DownloadFormatter = function(row, cell, value, columnDef, dataContext) {
+    if (value) {
+        return '<a href="' + value + '">Download</a>';
+    }
+}
+
 var grid = HGrid.create({
     container: "#gitGrid",
     info: gridData,
     url: '',
     columns:[
-        {id: "name", name: "Name", field: "name", width: 550, cssClass: "cell-title", formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true}
+        {id: "name", name: "Name", field: "name", cssClass: "cell-title", formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
+        {id: "size", name: "Size", field: "size", formatter: PairFormatter, sortable: true},
+        {id: "download", name: "Download", field: "download", formatter: DownloadFormatter, sortable: false}
     ],
     enableCellNavigation: false,
     breadcrumbBox: "#gitCrumb",
