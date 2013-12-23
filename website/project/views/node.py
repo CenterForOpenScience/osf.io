@@ -15,7 +15,7 @@ from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from framework.auth import must_have_session_auth, get_api_key
 
-from website.project import new_node, new_project, clean_template_name
+from website.project import new_node, clean_template_name
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from website.project.forms import NewProjectForm, NewNodeForm
@@ -62,7 +62,9 @@ def project_new_post(*args, **kwargs):
     user = kwargs['user']
     form = NewProjectForm(request.form)
     if form.validate():
-        project = new_project(form.title.data, form.description.data, user)
+        project = new_node(
+            'project', form.title.data, user, form.description.data
+        )
         return redirect(project.url)
     else:
         push_errors_to_status(form.errors)
