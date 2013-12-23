@@ -105,7 +105,7 @@ def node_register_template_page_post(*args, **kwargs):
         Q('name', 'eq', template)
     ).sort('-schema_version')[0]
     register = node_to_use.register_node(
-        schema, user, api_key, template, json.dumps(clean_data)
+        schema, user, template, json.dumps(clean_data), api_key
     )
 
     return {

@@ -224,9 +224,8 @@ class NodeFile(GuidStoredObject):
     sha = fields.StringField()
     size = fields.IntegerField()
     content_type = fields.StringField()
-    is_public = fields.BooleanField()
     git_commit = fields.StringField()
-    is_deleted = fields.BooleanField()
+    is_deleted = fields.BooleanField(default=False)
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_uploaded = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -332,7 +331,7 @@ class Node(GuidStoredObject):
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
 
     # Permissions
-    is_public = fields.BooleanField()
+    is_public = fields.BooleanField(default=False)
 
     is_deleted = fields.BooleanField(default=False)
     deleted_date = fields.DateTimeField()
@@ -383,6 +382,16 @@ class Node(GuidStoredObject):
 
     _meta = {'optimistic': True}
 
+    def __init__(self, *args, **kwargs):
+        super(Node, self).__init__(*args, **kwargs)
+
+        if kwargs.get('_is_loaded', False):
+            return
+
+        if self.creator:
+            self.contributors.append(self.creator)
+            self.contributor_list.append({'id': self.creator._primary_key})
+
     def can_edit(self, user, api_key=None):
         return (
             self.is_contributor(user)
@@ -418,27 +427,59 @@ class Node(GuidStoredObject):
     def save(self, *args, **kwargs):
 
         first_save = not self._is_loaded
+        is_original = not self.is_registration and not self.is_fork
 
         saved_fields = super(Node, self).save(*args, **kwargs)
 
-        if first_save and not self.is_registration and not self.is_fork:
+        if first_save and is_original:
+
+            #
             for addon in settings.ADDONS_AVAILABLE:
                 if addon.added_by_default and addon.short_name not in self.addons_enabled:
                     self.addons_enabled.append(addon.short_name)
             self._ensure_addons()
 
-        # Skip Solr update if private and unsaved, or private and privacy
-        # unchanged
+            #
+            if getattr(self, 'project', None):
+
+                # Append log to parent
+                self.project.nodes.append(self)
+                self.project.save()
+
+                # Define log fields for component
+                log_action = NodeLog.NODE_CREATED
+                log_params = {
+                    'node': self._primary_key,
+                    'project': self.project._primary_key,
+                }
+
+            else:
+
+                # Define log fields for non-component project
+                log_action = NodeLog.PROJECT_CREATED
+                log_params = {
+                    'project': self._primary_key,
+                }
+
+            # Add log with appropriate fields
+            self.add_log(
+                log_action,
+                params=log_params,
+                user=self.creator,
+                log_date=self.date_created,
+                save=True,
+            )
+
+        # Only update Solr if at least one stored field has changed, and if
+        # public or privacy setting has changed
+        update_solr = bool(self.SOLR_UPDATE_FIELDS.intersection(saved_fields))
         if not self.is_public:
-            if first_save:
-                return
-            if 'is_public' not in saved_fields:
-                return
-        # Only update Solr if at least one stored field has changed
-        if self.SOLR_UPDATE_FIELDS.intersection(saved_fields):
-            print 'UPDATING SOLR'
+            if first_save or 'is_public' not in saved_fields:
+                update_solr = False
+        if update_solr:
             self.update_solr()
 
+        # Return expected value for StoredObject::save
         return saved_fields
 
     def get_recent_logs(self, n=10):
@@ -488,6 +529,7 @@ class Node(GuidStoredObject):
         :param str description: The new description
         :param User user: The user who changed the description.
         :param ApiKey api_key: Optional API key.
+        :param bool save: Save self after updating.
 
         """
         original = self.description
@@ -509,7 +551,7 @@ class Node(GuidStoredObject):
 
     def update_solr(self):
         """Send the current state of the object to Solr, or delete it from Solr
-        as appropriate
+        as appropriate.
 
         """
         if not settings.USE_SOLR:
@@ -692,7 +734,7 @@ class Node(GuidStoredObject):
 
         return forked
 
-    def register_node(self, schema, user, api_key, template, data):
+    def register_node(self, schema, user, template, data, api_key=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -739,6 +781,10 @@ class Node(GuidStoredObject):
         # todo: should be recursive; see Node.fork_node()
         for original_node_contained in original.nodes:
 
+            if not original_node_contained.can_edit(user):
+                # todo: inform user that node can't be registered
+                continue
+
             node_contained = original_node_contained.clone()
             node_contained.save()
 
@@ -748,12 +794,6 @@ class Node(GuidStoredObject):
                 folder_new = os.path.join(settings.UPLOADS_PATH, node_contained._primary_key)
                 Repo(folder_old).clone(folder_new)
 
-            node_contained.contributors = original_node_contained.contributors
-            node_contained.forked_from = original_node_contained.forked_from
-            node_contained.creator = original_node_contained.creator
-            node_contained.logs = original_node_contained.logs
-            node_contained.tags = original_node_contained.tags
-
             node_contained.is_registration = True
             node_contained.registered_date = when
             node_contained.registered_user = user
@@ -762,13 +802,18 @@ class Node(GuidStoredObject):
             if not node_contained.registered_meta:
                 node_contained.registered_meta = {}
             node_contained.registered_meta[template] = data
+            
+            node_contained.contributors = original_node_contained.contributors
+            node_contained.forked_from = original_node_contained.forked_from
+            node_contained.creator = original_node_contained.creator
+            node_contained.logs = original_node_contained.logs
+            node_contained.tags = original_node_contained.tags
+
             node_contained.save()
 
             original_node_contained._clone_addons_to_node(node_contained)
 
             registered.nodes.append(node_contained)
-
-        registered.save()
 
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
@@ -1011,12 +1056,10 @@ class Node(GuidStoredObject):
             path=file_name,
             filename=file_name,
             size=size,
-            is_public=self.is_public,
             node=self,
             uploader=user,
             git_commit=commit_id,
             content_type=content_type,
-            is_deleted=False,
         )
         node_file.save()
 
@@ -1234,11 +1277,22 @@ class Node(GuidStoredObject):
         :param save: Save after adding contributor
         :return: Boolean--whether contributor was added
         """
+        MAX_RECENT_LENGTH = 15
+
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
         if contrib_to_add._primary_key not in self.contributors:
             self.contributors.append(contrib_to_add)
             self.contributor_list.append({'id': contrib_to_add._primary_key})
+
+            # Add contributor to recently added list for user
+            if user is not None:
+                if contrib_to_add in user.recently_added:
+                    user.recently_added.remove(contrib_to_add)
+                user.recently_added.insert(0, contrib_to_add)
+                while len(user.recently_added) > MAX_RECENT_LENGTH:
+                    user.recently_added.pop()
+
             if log:
                 self.add_log(
                     action=NodeLog.CONTRIB_ADDED,
@@ -1265,6 +1319,7 @@ class Node(GuidStoredObject):
         :param log: Add log to self
         :param api_key: API key used to add contributors
         :param save: Save after adding contributor
+
         """
         for contrib in contributors:
             self.add_contributor(contributor=contrib, user=user, log=False, save=False)
@@ -1360,7 +1415,7 @@ class Node(GuidStoredObject):
 
         return pw
 
-    def update_node_wiki(self, page, content, user, api_key):
+    def update_node_wiki(self, page, content, user, api_key=None):
         """Update the node's wiki page with new content.
 
         :param page: A string, the page's name, e.g. ``"home"``.
@@ -1410,7 +1465,6 @@ class Node(GuidStoredObject):
             api_key=api_key,
             log_date=v.date
         )
-
 
     def get_stats(self, detailed=False):
         if detailed:

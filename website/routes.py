@@ -421,6 +421,11 @@ def make_url_map(app):
         ], 'get', project_views.contributor.get_contributors_from_parent, json_renderer),
 
         Rule([
+            '/project/<pid>/get_recently_added_contributors/',
+            '/project/<pid>/node/<nid>/get_recently_added_contributors/',
+        ], 'get', project_views.contributor.get_recently_added_contributors, json_renderer),
+
+        Rule([
             '/project/<pid>/get_editable_children/',
             '/project/<pid>/node/<nid>/get_editable_children/',
         ], 'get', project_views.node.get_editable_children, json_renderer),
@@ -474,17 +479,12 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/files/',
             '/project/<pid>/node/<nid>/files/',
-        ], 'get', project_views.file.list_files, json_renderer),
+        ], 'get', project_views.file.get_files, json_renderer),
 
         Rule([
             '/project/<pid>/file_paths/',
             '/project/<pid>/node/<nid>/file_paths/',
         ], 'get', project_views.file.list_file_paths, json_renderer),
-
-        Rule([
-            '/project/<pid>/get_files/',
-            '/project/<pid>/node/<nid>/get_files/',
-        ], 'get', project_views.file.get_files, json_renderer),
 
         # Download file
         Rule([

@@ -22,7 +22,7 @@ from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
 from website.project.views.node import _view_project
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public
+    must_be_contributor, must_be_contributor_or_public, must_have_addon
 from website.project.model import NodeFile
 from website import settings
 
@@ -50,6 +50,7 @@ def get_file_tree(node_to_use, user):
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public
+@must_have_addon('files')
 def get_files(*args, **kwargs):
     """Build list of files for HGrid, ignoring contents of components to which
     the user does not have access. Note: This view hides the titles of
@@ -59,6 +60,10 @@ def get_files(*args, **kwargs):
     # Get arguments
     node_to_use = kwargs['node'] or kwargs['project']
     user = get_current_user()
+
+    ## Raise 404 if files addon not enabled
+    #if 'files' not in node_to_use.addons_enabled:
+    #    raise HTTPError(http.NOT_FOUND)
 
     filetree = get_file_tree(node_to_use, user)
     parent_id = node_to_use.parent_id
@@ -164,10 +169,10 @@ def _get_files(filetree, parent_id, check, user):
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
+@must_have_addon('files')
 def list_file_paths(*args, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
 
     return {'files': [
         NodeFile.load(fid).path
@@ -176,31 +181,20 @@ def list_file_paths(*args, **kwargs):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor_or_public # returns user, project
-@update_counters('node:{pid}')
-@update_counters('node:{nid}')
-def list_files(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
-    user = kwargs['user']
-    node_to_use = node or project
-
-    return _view_project(node_to_use, user)
-
-
-@must_be_valid_project # returns project
 @must_be_contributor_or_public  # returns user, project
+@must_have_addon('files')
 def upload_file_get(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
-    user = kwargs['user']
-    node_to_use = node or project
+
+    node_to_use = kwargs['node'] or kwargs['project']
 
     file_infos = []
     for i, v in node_to_use.files_current.items():
         v = NodeFile.load(v)
         if not v.is_deleted:
-            unique, total = get_basic_counters('download:' + node_to_use._primary_key + ':' + v.path.replace('.', '_') )
+            unique, total = get_basic_counters('download:{0}:{1}'.format(
+                node_to_use._id,
+                v.path.replace('.', '_'),
+            ))
             file_infos.append({
                 "name": v.path,
                 "size": v.size,
@@ -213,12 +207,13 @@ def upload_file_get(*args, **kwargs):
                 "user_fullname": None,
                 "delete": v.is_deleted,
             })
-    return {'files' : file_infos}
+    return {'files': file_infos}
 
 @must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor  # returns user, project
 @must_not_be_registration
+@must_have_addon('files')
 def upload_file_public(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
@@ -246,24 +241,24 @@ def upload_file_public(*args, **kwargs):
     except FileNotModified as e:
         # TODO: Should raise a 400 but this breaks BlueImp
         return [{
-            'action_taken' : None,
-            'message' : e.message,
-            'name' : uploaded_filename,
+            'action_taken': None,
+            'message': e.message,
+            'name': uploaded_filename,
         }]
 
     unique, total = get_basic_counters('download:' + node_to_use._primary_key + ':' + file_object.path.replace('.', '_') )
 
     file_info = {
-        "name":uploaded_filename,
+        "name": uploaded_filename,
         "sizeRead": [
             float(uploaded_file_size),
             size(uploaded_file_size, system=alternative),
         ],
-        "size":str(uploaded_file_size),
-        "url":node_to_use.url + "files/" + uploaded_filename + "/",
-        "ext":str(uploaded_filename.split('.')[-1]),
-        "type":"file",
-        "download_url":node_to_use.url + "/files/download/" + file_object.path,
+        "size": str(uploaded_file_size),
+        "url": node_to_use.url + "files/" + uploaded_filename + "/",
+        "ext": str(uploaded_filename.split('.')[-1]),
+        "type": "file",
+        "download_url": node_to_use.url + "/files/download/" + file_object.path,
         "date_uploaded": file_object.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
         "dateModified": [
             time.mktime(file_object.date_uploaded.timetuple()),
@@ -271,7 +266,7 @@ def upload_file_public(*args, **kwargs):
         ],
         "downloads": total if total else 0,
         "user_id": None,
-        "user_fullname":None,
+        "user_fullname": None,
         "uid": '-'.join([
             str(file_object._name), #node or nodefile
             str(file_object._id) #objectId
@@ -291,6 +286,7 @@ def upload_file_public(*args, **kwargs):
 @must_be_contributor_or_public # returns user, project
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
+@must_have_addon('files')
 def view_file(*args, **kwargs):
     user = kwargs['user']
     node_to_use = kwargs['node'] or kwargs['project']
@@ -316,7 +312,6 @@ def view_file(*args, **kwargs):
         latest_node_file.save()
 
     download_path = latest_node_file.download_url
-    download_html = '<a href="{path}">Download file</a>'.format(path=download_path)
 
     file_path = os.path.join(
         settings.UPLOADS_PATH,
@@ -340,23 +335,25 @@ def view_file(*args, **kwargs):
             number,
         ))
         versions.append({
-            'file_name' : file_name,
-            'number' : number,
-            'display_number' : number if idx > 0 else 'current',
-            'date_uploaded' : node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
-            'total' : total if total else 0,
+            'file_name': file_name,
+            'number': number,
+            'display_number': number if idx > 0 else 'current',
+            'date_uploaded': node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
+            'total': total if total else 0,
+            'committer_name': node_file.uploader.fullname,
+            'committer_url': node_file.uploader.url,
         })
 
     file_size = os.stat(file_path).st_size
     if file_size > settings.MAX_RENDER_SIZE:
 
         rv = {
-            'file_name' : file_name,
-            'rendered' : ('<p>This file is too large to be rendered online. '
-                        'Please <a href={path}>download the file</a> to view it locally.</p>'
-                        .format(path=download_path)),
-            'renderer' : renderer,
-            'versions' : versions,
+            'file_name': file_name,
+            'rendered': ('<p>This file is too large to be rendered online. '
+                         'Please <a href={path}>download the file</a> to view it locally.</p>'
+                         .format(path=download_path)),
+            'renderer': renderer,
+            'versions': versions,
 
         }
         rv.update(_view_project(node_to_use, user))
@@ -375,7 +372,11 @@ def view_file(*args, **kwargs):
     # TODO: this logic belongs in model
     # todo: add bzip, etc
     if is_img:
-        rendered="<img src='{node_url}files/download/{fid}/' />".format(node_url=node_to_use.api_url, fid=file_name)
+        # Append version number to image URL so that old versions aren't
+        # cached incorrectly. Resolves #208 [openscienceframework.org]
+        rendered='<img src="{url}files/download/{fid}/?{vid}" />'.format(
+            url=node_to_use.api_url, fid=file_name, vid=len(versions),
+        )
     elif file_ext == '.zip':
         archive = zipfile.ZipFile(file_path)
         archive_files = prune_file_list(archive.namelist(), settings.ARCHIVE_DEPTH)
@@ -399,7 +400,7 @@ def view_file(*args, **kwargs):
 
     if renderer == 'pygments':
         try:
-            rendered = download_html + pygments.highlight(
+            rendered = pygments.highlight(
                 file_contents,
                 pygments.lexers.guess_lexer_for_filename(file_path, file_contents),
                 pygments.formatters.HtmlFormatter()
@@ -410,10 +411,10 @@ def view_file(*args, **kwargs):
                         .format(path=download_path))
 
     rv = {
-        'file_name' : file_name,
-        'rendered' : rendered,
-        'renderer' : renderer,
-        'versions' : versions,
+        'file_name': file_name,
+        'rendered': rendered,
+        'renderer': renderer,
+        'versions': versions,
     }
     rv.update(_view_project(node_to_use, user))
     return rv
@@ -421,19 +422,18 @@ def view_file(*args, **kwargs):
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
+@must_have_addon('files')
 def download_file(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
-    user = kwargs['user']
+
+    node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
-    node_to_use = node or project
 
-    kwargs["vid"] = len(node_to_use.files_versions[filename.replace('.', '_')])
+    vid = len(node_to_use.files_versions[filename.replace('.', '_')])
 
-    return redirect('{node_url}files/download/{fid}/version/{vid}/'.format(
-        node_url=node_to_use.api_url,
+    return redirect('{url}files/download/{fid}/version/{vid}/'.format(
+        url=node_to_use.api_url,
         fid=filename,
-        vid=kwargs['vid'],
+        vid=vid,
     ))
 
 @must_be_valid_project # returns project
@@ -442,6 +442,7 @@ def download_file(*args, **kwargs):
 @update_counters('download:{nid}:{fid}:{vid}')
 @update_counters('download:{pid}:{fid}')
 @update_counters('download:{nid}:{fid}')
+@must_have_addon('files')
 def download_file_by_version(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
@@ -481,6 +482,7 @@ def download_file_by_version(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
+@must_have_addon('files')
 def delete_file(*args, **kwargs):
 
     user = kwargs['user']
@@ -489,8 +491,6 @@ def delete_file(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
 
     if node_to_use.remove_file(user, api_key, filename):
-        return {'status' : 'success'}
+        return {'status': 'success'}
 
     raise HTTPError(http.BAD_REQUEST)
-    # return {'status' : 'failure'}
-

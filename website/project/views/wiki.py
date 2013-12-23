@@ -14,13 +14,14 @@ from website.project.views.node import _view_project
 from website.project.model import NodeWikiPage
 from website.project import show_diff
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public
+    must_be_contributor, must_be_contributor_or_public, must_have_addon
 
 
 logger = logging.getLogger(__name__)
 
 
 @must_be_valid_project
+@must_have_addon('wiki')
 def project_wiki_home(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     return {}, None, None, '{}wiki/home/'.format(node_to_use.url)
@@ -52,6 +53,7 @@ def _get_wiki_versions(node, wid):
 @must_be_contributor_or_public # returns user, project
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
+@must_have_addon('wiki')
 def project_wiki_compare(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
@@ -88,6 +90,7 @@ def project_wiki_compare(*args, **kwargs):
 @must_be_contributor # returns user, project
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
+@must_have_addon('wiki')
 def project_wiki_version(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
@@ -118,6 +121,7 @@ def project_wiki_version(*args, **kwargs):
 @must_be_contributor_or_public
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
+@must_have_addon('wiki')
 def project_wiki_page(*args, **kwargs):
 
     project = kwargs['project']
@@ -178,6 +182,7 @@ def project_wiki_page(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
+@must_have_addon('wiki')
 def project_wiki_edit(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
@@ -213,6 +218,7 @@ def project_wiki_edit(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
+@must_have_addon('wiki')
 def project_wiki_edit_post(*args, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
@@ -232,7 +238,7 @@ def project_wiki_edit_post(*args, **kwargs):
     else:
         content = ''
     if request.form['content'] != content:
-        node_to_use.update_node_wiki(wid, request.form['content'], user, api_key=None)
+        node_to_use.update_node_wiki(wid, request.form['content'], user)
         return {
             'status' : 'success',
         }, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
