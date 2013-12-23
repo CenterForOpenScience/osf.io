@@ -76,18 +76,18 @@ class TestProjectViews(DbTestCase):
     def test_add_contributor_post(self):
         # Two users are added as a contributor via a POST request
         project = ProjectFactory(creator=self.user1, is_public=True)
-        user = UserFactory()
         user2 = UserFactory()
+        user3 = UserFactory()
         url = "/api/v1/project/{0}/addcontributors/".format(project._id)
-        res = self.app.post(url, json.dumps({"user_ids": [user._id, user2._id]}),
+        res = self.app.post(url, json.dumps({"user_ids": [user2._id, user3._id]}),
                             content_type="application/json",
                             auth=self.auth).maybe_follow()
         project.reload()
-        assert_in(user._id, project.contributors)
+        assert_in(user2._id, project.contributors)
         # A log event was added
         assert_equal(project.logs[-1].action, "contributor_added")
-        assert_equal(len(project.contributors), 2)
-        assert_equal(len(project.contributor_list), 2)
+        assert_equal(len(project.contributors), 3)
+        assert_equal(len(project.contributor_list), 3)
 
     @unittest.skip('Adding non-registered contributors is on hold until '
                    'invitations and account merging are done.')
@@ -244,18 +244,16 @@ class TestWatchViews(DbTestCase):
         # A public project
         self.project = ProjectFactory(is_public=True)
         self.project.save()
-        # add some log objects
-        # A log added 100 days ago
-        self.project.add_log(NodeLog.PROJECT_CREATED,
-                        params={'project': self.project._primary_key},
-                        user=self.user, log_date=dt.datetime.utcnow() - dt.timedelta(days=100),
-                        api_key=self.auth[1],
-                        save=True)
+        # Manually reset log date to 100 days ago so it won't show up in feed
+        self.project.logs[0].date = dt.datetime.utcnow() - dt.timedelta(days=100)
+        self.project.logs[0].save()
         # A log added now
-        self.last_log = self.project.add_log(NodeLog.TAG_ADDED, params={'project': self.project._primary_key},
-                        user=self.user, log_date=dt.datetime.utcnow(),
-                        api_key=self.auth[1],
-                        save=True)
+        self.last_log = self.project.add_log(
+            NodeLog.TAG_ADDED, params={'project': self.project._primary_key},
+            user=self.user, log_date=dt.datetime.utcnow(),
+            api_key=self.auth[1],
+            save=True,
+        )
         # Clear watched list
         self.user.watched = []
         self.user.save()
@@ -264,8 +262,8 @@ class TestWatchViews(DbTestCase):
         n_watched_then = len(self.user.watched)
         url = '/api/v1/project/{0}/watch/'.format(self.project._id)
         res = self.app.post_json(url,
-                                params={"digest": True},
-                                auth=self.auth)
+                                 params={"digest": True},
+                                 auth=self.auth)
         assert_equal(res.json['watchCount'], 1)
         self.user.reload()
         n_watched_now = len(self.user.watched)
@@ -316,9 +314,7 @@ class TestWatchViews(DbTestCase):
 
     def test_toggle_watch_node(self):
         # The project has a public sub-node
-        node = NodeFactory(is_public=True)
-        self.project.nodes.append(node)
-        self.project.save()
+        node = NodeFactory(creator=self.user, project=self.project, is_public=True)
         url = "/api/v1/project/{}/node/{}/togglewatch/".format(self.project._id,
                                                                 node._id)
         res = self.app.post_json(url, {}, auth=self.auth)
