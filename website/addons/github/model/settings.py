@@ -2,23 +2,26 @@
 
 """
 
-import os
 import json
 
 from framework import fields
-from website.addons.base import AddonSettingsBase
+from website.addons.base import AddonSettingsBase, AddonError
+
+from ..api import GitHub
 
 class AddonGitHubSettings(AddonSettingsBase):
+
+    SHORT_NAME = 'github'
 
     url = fields.StringField()
     user = fields.StringField()
     repo = fields.StringField()
 
-    repo_json = fields.DictionaryField()
-    branch_json = fields.DictionaryField()
-    commit_json = fields.DictionaryField()
+    oauth_osf_user = fields.ForeignField('user', backref='authorized')
+    oauth_state = fields.StringField()
+    oauth_access_token = fields.StringField()
 
-    registered = fields.DictionaryField()
+    registration_data = fields.DictionaryField()
 
     @property
     def short_url(self):
@@ -46,10 +49,24 @@ class AddonGitHubSettings(AddonSettingsBase):
         return json.dumps({
             'github_user': self.user,
             'github_repo': self.repo,
+            'github_code': self.oauth_access_token is not None,
+            'github_oauth_user': self.oauth_osf_user.fullname
+                                 if self.oauth_osf_user
+                                 else '',
         })
 
-    def register(self):
+    def register(self, save=True):
+        """
 
-        self._branches(force=True)
-        for branch in self.branch_json:
-            self._tree(sha=branch['commit']['sha'], force=True)
+        """
+        connect = GitHub.from_settings(self)
+        branches = connect.branches(self.user, self.repo)
+        if branches is None:
+            raise AddonError('Could not fetch repo branches.')
+
+        self.registration_data['branches'] = branches
+
+        super(AddonGitHubSettings, self).register(save=False)
+
+        if save:
+            self.save()

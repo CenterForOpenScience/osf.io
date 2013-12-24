@@ -864,8 +864,8 @@ class TestForkNode(DbTestCase):
             for vidx in range(len(original.files_versions[fname])):
                 file_original = NodeFile.load(original.files_versions[fname][vidx])
                 file_fork = NodeFile.load(original.files_versions[fname][vidx])
-                data_original = original.get_file(file_original.path, vidx)
-                data_fork = fork.get_file(file_fork.path, vidx)
+                data_original = original.file(file_original.path, vidx)
+                data_fork = fork.file(file_fork.path, vidx)
                 assert_equal(data_original, data_fork)
 
         # Recursively compare children

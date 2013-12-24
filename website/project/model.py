@@ -660,11 +660,12 @@ class Node(GuidStoredObject):
 
         return True
 
-    def _clone_addons_to_node(self, node):
+    def _clone_addons_to_node(self, node, action=None):
         """Clone all nodes on current node and point clones to provided node.
         Used during forking and registration.
 
-        :param node: Node to which addons will be copied
+        :param Node node: Node to which addons will be copied
+        :param str action: Optional action
 
         """
         for addon in settings.ADDONS_AVAILABLE:
@@ -675,6 +676,10 @@ class Node(GuidStoredObject):
 
                 clone = record.clone()
                 clone.node = node
+
+                if action == 'register':
+                    clone.register(save=False)
+
                 clone.save()
 
     def fork_node(self, user, api_key=None, title='Fork of '):
@@ -770,7 +775,7 @@ class Node(GuidStoredObject):
 
         registered.save()
 
-        self._clone_addons_to_node(registered)
+        self._clone_addons_to_node(registered, action='register')
 
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, registered._primary_key)

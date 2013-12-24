@@ -49,6 +49,23 @@ SCHEMA = {
                     'label': 'GitHub Repo',
                     'required': True,
                 },
+                {
+                    'id': 'github_code',
+                    'type': 'htmlfield',
+                    'label': 'GitHub Access',
+                    'content': '''
+                        <div>
+                            <a id="githubAddKey" class="btn btn-primary" style="display: none;">Get Access Token</a>
+                            <a id="githubDelKey" class="btn btn-danger" style="display: none;">Delete Access Token</a>
+                            <span id="githubKeyUser" style="margin-left: 10px;"></span>
+                        </div>
+                    ''',
+                },
+                {
+                    'id': 'github_oauth_user',
+                    'type': 'hiddenfield',
+                    'label': '',
+                }
             ]
         }
     ]

@@ -450,7 +450,7 @@ def download_file_by_version(*args, **kwargs):
     version_number = int(kwargs['vid']) - 1
     current_version = len(node_to_use.files_versions[filename.replace('.', '_')]) - 1
 
-    content, content_type = node_to_use.get_file(filename, version=version_number)
+    content, content_type = node_to_use.file(filename, version=version_number)
     if content is None:
         raise HTTPError(http.NOT_FOUND)
 

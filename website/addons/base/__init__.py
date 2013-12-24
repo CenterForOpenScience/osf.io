@@ -7,9 +7,14 @@ import glob
 import importlib
 import mimetypes
 from bson import ObjectId
+from mako.template import Template
 
 from framework import StoredObject, fields
 from framework.routing import process_rules
+
+from website import settings
+
+class AddonError(Exception): pass
 
 
 def _is_image(filename):
@@ -107,20 +112,44 @@ class AddonSettingsBase(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
     node = fields.ForeignField('node', backref='addons')
+    registered = fields.BooleanField()
 
     _meta = {
         'abstract': True,
     }
 
-    #def render_widget(self):
-    #    raise NotImplementedError
-    #
-    #def render_tab(self):
-    #    raise NotImplementedError
-    #
-    #def render_page(self):
-    #    raise NotImplementedError
+    def render_config_error(self):
+        """
 
+        """
+        config = settings.ADDONS_AVAILABLE_DICT[self.SHORT_NAME]
+        return Template('''
+            <div class='addon-config-error'>
+                ${title} add-on is not configured properly.
+                Configure this addon on the <a href="/${nid}/settings/">settings</a> page,
+                or click <a class="widget-disable" href="{url}settings/${short}/disable/">here</a> to disable it.
+            </div>
+        ''').render(
+            title=config.full_name,
+            short=config.short_name,
+            nid=self.node._id,
+        )
+
+    def fork(self, save=True):
+        """
+
+        """
+        self.forked = True
+        if save:
+            self.save()
+
+    def register(self, save=True):
+        """
+
+        """
+        self.registered = True
+        if save:
+            self.save()
 
 def init_addon(app, addon_name):
     """Load addon module and create a configuration object

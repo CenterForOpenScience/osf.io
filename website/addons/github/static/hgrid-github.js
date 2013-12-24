@@ -36,7 +36,7 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         }
         return spacer + " <span class='toggle'></span><span class='file' style='background: url(" + imageUrl+ ") no-repeat left top;'></span>&nbsp;" + link;
     }
-}
+};
 
 var PairFormatter = function(row, cell, value, columnDef, dataContext) {
     if (value) {
@@ -47,9 +47,10 @@ var PairFormatter = function(row, cell, value, columnDef, dataContext) {
 
 var DownloadFormatter = function(row, cell, value, columnDef, dataContext) {
     if (value) {
-        return '<a href="' + value + '">Download</a>';
+        return '<a href="' + value + '"><button type="button" class="btn btn-success btn-mini"><i class="icon-download-alt icon-white"></i></button></a>';
     }
-}
+    return '';
+};
 
 var grid = HGrid.create({
     container: "#gitGrid",

@@ -35,6 +35,9 @@
 </script>
 
 <!-- Item templates -->
+<script id="hiddenfield" type="text/html">
+    <input type="hidden" class="form-control" data-bind="value:value, valueUpdate:'onblur', attr:{name:id, id:id, required:required || null}, disable:disable || $root.disable" />
+</script>
 <script id="textfield" type="text/html">
     <input type="text" class="form-control" data-bind="value:value, valueUpdate:'onblur', attr:{name:id, id:id, required:required || null}, disable:disable || $root.disable" />
 </script>

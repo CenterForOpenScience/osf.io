@@ -163,6 +163,45 @@
 
         % endfor
 
+        % if 'github' in addon_enabled_settings:
+
+            var dataGH = addonSettingsModels.github.observedData,
+                addButton = $('#githubAddKey'),
+                delButton = $('#githubDelKey'),
+                keyUser = $('#githubKeyUser');
+
+            if (dataGH.github_code.value()) {
+                delButton.show();
+                keyUser.text('(Authorized by ' + dataGH.github_oauth_user.value() + ')');
+            } else {
+                addButton.show();
+            }
+
+            addButton.on('click', function() {
+                window.location.href = nodeApiUrl + 'github/oauth/';
+            });
+
+            delButton.on('click', function() {
+                bootbox.confirm(
+                    'Are you sure you want to delete your GitHub access key?',
+                    function(result) {
+                        if (result) {
+                            $.ajax({
+                                url: nodeApiUrl + 'github/oauth/delete/',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                dataType: 'json',
+                                success: function() {
+                                    window.location.reload();
+                                }
+                            });
+                        }
+                    }
+                )
+            });
+
+        % endif
+
     });
 
     // Set up submission for addon selection form
