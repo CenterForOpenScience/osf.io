@@ -182,7 +182,6 @@ def list_file_paths(*args, **kwargs):
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public  # returns user, project
-@must_have_addon('files')
 def upload_file_get(*args, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
@@ -213,7 +212,6 @@ def upload_file_get(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor  # returns user, project
 @must_not_be_registration
-@must_have_addon('files')
 def upload_file_public(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
@@ -286,7 +284,6 @@ def upload_file_public(*args, **kwargs):
 @must_be_contributor_or_public # returns user, project
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
-@must_have_addon('files')
 def view_file(*args, **kwargs):
     user = kwargs['user']
     node_to_use = kwargs['node'] or kwargs['project']
@@ -422,7 +419,6 @@ def view_file(*args, **kwargs):
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
-@must_have_addon('files')
 def download_file(*args, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
@@ -442,7 +438,6 @@ def download_file(*args, **kwargs):
 @update_counters('download:{nid}:{fid}:{vid}')
 @update_counters('download:{pid}:{fid}')
 @update_counters('download:{nid}:{fid}')
-@must_have_addon('files')
 def download_file_by_version(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
@@ -482,7 +477,6 @@ def download_file_by_version(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
-@must_have_addon('files')
 def delete_file(*args, **kwargs):
 
     user = kwargs['user']

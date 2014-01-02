@@ -3,6 +3,7 @@
 """
 
 import os
+import json
 import uuid
 import base64
 import urllib
@@ -17,11 +18,13 @@ API_URL = 'https://api.github.com/'
 OAUTH_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
 OAUTH_ACCESS_TOKEN_URL = 'https://github.com/login/oauth/access_token'
 
+# TODO: Move to settings
 GITHUB_USER = 'pfftwhat'
 GITHUB_TOKEN = '150fbf1af333e58cd9ae22a21dddafb454b95e8d'
 
 CLIENT_ID = '01344fe22202e7f924bc'
 CLIENT_SECRET = 'bc8b79abe67ac0c282d4d86dd54515ee5b1a4e27'
+
 SCOPE = ['repo']
 
 GITHUB_AUTH = (
@@ -107,18 +110,18 @@ class GitHub(object):
         cache_data = github_cache.get(cache_key)
         if cache and cache_data:
             if 'if-modified-since' not in headers:
-                headers['if-modified-since'] = datetime.datetime.utcnow().strftime('%c')
+                headers['if-modified-since'] = cache_data['date'].strftime('%c')
 
         # Send request
         req = func(url, params=params, auth=auth, headers=headers, **kwargs)
 
         # Pull from cache if not modified
         if cache and cache_data and req.status_code == 304:
-            return cache_data
+            return cache_data['data']
 
         # Get return value
         rv = None
-        if req.status_code == 200:
+        if 200 <= req.status_code < 300:
             if output is None:
                 rv = req
             else:
@@ -129,7 +132,10 @@ class GitHub(object):
         # Cache return value if needed
         if cache and rv:
             if req.headers.get('last-modified'):
-                github_cache[cache_key] = rv
+                github_cache[cache_key] = {
+                    'data': rv,
+                    'date': datetime.datetime.utcnow(),
+                }
 
         return rv
 
@@ -179,23 +185,31 @@ class GitHub(object):
             return commit_id, req
         return commit_id, None
 
-    def file(self, user, repo, path):
+    def file(self, user, repo, path, ref=None):
+
+        params = {
+            'ref': ref,
+        }
 
         req = self._send(
             os.path.join(
                 API_URL, 'repos', user, repo, 'contents', path
             ),
-            cache=False
+            cache=False,
+            params=params,
         )
+
         if req:
             content = req['content']
             return req['name'], base64.b64decode(content)
 
-    def tarball(self, user, repo):
+        return None, None
+
+    def starball(self, user, repo, archive='tar'):
 
         req = self._send(
             os.path.join(
-                API_URL, 'repos', user, repo, 'tarball'
+                API_URL, 'repos', user, repo, archive + 'ball'
             ),
             cache=False, output=None,
         )
@@ -204,6 +218,54 @@ class GitHub(object):
             return dict(req.headers), req.content
         return None, None
 
+    ########
+    # CRUD #
+    ########
+
+    def upload_file(self, user, repo, path, message, content, sha=None, branch=None, committer=None):
+
+        data = {
+            'message': message,
+            'content': base64.b64encode(content),
+        }
+        if sha is not None:
+            data['sha'] = sha
+        if branch is not None:
+            data['branch'] = branch
+        if committer is not None:
+            data['committer'] = committer
+
+        req = self._send(
+            os.path.join(
+                API_URL, 'repos', user, repo, 'contents', path
+            ),
+            method='put',
+            data=json.dumps(data),
+        )
+
+        return req
+
+    def delete_file(self, user, repo, path, message, sha, branch=None, committer=None):
+
+        data = {
+            'message': message,
+            'sha': sha,
+        }
+        if branch:
+            data['branch'] = branch
+        if committer:
+            data['committer'] = committer
+
+        req = self._send(
+            os.path.join(
+                API_URL, 'repos', user, repo, 'contents', path
+            ),
+            method='delete',
+            data=json.dumps(data),
+        )
+
+        return req
+
 #
 
 type_map = {
@@ -211,18 +273,19 @@ type_map = {
     'blob': 'file',
 }
 
-def tree_to_hgrid(tree, repo, node):
+def tree_to_hgrid(tree, repo, node, ref=None):
     """
 
     """
     grid = []
 
     parent = {
-        'uid': '__repo__',
+        'uid': 'tree:__repo__',
         'name': 'GitHub :: {0}'.format(repo),
         'parent_uid': 'null',
         'url': '',
         'type': 'folder',
+        'uploadUrl': node.api_url + 'github/file/'
     }
 
     grid.append(parent)
@@ -232,19 +295,30 @@ def tree_to_hgrid(tree, repo, node):
         split = os.path.split(item['path'])
 
         row = {
-            'uid': item['path'],
+            'uid': item['type'] + ':' + '||'.join(['__repo__', item['path']]),
             'name': split[1],
-            'parent_uid': split[0] if split[0] else '__repo__',
-            'url': item['url'],
+            'parent_uid': 'tree:' + '||'.join(['__repo__', split[0]]).strip('||'),
             'type': type_map[item['type']],
+            'uploadUrl': node.api_url + 'github/file/',
         }
+        if ref is not None:
+             row['uploadUrl'] += '?ref=' + ref
 
         if item['type'] == 'blob':
+            row['sha'] = item['sha']
+            row['url'] = item['url']
             row['size'] = [
                 item['size'],
                 size(item['size'], system=alternative)
             ]
             row['download'] = node.api_url + 'github/file/{0}'.format(item['path'])
+            if ref is not None:
+                row['download'] += '/?ref=' + ref
+                row['ref'] = ref
+        else:
+            row['uploadUrl'] = node.api_url + 'github/file/{0}/'.format(item['path'])
+            if ref is not None:
+                 row['uploadUrl'] += '?ref=' + ref
 
         grid.append(row)
 

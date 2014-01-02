@@ -13,7 +13,7 @@ ADDED_BY_DEFAULT = False
 CATEGORIES = ['storage']
 
 INCLUDE_JS = {
-    'widget': ['jquery.githubRepoWidget.min.js'],
+    'widget': ['jquery.githubRepoWidget.js'],
     'page': [
         '/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js',
         '/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js',

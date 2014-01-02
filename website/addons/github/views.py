@@ -5,12 +5,15 @@
 import os
 import json
 import uuid
+import datetime
 import urlparse
 import httplib as http
 
 from mako.template import Template
+from hurry.filesize import size, alternative
 
 from framework import request, redirect, make_response
+from framework.flask import secure_filename
 from framework.exceptions import HTTPError
 
 from website import settings
@@ -22,6 +25,12 @@ from website.project.views.node import _view_project
 
 from .api import GitHub, oauth_start_url, oauth_get_token, tree_to_hgrid
 
+MESSAGES = {
+    'add': 'Added by Open Science Framework',
+    'delete': 'Deleted by Open Science Framework',
+}
+
+# TODO: Abstract across add-ons
 def _get_addon(node):
     """Get GitHub addon for node.
 
@@ -60,7 +69,7 @@ def github_disable(*args, **kwargs):
     node.save()
 
 
-def _page_content(node, github):
+def _page_content(node, github, data):
 
     if github.user is None or github.repo is None:
 
@@ -84,7 +93,7 @@ def _page_content(node, github):
     if tree is None:
         return github.render_config_error()
 
-    hgrid = tree_to_hgrid(tree['tree'], github.repo, node)
+    hgrid = tree_to_hgrid(tree['tree'], github.repo, node, commit_id)
 
     return Template('''
         <h4>Viewing ${repo} / ${commit_id}</h4>
@@ -113,20 +122,33 @@ def _page_content(node, github):
             <hr />
         % endif
 
+        % if user['can_edit']:
+            <div class="container" style="position: relative;">
+                <h3 id="dropZoneHeader">Drag and drop (or <a href="#" id="gitFormUpload">click here</a>) to upload files</h3>
+                <div id="fallback"></div>
+                <div id="totalProgressActive" style="width: 35%; height: 20px; position: absolute; top: 73px; right: 0;" class>
+                    <div id="totalProgress" class="progress-bar progress-bar-success" style="width: 0%;"></div>
+                </div>
+            </div>
+        % endif
+
         <div id="grid">
             <div id="gitCrumb"></div>
             <div id="gitGrid"></div>
         </div>
 
         <script type="text/javascript">
-            var gridData = ${data};
+            var gridData = ${grid_data};
+            var ref = '${commit_id}';
+            var canEdit = ${int(user['can_edit'])};
         </script>
     ''').render(
         repo=github.repo,
         api_url=node.api_url,
         branches=branches,
         commit_id=commit_id,
-        data=json.dumps(hgrid),
+        grid_data=json.dumps(hgrid),
+        **data
     )
 
 
@@ -139,7 +161,9 @@ def github_page(*args, **kwargs):
     config = settings.ADDONS_AVAILABLE_DICT['github']
     github = _get_addon(node)
 
-    content = _page_content(node, github)
+    data = _view_project(node, user)
+
+    content = _page_content(node, github, data)
 
     rv = {
         'addon_title': 'GitHub',
@@ -147,8 +171,22 @@ def github_page(*args, **kwargs):
         'addon_page_js': config.include_js['page'],
         'addon_page_css': config.include_css['page'],
     }
-    rv.update(_view_project(node, user))
+    rv.update(data)
     return rv
+
+
+@must_be_contributor_or_public
+@must_have_addon('github')
+def github_get_repo(*args, **kwargs):
+
+    node = kwargs['node'] or kwargs['project']
+    github = _get_addon(node)
+
+    connect = GitHub.from_settings(github)
+
+    data = connect.repo(github.user, github.repo)
+
+    return {'data': data}
 
 
 @must_be_contributor_or_public
@@ -162,9 +200,11 @@ def github_download_file(*args, **kwargs):
     if path is None:
         raise HTTPError(http.NOT_FOUND)
 
+    ref = request.args.get('ref')
+
     connect = GitHub.from_settings(github)
 
-    name, data = connect.file(github.user, github.repo, path)
+    name, data = connect.file(github.user, github.repo, path, ref=ref)
 
     resp = make_response(data)
     resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(
@@ -175,14 +215,138 @@ def github_download_file(*args, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('github')
-def github_download_tarball(*args, **kwargs):
+def github_upload_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
+    user = kwargs['user']
     github = _get_addon(node)
+    now = datetime.datetime.utcnow()
+
+    path = kwargs.get('path', '')
+
+    ref = request.args.get('ref')
 
     connect = GitHub.from_settings(github)
 
-    headers, data = connect.tarball(github.user, github.repo)
+    upload = request.files.get('file')
+    filename = secure_filename(upload.filename)
+    content = upload.read()
+
+    # Get SHA of existing file if present; requires an additional call to the
+    # GitHub API
+    commit_id, tree = connect.tree(github.user, github.repo, branch=ref)
+    existing = [
+        thing
+        for thing in tree['tree']
+        if thing['path'] == os.path.join(path, filename)
+    ]
+    sha = existing[0]['sha'] if existing else None
+
+    data = connect.upload_file(
+        github.user, github.repo,
+        os.path.join(path, filename), MESSAGES['add'], content,
+        sha=sha, branch=ref,
+    )
+
+    if data is not None:
+
+        node.add_log(
+            action=(
+                models.NodeLog.FILE_UPDATED
+                if sha
+                else models.NodeLog.FILE_ADDED
+            ),
+            params={
+                'project': node.parent_id,
+                'node': node._primary_key,
+                'path': os.path.join(path, filename),
+                'addon': {
+                    'name': 'github',
+                    '_id': github._primary_key,
+                },
+            },
+            user=user,
+            api_key=None,
+            log_date=now,
+        )
+
+        info = {
+            'name': filename,
+            'uid': os.path.join('__repo__', data['content']['path']),
+            'parent_uid': 'tree:' + '||'.join(['__repo__', path]).strip('||'),
+            'size': [
+                data['content']['size'],
+                size(data['content']['size'], system=alternative)
+            ],
+            'type': 'file',
+            'sha': data['commit']['sha'],
+            'url': data['content']['url'],
+            'download': node.api_url + 'github/file/{0}'.format(path),
+        }
+
+        if ref is not None:
+            info['download'] += '/?ref=' + ref
+            info['ref'] = ref
+
+        return [info]
+
+    raise HTTPError(http.BAD_REQUEST)
+
+@must_be_contributor_or_public
+@must_have_addon('github')
+def github_delete_file(*args, **kwargs):
+
+    node = kwargs['node'] or kwargs['project']
+    user = kwargs['user']
+    github = _get_addon(node)
+    now = datetime.datetime.utcnow()
+
+    path = kwargs.get('path')
+    if path is None:
+        raise HTTPError(http.NOT_FOUND)
+
+    ref = request.args.get('ref')
+    sha = request.json.get('sha')
+
+    connect = GitHub.from_settings(github)
+
+    data = connect.delete_file(
+        github.user, github.repo, path, MESSAGES['delete'], sha=sha, branch=ref,
+    )
+
+    node.add_log(
+        action=models.NodeLog.FILE_REMOVED,
+        params={
+            'project': node.parent_id,
+            'node': node._primary_key,
+            'path': path,
+            'addon': {
+                'name': 'github',
+                '_id': github._primary_key,
+            },
+        },
+        user=user,
+        api_key=None,
+        log_date=now,
+    )
+
+    if data is not None:
+        return {}
+
+    raise HTTPError(http.BAD_REQUEST)
+
+
+@must_be_contributor_or_public
+@must_have_addon('github')
+def github_download_starball(*args, **kwargs):
+
+    node = kwargs['node'] or kwargs['project']
+    github = _get_addon(node)
+    archive = kwargs.get('archive', 'tar')
+
+    connect = GitHub.from_settings(github)
+
+    headers, data = connect.starball(github.user, github.repo, archive)
 
     resp = make_response(data)
     for key, value in headers.iteritems():

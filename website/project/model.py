@@ -660,28 +660,6 @@ class Node(GuidStoredObject):
 
         return True
 
-    def _clone_addons_to_node(self, node, action=None):
-        """Clone all nodes on current node and point clones to provided node.
-        Used during forking and registration.
-
-        :param Node node: Node to which addons will be copied
-        :param str action: Optional action
-
-        """
-        for addon in settings.ADDONS_AVAILABLE:
-
-            records = getattr(self, addon.backref_key)
-
-            for record in records:
-
-                clone = record.clone()
-                clone.node = node
-
-                if action == 'register':
-                    clone.register(save=False)
-
-                clone.save()
-
     def fork_node(self, user, api_key=None, title='Fork of '):
 
         # todo: should this raise an error?
@@ -728,7 +706,9 @@ class Node(GuidStoredObject):
 
         forked.save()
 
-        self._clone_addons_to_node(forked)
+        # After fork callback
+        for addon in original.addons:
+            addon.after_fork(original, forked, user)
 
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, forked._primary_key)
@@ -775,7 +755,9 @@ class Node(GuidStoredObject):
 
         registered.save()
 
-        self._clone_addons_to_node(registered, action='register')
+        # After register callback
+        for addon in original.addons:
+            addon.after_register(original, registered, user)
 
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, registered._primary_key)
@@ -816,7 +798,11 @@ class Node(GuidStoredObject):
 
             node_contained.save()
 
-            original_node_contained._clone_addons_to_node(node_contained)
+            # After register callback
+            for addon in original_node_contained:
+                addon.after_register(
+                    original_node_contained, node_contained, user
+                )
 
             registered.nodes.append(node_contained)
 
@@ -1257,13 +1243,18 @@ class Node(GuidStoredObject):
             self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != contributor._id]
             self.save()
             removed_user = get_user(contributor._id)
+
+            # After remove callback
+            for addon in self.addons:
+                addon.after_remove_contributor(self, removed_user)
+
             if log:
                 self.add_log(
                     action=NodeLog.CONTRIB_REMOVED,
                     params={
-                        'project':self.parent_id,
-                        'node':self._primary_key,
-                        'contributor':removed_user._primary_key,
+                        'project': self.parent_id,
+                        'node': self._primary_key,
+                        'contributor': removed_user._primary_key,
                     },
                     user=user,
                     api_key=api_key,
@@ -1275,12 +1266,13 @@ class Node(GuidStoredObject):
     def add_contributor(self, contributor, user=None, log=True, api_key=None, save=False):
         """Add a contributor to the project.
 
-        :param contributor: A User object, the contributor to be added
-        :param user: A User object, the user who added the contributor or None.
-        :param log: Add log to self
-        :param api_key: API key used to add contributors
-        :param save: Save after adding contributor
-        :return: Boolean--whether contributor was added
+        :param User contributor: The contributor to be added
+        :param User user: The user who added the contributor or None.
+        :param NodeLog log: Add log to self
+        :param ApiKey api_key: API key used to add contributors
+        :param bool save: Save after adding contributor
+        :return bool: Whether contributor was added
+
         """
         MAX_RECENT_LENGTH = 15
 

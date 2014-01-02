@@ -135,21 +135,39 @@ class AddonSettingsBase(StoredObject):
             nid=self.node._id,
         )
 
-    def fork(self, save=True):
+    #############
+    # Callbacks #
+    #############
+
+    def after_remove_contributor(self, node, removed):
         """
 
-        """
-        self.forked = True
-        if save:
-            self.save()
-
-    def register(self, save=True):
-        """
+        :param Node node:
+        :param User removed:
 
         """
-        self.registered = True
-        if save:
-            self.save()
+        pass
+
+    def after_fork(self, node, fork, user):
+        """
+
+        :param Node node:
+        :param Node fork:
+        :param User user:
+
+        """
+        pass
+
+    def after_register(self, node, registration, user):
+        """
+
+        :param Node node:
+        :param Node registration:
+        :param User user:
+
+        """
+        pass
+
 
 def init_addon(app, addon_name):
     """Load addon module and create a configuration object
