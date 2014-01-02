@@ -222,19 +222,16 @@ class GitHub(object):
     # CRUD #
     ########
 
-    def upload_file(self, user, repo, path, message, content, sha=None, branch=None, committer=None):
+    def upload_file(self, user, repo, path, message, content, sha=None, branch=None, committer=None, author=None):
 
         data = {
             'message': message,
             'content': base64.b64encode(content),
+            'sha': sha,
+            'branch': branch,
+            'committer': committer,
+            'author': author,
         }
-        if sha is not None:
-            data['sha'] = sha
-        if branch is not None:
-            data['branch'] = branch
-        if committer is not None:
-            data['committer'] = committer
-
         req = self._send(
             os.path.join(
                 API_URL, 'repos', user, repo, 'contents', path
@@ -245,16 +242,15 @@ class GitHub(object):
 
         return req
 
-    def delete_file(self, user, repo, path, message, sha, branch=None, committer=None):
+    def delete_file(self, user, repo, path, message, sha, branch=None, committer=None, author=None):
 
         data = {
             'message': message,
             'sha': sha,
+            'branch': branch,
+            'committer': committer,
+            'author': author,
         }
-        if branch:
-            data['branch'] = branch
-        if committer:
-            data['committer'] = committer
 
         req = self._send(
             os.path.join(

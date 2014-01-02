@@ -27,6 +27,7 @@ from .api import GitHub, oauth_start_url, oauth_get_token, tree_to_hgrid
 
 MESSAGES = {
     'add': 'Added by Open Science Framework',
+    'update': 'Updated by Open Science Framework',
     'delete': 'Deleted by Open Science Framework',
 }
 
@@ -96,11 +97,12 @@ def _page_content(node, github, data):
     hgrid = tree_to_hgrid(tree['tree'], github.repo, node, commit_id)
 
     return Template('''
-        <h4>Viewing ${repo} / ${commit_id}</h4>
+        <h4>Viewing ${gh_user} :: ${repo} :: ${commit_id}</h4>
 
         <hr />
 
-        <a href="${api_url}github/tarball/">Download tarball</a>
+        <p><a href="${api_url}github/tarball/">Download tarball</a></p>
+        <p><a href="${api_url}github/zipball/">Download zip</a></p>
 
         <hr />
 
@@ -143,6 +145,7 @@ def _page_content(node, github, data):
             var canEdit = ${int(user['can_edit'])};
         </script>
     ''').render(
+        gh_user=github.user,
         repo=github.repo,
         api_url=node.api_url,
         branches=branches,
@@ -242,10 +245,15 @@ def github_upload_file(*args, **kwargs):
     ]
     sha = existing[0]['sha'] if existing else None
 
+    author = {
+        'name': user.fullname,
+        'email': '{0}@osf.io'.format(user._id),
+    }
+
     data = connect.upload_file(
-        github.user, github.repo,
-        os.path.join(path, filename), MESSAGES['add'], content,
-        sha=sha, branch=ref,
+        github.user, github.repo, os.path.join(path, filename),
+        MESSAGES['update' if sha else 'add'], content, sha=sha, branch=ref,
+        author=author,
     )
 
     if data is not None:
@@ -307,11 +315,16 @@ def github_delete_file(*args, **kwargs):
 
     ref = request.args.get('ref')
     sha = request.json.get('sha')
+    author = {
+        'name': user.fullname,
+        'email': '{0}@osf.io'.format(user._id),
+    }
 
     connect = GitHub.from_settings(github)
 
     data = connect.delete_file(
-        github.user, github.repo, path, MESSAGES['delete'], sha=sha, branch=ref,
+        github.user, github.repo, path, MESSAGES['delete'], sha=sha,
+        branch=ref, author=author,
     )
 
     node.add_log(

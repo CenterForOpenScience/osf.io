@@ -77,6 +77,18 @@ class AddonGitHubSettings(AddonSettingsBase):
     # Callbacks #
     #############
 
+    def before_remove_contributor(self, node, removed):
+
+        if self.oauth_osf_user and self.oauth_osf_user == removed:
+            return (
+                'The GitHub add-on for this {category} is authenticated '
+                'by {user}. Removing this user will also remove write access '
+                'to GitHub unless another contributor re-authenticates.'
+            ).format(
+                category=node.project_or_component,
+                user=removed.fullname,
+            )
+
     def after_remove_contributor(self, node, removed):
         """
 

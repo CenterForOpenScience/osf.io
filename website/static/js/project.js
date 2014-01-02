@@ -4,7 +4,7 @@
 (function(){
 
 // Messages, e.g. for confirmation dialogs, alerts, etc.
-Messages = {
+var Messages = {
     makePublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
                         'access to the data it contains can be complete prevented. Users ' +
                         'should assume that once a project is made public, it will always ' +
@@ -121,21 +121,39 @@ $(function(){
 });
 
 NodeActions.removeUser = function(userid, name) {
-    bootbox.confirm('Remove ' + name + ' from contributor list?', function(result) {
-        if (result) {
-            $.ajax({
-                type: "POST",
-                url: nodeApiUrl + "removecontributors/",
-                contentType: "application/json",
-                dataType: "json",
-                data: JSON.stringify({
-                    "id": userid,
-                    "name": name,
-                })
-            }).done(function(response) {
-                window.location.reload();
-            });
+    var data = JSON.stringify({
+        id: userid,
+        name: name
+    });
+    $.ajax({
+        type: 'POST',
+        url: nodeApiUrl + 'beforeremovecontributors/',
+        contentType: 'application/json',
+        dataType: 'json',
+        data: data
+    }).success(function(response) {
+        var prompt = 'Remove ' + name + ' from contributor list?';
+        if (response.prompts) {
+            prompt += '<hr />';
+            prompt += '<ul>';
+            for (var i=0; i<response.prompts.length; i++) {
+                prompt += '<li>' + response.prompts[i] + '</li>';
+            }
+            prompt += '</ul>';
         }
+        bootbox.confirm(prompt, function(result) {
+            if (result) {
+                $.ajax({
+                    type: 'POST',
+                    url: nodeApiUrl + 'removecontributors/',
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    data: data
+                }).done(function(response) {
+                    window.location.reload();
+                });
+            }
+        });
     });
     return false;
 };
@@ -173,7 +191,7 @@ NodeActions.openCloseNode = function(node_id){
                     $logs.addClass("served")
                 }
             );
-        };
+        }
         $logs.addClass("active");
     } else {
         $logs.removeClass("active");

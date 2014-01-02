@@ -139,6 +139,15 @@ class AddonSettingsBase(StoredObject):
     # Callbacks #
     #############
 
+    def before_remove_contributor(self, node, removed):
+        """
+
+        :param Node node:
+        :param User removed:
+
+        """
+        pass
+
     def after_remove_contributor(self, node, removed):
         """
 

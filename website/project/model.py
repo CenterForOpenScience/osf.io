@@ -35,12 +35,6 @@ from website import settings
 
 from website.addons.base import init_addon
 
-#from website.addons.github.model.settings import AddonGitHubSettings
-#from website.addons.figshare.model.settings import AddonFigShareSettings
-#from website.addons.zotero.model.settings import AddonZoteroSettings
-#from website.addons.wiki.model.settings import AddonWikiSettings
-#from website.addons.files.model.settings import AddonFilesSettings
-
 def utc_datetime_to_timestamp(dt):
     return float(
         str(calendar.timegm(dt.utcnow().utctimetuple())) + '.' + str(dt.microsecond)
@@ -1231,14 +1225,29 @@ class Node(GuidStoredObject):
         )
         return True
 
+    def before_remove_contributor(self, contributor, user):
+
+        prompts = []
+
+        if not user._primary_key == contributor._id:
+
+            for addon in self.addons:
+                prompt = addon.before_remove_contributor(self, contributor)
+                if prompt:
+                    prompts.append(prompt)
+
+        return prompts
+
     def remove_contributor(self, contributor, user=None, api_key=None, log=True):
-        '''Remove a contributor from this project.
+        """Remove a contributor from this node.
 
         :param contributor: User object, the contributor to be removed
         :param user: User object, the user who is removing the contributor.
         :param api_key: ApiKey object
-        '''
+
+        """
         if not user._primary_key == contributor._id:
+
             self.contributors.remove(contributor._id)
             self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != contributor._id]
             self.save()

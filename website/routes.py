@@ -517,6 +517,10 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/addcontributors/',
         ], 'post', project_views.contributor.project_addcontributors_post, json_renderer),
         Rule([
+            '/project/<pid>/beforeremovecontributors/',
+            '/project/<pid>/node/<nid>/beforeremovecontributors/',
+        ], 'post', project_views.contributor.project_before_remove_contributor, json_renderer),
+        Rule([
             '/project/<pid>/removecontributors/',
             '/project/<pid>/node/<nid>/removecontributors/',
         ], 'post', project_views.contributor.project_removecontributor, json_renderer),
