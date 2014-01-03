@@ -987,16 +987,18 @@ class Node(GuidStoredObject):
         return node_file
 
     def add_private_link(self, link='', save=True):
-        if link == '':
+        if not link:
             link = str(uuid.uuid4())
 
         self.private_links.append(link)
-        self.save()
+        if save:
+            self.save()
         return link
 
     def remove_private_link(self, link, save=True):
         self.private_links.remove(link)
-        self.save()
+        if save:
+            self.save()
 
     def add_log(self, action, params, user, api_key=None, log_date=None, save=True):
         log = NodeLog()
@@ -1442,7 +1444,6 @@ class NodeWikiPage(GuidStoredObject):
         if self.node:
             self.node.update_solr()
         return rv
-
 
 
 class WatchConfig(StoredObject):
