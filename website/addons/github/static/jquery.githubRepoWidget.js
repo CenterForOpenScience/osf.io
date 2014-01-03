@@ -66,7 +66,7 @@
 //			+'</div>'
 			+'<div class="github-box-download">'
 			+'<div class="updated"></div>'
-			+'<a class="download" href="' + nodeApiUrl + 'github/zipball" title="Get an archive of this repository">Download as zip</a>'
+			+'<a class="download" href="' + nodeApiUrl + 'github/zipball/" title="Get an archive of this repository">Download as zip</a>'
 			+'</div>'
 			+'</div>'
 		);

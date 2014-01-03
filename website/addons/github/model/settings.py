@@ -120,10 +120,13 @@ class AddonGitHubSettings(AddonSettingsBase):
             return (
                 'The GitHub add-on for this {category} is authenticated '
                 'by {user}. Removing this user will also remove write access '
-                'to GitHub unless another contributor re-authenticates.'
+                'to GitHub unless another contributor re-authenticates. You '
+                'can download the contents of this repository before removing '
+                'this contributor <a href="{url}">here</a>.'
             ).format(
                 category=node.project_or_component,
                 user=removed.fullname,
+                url=node.api_url + 'github/tarball/'
             )
 
     def after_remove_contributor(self, node, removed):
