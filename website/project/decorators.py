@@ -110,7 +110,7 @@ def must_be_contributor(fn):
                     and api_node != node_to_use:
                 raise HTTPError(http.FORBIDDEN)
 
-            return fn(*args, **kwargs)
+        return fn(*args, **kwargs)
     return decorator(wrapped, fn)
 
 

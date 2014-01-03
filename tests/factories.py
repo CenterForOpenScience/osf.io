@@ -151,6 +151,7 @@ class WatchConfigFactory(ModularOdmFactory):
     FACTORY_FOR = WatchConfig
     node = SubFactory(NodeFactory)
 
+
 class MetaDataFactory(ModularOdmFactory):
     FACTORY_FOR = MetaData
 

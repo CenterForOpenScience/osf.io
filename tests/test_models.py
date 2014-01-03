@@ -1221,6 +1221,7 @@ class TestWatchConfig(DbTestCase):
         assert_false(config.immediate)
         assert_true(config.node._id)
 
+
 class TestUnregisteredUser(unittest.TestCase):
     def test_factory(self):
         u1 = UnregUserFactory()
