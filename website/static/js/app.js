@@ -91,6 +91,7 @@ var LogsViewModel = function(logs, url) {
     self.logs = ko.observableArray(logs);
     var offset=  0;
     self.url = url;
+
     self.moreLogs = function(){
         offset+=10;
         var data_to_send={
