@@ -196,6 +196,10 @@ class AddonSettingsBase(StoredObject):
         pass
 
 
+# TODO: Move this
+LOG_TEMPLATES = 'website/templates/log_templates.mako'
+
+
 def init_addon(app, addon_name):
     """Load addon module and create a configuration object
 
@@ -204,13 +208,22 @@ def init_addon(app, addon_name):
     :return AddonConfig: AddonConfig configuration object if module found, else None
 
     """
-    addon_path = 'website.addons.{0}'.format(addon_name)
+    addon_path = os.path.join('website', 'addons', addon_name)
+    addon_import_path = 'website.addons.{0}'.format(addon_name)
 
     # Import addon module
     try:
-        addon_module = importlib.import_module(addon_path)
+        addon_module = importlib.import_module(addon_import_path)
     except ImportError:
         return None
+
+    # Append add-on log templates to main log templates
+    log_templates = os.path.join(
+        addon_path, 'templates', 'log_templates.mako'
+    )
+    if os.path.exists(log_templates):
+        with open(LOG_TEMPLATES, 'a') as fp:
+            fp.write(open(log_templates, 'r').read())
 
     # Add routes
     for route_group in getattr(addon_module, 'ROUTES', []):

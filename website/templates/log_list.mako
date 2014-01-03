@@ -19,4 +19,3 @@
   </dd>
 </dl><!-- end foreach logs -->
 <%include file="log_templates.mako"/>
-

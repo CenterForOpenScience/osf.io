@@ -262,17 +262,20 @@ def github_upload_file(*args, **kwargs):
 
         node.add_log(
             action=(
-                models.NodeLog.FILE_UPDATED
-                if sha
-                else models.NodeLog.FILE_ADDED
+                'github_' + (
+                    models.NodeLog.FILE_UPDATED
+                    if sha
+                    else models.NodeLog.FILE_ADDED
+                )
             ),
             params={
                 'project': node.parent_id,
                 'node': node._primary_key,
                 'path': os.path.join(path, filename),
-                'addon': {
-                    'name': 'github',
-                    '_id': github._primary_key,
+                'github': {
+                    'user': github.user,
+                    'repo': github.repo,
+                    'url': node.api_url + 'github/file/' + os.path.join(path, filename),
                 },
             },
             user=user,
@@ -331,14 +334,14 @@ def github_delete_file(*args, **kwargs):
     )
 
     node.add_log(
-        action=models.NodeLog.FILE_REMOVED,
+        action='github_' + models.NodeLog.FILE_REMOVED,
         params={
             'project': node.parent_id,
             'node': node._primary_key,
             'path': path,
-            'addon': {
-                'name': 'github',
-                '_id': github._primary_key,
+            'github': {
+                'user': github.user,
+                'repo': github.repo,
             },
         },
         user=user,
