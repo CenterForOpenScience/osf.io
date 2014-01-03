@@ -71,7 +71,7 @@ def github_disable(*args, **kwargs):
     node.save()
 
 
-def _page_content(node, github, data):
+def _page_content(node, github, data, hotlink=True):
 
     if github.user is None or github.repo is None:
 
@@ -88,6 +88,12 @@ def _page_content(node, github, data):
         if github.registered
         else []
     )
+
+    if hotlink:
+        repo = connect.repo(github.user, github.repo)
+        if repo['private']:
+            hotlink = False
+
     commit_id, tree = connect.tree(
         github.user, github.repo, branch=branch,
         registration_data=registration_data
@@ -95,35 +101,47 @@ def _page_content(node, github, data):
     if tree is None:
         return github.render_config_error()
 
-    hgrid = tree_to_hgrid(tree['tree'], github.repo, node, commit_id)
+    hgrid = tree_to_hgrid(
+        tree['tree'], github.user, github.repo, node, commit_id, hotlink,
+    )
 
     return Template('''
-        <h4>Viewing ${gh_user} / ${repo} : ${commit_id}</h4>
+
+        <div class="row">
+
+            <div class="col-md-6">
+
+                <h4>Viewing ${gh_user} / ${repo}</h4>
+
+                % if len(branches) > 1:
+
+                    <form role="form">
+                        <select id="gitBranchSelect" name="branch">
+                            % for branch in branches:
+                                <option
+                                    value=${branch['name']}
+                                    ${'selected' if commit_id in [branch['name'], branch['commit']['sha']] else ''}
+                                >${branch['name']}</option>
+                            % endfor
+                        </select>
+                    </form>
+
+                % endif
+
+            </div>
+
+            <div class="col-md-6">
+
+                <h4>Downloads</h4>
+
+                <p><a href="${api_url}github/tarball/">Tarball</a></p>
+                <p><a href="${api_url}github/zipball/">Zip</a></p>
+
+            </div>
+
+        </div>
 
         <hr />
-
-        <p><a href="${api_url}github/tarball/">Download tarball</a></p>
-        <p><a href="${api_url}github/zipball/">Download zip</a></p>
-
-        <hr />
-
-        % if len(branches) > 1:
-            <form role="form">
-                <div class="form-group">
-                    <label for="selectBranch">Select branch</label>
-                    <select id="selectBranch" name="branch">
-                        % for branch in branches:
-                            <option
-                                value=${branch['name']}
-                                ${'selected' if commit_id in [branch['name'], branch['commit']['sha']] else ''}
-                            >${branch['name']}</option>
-                        % endfor
-                    </select>
-                </div>
-                <button class="btn btn-success">Submit</button>
-            </form>
-            <hr />
-        % endif
 
         % if user['can_edit']:
             <div class="container" style="position: relative;">
@@ -141,9 +159,19 @@ def _page_content(node, github, data):
         </div>
 
         <script type="text/javascript">
+
+            // Import JS variables
             var gridData = ${grid_data};
             var ref = '${commit_id}';
             var canEdit = ${int(user['can_edit'])};
+
+            // Submit branch form on change
+            % if len(branches) > 1:
+                $('#gitBranchSelect').on('change', function() {
+                    $(this).closest('form').submit();
+                });
+            % endif
+
         </script>
     ''').render(
         gh_user=github.user,

@@ -16,6 +16,7 @@ from website import settings
 
 from . import settings as github_settings
 
+GH_URL = 'https://github.com/'
 API_URL = 'https://api.github.com/'
 OAUTH_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
 OAUTH_ACCESS_TOKEN_URL = 'https://github.com/login/oauth/access_token'
@@ -182,7 +183,7 @@ class GitHub(object):
             return commit_id, req
         return commit_id, None
 
-    def file(self, user, repo, path, ref=None):
+    def file(self, user, repo, path, ref=None, hotlink=True):
 
         params = {
             'ref': ref,
@@ -290,7 +291,7 @@ type_map = {
     'blob': 'file',
 }
 
-def tree_to_hgrid(tree, repo, node, ref=None):
+def tree_to_hgrid(tree, user, repo, node, ref=None, hotlink=True):
     """
 
     """
@@ -328,10 +329,15 @@ def tree_to_hgrid(tree, repo, node, ref=None):
                 item['size'],
                 size(item['size'], system=alternative)
             ]
-            row['download'] = node.api_url + 'github/file/{0}'.format(item['path'])
-            if ref is not None:
-                row['download'] += '/?ref=' + ref
-                row['ref'] = ref
+            if hotlink and ref:
+                row['download'] = os.path.join(
+                    GH_URL, user, repo, 'blob', ref, item['path']
+                ) + '?raw=true'
+            else:
+                row['download'] = node.api_url + 'github/file/{0}'.format(item['path'])
+                if ref is not None:
+                    row['download'] += '/?ref=' + ref
+                    row['ref'] = ref
         else:
             row['uploadUrl'] = node.api_url + 'github/file/{0}/'.format(item['path'])
             if ref is not None:
