@@ -2,21 +2,22 @@
 
 """
 
+from mako.template import Template
 from website.addons.base import AddonSettingsBase
 
 class AddonFilesSettings(AddonSettingsBase):
 
     def render_widget(self):
-        return '''
-            <div mod-meta='{{
+        return Template('''
+            <div mod-meta='{
                 "tpl": "util/render_file_tree.mako",
-                "uri": "{url}get_files/",
-                "view_kwargs": {{
+                "uri": "${url}files/",
+                "view_kwargs": {
                       "dash": true
-                }},
+                },
                 "replace": true
-            }}'></div>
-        '''.format(
+            }'></div>
+        ''').render(
             url=self.node.api_url,
         )
 

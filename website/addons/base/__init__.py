@@ -139,6 +139,15 @@ class AddonSettingsBase(StoredObject):
     # Callbacks #
     #############
 
+    def before_page_load(self, node, user):
+        """
+
+        :param Node node:
+        :param User user:
+
+        """
+        pass
+
     def before_remove_contributor(self, node, removed):
         """
 
@@ -153,6 +162,15 @@ class AddonSettingsBase(StoredObject):
 
         :param Node node:
         :param User removed:
+
+        """
+        pass
+
+    def after_set_permissions(self, node, permissions):
+        """
+
+        :param Node node:
+        :param str permissions:
 
         """
         pass

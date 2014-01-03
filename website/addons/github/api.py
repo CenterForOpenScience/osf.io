@@ -14,22 +14,17 @@ from hurry.filesize import size, alternative
 
 from website import settings
 
+from . import settings as github_settings
+
 API_URL = 'https://api.github.com/'
 OAUTH_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
 OAUTH_ACCESS_TOKEN_URL = 'https://github.com/login/oauth/access_token'
 
-# TODO: Move to settings
-GITHUB_USER = 'pfftwhat'
-GITHUB_TOKEN = '150fbf1af333e58cd9ae22a21dddafb454b95e8d'
-
-CLIENT_ID = '01344fe22202e7f924bc'
-CLIENT_SECRET = 'bc8b79abe67ac0c282d4d86dd54515ee5b1a4e27'
-
 SCOPE = ['repo']
 
 GITHUB_AUTH = (
-    GITHUB_USER,
-    GITHUB_TOKEN,
+    github_settings.GITHUB_USER,
+    github_settings.GITHUB_TOKEN,
 )
 
 github_cache = {}
@@ -44,7 +39,7 @@ def oauth_start_url(node, state=None):
         settings.DOMAIN, 'api', 'v1', 'addons', 'github', 'callback', node._id
     )
     query_string = urllib.urlencode({
-        'client_id': CLIENT_ID,
+        'client_id': github_settings.CLIENT_ID,
         'redirect_uri': redirect_uri,
         'scope': ','.join(SCOPE),
         'state': state,
@@ -64,8 +59,8 @@ def oauth_get_token(code):
     return requests.get(
         OAUTH_ACCESS_TOKEN_URL,
         data={
-            'client_id': CLIENT_ID,
-            'client_secret': CLIENT_SECRET,
+            'client_id': github_settings.CLIENT_ID,
+            'client_secret': github_settings.CLIENT_SECRET,
             'code': code,
         }
     )
@@ -81,7 +76,7 @@ class GitHub(object):
     @classmethod
     def from_settings(cls, settings):
         return cls(
-            GITHUB_USER, GITHUB_TOKEN,
+            github_settings.GITHUB_USER, github_settings.GITHUB_TOKEN,
             key=settings.oauth_access_token,
         )
 
@@ -89,7 +84,7 @@ class GitHub(object):
         """
 
         """
-        func = getattr(requests, method)
+        func = getattr(requests, method.lower())
 
         # Add access token to params
         params = kwargs.pop('params', {})
@@ -159,7 +154,7 @@ class GitHub(object):
             os.path.join(API_URL, 'repos', user, repo, 'commits'),
         )
 
-    def tree(self, user, repo, branch=None, registration_data=None):
+    def tree(self, user, repo, branch=None, recursive=True, registration_data=None):
 
         if branch:
             commit_id = branch
@@ -178,7 +173,9 @@ class GitHub(object):
         req = self._send(os.path.join(
                 API_URL, 'repos', user, repo, 'git', 'trees', commit_id
             ),
-            params={'recursive': 1},
+            params={
+                'recursive': int(recursive)
+            },
         )
 
         if req is not None:
@@ -218,6 +215,28 @@ class GitHub(object):
             return dict(req.headers), req.content
         return None, None
 
+    def set_privacy(self, user, repo, private):
+        """Set privacy of GitHub repo.
+
+        :param str user: GitHub user name
+        :param str repo: GitHub repo name
+        :param bool private: Make repo private
+
+        """
+        req = self._send(
+            os.path.join(
+                API_URL, 'repos', user, repo
+            ),
+            method='patch',
+            cache=False,
+            data=json.dumps({
+                'name': repo,
+                'private': private,
+            })
+        )
+
+        return req
+
     ########
     # CRUD #
     ########
@@ -237,6 +256,7 @@ class GitHub(object):
                 API_URL, 'repos', user, repo, 'contents', path
             ),
             method='put',
+            cache=False,
             data=json.dumps(data),
         )
 
@@ -257,6 +277,7 @@ class GitHub(object):
                 API_URL, 'repos', user, repo, 'contents', path
             ),
             method='delete',
+            cache=False,
             data=json.dumps(data),
         )
 

@@ -2,7 +2,6 @@
 import json
 import logging
 import httplib as http
-from bs4 import BeautifulSoup
 from framework import (
     request, redirect, must_be_logged_in,
     push_errors_to_status, get_current_user, Q,
@@ -53,9 +52,11 @@ def edit_node(*args, **kwargs):
 # New Project
 ##############################################################################
 
+
 @must_be_logged_in
 def project_new(*args, **kwargs):
     return {}
+
 
 @must_be_logged_in
 def project_new_post(*args, **kwargs):
@@ -75,9 +76,11 @@ def project_new_post(*args, **kwargs):
         push_errors_to_status(form.errors)
     return {}, http.BAD_REQUEST
 
+
 ##############################################################################
 # New Node
 ##############################################################################
+
 
 @must_have_session_auth # returns user
 @must_be_valid_project # returns project
@@ -106,6 +109,7 @@ def project_new_node(*args, **kwargs):
         push_errors_to_status(form.errors)
     raise HTTPError(http.BAD_REQUEST, redirect_url=project.url)
 
+
 @must_be_valid_project
 def node_fork_page(*args, **kwargs):
     project = kwargs['project']
@@ -131,6 +135,7 @@ def node_fork_page(*args, **kwargs):
 
     return fork.url
 
+
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
 @update_counters('node:{pid}')
@@ -140,6 +145,7 @@ def node_registrations(*args, **kwargs):
     user = get_current_user()
     node_to_use = kwargs['node'] or kwargs['project']
     return _view_project(node_to_use, user)
+
 
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
@@ -236,6 +242,7 @@ def node_choose_addons(**kwargs):
 # View Project
 ##############################################################################
 
+
 @must_be_valid_project
 @must_not_be_registration
 @must_be_contributor # returns user, project
@@ -254,7 +261,9 @@ def project_reorder_components(*args, **kwargs):
     # todo log impossibility
     return {'status': 'failure'}
 
+
 ##############################################################################
+
 
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
@@ -276,6 +285,7 @@ def project_statistics(*args, **kwargs):
     }
     rv.update(_view_project(node_to_use, user))
     return rv
+
 
 ###############################################################################
 # Make Public
@@ -321,6 +331,7 @@ def watch_post(*args, **kwargs):
         'status': 'success',
         'watchCount': len(node_to_use.watchconfig__watched)
     }
+
 
 @must_have_session_auth  # returns user or api_node
 @must_be_valid_project  # returns project
@@ -425,10 +436,6 @@ def _render_addon(node):
 
         if addons:
 
-            #try:
-            #    widgets[addon] = addons[0].render_widget()
-            #except NotImplementedError:
-            #    pass
             widget = registered_addon.widget_json(addons[0])
             if widget:
                 widgets[addon] = widget
@@ -456,6 +463,10 @@ def _view_project(node_to_use, user, api_key=None):
     recent_logs = list(reversed(node_to_use.logs)[:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
     widgets, tabs, icons, js, css = _render_addon(node_to_use)
+    # Before page load callback; skip if API request
+    if 'api/v1' in request.path:
+        for addon in node_to_use.addons:
+            addon.before_page_load(node_to_use, user)
     data = {
         'node': {
             'id': node_to_use._primary_key,

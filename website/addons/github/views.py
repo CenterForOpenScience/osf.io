@@ -16,19 +16,20 @@ from framework import request, redirect, make_response
 from framework.flask import secure_filename
 from framework.exceptions import HTTPError
 
-from website import settings
 from website import models
+from website import settings
 from website.project.decorators import must_be_contributor
 from website.project.decorators import must_be_contributor_or_public
+from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 
 from .api import GitHub, oauth_start_url, oauth_get_token, tree_to_hgrid
 
 MESSAGES = {
-    'add': 'Added by Open Science Framework',
-    'update': 'Updated by Open Science Framework',
-    'delete': 'Deleted by Open Science Framework',
+    'add': 'Added via the Open Science Framework',
+    'update': 'Updated via the Open Science Framework',
+    'delete': 'Deleted via the Open Science Framework',
 }
 
 # TODO: Abstract across add-ons
@@ -97,7 +98,7 @@ def _page_content(node, github, data):
     hgrid = tree_to_hgrid(tree['tree'], github.repo, node, commit_id)
 
     return Template('''
-        <h4>Viewing ${gh_user} :: ${repo} :: ${commit_id}</h4>
+        <h4>Viewing ${gh_user} / ${repo} : ${commit_id}</h4>
 
         <hr />
 
@@ -217,6 +218,7 @@ def github_download_file(*args, **kwargs):
 
 
 @must_be_contributor_or_public
+@must_not_be_registration
 @must_have_addon('github')
 def github_upload_file(*args, **kwargs):
 
@@ -301,6 +303,7 @@ def github_upload_file(*args, **kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 @must_be_contributor_or_public
+@must_not_be_registration
 @must_have_addon('github')
 def github_delete_file(*args, **kwargs):
 
@@ -366,6 +369,22 @@ def github_download_starball(*args, **kwargs):
         resp.headers[key] = value
 
     return resp
+
+
+@must_be_contributor
+@must_have_addon('github')
+def github_set_privacy(*args, **kwargs):
+
+    node = kwargs['node'] or kwargs['project']
+    github = _get_addon(node)
+    private = request.form.get('private')
+
+    if private is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    connect = GitHub.from_settings(github)
+
+    connect.set_privacy(github.user, github.repo, private)
 
 
 @must_be_contributor

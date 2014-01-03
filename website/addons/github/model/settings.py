@@ -77,8 +77,45 @@ class AddonGitHubSettings(AddonSettingsBase):
     # Callbacks #
     #############
 
-    def before_remove_contributor(self, node, removed):
+    def before_page_load(self, node, user):
+        """
 
+        :param Node node:
+        :param User user:
+
+        """
+        # Quit if not configured
+        if self.user is None or self.repo is None:
+            return
+
+        connect = GitHub.from_settings(self)
+        repo = connect.repo(self.user, self.repo)
+
+        # Quit if request failed
+        if repo is None:
+            return
+
+        node_permissions = 'public' if node.is_public else 'private'
+        repo_permissions = 'private' if repo['private'] else 'public'
+        if repo_permissions != node_permissions:
+            push_status_message(
+                'This {category} is {node_perm}, but GitHub add-on '
+                '{user} / {repo} is {repo_perm}.'.format(
+                    category=node.project_or_component,
+                    node_perm=node_permissions,
+                    repo_perm=repo_permissions,
+                    user=self.user,
+                    repo=self.repo,
+                )
+            )
+
+    def before_remove_contributor(self, node, removed):
+        """
+
+        :param Node node:
+        :param User removed:
+
+        """
         if self.oauth_osf_user and self.oauth_osf_user == removed:
             return (
                 'The GitHub add-on for this {category} is authenticated '
@@ -113,6 +150,42 @@ class AddonGitHubSettings(AddonSettingsBase):
                     url=node.url,
                 )
             )
+
+    def after_set_permissions(self, node, permissions):
+        """
+
+        :param Node node:
+        :param str permissions:
+
+        """
+        connect = GitHub.from_settings(self)
+
+        data = connect.set_privacy(
+            self.user, self.repo, permissions == 'private'
+        )
+        if data is None or 'errors' in data:
+            repo = connect.repo(self.user, self.repo)
+            if repo is not None:
+                current_privacy = 'private' if repo['private'] else 'public'
+            else:
+                current_privacy = 'unknown'
+            push_status_message(
+                'Could not set privacy for repo {user}::{repo}. '
+                'Current privacy status is {perm}.'.format(
+                    user=self.user,
+                    repo=self.repo,
+                    perm=current_privacy,
+                )
+            )
+        else:
+            push_status_message(
+                'GitHub repo {user}::{repo} made {perm}.'.format(
+                    user=self.user,
+                    repo=self.repo,
+                    perm=permissions,
+                )
+            )
+
 
     def after_fork(self, node, fork, user):
         """
@@ -155,5 +228,6 @@ class AddonGitHubSettings(AddonSettingsBase):
         if branches is None:
             raise AddonError('Could not fetch repo branches.')
         clone.registration_data['branches'] = branches
+        clone.registered = True
 
         clone.save()

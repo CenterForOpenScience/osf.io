@@ -1380,6 +1380,11 @@ class Node(GuidStoredObject):
             self.is_public = False
         else:
             return False
+
+        # After set permissions callback
+        for addon in self.addons:
+            addon.after_set_permissions(self, permissions)
+
         action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
         self.add_log(
             action=action,
