@@ -36,9 +36,6 @@ DEBUG_MODE = False
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
 
-# URLs to ignore in history
-URL_HISTORY_IGNORE = ['/login/', '/account/']
-
 FROM_EMAIL = 'openscienceframework-noreply@openscienceframework.org'
 MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
@@ -53,6 +50,13 @@ DB_PORT = 20771
 DB_NAME = 'osf20130903'
 DB_USER = None
 DB_PASS = None
+
+# Cache settings
+SESSION_HISTORY_LENGTH = 5
+SESSION_HISTORY_IGNORE_RULES = [
+    lambda url: '/static/' in url,
+    lambda url: 'favicon' in url,
+]
 
 # TODO: Configuration should not change between deploys - this should be dynamic.
 CANONICAL_DOMAIN = 'openscienceframework.org'

@@ -3,7 +3,7 @@ import httplib as http
 import logging
 
 import framework
-from framework import goback, set_previous_url, request
+from framework import goback, set_previous_url, request, redirect, session
 from framework.email.tasks import send_email
 from framework import status
 import framework.forms as forms
@@ -85,10 +85,11 @@ def forgot_password():
 # Log in
 ###############################################################################
 
-def auth_login(
-        registration_form=None,
-        forgot_password_form=None
-):
+def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
+    """If GET request, show login page. If POST, attempt to log user in if
+    login form passsed; else send forgot password email.
+
+    """
     direct_call = registration_form or forgot_password_form
 
     if framework.request.method == 'POST' and not direct_call:
@@ -108,12 +109,32 @@ def auth_login(
 
         forms.push_errors_to_status(form.errors)
 
-    return {}
+    if kwargs.get('first', False):
+        status.push_status_message('You may now log in')
+
+    # Get next URL from GET / POST data
+    next_url = request.args.get(
+        'next',
+        request.form.get(
+            'next_url',
+            ''
+        )
+    )
+    if next_url:
+        status.push_status_message('You must log in to access this resource')
+    return {
+        'next': next_url,
+    }
 
 def auth_logout():
+    """Log out and delete cookie.
+
+    """
     logout()
     status.push_status_message('You have successfully logged out.')
-    return framework.redirect('/')
+    rv = framework.redirect('/goodbye/')
+    rv.delete_cookie(website.settings.COOKIE_NAME)
+    return rv
 
 def auth_register_post():
     if not website.settings.ALLOW_REGISTRATION:
@@ -151,7 +172,8 @@ def auth_register_post():
                     check %s to confirm your email address, %s.' %
                     (str(u.username), str(u.fullname)))
             else:
-                status.push_status_message('You may now log in')
+                return framework.redirect('/login/first/')
+                #status.push_status_message('You may now log in')
             return framework.redirect(framework.url_for('OsfWebRenderer__auth_login'))
 
     else:

@@ -12,9 +12,9 @@ from werkzeug.exceptions import NotFound
 from mako.template import Template
 from mako.lookup import TemplateLookup
 
-from framework import StoredObject, session, request, make_response
+from framework import session, request, make_response
 from framework.exceptions import HTTPError
-from framework.flask import app, redirect, make_response
+from framework.flask import app, redirect
 from website import settings
 
 logger = logging.getLogger(__name__)
@@ -82,23 +82,25 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
 
     """
     def wrapped(*args, **kwargs):
+        session_error_code = session.data.get('auth_error_code')
+        if session_error_code:
+            raise HTTPError(session_error_code)
         try:
-            session_error_code = session.data.get('auth_error_code')
-            if session_error_code:
-                raise HTTPError(session_error_code)
-            rv = fn(*args, **kwargs)
+            if renderer_kwargs:
+                kwargs.update(renderer_kwargs)
+            data = fn(*args, **kwargs)
         except HTTPError as error:
-            rv = error
+            data = error
         except Exception as error:
-            logger.debug("Exception raised in wrap_with_renderer")
+            logger.debug('Exception raised in wrap_with_renderer')
             logger.error(error)
             if debug_mode:
                 raise
-            rv = HTTPError(
+            data = HTTPError(
                 http.INTERNAL_SERVER_ERROR,
                 message=repr(error),
             )
-        return renderer(rv, **renderer_kwargs or {})
+        return renderer(data, **renderer_kwargs or {})
     return wrapped
 
 

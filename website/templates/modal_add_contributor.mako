@@ -21,6 +21,9 @@
                             <div class="col-md-6" data-bind="if:parentId">
                                 <a data-bind="click:importFromParent, text:'Import contributors from ' + parentTitle"></a>
                             </div>
+                            <div class="col-md-6">
+                                <a data-bind="click:recentlyAdded, text:'Get list of recently added contributors'"></a>
+                            </div>
                         </div>
                     </form>
 

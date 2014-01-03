@@ -232,7 +232,7 @@ def project_wiki_edit_post(*args, **kwargs):
     else:
         content = ''
     if request.form['content'] != content:
-        node_to_use.update_node_wiki(wid, request.form['content'], user, api_key=None)
+        node_to_use.update_node_wiki(wid, request.form['content'], user)
         return {
             'status' : 'success',
         }, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)

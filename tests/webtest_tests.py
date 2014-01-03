@@ -11,16 +11,18 @@ from webtest import AppError
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ProjectFactory, WatchConfigFactory,
                             NodeLogFactory, ApiKeyFactory, NodeFactory,
-                            NodeWikiFactory)
+                            NodeWikiFactory, RegistrationFactory)
 
 from website import settings
 from website.project.metadata.schemas import OSF_META_SCHEMAS
+from website.project.model import ensure_schemas
 from framework import app
 
 
 # Only uncomment if running these tests in isolation
 #from website.app import init_app
 #app = init_app(set_backends=False, routes=True)
+
 
 class TestAnUnregisteredUser(DbTestCase):
 
@@ -71,13 +73,17 @@ class TestAnUnregisteredUser(DbTestCase):
 
     def test_cant_see_new_project_form(self):
         """ Can't see new project form if not logged in. """
-        with assert_raises(AppError):
+        assert_in(
+            'You must log in to access this resource',
             self.app.get('/project/new/').maybe_follow()
+        )
 
     def test_cant_see_profile(self):
         """ Can't see profile if not logged in. """
-        with assert_raises(AppError):
+        assert_in(
+            'You must log in to access this resource',
             self.app.get('/profile/').maybe_follow()
+        )
 
 
 class TestAUser(DbTestCase):
@@ -109,7 +115,7 @@ class TestAUser(DbTestCase):
 
     def test_can_see_homepage(self):
         # Goes to homepage
-        res = self.app.get("/").follow()  # Redirects
+        res = self.app.get('/').maybe_follow()  # Redirects
         assert_equal(res.status_code, 200)
 
     def test_can_log_in_first_time(self):
@@ -265,6 +271,7 @@ class TestAUser(DbTestCase):
 class TestRegistrations(DbTestCase):
 
     def setUp(self):
+        ensure_schemas()
         self.app = TestApp(app)
         self.user = UserFactory()
         # Add an API key for quicker authentication
@@ -274,10 +281,10 @@ class TestRegistrations(DbTestCase):
         self.auth = ('test', api_key._primary_key)
         self.original = ProjectFactory(creator=self.user, is_public=True)
         # A registration
-        self.project = ProjectFactory(is_registration=True,
-                                registered_from=self.original,
-                                registered_date=dt.datetime.now(),
-                                creator=self.user)
+        self.project = RegistrationFactory(
+            project=self.original,
+            user=self.user,
+        )
 
     def test_cant_be_deleted(self):
         # Goes to project's page
@@ -342,8 +349,11 @@ class TestComponents(DbTestCase):
         self.nr_user = {"nr_name": "Foo Bar", "nr_email": "foo@example.com"}
         self.project.contributor_list.append(self.nr_user)
         # A non-project componenet
-        self.component = NodeFactory(category="hypothesis", creator=self.user)
-        self.project.nodes.append(self.component)
+        self.component = NodeFactory(
+            category="hypothesis",
+            creator=self.user,
+            project=self.project,
+        )
         self.component.save()
         self.component.set_permissions('public', self.user)
         self.component.set_permissions('private', self.user)

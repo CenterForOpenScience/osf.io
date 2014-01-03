@@ -51,7 +51,7 @@
           </div>
           <div mod-meta='{
                   "tpl": "util/render_file_tree.mako",
-                  "uri": "${node["api_url"]}get_files/",
+                  "uri": "${node["api_url"]}files/",
                   "view_kwargs": {
                       "dash": true
                   },

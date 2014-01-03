@@ -17,10 +17,19 @@ import datetime as dt
 
 from factory import base, Sequence, SubFactory, post_generation
 
-from framework.auth import User
+from framework import StoredObject
+from framework.auth import User, Q
 from framework.auth.utils import parse_name
 from website.project.model import (ApiKey, Node, NodeLog, WatchConfig,
-                                   MetaData, Tag, NodeWikiPage)
+                                   MetaData, Tag, NodeWikiPage, MetaSchema)
+
+
+# TODO: This is a hack. Check whether FactoryBoy can do this better
+def save_kwargs(**kwargs):
+    for value in kwargs.itervalues():
+        if isinstance(value, StoredObject) and not value._is_loaded:
+            value.save()
+
 
 class ModularOdmFactory(base.Factory):
 
@@ -32,10 +41,12 @@ class ModularOdmFactory(base.Factory):
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
         '''Build an object without saving it.'''
+        save_kwargs(**kwargs)
         return target_class(*args, **kwargs)
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
+        save_kwargs(**kwargs)
         instance = target_class(*args, **kwargs)
         instance.save()
         return instance
@@ -78,30 +89,55 @@ class ApiKeyFactory(ModularOdmFactory):
     FACTORY_FOR = ApiKey
 
 
-class NodeFactory(ModularOdmFactory):
+class AbstractNodeFactory(ModularOdmFactory):
     FACTORY_FOR = Node
 
-    category = 'hypothesis'
     title = 'The meaning of life'
-    description = "The meaning of life is 42."
-    is_public = False
-    is_registration = False
-
-
-class ProjectFactory(NodeFactory):
-    FACTORY_FOR = Node
-    category = 'project'
+    description = 'The meaning of life is 42.'
     creator = SubFactory(UserFactory)
 
-    @post_generation
-    def add_created_log(self, create, extracted):
-        '''Add a log after creating a new project.'''
-        self.add_log(NodeLog.PROJECT_CREATED,
-            params={
-                'project': self._primary_key,
-            },
-            user=self.creator,
-            log_date=self.date_created
+
+class ProjectFactory(AbstractNodeFactory):
+    category = 'project'
+
+
+class NodeFactory(AbstractNodeFactory):
+    category = 'hypothesis'
+    project = SubFactory(ProjectFactory)
+
+
+class RegistrationFactory(AbstractNodeFactory):
+
+    # Default project is created if not provided
+    category = 'project'
+
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        raise Exception("Cannot build registration without saving.")
+
+    @classmethod
+    def _create(cls, target_class, project=None, schema=None, user=None,
+                template=None, data=None, *args, **kwargs):
+
+        save_kwargs(**kwargs)
+
+        # Original project to be registered
+        project = project or target_class(*args, **kwargs)
+        project.save()
+
+        # Default registration parameters
+        schema = schema or MetaSchema.find_one(
+            Q('name', 'eq', 'Open-Ended_Registration')
+        )
+        user = user or project.creator
+        template = template or "Template1"
+        data = data or "Some words"
+
+        return project.register_node(
+            schema=schema,
+            user=user,
+            template=template,
+            data=data,
         )
 
 
@@ -124,7 +160,40 @@ class NodeWikiFactory(ModularOdmFactory):
     FACTORY_FOR = NodeWikiPage
 
     page_name = 'home'
+    content = 'Some content'
     version = 1
     user = SubFactory(UserFactory)
     node = SubFactory(NodeFactory)
 
+
+class UnregUser(object):
+    '''A dummy "model" for an unregistered user.'''
+    def __init__(self, nr_name, nr_email):
+        self.nr_name = nr_name
+        self.nr_email = nr_email
+
+    def to_dict(self):
+        return {"nr_name": self.nr_name, "nr_email": self.nr_email}
+
+
+class UnregUserFactory(base.Factory):
+    """Generates a dictonary represenation of an unregistered user, in the
+    format expected by the OSF.
+    ::
+
+        >>> from tests.factories import UnregUserFactory
+        >>> UnregUserFactory()
+        {'nr_name': 'Tom Jones0', 'nr_email': 'tom0@example.com'}
+        >>> UnregUserFactory()
+        {'nr_name': 'Tom Jones1', 'nr_email': 'tom1@example.com'}
+    """
+    FACTORY_FOR = UnregUser
+
+    nr_name = Sequence(lambda n: "Tom Jones{0}".format(n))
+    nr_email = Sequence(lambda n: "tom{0}@example.com".format(n))
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        return target_class(*args, **kwargs).to_dict()
+
+    _build = _create

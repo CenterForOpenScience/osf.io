@@ -3,7 +3,7 @@ import logging
 
 from framework import session, create_session
 from framework import goback
-from framework import status
+from framework import status, redirect, request
 from framework.auth.utils import parse_name
 from framework.exceptions import HTTPError
 import framework.flask as web
@@ -27,7 +27,7 @@ def get_current_user_id():
 
 
 def get_current_user():
-    uid = session.data.get('auth_user_id')
+    uid = session._get_current_object() and session.data.get('auth_user_id')
     return User.load(uid)
 
 
@@ -124,11 +124,13 @@ def login(username, password):
                                         '<a href="/getting-started/">Getting Started</a> '
                                         'page.')
                     response = web.redirect('/settings/')
-                response = create_session(response, data=session.data.update(**{
+                data = session.data if session._get_current_object() else {}
+                data.update({
                     'auth_user_username': user.username,
                     'auth_user_id': user._primary_key,
                     'auth_user_fullname': user.fullname,
-                }))
+                })
+                response = create_session(response, data=data)
                 return response
     return False
 
@@ -201,7 +203,7 @@ def must_be_logged_in(fn):
             kwargs['user'] = user
             return func(*args, **kwargs)
         else:
-            raise HTTPError(http.UNAUTHORIZED)
+            return redirect('/login/?next={0}'.format(request.path))
     return decorator(wrapped, fn)
 
 
@@ -231,6 +233,6 @@ def must_have_session_auth(fn):
             # kwargs['api_node'] = node
             # return func(*args, **kwargs)
         # No session authentication found
-        raise HTTPError(http.UNAUTHORIZED)
+        return redirect('/login/?next={0}'.format(request.path))
 
     return decorator(wrapped, fn)

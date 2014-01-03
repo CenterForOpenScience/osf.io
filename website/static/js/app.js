@@ -357,6 +357,20 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         )
     };
 
+    self.recentlyAdded = function() {
+        self.errorMsg('');
+        $.getJSON(
+            nodeApiUrl + 'get_recently_added_contributors/',
+            {},
+            function(result) {
+                if (!result.contributors.length) {
+                    self.errorMsg('All recently added contributors already included.');
+                }
+                self.results(result['contributors']);
+            }
+        )
+    };
+
 
     self.addTips = function(elements) {
         elements.forEach(function(element) {
