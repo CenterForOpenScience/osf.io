@@ -987,8 +987,7 @@ class Node(GuidStoredObject):
         return node_file
 
     def add_private_link(self, link='', save=True):
-        if not link:
-            link = str(uuid.uuid4())
+        link = link or str(uuid.uuid4())
 
         self.private_links.append(link)
         if save:
@@ -996,7 +995,10 @@ class Node(GuidStoredObject):
         return link
 
     def remove_private_link(self, link, save=True):
-        self.private_links.remove(link)
+        try:
+            self.private_links.remove(link)
+        except ValueError:
+                pass
         if save:
             self.save()
 
