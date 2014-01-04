@@ -18,8 +18,7 @@ from framework.auth import must_have_session_auth, get_api_key
 from website.models import Node
 from website.project import new_node, clean_template_name
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public, \
-    must_be_contributor_or_public_and_no_private_link, must_be_contributor_and_no_private_link
+    must_be_contributor, must_be_contributor_or_public, must_be_contributor_and_no_private_link
 from website.project.forms import NewProjectForm, NewNodeForm
 from website.models import WatchConfig
 from website import settings
@@ -124,26 +123,26 @@ def node_fork_page(*args, **kwargs):
     return fork.url
 
 @must_be_valid_project
-@must_be_contributor_or_public_and_no_private_link# returns user, project
+@must_be_contributor_or_public# returns user, project
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
 def node_registrations(*args, **kwargs):
-
     user = get_current_user()
     node_to_use = kwargs['node'] or kwargs['project']
-    return _view_project(node_to_use, user)
+    link = kwargs['link']
+    return _view_project(node_to_use, user, link)
 
 @must_be_valid_project
-@must_be_contributor_or_public_and_no_private_link # returns user, project
+@must_be_contributor_or_public # returns user, project
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
 def node_forks(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
     user = get_current_user()
-
+    link = kwargs['link']
     node_to_use = node or project
-    return _view_project(node_to_use, user)
+    return _view_project(node_to_use, user, link)
 
 @must_be_valid_project
 @must_be_contributor_and_no_private_link# returns user, project

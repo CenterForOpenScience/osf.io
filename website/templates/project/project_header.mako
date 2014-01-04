@@ -115,11 +115,11 @@
                     <li><a href="${node['url']}wiki/${node['url_params']}">Wiki</a></li>
                     <li><a href="${node['url']}statistics/${node['url_params']}">Statistics</a></li>
                     <li><a href="${node['url']}files/${node['url_params']}">Files</a></li>
+                    % if not node['is_registration']:
+                        <li><a href="${node['url']}registrations/${node['url_params']}">Registrations</a></li>
+                    % endif
+                    <li><a href="${node['url']}forks/${node['url_params']}">Forks</a></li>
                     % if not node['url_params']:
-                        % if not node['is_registration']:
-                            <li><a href="${node['url']}registrations/">Registrations</a></li>
-                        % endif
-                        <li><a href="${node['url']}forks/">Forks</a></li>
                         % if user['is_contributor']:
                             <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
