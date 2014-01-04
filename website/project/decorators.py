@@ -11,6 +11,7 @@ from website.project import get_node
 
 from decorator import decorator
 
+
 def must_not_be_registration(fn):
     def wrapped(func, *args, **kwargs):
         if 'project' not in kwargs:
@@ -39,6 +40,7 @@ def must_not_be_registration(fn):
 
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)
+
 
 def must_be_valid_project(fn):
     def wrapped(func, *args, **kwargs):
@@ -160,6 +162,7 @@ def must_be_contributor_or_public(fn):
     return decorator(wrapped, fn)
 
 
+# TOdo remove code reprtition in decorators
 def must_be_contributor_and_no_private_link(fn):
     def wrapped(func, *args, **kwargs):
         if 'project' not in kwargs:
