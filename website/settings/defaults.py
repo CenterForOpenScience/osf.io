@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-'''Base settings file, common to all environments.
-
+"""
+Base settings file, common to all environments.
 These settings can be overridden in local.py.
-'''
+"""
+
 import os
 
 def parent_dir(path):
@@ -98,7 +99,6 @@ WIKI_WHITELIST = {
         'salign', 'align', 'wmode', 'target',
     ],
     # Styles currently used in Reproducibility Project wiki pages
-    # TODO: Discuss and possibly delete
     'styles' : [
         'top', 'left', 'width', 'height', 'position',
         'background', 'font-size', 'text-align', 'z-index',
@@ -119,3 +119,15 @@ CELERY_IMPORTS = (
     'framework.email.tasks',
     'framework.tasks'
 )
+
+###########
+# Add-ons #
+###########
+
+ADDONS_REQUESTED = [
+    'wiki', 'files',
+    'github', 'figshare',
+    'zotero',
+]
+
+ADDON_CATEGORIES = ['documentation', 'storage', 'bibliography']

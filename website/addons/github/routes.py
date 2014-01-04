@@ -14,10 +14,6 @@ settings_routes = {
             '/project/<pid>/node/<nid>/settings/github/',
         ], 'post', views.github_settings, json_renderer),
         Rule([
-            '/project/<pid>/settings/github/disable/',
-            '/project/<pid>/node/<nid>/settings/github/disable/',
-        ], 'post', views.github_disable, json_renderer),
-        Rule([
             '/project/<pid>/github/file/<path:path>',
             '/project/<pid>/node/<nid>/github/file/<path:path>',
         ], 'get', views.github_download_file, json_renderer),

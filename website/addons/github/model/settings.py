@@ -11,6 +11,7 @@ from website.addons.base import AddonSettingsBase, AddonError
 
 from ..api import GitHub
 
+
 class AddonGitHubSettings(AddonSettingsBase):
 
     SHORT_NAME = 'github'
@@ -41,11 +42,10 @@ class AddonGitHubSettings(AddonSettingsBase):
             )
 
     def render_tab(self):
-        return '''
-            <a href="{url}github/">GitHub</a>
-        '''.format(
-            url=self.node.url,
-        )
+        return {
+            'href': '{0}github/'.format(self.node.url),
+            'text': 'GitHub',
+        }
 
     def meta_json(self):
         return json.dumps({
@@ -56,22 +56,6 @@ class AddonGitHubSettings(AddonSettingsBase):
                                  if self.oauth_osf_user
                                  else '',
         })
-
-    def register(self, save=True):
-        """
-
-        """
-        connect = GitHub.from_settings(self)
-        branches = connect.branches(self.user, self.repo)
-        if branches is None:
-            raise AddonError('Could not fetch repo branches.')
-
-        self.registration_data['branches'] = branches
-
-        super(AddonGitHubSettings, self).register(save=False)
-
-        if save:
-            self.save()
 
     #############
     # Callbacks #

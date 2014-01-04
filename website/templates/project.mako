@@ -1,103 +1,88 @@
 <%inherit file="base.mako"/>
-
 <%namespace file="project/widget.mako" import="widget"/>
-
 <%def name="title()">Project</%def>
 
-
 <%def name="content()">
-  <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
-  <div class="row">
-    <div class="col-md-7" id='containment'>
-        % if 'wiki' in addon_widgets:
-            ${widget(**addon_widgets['wiki'])}
-        % endif
-       % if node:
-      <section id="Nodes">
+    <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
-      </section>
-      % endif
+    <div class="row">
 
-        % if 'files' in addon_widgets:
-            ${widget(**addon_widgets['files'])}
-        % endif
+        <div class="col-md-7" id="containment">
 
-    </div>
+            <%
+                extra_addon_widgets = [
+                    addon
+                    for addon in addon_widgets
+                    if addon not in ['wiki', 'files']
+                ]
+            %>
 
-    <div class="col-md-5">
+            % if extra_addon_widgets:
 
-        <div class="citations">
-            <span class="citation-label">Citation:</span>
-            <span>${node['display_absolute_url']}</span>
-            <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
-            <dl class="citation-list">
-                <dt>APA</dt>
-                    <dd class="citation-text">${node['citations']['apa']}</dd>
-                <dt>MLA</dt>
-                    <dd class="citation-text">${node['citations']['mla']}</dd>
-                <dt>Chicago</dt>
-                    <dd class="citation-text">${node['citations']['chicago']}</dd>
-            </dl>
+                <!-- Show widgets in left column if present -->
+                % for addon in addons_enabled:
+                    % if addon in addon_widgets:
+                        ${widget(**addon_widgets[addon])}
+                    % endif
+                % endfor
+
+            % else:
+
+                <!-- If no widgets, show components -->
+                ${children()}
+
+                % for addon in ['wiki', 'files']:
+                    % if addon in addon_widgets:
+                        ${widget(**addon_widgets[addon])}
+                    % endif
+                % endfor
+
+            % endif
+
         </div>
 
-        <hr />
+        <div class="col-md-5">
 
-          <div class="page-header">
-            % if node['category'] == 'project':
-              <div class="pull-right">
-                  % if user['can_edit']:
-                      <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">
-                  % else:
-                      <a class="btn btn-default disabled">
-                  % endif
-                          Add Component
-                  </a>
-              </div>
-              <%include file="modal_add_component.mako"/>
-            % endif
-            <h2>Components</h2>
-          </div>
+            <!-- Citations -->
+            <div class="citations">
+                <span class="citation-label">Citation:</span>
+                <span>${node['display_absolute_url']}</span>
+                <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
+                <dl class="citation-list">
+                    <dt>APA</dt>
+                        <dd class="citation-text">${node['citations']['apa']}</dd>
+                    <dt>MLA</dt>
+                        <dd class="citation-text">${node['citations']['mla']}</dd>
+                    <dt>Chicago</dt>
+                        <dd class="citation-text">${node['citations']['chicago']}</dd>
+                </dl>
+            </div>
 
-          % if node["children"]:
-              <div mod-meta='{
-                      "tpl" : "util/render_nodes.mako",
-                      "uri" : "${node["api_url"]}get_children/",
-                      "replace" : true,
-                      "kwargs" : {"sortable" : true}
-                  }'></div>
-          % else:
-              <p>No components have been added to this project.</p>
-          % endif
-
-        <!-- Addon Widgets -->
-        % for addon in addons_enabled:
-            % if addon in addon_widgets and addon not in ['wiki', 'files']:
-                ${widget(**addon_widgets[addon])}
-            % endif
-        % endfor
-
-        % if addons_enabled:
             <hr />
-        % endif
 
-        <div class="tags">
-            <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
+            <!-- Show child on right if widgets -->
+            % if extra_addon_widgets:
+                ${children()}
+            % endif
+
+            <div class="tags">
+                <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
+            </div>
+
+            <hr />
+
+            <div class="logs">
+                <div id='logScope'>
+                    <%include file="log_list.mako"/>
+                </div><!-- end #logScope -->
+                ## Hide More widget until paging for logs is implemented
+                ##<div class="paginate pull-right">more</div>
+            </div>
+
         </div>
 
-        <hr />
-
-        <div class="logs">
-            <div id='logScope'>
-                <%include file="log_list.mako"/>
-            </div><!-- end #logScope -->
-            ## Hide More widget until paging for logs is implemented
-            ##<div class="paginate pull-right">more</div>
-        </div>
-
-    </div>
-
-  </div>
+      </div>
 
 
 ##<!-- Include Knockout and view model -->
@@ -124,6 +109,37 @@
 
 </%def>
 
+<%def name="children()">
+
+<div class="page-header">
+    % if node['category'] == 'project':
+        <div class="pull-right">
+            % if user['can_edit']:
+                <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">
+            % else:
+                <a class="btn btn-default disabled">
+            % endif
+                Add Component
+        </a>
+        </div>
+        <%include file="modal_add_component.mako"/>
+    % endif
+    <h2>Components</h2>
+</div>
+
+% if node['children']:
+    <div mod-meta='{
+            "tpl": "util/render_nodes.mako",
+            "uri": "${node["api_url"]}get_children/",
+            "replace": true,
+            "kwargs": {"sortable" : true}
+        }'></div>
+% else:
+    <p>No components have been added to this project.</p>
+% endif
+
+</%def>
+
 <%def name="stylesheets()">
     ${parent.stylesheets()}
     % for style in addon_widget_css:
@@ -137,14 +153,15 @@
     <script type="text/javascript" src="${script}"></script>
 % endfor
 
+## Todo: Move to project.js
 <script>
+
     $(document).ready(function() {
 
         // Tooltips
         $('[data-toggle="tooltip"]').tooltip();
 
-        ### Tag Input ###
-
+        // Tag input
         $('#node-tags').tagsInput({
             width: "100%",
             interactive:${'true' if user["can_edit"] else 'false'},
@@ -161,15 +178,19 @@
                     type:"POST",
                     contentType: "application/json"
                 });
-            },
+            }
         });
-        % if not user["can_edit"]:
-            // Remove delete UI if not contributor
+
+        // Remove delete UI if not contributor
+        % if not user['can_edit']:
             $('a[title="Removing tag"]').remove();
             $('span.tag span').each(function(idx, elm) {
                 $(elm).text($(elm).text().replace(/\s*$/, ''))
             });
         % endif
+
     });
+
 </script>
+
 </%def>

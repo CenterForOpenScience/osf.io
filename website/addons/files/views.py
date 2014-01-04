@@ -6,9 +6,9 @@ import httplib as http
 
 from framework import request
 from framework.exceptions import HTTPError
-from website.project.decorators import must_be_contributor
+from website.project import decorators
 
-@must_be_contributor
+@decorators.must_be_contributor
 def files_disable(**kwargs):
 
     node = kwargs.get('node') or kwargs.get('project')

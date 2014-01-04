@@ -11,6 +11,7 @@ from website.project.decorators import must_be_contributor
 from website.project.decorators import must_be_contributor_or_public
 from website.project.views.node import _view_project
 
+
 @must_be_contributor
 def zotero_settings(**kwargs):
 
@@ -23,15 +24,6 @@ def zotero_settings(**kwargs):
     else:
         raise HTTPError(http.BAD_REQUEST)
 
-@must_be_contributor
-def zotero_disable(**kwargs):
-
-    node = kwargs.get('node') or kwargs.get('project')
-    try:
-        node.addons_enabled.remove('zotero')
-        node.save()
-    except ValueError:
-        pass
 
 @must_be_contributor_or_public
 def zotero_page(**kwargs):

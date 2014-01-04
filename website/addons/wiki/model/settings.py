@@ -31,8 +31,7 @@ class AddonWikiSettings(AddonSettingsBase):
         return '<p><em>No wiki content</em></p>'
 
     def render_tab(self):
-        return '''
-            <a href="{url}wiki/">Wiki</a>
-        '''.format(
-            url=self.node.url,
-        )
+        return {
+            'href': '{0}wiki/'.format(self.node.url),
+            'text': 'Wiki',
+        }

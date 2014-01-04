@@ -6,8 +6,26 @@ from framework import storage, db, app
 from framework.mongo import set_up_storage
 import website.models
 from website.routes import make_url_map
+from website.addons.base import init_addon
 
 logger = logging.getLogger(__name__)
+
+
+def init_addons(settings, routes=True):
+    """
+
+    """
+    ADDONS_AVAILABLE = []
+    for addon_name in settings.ADDONS_REQUESTED:
+        addon = init_addon(app, addon_name, routes)
+        if addon:
+            ADDONS_AVAILABLE.append(addon)
+    settings.ADDONS_AVAILABLE = ADDONS_AVAILABLE
+
+    settings.ADDONS_AVAILABLE_DICT = {
+        addon.short_name: addon
+        for addon in settings.ADDONS_AVAILABLE
+    }
 
 
 def init_app(settings_module='website.settings', set_backends=True, routes=True):
@@ -21,10 +39,16 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
     """
     # The settings module
     settings = importlib.import_module(settings_module)
+
+    init_addons(settings, routes)
+
     app.debug = settings.DEBUG_MODE
     if set_backends:
         logger.debug('Setting storage backends')
-        set_up_storage(website.models.MODELS, storage.MongoStorage, addons=settings.ADDONS_AVAILABLE, db=db)
+        set_up_storage(
+            website.models.MODELS, storage.MongoStorage,
+            addons=settings.ADDONS_AVAILABLE, db=db
+        )
     if routes:
         make_url_map(app)
     return app

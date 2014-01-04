@@ -10,9 +10,12 @@ from bson import ObjectId
 from mako.template import Template
 
 from framework import StoredObject, fields
-from framework.routing import process_rules
+from framework.routing import Rule, process_rules
 
 from website import settings
+
+from .views import disable_rule_factory
+
 
 class AddonError(Exception): pass
 
@@ -200,12 +203,14 @@ class AddonSettingsBase(StoredObject):
 LOG_TEMPLATES = 'website/templates/log_templates.mako'
 
 
-def init_addon(app, addon_name):
-    """Load addon module and create a configuration object
+def init_addon(app, addon_name, routes=True):
+    """Load addon module and create configuration object.
 
     :param app: Flask app object
     :param addon_name: Name of addon directory
-    :return AddonConfig: AddonConfig configuration object if module found, else None
+    :param bool routes: Add routes
+    :return AddonConfig: AddonConfig configuration object if module found,
+        else None
 
     """
     addon_path = os.path.join('website', 'addons', addon_name)
@@ -226,8 +231,13 @@ def init_addon(app, addon_name):
             fp.write(open(log_templates, 'r').read())
 
     # Add routes
-    for route_group in getattr(addon_module, 'ROUTES', []):
-        process_rules(app, **route_group)
+    if routes:
+        for route_group in getattr(addon_module, 'ROUTES', []):
+            process_rules(app, **route_group)
+        process_rules(
+            app,
+            [disable_rule_factory(addon_name)]
+        )
 
     # Build AddonConfig object
     return AddonConfig(**{

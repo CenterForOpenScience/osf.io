@@ -59,18 +59,6 @@ def github_settings(*args, **kwargs):
     github.save()
 
 
-@must_be_contributor
-@must_have_addon('github')
-def github_disable(*args, **kwargs):
-
-    node = kwargs['node'] or kwargs['project']
-    try:
-        node.addons_enabled.remove('github')
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
-    node.save()
-
-
 def _page_content(node, github, data, hotlink=True):
 
     if github.user is None or github.repo is None:

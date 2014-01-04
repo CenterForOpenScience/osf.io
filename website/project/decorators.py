@@ -35,7 +35,7 @@ def must_not_be_registration(fn):
             node_to_use = project
 
         if node_to_use.is_registration:
-            raise HTTPError(http.FORBIDDEN)
+            raise HTTPError(http.NOT_FOUND)
 
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)

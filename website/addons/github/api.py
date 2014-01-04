@@ -23,11 +23,6 @@ OAUTH_ACCESS_TOKEN_URL = 'https://github.com/login/oauth/access_token'
 
 SCOPE = ['repo']
 
-GITHUB_AUTH = (
-    github_settings.GITHUB_USER,
-    github_settings.GITHUB_TOKEN,
-)
-
 github_cache = {}
 
 def oauth_start_url(node, state=None):
@@ -77,7 +72,7 @@ class GitHub(object):
     @classmethod
     def from_settings(cls, settings):
         return cls(
-            github_settings.GITHUB_USER, github_settings.GITHUB_TOKEN,
+            None, None,
             key=settings.oauth_access_token,
         )
 
@@ -149,14 +144,59 @@ class GitHub(object):
 
         return self._send(url)
 
-    def commits(self, user, repo):
+    def commits(self, user, repo, path=None):
+        """Get commits for a repo or file.
 
+        :param str user: GitHub user name
+        :param str repo: GitHub repo name
+        :param str path: Path to file within repo
+        :return list: List of commit dicts from GitHub; see
+            http://developer.github.com/v3/repos/commits/
+
+        """
         return self._send(
-            os.path.join(API_URL, 'repos', user, repo, 'commits'),
+            os.path.join(
+                API_URL, 'repos', user, repo, 'commits'
+            ),
+            params={
+                'path': path,
+            }
         )
 
-    def tree(self, user, repo, branch=None, recursive=True, registration_data=None):
+    def history(self, user, repo, path):
+        """Get commit history for a file.
 
+        :param str user: GitHub user name
+        :param str repo: GitHub repo name
+        :param str path: Path to file within repo
+        :return list: List of dicts summarizing commits
+
+        """
+        req = self.commits(user, repo, path)
+
+        if req:
+            return [
+                {
+                    'sha': commit['sha'],
+                    'name': commit['author']['name'],
+                    'email': commit['author']['email'],
+                    'date': commit['author']['date'],
+                }
+                for commit in req
+            ]
+
+    def tree(self, user, repo, branch=None, recursive=True, registration_data=None):
+        """Get file tree for a repo.
+
+        :param str user: GitHub user name
+        :param str repo: GitHub repo name
+        :param str branch: Branch name
+        :param bool recursive: Walk repo recursively
+        :param dict registration_data: Registered commit data
+        :return tuple: Tuple of commit ID and tree JSON; see
+            http://developer.github.com/v3/git/trees/
+
+        """
         if branch:
             commit_id = branch
         else:
@@ -183,7 +223,7 @@ class GitHub(object):
             return commit_id, req
         return commit_id, None
 
-    def file(self, user, repo, path, ref=None, hotlink=True):
+    def file(self, user, repo, path, ref=None):
 
         params = {
             'ref': ref,
@@ -209,7 +249,8 @@ class GitHub(object):
             os.path.join(
                 API_URL, 'repos', user, repo, archive + 'ball'
             ),
-            cache=False, output=None,
+            cache=False,
+            output=None,
         )
 
         if req.status_code == 200:
@@ -221,7 +262,8 @@ class GitHub(object):
 
         :param str user: GitHub user name
         :param str repo: GitHub repo name
-        :param bool private: Make repo private
+        :param bool private: Make repo private; see
+            http://developer.github.com/v3/repos/#edit
 
         """
         req = self._send(
@@ -252,7 +294,8 @@ class GitHub(object):
             'committer': committer,
             'author': author,
         }
-        req = self._send(
+
+        return self._send(
             os.path.join(
                 API_URL, 'repos', user, repo, 'contents', path
             ),
@@ -260,8 +303,6 @@ class GitHub(object):
             cache=False,
             data=json.dumps(data),
         )
-
-        return req
 
     def delete_file(self, user, repo, path, message, sha, branch=None, committer=None, author=None):
 
@@ -273,7 +314,7 @@ class GitHub(object):
             'author': author,
         }
 
-        req = self._send(
+        return self._send(
             os.path.join(
                 API_URL, 'repos', user, repo, 'contents', path
             ),
@@ -281,8 +322,6 @@ class GitHub(object):
             cache=False,
             data=json.dumps(data),
         )
-
-        return req
 
 #
 
@@ -292,7 +331,15 @@ type_map = {
 }
 
 def tree_to_hgrid(tree, user, repo, node, ref=None, hotlink=True):
-    """
+    """Convert GitHub tree data to HGrid format.
+
+    :param list tree: JSON description of git tree
+    :param str user: GitHub user name
+    :param str repo: GitHub repo name
+    :param Node node: OSF Node
+    :param str ref: Branch or SHA
+    :param bool hotlink: Hotlink files if ref provided; will yield broken
+        links if repo is private
 
     """
     grid = []

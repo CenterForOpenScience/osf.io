@@ -5,14 +5,14 @@
 from framework.routing import Rule, json_renderer
 from website.routes import OsfWebRenderer
 
-from .views import zotero_settings, zotero_disable, zotero_page
+from . import views
 
 widget_routes = {
     'rules': [
         Rule([
             '/project/<pid>/settings/zotero/',
             '/project/<pid>/node/<nid>/settings/zotero/',
-        ], 'post', zotero_settings, json_renderer),
+        ], 'post', views.zotero_settings, json_renderer),
     ],
     'prefix': '/api/v1',
 }
@@ -22,11 +22,7 @@ settings_routes = {
         Rule([
             '/project/<pid>/settings/zotero/',
             '/project/<pid>/node/<nid>/settings/zotero/',
-        ], 'post', zotero_settings, json_renderer),
-        Rule([
-            '/project/<pid>/settings/zotero/disable/',
-            '/project/<pid>/node/<nid>/settings/zotero/disable/',
-        ], 'post', zotero_disable, json_renderer),
+        ], 'post', views.zotero_settings, json_renderer),
     ],
     'prefix': '/api/v1',
 }
@@ -36,6 +32,6 @@ page_routes = {
         Rule([
             '/project/<pid>/zotero/',
             '/project/<pid>/node/<nid>/zotero/',
-        ], 'get', zotero_page, OsfWebRenderer('project/addon.mako')),
+        ], 'get', views.zotero_page, OsfWebRenderer('project/addon.mako')),
     ],
 }

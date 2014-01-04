@@ -33,8 +33,6 @@ from framework import GuidStoredObject, Q
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
 
-from website.addons.base import init_addon
-
 def utc_datetime_to_timestamp(dt):
     return float(
         str(calendar.timegm(dt.utcnow().utctimetuple())) + '.' + str(dt.microsecond)
@@ -263,43 +261,6 @@ class Tag(StoredObject):
     @property
     def url(self):
         return '/search/?q=tags:{}'.format(self._id)
-
-
-class Addon(object):
-
-    def __init__(self, model, short_name, full_name, added_by_default, categories=None, schema=None):
-
-        self.model = model
-        self.short_name = short_name
-        self.full_name = full_name
-        self.added_by_default = added_by_default
-        self.categories = categories or []
-        self.schema = schema
-
-        self.backref_key = '__'.join([self.model._name, 'addons'])
-
-    def _is_image(self, filename):
-        mtype, _ = mimetypes.guess_type(filename)
-        return mtype and mtype.startswith('image')
-
-    @property
-    def icon(self):
-
-        try:
-            return self._icon
-        except:
-            static_path = os.path.join('website', 'addons', self.short_name, 'static')
-            static_files = glob.glob(os.path.join(static_path, 'comicon.*'))
-            image_files = [
-                os.path.split(filename)[1]
-                for filename in static_files
-                if self._is_image(filename)
-            ]
-            if len(image_files) == 1:
-                self._icon = image_files[0]
-            else:
-                self._icon = None
-            return self._icon
 
 
 class Node(GuidStoredObject):
@@ -701,7 +662,7 @@ class Node(GuidStoredObject):
         forked.save()
 
         # After fork callback
-        for addon in original.addons:
+        for addon in getattr(original, 'addons', []):
             addon.after_fork(original, forked, user)
 
         if os.path.exists(folder_old):
@@ -750,7 +711,7 @@ class Node(GuidStoredObject):
         registered.save()
 
         # After register callback
-        for addon in original.addons:
+        for addon in getattr(original, 'addons', []):
             addon.after_register(original, registered, user)
 
         if os.path.exists(folder_old):
@@ -793,7 +754,7 @@ class Node(GuidStoredObject):
             node_contained.save()
 
             # After register callback
-            for addon in original_node_contained:
+            for addon in getattr(original_node_contained, 'addons', []):
                 addon.after_register(
                     original_node_contained, node_contained, user
                 )
@@ -1231,7 +1192,7 @@ class Node(GuidStoredObject):
 
         if not user._primary_key == contributor._id:
 
-            for addon in self.addons:
+            for addon in getattr(self, 'addons', []):
                 prompt = addon.before_remove_contributor(self, contributor)
                 if prompt:
                     prompts.append(prompt)
@@ -1254,7 +1215,7 @@ class Node(GuidStoredObject):
             removed_user = get_user(contributor._id)
 
             # After remove callback
-            for addon in self.addons:
+            for addon in getattr(self, 'addons', []):
                 addon.after_remove_contributor(self, removed_user)
 
             if log:
@@ -1382,7 +1343,7 @@ class Node(GuidStoredObject):
             return False
 
         # After set permissions callback
-        for addon in self.addons:
+        for addon in getattr(self, 'addons', []):
             addon.after_set_permissions(self, permissions)
 
         action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE

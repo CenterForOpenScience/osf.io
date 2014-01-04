@@ -22,8 +22,7 @@ class AddonFilesSettings(AddonSettingsBase):
         )
 
     def render_tab(self):
-        return '''
-            <a href="{url}files/">Files</a>
-        '''.format(
-            url=self.node.url,
-        )
+        return {
+            'href': '{0}files/'.format(self.node.url),
+            'text': 'Files',
+        }

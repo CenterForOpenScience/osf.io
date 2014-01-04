@@ -26,13 +26,6 @@
                     %endif
                 %endif
                 <h1 class="node-title">
-                    <span class="addon-logos">
-                        % for addon in addons_enabled:
-                            % if addon in addon_icons:
-                                <img src="${addon_icons[addon]}" />
-                            % endif
-                        % endfor
-                    </span>
                     <span id="nodeTitleEditable">${node['title']}</span>
                 </h1>
             </div><!-- end col-md-->
@@ -121,10 +114,17 @@
             <ul class="nav navbar-nav">
                 <li><a href="${node['url']}">Dashboard</a></li>
 
-                <!-- Addon Tabs -->
+                <!-- Addon tabs -->
                 % for addon in addons_enabled:
                     % if addon in addon_tabs:
-                        <li>${addon_tabs[addon]}</li>
+                        <li>
+                            <a href="${addon_tabs[addon]['href']}">
+                                % if addon in addon_icons:
+                                    <img src="${addon_icons[addon]}" class="addon-logo"/>
+                                % endif
+                                ${addon_tabs[addon]['text']}
+                            </a>
+                        </li>
                     % endif
                 % endfor
 
@@ -133,7 +133,7 @@
                     <li><a href="${node['url']}registrations/">Registrations</a></li>
                 % endif
                     <li><a href="${node['url']}forks/">Forks</a></li>
-                % if user['is_contributor']:
+                % if user['can_edit']:
                     <li><a href="${node['url']}settings/">Settings</a></li>
                 %endif
             </ul>

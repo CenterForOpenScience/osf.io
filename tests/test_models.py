@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
+
 import unittest
+from mock import MagicMock
 from nose.tools import *  # PEP8 asserts
 
 import pytz
@@ -508,6 +510,14 @@ class TestNode(DbTestCase):
         assert_equal(node.category, 'hypothesis')
         assert_true(node.node__parent)
         assert_equal(node.logs[-1].action, 'node_created')
+        assert_equal(
+            node.addons_enabled,
+            [
+                addon.short_name
+                for addon in settings.ADDONS_AVAILABLE
+                if addon.added_by_default
+            ]
+        )
 
     def test_remove_node(self):
         # Add some components and delete the project
@@ -556,6 +566,74 @@ class TestNode(DbTestCase):
         #todo Add file series of tests
         pass
 
+
+class TestAddonCallbacks(DbTestCase):
+    """Verify that callback functions are called at the right times, with the
+    right arguments.
+
+    """
+    callbacks = [
+        'after_remove_contributor',
+        'after_set_permissions',
+        'after_fork',
+        'after_register',
+    ]
+
+    def setUp(self):
+
+        # Create project with component
+        self.user = UserFactory()
+        self.parent = ProjectFactory()
+        self.node = NodeFactory(creator=self.user, project=self.parent)
+
+        # Mock addon callbacks
+        for addon in self.node.addons:
+            for callback in self.callbacks:
+                setattr(addon, callback, MagicMock(name=callback))
+
+    def test_remove_contributor_callback(self):
+        user2 = UserFactory()
+        self.node.add_contributor(contributor=user2, user=self.user)
+        self.node.remove_contributor(contributor=user2, user=self.user)
+        for addon in self.node.addons:
+            callback = addon.after_remove_contributor
+            callback.assert_called_once_with(
+                self.node, user2
+            )
+
+    def test_set_permissions_callback(self):
+
+        self.node.set_permissions('public', self.user)
+        for addon in self.node.addons:
+            callback = addon.after_set_permissions
+            callback.assert_called_with(
+                self.node, 'public'
+            )
+
+        self.node.set_permissions('private', self.user)
+        for addon in self.node.addons:
+            callback = addon.after_set_permissions
+            callback.assert_called_with(
+                self.node, 'private'
+            )
+
+    def test_fork_callback(self):
+        fork = self.node.fork_node(user=self.user)
+        for addon in self.node.addons:
+            callback = addon.after_fork
+            callback.assert_called_once_with(
+                self.node, fork, self.user
+            )
+
+    def test_register_callback(self):
+        registration = self.node.register_node(
+            None, self.user, '', '',
+        )
+        for addon in self.node.addons:
+            callback = addon.after_register
+            callback.assert_called_once_with(
+                self.node, registration, self.user
+            )
 
 class TestProject(DbTestCase):
 
@@ -864,8 +942,8 @@ class TestForkNode(DbTestCase):
             for vidx in range(len(original.files_versions[fname])):
                 file_original = NodeFile.load(original.files_versions[fname][vidx])
                 file_fork = NodeFile.load(original.files_versions[fname][vidx])
-                data_original = original.file(file_original.path, vidx)
-                data_fork = fork.file(file_fork.path, vidx)
+                data_original = original.get_file(file_original.path, vidx)
+                data_fork = fork.get_file(file_fork.path, vidx)
                 assert_equal(data_original, data_fork)
 
         # Recursively compare children

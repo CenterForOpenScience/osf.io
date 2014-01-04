@@ -54,11 +54,10 @@ class AddonZoteroSettings(AddonSettingsBase):
             return self._summarize_references()
 
     def render_tab(self):
-        return '''
-            <a href="{url}zotero/">Zotero</a>
-        '''.format(
-            url=self.node.url,
-        )
+        return {
+            'href': '{0}zotero/'.format(self.node.url),
+            'text': 'Zotero',
+        }
 
     def render_page(self):
         if self.zotero_id:

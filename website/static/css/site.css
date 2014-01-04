@@ -7,15 +7,24 @@
 
 /* Global Styles */
 
+/* Add-on styles */
+
 /* Make embedded iframes responsive */
-iframe {
+.addon-widget iframe {
     max-width: 100%;
 }
 
-/*  */
-.addon-logos img {
-    width: 32px;
+.addon-logo {
+    width: 20px;
 }
+
+.addon-widget:first-of-type h1,
+.addon-widget:first-of-type h2,
+.addon-widget:first-of-type h3 {
+    margin-top: 0;
+}
+
+/* End add-on styles */
 
 html, body {
     height:100%;
