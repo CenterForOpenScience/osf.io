@@ -24,10 +24,8 @@ logger = logging.getLogger(__name__)
 def project_wiki_home(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     link = request.args.get('key', '').strip('/')
-    if link:
-        return {}, None, None, '{}wiki/home/?key={}'.format(node_to_use.url, link)
-    else:
-        return {}, None, None, '{}wiki/home/'.format(node_to_use.url)
+    url_fix = '?key={}'.format(link) if link else ''
+    return {}, None, None, '{}wiki/home/{}'.format(node_to_use.url, url_fix)
 
 
 def _get_wiki_versions(node, wid):

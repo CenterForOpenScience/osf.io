@@ -161,16 +161,11 @@ def _get_files(filetree, parent_id, check, user, link):
                     size(tmp.size, system=alternative)
                 ]
                 item['size'] = str(tmp.size)
-                if link:
-                    item['url'] = 'files/'.join([
-                        str(filetree[0].deep_url),
-                        item['name'] + '/?key='+link
-                    ])
-                else:
-                    item['url'] = 'files/'.join([
-                        str(filetree[0].deep_url),
-                        item['name'] + '/'
-                    ])
+                item_url = 'files/'.join([
+                    str(filetree[0].deep_url),
+                    item['name']
+                ])
+                item['url'] = url_builder(item_url, link)
                 item['dateModified'] = [
                     time.mktime(tmp.date_modified.timetuple()),
                     tmp.date_modified.strftime('%Y/%m/%d %I:%M %p')
