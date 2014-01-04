@@ -158,7 +158,6 @@
 
     var nodeId = '${node['id']}';
     var nodeApiUrl = '${node['api_url']}';
-    var nodeUrl = '${node['url']}';
 
     $(document).ready(function(){
         $logScope = $("#logScope");
