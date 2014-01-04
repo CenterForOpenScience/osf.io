@@ -61,6 +61,7 @@
                         <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
 
                         </a>
+
                         <a
                             rel="tooltip"
                             title="Number of times this node has been forked (copied)"
@@ -132,7 +133,7 @@
                     % endif
                     <li><a href="${node['url']}forks/?key=${node['link']}">Forks</a></li>
                     % if user['is_contributor']:
-                    <li><a href="${node['url']}settings/?key=${node['link']}">Settings</a></li>
+                        <li><a href="${node['url']}settings/?key=${node['link']}">Settings</a></li>
                     % endif
                 % else:
                     <li><a href="${node['url']}">Dashboard</a></li>
@@ -144,7 +145,7 @@
                     % endif
                     <li><a href="${node['url']}forks/">Forks</a></li>
                     % if user['is_contributor']:
-                    <li><a href="${node['url']}settings/">Settings</a></li>
+                        <li><a href="${node['url']}settings/">Settings</a></li>
                     % endif
                 % endif
             </ul>

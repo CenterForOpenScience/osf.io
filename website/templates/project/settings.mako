@@ -4,18 +4,14 @@
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 <!-- Delete node -->
-% if user['is_contributor']:
-    % if not node['is_registration']:
+
+% if not node['is_registration']:
     <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
-    % endif
+% endif
 <div class="col-md-6" id="linkScope">
     <button id="generate-private-link" class="private-link" data-toggle="modal" href="#private-link">Generate Private Link</button>
     % for link in node['private_links']:
-        <li
-            % if user['can_edit']:
-               class="contributor-list-item list-group-item"
-            % endif
-                >
+        <li class="list-group-item" >
             <a class="remove-private-link btn btn-default" data-link="${link}">-</a>
             <a class="link-name" >${node['absolute_url']}?key=${link}/</a>
 
@@ -23,7 +19,7 @@
     % endfor
 </div>
 <%include file="modal_generate_private_link.mako"/>
-% endif
+
 
 ##<!-- Show API key settings -->
 ##<div mod-meta='{
