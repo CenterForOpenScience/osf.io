@@ -15,7 +15,7 @@
 
             <div class="col-md-8 cite-container">
                 %if parent['id']:
-                    % if node['link'] in parent['private_links'] or parent['is_public'] or parent['is_contributor']:
+                    % if parent['can_view'] or parent['is_public'] or parent['is_contributor']:
                         <h1 class="node-parent-title">
                             <a
                                %if node['link']:

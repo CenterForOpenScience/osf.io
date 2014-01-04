@@ -410,7 +410,7 @@ def _view_project(node_to_use, user, link='', api_key=None):
             'absolute_url':  parent.absolute_url if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
-            'private_links': parent.private_links if parent else ''
+            'can_view': (link in parent.private_links) if parent else False
         },
         'user': {
             'is_contributor': node_to_use.is_contributor(user),
