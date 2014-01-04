@@ -44,13 +44,8 @@
                         ${version['total']}
                     </td>
                     <td>
-                        <a
-                            % if node['link']:
-                                href="${node['api_url']}files/download/${file_name}/version/${version['number']}/?key=${node['link']}"
-                            % else:
-                                href="${node['api_url']}files/download/${file_name}/version/${version['number']}/"
-                            % endif
-                                ><i class="icon-download-alt"></i></
+                        <a href="${node['api_url']}files/download/${file_name}/version/${version['number']}/${node['url_params']}" >
+                            <i class="icon-download-alt"></i></
                     </td>
                 </tr>
 			%endfor

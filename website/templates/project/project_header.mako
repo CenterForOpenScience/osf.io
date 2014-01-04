@@ -17,13 +17,7 @@
                 %if parent['id']:
                     % if parent['can_view'] or parent['is_public'] or parent['is_contributor']:
                         <h1 class="node-parent-title">
-                            <a
-                               %if node['link']:
-                                   href="${parent['url']}?key=${node['link']}"
-                               %else:
-                                   href="${parent['url']}"
-                               %endif
-                                    >${parent['title']}</a> /
+                            <a href="${parent['url']}${node['url_params']}">${parent['title']}</a> /
 
                         </h1>
                     % else:
@@ -97,13 +91,7 @@
             % if node['is_registration'] and node['registered_meta']:
                 <br />Registration Supplement:
                 % for meta in node['registered_meta']:
-                    <a
-                        %if node['link']:
-                           href="${node['url']}register/${meta['name_no_ext']}?key=${node['link']}"
-                       %else:
-                           href="${node['url']}register/${meta['name_no_ext']}"
-                       %endif
-                            >${meta['name_clean']}</a>
+                    <a href="${node['url']}register/${meta['name_no_ext']}${node['url_params']}">${meta['name_clean']}</a>
                 % endfor
             % endif
             <br />Date Created:
@@ -123,31 +111,19 @@
 
         <nav id="projectSubnav" class="navbar navbar-default ">
             <ul class="nav navbar-nav">
-                % if node['link']:
-                    <li><a href="${node['url']}?key=${node['link']}">Dashboard</a></li>
-                    <li><a href="${node['url']}wiki/?key=${node['link']}">Wiki</a></li>
-                    <li><a href="${node['url']}statistics/?key=${node['link']}">Statistics</a></li>
-                    <li><a href="${node['url']}files/?key=${node['link']}">Files</a></li>
-                    % if not node['is_registration']:
-                        <li><a href="${node['url']}registrations/?key=${node['link']}">Registrations</a></li>
+                    <li><a href="${node['url']}${node['url_params']}">Dashboard</a></li>
+                    <li><a href="${node['url']}wiki/${node['url_params']}">Wiki</a></li>
+                    <li><a href="${node['url']}statistics/${node['url_params']}">Statistics</a></li>
+                    <li><a href="${node['url']}files/${node['url_params']}">Files</a></li>
+                    % if not node['url_params']:
+                        % if not node['is_registration']:
+                            <li><a href="${node['url']}registrations/">Registrations</a></li>
+                        % endif
+                        <li><a href="${node['url']}forks/">Forks</a></li>
+                        % if user['is_contributor']:
+                            <li><a href="${node['url']}settings/">Settings</a></li>
+                        % endif
                     % endif
-                    <li><a href="${node['url']}forks/?key=${node['link']}">Forks</a></li>
-                    % if user['is_contributor']:
-                        <li><a href="${node['url']}settings/?key=${node['link']}">Settings</a></li>
-                    % endif
-                % else:
-                    <li><a href="${node['url']}">Dashboard</a></li>
-                    <li><a href="${node['url']}wiki/">Wiki</a></li>
-                    <li><a href="${node['url']}statistics/">Statistics</a></li>
-                    <li><a href="${node['url']}files/">Files</a></li>
-                    % if not node['is_registration']:
-                        <li><a href="${node['url']}registrations/">Registrations</a></li>
-                    % endif
-                    <li><a href="${node['url']}forks/">Forks</a></li>
-                    % if user['is_contributor']:
-                        <li><a href="${node['url']}settings/">Settings</a></li>
-                    % endif
-                % endif
             </ul>
         </nav>
     </header>
@@ -169,7 +145,7 @@
         }
         // Get project data from the server and initiate the ProjectViewModel
         $.ajax({
-            url: nodeApiUrl+"?key=${node['link']}",
+            url: nodeApiUrl+"${node['url_params']}",
             type: "get", contentType: "application/json",
             dataType: "json",
             cache: false,

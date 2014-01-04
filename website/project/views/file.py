@@ -375,11 +375,12 @@ def view_file(*args, **kwargs):
     if is_img:
         # Append version number to image URL so that old versions aren't
         # cached incorrectly. Resolves #208 [openscienceframework.org]
-        rendered='<img src="{url}files/download/{fid}/version/{vid}/" />'.format(
+        rendered_url = "{url}files/download/{fid}/version/{vid}/".format(
             url=node_to_use.api_url, fid=file_name, vid=len(versions),
         )
         if link:
-            rendered += '?key={0}'.format(link)
+            rendered_url += '?key={0}'.format(link)
+        rendered = '<img src={0} />'.format(rendered_url)
     elif file_ext == '.zip':
         archive = zipfile.ZipFile(file_path)
         archive_files = prune_file_list(archive.namelist(), settings.ARCHIVE_DEPTH)

@@ -5,13 +5,7 @@
         <h4 class="list-group-item-heading">
             <span class="overflow" style="display:inline-block;">
             % if node:
-                <a
-                  % if node['link']:
-                    href="${summary['url']}?key=${node['link']}"
-                  %else:
-                    href="${summary['url']}"
-                  % endif
-                        >${summary['title']}</a>
+                <a href="${summary['url']}${node['url_params']}">${summary['title']}</a>
             % else:
                 <a href="${summary['url']}">${summary['title']}</a>
             % endif
@@ -48,13 +42,7 @@
             <hr />
             Recent Activity
             % if node:
-                <div id="logs-${summary['id']}" class="log-container"
-                      % if node['link']:
-                        data-uri="${summary['api_url']}log/?key=${node['link']}"
-                      %else:
-                        data-uri="${summary['api_url']}log/"
-                      % endif
-                     >
+                <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/${node['url_params']}">
             % else:
                 <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/">
             % endif

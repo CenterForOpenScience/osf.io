@@ -6,13 +6,7 @@
 
         % for k in pages_current:
             <li>
-                <a
-                  % if node['link']:
-                    href="/${node['id']}/wiki/${k}/?key=${node['link']}"
-                  % else:
-                    href="/${node['id']}/wiki/${k}/"
-                  % endif
-                        >${k}</a>
+                <a href="/${node['id']}/wiki/${k}/${node['url_params']}">${k}</a>
             </li>
         % endfor
 
@@ -22,30 +16,18 @@
 
             % for child in toc:
                 <li class="nav-header">
-                    % if child['link']:
 
-                        <a href="/${node['id']}/node/${child['id']}/wiki/home/?key=${child['link']}">${child['title']} (${child['category']})</a>
-                        <ul style="list-style-type: none;">
-                            % for k in child['pages']:
-                                % if k != 'home':
-                                    <li class="">
-                                        <a href="/${node_id}/node/${child['id']}/wiki/${k}/?key=${child['link']}">${k}</a>
-                                    </li>
-                                % endif
-                            % endfor
-                        </ul>
-                    % else:
-                        <a href="/${node['id']}/node/${child['id']}/wiki/home/">${child['title']} (${child['category']})</a>
-                        <ul style="list-style-type: none;">
-                            % for k in child['pages']:
-                                % if k != 'home':
-                                    <li class="">
-                                        <a href="/${node_id}/node/${child['id']}/wiki/${k}/">${k}</a>
-                                    </li>
-                                % endif
-                            % endfor
-                        </ul>
-                    % endif
+                    <a href="/${node['id']}/node/${child['id']}/wiki/home/${child['url_params']}">${child['title']} (${child['category']})</a>
+                    <ul style="list-style-type: none;">
+                        % for k in child['pages']:
+                            % if k != 'home':
+                                <li class="">
+                                    <a href="/${node_id}/node/${child['id']}/wiki/${k}/${child['url_params']}">${k}</a>
+                                </li>
+                            % endif
+                        % endfor
+                    </ul>
+
                 </li>
             % endfor
 

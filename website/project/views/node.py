@@ -400,7 +400,8 @@ def _view_project(node_to_use, user, link='', api_key=None):
             'watched_count': len(node_to_use.watchconfig__watched),
             'logs': recent_logs_dicts,
             'private_links': node_to_use.private_links,
-            'link': link
+            'link': link,
+            'url_params': '?key={0}'.format(link) if link else ''
         },
         'parent': {
             'id': parent._primary_key if parent else '',
