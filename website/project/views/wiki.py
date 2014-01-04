@@ -148,7 +148,8 @@ def project_wiki_page(*args, **kwargs):
             'id': child._primary_key,
             'title': child.title,
             'category': child.category,
-            'pages': child.wiki_pages_current.keys() if child.wiki_pages_current else []
+            'pages': child.wiki_pages_current.keys() if child.wiki_pages_current else [],
+            'url_params': '?key={0}'.format(link) if link else ''
         }
         for child in node_to_use.nodes
         if not child.is_deleted
