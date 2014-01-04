@@ -34,11 +34,11 @@ def prune_file_list(file_list, max_depth):
     return [file for file in file_list if len([c for c in file if c == '/']) <= max_depth]
 
 
-def get_file_tree(node_to_use, user, link=""):
+def get_file_tree(node_to_use, user, link):
     tree = []
     for node in node_to_use.nodes:
         if not node.is_deleted:
-            tree.append(get_file_tree(node, user))
+            tree.append(get_file_tree(node, user, link))
 
     if node_to_use.can_view(user, link):
             for i,v in node_to_use.files_current.items():
@@ -78,7 +78,7 @@ def _clean_file_name(name):
     return encoded
 
 
-def _get_files(filetree, parent_id, check, user, link=""):
+def _get_files(filetree, parent_id, check, user, link):
     if parent_id is not None:
         parent_uid = 'node-{}'.format(parent_id)
     else:
@@ -117,11 +117,10 @@ def _get_files(filetree, parent_id, check, user, link=""):
         )
     )
     itemParent['can_edit'] = str(
-         filetree[0].is_contributor(user) and
+        filetree[0].is_contributor(user) and
         not filetree[0].is_registration
     ).lower()
-    itemParent['can_view'] \
-        = str(filetree[0].can_view(user, link)).lower()
+    itemParent['can_view'] = str(filetree[0].can_view(user, link)).lower()
     if itemParent['can_view'] == 'false':
         itemParent['name'] = 'Private Component'
     if check == 0:
