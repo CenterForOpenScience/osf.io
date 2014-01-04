@@ -661,7 +661,7 @@ class TestProject(DbTestCase):
         link = self.project.add_private_link()
         assert_in(link, self.project.private_links)
 
-    def test_remove_ptivate_link(self):
+    def test_remove_private_link(self):
         link = self.project.add_private_link()
         assert_in(link, self.project.private_links)
         self.project.remove_private_link(link)
