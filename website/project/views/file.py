@@ -28,6 +28,13 @@ from website import settings
 
 logger = logging.getLogger(__name__)
 
+
+def url_builder(url, link):
+    if link:
+        url += '?key={0}'.format(link)
+    return url
+
+
 def prune_file_list(file_list, max_depth):
     if max_depth is None:
         return file_list
@@ -378,9 +385,7 @@ def view_file(*args, **kwargs):
         rendered_url = "{url}files/download/{fid}/version/{vid}/".format(
             url=node_to_use.api_url, fid=file_name, vid=len(versions),
         )
-        if link:
-            rendered_url += '?key={0}'.format(link)
-        rendered = '<img src={0} />'.format(rendered_url)
+        rendered = '<img src={0} />'.format(url_builder(rendered_url, link))
     elif file_ext == '.zip':
         archive = zipfile.ZipFile(file_path)
         archive_files = prune_file_list(archive.namelist(), settings.ARCHIVE_DEPTH)
@@ -437,9 +442,7 @@ def download_file(*args, **kwargs):
         fid=filename,
         vid=vid,
     )
-    if link:
-        redirect_url += '?key={0}'.format(link)
-    return redirect(redirect_url)
+    return redirect(url_builder(redirect_url, link))
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project

@@ -4,11 +4,7 @@
 
         <h4 class="list-group-item-heading">
             <span class="overflow" style="display:inline-block;">
-            % if node:
-                <a href="${summary['url']}${node['url_params']}">${summary['title']}</a>
-            % else:
-                <a href="${summary['url']}">${summary['title']}</a>
-            % endif
+                <a href="${summary['url']}${node['url_params'] if node else ''}">${summary['title']}</a>
             % if summary['is_registration']:
                 | Registered: ${summary['registered_date']}
             % endif
@@ -41,11 +37,7 @@
         <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
             <hr />
             Recent Activity
-            % if node:
-                <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/${node['url_params']}">
-            % else:
-                <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/">
-            % endif
+                <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/${node['url_params'] if node else ''}">
                     <dl class="dl-horizontal activity-log"
                         data-bind="foreach: {data: logs, as: 'log'}">
                         <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>

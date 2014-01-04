@@ -606,6 +606,7 @@ class Node(GuidStoredObject):
         forked.is_public = False
         forked.creator = user
         forked.contributor_list = []
+        forked.private_links = []
 
         forked.add_contributor(user, log=False, save=False)
 
@@ -662,6 +663,7 @@ class Node(GuidStoredObject):
         registered.registered_meta[template] = data
 
         registered.contributors = self.contributors
+        registered.private_links = []
         registered.forked_from = self.forked_from
         registered.creator = self.creator
         registered.logs = self.logs
@@ -705,6 +707,7 @@ class Node(GuidStoredObject):
             node_contained.creator = original_node_contained.creator
             node_contained.logs = original_node_contained.logs
             node_contained.tags = original_node_contained.tags
+            node_contained.private_links = []
 
             node_contained.save()
 
