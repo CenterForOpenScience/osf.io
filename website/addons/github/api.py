@@ -4,62 +4,17 @@
 
 import os
 import json
-import uuid
 import base64
-import urllib
 import datetime
 import requests
 
 from hurry.filesize import size, alternative
 
-from website import settings
-
-from . import settings as github_settings
-
 GH_URL = 'https://github.com/'
 API_URL = 'https://api.github.com/'
-OAUTH_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
-OAUTH_ACCESS_TOKEN_URL = 'https://github.com/login/oauth/access_token'
 
-SCOPE = ['repo']
-
+# TODO: Move to redis / memcached
 github_cache = {}
-
-def oauth_start_url(node, state=None):
-    """
-
-    """
-    state = state or str(uuid.uuid4())
-
-    redirect_uri = os.path.join(
-        settings.DOMAIN, 'api', 'v1', 'addons', 'github', 'callback', node._id
-    )
-    query_string = urllib.urlencode({
-        'client_id': github_settings.CLIENT_ID,
-        'redirect_uri': redirect_uri,
-        'scope': ','.join(SCOPE),
-        'state': state,
-    })
-    url = '{0}/?{1}'.format(
-        OAUTH_AUTHORIZE_URL,
-        query_string
-    )
-
-    return state, url
-
-
-def oauth_get_token(code):
-    """
-
-    """
-    return requests.get(
-        OAUTH_ACCESS_TOKEN_URL,
-        data={
-            'client_id': github_settings.CLIENT_ID,
-            'client_secret': github_settings.CLIENT_SECRET,
-            'code': code,
-        }
-    )
 
 
 class GitHub(object):

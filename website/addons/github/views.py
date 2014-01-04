@@ -4,9 +4,7 @@
 
 import os
 import json
-import uuid
 import datetime
-import urlparse
 import httplib as http
 
 from mako.template import Template
@@ -24,7 +22,8 @@ from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 
-from .api import GitHub, oauth_start_url, oauth_get_token, tree_to_hgrid
+from .api import GitHub, tree_to_hgrid
+from .auth import oauth_start_url, oauth_get_token
 
 MESSAGES = {
     'add': 'Added via the Open Science Framework',
@@ -414,13 +413,12 @@ def github_oauth_start(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     github = _get_addon(node)
 
-    state = str(uuid.uuid4()) + '_' + user._id
-    _, url = oauth_start_url(node, state=state)
+    auth_url, state = oauth_start_url(node, '_' + user._id)
 
     github.oauth_state = state
     github.save()
 
-    return redirect(url)
+    return redirect(auth_url)
 
 
 @must_be_contributor
@@ -454,17 +452,11 @@ def github_oauth_callback(*args, **kwargs):
 
     if code is not None:
 
-        req = oauth_get_token(code)
+        token = oauth_get_token(code)
 
-        if req.status_code == 200:
-            params = urlparse.parse_qs(req.content)
-        else:
-            raise HTTPError(http.BAD_REQUEST)
-
-        access_token = params.get('access_token')
         github.oauth_osf_user = user
         github.oauth_state = None
-        github.oauth_access_token = access_token[0]
+        github.oauth_access_token = token
         github.save()
 
     return redirect(os.path.join(node.url, 'settings'))
