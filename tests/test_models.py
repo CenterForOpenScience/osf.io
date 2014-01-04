@@ -852,6 +852,7 @@ class TestForkNode(DbTestCase):
 
         # Test modified fields
         assert_true(fork.is_fork)
+        assert_equal(len(fork.private_links), 0)
         assert_equal(fork.forked_from, original)
         assert_in(fork._id, original.fork_list)
         assert_in(fork._id, original.node__forked)
@@ -966,6 +967,11 @@ class TestForkNode(DbTestCase):
         fork = self.project.fork_node(self.user)
         assert_false(fork.is_public)
 
+    def test_not_fork_private_link(self):
+        link = self.project.add_private_link()
+        fork = self.project.fork_node(self.user)
+        assert_not_in(link, fork.private_links)
+
     def test_cannot_fork_private_node(self):
         user2 = UserFactory()
         fork = self.project.fork_node(user2)
@@ -1004,6 +1010,7 @@ class TestRegisterNode(DbTestCase):
         assert_equal(registration1.registered_user, self.user)
         assert_equal(len(registration1.registered_meta), 1)
         assert_true(registration1.registered_schema)
+        assert_equal(len(registration1.private_links), 0)
 
         # Create a registration from a project
         user2 = UserFactory()
@@ -1020,7 +1027,6 @@ class TestRegisterNode(DbTestCase):
 
         # Test default user
         assert_equal(self.registration.registered_user, self.user)
-
 
     def test_title(self):
         assert_equal(self.registration.title, self.project.title)
@@ -1053,6 +1059,12 @@ class TestRegisterNode(DbTestCase):
         fork = self.project.fork_node(self.user)
         registration = RegistrationFactory(project=fork)
         assert_equal(registration.forked_from, self.project)
+
+    def test_private_links(self):
+        assert_not_equal(
+            self.registration.private_links,
+            self.project.priavte_links
+        )
 
     def test_creator(self):
         user2 = UserFactory()
