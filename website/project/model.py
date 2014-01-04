@@ -351,10 +351,8 @@ class Node(GuidStoredObject):
         )
 
     def can_view(self, user, link='', api_key=None):
-        if link not in self.private_links:
-            return self.is_public or self.can_edit(user, api_key)
-        else:
-            return True
+        return (self.is_public or self.can_edit(user, api_key)) \
+            if link not in self.private_links else True
 
     def save(self, *args, **kwargs):
 
@@ -991,7 +989,6 @@ class Node(GuidStoredObject):
 
     def add_private_link(self, link='', save=True):
         link = link or str(uuid.uuid4())
-
         self.private_links.append(link)
         if save:
             self.save()
@@ -1001,7 +998,7 @@ class Node(GuidStoredObject):
         try:
             self.private_links.remove(link)
         except ValueError:
-                pass
+            pass
         if save:
             self.save()
 
