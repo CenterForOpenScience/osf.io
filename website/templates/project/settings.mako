@@ -33,6 +33,7 @@
 </%def>
 
 <%def name="javascript_bottom()">
+
 <script type="text/javascript">
     ## TODO: Replace with something more fun, like the name of a famous scientist
     ## h/t @sloria
