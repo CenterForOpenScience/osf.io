@@ -15,7 +15,7 @@
 
             <div class="col-md-8 cite-container">
                 %if parent['id']:
-                    % if parent['can_view'] or parent['is_public'] or parent['is_contributor']:
+                    % if parent['can_be_viewed'] or parent['is_public'] or parent['is_contributor']:
                         <h1 class="node-parent-title">
                             <a href="${parent['url']}${node['url_params']}">${parent['title']}</a> /
 
@@ -111,19 +111,19 @@
 
         <nav id="projectSubnav" class="navbar navbar-default ">
             <ul class="nav navbar-nav">
-                    <li><a href="${node['url']}${node['url_params']}">Dashboard</a></li>
-                    <li><a href="${node['url']}wiki/${node['url_params']}">Wiki</a></li>
-                    <li><a href="${node['url']}statistics/${node['url_params']}">Statistics</a></li>
-                    <li><a href="${node['url']}files/${node['url_params']}">Files</a></li>
-                    % if not node['is_registration']:
-                        <li><a href="${node['url']}registrations/${node['url_params']}">Registrations</a></li>
+                <li><a href="${node['url']}${node['url_params']}">Dashboard</a></li>
+                <li><a href="${node['url']}wiki/${node['url_params']}">Wiki</a></li>
+                <li><a href="${node['url']}statistics/${node['url_params']}">Statistics</a></li>
+                <li><a href="${node['url']}files/${node['url_params']}">Files</a></li>
+                % if not node['is_registration']:
+                    <li><a href="${node['url']}registrations/${node['url_params']}">Registrations</a></li>
+                % endif
+                <li><a href="${node['url']}forks/${node['url_params']}">Forks</a></li>
+                % if not node['url_params']:
+                    % if user['is_contributor']:
+                        <li><a href="${node['url']}settings/">Settings</a></li>
                     % endif
-                    <li><a href="${node['url']}forks/${node['url_params']}">Forks</a></li>
-                    % if not node['url_params']:
-                        % if user['is_contributor']:
-                            <li><a href="${node['url']}settings/">Settings</a></li>
-                        % endif
-                    % endif
+                % endif
             </ul>
         </nav>
     </header>
