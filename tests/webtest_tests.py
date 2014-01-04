@@ -359,10 +359,13 @@ class TestComponents(DbTestCase):
         self.component.set_permissions('private', self.user)
         self.project.save()
 
+    def test_can_create_component_from_a_project(self):
+        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
+        assert_in('Add Component', res)
+
     def test_cannot_create_component_from_a_component(self):
-        # At the component's page
         res = self.app.get(self.component.url, auth=self.auth).maybe_follow()
-        assert_not_in("Add Component", res)
+        assert_not_in('Add Component', res)
 
     def test_sees_parent(self):
         res = self.app.get(self.component.url, auth=self.auth).maybe_follow()

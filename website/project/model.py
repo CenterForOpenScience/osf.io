@@ -11,9 +11,6 @@ import urllib
 import urlparse
 import logging
 
-import glob
-import mimetypes
-
 import markdown
 import pytz
 from markdown.extensions import wikilinks
@@ -338,7 +335,13 @@ class Node(GuidStoredObject):
     _meta = {'optimistic': True}
 
     def __init__(self, *args, **kwargs):
+
         super(Node, self).__init__(*args, **kwargs)
+
+        # Crash if parent provided and not project
+        project = kwargs.get('project')
+        if project and project.category != 'project':
+            raise ValueError('Parent must be a project.')
 
         if kwargs.get('_is_loaded', False):
             return

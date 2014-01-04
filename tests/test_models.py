@@ -519,15 +519,20 @@ class TestNode(DbTestCase):
             ]
         )
 
+    def test_cant_add_component_to_component(self):
+        with assert_raises(ValueError):
+            NodeFactory(project=self.node)
+
     def test_remove_node(self):
         # Add some components and delete the project
-        component = NodeFactory(creator=self.user, project=self.node)
-        subproject = ProjectFactory(creator=self.user, project=self.node)
-        self.node.remove_node(self.user)
+        subproject = ProjectFactory(creator=self.user, project=self.parent)
+        subsubproject = ProjectFactory(creator=self.user, project=subproject)
+        component = NodeFactory(creator=self.user, project=subproject)
+        subproject.remove_node(self.user)
         # The correct nodes were deleted
-        assert_true(self.node.is_deleted)
         assert_true(component.is_deleted)
-        assert_false(subproject.is_deleted)
+        assert_true(subproject.is_deleted)
+        assert_false(subsubproject.is_deleted)
         assert_false(self.parent.is_deleted)
         # A log was saved
         assert_equal(self.parent.logs[-1].action, 'node_removed')
