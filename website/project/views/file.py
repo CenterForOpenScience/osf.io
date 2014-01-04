@@ -370,20 +370,16 @@ def view_file(*args, **kwargs):
             is_img = True
             break
 
-
     # TODO: this logic belongs in model
     # todo: add bzip, etc
     if is_img:
         # Append version number to image URL so that old versions aren't
         # cached incorrectly. Resolves #208 [openscienceframework.org]
+        rendered='<img src="{url}files/download/{fid}/version/{vid}/" />'.format(
+            url=node_to_use.api_url, fid=file_name, vid=len(versions),
+        )
         if link:
-            rendered='<img src="{url}files/download/{fid}/version/{vid}/?key={link}" />'.format(
-                url=node_to_use.api_url, fid=file_name, vid=len(versions), link=link,
-            )
-        else:
-            rendered='<img src="{url}files/download/{fid}/version/{vid}/" />'.format(
-                url=node_to_use.api_url, fid=file_name, vid=len(versions),
-            )
+            rendered += '?key={0}'.format(link)
     elif file_ext == '.zip':
         archive = zipfile.ZipFile(file_path)
         archive_files = prune_file_list(archive.namelist(), settings.ARCHIVE_DEPTH)
@@ -435,19 +431,14 @@ def download_file(*args, **kwargs):
     filename = kwargs['fid']
     link = kwargs['link']
     vid = len(node_to_use.files_versions[filename.replace('.', '_')])
+    redirect_url = '{url}files/download/{fid}/version/{vid}/'.format(
+        url=node_to_use.api_url,
+        fid=filename,
+        vid=vid,
+    )
     if link:
-        return redirect('{url}files/download/{fid}/version/{vid}/?key={link}'.format(
-            url=node_to_use.api_url,
-            fid=filename,
-            vid=vid,
-            link=link,
-        ))
-    else:
-        return redirect('{url}files/download/{fid}/version/{vid}/'.format(
-            url=node_to_use.api_url,
-            fid=filename,
-            vid=vid,
-        ))
+        redirect_url += '?key={0}'.format(link)
+    return redirect(redirect_url)
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
