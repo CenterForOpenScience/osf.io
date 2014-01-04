@@ -162,7 +162,7 @@ def must_be_contributor_or_public(fn):
     return decorator(wrapped, fn)
 
 
-# TOdo remove code reprtition in decorators
+# TODO remove code repetition in decorators
 def must_be_contributor_and_no_private_link(fn):
     def wrapped(func, *args, **kwargs):
         if 'project' not in kwargs:
