@@ -609,8 +609,6 @@ def get_summary(*args, **kwargs):
     rescale_ratio = kwargs.get('rescale_ratio')
     node_to_use = kwargs['node'] or kwargs['project']
 
-    widgets, tabs, icons, _, _ = _render_addon(node_to_use)
-
     if node_to_use.can_view(user, api_key):
         summary = {
             'can_view': True,
@@ -624,7 +622,6 @@ def get_summary(*args, **kwargs):
             'ua_count': None,
             'ua': None,
             'non_ua': None,
-            'icons': icons,
             'addons_enabled': node_to_use.addons_enabled,
         }
         if rescale_ratio:
