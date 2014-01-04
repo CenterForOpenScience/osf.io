@@ -179,8 +179,6 @@ def must_be_contributor_and_no_private_link(fn):
             kwargs['node'] = node
 
         node_to_use = node or project
-        link = request.args.get('key', '').strip('/')
-        kwargs['link'] = link
         if 'user' in kwargs:
             user = kwargs['user']
         else:
