@@ -11,11 +11,11 @@
         <div class="wiki">
             ${ node["wiki_home"] }
             <p><a
-                   %if node['link']:
+                   % if node['link']:
                        href="${node['url']}wiki/home/?key=${node['link']}"
-                   %else:
+                   % else:
                        href="${node['url']}wiki/home/"
-                   %endif
+                   % endif
                         >read more</a></p>
         </div>
       </section>
