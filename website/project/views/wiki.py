@@ -19,6 +19,7 @@ from website.project.decorators import must_not_be_registration, must_be_valid_p
 
 logger = logging.getLogger(__name__)
 
+
 @must_be_valid_project
 def project_wiki_home(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
