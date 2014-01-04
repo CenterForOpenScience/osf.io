@@ -16,9 +16,7 @@ from framework.mongo.utils import from_mongo
 from framework.auth import must_have_session_auth, get_api_key
 
 from website.models import Node
-
 from website.project import new_node, clean_template_name
-
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from website.project.forms import NewProjectForm, NewNodeForm
@@ -132,7 +130,7 @@ def node_registrations(*args, **kwargs):
 
     user = get_current_user()
     node_to_use = kwargs['node'] or kwargs['project']
-    link = request.args.get('key', '').strip('/')
+    link = kwargs['link']
     return _view_project(node_to_use, user, link)
 
 @must_be_valid_project
@@ -145,7 +143,7 @@ def node_forks(*args, **kwargs):
     user = get_current_user()
 
     node_to_use = node or project
-    link = request.args.get('key', '').strip('/')
+    link = kwargs['link']
     return _view_project(node_to_use, user, link)
 
 @must_be_valid_project
@@ -414,9 +412,9 @@ def _view_project(node_to_use, user, link='', api_key=None):
             'is_contributor': parent.is_contributor(user) if parent else ''
         },
         'user': {
-            'is_contributor': node_to_use.is_contributor(user) or False,
+            'is_contributor': node_to_use.is_contributor(user),
             'can_edit': (node_to_use.can_edit(user, api_key)
-                                and not node_to_use.is_registration) or False,
+                                and not node_to_use.is_registration),
             'can_view': node_to_use.can_view(user, link, api_key),
             'is_watching': user.is_watching(node_to_use) if user and not user == None else False
         }
@@ -541,7 +539,6 @@ def get_children(*args, **kwargs):
 @must_be_contributor_or_public
 def get_forks(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
-
     forks = node_to_use.node__forked.find(
         Q('is_deleted', 'eq', False)
     )
@@ -559,8 +556,6 @@ def project_generate_private_link_post(*args, **kwargs):
     """ Add contributors to a node. """
 
     node_to_use = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
-    api_key = get_api_key()
     node_ids = request.json.get('node_ids', [])
     link = node_to_use.add_private_link()
 
