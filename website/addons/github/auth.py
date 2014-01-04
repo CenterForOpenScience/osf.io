@@ -3,7 +3,6 @@
 """
 
 import os
-from oauthlib.common import generate_token
 from requests_oauthlib import OAuth2Session
 
 from website import settings
@@ -13,29 +12,26 @@ OAUTH_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
 OAUTH_ACCESS_TOKEN_URL = 'https://github.com/login/oauth/access_token'
 
 
-def oauth_start_url(node, state_suffix):
+def oauth_start_url(user, node=None):
     """Get authorization URL for OAuth.
 
-    :param Node node: OSF Node
-    :param str state_suffix: Optional string to be appended to state
+    :param User user: OSF user
+    :param Node node: OSF node
     :return tuple: Tuple of authorization URL and OAuth state
 
     """
-    redirect_uri = os.path.join(
+    uri_parts = [
         settings.DOMAIN, 'api', 'v1', 'addons', 'github',
-        'callback', node._id,
-    )
-    state_generator=(
-        lambda: generate_token() + state_suffix
-        if state_suffix
-        else None
-    )
+        'callback', user._id,
+    ]
+    if node:
+        uri_parts.append(node._id)
+    redirect_uri = os.path.join(*uri_parts)
 
     session = OAuth2Session(
         github_settings.CLIENT_ID,
         redirect_uri=redirect_uri,
         scope=github_settings.SCOPE,
-        state=state_generator,
     )
 
     return session.authorization_url(OAUTH_AUTHORIZE_URL)

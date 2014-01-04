@@ -413,7 +413,7 @@ def github_oauth_start(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     github = _get_addon(node)
 
-    auth_url, state = oauth_start_url(node, '_' + user._id)
+    auth_url, state = oauth_start_url(user, node)
 
     github.oauth_state = state
     github.save()
@@ -434,9 +434,11 @@ def github_oauth_delete(*args, **kwargs):
     return {}
 
 
+# TODO: Handle auth for users as well as nodes
 def github_oauth_callback(*args, **kwargs):
 
     verification_key = request.args.get('state')
+    user = models.User.load(kwargs.get('uid', None))
     node = models.Node.load(kwargs.get('nid', None))
 
     if node is None:
@@ -447,7 +449,6 @@ def github_oauth_callback(*args, **kwargs):
     if github.oauth_state != verification_key:
         raise HTTPError(http.BAD_REQUEST)
 
-    user = models.User.load(verification_key.split('_')[-1])
     code = request.args.get('code')
 
     if code is not None:

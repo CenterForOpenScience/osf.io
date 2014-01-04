@@ -47,7 +47,10 @@ settings_routes = {
             '/project/<pid>/github/oauth/delete/',
             '/project/<pid>/node/<nid>/github/oauth/delete/',
         ], 'post', views.github_oauth_delete, json_renderer),
-        Rule('/addons/github/callback/<nid>/', 'get', views.github_oauth_callback, json_renderer),
+        Rule([
+            '/addons/github/callback/<uid>/',
+            '/addons/github/callback/<uid>/<nid>/',
+        ], 'get', views.github_oauth_callback, json_renderer),
     ],
     'prefix': '/api/v1',
 }
