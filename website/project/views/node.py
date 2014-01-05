@@ -465,7 +465,7 @@ def _view_project(node_to_use, user, api_key=None):
     recent_logs_dicts = [log.serialize() for log in recent_logs]
     widgets, tabs, icons, js, css = _render_addon(node_to_use)
     # Before page load callback; skip if API request
-    if 'api/v1' in request.path:
+    if 'api/v1' not in request.path:
         for addon in node_to_use.addons:
             addon.before_page_load(node_to_use, user)
     data = {

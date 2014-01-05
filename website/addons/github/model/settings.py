@@ -14,8 +14,6 @@ from ..api import GitHub
 
 class AddonGitHubSettings(AddonSettingsBase):
 
-    SHORT_NAME = 'github'
-
     url = fields.StringField()
     user = fields.StringField()
     repo = fields.StringField()

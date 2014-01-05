@@ -58,8 +58,9 @@ class AddonConfig(object):
                  categories, schema=None, include_js=None, include_css=None,
                  widget_help=None, **kwargs):
 
-        # Memorize arguments
         self.settings_model = settings_model
+        self.settings_model.config = self
+
         self.short_name = short_name
         self.full_name = full_name
         self.added_by_default = added_by_default
@@ -125,7 +126,7 @@ class AddonSettingsBase(StoredObject):
         """
 
         """
-        config = settings.ADDONS_AVAILABLE_DICT[self.SHORT_NAME]
+        # Note: `config` is added to `self` in AddonConfig::__init__.
         return Template('''
             <div class='addon-config-error'>
                 ${title} add-on is not configured properly.
@@ -133,8 +134,8 @@ class AddonSettingsBase(StoredObject):
                 or click <a class="widget-disable" href="{url}settings/${short}/disable/">here</a> to disable it.
             </div>
         ''').render(
-            title=config.full_name,
-            short=config.short_name,
+            title=self.config.full_name,
+            short=self.config.short_name,
             nid=self.node._id,
         )
 

@@ -61,12 +61,9 @@ def github_settings(*args, **kwargs):
 def _page_content(node, github, data, hotlink=True):
 
     if github.user is None or github.repo is None:
-
         return github.render_config_error()
 
     connect = GitHub.from_settings(github)
-
-    branches = connect.branches(github.user, github.repo)
 
     branch = request.args.get('branch', None)
 
@@ -76,9 +73,13 @@ def _page_content(node, github, data, hotlink=True):
         else []
     )
 
+    # Get data from GitHub API
+    branches = connect.branches(github.user, github.repo)
+    if branches is None:
+        return github.render_config_error()
     if hotlink:
         repo = connect.repo(github.user, github.repo)
-        if repo['private']:
+        if repo is None or repo['private']:
             hotlink = False
 
     commit_id, tree = connect.tree(
