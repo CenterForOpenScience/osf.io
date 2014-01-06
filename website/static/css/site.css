@@ -1,6 +1,94 @@
 /* Body and structure
 -------------------------------------------------- */
 
+/*CSS Johanna added for front page*/
+.verticalline {
+border-left:  thin solid #D9E8F4;
+}
+
+#carousel-control-left-blue{
+/* IE10 Consumer Preview */
+background-image: -ms-linear-gradient(right, #FFFFFF 50%, #D9E8F4 100%);
+
+/* Mozilla Firefox */
+background-image: -moz-linear-gradient(right, #FFFFFF 50%, #D9E8F4 100%);
+
+/* Opera */
+background-image: -o-linear-gradient(right, #FFFFFF 50%, #D9E8F4 100%);
+
+/* Webkit (Safari/Chrome 10) */
+background-image: -webkit-gradient(linear, right top, left top, color-stop(.50, #FFFFFF), color-stop(1, #D9E8F4));
+
+/* Webkit (Chrome 11+) */
+background-image: -webkit-linear-gradient(right, #FFFFFF 50%, #D9E8F4 100%);
+
+/* W3C Markup, IE10 Release Preview */
+background-image: linear-gradient(to left, #FFFFFF 50%, #D9E8F4 100%);
+
+}
+
+#carousel-control-right-blue{
+/* IE10 Consumer Preview */
+background-image: -ms-linear-gradient(left, #FFFFFF 50%, #D9E8F4 100%);
+
+/* Mozilla Firefox */
+background-image: -moz-linear-gradient(left, #FFFFFF 50%, #D9E8F4 100%);
+
+/* Opera */
+background-image: -o-linear-gradient(left, #FFFFFF 50%, #D9E8F4 100%);
+
+/* Webkit (Safari/Chrome 10) */
+background-image: -webkit-gradient(linear, right top, left top, color-stop(.50, #FFFFFF), color-stop(1, #D9E8F4));
+
+/* Webkit (Chrome 11+) */
+background-image: -webkit-linear-gradient(left, #FFFFFF 50%, #D9E8F4 100%);
+
+/* W3C Markup, IE10 Release Preview */
+background-image: linear-gradient(to right, #FFFFFF 50%, #D9E8F4 100%);
+}
+
+.FP_Header {
+color: #b4b4b4;
+font-weight: bold;
+
+}
+
+.FP_Question{
+color: #b4b4b4;
+font-weight: bold;
+font-size:500%
+}
+
+.FP_Center {
+text-align: center;
+}
+
+#FP_great {
+color: #b4b4b4;
+}
+
+.video_header {
+background-color: #D9E8F4;
+opacity:.3;
+
+}
+
+#video_font_head {
+color: #428bca;
+font-weight: bold;
+}
+
+.hrBlue {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  border: 0;
+  border-top: 1px solid #D9E8F4;
+}
+------------------------
+/*End Johanna's CSS*/
+
+
+
 /*
 'Modern Business' HTML Theme. Licensed under Apache 2.0.
 */
@@ -67,6 +155,8 @@ h4 {
     padding-right: 60px;
 }
 
+
+
 /* Navbar */
 .navbar .search-query {
     width:190px
@@ -99,6 +189,8 @@ h4 {
 
 
 /* Half Page Height Carousel Customization */
+
+
 .carousel {
   height: 50%;
 }
