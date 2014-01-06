@@ -8,7 +8,10 @@ import base64
 import datetime
 import requests
 
+from requests_oauthlib import OAuth2Session
 from hurry.filesize import size, alternative
+
+from . import settings as github_settings
 
 GH_URL = 'https://github.com/'
 API_URL = 'https://api.github.com/'
@@ -19,36 +22,28 @@ github_cache = {}
 
 class GitHub(object):
 
-    def __init__(self, user=None, token=None, key=None):
-        self.user = user
-        self.token = token
-        self.key = key
+    def __init__(self, access_token, token_type):
+
+        self.session = OAuth2Session(
+            github_settings.CLIENT_ID,
+            token={
+                'access_token': access_token,
+                'token_type': token_type,
+            }
+        )
 
     @classmethod
     def from_settings(cls, settings):
         return cls(
-            None, None,
-            key=settings.oauth_access_token,
+            access_token=settings.oauth_access_token,
+            token_type=settings.oauth_token_type,
         )
 
     def _send(self, url, method='get', output='json', cache=True, **kwargs):
         """
 
         """
-        func = getattr(requests, method.lower())
-
-        # Add access token to params
-        params = kwargs.pop('params', {})
-        if self.key is not None and 'access_token' not in params:
-            params['access_token'] = self.key
-
-        # Build auth
-        auth = kwargs.pop('auth', None)
-        if 'access_token' not in params:
-            if auth is None and self.user is not None and self.token is not None:
-                auth = (self.user, self.token)
-        else:
-            auth = None
+        func = getattr(self.session, method.lower())
 
         # Add if-modified-since header if needed
         headers = kwargs.pop('headers', {})
@@ -59,7 +54,7 @@ class GitHub(object):
                 headers['if-modified-since'] = cache_data['date'].strftime('%c')
 
         # Send request
-        req = func(url, params=params, auth=auth, headers=headers, **kwargs)
+        req = func(url, headers=headers, **kwargs)
 
         # Pull from cache if not modified
         if cache and cache_data and req.status_code == 304:
@@ -331,15 +326,16 @@ def tree_to_hgrid(tree, user, repo, node, ref=None, hotlink=True):
                 item['size'],
                 size(item['size'], system=alternative)
             ]
+            base_api_url = node.api_url + 'github/file/{0}/'.format(item['path'])
+            row['delete'] = base_api_url
+            if ref is not None:
+                base_api_url += '/?ref=' + ref
             if hotlink and ref:
                 row['download'] = os.path.join(
                     GH_URL, user, repo, 'blob', ref, item['path']
                 ) + '?raw=true'
             else:
-                row['download'] = node.api_url + 'github/file/{0}'.format(item['path'])
-                if ref is not None:
-                    row['download'] += '/?ref=' + ref
-                    row['ref'] = ref
+                row['download'] = base_api_url
         else:
             row['uploadUrl'] = node.api_url + 'github/file/{0}/'.format(item['path'])
             if ref is not None:

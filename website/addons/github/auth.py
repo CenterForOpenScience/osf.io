@@ -47,9 +47,8 @@ def oauth_get_token(code):
     session = OAuth2Session(
         github_settings.CLIENT_ID,
     )
-    token = session.fetch_token(
+    return session.fetch_token(
         OAUTH_ACCESS_TOKEN_URL,
         client_secret=github_settings.CLIENT_SECRET,
         code=code,
     )
-    return token.get('access_token')

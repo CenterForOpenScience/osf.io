@@ -441,6 +441,7 @@ def github_oauth_delete(*args, **kwargs):
     github = _get_addon(node)
 
     github.oauth_access_token = None
+    github.oauth_token_type = None
     github.save()
 
     return {}
@@ -469,7 +470,8 @@ def github_oauth_callback(*args, **kwargs):
 
         github.oauth_osf_user = user
         github.oauth_state = None
-        github.oauth_access_token = token
+        github.oauth_access_token = token['access_token']
+        github.oauth_token_type = token['token_type']
 
         github.save()
 

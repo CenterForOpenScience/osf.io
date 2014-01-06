@@ -96,7 +96,7 @@ grid.hGridBeforeDelete.subscribe(function(e, args) {
             msg,
             function(result) {
                 if (result) {
-                    var url = args['items'][0]['download'];
+                    var url = args['items'][0]['delete'];
                     $.ajax({
                         url: url,
                         type: 'DELETE',

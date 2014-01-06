@@ -14,13 +14,13 @@ from ..api import GitHub
 
 class AddonGitHubSettings(AddonSettingsBase):
 
-    url = fields.StringField()
     user = fields.StringField()
     repo = fields.StringField()
 
     oauth_osf_user = fields.ForeignField('user', backref='authorized')
     oauth_state = fields.StringField()
     oauth_access_token = fields.StringField()
+    oauth_token_type = fields.StringField()
 
     registration_data = fields.DictionaryField()
 
@@ -120,7 +120,7 @@ class AddonGitHubSettings(AddonSettingsBase):
         """
         if self.oauth_osf_user and self.oauth_osf_user == removed:
 
-            #
+            # Delete OAuth tokens
             self.oauth_osf_user = None
             self.oauth_access_token = None
             self.save()
