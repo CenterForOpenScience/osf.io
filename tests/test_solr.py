@@ -194,7 +194,7 @@ class TestPublicProject(SolrTestCase):
         docs = query(wiki_content)
         assert_equal(len(docs), 0)
 
-        self.project.update_node_wiki('home', wiki_content, self.user, None)
+        self.project.update_node_wiki('home', wiki_content, self.user)
 
         docs = query(wiki_content)
         assert_equal(len(docs), 1)
@@ -205,8 +205,8 @@ class TestPublicProject(SolrTestCase):
 
         """
         wiki_content = 'Hammer to fall'
-        self.project.update_node_wiki('home', wiki_content, self.user, None)
-        self.project.update_node_wiki('home', '', self.user, None)
+        self.project.update_node_wiki('home', wiki_content, self.user)
+        self.project.update_node_wiki('home', '', self.user)
 
         docs = query(wiki_content)
         assert_equal(len(docs), 0)
@@ -219,12 +219,12 @@ class TestPublicProject(SolrTestCase):
         """
         user2 = UserFactory()
 
-        docs = query(user2.fullname)
+        docs = query('"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
 
         self.project.add_contributor(user2, save=True)
 
-        docs = query(user2.fullname)
+        docs = query('"{}"'.format(user2.fullname))
         assert_equal(len(docs), 1)
 
     def test_remove_contributor(self):
@@ -237,13 +237,8 @@ class TestPublicProject(SolrTestCase):
         self.project.add_contributor(user2, save=True)
         self.project.remove_contributor(user2, self.user)
 
-        docs = query(user2.fullname)
+        docs = query('"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
-
-
-# todo: write these
-class TestSearchSearch(SolrTestCase):
-    pass
 
 
 class TestAddContributor(SolrTestCase):
@@ -252,8 +247,8 @@ class TestAddContributor(SolrTestCase):
     """
 
     def setUp(self):
-        self.name1 = 'Roger Taylor'
-        self.name2 = 'John Deacon'
+        self.name1 = 'Roger1 Taylor1'
+        self.name2 = 'John2 Deacon2'
         self.user = UserFactory(fullname=self.name1)
 
     def test_search_fullname(self):

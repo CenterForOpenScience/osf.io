@@ -9,16 +9,14 @@ import bson
 
 from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
-from framework import fields,  Q, analytics
+from framework import fields, Q, analytics
 from framework.guid.model import GuidStoredObject
 from framework.search import solr
 from website import settings, filters
 
-from .utils import parse_name
-
 name_formatters = {
    'long': lambda user: user.fullname,
-   'surname': lambda user: user.family_name,
+   'surname': lambda user: user.family_name if user.family_name else user.fullname,
    'initials': lambda user: u'{surname}, {initial}.'.format(
        surname=user.family_name,
        initial=user.given_name_initial
@@ -46,6 +44,9 @@ class User(GuidStoredObject):
     date_registered = fields.DateTimeField()#auto_now_add=True)
     # Watched nodes are stored via a list of WatchConfigs
     watched = fields.ForeignField("WatchConfig", list=True, backref="watched")
+
+    # Recently added contributors stored via a list of users
+    recently_added = fields.ForeignField("user", list=True, backref="recently_added")
 
     # CSL names
     given_name = fields.StringField()

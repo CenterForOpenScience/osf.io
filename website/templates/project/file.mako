@@ -22,9 +22,10 @@
 		<table class="table table-striped" id='file-version-history'>
 			<thead>
 				<tr>
-					<th>version</th>
-					<th>date</th>
-					<th colspan=2>downloads</th>
+					<th>Version</th>
+					<th>Date</th>
+                    <th>User</th>
+					<th colspan=2>Downloads</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -35,6 +36,9 @@
                     </td>
                     <td>
                         ${version['date_uploaded']}
+                    </td>
+                    <td>
+                        <a href="${version['committer_url']}">${version['committer_name']}</a>
                     </td>
                     <td>
                         ${version['total']}

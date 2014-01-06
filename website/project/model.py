@@ -216,9 +216,8 @@ class NodeFile(GuidStoredObject):
     sha = fields.StringField()
     size = fields.IntegerField()
     content_type = fields.StringField()
-    is_public = fields.BooleanField()
     git_commit = fields.StringField()
-    is_deleted = fields.BooleanField()
+    is_deleted = fields.BooleanField(default=False)
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_uploaded = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -287,7 +286,7 @@ class Node(GuidStoredObject):
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
 
     # Permissions
-    is_public = fields.BooleanField()
+    is_public = fields.BooleanField(default=False)
 
     is_deleted = fields.BooleanField(default=False)
     deleted_date = fields.DateTimeField()
@@ -337,6 +336,16 @@ class Node(GuidStoredObject):
 
     _meta = {'optimistic': True}
 
+    def __init__(self, *args, **kwargs):
+        super(Node, self).__init__(*args, **kwargs)
+
+        if kwargs.get('_is_loaded', False):
+            return
+
+        if self.creator:
+            self.contributors.append(self.creator)
+            self.contributor_list.append({'id': self.creator._primary_key})
+
     def can_edit(self, user, api_key=None):
         return (
             self.is_contributor(user)
@@ -348,16 +357,51 @@ class Node(GuidStoredObject):
         return self.is_public or self.can_edit(user, api_key)
 
     def save(self, *args, **kwargs):
-        rv = super(Node, self).save(*args, **kwargs)
+
+        first_save = not self._is_loaded
+        needs_created_log = not self.is_registration and not self.is_fork
+
+        saved_fields = super(Node, self).save(*args, **kwargs)
+
+        # Append to parent and create log on first save only
+        if first_save and needs_created_log:
+            if getattr(self, 'project', None):
+                # Append log to parent
+                self.project.nodes.append(self)
+                self.project.save()
+
+                # Define log fields for component
+                log_action = NodeLog.NODE_CREATED
+                log_params = {
+                    'node': self._primary_key,
+                    'project': self.project._primary_key,
+                }
+
+            else:
+                # Define log fields for non-component project
+                log_action = NodeLog.PROJECT_CREATED
+                log_params = {
+                    'project': self._primary_key,
+                }
+
+            # Add log with appropriate fields
+            self.add_log(
+                log_action,
+                params=log_params,
+                user=self.creator,
+                log_date=self.date_created,
+                save=True,
+            )
 
         # Only update Solr if at least one watched field has changed
-        if self.SOLR_UPDATE_FIELDS.intersection(rv['saved_fields']):
+        if self.SOLR_UPDATE_FIELDS.intersection(saved_fields):
             self.update_solr()
 
         # This method checks what has changed.
-        piwik.update_node(self, rv['saved_fields'])
+        piwik.update_node(self, saved_fields)
 
-        return rv
+        # Return expected value for StoredObject::save
+        return saved_fields
 
     def get_recent_logs(self, n=10):
         '''Return a list of the n most recent logs, in reverse chronological
@@ -376,12 +420,13 @@ class Node(GuidStoredObject):
             return None
 
     def set_title(self, title, user, api_key=None, save=False):
-        '''Set the title of this Node and log it.
+        """Set the title of this Node and log it.
 
         :param str title: The new title.
         :param User user: User who made the action.
         :param ApiKey api_key: Optional API key.
-        '''
+
+        """
         original_title = self.title
         self.title = title
         self.add_log(
@@ -400,12 +445,14 @@ class Node(GuidStoredObject):
         return None
 
     def set_description(self, description, user, api_key=None, save=False):
-        '''Set the description and log the event.
+        """Set the description and log the event.
 
         :param str description: The new description
         :param User user: The user who changed the description.
         :param ApiKey api_key: Optional API key.
-        '''
+        :param bool save: Save self after updating.
+
+        """
         original = self.description
         self.description = description
         if save:
@@ -425,7 +472,7 @@ class Node(GuidStoredObject):
 
     def update_solr(self):
         """Send the current state of the object to Solr, or delete it from Solr
-        as appropriate
+        as appropriate.
 
         """
         if not settings.USE_SOLR:
@@ -589,7 +636,7 @@ class Node(GuidStoredObject):
 
         return forked
 
-    def register_node(self, schema, user, api_key, template, data):
+    def register_node(self, schema, user, template, data, api_key=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -608,6 +655,15 @@ class Node(GuidStoredObject):
         original = self.load(self._primary_key)
         registered = original.clone()
 
+        registered.is_registration = True
+        registered.registered_date = when
+        registered.registered_user = user
+        registered.registered_schema = schema
+        registered.registered_from = original
+        if not registered.registered_meta:
+            registered.registered_meta = {}
+        registered.registered_meta[template] = data
+
         registered.contributors = self.contributors
         registered.forked_from = self.forked_from
         registered.creator = self.creator
@@ -625,6 +681,10 @@ class Node(GuidStoredObject):
         # todo: should be recursive; see Node.fork_node()
         for original_node_contained in original.nodes:
 
+            if not original_node_contained.can_edit(user):
+                # todo: inform user that node can't be registered
+                continue
+
             node_contained = original_node_contained.clone()
             node_contained.save()
 
@@ -634,12 +694,6 @@ class Node(GuidStoredObject):
                 folder_new = os.path.join(settings.UPLOADS_PATH, node_contained._primary_key)
                 Repo(folder_old).clone(folder_new)
 
-            node_contained.contributors = original_node_contained.contributors
-            node_contained.forked_from = original_node_contained.forked_from
-            node_contained.creator = original_node_contained.creator
-            node_contained.logs = original_node_contained.logs
-            node_contained.tags = original_node_contained.tags
-
             node_contained.is_registration = True
             node_contained.registered_date = when
             node_contained.registered_user = user
@@ -648,19 +702,16 @@ class Node(GuidStoredObject):
             if not node_contained.registered_meta:
                 node_contained.registered_meta = {}
             node_contained.registered_meta[template] = data
+            
+            node_contained.contributors = original_node_contained.contributors
+            node_contained.forked_from = original_node_contained.forked_from
+            node_contained.creator = original_node_contained.creator
+            node_contained.logs = original_node_contained.logs
+            node_contained.tags = original_node_contained.tags
+
             node_contained.save()
 
             registered.nodes.append(node_contained)
-
-        registered.is_registration = True
-        registered.registered_date = when
-        registered.registered_user = user
-        registered.registered_schema = schema
-        registered.registered_from = original
-        if not registered.registered_meta:
-            registered.registered_meta = {}
-        registered.registered_meta[template] = data
-        registered.save()
 
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
@@ -903,12 +954,10 @@ class Node(GuidStoredObject):
             path=file_name,
             filename=file_name,
             size=size,
-            is_public=self.is_public,
             node=self,
             uploader=user,
             git_commit=commit_id,
             content_type=content_type,
-            is_deleted=False,
         )
         node_file.save()
 
@@ -1126,11 +1175,22 @@ class Node(GuidStoredObject):
         :param save: Save after adding contributor
         :return: Boolean--whether contributor was added
         """
+        MAX_RECENT_LENGTH = 15
+
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
         if contrib_to_add._primary_key not in self.contributors:
             self.contributors.append(contrib_to_add)
             self.contributor_list.append({'id': contrib_to_add._primary_key})
+
+            # Add contributor to recently added list for user
+            if user is not None:
+                if contrib_to_add in user.recently_added:
+                    user.recently_added.remove(contrib_to_add)
+                user.recently_added.insert(0, contrib_to_add)
+                while len(user.recently_added) > MAX_RECENT_LENGTH:
+                    user.recently_added.pop()
+
             if log:
                 self.add_log(
                     action=NodeLog.CONTRIB_ADDED,
@@ -1157,6 +1217,7 @@ class Node(GuidStoredObject):
         :param log: Add log to self
         :param api_key: API key used to add contributors
         :param save: Save after adding contributor
+
         """
         for contrib in contributors:
             self.add_contributor(contributor=contrib, user=user, log=False, save=False)
@@ -1254,7 +1315,7 @@ class Node(GuidStoredObject):
 
         return pw
 
-    def update_node_wiki(self, page, content, user, api_key):
+    def update_node_wiki(self, page, content, user, api_key=None):
         """Update the node's wiki page with new content.
 
         :param page: A string, the page's name, e.g. ``"home"``.
@@ -1304,7 +1365,6 @@ class Node(GuidStoredObject):
             api_key=api_key,
             log_date=v.date
         )
-
 
     def get_stats(self, detailed=False):
         if detailed:

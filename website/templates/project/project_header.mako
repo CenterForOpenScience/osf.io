@@ -17,7 +17,7 @@
                 %if parent['id']:
                     % if parent['is_public'] or parent['is_contributor']:
                         <h1 class="node-parent-title">
-                            <a href="${parent['absolute_url']}">${parent['title']}</a> /
+                            <a href="${parent['url']}">${parent['title']}</a> /
                         </h1>
                     % else:
                          <h1 class="node-parent-title unavailable">

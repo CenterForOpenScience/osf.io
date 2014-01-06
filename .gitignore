@@ -52,6 +52,7 @@ website/static/public/js/*.js
 # OSF-specific
 #######################
 website/cache/*
+website/settings/uploads/*
 website/uploads/*
 # Local settings
 */settings/local.py

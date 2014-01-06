@@ -9,7 +9,9 @@ from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from framework.auth import must_have_session_auth, get_current_user, get_api_key
 
-
+from website import settings
+from website.filters import gravatar
+from website.models import User
 from website.models import Node
 from website.profile import utils
 
@@ -65,6 +67,18 @@ def get_node_contributors_abbrev(*args, **kwargs):
     }
 
 
+def _add_contributor_json(user):
+
+    return {
+        'fullname': user.fullname,
+        'id': user._primary_key,
+        'gravatar': gravatar(
+            user, use_ssl=True,
+            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+        )
+    }
+
+
 def _jsonify_contribs(contribs):
 
     data = []
@@ -108,11 +122,30 @@ def get_contributors_from_parent(*args, **kwargs):
     if not node_to_use.can_view(user, api_key):
         raise HTTPError(http.FORBIDDEN)
 
-    contribs = _jsonify_contribs([
-        contrib
-        for contrib in parent.contributor_list
-        if contrib not in node_to_use.contributor_list
-    ])
+    contribs = [
+        _add_contributor_json(contrib)
+        for contrib in parent.contributors
+        if contrib not in node_to_use.contributors
+    ]
+
+    return {'contributors': contribs}
+
+
+@must_be_contributor
+def get_recently_added_contributors(*args, **kwargs):
+
+    user = kwargs['user']
+    api_key = get_api_key()
+    node_to_use = kwargs['node'] or kwargs['project']
+
+    if not node_to_use.can_view(user, api_key):
+        raise HTTPError(http.FORBIDDEN)
+
+    contribs = [
+        _add_contributor_json(contrib)
+        for contrib in user.recently_added
+        if contrib not in node_to_use.contributors
+    ]
 
     return {'contributors': contribs}
 
