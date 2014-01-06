@@ -15,7 +15,6 @@ from framework.flask import secure_filename
 from framework.exceptions import HTTPError
 
 from website import models
-from website import settings
 from website.project.decorators import must_be_contributor
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_not_be_registration
@@ -61,7 +60,7 @@ def github_settings(*args, **kwargs):
 def _page_content(node, github, data, hotlink=True):
 
     if github.user is None or github.repo is None:
-        return github.render_config_error()
+        return github.render_config_error(data)
 
     connect = GitHub.from_settings(github)
 
@@ -76,7 +75,7 @@ def _page_content(node, github, data, hotlink=True):
     # Get data from GitHub API
     branches = connect.branches(github.user, github.repo)
     if branches is None:
-        return github.render_config_error()
+        return github.render_config_error(data)
     if hotlink:
         repo = connect.repo(github.user, github.repo)
         if repo is None or repo['private']:
@@ -87,7 +86,7 @@ def _page_content(node, github, data, hotlink=True):
         registration_data=registration_data
     )
     if tree is None:
-        return github.render_config_error()
+        return github.render_config_error(data)
 
     hgrid = tree_to_hgrid(
         tree['tree'], github.user, github.repo, node, commit_id, hotlink,
@@ -129,16 +128,27 @@ def _page_content(node, github, data, hotlink=True):
 
         </div>
 
-        <hr />
-
         % if user['can_edit']:
-            <div class="container" style="position: relative;">
-                <h3 id="dropZoneHeader">Drag and drop (or <a href="#" id="gitFormUpload">click here</a>) to upload files</h3>
-                <div id="fallback"></div>
-                <div id="totalProgressActive" style="width: 35%; height: 20px; position: absolute; top: 73px; right: 0;" class>
-                    <div id="totalProgress" class="progress-bar progress-bar-success" style="width: 0%;"></div>
+
+            % if has_auth:
+
+                <div class="container" style="position: relative;">
+                    <h3 id="dropZoneHeader">Drag and drop (or <a href="#" id="gitFormUpload">click here</a>) to upload files</h3>
+                    <div id="fallback"></div>
+                    <div id="totalProgressActive" style="width: 35%; height: 20px; position: absolute; top: 73px; right: 0;" class>
+                        <div id="totalProgress" class="progress-bar progress-bar-success" style="width: 0%;"></div>
+                    </div>
                 </div>
-            </div>
+
+            % else:
+
+                <p>
+                    This GitHub add-on has not been authenticated. To enable file uploads and deletion,
+                    browse to the <a href="${node['url']}settings/">settings</a> page and authenticate this add-on.
+                <p>
+
+            % endif
+
         % endif
 
         <div id="grid">
@@ -149,9 +159,10 @@ def _page_content(node, github, data, hotlink=True):
         <script type="text/javascript">
 
             // Import JS variables
-            var gridData = ${grid_data};
-            var ref = '${commit_id}';
-            var canEdit = ${int(user['can_edit'])};
+            var gridData = ${grid_data},
+                ref = '${commit_id}',
+                canEdit = ${int(user['can_edit'])},
+                hasAuth = ${int(has_auth)};
 
             // Submit branch form on change
             % if len(branches) > 1:
@@ -164,6 +175,7 @@ def _page_content(node, github, data, hotlink=True):
     ''').render(
         gh_user=github.user,
         repo=github.repo,
+        has_auth=github.oauth_access_token is not None,
         api_url=node.api_url,
         branches=branches,
         commit_id=commit_id,
@@ -178,7 +190,6 @@ def github_page(*args, **kwargs):
 
     user = kwargs['user']
     node = kwargs['node'] or kwargs['project']
-    config = settings.ADDONS_AVAILABLE_DICT['github']
     github = _get_addon(node)
 
     data = _view_project(node, user)
@@ -188,8 +199,8 @@ def github_page(*args, **kwargs):
     rv = {
         'addon_title': 'GitHub',
         'addon_page': content,
-        'addon_page_js': config.include_js['page'],
-        'addon_page_css': config.include_css['page'],
+        'addon_page_js': github.config.include_js['page'],
+        'addon_page_css': github.config.include_css['page'],
     }
     rv.update(data)
     return rv
@@ -458,7 +469,8 @@ def github_oauth_callback(*args, **kwargs):
 
         github.oauth_osf_user = user
         github.oauth_state = None
-        github.oauth_access_token = token['access_token']
+        github.oauth_access_token = token
+
         github.save()
 
     return redirect(os.path.join(node.url, 'settings'))

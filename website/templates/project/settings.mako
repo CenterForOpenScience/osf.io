@@ -163,6 +163,8 @@
 
         % endfor
 
+        ## TODO: Abstract authentication logic
+
         % if 'github' in addon_enabled_settings:
 
             var dataGH = addonSettingsModels.github.observedData,
@@ -188,6 +190,45 @@
                         if (result) {
                             $.ajax({
                                 url: nodeApiUrl + 'github/oauth/delete/',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                dataType: 'json',
+                                success: function() {
+                                    window.location.reload();
+                                }
+                            });
+                        }
+                    }
+                )
+            });
+
+        % endif
+
+        % if 'bitbucket' in addon_enabled_settings:
+
+            var dataBB = addonSettingsModels.bitbucket.observedData,
+                addButton = $('#bitbucketAddKey'),
+                delButton = $('#bitbucketDelKey'),
+                keyUser = $('#bitbucketKeyUser');
+
+            if (dataBB.bitbucket_code.value()) {
+                delButton.show();
+                keyUser.text('(Authorized by ' + dataBB.bitbucket_oauth_user.value() + ')');
+            } else {
+                addButton.show();
+            }
+
+            addButton.on('click', function() {
+                window.location.href = nodeApiUrl + 'bitbucket/oauth/';
+            });
+
+            delButton.on('click', function() {
+                bootbox.confirm(
+                    'Are you sure you want to delete your Bitbucket access key?',
+                    function(result) {
+                        if (result) {
+                            $.ajax({
+                                url: nodeApiUrl + 'bitbucket/oauth/delete/',
                                 type: 'POST',
                                 contentType: 'application/json',
                                 dataType: 'json',

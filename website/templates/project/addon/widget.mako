@@ -1,3 +1,5 @@
+<%namespace file="config_error.mako" import="config_error" />
+
 <%def name="widget(name, title, help, page, content)">
 
     <div class="addon-widget">
@@ -16,11 +18,7 @@
             % if content:
                 ${content}
             % else:
-                <div class="addon-not-configured">
-                    ${title} addon not configured:
-                    Configure this addon on the <a href="/${node['url']}/settings/">settings</a> page,
-                    or click <a class="widget-disable" href="{url}settings/${name}/disable/">here</a> to disable it.
-                </div>
+                ${config_error(name, title)}
             % endif
 
         </div>

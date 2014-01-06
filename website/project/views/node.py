@@ -204,39 +204,19 @@ def node_setting(**kwargs):
     return rv
 
 
-@must_be_contributor_or_public
+@must_be_contributor
+@must_not_be_registration
 def node_choose_addons(**kwargs):
 
-    node = kwargs.get('node') or kwargs.get('project')
+    node = kwargs['node'] or kwargs['project']
 
-    for addon, enabled in request.json.iteritems():
-
-        registered_addon = settings.ADDONS_AVAILABLE_DICT[addon]
-
+    for addon_name, enabled in request.json.iteritems():
         if enabled:
-
-            Schema = registered_addon.settings_model
-            if Schema is None:
-                continue
-
-            if addon not in node.addons_enabled:
-                node.addons_enabled.append(addon)
-                node._order_addons()
-                node.save()
-
-            backref_key = '__'.join([Schema._name, 'addons'])
-            models = getattr(node, backref_key)
-            if not models:
-                model = Schema(node=node)
-                model.save()
-
+            node.add_addon(addon_name, save=False)
         else:
+            node.delete_addon(addon_name, save=False)
 
-            try:
-                node.addons_enabled.remove(addon)
-                node.save()
-            except ValueError:
-                pass
+    node.save()
 
 
 ##############################################################################
@@ -416,6 +396,7 @@ def view_project(*args, **kwargs):
     return _view_project(node_to_use, user)
 
 
+# TODO: Split into separate functions
 def _render_addon(node):
 
     widgets = {}
@@ -424,33 +405,22 @@ def _render_addon(node):
     js = []
     css = []
 
-    for addon in node.addons_enabled:
+    for addon in getattr(node, 'addons', []):
 
-        registered_addon = settings.ADDONS_AVAILABLE_DICT[addon]
-        Schema = registered_addon.settings_model
+        widget = addon.config.widget_json(addon)
+        if widget:
+            widgets[addon.config.short_name] = widget
 
-        if Schema is None:
-            continue
+        try:
+            tabs[addon.config.short_name] = addon.render_tab()
+        except AttributeError:
+            pass
 
-        backref_key = '__'.join([Schema._name, 'addons'])
-        addons = getattr(node, backref_key)
+        if addon.config.icon:
+            icons[addon.config.short_name] = addon.config.icon_url
 
-        if addons:
-
-            widget = registered_addon.widget_json(addons[0])
-            if widget:
-                widgets[addon] = widget
-
-            try:
-                tabs[addon] = addons[0].render_tab()
-            except AttributeError:
-                pass
-
-            if registered_addon.icon:
-                icons[addon] = registered_addon.icon_url
-
-            js.extend(registered_addon.include_js.get('widget', []))
-            css.extend(registered_addon.include_css.get('widget', []))
+        js.extend(addon.config.include_js.get('widget', []))
+        css.extend(addon.config.include_css.get('widget', []))
 
     return widgets, tabs, icons, js, css
 
@@ -466,7 +436,7 @@ def _view_project(node_to_use, user, api_key=None):
     widgets, tabs, icons, js, css = _render_addon(node_to_use)
     # Before page load callback; skip if API request
     if 'api/v1' not in request.path:
-        for addon in node_to_use.addons:
+        for addon in getattr(node_to_use, 'addons', []):
             addon.before_page_load(node_to_use, user)
     data = {
         'node': {
@@ -526,6 +496,7 @@ def _view_project(node_to_use, user, api_key=None):
                                 and not node_to_use.is_registration),
             'is_watching': user.is_watching(node_to_use) if user else False
         },
+        # TODO: Namespace with nested dicts
         'addons_enabled': node_to_use.addons_enabled,
         'addon_widgets': widgets,
         'addon_tabs': tabs,

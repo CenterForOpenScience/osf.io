@@ -42,7 +42,7 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
             var delButton = "<button type='button' class='btn btn-danger btn-mini' onclick='grid.deleteItems([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-trash icon-white'></i></button>"
             var downButton = '<a href="' + value + '" download="' + dataContext['name'] + '"><button type="button" class="btn btn-success btn-mini"><i class="icon-download-alt icon-white"></i></button></a>';
             var buttons = downButton;
-            if (canEdit && hasAuth) {
+            if (canEdit) {
                 buttons += ' ' + delButton;
             }
             return "<div>" + buttons + "</div>";
@@ -74,12 +74,12 @@ var grid = HGrid.create({
     url: gridData[0]['uploadUrl'],
     enableCellNavigation: false,
     breadcrumbBox: "#gitCrumb",
-    clickUploadElement: (canEdit && hasAuth) ? "#gitFormUpload" : null,
+    clickUploadElement: canEdit ? "#gitFormUpload" : null,
     navLevel: gridData[0]['uid'],
     autoHeight: true,
     forceFitColumns: true,
     largeGuide: false,
-    dropZone: canEdit && hasAuth,
+    dropZone: true,
     rowHeight: 30,
     topCrumb: false,
     dragToRoot: false,

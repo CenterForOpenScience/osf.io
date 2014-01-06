@@ -32,6 +32,6 @@ page_routes = {
         Rule([
             '/project/<pid>/zotero/',
             '/project/<pid>/node/<nid>/zotero/',
-        ], 'get', views.zotero_page, OsfWebRenderer('project/addon.mako')),
+        ], 'get', views.zotero_page, OsfWebRenderer('project/addon/addon.mako')),
     ],
 }

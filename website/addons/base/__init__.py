@@ -7,15 +7,18 @@ import glob
 import importlib
 import mimetypes
 from bson import ObjectId
+from mako.lookup import TemplateLookup
 from mako.template import Template
 
-from framework import StoredObject, fields
-from framework.routing import Rule, process_rules
-
 from website import settings
+from framework import StoredObject, fields
+from framework.routing import process_rules
 
-from .views import disable_rule_factory
-
+lookup = TemplateLookup(
+    directories=[
+        settings.TEMPLATES_PATH
+    ]
+)
 
 class AddonError(Exception): pass
 
@@ -122,21 +125,16 @@ class AddonSettingsBase(StoredObject):
         'abstract': True,
     }
 
-    def render_config_error(self):
+    def render_config_error(self, data):
         """
 
         """
         # Note: `config` is added to `self` in AddonConfig::__init__.
-        return Template('''
-            <div class='addon-config-error'>
-                ${title} add-on is not configured properly.
-                Configure this addon on the <a href="/${nid}/settings/">settings</a> page,
-                or click <a class="widget-disable" href="{url}settings/${short}/disable/">here</a> to disable it.
-            </div>
-        ''').render(
+        template = lookup.get_template('project/addon/config_error.mako')
+        return template.get_def('config_error').render(
             title=self.config.full_name,
-            short=self.config.short_name,
-            nid=self.node._id,
+            name=self.config.short_name,
+            **data
         )
 
     #############
@@ -235,10 +233,6 @@ def init_addon(app, addon_name, routes=True):
     if routes:
         for route_group in getattr(addon_module, 'ROUTES', []):
             process_rules(app, **route_group)
-        process_rules(
-            app,
-            [disable_rule_factory(addon_name)]
-        )
 
     # Build AddonConfig object
     return AddonConfig(**{

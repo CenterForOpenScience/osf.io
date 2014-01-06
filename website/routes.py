@@ -2,7 +2,7 @@
 import httplib as http
 
 import framework
-from framework import request, status
+from framework import status
 from framework.exceptions import HTTPError
 from framework import (Rule, process_rules,
                        WebRenderer, json_renderer,
@@ -11,6 +11,7 @@ from framework.auth import views as auth_views
 
 from website import settings
 from website import views as website_routes
+from website.addons.base import views as addon_views
 from website.search import views as search_views
 from website.discovery import views as discovery_views
 from website.profile import views as profile_views
@@ -97,6 +98,18 @@ def make_url_map(app):
         Rule(['/messages/', '/help/'], 'get', {}, OsfWebRenderer('public/comingsoon.mako')),
 
     ])
+
+    process_rules(app, [
+        Rule(
+            [
+                '/project/<pid>/settings/<addon>/disable/',
+                '/project/<pid>/node/<nid>/settings/<addon>/disable/',
+            ],
+            'post',
+            addon_views.disable_addon,
+            json_renderer,
+        )
+    ], prefix='/api/v1')
 
     process_rules(app, [
 

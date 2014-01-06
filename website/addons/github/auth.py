@@ -1,5 +1,5 @@
 """
-
+Get access to GitHub using OAuth 2.0.
 """
 
 import os
@@ -47,8 +47,9 @@ def oauth_get_token(code):
     session = OAuth2Session(
         github_settings.CLIENT_ID,
     )
-    return session.fetch_token(
+    token = session.fetch_token(
         OAUTH_ACCESS_TOKEN_URL,
         client_secret=github_settings.CLIENT_SECRET,
         code=code,
     )
+    return token.get('access_token')

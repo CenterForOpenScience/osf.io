@@ -382,6 +382,49 @@ class Node(GuidStoredObject):
             if addon.short_name in self.addons_enabled
         ]
 
+    def add_addon(self, addon_name, save=True):
+        """Add an add-on to the node.
+
+        :param str addon_name: Name of add-on
+        :return bool: Add-on was added
+
+        """
+        if addon_name in self.addons_enabled:
+            return False
+
+        addon_config = settings.ADDONS_AVAILABLE_DICT.get(addon_name)
+        if not addon_config or not addon_config.settings_model:
+            return False
+
+        if addon_name not in self.addons_enabled:
+            self.addons_enabled.append(addon_name)
+            self._order_addons()
+            if save:
+                self.save()
+
+        backref_key = '__'.join([addon_config.settings_model._name, 'addons'])
+        models = getattr(self, backref_key)
+        if not models:
+            model = addon_config.settings_model(node=self)
+            model.save()
+
+        return True
+
+    def delete_addon(self, addon_name, save=True):
+        """Delete an add-on from the node.
+
+        :param str addon_name: Name of add-on
+        :return bool: Add-on was deleted
+
+        """
+        try:
+            self.addons_enabled.remove(addon_name)
+            if save:
+                self.save()
+            return True
+        except ValueError:
+            return False
+
     def save(self, *args, **kwargs):
 
         first_save = not self._is_loaded

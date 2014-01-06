@@ -519,6 +519,52 @@ class TestNode(DbTestCase):
             ]
         )
 
+    def test_add_addon(self):
+        addon_count = len(self.node.addons_enabled)
+        addon_record_count = len(self.node.addons)
+        added = self.node.add_addon('github')
+        assert_true(added)
+        assert_equal(
+            len(self.node.addons_enabled),
+            addon_count + 1
+        )
+        assert_equal(
+            len(self.node.addons),
+            addon_record_count + 1
+        )
+
+    def test_add_existing_addon(self):
+        addon_count = len(self.node.addons_enabled)
+        addon_record_count = len(self.node.addons)
+        added = self.node.add_addon('files')
+        assert_false(added)
+        assert_equal(
+            len(self.node.addons_enabled),
+            addon_count
+        )
+        assert_equal(
+            len(self.node.addons),
+            addon_record_count
+        )
+
+    def test_delete_addon(self):
+        addon_count = len(self.node.addons_enabled)
+        deleted = self.node.delete_addon('files')
+        assert_true(deleted)
+        assert_equal(
+            len(self.node.addons_enabled),
+            addon_count - 1
+        )
+
+    def test_delete_nonexistent_addon(self):
+        addon_count = len(self.node.addons_enabled)
+        deleted = self.node.delete_addon('github')
+        assert_false(deleted)
+        assert_equal(
+            len(self.node.addons_enabled),
+            addon_count
+        )
+
     def test_cant_add_component_to_component(self):
         with assert_raises(ValueError):
             NodeFactory(project=self.node)

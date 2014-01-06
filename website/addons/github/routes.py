@@ -60,6 +60,6 @@ page_routes = {
         Rule([
             '/project/<pid>/github/',
             '/project/<pid>/node/<nid>/github/',
-        ], 'get', views.github_page, OsfWebRenderer('project/addon.mako')),
+        ], 'get', views.github_page, OsfWebRenderer('project/addon/addon.mako')),
     ],
 }

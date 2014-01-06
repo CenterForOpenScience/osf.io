@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
-<%namespace file="project/widget.mako" import="widget"/>
+<%namespace file="project/addon/widget.mako" import="widget"/>
 <%def name="title()">Project</%def>
 
 <%def name="content()">

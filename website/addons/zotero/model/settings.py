@@ -59,6 +59,7 @@ class AddonZoteroSettings(AddonSettingsBase):
             'text': 'Zotero',
         }
 
+    # TODO: Move to views
     def render_page(self):
         if self.zotero_id:
             return '''

@@ -126,7 +126,8 @@ CELERY_IMPORTS = (
 
 ADDONS_REQUESTED = [
     'wiki', 'files',
-    'github', 'figshare',
+    'github',
+    'bitbucket', 'figshare',
     'zotero',
 ]
 
