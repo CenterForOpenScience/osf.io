@@ -122,6 +122,6 @@ CELERY_IMPORTS = (
 
 # Piwik (analytics)
 # TODO: Override in local.py in production
-PIWIK_HOST = '' # Domain only - no http:// or trailing slash
-PIWIK_ADMIN_TOKEN = ''
+PIWIK_HOST = 'http://localhost:8000/piwik/'
+PIWIK_ADMIN_TOKEN = '4f5fba03a86607a215fe91bd47735689'
 PIWIK_SITE_ID = 1

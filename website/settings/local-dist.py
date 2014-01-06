@@ -11,7 +11,7 @@ DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 
 # Comment out to use solr in development
-USE_SOLR = False
+USE_SOLR = True
 
 # Email
 MAIL_SERVER = 'localhost:1025'  # For local testing
@@ -33,7 +33,3 @@ USE_CDN_FOR_CLIENT_LIBS = False
 
 # Example of extending default settings
 # defaults.IMG_FMTS += ["pdf"]
-
-PIWIK_HOST = 'http://localhost:8889'
-PIWIK_SITE_ID = 1
-PIWIK_ADMIN_TOKEN = ''
