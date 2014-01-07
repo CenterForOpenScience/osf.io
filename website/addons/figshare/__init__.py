@@ -11,7 +11,7 @@ FULL_NAME = 'FigShare'
 ADDED_BY_DEFAULT = False
 
 CATEGORIES = ['storage']
-
+  
 INCLUDE_JS = {
     'widget': [],
     'page': [],
