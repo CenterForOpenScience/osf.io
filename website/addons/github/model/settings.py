@@ -75,6 +75,7 @@ class AddonGitHubSettings(AddonSettingsBase):
                 )
             )
 
+    # TODO: Rename to before_remove_contributor_message
     def before_remove_contributor(self, node, removed):
         """
 

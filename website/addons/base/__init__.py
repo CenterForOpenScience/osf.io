@@ -132,6 +132,8 @@ class AddonSettingsBase(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
     node = fields.ForeignField('node', backref='addons')
+
+    # TODO: Remove / replace with property
     registered = fields.BooleanField()
 
     _meta = {
