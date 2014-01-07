@@ -116,13 +116,13 @@
 
                 <!-- Addon tabs -->
                 % for addon in addons_enabled:
-                    % if addon in addon_tabs:
+                    % if addons[addon]['has_page']:
                         <li>
-                            <a href="${addon_tabs[addon]['href']}">
-                                % if addon in addon_icons:
-                                    <img src="${addon_icons[addon]}" class="addon-logo"/>
+                            <a href="${node['url']}${addons[addon]['short_name']}">
+                                % if addons[addon]['icon']:
+                                    <img src="${addons[addon]['icon']}" class="addon-logo"/>
                                 % endif
-                                ${addon_tabs[addon]['text']}
+                                ${addons[addon]['full_name']}
                             </a>
                         </li>
                     % endif

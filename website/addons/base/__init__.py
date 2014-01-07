@@ -8,11 +8,11 @@ import importlib
 import mimetypes
 from bson import ObjectId
 from mako.lookup import TemplateLookup
-from mako.template import Template
 
-from website import settings
 from framework import StoredObject, fields
 from framework.routing import process_rules
+
+from website import settings
 
 lookup = TemplateLookup(
     directories=[
@@ -59,7 +59,7 @@ class AddonConfig(object):
 
     def __init__(self, settings_model, short_name, full_name, added_by_default,
                  categories, schema=None, include_js=None, include_css=None,
-                 widget_help=None, **kwargs):
+                 widget_help=None, has_page=False, has_widget=False, **kwargs):
 
         self.settings_model = settings_model
         self.settings_model.config = self
@@ -75,8 +75,23 @@ class AddonConfig(object):
 
         self.widget_help = widget_help
 
+        self.has_page = has_page
+        self.has_widget = has_widget
+
         # Build back-reference key
         self.backref_key = '__'.join([self.settings_model._name, 'addons'])
+
+        # Build template lookup
+        template_path = os.path.join('website', 'addons', short_name, 'templates')
+        if os.path.exists(template_path):
+            self.template_lookup = TemplateLookup(
+                directories=[
+                    template_path,
+                    settings.TEMPLATES_PATH,
+                ]
+            )
+        else:
+            self.template_lookup = None
 
     @property
     def icon(self):
@@ -99,20 +114,18 @@ class AddonConfig(object):
 
     @property
     def icon_url(self):
-        return self._static_url(self.icon)
+        return self._static_url(self.icon) if self.icon else None
 
-    def widget_json(self, settings_model):
+    def to_json(self):
 
-        try:
-            return {
-                'name': self.short_name,
-                'title': self.full_name,
-                'help': self.widget_help,
-                'page': hasattr(settings_model, 'render_page'),
-                'content': settings_model.render_widget(),
-            }
-        except NotImplementedError:
-            return None
+        return {
+            'short_name': self.short_name,
+            'full_name': self.full_name,
+            'help': self.widget_help,
+            'icon': self.icon_url,
+            'has_page': self.has_page,
+            'has_widget': self.has_widget,
+        }
 
 
 class AddonSettingsBase(StoredObject):
@@ -177,25 +190,41 @@ class AddonSettingsBase(StoredObject):
         """
         pass
 
-    def after_fork(self, node, fork, user):
+    def after_fork(self, node, fork, user, save=True):
         """
 
         :param Node node:
         :param Node fork:
         :param User user:
+        :param bool save:
+        :return AddonSettingsBase:
 
         """
-        pass
+        clone = self.clone()
+        clone.node = fork
 
-    def after_register(self, node, registration, user):
+        if save:
+            clone.save()
+
+        return clone
+
+    def after_register(self, node, registration, user, save=True):
         """
 
         :param Node node:
         :param Node registration:
         :param User user:
+        :param bool save:
+        :return AddonSettingsBase:
 
         """
-        pass
+        clone = self.clone()
+        clone.node = registration
+
+        if save:
+            clone.save()
+
+        return clone
 
 
 # TODO: Move this
@@ -213,13 +242,27 @@ def init_addon(app, addon_name, routes=True):
 
     """
     addon_path = os.path.join('website', 'addons', addon_name)
-    addon_import_path = 'website.addons.{0}'.format(addon_name)
+    template_path = os.path.join(addon_path, 'templates')
+    import_path = 'website.addons.{0}'.format(addon_name)
+    views_import_path = '{0}.views'.format(import_path)
 
     # Import addon module
     try:
-        addon_module = importlib.import_module(addon_import_path)
+        addon_module = importlib.import_module(import_path)
     except ImportError:
         return None
+
+    data = vars(addon_module)
+
+    try:
+        addon_views = importlib.import_module(views_import_path)
+        has_page = hasattr(addon_views, '{0}_page'.format(addon_name))
+        has_widget = hasattr(addon_views, '{0}_widget'.format(addon_name))
+    except ImportError:
+        has_page = False
+        has_widget = False
+
+    has_page = has_page or data.pop('HAS_PAGE', False)
 
     # Append add-on log templates to main log templates
     log_templates = os.path.join(
@@ -235,7 +278,11 @@ def init_addon(app, addon_name, routes=True):
             process_rules(app, **route_group)
 
     # Build AddonConfig object
-    return AddonConfig(**{
-        key.lower(): value
-        for key, value in vars(addon_module).iteritems()
-    })
+    return AddonConfig(
+        has_page=has_page,
+        has_widget=has_widget,
+        **{
+            key.lower(): value
+            for key, value in data.iteritems()
+        }
+    )

@@ -6,8 +6,8 @@ import os
 import json
 import base64
 import datetime
-import requests
 
+import requests
 from requests_oauthlib import OAuth2Session
 from hurry.filesize import size, alternative
 
@@ -24,13 +24,16 @@ class GitHub(object):
 
     def __init__(self, access_token, token_type):
 
-        self.session = OAuth2Session(
-            github_settings.CLIENT_ID,
-            token={
-                'access_token': access_token,
-                'token_type': token_type,
-            }
-        )
+        if access_token and token_type:
+            self.session = OAuth2Session(
+                github_settings.CLIENT_ID,
+                token={
+                    'access_token': access_token,
+                    'token_type': token_type,
+                }
+            )
+        else:
+            self.session = requests
 
     @classmethod
     def from_settings(cls, settings):

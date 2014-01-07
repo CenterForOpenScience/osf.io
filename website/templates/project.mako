@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
-<%namespace file="project/addon/widget.mako" import="widget"/>
+
 <%def name="title()">Project</%def>
 
 <%def name="content()">
@@ -12,9 +12,10 @@
 
             <%
                 extra_addon_widgets = [
-                    addon
-                    for addon in addon_widgets
-                    if addon not in ['wiki', 'files']
+                    addon_name
+                    for addon_name, addon_config in addons.iteritems()
+                    if addon_name not in ['wiki', 'files']
+                        and addon_config['has_widget']
                 ]
             %>
 
@@ -22,21 +23,50 @@
 
                 <!-- Show widgets in left column if present -->
                 % for addon in addons_enabled:
-                    % if addon in addon_widgets:
-                        ${widget(**addon_widgets[addon])}
+                    % if addons[addon]['has_widget']:
+                        <div class="addon-widget-container" mod-meta='{
+                                "tpl": "../addons/${addon}/templates/${addon}_widget.mako",
+                                "uri": "${node['api_url']}${addon}/widget/",
+                                "kwargs": {
+                                    "name": "${addons[addon]['short_name']}",
+                                    "title": "${addons[addon]['full_name']}",
+                                    "page": "${addons[addon]['has_page']}",
+                                    "help": "${addons[addon]['help']}"
+                                }
+                            }'></div>
                     % endif
                 % endfor
 
             % else:
 
+                % if 'wiki' in addons and addons['wiki']['has_widget']:
+                    <div class="addon-widget-container" mod-meta='{
+                            "tpl": "../addons/wiki/templates/wiki_widget.mako",
+                            "uri": "${node['api_url']}wiki/widget/",
+                            "kwargs": {
+                                "name": "${addons['wiki']['short_name']}",
+                                "title": "${addons['wiki']['full_name']}",
+                                "page": "${addons['wiki']['has_page']}",
+                                "help": "${addons['wiki']['help']}"
+                            }
+                        }'></div>
+                % endif
+
                 <!-- If no widgets, show components -->
                 ${children()}
 
-                % for addon in ['wiki', 'files']:
-                    % if addon in addon_widgets:
-                        ${widget(**addon_widgets[addon])}
-                    % endif
-                % endfor
+                % if 'files' in addons and addons['files']['has_widget']:
+                    <div class="addon-widget-container" mod-meta='{
+                            "tpl": "../addons/files/templates/files_widget.mako",
+                            "uri": "${node['api_url']}files/widget/",
+                            "kwargs": {
+                                "name": "${addons['files']['short_name']}",
+                                "title": "${addons['files']['full_name']}",
+                                "page": "${addons['files']['has_page']}",
+                                "help": "${addons['files']['help']}"
+                            }
+                        }'></div>
+                % endif
 
             % endif
 

@@ -1,9 +1,9 @@
 from .model.settings import AddonZoteroSettings
-from .routes import settings_routes, page_routes
+from .routes import settings_routes, page_routes, widget_routes
 
 SETTINGS_MODEL = AddonZoteroSettings
 
-ROUTES = [settings_routes, page_routes]
+ROUTES = [settings_routes, page_routes, widget_routes]
 
 SHORT_NAME = 'zotero'
 FULL_NAME = 'Zotero'

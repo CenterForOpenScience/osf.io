@@ -12,7 +12,7 @@ settings_routes = {
         Rule([
             '/project/<pid>/settings/github/',
             '/project/<pid>/node/<nid>/settings/github/',
-        ], 'post', views.github_settings, json_renderer),
+        ], 'post', views.github_set_config, json_renderer),
         Rule([
             '/project/<pid>/github/file/<path:path>',
             '/project/<pid>/node/<nid>/github/file/<path:path>',
@@ -51,6 +51,10 @@ settings_routes = {
             '/addons/github/callback/<uid>/',
             '/addons/github/callback/<uid>/<nid>/',
         ], 'get', views.github_oauth_callback, json_renderer),
+        Rule([
+            '/project/<pid>/github/widget/',
+            '/project/<pid>/node/<nid>/github/widget/',
+        ], 'get', views.github_widget, json_renderer),
     ],
     'prefix': '/api/v1',
 }
@@ -60,6 +64,6 @@ page_routes = {
         Rule([
             '/project/<pid>/github/',
             '/project/<pid>/node/<nid>/github/',
-        ], 'get', views.github_page, OsfWebRenderer('project/addon/addon.mako')),
+        ], 'get', views.github_page, OsfWebRenderer('../addons/github/templates/github_page.mako')),
     ],
 }

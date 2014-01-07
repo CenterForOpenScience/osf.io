@@ -140,8 +140,6 @@
 
             <% settings = addon_settings[name] %>
 
-            var name = '${name}';
-
             // Set up view model
             var VM = new MetaData.ViewModel(
                 ${settings['schema']},
@@ -150,7 +148,7 @@
             VM.updateIdx('add', true);
 
             // Add model to models hash
-            addonSettingsModels[name] = VM;
+            addonSettingsModels['${name}'] = VM;
 
             // Unserialize data from server
             VM.unserialize(${settings['settings']});

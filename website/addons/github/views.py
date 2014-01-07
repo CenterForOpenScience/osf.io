@@ -7,7 +7,6 @@ import json
 import datetime
 import httplib as http
 
-from mako.template import Template
 from hurry.filesize import size, alternative
 
 from framework import request, redirect, make_response
@@ -30,27 +29,13 @@ MESSAGES = {
     'delete': 'Deleted via the Open Science Framework',
 }
 
-# TODO: Abstract across add-ons
-def _get_addon(node):
-    """Get GitHub addon for node.
-
-    :param Node node: Target node
-    :return AddonGitHubSettings: GitHub settings
-
-    """
-    node = node
-    addons = node.addongithubsettings__addons
-    if addons:
-        return addons[0]
-    raise HTTPError(http.BAD_REQUEST)
-
 
 @must_be_contributor
 @must_have_addon('github')
-def github_settings(*args, **kwargs):
+def github_set_config(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    github = _get_addon(node)
+    github = node.get_addon('github')
 
     github.user = request.json.get('github_user', '')
     github.repo = request.json.get('github_repo', '')
@@ -60,7 +45,8 @@ def github_settings(*args, **kwargs):
 def _page_content(node, github, data, hotlink=True):
 
     if github.user is None or github.repo is None:
-        return github.render_config_error(data)
+        return {}
+        #return github.render_config_error(data)
 
     connect = GitHub.from_settings(github)
 
@@ -75,7 +61,8 @@ def _page_content(node, github, data, hotlink=True):
     # Get data from GitHub API
     branches = connect.branches(github.user, github.repo)
     if branches is None:
-        return github.render_config_error(data)
+        return {}
+        #return github.render_config_error(data)
     if hotlink:
         repo = connect.repo(github.user, github.repo)
         if repo is None or repo['private']:
@@ -86,102 +73,36 @@ def _page_content(node, github, data, hotlink=True):
         registration_data=registration_data
     )
     if tree is None:
-        return github.render_config_error(data)
+        return {}
+        #return github.render_config_error(data)
 
     hgrid = tree_to_hgrid(
         tree['tree'], github.user, github.repo, node, commit_id, hotlink,
     )
+    return {
+        'gh_user': github.user,
+        'repo': github.repo,
+        'has_auth': github.oauth_access_token is not None,
+        'api_url': node.api_url,
+        'branches': branches,
+        'commit_id': commit_id,
+        'grid_data': json.dumps(hgrid),
+    }
 
-    return Template('''
 
-        <div class="row">
-
-            <div class="col-md-6">
-
-                <h4>Viewing ${gh_user} / ${repo}</h4>
-
-                % if len(branches) > 1:
-
-                    <form role="form">
-                        <select id="gitBranchSelect" name="branch">
-                            % for branch in branches:
-                                <option
-                                    value=${branch['name']}
-                                    ${'selected' if commit_id in [branch['name'], branch['commit']['sha']] else ''}
-                                >${branch['name']}</option>
-                            % endfor
-                        </select>
-                    </form>
-
-                % endif
-
-            </div>
-
-            <div class="col-md-6">
-
-                <h4>Downloads</h4>
-
-                <p><a href="${api_url}github/tarball/">Tarball</a></p>
-                <p><a href="${api_url}github/zipball/">Zip</a></p>
-
-            </div>
-
-        </div>
-
-        % if user['can_edit']:
-
-            % if has_auth:
-
-                <div class="container" style="position: relative;">
-                    <h3 id="dropZoneHeader">Drag and drop (or <a href="#" id="gitFormUpload">click here</a>) to upload files</h3>
-                    <div id="fallback"></div>
-                    <div id="totalProgressActive" style="width: 35%; height: 20px; position: absolute; top: 73px; right: 0;" class>
-                        <div id="totalProgress" class="progress-bar progress-bar-success" style="width: 0%;"></div>
-                    </div>
-                </div>
-
-            % else:
-
-                <p>
-                    This GitHub add-on has not been authenticated. To enable file uploads and deletion,
-                    browse to the <a href="${node['url']}settings/">settings</a> page and authenticate this add-on.
-                <p>
-
-            % endif
-
-        % endif
-
-        <div id="grid">
-            <div id="gitCrumb"></div>
-            <div id="gitGrid"></div>
-        </div>
-
-        <script type="text/javascript">
-
-            // Import JS variables
-            var gridData = ${grid_data},
-                ref = '${commit_id}',
-                canEdit = ${int(user['can_edit'])},
-                hasAuth = ${int(has_auth)};
-
-            // Submit branch form on change
-            % if len(branches) > 1:
-                $('#gitBranchSelect').on('change', function() {
-                    $(this).closest('form').submit();
-                });
-            % endif
-
-        </script>
-    ''').render(
-        gh_user=github.user,
-        repo=github.repo,
-        has_auth=github.oauth_access_token is not None,
-        api_url=node.api_url,
-        branches=branches,
-        commit_id=commit_id,
-        grid_data=json.dumps(hgrid),
-        **data
-    )
+@must_be_contributor_or_public
+@must_have_addon('github')
+def github_widget(*args, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    github = node.get_addon('github')
+    if github:
+        rv = {
+            'complete': bool(github.short_url),
+            'short_url': github.short_url,
+        }
+        rv.update(github.config.to_json())
+        return rv
+    raise HTTPError(http.NOT_FOUND)
 
 
 @must_be_contributor_or_public
@@ -190,19 +111,18 @@ def github_page(*args, **kwargs):
 
     user = kwargs['user']
     node = kwargs['node'] or kwargs['project']
-    github = _get_addon(node)
+    github = node.get_addon('github')
 
     data = _view_project(node, user)
 
-    content = _page_content(node, github, data)
-
-    rv = {
-        'addon_title': 'GitHub',
-        'addon_page': content,
-        'addon_page_js': github.config.include_js['page'],
-        'addon_page_css': github.config.include_css['page'],
-    }
+    rv = _page_content(node, github, data)
+    rv.update({
+        'addon_page_js': github.config.include_js.get('page'),
+        'addon_page_css': github.config.include_css.get('page'),
+    })
+    rv.update(github.config.to_json())
     rv.update(data)
+
     return rv
 
 
@@ -211,7 +131,7 @@ def github_page(*args, **kwargs):
 def github_get_repo(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    github = _get_addon(node)
+    github = node.get_addon('github')
 
     connect = GitHub.from_settings(github)
 
@@ -225,7 +145,7 @@ def github_get_repo(*args, **kwargs):
 def github_download_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    github = _get_addon(node)
+    github = node.get_addon('github')
 
     path = kwargs.get('path')
     if path is None:
@@ -251,7 +171,7 @@ def github_upload_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
     user = kwargs['user']
-    github = _get_addon(node)
+    github = node.get_addon('github')
     now = datetime.datetime.utcnow()
 
     path = kwargs.get('path', '')
@@ -339,7 +259,7 @@ def github_delete_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
     user = kwargs['user']
-    github = _get_addon(node)
+    github = node.get_addon('github')
     now = datetime.datetime.utcnow()
 
     path = kwargs.get('path')
@@ -387,7 +307,7 @@ def github_delete_file(*args, **kwargs):
 def github_download_starball(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    github = _get_addon(node)
+    github = node.get_addon('github')
     archive = kwargs.get('archive', 'tar')
 
     connect = GitHub.from_settings(github)
@@ -406,7 +326,7 @@ def github_download_starball(*args, **kwargs):
 def github_set_privacy(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    github = _get_addon(node)
+    github = node.get_addon('github')
     private = request.form.get('private')
 
     if private is None:
@@ -423,7 +343,7 @@ def github_oauth_start(*args, **kwargs):
 
     user = kwargs['user']
     node = kwargs['node'] or kwargs['project']
-    github = _get_addon(node)
+    github = node.get_addon('github')
 
     auth_url, state = oauth_start_url(user, node)
 
@@ -438,7 +358,7 @@ def github_oauth_start(*args, **kwargs):
 def github_oauth_delete(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    github = _get_addon(node)
+    github = node.get_addon('github')
 
     github.oauth_access_token = None
     github.oauth_token_type = None
@@ -457,7 +377,7 @@ def github_oauth_callback(*args, **kwargs):
     if node is None:
         raise HTTPError(http.NOT_FOUND)
 
-    github = _get_addon(node)
+    github = node.get_addon('github')
 
     if github.oauth_state != verification_key:
         raise HTTPError(http.BAD_REQUEST)

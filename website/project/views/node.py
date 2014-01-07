@@ -175,21 +175,13 @@ def node_setting(**kwargs):
 
     for addon_name in node.addons_enabled:
 
-        registered_addon = settings.ADDONS_AVAILABLE_DICT[addon_name]
+        addon = node.get_addon(addon_name)
 
-        if registered_addon.schema is None or registered_addon.settings_model is None:
-            continue
-
-        Schema = registered_addon.settings_model
-        backref_key = '__'.join([Schema._name, 'addons'])
-
-        addons = getattr(node, backref_key)
-
-        if addons:
+        if addon and addon.config.schema:
 
             addon_data[addon_name] = {
-                'schema': json.dumps(registered_addon.schema),
-                'settings': addons[0].meta_json(),
+                'schema': json.dumps(addon.config.schema),
+                'settings': json.dumps(addon.to_json()),
             }
 
             addon_enabled_settings.append(addon_name)
@@ -400,29 +392,18 @@ def view_project(*args, **kwargs):
 def _render_addon(node):
 
     widgets = {}
-    tabs = {}
-    icons = {}
+    configs = {}
     js = []
     css = []
 
     for addon in getattr(node, 'addons', []):
 
-        widget = addon.config.widget_json(addon)
-        if widget:
-            widgets[addon.config.short_name] = widget
-
-        try:
-            tabs[addon.config.short_name] = addon.render_tab()
-        except AttributeError:
-            pass
-
-        if addon.config.icon:
-            icons[addon.config.short_name] = addon.config.icon_url
+        configs[addon.config.short_name] = addon.config.to_json()
 
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
 
-    return widgets, tabs, icons, js, css
+    return widgets, configs, js, css
 
 
 def _view_project(node_to_use, user, api_key=None):
@@ -433,7 +414,7 @@ def _view_project(node_to_use, user, api_key=None):
     parent = node_to_use.parent
     recent_logs = list(reversed(node_to_use.logs)[:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
-    widgets, tabs, icons, js, css = _render_addon(node_to_use)
+    widgets, configs, js, css = _render_addon(node_to_use)
     # Before page load callback; skip if API request
     if 'api/v1' not in request.path:
         for addon in getattr(node_to_use, 'addons', []):
@@ -498,9 +479,8 @@ def _view_project(node_to_use, user, api_key=None):
         },
         # TODO: Namespace with nested dicts
         'addons_enabled': node_to_use.addons_enabled,
+        'addons': configs,
         'addon_widgets': widgets,
-        'addon_tabs': tabs,
-        'addon_icons': icons,
         'addon_widget_js': js,
         'addon_widget_css': css,
     }

@@ -26,34 +26,18 @@ class AddonGitHubSettings(AddonSettingsBase):
 
     @property
     def short_url(self):
-        return '/'.join([self.user, self.repo])
-
-    def render_widget(self):
         if self.user and self.repo:
-            return '''
-                <div
-                    class="github-widget"
-                    data-repo="{short_url}"
-                ></div>
-            '''.format(
-                short_url=self.short_url
-            )
+            return '/'.join([self.user, self.repo])
 
-    def render_tab(self):
+    def to_json(self):
         return {
-            'href': '{0}github/'.format(self.node.url),
-            'text': 'GitHub',
-        }
-
-    def meta_json(self):
-        return json.dumps({
             'github_user': self.user,
             'github_repo': self.repo,
             'github_code': self.oauth_access_token is not None,
             'github_oauth_user': self.oauth_osf_user.fullname
                                  if self.oauth_osf_user
                                  else '',
-        })
+        }
 
     #############
     # Callbacks #
@@ -172,18 +156,19 @@ class AddonGitHubSettings(AddonSettingsBase):
             )
 
 
-    def after_fork(self, node, fork, user):
+    def after_fork(self, node, fork, user, save=True):
         """
 
         :param Node node:
         :param Node fork:
         :param User user:
+        :param bool save:
+        :return AddonGitHubSettings:
 
         """
-        clone = self.clone()
-
-        # Copy foreign fields from current add-on
-        clone.node = fork
+        clone = super(AddonGitHubSettings, self).after_fork(
+            node, fork, user, save=False
+        )
 
         # Copy authentication if authenticated by forking user
         if self.oauth_osf_user and self.oauth_osf_user == user:
@@ -191,17 +176,24 @@ class AddonGitHubSettings(AddonSettingsBase):
         else:
             clone.oauth_access_token = None
 
-        clone.save()
+        if save:
+            clone.save()
 
-    def after_register(self, node, registration, user):
+        return clone
+
+    def after_register(self, node, registration, user, save=True):
         """
 
         :param Node node:
         :param Node registration:
         :param User user:
+        :param bool save:
+        :return AddonGitHubSettings:
 
         """
-        clone = self.clone()
+        clone = super(AddonGitHubSettings, self).after_register(
+            node, registration, user, save=False
+        )
 
         # Copy foreign fields from current add-on
         clone.node = registration
@@ -215,4 +207,7 @@ class AddonGitHubSettings(AddonSettingsBase):
         clone.registration_data['branches'] = branches
         clone.registered = True
 
-        clone.save()
+        if save:
+            clone.save()
+
+        return clone

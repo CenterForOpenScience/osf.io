@@ -2,18 +2,16 @@
 
 """
 
-import httplib as http
-
-from framework import request
-from framework.exceptions import HTTPError
 from website.project import decorators
 
-@decorators.must_be_contributor
-def files_disable(**kwargs):
 
-    node = kwargs.get('node') or kwargs.get('project')
-    try:
-        node.addons_enabled.remove('files')
-        node.save()
-    except ValueError:
-        pass
+@decorators.must_be_contributor_or_public
+@decorators.must_have_addon('wiki')
+def files_widget(*args, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    files = node.get_addon('files')
+    rv = {
+        'complete': True,
+    }
+    rv.update(files.config.to_json())
+    return rv

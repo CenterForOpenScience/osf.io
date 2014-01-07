@@ -4,7 +4,6 @@
 
 from bs4 import BeautifulSoup
 import requests
-import json
 
 from framework import fields
 
@@ -17,7 +16,6 @@ params = {
     'limit': 5,
 }
 
-# TODO: Use content=bibtex
 
 class AddonZoteroSettings(AddonSettingsBase):
 
@@ -38,48 +36,19 @@ class AddonZoteroSettings(AddonSettingsBase):
         xml = self._fetch_references()
         parsed = BeautifulSoup(xml)
         titles = parsed.select('entry title')
-        return '''
-            <ul>
-                {lis}
-            </ul>
-        '''.format(
-            lis=''.join([
-                '<li>{}</li>'.format(title.string)
-                for title in titles
-            ])
-        )
-
-    def render_widget(self):
-        if self.zotero_id:
-            return self._summarize_references()
-
-    def render_tab(self):
-        return {
-            'href': '{0}zotero/'.format(self.node.url),
-            'text': 'Zotero',
-        }
-
-    # TODO: Move to views
-    def render_page(self):
-        if self.zotero_id:
+        if titles:
             return '''
-                <h3>Zotero Page</h3>
-                <div>{xml}</div>
+                <ul>
+                    {lis}
+                </ul>
             '''.format(
-                xml=self._fetch_references()
+                lis=''.join([
+                    '<li>{}</li>'.format(title.string)
+                    for title in titles
+                ])
             )
-        return '''
-            <div>
-                Zotero page not configured:
-                Configure this addon on the <a href="/{nid}/settings/">settings</a> page,
-                or click <a class="widget-disable" href="{url}settings/zotero/disable/">here</a> to disable it.
-            </div>
-        '''.format(
-            nid=self.node._primary_key,
-            url=self.node.api_url,
-        )
 
-    def meta_json(self):
-        return json.dumps({
+    def to_json(self):
+        return {
             'zotero_id': self.zotero_id,
-        })
+        }

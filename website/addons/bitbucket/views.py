@@ -24,27 +24,12 @@ from .api import Bitbucket, tree_to_hgrid
 from .auth import oauth_start_url, oauth_get_token
 
 
-# TODO: Abstract across add-ons
-def _get_addon(node):
-    """Get Bitbucket addon for node.
-
-    :param Node node: Target node
-    :return AddonBitbucketSettings: GitHub settings
-
-    """
-    node = node
-    addons = node.addonbitbucketsettings__addons
-    if addons:
-        return addons[0]
-    raise HTTPError(http.BAD_REQUEST)
-
-
 @must_be_contributor
 @must_have_addon('bitbucket')
 def bitbucket_settings(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    bitbucket = _get_addon(node)
+    bitbucket = node.get_addon('bitbucket')
 
     bitbucket.user = request.json.get('bitbucket_user', '')
     bitbucket.repo = request.json.get('bitbucket_repo', '')
@@ -171,7 +156,7 @@ def bitbucket_page(*args, **kwargs):
 
     user = kwargs['user']
     node = kwargs['node'] or kwargs['project']
-    bitbucket = _get_addon(node)
+    bitbucket = node.get_addon('bitbucket')
 
     data = _view_project(node, user)
 
@@ -192,7 +177,7 @@ def bitbucket_page(*args, **kwargs):
 def bitbucket_get_repo(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    bitbucket = _get_addon(node)
+    bitbucket = node.get_addon('bitbucket')
 
     connect = Bitbucket.from_settings(bitbucket)
 
@@ -206,7 +191,7 @@ def bitbucket_get_repo(*args, **kwargs):
 def bitbucket_download_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    bitbucket = _get_addon(node)
+    bitbucket = node.get_addon('bitbucket')
 
     path = kwargs.get('path')
     if path is None:
@@ -230,7 +215,7 @@ def bitbucket_download_file(*args, **kwargs):
 def bitbucket_download_starball(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    bitbucket = _get_addon(node)
+    bitbucket = node.get_addon('bitbucket')
     archive = kwargs.get('archive', 'tar')
 
     connect = Bitbucket.from_settings(bitbucket)
@@ -249,7 +234,7 @@ def bitbucket_download_starball(*args, **kwargs):
 def bitbucket_set_privacy(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    bitbucket = _get_addon(node)
+    bitbucket = node.get_addon('bitbucket')
     private = request.form.get('private')
 
     if private is None:
@@ -266,7 +251,7 @@ def bitbucket_oauth_start(*args, **kwargs):
 
     user = kwargs['user']
     node = kwargs['node'] or kwargs['project']
-    bitbucket = _get_addon(node)
+    bitbucket = node.get_addon('bitbucket')
 
     request_token, request_token_secret, authorization_url = \
         oauth_start_url(user, node)
@@ -283,7 +268,7 @@ def bitbucket_oauth_start(*args, **kwargs):
 def bitbucket_oauth_delete(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    bitbucket = _get_addon(node)
+    bitbucket = node.get_addon('bitbucket')
 
     bitbucket.oauth_access_token = None
     bitbucket.save()
@@ -300,7 +285,7 @@ def bitbucket_oauth_callback(*args, **kwargs):
     if node is None:
         raise HTTPError(http.NOT_FOUND)
 
-    bitbucket = _get_addon(node)
+    bitbucket = node.get_addon('bitbucket')
 
     verifier = request.args.get('oauth_verifier')
 

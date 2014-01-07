@@ -382,6 +382,19 @@ class Node(GuidStoredObject):
             if addon.short_name in self.addons_enabled
         ]
 
+    def get_addon(self, addon_name):
+        """Get addon for node.
+
+        :param str addon_name: Name of addon
+        :return AddonSettingsBase: Settings record
+
+        """
+        backref_key = 'addon{0}settings__addons'.format(addon_name)
+        addons = getattr(self, backref_key)
+        if addons:
+            return addons[0]
+
+
     def add_addon(self, addon_name, save=True):
         """Add an add-on to the node.
 

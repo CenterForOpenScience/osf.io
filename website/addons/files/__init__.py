@@ -1,9 +1,9 @@
 from .model.settings import AddonFilesSettings
-from .routes import settings_routes
+from .routes import settings_routes, widget_routes
 
 SETTINGS_MODEL = AddonFilesSettings
 
-ROUTES = [settings_routes]
+ROUTES = [settings_routes, widget_routes]
 
 SHORT_NAME = 'files'
 FULL_NAME = 'Files'
@@ -21,3 +21,5 @@ INCLUDE_CSS = {
     'widget': [],
     'page': [],
 }
+
+HAS_PAGE = True

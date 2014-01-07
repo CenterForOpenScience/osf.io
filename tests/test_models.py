@@ -513,11 +513,25 @@ class TestNode(DbTestCase):
         assert_equal(
             node.addons_enabled,
             [
-                addon.short_name
-                for addon in settings.ADDONS_AVAILABLE
-                if addon.added_by_default
+                addon_config.short_name
+                for addon_config in settings.ADDONS_AVAILABLE
+                if addon_config.added_by_default
             ]
         )
+        for addon_config in settings.ADDONS_AVAILABLE:
+            if addon_config.added_by_default:
+                assert_in(
+                    addon_config.short_name,
+                    node.addons_enabled
+                )
+                assert_true(
+                    len([
+                        addon
+                        for addon in node.addons
+                        if addon.config.short_name == addon_config.short_name
+                    ]),
+                    1
+                )
 
     def test_add_addon(self):
         addon_count = len(self.node.addons_enabled)
