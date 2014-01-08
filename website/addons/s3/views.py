@@ -12,7 +12,7 @@ from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
-@decorators.must_be_contributor
+@must_be_contributor
 def s3_settings(**kwargs):
 
     node = kwargs.get('node') or kwargs.get('project')
@@ -25,12 +25,19 @@ def s3_settings(**kwargs):
     else:
         raise HTTPError(http.BAD_REQUEST)
     
-@must_be_contributor_or_public
-@must_have_addon('github')
-def get_bucket_list():
-    pass
 
 @must_be_contributor_or_public
-@must_have_addon('github')
-def get_file_list():
-    pass
+def s3_page(*args, **kwargs):
+    user = kwargs.get('user')
+    node = kwargs.get('node') or kwargs.get('project')
+    addons = node.addonzoterosettings__addons
+    if addons:
+        zotero = addons[0]
+        rv = {
+            'addon_title': 'Amazon S3',
+            'addon_page': zotero.render_page(),
+        }
+        rv.update(_view_project(node, user))
+        return rv
+    else:
+        raise HTTPError(http.BAD_REQUEST)
