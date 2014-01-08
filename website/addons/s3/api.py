@@ -133,26 +133,41 @@ class BucketManager:
         '''
         bucket = self.__getProperBucket(bucket)
         bucketList = bucket.list()
-        grid = []
+        folders = []
+        files = []
         parent =  {
             'uid': 0,
             'name': str(bucket.name),
             'type': 'Folder',
             'parent_uid': 'null'
         }
-        grid.append(parent)
+        folders.append(parent)
 
         i = 1
 
+
+
         for k in bucketList:
-            row =  {
-                'uid': i,
-                'name': str(k.key),
-                'type': 'File',
-                'parent_uid': 0
+
+            row = {
+            'uid':0,
+            'name':'null',
+            'type':'null',
+             'parent_uid': 0
             }
+
+            row['uid'] = i
             i+=1
-            grid.append(row)
-        return grid
+            if(str(k.key).endswith('/')):
+                row['type'] = 'folder'
+
+            else:
+                row['type'] = 'file'
+            
+            row['name'] = str(k.key)[str(k.key).rfind('/')+1:]
+            files.append(row)
+
+        folders.extend(files)
+        return folders
 
         

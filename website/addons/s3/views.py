@@ -41,7 +41,8 @@ def _page_content(node, s3):
 
     connect = BucketManager(S3Connection(s3.access_key,s3.secret_key))
     data = connect.getFileListAsHGrid()
-
+    print "========================="
+    print data
     rv = {
         'complete': True,
         'bucket': s3.s3_bucket,
