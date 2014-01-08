@@ -1,7 +1,8 @@
-from .model.settings import AddonS3Settings
+from .model.settings import AddonS3UserSettings,AddonS3NodeSettings
 from .routes import settings_routes
 
-SETTINGS_MODEL = AddonS3Settings
+USER_MODEL = AddonS3UserSettings
+SETTINGS_MODEL = AddonS3NodeSettings
 
 ROUTES = [settings_routes]
 
@@ -40,6 +41,12 @@ SCHEMA = {
                     'id': 'secret_key',
                     'type': 'textfield',
                     'label': 'S3 Secret Key',
+                    'required': True,
+                },
+                {
+                    'id': 'bucket_name',
+                    'type': 'textfield',
+                    'label': 'S3 Bucket Name',
                     'required': True,
                 }
             ]

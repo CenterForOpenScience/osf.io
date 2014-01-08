@@ -120,4 +120,24 @@ class BucketManager:
         bucket = self.__getProperBucket(bucket)
         return bucket.get_key(keyName).generate_url(5)
 
+    def getFileListAsHGrid(self,bucket = None):
+        bucket = self.__getProperBucket(bucket)
+        bucketList = bucket.list()
+        grid = []
+        parent = 
+        {
+            'name': bucket.name,
+            'type': 'Bucket'
+        }
+        grid.append(parent)
+
+        for k in bucketList:
+            row = 
+            {
+                'name': k.key,
+                'type': k.key
+            }
+            grid.append(row)
+        return grid
+
         

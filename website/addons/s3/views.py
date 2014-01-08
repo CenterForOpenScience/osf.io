@@ -27,17 +27,19 @@ def s3_settings(**kwargs):
     
 
 @must_be_contributor_or_public
+@must_have_addon('s3')
 def s3_page(*args, **kwargs):
+
     user = kwargs.get('user')
     node = kwargs.get('node') or kwargs.get('project')
-    addons = node.addonzoterosettings__addons
-    if addons:
-        zotero = addons[0]
-        rv = {
-            'addon_title': 'Amazon S3',
-            'addon_page': zotero.render_page(),
-        }
-        rv.update(_view_project(node, user))
-        return rv
-    else:
-        raise HTTPError(http.BAD_REQUEST)
+
+    s3 = node.get_addon('s3')
+
+    data = _view_project(node, user)
+
+    rv = _page_content(node, s3)
+
+    rv.update(github.config.to_json())
+    rv.update(data)
+
+    return rv

@@ -263,10 +263,10 @@ def init_addon(app, addon_name, routes=True):
     views_import_path = '{0}.views'.format(import_path)
 
     # Import addon module
-    try:
-        addon_module = importlib.import_module(import_path)
-    except ImportError:
-        return None
+    #try:
+    addon_module = importlib.import_module(import_path)
+    #except ImportError:
+      #  return None
 
     data = vars(addon_module)
 
