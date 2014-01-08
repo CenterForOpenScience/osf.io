@@ -96,6 +96,9 @@ class BucketManager:
     def getFileList(self,bucket = None):
         if(bucket is None):
             return self.__defaultBucket.list()
+        
+        for key in bucket:
+            pass
 
     def createFolder(self,name,bucket=None,pathToFolder=""):
         if(bucket is None):
@@ -121,20 +124,34 @@ class BucketManager:
         return bucket.get_key(keyName).generate_url(5)
 
     def getFileListAsHGrid(self,bucket = None):
+        '''
+        {
+        'uid':X, 
+        'type':"", 
+        'name':"", 
+        'parent_uid':Y}
+        '''
         bucket = self.__getProperBucket(bucket)
         bucketList = bucket.list()
         grid = []
         parent =  {
-            'name': bucket.name,
-            'type': 'Bucket',
+            'uid': 0,
+            'name': str(bucket.name),
+            'type': 'Folder',
+            'parent_uid': 'null'
         }
         grid.append(parent)
 
+        i = 1
+
         for k in bucketList:
             row =  {
-                'name': k.key,
-                'type': k.key,
+                'uid': i,
+                'name': str(k.key),
+                'type': 'File',
+                'parent_uid': 0
             }
+            i+=1
             grid.append(row)
         return grid
 

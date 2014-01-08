@@ -15,12 +15,19 @@ CATEGORIES = ['storage']
 
 INCLUDE_JS = {
     'widget': [],
-    'page': [],
+    'page': [
+        '/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js',
+        '/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js',
+        '/static/vendor/dropzone/dropzone.js',
+        '/static/js/slickgrid.custom.min.js',
+        '/static/js/hgrid.js',
+        'hgrid-s3.js',
+    ],
 }
 
 INCLUDE_CSS = {
     'widget': [],
-    'page': [],
+        'page': ['/static/css/hgrid-base.css'],
 }
 
 WIDGET_HELP = 'AWS S3 Add-on Alpha'
