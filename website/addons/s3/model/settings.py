@@ -13,10 +13,35 @@ from framework import fields
 
 from website.addons.base import AddonSettingsBase
 
-class AddonS3Settings(AddonSettingsBase):
+class AddonS3UserSettings(AddonUserSettingsBase):
 
     access_key = fields.StringField()
     secret_key = fields.StringField()
+
+
+
+class AddonS3NodeSettings(AddonSettingsBase):
+
+    bucket = fields.StringField()
+
+    user_settings = fields.ForeignField(
+        'addons3usersettings', backref='authorized'
+    )
+
+    registration_data = fields.DictionaryField()
+
+    def to_json(self, user):
+        s3_user = user.get_addon('s3')
+        rv = {
+            'bucket': self.bucket
+        }
+        settings = self.user_settings
+        if settings:
+            rv.update({
+                'access_key': settings.access_key,
+                'secret_key': settings.secret_key
+            })
+        return rv
 
     @property
     def embed_url(self):
@@ -43,6 +68,8 @@ class AddonS3Settings(AddonSettingsBase):
             'access_key': self.access_key,
             'secret_key': self.secret_key,
         })
+
+
 
     def render_page(self):
         if self.secret_key:

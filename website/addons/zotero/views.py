@@ -42,22 +42,6 @@ def zotero_widget(*args, **kwargs):
 @must_be_contributor_or_public
 def zotero_page(**kwargs):
 
-<<<<<<< HEAD
-    user = kwargs.get('user')
-    node = kwargs.get('node') or kwargs.get('project')
-    addons = node.addonzoterosettings__addons
-    if addons:
-        zotero = addons[0]
-        rv = {
-            'addon_title': 'Zotero',
-            'addon_page': zotero.render_page(),
-        }
-        rv.update(_view_project(node, user))
-        return rv
-    else:
-        raise HTTPError(http.BAD_REQUEST)
-
-=======
     user = kwargs['user']
     node = kwargs['node'] or kwargs['project']
     zotero = node.get_addon('zotero')
@@ -74,4 +58,4 @@ def zotero_page(**kwargs):
     }
     rv.update(data)
     return rv
->>>>>>> upstream/feature/addons
+
