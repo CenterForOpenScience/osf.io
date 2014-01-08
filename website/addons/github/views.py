@@ -74,18 +74,26 @@ def _page_content(node, github, hotlink=True):
     if tree is None:
         return {}
 
+    # If authorization, check whether authorized user has push rights to repo.
+    has_auth = False
+    if github.user_settings:
+        repo = connect.repo(github.user, github.repo)
+        print 'permissions', repo['permissions']
+        has_auth = repo is not None and repo['permissions']['push']
+
     hgrid = tree_to_hgrid(
         tree['tree'], github.user, github.repo, node,
         ref=commit_id, hotlink=hotlink,
     )
+
     return {
         'gh_user': github.user,
         'repo': github.repo,
-        'has_auth': github.user_settings is not None,
+        'has_auth': has_auth,
         'api_url': node.api_url,
         'branches': branches,
         'commit_id': commit_id,
-        'show_commit_id': branch is not None,
+        'show_commit_id': branch != commit_id,
         'grid_data': json.dumps(hgrid),
         'registration_data': json.dumps(registration_data),
     }

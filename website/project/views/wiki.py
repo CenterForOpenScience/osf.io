@@ -81,7 +81,7 @@ def project_wiki_compare(*args, **kwargs):
                 'is_edit': True,
                 'version': pw.version,
             }
-            rv.update(_view_project(node_to_use, user))
+            rv.update(_view_project(node_to_use, user, primary=True))
             return rv
     raise HTTPError(http.NOT_FOUND)
 
@@ -111,7 +111,7 @@ def project_wiki_version(*args, **kwargs):
             'is_current': pw.is_current,
             'is_edit': False,
         }
-        rv.update(_view_project(node_to_use, user))
+        rv.update(_view_project(node_to_use, user, primary=True))
         return rv
 
     raise HTTPError(http.NOT_FOUND)
@@ -174,7 +174,7 @@ def project_wiki_page(*args, **kwargs):
         'category': node_to_use.category
     }
 
-    rv.update(_view_project(node_to_use, user))
+    rv.update(_view_project(node_to_use, user, primary=True))
     return rv
 
 
@@ -210,7 +210,7 @@ def project_wiki_edit(*args, **kwargs):
         'is_current': is_current,
         'is_edit': True,
     }
-    rv.update(_view_project(node_to_use, user))
+    rv.update(_view_project(node_to_use, user, primary=True))
     return rv
 
 

@@ -19,8 +19,8 @@
 			+'.github-box .github-box-title h3 .repo{font-weight:bold}'
 			+'.github-box .github-box-title .github-stats{float:right;position:absolute;top:8px;right:10px;font-size:11px;font-weight:bold;line-height:21px;height:auto;min-height:21px}'
 			+'.github-box .github-box-title .github-stats a{display:inline-block;height:21px;color:#666;border:1px solid #ddd;border-radius:3px;padding:0 5px 0 18px;background: white url('+stats_png+') no-repeat}'
-			+'.github-box .github-box-title .github-stats .watchers{border-right:1px solid #ddd}'
-			+'.github-box .github-box-title .github-stats .forks{background-position:-4px -21px;padding-left:15px}'
+//			+'.github-box .github-box-title .github-stats .watchers{border-right:1px solid #ddd}'
+//			+'.github-box .github-box-title .github-stats .forks{background-position:-4px -21px;padding-left:15px}'
 			+'.github-box .github-box-content{padding:10px;font-weight:300}'
 			+'.github-box .github-box-content p{margin:0}'
 			+'.github-box .github-box-content .link{font-weight:bold}'
@@ -56,8 +56,8 @@
 			+'<a class="repo" href="' + repoUrl + '" title="' + repoUrl + '">' + repoName + '</a>'
 			+'</h3>'
 			+'<div class="github-stats">'
-			+'<a class="watchers" href="' + repoUrl + '/watchers" title="See watchers">?</a>'
-			+'<a class="forks" href="' + repoUrl + '/network/members" title="See forkers">?</a>'
+//			+'<a class="watchers" href="' + repoUrl + '/watchers" title="See watchers">?</a>'
+//			+'<a class="forks" href="' + repoUrl + '/network/members" title="See forkers">?</a>'
 			+'</div>'
 			+'</div>'
 			+'<div class="github-box-download">'
@@ -81,8 +81,8 @@
 					pushed_at = (date.getMonth() + 1) + '-' + date.getDate() + '-' + date.getFullYear();
 				}
 
-				$widget.find('.watchers').text(repo.watchers);
-				$widget.find('.forks').text(repo.forks);
+//				$widget.find('.watchers').text(repo.watchers);
+//				$widget.find('.forks').text(repo.forks);
 				$widget.find('.description span').text(repo.description);
 				$widget.find('.updated').html('Latest commit to the <strong>' + repo.default_branch + '</strong> branch on ' + pushed_at);
 

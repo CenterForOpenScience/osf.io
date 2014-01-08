@@ -144,7 +144,7 @@ def node_registrations(*args, **kwargs):
 
     user = get_current_user()
     node_to_use = kwargs['node'] or kwargs['project']
-    return _view_project(node_to_use, user)
+    return _view_project(node_to_use, user, primary=True)
 
 
 @must_be_valid_project
@@ -157,7 +157,7 @@ def node_forks(*args, **kwargs):
     user = get_current_user()
 
     node_to_use = node or project
-    return _view_project(node_to_use, user)
+    return _view_project(node_to_use, user, primary=True)
 
 
 @must_be_valid_project
@@ -168,7 +168,7 @@ def node_setting(**kwargs):
     user = get_current_user()
     node = kwargs.get('node') or kwargs.get('project')
 
-    rv = _view_project(node, user)
+    rv = _view_project(node, user, primary=True)
 
     addon_data = {}
     addon_enabled_settings = []
@@ -256,7 +256,7 @@ def project_statistics(*args, **kwargs):
     rv = {
         'csv' : csv,
     }
-    rv.update(_view_project(node_to_use, user))
+    rv.update(_view_project(node_to_use, user, primary=True))
     return rv
 
 
@@ -385,7 +385,9 @@ def component_remove(*args, **kwargs):
 def view_project(*args, **kwargs):
     user = get_current_user()
     node_to_use = kwargs['node'] or kwargs['project']
-    return _view_project(node_to_use, user)
+    primary = '/api/v1' not in request.path
+    print 'PRIMARY IS', primary
+    return _view_project(node_to_use, user, primary=primary)
 
 
 # TODO: Split into separate functions
@@ -406,7 +408,7 @@ def _render_addon(node):
     return widgets, configs, js, css
 
 
-def _view_project(node_to_use, user, api_key=None):
+def _view_project(node_to_use, user, api_key=None, primary=False):
     """Build a JSON object containing everything needed to render
     project.view.mako.
 
@@ -415,8 +417,8 @@ def _view_project(node_to_use, user, api_key=None):
     recent_logs = list(reversed(node_to_use.logs)[:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
     widgets, configs, js, css = _render_addon(node_to_use)
-    # Before page load callback; skip if API request
-    if 'api/v1' not in request.path:
+    # Before page load callback; skip if not primary call
+    if primary:
         for addon in getattr(node_to_use, 'addons', []):
             addon.before_page_load(node_to_use, user)
     data = {

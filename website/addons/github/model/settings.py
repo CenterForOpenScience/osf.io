@@ -95,7 +95,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         :param User removed:
 
         """
-        if self.oauth_osf_user and self.oauth_osf_user == removed:
+        if self.user_settings and self.user_settings.owner == removed:
             return (
                 'The GitHub add-on for this {category} is authenticated '
                 'by {user}. Removing this user will also remove write access '

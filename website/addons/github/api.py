@@ -5,6 +5,7 @@
 import os
 import json
 import base64
+import urllib
 import datetime
 
 import requests
@@ -85,10 +86,36 @@ class GitHub(object):
 
         return rv
 
+    def user(self):
+
+        return self._send(
+            os.path.join(
+                API_URL, 'user'
+            )
+        )
+
     def repo(self, user, repo):
 
         return self._send(
             os.path.join(API_URL, 'repos', user, repo)
+        )
+
+    def contributors(self, user, repo):
+
+        return self._send(
+            os.path.join(API_URL, 'repos', user, repo, 'collaborators')
+        )
+
+    def user_teams(self, user):
+
+        return self._send(
+            os.path.join(API_URL, 'user', 'teams')
+        )
+
+    def repo_teams(self, user, repo):
+
+        return self._send(
+            os.path.join(API_URL, 'repos', user, repo, 'teams')
         )
 
     def branches(self, user, repo, branch=None):
@@ -167,7 +194,8 @@ class GitHub(object):
                     break
 
         req = self._send(os.path.join(
-                API_URL, 'repos', user, repo, 'git', 'trees', commit_id
+                API_URL, 'repos', user, repo, 'git', 'trees',
+                urllib.quote_plus(commit_id),
             ),
             params={
                 'recursive': int(recursive)

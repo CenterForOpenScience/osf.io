@@ -48,7 +48,7 @@
 
         <div class="col-md-6">
 
-            <h4>Downloads</h4>
+            <h4>Download:</h4>
 
             <p><a href="${api_url}github/tarball/">Tarball</a></p>
             <p><a href="${api_url}github/zipball/">Zip</a></p>

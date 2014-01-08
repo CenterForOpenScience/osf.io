@@ -25,7 +25,7 @@ def zotero_settings(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
 
-@must_be_contributor
+@must_be_contributor_or_public
 @must_have_addon('zotero')
 def zotero_widget(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
