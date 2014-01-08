@@ -29,6 +29,12 @@ settings_routes = {
             '/project/<pid>/bitbucket/zipball/',
             '/project/<pid>/node/<nid>/bitbucket/zipball/',
         ], 'get', views.bitbucket_download_starball, json_renderer, {'archive': 'zip'}, endpoint_suffix='__zip'),
+
+        # OAuth
+        Rule([
+            '/project/<pid>/bitbucket/user_auth/',
+            '/project/<pid>/node/<nid>/bitbucket/user_auth/',
+        ], 'post', views.bitbucket_add_user_auth, json_renderer),
         Rule([
             '/project/<pid>/bitbucket/oauth/',
             '/project/<pid>/node/<nid>/bitbucket/oauth/',
@@ -36,7 +42,7 @@ settings_routes = {
         Rule([
             '/project/<pid>/bitbucket/oauth/delete/',
             '/project/<pid>/node/<nid>/bitbucket/oauth/delete/',
-        ], 'post', views.bitbucket_oauth_delete, json_renderer),
+        ], 'post', views.bitbucket_oauth_delete_node, json_renderer),
         Rule([
             '/addons/bitbucket/callback/<uid>/',
             '/addons/bitbucket/callback/<uid>/<nid>/',

@@ -2,13 +2,11 @@
 
 """
 
-import json
-
 from framework import fields
+from website.addons.base import AddonNodeSettingsBase
 
-from website.addons.base import AddonSettingsBase
 
-class AddonFigShareSettings(AddonSettingsBase):
+class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
     figshare_id = fields.StringField()
 
@@ -18,23 +16,7 @@ class AddonFigShareSettings(AddonSettingsBase):
             fid=self.figshare_id,
         )
 
-    def render_widget(self):
-        if self.figshare_id:
-            return '''
-                <h3>FigShare Add-On</h3>
-                <iframe
-                    src="{embed}"
-                    width="{width}"
-                    height="{height}"
-                    frameborder="0"
-                ></iframe>
-            '''.format(
-                embed=self.embed_url,
-                width=9999,
-                height=300,
-            )
-
-    def meta_json(self):
-        return json.dumps({
+    def to_json(self, user):
+        return {
             'figshare_id': self.figshare_id,
-        })
+        }

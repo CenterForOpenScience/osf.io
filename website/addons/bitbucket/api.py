@@ -243,7 +243,7 @@ def tree_to_hgrid(tree, user, repo, node, ref=None, hotlink=True):
             else:
                 row['download'] = node.api_url + 'github/file/{0}'.format(item['path'])
                 if ref is not None:
-                    row['download'] += '/?ref=' + ref
+                    row['download'] += '?ref=' + ref
                     row['ref'] = ref
         else:
             row['uploadUrl'] = node.api_url + 'github/file/{0}/'.format(item['path'])

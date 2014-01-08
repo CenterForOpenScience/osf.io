@@ -11,6 +11,7 @@ from mako.template import Template
 from hurry.filesize import size, alternative
 
 from framework import request, redirect, make_response
+from framework.auth import get_current_user
 from framework.exceptions import HTTPError
 
 from website import models
@@ -24,27 +25,12 @@ from .api import Bitbucket, tree_to_hgrid
 from .auth import oauth_start_url, oauth_get_token
 
 
-# TODO: Abstract across add-ons
-def _get_addon(node):
-    """Get Bitbucket addon for node.
-
-    :param Node node: Target node
-    :return AddonBitbucketSettings: GitHub settings
-
-    """
-    node = node
-    addons = node.addonbitbucketsettings__addons
-    if addons:
-        return addons[0]
-    raise HTTPError(http.BAD_REQUEST)
-
-
 @must_be_contributor
 @must_have_addon('bitbucket')
 def bitbucket_settings(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    bitbucket = _get_addon(node)
+    bitbucket = node.get_addon('bitbucket')
 
     bitbucket.user = request.json.get('bitbucket_user', '')
     bitbucket.repo = request.json.get('bitbucket_repo', '')
@@ -56,7 +42,7 @@ def _page_content(node, bitbucket, data, hotlink=True):
     if bitbucket.user is None or bitbucket.repo is None:
         return bitbucket.render_config_error(data)
 
-    connect = Bitbucket.from_settings(bitbucket)
+    connect = Bitbucket.from_settings(bitbucket.user_settings)
 
     branch = request.args.get('branch', None)
 
@@ -171,7 +157,7 @@ def bitbucket_page(*args, **kwargs):
 
     user = kwargs['user']
     node = kwargs['node'] or kwargs['project']
-    bitbucket = _get_addon(node)
+    bitbucket = node.get_addon('bitbucket')
 
     data = _view_project(node, user)
 
@@ -192,9 +178,9 @@ def bitbucket_page(*args, **kwargs):
 def bitbucket_get_repo(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    bitbucket = _get_addon(node)
+    bitbucket = node.get_addon('bitbucket')
 
-    connect = Bitbucket.from_settings(bitbucket)
+    connect = Bitbucket.from_settings(bitbucket.user_settings)
 
     data = connect.repo(bitbucket.user, bitbucket.repo)
 
@@ -206,7 +192,7 @@ def bitbucket_get_repo(*args, **kwargs):
 def bitbucket_download_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    bitbucket = _get_addon(node)
+    bitbucket = node.get_addon('bitbucket')
 
     path = kwargs.get('path')
     if path is None:
@@ -214,7 +200,7 @@ def bitbucket_download_file(*args, **kwargs):
 
     ref = request.args.get('ref')
 
-    connect = Bitbucket.from_settings(bitbucket)
+    connect = Bitbucket.from_settings(bitbucket.user_settings)
 
     name, data = connect.file(bitbucket.user, bitbucket.repo, path, ref=ref)
 
@@ -230,10 +216,10 @@ def bitbucket_download_file(*args, **kwargs):
 def bitbucket_download_starball(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    bitbucket = _get_addon(node)
+    bitbucket = node.get_addon('bitbucket')
     archive = kwargs.get('archive', 'tar')
 
-    connect = Bitbucket.from_settings(bitbucket)
+    connect = Bitbucket.from_settings(bitbucket.user_settings)
 
     headers, data = connect.starball(bitbucket.user, bitbucket.repo, archive)
 
@@ -249,15 +235,34 @@ def bitbucket_download_starball(*args, **kwargs):
 def bitbucket_set_privacy(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    bitbucket = _get_addon(node)
+    bitbucket = node.get_addon('bitbucket')
     private = request.form.get('private')
 
     if private is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    connect = Bitbucket.from_settings(bitbucket)
+    connect = Bitbucket.from_settings(bitbucket.user_settings)
 
     connect.set_privacy(bitbucket.user, bitbucket.repo, private)
+
+
+@must_be_contributor
+@must_have_addon('bitbucket')
+def bitbucket_add_user_auth(*args, **kwargs):
+
+    user = kwargs['user']
+    node = kwargs['node'] or kwargs['project']
+
+    bitbucket_node = node.get_addon('bitbucket')
+    bitbucket_user = user.get_addon('bitbucket')
+
+    if bitbucket_node is None or bitbucket_user is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    bitbucket_node.user_settings = bitbucket_user
+    bitbucket_node.save()
+
+    return {}
 
 
 @must_be_contributor
@@ -266,56 +271,80 @@ def bitbucket_oauth_start(*args, **kwargs):
 
     user = kwargs['user']
     node = kwargs['node'] or kwargs['project']
-    bitbucket = _get_addon(node)
+
+    user.add_addon('bitbucket', 'user')
+    bitbucket_user = user.get_addon('bitbucket')
+    bitbucket_node = node.get_addon('bitbucket')
+
+    bitbucket_node.user_settings = bitbucket_user
+    bitbucket_node.save()
 
     request_token, request_token_secret, authorization_url = \
         oauth_start_url(user, node)
 
-    bitbucket.oauth_request_token= request_token
-    bitbucket.oauth_request_token_secret = request_token_secret
-    bitbucket.save()
+    bitbucket_user.oauth_request_token = request_token
+    bitbucket_user.oauth_request_token_secret = request_token_secret
+    bitbucket_user.save()
 
     return redirect(authorization_url)
 
 
-@must_be_contributor
-@must_have_addon('bitbucket')
-def bitbucket_oauth_delete(*args, **kwargs):
+# TODO: Expose this
+def bitbucket_oauth_delete_user(*args, **kwargs):
 
-    node = kwargs['node'] or kwargs['project']
-    bitbucket = _get_addon(node)
+    user = get_current_user()
+    bitbucket_user = user.get_addon('bitbucket')
 
-    bitbucket.oauth_access_token = None
-    bitbucket.save()
+    bitbucket_user.oauth_access_token = None
+    bitbucket_user.save()
 
     return {}
 
 
-# TODO: Handle auth for users as well as nodes
+@must_be_contributor
+@must_have_addon('bitbucket')
+def bitbucket_oauth_delete_node(*args, **kwargs):
+
+    node = kwargs['node'] or kwargs['project']
+    bitbucket_node = node.get_addon('bitbucket')
+
+    bitbucket_node.user_settings = None
+    bitbucket_node.save()
+
+    return {}
+
+
 def bitbucket_oauth_callback(*args, **kwargs):
 
     user = models.User.load(kwargs.get('uid', None))
     node = models.Node.load(kwargs.get('nid', None))
 
-    if node is None:
+    if user is None:
+        raise HTTPError(http.NOT_FOUND)
+    if kwargs.get('nid') and not node:
         raise HTTPError(http.NOT_FOUND)
 
-    bitbucket = _get_addon(node)
+    bitbucket_user = user.get_addon('bitbucket')
+    bitbucket_node = node.get_addon('bitbucket')
 
     verifier = request.args.get('oauth_verifier')
 
-
     access_token, access_token_secret = oauth_get_token(
-        bitbucket.oauth_request_token, bitbucket.oauth_request_token_secret,
+        bitbucket_user.oauth_request_token,
+        bitbucket_user.oauth_request_token_secret,
         verifier
     )
 
-    bitbucket.oauth_osf_user = user
-    bitbucket.oauth_request_token = None
-    bitbucket.oauth_request_token_secret = None
-    bitbucket.oauth_access_token = access_token
-    bitbucket.oauth_access_token_secret = access_token_secret
+    bitbucket_user.oauth_request_token = None
+    bitbucket_user.oauth_request_token_secret = None
+    bitbucket_user.oauth_access_token = access_token
+    bitbucket_user.oauth_access_token_secret = access_token_secret
 
-    bitbucket.save()
+    bitbucket_user.save()
 
+    if bitbucket_node:
+        bitbucket_node.user_settings = bitbucket_user
+        bitbucket_node.save()
+
+    # TODO: Handle redirect with no node
     return redirect(os.path.join(node.url, 'settings'))

@@ -343,7 +343,7 @@ class TestComponents(DbTestCase):
         self.user.api_keys.append(api_key)
         self.user.save()
         self.auth = ('test', api_key._primary_key)
-        self.project = ProjectFactory.build(creator=self.user)
+        self.project = ProjectFactory(creator=self.user)
         self.project.add_contributor(contributor=self.user)
         # project has a non-registered contributor
         self.nr_user = {"nr_name": "Foo Bar", "nr_email": "foo@example.com"}

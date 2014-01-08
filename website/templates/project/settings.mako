@@ -140,8 +140,6 @@
 
             <% settings = addon_settings[name] %>
 
-            var name = '${name}';
-
             // Set up view model
             var VM = new MetaData.ViewModel(
                 ${settings['schema']},
@@ -150,7 +148,7 @@
             VM.updateIdx('add', true);
 
             // Add model to models hash
-            addonSettingsModels[name] = VM;
+            addonSettingsModels['${name}'] = VM;
 
             // Unserialize data from server
             VM.unserialize(${settings['settings']});
@@ -172,15 +170,33 @@
                 delButton = $('#githubDelKey'),
                 keyUser = $('#githubKeyUser');
 
-            if (dataGH.github_code.value()) {
+            if (dataGH.github_has_authentication.value()) {
                 delButton.show();
-                keyUser.text('(Authorized by ' + dataGH.github_oauth_user.value() + ')');
+                keyUser.text('(Authorized by ' + dataGH.github_authenticated_user.value() + ')');
             } else {
                 addButton.show();
             }
 
+            if (dataGH.github_has_user_authentication.value()) {
+                addButton.html('Import Access Token from Profile');
+            } else {
+                addButton.html('Get Access Token');
+            }
+
             addButton.on('click', function() {
-                window.location.href = nodeApiUrl + 'github/oauth/';
+                if (dataGH.github_has_user_authentication.value()) {
+                    $.ajax({
+                        type: 'POST',
+                        url: nodeApiUrl + 'github/user_auth/',
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        success: function(response) {
+                            window.location.reload();
+                        }
+                    });
+                } else {
+                    window.location.href = nodeApiUrl + 'github/oauth/';
+                }
             });
 
             delButton.on('click', function() {
@@ -211,15 +227,33 @@
                 delButton = $('#bitbucketDelKey'),
                 keyUser = $('#bitbucketKeyUser');
 
-            if (dataBB.bitbucket_code.value()) {
+            if (dataBB.bitbucket_has_authentication.value()) {
                 delButton.show();
-                keyUser.text('(Authorized by ' + dataBB.bitbucket_oauth_user.value() + ')');
+                keyUser.text('(Authorized by ' + dataBB.bitbucket_authenticated_user.value() + ')');
             } else {
                 addButton.show();
             }
 
+            if (dataBB.bitbucket_has_user_authentication.value()) {
+                addButton.html('Import Access Token from Profile');
+            } else {
+                addButton.html('Get Access Token');
+            }
+
             addButton.on('click', function() {
-                window.location.href = nodeApiUrl + 'bitbucket/oauth/';
+                if (dataBB.bitbucket_has_user_authentication.value()) {
+                    $.ajax({
+                        type: 'POST',
+                        url: nodeApiUrl + 'bitbucket/user_auth/',
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        success: function(response) {
+                            window.location.reload();
+                        }
+                    });
+                } else {
+                    window.location.href = nodeApiUrl + 'bitbucket/oauth/';
+                }
             });
 
             delButton.on('click', function() {

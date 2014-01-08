@@ -1,7 +1,8 @@
-from .model.settings import AddonGitHubSettings
+from .model.settings import AddonGitHubUserSettings, AddonGitHubNodeSettings
 from .routes import settings_routes, page_routes
 
-SETTINGS_MODEL = AddonGitHubSettings
+USER_MODEL = AddonGitHubUserSettings
+SETTINGS_MODEL = AddonGitHubNodeSettings
 
 ROUTES = [settings_routes, page_routes]
 
@@ -50,19 +51,24 @@ SCHEMA = {
                     'required': True,
                 },
                 {
-                    'id': 'github_code',
+                    'id': 'github_has_authentication',
                     'type': 'htmlfield',
                     'label': 'GitHub Access',
                     'content': '''
                         <div>
-                            <a id="githubAddKey" class="btn btn-primary" style="display: none;">Get Access Token</a>
+                            <a id="githubAddKey" class="btn btn-primary" style="display: none;"></a>
                             <a id="githubDelKey" class="btn btn-danger" style="display: none;">Delete Access Token</a>
                             <span id="githubKeyUser" style="margin-left: 10px;"></span>
                         </div>
                     ''',
                 },
                 {
-                    'id': 'github_oauth_user',
+                    'id': 'github_has_user_authentication',
+                    'type': 'hiddenfield',
+                    'label': '',
+                },
+                {
+                    'id': 'github_authenticated_user',
                     'type': 'hiddenfield',
                     'label': '',
                 }

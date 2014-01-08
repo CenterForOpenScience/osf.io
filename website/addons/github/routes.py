@@ -12,7 +12,11 @@ settings_routes = {
         Rule([
             '/project/<pid>/settings/github/',
             '/project/<pid>/node/<nid>/settings/github/',
-        ], 'post', views.github_settings, json_renderer),
+        ], 'post', views.github_set_config, json_renderer),
+        Rule([
+            '/project/<pid>/github/widget/',
+            '/project/<pid>/node/<nid>/github/widget/',
+        ], 'get', views.github_widget, json_renderer),
         Rule([
             '/project/<pid>/github/file/<path:path>',
             '/project/<pid>/node/<nid>/github/file/<path:path>',
@@ -39,6 +43,12 @@ settings_routes = {
             '/project/<pid>/github/zipball/',
             '/project/<pid>/node/<nid>/github/zipball/',
         ], 'get', views.github_download_starball, json_renderer, {'archive': 'zip'}, endpoint_suffix='__zip'),
+
+        # OAuth
+        Rule([
+            '/project/<pid>/github/user_auth/',
+            '/project/<pid>/node/<nid>/github/user_auth/',
+        ], 'post', views.github_add_user_auth, json_renderer),
         Rule([
             '/project/<pid>/github/oauth/',
             '/project/<pid>/node/<nid>/github/oauth/',
@@ -46,7 +56,11 @@ settings_routes = {
         Rule([
             '/project/<pid>/github/oauth/delete/',
             '/project/<pid>/node/<nid>/github/oauth/delete/',
-        ], 'post', views.github_oauth_delete, json_renderer),
+        ], 'post', views.github_oauth_delete_node, json_renderer),
+        Rule(
+            '/profile/github/oauth/delete', 'post',
+            views.github_oauth_delete_user, json_renderer,
+        ),
         Rule([
             '/addons/github/callback/<uid>/',
             '/addons/github/callback/<uid>/<nid>/',
@@ -60,6 +74,6 @@ page_routes = {
         Rule([
             '/project/<pid>/github/',
             '/project/<pid>/node/<nid>/github/',
-        ], 'get', views.github_page, OsfWebRenderer('project/addon/addon.mako')),
+        ], 'get', views.github_page, OsfWebRenderer('../addons/github/templates/github_page.mako')),
     ],
 }

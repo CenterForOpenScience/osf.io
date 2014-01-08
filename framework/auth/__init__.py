@@ -65,16 +65,21 @@ check_password = bcrypt.check_password_hash
 
 def get_user(id=None, username=None, password=None, verification_key=None):
     # tag: database
-    query = []
+    query_list = []
     if id:
-        query.append(Q('_id', 'eq', id))
+        query_list.append(Q('_id', 'eq', id))
     if username:
         username = username.strip().lower()
-        query.append(Q('username', 'eq', username))
+        query_list.append(Q('username', 'eq', username))
     if password:
         password = password.strip()
         try:
-            user = User.find_one(*query)
+            query = query_list[0]
+            for query_part in query_list[1:]:
+                query = query & query_part
+            print 'query', query
+            user = User.find_one(query)
+            print 'user', user
         except Exception as err:
             logging.error(err)
             user = None
@@ -83,9 +88,12 @@ def get_user(id=None, username=None, password=None, verification_key=None):
             return False
         return user
     if verification_key:
-        query.append(Q('verification_key', 'eq', verification_key))
+        query_list.append(Q('verification_key', 'eq', verification_key))
     try:
-        user = User.find_one(*query)
+        query = query_list[0]
+        for query_part in query_list[1:]:
+            query = query & query_part
+        user = User.find_one(query)
         return user
     except Exception as err:
         logging.error(err)

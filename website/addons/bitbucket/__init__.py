@@ -1,7 +1,8 @@
-from .model.settings import AddonBitbucketSettings
+from .model.settings import AddonBitbucketUserSettings, AddonBitbucketNodeSettings
 from .routes import settings_routes, page_routes
 
-SETTINGS_MODEL = AddonBitbucketSettings
+USER_MODEL = AddonBitbucketUserSettings
+SETTINGS_MODEL = AddonBitbucketNodeSettings
 
 ROUTES = [settings_routes, page_routes]
 
@@ -43,19 +44,24 @@ SCHEMA = {
                     'required': True,
                 },
                 {
-                    'id': 'bitbucket_code',
+                    'id': 'bitbucket_has_authentication',
                     'type': 'htmlfield',
                     'label': 'Bitbucket Access',
                     'content': '''
                         <div>
-                            <a id="bitbucketAddKey" class="btn btn-primary" style="display: none;">Get Access Token</a>
+                            <a id="bitbucketAddKey" class="btn btn-primary" style="display: none;"></a>
                             <a id="bitbucketDelKey" class="btn btn-danger" style="display: none;">Delete Access Token</a>
                             <span id="bitbucketKeyUser" style="margin-left: 10px;"></span>
                         </div>
                     ''',
                 },
                 {
-                    'id': 'bitbucket_oauth_user',
+                    'id': 'bitbucket_has_user_authentication',
+                    'type': 'hiddenfield',
+                    'label': '',
+                },
+                {
+                    'id': 'bitbucket_authenticated_user',
                     'type': 'hiddenfield',
                     'label': '',
                 }

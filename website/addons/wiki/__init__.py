@@ -1,9 +1,9 @@
-from .model.settings import AddonWikiSettings
-from .routes import settings_routes
+from .model.settings import AddonWikiNodeSettings
+from .routes import settings_routes, widget_routes
 
-SETTINGS_MODEL = AddonWikiSettings
+SETTINGS_MODEL = AddonWikiNodeSettings
 
-ROUTES = [settings_routes]
+ROUTES = [settings_routes, widget_routes]
 
 SHORT_NAME = 'wiki'
 FULL_NAME = 'Wiki'
@@ -21,3 +21,5 @@ INCLUDE_CSS = {
     'widget': [],
     'page': [],
 }
+
+HAS_PAGE = True

@@ -10,7 +10,7 @@
 /* Add-on styles */
 
 /* Make embedded iframes responsive */
-.addon-widget iframe {
+.addon-widget-container iframe {
     max-width: 100%;
 }
 
@@ -18,9 +18,9 @@
     width: 20px;
 }
 
-.addon-widget:first-of-type h1,
-.addon-widget:first-of-type h2,
-.addon-widget:first-of-type h3 {
+.addon-widget-container:first-of-type h1,
+.addon-widget-container:first-of-type h2,
+.addon-widget-container:first-of-type h3 {
     margin-top: 0;
 }
 

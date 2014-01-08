@@ -1,11 +1,16 @@
-<%inherit file="base.mako"/>
+<%inherit file="../../base.mako"/>
 
-<%def name="title()">${addon_title}</%def>
+<%def name="page()"></%def>
 
 <%def name="content()">
 
-<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
-${addon_page}
+<div mod-meta='{
+        "tpl": "project/project_header.mako",
+        "replace": true
+    }'></div>
+    <span></span>
+
+${self.page()}
 
 </%def>
 
