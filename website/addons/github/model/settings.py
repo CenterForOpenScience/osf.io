@@ -2,25 +2,29 @@
 
 """
 
-import json
-
 from framework import fields
 from framework.status import push_status_message
 
-from website.addons.base import AddonSettingsBase, AddonError
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, AddonError
 
 from ..api import GitHub
 
 
-class AddonGitHubSettings(AddonSettingsBase):
+class AddonGitHubUserSettings(AddonUserSettingsBase):
+
+    oauth_state = fields.StringField()
+    oauth_access_token = fields.StringField()
+    oauth_token_type = fields.StringField()
+
+
+class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     user = fields.StringField()
     repo = fields.StringField()
 
-    oauth_osf_user = fields.ForeignField('user', backref='authorized')
-    oauth_state = fields.StringField()
-    oauth_access_token = fields.StringField()
-    oauth_token_type = fields.StringField()
+    user_settings = fields.ForeignField(
+        'addongithubusersettings', backref='authorized'
+    )
 
     registration_data = fields.DictionaryField()
 
@@ -29,15 +33,20 @@ class AddonGitHubSettings(AddonSettingsBase):
         if self.user and self.repo:
             return '/'.join([self.user, self.repo])
 
-    def to_json(self):
-        return {
+    def to_json(self, user):
+        github_user = user.get_addon('github')
+        rv = {
             'github_user': self.user,
             'github_repo': self.repo,
-            'github_code': self.oauth_access_token is not None,
-            'github_oauth_user': self.oauth_osf_user.fullname
-                                 if self.oauth_osf_user
-                                 else '',
+            'github_has_user_authentication': github_user is not None,
         }
+        settings = self.user_settings
+        if settings:
+            rv.update({
+                'github_has_authentication': settings.oauth_access_token is not None,
+                'github_authenticated_user': settings.owner.fullname,
+            })
+        return rv
 
     #############
     # Callbacks #
@@ -54,7 +63,10 @@ class AddonGitHubSettings(AddonSettingsBase):
         if self.user is None or self.repo is None:
             return
 
-        connect = GitHub.from_settings(self)
+        # Quit if no user authorization
+        if self.user_settings is None:
+            return
+        connect = GitHub.from_settings(self.user_settings)
         repo = connect.repo(self.user, self.repo)
 
         # Quit if request failed
@@ -103,11 +115,10 @@ class AddonGitHubSettings(AddonSettingsBase):
         :param User removed:
 
         """
-        if self.oauth_osf_user and self.oauth_osf_user == removed:
+        if self.user_settings and self.user_settings.owner == removed:
 
             # Delete OAuth tokens
-            self.oauth_osf_user = None
-            self.oauth_access_token = None
+            self.user_settings = None
             self.save()
 
             #
@@ -128,7 +139,7 @@ class AddonGitHubSettings(AddonSettingsBase):
         :param str permissions:
 
         """
-        connect = GitHub.from_settings(self)
+        connect = GitHub.from_settings(self.user_settings)
 
         data = connect.set_privacy(
             self.user, self.repo, permissions == 'private'
@@ -164,18 +175,16 @@ class AddonGitHubSettings(AddonSettingsBase):
         :param Node fork:
         :param User user:
         :param bool save:
-        :return AddonGitHubSettings:
+        :return AddonGitHubNodeSettings:
 
         """
-        clone = super(AddonGitHubSettings, self).after_fork(
+        clone = super(AddonGitHubNodeSettings, self).after_fork(
             node, fork, user, save=False
         )
 
         # Copy authentication if authenticated by forking user
-        if self.oauth_osf_user and self.oauth_osf_user == user:
-            clone.oauth_osf_user = user
-        else:
-            clone.oauth_access_token = None
+        if self.user_settings and self.user_settings.owner == user:
+            clone.user_settings = self.user_settings
 
         if save:
             clone.save()
@@ -189,19 +198,18 @@ class AddonGitHubSettings(AddonSettingsBase):
         :param Node registration:
         :param User user:
         :param bool save:
-        :return AddonGitHubSettings:
+        :return AddonGitHubNodeSettings:
 
         """
-        clone = super(AddonGitHubSettings, self).after_register(
+        clone = super(AddonGitHubNodeSettings, self).after_register(
             node, registration, user, save=False
         )
 
         # Copy foreign fields from current add-on
-        clone.node = registration
-        clone.oauth_osf_user = self.oauth_osf_user
+        clone.user_settings = self.user_settings
 
         # Store current branch data
-        connect = GitHub.from_settings(self)
+        connect = GitHub.from_settings(self.user_settings)
         branches = connect.branches(self.user, self.repo)
         if branches is None:
             raise AddonError('Could not fetch repo branches.')

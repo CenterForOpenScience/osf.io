@@ -18,9 +18,18 @@
 
         <div class="col-md-6">
 
-            <h4>Viewing ${gh_user} / ${repo}</h4>
+            <h4>
+                Viewing ${gh_user} / ${repo}
+                % if show_commit_id:
+                    : ${commit_id}
+                % endif
+            </h4>
 
-            % if len(branches) > 1:
+            % if len(branches) == 1:
+
+                ${branches[0]['name']}
+
+            % elif len(branches) > 1:
 
                 <form role="form">
                     <select id="gitBranchSelect" name="branch">

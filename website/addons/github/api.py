@@ -22,7 +22,7 @@ github_cache = {}
 
 class GitHub(object):
 
-    def __init__(self, access_token, token_type):
+    def __init__(self, access_token=None, token_type=None):
 
         if access_token and token_type:
             self.session = OAuth2Session(
@@ -37,10 +37,12 @@ class GitHub(object):
 
     @classmethod
     def from_settings(cls, settings):
-        return cls(
-            access_token=settings.oauth_access_token,
-            token_type=settings.oauth_token_type,
-        )
+        if settings:
+            return cls(
+                access_token=settings.oauth_access_token,
+                token_type=settings.oauth_token_type,
+            )
+        return cls()
 
     def _send(self, url, method='get', output='json', cache=True, **kwargs):
         """
@@ -293,6 +295,7 @@ def tree_to_hgrid(tree, user, repo, node, ref=None, hotlink=True):
     :param str ref: Branch or SHA
     :param bool hotlink: Hotlink files if ref provided; will yield broken
         links if repo is private
+    :return list: List of HGrid-formatted dicts
 
     """
     grid = []
@@ -305,6 +308,8 @@ def tree_to_hgrid(tree, user, repo, node, ref=None, hotlink=True):
         'type': 'folder',
         'uploadUrl': node.api_url + 'github/file/'
     }
+    if ref is not None:
+        parent['uploadUrl'] += '?ref=' + ref
 
     grid.append(parent)
 
@@ -332,7 +337,7 @@ def tree_to_hgrid(tree, user, repo, node, ref=None, hotlink=True):
             base_api_url = node.api_url + 'github/file/{0}/'.format(item['path'])
             row['delete'] = base_api_url
             if ref is not None:
-                base_api_url += '/?ref=' + ref
+                base_api_url += '?ref=' + ref
             if hotlink and ref:
                 row['download'] = os.path.join(
                     GH_URL, user, repo, 'blob', ref, item['path']

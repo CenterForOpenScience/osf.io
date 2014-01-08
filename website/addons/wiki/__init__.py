@@ -1,7 +1,7 @@
-from .model.settings import AddonWikiSettings
+from .model.settings import AddonWikiNodeSettings
 from .routes import settings_routes, widget_routes
 
-SETTINGS_MODEL = AddonWikiSettings
+SETTINGS_MODEL = AddonWikiNodeSettings
 
 ROUTES = [settings_routes, widget_routes]
 

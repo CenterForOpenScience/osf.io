@@ -1,7 +1,7 @@
-from .model.settings import AddonFilesSettings
+from .model.settings import AddonFilesNodeSettings
 from .routes import settings_routes, widget_routes
 
-SETTINGS_MODEL = AddonFilesSettings
+SETTINGS_MODEL = AddonFilesNodeSettings
 
 ROUTES = [settings_routes, widget_routes]
 

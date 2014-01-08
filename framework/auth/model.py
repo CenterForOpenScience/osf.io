@@ -11,6 +11,8 @@ from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import fields, Q, analytics
 from framework.guid.model import GuidStoredObject
 from framework.search import solr
+from framework.addons import AddonModelMixin
+
 from website import settings, filters
 
 name_formatters = {
@@ -22,7 +24,7 @@ name_formatters = {
    ),
 }
 
-class User(GuidStoredObject):
+class User(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
 

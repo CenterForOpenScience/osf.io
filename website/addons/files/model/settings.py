@@ -2,10 +2,10 @@
 
 """
 
-from website.addons.base import AddonSettingsBase
+from website.addons.base import AddonNodeSettingsBase
 
 
-class AddonFilesSettings(AddonSettingsBase):
+class AddonFilesNodeSettings(AddonNodeSettingsBase):
 
-    def to_json(self):
+    def to_json(self, user):
         return{}

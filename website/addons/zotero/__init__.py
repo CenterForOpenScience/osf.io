@@ -1,7 +1,7 @@
-from .model.settings import AddonZoteroSettings
+from .model.settings import AddonZoteroNodeSettings
 from .routes import settings_routes, page_routes, widget_routes
 
-SETTINGS_MODEL = AddonZoteroSettings
+SETTINGS_MODEL = AddonZoteroNodeSettings
 
 ROUTES = [settings_routes, page_routes, widget_routes]
 

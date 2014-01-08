@@ -4,9 +4,9 @@
 
 from bs4 import BeautifulSoup
 
-from website.addons.base import AddonSettingsBase
+from website.addons.base import AddonNodeSettingsBase
 
-class AddonWikiSettings(AddonSettingsBase):
+class AddonWikiNodeSettings(AddonNodeSettingsBase):
 
-    def to_json(self):
+    def to_json(self, user):
         return {}

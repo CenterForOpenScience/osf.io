@@ -7,7 +7,7 @@ import requests
 
 from framework import fields
 
-from website.addons.base import AddonSettingsBase
+from website.addons.base import AddonNodeSettingsBase
 
 API_URL = 'https://api.zotero.org/groups/{zid}/items'
 params = {
@@ -17,7 +17,7 @@ params = {
 }
 
 
-class AddonZoteroSettings(AddonSettingsBase):
+class AddonZoteroNodeSettings(AddonNodeSettingsBase):
 
     zotero_id = fields.StringField()
 
@@ -48,7 +48,7 @@ class AddonZoteroSettings(AddonSettingsBase):
                 ])
             )
 
-    def to_json(self):
+    def to_json(self, user):
         return {
             'zotero_id': self.zotero_id,
         }

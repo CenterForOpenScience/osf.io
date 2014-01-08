@@ -181,7 +181,7 @@ def node_setting(**kwargs):
 
             addon_data[addon_name] = {
                 'schema': json.dumps(addon.config.schema),
-                'settings': json.dumps(addon.to_json()),
+                'settings': json.dumps(addon.to_json(user)),
             }
 
             addon_enabled_settings.append(addon_name)

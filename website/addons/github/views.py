@@ -10,6 +10,7 @@ import httplib as http
 from hurry.filesize import size, alternative
 
 from framework import request, redirect, make_response
+from framework.auth import get_current_user
 from framework.flask import secure_filename
 from framework.exceptions import HTTPError
 
@@ -42,13 +43,12 @@ def github_set_config(*args, **kwargs):
     github.save()
 
 
-def _page_content(node, github, data, hotlink=True):
+def _page_content(node, github, hotlink=True):
 
     if github.user is None or github.repo is None:
         return {}
-        #return github.render_config_error(data)
 
-    connect = GitHub.from_settings(github)
+    connect = GitHub.from_settings(github.user_settings)
 
     branch = request.args.get('branch', None)
 
@@ -62,7 +62,6 @@ def _page_content(node, github, data, hotlink=True):
     branches = connect.branches(github.user, github.repo)
     if branches is None:
         return {}
-        #return github.render_config_error(data)
     if hotlink:
         repo = connect.repo(github.user, github.repo)
         if repo is None or repo['private']:
@@ -74,19 +73,21 @@ def _page_content(node, github, data, hotlink=True):
     )
     if tree is None:
         return {}
-        #return github.render_config_error(data)
 
     hgrid = tree_to_hgrid(
-        tree['tree'], github.user, github.repo, node, commit_id, hotlink,
+        tree['tree'], github.user, github.repo, node,
+        ref=commit_id, hotlink=hotlink,
     )
     return {
         'gh_user': github.user,
         'repo': github.repo,
-        'has_auth': github.oauth_access_token is not None,
+        'has_auth': github.user_settings is not None,
         'api_url': node.api_url,
         'branches': branches,
         'commit_id': commit_id,
+        'show_commit_id': branch is not None,
         'grid_data': json.dumps(hgrid),
+        'registration_data': json.dumps(registration_data),
     }
 
 
@@ -115,7 +116,7 @@ def github_page(*args, **kwargs):
 
     data = _view_project(node, user)
 
-    rv = _page_content(node, github, data)
+    rv = _page_content(node, github)
     rv.update({
         'addon_page_js': github.config.include_js.get('page'),
         'addon_page_css': github.config.include_css.get('page'),
@@ -133,7 +134,7 @@ def github_get_repo(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     github = node.get_addon('github')
 
-    connect = GitHub.from_settings(github)
+    connect = GitHub.from_settings(github.user_settings)
 
     data = connect.repo(github.user, github.repo)
 
@@ -153,7 +154,7 @@ def github_download_file(*args, **kwargs):
 
     ref = request.args.get('ref')
 
-    connect = GitHub.from_settings(github)
+    connect = GitHub.from_settings(github.user_settings)
 
     name, data = connect.file(github.user, github.repo, path, ref=ref)
 
@@ -178,7 +179,7 @@ def github_upload_file(*args, **kwargs):
 
     ref = request.args.get('ref')
 
-    connect = GitHub.from_settings(github)
+    connect = GitHub.from_settings(github.user_settings)
 
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
@@ -222,7 +223,7 @@ def github_upload_file(*args, **kwargs):
                 'github': {
                     'user': github.user,
                     'repo': github.repo,
-                    'url': node.api_url + 'github/file/' + os.path.join(path, filename),
+                    'url': node.api_url + 'github/file/{0}/'.format(os.path.join(path, filename)),
                 },
             },
             user=user,
@@ -241,12 +242,11 @@ def github_upload_file(*args, **kwargs):
             'type': 'file',
             'sha': data['commit']['sha'],
             'url': data['content']['url'],
-            'download': node.api_url + 'github/file/{0}'.format(path),
+            'download': node.api_url + 'github/file/{0}/'.format(os.path.join(path, filename)),
         }
 
-        if ref is not None:
-            info['download'] += '/?ref=' + ref
-            info['ref'] = ref
+        info['download'] += '?ref=' + commit_id
+        info['ref'] = commit_id
 
         return [info]
 
@@ -273,7 +273,7 @@ def github_delete_file(*args, **kwargs):
         'email': '{0}@osf.io'.format(user._id),
     }
 
-    connect = GitHub.from_settings(github)
+    connect = GitHub.from_settings(github.user_settings)
 
     data = connect.delete_file(
         github.user, github.repo, path, MESSAGES['delete'], sha=sha,
@@ -310,7 +310,7 @@ def github_download_starball(*args, **kwargs):
     github = node.get_addon('github')
     archive = kwargs.get('archive', 'tar')
 
-    connect = GitHub.from_settings(github)
+    connect = GitHub.from_settings(github.user_settings)
 
     headers, data = connect.starball(github.user, github.repo, archive)
 
@@ -332,9 +332,28 @@ def github_set_privacy(*args, **kwargs):
     if private is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    connect = GitHub.from_settings(github)
+    connect = GitHub.from_settings(github.user_settings)
 
     connect.set_privacy(github.user, github.repo, private)
+
+
+@must_be_contributor
+@must_have_addon('github')
+def github_add_user_auth(*args, **kwargs):
+
+    user = kwargs['user']
+    node = kwargs['node'] or kwargs['project']
+
+    github_node = node.get_addon('github')
+    github_user = user.get_addon('github')
+
+    if github_node is None or github_user is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    github_node.user_settings = github_user
+    github_node.save()
+
+    return {}
 
 
 @must_be_contributor
@@ -343,43 +362,63 @@ def github_oauth_start(*args, **kwargs):
 
     user = kwargs['user']
     node = kwargs['node'] or kwargs['project']
-    github = node.get_addon('github')
 
-    auth_url, state = oauth_start_url(user, node)
+    user.add_addon('github', 'user')
+    github_user = user.get_addon('github')
+    github_node = node.get_addon('github')
 
-    github.oauth_state = state
-    github.save()
+    github_node.user_settings = github_user
+    github_node.save()
 
-    return redirect(auth_url)
+    authorization_url, state = oauth_start_url(user, node)
+
+    github_user.oauth_state = state
+    github_user.save()
+
+    return redirect(authorization_url)
 
 
-@must_be_contributor
-@must_have_addon('github')
-def github_oauth_delete(*args, **kwargs):
+# TODO: Expose this
+def github_oauth_delete_user(*args, **kwargs):
 
-    node = kwargs['node'] or kwargs['project']
-    github = node.get_addon('github')
+    user = get_current_user()
+    github_user = user.get_addon('github')
 
-    github.oauth_access_token = None
-    github.oauth_token_type = None
-    github.save()
+    github_user.oauth_access_token = None
+    github_user.oauth_token_type = None
+    github_user.save()
 
     return {}
 
 
-# TODO: Handle auth for users as well as nodes
+@must_be_contributor
+@must_have_addon('github')
+def github_oauth_delete_node(*args, **kwargs):
+
+    node = kwargs['node'] or kwargs['project']
+    github_node = node.get_addon('github')
+
+    github_node.user_settings = None
+    github_node.save()
+
+    return {}
+
+
 def github_oauth_callback(*args, **kwargs):
 
     verification_key = request.args.get('state')
-    user = models.User.load(kwargs.get('uid', None))
-    node = models.Node.load(kwargs.get('nid', None))
+    user = models.User.load(kwargs.get('uid'))
+    node = models.Node.load(kwargs.get('nid'))
 
-    if node is None:
+    if user is None:
+        raise HTTPError(http.NOT_FOUND)
+    if kwargs.get('nid') and not node:
         raise HTTPError(http.NOT_FOUND)
 
-    github = node.get_addon('github')
+    github_user = user.get_addon('github')
+    github_node = node.get_addon('github')
 
-    if github.oauth_state != verification_key:
+    if github_user.oauth_state != verification_key:
         raise HTTPError(http.BAD_REQUEST)
 
     code = request.args.get('code')
@@ -388,11 +427,14 @@ def github_oauth_callback(*args, **kwargs):
 
         token = oauth_get_token(code)
 
-        github.oauth_osf_user = user
-        github.oauth_state = None
-        github.oauth_access_token = token['access_token']
-        github.oauth_token_type = token['token_type']
+        github_user.oauth_state = None
+        github_user.oauth_access_token = token['access_token']
+        github_user.oauth_token_type = token['token_type']
+        github_user.save()
 
-        github.save()
+        if github_node:
+            github_node.user_settings = github_user
+            github_node.save()
 
+    # TODO: Handle redirect with no node
     return redirect(os.path.join(node.url, 'settings'))

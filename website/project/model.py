@@ -26,6 +26,7 @@ from framework.forms.utils import sanitize
 from framework import StoredObject, fields, utils
 from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
+from framework.addons import AddonModelMixin
 
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
@@ -260,7 +261,7 @@ class Tag(StoredObject):
         return '/search/?q=tags:{}'.format(self._id)
 
 
-class Node(GuidStoredObject):
+class Node(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
 
@@ -359,84 +360,6 @@ class Node(GuidStoredObject):
 
     def can_view(self, user, api_key=None):
         return self.is_public or self.can_edit(user, api_key)
-
-    def _ensure_addons(self):
-
-        for addon in self.addons_enabled:
-
-            registered_addon = settings.ADDONS_AVAILABLE_DICT[addon]
-            Schema = registered_addon.settings_model
-            models = getattr(self, registered_addon.backref_key)
-            if not models:
-                model = Schema(node=self)
-                model.save()
-
-    def _order_addons(self):
-        """Ensure that addons in `addons_enabled` appear in the same order as
-        in `ADDONS_AVAILABLE`.
-
-        """
-        self.addons_enabled = [
-            addon.short_name
-            for addon in settings.ADDONS_AVAILABLE
-            if addon.short_name in self.addons_enabled
-        ]
-
-    def get_addon(self, addon_name):
-        """Get addon for node.
-
-        :param str addon_name: Name of addon
-        :return AddonSettingsBase: Settings record
-
-        """
-        backref_key = 'addon{0}settings__addons'.format(addon_name)
-        addons = getattr(self, backref_key)
-        if addons:
-            return addons[0]
-
-
-    def add_addon(self, addon_name, save=True):
-        """Add an add-on to the node.
-
-        :param str addon_name: Name of add-on
-        :return bool: Add-on was added
-
-        """
-        if addon_name in self.addons_enabled:
-            return False
-
-        addon_config = settings.ADDONS_AVAILABLE_DICT.get(addon_name)
-        if not addon_config or not addon_config.settings_model:
-            return False
-
-        if addon_name not in self.addons_enabled:
-            self.addons_enabled.append(addon_name)
-            self._order_addons()
-            if save:
-                self.save()
-
-        backref_key = '__'.join([addon_config.settings_model._name, 'addons'])
-        models = getattr(self, backref_key)
-        if not models:
-            model = addon_config.settings_model(node=self)
-            model.save()
-
-        return True
-
-    def delete_addon(self, addon_name, save=True):
-        """Delete an add-on from the node.
-
-        :param str addon_name: Name of add-on
-        :return bool: Add-on was deleted
-
-        """
-        try:
-            self.addons_enabled.remove(addon_name)
-            if save:
-                self.save()
-            return True
-        except ValueError:
-            return False
 
     def save(self, *args, **kwargs):
 

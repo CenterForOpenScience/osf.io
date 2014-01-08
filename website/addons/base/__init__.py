@@ -57,12 +57,20 @@ class AddonConfig(object):
             for key, value in include.iteritems()
         }
 
-    def __init__(self, settings_model, short_name, full_name, added_by_default,
-                 categories, schema=None, include_js=None, include_css=None,
+    def __init__(self, short_name, full_name, added_by_default,
+                 categories,
+                 settings_model=None, user_model=None, schema=None, include_js=None, include_css=None,
                  widget_help=None, has_page=False, has_widget=False, **kwargs):
 
-        self.settings_model = settings_model
-        self.settings_model.config = self
+        self.models = {}
+
+        if settings_model:
+            settings_model.config = self
+            self.models['node'] = settings_model
+
+        if user_model:
+            user_model.config = self
+            self.models['user'] = user_model
 
         self.short_name = short_name
         self.full_name = full_name
@@ -77,9 +85,6 @@ class AddonConfig(object):
 
         self.has_page = has_page
         self.has_widget = has_widget
-
-        # Build back-reference key
-        self.backref_key = '__'.join([self.settings_model._name, 'addons'])
 
         # Build template lookup
         template_path = os.path.join('website', 'addons', short_name, 'templates')
@@ -128,10 +133,20 @@ class AddonConfig(object):
         }
 
 
-class AddonSettingsBase(StoredObject):
+class AddonUserSettingsBase(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
-    node = fields.ForeignField('node', backref='addons')
+    owner = fields.ForeignField('user', backref='addons')
+
+    _meta = {
+        'abstract': True,
+    }
+
+
+class AddonNodeSettingsBase(StoredObject):
+
+    _id = fields.StringField(default=lambda: str(ObjectId()))
+    owner = fields.ForeignField('node', backref='addons')
 
     # TODO: Remove / replace with property
     registered = fields.BooleanField()
@@ -199,11 +214,11 @@ class AddonSettingsBase(StoredObject):
         :param Node fork:
         :param User user:
         :param bool save:
-        :return AddonSettingsBase:
+        :return AddonNodeSettingsBase:
 
         """
         clone = self.clone()
-        clone.node = fork
+        clone.owner = fork
 
         if save:
             clone.save()
@@ -217,11 +232,11 @@ class AddonSettingsBase(StoredObject):
         :param Node registration:
         :param User user:
         :param bool save:
-        :return AddonSettingsBase:
+        :return AddonNodeSettingsBase:
 
         """
         clone = self.clone()
-        clone.node = registration
+        clone.owner = registration
 
         if save:
             clone.save()
@@ -244,7 +259,6 @@ def init_addon(app, addon_name, routes=True):
 
     """
     addon_path = os.path.join('website', 'addons', addon_name)
-    template_path = os.path.join(addon_path, 'templates')
     import_path = 'website.addons.{0}'.format(addon_name)
     views_import_path = '{0}.views'.format(import_path)
 
