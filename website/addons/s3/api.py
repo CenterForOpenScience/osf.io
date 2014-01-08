@@ -124,18 +124,16 @@ class BucketManager:
         bucket = self.__getProperBucket(bucket)
         bucketList = bucket.list()
         grid = []
-        parent = 
-        {
+        parent =  {
             'name': bucket.name,
-            'type': 'Bucket'
+            'type': 'Bucket',
         }
         grid.append(parent)
 
         for k in bucketList:
-            row = 
-            {
+            row =  {
                 'name': k.key,
-                'type': k.key
+                'type': k.key,
             }
             grid.append(row)
         return grid

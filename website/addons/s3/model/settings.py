@@ -24,6 +24,8 @@ class AddonS3UserSettings(AddonUserSettingsBase):
 class AddonS3NodeSettings(AddonNodeSettingsBase):
 
     s3_bucket = fields.StringField()
+    access_key = fields.StringField()
+    secret_key = fields.StringField()
 
     user_settings = fields.ForeignField(
         'addons3usersettings', backref='authorized'
@@ -32,14 +34,10 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
 
     def to_json(self, user):
         rv = {
-            'bucket': self.s3_bucket
+            's3_bucket': self.s3_bucket,
+            'access_key': self.access_key,
+            'secret_key': self.secret_key
         }
-        settings = self.user_settings
-        if settings:
-            rv.update({
-                'access_key': settings.access_key,
-                'secret_key': settings.secret_key
-            })
         return rv
 
     def _get_bucket_list(self, user):

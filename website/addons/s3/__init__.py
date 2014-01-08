@@ -1,10 +1,10 @@
 from .model.settings import AddonS3UserSettings,AddonS3NodeSettings
-from .routes import settings_routes
+from .routes import settings_routes,page_routes,widget_routes
 
 USER_MODEL = AddonS3UserSettings
 SETTINGS_MODEL = AddonS3NodeSettings
 
-ROUTES = [settings_routes]
+ROUTES = [settings_routes,page_routes,widget_routes]
 
 SHORT_NAME = 's3'
 FULL_NAME = 'Amazon Simple Storage Service'
@@ -44,7 +44,7 @@ SCHEMA = {
                     'required': True,
                 },
                 {
-                    'id': 'bucket_name',
+                    'id': 's3_bucket',
                     'type': 'textfield',
                     'label': 'S3 Bucket Name',
                     'required': True,
