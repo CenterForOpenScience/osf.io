@@ -133,7 +133,7 @@ class BucketManager:
         '''
         bucket = self.__getProperBucket(bucket)
         bucketList = bucket.list()
-        folders = []
+        folders = self._getFolders(bucketList)
         files = []
         parent =  {
             'uid': 0,
@@ -143,42 +143,76 @@ class BucketManager:
         }
         folders.append(parent)
 
-        i = 1
+        i = len(folders)
 
 
 
         for k in bucketList:
 
-            row = {
-            'uid':0,
-            'name':'null',
-            'type':'null',
-            'parent_uid': 0
-            }
-
-            row['uid'] = i
-            i+=1
-
             s = str(k.key)
+            if not s.endswith('/'):
+                row = {
+                'uid':0,
+                'name':'null',
+                'type':'null',
+                'parent_uid': 0
+                }
+                row['name'] = s[s.rfind('/')+1:]
+                row['uid'] = i
+                i+=1
 
-            d = s.split('/')
-
-#            if(len(d) > 1):
- #               for l in d[:len(d)-1:
-  #                  if l not in [x['name'] for x in folders]:
-   #                     folders.append({'uid':i,'name':l,'type':'folder','parent_uid':'null'})
-    #                    i+=1
-
-            if(s.endswith('/')):
-                row['type'] = 'folder'
-                s = s[:len(s)-1]
-            else:
                 row['type'] = 'file'
-            
-            row['name'] = s[s.rfind('/')+1:]
-            files.append(row)
+                d = s.split('/')
+                if len(d) > 1:
+                        q = (x for x in folders if x['name'] == d[len(d)-2]).next()
+                        if q:
+                            row['parent_uid']=q['uid']
+               
+                files.append(row)
 
         folders.extend(files)
         return folders
 
+
+    def _getFolders(self,bucketList):
+        folders = []
+        i = 1
+        for k in bucketList:
+
+            row = {
+            'uid':i,
+            'name':'null',
+            'type':'folder',
+            'parent_uid':0
+             }
         
+            row['uid'] = i
+            s1 = str(k.key)
+            d = s1.split('/')
+
+            for l  in d[:len(d)-1]:
+                if l not in [x['name'] for x in folders]:
+                    row['name']=l
+                    if len(d) > 1:
+                        q = (x for x in folders if x['name'] == d[len(d)-2]).next()
+                        if q:
+                            row['parent_uid']=q['uid']
+                    folders.append(row)
+                    i+=1
+        return folders
+        
+class S3Key:
+    def __init__(self, key):
+        self.s3Key = key
+        self.fullName = str(key.key)
+        self.name = 
+        if(str(key.key).endswith('/')):
+            self.type = 'files'
+        else:
+            self.type = 'folder'
+    @property
+    def name(self):
+        return self._nameAsStr()[self._nameAsStr().rfind('/'):]
+
+    def _nameAsStr(self):
+        return str(self.s3Key.key)

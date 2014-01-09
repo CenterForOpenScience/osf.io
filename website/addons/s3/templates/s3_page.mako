@@ -12,9 +12,6 @@
     	<div id="s3Crumbs"></div>
 		<div id="s3Grid"/></div>
 	</div>
-	<b>
-	${grid}
-	</b>
 
 
 </html>
