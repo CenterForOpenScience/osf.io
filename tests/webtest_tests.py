@@ -583,5 +583,83 @@ class TestShortUrls(DbTestCase):
         )
 
 
+class TestPiwik(DbTestCase):
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = UserFactory()
+        api_key = ApiKeyFactory()
+        self.user.api_keys.append(api_key)
+        self.user.save()
+        self.auth = ('test', api_key._primary_key)
+        self.user2 = UserFactory()
+        self.user3 = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_contributor(contributor=self.user2, user=self.user)
+        self.project.set_permissions('public', user=self.user)
+        self.project.save()
+
+    def _login(self, user):
+        '''Log in a user via at the login page.'''
+        res = self.app.get("/account/").maybe_follow()
+        # Fills out login info
+        form = res.forms['signinForm']  # Get the form from its ID
+        form['username'] = user.username
+        form['password'] = user.password
+        # submits
+        res = form.submit().maybe_follow()
+        return res
+
+    def test_contains_iframe_and_src(self):
+        res = self.app.get(
+            "/{0}/statistics".format(self.project._primary_key),
+            auth=self.auth
+        ).maybe_follow()
+        assert_in("iframe", res)
+        assert_in('src="http://162.243.104.66/piwik/index.php?"', res)
+
+    def test_anymous_no_token(self):
+        self._login(self.user3)
+        res = self.app.get(
+            "/{0}/statistics".format(self.project._primary_key)
+        ).maybe_follow()
+        assert_not_in(self.user3.piwik_token, res)
+        self.app.get('/logout/')
+
+    def test_contributor_token(self):
+        self._login(self.user2)
+        res = self.app.get(
+            "/{0}/statistics".format(self.project._primary_key)
+        ).maybe_follow()
+        assert_in(self.user2.piwik_token, res)
+        self.app.get('/logout/')
+
+    def test_no_user_token(self):
+        res = self.app.get(
+            "/{0}/statistics".format(self.project._primary_key)
+        ).maybe_follow()
+        assert_in("token_auth=anonymous", res)
+
+    def test_private_alert(self):
+        self.project.set_permissions('private', user=self.user)
+        self.project.save()
+        res = self.app.get(
+            "/{0}/statistics".format(self.project._primary_key),
+            auth=self.auth
+        ).maybe_follow()
+        assert_in(
+            "Usage statistics are collected only for public resources.",
+            res
+        )
+
+    def test_no_piwik_site_id(self):
+        self.project.piwik_site_id = None
+        self.project.save()
+        res = self.app.get(
+            "/{0}/statistics".format(self.project._primary_key),
+            auth=self.auth
+        ).maybe_follow()
+        assert_in("/static/img/no_analytics.png", res)
+
+
 if __name__ == '__main__':
     unittest.main()
