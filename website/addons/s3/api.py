@@ -10,12 +10,15 @@ import os
 
 class BucketManager:
     "S3 Bucket management"
-    def __init__(self, connect=S3Connection):
+    def __init__(self, connect=S3Connection,bucketName=None):
         self.connection = connect
-        if(len(self.connection.get_all_buckets()) == 0):
-            self.newBucket("DefaultBucket")
+        if bucketName is not None:
+            self.__defaultBucket = self.getBucket(bucketName)
         else:
-            self.__defaultBucket = self.connection.get_all_buckets()[1]
+            if(len(self.connection.get_all_buckets()) == 0):
+                self.newBucket("DefaultBucket")
+            else:
+                self.__defaultBucket = self.connection.get_all_buckets()[1]
 
     @staticmethod
     def getLoctions(self):
