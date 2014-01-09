@@ -5,6 +5,9 @@ from os.path import basename
 
 from boto.exception import *
 from boto.s3.connection import *
+
+from hurry.filesize import size
+
 import os
 
 
@@ -287,7 +290,10 @@ class S3Key:
             'uid':self.uid,
             'type':self.type,
             'name':self.name,
-            'parent_uid':parent_uid
+            'parent_uid':parent_uid,
+            'version_id':self.version,
+            'size':self.size,
+            'lastMod':self.lastMod
         }
     @property
     def pathTo(self):
@@ -298,4 +304,14 @@ class S3Key:
         if self.type is 'folder':
             return '--'
         else:
-            return self.s3Key.size
+            return size(int(self.s3Key.size)).lower()
+    @property
+    def lastMod(self):
+        return str(self.s3Key.last_modified)
+
+    @property
+    def version(self):
+        if self.s3Key.version_id:
+            return str(self.s3Key.version_id)
+        else:
+            return '--'
