@@ -11,6 +11,7 @@ from website.project.decorators import must_be_contributor
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
+from framework.status import push_status_message
 
 from api import BucketManager
 from boto.s3.connection import S3Connection
@@ -39,7 +40,7 @@ def s3_settings(*args, **kwargs):
 
 @must_be_contributor
 @must_have_addon('s3')
-def s3_widget(*args, **kwargs):
+def s3_widget_unused(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
@@ -50,10 +51,15 @@ def s3_widget(*args, **kwargs):
 def _page_content(node, s3):
     #nTODO use bucket name 
     # create new bucket if not found  inform use/ output error
-    connect = BucketManager(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key),s3.s3_bucket)
-    data = connect.getHgrid()#connect.getFileListAsHGrid()
+    try:
+        connect = BucketManager(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key),s3.s3_bucket)
+        data = connect.getHgrid()
+    except Exception:
+        push_status_message("Something went wrong. Are you sure your setting are correct?")
+        data = None
     #Error handling should occur here or one function up
     # ie if usersettings or settings is none etc etc
+    
     rv = {
         'complete': True,
         'bucket': s3.s3_bucket,

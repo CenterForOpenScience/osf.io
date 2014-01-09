@@ -292,3 +292,10 @@ class S3Key:
     @property
     def pathTo(self):
         return self._nameAsStr()[:self._nameAsStr().rfind('/')] + '/'
+
+    @property
+    def size(self):
+        if self.type is 'folder':
+            return '--'
+        else:
+            return self.s3Key.size
