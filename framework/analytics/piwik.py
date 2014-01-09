@@ -171,12 +171,12 @@ def _provision_node(node):
 
     # contributors lists might be empty, due to a bug.
     if node.contributors:
-        users = node.contributors
+        users = ['osf.' + user._id for user in node.contributors]
         if node.is_public:
             users.append('anonymous')
         _change_view_access(
             # contibutors lists might contain `None` due to bug
-            ('osf.' + x._id for x in node.contributors if x),
+            users,
             node,
             'view'
         )
