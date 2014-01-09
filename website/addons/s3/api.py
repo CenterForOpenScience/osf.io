@@ -123,6 +123,13 @@ class BucketManager:
         bucket = self.__getProperBucket(bucket)
         return bucket.get_key(keyName).generate_url(5)
 
+    def getWrappedKeys(self, bucketList):
+        List = []
+        for k in bucketList:
+            List.append(S3Key(k))
+        return List
+
+
     def getFileListAsHGrid(self,bucket = None):
         '''
         {
@@ -204,15 +211,36 @@ class BucketManager:
 class S3Key:
     def __init__(self, key):
         self.s3Key = key
-        self.fullName = str(key.key)
-        self.name = 
-        if(str(key.key).endswith('/')):
-            self.type = 'files'
-        else:
-            self.type = 'folder'
+
     @property
     def name(self):
         return self._nameAsStr()[self._nameAsStr().rfind('/'):]
 
     def _nameAsStr(self):
         return str(self.s3Key.key)
+
+    @property
+    def type(self):
+        if(str(key.key).endswith('/')):
+            return 'files'
+        else:
+            return 'folder'
+
+    @property
+    def fullPath(self):
+        return self._nameAsStr()
+
+    @property
+    def parentFolder(self):
+        d = self._nameAsStr().split('/')
+        if len(d) > 1:
+            return d[len(d)-2]
+        else:
+            return 'null'
+    def getAsDict(self,uid,parent_uid=0):
+        return[{
+            'uid':uid,
+            'type':self.type,
+            'name':self.name,
+            'parent_uid':parent_uid
+        }]
