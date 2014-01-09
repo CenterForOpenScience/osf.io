@@ -17,7 +17,7 @@ for user in User.find():
 
     piwik.create_user(user)
 
-for node in Node.find(Q('is_public', 'eq', True), Q('is_deleted', 'eq', False)):
+for node in Node.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)):
     if node.piwik_site_id:
         continue
 
