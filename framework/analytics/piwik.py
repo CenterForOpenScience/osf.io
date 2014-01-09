@@ -169,4 +169,14 @@ def _provision_node(node):
     except ValueError:
         raise PiwikException('Piwik site creation failed for ' + node._id)
 
-    _change_view_access(('osf.' + x._id for x in node.contributors), node, 'view')
+    # contributors lists might be empty, due to a bug.
+    if node.contributors:
+        users = node.contributors
+        if node.is_public:
+            users.append('anonymous')
+        _change_view_access(
+            # contibutors lists might contain `None` due to bug
+            ('osf.' + x._id for x in node.contributors if x),
+            node,
+            'view'
+        )
