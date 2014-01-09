@@ -170,10 +170,10 @@ class BucketManager:
 
                 row['type'] = 'file'
                 d = s.split('/')
-                if len(d) > 1:
-                        q = (x for x in folders if x['name'] == d[len(d)-2]).next()
-                        if q:
-                            row['parent_uid']=q['uid']
+               # if len(d) > 1:
+                       # q = (x for x in folders if x['name'] == d[len(d)-2]).next()
+                       # if q:
+                        #    row['parent_uid']=q['uid']
                
                 files.append(row)
 
@@ -200,29 +200,68 @@ class BucketManager:
             for l  in d[:len(d)-1]:
                 if l not in [x['name'] for x in folders]:
                     row['name']=l
-                    if len(d) > 1:
-                        q = (x for x in folders if x['name'] == d[len(d)-2]).next()
-                        if q:
-                            row['parent_uid']=q['uid']
+                    #if len(d) > 1:
+                       # q = (x for x in folders if x['name'] == d[len(d)-2]).next()
+                       # if q:
+                         #   row['parent_uid']=q['uid']
                     folders.append(row)
                     i+=1
         return folders
-        
+
+    def getHgrid(self,bucket=None):
+            S3Key.nextUid = 1
+            bucket = self.__getProperBucket(bucket)
+            keyList = self.getWrappedKeys(bucket.list())
+            hgrid = []
+            hgrid.append({
+            'uid': 0,
+            'name': str(bucket.name),
+            'type': 'folder',
+            'parent_uid': 'null'
+            })
+            self.checkFolders(keyList)
+            for k in keyList:
+                if k.parentFolder is not 'null':
+                    q = [x for x in keyList if k.parentFolder == x.name]
+                    hgrid.append(k.getAsDict(q[0].uid))
+                else:
+                    hgrid.append(k.getAsDict())
+            return hgrid
+
+    def checkFolders(self,keyList):
+        for k in keyList:
+            if k.parentFolder is not 'null' and k.parentFolder not in [x.name for x in keyList]:
+                newKey = self.__defaultBucket.new_key(k.pathTo)
+                newKey.set_contents_from_string("")
+                keyList.append(S3Key(newKey))
+                raise Exception
+
 class S3Key:
+
+    nextUid = 1
+
     def __init__(self, key):
         self.s3Key = key
+        self.uid = S3Key.nextUid
+        S3Key.nextUid+=1
 
     @property
     def name(self):
-        return self._nameAsStr()[self._nameAsStr().rfind('/'):]
+        d = self._nameAsStr().split('/')
+        if len(d) > 1 and self.type is 'file':
+            return d[len(d)-1]
+        elif self.type is 'folder':
+            return d[len(d)-2]
+        else:
+            return d[0]
 
     def _nameAsStr(self):
         return str(self.s3Key.key)
 
     @property
     def type(self):
-        if(str(key.key).endswith('/')):
-            return 'files'
+        if not (str(self.s3Key.key).endswith('/')):
+            return 'file'
         else:
             return 'folder'
 
@@ -233,14 +272,20 @@ class S3Key:
     @property
     def parentFolder(self):
         d = self._nameAsStr().split('/')
-        if len(d) > 1:
+
+        if len(d) > 1 and self.type is 'file':
             return d[len(d)-2]
+        elif len(d) > 2 and self.type is 'folder':
+            return d[len(d)-3]
         else:
             return 'null'
-    def getAsDict(self,uid,parent_uid=0):
-        return[{
-            'uid':uid,
+    def getAsDict(self,parent_uid=0):
+        return{
+            'uid':self.uid,
             'type':self.type,
             'name':self.name,
             'parent_uid':parent_uid
-        }]
+        }
+    @property
+    def pathTo(self):
+        return self._nameAsStr()[:self._nameAsStr().rfind('/')] + '/'

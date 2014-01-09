@@ -48,9 +48,10 @@ def s3_widget(*args, **kwargs):
     return rv
 
 def _page_content(node, s3):
-
+    #nTODO use bucket name 
+    # create new bucket if not found  inform use/ output error
     connect = BucketManager(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key))
-    data = connect.getFileListAsHGrid()
+    data = connect.getHgrid()#connect.getFileListAsHGrid()
     #Error handling should occur here or one function up
     # ie if usersettings or settings is none etc etc
     rv = {
