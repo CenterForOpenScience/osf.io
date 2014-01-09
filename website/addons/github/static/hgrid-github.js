@@ -106,6 +106,7 @@ grid.hGridBeforeDelete.subscribe(function(e, args) {
                     }).complete(function() {
                         d.resolve(true);
                     }).error(function() {
+                        bootbox.alert('Delete failed.');
                         d.resolve(false);
                     });
                 } else {

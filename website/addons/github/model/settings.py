@@ -2,25 +2,33 @@
 
 """
 
+import os
+import urlparse
+
 from framework import fields
 from framework.status import push_status_message
 
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, AddonError
+from website import settings
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from website.addons.base import AddonError
 
 from ..api import GitHub
 
 
 class AddonGitHubUserSettings(AddonUserSettingsBase):
 
+    # OAuth
     oauth_state = fields.StringField()
     oauth_access_token = fields.StringField()
     oauth_token_type = fields.StringField()
+
 
 
 class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     user = fields.StringField()
     repo = fields.StringField()
+    hook_id = fields.StringField()
 
     user_settings = fields.ForeignField(
         'addongithubusersettings', backref='authorized'
@@ -40,11 +48,11 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             'github_repo': self.repo,
             'github_has_user_authentication': github_user is not None,
         }
-        settings = self.user_settings
-        if settings:
+        if self.user_settings:
             rv.update({
-                'github_has_authentication': settings.oauth_access_token is not None,
-                'github_authenticated_user': settings.owner.fullname,
+                'github_has_authentication': self.user_settings.oauth_access_token is not None,
+                'github_authenticated_user_name': self.user_settings.owner.fullname,
+                'github_authenticated_user_id': self.user_settings.owner._id,
             })
         return rv
 
@@ -220,3 +228,45 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             clone.save()
 
         return clone
+
+    #########
+    # Hooks #
+    #########
+
+    def add_hook(self, save=True):
+
+        if self.user_settings:
+            connect = GitHub.from_settings(self.user_settings)
+            hook = connect.add_hook(
+                self.user, self.repo,
+                'web',
+                {
+                    'url': urlparse.urljoin(
+                        settings.HOOK_DOMAIN,
+                        os.path.join(
+                            self.owner.api_url, 'github', 'hook/'
+                        )
+                    ),
+                    'content_type': 'json',
+                }
+            )
+
+            if hook:
+                self.hook_id = hook['id']
+                if save:
+                    self.save()
+
+    def delete_hook(self):
+        """
+
+        :return bool: Hook was deleted
+
+        """
+        if self.user_settings and self.hook_id:
+            connect = GitHub.from_settings(self.user_settings)
+            response = connect.delete_hook(self.user, self.repo, self.hook_id)
+            if response:
+                self.hook_id = None
+                self.save()
+                return True
+        return False

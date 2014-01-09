@@ -86,36 +86,10 @@ class GitHub(object):
 
         return rv
 
-    def user(self):
-
-        return self._send(
-            os.path.join(
-                API_URL, 'user'
-            )
-        )
-
     def repo(self, user, repo):
 
         return self._send(
             os.path.join(API_URL, 'repos', user, repo)
-        )
-
-    def contributors(self, user, repo):
-
-        return self._send(
-            os.path.join(API_URL, 'repos', user, repo, 'collaborators')
-        )
-
-    def user_teams(self, user):
-
-        return self._send(
-            os.path.join(API_URL, 'user', 'teams')
-        )
-
-    def repo_teams(self, user, repo):
-
-        return self._send(
-            os.path.join(API_URL, 'repos', user, repo, 'teams')
         )
 
     def branches(self, user, repo, branch=None):
@@ -216,7 +190,7 @@ class GitHub(object):
             os.path.join(
                 API_URL, 'repos', user, repo, 'contents', path
             ),
-            cache=False,
+            cache=True,
             params=params,
         )
 
@@ -262,6 +236,46 @@ class GitHub(object):
         )
 
         return req
+
+    #########
+    # Hooks #
+    #########
+
+    def hooks(self, user, repo):
+
+        return self._send(
+            os.path.join(
+                API_URL, 'repos', user, repo, 'hooks',
+            )
+        )
+
+    def add_hook(self, user, repo, name, config, events=None, active=True):
+
+        data = {
+            'name': name,
+            'config': config,
+            'events': events or ['push'],
+            'active': active,
+        }
+
+        return self._send(
+            os.path.join(
+                API_URL, 'repos', user, repo, 'hooks'
+            ),
+            method='post',
+            cache=False,
+            data=json.dumps(data),
+        )
+
+    def delete_hook(self, user, repo, _id):
+
+        return self._send(
+            os.path.join(
+                API_URL, 'repos', user, repo, 'hooks', str(_id),
+            ),
+            'delete',
+            cache=False,
+        )
 
     ########
     # CRUD #

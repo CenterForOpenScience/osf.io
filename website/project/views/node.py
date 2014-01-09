@@ -171,26 +171,27 @@ def node_setting(**kwargs):
     rv = _view_project(node, user, primary=True)
 
     addon_data = {}
+    addons_enabled = []
     addon_enabled_settings = []
 
-    for addon_name in node.addons_enabled:
+    for addon in node.get_addons():
 
-        addon = node.get_addon(addon_name)
+        addons_enabled.append(addon.config.short_name)
 
         if addon and addon.config.schema:
 
-            addon_data[addon_name] = {
+            addon_data[addon.config.short_name] = {
                 'schema': json.dumps(addon.config.schema),
                 'settings': json.dumps(addon.to_json(user)),
             }
 
-            addon_enabled_settings.append(addon_name)
+            addon_enabled_settings.append(addon.config.short_name)
 
     rv['addon_settings'] = addon_data
     rv['addon_categories'] = settings.ADDON_CATEGORIES
 
     rv['addons_available'] = settings.ADDONS_AVAILABLE
-    rv['addons_enabled'] = node.addons_enabled
+    rv['addons_enabled'] = addons_enabled
     rv['addon_enabled_settings'] = addon_enabled_settings
 
     return rv
@@ -204,9 +205,9 @@ def node_choose_addons(**kwargs):
 
     for addon_name, enabled in request.json.iteritems():
         if enabled:
-            node.add_addon(addon_name, save=False)
+            node.add_addon(addon_name)
         else:
-            node.delete_addon(addon_name, save=False)
+            node.delete_addon(addon_name)
 
     node.save()
 
@@ -386,7 +387,6 @@ def view_project(*args, **kwargs):
     user = get_current_user()
     node_to_use = kwargs['node'] or kwargs['project']
     primary = '/api/v1' not in request.path
-    print 'PRIMARY IS', primary
     return _view_project(node_to_use, user, primary=primary)
 
 
@@ -398,7 +398,7 @@ def _render_addon(node):
     js = []
     css = []
 
-    for addon in getattr(node, 'addons', []):
+    for addon in node.get_addons():
 
         configs[addon.config.short_name] = addon.config.to_json()
 
@@ -419,7 +419,7 @@ def _view_project(node_to_use, user, api_key=None, primary=False):
     widgets, configs, js, css = _render_addon(node_to_use)
     # Before page load callback; skip if not primary call
     if primary:
-        for addon in getattr(node_to_use, 'addons', []):
+        for addon in node_to_use.get_addons():
             addon.before_page_load(node_to_use, user)
     data = {
         'node': {
@@ -480,7 +480,7 @@ def _view_project(node_to_use, user, api_key=None, primary=False):
             'is_watching': user.is_watching(node_to_use) if user else False
         },
         # TODO: Namespace with nested dicts
-        'addons_enabled': node_to_use.addons_enabled,
+        'addons_enabled': node_to_use.get_addon_names(),
         'addons': configs,
         'addon_widgets': widgets,
         'addon_widget_js': js,
@@ -575,7 +575,7 @@ def get_summary(*args, **kwargs):
             'ua_count': None,
             'ua': None,
             'non_ua': None,
-            'addons_enabled': node_to_use.addons_enabled,
+            'addons_enabled': node_to_use.get_addon_names(),
         }
         if rescale_ratio:
             ua_count, ua, non_ua = _get_user_activity(node_to_use, user, rescale_ratio)

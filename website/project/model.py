@@ -129,6 +129,7 @@ class NodeLog(StoredObject):
 
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
+    foreign_user = fields.StringField()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
@@ -191,7 +192,9 @@ class NodeLog(StoredObject):
         '''Return a dictionary representation of the log.'''
         return {
             'id': str(self._primary_key),
-            'user': self.user.serialize() if self.user else None,
+            'user': self.user.serialize()
+                    if isinstance(self.user, User)
+                    else {'fullname': self.foreign_user},
             'contributors': [self._render_log_contributor(c) for c in self.params.get("contributors", [])],
             'contributor': self._render_log_contributor(self.params.get("contributor", {})),
             'api_key': self.api_key.label if self.api_key else '',
@@ -302,9 +305,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     description = fields.StringField()
     category = fields.StringField()
 
-    # AddonConfig settings
-    addons_enabled = fields.StringField(list=True)
-
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
 
@@ -372,9 +372,8 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             #
             for addon in settings.ADDONS_AVAILABLE:
-                if addon.added_by_default and addon.short_name not in self.addons_enabled:
-                    self.addons_enabled.append(addon.short_name)
-            self._ensure_addons()
+                if addon.added_by_default:
+                    self.add_addon(addon.short_name)
 
             #
             if getattr(self, 'project', None):
@@ -644,7 +643,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.save()
 
         # After fork callback
-        for addon in getattr(original, 'addons', []):
+        for addon in original.get_addons():
             addon.after_fork(original, forked, user)
 
         if os.path.exists(folder_old):
@@ -693,7 +692,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         registered.save()
 
         # After register callback
-        for addon in getattr(original, 'addons', []):
+        for addon in original.get_addons():
             addon.after_register(original, registered, user)
 
         if os.path.exists(folder_old):
@@ -736,7 +735,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             node_contained.save()
 
             # After register callback
-            for addon in getattr(original_node_contained, 'addons', []):
+            for addon in original_node_contained.get_addons():
                 addon.after_register(
                     original_node_contained, node_contained, user
                 )
@@ -1019,10 +1018,11 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return node_file
 
-    def add_log(self, action, params, user, api_key=None, log_date=None, save=True):
+    def add_log(self, action, params, user, foreign_user=None, api_key=None, log_date=None, save=True):
         log = NodeLog()
-        log.action=action
-        log.user=user
+        log.action = action
+        log.user = user
+        log.foreign_user = foreign_user
         log.api_key = api_key
         if log_date:
             log.date=log_date
@@ -1174,7 +1174,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         if not user._primary_key == contributor._id:
 
-            for addon in getattr(self, 'addons', []):
+            for addon in self.get_addons():
                 prompt = addon.before_remove_contributor(self, contributor)
                 if prompt:
                     prompts.append(prompt)
@@ -1197,7 +1197,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             removed_user = get_user(contributor._id)
 
             # After remove callback
-            for addon in getattr(self, 'addons', []):
+            for addon in self.get_addons():
                 addon.after_remove_contributor(self, removed_user)
 
             if log:
@@ -1325,7 +1325,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             return False
 
         # After set permissions callback
-        for addon in getattr(self, 'addons', []):
+        for addon in self.get_addons():
             addon.after_set_permissions(self, permissions)
 
         action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE

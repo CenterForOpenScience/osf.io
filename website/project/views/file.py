@@ -50,7 +50,7 @@ def get_file_tree(node_to_use, user):
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public
-@must_have_addon('files')
+@must_have_addon('files', 'node')
 def get_files(*args, **kwargs):
     """Build list of files for HGrid, ignoring contents of components to which
     the user does not have access. Note: This view hides the titles of
@@ -60,10 +60,6 @@ def get_files(*args, **kwargs):
     # Get arguments
     node_to_use = kwargs['node'] or kwargs['project']
     user = get_current_user()
-
-    ## Raise 404 if files addon not enabled
-    #if 'files' not in node_to_use.addons_enabled:
-    #    raise HTTPError(http.NOT_FOUND)
 
     filetree = get_file_tree(node_to_use, user)
     parent_id = node_to_use.parent_id
@@ -169,7 +165,7 @@ def _get_files(filetree, parent_id, check, user):
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
-@must_have_addon('files')
+@must_have_addon('files', 'node')
 def list_file_paths(*args, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']

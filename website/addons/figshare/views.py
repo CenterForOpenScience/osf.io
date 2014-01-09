@@ -11,7 +11,7 @@ from website.project import decorators
 from . import settings as figshare_settings
 
 @decorators.must_be_contributor
-@decorators.must_have_addon('figshare')
+@decorators.must_have_addon('figshare', 'node')
 def figshare_config(*args, **kwargs):
 
     node = kwargs.get('node') or kwargs.get('project')
@@ -25,7 +25,7 @@ def figshare_config(*args, **kwargs):
 
 
 @decorators.must_be_contributor_or_public
-@decorators.must_have_addon('figshare')
+@decorators.must_have_addon('figshare', 'node')
 def figshare_widget(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']

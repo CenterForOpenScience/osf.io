@@ -44,6 +44,11 @@ settings_routes = {
             '/project/<pid>/node/<nid>/github/zipball/',
         ], 'get', views.github_download_starball, json_renderer, {'archive': 'zip'}, endpoint_suffix='__zip'),
 
+        Rule([
+            '/project/<pid>/github/hook/',
+            '/project/<pid>/node/<nid>github/hook/',
+        ], 'post', views.github_hook_callback, json_renderer),
+
         # OAuth
         Rule([
             '/project/<pid>/github/user_auth/',

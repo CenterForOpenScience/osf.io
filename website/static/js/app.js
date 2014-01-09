@@ -120,7 +120,7 @@ var createLogs = function(logData){
         })
     });
     return mappedLogs;
-}
+};
 
 /**
  * Initialize the LogsViewModel. Fetches the logs data from the specified url
@@ -134,7 +134,7 @@ var initializeLogs = function(scopeSelector, url){
     // Initiate LogsViewModel
     $logScope = $(scopeSelector);
     ko.cleanNode($logScope[0]);
-    progressBar = $("#logProgressBar")
+    progressBar = $("#logProgressBar");
     progressBar.show();
     $.ajax({
         url: url,
@@ -150,7 +150,7 @@ var initializeLogs = function(scopeSelector, url){
             ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
         }
     });
-}
+};
 
 /**
  * The ProjectViewModel, scoped to the project header.
@@ -220,7 +220,7 @@ var ProjectViewModel = function(params) {
             emptytext: "No description",
             emptyclass: "text-muted"
         });
-    };
+    }
 
     /**
      * Toggle the watch status for this project.

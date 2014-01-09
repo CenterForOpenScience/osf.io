@@ -511,18 +511,18 @@ class TestNode(DbTestCase):
         assert_true(node.node__parent)
         assert_equal(node.logs[-1].action, 'node_created')
         assert_equal(
-            node.addons_enabled,
-            [
+            set(node.get_addon_names()),
+            set([
                 addon_config.short_name
                 for addon_config in settings.ADDONS_AVAILABLE
                 if addon_config.added_by_default
-            ]
+            ])
         )
         for addon_config in settings.ADDONS_AVAILABLE:
             if addon_config.added_by_default:
                 assert_in(
                     addon_config.short_name,
-                    node.addons_enabled
+                    node.get_addon_names()
                 )
                 assert_true(
                     len([
@@ -534,12 +534,12 @@ class TestNode(DbTestCase):
                 )
 
     def test_add_addon(self):
-        addon_count = len(self.node.addons_enabled)
+        addon_count = len(self.node.get_addon_names())
         addon_record_count = len(self.node.addons)
         added = self.node.add_addon('github')
         assert_true(added)
         assert_equal(
-            len(self.node.addons_enabled),
+            len(self.node.get_addon_names()),
             addon_count + 1
         )
         assert_equal(
@@ -548,12 +548,12 @@ class TestNode(DbTestCase):
         )
 
     def test_add_existing_addon(self):
-        addon_count = len(self.node.addons_enabled)
+        addon_count = len(self.node.get_addon_names())
         addon_record_count = len(self.node.addons)
         added = self.node.add_addon('files')
         assert_false(added)
         assert_equal(
-            len(self.node.addons_enabled),
+            len(self.node.get_addon_names()),
             addon_count
         )
         assert_equal(
@@ -562,20 +562,20 @@ class TestNode(DbTestCase):
         )
 
     def test_delete_addon(self):
-        addon_count = len(self.node.addons_enabled)
+        addon_count = len(self.node.get_addon_names())
         deleted = self.node.delete_addon('files')
         assert_true(deleted)
         assert_equal(
-            len(self.node.addons_enabled),
+            len(self.node.get_addon_names()),
             addon_count - 1
         )
 
     def test_delete_nonexistent_addon(self):
-        addon_count = len(self.node.addons_enabled)
+        addon_count = len(self.node.get_addon_names())
         deleted = self.node.delete_addon('github')
         assert_false(deleted)
         assert_equal(
-            len(self.node.addons_enabled),
+            len(self.node.get_addon_names()),
             addon_count
         )
 
@@ -1011,6 +1011,16 @@ class TestForkNode(DbTestCase):
                 data_fork = fork.get_file(file_fork.path, vidx)
                 assert_equal(data_original, data_fork)
 
+        # Test that add-ons were copied correctly
+        assert_equal(
+            original.get_addon_names(),
+            fork.get_addon_names()
+        )
+        assert_equal(
+            [addon.config.short_name for addon in original.get_addons()],
+            [addon.config.short_name for addon in fork.get_addons()]
+        )
+
         # Recursively compare children
         for idx, child in enumerate(original.nodes):
             if child.can_view(fork_user):
@@ -1035,6 +1045,11 @@ class TestForkNode(DbTestCase):
         self.subproject.add_file(
             self.user, None, 'test3.txt', 'test content3', 4, 'text/plain'
         )
+
+        # Add add-on to test copying
+        self.project.add_addon('github')
+        self.component.add_addon('github')
+        self.subproject.add_addon('github')
 
         # Log time
         fork_date = datetime.datetime.utcnow()
@@ -1284,6 +1299,12 @@ class TestRegisterNode(DbTestCase):
             self.registration.registered_date,
             datetime.datetime.utcnow(),
             delta=datetime.timedelta(seconds=5),
+        )
+
+    def test_registered_addons(self):
+        assert_equal(
+            [addon.config.short_name for addon in self.registration.get_addons()],
+            [addon.config.short_name for addon in self.registration.registered_from.get_addons()],
         )
 
     def test_registered_meta(self):

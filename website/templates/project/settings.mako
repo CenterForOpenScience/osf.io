@@ -165,16 +165,24 @@
 
         % if 'github' in addon_enabled_settings:
 
-            var dataGH = addonSettingsModels.github.observedData,
-                addButton = $('#githubAddKey'),
-                delButton = $('#githubDelKey'),
+            dataGH = addonSettingsModels.github.observedData;
+                addButton = $('#githubAddKey');
+                delButton = $('#githubDelKey');
                 keyUser = $('#githubKeyUser');
 
             if (dataGH.github_has_authentication.value()) {
                 delButton.show();
-                keyUser.text('(Authorized by ' + dataGH.github_authenticated_user.value() + ')');
+                keyUser.text('(Authorized by ' + dataGH.github_authenticated_user_name.value() + ')');
             } else {
                 addButton.show();
+            }
+
+            //
+            var id = dataGH.github_authenticated_user_id.value();
+            if (id && id != userId) {
+                $('#github_user').attr('disabled', 'disabled');
+                $('#github_repo').attr('disabled', 'disabled');
+                $('form.addon-settings[data-addon="github"] button').attr('disabled', 'disabled');
             }
 
             if (dataGH.github_has_user_authentication.value()) {

@@ -144,6 +144,7 @@
 ## TODO: Find a better place to put this initialization code
 <script>
 
+    var userId = '${user_id}';
     var nodeId = '${node['id']}';
     var nodeApiUrl = '${node['api_url']}';
 

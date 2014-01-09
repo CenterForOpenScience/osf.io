@@ -39,6 +39,19 @@ SCHEMA = {
             'title': 'GitHub Addon Settings',
             'contents': [
                 {
+                    'id': 'github_has_authentication',
+                    'type': 'htmlfield',
+                    'label': 'GitHub Access',
+                    'content': '''
+                        <div>
+                            <a id="githubAddKey" class="btn btn-primary" style="display: none;"></a>
+                            <a id="githubDelKey" class="btn btn-danger" style="display: none;">Delete Access Token</a>
+                            <span id="githubKeyUser" style="margin-left: 10px;"></span>
+                        </div>
+                        <br />
+                    ''',
+                },
+                {
                     'id': 'github_user',
                     'type': 'textfield',
                     'label': 'GitHub User',
@@ -51,24 +64,17 @@ SCHEMA = {
                     'required': True,
                 },
                 {
-                    'id': 'github_has_authentication',
-                    'type': 'htmlfield',
-                    'label': 'GitHub Access',
-                    'content': '''
-                        <div>
-                            <a id="githubAddKey" class="btn btn-primary" style="display: none;"></a>
-                            <a id="githubDelKey" class="btn btn-danger" style="display: none;">Delete Access Token</a>
-                            <span id="githubKeyUser" style="margin-left: 10px;"></span>
-                        </div>
-                    ''',
-                },
-                {
                     'id': 'github_has_user_authentication',
                     'type': 'hiddenfield',
                     'label': '',
                 },
                 {
-                    'id': 'github_authenticated_user',
+                    'id': 'github_authenticated_user_id',
+                    'type': 'hiddenfield',
+                    'label': '',
+                },
+                {
+                    'id': 'github_authenticated_user_name',
                     'type': 'hiddenfield',
                     'label': '',
                 }

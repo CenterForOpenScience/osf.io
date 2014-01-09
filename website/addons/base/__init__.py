@@ -133,9 +133,26 @@ class AddonConfig(object):
         }
 
 
-class AddonUserSettingsBase(StoredObject):
+class AddonSettingsBase(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
+    deleted = fields.BooleanField()
+
+    _meta = {
+        'abstract': True,
+    }
+
+    def delete(self):
+        self.deleted = True
+        self.save()
+
+    def undelete(self):
+        self.deleted = False
+        self.save()
+
+
+class AddonUserSettingsBase(AddonSettingsBase):
+
     owner = fields.ForeignField('user', backref='addons')
 
     _meta = {
@@ -143,13 +160,9 @@ class AddonUserSettingsBase(StoredObject):
     }
 
 
-class AddonNodeSettingsBase(StoredObject):
+class AddonNodeSettingsBase(AddonSettingsBase):
 
-    _id = fields.StringField(default=lambda: str(ObjectId()))
     owner = fields.ForeignField('node', backref='addons')
-
-    # TODO: Remove / replace with property
-    registered = fields.BooleanField()
 
     _meta = {
         'abstract': True,

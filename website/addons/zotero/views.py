@@ -26,7 +26,7 @@ def zotero_settings(**kwargs):
 
 
 @must_be_contributor_or_public
-@must_have_addon('zotero')
+@must_have_addon('zotero', 'node')
 def zotero_widget(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     zotero = node.get_addon('zotero')

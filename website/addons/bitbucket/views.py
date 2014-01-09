@@ -26,7 +26,7 @@ from .auth import oauth_start_url, oauth_get_token
 
 
 @must_be_contributor
-@must_have_addon('bitbucket')
+@must_have_addon('bitbucket', 'node')
 def bitbucket_settings(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -152,7 +152,7 @@ def _page_content(node, bitbucket, data, hotlink=True):
 
 
 @must_be_contributor_or_public
-@must_have_addon('bitbucket')
+@must_have_addon('bitbucket', 'node')
 def bitbucket_page(*args, **kwargs):
 
     user = kwargs['user']
@@ -174,7 +174,7 @@ def bitbucket_page(*args, **kwargs):
 
 
 @must_be_contributor_or_public
-@must_have_addon('bitbucket')
+@must_have_addon('bitbucket', 'node')
 def bitbucket_get_repo(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -188,7 +188,7 @@ def bitbucket_get_repo(*args, **kwargs):
 
 
 @must_be_contributor_or_public
-@must_have_addon('bitbucket')
+@must_have_addon('bitbucket', 'node')
 def bitbucket_download_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -212,7 +212,7 @@ def bitbucket_download_file(*args, **kwargs):
 
 
 @must_be_contributor_or_public
-@must_have_addon('bitbucket')
+@must_have_addon('bitbucket', 'node')
 def bitbucket_download_starball(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -231,7 +231,7 @@ def bitbucket_download_starball(*args, **kwargs):
 
 
 @must_be_contributor
-@must_have_addon('bitbucket')
+@must_have_addon('bitbucket', 'node')
 def bitbucket_set_privacy(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -247,7 +247,7 @@ def bitbucket_set_privacy(*args, **kwargs):
 
 
 @must_be_contributor
-@must_have_addon('bitbucket')
+@must_have_addon('bitbucket', 'node')
 def bitbucket_add_user_auth(*args, **kwargs):
 
     user = kwargs['user']
@@ -266,7 +266,7 @@ def bitbucket_add_user_auth(*args, **kwargs):
 
 
 @must_be_contributor
-@must_have_addon('bitbucket')
+@must_have_addon('bitbucket', 'node')
 def bitbucket_oauth_start(*args, **kwargs):
 
     user = kwargs['user']
@@ -302,7 +302,7 @@ def bitbucket_oauth_delete_user(*args, **kwargs):
 
 
 @must_be_contributor
-@must_have_addon('bitbucket')
+@must_have_addon('bitbucket', 'node')
 def bitbucket_oauth_delete_node(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']

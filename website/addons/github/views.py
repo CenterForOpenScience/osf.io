@@ -8,6 +8,7 @@ import datetime
 import httplib as http
 
 from hurry.filesize import size, alternative
+from dateutil.parser import parse as dateparse
 
 from framework import request, redirect, make_response
 from framework.auth import get_current_user
@@ -15,6 +16,8 @@ from framework.flask import secure_filename
 from framework.exceptions import HTTPError
 
 from website import models
+from website import settings
+from website.project import decorators
 from website.project.decorators import must_be_contributor
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_not_be_registration
@@ -24,23 +27,126 @@ from website.project.views.node import _view_project
 from .api import GitHub, tree_to_hgrid
 from .auth import oauth_start_url, oauth_get_token
 
+MESSAGE_BASE = 'via the Open Science Framework'
 MESSAGES = {
-    'add': 'Added via the Open Science Framework',
-    'update': 'Updated via the Open Science Framework',
-    'delete': 'Deleted via the Open Science Framework',
+    'add': 'Added {0}'.format(MESSAGE_BASE),
+    'update': 'Updated {0}'.format(MESSAGE_BASE),
+    'delete': 'Deleted {0}'.format(MESSAGE_BASE),
 }
 
+# All GitHub hooks come from 192.30.252.0/22
+HOOKS_IP = '192.30.252.'
 
-@must_be_contributor
-@must_have_addon('github')
-def github_set_config(*args, **kwargs):
+def _add_hook_log(node, github, action, path, date, committer, url=None, save=False):
+
+    github_data = {
+        'user': github.user,
+        'repo': github.repo,
+    }
+    if url:
+        github_data['url'] = '{0}github/file/{1}/'.format(
+            node.api_url,
+            path
+        )
+
+    node.add_log(
+        action=action,
+        params={
+            'project': node.parent_id,
+            'node': node._id,
+            'path': path,
+            'github': github_data,
+        },
+        user=None,
+        foreign_user=committer,
+        api_key=None,
+        log_date=date,
+        save=save,
+    )
+
+
+@decorators.must_be_valid_project
+@decorators.must_not_be_registration
+@decorators.must_have_addon('github', 'node')
+def github_hook_callback(*args, **kwargs):
+    """Add logs for commits from outside OSF.
+
+    """
+    # Request must come from GitHub hooks IP
+    if HOOKS_IP not in request.remote_addr:
+        raise HTTPError(http.BAD_REQUEST)
 
     node = kwargs['node'] or kwargs['project']
     github = node.get_addon('github')
 
-    github.user = request.json.get('github_user', '')
-    github.repo = request.json.get('github_repo', '')
-    github.save()
+    payload = request.json
+
+    for commit in payload.get('commits', []):
+
+        # TODO: Look up OSF user by commit
+
+        # Skip if pushed by OSF
+        if commit['message'] in MESSAGES.values():
+            continue
+
+        date = dateparse(commit['timestamp'])
+        committer = commit['committer']['name']
+
+        # Add logs
+        for path in commit.get('added', []):
+            _add_hook_log(
+                node, github, 'github_' + models.NodeLog.FILE_ADDED,
+                path, date, committer, url=True,
+            )
+        for path in commit.get('updated', []):
+            _add_hook_log(
+                node, github, 'github_' + models.NodeLog.FILE_UPDATED,
+                path, date, committer, url=True,
+            )
+        for path in commit.get('removed', []):
+            _add_hook_log(
+                node, github, 'github_' + models.NodeLog.FILE_REMOVED,
+                path, date, committer,
+            )
+
+    node.save()
+
+
+@must_be_contributor
+@must_have_addon('github', 'node')
+def github_set_config(*args, **kwargs):
+
+    user = kwargs['user']
+    node = kwargs['node'] or kwargs['project']
+
+    github_user = user.get_addon('github')
+    github_node = node.get_addon('github')
+
+    # If authorized, only owner can change settings
+    if github_user and github_user.owner != user:
+        raise HTTPError(http.BAD_REQUEST)
+
+    github_user_name = request.json.get('github_user', '')
+    github_repo_name = request.json.get('github_repo', '')
+
+    if not github_user_name or not github_repo_name:
+        raise HTTPError(http.BAD_REQUEST)
+
+    changed = github_user_name != github_node.user or github_repo_name != github_node.repo
+
+    # Delete callback
+    if changed:
+
+        github_node.delete_hook()
+
+        # Update node settings
+        github_node.user = github_user_name
+        github_node.repo = github_repo_name
+
+        # Add hook
+        github_node.add_hook(save=False)
+
+        github_node.save()
 
 
 def _page_content(node, github, hotlink=True):
@@ -54,7 +160,7 @@ def _page_content(node, github, hotlink=True):
 
     registration_data = (
         github.registration_data.get('branches', [])
-        if github.registered
+        if github.owner.is_registration
         else []
     )
 
@@ -74,11 +180,10 @@ def _page_content(node, github, hotlink=True):
     if tree is None:
         return {}
 
-    # If authorization, check whether authorized user has push rights to repo.
+    # If authorization, check whether authorized user has push rights to repo
     has_auth = False
     if github.user_settings:
         repo = connect.repo(github.user, github.repo)
-        print 'permissions', repo['permissions']
         has_auth = repo is not None and repo['permissions']['push']
 
     hgrid = tree_to_hgrid(
@@ -100,7 +205,7 @@ def _page_content(node, github, hotlink=True):
 
 
 @must_be_contributor_or_public
-@must_have_addon('github')
+@must_have_addon('github', 'node')
 def github_widget(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     github = node.get_addon('github')
@@ -115,7 +220,7 @@ def github_widget(*args, **kwargs):
 
 
 @must_be_contributor_or_public
-@must_have_addon('github')
+@must_have_addon('github', 'node')
 def github_page(*args, **kwargs):
 
     user = kwargs['user']
@@ -136,7 +241,7 @@ def github_page(*args, **kwargs):
 
 
 @must_be_contributor_or_public
-@must_have_addon('github')
+@must_have_addon('github', 'node')
 def github_get_repo(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -150,7 +255,7 @@ def github_get_repo(*args, **kwargs):
 
 
 @must_be_contributor_or_public
-@must_have_addon('github')
+@must_have_addon('github', 'node')
 def github_download_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -175,7 +280,7 @@ def github_download_file(*args, **kwargs):
 
 @must_be_contributor_or_public
 @must_not_be_registration
-@must_have_addon('github')
+@must_have_addon('github', 'node')
 def github_upload_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -262,7 +367,7 @@ def github_upload_file(*args, **kwargs):
 
 @must_be_contributor_or_public
 @must_not_be_registration
-@must_have_addon('github')
+@must_have_addon('github', 'node')
 def github_delete_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -288,6 +393,9 @@ def github_delete_file(*args, **kwargs):
         branch=ref, author=author,
     )
 
+    if data is None:
+        raise HTTPError(http.BAD_REQUEST)
+
     node.add_log(
         action='github_' + models.NodeLog.FILE_REMOVED,
         params={
@@ -304,14 +412,11 @@ def github_delete_file(*args, **kwargs):
         log_date=now,
     )
 
-    if data is not None:
-        return {}
-
-    raise HTTPError(http.BAD_REQUEST)
+    return {}
 
 
 @must_be_contributor_or_public
-@must_have_addon('github')
+@must_have_addon('github', 'node')
 def github_download_starball(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -330,7 +435,7 @@ def github_download_starball(*args, **kwargs):
 
 
 @must_be_contributor
-@must_have_addon('github')
+@must_have_addon('github', 'node')
 def github_set_privacy(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -346,7 +451,7 @@ def github_set_privacy(*args, **kwargs):
 
 
 @must_be_contributor
-@must_have_addon('github')
+@must_have_addon('github', 'node')
 def github_add_user_auth(*args, **kwargs):
 
     user = kwargs['user']
@@ -365,7 +470,7 @@ def github_add_user_auth(*args, **kwargs):
 
 
 @must_be_contributor
-@must_have_addon('github')
+@must_have_addon('github', 'node')
 def github_oauth_start(*args, **kwargs):
 
     user = kwargs['user']
@@ -400,7 +505,7 @@ def github_oauth_delete_user(*args, **kwargs):
 
 
 @must_be_contributor
-@must_have_addon('github')
+@must_have_addon('github', 'node')
 def github_oauth_delete_node(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -408,6 +513,8 @@ def github_oauth_delete_node(*args, **kwargs):
 
     github_node.user_settings = None
     github_node.save()
+
+    github_node.delete_hook()
 
     return {}
 
@@ -442,6 +549,7 @@ def github_oauth_callback(*args, **kwargs):
 
         if github_node:
             github_node.user_settings = github_user
+            github_node.add_hook(save=False)
             github_node.save()
 
     # TODO: Handle redirect with no node

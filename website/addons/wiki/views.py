@@ -9,7 +9,7 @@ from website.project.decorators import must_have_addon
 
 
 @must_be_contributor_or_public
-@must_have_addon('wiki')
+@must_have_addon('wiki', 'node')
 def wiki_widget(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki = node.get_addon('wiki')
