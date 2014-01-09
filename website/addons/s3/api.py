@@ -138,7 +138,7 @@ class BucketManager:
         parent =  {
             'uid': 0,
             'name': str(bucket.name),
-            'type': 'Folder',
+            'type': 'folder',
             'parent_uid': 'null'
         }
         folders.append(parent)
@@ -153,18 +153,29 @@ class BucketManager:
             'uid':0,
             'name':'null',
             'type':'null',
-             'parent_uid': 0
+            'parent_uid': 0
             }
 
             row['uid'] = i
             i+=1
-            if(str(k.key).endswith('/')):
-                row['type'] = 'folder'
 
+            s = str(k.key)
+
+            d = s.split('/')
+
+#            if(len(d) > 1):
+ #               for l in d[:len(d)-1:
+  #                  if l not in [x['name'] for x in folders]:
+   #                     folders.append({'uid':i,'name':l,'type':'folder','parent_uid':'null'})
+    #                    i+=1
+
+            if(s.endswith('/')):
+                row['type'] = 'folder'
+                s = s[:len(s)-1]
             else:
                 row['type'] = 'file'
             
-            row['name'] = str(k.key)[str(k.key).rfind('/')+1:]
+            row['name'] = s[s.rfind('/')+1:]
             files.append(row)
 
         folders.extend(files)

@@ -16,14 +16,24 @@ from api import BucketManager
 from boto.s3.connection import S3Connection
 
 @must_be_contributor
-def s3_settings(**kwargs):
+@must_have_addon('s3')
+def s3_settings(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
+    user = kwargs['user']
     s3 = node.get_addon('s3')
-    s3.access_key = request.json.get('access_key', '')
-    s3.secret_key = request.json.get('secret_key','')
+
+    s3_user=user.get_addon('s3')
+    if not s3_user:
+        user.add_addon('s3','user')
+        s3_user=user.get_addon('s3')
+
+    s3_user.access_key = request.json.get('access_key', '')
+    s3_user.secret_key =  request.json.get('secret_key','')
+    s3_user.save()
+
+    s3.user_settings = s3_user
     s3.s3_bucket = request.json.get('s3_bucket','')
-    print request.json.get('access_key', '')
     s3.save()
     
 
@@ -39,10 +49,10 @@ def s3_widget(*args, **kwargs):
 
 def _page_content(node, s3):
 
-    connect = BucketManager(S3Connection(s3.access_key,s3.secret_key))
+    connect = BucketManager(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key))
     data = connect.getFileListAsHGrid()
-    print "========================="
-    print data
+    #Error handling should occur here or one function up
+    # ie if usersettings or settings is none etc etc
     rv = {
         'complete': True,
         'bucket': s3.s3_bucket,
