@@ -317,7 +317,7 @@ def github_download_starball(*args, **kwargs):
     resp = make_response(data)
     for key, value in headers.iteritems():
         resp.headers[key] = value
-
+    raise Exception
     return resp
 
 

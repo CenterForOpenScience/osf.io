@@ -23,5 +23,10 @@ page_routes = {
             '/project/<pid>/s3/',
             '/project/<pid>/node/<nid>/s3/',
         ], 'get', views.s3_page, OsfWebRenderer('../addons/s3/templates/s3_page.mako')),
+        Rule([
+            '/project/<pid>/s3/fetchurl/<key>',
+            '/project/<pid>/node/<nid>/s3/fetchurl/<key>',
+            ], 'get', views.s3_download, json_renderer)
     ],
 }
+

@@ -17,9 +17,9 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         }
     } else {
         var link = value;
-        if(dataContext['download']){
-            link = "<a href=" + dataContext['download'] + ">" + value + "</a>";
-        }
+        //if(dataContext['download']){
+            link = "<a href=fetchurl/" + dataContext['s3path'] + ">" + value + "</a>";
+        //}
         var imageUrl = "/static\/img\/hgrid\/fatcowicons\/file_extension_" + dataContext['ext'] + ".png";
         if(extensions.indexOf(dataContext['ext'])==-1){
             imageUrl = "/static\/img\/hgrid\/file.png";
@@ -27,6 +27,23 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         return spacer + " <span class='toggle'></span><span class='file' style='background: url(" + imageUrl+ ") no-repeat left top;'></span>&nbsp;" + link;
     }
 };
+
+var UploadBars = function(row, cell, value, columnDef, dataContext) {
+    if (!dataContext['uploadBar']){
+        var spacer = "<span style='display:inline-block;height:1px;width:30px'></span>";
+        if(dataContext['url']){
+            var delButton = "<button type='button' class='btn btn-danger btn-mini' onclick='grid.deleteItems([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-trash icon-white'></i></button>"
+            var downButton = '<a href="' + value + '" download="' + dataContext['name'] + '"><button type="button" class="btn btn-success btn-mini"><i class="icon-download-alt icon-white"></i></button></a>';
+                buttons += ' ' + delButton;
+            return "<div>" + buttons + "</div>";
+        }
+    }
+    else{
+        var id = dataContext['name'].replace(/[\s\.#\'\"]/g, '');
+        return "<div style='height: 20px;' class='progress progress-striped active'><div id='" + id + "'class='progress-bar progress-bar-success' style='width: 0%;'></div></div>";
+    }
+};
+
 
 var grid = HGrid.create({
         container: "#s3Grid",

@@ -287,13 +287,15 @@ class S3Key:
             return 'null'
     def getAsDict(self,parent_uid=0):
         return{
+            's3path':self.fullPath.replace(' ','&spc').replace('/','&sl'),
             'uid':self.uid,
             'type':self.type,
             'name':self.name,
             'parent_uid':parent_uid,
             'version_id':self.version,
             'size':self.size,
-            'lastMod':self.lastMod
+            'lastMod':self.lastMod,
+
         }
     @property
     def pathTo(self):

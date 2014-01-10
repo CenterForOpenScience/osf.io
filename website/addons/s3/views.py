@@ -12,6 +12,7 @@ from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from framework.status import push_status_message
+from framework import request, redirect, make_response
 
 from api import BucketManager
 from boto.s3.connection import S3Connection
@@ -86,3 +87,15 @@ def s3_page(*args, **kwargs):
     rv.update(data)
 
     return rv
+
+@must_be_contributor_or_public
+@must_have_addon('github')
+def s3_download(*args, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    s3 = node.get_addon('s3')
+
+    keyName = kwargs['key']
+    if keyName is None:
+        raise HTTPError(http.NOT_FOUND)
+    connect = BucketManager(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key),s3.s3_bucket)
+    return redirect(connect.downloadFileURL(keyName.replace('&spc',' ').replace('&sl','/')))
