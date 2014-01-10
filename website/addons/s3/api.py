@@ -180,9 +180,7 @@ class S3Key:
             'version_id':self.version,
             'size':self.size,
             'lastMod':self.lastMod,
-            'uploadUrl':'',
-            'downloadUrl':'',
-            'pid':'',
+            'ext':self.extention,
         }
     @property
     def pathTo(self):
@@ -206,5 +204,15 @@ class S3Key:
     def version(self):
         if self.s3Key.version_id:
             return str(self.s3Key.version_id)
+        else:
+            return '--'
+
+    @property
+    def extention(self):
+        if self.type is not 'folder':
+            if os.path.splitext(self._nameAsStr())[1] is None:
+                return '--'
+            else:
+                return os.path.splitext(self._nameAsStr())[1][1:]
         else:
             return '--'

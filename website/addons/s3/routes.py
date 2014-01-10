@@ -39,8 +39,9 @@ page_routes = {
             '/project/<pid>/node/<nid>/s3/delete/',
         ], 'delete', views.s3_delete, json_renderer),
         Rule([
-            '',
-        ],'get',views.render_file, OsfWebRenderer('')), #Mako file here
+            '/project/<pid>/s3/render/<key>',
+            '/project/<pid>/node/<nid>/s3/render/<key>'
+        ],'get',views.render_file, OsfWebRenderer('../addons/s3/templates/s3_render.mako')), #Mako file here
     ],
 }
 
