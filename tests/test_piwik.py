@@ -1,9 +1,11 @@
 from nose.tools import *
 
-from tests.base import DbTestCase, AppTestCase
+from tests.base import DbTestCase
 from tests.factories import ProjectFactory, UserFactory
+from tests.test_features import requires_piwik
 
 
+@requires_piwik
 class TestCreateUser(DbTestCase):
     def setUp(self):
         self.user = UserFactory()
@@ -11,6 +13,7 @@ class TestCreateUser(DbTestCase):
     def test_has_piwik_token(self):
         assert_true(self.user.piwik_token)
 
+@requires_piwik
 class TestCreateProject(DbTestCase):
     def setUp(self):
         self.project = ProjectFactory()

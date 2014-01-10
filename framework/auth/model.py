@@ -157,7 +157,7 @@ class User(GuidStoredObject, AddonModelMixin):
     def save(self, *args, **kwargs):
         rv = super(User, self).save(*args, **kwargs)
         self.update_solr()
-        if not self.piwik_token:
+        if settings.PIWIK_HOST and not self.piwik_token:
             piwik.create_user(self)
         return rv
 

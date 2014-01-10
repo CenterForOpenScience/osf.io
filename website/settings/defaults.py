@@ -134,6 +134,6 @@ ADDON_CATEGORIES = ['documentation', 'storage', 'bibliography']
 # Piwik
 
 # TODO: Override in local.py in production
-PIWIK_HOST = 'CHANGEME'
-PIWIK_ADMIN_TOKEN = 'CHANGEME'
-PIWIK_SITE_ID = 1
+PIWIK_HOST = None
+PIWIK_ADMIN_TOKEN = None
+PIWIK_SITE_ID = None
