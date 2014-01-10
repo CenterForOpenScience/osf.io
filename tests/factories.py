@@ -79,6 +79,15 @@ class UserFactory(ModularOdmFactory):
             self.save()
 
 
+class AuthUserFactory(UserFactory):
+    @post_generation
+    def add_api_key(self, create, extracted):
+        key = ApiKeyFactory()
+        self.api_keys.append(key)
+        self.save()
+        self.auth = ('test', key._primary_key)
+
+
 class TagFactory(ModularOdmFactory):
     FACTORY_FOR = Tag
 

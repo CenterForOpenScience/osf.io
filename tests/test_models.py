@@ -39,8 +39,8 @@ class TestUser(DbTestCase):
         user = UserFactory()
         assert_equal(User.find().count(), 1)
         assert_true(user.username)
-        another_user = UserFactory(username="joe@example.com")
-        assert_equal(another_user.username, "joe@example.com")
+        another_user = UserFactory(username='joe@example.com')
+        assert_equal(another_user.username, 'joe@example.com')
         assert_equal(User.find().count(), 2)
         assert_true(user.date_registered)
 
@@ -78,17 +78,17 @@ class TestUser(DbTestCase):
         assert_equal(d['url'], self.user.url)
 
     def test_set_password(self):
-        user = User(username="nick@cage.com", fullname="Nick Cage")
-        user.set_password("ghostrider")
+        user = User(username='nick@cage.com', fullname='Nick Cage')
+        user.set_password('ghostrider')
         user.save()
         assert_true(check_password_hash(user.password, 'ghostrider'))
 
     def test_check_password(self):
-        user = User(username="nick@cage.com", fullname="Nick Cage")
-        user.set_password("ghostrider")
+        user = User(username='nick@cage.com', fullname='Nick Cage')
+        user.set_password('ghostrider')
         user.save()
-        assert_true(user.check_password("ghostrider"))
-        assert_false(user.check_password("ghostride"))
+        assert_true(user.check_password('ghostrider'))
+        assert_false(user.check_password('ghostride'))
 
     def test_url(self):
         assert_equal(
@@ -125,7 +125,7 @@ class TestUser(DbTestCase):
         assert_equal(d['fullname'], user.fullname)
         assert_equal(d['registered'], user.is_registered)
         assert_equal(d['absolute_url'], user.absolute_url)
-        assert_equal(d['date_registered'], user.date_registered.strftime("%Y-%m-%d"))
+        assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
 
     def test_serialize_user_full(self):
         master = UserFactory()
@@ -139,7 +139,7 @@ class TestUser(DbTestCase):
         assert_equal(d['registered'], user.is_registered)
         assert_equal(d['gravatar_url'], user.gravatar_url)
         assert_equal(d['absolute_url'], user.absolute_url)
-        assert_equal(d['date_registered'], user.date_registered.strftime("%Y-%m-%d"))
+        assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
         assert_equal(d['activity_points'], user.activity_points)
         assert_equal(d['is_merged'], user.is_merged)
         assert_equal(d['merged_by']['url'], user.merged_by.url)
@@ -159,7 +159,7 @@ class TestUser(DbTestCase):
         # Project created
         project = ProjectFactory()
 
-        assert_true(hasattr(self.user, "recently_added"))
+        assert_true(hasattr(self.user, 'recently_added'))
         
         # Two users added as contributors
         user2 = UserFactory()
@@ -222,13 +222,13 @@ class TestUserParse(unittest.TestCase):
 class TestMergingUsers(DbTestCase):
 
     def setUp(self):
-        self.master = UserFactory(username="joe@example.com",
-                            fullname="Joe Shmo",
+        self.master = UserFactory(username='joe@example.com',
+                            fullname='Joe Shmo',
                             is_registered=True,
-                            emails=["joe@example.com"])
-        self.dupe = UserFactory(username="joseph123@hotmail.com",
-                            fullname="Joseph Shmo",
-                            emails=["joseph123@hotmail.com"])
+                            emails=['joe@example.com'])
+        self.dupe = UserFactory(username='joseph123@hotmail.com',
+                            fullname='Joseph Shmo',
+                            emails=['joseph123@hotmail.com'])
 
     def _merge_dupe(self):
         '''Do the actual merge.'''
@@ -242,7 +242,7 @@ class TestMergingUsers(DbTestCase):
 
     def test_dupe_email_is_appended(self):
         self._merge_dupe()
-        assert_in("joseph123@hotmail.com", self.master.emails)
+        assert_in('joseph123@hotmail.com', self.master.emails)
 
     def test_inherits_projects_contributed_by_dupe(self):
         project = ProjectFactory()
@@ -310,25 +310,25 @@ class TestNodeFile(DbTestCase):
     def setUp(self):
         # Create a project with a NodeFile
         self.node = ProjectFactory()
-        self.node_file = NodeFile(node=self.node, path="foo.py", filename="foo.py", size=128)
+        self.node_file = NodeFile(node=self.node, path='foo.py', filename='foo.py', size=128)
         self.node.files_versions[self.node_file.clean_filename] = [self.node_file._primary_key]
         self.node.save()
 
     def test_url(self):
         assert_equal(
             self.node_file.api_url,
-            "{0}files/{1}/".format(self.node.api_url, self.node_file.filename),
+            '{0}files/{1}/'.format(self.node.api_url, self.node_file.filename),
         )
 
     def test_clean(self):
-        assert_equal(self.node_file.clean_filename, "foo_py")
+        assert_equal(self.node_file.clean_filename, 'foo_py')
 
     def test_latest_version_number(self):
         assert_equal(self.node_file.latest_version_number, 1)
 
     def test_download_url(self):
         assert_equal(self.node_file.download_url,
-            self.node.api_url + "files/download/{0}/version/1/".format(self.node_file.filename))
+            self.node.api_url + 'files/download/{0}/version/1/'.format(self.node_file.filename))
 
 
 class TestAddFile(DbTestCase):
@@ -338,10 +338,10 @@ class TestAddFile(DbTestCase):
         self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user)
         # Add a file
-        self.file_name = "foo.py"
-        self.file_key = self.file_name.replace(".", "_")
+        self.file_name = 'foo.py'
+        self.file_key = self.file_name.replace('.', '_')
         self.node_file = self.project.add_file(
-            self.user, None, self.file_name, "Content", 128, "Type"
+            self.user, None, self.file_name, 'Content', 128, 'Type'
         )
         self.project.save()
 
@@ -352,7 +352,7 @@ class TestAddFile(DbTestCase):
         # Add exact copy of parent project's file to component
         component = NodeFactory(project=self.project, creator=self.user)
         component_file = component.add_file(
-            self.user, None, self.file_name, "Content", 128, "Type"
+            self.user, None, self.file_name, 'Content', 128, 'Type'
         )
         # File is correctly assigned to component
         assert_equal(component_file.node, component)
@@ -368,9 +368,9 @@ class TestAddFile(DbTestCase):
             user2,
             None,
             self.file_name,
-            "Content 2",
+            'Content 2',
             129,
-            "Type 2",
+            'Type 2',
         )
         # There are two versions of the file
         assert_equal(len(self.project.files_versions[self.file_key]), 2)
@@ -380,16 +380,16 @@ class TestAddFile(DbTestCase):
         assert_equal(updated_file.uploader, user2)
         assert_equal(self.node_file.size, 128)
         assert_equal(updated_file.size, 129)
-        assert_equal(self.node_file.content_type, "Type")
-        assert_equal(updated_file.content_type, "Type 2")
+        assert_equal(self.node_file.content_type, 'Type')
+        assert_equal(updated_file.content_type, 'Type 2')
 
 
     @raises(FileNotModified)
     def test_not_modified(self):
         user2 = UserFactory()
         # Modify user, size, and type, but not content
-        self.project.add_file(user2, None, self.file_name, "Content", 256,
-                              "Type 2")
+        self.project.add_file(user2, None, self.file_name, 'Content', 256,
+                              'Type 2')
 
 
 class TestApiKey(DbTestCase):
@@ -412,15 +412,15 @@ class TestNodeWikiPage(DbTestCase):
 
     def test_factory(self):
         wiki = NodeWikiFactory()
-        assert_equal(wiki.page_name, "home")
+        assert_equal(wiki.page_name, 'home')
         assert_equal(wiki.version, 1)
-        assert_true(hasattr(wiki, "is_current"))
+        assert_true(hasattr(wiki, 'is_current'))
         assert_equal(wiki.content, 'Some content')
         assert_true(wiki.user)
         assert_true(wiki.node)
 
     def test_url(self):
-        assert_equal(self.wiki.url, "{project_url}wiki/home/"
+        assert_equal(self.wiki.url, '{project_url}wiki/home/'
                                     .format(project_url=self.project.url))
 
 
@@ -432,43 +432,43 @@ class TestUpdateNodeWiki(DbTestCase):
         self.project = ProjectFactory()
         self.node = NodeFactory(creator=self.user, project=self.project)
         # user updates the wiki
-        self.project.update_node_wiki("home", "Hello world", self.user)
+        self.project.update_node_wiki('home', 'Hello world', self.user)
         self.versions = self.project.wiki_pages_versions
 
     def test_default_wiki(self):
         # There is no default wiki
         project1 = ProjectFactory()
-        assert_equal(project1.get_wiki_page("home"), None)
+        assert_equal(project1.get_wiki_page('home'), None)
 
     def test_default_is_current(self):
         assert_true(self.project.get_wiki_page('home').is_current)
-        self.project.update_node_wiki("home", "Hello world 2", self.user)
+        self.project.update_node_wiki('home', 'Hello world 2', self.user)
         assert_true(self.project.get_wiki_page('home').is_current)
-        self.project.update_node_wiki("home", "Hello world 3", self.user)
+        self.project.update_node_wiki('home', 'Hello world 3', self.user)
 
     def test_wiki_content(self):
         # Wiki has correct content
-        assert_equal(self.project.get_wiki_page("home").content, "Hello world")
+        assert_equal(self.project.get_wiki_page('home').content, 'Hello world')
         # user updates the wiki a second time
-        self.project.update_node_wiki('home', "Hola mundo", self.user)
+        self.project.update_node_wiki('home', 'Hola mundo', self.user)
         # Both versions have the expected content
-        assert_equal(self.project.get_wiki_page("home", 2).content, "Hola mundo")
-        assert_equal(self.project.get_wiki_page("home", 1).content, "Hello world")
+        assert_equal(self.project.get_wiki_page('home', 2).content, 'Hola mundo')
+        assert_equal(self.project.get_wiki_page('home', 1).content, 'Hello world')
 
     def test_current(self):
         # Wiki is current
-        assert_true(self.project.get_wiki_page("home", 1).is_current)
+        assert_true(self.project.get_wiki_page('home', 1).is_current)
         # user updates the wiki a second time
-        self.project.update_node_wiki('home', "Hola mundo", self.user)
+        self.project.update_node_wiki('home', 'Hola mundo', self.user)
         # New version is current, old version is not
-        assert_true(self.project.get_wiki_page("home", 2).is_current)
-        assert_false(self.project.get_wiki_page("home", 1).is_current)
+        assert_true(self.project.get_wiki_page('home', 2).is_current)
+        assert_false(self.project.get_wiki_page('home', 1).is_current)
 
     def test_update_log(self):
         # Updates are logged
-        assert_equal(self.project.logs[-1].action, "wiki_updated")
+        assert_equal(self.project.logs[-1].action, 'wiki_updated')
         # user updates the wiki a second time
-        self.project.update_node_wiki('home', "Hola mundo", self.user)
+        self.project.update_node_wiki('home', 'Hola mundo', self.user)
         # There are two update logs
         assert_equal([log.action for log in self.project.logs].count('wiki_updated'), 2)
 
@@ -476,7 +476,7 @@ class TestUpdateNodeWiki(DbTestCase):
         # Number of versions is correct
         assert_equal(len(self.versions['home']), 1)
         # Update wiki
-        self.project.update_node_wiki("home", "Hello world", self.user)
+        self.project.update_node_wiki('home', 'Hello world', self.user)
         # Number of versions is correct
         assert_equal(len(self.versions['home']), 2)
         # Versions are different
@@ -484,15 +484,15 @@ class TestUpdateNodeWiki(DbTestCase):
 
     def test_update_two_node_wikis(self):
         # user updates a second wiki for the same node
-        self.project.update_node_wiki("second", "Hola mundo", self.user)
+        self.project.update_node_wiki('second', 'Hola mundo', self.user)
         # each wiki only has one version
         assert_equal(len(self.versions['home']), 1)
         assert_equal(len(self.versions['second']), 1)
         # There are 2 logs saved
         assert_equal([log.action for log in self.project.logs].count('wiki_updated'), 2)
         # Each wiki has the expected content
-        assert_equal(self.project.get_wiki_page("home").content, "Hello world")
-        assert_equal(self.project.get_wiki_page("second").content, "Hola mundo")
+        assert_equal(self.project.get_wiki_page('home').content, 'Hello world')
+        assert_equal(self.project.get_wiki_page('second').content, 'Hola mundo')
 
 
 class TestNode(DbTestCase):
@@ -530,7 +530,7 @@ class TestNode(DbTestCase):
 
     def test_watch_url(self):
         url = self.node.watch_url
-        assert_equal(url, "/api/v1/project/{0}/node/{1}/watch/"
+        assert_equal(url, '/api/v1/project/{0}/node/{1}/watch/'
                                 .format(self.parent._primary_key,
                                         self.node._primary_key))
 
@@ -611,11 +611,11 @@ class TestProject(DbTestCase):
 
     def test_api_url(self):
         api_url = self.project.api_url
-        assert_equal(api_url, "/api/v1/project/{0}/".format(self.project._primary_key))
+        assert_equal(api_url, '/api/v1/project/{0}/'.format(self.project._primary_key))
 
     def test_watch_url(self):
         watch_url = self.project.watch_url
-        assert_equal(watch_url, "/api/v1/project/{0}/watch/".format(self.project._primary_key))
+        assert_equal(watch_url, '/api/v1/project/{0}/watch/'.format(self.project._primary_key))
 
     def test_parent_id(self):
         assert_false(self.project.parent_id)
@@ -637,14 +637,14 @@ class TestProject(DbTestCase):
         assert_equal(self.project.logs[-1].action, 'contributor_added')
 
     def test_add_nonregistered_contributor(self):
-        self.project.add_nonregistered_contributor(email="foo@bar.com", name="Weezy F. Baby", user=self.user)
+        self.project.add_nonregistered_contributor(email='foo@bar.com', name='Weezy F. Baby', user=self.user)
         self.project.save()
         # Contributor list include nonregistered contributor
         latest_contributor = self.project.contributor_list[-1]
         assert_dict_equal(latest_contributor,
-                        {"nr_name": "Weezy F. Baby", "nr_email": "foo@bar.com"})
+                        {'nr_name': 'Weezy F. Baby', 'nr_email': 'foo@bar.com'})
         # A log event was added
-        assert_equal(self.project.logs[-1].action, "contributor_added")
+        assert_equal(self.project.logs[-1].action, 'contributor_added')
 
     def test_remove_contributor(self):
         # A user is added as a contributor
@@ -655,7 +655,7 @@ class TestProject(DbTestCase):
         self.project.remove_contributor(user=self.user, contributor=user2, api_key=None)
         assert_not_in(user2, self.project.contributors)
         assert_not_in(user2._id, [contrib.get('id') for contrib in self.project.contributor_list])
-        assert_equal(self.project.logs[-1].action, "contributor_removed")
+        assert_equal(self.project.logs[-1].action, 'contributor_removed')
 
     def test_remove_nonregistered_contributor(self):
         nr_user = {
@@ -674,19 +674,19 @@ class TestProject(DbTestCase):
         )
         # List does not contain nonregistered contributor
         assert_not_in(nr_user, self.project.contributors)
-        assert_equal(self.project.logs[-1].action, "contributor_removed")
-        assert_not_in("Weezy F. Baby", [contrib.get('nr_name') for contrib in self.project.contributor_list])
+        assert_equal(self.project.logs[-1].action, 'contributor_removed')
+        assert_not_in('Weezy F. Baby', [contrib.get('nr_name') for contrib in self.project.contributor_list])
         
     def test_set_title(self):
-        proj = ProjectFactory(title="That Was Then", creator=self.user)
-        proj.set_title("This is now", user=self.user)
+        proj = ProjectFactory(title='That Was Then', creator=self.user)
+        proj.set_title('This is now', user=self.user)
         proj.save()
         # Title was changed
-        assert_equal(proj.title, "This is now")
+        assert_equal(proj.title, 'This is now')
         # A log event was saved
         latest_log = proj.logs[-1]
-        assert_equal(latest_log.action, "edit_title")
-        assert_equal(latest_log.params['title_original'], "That Was Then")
+        assert_equal(latest_log.action, 'edit_title')
+        assert_equal(latest_log.params['title_original'], 'That Was Then')
 
     def test_contributor_can_edit(self):
         contributor = UserFactory()
@@ -779,7 +779,7 @@ class TestProject(DbTestCase):
 
     def test_set_description(self):
         old_desc = self.project.description
-        self.project.set_description("new description", user=self.user)
+        self.project.set_description('new description', user=self.user)
         self.project.save()
         assert_equal(self.project.description, 'new description')
         latest_log = self.project.logs[-1]
@@ -878,7 +878,7 @@ class TestForkNode(DbTestCase):
         """Omnibus test for forking.
 
         """
-        # Make a some children
+        # Make some children
         self.component = NodeFactory(creator=self.user, project=self.project)
         self.subproject = ProjectFactory(creator=self.user, project=self.project)
 
@@ -983,10 +983,10 @@ class TestRegisterNode(DbTestCase):
     def test_factory(self):
         # Create a registration with kwargs
         registration1 = RegistrationFactory(
-            title="t1", description="d1", creator=self.user,
+            title='t1', description='d1', creator=self.user,
         )
-        assert_equal(registration1.title, "t1")
-        assert_equal(registration1.description, "d1")
+        assert_equal(registration1.title, 't1')
+        assert_equal(registration1.description, 'd1')
         assert_equal(len(registration1.contributors), 1)
         assert_in(self.user, registration1.contributors)
         assert_equal(registration1.registered_user, self.user)
@@ -999,12 +999,12 @@ class TestRegisterNode(DbTestCase):
         registration2 = RegistrationFactory(
             project=self.project,
             user=user2,
-            template="Template2",
-            data="Something else",
+            template='Template2',
+            data='Something else',
         )
         assert_equal(registration2.registered_from, self.project)
         assert_equal(registration2.registered_user, user2)
-        assert_equal(registration2.registered_meta["Template2"], "Something else")
+        assert_equal(registration2.registered_meta['Template2'], 'Something else')
 
         # Test default user
         assert_equal(self.registration.registered_user, self.user)
@@ -1140,7 +1140,7 @@ class TestRegisterNode(DbTestCase):
         assert_almost_equal(
             self.registration.registered_date,
             datetime.datetime.utcnow(),
-            delta=datetime.timedelta(seconds=5),
+            delta=datetime.timedelta(seconds=30),
         )
 
     def test_registered_meta(self):
@@ -1172,7 +1172,7 @@ class TestNodeLog(DbTestCase):
         assert_true(log.action)
 
     def test_serialize(self):
-        node = NodeFactory(category="hypothesis")
+        node = NodeFactory(category='hypothesis')
         log = NodeLogFactory(params={'node': node._primary_key})
         node.logs.append(log)
         node.save()
