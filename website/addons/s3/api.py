@@ -242,6 +242,15 @@ class BucketManager:
                 keyList.append(S3Key(newKey))
                 raise Exception
 
+    def flaskUpload(self,upFile,safeFilename):
+        if(bucket is None):
+            k = Key(self.__defaultBucket)
+        else:
+            k = Key(self[bucket])
+        k.key = safeFilename
+        k.set_contents_from_string(upFile.read())
+
+
 class S3Key:
 
     nextUid = 1

@@ -26,7 +26,13 @@ page_routes = {
         Rule([
             '/project/<pid>/s3/fetchurl/<key>',
             '/project/<pid>/node/<nid>/s3/fetchurl/<key>',
-            ], 'get', views.s3_download, json_renderer)
+            ], 'get', views.s3_download, json_renderer),
+        Rule([
+            '/project/<pid>/s3/upload/',
+            '/project/<pid>/s3/upload/<path:path>',
+            '/project/<pid>/node/<nid>/s3/upload/',
+            '/project/<pid>/node/<nid>/s3/upload/<path:path>',
+        ], 'post', views.s3_upload, json_renderer),
     ],
 }
 

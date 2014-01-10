@@ -99,3 +99,15 @@ def s3_download(*args, **kwargs):
         raise HTTPError(http.NOT_FOUND)
     connect = BucketManager(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key),s3.s3_bucket)
     return redirect(connect.downloadFileURL(keyName.replace('&spc',' ').replace('&sl','/')))
+
+
+def s3_upload(*args,**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    s3 = node.get_addon('s3')
+
+    upload = request.files.get('file')
+    filename = secure_filename(upload.filename)
+    connect = BucketManager(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key),s3.s3_bucket)
+
+    connect.flaskUpload(upload,filename)
+
