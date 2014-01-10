@@ -18,40 +18,45 @@
 
         <div class="col-md-6">
 
-            <h4>
-                Viewing ${gh_user} / ${repo}
-                % if show_commit_id:
-                    : ${commit_id}
+            <div>
+
+                Viewing ${gh_user} / ${repo} :
+
+                % if len(branches) == 1:
+
+                    ${branches[0]['name']}
+
+                % elif len(branches) > 1:
+
+                    <form role="form" style="display: inline;">
+                        <select id="gitBranchSelect" name="branch">
+                            % for _branch in branches:
+                                <option
+                                    value=${_branch['name']}
+                                    ${'selected' if branch == _branch['name'] else ''}
+                                >${_branch['name']}</option>
+                            % endfor
+                        </select>
+                    </form>
+
                 % endif
-            </h4>
 
-            % if len(branches) == 1:
+            </div>
 
-                ${branches[0]['name']}
-
-            % elif len(branches) > 1:
-
-                <form role="form">
-                    <select id="gitBranchSelect" name="branch">
-                        % for branch in branches:
-                            <option
-                                value=${branch['name']}
-                                ${'selected' if commit_id in [branch['name'], branch['commit']['sha']] else ''}
-                            >${branch['name']}</option>
-                        % endfor
-                    </select>
-                </form>
-
+            % if sha:
+                <p>Commit: ${sha}</p>
             % endif
 
         </div>
 
         <div class="col-md-6">
 
-            <h4>Download:</h4>
-
-            <p><a href="${api_url}github/tarball/">Tarball</a></p>
-            <p><a href="${api_url}github/zipball/">Zip</a></p>
+            <div>
+                Download:
+                <a href="${api_url}github/tarball/">Tarball</a>
+                <span>|</span>
+                <a href="${api_url}github/zipball/">Zip</a>
+            </div>
 
         </div>
 
@@ -89,9 +94,11 @@
 
         // Import JS variables
         var gridData = ${grid_data},
-            ref = '${commit_id}',
+            branch = '${branch}',
+            sha = '${sha}',
             canEdit = ${int(user['can_edit'])},
-            hasAuth = ${int(has_auth)};
+            hasAuth = ${int(has_auth)},
+            isHead = ${int(is_head)};
 
         // Submit branch form on change
         % if len(branches) > 1:

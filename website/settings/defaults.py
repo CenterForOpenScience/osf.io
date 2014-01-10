@@ -16,7 +16,6 @@ STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 DOMAIN = 'https://openscienceframework.org/'
-HOOKS_DOMAIN = DOMAIN
 
 # User management & registration
 CONFIRM_REGISTRATIONS_BY_EMAIL = False # Not fully implemented
@@ -121,9 +120,7 @@ CELERY_IMPORTS = (
     'framework.tasks'
 )
 
-###########
-# Add-ons #
-###########
+# Add-ons
 
 ADDONS_REQUESTED = [
     'wiki', 'files',
@@ -133,3 +130,10 @@ ADDONS_REQUESTED = [
 ]
 
 ADDON_CATEGORIES = ['documentation', 'storage', 'bibliography']
+
+# Piwik
+
+# TODO: Override in local.py in production
+PIWIK_HOST = 'CHANGEME'
+PIWIK_ADMIN_TOKEN = 'CHANGEME'
+PIWIK_SITE_ID = 1

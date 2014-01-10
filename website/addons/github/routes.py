@@ -80,5 +80,9 @@ page_routes = {
             '/project/<pid>/github/',
             '/project/<pid>/node/<nid>/github/',
         ], 'get', views.github_page, OsfWebRenderer('../addons/github/templates/github_page.mako')),
+        Rule([
+            '/project/<pid>/github/file/<path:path>',
+            '/project/<pid>/node/<nid>/github/file/<path:path>',
+        ], 'get', views.github_view_file, OsfWebRenderer('../addons/github/templates/github_file.mako')),
     ],
 }

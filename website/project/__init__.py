@@ -2,7 +2,6 @@ from .model import Node, NodeLog, NodeWikiPage
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 
-
 def show_diff(seqm):
     """Unify operations between two compared strings
 seqm is a difflib.SequenceMatcher instance whose a & b are strings"""

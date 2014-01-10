@@ -2,9 +2,13 @@
 
 """
 
+
 import os
+import re
 import json
+import urllib
 import datetime
+import pygments
 import httplib as http
 
 from hurry.filesize import size, alternative
@@ -24,7 +28,7 @@ from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 
-from .api import GitHub, tree_to_hgrid
+from .api import GitHub, raw_url, tree_to_hgrid
 from .auth import oauth_start_url, oauth_get_token
 
 MESSAGE_BASE = 'via the Open Science Framework'
@@ -37,7 +41,9 @@ MESSAGES = {
 # All GitHub hooks come from 192.30.252.0/22
 HOOKS_IP = '192.30.252.'
 
-def _add_hook_log(node, github, action, path, date, committer, url=None, save=False):
+SHA1 = re.compile(r'^\w{40}$')
+
+def _add_hook_log(node, github, action, path, date, committer, url=None, sha=None, save=False):
 
     github_data = {
         'user': github.user,
@@ -48,6 +54,8 @@ def _add_hook_log(node, github, action, path, date, committer, url=None, save=Fa
             node.api_url,
             path
         )
+        if sha:
+            github_data['url'] += '?ref=' + sha
 
     node.add_log(
         action=action,
@@ -89,6 +97,7 @@ def github_hook_callback(*args, **kwargs):
         if commit['message'] in MESSAGES.values():
             continue
 
+        _id = commit['id']
         date = dateparse(commit['timestamp'])
         committer = commit['committer']['name']
 
@@ -96,12 +105,12 @@ def github_hook_callback(*args, **kwargs):
         for path in commit.get('added', []):
             _add_hook_log(
                 node, github, 'github_' + models.NodeLog.FILE_ADDED,
-                path, date, committer, url=True,
+                path, date, committer, url=True, sha=_id,
             )
-        for path in commit.get('updated', []):
+        for path in commit.get('modified', []):
             _add_hook_log(
                 node, github, 'github_' + models.NodeLog.FILE_UPDATED,
-                path, date, committer, url=True,
+                path, date, committer, url=True, sha=_id,
             )
         for path in commit.get('removed', []):
             _add_hook_log(
@@ -156,16 +165,33 @@ def _page_content(node, github, hotlink=True):
 
     connect = GitHub.from_settings(github.user_settings)
 
-    branch = request.args.get('branch', None)
+    branch = request.args.get('branch')
+    sha = request.args.get('sha')
 
-    registration_data = (
+    if sha and not branch:
+        raise HTTPError(http.BAD_REQUEST)
+
+    if not branch:
+        repo = connect.repo(github.user, github.repo)
+        branch = repo['default_branch']
+
+    if sha:
+        branches = connect.branches(github.user, github.repo, branch)
+        head = branches['commit']['sha']
+
+    if github.registration_data:
+        for _branch in github.registration_data['branches']:
+            if branch == _branch['name']:
+                sha = _branch['commit']['sha']
+
+    registered_branches = (
         github.registration_data.get('branches', [])
         if github.owner.is_registration
         else []
     )
 
     # Get data from GitHub API
-    branches = connect.branches(github.user, github.repo)
+    branches = registered_branches or connect.branches(github.user, github.repo)
     if branches is None:
         return {}
     if hotlink:
@@ -173,12 +199,12 @@ def _page_content(node, github, hotlink=True):
         if repo is None or repo['private']:
             hotlink = False
 
-    commit_id, tree = connect.tree(
-        github.user, github.repo, branch=branch,
-        registration_data=registration_data
+    tree = connect.tree(
+        github.user, github.repo, sha=sha or branch,
+        registration_data=registered_branches
     )
     if tree is None:
-        return {}
+        raise HTTPError(http.BAD_REQUEST)
 
     # If authorization, check whether authorized user has push rights to repo
     has_auth = False
@@ -188,19 +214,20 @@ def _page_content(node, github, hotlink=True):
 
     hgrid = tree_to_hgrid(
         tree['tree'], github.user, github.repo, node,
-        ref=commit_id, hotlink=hotlink,
+        branch=branch, sha=sha, hotlink=hotlink,
     )
 
     return {
         'gh_user': github.user,
         'repo': github.repo,
         'has_auth': has_auth,
+        'is_head': sha is None or sha == head,
         'api_url': node.api_url,
         'branches': branches,
-        'commit_id': commit_id,
-        'show_commit_id': branch != commit_id,
+        'branch': branch,
+        'sha': sha if sha else '',
         'grid_data': json.dumps(hgrid),
-        'registration_data': json.dumps(registration_data),
+        'registration_data': json.dumps(registered_branches),
     }
 
 
@@ -269,13 +296,114 @@ def github_download_file(*args, **kwargs):
 
     connect = GitHub.from_settings(github.user_settings)
 
-    name, data = connect.file(github.user, github.repo, path, ref=ref)
+    name, data, _ = connect.file(github.user, github.repo, path, ref=ref)
+    if data is None:
+        raise HTTPError(http.NOT_FOUND)
 
     resp = make_response(data)
     resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(
         name
     )
     return resp
+
+
+# TODO: Remove unnecessary API calls
+@must_be_contributor_or_public
+@must_have_addon('github', 'node')
+def github_view_file(*args, **kwargs):
+
+    user = kwargs['user']
+    node = kwargs['node'] or kwargs['project']
+    github = node.get_addon('github')
+
+    path = kwargs.get('path')
+    if path is None:
+        raise HTTPError(http.NOT_FOUND)
+
+    connect = GitHub.from_settings(github.user_settings)
+
+    repo = connect.repo(github.user, github.repo)
+
+    # Get branch / commit
+    branch = request.args.get('branch', repo['default_branch'])
+    sha = request.args.get('sha', branch)
+
+    file_name, data, size = connect.file(
+        github.user, github.repo, path, ref=sha,
+    )
+
+    # Get file URL
+    if repo is None or repo['private']:
+        url = os.path.join(node.api_url, 'github', 'file', path)
+    else:
+        url = raw_url(github.user, github.repo, sha, path)
+
+    # Get file history
+    commits = connect.history(github.user, github.repo, path, sha=branch)
+    for commit in commits:
+        if repo['private']:
+            commit['download'] = os.path.join(node.api_url, 'github', 'file', path) + '?ref=' + commit['sha']
+        else:
+            commit['download'] = raw_url(github.user, github.repo, commit['sha'], path)
+        commit['view'] = os.path.join(node.url, 'github', 'file', path) + '?sha=' + commit['sha'] + '&ref=' + branch
+    current_sha = request.args.get('sha', commits[0]['sha'])
+
+    # Pasted from views/file.py #
+    # TODO: Replace with modular-file-renderer
+
+    _, file_ext = os.path.splitext(path.lower())
+
+    is_img = False
+    for fmt in settings.IMG_FMTS:
+        fmt_ptn = '^.{0}$'.format(fmt)
+        if re.search(fmt_ptn, file_ext):
+            is_img = True
+            break
+
+    if is_img:
+
+        rendered='<img src="{url}/" />'.format(
+            url=url,
+        )
+
+    else:
+
+        if size > settings.MAX_RENDER_SIZE:
+            rendered = (
+                '<p>This file is too large to be rendered online. '
+                'Please <a href={url} download={name}>download the file</a> to view it locally.</p>'
+            ).format(
+                url=url,
+                name=file_name,
+            )
+
+        else:
+            try:
+                rendered = pygments.highlight(
+                    data,
+                    pygments.lexers.guess_lexer_for_filename(path, data),
+                    pygments.formatters.HtmlFormatter()
+                )
+            except pygments.util.ClassNotFound:
+                rendered = (
+                    '<p>This file cannot be rendered online. '
+                    'Please <a href={url} download={name}>download the file</a> to view it locally.</p>'
+                ).format(
+                    url=url,
+                    name=file_name,
+                )
+
+    # End pasted code #
+
+    rv = {
+        'file_name': file_name,
+        'current_sha': current_sha,
+        'rendered': rendered,
+        'download_url': url,
+        'commits': commits,
+    }
+    rv.update(_view_project(node, user))
+    return rv
 
 
 @must_be_contributor_or_public
@@ -290,7 +418,11 @@ def github_upload_file(*args, **kwargs):
 
     path = kwargs.get('path', '')
 
-    ref = request.args.get('ref')
+    branch = request.args.get('branch')
+    sha = request.args.get('sha')
+
+    if branch is None:
+        raise HTTPError(http.BAD_REQUEST)
 
     connect = GitHub.from_settings(github.user_settings)
 
@@ -300,7 +432,7 @@ def github_upload_file(*args, **kwargs):
 
     # Get SHA of existing file if present; requires an additional call to the
     # GitHub API
-    commit_id, tree = connect.tree(github.user, github.repo, branch=ref)
+    tree = connect.tree(github.user, github.repo, sha=sha or branch)
     existing = [
         thing
         for thing in tree['tree']
@@ -315,7 +447,7 @@ def github_upload_file(*args, **kwargs):
 
     data = connect.upload_file(
         github.user, github.repo, os.path.join(path, filename),
-        MESSAGES['update' if sha else 'add'], content, sha=sha, branch=ref,
+        MESSAGES['update' if sha else 'add'], content, sha=sha, branch=branch,
         author=author,
     )
 
@@ -336,13 +468,20 @@ def github_upload_file(*args, **kwargs):
                 'github': {
                     'user': github.user,
                     'repo': github.repo,
-                    'url': node.api_url + 'github/file/{0}/'.format(os.path.join(path, filename)),
+                    'url': node.api_url + 'github/file/{0}/?ref={1}'.format(
+                        os.path.join(path, filename),
+                        data['commit']['sha']
+                    ),
                 },
             },
             user=user,
             api_key=None,
             log_date=now,
         )
+
+        ref = urllib.urlencode({
+            'branch': branch,
+        })
 
         info = {
             'name': filename,
@@ -353,13 +492,16 @@ def github_upload_file(*args, **kwargs):
                 size(data['content']['size'], system=alternative)
             ],
             'type': 'file',
-            'sha': data['commit']['sha'],
+            'sha': data['content']['sha'],
             'url': data['content']['url'],
             'download': node.api_url + 'github/file/{0}/'.format(os.path.join(path, filename)),
+            'view': os.path.join(node.url, 'github', 'file', path, filename),
+            'delete': node.api_url + 'github/file/{0}/'.format(data['content']['path']),
         }
 
-        info['download'] += '?ref=' + commit_id
-        info['ref'] = commit_id
+        info['view'] += '?' + ref
+        info['download'] += '?' + ref
+        info['delete'] += '?' + ref
 
         return [info]
 
@@ -379,8 +521,10 @@ def github_delete_file(*args, **kwargs):
     if path is None:
         raise HTTPError(http.NOT_FOUND)
 
-    ref = request.args.get('ref')
     sha = request.json.get('sha')
+    if sha is None:
+        raise HTTPError(http.BAD_REQUEST)
+
     author = {
         'name': user.fullname,
         'email': '{0}@osf.io'.format(user._id),
@@ -389,8 +533,8 @@ def github_delete_file(*args, **kwargs):
     connect = GitHub.from_settings(github.user_settings)
 
     data = connect.delete_file(
-        github.user, github.repo, path, MESSAGES['delete'], sha=sha,
-        branch=ref, author=author,
+        github.user, github.repo, path, MESSAGES['delete'],
+        sha=sha, author=author,
     )
 
     if data is None:

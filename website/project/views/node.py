@@ -462,7 +462,8 @@ def _view_project(node_to_use, user, api_key=None, primary=False):
             'fork_count': len(node_to_use.fork_list),
 
             'watched_count': len(node_to_use.watchconfig__watched),
-            'logs': recent_logs_dicts
+            'logs': recent_logs_dicts,
+            'piwik_site_id': node_to_use.piwik_site_id,
         },
         'parent': {
             'id': parent._primary_key if parent else '',
@@ -477,7 +478,8 @@ def _view_project(node_to_use, user, api_key=None, primary=False):
             'is_contributor': node_to_use.is_contributor(user),
             'can_edit': (node_to_use.can_edit(user, api_key)
                                 and not node_to_use.is_registration),
-            'is_watching': user.is_watching(node_to_use) if user else False
+            'is_watching': user.is_watching(node_to_use) if user else False,
+            'piwik_token': user.piwik_token if user else '',
         },
         # TODO: Namespace with nested dicts
         'addons_enabled': node_to_use.get_addon_names(),

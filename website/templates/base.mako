@@ -92,6 +92,28 @@
               })();
             </script>
         %endif
+
+        % if piwik_host:
+            <script src="${ piwik_host }piwik.js" type="text/javascript"></script>
+            <% is_public = node.get('is_public', 'ERROR') if node else True %>
+            <script type="text/javascript">
+
+                $(function() {
+                    var cvars = [];
+                    %if user_id:
+                        cvars.push([1, "User ID", "${ user_id }", "visit"])
+                        cvars.push([2, "User Name", "${ user_full_name }", "visit"])
+                    %endif
+                    %if node:
+                        <% parent_project = parent.get('id') or node.get('id') %>
+                        cvars.push([2, "Project ID", "${ parent_project }", "page"]);
+                        cvars.push([3, "Node ID", "${ node.get('id') }", "page"]);
+                        cvars.push([4, "Tags", "${ ','.join(node.get('tags')) }", "page"]);
+                    %endif
+                    var foo = trackPiwik("${ piwik_host }", ${ piwik_site_id }, cvars);
+                });
+            </script>
+        % endif
         ${self.javascript_bottom()}
     </body>
 </html>

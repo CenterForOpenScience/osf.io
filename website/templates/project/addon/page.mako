@@ -18,7 +18,7 @@ ${self.page()}
 
     ${parent.stylesheets()}
 
-    % for style in addon_page_css:
+    % for style in addon_page_css or []:
         <link rel="stylesheet" href="${style}" />
     % endfor
 
@@ -28,7 +28,7 @@ ${self.page()}
 
     ${parent.javascript_bottom()}
 
-    % for script in addon_page_js:
+    % for script in addon_page_js or []:
         <script type="text/javascript" src="${script}"></script>
     % endfor
 

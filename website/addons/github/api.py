@@ -3,6 +3,7 @@
 """
 
 import os
+import re
 import json
 import base64
 import urllib
@@ -53,7 +54,9 @@ class GitHub(object):
 
         # Add if-modified-since header if needed
         headers = kwargs.pop('headers', {})
-        cache_key = '{0}::{1}'.format(url, method)
+        cache_key = '{0}::{1}::{2}'.format(
+            url, method, str(kwargs)
+        )
         cache_data = github_cache.get(cache_key)
         if cache and cache_data:
             if 'if-modified-since' not in headers:
@@ -100,12 +103,13 @@ class GitHub(object):
 
         return self._send(url)
 
-    def commits(self, user, repo, path=None):
+    def commits(self, user, repo, path=None, sha=None):
         """Get commits for a repo or file.
 
         :param str user: GitHub user name
         :param str repo: GitHub repo name
         :param str path: Path to file within repo
+        :param str sha: SHA or branch name
         :return list: List of commit dicts from GitHub; see
             http://developer.github.com/v3/repos/commits/
 
@@ -116,60 +120,48 @@ class GitHub(object):
             ),
             params={
                 'path': path,
+                'sha': sha,
             }
         )
 
-    def history(self, user, repo, path):
+    def history(self, user, repo, path, sha=None):
         """Get commit history for a file.
 
         :param str user: GitHub user name
         :param str repo: GitHub repo name
         :param str path: Path to file within repo
+        :param str sha: SHA or branch name
         :return list: List of dicts summarizing commits
 
         """
-        req = self.commits(user, repo, path)
+        req = self.commits(user, repo, path=path, sha=sha)
 
         if req:
             return [
                 {
                     'sha': commit['sha'],
-                    'name': commit['author']['name'],
-                    'email': commit['author']['email'],
-                    'date': commit['author']['date'],
+                    'name': commit['commit']['author']['name'],
+                    'email': commit['commit']['author']['email'],
+                    'date': commit['commit']['author']['date'],
                 }
                 for commit in req
             ]
 
-    def tree(self, user, repo, branch=None, recursive=True, registration_data=None):
+    def tree(self, user, repo, sha, recursive=True, registration_data=None):
         """Get file tree for a repo.
 
         :param str user: GitHub user name
         :param str repo: GitHub repo name
-        :param str branch: Branch name
+        :param str sha: Branch name or SHA
         :param bool recursive: Walk repo recursively
         :param dict registration_data: Registered commit data
         :return tuple: Tuple of commit ID and tree JSON; see
             http://developer.github.com/v3/git/trees/
 
         """
-        if branch:
-            commit_id = branch
-        else:
-            _repo = self.repo(user, repo)
-            if _repo is None:
-                return None, None
-            commit_id = _repo['default_branch']
-
-        if registration_data is not None:
-            for registered_branch in registration_data:
-                if commit_id == registered_branch['name']:
-                    commit_id = registered_branch['commit']['sha']
-                    break
-
         req = self._send(os.path.join(
                 API_URL, 'repos', user, repo, 'git', 'trees',
-                urllib.quote_plus(commit_id),
+                urllib.quote_plus(sha),
             ),
             params={
                 'recursive': int(recursive)
@@ -177,8 +169,8 @@ class GitHub(object):
         )
 
         if req is not None:
-            return commit_id, req
-        return commit_id, None
+            return req
+        return None
 
     def file(self, user, repo, path, ref=None):
 
@@ -196,9 +188,9 @@ class GitHub(object):
 
         if req:
             content = req['content']
-            return req['name'], base64.b64decode(content)
+            return req['name'], base64.b64decode(content), req['size']
 
-        return None, None
+        return None, None, None
 
     def starball(self, user, repo, archive='tar'):
 
@@ -320,27 +312,43 @@ class GitHub(object):
             data=json.dumps(data),
         )
 
-#
+
+def raw_url(user, repo, ref, path):
+    return os.path.join(
+        GH_URL, user, repo, 'blob', ref, path
+    ) + '?raw=true'
+
 
 type_map = {
     'tree': 'folder',
     'blob': 'file',
 }
 
-def tree_to_hgrid(tree, user, repo, node, ref=None, hotlink=True):
+
+def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=True):
     """Convert GitHub tree data to HGrid format.
 
     :param list tree: JSON description of git tree
     :param str user: GitHub user name
     :param str repo: GitHub repo name
     :param Node node: OSF Node
-    :param str ref: Branch or SHA
+    :param str branch: Git branch
+    :param str sha: Git SHA
     :param bool hotlink: Hotlink files if ref provided; will yield broken
         links if repo is private
     :return list: List of HGrid-formatted dicts
 
     """
     grid = []
+
+    ref = urllib.urlencode({
+        key: value
+        for key, value in {
+            'branch': branch,
+            'sha': sha,
+        }.iteritems()
+        if value
+    })
 
     parent = {
         'uid': 'tree:__repo__',
@@ -350,8 +358,8 @@ def tree_to_hgrid(tree, user, repo, node, ref=None, hotlink=True):
         'type': 'folder',
         'uploadUrl': node.api_url + 'github/file/'
     }
-    if ref is not None:
-        parent['uploadUrl'] += '?ref=' + ref
+    if ref:
+        parent['uploadUrl'] += '?' + ref
 
     grid.append(parent)
 
@@ -377,19 +385,19 @@ def tree_to_hgrid(tree, user, repo, node, ref=None, hotlink=True):
                 size(item['size'], system=alternative)
             ]
             base_api_url = node.api_url + 'github/file/{0}/'.format(item['path'])
-            row['delete'] = base_api_url
+            row['delete'] = base_api_url + '?' + ref
+            row['view'] = os.path.join(node.url, 'github', 'file', item['path']) + '/'
             if ref is not None:
-                base_api_url += '?ref=' + ref
+                base_api_url += '?' + ref
+                row['view'] += '?' + ref
             if hotlink and ref:
-                row['download'] = os.path.join(
-                    GH_URL, user, repo, 'blob', ref, item['path']
-                ) + '?raw=true'
+                row['download'] = raw_url(user, repo, sha or branch, item['path'])
             else:
                 row['download'] = base_api_url
         else:
             row['uploadUrl'] = node.api_url + 'github/file/{0}/'.format(item['path'])
             if ref is not None:
-                 row['uploadUrl'] += '?ref=' + ref
+                 row['uploadUrl'] += '?' + ref
 
         grid.append(row)
 

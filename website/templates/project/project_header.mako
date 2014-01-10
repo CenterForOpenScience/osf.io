@@ -189,3 +189,10 @@
     });
 
 </script>
+% if node.get('is_public') and node.get('piwik_site_id'):
+<script type="text/javascript">
+    $(function() {
+        trackPiwik("${ piwik_host }", ${ node['piwik_site_id'] });
+    });
+</script>
+% endif

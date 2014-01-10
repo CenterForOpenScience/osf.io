@@ -12,6 +12,7 @@ from website import settings
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import AddonError
 
+from .. import settings as github_settings
 from ..api import GitHub
 
 
@@ -222,7 +223,6 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if branches is None:
             raise AddonError('Could not fetch repo branches.')
         clone.registration_data['branches'] = branches
-        clone.registered = True
 
         if save:
             clone.save()
@@ -242,7 +242,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 'web',
                 {
                     'url': urlparse.urljoin(
-                        settings.HOOK_DOMAIN,
+                        github_settings.HOOK_DOMAIN or settings.DOMAIN,
                         os.path.join(
                             self.owner.api_url, 'github', 'hook/'
                         )
@@ -256,7 +256,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 if save:
                     self.save()
 
-    def delete_hook(self):
+    def delete_hook(self, save=True):
         """
 
         :return bool: Hook was deleted
@@ -267,6 +267,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             response = connect.delete_hook(self.user, self.repo, self.hook_id)
             if response:
                 self.hook_id = None
-                self.save()
+                if save:
+                    self.save()
                 return True
         return False

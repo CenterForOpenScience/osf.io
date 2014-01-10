@@ -4,3 +4,6 @@ CLIENT_SECRET = None
 
 # GitHub access scope
 SCOPE = ['repo']
+
+# GitHub hook domain
+HOOK_DOMAIN = None

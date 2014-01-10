@@ -993,7 +993,7 @@ class TestForkNode(DbTestCase):
             fork_user._id,
             [user.get('id') for user in fork.contributor_list]
         )
-        assert_true((fork_date - fork.date_created) < datetime.timedelta(seconds=5))
+        assert_true((fork_date - fork.date_created) < datetime.timedelta(seconds=30))
         assert_not_equal(fork.forked_date, original.date_created)
 
         # Test that files were copied correctly

@@ -20,7 +20,9 @@ from dulwich.object_store import tree_lookup_path
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
-from framework.analytics import get_basic_counters, increment_user_activity_counters
+from framework.analytics import (
+    get_basic_counters, increment_user_activity_counters, piwik
+)
 from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
 from framework import StoredObject, fields, utils
@@ -330,6 +332,8 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
+    piwik_site_id = fields.StringField()
+
     ## Meta-data
     #comment_schema = OSF_META_SCHEMAS['osf_comment']
 
@@ -414,6 +418,9 @@ class Node(GuidStoredObject, AddonModelMixin):
                 update_solr = False
         if update_solr:
             self.update_solr()
+
+        # This method checks what has changed.
+        piwik.update_node(self, saved_fields)
 
         # Return expected value for StoredObject::save
         return saved_fields
@@ -1319,6 +1326,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         if permissions == 'public' and not self.is_public:
             self.is_public = True
+            # If the node doesn't have a piwik site, make one.
+            piwik.update_node(self)
         elif permissions == 'private' and self.is_public:
             self.is_public = False
         else:
