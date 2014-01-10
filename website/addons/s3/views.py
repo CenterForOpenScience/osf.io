@@ -81,6 +81,7 @@ def s3_page(*args, **kwargs):
 
     rv = _page_content(node, s3)
     rv.update({
+        'pid': str(kwargs['pid']),
         'addon_page_js': s3.config.include_js['page'],
         'addon_page_css': s3.config.include_css['page'],
     })
@@ -112,7 +113,8 @@ def s3_upload(*args,**kwargs):
     connect = BucketManager.fromAddon(s3)
 
     connect.flaskUpload(upload,filename)
-
+    connect.getWrappedKey(filename)
+    return filename.getAsDict()
 
 @must_be_contributor_or_public
 @must_have_addon('s3')
@@ -127,16 +129,22 @@ def s3_delete(*args,**kwargs):
     return {}
     #raise Exception
 
+@must_be_contributor_or_public
+@must_have_addon('s3')
 def render_file(*args, **kwargs):
     user = kwargs['user']
     node = kwargs['node'] or kwargs['project']
+    keyName = kwargs['key']
 
     s3 = node.get_addon('s3')
 
-    data = _view_project(node, user)
+    rv = _view_project(node, user)
 
-    rv = _page_content(node, s3)
+    rv.update({
+        'addon_page_js': 'null',
+        'addon_page_css': 'null',
+        'filename':keyName.replace('&spc',' ').replace('&sl','/')
+    })
 
-    rv.update(data)
 
     return rv

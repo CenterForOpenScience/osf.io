@@ -19,7 +19,7 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         var link = value;
         //if(dataContext['download']){
             //This will later be changed into a render function
-            link = "<a href=fetchurl/" + dataContext['s3path'] + ">" + value + "</a>";
+            link = "<a href=render/" + dataContext['s3path'] + ">" + value + "</a>";
         //}
         var imageUrl = "/static\/img\/hgrid\/fatcowicons\/file_extension_" + dataContext['ext'] + ".png";
         if(extensions.indexOf(dataContext['ext'])==-1){
@@ -76,7 +76,7 @@ var grid = HGrid.create({
     dragDrop: false,
     dropZone: true,
     clickUploadElement: '#s3FormUpload',
-    urlAdd:'/project/eha9r/s3/upload/',
+    urlAdd: pidUrl
 });
 
 grid.addColumn({id: "download", name: "Delete", field: "download", width: 75, sortable: true, formatter: UploadBars});
@@ -90,7 +90,7 @@ grid.hGridBeforeDelete.subscribe(function(e, args) {
             msg,
             function(result) {
                 if (result) {
-                    var url = "/project/eha9r/s3/delete/";
+                    var url = pidUrl;
                     $.ajax({
                         url: url,
                         type: 'DELETE',

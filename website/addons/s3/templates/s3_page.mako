@@ -6,6 +6,7 @@
 
     <script type="text/javascript">
         var gridData = ${grid}
+        var pidUrl = '/project/' + "${pid}" +'/s3/upload/'
     </script>
 
                 <div class="container" style="position: relative;">
@@ -21,7 +22,6 @@
     	<div id="s3Crumbs"></div>
 		<div id="s3Grid"/></div>
 	</div>
-
 
 </html>
 </%def>

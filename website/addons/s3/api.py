@@ -92,6 +92,9 @@ class BucketManager:
             List.append(S3Key(k))
         return List
 
+    def getWrappedKey(self,keyName):
+        return S3Key(self.bucket.get_key(keyName))
+
     def getHgrid(self):
             S3Key.nextUid = 1
             keyList = self.getWrappedKeys(self.bucket.list())
@@ -125,6 +128,15 @@ class BucketManager:
     def flaskUpload(self,upFile,safeFilename):
         k = self.bucket.new_key(safeFilename)
         k.set_contents_from_string(upFile.read())
+
+    def getVersionData(self):
+        versions = {}
+        for p in s.Buckets['newuniquebucket'].list_versions():
+            if type(p) is Key:
+                if p.key not in versions:
+                    versions[p.key] = []
+            versions[p.key].append(p.version_id)
+        return version
 
 
 class S3Key:
