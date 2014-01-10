@@ -77,6 +77,7 @@ var grid = HGrid.create({
     dragDrop: false,
     dropZone: true,
     clickUploadElement: '#s3FormUpload',
+    urlAdd:'/project/eha9r/s3/upload/',
 });
 
 grid.addColumn({id: "download", name: "Delete", field: "download", width: 75, sortable: true, formatter: UploadBars});

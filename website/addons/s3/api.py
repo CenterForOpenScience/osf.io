@@ -98,7 +98,7 @@ class BucketManager:
             hgrid = []
             hgrid.append({
             'uid': 0,
-            'name': str(bucket.name),
+            'name': str(self.bucket.name),
             'type': 'folder',
             'parent_uid': 'null',
             'version_id': '--',
