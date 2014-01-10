@@ -18,6 +18,7 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
     } else {
         var link = value;
         //if(dataContext['download']){
+            //This will later be changed into a render function
             link = "<a href=fetchurl/" + dataContext['s3path'] + ">" + value + "</a>";
         //}
         var imageUrl = "/static\/img\/hgrid\/fatcowicons\/file_extension_" + dataContext['ext'] + ".png";
@@ -32,14 +33,29 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
         //var spacer = "<span style='display:inline-block;height:1px;width:30px'></span>";
         if(dataContext['type']!='folder'){
             var delButton = "<button type='button' class='btn btn-danger btn-mini' onclick='grid.deleteItems([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-trash icon-white'></i></button>"
-            //var downButton = '<a href="' + value + '" download="' + dataContext['name'] + '"><button type="button" class="btn btn-success btn-mini"><i class="icon-download-alt icon-white"></i></button></a>';
+            var downButton = '<a href="' + value + '" download="' + dataContext['name'] + '"><button type="button" class="btn btn-success btn-mini"><i class="icon-download-alt icon-white"></i></button></a>';
              //   buttons += ' ' + delButton;
-            return "<div>" + delButton + "</div>";
+            return "<div align=\"center\">" + delButton + "</div>";
         }else{
-            return ''
+            return '';
         }
         //}
 };
+
+
+var VersionSelect = function(row, cell, value, columnDef, dataContext) {
+    if(dataContext['version_id'] == '--' || dataContext['version_id']=='null')
+        return '--';
+    else
+    {
+        var selector = "<select>";
+        for(var i = 0; i < dataContext['version_id']; i++)
+        {
+            selector += "<option value=" + i + ">" + i + "</option>";
+        }
+        return selector + "</select>";
+    }
+}
 
 
 var grid = HGrid.create({
@@ -53,7 +69,7 @@ var grid = HGrid.create({
         {id: "name", name: "Name", field: "name", cssClass: "cell-title", formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
         {id: "lastMod", name: "Last Modified", field: "lastMod", sortable: true},
         {id: "size", name: "Size", field: "size", width: 10, sortable: true},
-        {id: "version_id", name: "Version", field: "version_id", width: 7, sortable: true},
+        {id: "version_id", name: "Version", field: "version_id", width: 7, formatter: VersionSelect, sortable: true},
         ],
         largeGuide: false,
         enableColumnReorder: false,
@@ -74,7 +90,7 @@ grid.hGridBeforeDelete.subscribe(function(e, args) {
             msg,
             function(result) {
                 if (result) {
-                    var url = "filedelete" + args['items'][0]['name'];
+                    var url = "/project/eha9r/s3/delete/";
                     $.ajax({
                         url: url,
                         type: 'DELETE',

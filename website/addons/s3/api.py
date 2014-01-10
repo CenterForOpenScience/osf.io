@@ -9,9 +9,15 @@ from boto.s3.connection import *
 from hurry.filesize import size
 
 import os
+import re
 
 
 class BucketManager:
+
+    @staticmethod
+    def fromAddon(s3):
+        return BucketManager(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key),s3.s3_bucket)
+
     "S3 Bucket management"
     def __init__(self, connect=S3Connection,bucketName=None):
         self.connection = connect
@@ -115,7 +121,7 @@ class BucketManager:
         k.set_contents_from_string("")
 
 
-    def deleteKey(self,keyName,bucket):
+    def deleteKey(self,keyName,bucket=None):
         if(bucket is None):
             self.__defaultBucket.delete_key(keyName)
         else:
@@ -223,7 +229,10 @@ class BucketManager:
             'uid': 0,
             'name': str(bucket.name),
             'type': 'folder',
-            'parent_uid': 'null'
+            'parent_uid': 'null',
+            'version_id': '--',
+            'lastMod': '--',
+            'size':'--'
             })
             self.checkFolders(keyList)
             for k in keyList:
@@ -318,7 +327,11 @@ class S3Key:
             return size(int(self.s3Key.size)).lower()
     @property
     def lastMod(self):
-        return str(self.s3Key.last_modified)
+        if self.type is 'folder':
+            return '--'
+        else:
+            m= re.search('(.+?)-(.+?)-(\d*)T(\d*):(\d*):(\d*)',str(self.s3Key.last_modified))
+            return "{month}/{day}/{year} {hour}:{minute}".format(month=m.group(2),day=m.group(3),year=m.group(4),hour=m.group(5),minute=m.group(6))
 
     @property
     def version(self):

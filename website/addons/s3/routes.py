@@ -33,6 +33,11 @@ page_routes = {
             '/project/<pid>/node/<nid>/s3/upload/',
             '/project/<pid>/node/<nid>/s3/upload/<path:path>',
         ], 'post', views.s3_upload, json_renderer),
+        Rule([
+            '/project/<pid>/s3/delete/',
+            '/<pid>/s3/delete/',
+            '/project/<pid>/node/<nid>/s3/delete/',
+        ], 'delete', views.s3_delete, json_renderer),
     ],
 }
 

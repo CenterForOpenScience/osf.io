@@ -111,3 +111,16 @@ def s3_upload(*args,**kwargs):
 
     connect.flaskUpload(upload,filename)
 
+
+@must_be_contributor_or_public
+@must_have_addon('s3')
+def s3_delete(*args,**kwargs):
+    print args
+    print kwargs
+    node = kwargs['node'] or kwargs['project']
+    s3 = node.get_addon('s3')
+    dfile = request.json.get('keyPath').replace('&spc',' ').replace('&sl','/')
+    connect = BucketManager.fromAddon(s3)
+    connect.deleteKey(dfile)
+    return {}
+    #raise Exception
