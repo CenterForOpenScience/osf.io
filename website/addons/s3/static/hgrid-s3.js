@@ -62,7 +62,6 @@ var grid = HGrid.create({
         info: gridData,
         breadcrumbBox: "#s3Crumbs",
         dropZone: true,
-        url: '/',
         
         columns:[
         {id: "name", name: "Name", field: "name", cssClass: "cell-title", formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
@@ -81,6 +80,7 @@ var grid = HGrid.create({
 });
 
 grid.addColumn({id: "download", name: "Delete", field: "download", width: 75, sortable: true, formatter: UploadBars});
+myGrid.updateBreadcrumbsBox(myGrid.data[0]['uid']);
 
 grid.hGridBeforeDelete.subscribe(function(e, args) {
     if (args['items'][0]['type'] !== 'fake') {

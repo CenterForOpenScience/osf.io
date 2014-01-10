@@ -123,11 +123,7 @@ class BucketManager:
                 raise Exception
 
     def flaskUpload(self,upFile,safeFilename):
-        if(bucket is None):
-            k = Key(self._bucket)
-        else:
-            k = Key(self[bucket])
-        k.key = safeFilename
+        k = self.bucket.new_key(safeFilename)
         k.set_contents_from_string(upFile.read())
 
 
@@ -184,7 +180,9 @@ class S3Key:
             'version_id':self.version,
             'size':self.size,
             'lastMod':self.lastMod,
-
+            'uploadUrl':'',
+            'downloadUrl':'',
+            'pid':'',
         }
     @property
     def pathTo(self):
