@@ -398,7 +398,8 @@ class Node(GuidStoredObject):
             self.update_solr()
 
         # This method checks what has changed.
-        piwik.update_node(self, saved_fields)
+        if settings.PIWIK_HOST:
+            piwik.update_node(self, saved_fields)
 
         # Return expected value for StoredObject::save
         return saved_fields
@@ -1269,7 +1270,8 @@ class Node(GuidStoredObject):
         if permissions == 'public' and not self.is_public:
             self.is_public = True
             # If the node doesn't have a piwik site, make one.
-            piwik.update_node(self)
+            if settings.PIWIK_HOST:
+                piwik.update_node(self)
         elif permissions == 'private' and self.is_public:
             self.is_public = False
         else:

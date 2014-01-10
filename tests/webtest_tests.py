@@ -12,6 +12,7 @@ from tests.base import DbTestCase
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, NodeLogFactory, ApiKeyFactory,
                              NodeFactory, NodeWikiFactory, RegistrationFactory)
+from tests.test_features import requires_piwik
 
 from website import settings
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -582,6 +583,7 @@ class TestShortUrls(DbTestCase):
         )
 
 
+@requires_piwik
 class TestPiwik(DbTestCase):
     def setUp(self):
         self.app = TestApp(app)
