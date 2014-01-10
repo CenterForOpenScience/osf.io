@@ -7,6 +7,7 @@ import datetime as dt
 import pytz
 import bson
 
+from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import fields, Q, analytics
 from framework.guid.model import GuidStoredObject
@@ -54,6 +55,8 @@ class User(GuidStoredObject):
     suffix = fields.StringField()
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
+
+    piwik_token = fields.StringField()
 
     date_last_login = fields.DateTimeField()
 
@@ -152,6 +155,8 @@ class User(GuidStoredObject):
     def save(self, *args, **kwargs):
         rv = super(User, self).save(*args, **kwargs)
         self.update_solr()
+        if settings.PIWIK_HOST and not self.piwik_token:
+            piwik.create_user(self)
         return rv
 
     def update_solr(self):

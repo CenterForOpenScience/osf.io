@@ -2,14 +2,52 @@
 <%def name="title()">Project Statistics</%def>
 <%def name="content()">
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
+    <%
+        if user['is_contributor']:
+            token = user.get('piwik_token', 'anonymous')
+        else:
+            token = 'anonymous'
+
+        if node.get('piwik_site_id'):
+            piwik_url = '{host}index.php?module=Widgetize&action=iframe&moduleToWidgetize=Dashboard&actionToWidgetize=index&idSite={site_id}&period=day&date=today&disableLink=1&token_auth={auth_token}'.format(
+                host=piwik_host,
+                auth_token=token,
+                site_id=node['piwik_site_id'],
+            )
+    %>
+    <div class="" style="margin-bottom:20px;">
+        <ul class="nav nav-pills">
+            <li><a href="#LegacyStatistics" data-toggle="tab">Legacy</a></li>
+            <li class="active"><a href="#PiwikStatistics" data-toggle="tab">Advanced</a></li>
+        </ul>
+    </div>
+    <div class='alert alert-info alert-dismissable'>
+        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+        <strong>Note:</strong> During this transitionary period, historical data may not be available for advanced analytics.
+    </div>
+    <div class="tab-content">
+        <div class="tab-pane active" id="PiwikStatistics">
+    % if not node.get('piwik_site_id'):
+            <img src="/static/img/no_analytics.png">
+    % else:
+        % if not node.get('is_public'):
+            <div class='alert alert-warning alert-dismissable'>
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                <strong>Note:</strong> Usage statistics are collected only for public resources.
+            </div>
+        % endif
+        <iframe style="overflow-y:scroll;border:none;" width="100%" height='600' src="${ piwik_url }"></iframe>
+    % endif
+        </div>
+        <div class="tab-pane" id="LegacyStatistics">
 
 <div>
-	<div>
+        <div>
     <h2>Visits Per Day</h2>
-		<div style="font: 10px sans-serif;margin: 0px auto 22px;clear: both;width">
-			<div id='chart'></div>
-		</div>
-	</div>
+                <div style="font: 10px sans-serif;margin: 0px auto 22px;clear: both;width">
+                        <div id='chart'></div>
+                </div>
+        </div>
 </div>
 
 %if use_cdn:
@@ -141,4 +179,8 @@ function brush() {
 }
 
 </script>
+        </div>
+    </div>
+
+
 </%def>

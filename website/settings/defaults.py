@@ -119,3 +119,9 @@ CELERY_IMPORTS = (
     'framework.email.tasks',
     'framework.tasks'
 )
+
+# Piwik (analytics)
+# TODO: Override in local.py in production
+PIWIK_HOST = None
+PIWIK_ADMIN_TOKEN = None
+PIWIK_SITE_ID = None
