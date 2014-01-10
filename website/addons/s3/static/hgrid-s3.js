@@ -34,7 +34,6 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
         if(dataContext['type']!='folder'){
             var delButton = "<button type='button' class='btn btn-danger btn-mini' onclick='grid.deleteItems([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-trash icon-white'></i></button>"
             var downButton = '<a href=fetchurl/' + dataContext['s3path'] +'><button type="button" class="btn btn-success btn-mini"><i class="icon-download-alt icon-white"></i></button></a>';
-             //   buttons += ' ' + delButton;
             return "<div align=\"center\">" + downButton + delButton + "</div>";
         }else{
             return '';
