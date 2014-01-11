@@ -11,7 +11,7 @@ settings_routes = {
         Rule([
             '/project/<pid>/settings/figshare/',
             '/project/<pid>/node/<nid>/settings/figshare/',
-        ], 'post', views.figshare_config, json_renderer),
+        ], 'post', views.figshare_set_config, json_renderer),
         Rule([
             '/project/<pid>/figshare/widget/',
             '/project/<pid>/node/<nid>/figshare/widget/',

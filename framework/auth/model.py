@@ -109,7 +109,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @property
     def api_url(self):
-        return '/api/v1/{0}/'.format(self._primary_key)
+        return '/api/v1/profile/{0}/'.format(self._primary_key)
 
     @property
     def absolute_url(self):
@@ -181,7 +181,8 @@ class User(GuidStoredObject, AddonModelMixin):
             'id': self._primary_key,
             'fullname': self.fullname,
             'registered': self.is_registered,
-            'url': self.url
+            'url': self.url,
+            'api_url': self.api_url,
         }
 
     ###### OSF-Specific methods ######

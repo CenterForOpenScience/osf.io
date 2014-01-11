@@ -1,15 +1,20 @@
-from .model.settings import AddonBitbucketUserSettings, AddonBitbucketNodeSettings
+from .model import AddonBitbucketUserSettings, AddonBitbucketNodeSettings
 from .routes import settings_routes, page_routes
 
-USER_MODEL = AddonBitbucketUserSettings
-SETTINGS_MODEL = AddonBitbucketNodeSettings
+USER_SETTINGS_MODEL = AddonBitbucketUserSettings
+NODE_SETTINGS_MODEL = AddonBitbucketNodeSettings
 
 ROUTES = [settings_routes, page_routes]
 
 SHORT_NAME = 'bitbucket'
 FULL_NAME = 'Bitbucket'
 
-ADDED_BY_DEFAULT = False
+OWNERS = ['user', 'node']
+
+ADDED_TO = {
+    'user': False,
+    'node': False,
+}
 
 CATEGORIES = ['storage']
 
@@ -24,48 +29,3 @@ INCLUDE_CSS = {
 }
 
 WIDGET_HELP = 'Bitbucket Add-on Alpha'
-
-SCHEMA = {
-    'pages': [
-        {
-            'id': 'null',
-            'title': 'Bitbucket Addon Settings',
-            'contents': [
-                {
-                    'id': 'bitbucket_user',
-                    'type': 'textfield',
-                    'label': 'Bitbucket User',
-                    'required': True,
-                },
-                {
-                    'id': 'bitbucket_repo',
-                    'type': 'textfield',
-                    'label': 'Bitbucket Repo',
-                    'required': True,
-                },
-                {
-                    'id': 'bitbucket_has_authentication',
-                    'type': 'htmlfield',
-                    'label': 'Bitbucket Access',
-                    'content': '''
-                        <div>
-                            <a id="bitbucketAddKey" class="btn btn-primary" style="display: none;"></a>
-                            <a id="bitbucketDelKey" class="btn btn-danger" style="display: none;">Delete Access Token</a>
-                            <span id="bitbucketKeyUser" style="margin-left: 10px;"></span>
-                        </div>
-                    ''',
-                },
-                {
-                    'id': 'bitbucket_has_user_authentication',
-                    'type': 'hiddenfield',
-                    'label': '',
-                },
-                {
-                    'id': 'bitbucket_authenticated_user',
-                    'type': 'hiddenfield',
-                    'label': '',
-                }
-            ]
-        }
-    ]
-}

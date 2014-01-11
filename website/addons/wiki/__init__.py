@@ -1,14 +1,18 @@
-from .model.settings import AddonWikiNodeSettings
+from .model import AddonWikiNodeSettings
 from .routes import settings_routes, widget_routes
 
-SETTINGS_MODEL = AddonWikiNodeSettings
+NODE_SETTINGS_MODEL = AddonWikiNodeSettings
 
 ROUTES = [settings_routes, widget_routes]
 
 SHORT_NAME = 'wiki'
 FULL_NAME = 'Wiki'
 
-ADDED_BY_DEFAULT = True
+OWNERS = ['node']
+
+ADDED_TO = {
+    'node': True,
+}
 
 CATEGORIES = ['documentation']
 

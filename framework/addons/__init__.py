@@ -2,7 +2,7 @@
 
 """
 
-from framework import StoredObject, fields
+from framework import StoredObject
 from website import settings
 
 
@@ -87,3 +87,18 @@ class AddonModelMixin(StoredObject):
             addon.delete()
             return True
         return False
+
+    def config_addons(self, config, save=True):
+        """Enable or disable a set of add-ons.
+
+        :param dict config: Mapping between add-on names and enabled / disabled
+            statuses
+
+        """
+        for addon_name, enabled in config.iteritems():
+            if enabled:
+                self.add_addon(addon_name)
+            else:
+                self.delete_addon(addon_name)
+        if save:
+            self.save()

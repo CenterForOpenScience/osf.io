@@ -6,24 +6,31 @@ import os
 import urlparse
 
 from framework import fields
-from framework.status import push_status_message
 
 from website import settings
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import AddonError
 
-from .. import settings as github_settings
-from ..api import GitHub
+from . import settings as github_settings
+from .api import GitHub
 
 
 class AddonGitHubUserSettings(AddonUserSettingsBase):
 
-    # OAuth
     oauth_state = fields.StringField()
     oauth_access_token = fields.StringField()
     oauth_token_type = fields.StringField()
 
+    @property
+    def has_auth(self):
+        return self.oauth_access_token is not None
 
+    def to_json(self, user):
+        rv = super(AddonGitHubUserSettings, self).to_json(user)
+        rv.update({
+            'authorized': self.has_auth,
+        })
+        return rv
 
 class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
@@ -44,16 +51,16 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     def to_json(self, user):
         github_user = user.get_addon('github')
-        rv = {
-            'github_user': self.user,
-            'github_repo': self.repo,
-            'github_has_user_authentication': github_user is not None,
-        }
-        if self.user_settings:
+        rv = super(AddonGitHubNodeSettings, self).to_json(user)
+        rv.update({
+            'github_user': self.user or '',
+            'github_repo': self.repo or '',
+            'user_has_authorization': github_user and github_user.has_auth,
+        })
+        if self.user_settings and self.user_settings.has_auth:
             rv.update({
-                'github_has_authentication': self.user_settings.oauth_access_token is not None,
-                'github_authenticated_user_name': self.user_settings.owner.fullname,
-                'github_authenticated_user_id': self.user_settings.owner._id,
+                'authorized_user': self.user_settings.owner.fullname,
+                'disabled': user != self.user_settings.owner,
             })
         return rv
 
@@ -85,7 +92,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         node_permissions = 'public' if node.is_public else 'private'
         repo_permissions = 'private' if repo['private'] else 'public'
         if repo_permissions != node_permissions:
-            push_status_message(
+            return (
                 'This {category} is {node_perm}, but GitHub add-on '
                 '{user} / {repo} is {repo_perm}.'.format(
                     category=node.project_or_component,
@@ -102,6 +109,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
         :param Node node:
         :param User removed:
+        :return str: Alert message
 
         """
         if self.user_settings and self.user_settings.owner == removed:
@@ -122,6 +130,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
         :param Node node:
         :param User removed:
+        :return str: Alert message
 
         """
         if self.user_settings and self.user_settings.owner == removed:
@@ -131,7 +140,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             self.save()
 
             #
-            push_status_message(
+            return (
                 'Because the GitHub add-on for this project was authenticated '
                 'by {user}, authentication information has been deleted. You '
                 'can re-authenticate on the <a href="{url}settings/">'
@@ -146,6 +155,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
         :param Node node:
         :param str permissions:
+        :return str: Alert message
 
         """
         connect = GitHub.from_settings(self.user_settings)
@@ -159,7 +169,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 current_privacy = 'private' if repo['private'] else 'public'
             else:
                 current_privacy = 'unknown'
-            push_status_message(
+            return (
                 'Could not set privacy for repo {user}::{repo}. '
                 'Current privacy status is {perm}.'.format(
                     user=self.user,
@@ -167,15 +177,14 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                     perm=current_privacy,
                 )
             )
-        else:
-            push_status_message(
-                'GitHub repo {user}::{repo} made {perm}.'.format(
-                    user=self.user,
-                    repo=self.repo,
-                    perm=permissions,
-                )
-            )
 
+        return (
+            'GitHub repo {user}::{repo} made {perm}.'.format(
+                user=self.user,
+                repo=self.repo,
+                perm=permissions,
+            )
+        )
 
     def after_fork(self, node, fork, user, save=True):
         """
@@ -184,10 +193,10 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         :param Node fork:
         :param User user:
         :param bool save:
-        :return AddonGitHubNodeSettings:
+        :return tuple: Tuple of cloned settings and alert message
 
         """
-        clone = super(AddonGitHubNodeSettings, self).after_fork(
+        clone, message = super(AddonGitHubNodeSettings, self).after_fork(
             node, fork, user, save=False
         )
 
@@ -198,7 +207,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if save:
             clone.save()
 
-        return clone
+        return clone, message
 
     def after_register(self, node, registration, user, save=True):
         """
@@ -207,10 +216,10 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         :param Node registration:
         :param User user:
         :param bool save:
-        :return AddonGitHubNodeSettings:
+        :return tuple: Tuple of cloned settings and alert message
 
         """
-        clone = super(AddonGitHubNodeSettings, self).after_register(
+        clone, message = super(AddonGitHubNodeSettings, self).after_register(
             node, registration, user, save=False
         )
 
@@ -227,7 +236,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if save:
             clone.save()
 
-        return clone
+        return clone, message
 
     #########
     # Hooks #

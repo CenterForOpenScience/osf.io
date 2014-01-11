@@ -17,6 +17,7 @@ from markdown.extensions import wikilinks
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 
+from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
@@ -376,7 +377,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             #
             for addon in settings.ADDONS_AVAILABLE:
-                if addon.added_by_default:
+                if addon.added_to['node']:
                     self.add_addon(addon.short_name)
 
             #
@@ -652,7 +653,9 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # After fork callback
         for addon in original.get_addons():
-            addon.after_fork(original, forked, user)
+            _, message = addon.after_fork(original, forked, user)
+            if message:
+                status.push_status_message(message)
 
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, forked._primary_key)
@@ -701,7 +704,9 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # After register callback
         for addon in original.get_addons():
-            addon.after_register(original, registered, user)
+            _, message = addon.after_register(original, registered, user)
+            if message:
+                status.push_status_message(message)
 
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, registered._primary_key)
@@ -744,9 +749,11 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             # After register callback
             for addon in original_node_contained.get_addons():
-                addon.after_register(
+                _, message = addon.after_register(
                     original_node_contained, node_contained, user
                 )
+                if message:
+                    status.push_status_message(message)
 
             registered.nodes.append(node_contained)
 
@@ -1178,16 +1185,16 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def before_remove_contributor(self, contributor, user):
 
-        prompts = []
+        messages = []
 
         if not user._primary_key == contributor._id:
 
             for addon in self.get_addons():
-                prompt = addon.before_remove_contributor(self, contributor)
-                if prompt:
-                    prompts.append(prompt)
+                message = addon.before_remove_contributor(self, contributor)
+                if message:
+                    messages.append(message)
 
-        return prompts
+        return messages
 
     def remove_contributor(self, contributor, user=None, api_key=None, log=True):
         """Remove a contributor from this node.
@@ -1206,7 +1213,9 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             # After remove callback
             for addon in self.get_addons():
-                addon.after_remove_contributor(self, removed_user)
+                message = addon.after_remove_contributor(self, removed_user)
+                if message:
+                    status.push_status_message(message)
 
             if log:
                 self.add_log(
@@ -1337,7 +1346,9 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # After set permissions callback
         for addon in self.get_addons():
-            addon.after_set_permissions(self, permissions)
+            message = addon.after_set_permissions(self, permissions)
+            if message:
+                status.push_status_message(message)
 
         action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
         self.add_log(

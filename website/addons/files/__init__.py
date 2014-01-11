@@ -1,14 +1,18 @@
-from .model.settings import AddonFilesNodeSettings
+from .model import AddonFilesNodeSettings
 from .routes import settings_routes, widget_routes
 
-SETTINGS_MODEL = AddonFilesNodeSettings
+NODE_SETTINGS_MODEL = AddonFilesNodeSettings
 
 ROUTES = [settings_routes, widget_routes]
 
 SHORT_NAME = 'files'
 FULL_NAME = 'Files'
 
-ADDED_BY_DEFAULT = True
+OWNERS = ['node']
+
+ADDED_TO = {
+    'node': True,
+}
 
 CATEGORIES = ['storage']
 

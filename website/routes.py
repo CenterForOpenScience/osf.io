@@ -104,13 +104,28 @@ def make_url_map(app):
     process_rules(app, [
         Rule(
             [
-                '/project/<pid>/settings/<addon>/disable/',
-                '/project/<pid>/node/<nid>/settings/<addon>/disable/',
+                '/project/<pid>/<addon>/settings/disable/',
+                '/project/<pid>/node/<nid>/<addon>/settings/disable/',
             ],
             'post',
             addon_views.disable_addon,
             json_renderer,
-        )
+        ),
+        Rule(
+            [
+                '/project/<pid>/<addon>/settings/',
+                '/project/<pid>/node/<nid>/<addon>/settings/',
+            ],
+            'get',
+            addon_views.get_addon_config,
+            json_renderer,
+        ),
+        Rule(
+            '/profile/<uid>/<addon>/settings/',
+            'get',
+            addon_views.get_addon_user_config,
+            json_renderer,
+        ),
     ], prefix='/api/v1')
 
     process_rules(app, [
@@ -273,14 +288,16 @@ def make_url_map(app):
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
         Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.mako')),
 
-        #Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('project.mako')),
-
         Rule([
             '/project/<pid>/settings/',
             '/project/<pid>/node/<nid>/settings/',
         ], 'get', project_views.node.node_setting, OsfWebRenderer('project/settings.mako')),
 
         # TODO: Move to API routes below
+        Rule(
+            '/api/v1/settings/addons/',
+            'post', profile_views.user_choose_addons, json_renderer,
+        ),
         Rule([
             '/api/v1/project/<pid>/settings/addons/',
             '/api/v1/project/<pid>/node/<nid>/settings/addons/',

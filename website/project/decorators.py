@@ -154,14 +154,14 @@ def must_be_contributor_or_public(fn):
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)
 
-def must_have_addon(addon, model):
+def must_have_addon(addon_name, model):
     """Decorator factory that ensures that a given addon has been added to
     the target node. The decorated function will throw a 404 if the required
     addon is not found. Must be applied after a decorator that adds `node` and
     `project` to the target function's keyword arguments, such as
     `must_be_contributor.
 
-    :param str addon: Name of addon
+    :param str addon_name: Name of addon
     :param str model: Name of model
     :return function: Decorator function
 
@@ -172,8 +172,12 @@ def must_have_addon(addon, model):
                 owner = kwargs['node'] or kwargs['project']
             elif model == 'user':
                 owner = kwargs['user']
-            if addon not in owner.get_addon_names():
-                raise HTTPError(http.NOT_FOUND)
+                if owner is None:
+                    raise HTTPError(http.UNAUTHORIZED)
+            addon = owner.get_addon(addon_name)
+            if addon is None:
+                raise HTTPError(http.BAD_REQUEST)
+            kwargs['{0}_addon'.format(model)] = addon
             return func(*args, **kwargs)
         return decorator(wrapped, func)
     return wrapper

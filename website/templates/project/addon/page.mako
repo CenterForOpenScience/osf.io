@@ -1,7 +1,5 @@
 <%inherit file="../../base.mako"/>
 
-<%def name="page()"></%def>
-
 <%def name="content()">
 
 <div mod-meta='{
@@ -10,7 +8,23 @@
     }'></div>
     <span></span>
 
-${self.page()}
+% if complete:
+
+    <div class="addon-content">
+        ${self.body()}
+    </div>
+
+% else:
+
+    <div mod-meta='{
+            "tpl": "project/addon/config_error.mako",
+            "kwargs": {
+                "short_name": "${short_name}",
+                "full_name": "${full_name}"
+            }
+        }'></div>
+
+% endif
 
 </%def>
 

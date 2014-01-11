@@ -20,9 +20,9 @@ widget_routes = {
 settings_routes = {
     'rules': [
         Rule([
-            '/project/<pid>/settings/zotero/',
-            '/project/<pid>/node/<nid>/settings/zotero/',
-        ], 'post', views.zotero_settings, json_renderer),
+            '/project/<pid>/zotero/settings/',
+            '/project/<pid>/node/<nid>/zotero/settings/',
+        ], 'post', views.zotero_set_config, json_renderer),
     ],
     'prefix': '/api/v1',
 }

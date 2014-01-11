@@ -170,7 +170,6 @@ def node_setting(**kwargs):
 
     rv = _view_project(node, user, primary=True)
 
-    addon_data = {}
     addons_enabled = []
     addon_enabled_settings = []
 
@@ -178,19 +177,15 @@ def node_setting(**kwargs):
 
         addons_enabled.append(addon.config.short_name)
 
-        if addon and addon.config.schema:
-
-            addon_data[addon.config.short_name] = {
-                'schema': json.dumps(addon.config.schema),
-                'settings': json.dumps(addon.to_json(user)),
-            }
-
+        if addon.config.has_node_settings:
             addon_enabled_settings.append(addon.config.short_name)
 
-    rv['addon_settings'] = addon_data
     rv['addon_categories'] = settings.ADDON_CATEGORIES
-
-    rv['addons_available'] = settings.ADDONS_AVAILABLE
+    rv['addons_available'] = [
+        addon
+        for addon in settings.ADDONS_AVAILABLE
+        if 'node' in addon.owners
+    ]
     rv['addons_enabled'] = addons_enabled
     rv['addon_enabled_settings'] = addon_enabled_settings
 
@@ -200,16 +195,8 @@ def node_setting(**kwargs):
 @must_be_contributor
 @must_not_be_registration
 def node_choose_addons(**kwargs):
-
     node = kwargs['node'] or kwargs['project']
-
-    for addon_name, enabled in request.json.iteritems():
-        if enabled:
-            node.add_addon(addon_name)
-        else:
-            node.delete_addon(addon_name)
-
-    node.save()
+    node.config_addons(request.json)
 
 
 ##############################################################################
@@ -420,7 +407,9 @@ def _view_project(node_to_use, user, api_key=None, primary=False):
     # Before page load callback; skip if not primary call
     if primary:
         for addon in node_to_use.get_addons():
-            addon.before_page_load(node_to_use, user)
+            message = addon.before_page_load(node_to_use, user)
+            if message:
+                status.push_status_message(message)
     data = {
         'node': {
             'id': node_to_use._primary_key,

@@ -515,11 +515,11 @@ class TestNode(DbTestCase):
             set([
                 addon_config.short_name
                 for addon_config in settings.ADDONS_AVAILABLE
-                if addon_config.added_by_default
+                if addon_config.added_to['node']
             ])
         )
         for addon_config in settings.ADDONS_AVAILABLE:
-            if addon_config.added_by_default:
+            if addon_config.added_to['node']:
                 assert_in(
                     addon_config.short_name,
                     node.get_addon_names()

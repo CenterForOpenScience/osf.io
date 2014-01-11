@@ -146,6 +146,7 @@
 
     var userId = '${user_id}';
     var nodeId = '${node['id']}';
+    var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
 
     $(document).ready(function(){

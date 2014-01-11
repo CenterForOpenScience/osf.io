@@ -9,10 +9,13 @@ from . import views
 
 settings_routes = {
     'rules': [
+
+        # Configuration
         Rule([
-            '/project/<pid>/settings/github/',
-            '/project/<pid>/node/<nid>/settings/github/',
+            '/project/<pid>/github/settings/',
+            '/project/<pid>/node/<nid>/github/settings/',
         ], 'post', views.github_set_config, json_renderer),
+
         Rule([
             '/project/<pid>/github/widget/',
             '/project/<pid>/node/<nid>/github/widget/',
@@ -49,27 +52,36 @@ settings_routes = {
             '/project/<pid>/node/<nid>github/hook/',
         ], 'post', views.github_hook_callback, json_renderer),
 
-        # OAuth
-        Rule([
-            '/project/<pid>/github/user_auth/',
-            '/project/<pid>/node/<nid>/github/user_auth/',
-        ], 'post', views.github_add_user_auth, json_renderer),
+        # OAuth: User
+        Rule(
+            '/settings/github/oauth/',
+            'get', views.github_oauth_start, json_renderer,
+            endpoint_suffix='__user'),
+        Rule(
+            '/settings/github/oauth/delete/', 'post',
+            views.github_oauth_delete_user, json_renderer,
+        ),
+
+        # OAuth: Node
         Rule([
             '/project/<pid>/github/oauth/',
             '/project/<pid>/node/<nid>/github/oauth/',
         ], 'get', views.github_oauth_start, json_renderer),
         Rule([
+            '/project/<pid>/github/user_auth/',
+            '/project/<pid>/node/<nid>/github/user_auth/',
+        ], 'post', views.github_add_user_auth, json_renderer),
+        Rule([
             '/project/<pid>/github/oauth/delete/',
             '/project/<pid>/node/<nid>/github/oauth/delete/',
         ], 'post', views.github_oauth_delete_node, json_renderer),
-        Rule(
-            '/profile/github/oauth/delete', 'post',
-            views.github_oauth_delete_user, json_renderer,
-        ),
+
+        # OAuth: General
         Rule([
             '/addons/github/callback/<uid>/',
             '/addons/github/callback/<uid>/<nid>/',
         ], 'get', views.github_oauth_callback, json_renderer),
+
     ],
     'prefix': '/api/v1',
 }

@@ -49,6 +49,8 @@ class AddonZoteroNodeSettings(AddonNodeSettingsBase):
             )
 
     def to_json(self, user):
-        return {
-            'zotero_id': self.zotero_id,
-        }
+        rv = super(AddonZoteroNodeSettings, self).to_json(user)
+        rv.update({
+            'zotero_id': self.zotero_id or '',
+        })
+        return rv

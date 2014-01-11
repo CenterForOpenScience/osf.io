@@ -10,18 +10,13 @@ from website.project import decorators
 
 from . import settings as figshare_settings
 
+
 @decorators.must_be_contributor
 @decorators.must_have_addon('figshare', 'node')
-def figshare_config(*args, **kwargs):
-
-    node = kwargs.get('node') or kwargs.get('project')
-    addons = node.addonfigsharesettings__addons
-    if addons:
-        figshare = addons[0]
-        figshare.figshare_id = request.json.get('figshare_id', '')
-        figshare.save()
-    else:
-        raise HTTPError(http.BAD_REQUEST)
+def figshare_set_config(**kwargs):
+    figshare = kwargs['node_addon']
+    figshare.figshare_id = request.json.get('figshare_id', '')
+    figshare.save()
 
 
 @decorators.must_be_contributor_or_public

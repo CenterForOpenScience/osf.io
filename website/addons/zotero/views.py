@@ -14,7 +14,7 @@ from website.project.views.node import _view_project
 
 
 @must_be_contributor
-def zotero_settings(**kwargs):
+def zotero_set_config(**kwargs):
 
     node = kwargs.get('node') or kwargs.get('project')
     zotero = node.get_addon('zotero')
