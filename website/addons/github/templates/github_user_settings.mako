@@ -19,7 +19,7 @@
             % if authorized_user:
                 $.ajax({
                     type: 'POST',
-                    url: '/api/v1/profile/github/oauth/',
+                    url: '/api/v1/profile/settings/oauth/',
                     contentType: 'application/json',
                     dataType: 'json',
                     success: function(response) {
@@ -27,7 +27,7 @@
                     }
                 });
             % else:
-                window.location.href = '/api/v1/profile/github/oauth/';
+                window.location.href = '/api/v1/settings/github/oauth/';
             % endif
         });
 
@@ -37,7 +37,7 @@
                 function(result) {
                     if (result) {
                         $.ajax({
-                            url: '/api/v1/profile/github/oauth/delete/',
+                            url: '/api/v1/settings/github/oauth/delete/',
                             type: 'POST',
                             contentType: 'application/json',
                             dataType: 'json',

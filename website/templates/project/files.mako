@@ -267,6 +267,7 @@ $(window).on('beforeunload', function() {
         return 'Uploads(s) still in progress. Are you sure you want to leave this page?';
 });
 
+// Don't show dropped content if user drags outside grid
 window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };
 

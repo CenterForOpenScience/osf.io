@@ -195,11 +195,10 @@ class AddonNodeSettingsBase(AddonSettingsBase):
     # Callbacks #
     #############
 
-    def before_page_load(self, node, user):
+    def before_page_load(self, node):
         """
 
         :param Node node:
-        :param User user:
 
         """
         pass
@@ -265,7 +264,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         if save:
             clone.save()
 
-        return clone
+        return clone, None
 
 
 # TODO: Move this

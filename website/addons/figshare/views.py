@@ -2,10 +2,7 @@
 
 """
 
-import httplib as http
-
 from framework import request
-from framework.exceptions import HTTPError
 from website.project import decorators
 
 from . import settings as figshare_settings
@@ -13,7 +10,7 @@ from . import settings as figshare_settings
 
 @decorators.must_be_contributor
 @decorators.must_have_addon('figshare', 'node')
-def figshare_set_config(**kwargs):
+def figshare_set_config(*args, **kwargs):
     figshare = kwargs['node_addon']
     figshare.figshare_id = request.json.get('figshare_id', '')
     figshare.save()

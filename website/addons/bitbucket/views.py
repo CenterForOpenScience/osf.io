@@ -201,8 +201,8 @@ def bitbucket_oauth_delete_node(*args, **kwargs):
 
 def bitbucket_oauth_callback(*args, **kwargs):
 
-    user = models.User.load(kwargs.get('uid', None))
-    node = models.Node.load(kwargs.get('nid', None))
+    user = models.User.load(kwargs.get('uid'))
+    node = models.Node.load(kwargs.get('nid'))
 
     if user is None:
         raise HTTPError(http.NOT_FOUND)
@@ -215,12 +215,10 @@ def bitbucket_oauth_callback(*args, **kwargs):
 
     bitbucket_node = node.get_addon('bitbucket')
 
-    verifier = request.args.get('oauth_verifier')
-
     access_token, access_token_secret = oauth_get_token(
         bitbucket_user.oauth_request_token,
         bitbucket_user.oauth_request_token_secret,
-        verifier
+        request.args.get('oauth_verifier')
     )
 
     if access_token is None or access_token_secret is None:

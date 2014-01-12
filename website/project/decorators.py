@@ -171,7 +171,7 @@ def must_have_addon(addon_name, model):
             if model == 'node':
                 owner = kwargs['node'] or kwargs['project']
             elif model == 'user':
-                owner = kwargs['user']
+                owner = get_current_user()
                 if owner is None:
                     raise HTTPError(http.UNAUTHORIZED)
             addon = owner.get_addon(addon_name)

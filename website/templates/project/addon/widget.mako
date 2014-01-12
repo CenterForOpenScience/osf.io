@@ -2,7 +2,7 @@
 
     <h3 class="addon-widget-header">
         % if help:
-            <span data-toggle="tooltip" title="${help}">
+            <span class="pull-right" data-toggle="tooltip" title="${help}">
                 <i class="icon-question-sign"></i>
             </span>
         % endif

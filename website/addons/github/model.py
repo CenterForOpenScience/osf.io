@@ -68,11 +68,11 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     # Callbacks #
     #############
 
-    def before_page_load(self, node, user):
+    def before_page_load(self, node):
         """
 
         :param Node node:
-        :param User user:
+        :return str: Alert message
 
         """
         # Quit if not configured
@@ -189,20 +189,34 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     def after_fork(self, node, fork, user, save=True):
         """
 
-        :param Node node:
-        :param Node fork:
-        :param User user:
-        :param bool save:
+        :param Node node: Original node
+        :param Node fork: Forked node
+        :param User user: User creating fork
+        :param bool save: Save settings after callback
         :return tuple: Tuple of cloned settings and alert message
 
         """
-        clone, message = super(AddonGitHubNodeSettings, self).after_fork(
+        clone, _ = super(AddonGitHubNodeSettings, self).after_fork(
             node, fork, user, save=False
         )
 
         # Copy authentication if authenticated by forking user
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
+            message = (
+                'GitHub authorization copied to forked {cat}.'
+            ).format(
+                cat=fork.project_or_component,
+            )
+        else:
+            message = (
+                'GitHub authorization not copied to forked {cat}. You may '
+                'authorize this fork on the <a href={url}>Settings</a> '
+                'page.'
+            ).format(
+                cat=fork.project_or_component,
+                url=fork.url + 'settings/'
+            )
 
         if save:
             clone.save()
@@ -212,10 +226,10 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     def after_register(self, node, registration, user, save=True):
         """
 
-        :param Node node:
-        :param Node registration:
-        :param User user:
-        :param bool save:
+        :param Node node: Original node
+        :param Node registration: Registered node
+        :param User user: User creating registration
+        :param bool save: Save settings after callback
         :return tuple: Tuple of cloned settings and alert message
 
         """

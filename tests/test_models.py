@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
 
+import mock
 import unittest
-from mock import MagicMock
 from nose.tools import *  # PEP8 asserts
 
 import pytz
@@ -21,7 +21,7 @@ from website import settings, filters
 from website.profile.utils import serialize_user
 from website.project.model import ApiKey, NodeFile, NodeLog, ensure_schemas
 
-from tests.base import DbTestCase, Guid
+from tests.base import DbTestCase, test_app, Guid
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
     NodeWikiFactory, UnregUserFactory, RegistrationFactory)
@@ -637,12 +637,12 @@ class TestAddonCallbacks(DbTestCase):
     right arguments.
 
     """
-    callbacks = [
-        'after_remove_contributor',
-        'after_set_permissions',
-        'after_fork',
-        'after_register',
-    ]
+    callbacks = {
+        'after_remove_contributor': None,
+        'after_set_permissions': None,
+        'after_fork': (None, None),
+        'after_register': (None, None),
+    }
 
     def setUp(self):
 
@@ -653,10 +653,19 @@ class TestAddonCallbacks(DbTestCase):
 
         # Mock addon callbacks
         for addon in self.node.addons:
-            for callback in self.callbacks:
-                setattr(addon, callback, MagicMock(name=callback))
+            mock_settings = mock.create_autospec(addon.__class__)
+            for callback, return_value in self.callbacks.iteritems():
+                mock_callback = getattr(mock_settings, callback)
+                mock_callback.return_value = return_value
+                setattr(
+                    addon,
+                    callback,
+                    getattr(mock_settings, callback)
+                )
 
-    def test_remove_contributor_callback(self):
+    @mock.patch('framework.status.push_status_message')
+    def test_remove_contributor_callback(self, status):
+
         user2 = UserFactory()
         self.node.add_contributor(contributor=user2, user=self.user)
         self.node.remove_contributor(contributor=user2, user=self.user)
@@ -666,7 +675,8 @@ class TestAddonCallbacks(DbTestCase):
                 self.node, user2
             )
 
-    def test_set_permissions_callback(self):
+    @mock.patch('framework.status.push_status_message')
+    def test_set_permissions_callback(self, status):
 
         self.node.set_permissions('public', self.user)
         for addon in self.node.addons:
@@ -682,7 +692,8 @@ class TestAddonCallbacks(DbTestCase):
                 self.node, 'private'
             )
 
-    def test_fork_callback(self):
+    @mock.patch('framework.status.push_status_message')
+    def test_fork_callback(self, status):
         fork = self.node.fork_node(user=self.user)
         for addon in self.node.addons:
             callback = addon.after_fork
@@ -690,7 +701,8 @@ class TestAddonCallbacks(DbTestCase):
                 self.node, fork, self.user
             )
 
-    def test_register_callback(self):
+    @mock.patch('framework.status.push_status_message')
+    def test_register_callback(self, status):
         registration = self.node.register_node(
             None, self.user, '', '',
         )

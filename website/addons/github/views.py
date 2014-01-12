@@ -181,11 +181,15 @@ def _page_content(node, github, hotlink=True):
 
     if not branch:
         repo = connect.repo(github.user, github.repo)
+        if not repo:
+            return {}
         branch = repo['default_branch']
 
     if sha:
         branches = connect.branches(github.user, github.repo, branch)
         head = branches['commit']['sha']
+    else:
+        head = None
 
     if github.registration_data:
         for _branch in github.registration_data['branches']:
@@ -262,7 +266,7 @@ def github_page(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     github = kwargs['node_addon']
 
-    data = _view_project(node, user)
+    data = _view_project(node, user, primary=True)
 
     rv = _page_content(node, github)
     rv.update({
@@ -342,14 +346,21 @@ def github_view_file(*args, **kwargs):
         url = raw_url(github.user, github.repo, sha, path)
 
     # Get file history
-    commits = connect.history(github.user, github.repo, path, sha=branch)
+    since_sha = (sha or branch) if node.is_registration else branch
+    commits = connect.history(github.user, github.repo, path, sha=since_sha)
     for commit in commits:
         if repo['private']:
             commit['download'] = os.path.join(node.api_url, 'github', 'file', path) + '?ref=' + commit['sha']
         else:
             commit['download'] = raw_url(github.user, github.repo, commit['sha'], path)
-        commit['view'] = os.path.join(node.url, 'github', 'file', path) + '?sha=' + commit['sha'] + '&ref=' + branch
-    current_sha = request.args.get('sha', commits[0]['sha'])
+        commit['view'] = os.path.join(node.url, 'github', 'file', path) + '?sha=' + commit['sha'] + '&branch=' + branch
+
+    # Get current commit
+    shas = [
+        commit['sha']
+        for commit in commits
+    ]
+    current_sha = sha if sha in shas else shas[0]
 
     # Pasted from views/file.py #
     # TODO: Replace with modular-file-renderer
@@ -405,7 +416,7 @@ def github_view_file(*args, **kwargs):
         'download_url': url,
         'commits': commits,
     }
-    rv.update(_view_project(node, user))
+    rv.update(_view_project(node, user, primary=True))
     return rv
 
 
@@ -624,6 +635,8 @@ def github_oauth_start(*args, **kwargs):
 
     nid = kwargs.get('nid') or kwargs.get('pid')
     node = models.Node.load(nid) if nid else None
+
+    # Fail if node provided and user not contributor
     if node and not node.is_contributor(user):
         raise HTTPError(http.FORBIDDEN)
 
@@ -671,7 +684,6 @@ def github_oauth_delete_node(*args, **kwargs):
 
 def github_oauth_callback(*args, **kwargs):
 
-    verification_key = request.args.get('state')
     user = models.User.load(kwargs.get('uid'))
     node = models.Node.load(kwargs.get('nid'))
 
@@ -684,10 +696,10 @@ def github_oauth_callback(*args, **kwargs):
     if github_user is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    github_node = node.get_addon('github') if node else None
-
-    if github_user.oauth_state != verification_key:
+    if github_user.oauth_state != request.args.get('state'):
         raise HTTPError(http.BAD_REQUEST)
+
+    github_node = node.get_addon('github') if node else None
 
     code = request.args.get('code')
     if code is None:
@@ -702,7 +714,8 @@ def github_oauth_callback(*args, **kwargs):
 
     if github_node:
         github_node.user_settings = github_user
-        github_node.add_hook(save=False)
+        if github_node.user and github_node.repo:
+            github_node.add_hook(save=False)
         github_node.save()
 
     if node:

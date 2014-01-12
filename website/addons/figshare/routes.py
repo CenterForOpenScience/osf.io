@@ -9,8 +9,8 @@ from . import views
 settings_routes = {
     'rules': [
         Rule([
-            '/project/<pid>/settings/figshare/',
-            '/project/<pid>/node/<nid>/settings/figshare/',
+            '/project/<pid>/figshare/settings/',
+            '/project/<pid>/node/<nid>/figshare/settings/',
         ], 'post', views.figshare_set_config, json_renderer),
         Rule([
             '/project/<pid>/figshare/widget/',
