@@ -110,6 +110,7 @@ def project_new_node(*args, **kwargs):
     raise HTTPError(http.BAD_REQUEST, redirect_url=project.url)
 
 
+@must_be_logged_in
 @must_be_valid_project
 def node_fork_page(*args, **kwargs):
     project = kwargs['project']

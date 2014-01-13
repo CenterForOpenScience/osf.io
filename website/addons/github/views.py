@@ -256,6 +256,7 @@ def _page_content(node, github, hotlink=True):
         'branches': branches,
         'branch': branch,
         'sha': sha if sha else '',
+        'ref': sha or branch,
         'grid_data': json.dumps(hgrid),
         'registration_data': json.dumps(registered_branches),
     }
@@ -595,13 +596,12 @@ def github_delete_file(*args, **kwargs):
 @must_have_addon('github', 'node')
 def github_download_starball(*args, **kwargs):
 
-    node = kwargs['node'] or kwargs['project']
     github = kwargs['node_addon']
     archive = kwargs.get('archive', 'tar')
+    ref = request.args.get('ref')
 
     connect = GitHub.from_settings(github.user_settings)
-
-    headers, data = connect.starball(github.user, github.repo, archive)
+    headers, data = connect.starball(github.user, github.repo, archive, ref)
 
     resp = make_response(data)
     for key, value in headers.iteritems():
@@ -614,7 +614,6 @@ def github_download_starball(*args, **kwargs):
 @must_have_addon('github', 'node')
 def github_set_privacy(*args, **kwargs):
 
-    node = kwargs['node'] or kwargs['project']
     github = kwargs['node_addon']
     private = request.form.get('private')
 
@@ -631,7 +630,6 @@ def github_set_privacy(*args, **kwargs):
 def github_add_user_auth(*args, **kwargs):
 
     user = kwargs['user']
-    node = kwargs['node'] or kwargs['project']
 
     github_user = user.get_addon('github')
     github_node = kwargs['node_addon']

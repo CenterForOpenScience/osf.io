@@ -158,6 +158,9 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         :return str: Alert message
 
         """
+        if not github_settings.SET_PRIVACY:
+            return
+
         connect = GitHub.from_settings(self.user_settings)
 
         data = connect.set_privacy(

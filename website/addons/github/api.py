@@ -191,12 +191,24 @@ class GitHub(object):
 
         return None, None, None
 
-    def starball(self, user, repo, archive='tar'):
+    def starball(self, user, repo, archive='tar', ref=None):
+        """Get link for archive download.
+
+        :param str user: GitHub user name
+        :param str repo: GitHub repo name
+        :param str archive: Archive format [tar|zip]
+        :param str ref: Git reference
+        :return tuple: Tuple of headers and file location
+
+        """
+        url_parts = [
+            API_URL, 'repos', user, repo, archive + 'ball'
+        ]
+        if ref:
+            url_parts.append(ref)
 
         req = self._send(
-            os.path.join(
-                API_URL, 'repos', user, repo, archive + 'ball'
-            ),
+            os.path.join(*url_parts),
             cache=False,
             output=None,
         )
