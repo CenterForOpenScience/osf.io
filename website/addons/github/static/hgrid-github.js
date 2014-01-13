@@ -18,7 +18,7 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
     } else {
         var link = value;
         if(dataContext['download']){
-            link = "<a href=" + dataContext['download'] + ">" + value + "</a>";
+            link = "<a href=" + dataContext['view'] + ">" + value + "</a>";
         }
         var imageUrl = "/static\/img\/hgrid\/fatcowicons\/file_extension_" + dataContext['ext'] + ".png";
         if(extensions.indexOf(dataContext['ext'])==-1){
@@ -42,7 +42,7 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
             var delButton = "<button type='button' class='btn btn-danger btn-mini' onclick='grid.deleteItems([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-trash icon-white'></i></button>"
             var downButton = '<a href="' + value + '" download="' + dataContext['name'] + '"><button type="button" class="btn btn-success btn-mini"><i class="icon-download-alt icon-white"></i></button></a>';
             var buttons = downButton;
-            if (canEdit && hasAuth) {
+            if (canEdit && hasAuth && isHead) {
                 buttons += ' ' + delButton;
             }
             return "<div>" + buttons + "</div>";
@@ -74,12 +74,12 @@ var grid = HGrid.create({
     url: gridData[0]['uploadUrl'],
     enableCellNavigation: false,
     breadcrumbBox: "#gitCrumb",
-    clickUploadElement: (canEdit && hasAuth) ? "#gitFormUpload" : null,
+    clickUploadElement: (canEdit && hasAuth && isHead) ? "#gitFormUpload" : null,
     navLevel: gridData[0]['uid'],
     autoHeight: true,
     forceFitColumns: true,
     largeGuide: false,
-    dropZone: canEdit && hasAuth,
+    dropZone: canEdit && hasAuth && isHead,
     rowHeight: 30,
     topCrumb: false,
     dragToRoot: false,
@@ -106,6 +106,7 @@ grid.hGridBeforeDelete.subscribe(function(e, args) {
                     }).complete(function() {
                         d.resolve(true);
                     }).error(function() {
+                        bootbox.alert('Delete failed.');
                         d.resolve(false);
                     });
                 } else {
@@ -135,7 +136,7 @@ grid.hGridOnUpload.subscribe(function(e, args) {
     // Check if the server says that the file exists already
     var newSlickInfo = JSON.parse(args.xhr.response)[0];
     // Delete fake item
-    var item = grid.getItemByValue(grid.data, args.name, "uid");
+    var item = grid.getItemByValue(grid.data, args.name, 'uid');
     grid.deleteItems([item['uid']]);
     // If action taken is not null, create new item
     if (newSlickInfo['action_taken'] !== null) {

@@ -36,7 +36,7 @@ def node_register_page(*args, **kwargs):
             for metaschema in OSF_META_SCHEMAS
         ]
     }
-    rv.update(_view_project(node_to_use, user))
+    rv.update(_view_project(node_to_use, user, primary=True))
     return rv
 
 
@@ -78,7 +78,7 @@ def node_register_template_page(*args, **kwargs):
         'registered': registered,
         'payload': payload,
     }
-    rv.update(_view_project(node_to_use, user))
+    rv.update(_view_project(node_to_use, user, primary=True))
     return rv
 
 

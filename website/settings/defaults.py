@@ -14,7 +14,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = parent_dir(HERE)  # website/ directory
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
-TEMPLATES_PATH = os.path.join(BASE_PATH, "templates")
+TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 DOMAIN = 'https://openscienceframework.org/'
 
 # User management & registration
@@ -120,9 +120,7 @@ CELERY_IMPORTS = (
     'framework.tasks'
 )
 
-###########
-# Add-ons #
-###########
+# Add-ons
 
 ADDONS_REQUESTED = [
     'wiki', 'files',
@@ -132,3 +130,10 @@ ADDONS_REQUESTED = [
 ]
 
 ADDON_CATEGORIES = ['documentation', 'storage', 'bibliography']
+
+# Piwik
+
+# TODO: Override in local.py in production
+PIWIK_HOST = None
+PIWIK_ADMIN_TOKEN = None
+PIWIK_SITE_ID = None

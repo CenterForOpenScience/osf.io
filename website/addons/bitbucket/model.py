@@ -13,6 +13,13 @@ class AddonBitbucketUserSettings(AddonUserSettingsBase):
     oauth_access_token = fields.StringField()
     oauth_access_token_secret = fields.StringField()
 
+    @property
+    def has_auth(self):
+        return (
+            self.oauth_access_token is not None and
+            self.oauth_access_token_secret is not None
+        )
+
 
 class AddonBitbucketNodeSettings(AddonNodeSettingsBase):
 
@@ -31,15 +38,17 @@ class AddonBitbucketNodeSettings(AddonNodeSettingsBase):
 
     def to_json(self, user):
         bitbucket_user = user.get_addon('bitbucket')
-        rv = {
-            'bitbucket_user': self.user,
-            'bitbucket_repo': self.repo,
-            'bitbucket_has_user_authentication': bitbucket_user is not None,
-        }
-        settings = self.user_settings
-        if settings:
+        rv = super(AddonBitbucketNodeSettings, self).to_json(user)
+        rv.update({
+            'addon_name': 'bitbucket',
+            'addon_title': 'Bitbucket',
+            'bitbucket_user': self.user if self.user else '',
+            'bitbucket_repo': self.repo if self.repo else '',
+            'user_has_authorization': bitbucket_user and bitbucket_user.has_auth,
+        })
+        if self.user_settings and self.user_settings.has_auth:
             rv.update({
-                'bitbucket_has_authentication': settings.oauth_access_token is not None,
-                'bitbucket_authenticated_user': settings.owner.fullname,
+                'authorized_user': self.user_settings.owner.fullname,
+                'disabled': user != self.user_settings.owner,
             })
         return rv

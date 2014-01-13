@@ -17,6 +17,8 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         )
 
     def to_json(self, user):
-        return {
-            'figshare_id': self.figshare_id,
-        }
+        rv = super(AddonFigShareNodeSettings, self).to_json(user)
+        rv.update({
+            'figshare_id': self.figshare_id or '',
+        })
+        return rv

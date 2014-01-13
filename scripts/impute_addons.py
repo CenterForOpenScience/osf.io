@@ -10,6 +10,7 @@ app = init_app('website.settings', set_backends=True, routes=True)
 
 def impute_addons():
     for node in models.Node.find():
+        # TODO: Rewrite
         node.addons_enabled = ['wiki', 'files']
         node._ensure_addons()
         node.save()

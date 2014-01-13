@@ -14,7 +14,7 @@ from website.project.views.node import _view_project
 
 
 @must_be_contributor
-def zotero_settings(**kwargs):
+def zotero_set_config(**kwargs):
 
     node = kwargs.get('node') or kwargs.get('project')
     zotero = node.get_addon('zotero')
@@ -25,8 +25,8 @@ def zotero_settings(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
 
-@must_be_contributor
-@must_have_addon('zotero')
+@must_be_contributor_or_public
+@must_have_addon('zotero', 'node')
 def zotero_widget(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     zotero = node.get_addon('zotero')

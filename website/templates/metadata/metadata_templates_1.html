@@ -20,7 +20,7 @@
         <div data-bind="item:$data"></div>
     </div>
     <div data-bind="ifnot:type=='htmlfield'">
-        <div class="form-group" data-bind="attr:{id:uidFmt}">
+        <div class="form-group" data-bind="attr:{id:uidFmt}, visible:type!='hiddenfield'">
             <label class="control-label" data-bind="css:{required:required}">
                 <span data-bind="if:required">* </span>
                 <span data-bind="text:label, attr:{for:id}"></span>
@@ -36,7 +36,7 @@
 
 <!-- Item templates -->
 <script id="hiddenfield" type="text/html">
-    <input type="hidden" class="form-control" data-bind="value:value, valueUpdate:'onblur', attr:{name:id, id:id, required:required || null}, disable:disable || $root.disable" />
+    <input type="hidden" class="form-control" data-bind="value:value, attr:{name:id, id:id}" />
 </script>
 <script id="textfield" type="text/html">
     <input type="text" class="form-control" data-bind="value:value, valueUpdate:'onblur', attr:{name:id, id:id, required:required || null}, disable:disable || $root.disable" />

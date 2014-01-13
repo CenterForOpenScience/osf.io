@@ -1,29 +1,12 @@
 <%inherit file="project/addon/page.mako" />
 
-<%def name="page()">
+<div class="row">
 
-% if not gh_user:
+    <div class="col-md-6">
 
-    <div mod-meta='{
-            "tpl": "project/addon/config_error.mako",
-            "kwargs": {
-                "short_name": "${short_name}",
-                "full_name": "${full_name}"
-            }
-        }'></div>
+        <div>
 
-% else:
-
-    <div class="row">
-
-        <div class="col-md-6">
-
-            <h4>
-                Viewing ${gh_user} / ${repo}
-                % if show_commit_id:
-                    : ${commit_id}
-                % endif
-            </h4>
+            Viewing ${gh_user} / ${repo} :
 
             % if len(branches) == 1:
 
@@ -31,13 +14,13 @@
 
             % elif len(branches) > 1:
 
-                <form role="form">
+                <form role="form" style="display: inline;">
                     <select id="gitBranchSelect" name="branch">
-                        % for branch in branches:
+                        % for _branch in branches:
                             <option
-                                value=${branch['name']}
-                                ${'selected' if commit_id in [branch['name'], branch['commit']['sha']] else ''}
-                            >${branch['name']}</option>
+                                value=${_branch['name']}
+                                ${'selected' if branch == _branch['name'] else ''}
+                            >${_branch['name']}</option>
                         % endfor
                     </select>
                 </form>
@@ -46,62 +29,68 @@
 
         </div>
 
-        <div class="col-md-6">
+        % if sha:
+            <p>Commit: ${sha}</p>
+        % endif
 
-            <h4>Downloads</h4>
+    </div>
 
-            <p><a href="${api_url}github/tarball/">Tarball</a></p>
-            <p><a href="${api_url}github/zipball/">Zip</a></p>
+    <div class="col-md-6">
 
+        <div>
+            Download:
+            <a href="${api_url}github/tarball/?ref=${ref}">Tarball</a>
+            <span>|</span>
+            <a href="${api_url}github/zipball/?ref=${ref}">Zip</a>
         </div>
 
     </div>
 
-    % if user['can_edit']:
+</div>
 
-        % if has_auth:
+% if user['can_edit']:
 
-            <div class="container" style="position: relative;">
-                <h3 id="dropZoneHeader">Drag and drop (or <a href="#" id="gitFormUpload">click here</a>) to upload files</h3>
-                <div id="fallback"></div>
-                <div id="totalProgressActive" style="width: 35%; height: 20px; position: absolute; top: 73px; right: 0;" class>
-                    <div id="totalProgress" class="progress-bar progress-bar-success" style="width: 0%;"></div>
-                </div>
+    % if has_auth:
+
+        <div class="container" style="position: relative;">
+            <h3 id="dropZoneHeader">Drag and drop (or <a href="#" id="gitFormUpload">click here</a>) to upload files</h3>
+            <div id="fallback"></div>
+            <div id="totalProgressActive" style="width: 35%; height: 20px; position: absolute; top: 73px; right: 0;" class>
+                <div id="totalProgress" class="progress-bar progress-bar-success" style="width: 0%;"></div>
             </div>
+        </div>
 
-        % else:
+    % else:
 
-            <p>
-                This GitHub add-on has not been authenticated. To enable file uploads and deletion,
-                browse to the <a href="${node['url']}settings/">settings</a> page and authenticate this add-on.
-            <p>
-
-        % endif
-
-    % endif
-
-    <div id="grid">
-        <div id="gitCrumb"></div>
-        <div id="gitGrid"></div>
-    </div>
-
-    <script type="text/javascript">
-
-        // Import JS variables
-        var gridData = ${grid_data},
-            ref = '${commit_id}',
-            canEdit = ${int(user['can_edit'])},
-            hasAuth = ${int(has_auth)};
-
-        // Submit branch form on change
-        % if len(branches) > 1:
-            $('#gitBranchSelect').on('change', function() {
-                $(this).closest('form').submit();
-            });
-        % endif
-
-    </script>
+        <p>
+            This GitHub add-on has not been authenticated. To enable file uploads and deletion,
+            browse to the <a href="${node['url']}settings/">settings</a> page and authenticate this add-on.
+        <p>
 
     % endif
 
-</%def>
+% endif
+
+<div id="grid">
+    <div id="gitCrumb"></div>
+    <div id="gitGrid"></div>
+</div>
+
+<script type="text/javascript">
+
+    // Import JS variables
+    var gridData = ${grid_data},
+        branch = '${branch}',
+        sha = '${sha}',
+        canEdit = ${int(user['can_edit'])},
+        hasAuth = ${int(has_auth)},
+        isHead = ${int(is_head)};
+
+    // Submit branch form on change
+    % if len(branches) > 1:
+        $('#gitBranchSelect').on('change', function() {
+            $(this).closest('form').submit();
+        });
+    % endif
+
+</script>

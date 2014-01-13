@@ -144,7 +144,9 @@
 ## TODO: Find a better place to put this initialization code
 <script>
 
+    var userId = '${user_id}';
     var nodeId = '${node['id']}';
+    var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
 
     $(document).ready(function(){
@@ -188,3 +190,10 @@
     });
 
 </script>
+% if node.get('is_public') and node.get('piwik_site_id'):
+<script type="text/javascript">
+    $(function() {
+        trackPiwik("${ piwik_host }", ${ node['piwik_site_id'] });
+    });
+</script>
+% endif

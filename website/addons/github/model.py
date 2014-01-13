@@ -2,12 +2,17 @@
 
 """
 
+import os
+import urlparse
+
 from framework import fields
-from framework.status import push_status_message
 
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, AddonError
+from website import settings
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from website.addons.base import AddonError
 
-from ..api import GitHub
+from . import settings as github_settings
+from .api import GitHub
 
 
 class AddonGitHubUserSettings(AddonUserSettingsBase):
@@ -16,11 +21,22 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
     oauth_access_token = fields.StringField()
     oauth_token_type = fields.StringField()
 
+    @property
+    def has_auth(self):
+        return self.oauth_access_token is not None
+
+    def to_json(self, user):
+        rv = super(AddonGitHubUserSettings, self).to_json(user)
+        rv.update({
+            'authorized': self.has_auth,
+        })
+        return rv
 
 class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     user = fields.StringField()
     repo = fields.StringField()
+    hook_id = fields.StringField()
 
     user_settings = fields.ForeignField(
         'addongithubusersettings', backref='authorized'
@@ -35,16 +51,16 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     def to_json(self, user):
         github_user = user.get_addon('github')
-        rv = {
-            'github_user': self.user,
-            'github_repo': self.repo,
-            'github_has_user_authentication': github_user is not None,
-        }
-        settings = self.user_settings
-        if settings:
+        rv = super(AddonGitHubNodeSettings, self).to_json(user)
+        rv.update({
+            'github_user': self.user or '',
+            'github_repo': self.repo or '',
+            'user_has_authorization': github_user and github_user.has_auth,
+        })
+        if self.user_settings and self.user_settings.has_auth:
             rv.update({
-                'github_has_authentication': settings.oauth_access_token is not None,
-                'github_authenticated_user': settings.owner.fullname,
+                'authorized_user': self.user_settings.owner.fullname,
+                'disabled': user != self.user_settings.owner,
             })
         return rv
 
@@ -52,11 +68,11 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     # Callbacks #
     #############
 
-    def before_page_load(self, node, user):
+    def before_page_load(self, node):
         """
 
         :param Node node:
-        :param User user:
+        :return str: Alert message
 
         """
         # Quit if not configured
@@ -76,7 +92,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         node_permissions = 'public' if node.is_public else 'private'
         repo_permissions = 'private' if repo['private'] else 'public'
         if repo_permissions != node_permissions:
-            push_status_message(
+            return (
                 'This {category} is {node_perm}, but GitHub add-on '
                 '{user} / {repo} is {repo_perm}.'.format(
                     category=node.project_or_component,
@@ -93,9 +109,10 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
         :param Node node:
         :param User removed:
+        :return str: Alert message
 
         """
-        if self.oauth_osf_user and self.oauth_osf_user == removed:
+        if self.user_settings and self.user_settings.owner == removed:
             return (
                 'The GitHub add-on for this {category} is authenticated '
                 'by {user}. Removing this user will also remove write access '
@@ -113,6 +130,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
         :param Node node:
         :param User removed:
+        :return str: Alert message
 
         """
         if self.user_settings and self.user_settings.owner == removed:
@@ -122,7 +140,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             self.save()
 
             #
-            push_status_message(
+            return (
                 'Because the GitHub add-on for this project was authenticated '
                 'by {user}, authentication information has been deleted. You '
                 'can re-authenticate on the <a href="{url}settings/">'
@@ -137,8 +155,12 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
         :param Node node:
         :param str permissions:
+        :return str: Alert message
 
         """
+        if not github_settings.SET_PRIVACY:
+            return
+
         connect = GitHub.from_settings(self.user_settings)
 
         data = connect.set_privacy(
@@ -150,7 +172,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 current_privacy = 'private' if repo['private'] else 'public'
             else:
                 current_privacy = 'unknown'
-            push_status_message(
+            return (
                 'Could not set privacy for repo {user}::{repo}. '
                 'Current privacy status is {perm}.'.format(
                     user=self.user,
@@ -158,50 +180,63 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                     perm=current_privacy,
                 )
             )
-        else:
-            push_status_message(
-                'GitHub repo {user}::{repo} made {perm}.'.format(
-                    user=self.user,
-                    repo=self.repo,
-                    perm=permissions,
-                )
-            )
 
+        return (
+            'GitHub repo {user}::{repo} made {perm}.'.format(
+                user=self.user,
+                repo=self.repo,
+                perm=permissions,
+            )
+        )
 
     def after_fork(self, node, fork, user, save=True):
         """
 
-        :param Node node:
-        :param Node fork:
-        :param User user:
-        :param bool save:
-        :return AddonGitHubNodeSettings:
+        :param Node node: Original node
+        :param Node fork: Forked node
+        :param User user: User creating fork
+        :param bool save: Save settings after callback
+        :return tuple: Tuple of cloned settings and alert message
 
         """
-        clone = super(AddonGitHubNodeSettings, self).after_fork(
+        clone, _ = super(AddonGitHubNodeSettings, self).after_fork(
             node, fork, user, save=False
         )
 
         # Copy authentication if authenticated by forking user
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
+            message = (
+                'GitHub authorization copied to forked {cat}.'
+            ).format(
+                cat=fork.project_or_component,
+            )
+        else:
+            message = (
+                'GitHub authorization not copied to forked {cat}. You may '
+                'authorize this fork on the <a href={url}>Settings</a> '
+                'page.'
+            ).format(
+                cat=fork.project_or_component,
+                url=fork.url + 'settings/'
+            )
 
         if save:
             clone.save()
 
-        return clone
+        return clone, message
 
     def after_register(self, node, registration, user, save=True):
         """
 
-        :param Node node:
-        :param Node registration:
-        :param User user:
-        :param bool save:
-        :return AddonGitHubNodeSettings:
+        :param Node node: Original node
+        :param Node registration: Registered node
+        :param User user: User creating registration
+        :param bool save: Save settings after callback
+        :return tuple: Tuple of cloned settings and alert message
 
         """
-        clone = super(AddonGitHubNodeSettings, self).after_register(
+        clone, message = super(AddonGitHubNodeSettings, self).after_register(
             node, registration, user, save=False
         )
 
@@ -214,9 +249,51 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if branches is None:
             raise AddonError('Could not fetch repo branches.')
         clone.registration_data['branches'] = branches
-        clone.registered = True
 
         if save:
             clone.save()
 
-        return clone
+        return clone, message
+
+    #########
+    # Hooks #
+    #########
+
+    def add_hook(self, save=True):
+
+        if self.user_settings:
+            connect = GitHub.from_settings(self.user_settings)
+            hook = connect.add_hook(
+                self.user, self.repo,
+                'web',
+                {
+                    'url': urlparse.urljoin(
+                        github_settings.HOOK_DOMAIN or settings.DOMAIN,
+                        os.path.join(
+                            self.owner.api_url, 'github', 'hook/'
+                        )
+                    ),
+                    'content_type': 'json',
+                }
+            )
+
+            if hook:
+                self.hook_id = hook['id']
+                if save:
+                    self.save()
+
+    def delete_hook(self, save=True):
+        """
+
+        :return bool: Hook was deleted
+
+        """
+        if self.user_settings and self.hook_id:
+            connect = GitHub.from_settings(self.user_settings)
+            response = connect.delete_hook(self.user, self.repo, self.hook_id)
+            if response:
+                self.hook_id = None
+                if save:
+                    self.save()
+                return True
+        return False

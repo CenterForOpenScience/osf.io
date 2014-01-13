@@ -148,11 +148,15 @@ profile_schema = {
 }
 
 
+# TODO: Similar to node_setting; refactor
 @must_be_logged_in
 def profile_settings(**kwargs):
+
     user = kwargs['user']
-    return {
+
+    rv = {
         'user_id': user._primary_key,
+        'user_api_url': user.api_url,
         'names': json.dumps({
             'fullname': user.fullname,
             'given_name': user.given_name,
@@ -163,6 +167,27 @@ def profile_settings(**kwargs):
         'schema': json.dumps(profile_schema),
     }
 
+    addons_enabled = []
+    addon_enabled_settings = []
+
+    for addon in user.get_addons():
+
+        addons_enabled.append(addon.config.short_name)
+
+        if addon.config.model['user']:
+            addon_enabled_settings.append(addon.config.short_name)
+
+    rv['addon_categories'] = settings.ADDON_CATEGORIES
+    rv['addons_available'] = [
+        addon
+        for addon in settings.ADDONS_AVAILABLE
+        if 'user' in addon.owners
+    ]
+    rv['addons_enabled'] = addons_enabled
+    rv['addon_enabled_settings'] = addon_enabled_settings
+
+    return rv
+
 
 @must_be_logged_in
 def profile_addons(**kwargs):
@@ -170,6 +195,12 @@ def profile_addons(**kwargs):
     return {
         'user_id': user._primary_key,
     }
+
+
+@must_be_logged_in
+def user_choose_addons(**kwargs):
+    user = kwargs['user']
+    user.config_addons(request.json)
 
 
 @must_be_logged_in

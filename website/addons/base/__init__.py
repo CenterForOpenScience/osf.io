@@ -30,6 +30,46 @@ def _is_image(filename):
 
 class AddonConfig(object):
 
+    def __init__(self, short_name, full_name, owners, added_to, categories,
+                 node_settings_model=None, user_settings_model=None, include_js=None, include_css=None,
+                 widget_help=None, views=None,
+                 **kwargs):
+
+        self.models = {}
+
+        if node_settings_model:
+            node_settings_model.config = self
+            self.models['node'] = node_settings_model
+
+        if user_settings_model:
+            user_settings_model.config = self
+            self.models['user'] = user_settings_model
+
+        self.short_name = short_name
+        self.full_name = full_name
+        self.owners = owners
+        self.added_to = added_to
+        self.categories = categories
+
+        self.include_js = self._include_to_static(include_js or {})
+        self.include_css = self._include_to_static(include_css or {})
+
+        self.widget_help = widget_help
+
+        self.views = views or []
+
+        # Build template lookup
+        template_path = os.path.join('website', 'addons', short_name, 'templates')
+        if os.path.exists(template_path):
+            self.template_lookup = TemplateLookup(
+                directories=[
+                    template_path,
+                    settings.TEMPLATES_PATH,
+                ]
+            )
+        else:
+            self.template_lookup = None
+
     def _static_url(self, filename):
         """Build static URL for file; use the current addon if relative path,
         else the global static directory.
@@ -56,47 +96,6 @@ class AddonConfig(object):
             ]
             for key, value in include.iteritems()
         }
-
-    def __init__(self, short_name, full_name, added_by_default,
-                 categories,
-                 settings_model=None, user_model=None, schema=None, include_js=None, include_css=None,
-                 widget_help=None, has_page=False, has_widget=False, **kwargs):
-
-        self.models = {}
-
-        if settings_model:
-            settings_model.config = self
-            self.models['node'] = settings_model
-
-        if user_model:
-            user_model.config = self
-            self.models['user'] = user_model
-
-        self.short_name = short_name
-        self.full_name = full_name
-        self.added_by_default = added_by_default
-        self.categories = categories
-        self.schema = schema
-
-        self.include_js = self._include_to_static(include_js or {})
-        self.include_css = self._include_to_static(include_css or {})
-
-        self.widget_help = widget_help
-
-        self.has_page = has_page
-        self.has_widget = has_widget
-
-        # Build template lookup
-        template_path = os.path.join('website', 'addons', short_name, 'templates')
-        if os.path.exists(template_path):
-            self.template_lookup = TemplateLookup(
-                directories=[
-                    template_path,
-                    settings.TEMPLATES_PATH,
-                ]
-            )
-        else:
-            self.template_lookup = None
 
     @property
     def icon(self):
@@ -128,14 +127,37 @@ class AddonConfig(object):
             'full_name': self.full_name,
             'help': self.widget_help,
             'icon': self.icon_url,
-            'has_page': self.has_page,
-            'has_widget': self.has_widget,
+            'has_page': 'page' in self.views,
+            'has_widget': 'widget' in self.views,
         }
 
 
-class AddonUserSettingsBase(StoredObject):
+class AddonSettingsBase(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
+    deleted = fields.BooleanField()
+
+    _meta = {
+        'abstract': True,
+    }
+
+    def delete(self):
+        self.deleted = True
+        self.save()
+
+    def undelete(self):
+        self.deleted = False
+        self.save()
+
+    def to_json(self, user):
+        return {
+            'addon_short_name': self.config.short_name,
+            'addon_full_name': self.config.full_name,
+        }
+
+
+class AddonUserSettingsBase(AddonSettingsBase):
+
     owner = fields.ForeignField('user', backref='addons')
 
     _meta = {
@@ -143,13 +165,9 @@ class AddonUserSettingsBase(StoredObject):
     }
 
 
-class AddonNodeSettingsBase(StoredObject):
+class AddonNodeSettingsBase(AddonSettingsBase):
 
-    _id = fields.StringField(default=lambda: str(ObjectId()))
     owner = fields.ForeignField('node', backref='addons')
-
-    # TODO: Remove / replace with property
-    registered = fields.BooleanField()
 
     _meta = {
         'abstract': True,
@@ -171,11 +189,10 @@ class AddonNodeSettingsBase(StoredObject):
     # Callbacks #
     #############
 
-    def before_page_load(self, node, user):
+    def before_page_load(self, node):
         """
 
         :param Node node:
-        :param User user:
 
         """
         pass
@@ -214,7 +231,7 @@ class AddonNodeSettingsBase(StoredObject):
         :param Node fork:
         :param User user:
         :param bool save:
-        :return AddonNodeSettingsBase:
+        :return tuple: Tuple of cloned settings and alert message
 
         """
         clone = self.clone()
@@ -223,7 +240,7 @@ class AddonNodeSettingsBase(StoredObject):
         if save:
             clone.save()
 
-        return clone
+        return clone, None
 
     def after_register(self, node, registration, user, save=True):
         """
@@ -232,7 +249,7 @@ class AddonNodeSettingsBase(StoredObject):
         :param Node registration:
         :param User user:
         :param bool save:
-        :return AddonNodeSettingsBase:
+        :return tuple: Tuple of cloned settings and alert message
 
         """
         clone = self.clone()
@@ -241,7 +258,7 @@ class AddonNodeSettingsBase(StoredObject):
         if save:
             clone.save()
 
-        return clone
+        return clone, None
 
 
 # TODO: Move this
@@ -260,25 +277,11 @@ def init_addon(app, addon_name, routes=True):
     """
     addon_path = os.path.join('website', 'addons', addon_name)
     import_path = 'website.addons.{0}'.format(addon_name)
-    views_import_path = '{0}.views'.format(import_path)
 
     # Import addon module
-    #try:
     addon_module = importlib.import_module(import_path)
-    #except ImportError:
-      #  return None
 
     data = vars(addon_module)
-
-    try:
-        addon_views = importlib.import_module(views_import_path)
-        has_page = hasattr(addon_views, '{0}_page'.format(addon_name))
-        has_widget = hasattr(addon_views, '{0}_widget'.format(addon_name))
-    except ImportError:
-        has_page = False
-        has_widget = False
-
-    has_page = has_page or data.pop('HAS_PAGE', False)
 
     # Append add-on log templates to main log templates
     log_templates = os.path.join(
@@ -295,8 +298,6 @@ def init_addon(app, addon_name, routes=True):
 
     # Build AddonConfig object
     return AddonConfig(
-        has_page=has_page,
-        has_widget=has_widget,
         **{
             key.lower(): value
             for key, value in data.iteritems()

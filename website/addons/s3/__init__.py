@@ -1,8 +1,8 @@
-from .model.settings import AddonS3UserSettings,AddonS3NodeSettings
+from model import AddonS3UserSettings,AddonS3NodeSettings
 from .routes import settings_routes,page_routes
 
-USER_MODEL = AddonS3UserSettings
-SETTINGS_MODEL = AddonS3NodeSettings
+USER_SETTINGS_MODEL = AddonS3UserSettings
+NODE_SETTINGS_MODEL = AddonS3NodeSettings
 
 ROUTES = [settings_routes,page_routes]
 
@@ -12,6 +12,15 @@ FULL_NAME = 'Amazon Simple Storage Service'
 ADDED_BY_DEFAULT = False
 
 CATEGORIES = ['storage']
+
+OWNERS = ['user', 'node']
+
+ADDED_TO = {
+    'user': False,
+    'node': False,
+}
+
+VIEWS = ['widget', 'page']
 
 INCLUDE_JS = {
     'widget': [],
@@ -30,7 +39,6 @@ INCLUDE_CSS = {
         'page': ['/static/css/hgrid-base.css'],
 }
 
-WIDGET_HELP = 'AWS S3 Add-on Alpha'
 
 SCHEMA = {
     'pages': [

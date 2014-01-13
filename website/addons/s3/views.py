@@ -14,6 +14,7 @@ from website.project.views.node import _view_project
 from framework.status import push_status_message
 from framework import request, redirect, make_response
 from framework.flask import secure_filename
+from framework.auth import get_current_user, must_be_logged_in
 
 from api import BucketManager
 from boto.exception import S3ResponseError
@@ -22,8 +23,15 @@ import time
 from datetime import date
 import os
 
+
+@must_be_logged_in
+def s3_set_user_config(*args, **kwargs):
+    return {}
+
+
+
 @must_be_contributor
-@must_have_addon('s3')
+@must_have_addon('s3', 'node')
 def s3_settings(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -45,7 +53,8 @@ def s3_settings(*args, **kwargs):
     
 
 @must_be_contributor
-@must_have_addon('s3')
+@must_have_addon('s3','node')
+
 def s3_widget_unused(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -74,7 +83,8 @@ def _page_content(pid, s3):
     return rv
 
 @must_be_contributor_or_public
-@must_have_addon('s3')
+@must_have_addon('s3','node')
+
 def s3_page(*args, **kwargs):
 
     user = kwargs['user']
@@ -95,7 +105,8 @@ def s3_page(*args, **kwargs):
     return rv
 
 @must_be_contributor_or_public
-@must_have_addon('s3')
+@must_have_addon('s3','node')
+
 def s3_download(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
@@ -107,7 +118,8 @@ def s3_download(*args, **kwargs):
     return redirect(connect.downloadFileURL(keyName.replace('&spc',' ').replace('&sl','/')))
 
 @must_be_contributor
-@must_have_addon('s3')
+@must_have_addon('s3','node')
+
 def s3_upload(*args,**kwargs):
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
@@ -135,7 +147,8 @@ def s3_upload(*args,**kwargs):
         }]
 
 @must_be_contributor
-@must_have_addon('s3')
+@must_have_addon('s3','node')
+
 def s3_delete(*args,**kwargs):
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
@@ -146,7 +159,8 @@ def s3_delete(*args,**kwargs):
     #raise Exception
 
 @must_be_contributor
-@must_have_addon('s3')
+@must_have_addon('s3','node')
+
 def render_file(*args, **kwargs):
     user = kwargs['user']
     node = kwargs['node'] or kwargs['project']
@@ -166,7 +180,8 @@ def render_file(*args, **kwargs):
     return rv
 
 @must_be_contributor
-@must_have_addon('s3')
+@must_have_addon('s3','node')
+
 def s3_new_folder(*args, ** kwargs):
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')

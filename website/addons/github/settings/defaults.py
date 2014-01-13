@@ -4,3 +4,9 @@ CLIENT_SECRET = None
 
 # GitHub access scope
 SCOPE = ['repo']
+
+# Set GitHub privacy on OSF permissions change
+SET_PRIVACY = False
+
+# GitHub hook domain
+HOOK_DOMAIN = None

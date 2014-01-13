@@ -46,6 +46,7 @@
             </div>
 
             <div class="panel-body">
+
                 <form id="chooseAddonsForm">
 
                     % for category in addon_categories:
@@ -85,26 +86,16 @@
 
                 </form>
 
-                % if addon_settings:
+                % if addon_enabled_settings:
 
                     <hr />
 
                     % for name in addon_enabled_settings:
 
-                        <div>
-                            <form class="addon-settings" data-addon="${name}">
-                                <%include file="metadata/metadata_container_1.html" />
-                                % if not node['is_registration']:
-                                    <button id="settings-submit" class="btn btn-success">
-                                        Submit
-                                    </button>
-                                % endif
-                                <div>
-                                    <br />
-                                    <div class="message" style="display: none;"></div>
-                                </div>
-                            </form>
-                        </div>
+                        <div mod-meta='{
+                                "tpl": "../addons/${name}/templates/${name}_node_settings.mako",
+                                "uri": "${node['api_url']}${name}/settings/"
+                            }'></div>
 
                         % if not loop.last:
                             <hr />
@@ -130,206 +121,16 @@
 
 <script type="text/javascript" src="/static/js/metadata_1.js"></script>
 
+## TODO: Move to project.js
 <script type="text/javascript">
 
-    var addonSettingsModels = {};
-
-    $(document).ready(function() {
-
-        % for name in addon_enabled_settings:
-
-            <% settings = addon_settings[name] %>
-
-            // Set up view model
-            var VM = new MetaData.ViewModel(
-                ${settings['schema']},
-                ${int(node['is_registration'])}
-            );
-            VM.updateIdx('add', true);
-
-            // Add model to models hash
-            addonSettingsModels['${name}'] = VM;
-
-            // Unserialize data from server
-            VM.unserialize(${settings['settings']});
-
-            // Apply completed bindings
-            ko.applyBindings(
-                VM,
-                $('form.addon-settings[data-addon="${name}"]')[0]
-            );
-
-        % endfor
-
-        ## TODO: Abstract authentication logic
-
-        % if 'github' in addon_enabled_settings:
-
-            var dataGH = addonSettingsModels.github.observedData,
-                addButton = $('#githubAddKey'),
-                delButton = $('#githubDelKey'),
-                keyUser = $('#githubKeyUser');
-
-            if (dataGH.github_has_authentication.value()) {
-                delButton.show();
-                keyUser.text('(Authorized by ' + dataGH.github_authenticated_user.value() + ')');
-            } else {
-                addButton.show();
-            }
-
-            if (dataGH.github_has_user_authentication.value()) {
-                addButton.html('Import Access Token from Profile');
-            } else {
-                addButton.html('Get Access Token');
-            }
-
-            addButton.on('click', function() {
-                if (dataGH.github_has_user_authentication.value()) {
-                    $.ajax({
-                        type: 'POST',
-                        url: nodeApiUrl + 'github/user_auth/',
-                        contentType: 'application/json',
-                        dataType: 'json',
-                        success: function(response) {
-                            window.location.reload();
-                        }
-                    });
-                } else {
-                    window.location.href = nodeApiUrl + 'github/oauth/';
-                }
-            });
-
-            delButton.on('click', function() {
-                bootbox.confirm(
-                    'Are you sure you want to delete your GitHub access key?',
-                    function(result) {
-                        if (result) {
-                            $.ajax({
-                                url: nodeApiUrl + 'github/oauth/delete/',
-                                type: 'POST',
-                                contentType: 'application/json',
-                                dataType: 'json',
-                                success: function() {
-                                    window.location.reload();
-                                }
-                            });
-                        }
-                    }
-                )
-            });
-
-        % endif
-
-        % if 'bitbucket' in addon_enabled_settings:
-
-            var dataBB = addonSettingsModels.bitbucket.observedData,
-                addButton = $('#bitbucketAddKey'),
-                delButton = $('#bitbucketDelKey'),
-                keyUser = $('#bitbucketKeyUser');
-
-            if (dataBB.bitbucket_has_authentication.value()) {
-                delButton.show();
-                keyUser.text('(Authorized by ' + dataBB.bitbucket_authenticated_user.value() + ')');
-            } else {
-                addButton.show();
-            }
-
-            if (dataBB.bitbucket_has_user_authentication.value()) {
-                addButton.html('Import Access Token from Profile');
-            } else {
-                addButton.html('Get Access Token');
-            }
-
-            addButton.on('click', function() {
-                if (dataBB.bitbucket_has_user_authentication.value()) {
-                    $.ajax({
-                        type: 'POST',
-                        url: nodeApiUrl + 'bitbucket/user_auth/',
-                        contentType: 'application/json',
-                        dataType: 'json',
-                        success: function(response) {
-                            window.location.reload();
-                        }
-                    });
-                } else {
-                    window.location.href = nodeApiUrl + 'bitbucket/oauth/';
-                }
-            });
-
-            delButton.on('click', function() {
-                bootbox.confirm(
-                    'Are you sure you want to delete your Bitbucket access key?',
-                    function(result) {
-                        if (result) {
-                            $.ajax({
-                                url: nodeApiUrl + 'bitbucket/oauth/delete/',
-                                type: 'POST',
-                                contentType: 'application/json',
-                                dataType: 'json',
-                                success: function() {
-                                    window.location.reload();
-                                }
-                            });
-                        }
-                    }
-                )
-            });
-
-        % endif
-
-    });
-
-    // Set up submission for addon selection form
-    $('#chooseAddonsForm').on('submit', function() {
-
-        var formData = {};
-        $('#chooseAddonsForm').find('input').each(function(idx, elm) {
-            var $elm = $(elm);
-            formData[$elm.attr('name')] = $elm.is(':checked');
+    function formToObj(form) {
+        var rv = {};
+        $.each($(form).serializeArray(), function(_, value) {
+            rv[value.name] = value.value;
         });
-
-        $.ajax({
-            url: nodeApiUrl + 'settings/addons/',
-            data: JSON.stringify(formData),
-            type: 'POST',
-            contentType: 'application/json',
-            dataType: 'json',
-            success: function() {
-                window.location.reload();
-            }
-        });
-
-        return false;
-
-    });
-
-    // Set up submission on addon settings forms
-    $('form.addon-settings').on('submit', function() {
-
-        var $this = $(this),
-            addon = $this.attr('data-addon'),
-            VM = addonSettingsModels[addon],
-            msgElm = $this.find('.message');
-
-        $.ajax({
-            url: nodeApiUrl + 'settings/' + addon + '/',
-            data: JSON.stringify(VM.serialize().data),
-            type: 'POST',
-            contentType: 'application/json',
-            dataType: 'json'
-        }).done(function() {
-            msgElm.text('Settings updated')
-                .removeClass('text-danger').addClass('text-success')
-                .fadeOut(100).fadeIn();
-        }).fail(function() {
-            msgElm.text('Error: Settings not updated')
-                .removeClass('text-success').addClass('text-danger')
-                .fadeOut(100).fadeIn();
-        });
-
-        return false;
-
-    });
+        return rv;
+    }
 
     ## TODO: Replace with something more fun, like the name of a famous scientist
     ## h/t @sloria
@@ -343,17 +144,74 @@
         return text;
     }
 
-    $('#delete-node').on('click', function() {
-        var key = randomString();
-        bootbox.prompt(
-            '<div>Delete this ${node["category"]} and all non-project children? This is IRREVERSIBLE.</div>' +
-                '<p style="font-weight: normal; font-size: medium; line-height: normal;">If you want to continue, type <strong>' + key + '</strong> and click OK.</p>',
-            function(result) {
-                if (result === key) {
-                    window.location.href = '${node["url"]}remove/';
+    $(document).ready(function() {
+
+        // Set up submission for addon selection form
+        $('#chooseAddonsForm').on('submit', function() {
+
+            var formData = {};
+            $('#chooseAddonsForm').find('input').each(function(idx, elm) {
+                var $elm = $(elm);
+                formData[$elm.attr('name')] = $elm.is(':checked');
+            });
+
+            $.ajax({
+                url: nodeApiUrl + 'settings/addons/',
+                data: JSON.stringify(formData),
+                type: 'POST',
+                contentType: 'application/json',
+                dataType: 'json',
+                success: function() {
+                    window.location.reload();
                 }
-            }
-        )
+            });
+
+            return false;
+
+        });
+
+        // Set up submission on addon settings forms
+        $('form.addon-settings').on('submit', function() {
+
+            var $this = $(this),
+                addon = $this.attr('data-addon'),
+                msgElm = $this.find('.addon-settings-message');
+
+            $.ajax({
+                url: nodeApiUrl + addon + '/settings/',
+                data: JSON.stringify(formToObj($this)),
+                type: 'POST',
+                contentType: 'application/json',
+                dataType: 'json'
+            }).success(function() {
+                msgElm.text('Settings updated')
+                    .removeClass('text-danger').addClass('text-success')
+                    .fadeOut(100).fadeIn();
+            }).fail(function() {
+                msgElm.text('Error: Settings not updated')
+                    .removeClass('text-success').addClass('text-danger')
+                    .fadeOut(100).fadeIn();
+            });
+
+            return false;
+
+        });
+
+        $('#delete-node').on('click', function() {
+            var key = randomString();
+            bootbox.prompt(
+                '<div>Delete this ${node['category']} and all non-project children? This is IRREVERSIBLE.</div>' +
+                    '<p style="font-weight: normal; font-size: medium; line-height: normal;">If you want to continue, type <strong>' + key + '</strong> and click OK.</p>',
+                function(result) {
+                    if (result === key) {
+                        window.location.href = '${node['url']}remove/';
+                    }
+                }
+            )
+        });
+
     });
+
 </script>
+
 </%def>

@@ -110,6 +110,7 @@ def project_new_node(*args, **kwargs):
     raise HTTPError(http.BAD_REQUEST, redirect_url=project.url)
 
 
+@must_be_logged_in
 @must_be_valid_project
 def node_fork_page(*args, **kwargs):
     project = kwargs['project']
@@ -144,7 +145,7 @@ def node_registrations(*args, **kwargs):
 
     user = get_current_user()
     node_to_use = kwargs['node'] or kwargs['project']
-    return _view_project(node_to_use, user)
+    return _view_project(node_to_use, user, primary=True)
 
 
 @must_be_valid_project
@@ -157,7 +158,7 @@ def node_forks(*args, **kwargs):
     user = get_current_user()
 
     node_to_use = node or project
-    return _view_project(node_to_use, user)
+    return _view_project(node_to_use, user, primary=True)
 
 
 @must_be_valid_project
@@ -168,29 +169,25 @@ def node_setting(**kwargs):
     user = get_current_user()
     node = kwargs.get('node') or kwargs.get('project')
 
-    rv = _view_project(node, user)
+    rv = _view_project(node, user, primary=True)
 
-    addon_data = {}
+    addons_enabled = []
     addon_enabled_settings = []
 
-    for addon_name in node.addons_enabled:
+    for addon in node.get_addons():
 
-        addon = node.get_addon(addon_name)
+        addons_enabled.append(addon.config.short_name)
 
-        if addon and addon.config.schema:
+        if addon.config.models['node']:
+            addon_enabled_settings.append(addon.config.short_name)
 
-            addon_data[addon_name] = {
-                'schema': json.dumps(addon.config.schema),
-                'settings': json.dumps(addon.to_json(user)),
-            }
-
-            addon_enabled_settings.append(addon_name)
-
-    rv['addon_settings'] = addon_data
     rv['addon_categories'] = settings.ADDON_CATEGORIES
-
-    rv['addons_available'] = settings.ADDONS_AVAILABLE
-    rv['addons_enabled'] = node.addons_enabled
+    rv['addons_available'] = [
+        addon
+        for addon in settings.ADDONS_AVAILABLE
+        if 'node' in addon.owners
+    ]
+    rv['addons_enabled'] = addons_enabled
     rv['addon_enabled_settings'] = addon_enabled_settings
 
     return rv
@@ -199,16 +196,8 @@ def node_setting(**kwargs):
 @must_be_contributor
 @must_not_be_registration
 def node_choose_addons(**kwargs):
-
     node = kwargs['node'] or kwargs['project']
-
-    for addon_name, enabled in request.json.iteritems():
-        if enabled:
-            node.add_addon(addon_name, save=False)
-        else:
-            node.delete_addon(addon_name, save=False)
-
-    node.save()
+    node.config_addons(request.json)
 
 
 ##############################################################################
@@ -256,7 +245,7 @@ def project_statistics(*args, **kwargs):
     rv = {
         'csv' : csv,
     }
-    rv.update(_view_project(node_to_use, user))
+    rv.update(_view_project(node_to_use, user, primary=True))
     return rv
 
 
@@ -385,7 +374,8 @@ def component_remove(*args, **kwargs):
 def view_project(*args, **kwargs):
     user = get_current_user()
     node_to_use = kwargs['node'] or kwargs['project']
-    return _view_project(node_to_use, user)
+    primary = '/api/v1' not in request.path
+    return _view_project(node_to_use, user, primary=primary)
 
 
 # TODO: Split into separate functions
@@ -396,7 +386,7 @@ def _render_addon(node):
     js = []
     css = []
 
-    for addon in getattr(node, 'addons', []):
+    for addon in node.get_addons():
 
         configs[addon.config.short_name] = addon.config.to_json()
 
@@ -406,7 +396,7 @@ def _render_addon(node):
     return widgets, configs, js, css
 
 
-def _view_project(node_to_use, user, api_key=None):
+def _view_project(node_to_use, user, api_key=None, primary=False):
     """Build a JSON object containing everything needed to render
     project.view.mako.
 
@@ -415,10 +405,12 @@ def _view_project(node_to_use, user, api_key=None):
     recent_logs = list(reversed(node_to_use.logs)[:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
     widgets, configs, js, css = _render_addon(node_to_use)
-    # Before page load callback; skip if API request
-    if 'api/v1' not in request.path:
-        for addon in getattr(node_to_use, 'addons', []):
-            addon.before_page_load(node_to_use, user)
+    # Before page load callback; skip if not primary call
+    if primary:
+        for addon in node_to_use.get_addons():
+            message = addon.before_page_load(node_to_use)
+            if message:
+                status.push_status_message(message)
     data = {
         'node': {
             'id': node_to_use._primary_key,
@@ -460,7 +452,8 @@ def _view_project(node_to_use, user, api_key=None):
             'fork_count': len(node_to_use.fork_list),
 
             'watched_count': len(node_to_use.watchconfig__watched),
-            'logs': recent_logs_dicts
+            'logs': recent_logs_dicts,
+            'piwik_site_id': node_to_use.piwik_site_id,
         },
         'parent': {
             'id': parent._primary_key if parent else '',
@@ -475,10 +468,11 @@ def _view_project(node_to_use, user, api_key=None):
             'is_contributor': node_to_use.is_contributor(user),
             'can_edit': (node_to_use.can_edit(user, api_key)
                                 and not node_to_use.is_registration),
-            'is_watching': user.is_watching(node_to_use) if user else False
+            'is_watching': user.is_watching(node_to_use) if user else False,
+            'piwik_token': user.piwik_token if user else '',
         },
         # TODO: Namespace with nested dicts
-        'addons_enabled': node_to_use.addons_enabled,
+        'addons_enabled': node_to_use.get_addon_names(),
         'addons': configs,
         'addon_widgets': widgets,
         'addon_widget_js': js,
@@ -573,7 +567,7 @@ def get_summary(*args, **kwargs):
             'ua_count': None,
             'ua': None,
             'non_ua': None,
-            'addons_enabled': node_to_use.addons_enabled,
+            'addons_enabled': node_to_use.get_addon_names(),
         }
         if rescale_ratio:
             ua_count, ua, non_ua = _get_user_activity(node_to_use, user, rescale_ratio)

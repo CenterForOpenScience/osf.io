@@ -12,8 +12,8 @@ class TestAddonConfig(unittest.TestCase):
 
     def setUp(self):
         self.addon_config = AddonConfig(
-            short_name='test', full_name='test',
-            added_by_default=False, categories=[],
+            short_name='test', full_name='test', owners=['node'],
+            added_to={'node': False}, categories=[],
             settings_model=AddonNodeSettingsBase,
         )
 

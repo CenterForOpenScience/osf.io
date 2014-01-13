@@ -1,14 +1,20 @@
-from .model.settings import AddonFigShareNodeSettings
+from .model import AddonFigShareNodeSettings
 from .routes import settings_routes
 
-SETTINGS_MODEL = AddonFigShareNodeSettings
+NODE_SETTINGS_MODEL = AddonFigShareNodeSettings
 
 ROUTES = [settings_routes]
 
 SHORT_NAME = 'figshare'
 FULL_NAME = 'FigShare'
 
-ADDED_BY_DEFAULT = False
+OWNERS = ['node']
+
+ADDED_TO = {
+    'node': False,
+}
+
+VIEWS = ['widget']
 
 CATEGORIES = ['storage']
   
@@ -23,20 +29,3 @@ INCLUDE_CSS = {
 }
 
 WIDGET_HELP = 'FigShare Add-on Alpha'
-
-SCHEMA = {
-    'pages': [
-        {
-            'id': 'null',
-            'title': 'FigShare Addon Settings',
-            'contents': [
-                {
-                    'id': 'figshare_id',
-                    'type': 'textfield',
-                    'label': 'FigShare Project ID',
-                    'required': True,
-                },
-            ]
-        }
-    ]
-}
