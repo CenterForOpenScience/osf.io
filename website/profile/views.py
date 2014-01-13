@@ -174,7 +174,7 @@ def profile_settings(**kwargs):
 
         addons_enabled.append(addon.config.short_name)
 
-        if addon.config.model['user']:
+        if 'user' in addon.config.configs:
             addon_enabled_settings.append(addon.config.short_name)
 
     rv['addon_categories'] = settings.ADDON_CATEGORIES

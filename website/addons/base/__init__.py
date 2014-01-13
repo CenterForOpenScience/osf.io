@@ -32,7 +32,7 @@ class AddonConfig(object):
 
     def __init__(self, short_name, full_name, owners, added_to, categories,
                  node_settings_model=None, user_settings_model=None, include_js=None, include_css=None,
-                 widget_help=None, views=None,
+                 widget_help=None, views=None, configs=None,
                  **kwargs):
 
         self.models = {}
@@ -57,6 +57,7 @@ class AddonConfig(object):
         self.widget_help = widget_help
 
         self.views = views or []
+        self.configs = configs or []
 
         # Build template lookup
         template_path = os.path.join('website', 'addons', short_name, 'templates')
@@ -224,6 +225,16 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
         pass
 
+    def before_fork(self, node, user):
+        """
+
+        :param Node node:
+        :param User user:
+        :return str: Alert message
+
+        """
+        pass
+
     def after_fork(self, node, fork, user, save=True):
         """
 
@@ -241,6 +252,16 @@ class AddonNodeSettingsBase(AddonSettingsBase):
             clone.save()
 
         return clone, None
+
+    def before_register(self, node, user):
+        """
+
+        :param Node node:
+        :param User user:
+        :return str: Alert message
+
+        """
+        pass
 
     def after_register(self, node, registration, user, save=True):
         """

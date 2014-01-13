@@ -1183,16 +1183,15 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
         return True
 
-    def before_remove_contributor(self, contributor, user):
+    def callback(self, callback, *args, **kwargs):
 
         messages = []
 
-        if not user._primary_key == contributor._id:
-
-            for addon in self.get_addons():
-                message = addon.before_remove_contributor(self, contributor)
-                if message:
-                    messages.append(message)
+        for addon in self.get_addons():
+            method = getattr(addon, callback)
+            message = method(self, *args, **kwargs)
+            if message:
+                messages.append(message)
 
         return messages
 

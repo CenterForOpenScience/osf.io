@@ -559,6 +559,10 @@ def make_url_map(app):
 
         # Forks
         Rule([
+            '/project/<pid>/beforefork/',
+            '/project/<pid>/node/<nid>/beforefork',
+        ], 'get', project_views.node.project_before_fork, json_renderer),
+        Rule([
             '/project/<pid>/fork/',
             '/project/<pid>/node/<nid>/fork/',
         ], 'post', project_views.node.node_fork_page, json_renderer),
@@ -570,6 +574,10 @@ def make_url_map(app):
         ], 'get', project_views.node.node_forks, json_renderer),
 
         # Registrations
+        Rule([
+            '/project/<pid>/beforeregister/',
+            '/project/<pid>/node/<nid>/beforeregister',
+        ], 'get', project_views.register.project_before_register, json_renderer),
         Rule([
             '/project/<pid>/register/<template>/',
             '/project/<pid>/node/<nid>/register/<template>/',
