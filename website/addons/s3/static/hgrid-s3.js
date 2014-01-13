@@ -61,7 +61,7 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
         //var spacer = "<span style='display:inline-block;height:1px;width:30px'></span>";
         if(dataContext['type']!='folder'){
             var delButton = "<button type='button' class='btn btn-danger btn-mini' onclick='grid.deleteItems([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-trash icon-white'></i></button>"
-            var downButton = '<a href=fetchurl/' + dataContext['s3path']+ '><button type="button" class="btn btn-success btn-mini"><i class="icon-download-alt icon-white"></i></button></a>';
+            var downButton = '<a href=fetchurl/' + dataContext['uid'].replace(' ','&spc').replace('/','&sl')+ '><button type="button" class="btn btn-success btn-mini"><i class="icon-download-alt icon-white"></i></button></a>';
             return "<div align=\"center\">" + downButton + delButton + "</div>";
         }else{
             var newFolderButton = "<button type='button' class='btn btn-success btn-mini' onclick='newFolder([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-plus icon-white'></i></button>"

@@ -118,13 +118,12 @@ def s3_upload(*args,**kwargs):
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
     connect = BucketManager.fromAddon(s3)
-
     connect.flaskUpload(upload,filename,parentFolder)
     return [{
             'uid': str(parentFolder) + filename,
             'type': 'file',
             'name': filename,
-            'parent_uid': "0",
+            'parent_uid': parentFolder,
             'version_id': 'current',
             'size': '--',
             'lastMod': "--",

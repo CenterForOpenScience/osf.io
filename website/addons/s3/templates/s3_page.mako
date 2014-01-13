@@ -22,7 +22,6 @@
 		<div id="s3Grid"/></div>
 	</div>
 
-	${grid}
 
 </html>
 </%def>
