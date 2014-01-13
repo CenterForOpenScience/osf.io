@@ -5,7 +5,9 @@
     Viewing Bucket: <b>${bucket}</b>
 
     <script type="text/javascript">
-        var gridData = ${grid}
+        var gridData = ${grid},
+        can_io = ${int(can_io)},
+        can_dl = ${int(can_dl)}
     </script>
 
                 <div class="container" style="position: relative;">
@@ -16,12 +18,12 @@
                 </div>
             </div>
 
-
+%if can_view:
     <div id="grid">
     	<div id="s3Crumbs"></div>
 		<div id="s3Grid"/></div>
 	</div>
-
+%endif
 
 </html>
 </%def>

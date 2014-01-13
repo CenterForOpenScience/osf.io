@@ -57,11 +57,11 @@ def s3_widget_unused(*args, **kwargs):
 def _page_content(pid, s3):
     #nTODO use bucket name 
     # create new bucket if not found  inform use/ output error
-    #try:
-    connect = BucketManager.fromAddon(s3)
-    data = connect.getHgrid('/project/' + pid + '/s3/') 
-    #except Exception:
-    #push_status_message("Something went wrong. Are you sure your setting are correct?")
+    try:
+        connect = BucketManager.fromAddon(s3)
+        data = connect.getHgrid('/project/' + pid + '/s3/') 
+    except Exception:
+        push_status_message("Something went wrong. Are you sure your setting are correct?")
     #Error handling should occur here or one function up
     # ie if usersettings or settings is none etc etc
     
@@ -69,6 +69,9 @@ def _page_content(pid, s3):
         'complete': True,
         'bucket': s3.s3_bucket,
         'grid': data,
+        'can_io': True,
+        'can_view': True,
+        'can_dl': True,
     }
     return rv
 

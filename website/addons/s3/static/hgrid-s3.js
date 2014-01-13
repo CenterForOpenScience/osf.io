@@ -17,7 +17,6 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         }
     } else {
         var link = value;
-        //version control would happen around here but actually in the upload bars
         //if(dataContext['download']){
             //This will later be changed into a render function
             link = "<a href=render/" + dataContext['s3path'] + ">" + value + "</a>";
@@ -61,8 +60,12 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
     if (!dataContext['uploadBar']){
         var spacer = "<span style='display:inline-block;height:1px;width:30px'></span>";
         if(dataContext['type']!='folder'){
-            var delButton = "<button type='button' class='btn btn-danger btn-mini' onclick='grid.deleteItems([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-trash icon-white'></i></button>"
-            var downButton = '<a href=fetchurl/' + dataContext['uid'].replace(' ','&spc').replace('/','&sl')+ '><button type="button" class="btn btn-success btn-mini"><i class="icon-download-alt icon-white"></i></button></a>';
+                var delButton = "<button type='button' class='btn btn-danger btn-mini' onclick='grid.deleteItems([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-trash icon-white'></i></button>"
+                var downButton = '<a href=fetchurl/' + dataContext['uid'].replace(' ','&spc').replace('/','&sl')+ '><button type="button" class="btn btn-success btn-mini"><i class="icon-download-alt icon-white"></i></button></a>';
+                if(!can_io)
+                    delButton  = "";
+                if (!can_dl)
+                    downButton = "";
             return "<div align=\"center\">" + downButton + " " + delButton + "</div>";
         }else{
             var newFolderButton = "<button type='button' class='btn btn-success btn-mini' onclick='newFolder([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-plus icon-white'></i></button>"
