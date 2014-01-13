@@ -18,6 +18,10 @@ from framework.flask import secure_filename
 from api import BucketManager
 from boto.s3.connection import S3Connection
 
+import time
+from datetime import date
+import os
+
 @must_be_contributor
 @must_have_addon('s3')
 def s3_settings(*args, **kwargs):
@@ -110,22 +114,32 @@ def s3_upload(*args,**kwargs):
     parentFolder = kwargs.get('path')
     if parentFolder is not None:
         parentFolder = parentFolder.replace('&spc',' ').replace('&sl','/')
-        
+
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
     connect = BucketManager.fromAddon(s3)
 
     connect.flaskUpload(upload,filename,parentFolder)
-    key = connect.getWrappedKey(filename)
-    diction = key.getAsDict('/project/' + str(kwargs['pid'] )+ '/s3/')
-    return diction, 201
+    return [{
+            'uid': str(parentFolder) + filename,
+            'type': 'file',
+            'name': filename,
+            'parent_uid': "0",
+            'version_id': 'current',
+            'size': '--',
+            'lastMod': "--",
+            'ext':os.path.splitext(filename)[1][1:],
+            'uploadUrl': " ",
+            'downloadUrl':'/project/' + str(kwargs['pid'] )+ '/s3/download/',
+            'deleteUrl': '/project/' + str(kwargs['pid'] )+ '/s3/delete/',
+        }]
 
 @must_be_contributor_or_public
 @must_have_addon('s3')
 def s3_delete(*args,**kwargs):
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
-    dfile = request.json.get('keyPath').replace('&spc',' ').replace('&sl','/')
+    dfile = request.json.get('keyPath')
     connect = BucketManager.fromAddon(s3)
     connect.deleteFile(dfile)
     return {}
