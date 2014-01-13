@@ -63,7 +63,7 @@
                             % if node["category"] == 'project' and user_name:
                                 href="#"
                                 class="btn btn-default node-fork-btn"
-                                onclick="NodeActions.forkNode();"
+                                onclick="NodeActions.beforeForkNode();"
                             % else:
                                 class="btn btn-default disabled node-fork-btn"
                             % endif

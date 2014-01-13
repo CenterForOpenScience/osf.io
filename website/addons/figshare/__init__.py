@@ -15,6 +15,7 @@ ADDED_TO = {
 }
 
 VIEWS = ['widget']
+CONFIGS = ['node']
 
 CATEGORIES = ['storage']
 
