@@ -177,7 +177,7 @@ def node_setting(**kwargs):
 
         addons_enabled.append(addon.config.short_name)
 
-        if addon.config.has_node_settings:
+        if addon.config.models['node']:
             addon_enabled_settings.append(addon.config.short_name)
 
     rv['addon_categories'] = settings.ADDON_CATEGORIES

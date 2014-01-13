@@ -168,6 +168,7 @@ def github_set_config(*args, **kwargs):
 
 def _page_content(node, github, hotlink=True):
 
+    # Fail if GitHub settings incomplete
     if github.user is None or github.repo is None:
         return {}
 
@@ -176,14 +177,32 @@ def _page_content(node, github, hotlink=True):
     branch = request.args.get('branch')
     sha = request.args.get('sha')
 
+    repo = None
+
     if sha and not branch:
         raise HTTPError(http.BAD_REQUEST)
 
+    # Get default branch if not provided
     if not branch:
-        repo = connect.repo(github.user, github.repo)
+        repo = repo or connect.repo(github.user, github.repo)
         if not repo:
             return {}
         branch = repo['default_branch']
+
+    # Get registered branches if provided
+    registered_branches = (
+        github.registration_data.get('branches', [])
+        if github.owner.is_registration
+        else []
+    )
+    registered_branch_names = [
+        _branch['name']
+        for _branch in registered_branches
+    ]
+
+    # Fail if registered and branch not in registration data
+    if registered_branches and branch not in registered_branch_names:
+        raise HTTPError(http.BAD_REQUEST)
 
     if sha:
         branches = connect.branches(github.user, github.repo, branch)
@@ -191,26 +210,23 @@ def _page_content(node, github, hotlink=True):
     else:
         head = None
 
-    if github.registration_data:
-        for _branch in github.registration_data['branches']:
-            if branch == _branch['name']:
-                sha = _branch['commit']['sha']
+    # Use registered SHA if provided
+    for _branch in registered_branches:
+        if branch == _branch['name']:
+            sha = _branch['commit']['sha']
 
-    registered_branches = (
-        github.registration_data.get('branches', [])
-        if github.owner.is_registration
-        else []
-    )
-
-    # Get data from GitHub API
+    # Get data from GitHub API if not registered
     branches = registered_branches or connect.branches(github.user, github.repo)
     if branches is None:
         return {}
+
+    # Check repo privacy if hotlinking enabled
     if hotlink:
         repo = connect.repo(github.user, github.repo)
         if repo is None or repo['private']:
             hotlink = False
 
+    # Get file tree
     tree = connect.tree(
         github.user, github.repo, sha=sha or branch,
         registration_data=registered_branches
@@ -218,12 +234,13 @@ def _page_content(node, github, hotlink=True):
     if tree is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    # If authorization, check whether authorized user has push rights to repo
+    # Check permissions if authorized
     has_auth = False
     if github.user_settings:
-        repo = connect.repo(github.user, github.repo)
+        repo = repo or connect.repo(github.user, github.repo)
         has_auth = repo is not None and repo['permissions']['push']
 
+    # Build HGrid JSON
     hgrid = tree_to_hgrid(
         tree['tree'], github.user, github.repo, node,
         branch=branch, sha=sha, hotlink=hotlink,

@@ -14,6 +14,8 @@ ADDED_TO = {
     'node': False,
 }
 
+VIEWS = ['widget']
+
 CATEGORIES = ['storage']
 
 INCLUDE_JS = {
@@ -27,20 +29,3 @@ INCLUDE_CSS = {
 }
 
 WIDGET_HELP = 'FigShare Add-on Alpha'
-
-SCHEMA = {
-    'pages': [
-        {
-            'id': 'null',
-            'title': 'FigShare Addon Settings',
-            'contents': [
-                {
-                    'id': 'figshare_id',
-                    'type': 'textfield',
-                    'label': 'FigShare Project ID',
-                    'required': True,
-                },
-            ]
-        }
-    ]
-}
