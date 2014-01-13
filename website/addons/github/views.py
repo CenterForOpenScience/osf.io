@@ -166,18 +166,13 @@ def github_set_config(*args, **kwargs):
         github_node.save()
 
 
-def _page_content(node, github, hotlink=True):
+def _page_content(node, github, branch=None, sha=None, hotlink=True):
 
     # Fail if GitHub settings incomplete
     if github.user is None or github.repo is None:
         return {}
 
     connect = GitHub.from_settings(github.user_settings)
-
-    branch = request.args.get('branch')
-    sha = request.args.get('sha')
-
-    repo = None
 
     if sha and not branch:
         raise HTTPError(http.BAD_REQUEST)
@@ -285,8 +280,8 @@ def github_page(*args, **kwargs):
     github = kwargs['node_addon']
 
     data = _view_project(node, user, primary=True)
-
-    rv = _page_content(node, github)
+    branch, sha = request.args.get('branch'), request.args.get('sha')
+    rv = _page_content(node, github, branch=branch, sha=sha)
     rv.update({
         'addon_page_js': github.config.include_js.get('page'),
         'addon_page_css': github.config.include_css.get('page'),
