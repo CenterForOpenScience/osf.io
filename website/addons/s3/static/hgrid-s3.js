@@ -122,7 +122,7 @@ var grid = HGrid.create({
             return ans;
         },
         url: gridData[0]['uploadUrl'],
-        navLevel: gridData[0]['uid'],
+       // navLevel: gridData[0]['uid'],
         dropZonePreviewsContainer: false,
         rowHeight: 30,
         enableCellNavigation: false,

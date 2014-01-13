@@ -6,8 +6,8 @@
 
     <script type="text/javascript">
         var gridData = ${grid},
-        can_io = ${int(can_io)},
-        can_dl = ${int(can_dl)}
+        can_io = ${int(user['can_edit'])},
+        can_dl = 1
     </script>
 
                 <div class="container" style="position: relative;">
@@ -18,12 +18,12 @@
                 </div>
             </div>
 
-%if can_view:
+
     <div id="grid">
     	<div id="s3Crumbs"></div>
 		<div id="s3Grid"/></div>
 	</div>
-%endif
+
 
 </html>
 </%def>

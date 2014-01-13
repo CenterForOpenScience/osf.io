@@ -16,7 +16,7 @@ from framework import request, redirect, make_response
 from framework.flask import secure_filename
 
 from api import BucketManager
-from boto.s3.connection import S3Connection
+from boto.exception import S3ResponseError
 
 import time
 from datetime import date
@@ -60,8 +60,9 @@ def _page_content(pid, s3):
     try:
         connect = BucketManager.fromAddon(s3)
         data = connect.getHgrid('/project/' + pid + '/s3/') 
-    except Exception:
-        push_status_message("Something went wrong. Are you sure your setting are correct?")
+    except S3ResponseError:
+        push_status_message("It appears you do not have access to this bucket. Are you settings correct?")
+        data = None
     #Error handling should occur here or one function up
     # ie if usersettings or settings is none etc etc
     
@@ -69,9 +70,6 @@ def _page_content(pid, s3):
         'complete': True,
         'bucket': s3.s3_bucket,
         'grid': data,
-        'can_io': True,
-        'can_view': True,
-        'can_dl': True,
     }
     return rv
 
