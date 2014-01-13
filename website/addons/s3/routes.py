@@ -29,9 +29,9 @@ page_routes = {
             ], 'get', views.s3_download, json_renderer),
         Rule([
             '/project/<pid>/s3/upload/',
-            '/project/<pid>/s3/upload/<path:path>',
+            '/project/<pid>/s3/upload/<path>',
             '/project/<pid>/node/<nid>/s3/upload/',
-            '/project/<pid>/node/<nid>/s3/upload/<path:path>',
+            '/project/<pid>/node/<nid>/s3/upload/<path>',
         ], 'post', views.s3_upload, json_renderer),
         Rule([
             '/project/<pid>/s3/delete/',
@@ -41,7 +41,11 @@ page_routes = {
         Rule([
             '/project/<pid>/s3/render/<key>',
             '/project/<pid>/node/<nid>/s3/render/<key>'
-        ],'get',views.render_file, OsfWebRenderer('../addons/s3/templates/s3_render.mako')), #Mako file here
+        ],'get',views.render_file, OsfWebRenderer('../addons/s3/templates/s3_render.mako')),
+        Rule([
+            '/project/<pid>/s3/newfolder/<path>',
+            '/project/<pid>/node/<nid>/s3/newfolder/<path>'
+        ],'get',views.s3_new_folder, json_renderer),
     ],
 }
 

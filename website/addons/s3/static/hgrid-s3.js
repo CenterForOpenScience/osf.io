@@ -17,6 +17,7 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         }
     } else {
         var link = value;
+        //version control would happen around here but actually in the upload bars
         //if(dataContext['download']){
             //This will later be changed into a render function
             link = "<a href=render/" + dataContext['s3path'] + ">" + value + "</a>";
@@ -29,14 +30,42 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
     }
 };
 
+
+var newFolder = function(dataContext) {
+    var message = "Please name your new folder."
+     var d = $.Deferred();
+    bootbox.prompt(message, function(result)
+    {
+  if (result) {
+                    var url = args['items'][0]['deleteUrl'];
+                    $.ajax({
+                        url: url,
+                        type: 'DELETE',
+                        data: JSON.stringify({keyPath: args['items'][0]['s3path']}),
+                        contentType: 'application/json',
+                        dataType: 'json'
+                    }).complete(function() {
+                        d.resolve(true);
+                    }).error(function() {
+                        d.resolve(false);
+                    });
+                } else {
+                    d.resolve(false);
+                }
+            }
+        );
+        return d;
+    };
+
 var UploadBars = function(row, cell, value, columnDef, dataContext) {
         //var spacer = "<span style='display:inline-block;height:1px;width:30px'></span>";
         if(dataContext['type']!='folder'){
             var delButton = "<button type='button' class='btn btn-danger btn-mini' onclick='grid.deleteItems([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-trash icon-white'></i></button>"
-            var downButton = '<a href=fetchurl/' + dataContext['s3path'] +'><button type="button" class="btn btn-success btn-mini"><i class="icon-download-alt icon-white"></i></button></a>';
+            var downButton = '<a href=fetchurl/' + dataContext['s3path']+ '><button type="button" class="btn btn-success btn-mini"><i class="icon-download-alt icon-white"></i></button></a>';
             return "<div align=\"center\">" + downButton + delButton + "</div>";
         }else{
-            return '';
+            var newFolderButton = "<button type='button' class='btn btn-success btn-mini' onclick='newFolder([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-plus icon-white'></i></button>"
+            return '<div align="center">' +  newFolderButton + "</div>";
         }
         //}
 };
@@ -47,10 +76,10 @@ var VersionSelect = function(row, cell, value, columnDef, dataContext) {
         return '--';
     else
     {
-        var selector = "<select>";
-        for(var i = 0; i < dataContext['version_id']; i++)
+        var selector = '<select id="VersionSelect">';
+        for(var i = dataContext['version_id'].length; i > 0; i--)
         {
-            selector += "<option value=" + i + ">" + i + "</option>";
+            selector += "<option value=" + dataContext['version_id'][i] + ">" + i + "</option>";
         }
         return selector + "</select>";
     }
@@ -67,7 +96,7 @@ var grid = HGrid.create({
         {id: "name", name: "Name", field: "name", cssClass: "cell-title", formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
         {id: "lastMod", name: "Last Modified", field: "lastMod", sortable: true},
         {id: "size", name: "Size", field: "size", width: 10, sortable: true},
-        {id: "version_id", name: "Version", field: "version_id", width: 7, formatter: VersionSelect, sortable: true},
+        //{id: "version_id", name: "Version", field: "version_id", width: 7, formatter: VersionSelect, sortable: true},
         ],
         largeGuide: false,
         enableColumnReorder: false,
@@ -76,11 +105,21 @@ var grid = HGrid.create({
     dragDrop: false,
     dropZone: true,
     clickUploadElement: '#s3FormUpload',
-    urlAdd: pidUrl
+    urlAdd: function() {
+        var ans = {};
+        for (var i = 0; i < gridData.length; i++) {
+            if (gridData[i].type == 'folder') {
+                ans[gridData[i]['uid']] = gridData[i]['uploadUrl'];
+            }
+        }
+        ans[null] = gridData[0]['uploadUrl'];
+        return ans;
+    },
+    url: gridData[0]['uploadUrl'],
 });
 
 grid.addColumn({id: "download", name: "Delete", field: "download", width: 75, sortable: true, formatter: UploadBars});
-myGrid.updateBreadcrumbsBox(myGrid.data[0]['uid']);
+grid.updateBreadcrumbsBox(grid.data[0]['uid']);
 
 grid.hGridBeforeDelete.subscribe(function(e, args) {
     if (args['items'][0]['type'] !== 'fake') {
@@ -90,11 +129,11 @@ grid.hGridBeforeDelete.subscribe(function(e, args) {
             msg,
             function(result) {
                 if (result) {
-                    var url = pidUrl;
+                    var url = args['items'][0]['deleteUrl'];
                     $.ajax({
                         url: url,
                         type: 'DELETE',
-                        data: JSON.stringify({keyPath: args['items'][0]['s3path']}),
+                        data: JSON.stringify({keyPath: args['items'][0]['uid']}),
                         contentType: 'application/json',
                         dataType: 'json'
                     }).complete(function() {
@@ -118,7 +157,7 @@ grid.hGridBeforeUpload.subscribe(function(e, args) {
     grid.removeDraggerGuide();
     var path = args.parent['path'].slice();
     path.push(args.item.name);
-    var item = {name: args.item.name, parent_uid: args.parent['uid'], uid: args.item.name, type:"fake", uploadBar: true, path: path, sortpath: path.join("/"), ext: "py", size: args.item.size.toString()};
+    var item = {name: args.item.name, parent_uid: args.parent['uid'], uid: args.item.name, type:"fake", uploadBar: true, path: path, sortpath: path.join("/"), ext: "py", size: args.item.size.toString(),version_id:"current"};
     var promise = $.when(grid.addItem(item));
     promise.done(function(bool){
         return true;

@@ -11,6 +11,11 @@ from hurry.filesize import size
 import os
 import re
 
+URLADDONS = {
+        'delete':'delete/',
+        'upload':'upload/',
+        'download':'download/',
+}
 
 class BucketManager:
 
@@ -95,8 +100,7 @@ class BucketManager:
     def getWrappedKey(self,keyName):
         return S3Key(self.bucket.get_key(keyName))
 
-    def getHgrid(self):
-            S3Key.nextUid = 1
+    def getHgrid(self,url):
             keyList = self.getWrappedKeys(self.bucket.list())
             hgrid = []
             hgrid.append({
@@ -106,15 +110,19 @@ class BucketManager:
             'parent_uid': 'null',
             'version_id': '--',
             'lastMod': '--',
-            'size':'--'
+            'size':'--',
+            'uploadUrl': url + URLADDONS['upload'],
+            'downloadUrl':url + URLADDONS['download'],
+            'deleteUrl':url + URLADDONS['delete'],
             })
             self.checkFolders(keyList)
             for k in keyList:
+                k.updateVersions(self)
                 if k.parentFolder is not 'null':
                     q = [x for x in keyList if k.parentFolder == x.name]
-                    hgrid.append(k.getAsDict(q[0].uid))
+                    hgrid.append(k.getAsDict(url,q[0].fullPath))
                 else:
-                    hgrid.append(k.getAsDict())
+                    hgrid.append(k.getAsDict(url))
             return hgrid
 
     def checkFolders(self,keyList):
@@ -125,28 +133,39 @@ class BucketManager:
                 keyList.append(S3Key(newKey))
                 raise Exception
 
-    def flaskUpload(self,upFile,safeFilename):
-        k = self.bucket.new_key(safeFilename)
+    def flaskUpload(self,upFile,safeFilename,parentFolder=None):
+        if parentFolder:
+            k = self.bucket.new_key(parentFolder + safeFilename)
+        else:
+            k = self.bucket.new_key(safeFilename)
         k.set_contents_from_string(upFile.read())
 
     def getVersionData(self):
         versions = {}
-        for p in s.Buckets['newuniquebucket'].list_versions():
+        for p in self.bucket.list_versions():
             if type(p) is Key:
-                if p.key not in versions:
-                    versions[p.key] = []
-            versions[p.key].append(p.version_id)
-        return version
+                if str(p.version_id) != 'null':
+                    if str(p.key) not in versions:
+                        versions[str(p.key)] = []
+                    versions[str(p.key)].append(str(p.version_id))
+        return versions
+        #update this to cache results later
 
+    def getFileVersions(self,fileName):
+        v = self.getVersionData()
+        if fileName in v:
+            return v[fileName]
+        return []
 
 class S3Key:
 
-    nextUid = 1
 
     def __init__(self, key):
         self.s3Key = key
-        self.uid = S3Key.nextUid
-        S3Key.nextUid+=1
+        if self.type is 'file':
+            self.versions = ['current']
+        else:
+            self.version =  '--'
 
     @property
     def name(self):
@@ -182,10 +201,9 @@ class S3Key:
             return d[len(d)-3]
         else:
             return 'null'
-    def getAsDict(self,parent_uid=0):
+    def getAsDict(self,url,parent_uid=0):
         return{
-            's3path':self.fullPath.replace(' ','&spc').replace('/','&sl'),
-            'uid':self.uid,
+            'uid': self.fullPath,
             'type':self.type,
             'name':self.name,
             'parent_uid':parent_uid,
@@ -193,6 +211,9 @@ class S3Key:
             'size':self.size,
             'lastMod':self.lastMod,
             'ext':self.extention,
+            'uploadUrl': self.uploadPath(url),
+            'downloadUrl':url + URLADDONS['download'],
+            'deleteUrl':url + URLADDONS['delete'],
         }
     @property
     def pathTo(self):
@@ -210,14 +231,14 @@ class S3Key:
             return '--'
         else:
             m= re.search('(.+?)-(.+?)-(\d*)T(\d*):(\d*):(\d*)',str(self.s3Key.last_modified))
-            return "{month}/{day}/{year} {hour}:{minute}".format(month=m.group(2),day=m.group(3),year=m.group(4),hour=m.group(5),minute=m.group(6))
+            if(m is not None):
+                return "{month}/{day}/{year} {hour}:{minute}".format(month=m.group(2),day=m.group(3),year=m.group(4),hour=m.group(5),minute=m.group(6))
+            else:
+                return '--'
 
     @property
     def version(self):
-        if self.s3Key.version_id:
-            return str(self.s3Key.version_id)
-        else:
-            return '--'
+        return self.versions
 
     @property
     def extention(self):
@@ -228,3 +249,12 @@ class S3Key:
                 return os.path.splitext(self._nameAsStr())[1][1:]
         else:
             return '--'
+    def updateVersions(self, manager):
+        if self.type is not 'folder':
+            self.versions.extend(manager.getFileVersions(self._nameAsStr()))
+
+    def uploadPath(self,url):
+        if self.type is not 'folder':
+            return url + URLADDONS['upload']
+        else:
+            return url + URLADDONS['upload'] + self.fullPath.replace(' ','&spc').replace('/','&sl') + '/'

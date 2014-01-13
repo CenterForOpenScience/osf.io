@@ -50,12 +50,12 @@ def s3_widget_unused(*args, **kwargs):
     rv.update(s3.config.to_json())
     return rv
 
-def _page_content(node, s3):
+def _page_content(pid, s3):
     #nTODO use bucket name 
     # create new bucket if not found  inform use/ output error
     #try:
-    connect = BucketManager(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key),s3.s3_bucket)
-    data = connect.getHgrid()
+    connect = BucketManager.fromAddon(s3)
+    data = connect.getHgrid('/project/' + pid + '/s3/') 
     #except Exception:
     #push_status_message("Something went wrong. Are you sure your setting are correct?")
     #Error handling should occur here or one function up
@@ -79,9 +79,8 @@ def s3_page(*args, **kwargs):
 
     data = _view_project(node, user)
 
-    rv = _page_content(node, s3)
+    rv = _page_content(str(kwargs['pid']), s3)
     rv.update({
-        'pid': str(kwargs['pid']),
         'addon_page_js': s3.config.include_js['page'],
         'addon_page_css': s3.config.include_css['page'],
     })
@@ -108,24 +107,27 @@ def s3_upload(*args,**kwargs):
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
 
+    parentFolder = kwargs.get('path')
+    if parentFolder is not None:
+        parentFolder = parentFolder.replace('&spc',' ').replace('&sl','/')
+        
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
     connect = BucketManager.fromAddon(s3)
 
-    connect.flaskUpload(upload,filename)
-    connect.getWrappedKey(filename)
-    return filename.getAsDict()
+    connect.flaskUpload(upload,filename,parentFolder)
+    key = connect.getWrappedKey(filename)
+    diction = key.getAsDict('/project/' + str(kwargs['pid'] )+ '/s3/')
+    return diction, 201
 
 @must_be_contributor_or_public
 @must_have_addon('s3')
 def s3_delete(*args,**kwargs):
-    print args
-    print kwargs
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
     dfile = request.json.get('keyPath').replace('&spc',' ').replace('&sl','/')
     connect = BucketManager.fromAddon(s3)
-    connect.deleteKey(dfile)
+    connect.deleteFile(dfile)
     return {}
     #raise Exception
 
@@ -148,3 +150,15 @@ def render_file(*args, **kwargs):
 
 
     return rv
+
+@must_be_contributor_or_public
+@must_have_addon('s3')
+def s3_new_folder(*args, ** kwargs):
+    node = kwargs['node'] or kwargs['project']
+    s3 = node.get_addon('s3')
+    folderPath =  request.json.get('path').replace('&spc',' ').replace('&sl','/')
+
+    connect = BucketManager.fromAddon(s3)
+    connect.createFolder(folderPath)
+    return {}
+
