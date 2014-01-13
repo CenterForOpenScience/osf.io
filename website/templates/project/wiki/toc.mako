@@ -16,7 +16,12 @@
 
             % for child in toc:
                 <li class="nav-header">
-                    <a href="/${node['id']}/node/${child['id']}/wiki/home">${child['title']} (${child['category']})</a>
+                    <a href="/${node['id']}/node/${child['id']}/wiki/home">
+                        ${child['title']}
+                        % if child['category']:
+                            (${child['category']})
+                        % endif
+                    </a>
                     <ul style="list-style-type: none;">
                         % for k in child['pages']:
                             % if k != 'home':
