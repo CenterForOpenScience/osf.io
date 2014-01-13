@@ -105,7 +105,7 @@ def s3_download(*args, **kwargs):
     connect = BucketManager(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key),s3.s3_bucket)
     return redirect(connect.downloadFileURL(keyName.replace('&spc',' ').replace('&sl','/')))
 
-@must_be_contributor_or_public
+@must_be_contributor
 @must_have_addon('s3')
 def s3_upload(*args,**kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -133,7 +133,7 @@ def s3_upload(*args,**kwargs):
             'deleteUrl': '/project/' + str(kwargs['pid'] )+ '/s3/delete/',
         }]
 
-@must_be_contributor_or_public
+@must_be_contributor
 @must_have_addon('s3')
 def s3_delete(*args,**kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -144,7 +144,7 @@ def s3_delete(*args,**kwargs):
     return {}
     #raise Exception
 
-@must_be_contributor_or_public
+@must_be_contributor
 @must_have_addon('s3')
 def render_file(*args, **kwargs):
     user = kwargs['user']
@@ -164,7 +164,7 @@ def render_file(*args, **kwargs):
 
     return rv
 
-@must_be_contributor_or_public
+@must_be_contributor
 @must_have_addon('s3')
 def s3_new_folder(*args, ** kwargs):
     node = kwargs['node'] or kwargs['project']

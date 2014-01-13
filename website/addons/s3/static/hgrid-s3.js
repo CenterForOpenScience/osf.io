@@ -58,16 +58,20 @@ var newFolder = function(dataContext) {
     };
 
 var UploadBars = function(row, cell, value, columnDef, dataContext) {
-        //var spacer = "<span style='display:inline-block;height:1px;width:30px'></span>";
+    if (!dataContext['uploadBar']){
+        var spacer = "<span style='display:inline-block;height:1px;width:30px'></span>";
         if(dataContext['type']!='folder'){
             var delButton = "<button type='button' class='btn btn-danger btn-mini' onclick='grid.deleteItems([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-trash icon-white'></i></button>"
             var downButton = '<a href=fetchurl/' + dataContext['uid'].replace(' ','&spc').replace('/','&sl')+ '><button type="button" class="btn btn-success btn-mini"><i class="icon-download-alt icon-white"></i></button></a>';
-            return "<div align=\"center\">" + downButton + delButton + "</div>";
+            return "<div align=\"center\">" + downButton + " " + delButton + "</div>";
         }else{
             var newFolderButton = "<button type='button' class='btn btn-success btn-mini' onclick='newFolder([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-plus icon-white'></i></button>"
-            return '<div align="center">' +  newFolderButton + "</div>";
+            return ''//<div align="center">' +  newFolderButton + "</div>";
         }
-        //}
+            }else{
+        var id = dataContext['name'].replace(/[\s\.#\'\"]/g, '');
+        return "<div style='height: 20px;' class='progress progress-striped active'><div id='" + id + "'class='progress-bar progress-bar-success' style='width: 0%;'></div></div>";
+    }
 };
 
 
@@ -91,7 +95,6 @@ var grid = HGrid.create({
         info: gridData,
         breadcrumbBox: "#s3Crumbs",
         dropZone: true,
-        
         columns:[
         {id: "name", name: "Name", field: "name", cssClass: "cell-title", formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
         {id: "lastMod", name: "Last Modified", field: "lastMod", sortable: true},
@@ -100,22 +103,26 @@ var grid = HGrid.create({
         ],
         largeGuide: false,
         enableColumnReorder: false,
-            topCrumb: false,
-    dragToRoot: false,
-    dragDrop: false,
-    dropZone: true,
-    clickUploadElement: '#s3FormUpload',
-    urlAdd: function() {
-        var ans = {};
-        for (var i = 0; i < gridData.length; i++) {
-            if (gridData[i].type == 'folder') {
-                ans[gridData[i]['uid']] = gridData[i]['uploadUrl'];
+        topCrumb: false,
+        dragToRoot: false,
+        dragDrop: false,
+        dropZone: true,
+        clickUploadElement: '#s3FormUpload',
+        urlAdd: function() {
+            var ans = {};
+            for (var i = 0; i < gridData.length; i++) {
+                if (gridData[i].type == 'folder') {
+                    ans[gridData[i]['uid']] = gridData[i]['uploadUrl'];
+                }
             }
-        }
-        ans[null] = gridData[0]['uploadUrl'];
-        return ans;
-    },
-    url: gridData[0]['uploadUrl'],
+            ans[null] = gridData[0]['uploadUrl'];
+            return ans;
+        },
+        url: gridData[0]['uploadUrl'],
+        navLevel: gridData[0]['uid'],
+        dropZonePreviewsContainer: false,
+        rowHeight: 30,
+        enableCellNavigation: false,
 });
 
 grid.addColumn({id: "download", name: "Delete", field: "download", width: 75, sortable: true, formatter: UploadBars});
