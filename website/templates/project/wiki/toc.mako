@@ -21,7 +21,7 @@
                         % for k in child['pages']:
                             % if k != 'home':
                                 <li class="">
-                                    <a href="/${node_id}/node/${child['id']}/wiki/${k}">${k}</a>
+                                    <a href="/${node['id']}/node/${child['id']}/wiki/${k}">${k}</a>
                                 </li>
                             % endif
                         % endfor
