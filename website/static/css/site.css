@@ -102,6 +102,10 @@ font-weight: bold;
     max-width: 100%;
 }
 
+.addon-widget-container img {
+    max-width: 100%;
+}
+
 .addon-logo {
     width: 20px;
 }
