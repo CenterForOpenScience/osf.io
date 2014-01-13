@@ -99,7 +99,7 @@
     <div class="row">
         <div class="col-md-8 col-md-offset-2">
             <h3>Forking</h3>
-            <p>Forking a project means creates a copy of it to your dashboard so that you can adapt it for new purposes. You will be the only contributor to the forked project until you add others.</p>
+            <p>Forking a project means you have created a copy of it into your dashboard, and can change that copy for your own purposes. You will be the only contributor to the forked project until you add others.</p>
 
             <p>Forks will automatically reference the original project as a functional citation.  Over time, the network of forks trace the evolution of project materials.</p>
             <div class="video"><iframe width="550" height="309" src="//www.youtube-nocookie.com/embed/1GeAqTX51F8?rel=0" frameborder="0" allowfullscreen></iframe></div>
