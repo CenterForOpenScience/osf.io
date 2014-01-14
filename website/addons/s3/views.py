@@ -89,7 +89,11 @@ def s3_create_access_key(*args, **kwargs):
     u = createLimitedUser(s3_user.access_key,s3_user.secret_key,s3_node.s3_bucket)
 
     if u:
-        s3_node.s3_node_access_key
+        s3_node.s3_node_access_key = u['']
+        s3_node.s3_node_secret_key = u['']
+        s3_node.node_auth = 1
+
+        s3_node.save()
     #TODO grab keys from 
 
 def _page_content(pid, s3):
