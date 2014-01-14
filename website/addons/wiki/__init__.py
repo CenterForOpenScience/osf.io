@@ -14,6 +14,9 @@ ADDED_TO = {
     'node': True,
 }
 
+VIEWS = ['widget', 'page']
+CONFIGS = []
+
 CATEGORIES = ['documentation']
 
 INCLUDE_JS = {
@@ -25,5 +28,3 @@ INCLUDE_CSS = {
     'widget': [],
     'page': [],
 }
-
-HAS_PAGE = True

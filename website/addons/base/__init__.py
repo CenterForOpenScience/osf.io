@@ -30,11 +30,9 @@ def _is_image(filename):
 
 class AddonConfig(object):
 
-    def __init__(self, short_name, full_name, owners, added_to,
-                 categories,
+    def __init__(self, short_name, full_name, owners, added_to, categories,
                  node_settings_model=None, user_settings_model=None, include_js=None, include_css=None,
-                 widget_help=None, has_page=False, has_widget=False, has_node_settings=False,
-                 has_user_settings=False,
+                 widget_help=None, views=None, configs=None,
                  **kwargs):
 
         self.models = {}
@@ -58,11 +56,8 @@ class AddonConfig(object):
 
         self.widget_help = widget_help
 
-        # TODO: Detect views in __init__, not by special names
-        self.has_page = has_page
-        self.has_widget = has_widget
-        self.has_node_settings = has_node_settings
-        self.has_user_settings = has_user_settings
+        self.views = views or []
+        self.configs = configs or []
 
         # Build template lookup
         template_path = os.path.join('website', 'addons', short_name, 'templates')
@@ -133,8 +128,8 @@ class AddonConfig(object):
             'full_name': self.full_name,
             'help': self.widget_help,
             'icon': self.icon_url,
-            'has_page': self.has_page,
-            'has_widget': self.has_widget,
+            'has_page': 'page' in self.views,
+            'has_widget': 'widget' in self.views,
         }
 
 
@@ -230,6 +225,16 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
         pass
 
+    def before_fork(self, node, user):
+        """
+
+        :param Node node:
+        :param User user:
+        :return str: Alert message
+
+        """
+        pass
+
     def after_fork(self, node, fork, user, save=True):
         """
 
@@ -247,6 +252,16 @@ class AddonNodeSettingsBase(AddonSettingsBase):
             clone.save()
 
         return clone, None
+
+    def before_register(self, node, user):
+        """
+
+        :param Node node:
+        :param User user:
+        :return str: Alert message
+
+        """
+        pass
 
     def after_register(self, node, registration, user, save=True):
         """
@@ -283,26 +298,11 @@ def init_addon(app, addon_name, routes=True):
     """
     addon_path = os.path.join('website', 'addons', addon_name)
     import_path = 'website.addons.{0}'.format(addon_name)
-    views_import_path = '{0}.views'.format(import_path)
 
     # Import addon module
     addon_module = importlib.import_module(import_path)
 
     data = vars(addon_module)
-
-    try:
-        addon_views = importlib.import_module(views_import_path)
-        has_page = hasattr(addon_views, '{0}_page'.format(addon_name))
-        has_widget = hasattr(addon_views, '{0}_widget'.format(addon_name))
-        has_node_settings = hasattr(addon_views, '{0}_set_config'.format(addon_name))
-        has_user_settings = hasattr(addon_views, '{0}_set_user_config'.format(addon_name))
-    except ImportError:
-        has_page = False
-        has_widget = False
-        has_node_settings = False
-        has_user_settings = False
-
-    has_page = has_page or data.pop('HAS_PAGE', False)
 
     # Append add-on log templates to main log templates
     log_templates = os.path.join(
@@ -319,10 +319,6 @@ def init_addon(app, addon_name, routes=True):
 
     # Build AddonConfig object
     return AddonConfig(
-        has_page=has_page,
-        has_widget=has_widget,
-        has_node_settings=has_node_settings,
-        has_user_settings=has_user_settings,
         **{
             key.lower(): value
             for key, value in data.iteritems()

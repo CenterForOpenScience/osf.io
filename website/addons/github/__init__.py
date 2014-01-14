@@ -16,6 +16,9 @@ ADDED_TO = {
     'node': False,
 }
 
+VIEWS = ['widget', 'page']
+CONFIGS = ['user', 'node']
+
 CATEGORIES = ['storage']
 
 INCLUDE_JS = {

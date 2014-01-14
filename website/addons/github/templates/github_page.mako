@@ -39,9 +39,9 @@
 
         <div>
             Download:
-            <a href="${api_url}github/tarball/">Tarball</a>
+            <a href="${api_url}github/tarball/?ref=${ref}">Tarball</a>
             <span>|</span>
-            <a href="${api_url}github/zipball/">Zip</a>
+            <a href="${api_url}github/zipball/?ref=${ref}">Zip</a>
         </div>
 
     </div>

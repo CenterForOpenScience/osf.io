@@ -110,6 +110,22 @@ def project_new_node(*args, **kwargs):
     raise HTTPError(http.BAD_REQUEST, redirect_url=project.url)
 
 
+@must_have_session_auth
+@must_be_valid_project  # returns project
+@must_be_contributor  # returns user, project
+@must_not_be_registration
+def project_before_fork(*args, **kwargs):
+
+    node = kwargs['node'] or kwargs['project']
+    user = kwargs['user']
+    api_key = get_api_key()
+
+    prompts = node.callback('before_fork', user)
+
+    return {'prompts': prompts}
+
+
+@must_be_logged_in
 @must_be_valid_project
 def node_fork_page(*args, **kwargs):
     project = kwargs['project']
@@ -177,7 +193,7 @@ def node_setting(**kwargs):
 
         addons_enabled.append(addon.config.short_name)
 
-        if addon.config.has_node_settings:
+        if 'node' in addon.config.configs:
             addon_enabled_settings.append(addon.config.short_name)
 
     rv['addon_categories'] = settings.ADDON_CATEGORIES

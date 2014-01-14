@@ -14,6 +14,9 @@ ADDED_TO = {
     'node': False,
 }
 
+VIEWS = ['widget', 'page']
+CONFIGS = ['node']
+
 CATEGORIES = ['bibliography']
 
 INCLUDE_JS = {

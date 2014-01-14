@@ -1039,7 +1039,8 @@ class TestForkNode(DbTestCase):
                 self._cmp_fork_original(fork_user, fork_date, fork.nodes[idx],
                                         child, title_prepend='')
 
-    def test_fork_recursion(self):
+    @mock.patch('framework.status.push_status_message')
+    def test_fork_recursion(self, mock_push_status_message):
         """Omnibus test for forking.
 
         """

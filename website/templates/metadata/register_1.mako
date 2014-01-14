@@ -53,6 +53,32 @@
         bootbox.alert('Registration failed');
     }
 
+    function registerNode(data) {
+
+        // Block UI until request completes
+        block();
+
+        // POST data
+        $.ajax({
+            url: '${node['api_url']}' + 'register/' + '${template_name if template_name else ''}/',
+            type: 'POST',
+            data: JSON.stringify(data),
+            contentType: 'application/json',
+            dataType: 'json'
+        }).done(function(response) {
+            if (response.status === 'success')
+                window.location.href = response.result;
+            else if (response.status === 'error')
+                registration_failed();
+        }).fail(function() {
+            registration_failed();
+        });
+
+        // Stop event propagation
+        return false;
+
+    }
+
     $(document).ready(function() {
 
         // Don't submit form on enter; must use $.delegate rather than $.on
@@ -86,26 +112,25 @@
                 return false;
             }
 
-            // Block UI until request completes
-            block();
-
-            // POST data
             $.ajax({
-                url: '${node['api_url']}' + 'register/' + '${template_name if template_name else ''}/',
-                type: "POST",
-                data: JSON.stringify(data),
-                contentType: "application/json",
-                dataType: 'json'
-            }).done(function(response) {
-                if (response.status === 'success')
-                    window.location.href = response.result;
-                else if (response.status === 'error')
-                    registration_failed();
-            }).fail(function() {
-                registration_failed();
+                url: nodeApiUrl + 'beforeregister/',
+                contentType: 'application/json',
+                success: function(response) {
+                    if (response.prompts && response.prompts.length) {
+                        bootbox.confirm(
+                            joinPrompts(response.prompts, 'Are you sure you want to register this project?'),
+                            function(result) {
+                                if (result) {
+                                    registerNode(data)
+                                }
+                            }
+                        )
+                    } else {
+                        registerNode(data);
+                    }
+                }
             });
 
-            // Stop event propagation
             return false;
 
         });

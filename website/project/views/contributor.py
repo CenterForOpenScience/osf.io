@@ -161,7 +161,7 @@ def project_before_remove_contributor(*args, **kwargs):
     api_key = get_api_key()
 
     contributor = User.load(request.json.get('id'))
-    prompts = node_to_use.before_remove_contributor(contributor, user)
+    prompts = node_to_use.callback('before_remove_contributor', contributor)
 
     return {'prompts': prompts}
 

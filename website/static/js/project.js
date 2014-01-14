@@ -36,9 +36,41 @@ window.unblock = function() {
     $.unblockUI();
 };
 
+window.joinPrompts = function(prompts, base) {
+    var prompt = base || '';
+    if (prompts) {
+        prompt += '<hr />';
+        prompt += '<ul>';
+        for (var i=0; i<prompts.length; i++) {
+            prompt += '<li>' + prompts[i] + '</li>';
+        }
+        prompt += '</ul>';
+    }
+    return prompt;
+}
+
 window.NodeActions = {};  // Namespace for NodeActions
 // TODO: move me to the ProjectViewModel
-NodeActions.forkNode = function(){
+
+NodeActions.beforeForkNode = function() {
+
+    $.ajax({
+        url: nodeApiUrl + 'beforefork/',
+        contentType: 'application/json'
+    }).success(function(response) {
+        bootbox.confirm(
+            joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
+            function(result) {
+                if (result) {
+                    NodeActions.forkNode();
+                }
+            }
+        )
+    });
+
+};
+
+NodeActions.forkNode = function() {
 
     // Block page
     block();
@@ -132,15 +164,7 @@ NodeActions.removeUser = function(userid, name) {
         dataType: 'json',
         data: data
     }).success(function(response) {
-        var prompt = 'Remove ' + name + ' from contributor list?';
-        if (response.prompts) {
-            prompt += '<hr />';
-            prompt += '<ul>';
-            for (var i=0; i<response.prompts.length; i++) {
-                prompt += '<li>' + response.prompts[i] + '</li>';
-            }
-            prompt += '</ul>';
-        }
+        var prompt = joinPrompts(response.prompts, 'Remove ' + name + ' from contributor list?');
         bootbox.confirm(prompt, function(result) {
             if (result) {
                 $.ajax({

@@ -398,7 +398,8 @@ h4 {
 }
 
 /* Make wiki images responsive */
-.wiki img {
+.wiki img,
+.addon-widget-container img {
   vertical-align: middle;
   display: block;
   max-width: 100%;
