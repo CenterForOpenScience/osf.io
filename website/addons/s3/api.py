@@ -31,6 +31,15 @@ class BucketManager:
     def fromAddon(s3):
         return BucketManager(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key),s3.s3_bucket)
 
+    @staticmethod
+    def bucketExist(s3, bucketName):
+        m = BucketManager.fromAddon(s3)
+        try:
+            m.connection.get_bucket(bucketName.lower())
+            return True
+        except Exception:
+            return False
+
     "S3 Bucket management"
     def __init__(self, connect,bucketName):
         self.connection = connect
