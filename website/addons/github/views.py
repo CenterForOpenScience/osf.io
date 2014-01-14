@@ -512,10 +512,14 @@ def github_upload_file(*args, **kwargs):
             'branch': branch,
         })
 
+        _, ext = os.path.splitext(filename)
+        ext = ext.lstrip('.')
+
         info = {
             'name': filename,
             'uid': os.path.join('__repo__', data['content']['path']),
             'parent_uid': 'tree:' + '||'.join(['__repo__', path]).strip('||'),
+            'ext': ext,
             'size': [
                 data['content']['size'],
                 size(data['content']['size'], system=alternative)
