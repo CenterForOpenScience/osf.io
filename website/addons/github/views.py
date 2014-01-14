@@ -94,7 +94,7 @@ def github_hook_callback(*args, **kwargs):
         # TODO: Look up OSF user by commit
 
         # Skip if pushed by OSF
-        if commit['message'] in MESSAGES.values():
+        if commit['message'] and commit['message'] in MESSAGES.values():
             continue
 
         _id = commit['id']
@@ -132,15 +132,31 @@ def github_set_config(*args, **kwargs):
 
     user = kwargs['user']
 
-    github_user = user.get_addon('github')
     github_node = kwargs['node_addon']
+    github_user = github_node.user_settings
 
     # If authorized, only owner can change settings
     if github_user and github_user.owner != user:
         raise HTTPError(http.BAD_REQUEST)
 
+    # Parse request
     github_user_name = request.json.get('github_user', '')
     github_repo_name = request.json.get('github_repo', '')
+
+    # Verify that repo exists and that user can access
+    connect = GitHub.from_settings(github_user)
+    repo = connect.repo(github_user_name, github_repo_name)
+    if repo is None:
+        if github_user:
+            message = (
+                'Cannot access repo. Either the repo does not exist '
+                'or your account does not have permission to view it.'
+            )
+        else:
+            message = (
+                'Cannot access repo.'
+            )
+        return {'message': message}, 400
 
     if not github_user_name or not github_repo_name:
         raise HTTPError(http.BAD_REQUEST)
@@ -726,6 +742,12 @@ def github_oauth_callback(*args, **kwargs):
     github_user.oauth_state = None
     github_user.oauth_access_token = token['access_token']
     github_user.oauth_token_type = token['token_type']
+
+    connect = GitHub.from_settings(github_user)
+    user = connect.user()
+
+    github_user.github_user = user['login']
+
     github_user.save()
 
     if github_node:

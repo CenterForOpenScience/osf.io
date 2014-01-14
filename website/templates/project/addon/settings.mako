@@ -15,7 +15,7 @@
         % endif
 
         <!-- Form feedback -->
-        <span class="addon-settings-message" style="display: none; padding-left: 10px;"></span>
+        <div class="addon-settings-message" style="display: none; padding-top: 10px;"></div>
 
     </form>
 

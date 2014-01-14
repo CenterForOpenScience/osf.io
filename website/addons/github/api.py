@@ -88,6 +88,21 @@ class GitHub(object):
 
         return rv
 
+    def user(self, user=None):
+        """Fetch a user or the authenticated user.
+
+        :param user: Optional GitHub user name; will fetch authenticated
+            user if omitted
+        :return dict: GitHub API response
+
+        """
+        url = (
+            os.path.join(API_URL, 'users', user)
+            if user
+            else os.path.join(API_URL, 'user')
+        )
+        return self._send(url)
+
     def repo(self, user, repo):
 
         return self._send(

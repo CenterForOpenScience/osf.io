@@ -129,7 +129,9 @@ ADDONS_REQUESTED = [
     'zotero',
 ]
 
-ADDON_CATEGORIES = ['documentation', 'storage', 'bibliography']
+ADDON_CATEGORIES = [
+    'documentation', 'storage', 'bibliography', 'other',
+]
 
 # Piwik
 
