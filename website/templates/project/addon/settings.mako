@@ -8,11 +8,11 @@
         ${self.body()}
 
         <!-- Submit button -->
-       ## % if node and not node['is_registration']:
+        % if node and not node['is_registration'] or has_submit_button:
             <button id="addon-settings-submit" class="btn btn-success">
                 Submit
             </button>
-       ## % endif
+        % endif
 
         <!-- Form feedback -->
         <span class="addon-settings-message" style="display: none; padding-left: 10px;"></span>

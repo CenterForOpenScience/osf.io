@@ -154,6 +154,7 @@ class AddonSettingsBase(StoredObject):
         return {
             'addon_short_name': self.config.short_name,
             'addon_full_name': self.config.full_name,
+            'has_submit_button' : 0,
         }
 
 
