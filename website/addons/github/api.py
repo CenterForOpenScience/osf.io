@@ -106,10 +106,11 @@ class GitHub(object):
     def repo(self, user, repo):
         """Get a single Github repo's info.
 
-        :param str user: The owner of the repo
-        :param str repo: The repo name.
-        :return: Dict of repo information.
+        :param str user: GitHub user name
+        :param str repo: GitHub repo name
+        :return: Dict of repo information
             See http://developer.github.com/v3/repos/#get
+
         """
         return self._send(
             os.path.join(API_URL, 'repos', user, repo)
@@ -118,11 +119,12 @@ class GitHub(object):
     def branches(self, user, repo, branch=None):
         """List a repo's branches or get a single branch.
 
-        :param str user: The repo owner
-        :param str repo: The repo name.
-        :param str branch: Branch name if getting a single branch.
-        :return: List of branch dicts.
+        :param str user: GitHub user name
+        :param str repo: GitHub repo name
+        :param str branch: Branch name if getting a single branch
+        :return: List of branch dicts
             http://developer.github.com/v3/repos/#list-branches
+
         """
         url = os.path.join(API_URL, 'repos', user, repo, 'branches')
         if branch:
@@ -138,6 +140,7 @@ class GitHub(object):
         :param str sha: SHA or branch name
         :return list: List of commit dicts from GitHub; see
             http://developer.github.com/v3/repos/commits/
+
         """
         return self._send(
             os.path.join(
@@ -271,6 +274,14 @@ class GitHub(object):
     #########
 
     def hooks(self, user, repo):
+        """List webhooks
+
+        :param str user: GitHub user name
+        :param str repo: GitHub repo name
+        :return list: List of commit dicts from GitHub; see
+            http://developer.github.com/v3/repos/hooks/#json-http
+
+        """
 
         return self._send(
             os.path.join(
@@ -279,7 +290,14 @@ class GitHub(object):
         )
 
     def add_hook(self, user, repo, name, config, events=None, active=True):
+        """Create a webhook.
 
+        :param str user: GitHub user name
+        :param str repo: GitHub repo name
+        :return dict: Hook info from GitHub: see see
+            http://developer.github.com/v3/repos/hooks/#json-http
+
+        """
         data = {
             'name': name,
             'config': config,
@@ -297,7 +315,15 @@ class GitHub(object):
         )
 
     def delete_hook(self, user, repo, _id):
+        """Delete a webhook.
 
+        :param str user: GitHub user name
+        :param str repo: GitHub repo name
+        :return requests.models.Response: Response object
+
+        """
+        # Note: Must set `output` to `None`; no JSON response from this
+        # endpoint
         return self._send(
             os.path.join(
                 API_URL, 'repos', user, repo, 'hooks', str(_id),
