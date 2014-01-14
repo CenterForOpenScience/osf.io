@@ -10,8 +10,8 @@ from . import views
 settings_routes = {
     'rules': [
         Rule([
-            '/project/<pid>/settings/s3/',
-            '/project/<pid>/node/<nid>/settings/s3/',
+            '/project/<pid>/s3/settings/',
+            '/project/<pid>/node/<nid>/s3/settings/',
         ], 'post', views.s3_settings, json_renderer),
     ],
     'prefix': '/api/v1',

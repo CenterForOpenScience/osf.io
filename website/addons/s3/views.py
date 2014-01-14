@@ -33,16 +33,45 @@ def s3_set_user_config(*args, **kwargs):
 @must_be_contributor
 @must_have_addon('s3', 'node')
 def s3_settings(*args, **kwargs):
-
     node = kwargs['node'] or kwargs['project']
     user = kwargs['user']
-    s3 = node.get_addon('s3')
 
-    s3_user=user.get_addon('s3')
-    if not s3_user:
-        user.add_addon('s3','user')
-        s3_user=user.get_addon('s3')
+    s3_node = kwargs['node_addon']
+    s3_user = node.get_addon('s3')
 
+    print s3_user
+    
+    # If authorized, only owner can change settings
+    if s3_user and s3_user.owner != user:
+        raise HTTPError(http.BAD_REQUEST)
+
+    s3_bucket = request.json.get('s3_bucket', '')
+
+    print s3_bucket
+
+    print s3_user
+
+    if not s3_bucket:
+        raise HTTPError(http.BAD_REQUEST)
+
+    changed = (
+        s3_bucket != s3_node.s3_bucket
+    )
+    # Delete callback
+    if changed:
+
+        s3_node.delete_hook()
+
+        # Update node settings
+        s3_node.s3_bucket = s3_bucket
+
+        # Add hook
+        if s3_node.s3_bucket:
+            s3_node.add_hook(save=False)
+
+        s3_node.save()
+
+    '''
     s3_user.access_key = request.json.get('access_key', '')
     s3_user.secret_key =  request.json.get('secret_key','')
     s3_user.save()
@@ -50,6 +79,7 @@ def s3_settings(*args, **kwargs):
     s3.user_settings = s3_user
     s3.s3_bucket = request.json.get('s3_bucket','')
     s3.save()
+    '''
     
 
 @must_be_contributor
