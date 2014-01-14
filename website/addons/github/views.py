@@ -77,12 +77,12 @@ def _add_hook_log(node, github, action, path, date, committer, url=None, sha=Non
 @decorators.must_not_be_registration
 @decorators.must_have_addon('github', 'node')
 def github_hook_callback(*args, **kwargs):
-    """Add logs for commits from outside OSF.
-
+    """Add logs for commits from outside OSF
     """
     # Request must come from GitHub hooks IP
-    if HOOKS_IP not in request.remote_addr:
-        raise HTTPError(http.BAD_REQUEST)
+    if not request.data['testing']:
+        if HOOKS_IP not in request.remote_addr:
+            raise HTTPError(http.BAD_REQUEST)
 
     node = kwargs['node'] or kwargs['project']
     github = kwargs['node_addon']
@@ -181,16 +181,27 @@ def github_set_config(*args, **kwargs):
 
         github_node.save()
 
+# TODO: Change "github" to "addon_settings" or something similar
+def _page_content(node, github, branch=None, sha=None, hotlink=True, _connection=None):
+    """Return the info to be rendered for a given repo.
 
-def _page_content(node, github, branch=None, sha=None, hotlink=True):
+    :param AddonGitHubNodeSettings github: The addon object.
+    :param str branch: Git branch name.
+    :param str sha: SHA hash.
+    :param bool hotlink: Whether a direct download link from Github is available.
+        Should be True for public repos.
+    :param Github _connection: A GitHub object for sending API requests. If None,
+        a Github object will be created from the user settings. This param is
+        only exposed to allow for mocking the GitHub API object.
+    :return: A dict of repo info to render on the page.
+    """
 
     # Fail if GitHub settings incomplete
     if github.user is None or github.repo is None:
         return {}
-
     repo = None
 
-    connect = GitHub.from_settings(github.user_settings)
+    connect = _connection or GitHub.from_settings(github.user_settings)
 
     if sha and not branch:
         raise HTTPError(http.BAD_REQUEST)

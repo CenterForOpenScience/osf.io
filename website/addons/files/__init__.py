@@ -28,3 +28,4 @@ INCLUDE_CSS = {
     'widget': [],
     'page': [],
 }
+
