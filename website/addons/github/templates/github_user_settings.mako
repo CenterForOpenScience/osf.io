@@ -40,7 +40,8 @@
         $('#githubDelKey').on('click', function() {
             bootbox.confirm(
                 'Are you sure you want to delete your GitHub access key? This will ' +
-                    'revoke access to GitHub for all projects you have authorized.',
+                    'revoke access to GitHub for all projects you have authorized ' +
+                    'and delete your access token from GitHub.',
                 function(result) {
                     if (result) {
                         $.ajax({

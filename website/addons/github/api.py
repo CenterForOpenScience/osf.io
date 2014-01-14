@@ -25,6 +25,9 @@ class GitHub(object):
 
     def __init__(self, access_token=None, token_type=None):
 
+        self.access_token = access_token
+        self.token_type = token_type
+
         if access_token and token_type:
             self.session = OAuth2Session(
                 github_settings.CLIENT_ID,
@@ -376,6 +379,28 @@ class GitHub(object):
             data=json.dumps(data),
         )
 
+    ########
+    # Auth #
+    ########
+
+    def revoke_token(self):
+
+        if self.access_token is None:
+            return
+
+        return self._send(
+            os.path.join(
+                API_URL, 'applications', github_settings.CLIENT_ID,
+                'tokens', self.access_token,
+            ),
+            method='delete',
+            cache=False,
+            output=None,
+            auth=(
+                github_settings.CLIENT_ID,
+                github_settings.CLIENT_SECRET,
+            )
+        )
 
 def raw_url(user, repo, ref, path):
     return os.path.join(

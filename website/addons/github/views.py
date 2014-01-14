@@ -732,6 +732,10 @@ def github_oauth_delete_user(*args, **kwargs):
     for node_settings in github_user.addongithubnodesettings__authorized:
         node_settings.delete_hook()
 
+    # Revoke access token
+    connect = GitHub.from_settings(github_user)
+    connect.revoke_token()
+
     github_user.oauth_access_token = None
     github_user.oauth_token_type = None
     github_user.save()
