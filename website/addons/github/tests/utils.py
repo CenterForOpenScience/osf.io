@@ -3,12 +3,12 @@ import mock
 from website.addons.github.api import GitHub
 
 # TODO: allow changing the repo name
-def create_mock_github(user='octo-cat', private=False):
+def create_mock_github(user='osftest', private=False):
     """Factory for mock GitHub objects.
     Example: ::
 
-        >>> github = create_mock_github(user='octocat')
-        >>> github.branches(user='octocat', repo='hello-world')
+        >>> github = create_mock_github(user='osftest')
+        >>> github.branches(user='osftest', repo='testing')
         >>> [{u'commit': {u'sha': u'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
         ...   u'url': u'https://api.github.com/repos/octocat/mock-repo/commits/e22d92d5d90bb8f9695e9a5e2e2311a5c1997230'},
         ...  u'name': u'dev'},

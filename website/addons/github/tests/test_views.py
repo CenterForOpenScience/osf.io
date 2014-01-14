@@ -4,7 +4,7 @@ import unittest
 from nose.tools import *  # PEP8 asserts
 import json
 from tests.base import DbTestCase
-from tests.factories import ProjectFactory, UserFactory
+from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 from website.addons.github.tests.utils import create_mock_github
 from website.addons.github import views
 from website.addons.github.model import AddonGitHubNodeSettings
@@ -19,7 +19,7 @@ app = website.app.init_app(routes=True, set_backends=False,
 class TestGithubViews(DbTestCase):
 
     def setUp(self):
-        self.user = UserFactory()
+        self.user = AuthUserFactory()
         self.app = TestApp(app)
         self.project = ProjectFactory(creator=self.user)
         self.project.add_addon('github')
@@ -70,13 +70,25 @@ class TestGithubViews(DbTestCase):
         assert_true(res['registration_data'])
 
     def test_github_widget(self):
-        assert 0, 'finish me'
+        url = "/api/v1/project/{0}/github/widget/".format(self.project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json["complete"], bool(self.node_settings.short_url))
+        assert_equal(res.json["short_url"], self.node_settings.short_url)
 
     def test_github_page(self):
-        assert 0, 'finish me'
+        url = "/project/{0}/github/".format(self.project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_in("/addons/static/github/hgrid-github.js", res)
+        assert_in("/addons/static/github/comicon.png", res)
+        assert_in("/{0}/github".format(self.project._id), res)
 
     def test_github_get_repo(self):
-        assert 0, 'finish me'
+        url = "/api/v1/project/{0}/github/".format(self.project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        print res
+        print self.node_settings.user
+        print self.node_settings.repo
+        assert 0
 
     def test_hook_callback_add_file_not_thro_osf(self):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
