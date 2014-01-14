@@ -343,7 +343,7 @@ class TestComponents(DbTestCase):
         self.user.api_keys.append(api_key)
         self.user.save()
         self.auth = ('test', api_key._primary_key)
-        self.project = ProjectFactory.build(creator=self.user)
+        self.project = ProjectFactory(creator=self.user)
         self.project.add_contributor(contributor=self.user)
         # project has a non-registered contributor
         self.nr_user = {'nr_name': 'Foo Bar', 'nr_email': 'foo@example.com'}
@@ -359,8 +359,11 @@ class TestComponents(DbTestCase):
         self.component.set_permissions('private', self.user)
         self.project.save()
 
+    def test_can_create_component_from_a_project(self):
+        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
+        assert_in('Add Component', res)
+
     def test_cannot_create_component_from_a_component(self):
-        # At the component's page
         res = self.app.get(self.component.url, auth=self.auth).maybe_follow()
         assert_not_in('Add Component', res)
 

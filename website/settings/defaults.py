@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-'''Base settings file, common to all environments.
-
+"""
+Base settings file, common to all environments.
 These settings can be overridden in local.py.
-'''
+"""
+
 import os
 
 def parent_dir(path):
@@ -13,7 +14,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = parent_dir(HERE)  # website/ directory
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
-TEMPLATES_PATH = os.path.join(BASE_PATH, "templates")
+TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 DOMAIN = 'https://openscienceframework.org/'
 
 # User management & registration
@@ -98,7 +99,6 @@ WIKI_WHITELIST = {
         'salign', 'align', 'wmode', 'target',
     ],
     # Styles currently used in Reproducibility Project wiki pages
-    # TODO: Discuss and possibly delete
     'styles' : [
         'top', 'left', 'width', 'height', 'position',
         'background', 'font-size', 'text-align', 'z-index',
@@ -120,7 +120,19 @@ CELERY_IMPORTS = (
     'framework.tasks'
 )
 
-# Piwik (analytics)
+# Add-ons
+
+ADDONS_REQUESTED = [
+    'wiki', 'files',
+    'github',
+    'bitbucket', 'figshare',
+    'zotero',
+]
+
+ADDON_CATEGORIES = ['documentation', 'storage', 'bibliography']
+
+# Piwik
+
 # TODO: Override in local.py in production
 PIWIK_HOST = None
 PIWIK_ADMIN_TOKEN = None

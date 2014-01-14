@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
+
+import mock
 import unittest
 from nose.tools import *  # PEP8 asserts
 
@@ -19,7 +21,7 @@ from website import settings, filters
 from website.profile.utils import serialize_user
 from website.project.model import ApiKey, NodeFile, NodeLog, ensure_schemas
 
-from tests.base import DbTestCase, Guid
+from tests.base import DbTestCase, test_app, Guid
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
     NodeWikiFactory, UnregUserFactory, RegistrationFactory)
@@ -508,16 +510,89 @@ class TestNode(DbTestCase):
         assert_equal(node.category, 'hypothesis')
         assert_true(node.node__parent)
         assert_equal(node.logs[-1].action, 'node_created')
+        assert_equal(
+            set(node.get_addon_names()),
+            set([
+                addon_config.short_name
+                for addon_config in settings.ADDONS_AVAILABLE
+                if addon_config.added_to['node']
+            ])
+        )
+        for addon_config in settings.ADDONS_AVAILABLE:
+            if addon_config.added_to['node']:
+                assert_in(
+                    addon_config.short_name,
+                    node.get_addon_names()
+                )
+                assert_true(
+                    len([
+                        addon
+                        for addon in node.addons
+                        if addon.config.short_name == addon_config.short_name
+                    ]),
+                    1
+                )
+
+    def test_add_addon(self):
+        addon_count = len(self.node.get_addon_names())
+        addon_record_count = len(self.node.addons)
+        added = self.node.add_addon('github')
+        assert_true(added)
+        assert_equal(
+            len(self.node.get_addon_names()),
+            addon_count + 1
+        )
+        assert_equal(
+            len(self.node.addons),
+            addon_record_count + 1
+        )
+
+    def test_add_existing_addon(self):
+        addon_count = len(self.node.get_addon_names())
+        addon_record_count = len(self.node.addons)
+        added = self.node.add_addon('files')
+        assert_false(added)
+        assert_equal(
+            len(self.node.get_addon_names()),
+            addon_count
+        )
+        assert_equal(
+            len(self.node.addons),
+            addon_record_count
+        )
+
+    def test_delete_addon(self):
+        addon_count = len(self.node.get_addon_names())
+        deleted = self.node.delete_addon('files')
+        assert_true(deleted)
+        assert_equal(
+            len(self.node.get_addon_names()),
+            addon_count - 1
+        )
+
+    def test_delete_nonexistent_addon(self):
+        addon_count = len(self.node.get_addon_names())
+        deleted = self.node.delete_addon('github')
+        assert_false(deleted)
+        assert_equal(
+            len(self.node.get_addon_names()),
+            addon_count
+        )
+
+    def test_cant_add_component_to_component(self):
+        with assert_raises(ValueError):
+            NodeFactory(project=self.node)
 
     def test_remove_node(self):
         # Add some components and delete the project
-        component = NodeFactory(creator=self.user, project=self.node)
-        subproject = ProjectFactory(creator=self.user, project=self.node)
-        self.node.remove_node(self.user)
+        subproject = ProjectFactory(creator=self.user, project=self.parent)
+        subsubproject = ProjectFactory(creator=self.user, project=subproject)
+        component = NodeFactory(creator=self.user, project=subproject)
+        subproject.remove_node(self.user)
         # The correct nodes were deleted
-        assert_true(self.node.is_deleted)
         assert_true(component.is_deleted)
-        assert_false(subproject.is_deleted)
+        assert_true(subproject.is_deleted)
+        assert_false(subsubproject.is_deleted)
         assert_false(self.parent.is_deleted)
         # A log was saved
         assert_equal(self.parent.logs[-1].action, 'node_removed')
@@ -556,6 +631,86 @@ class TestNode(DbTestCase):
         #todo Add file series of tests
         pass
 
+
+class TestAddonCallbacks(DbTestCase):
+    """Verify that callback functions are called at the right times, with the
+    right arguments.
+
+    """
+    callbacks = {
+        'after_remove_contributor': None,
+        'after_set_permissions': None,
+        'after_fork': (None, None),
+        'after_register': (None, None),
+    }
+
+    def setUp(self):
+
+        # Create project with component
+        self.user = UserFactory()
+        self.parent = ProjectFactory()
+        self.node = NodeFactory(creator=self.user, project=self.parent)
+
+        # Mock addon callbacks
+        for addon in self.node.addons:
+            mock_settings = mock.create_autospec(addon.__class__)
+            for callback, return_value in self.callbacks.iteritems():
+                mock_callback = getattr(mock_settings, callback)
+                mock_callback.return_value = return_value
+                setattr(
+                    addon,
+                    callback,
+                    getattr(mock_settings, callback)
+                )
+
+    @mock.patch('framework.status.push_status_message')
+    def test_remove_contributor_callback(self, status):
+
+        user2 = UserFactory()
+        self.node.add_contributor(contributor=user2, user=self.user)
+        self.node.remove_contributor(contributor=user2, user=self.user)
+        for addon in self.node.addons:
+            callback = addon.after_remove_contributor
+            callback.assert_called_once_with(
+                self.node, user2
+            )
+
+    @mock.patch('framework.status.push_status_message')
+    def test_set_permissions_callback(self, status):
+
+        self.node.set_permissions('public', self.user)
+        for addon in self.node.addons:
+            callback = addon.after_set_permissions
+            callback.assert_called_with(
+                self.node, 'public'
+            )
+
+        self.node.set_permissions('private', self.user)
+        for addon in self.node.addons:
+            callback = addon.after_set_permissions
+            callback.assert_called_with(
+                self.node, 'private'
+            )
+
+    @mock.patch('framework.status.push_status_message')
+    def test_fork_callback(self, status):
+        fork = self.node.fork_node(user=self.user)
+        for addon in self.node.addons:
+            callback = addon.after_fork
+            callback.assert_called_once_with(
+                self.node, fork, self.user
+            )
+
+    @mock.patch('framework.status.push_status_message')
+    def test_register_callback(self, status):
+        registration = self.node.register_node(
+            None, self.user, '', '',
+        )
+        for addon in self.node.addons:
+            callback = addon.after_register
+            callback.assert_called_once_with(
+                self.node, registration, self.user
+            )
 
 class TestProject(DbTestCase):
 
@@ -868,13 +1023,24 @@ class TestForkNode(DbTestCase):
                 data_fork = fork.get_file(file_fork.path, vidx)
                 assert_equal(data_original, data_fork)
 
+        # Test that add-ons were copied correctly
+        assert_equal(
+            original.get_addon_names(),
+            fork.get_addon_names()
+        )
+        assert_equal(
+            [addon.config.short_name for addon in original.get_addons()],
+            [addon.config.short_name for addon in fork.get_addons()]
+        )
+
         # Recursively compare children
         for idx, child in enumerate(original.nodes):
             if child.can_view(fork_user):
                 self._cmp_fork_original(fork_user, fork_date, fork.nodes[idx],
                                         child, title_prepend='')
 
-    def test_fork_recursion(self):
+    @mock.patch('framework.status.push_status_message')
+    def test_fork_recursion(self, mock_push_status_message):
         """Omnibus test for forking.
 
         """
@@ -892,6 +1058,11 @@ class TestForkNode(DbTestCase):
         self.subproject.add_file(
             self.user, None, 'test3.txt', 'test content3', 4, 'text/plain'
         )
+
+        # Add add-on to test copying
+        self.project.add_addon('github')
+        self.component.add_addon('github')
+        self.subproject.add_addon('github')
 
         # Log time
         fork_date = datetime.datetime.utcnow()
@@ -1141,6 +1312,12 @@ class TestRegisterNode(DbTestCase):
             self.registration.registered_date,
             datetime.datetime.utcnow(),
             delta=datetime.timedelta(seconds=30),
+        )
+
+    def test_registered_addons(self):
+        assert_equal(
+            [addon.config.short_name for addon in self.registration.get_addons()],
+            [addon.config.short_name for addon in self.registration.registered_from.get_addons()],
         )
 
     def test_registered_meta(self):
