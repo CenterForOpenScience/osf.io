@@ -7,13 +7,18 @@ from tests.factories import UserFactory, ProjectFactory
 
 from website.addons.base import AddonError
 
+from webtest_plus import TestApp
+import website.app
+app = website.app.init_app(routes=True, set_backends=False,
+                            settings_module="website.settings")
+
 
 class TestCallbacks(DbTestCase):
 
     def setUp(self):
 
         super(TestCallbacks, self).setUp()
-
+        self.app = TestApp(app)
         self.project = ProjectFactory.build()
         self.non_authenticator = UserFactory()
         self.project.add_contributor(
@@ -223,50 +228,118 @@ class TestCallbacks(DbTestCase):
             self.node_settings.repo,
         )
 
-    def test_hook_callback_add_file(self, mock_hooks):
-        url = "/project/{0}/github/hook/".format(self.project._id)
-        res = self.node_settings.post(
+    def test_hook_callback_add_file_not_thro_osf(self):
+        url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        res = self.app.post(
             url,
             json.dumps(
-                {"commits":[{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                             "distinct":True,
-                             "message":"Updated via the Open Science Framework",
-                             "timestamp":"2014-01-08T14:15:51-08:00",
-                             "url":"https://github.com/chennan47/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                             "author":{"name":"Illidan","email":"njqpw@osf.io"},
-                             "committer":{"name":"Nan Chen","email":"nc6r@virginia.edu","username":"chennan47"},
-                             "added":["PRJWN3TV"],"removed":[],"modified":[]}]},
-                content_type="application/json")).maybe_follow()
-        assert_equal(self.project.logs[-1].action, "file_added")
+                {"test": True,
+                 "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "distinct":True,
+                              "message":"foo",
+                              "timestamp":"2014-01-08T14:15:51-08:00",
+                              "url":"https://github.com/chennan47/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "author":{"name":"Illidan","email":"njqpw@osf.io"},
+                              "committer":{"name":"Nan Chen","email":"nc6r@virginia.edu","username":"chennan47"},
+                              "added":["PRJWN3TV"],"removed":[],"modified":[]}]}
+            ),
+            content_type="application/json").maybe_follow()
+        self.project.reload()
+        assert_equal(self.project.logs[-1].action, "github_file_added")
 
-    def test_hook_callback_modify_file(self, mock_hooks):
-        url = "/project/{0}/github/hook/".format(self.project._id)
-        res = self.node_settings.post(
+    def test_hook_callback_modify_file_not_thro_osf(self):
+        url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        res = self.app.post(
             url,
             json.dumps(
-                {"commits":[{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                             "distinct":True,
-                             "message":"Updated via the Open Science Framework",
-                             "timestamp":"2014-01-08T14:15:51-08:00",
-                             "url":"https://github.com/chennan47/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                             "author":{"name":"Illidan","email":"njqpw@osf.io"},
-                             "committer":{"name":"Nan Chen","email":"nc6r@virginia.edu","username":"chennan47"},
-                             "added":[],"removed":[],"modified":["PRJWN3TV"]}]},
-                content_type="application/json")).maybe_follow()
-        assert_equal(self.project.logs[-1].action, "file_modified")
+                {"test": True,
+                 "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "distinct":True,
+                              "message":"foo",
+                              "timestamp":"2014-01-08T14:15:51-08:00",
+                              "url":"https://github.com/chennan47/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "author":{"name":"Illidan","email":"njqpw@osf.io"},
+                              "committer":{"name":"Nan Chen","email":"nc6r@virginia.edu","username":"chennan47"},
+                              "added":[],"removed":[],"modified":["PRJWN3TV"]}]}
 
-    def test_hook_callback_remove_file(self, mock_hooks):
-        url = "/project/{0}/github/hook/".format(self.project._id)
-        res = self.node_settings.post(
+            ),
+            content_type="application/json").maybe_follow()
+        self.project.reload()
+        assert_equal(self.project.logs[-1].action, "github_file_modified")
+
+    def test_hook_callback_remove_file_not_thro_osf(self):
+        url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        res = self.app.post(
             url,
             json.dumps(
-                {"commits":[{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                             "distinct":True,
-                             "message":"Updated via the Open Science Framework",
-                             "timestamp":"2014-01-08T14:15:51-08:00",
-                             "url":"https://github.com/chennan47/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                             "author":{"name":"Illidan","email":"njqpw@osf.io"},
-                             "committer":{"name":"Nan Chen","email":"nc6r@virginia.edu","username":"chennan47"},
-                             "added":[],"removed":["PRJWN3TV"],"modified":[]}]},
-                content_type="application/json")).maybe_follow()
-        assert_equal(self.project.logs[-1].action, "file_removed")
+                {"test": True,
+                 "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "distinct":True,
+                              "message":"foo",
+                              "timestamp":"2014-01-08T14:15:51-08:00",
+                              "url":"https://github.com/chennan47/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "author":{"name":"Illidan","email":"njqpw@osf.io"},
+                              "committer":{"name":"Nan Chen","email":"nc6r@virginia.edu","username":"chennan47"},
+                              "added":[],"removed":["PRJWN3TV"],"modified":[]}]}
+            ),
+            content_type="application/json").maybe_follow()
+        self.project.reload()
+        assert_equal(self.project.logs[-1].action, "github_file_removed")
+
+    def test_hook_callback_add_file_thro_osf(self):
+        url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        res = self.app.post(
+            url,
+            json.dumps(
+                {"test": True,
+                 "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "distinct":True,
+                              "message":"Added via the Open Science Framework",
+                              "timestamp":"2014-01-08T14:15:51-08:00",
+                              "url":"https://github.com/chennan47/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "author":{"name":"Illidan","email":"njqpw@osf.io"},
+                              "committer":{"name":"Nan Chen","email":"nc6r@virginia.edu","username":"chennan47"},
+                              "added":["PRJWN3TV"],"removed":[],"modified":[]}]}
+            ),
+            content_type="application/json").maybe_follow()
+        self.project.reload()
+        assert_not_equal(self.project.logs[-1].action, "github_file_added")
+
+    def test_hook_callback_modify_file_thro_osf(self):
+        url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        res = self.app.post(
+            url,
+            json.dumps(
+                {"test": True,
+                 "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "distinct":True,
+                              "message":"Updated via the Open Science Framework",
+                              "timestamp":"2014-01-08T14:15:51-08:00",
+                              "url":"https://github.com/chennan47/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "author":{"name":"Illidan","email":"njqpw@osf.io"},
+                              "committer":{"name":"Nan Chen","email":"nc6r@virginia.edu","username":"chennan47"},
+                              "added":[],"removed":[],"modified":["PRJWN3TV"]}]}
+
+            ),
+            content_type="application/json").maybe_follow()
+        self.project.reload()
+        assert_not_equal(self.project.logs[-1].action, "github_file_updated")
+
+    def test_hook_callback_remove_file_thro_osf(self):
+        url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        res = self.app.post(
+            url,
+            json.dumps(
+                {"test": True,
+                 "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "distinct":True,
+                              "message":"Deleted via the Open Science Framework",
+                              "timestamp":"2014-01-08T14:15:51-08:00",
+                              "url":"https://github.com/chennan47/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "author":{"name":"Illidan","email":"njqpw@osf.io"},
+                              "committer":{"name":"Nan Chen","email":"nc6r@virginia.edu","username":"chennan47"},
+                              "added":[],"removed":["PRJWN3TV"],"modified":[]}]}
+            ),
+            content_type="application/json").maybe_follow()
+        self.project.reload()
+        assert_not_equal(self.project.logs[-1].action, "github_file_removed")

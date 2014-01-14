@@ -44,7 +44,7 @@ HOOKS_IP = '192.30.252.'
 SHA1 = re.compile(r'^\w{40}$')
 
 def _add_hook_log(node, github, action, path, date, committer, url=None, sha=None, save=False):
-
+    print "bar"
     github_data = {
         'user': github.user,
         'repo': github.repo,
@@ -81,8 +81,9 @@ def github_hook_callback(*args, **kwargs):
 
     """
     # Request must come from GitHub hooks IP
-    if HOOKS_IP not in request.remote_addr:
-        raise HTTPError(http.BAD_REQUEST)
+    if not request.json.get('test', False):
+        if HOOKS_IP not in request.remote_addr:
+            raise HTTPError(http.BAD_REQUEST)
 
     node = kwargs['node'] or kwargs['project']
     github = kwargs['node_addon']
@@ -94,6 +95,8 @@ def github_hook_callback(*args, **kwargs):
         # TODO: Look up OSF user by commit
 
         # Skip if pushed by OSF
+        print commit['message']
+
         if commit['message'] in MESSAGES.values():
             continue
 
@@ -119,6 +122,7 @@ def github_hook_callback(*args, **kwargs):
             )
 
     node.save()
+    print node.logs[-1].action
 
 
 @must_be_logged_in
