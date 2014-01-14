@@ -109,7 +109,12 @@ def create_mock_github(user='octo-cat', private=False):
      u'updated_at': u'2014-01-12T21:23:50Z',
      u'url': u'https://api.github.com/repos/{user}/mock-repo'.format(user=user),
      u'watchers': 1469,
-     u'watchers_count': 1469}
+     u'watchers_count': 1469,
+     # NOTE: permissions are only available if authorized on the repo
+     'permissions': {
+        'push': True
+     }
+     }
 
     github_mock.branches.return_value = [
         {u'commit': {u'sha': u'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
