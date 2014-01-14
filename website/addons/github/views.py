@@ -172,6 +172,8 @@ def _page_content(node, github, branch=None, sha=None, hotlink=True):
     if github.user is None or github.repo is None:
         return {}
 
+    repo = None
+
     connect = GitHub.from_settings(github.user_settings)
 
     if sha and not branch:
