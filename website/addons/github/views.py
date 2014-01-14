@@ -180,6 +180,8 @@ def github_set_config(*args, **kwargs):
 
         github_node.save()
 
+    return {}
+
 # TODO: Change "github" to "addon_settings" or something similar
 def _page_content(node, github, branch=None, sha=None, hotlink=False, _connection=None):
     """Return the info to be rendered for a given repo.
