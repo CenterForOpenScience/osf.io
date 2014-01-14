@@ -87,7 +87,7 @@ def _page_content(pid, s3):
        # data = None
     #Error handling should occur here or one function up
     # ie if usersettings or settings is none etc etc
-    raise Exception
+
     rv = {
         'complete': True,
         'bucket': s3.s3_bucket,
@@ -105,7 +105,7 @@ def s3_page(*args, **kwargs):
 
     s3 = node.get_addon('s3')
 
-    data = _view_project(node, user)
+    data = _view_project(node, user, primary=True)
 
     rv = _page_content(str(kwargs['pid']), s3)
     rv.update({
@@ -114,7 +114,7 @@ def s3_page(*args, **kwargs):
     })
     rv.update(s3.config.to_json())
     rv.update(data)
-
+    
     return rv
 
 @must_be_contributor_or_public

@@ -1,6 +1,4 @@
 <%inherit file="project/addon/page.mako" />
-
-<%def name="page()">
 <html>
     Viewing Bucket: <b>${bucket}</b>
 
@@ -24,6 +22,4 @@
 		<div id="s3Grid"/></div>
 	</div>
 
-
 </html>
-</%def>
