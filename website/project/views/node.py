@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
+import os
 import httplib as http
 from bs4 import BeautifulSoup
 from framework import (
@@ -25,7 +26,7 @@ from website.views import _render_nodes
 
 from framework.render.tasks import build_rendered_html
 logger = logging.getLogger(__name__)
-
+import time
 
 @must_have_session_auth
 @must_be_valid_project  # returns project
@@ -536,8 +537,19 @@ def get_registrations(*args, **kwargs):
 
 
 def check_celery(*args, **kwargs):
-    celery_id = "project/" + kwargs["pid"] + "/file/" + kwargs["fid"] + "/version/" + kwargs['vid']
+    "/Users/Alex/PycharmProjects/osf/website/cached/j9gd7/file_py_v1.html"
+
+    celery_id = '/api/v1/project/{pid}/files/download/{fid}/version/{vid}/render'.format(
+        pid=kwargs['pid'], fid=kwargs['fid'],  vid=kwargs['vid']
+    )
     if build_rendered_html.AsyncResult(celery_id).state == "SUCCESS":
-        return "do the things"
+
+        cached_file_path = os.path.join(
+        settings.BASE_PATH,
+        "cached",
+        kwargs['pid'],
+        kwargs['fid'].replace('.', '_') + "_v" + kwargs['vid'] + ".html")
+        print cached_file_path
+        return open(cached_file_path, 'r').read()
     return None
 

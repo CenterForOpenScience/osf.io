@@ -10,9 +10,10 @@
               	<h1>${file_name} (current)</h1>
           	</div>
       	</section>
-      	<div>
+      	<div id='file-rendered'>
       		${rendered}
       	</div>
+        <script> window.ren("${download_path}render")</script>
     </div>
     <div class="col-md-4">
       	<ol class="breadcrumb">
@@ -21,7 +22,7 @@
 		</ol>
 		<table class="table table-striped" id='file-version-history'>
 			<thead>
-				<tr>
+				<tr>st
 					<th>Version</th>
 					<th>Date</th>
                     <th>User</th>

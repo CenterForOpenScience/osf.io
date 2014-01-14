@@ -151,35 +151,22 @@ NodeActions._openCloseNode = function(node_id) {
     }
 };
 
-///*
-//refresh rendered file through mfr
-// */
-//function AsyncFileRenderer() {
-//   $.ajax({
-////       url: 'your/route/here',
-//         url: url,
-//       success: function(response) {
-//           if (response.content) {
-//               alert(response.content)
-////               $('#renderDiv').html(response.content);
-//               // Stop setInterval function
-//           }
-//       }
-//   })
-//}
+/*
+refresh rendered file through mfr
+*/
 
-
-window.AsyncFileRenderer = {
-    start: function()
+window.ren = function(url) {
+    var refreshInterval = window.setInterval(function(){
+        $.get( url, function( data ) {
+            if(data){$('#file-rendered').html(data);
+            clearInterval(refreshInterval);
+            }
+        })
+    }, 1000);
 }
 
-//
-//function AsyncFileRenderer() {
-//    alert("blarg")
-//}
 
-
-
+"/project/j9gd7/files/download/div_data.pdf/version/1/render"
 /*
 Display recent logs for for a node on the project view page.
 */

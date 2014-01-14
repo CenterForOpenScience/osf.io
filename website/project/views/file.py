@@ -374,9 +374,7 @@ def view_file(*args, **kwargs):
         node_to_use._primary_key,
         cached_name + ".html"
     )
-    celery_id = "project/" + kwargs["pid"] + "/file/" + kwargs["fid"] + "/version/" + vid
-    print celery_id
-
+    celery_id = download_path + "render"
     cached_dir = cached_file_path.strip(cached_file_path.split('/')[-1])
     print cached_file_path
     if not os.path.exists(cached_file_path):
@@ -385,32 +383,16 @@ def view_file(*args, **kwargs):
         with open(cached_file_path, 'w') as fp:
             fp.write('<img src="/static/img/loading.gif">')
 
-
-        # randoms = []
-        # for x in range(100):
-        #     n = random.random()
-        #     paths = cached_file_path + str(n)
-        #     randoms.append(paths)
-        #     build_rendered_html.apply_async(
-        #     [file_path, cached_file_path, download_path],
-        #     task_id=paths)
-
         build_rendered_html.apply_async(
             [file_path, cached_file_path, download_path],
             task_id=celery_id
         )
-    # if os.path.exists(cached_file_path):
-
-    # if build_rendered_html.AsyncResult(cached_file_path).state == 'SUCCESS':
-    # stati = []
-    # for i in randoms:
-    #     stati.append(build_rendered_html.AsyncResult(i).state)
-    # print stati
 
     rendered = open(cached_file_path, 'r').read()
-
+    print download_path
     rv = {
         'file_name': file_name,
+        'download_path': download_path,
         'rendered': rendered,
         'renderer': renderer,
         'versions': versions,

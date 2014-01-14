@@ -285,7 +285,8 @@ def make_url_map(app):
         ], 'get', project_views.log.get_logs, OsfWebRenderer('util/render_logs.mako')),
 
         ### File Render ###
-        Rule('/project/<pid>/node/<nid>/files/<fid>/version/<vid>/render', 'get', project_views.node.check_celery, json_renderer),
+        # todo fix this so that it doesn't need api/v1, not sure why this works... (AJS)
+        Rule('/api/v1/project/<pid>/files/download/<fid>/version/<vid>/render', 'get', project_views.node.check_celery, json_renderer),
 
         ### Files ###
 
