@@ -166,15 +166,24 @@ def github_set_config(*args, **kwargs):
         github_node.save()
 
 
-def _page_content(node, github, branch=None, sha=None, hotlink=True):
+def _page_content(node, github, branch=None, sha=None, hotlink=True, connection=None):
+    """Return the info to be rendered for a given repo.
+
+    :param AddonGitHubNodeSettings github: The addon object.
+    :param str branch: Git branch name.
+    :param str sha: SHA hash.
+    :param bool hotlink: Whether a direct download link from Github is available.
+        Should be True for public repos.
+    :param Github connection: A GitHub object for sending API requests.
+    :return: A dict of repo info to render on the page.
+    """
 
     # Fail if GitHub settings incomplete
     if github.user is None or github.repo is None:
         return {}
-
     repo = None
 
-    connect = GitHub.from_settings(github.user_settings)
+    connect = connection or GitHub.from_settings(github.user_settings)
 
     if sha and not branch:
         raise HTTPError(http.BAD_REQUEST)
