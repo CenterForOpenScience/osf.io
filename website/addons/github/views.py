@@ -77,10 +77,10 @@ def _add_hook_log(node, github, action, path, date, committer, url=None, sha=Non
 @decorators.must_not_be_registration
 @decorators.must_have_addon('github', 'node')
 def github_hook_callback(*args, **kwargs):
-    """Add logs for commits from outside OSF.
-
+    """Add logs for commits from outside OSF
     """
     # Request must come from GitHub hooks IP
+
     if not request.json.get('test', False):
         if HOOKS_IP not in request.remote_addr:
             raise HTTPError(http.BAD_REQUEST)
@@ -95,9 +95,7 @@ def github_hook_callback(*args, **kwargs):
         # TODO: Look up OSF user by commit
 
         # Skip if pushed by OSF
-        print commit['message']
-
-        if commit['message'] in MESSAGES.values():
+        if commit['message'] and commit['message'] in MESSAGES.values():
             continue
 
         _id = commit['id']
@@ -136,15 +134,31 @@ def github_set_config(*args, **kwargs):
 
     user = kwargs['user']
 
-    github_user = user.get_addon('github')
     github_node = kwargs['node_addon']
+    github_user = github_node.user_settings
 
     # If authorized, only owner can change settings
     if github_user and github_user.owner != user:
         raise HTTPError(http.BAD_REQUEST)
 
+    # Parse request
     github_user_name = request.json.get('github_user', '')
     github_repo_name = request.json.get('github_repo', '')
+
+    # Verify that repo exists and that user can access
+    connect = GitHub.from_settings(github_user)
+    repo = connect.repo(github_user_name, github_repo_name)
+    if repo is None:
+        if github_user:
+            message = (
+                'Cannot access repo. Either the repo does not exist '
+                'or your account does not have permission to view it.'
+            )
+        else:
+            message = (
+                'Cannot access repo.'
+            )
+        return {'message': message}, 400
 
     if not github_user_name or not github_repo_name:
         raise HTTPError(http.BAD_REQUEST)
@@ -169,16 +183,27 @@ def github_set_config(*args, **kwargs):
 
         github_node.save()
 
+# TODO: Change "github" to "addon_settings" or something similar
+def _page_content(node, github, branch=None, sha=None, hotlink=True, _connection=None):
+    """Return the info to be rendered for a given repo.
 
-def _page_content(node, github, branch=None, sha=None, hotlink=True):
+    :param AddonGitHubNodeSettings github: The addon object.
+    :param str branch: Git branch name.
+    :param str sha: SHA hash.
+    :param bool hotlink: Whether a direct download link from Github is available.
+        Should be True for public repos.
+    :param Github _connection: A GitHub object for sending API requests. If None,
+        a Github object will be created from the user settings. This param is
+        only exposed to allow for mocking the GitHub API object.
+    :return: A dict of repo info to render on the page.
+    """
 
     # Fail if GitHub settings incomplete
     if github.user is None or github.repo is None:
         return {}
-
     repo = None
 
-    connect = GitHub.from_settings(github.user_settings)
+    connect = _connection or GitHub.from_settings(github.user_settings)
 
     if sha and not branch:
         raise HTTPError(http.BAD_REQUEST)
@@ -730,6 +755,12 @@ def github_oauth_callback(*args, **kwargs):
     github_user.oauth_state = None
     github_user.oauth_access_token = token['access_token']
     github_user.oauth_token_type = token['token_type']
+
+    connect = GitHub.from_settings(github_user)
+    user = connect.user()
+
+    github_user.github_user = user['login']
+
     github_user.save()
 
     if github_node:

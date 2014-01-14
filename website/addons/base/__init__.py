@@ -190,9 +190,10 @@ class AddonNodeSettingsBase(AddonSettingsBase):
     # Callbacks #
     #############
 
-    def before_page_load(self, node):
+    def before_page_load(self, node, user):
         """
 
+        :param User user:
         :param Node node:
 
         """

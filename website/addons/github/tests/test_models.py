@@ -43,7 +43,7 @@ class TestCallbacks(DbTestCase):
         self.project.is_public = True
         self.project.save()
         mock_repo.return_value = {'private': False}
-        message = self.node_settings.before_page_load(self.project)
+        message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
             self.node_settings.repo,
@@ -55,7 +55,7 @@ class TestCallbacks(DbTestCase):
         self.project.is_public = True
         self.project.save()
         mock_repo.return_value = {'private': True}
-        message = self.node_settings.before_page_load(self.project)
+        message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
             self.node_settings.repo,
@@ -65,7 +65,7 @@ class TestCallbacks(DbTestCase):
     @mock.patch('website.addons.github.api.GitHub.repo')
     def test_before_page_load_osf_private_gh_public(self, mock_repo):
         mock_repo.return_value = {'private': False}
-        message = self.node_settings.before_page_load(self.project)
+        message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
             self.node_settings.repo,
@@ -75,11 +75,19 @@ class TestCallbacks(DbTestCase):
     @mock.patch('website.addons.github.api.GitHub.repo')
     def test_before_page_load_osf_private_gh_private(self, mock_repo):
         mock_repo.return_value = {'private': True}
-        message = self.node_settings.before_page_load(self.project)
+        message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
             self.node_settings.repo,
         )
+        assert_false(message)
+
+    def test_before_page_load_not_contributor(self):
+        message = self.node_settings.before_page_load(self.project, UserFactory())
+        assert_false(message)
+
+    def test_before_page_load_not_logged_in(self):
+        message = self.node_settings.before_page_load(self.project, None)
         assert_false(message)
 
     def test_before_remove_contributor_authenticator(self):

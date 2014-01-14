@@ -88,18 +88,45 @@ class GitHub(object):
 
         return rv
 
-    def repo(self, user, repo):
+    def user(self, user=None):
+        """Fetch a user or the authenticated user.
 
+        :param user: Optional GitHub user name; will fetch authenticated
+            user if omitted
+        :return dict: GitHub API response
+
+        """
+        url = (
+            os.path.join(API_URL, 'users', user)
+            if user
+            else os.path.join(API_URL, 'user')
+        )
+        return self._send(url)
+
+    def repo(self, user, repo):
+        """Get a single Github repo's info.
+
+        :param str user: The owner of the repo
+        :param str repo: The repo name.
+        :return: Dict of repo information.
+            See http://developer.github.com/v3/repos/#get
+        """
         return self._send(
             os.path.join(API_URL, 'repos', user, repo)
         )
 
     def branches(self, user, repo, branch=None):
+        """List a repo's branches or get a single branch.
 
+        :param str user: The repo owner
+        :param str repo: The repo name.
+        :param str branch: Branch name if getting a single branch.
+        :return: List of branch dicts.
+            http://developer.github.com/v3/repos/#list-branches
+        """
         url = os.path.join(API_URL, 'repos', user, repo, 'branches')
         if branch:
             url = os.path.join(url, branch)
-
         return self._send(url)
 
     def commits(self, user, repo, path=None, sha=None):
@@ -111,7 +138,6 @@ class GitHub(object):
         :param str sha: SHA or branch name
         :return list: List of commit dicts from GitHub; see
             http://developer.github.com/v3/repos/commits/
-
         """
         return self._send(
             os.path.join(

@@ -4,6 +4,12 @@
 <div>
     % if authorized:
         <a id="githubDelKey" class="btn btn-danger">Delete Access Token</a>
+        <div style="padding-top: 10px;">
+            Authorized by GitHub user
+            <a href="https://github.com/${github_user}" target="_blank">
+                ${github_user}
+            </a>
+        </div>
     % else:
         <a id="githubAddKey" class="btn btn-primary">
             Create Access Token
@@ -16,7 +22,7 @@
     $(document).ready(function() {
 
         $('#githubAddKey').on('click', function() {
-            % if authorized_user:
+            % if authorized_user_id:
                 $.ajax({
                     type: 'POST',
                     url: '/api/v1/profile/settings/oauth/',

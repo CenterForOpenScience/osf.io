@@ -35,7 +35,8 @@ def get_globals():
         'allow_login': settings.ALLOW_LOGIN,
         'status': framework.status.pop_status_messages(),
         'js_all': assets_env['js'].urls(),
-        'css_all': assets_env['css'].urls()
+        'css_all': assets_env['css'].urls(),
+        'domain': settings.DOMAIN,
     }
 
 

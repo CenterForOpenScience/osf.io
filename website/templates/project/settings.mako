@@ -187,8 +187,15 @@
                 msgElm.text('Settings updated')
                     .removeClass('text-danger').addClass('text-success')
                     .fadeOut(100).fadeIn();
-            }).fail(function() {
-                msgElm.text('Error: Settings not updated')
+            }).fail(function(xhr) {
+                var message = 'Error: ';
+                var response = JSON.parse(xhr.responseText);
+                if (response && response.message) {
+                    message += response.message;
+                } else {
+                    message += 'Settings not updated.'
+                }
+                msgElm.text(message)
                     .removeClass('text-success').addClass('text-danger')
                     .fadeOut(100).fadeIn();
             });
