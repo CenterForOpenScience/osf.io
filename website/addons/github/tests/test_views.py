@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 from nose.tools import *  # PEP8 asserts
-
+import json
 from tests.base import DbTestCase
 from tests.factories import ProjectFactory, UserFactory
 from website.addons.github.tests.utils import create_mock_github
@@ -10,10 +10,17 @@ from website.addons.github import views
 from website.addons.github.model import AddonGitHubNodeSettings
 
 
+from webtest_plus import TestApp
+import website.app
+app = website.app.init_app(routes=True, set_backends=False,
+                            settings_module="website.settings")
+
+
 class TestGithubViews(DbTestCase):
 
     def setUp(self):
         self.user = UserFactory()
+        self.app = TestApp(app)
         self.project = ProjectFactory(creator=self.user)
         self.project.add_addon('github')
         self.project.creator.add_addon('github')
@@ -70,6 +77,122 @@ class TestGithubViews(DbTestCase):
 
     def test_github_get_repo(self):
         assert 0, 'finish me'
+
+    def test_hook_callback_add_file_not_thro_osf(self):
+        url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        res = self.app.post(
+            url,
+            json.dumps(
+                {"test": True,
+                 "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "distinct":True,
+                              "message":"foo",
+                              "timestamp":"2014-01-08T14:15:51-08:00",
+                              "url":"https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "author":{"name":"Illidan","email":"njqpw@osf.io"},
+                              "committer":{"name":"Testor","email":"test@osf.io","username":"tester"},
+                              "added":["PRJWN3TV"],"removed":[],"modified":[]}]}
+            ),
+            content_type="application/json").maybe_follow()
+        self.project.reload()
+        assert_equal(self.project.logs[-1].action, "github_file_added")
+
+    def test_hook_callback_modify_file_not_thro_osf(self):
+        url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        res = self.app.post(
+            url,
+            json.dumps(
+                {"test": True,
+                 "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "distinct":True,
+                              "message":"foo",
+                              "timestamp":"2014-01-08T14:15:51-08:00",
+                              "url":"https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "author":{"name":"Illidan","email":"njqpw@osf.io"},
+                              "committer":{"name":"Testor","email":"test@osf.io","username":"tester"},
+                              "added":[],"removed":[],"modified":["PRJWN3TV"]}]}
+
+            ),
+            content_type="application/json").maybe_follow()
+        self.project.reload()
+        assert_equal(self.project.logs[-1].action, "github_file_updated")
+
+    def test_hook_callback_remove_file_not_thro_osf(self):
+        url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        res = self.app.post(
+            url,
+            json.dumps(
+                {"test": True,
+                 "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "distinct":True,
+                              "message":"foo",
+                              "timestamp":"2014-01-08T14:15:51-08:00",
+                              "url":"https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "author":{"name":"Illidan","email":"njqpw@osf.io"},
+                              "committer":{"name":"Testor","email":"test@osf.io","username":"tester"},
+                              "added":[],"removed":["PRJWN3TV"],"modified":[]}]}
+            ),
+            content_type="application/json").maybe_follow()
+        self.project.reload()
+        assert_equal(self.project.logs[-1].action, "github_file_removed")
+
+    def test_hook_callback_add_file_thro_osf(self):
+        url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        res = self.app.post(
+            url,
+            json.dumps(
+                {"test": True,
+                 "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "distinct":True,
+                              "message":"Added via the Open Science Framework",
+                              "timestamp":"2014-01-08T14:15:51-08:00",
+                              "url":"https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "author":{"name":"Illidan","email":"njqpw@osf.io"},
+                              "committer":{"name":"Testor","email":"test@osf.io","username":"tester"},
+                              "added":["PRJWN3TV"],"removed":[],"modified":[]}]}
+            ),
+            content_type="application/json").maybe_follow()
+        self.project.reload()
+        assert_not_equal(self.project.logs[-1].action, "github_file_added")
+
+    def test_hook_callback_modify_file_thro_osf(self):
+        url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        res = self.app.post(
+            url,
+            json.dumps(
+                {"test": True,
+                 "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "distinct":True,
+                              "message":"Updated via the Open Science Framework",
+                              "timestamp":"2014-01-08T14:15:51-08:00",
+                              "url":"https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "author":{"name":"Illidan","email":"njqpw@osf.io"},
+                              "committer":{"name":"Testor","email":"test@osf.io","username":"tester"},
+                              "added":[],"removed":[],"modified":["PRJWN3TV"]}]}
+
+            ),
+            content_type="application/json").maybe_follow()
+        self.project.reload()
+        assert_not_equal(self.project.logs[-1].action, "github_file_updated")
+
+    def test_hook_callback_remove_file_thro_osf(self):
+        url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        res = self.app.post(
+            url,
+            json.dumps(
+                {"test": True,
+                 "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "distinct":True,
+                              "message":"Deleted via the Open Science Framework",
+                              "timestamp":"2014-01-08T14:15:51-08:00",
+                              "url":"https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "author":{"name":"Illidan","email":"njqpw@osf.io"},
+                              "committer":{"name":"Testor","email":"test@osf.io","username":"tester"},
+                              "added":[],"removed":["PRJWN3TV"],"modified":[]}]}
+            ),
+            content_type="application/json").maybe_follow()
+        self.project.reload()
+        assert_not_equal(self.project.logs[-1].action, "github_file_removed")
 
 
 class TestRegistrationsWithGithub(DbTestCase):
