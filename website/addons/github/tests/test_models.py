@@ -1,4 +1,5 @@
 import mock
+import unittest
 from nose.tools import *
 import json
 
@@ -6,6 +7,7 @@ from tests.base import DbTestCase
 from tests.factories import UserFactory, ProjectFactory
 
 from website.addons.base import AddonError
+from website.addons.github import settings as github_settings
 
 from webtest_plus import TestApp
 import website.app
@@ -110,6 +112,7 @@ class TestCallbacks(DbTestCase):
             None,
         )
 
+    @unittest.skipIf(not github_settings.SET_PRIVACY, 'Setting privacy is disabled.')
     @mock.patch('website.addons.github.api.GitHub.set_privacy')
     def test_after_set_permissions_private_authenticated(self, mock_set_privacy):
         mock_set_privacy.return_value = {}
@@ -124,6 +127,7 @@ class TestCallbacks(DbTestCase):
         assert_true(message)
         assert_in('made private', message.lower())
 
+    @unittest.skipIf(not github_settings.SET_PRIVACY, 'Setting privacy is disabled.')
     @mock.patch('website.addons.github.api.GitHub.set_privacy')
     def test_after_set_permissions_public_authenticated(self, mock_set_privacy):
         mock_set_privacy.return_value = {}
@@ -138,6 +142,7 @@ class TestCallbacks(DbTestCase):
         assert_true(message)
         assert_in('made public', message.lower())
 
+    @unittest.skipIf(not github_settings.SET_PRIVACY, 'Setting privacy is disabled.')
     @mock.patch('website.addons.github.api.GitHub.repo')
     @mock.patch('website.addons.github.api.GitHub.set_privacy')
     def test_after_set_permissions_not_authenticated(self, mock_set_privacy, mock_repo):

@@ -365,8 +365,8 @@ def github_view_file(*args, **kwargs):
         url = raw_url(github.user, github.repo, sha, path)
 
     # Get file history
-    since_sha = (sha or branch) if node.is_registration else branch
-    commits = connect.history(github.user, github.repo, path, sha=since_sha)
+    start_sha = (sha or branch) if node.is_registration else branch
+    commits = connect.history(github.user, github.repo, path, sha=start_sha)
     for commit in commits:
         if repo['private']:
             commit['download'] = os.path.join(node.api_url, 'github', 'file', path) + '?ref=' + commit['sha']
@@ -516,10 +516,14 @@ def github_upload_file(*args, **kwargs):
             'branch': branch,
         })
 
+        _, ext = os.path.splitext(filename)
+        ext = ext.lstrip('.')
+
         info = {
             'name': filename,
             'uid': os.path.join('__repo__', data['content']['path']),
             'parent_uid': 'tree:' + '||'.join(['__repo__', path]).strip('||'),
+            'ext': ext,
             'size': [
                 data['content']['size'],
                 size(data['content']['size'], system=alternative)

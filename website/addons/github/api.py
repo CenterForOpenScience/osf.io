@@ -376,7 +376,14 @@ def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=True):
 
     for item in tree:
 
+        # Types should be "blob" or "tree" but may also be "commit". Ignore
+        # unexpected types.
+        if item['type'] not in type_map:
+            continue
+
         split = os.path.split(item['path'])
+        _, ext = os.path.splitext(item['path'])
+        ext = ext.lstrip('.')
 
         row = {
             'uid': item['type'] + ':' + '||'.join(['__repo__', item['path']]),
@@ -395,6 +402,7 @@ def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=True):
                 item['size'],
                 size(item['size'], system=alternative)
             ]
+            row['ext'] = ext
             base_api_url = node.api_url + 'github/file/{0}/'.format(item['path'])
             row['delete'] = base_api_url + '?' + ref
             row['view'] = os.path.join(node.url, 'github', 'file', item['path']) + '/'

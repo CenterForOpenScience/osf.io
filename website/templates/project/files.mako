@@ -162,6 +162,7 @@ if (myGrid.dropZoneObj) {
     myGrid.dropZoneObj.options.parallelUploads = 1;
 }
 
+// TODO: Add to HGgrid
 myGrid.updateBreadcrumbsBox(myGrid.data[0]['uid']);
 
 myGrid.addColumn({id: "downloads", name: "Downloads", field: "downloads", width: 150, sortable: true, formatter: UploadBars});
