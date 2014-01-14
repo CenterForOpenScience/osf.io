@@ -35,6 +35,8 @@ def s3_user_settings(*args, **kwargs):
     s3_access_key = request.json.get('access_key','')
     s3_secret_key = request.json.get('secret_key','')
 
+    has_auth = (s3_access_key and s3_secret_key)
+
     changed = (
         s3_access_key != s3_user.access_key or
         s3_secret_key != s3_user.secret_key
@@ -43,6 +45,7 @@ def s3_user_settings(*args, **kwargs):
     if changed:
         s3_user.access_key = s3_access_key
         s3_user.secret_key = s3_secret_key
+        s3_user.user_has_auth = has_auth
 
         s3_user.save()
 
@@ -62,10 +65,6 @@ def s3_settings(*args, **kwargs):
 
     s3_bucket = request.json.get('s3_bucket', '')
 
-    print s3_bucket
-
-    print s3_user
-
     if not s3_bucket:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -80,16 +79,18 @@ def s3_settings(*args, **kwargs):
 
         s3_node.save()
 
-@must_be_contributor
-@must_have_addon('s3','node')
+def s3_create_access_key(*args, **kwargs):
 
-def s3_widget_unused(*args, **kwargs):
+    user = kwargs['user']
 
-    node = kwargs['node'] or kwargs['project']
-    s3 = node.get_addon('s3')
-    rv = {}
-    rv.update(s3.config.to_json())
-    return rv
+    s3_node = kwargs['node_addon']
+    s3_user = user.get_addon('s3')
+
+    u = createLimitedUser(s3_user.access_key,s3_user.secret_key,s3_node.s3_bucket)
+
+    if u:
+        s3_node.s3_node_access_key
+    #TODO grab keys from 
 
 def _page_content(pid, s3):
     #nTODO use bucket name 

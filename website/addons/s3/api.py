@@ -24,6 +24,9 @@ def testAccess(access_key, secret_key):
     except Exception:
         return False
 
+def createLimitedUser(access_key, secret_key,bucket_name):
+    pass
+
 
 class BucketManager:
 
