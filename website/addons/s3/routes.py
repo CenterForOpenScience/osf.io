@@ -13,8 +13,10 @@ settings_routes = {
             '/project/<pid>/s3/settings/',
             '/project/<pid>/node/<nid>/s3/settings/',
         ], 'post', views.s3_settings, json_renderer),
+        Rule([
+            '/user/s3/settings/',
+        ], 'post', views.s3_user_settings, json_renderer),
     ],
-    'prefix': '/api/v1',
 }
 
 page_routes = {

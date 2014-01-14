@@ -17,6 +17,14 @@ URLADDONS = {
         'download':'download/',
 }
 
+def testAccess(access_key, secret_key):
+    try:
+        S3Connection(access_key,secret_key)
+        return True
+    except Exception:
+        return False
+
+
 class BucketManager:
 
     @staticmethod

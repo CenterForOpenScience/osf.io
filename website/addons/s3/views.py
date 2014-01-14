@@ -25,9 +25,26 @@ import os
 
 
 @must_be_logged_in
-def s3_set_user_config(*args, **kwargs):
-    return {}
+def s3_user_settings(*args, **kwargs):
+    user = kwargs['user']
+    s3_user = user.get_addon('s3')
 
+    if not s3_user:
+        raise HTTPError(http.BAD_REQUEST)
+
+    s3_access_key = request.json.get('access_key','')
+    s3_secret_key = request.json.get('secret_key','')
+
+    changed = (
+        s3_access_key != s3_user.access_key or
+        s3_secret_key != s3_user.secret_key
+        )
+
+    if changed:
+        s3_user.access_key = s3_access_key
+        s3_user.secret_key = s3_secret_key
+
+        s3_user.save()
 
 
 @must_be_contributor
@@ -38,8 +55,6 @@ def s3_settings(*args, **kwargs):
 
     s3_node = kwargs['node_addon']
     s3_user = user.get_addon('s3')
-
-    print s3_user.owner is user
 
     # If authorized, only owner can change settings
     if s3_user and s3_user.owner != user:
@@ -114,7 +129,7 @@ def s3_page(*args, **kwargs):
     })
     rv.update(s3.config.to_json())
     rv.update(data)
-    
+
     return rv
 
 @must_be_contributor_or_public
