@@ -304,6 +304,7 @@ class GitHub(object):
             ),
             'delete',
             cache=False,
+            output=None,
         )
 
     ########

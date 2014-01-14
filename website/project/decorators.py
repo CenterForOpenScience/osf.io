@@ -174,9 +174,11 @@ def must_have_addon(addon_name, model):
                 owner = get_current_user()
                 if owner is None:
                     raise HTTPError(http.UNAUTHORIZED)
+            else:
+                raise HTTPError(http.BAD_REQUEST)
             addon = owner.get_addon(addon_name)
             if addon is None:
-                raise HTTPError(http.BAD_REQUEST)
+                raise HTTPError(http.NOT_FOUND)
             kwargs['{0}_addon'.format(model)] = addon
             return func(*args, **kwargs)
         return decorator(wrapped, func)
