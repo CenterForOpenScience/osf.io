@@ -41,8 +41,6 @@ MESSAGES = {
 # All GitHub hooks come from 192.30.252.0/22
 HOOKS_IP = '192.30.252.'
 
-SHA1 = re.compile(r'^\w{40}$')
-
 def _add_hook_log(node, github, action, path, date, committer, url=None, sha=None, save=False):
 
     github_data = {
@@ -166,16 +164,17 @@ def github_set_config(*args, **kwargs):
         github_repo_name != github_node.repo
     )
 
-    # Delete callback
+    # Update hooks
     if changed:
 
+        # Delete existing hook, if any
         github_node.delete_hook()
 
         # Update node settings
         github_node.user = github_user_name
         github_node.repo = github_repo_name
 
-        # Add hook
+        # Add new hook
         if github_node.user and github_node.repo:
             github_node.add_hook(save=False)
 
@@ -704,8 +703,14 @@ def github_oauth_start(*args, **kwargs):
     github_user = user.get_addon('github')
 
     if node:
+
         github_node = node.get_addon('github')
         github_node.user_settings = github_user
+
+        # Add webhook
+        if github_node.user and github_node.repo:
+            github_node.add_hook()
+
         github_node.save()
 
     authorization_url, state = oauth_start_url(user, node)
@@ -721,6 +726,10 @@ def github_oauth_delete_user(*args, **kwargs):
 
     github_user = kwargs['user_addon']
 
+    # Remove webhooks
+    for node_settings in github_user.addongithubnodesettings__authorized:
+        node_settings.delete_hook()
+
     github_user.oauth_access_token = None
     github_user.oauth_token_type = None
     github_user.save()
@@ -734,10 +743,11 @@ def github_oauth_delete_node(*args, **kwargs):
 
     github_node = kwargs['node_addon']
 
+    # Remove webhook
+    github_node.delete_hook()
+
     github_node.user_settings = None
     github_node.save()
-
-    github_node.delete_hook()
 
     return {}
 

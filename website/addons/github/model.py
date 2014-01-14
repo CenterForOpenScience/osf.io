@@ -14,6 +14,7 @@ from website.addons.base import AddonError
 from . import settings as github_settings
 from .api import GitHub
 
+hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
 class AddonGitHubUserSettings(AddonUserSettingsBase):
 
@@ -319,7 +320,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 'web',
                 {
                     'url': urlparse.urljoin(
-                        github_settings.HOOK_DOMAIN or settings.DOMAIN,
+                        hook_domain,
                         os.path.join(
                             self.owner.api_url, 'github', 'hook/'
                         )
