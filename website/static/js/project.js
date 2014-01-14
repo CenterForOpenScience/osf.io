@@ -151,6 +151,35 @@ NodeActions._openCloseNode = function(node_id) {
     }
 };
 
+///*
+//refresh rendered file through mfr
+// */
+//function AsyncFileRenderer() {
+//   $.ajax({
+////       url: 'your/route/here',
+//         url: url,
+//       success: function(response) {
+//           if (response.content) {
+//               alert(response.content)
+////               $('#renderDiv').html(response.content);
+//               // Stop setInterval function
+//           }
+//       }
+//   })
+//}
+
+
+window.AsyncFileRenderer = {
+    start: function()
+}
+
+//
+//function AsyncFileRenderer() {
+//    alert("blarg")
+//}
+
+
+
 /*
 Display recent logs for for a node on the project view page.
 */

@@ -1,17 +1,18 @@
-import re
 import os
 import cgi
 import json
 import time
-import zipfile
-import tarfile
 from cStringIO import StringIO
 import httplib as http
 import logging
+import time
+import random
 
-import pygments
-import pygments.lexers
-import pygments.formatters
+from mfr.renderer import FileRenderer
+
+# mfr imports used in nested way, do not remove
+# from mfr.renderer import tabular, pdf, code, ipynb, image
+
 from hurry.filesize import size, alternative
 
 from framework import request, redirect, secure_filename, send_file
@@ -25,8 +26,15 @@ from website.project.decorators import must_not_be_registration, must_be_valid_p
     must_be_contributor, must_be_contributor_or_public
 from website.project.model import NodeFile
 from website import settings
+from framework.render.tasks import build_rendered_html
+
+
+# TODO: Make MFR use this parameter
+FileRenderer.STATIC_PATH = '/static/mfr'
+
 
 logger = logging.getLogger(__name__)
+
 
 def prune_file_list(file_list, max_depth):
     if max_depth is None:
@@ -41,11 +49,10 @@ def get_file_tree(node_to_use, user):
             tree.append(get_file_tree(node, user))
 
     if node_to_use.can_view(user):
-        for i,v in node_to_use.files_current.items():
+        for i, v in node_to_use.files_current.items():
             v = NodeFile.load(v)
             tree.append(v)
-
-    return (node_to_use, tree)
+    return node_to_use, tree
 
 
 @must_be_valid_project # returns project
@@ -69,11 +76,13 @@ def get_files(*args, **kwargs):
         rv.update(_view_project(node_to_use, user))
     return rv
 
+
 def _clean_file_name(name):
     " HTML-escape file name and encode to UTF-8. "
     escaped = cgi.escape(name)
     encoded = unicode(escaped).encode('utf-8')
     return encoded
+
 
 def _get_files(filetree, parent_id, check, user):
     if parent_id is not None:
@@ -203,6 +212,7 @@ def upload_file_get(*args, **kwargs):
             })
     return {'files': file_infos}
 
+
 @must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor  # returns user, project
@@ -310,7 +320,6 @@ def view_file(*args, **kwargs):
         node_to_use._primary_key,
         file_name
     )
-
     # Throw 404 and log error if file not found on disk
     if not os.path.isfile(file_path):
         logger.error('File {} not found on disk.'.format(file_path))
@@ -337,6 +346,7 @@ def view_file(*args, **kwargs):
         })
 
     file_size = os.stat(file_path).st_size
+
     if file_size > settings.MAX_RENDER_SIZE:
 
         rv = {
@@ -353,54 +363,51 @@ def view_file(*args, **kwargs):
 
     _, file_ext = os.path.splitext(file_path.lower())
 
-    is_img = False
-    for fmt in settings.IMG_FMTS:
-        fmt_ptn = '^.{0}$'.format(fmt)
-        if re.search(fmt_ptn, file_ext):
-            is_img = True
-            break
+    # Check for cached rendered file
+    vid = str(len(node_to_use.files_versions[file_name.replace('.', '_')]))
+
+    cached_name = file_name_clean +\
+        "_v" + vid
+    cached_file_path = os.path.join(
+        settings.BASE_PATH,
+        "cached",
+        node_to_use._primary_key,
+        cached_name + ".html"
+    )
+    celery_id = "project/" + kwargs["pid"] + "/file/" + kwargs["fid"] + "/version/" + vid
+    print celery_id
+
+    cached_dir = cached_file_path.strip(cached_file_path.split('/')[-1])
+    print cached_file_path
+    if not os.path.exists(cached_file_path):
+        if not os.path.exists(cached_dir):
+            os.makedirs(cached_dir)
+        with open(cached_file_path, 'w') as fp:
+            fp.write('<img src="/static/img/loading.gif">')
 
 
-    # TODO: this logic belongs in model
-    # todo: add bzip, etc
-    if is_img:
-        # Append version number to image URL so that old versions aren't
-        # cached incorrectly. Resolves #208 [openscienceframework.org]
-        rendered='<img src="{url}files/download/{fid}/?{vid}" />'.format(
-            url=node_to_use.api_url, fid=file_name, vid=len(versions),
+        # randoms = []
+        # for x in range(100):
+        #     n = random.random()
+        #     paths = cached_file_path + str(n)
+        #     randoms.append(paths)
+        #     build_rendered_html.apply_async(
+        #     [file_path, cached_file_path, download_path],
+        #     task_id=paths)
+
+        build_rendered_html.apply_async(
+            [file_path, cached_file_path, download_path],
+            task_id=celery_id
         )
-    elif file_ext == '.zip':
-        archive = zipfile.ZipFile(file_path)
-        archive_files = prune_file_list(archive.namelist(), settings.ARCHIVE_DEPTH)
-        archive_files = [secure_filename(fi) for fi in archive_files]
-        file_contents = '\n'.join(['This archive contains the following files:'] + archive_files)
-        file_path = 'temp.txt'
-        renderer = 'pygments'
-    elif file_path.lower().endswith('.tar') or file_path.endswith('.tar.gz'):
-        archive = tarfile.open(file_path)
-        archive_files = prune_file_list(archive.getnames(), settings.ARCHIVE_DEPTH)
-        archive_files = [secure_filename(fi) for fi in archive_files]
-        file_contents = '\n'.join(['This archive contains the following files:'] + archive_files)
-        file_path = 'temp.txt'
-        renderer = 'pygments'
-    else:
-        renderer = 'pygments'
-        try:
-            file_contents = open(file_path, 'r').read()
-        except IOError:
-            raise HTTPError(http.NOT_FOUND)
+    # if os.path.exists(cached_file_path):
 
-    if renderer == 'pygments':
-        try:
-            rendered = pygments.highlight(
-                file_contents,
-                pygments.lexers.guess_lexer_for_filename(file_path, file_contents),
-                pygments.formatters.HtmlFormatter()
-            )
-        except pygments.util.ClassNotFound:
-            rendered = ('<p>This file cannot be rendered online. '
-                        'Please <a href={path}>download the file</a> to view it locally.</p>'
-                        .format(path=download_path))
+    # if build_rendered_html.AsyncResult(cached_file_path).state == 'SUCCESS':
+    # stati = []
+    # for i in randoms:
+    #     stati.append(build_rendered_html.AsyncResult(i).state)
+    # print stati
+
+    rendered = open(cached_file_path, 'r').read()
 
     rv = {
         'file_name': file_name,
@@ -410,7 +417,6 @@ def view_file(*args, **kwargs):
     }
     rv.update(_view_project(node_to_use, user))
     return rv
-    # ).encode('utf-8', 'replace')
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project

@@ -23,6 +23,7 @@ from website.models import WatchConfig
 from website import settings
 from website.views import _render_nodes
 
+from framework.render.tasks import build_rendered_html
 logger = logging.getLogger(__name__)
 
 
@@ -532,3 +533,11 @@ def get_registrations(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     registrations = node_to_use.node__registrations
     return _render_nodes(registrations)
+
+
+def check_celery(*args, **kwargs):
+    celery_id = "project/" + kwargs["pid"] + "/file/" + kwargs["fid"] + "/version/" + kwargs['vid']
+    if build_rendered_html.AsyncResult(celery_id).state == "SUCCESS":
+        return "do the things"
+    return None
+

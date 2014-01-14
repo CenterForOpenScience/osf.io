@@ -257,6 +257,8 @@ def make_url_map(app):
 
         Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('project.mako')),
 
+
+
         Rule([
             '/project/<pid>/settings/',
             '/project/<pid>/node/<nid>/settings/',
@@ -282,6 +284,8 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/log/',
         ], 'get', project_views.log.get_logs, OsfWebRenderer('util/render_logs.mako')),
 
+        ### File Render ###
+        Rule('/project/<pid>/node/<nid>/files/<fid>/version/<vid>/render', 'get', project_views.node.check_celery, json_renderer),
 
         ### Files ###
 

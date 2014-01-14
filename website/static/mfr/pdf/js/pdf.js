@@ -529,6 +529,7 @@ var Util = PDFJS.Util = (function UtilClosure() {
   Util.loadScript = function Util_loadScript(src, callback) {
     var script = document.createElement('script');
     var loaded = false;
+      console.log(src)
     script.setAttribute('src', src);
     if (callback) {
       script.onload = function() {
@@ -538,6 +539,7 @@ var Util = PDFJS.Util = (function UtilClosure() {
         loaded = true;
       };
     }
+
     document.getElementsByTagName('head')[0].appendChild(script);
   };
 

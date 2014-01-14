@@ -38,7 +38,7 @@ def mongoshell():
 @task
 def celery_worker(level="debug"):
     '''Run the Celery process.'''
-    run("celery worker -A framework -l {0}".format(level))
+    run("celery worker -A framework.tasks -l {0}".format(level))
 
 
 @task

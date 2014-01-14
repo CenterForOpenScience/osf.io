@@ -32,7 +32,6 @@ zope.interface==4.0.5
 bleach==1.2.2
 pystache==0.5.3
 # Development version of modular-odm
--e git://github.com/CenterForOpenScience/modular-odm.git@develop#egg=modular-odm
 
 
 # Assets
