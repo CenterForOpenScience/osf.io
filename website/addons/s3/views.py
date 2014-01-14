@@ -33,14 +33,14 @@ def s3_set_user_config(*args, **kwargs):
 @must_be_contributor
 @must_have_addon('s3', 'node')
 def s3_settings(*args, **kwargs):
-    node = kwargs['node'] or kwargs['project']
+
     user = kwargs['user']
 
     s3_node = kwargs['node_addon']
-    s3_user = node.get_addon('s3')
+    s3_user = user.get_addon('s3')
 
-    print s3_user
-    
+    print s3_user.owner is user
+
     # If authorized, only owner can change settings
     if s3_user and s3_user.owner != user:
         raise HTTPError(http.BAD_REQUEST)
@@ -60,27 +60,10 @@ def s3_settings(*args, **kwargs):
     # Delete callback
     if changed:
 
-        s3_node.delete_hook()
-
         # Update node settings
         s3_node.s3_bucket = s3_bucket
 
-        # Add hook
-        if s3_node.s3_bucket:
-            s3_node.add_hook(save=False)
-
         s3_node.save()
-
-    '''
-    s3_user.access_key = request.json.get('access_key', '')
-    s3_user.secret_key =  request.json.get('secret_key','')
-    s3_user.save()
-
-    s3.user_settings = s3_user
-    s3.s3_bucket = request.json.get('s3_bucket','')
-    s3.save()
-    '''
-    
 
 @must_be_contributor
 @must_have_addon('s3','node')
@@ -96,15 +79,15 @@ def s3_widget_unused(*args, **kwargs):
 def _page_content(pid, s3):
     #nTODO use bucket name 
     # create new bucket if not found  inform use/ output error
-    try:
-        connect = BucketManager.fromAddon(s3)
-        data = connect.getHgrid('/project/' + pid + '/s3/') 
-    except S3ResponseError:
-        push_status_message("It appears you do not have access to this bucket. Are you settings correct?")
-        data = None
+   # try:
+    connect = BucketManager.fromAddon(s3)
+    data = connect.getHgrid('/project/' + pid + '/s3/') 
+    #except S3ResponseError:
+       # push_status_message("It appears you do not have access to this bucket. Are you settings correct?")
+       # data = None
     #Error handling should occur here or one function up
     # ie if usersettings or settings is none etc etc
-    
+    raise Exception
     rv = {
         'complete': True,
         'bucket': s3.s3_bucket,
@@ -114,8 +97,8 @@ def _page_content(pid, s3):
 
 @must_be_contributor_or_public
 @must_have_addon('s3','node')
-
 def s3_page(*args, **kwargs):
+
 
     user = kwargs['user']
     node = kwargs['node'] or kwargs['project']
