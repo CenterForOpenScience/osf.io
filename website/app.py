@@ -4,6 +4,7 @@ import logging
 
 from framework import storage, db, app
 from framework.mongo import set_up_storage
+from framework.addons.utils import render_addon_capabilities
 import website.models
 from website.routes import make_url_map
 from website.addons.base import init_addon
@@ -26,6 +27,8 @@ def init_addons(settings, routes=True):
         addon.short_name: addon
         for addon in settings.ADDONS_AVAILABLE
     }
+
+    settings.ADDON_CAPABILITIES = render_addon_capabilities(settings.ADDONS_AVAILABLE)
 
 
 def init_app(settings_module='website.settings', set_backends=True, routes=True):

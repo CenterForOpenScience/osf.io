@@ -20,8 +20,8 @@
                 ${authorized_user_name}
             </a>
             on behalf of GitHub user
-            <a href="https://github.com/${github_user}" target="_blank">
-                ${github_user}
+            <a href="https://github.com/${authorized_github_user}" target="_blank">
+                ${authorized_github_user}
             </a>
         </div>
     % else:

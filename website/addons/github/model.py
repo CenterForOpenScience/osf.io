@@ -14,6 +14,7 @@ from website.addons.base import AddonError
 from . import settings as github_settings
 from .api import GitHub
 
+hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
 class AddonGitHubUserSettings(AddonUserSettingsBase):
 
@@ -64,7 +65,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             rv.update({
                 'authorized_user_name': self.user_settings.owner.fullname,
                 'authorized_user_id': self.user_settings.owner._id,
-                'github_user': self.user_settings.github_user,
+                'authorized_github_user': self.user_settings.github_user,
                 'disabled': user != self.user_settings.owner,
             })
         return rv
@@ -319,7 +320,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 'web',
                 {
                     'url': urlparse.urljoin(
-                        github_settings.HOOK_DOMAIN or settings.DOMAIN,
+                        hook_domain,
                         os.path.join(
                             self.owner.api_url, 'github', 'hook/'
                         )

@@ -126,7 +126,7 @@ class AddonConfig(object):
         return {
             'short_name': self.short_name,
             'full_name': self.full_name,
-            'help': self.widget_help,
+            'capabilities': self.short_name in settings.ADDON_CAPABILITIES,
             'icon': self.icon_url,
             'has_page': 'page' in self.views,
             'has_widget': 'widget' in self.views,
