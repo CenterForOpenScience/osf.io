@@ -361,8 +361,8 @@ def github_view_file(*args, **kwargs):
         url = raw_url(github.user, github.repo, sha, path)
 
     # Get file history
-    since_sha = (sha or branch) if node.is_registration else branch
-    commits = connect.history(github.user, github.repo, path, sha=since_sha)
+    start_sha = (sha or branch) if node.is_registration else branch
+    commits = connect.history(github.user, github.repo, path, sha=start_sha)
     for commit in commits:
         if repo['private']:
             commit['download'] = os.path.join(node.api_url, 'github', 'file', path) + '?ref=' + commit['sha']

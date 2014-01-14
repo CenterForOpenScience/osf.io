@@ -376,6 +376,11 @@ def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=True):
 
     for item in tree:
 
+        # Types should be "blob" or "tree" but may also be "commit". Ignore
+        # unexpected types.
+        if item['type'] not in type_map:
+            continue
+
         split = os.path.split(item['path'])
 
         row = {
