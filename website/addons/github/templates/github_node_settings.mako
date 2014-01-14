@@ -13,7 +13,7 @@
         your authorization for GitHub will automatically be revoked.
     </div>
     % if authorized_user_id:
-        <a id="githubDelKey" class="btn btn-danger">Unauthorize: Delete Access Token</a>
+        <a id="githubDelKey" class="btn btn-danger">Unauthorize: Detach Access Token</a>
         <div style="padding-top: 10px">
             Authorized by OSF user
             <a href="${domain}/${authorized_user_id}" target="_blank">
@@ -68,10 +68,12 @@
 
         $('#githubDelKey').on('click', function() {
             bootbox.confirm(
-                'Are you sure you want to delete your GitHub access key? This will ' +
+                'Are you sure you want to detach your GitHub access key? This will ' +
                     'revoke the ability to modify and upload files to GitHub. If ' +
                     'the associated repo is private, this will also disable viewing ' +
-                    'and downloading files from GitHub.',
+                    'and downloading files from GitHub. This will not remove your ' +
+                    'GitHub authorization from your <a href="/settings/">user settings</a> ' +
+                    'page.',
                 function(result) {
                     if (result) {
                         $.ajax({
