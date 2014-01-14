@@ -362,7 +362,7 @@ type_map = {
 }
 
 
-def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=True):
+def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=False):
     """Convert GitHub tree data to HGrid format.
 
     :param list tree: JSON description of git tree
