@@ -13,11 +13,12 @@ class AddonModelMixin(StoredObject):
     }
 
     def get_addons(self):
-        return [
-            addon
-            for addon in getattr(self, 'addons', [])
-            if not addon.deleted
-        ]
+        addons = []
+        for addon_name in settings.ADDONS_AVAILABLE_DICT.keys():
+            addon = self.get_addon(addon_name)
+            if addon:
+                addons.append(addon)
+        return addons
 
     def get_addon_names(self):
         return [
@@ -39,7 +40,7 @@ class AddonModelMixin(StoredObject):
 
         """
         addon_config = settings.ADDONS_AVAILABLE_DICT.get(addon_name)
-        if not addon_config or not addon_config.models[self._name]:
+        if not addon_config or not addon_config.models.get(self._name):
             return False
 
         backref_key = self._backref_key(addon_config)
