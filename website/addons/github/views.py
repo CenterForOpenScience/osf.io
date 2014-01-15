@@ -328,6 +328,18 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
         branch=branch, sha=sha, hotlink=hotlink,
     )
 
+    params = urllib.urlencode({
+        key: value
+        for key, value in {
+            'branch': branch,
+            'sha': sha,
+        }.iteritems()
+        if value
+    })
+    upload_url = node.api_url + "github/file/"
+    if params:
+        upload_url += '?' + params
+
     return {
         'complete': True,
         'gh_user': github.user,
@@ -342,6 +354,8 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
         'ref': sha or branch,
         'grid_data': json.dumps(hgrid),
         'registration_data': json.dumps(registered_branches),
+        'query_params': params,
+        'upload_url': upload_url
     }
 
 

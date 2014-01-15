@@ -62,6 +62,7 @@ HGrid.create({
         {id: "name", name: "Name", field: "name", cssClass: "cell-title", formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
         {id: "size", name: "Size", field: "size", formatter: PairFormatter, sortable: true}
     ],
+    url: contextVars.uploadUrl,
     urlAdd: function() {
         var ans = {};
         for (var i = 0; i < gridData.length; i++) {
@@ -75,8 +76,6 @@ HGrid.create({
     // NOTE: contextVars comes from the inline javascript on github_page.mako
     // Eventually, probably should inject it as a dependency when this is a module
     ajaxSource: contextVars.hgridUrl,
-    // Need to send sha and branch request params
-    // ajaxOptions: {data: {sha: contextVars.sha, branch: contextVars.branch}, contentType: "application/json", dataType: "json"},
     ajaxOnSuccess: function(lazyGrid) {
         grid = lazyGrid;
         grid.addColumn({id: "download", name: "Download", field: "download", width: 150, sortable: true, formatter: UploadBars});

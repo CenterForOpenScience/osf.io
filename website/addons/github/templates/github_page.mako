@@ -106,7 +106,7 @@
         // Node API URL
         apiUrl: "${api_url}",
         // Upload URL
-        uploadUrl: gridData[0].uploadUrl,
+        uploadUrl: "${upload_url}",
         // URL to get the hgrid root data
         hgridUrl: "${api_url + 'github/hgrid/'}",
         // SHA and branch,
