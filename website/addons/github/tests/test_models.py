@@ -14,6 +14,7 @@ class TestCallbacks(DbTestCase):
     def setUp(self):
 
         super(TestCallbacks, self).setUp()
+        
         self.project = ProjectFactory.build()
         self.non_authenticator = UserFactory()
         self.project.add_contributor(

@@ -42,7 +42,7 @@ MESSAGES = {
 HOOKS_IP = '192.30.252.'
 
 def _add_hook_log(node, github, action, path, date, committer, url=None, sha=None, save=False):
-    print "bar"
+
     github_data = {
         'user': github.user,
         'repo': github.repo,
@@ -118,7 +118,6 @@ def github_hook_callback(*args, **kwargs):
             )
 
     node.save()
-    print node.logs[-1].action
 
 
 @must_be_logged_in
