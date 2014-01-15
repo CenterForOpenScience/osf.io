@@ -1,0 +1,12 @@
+	Storage	
+	GitHub
+	Status	Message
+		
+View files	Supported	
+View file versions	Supported	
+Upload files	Supported	
+Delete files	Supported	
+Provenance	Supported	GitHub updates OSF logs when files are modified outside the OSF.
+Permissions	Not supported	The OSF does not currently alter the permissions of linked GitHub repos.
+Forking	Partially supported	GitHub authorization tokens will be copied to a forked project only if the user creating the fork has also authorized the project's GitHub add-on. The linked repo will not be forked on GitHub.
+Registration	Partially supported	GitHub authorization tokens will be copied to a registered project, and the state of all existing branches will be stored upon registration. However, if the GitHub repo its deleted or its history is changed, the contents of the registration will also change.
