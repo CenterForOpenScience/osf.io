@@ -86,6 +86,17 @@ settings_routes = {
     'prefix': '/api/v1',
 }
 
+api_routes = {
+    'rules': [
+        # Route from which to get the hgrid data
+        Rule([
+            '/project/<pid>/github/hgrid/',
+            '/project/<pid>/node/<nid>/github/hgrid/',
+        ], 'get', views.github_hgrid_data, json_renderer),
+    ],
+    'prefix': '/api/v1'
+}
+
 page_routes = {
     'rules': [
         Rule([

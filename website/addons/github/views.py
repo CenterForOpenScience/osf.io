@@ -298,6 +298,14 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
+def github_hgrid_data(*args, **kwargs):
+    """Return a repo's file tree as a dict formatted for Hgrid.
+
+    """
+    return {}
+
+@must_be_contributor_or_public
+@must_have_addon('github', 'node')
 def github_widget(*args, **kwargs):
 
     github = kwargs['node_addon']
