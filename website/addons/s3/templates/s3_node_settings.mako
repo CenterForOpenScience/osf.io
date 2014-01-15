@@ -8,11 +8,9 @@
     		 <br>
         	<a id="s3DelKey" class="btn btn-danger">Delete Access Key</a>
 	%else:
-        <div id="toolTip">
         <a id="s3createKey" class="btn btn-primary  ${'' if user_has_auth else 'disabled'}">
         	Create Access Key
         </a>
-    </div>
     %endif
 </div>
 
