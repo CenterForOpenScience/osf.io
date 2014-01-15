@@ -26,13 +26,7 @@
                     % if addons[addon]['has_widget']:
                         <div class="addon-widget-container" mod-meta='{
                                 "tpl": "../addons/${addon}/templates/${addon}_widget.mako",
-                                "uri": "${node['api_url']}${addon}/widget/",
-                                "kwargs": {
-                                    "name": "${addons[addon]['short_name']}",
-                                    "title": "${addons[addon]['full_name']}",
-                                    "page": "${addons[addon]['has_page']}",
-                                    "help": "${addons[addon]['help']}"
-                                }
+                                "uri": "${node['api_url']}${addon}/widget/"
                             }'></div>
                     % endif
                 % endfor
@@ -42,13 +36,7 @@
                 % if 'wiki' in addons and addons['wiki']['has_widget']:
                     <div class="addon-widget-container" mod-meta='{
                             "tpl": "../addons/wiki/templates/wiki_widget.mako",
-                            "uri": "${node['api_url']}wiki/widget/",
-                            "kwargs": {
-                                "name": "${addons['wiki']['short_name']}",
-                                "title": "${addons['wiki']['full_name']}",
-                                "page": "${addons['wiki']['has_page']}",
-                                "help": "${addons['wiki']['help']}"
-                            }
+                            "uri": "${node['api_url']}wiki/widget/"
                         }'></div>
                 % endif
 
@@ -58,13 +46,7 @@
                 % if 'files' in addons and addons['files']['has_widget']:
                     <div class="addon-widget-container" mod-meta='{
                             "tpl": "../addons/files/templates/files_widget.mako",
-                            "uri": "${node['api_url']}files/widget/",
-                            "kwargs": {
-                                "name": "${addons['files']['short_name']}",
-                                "title": "${addons['files']['full_name']}",
-                                "page": "${addons['files']['has_page']}",
-                                "help": "${addons['files']['help']}"
-                            }
+                            "uri": "${node['api_url']}files/widget/"
                         }'></div>
                 % endif
 
@@ -168,6 +150,10 @@
     <p>No components have been added to this project.</p>
 % endif
 
+% for name, capabilities in addon_capabilities.iteritems():
+    <script id="capabilities-${name}" type="text/html">${capabilities}</script>
+% endfor
+
 </%def>
 
 <%def name="stylesheets()">
@@ -187,6 +173,15 @@
 <script>
 
     $(document).ready(function() {
+
+        // Show capabilities modal on addon widget help
+        $('.addon-capabilities').on('click', function() {
+            var $this = $(this),
+                $widget = $this.closest('.addon-widget'),
+                name = $widget.attr('name'),
+                conditions = $('#capabilities-' + name);
+            bootbox.alert(conditions.html());
+        });
 
         // Tooltips
         $('[data-toggle="tooltip"]').tooltip();

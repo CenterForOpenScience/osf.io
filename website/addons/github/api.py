@@ -178,7 +178,7 @@ class GitHub(object):
                 for commit in req
             ]
 
-    def tree(self, user, repo, sha, recursive=True, registration_data=None):
+    def tree(self, user, repo, sha, recursive=True):
         """Get file tree for a repo.
 
         :param str user: GitHub user name
@@ -468,7 +468,6 @@ def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=False):
             'name': split[1],
             'parent_uid': 'tree:' + '||'.join(['__repo__', split[0]]).strip('||'),
             'type': type_map[item['type']],
-            'uploadUrl': node.api_url + 'github/file/',
         }
         if ref is not None:
              row['uploadUrl'] += '?ref=' + ref

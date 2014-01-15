@@ -255,14 +255,13 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
     # Get file tree
     tree = connect.tree(
         github.user, github.repo, sha=sha or branch,
-        registration_data=registered_branches
     )
     if tree is None:
         raise HTTPError(http.BAD_REQUEST)
 
     # Check permissions if authorized
     has_auth = False
-    if github.user_settings:
+    if github.user_settings and github.user_settings.has_auth:
         repo = repo or connect.repo(github.user, github.repo)
         has_auth = repo is not None and repo['permissions']['push']
 
