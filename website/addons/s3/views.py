@@ -190,6 +190,8 @@ def s3_upload(*args,**kwargs):
     parentFolder = kwargs.get('path')
     if parentFolder is not None:
         parentFolder = parentFolder.replace('&spc',' ').replace('&sl','/')
+    else:
+        parentFolder=0
 
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
