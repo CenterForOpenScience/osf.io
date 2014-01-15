@@ -453,3 +453,21 @@ ko.bindingHandlers.tooltip = {
     }
 };
 
+///////////
+// Piwik //
+///////////
+
+var trackPiwik = function(host, siteId, cvars) {
+    cvars = Array.isArray(cvars) ? cvars : [];
+    try {
+        var piwikTracker = Piwik.getTracker(host + 'piwik.php', siteId);
+        piwikTracker.enableLinkTracking(true);
+        for(var i=0; i<cvars.length;i++)
+        {
+            piwikTracker.setCustomVariable.apply(null, cvars[i]);
+        }
+        piwikTracker.trackPageView();
+
+    } catch(err) { return false; }
+    return true;
+}
