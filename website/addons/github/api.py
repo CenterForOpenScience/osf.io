@@ -479,8 +479,6 @@ def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=False):
             'parent_uid': 'tree:' + '||'.join(['__repo__', split[0]]).strip('||'),
             'type': type_map[item['type']],
         }
-        if ref is not None:
-             row['uploadUrl'] += '?ref=' + ref
 
         if item['type'] == 'blob':
             row['sha'] = item['sha']
