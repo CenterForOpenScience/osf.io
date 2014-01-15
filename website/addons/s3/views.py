@@ -17,7 +17,7 @@ from framework.flask import secure_filename
 from framework.auth import get_current_user, must_be_logged_in
 
 from api import BucketManager
-from api import createLimitedUser, removeUser, testAccess
+from api import createLimitedUser, removeUser, testAccess, doesBucketExist
 from boto.exception import S3ResponseError
 
 import time
@@ -72,9 +72,9 @@ def s3_settings(*args, **kwargs):
 
     s3_bucket = request.json.get('s3_bucket', '')
 
-    if not s3_bucket:
-        error_message = ('Looks like this bucket does not exist'
-                         'Could you have mistyped them?')
+    if not s3_bucket or not doesBucketExist(s3_user.access_key,s3_user.secret_key,s3_bucket):
+        error_message = ('Looks like this bucket does not exist.'
+                         'Could you have mistyped it?')
         return {'message':error_message},400
 
     changed = (
@@ -139,7 +139,7 @@ def _page_content(pid, s3):
     # ie if usersettings or settings is none etc etc
 
     rv = {
-        'complete': s3.node_auth,
+        'complete': s3.node_auth and data is not None,
         'bucket': s3.s3_bucket,
         'grid': data,
     }

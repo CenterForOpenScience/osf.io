@@ -17,6 +17,7 @@ settings_routes = {
             '/user/s3/settings/',
         ], 'post', views.s3_user_settings, json_renderer),
     ],
+    'prefix': '/api/v1',
 }
 
 page_routes = {

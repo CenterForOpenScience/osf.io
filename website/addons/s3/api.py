@@ -96,7 +96,7 @@ def removeUser(accessKey, secretKey,bucketName,otherKey):
 
 def doesBucketExist(accessKey, secretKey,bucketName):
     try:
-        c = S3Connection(access_key,secret_key)
+        c = S3Connection(accessKey,secretKey)
         c.get_bucket(bucketName)
         return True
     except Exception:
