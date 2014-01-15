@@ -52,6 +52,8 @@ var HGrid = {
         ajaxOnError: null,
         // Callback on AJAX complete
         ajaxOnComplete: null,
+        // Additional options to be passed into $.ajax when sending AJAX requests
+        ajaxOptions: {},
         lazyLoad: false,
         columns: [
             {id: "uid", name: "uid", width: 40, field: "uid"},
@@ -143,7 +145,7 @@ var HGrid = {
             }
         }
         if (self.options.ajaxSource) { // Get data from server
-            $.ajax({
+            var ajaxDefaults = {
                 url: self.options.ajaxSource, dataType: "json",
                 success: function(json)  {
                     self.options.info = json;
@@ -157,7 +159,10 @@ var HGrid = {
                 complete: function(xhr){
                     return self.options.ajaxOnComplete && self.options.ajaxOnComplete(xhr);
                 }
-            });
+            };
+            // Add extra ajaxOptions
+            var ajaxParams = $.extend(ajaxDefaults, self.options.ajaxOptions);
+            $.ajax(ajaxParams);
         } else {  // Data were passed in directly as an array
             return self.initialize.call(self);
         }
@@ -376,8 +381,9 @@ var HGrid = {
      * @param  {Function} done Optional callback that takes the returned data as its argument.
      */
     getItemsFromServer: function(parentItem, done) {
-        var _this = this
-        $.ajax({
+        var _this = this;
+        // Build params for $.ajax
+        var ajaxOptions = {
             url: _this.getItemUrl(parentItem), dataType: "json",
             success: function(json) {
                 done && done(json);
@@ -385,7 +391,9 @@ var HGrid = {
             error: function(xhr, textStatus, error) {
                 done && done(null, error);
             }
-        });
+        };
+        var ajaxParams = $.extend(ajaxOptions, _this.options.ajaxOptions);
+        $.ajax(ajaxParams);
     },
 
 
