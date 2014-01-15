@@ -10,6 +10,10 @@ from hurry.filesize import size
 
 import os
 import re
+from boto.iam import *
+import json
+
+
 
 URLADDONS = {
         'delete':'delete/',
@@ -24,7 +28,7 @@ def testAccess(access_key, secret_key):
     except Exception:
         return False
 
-def createLimitedUser(access_key, secret_key,bucket_name):
+def createLimitedUser(accessKey, secretKey,bucketName):
     policy = {
   "Version": "2012-10-17",
   "Statement": [
@@ -78,11 +82,10 @@ def createLimitedUser(access_key, secret_key,bucket_name):
     }
   ]
 }
-    connection = IAMConnection(AccessKey,SecretKey)
+    connection = IAMConnection(accessKey,secretKey)
     connection.create_user(bucketName + '-osf-limited')
     connection.put_user_policy(bucketName + '-osf-limited','policy-' + bucketName + '-osf-limited',json.dumps(policy))
-    return connection.create_access_key(bucketName + '-osf-limited')
-
+    return connection.create_access_key(bucketName + '-osf-limited')['create_access_key_response']['create_access_key_result']['access_key'] 
 
 class BucketManager:
 

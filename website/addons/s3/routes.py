@@ -53,7 +53,14 @@ page_routes = {
             '/project/<pid>/node/<nid>/s3/makekey/'
         ],'post',views.s3_create_access_key, json_renderer),
     ],
-    'prefix': '/api/v1',
-
 }
 
+user_settings_routes = {
+    'rules' : [
+         Rule([
+            '/project/<pid>/s3/makeKey/',
+            '/project/<pid>/node/<nid>/s3/makekey/'
+        ],'post',views.s3_create_access_key, json_renderer),
+    ],
+    'prefix': '/api/v1',
+}
