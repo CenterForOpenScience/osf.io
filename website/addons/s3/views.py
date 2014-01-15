@@ -17,7 +17,7 @@ from framework.flask import secure_filename
 from framework.auth import get_current_user, must_be_logged_in
 
 from api import BucketManager
-from api import createLimitedUser
+from api import createLimitedUser, removeUser, testAccess
 from boto.exception import S3ResponseError
 
 import time
@@ -43,7 +43,11 @@ def s3_user_settings(*args, **kwargs):
         s3_secret_key != s3_user.secret_key
         )
 
+
     if changed:
+        if not testAccess(s3_access_key,s3_secret_key):
+            raise HTTPError(http.BAD_REQUEST)
+
         s3_user.access_key = s3_access_key
         s3_user.secret_key = s3_secret_key
         s3_user.user_has_auth = has_auth
@@ -97,7 +101,25 @@ def s3_create_access_key(*args, **kwargs):
         s3_node.node_auth = 1
 
         s3_node.save()
-    #TODO grab keys from 
+
+@must_be_contributor
+@must_have_addon('s3','node')
+def s3_delete_access_key(*args, **kwargs):
+    user = kwargs['user']
+
+    s3_node = kwargs['node_addon']
+    s3_user = user.get_addon('s3')
+
+    #delete user from amazons data base
+    #boto giveth and boto taketh away
+    removeUser(s3_user.access_key,s3_user.secret_key,s3_node.s3_bucket)
+
+
+    #delete our access and secret key
+    s3_node.s3_node_access_key = ''
+    s3_node.s3_node_secret_key = ''
+    s3_node.node_auth = 0
+
 
 def _page_content(pid, s3):
     #nTODO use bucket name 

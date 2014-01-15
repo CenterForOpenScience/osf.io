@@ -6,7 +6,7 @@
     		<label for="s3Addon">Access Key</label>
     		<input class="form-control" id="secret_key" name="secret_key" value="${access_key}" disabled />
     		 <br>
-        	<a id="githubDelKey" class="btn btn-danger">Delete Access Key</a>
+        	<a id="s3DelKey" class="btn btn-danger">Delete Access Key</a>
 	%else:
         <a id="s3createKey" class="btn btn-primary  ${'' if user_has_auth else 'disabled'}">
         	Create Access Key
@@ -38,13 +38,13 @@
                 });
         });
 
-        $('#githubDelKey').on('click', function() {
+        $('#s3DelKey').on('click', function() {
             bootbox.confirm(
-                'Are you sure you want to delete your GitHub access key?',
+                'Are you sure you want to delete your Amazon S3 access key?',
                 function(result) {
                     if (result) {
                         $.ajax({
-                            url: nodeApiUrl + 'github/oauth/delete/',
+                            url: nodeApiUrl + 's3/key/delete/',
                             type: 'POST',
                             contentType: 'application/json',
                             dataType: 'json',

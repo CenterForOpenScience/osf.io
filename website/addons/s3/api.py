@@ -23,7 +23,8 @@ URLADDONS = {
 
 def testAccess(access_key, secret_key):
     try:
-        S3Connection(access_key,secret_key)
+        c = S3Connection(access_key,secret_key)
+        c.get_all_buckets()
         return True
     except Exception:
         return False
@@ -86,6 +87,10 @@ def createLimitedUser(accessKey, secretKey,bucketName):
     connection.create_user(bucketName + '-osf-limited')
     connection.put_user_policy(bucketName + '-osf-limited','policy-' + bucketName + '-osf-limited',json.dumps(policy))
     return connection.create_access_key(bucketName + '-osf-limited')['create_access_key_response']['create_access_key_result']['access_key'] 
+
+def removeUser(accessKey, secretKey,bucketName):
+    connection = IAMConnection(accessKey, secretKey, bucketName)
+    connection.delete_user(bucketName + '-osf-limited')
 
 class BucketManager:
 
