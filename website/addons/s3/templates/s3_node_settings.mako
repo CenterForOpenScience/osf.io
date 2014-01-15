@@ -18,8 +18,8 @@
 <br>
 
 <div class="form-group">
-    <label for="githubRepo">Bucket Name</label>
-    <input class="form-control" id="s3_bucket" name="s3_bucket" value="${s3_bucket}" ${'disabled' if not node_auth else ''} />
+    <label for="s3_bucket">Bucket Name</label>
+    <input class="form-control" id="s3_bucket" name="s3_bucket" value="${s3_bucket}" ${'disabled' if node_auth else ''}/>
 </div>
 
 <script type="text/javascript">
@@ -56,6 +56,18 @@
                 }
             )
         });
+        %if not node_auth:
+
+        $('#s3_bucket').on('input',function() {
+        	if($('#s3_bucket').val().length == 0)
+        		$("#s3createKey").attr("disabled", "disabled");
+        	else if ($('#s3createKey').attr("disabled"))
+        		$('#s3createKey').removeAttr("disabled");
+
+        });
+
+        %endif
+        console.log('Im here')
     });
 
 </script>

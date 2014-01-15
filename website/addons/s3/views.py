@@ -46,7 +46,9 @@ def s3_user_settings(*args, **kwargs):
 
     if changed:
         if not testAccess(s3_access_key,s3_secret_key):
-            raise HTTPError(http.BAD_REQUEST)
+            error_message = ('Looks like your creditials are incorrect'
+                             'Could you have mistyped them?')
+            return {'message':error_message},400
 
         s3_user.access_key = s3_access_key
         s3_user.secret_key = s3_secret_key
@@ -71,7 +73,9 @@ def s3_settings(*args, **kwargs):
     s3_bucket = request.json.get('s3_bucket', '')
 
     if not s3_bucket:
-        raise HTTPError(http.BAD_REQUEST)
+        error_message = ('Looks like this bucket does not exist'
+                         'Could you have mistyped them?')
+        return {'message':error_message},400
 
     changed = (
         s3_bucket != s3_node.s3_bucket
@@ -112,13 +116,14 @@ def s3_delete_access_key(*args, **kwargs):
 
     #delete user from amazons data base
     #boto giveth and boto taketh away
-    removeUser(s3_user.access_key,s3_user.secret_key,s3_node.s3_bucket)
+    removeUser(s3_user.access_key,s3_user.secret_key,s3_node.s3_bucket,s3_node.s3_node_access_key)
 
 
     #delete our access and secret key
     s3_node.s3_node_access_key = ''
     s3_node.s3_node_secret_key = ''
     s3_node.node_auth = 0
+    s3_node.save()
 
 
 def _page_content(pid, s3):
@@ -134,7 +139,7 @@ def _page_content(pid, s3):
     # ie if usersettings or settings is none etc etc
 
     rv = {
-        'complete': True,
+        'complete': s3.node_auth,
         'bucket': s3.s3_bucket,
         'grid': data,
     }

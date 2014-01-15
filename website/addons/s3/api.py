@@ -88,9 +88,19 @@ def createLimitedUser(accessKey, secretKey,bucketName):
     connection.put_user_policy(bucketName + '-osf-limited','policy-' + bucketName + '-osf-limited',json.dumps(policy))
     return connection.create_access_key(bucketName + '-osf-limited')['create_access_key_response']['create_access_key_result']['access_key'] 
 
-def removeUser(accessKey, secretKey,bucketName):
-    connection = IAMConnection(accessKey, secretKey, bucketName)
+def removeUser(accessKey, secretKey,bucketName,otherKey):
+    connection = IAMConnection(accessKey, secretKey)
+    connection.delete_user_policy(bucketName + '-osf-limited','policy-'+bucketName + '-osf-limited')
+    connection.delete_access_key(otherKey,bucketName + '-osf-limited')
     connection.delete_user(bucketName + '-osf-limited')
+
+def doesBucketExist(accessKey, secretKey,bucketName):
+    try:
+        c = S3Connection(access_key,secret_key)
+        c.get_bucket(bucketName)
+        return True
+    except Exception:
+        return False
 
 class BucketManager:
 

@@ -1,10 +1,10 @@
 from .model import AddonS3UserSettings,AddonS3NodeSettings
-from .routes import settings_routes,page_routes
+from .routes import settings_routes,page_routes,user_settings_routes
 
 USER_SETTINGS_MODEL = AddonS3UserSettings
 NODE_SETTINGS_MODEL = AddonS3NodeSettings
 
-ROUTES = [settings_routes,page_routes]
+ROUTES = [settings_routes,page_routes, user_settings_routes]
 
 SHORT_NAME = 's3'
 FULL_NAME = 'Amazon Simple Storage Service'
@@ -38,34 +38,3 @@ INCLUDE_CSS = {
     'widget': [],
         'page': ['/static/css/hgrid-base.css'],
 }
-'''
-
-SCHEMA = {
-    'pages': [
-        {
-            'id': 'null',
-            'title': 'S3 Addon Settings',
-            'contents': [
-                {
-                    'id': 'access_key',
-                    'type': 'textfield',
-                    'label': 'S3 Access Key',
-                    'required': True,
-                },
-                {
-                    'id': 'secret_key',
-                    'type': 'textfield',
-                    'label': 'S3 Secret Key',
-                    'required': True,
-                },
-                {
-                    'id': 's3_bucket',
-                    'type': 'textfield',
-                    'label': 'S3 Bucket Name',
-                    'required': True,
-                }
-            ]
-        }
-    ]
-}
-'''
