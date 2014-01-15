@@ -186,7 +186,7 @@ class GitHub(object):
         :param str sha: Branch name or SHA
         :param bool recursive: Walk repo recursively
         :param dict registration_data: Registered commit data
-        :return tuple: Tuple of commit ID and tree JSON; see
+        :returns: tuple: Tuple of commit ID and tree JSON; see
             http://developer.github.com/v3/git/trees/
 
         """
@@ -203,7 +203,23 @@ class GitHub(object):
             return req
         return None
 
+    def file(self, user, repo, path, ref=None):
+        """Get a file within a repo and its contents.
+
+        :returns: A tuple of the form (<filename>, <file_content>, <file_size):
+
+        """
+        req = self.contents(user=user, repo=repo, path=path, ref=ref)
+        if req:
+            content = req['content']
+            return req['name'], base64.b64decode(content), req['size']
+        return None, None, None
+
     def contents(self, user, repo, path, ref=None):
+        """Get the contents of a path within a repo.
+        http://developer.github.com/v3/repos/contents/#get-contents
+
+        """
         params = {
             'ref': ref,
         }
@@ -215,12 +231,7 @@ class GitHub(object):
             cache=True,
             params=params,
         )
-
-        if req:
-            content = req['content']
-            return req['name'], base64.b64decode(content), req['size']
-
-        return None, None, None
+        return req
 
     def starball(self, user, repo, archive='tar', ref=None):
         """Get link for archive download.
@@ -229,7 +240,7 @@ class GitHub(object):
         :param str repo: GitHub repo name
         :param str archive: Archive format [tar|zip]
         :param str ref: Git reference
-        :return tuple: Tuple of headers and file location
+        :returns: tuple: Tuple of headers and file location
 
         """
         url_parts = [

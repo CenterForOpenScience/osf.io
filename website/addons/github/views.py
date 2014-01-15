@@ -356,7 +356,7 @@ def github_download_file(*args, **kwargs):
 
     connect = GitHub.from_settings(github.user_settings)
 
-    name, data, _ = connect.contents(github.user, github.repo, path, ref=ref)
+    name, data, _ = connect.file(github.user, github.repo, path, ref=ref)
     if data is None:
         raise HTTPError(http.NOT_FOUND)
 
@@ -395,7 +395,7 @@ def github_view_file(*args, **kwargs):
     branch = request.args.get('branch', repo['default_branch'])
     sha = request.args.get('sha', branch)
 
-    file_name, data, size = connect.contents(
+    file_name, data, size = connect.file(
         github.user, github.repo, path, ref=sha,
     )
 
