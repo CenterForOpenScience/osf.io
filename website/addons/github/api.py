@@ -203,8 +203,7 @@ class GitHub(object):
             return req
         return None
 
-    def file(self, user, repo, path, ref=None):
-
+    def contents(self, user, repo, path, ref=None):
         params = {
             'ref': ref,
         }

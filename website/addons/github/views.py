@@ -262,7 +262,7 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
 
     # Check permissions if authorized
     has_auth = False
-    if github.user_settings:
+    if github.user_settings and github.user_settings.has_auth:
         repo = repo or connect.repo(github.user, github.repo)
         has_auth = repo is not None and repo['permissions']['push']
 
@@ -356,7 +356,7 @@ def github_download_file(*args, **kwargs):
 
     connect = GitHub.from_settings(github.user_settings)
 
-    name, data, _ = connect.file(github.user, github.repo, path, ref=ref)
+    name, data, _ = connect.contents(github.user, github.repo, path, ref=ref)
     if data is None:
         raise HTTPError(http.NOT_FOUND)
 
@@ -395,7 +395,7 @@ def github_view_file(*args, **kwargs):
     branch = request.args.get('branch', repo['default_branch'])
     sha = request.args.get('sha', branch)
 
-    file_name, data, size = connect.file(
+    file_name, data, size = connect.contents(
         github.user, github.repo, path, ref=sha,
     )
 
