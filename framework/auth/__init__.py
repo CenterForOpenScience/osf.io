@@ -221,9 +221,11 @@ def must_have_session_auth(fn):
     '''
     def wrapped(func, *args, **kwargs):
 
+
         kwargs['user'] = get_current_user()
         kwargs['api_key'] = get_api_key()
         kwargs['api_node'] = get_current_node()
+
         if kwargs['user'] or kwargs['api_key']:
             return func(*args, **kwargs)
         # kwargs['api_node'] = get_current_node()

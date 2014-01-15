@@ -15,7 +15,7 @@ from hurry.filesize import size, alternative
 from dateutil.parser import parse as dateparse
 
 from framework import request, redirect, make_response
-from framework.auth import get_current_user, must_be_logged_in
+from framework.auth import get_current_user, must_be_logged_in, must_have_session_auth
 from framework.flask import secure_filename
 from framework.exceptions import HTTPError
 

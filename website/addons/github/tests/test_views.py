@@ -83,7 +83,6 @@ class TestGithubViews(DbTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json['data'], mock_repo.return_value)
 
-
     def test_hook_callback_add_file_not_thro_osf(self):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         res = self.app.post(
