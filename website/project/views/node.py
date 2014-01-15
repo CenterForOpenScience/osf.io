@@ -358,6 +358,7 @@ def _view_project(node_to_use, user, api_key=None):
                 'apa': node_to_use.citation_apa,
                 'mla': node_to_use.citation_mla,
                 'chicago': node_to_use.citation_chicago,
+                'CSLTEST': node_to_use.to_CSL(node_to_use.to_csl(), os.path.join(CSL_PATH, 'harvard1.csl'), formatter.plain) #figure this out
             },
             'is_public': node_to_use.is_public,
             'date_created': node_to_use.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),

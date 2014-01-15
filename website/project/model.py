@@ -30,6 +30,8 @@ from framework import GuidStoredObject, Q
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
 
+#azeem's imports
+import CitationParser
 
 def utc_datetime_to_timestamp(dt):
     return float(
@@ -1054,6 +1056,28 @@ class Node(GuidStoredObject):
             and_delim,
             author_names[-1]
         )
+
+#return author(family_name1:
+
+#names[]
+#names.append(stuff)
+
+    def to_csl(self):
+
+        return {
+            "id": "ITEM-1",
+            "title": self.title,
+             "author": [
+                 contributor.to_csl() #different to_csl() method in auth/model.py which parses the names
+                 for contributor in self.contributors
+             ],
+            "publisher": "Open Science Framework",
+            "issued": {
+                "date-parts": [[self.logs[-1].date.year]]
+            },
+            "type": "Article",
+            "URL": self.display_absolute_url,
+        }
 
     @property
     def citation_apa(self):

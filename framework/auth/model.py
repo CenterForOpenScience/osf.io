@@ -68,6 +68,12 @@ class User(GuidStoredObject):
         '''Return a boolean of whether ``raw_password`` was correct.'''
         return check_password_hash(self.password, raw_password)
 
+    def to_csl(self):
+        return {
+            'given_name': self.given_name,
+            'family_name': self.family_name,
+        }
+
     @property
     def biblio_name(self):
         given_names = self.given_name + ' ' + self.middle_names

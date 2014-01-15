@@ -74,6 +74,9 @@
                     <dd class="citation-text">${node['citations']['mla']}</dd>
                 <dt>Chicago</dt>
                     <dd class="citation-text">${node['citations']['chicago']}</dd>
+                <dt>CSL TEST</dt>
+                    <dd class="citation-text">${node['citations']['CSLTEST']}</dd>
+
             </dl>
         </div>
 
