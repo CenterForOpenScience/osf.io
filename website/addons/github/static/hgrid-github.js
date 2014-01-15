@@ -88,6 +88,9 @@ var grid = HGrid.create({
 
 grid.addColumn({id: "download", name: "Download", field: "download", width: 150, sortable: true, formatter: UploadBars});
 
+// Initialize breadcrumbs
+grid.updateBreadcrumbsBox(grid.data[0]['uid']);
+
 grid.hGridBeforeDelete.subscribe(function(e, args) {
     if (args['items'][0]['type'] !== 'fake') {
         var msg = 'Are you sure you want to delete the file "' + args['items'][0]['name'] + '"?';
@@ -144,4 +147,13 @@ grid.hGridOnUpload.subscribe(function(e, args) {
         return true;
     }
     return false;
+});
+
+grid.hGridOnMouseEnter.subscribe(function (e, args){
+    var parent = args.e.target.parentNode;
+    $(parent).addClass("row-hover");
+});
+
+grid.hGridOnMouseLeave.subscribe(function (e, args){
+    $(grid.options.container).find(".row-hover").removeClass("row-hover");
 });

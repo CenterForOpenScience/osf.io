@@ -204,6 +204,7 @@ def node_setting(**kwargs):
     ]
     rv['addons_enabled'] = addons_enabled
     rv['addon_enabled_settings'] = addon_enabled_settings
+    rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
 
     return rv
 
@@ -390,7 +391,9 @@ def view_project(*args, **kwargs):
     user = get_current_user()
     node_to_use = kwargs['node'] or kwargs['project']
     primary = '/api/v1' not in request.path
-    return _view_project(node_to_use, user, primary=primary)
+    rv = _view_project(node_to_use, user, primary=primary)
+    rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    return rv
 
 
 # TODO: Split into separate functions
@@ -423,7 +426,7 @@ def _view_project(node_to_use, user, api_key=None, primary=False):
     # Before page load callback; skip if not primary call
     if primary:
         for addon in node_to_use.get_addons():
-            message = addon.before_page_load(node_to_use)
+            message = addon.before_page_load(node_to_use, user)
             if message:
                 status.push_status_message(message)
     data = {

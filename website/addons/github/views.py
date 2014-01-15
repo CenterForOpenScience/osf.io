@@ -41,8 +41,6 @@ MESSAGES = {
 # All GitHub hooks come from 192.30.252.0/22
 HOOKS_IP = '192.30.252.'
 
-SHA1 = re.compile(r'^\w{40}$')
-
 def _add_hook_log(node, github, action, path, date, committer, url=None, sha=None, save=False):
 
     github_data = {
@@ -77,12 +75,12 @@ def _add_hook_log(node, github, action, path, date, committer, url=None, sha=Non
 @decorators.must_not_be_registration
 @decorators.must_have_addon('github', 'node')
 def github_hook_callback(*args, **kwargs):
-    """Add logs for commits from outside OSF.
-
+    """Add logs for commits from outside OSF
     """
     # Request must come from GitHub hooks IP
-    if HOOKS_IP not in request.remote_addr:
-        raise HTTPError(http.BAD_REQUEST)
+    if not request.data['testing']:
+        if HOOKS_IP not in request.remote_addr:
+            raise HTTPError(http.BAD_REQUEST)
 
     node = kwargs['node'] or kwargs['project']
     github = kwargs['node_addon']
@@ -94,7 +92,7 @@ def github_hook_callback(*args, **kwargs):
         # TODO: Look up OSF user by commit
 
         # Skip if pushed by OSF
-        if commit['message'] in MESSAGES.values():
+        if commit['message'] and commit['message'] in MESSAGES.values():
             continue
 
         _id = commit['id']
@@ -132,15 +130,31 @@ def github_set_config(*args, **kwargs):
 
     user = kwargs['user']
 
-    github_user = user.get_addon('github')
     github_node = kwargs['node_addon']
+    github_user = github_node.user_settings
 
     # If authorized, only owner can change settings
     if github_user and github_user.owner != user:
         raise HTTPError(http.BAD_REQUEST)
 
+    # Parse request
     github_user_name = request.json.get('github_user', '')
     github_repo_name = request.json.get('github_repo', '')
+
+    # Verify that repo exists and that user can access
+    connect = GitHub.from_settings(github_user)
+    repo = connect.repo(github_user_name, github_repo_name)
+    if repo is None:
+        if github_user:
+            message = (
+                'Cannot access repo. Either the repo does not exist '
+                'or your account does not have permission to view it.'
+            )
+        else:
+            message = (
+                'Cannot access repo.'
+            )
+        return {'message': message}, 400
 
     if not github_user_name or not github_repo_name:
         raise HTTPError(http.BAD_REQUEST)
@@ -150,34 +164,46 @@ def github_set_config(*args, **kwargs):
         github_repo_name != github_node.repo
     )
 
-    # Delete callback
+    # Update hooks
     if changed:
 
+        # Delete existing hook, if any
         github_node.delete_hook()
 
         # Update node settings
         github_node.user = github_user_name
         github_node.repo = github_repo_name
 
-        # Add hook
+        # Add new hook
         if github_node.user and github_node.repo:
             github_node.add_hook(save=False)
 
         github_node.save()
 
+    return {}
 
-def _page_content(node, github, hotlink=True):
+# TODO: Change "github" to "addon_settings" or something similar
+def _page_content(node, github, branch=None, sha=None, hotlink=False, _connection=None):
+    """Return the info to be rendered for a given repo.
 
+    :param AddonGitHubNodeSettings github: The addon object.
+    :param str branch: Git branch name.
+    :param str sha: SHA hash.
+    :param bool hotlink: Whether a direct download link from Github is available.
+        Disabled by default for now, since GitHub sometimes passes the wrong
+        content-type headers.
+    :param Github _connection: A GitHub object for sending API requests. If None,
+        a Github object will be created from the user settings. This param is
+        only exposed to allow for mocking the GitHub API object.
+    :return: A dict of repo info to render on the page.
+
+    """
     # Fail if GitHub settings incomplete
     if github.user is None or github.repo is None:
         return {}
-
-    connect = GitHub.from_settings(github.user_settings)
-
-    branch = request.args.get('branch')
-    sha = request.args.get('sha')
-
     repo = None
+
+    connect = _connection or GitHub.from_settings(github.user_settings)
 
     if sha and not branch:
         raise HTTPError(http.BAD_REQUEST)
@@ -229,14 +255,13 @@ def _page_content(node, github, hotlink=True):
     # Get file tree
     tree = connect.tree(
         github.user, github.repo, sha=sha or branch,
-        registration_data=registered_branches
     )
     if tree is None:
         raise HTTPError(http.BAD_REQUEST)
 
     # Check permissions if authorized
     has_auth = False
-    if github.user_settings:
+    if github.user_settings and github.user_settings.has_auth:
         repo = repo or connect.repo(github.user, github.repo)
         has_auth = repo is not None and repo['permissions']['push']
 
@@ -265,10 +290,20 @@ def _page_content(node, github, hotlink=True):
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
 def github_widget(*args, **kwargs):
+
     github = kwargs['node_addon']
+    connect = GitHub.from_settings(github.user_settings)
+
+    # Check whether user has view access to repo
+    complete = False
+    if github.user and github.repo:
+        repo = connect.repo(github.user, github.repo)
+        if repo:
+            complete = True
+
     if github:
         rv = {
-            'complete': bool(github.short_url),
+            'complete': complete,
             'short_url': github.short_url,
         }
         rv.update(github.config.to_json())
@@ -285,8 +320,8 @@ def github_page(*args, **kwargs):
     github = kwargs['node_addon']
 
     data = _view_project(node, user, primary=True)
-
-    rv = _page_content(node, github)
+    branch, sha = request.args.get('branch'), request.args.get('sha')
+    rv = _page_content(node, github, branch=branch, sha=sha)
     rv.update({
         'addon_page_js': github.config.include_js.get('page'),
         'addon_page_css': github.config.include_css.get('page'),
@@ -310,7 +345,6 @@ def github_get_repo(*args, **kwargs):
 @must_have_addon('github', 'node')
 def github_download_file(*args, **kwargs):
 
-    node = kwargs['node'] or kwargs['project']
     github = kwargs['node_addon']
 
     path = kwargs.get('path')
@@ -325,10 +359,17 @@ def github_download_file(*args, **kwargs):
     if data is None:
         raise HTTPError(http.NOT_FOUND)
 
+    # Build response
     resp = make_response(data)
     resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(
         name
     )
+
+    # Add binary MIME type if extension missing
+    _, ext = os.path.splitext(name)
+    if not ext:
+        resp.headers['Content-Type'] = 'application/octet-stream'
+
     return resp
 
 
@@ -364,8 +405,8 @@ def github_view_file(*args, **kwargs):
         url = raw_url(github.user, github.repo, sha, path)
 
     # Get file history
-    since_sha = (sha or branch) if node.is_registration else branch
-    commits = connect.history(github.user, github.repo, path, sha=since_sha)
+    start_sha = (sha or branch) if node.is_registration else branch
+    commits = connect.history(github.user, github.repo, path, sha=start_sha)
     for commit in commits:
         if repo['private']:
             commit['download'] = os.path.join(node.api_url, 'github', 'file', path) + '?ref=' + commit['sha']
@@ -515,10 +556,14 @@ def github_upload_file(*args, **kwargs):
             'branch': branch,
         })
 
+        _, ext = os.path.splitext(filename)
+        ext = ext.lstrip('.')
+
         info = {
             'name': filename,
             'uid': os.path.join('__repo__', data['content']['path']),
             'parent_uid': 'tree:' + '||'.join(['__repo__', path]).strip('||'),
+            'ext': ext,
             'size': [
                 data['content']['size'],
                 size(data['content']['size'], system=alternative)
@@ -658,8 +703,14 @@ def github_oauth_start(*args, **kwargs):
     github_user = user.get_addon('github')
 
     if node:
+
         github_node = node.get_addon('github')
         github_node.user_settings = github_user
+
+        # Add webhook
+        if github_node.user and github_node.repo:
+            github_node.add_hook()
+
         github_node.save()
 
     authorization_url, state = oauth_start_url(user, node)
@@ -675,6 +726,14 @@ def github_oauth_delete_user(*args, **kwargs):
 
     github_user = kwargs['user_addon']
 
+    # Remove webhooks
+    for node_settings in github_user.addongithubnodesettings__authorized:
+        node_settings.delete_hook()
+
+    # Revoke access token
+    connect = GitHub.from_settings(github_user)
+    connect.revoke_token()
+
     github_user.oauth_access_token = None
     github_user.oauth_token_type = None
     github_user.save()
@@ -688,10 +747,11 @@ def github_oauth_delete_node(*args, **kwargs):
 
     github_node = kwargs['node_addon']
 
+    # Remove webhook
+    github_node.delete_hook()
+
     github_node.user_settings = None
     github_node.save()
-
-    github_node.delete_hook()
 
     return {}
 
@@ -724,6 +784,12 @@ def github_oauth_callback(*args, **kwargs):
     github_user.oauth_state = None
     github_user.oauth_access_token = token['access_token']
     github_user.oauth_token_type = token['token_type']
+
+    connect = GitHub.from_settings(github_user)
+    user = connect.user()
+
+    github_user.github_user = user['login']
+
     github_user.save()
 
     if github_node:

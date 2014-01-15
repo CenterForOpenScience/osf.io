@@ -4,6 +4,12 @@
 <div>
     % if authorized:
         <a id="githubDelKey" class="btn btn-danger">Delete Access Token</a>
+        <div style="padding-top: 10px;">
+            Authorized by GitHub user
+            <a href="https://github.com/${authorized_github_user}" target="_blank">
+                ${authorized_github_user}
+            </a>
+        </div>
     % else:
         <a id="githubAddKey" class="btn btn-primary">
             Create Access Token
@@ -16,7 +22,7 @@
     $(document).ready(function() {
 
         $('#githubAddKey').on('click', function() {
-            % if authorized_user:
+            % if authorized_user_id:
                 $.ajax({
                     type: 'POST',
                     url: '/api/v1/profile/settings/oauth/',
@@ -33,7 +39,9 @@
 
         $('#githubDelKey').on('click', function() {
             bootbox.confirm(
-                'Are you sure you want to delete your GitHub access key?',
+                'Are you sure you want to delete your GitHub access key? This will ' +
+                    'revoke access to GitHub for all projects you have authorized ' +
+                    'and delete your access token from GitHub.',
                 function(result) {
                     if (result) {
                         $.ajax({

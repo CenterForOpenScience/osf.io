@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-'''Base TextCase class for OSF unittests. Uses a temporary MongoDB database.'''
-import os
+'''Base TestCase class for OSF unittests. Uses a temporary MongoDB database.'''
 import unittest
 
 from pymongo import MongoClient

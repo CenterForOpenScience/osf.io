@@ -14,8 +14,11 @@ from website.addons.base import AddonError
 from . import settings as github_settings
 from .api import GitHub
 
+hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
 class AddonGitHubUserSettings(AddonUserSettingsBase):
+
+    github_user = fields.StringField()
 
     oauth_state = fields.StringField()
     oauth_access_token = fields.StringField()
@@ -29,6 +32,7 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         rv = super(AddonGitHubUserSettings, self).to_json(user)
         rv.update({
             'authorized': self.has_auth,
+            'github_user': self.github_user if self.github_user else '',
         })
         return rv
 
@@ -59,7 +63,9 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         })
         if self.user_settings and self.user_settings.has_auth:
             rv.update({
-                'authorized_user': self.user_settings.owner.fullname,
+                'authorized_user_name': self.user_settings.owner.fullname,
+                'authorized_user_id': self.user_settings.owner._id,
+                'authorized_github_user': self.user_settings.github_user,
                 'disabled': user != self.user_settings.owner,
             })
         return rv
@@ -68,13 +74,18 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     # Callbacks #
     #############
 
-    def before_page_load(self, node):
+    def before_page_load(self, node, user):
         """
 
         :param Node node:
+        :param User user:
         :return str: Alert message
 
         """
+        # Quit if not contributor
+        if not node.is_contributor(user):
+            return
+
         # Quit if not configured
         if self.user is None or self.repo is None:
             return
@@ -309,7 +320,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 'web',
                 {
                     'url': urlparse.urljoin(
-                        github_settings.HOOK_DOMAIN or settings.DOMAIN,
+                        hook_domain,
                         os.path.join(
                             self.owner.api_url, 'github', 'hook/'
                         )

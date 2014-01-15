@@ -67,6 +67,7 @@
                                         <input
                                             type="checkbox"
                                             name="${addon.short_name}"
+                                            class="addon-select"
                                             ${'checked' if addon.short_name in addons_enabled else ''}
                                             ${'disabled' if node['is_registration'] else ''}
                                         />
@@ -77,6 +78,8 @@
                         % endif
 
                     % endfor
+
+                    <br />
 
                     % if not node['is_registration']:
                         <button id="settings-submit" class="btn btn-success">
@@ -114,6 +117,10 @@
 
 <!-- Include metadata templates -->
 <%include file="metadata/metadata_templates_1.html" />
+
+% for name, capabilities in addon_capabilities.iteritems():
+    <script id="capabilities-${name}" type="text/html">${capabilities}</script>
+% endfor
 
 </%def>
 
@@ -187,8 +194,15 @@
                 msgElm.text('Settings updated')
                     .removeClass('text-danger').addClass('text-success')
                     .fadeOut(100).fadeIn();
-            }).fail(function() {
-                msgElm.text('Error: Settings not updated')
+            }).fail(function(xhr) {
+                var message = 'Error: ';
+                var response = JSON.parse(xhr.responseText);
+                if (response && response.message) {
+                    message += response.message;
+                } else {
+                    message += 'Settings not updated.'
+                }
+                msgElm.text(message)
                     .removeClass('text-success').addClass('text-danger')
                     .fadeOut(100).fadeIn();
             });
@@ -208,6 +222,27 @@
                     }
                 }
             )
+        });
+
+        // Show capabilities modal on selecting an addon; unselect if user
+        // rejects terms
+        $('.addon-select').on('change', function() {
+            var that = this,
+                $that = $(that);
+            if ($that.is(':checked')) {
+                var name = $that.attr('name'),
+                    capabilities = $('#capabilities-' + name);
+                if (capabilities) {
+                    bootbox.confirm(
+                        capabilities.html(),
+                        function(result) {
+                            if (!result) {
+                                $(that).attr('checked', false);
+                            }
+                        }
+                    )
+                }
+            }
         });
 
     });

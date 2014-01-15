@@ -2,15 +2,34 @@
 
 <!-- Authorization -->
 <div>
-    % if authorized_user:
-        <a id="githubDelKey" class="btn btn-danger">Delete Access Token</a>
-        <span>Authorized by ${authorized_user}</span>
+    <div class="alert alert-danger alert-dismissable">
+    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+        Authorizing this GitHub add-on will grant all contributors on this ${node['category']}
+        permission to upload, modify, and delete files on the associated GitHub repo.
+    </div>
+    <div class="alert alert-danger alert-dismissable">
+        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+        If one of your collaborators removes you from this ${node['category']},
+        your authorization for GitHub will automatically be revoked.
+    </div>
+    % if authorized_user_id:
+        <a id="githubDelKey" class="btn btn-danger">Unauthorize: Detach Access Token</a>
+        <div style="padding-top: 10px">
+            Authorized by OSF user
+            <a href="${domain}/${authorized_user_id}" target="_blank">
+                ${authorized_user_name}
+            </a>
+            on behalf of GitHub user
+            <a href="https://github.com/${authorized_github_user}" target="_blank">
+                ${authorized_github_user}
+            </a>
+        </div>
     % else:
         <a id="githubAddKey" class="btn btn-primary">
             % if user_has_authorization:
-                Import Token from Profile
+                Authorize: Import Token from Profile
             % else:
-                Create Access Token
+                Authorize: Create Access Token
             % endif
         </a>
     % endif
@@ -32,7 +51,7 @@
     $(document).ready(function() {
 
         $('#githubAddKey').on('click', function() {
-            % if authorized_user:
+            % if authorized_user_id:
                 $.ajax({
                     type: 'POST',
                     url: nodeApiUrl + 'github/user_auth/',
@@ -49,7 +68,12 @@
 
         $('#githubDelKey').on('click', function() {
             bootbox.confirm(
-                'Are you sure you want to delete your GitHub access key?',
+                'Are you sure you want to detach your GitHub access key? This will ' +
+                    'revoke the ability to modify and upload files to GitHub. If ' +
+                    'the associated repo is private, this will also disable viewing ' +
+                    'and downloading files from GitHub. This will not remove your ' +
+                    'GitHub authorization from your <a href="/settings/">user settings</a> ' +
+                    'page.',
                 function(result) {
                     if (result) {
                         $.ajax({

@@ -25,6 +25,9 @@ class GitHub(object):
 
     def __init__(self, access_token=None, token_type=None):
 
+        self.access_token = access_token
+        self.token_type = token_type
+
         if access_token and token_type:
             self.session = OAuth2Session(
                 github_settings.CLIENT_ID,
@@ -88,18 +91,47 @@ class GitHub(object):
 
         return rv
 
-    def repo(self, user, repo):
+    def user(self, user=None):
+        """Fetch a user or the authenticated user.
 
+        :param user: Optional GitHub user name; will fetch authenticated
+            user if omitted
+        :return dict: GitHub API response
+
+        """
+        url = (
+            os.path.join(API_URL, 'users', user)
+            if user
+            else os.path.join(API_URL, 'user')
+        )
+        return self._send(url)
+
+    def repo(self, user, repo):
+        """Get a single Github repo's info.
+
+        :param str user: GitHub user name
+        :param str repo: GitHub repo name
+        :return: Dict of repo information
+            See http://developer.github.com/v3/repos/#get
+
+        """
         return self._send(
             os.path.join(API_URL, 'repos', user, repo)
         )
 
     def branches(self, user, repo, branch=None):
+        """List a repo's branches or get a single branch.
 
+        :param str user: GitHub user name
+        :param str repo: GitHub repo name
+        :param str branch: Branch name if getting a single branch
+        :return: List of branch dicts
+            http://developer.github.com/v3/repos/#list-branches
+
+        """
         url = os.path.join(API_URL, 'repos', user, repo, 'branches')
         if branch:
             url = os.path.join(url, branch)
-
         return self._send(url)
 
     def commits(self, user, repo, path=None, sha=None):
@@ -146,7 +178,7 @@ class GitHub(object):
                 for commit in req
             ]
 
-    def tree(self, user, repo, sha, recursive=True, registration_data=None):
+    def tree(self, user, repo, sha, recursive=True):
         """Get file tree for a repo.
 
         :param str user: GitHub user name
@@ -154,7 +186,7 @@ class GitHub(object):
         :param str sha: Branch name or SHA
         :param bool recursive: Walk repo recursively
         :param dict registration_data: Registered commit data
-        :return tuple: Tuple of commit ID and tree JSON; see
+        :returns: tuple: Tuple of commit ID and tree JSON; see
             http://developer.github.com/v3/git/trees/
 
         """
@@ -172,7 +204,22 @@ class GitHub(object):
         return None
 
     def file(self, user, repo, path, ref=None):
+        """Get a file within a repo and its contents.
 
+        :returns: A tuple of the form (<filename>, <file_content>, <file_size):
+
+        """
+        req = self.contents(user=user, repo=repo, path=path, ref=ref)
+        if req:
+            content = req['content']
+            return req['name'], base64.b64decode(content), req['size']
+        return None, None, None
+
+    def contents(self, user, repo, path, ref=None):
+        """Get the contents of a path within a repo.
+        http://developer.github.com/v3/repos/contents/#get-contents
+
+        """
         params = {
             'ref': ref,
         }
@@ -184,12 +231,7 @@ class GitHub(object):
             cache=True,
             params=params,
         )
-
-        if req:
-            content = req['content']
-            return req['name'], base64.b64decode(content), req['size']
-
-        return None, None, None
+        return req
 
     def starball(self, user, repo, archive='tar', ref=None):
         """Get link for archive download.
@@ -198,7 +240,7 @@ class GitHub(object):
         :param str repo: GitHub repo name
         :param str archive: Archive format [tar|zip]
         :param str ref: Git reference
-        :return tuple: Tuple of headers and file location
+        :returns: tuple: Tuple of headers and file location
 
         """
         url_parts = [
@@ -245,6 +287,14 @@ class GitHub(object):
     #########
 
     def hooks(self, user, repo):
+        """List webhooks
+
+        :param str user: GitHub user name
+        :param str repo: GitHub repo name
+        :return list: List of commit dicts from GitHub; see
+            http://developer.github.com/v3/repos/hooks/#json-http
+
+        """
 
         return self._send(
             os.path.join(
@@ -253,7 +303,14 @@ class GitHub(object):
         )
 
     def add_hook(self, user, repo, name, config, events=None, active=True):
+        """Create a webhook.
 
+        :param str user: GitHub user name
+        :param str repo: GitHub repo name
+        :return dict: Hook info from GitHub: see see
+            http://developer.github.com/v3/repos/hooks/#json-http
+
+        """
         data = {
             'name': name,
             'config': config,
@@ -271,13 +328,22 @@ class GitHub(object):
         )
 
     def delete_hook(self, user, repo, _id):
+        """Delete a webhook.
 
+        :param str user: GitHub user name
+        :param str repo: GitHub repo name
+        :return requests.models.Response: Response object
+
+        """
+        # Note: Must set `output` to `None`; no JSON response from this
+        # endpoint
         return self._send(
             os.path.join(
                 API_URL, 'repos', user, repo, 'hooks', str(_id),
             ),
             'delete',
             cache=False,
+            output=None,
         )
 
     ########
@@ -323,6 +389,28 @@ class GitHub(object):
             data=json.dumps(data),
         )
 
+    ########
+    # Auth #
+    ########
+
+    def revoke_token(self):
+
+        if self.access_token is None:
+            return
+
+        return self._send(
+            os.path.join(
+                API_URL, 'applications', github_settings.CLIENT_ID,
+                'tokens', self.access_token,
+            ),
+            method='delete',
+            cache=False,
+            output=None,
+            auth=(
+                github_settings.CLIENT_ID,
+                github_settings.CLIENT_SECRET,
+            )
+        )
 
 def raw_url(user, repo, ref, path):
     return os.path.join(
@@ -336,7 +424,7 @@ type_map = {
 }
 
 
-def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=True):
+def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=False):
     """Convert GitHub tree data to HGrid format.
 
     :param list tree: JSON description of git tree
@@ -376,17 +464,21 @@ def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=True):
 
     for item in tree:
 
+        # Types should be "blob" or "tree" but may also be "commit". Ignore
+        # unexpected types.
+        if item['type'] not in type_map:
+            continue
+
         split = os.path.split(item['path'])
+        _, ext = os.path.splitext(item['path'])
+        ext = ext.lstrip('.')
 
         row = {
             'uid': item['type'] + ':' + '||'.join(['__repo__', item['path']]),
             'name': split[1],
             'parent_uid': 'tree:' + '||'.join(['__repo__', split[0]]).strip('||'),
             'type': type_map[item['type']],
-            'uploadUrl': node.api_url + 'github/file/',
         }
-        if ref is not None:
-             row['uploadUrl'] += '?ref=' + ref
 
         if item['type'] == 'blob':
             row['sha'] = item['sha']
@@ -395,6 +487,7 @@ def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=True):
                 item['size'],
                 size(item['size'], system=alternative)
             ]
+            row['ext'] = ext
             base_api_url = node.api_url + 'github/file/{0}/'.format(item['path'])
             row['delete'] = base_api_url + '?' + ref
             row['view'] = os.path.join(node.url, 'github', 'file', item['path']) + '/'
