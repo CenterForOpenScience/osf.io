@@ -8,10 +8,11 @@
     		 <br>
         	<a id="s3DelKey" class="btn btn-danger">Delete Access Key</a>
 	%else:
+        <div id="toolTip">
         <a id="s3createKey" class="btn btn-primary  ${'' if user_has_auth else 'disabled'}">
         	Create Access Key
         </a>
-
+    </div>
     %endif
 </div>
 
@@ -59,15 +60,20 @@
         %if not node_auth:
 
         $('#s3_bucket').on('input',function() {
-        	if($('#s3_bucket').val().length == 0)
+        	if($('#s3_bucket').val() != "${s3_bucket}"){
         		$("#s3createKey").attr("disabled", "disabled");
-        	else if ($('#s3createKey').attr("disabled"))
-        		$('#s3createKey').removeAttr("disabled");
+                $('#s3createKey').tooltip({
+                    'show': true,
+                    'placement': 'bottom',
+                    'title': "Please submit your bucket name"});
+                $('#s3createKey').tooltip('show');}
+            else {
+                $("#s3createKey").removeAttr("disabled");
+                $('#s3createKey').tooltip('destroy');
 
+            }
         });
 
         %endif
-        console.log('Im here')
     });
-
 </script>
