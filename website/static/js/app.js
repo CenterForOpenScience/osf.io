@@ -437,6 +437,102 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
 
 };
 
+var AddShortcutViewModel = function() {
+
+    var self = this;
+
+    self.query = ko.observable();
+    self.results = ko.observableArray();
+    self.selection = ko.observableArray();
+    self.errorMsg = ko.observable('');
+
+    self.search = function() {
+        self.errorMsg('');
+        $.getJSON(
+            '/api/v1/search/node/',
+            {
+                query: self.query(),
+                nid: nodeId
+            },
+            function(result) {
+                if (!result.nodes.length) {
+                    self.errorMsg('No results found.');
+                }
+                self.results(result['nodes']);
+            }
+        )
+    };
+
+    self.addTips = function(elements) {
+        elements.forEach(function(element) {
+            $(element).find('.contrib-button').tooltip();
+        });
+    };
+
+    self.add = function(data) {
+        self.selection.push(data);
+        // Hack: Hide and refresh tooltips
+        $('.tooltip').hide();
+        $('.contrib-button').tooltip();
+    };
+
+    self.remove = function(data) {
+        self.selection.splice(
+            self.selection.indexOf(data), 1
+        );
+        // Hack: Hide and refresh tooltips
+        $('.tooltip').hide();
+        $('.contrib-button').tooltip();
+    };
+
+    self.addAll = function() {
+        $.each(self.results(), function(idx, result) {
+            if (self.selection().indexOf(result) == -1) {
+                self.add(result);
+            }
+        });
+    };
+
+    self.removeAll = function() {
+        $.each(self.selection(), function(idx, selected) {
+            self.remove(selected);
+        });
+    };
+
+    self.selected = function(data) {
+        for (var idx=0; idx < self.selection().length; idx++) {
+            if (data.id == self.selection()[idx].id)
+                return true;
+        }
+        return false;
+    };
+
+    self.submit = function() {
+        var node_ids = attrMap(self.selection(), 'id');
+        $.ajax(
+            nodeApiUrl + 'addshortcuts/',
+            {
+                type: 'post',
+                data: JSON.stringify({
+                    node_ids: node_ids
+                }),
+                contentType: 'application/json',
+                dataType: 'json',
+                success: function(response) {
+                    window.location.reload();
+                }
+            }
+        )
+    };
+
+    self.clear = function() {
+        self.query('');
+        self.results([]);
+        self.selection([]);
+    };
+
+};
+
 //////////////////
 // Data binders //
 //////////////////

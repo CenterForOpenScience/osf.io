@@ -18,7 +18,7 @@ from website.project import new_node, clean_template_name
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from website.project.forms import NewProjectForm, NewNodeForm
-from website.models import WatchConfig
+from website.models import WatchConfig, Node, Shortcut
 from website import settings
 from website.views import _render_nodes
 
@@ -564,45 +564,65 @@ def get_recent_logs(*args, **kwargs):
     logs = list(reversed(node_to_use.logs._to_primary_keys()))[:3]
     return {'logs': logs}
 
-@must_be_valid_project
-def get_summary(*args, **kwargs):
+def _get_summary(node, rescale_ratio):
 
     user = get_current_user()
     api_key = get_api_key()
-    rescale_ratio = kwargs.get('rescale_ratio')
-    node_to_use = kwargs['node'] or kwargs['project']
 
-    if node_to_use.can_view(user, api_key):
-        summary = {
+    summary = {'primary': node.primary}
+
+    if node.can_view(user, api_key):
+        summary.update({
             'can_view': True,
-            'id': node_to_use._primary_key,
-            'url': node_to_use.url,
-            'api_url': node_to_use.api_url,
-            'title': node_to_use.title,
-            'is_registration': node_to_use.is_registration,
-            'registered_date': node_to_use.registered_date.strftime('%m/%d/%y %I:%M %p') if node_to_use.is_registration else None,
+            'id': node._primary_key,
+            'url': node.url,
+            # TODO: Make elegant
+            'api_url': node.api_url if node.primary else node.node.api_url,
+            'title': node.title,
+            'is_registration': node.is_registration,
+            'registered_date': node.registered_date.strftime('%m/%d/%y %I:%M %p') if node.is_registration else None,
             'nlogs': None,
             'ua_count': None,
             'ua': None,
             'non_ua': None,
-            'addons_enabled': node_to_use.get_addon_names(),
-        }
+            'addons_enabled': node.get_addon_names(),
+        })
         if rescale_ratio:
-            ua_count, ua, non_ua = _get_user_activity(node_to_use, user, rescale_ratio)
+            ua_count, ua, non_ua = _get_user_activity(node, user, rescale_ratio)
             summary.update({
-                'nlogs': len(node_to_use.logs),
+                'nlogs': len(node.logs),
                 'ua_count': ua_count,
                 'ua': ua,
                 'non_ua': non_ua,
             })
     else:
-        summary = {
-            'can_view': False,
-        }
+        summary['can_view'] = False
     # TODO: Make output format consistent with _view_project
     return {
         'summary': summary,
     }
+
+
+@must_be_valid_project
+def get_summary(*args, **kwargs):
+
+    node = kwargs['node'] or kwargs['project']
+    rescale_ratio = kwargs.get('rescale_ratio')
+
+    return _get_summary(node, rescale_ratio)
+
+
+def shortcut_summary(*args, **kwargs):
+
+    sid = kwargs.get('sid')
+    shortcut = Shortcut.load(sid)
+    if shortcut is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    rescale_ratio = kwargs.get('rescale_ratio')
+
+    return _get_summary(shortcut, rescale_ratio)
+
 
 @must_be_contributor_or_public
 def get_children(*args, **kwargs):
@@ -613,6 +633,7 @@ def get_children(*args, **kwargs):
         if not node.is_deleted
     ])
 
+
 @must_be_contributor_or_public
 def get_forks(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
@@ -621,8 +642,68 @@ def get_forks(*args, **kwargs):
     )
     return _render_nodes(forks)
 
+
 @must_be_contributor_or_public
 def get_registrations(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     registrations = node_to_use.node__registrations
     return _render_nodes(registrations)
+
+
+def search_node(*args, **kwargs):
+
+    user = get_current_user()
+    query = request.args.get('query', '')
+    node = Node.load(request.args.get('nid'))
+
+    # Build ODM query
+    odm_query = (
+        Q('title', 'icontains', query) &
+        (
+            Q('contributors', 'eq', user) |
+            Q('is_public', 'eq', True)
+        )
+    )
+
+    # Exclude current node from query if provided
+    if node:
+        ids = [node._id]
+        if node.nodes:
+            ids += node.nodes._to_primary_keys()
+        odm_query = (
+            odm_query &
+            Q('_id', 'nin', ids)
+        )
+
+    # TODO: Parameterize limit; expose pagination
+    cursor = Node.find(odm_query).limit(20)
+
+    return {
+        'nodes': [
+            {
+                'id': node._id,
+                'title': node.title,
+                'description': node.description,
+            }
+            for node in cursor
+        ]
+    }
+
+@must_be_contributor
+def add_shortcuts(*args, **kwargs):
+
+    node = kwargs['node'] or kwargs['project']
+
+    node_ids = request.json.get('node_ids', [])
+
+    added = False
+    for node_id in node_ids:
+        _node = Node.load(node_id)
+        if _node:
+            node.add_shortcut(_node, save=False)
+            added = True
+
+    if added:
+        node.save()
+
+    return {}

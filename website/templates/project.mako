@@ -127,12 +127,12 @@
     % if node['category'] == 'project':
         <div class="pull-right">
             % if user['can_edit']:
-                <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">
+                <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
+                <a class="btn btn-default" data-toggle="modal" data-target="#addShortcut">Add Shortcut</a>
             % else:
-                <a class="btn btn-default disabled">
+                <a class="btn btn-default disabled">Add Component</a>
+                <a class="btn btn-default disabled">Add Shortcut</a>
             % endif
-                Add Component
-        </a>
         </div>
         <%include file="modal_add_component.mako"/>
     % endif

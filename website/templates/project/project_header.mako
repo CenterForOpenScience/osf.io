@@ -141,6 +141,7 @@
     </header>
 </div><!-- end projectScope -->
 <%include file="modal_add_contributor.mako"/>
+<%include file="modal_add_shortcut.mako"/>
 ## TODO: Find a better place to put this initialization code
 <script>
 
@@ -176,6 +177,14 @@
                 $addContributors.on('hidden', function() {
                     addContribVM.clear();
                 });
+
+                var $addShortcut = $('#addShortcut');
+                var addShortcutVM = new AddShortcutViewModel();
+                ko.applyBindings(addShortcutVM, $addShortcut[0]);
+                $addShortcut.on('hidden', function() {
+                    addShortcutVM.clear();
+                });
+
 
                 // Initialize LogsViewModel when appropriate
                 if ($logScope.length > 0) {

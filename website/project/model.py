@@ -267,9 +267,46 @@ class Tag(StoredObject):
         return '/search/?q=tags:{}'.format(self._id)
 
 
+class Shortcut(StoredObject):
+
+    primary = False
+
+    _id = fields.StringField()
+    node = fields.ForeignField('node', backref='linked')
+
+    _meta = {'optimistic': True}
+
+    @property
+    def api_url(self):
+        return '/api/v1/shortcut/{0}/'.format(self._id)
+
+    def _clone(self):
+        if self.node:
+            clone = self.clone()
+            clone.node = self.node
+            clone.save()
+            return clone
+
+    def fork_node(self, *args, **kwargs):
+        return self._clone()
+
+    def register_node(self, *args, **kwargs):
+        return self._clone()
+
+    def __getattr__(self, item):
+        if self.node:
+            return getattr(self.node, item)
+        raise AttributeError(
+            'Shortcut object has no attribute {0}'.format(
+                item
+            )
+        )
+
+
 class Node(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
+    primary = True
 
     # Node fields that trigger an update to Solr on save
     SOLR_UPDATE_FIELDS = {
@@ -327,7 +364,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
     tags = fields.ForeignField('tag', list=True, backref='tagged')
 
-    nodes = fields.ForeignField('node', list=True, backref='parent')
+    nodes = fields.AbstractForeignField(list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked')
     registered_from = fields.ForeignField('node', backref='registrations')
 
@@ -426,6 +463,51 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # Return expected value for StoredObject::save
         return saved_fields
+
+    def add_shortcut(self, node, save=True):
+        """Add a shortcut to a node.
+
+        :param Node node: Node to add
+        :param bool save: Save changes
+
+        """
+        # Fail if node already in nodes / shortcuts
+        if node._id in self.nodes._to_primary_keys():
+            raise ValueError
+
+        # Append shortcut
+        shortcut = Shortcut(node=node)
+        shortcut.save()
+        self.nodes.append(shortcut)
+
+        # Optionally save changes
+        if save:
+            self.save()
+
+    def rm_shortcut(self, node, save=True):
+        self.nodes = [
+            _node
+            for _node in self.nodes
+            if _node.node != node
+        ]
+        if save:
+            self.save()
+
+    @property
+    def nodes_shortcut(self):
+        return [
+            node
+            for node in self.nodes
+            if not node.primary
+        ]
+
+    @property
+    def nodes_primary(self):
+        return [
+            node
+            for node in self.nodes
+            if node.primary
+        ]
 
     def get_recent_logs(self, n=10):
         '''Return a list of the n most recent logs, in reverse chronological
@@ -567,7 +649,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         date = date or datetime.datetime.utcnow()
 
         # Remove child nodes
-        for node in self.nodes:
+        for node in self.nodes_primary:
             if not node.category == 'project':
                 if not node.remove_node(user, api_key, date=date, top=False):
                     return False
@@ -766,7 +848,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             },
             user=user,
             api_key=api_key,
-            log_date=when
+            log_date=when,
         )
         original.registration_list.append(registered._id)
         original.save()

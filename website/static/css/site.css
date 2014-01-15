@@ -576,6 +576,9 @@ input.ui-autocomplete-input{
 li.list-group-item-node {
     margin-bottom: 10px;
 }
+li.shortcut {
+    border-style: dashed;
+}
 
 li .project-meta {
     position: absolute;

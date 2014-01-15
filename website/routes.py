@@ -252,6 +252,13 @@ def make_url_map(app):
 
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
+        Rule(
+            '/api/v1/search/node/',
+            'get',
+            project_views.node.search_node,
+            json_renderer,
+        ),
+
     ])
 
     # API
@@ -418,6 +425,21 @@ def make_url_map(app):
             '/project/<pid>/',
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, json_renderer),
+        Rule(
+            '/shortcut/<sid>/get_summary/',
+            'get',
+            project_views.node.shortcut_summary,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/addshortcuts/',
+                '/project/<pid>/node/<nid>/addshortcuts/',
+            ],
+            'post',
+            project_views.node.add_shortcuts,
+            json_renderer,
+        ),
 
         Rule([
             '/project/<pid>/get_summary/',
