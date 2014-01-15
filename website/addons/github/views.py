@@ -10,6 +10,7 @@ import urllib
 import datetime
 import pygments
 import httplib as http
+from collections import namedtuple
 
 from hurry.filesize import size, alternative
 from dateutil.parser import parse as dateparse
@@ -184,7 +185,52 @@ def github_set_config(*args, **kwargs):
 
     return {}
 
-# TODO: Change "github" to "addon_settings" or something similar
+
+def _get_branch_and_sha(addon, branch=None, sha=None, connection=None):
+    """Get the appropriate branch name and sha given the addon settings object,
+    and optionally the branch and sha from the request arguments.
+
+    :param str branch: Branch name. If None, return the default branch from the
+        repo settings.
+    :param str sha: The SHA.
+    :param GitHub connection: GitHub API object. If None, one will be created
+        from the addon's user settings.
+
+    """
+    connect = connection or GitHub.from_settings(addon.user_settings)
+
+    if sha and not branch:
+        raise HTTPError(http.BAD_REQUEST)
+
+    # Get default branch if not provided
+    if not branch:
+        repo = connect.repo(addon.user, addon.repo)
+        branch = repo['default_branch']
+
+    # Get registered branches if provided
+    registered_branches = (
+        addon.registration_data.get('branches', [])
+        if addon.owner.is_registration
+        else []
+    )
+    registered_branch_names = [
+        _branch['name']
+        for _branch in registered_branches
+    ]
+
+    # Fail if registered and branch not in registration data
+    if registered_branches and branch not in registered_branch_names:
+        raise HTTPError(http.BAD_REQUEST)
+
+    # Use registered SHA if provided
+    for _branch in registered_branches:
+        if branch == _branch['name']:
+            sha = _branch['commit']['sha']
+    GitRefs = namedtuple('GitRef', ['branch', 'sha'])
+    return GitRefs(branch=branch, sha=sha)
+
+
+# TODO: Change "github" to "node_settings" or something similar
 def _page_content(node, github, branch=None, sha=None, hotlink=False, _connection=None):
     """Return the info to be rendered for a given repo.
 
@@ -197,7 +243,7 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
     :param Github _connection: A GitHub object for sending API requests. If None,
         a Github object will be created from the user settings. This param is
         only exposed to allow for mocking the GitHub API object.
-    :return: A dict of repo info to render on the page.
+    :returns: A dict of repo info to render on the page.
 
     """
     # Fail if GitHub settings incomplete
@@ -207,11 +253,14 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
 
     connect = _connection or GitHub.from_settings(github.user_settings)
 
+    # TODO: Use _get_branch_and_sha helper
     if sha and not branch:
         raise HTTPError(http.BAD_REQUEST)
 
     # Get default branch if not provided
     if not branch:
+        # REVIEW: @jmcarp: Is it necessary to check for "repo"? Seems like
+        # it will always be None at this point
         repo = repo or connect.repo(github.user, github.repo)
         if not repo:
             return {}
@@ -302,7 +351,23 @@ def github_hgrid_data(*args, **kwargs):
     """Return a repo's file tree as a dict formatted for Hgrid.
 
     """
-    return {}
+    node = kwargs['node'] or kwargs['project']
+    node_addon = kwargs['node_addon']
+
+    connect = GitHub.from_settings(node_addon.user_settings)
+    # The requested branch and sha
+    req_branch, req_sha = request.args.get('branch'), request.args.get('sha')
+    # The actual branch and sha to use, given the addon settings
+    branch, sha = _get_branch_and_sha(node_addon, req_branch, req_sha,
+                                        connection=connect)
+    # Get file tree
+    gh_tree = connect.tree(
+        node_addon.user, node_addon.repo, sha=sha
+    )
+    hgrid_tree = tree_to_hgrid(gh_tree['tree'], user=node_addon.user,
+        repo=node_addon.repo, node=node)
+    return hgrid_tree
+
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
