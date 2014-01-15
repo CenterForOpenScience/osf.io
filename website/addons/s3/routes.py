@@ -48,6 +48,12 @@ page_routes = {
             '/project/<pid>/s3/newfolder/<path>',
             '/project/<pid>/node/<nid>/s3/newfolder/<path>'
         ],'get',views.s3_new_folder, json_renderer),
+        Rule([
+            '/project/<pid>/s3/makeKey/',
+            '/project/<pid>/node/<nid>/s3/makekey/'
+        ],'post',views.s3_create_access_key, json_renderer),
     ],
+    'prefix': '/api/v1',
+
 }
 

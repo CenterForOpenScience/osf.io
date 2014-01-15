@@ -8,7 +8,7 @@
     		 <br>
         	<a id="githubDelKey" class="btn btn-danger">Delete Access Key</a>
 	%else:
-        <a id="s3getKey" class="btn btn-primary  ${'' if user_has_auth else 'disabled'}">
+        <a id="s3createKey" class="btn btn-primary  ${'' if user_has_auth else 'disabled'}">
         	Create Access Key
         </a>
 
@@ -22,3 +22,40 @@
     <input class="form-control" id="s3_bucket" name="s3_bucket" value="${s3_bucket}" ${'disabled' if not node_auth else ''} />
 </div>
 
+<script type="text/javascript">
+
+    $(document).ready(function() {
+
+        $('#s3createKey').on('click', function() {
+                $.ajax({
+                    type: 'POST',
+                    url: nodeApiUrl + 's3/makeKey/',
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    success: function(response) {
+                        window.location.reload();
+                    }
+                });
+        });
+
+        $('#githubDelKey').on('click', function() {
+            bootbox.confirm(
+                'Are you sure you want to delete your GitHub access key?',
+                function(result) {
+                    if (result) {
+                        $.ajax({
+                            url: nodeApiUrl + 'github/oauth/delete/',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            dataType: 'json',
+                            success: function() {
+                                window.location.reload();
+                            }
+                        });
+                    }
+                }
+            )
+        });
+    });
+
+</script>

@@ -17,6 +17,7 @@ from framework.flask import secure_filename
 from framework.auth import get_current_user, must_be_logged_in
 
 from api import BucketManager
+from api import createLimitedUser
 from boto.exception import S3ResponseError
 
 import time
@@ -79,6 +80,8 @@ def s3_settings(*args, **kwargs):
 
         s3_node.save()
 
+@must_be_contributor
+@must_have_addon('s3', 'node')
 def s3_create_access_key(*args, **kwargs):
 
     user = kwargs['user']
@@ -89,8 +92,8 @@ def s3_create_access_key(*args, **kwargs):
     u = createLimitedUser(s3_user.access_key,s3_user.secret_key,s3_node.s3_bucket)
 
     if u:
-        s3_node.s3_node_access_key = u['']
-        s3_node.s3_node_secret_key = u['']
+        s3_node.s3_node_access_key = u['access_key_id']
+        s3_node.s3_node_secret_key = u['secret_access_key']
         s3_node.node_auth = 1
 
         s3_node.save()
