@@ -1,3 +1,4 @@
+// TODO: Make this a proper module that is reuseable across addons
 var extensions = ["3gp", "7z", "ace", "ai", "aif", "aiff", "amr", "asf", "asx", "bat", "bin", "bmp", "bup",
     "cab", "cbr", "cda", "cdl", "cdr", "chm", "dat", "divx", "dll", "dmg", "doc", "docx", "dss", "dvf", "dwg",
     "eml", "eps", "exe", "fla", "flv", "gif", "gz", "hqx", "htm", "html", "ifo", "indd", "iso", "jar",
@@ -18,7 +19,7 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
     } else {
         var link = value;
         if(dataContext['download']){
-            link = "<a href=" + dataContext['view'] + ">" + value + "</a>";
+            link = "<a href=" + dataContext['download'] + ">" + value + "</a>";
         }
         var imageUrl = "/static\/img\/hgrid\/fatcowicons\/file_extension_" + dataContext['ext'] + ".png";
         if(extensions.indexOf(dataContext['ext'])==-1){
@@ -42,7 +43,7 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
             var delButton = "<button type='button' class='btn btn-danger btn-mini' onclick='grid.deleteItems([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-trash icon-white'></i></button>"
             var downButton = '<a href="' + value + '" download="' + dataContext['name'] + '"><button type="button" class="btn btn-success btn-mini"><i class="icon-download-alt icon-white"></i></button></a>';
             var buttons = downButton;
-            if (canEdit && hasAuth && isHead) {
+            if (canEdit) {
                 buttons += ' ' + delButton;
             }
             return "<div>" + buttons + "</div>";
@@ -54,9 +55,9 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
     }
 };
 
-var grid = HGrid.create({
+var grid;
+HGrid.create({
     container: "#gitGrid",
-    info: gridData,
     columns:[
         {id: "name", name: "Name", field: "name", cssClass: "cell-title", formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
         {id: "size", name: "Size", field: "size", formatter: PairFormatter, sortable: true}
@@ -64,96 +65,89 @@ var grid = HGrid.create({
     urlAdd: function() {
         var ans = {};
         for (var i = 0; i < gridData.length; i++) {
-            if (gridData[i].type == 'folder') {
+            if (gridData[i].type === 'folder') {
                 ans[gridData[i]['uid']] = gridData[i]['uploadUrl'];
             }
         }
         ans[null] = gridData[0]['uploadUrl'];
         return ans;
     },
-    url: gridData[0]['uploadUrl'],
+    // NOTE: contextVars comes from the inline javascript on github_page.mako
+    // Eventually, probably should inject it as a dependency when this is a module
+    ajaxSource: contextVars.hgridUrl,
+    // Need to send sha and branch request params
+    // ajaxOptions: {data: {sha: contextVars.sha, branch: contextVars.branch}, contentType: "application/json", dataType: "json"},
+    ajaxOnSuccess: function(lazyGrid) {
+        grid = lazyGrid;
+        grid.addColumn({id: "download", name: "Download", field: "download", width: 150, sortable: true, formatter: UploadBars});
+        grid.hGridBeforeDelete.subscribe(function(e, args) {
+            if (args['items'][0]['type'] !== 'fake') {
+                var msg = 'Are you sure you want to delete the file "' + args['items'][0]['name'] + '"?';
+                var d = $.Deferred();
+                bootbox.confirm(
+                    msg,
+                    function(result) {
+                        if (result) {
+                            var url = args['items'][0]['download'];
+                            $.ajax({
+                                url: url,
+                                type: 'DELETE',
+                                data: JSON.stringify({sha: args['items'][0]['sha']}),
+                                contentType: 'application/json',
+                                dataType: 'json'
+                            }).complete(function() {
+                                d.resolve(true);
+                            }).error(function() {
+                                d.resolve(false);
+                            });
+                        } else {
+                            d.resolve(false);
+                        }
+                    }
+                );
+                return d;
+            }
+        });
+
+        // Upload callbacks
+
+        grid.hGridBeforeUpload.subscribe(function(e, args) {
+            grid.removeDraggerGuide();
+            var path = args.parent['path'].slice();
+            path.push(args.item.name);
+            var item = {name: args.item.name, parent_uid: args.parent['uid'], uid: args.item.name, type:"fake", uploadBar: true, path: path, sortpath: path.join("/"), ext: "py", size: args.item.size.toString()};
+            var promise = $.when(grid.addItem(item));
+            promise.done(function(bool){
+                return true;
+            });
+        });
+
+        grid.hGridOnUpload.subscribe(function(e, args) {
+            var value = {};
+            // Check if the server says that the file exists already
+            var newSlickInfo = JSON.parse(args.xhr.response)[0];
+            // Delete fake item
+            var item = grid.getItemByValue(grid.data, args.name, "uid");
+            grid.deleteItems([item['uid']]);
+            // If action taken is not null, create new item
+            if (newSlickInfo['action_taken'] !== null) {
+                grid.addItem(newSlickInfo);
+                return true;
+            }
+            return false;
+        });
+    },
     enableCellNavigation: false,
     breadcrumbBox: "#gitCrumb",
-    clickUploadElement: (canEdit && hasAuth && isHead) ? "#gitFormUpload" : null,
+    clickUploadElement: canEdit ? "#gitFormUpload" : null,
     navLevel: gridData[0]['uid'],
     autoHeight: true,
     forceFitColumns: true,
     largeGuide: false,
-    dropZone: canEdit && hasAuth && isHead,
+    dropZone: true,
     rowHeight: 30,
     topCrumb: false,
     dragToRoot: false,
     dragDrop: false
 });
 
-grid.addColumn({id: "download", name: "Download", field: "download", width: 150, sortable: true, formatter: UploadBars});
-
-// Initialize breadcrumbs
-grid.updateBreadcrumbsBox(grid.data[0]['uid']);
-
-grid.hGridBeforeDelete.subscribe(function(e, args) {
-    if (args['items'][0]['type'] !== 'fake') {
-        var msg = 'Are you sure you want to delete the file "' + args['items'][0]['name'] + '"?';
-        var d = $.Deferred();
-        bootbox.confirm(
-            msg,
-            function(result) {
-                if (result) {
-                    var url = args['items'][0]['delete'];
-                    $.ajax({
-                        url: url,
-                        type: 'DELETE',
-                        data: JSON.stringify({sha: args['items'][0]['sha']}),
-                        contentType: 'application/json',
-                        dataType: 'json'
-                    }).complete(function() {
-                        d.resolve(true);
-                    }).error(function() {
-                        bootbox.alert('Delete failed.');
-                        d.resolve(false);
-                    });
-                } else {
-                    d.resolve(false);
-                }
-            }
-        );
-        return d;
-    }
-});
-
-// Upload callbacks
-
-grid.hGridBeforeUpload.subscribe(function(e, args) {
-    grid.removeDraggerGuide();
-    var path = args.parent['path'].slice();
-    path.push(args.item.name);
-    var item = {name: args.item.name, parent_uid: args.parent['uid'], uid: args.item.name, type:"fake", uploadBar: true, path: path, sortpath: path.join("/"), ext: "py", size: args.item.size.toString()};
-    var promise = $.when(grid.addItem(item));
-    promise.done(function(bool){
-        return true;
-    });
-});
-
-grid.hGridOnUpload.subscribe(function(e, args) {
-    var value = {};
-    // Check if the server says that the file exists already
-    var newSlickInfo = JSON.parse(args.xhr.response)[0];
-    // Delete fake item
-    var item = grid.getItemByValue(grid.data, args.name, 'uid');
-    grid.deleteItems([item['uid']]);
-    // If action taken is not null, create new item
-    if (newSlickInfo['action_taken'] !== null) {
-        grid.addItem(newSlickInfo);
-        return true;
-    }
-    return false;
-});
-
-grid.hGridOnMouseEnter.subscribe(function (e, args){
-    var parent = args.e.target.parentNode;
-    $(parent).addClass("row-hover");
-});
-
-grid.hGridOnMouseLeave.subscribe(function (e, args){
-    $(grid.options.container).find(".row-hover").removeClass("row-hover");
-});

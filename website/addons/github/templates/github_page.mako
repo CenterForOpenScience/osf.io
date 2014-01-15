@@ -93,12 +93,26 @@
 <script type="text/javascript">
 
     // Import JS variables
+    // TODO: put these in contextVars namespace to avoid polluting global namespace
     var gridData = ${grid_data},
         branch = '${branch}',
         sha = '${sha}',
         canEdit = ${int(user['can_edit'])},
         hasAuth = ${int(has_auth)},
         isHead = ${int(is_head)};
+    // Namespace for variables grabbed from the python view through mako
+    // These are accessible in any of the Github JS modules
+    var contextVars = {
+        // Node API URL
+        apiUrl: "${api_url}",
+        // Upload URL
+        uploadUrl: gridData[0].uploadUrl,
+        // URL to get the hgrid root data
+        hgridUrl: "${api_url + 'github/hgrid/'}",
+        // SHA and branch,
+        sha: "${sha}",
+        branch: "${branch}"
+    };
 
     // Submit branch form on change
     % if len(branches) > 1:

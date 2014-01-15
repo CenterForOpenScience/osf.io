@@ -362,7 +362,8 @@ def github_hgrid_data(*args, **kwargs):
                                         connection=connect)
     # Get file tree
     gh_tree = connect.tree(
-        node_addon.user, node_addon.repo, sha=sha
+        node_addon.user, node_addon.repo, sha=sha or branch,
+        recursive=False
     )
     hgrid_tree = tree_to_hgrid(gh_tree['tree'], user=node_addon.user,
         repo=node_addon.repo, node=node)
