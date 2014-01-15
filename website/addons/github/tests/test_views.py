@@ -76,13 +76,6 @@ class TestGithubViews(DbTestCase):
         assert_equal(res.json["complete"], bool(self.node_settings.short_url))
         assert_equal(res.json["short_url"], self.node_settings.short_url)
 
-    def test_github_page(self):
-        url = "/project/{0}/github/".format(self.project._id)
-        res = self.app.get(url, auth=self.user.auth)
-        assert_in("/addons/static/github/hgrid-github.js", res)
-        assert_in("/addons/static/github/comicon.png", res)
-        assert_in("/{0}/github".format(self.project._id), res)
-
     @mock.patch('website.addons.github.api.GitHub.repo')
     def test_github_get_repo(self, mock_repo):
         mock_repo.return_value = {"owner": "osftest", "repo": "testing"}
