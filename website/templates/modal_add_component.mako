@@ -2,7 +2,7 @@
   <div class="modal fade" id="newComponent">
     <div class="modal-dialog">
         <div class="modal-content">
-        <form class="form" role="form" action="${node['api_url']}newnode/" method="post">
+        <form class="form" role="form" action="${node['url']}newnode/" method="post">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
               <h3 class="modal-title">Add Component</h3>
