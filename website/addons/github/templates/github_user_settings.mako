@@ -6,8 +6,8 @@
         <a id="githubDelKey" class="btn btn-danger">Delete Access Token</a>
         <div style="padding-top: 10px;">
             Authorized by GitHub user
-            <a href="https://github.com/${github_user}" target="_blank">
-                ${github_user}
+            <a href="https://github.com/${authorized_github_user}" target="_blank">
+                ${authorized_github_user}
             </a>
         </div>
     % else:

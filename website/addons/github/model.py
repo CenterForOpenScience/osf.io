@@ -65,7 +65,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             rv.update({
                 'authorized_user_name': self.user_settings.owner.fullname,
                 'authorized_user_id': self.user_settings.owner._id,
-                'github_user': self.user_settings.github_user,
+                'authorized_github_user': self.user_settings.github_user,
                 'disabled': user != self.user_settings.owner,
             })
         return rv
