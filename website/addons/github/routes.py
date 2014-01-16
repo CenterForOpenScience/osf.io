@@ -5,7 +5,7 @@
 from framework.routing import Rule, json_renderer
 from website.routes import OsfWebRenderer
 
-from . import views
+from website.addons.github import views
 
 settings_routes = {
     'rules': [
@@ -81,9 +81,25 @@ settings_routes = {
             '/addons/github/callback/<uid>/',
             '/addons/github/callback/<uid>/<nid>/',
         ], 'get', views.github_oauth_callback, json_renderer),
-
     ],
     'prefix': '/api/v1',
+}
+
+api_routes = {
+    'rules': [
+        # Route from which to get the hgrid data
+        Rule([
+            '/project/<pid>/github/hgrid/',
+            '/project/<pid>/node/<nid>/github/hgrid/',
+        ], 'get', views.github_hgrid_data, json_renderer),
+
+        Rule([
+            '/project/<pid>/github/hgrid/<path:path>/',
+            '/project/<pid>/node/<nid>/github/hgrid/<path:path>/',
+        ], 'get', views.github_hgrid_data_contents, json_renderer),
+
+    ],
+    'prefix': '/api/v1'
 }
 
 page_routes = {
