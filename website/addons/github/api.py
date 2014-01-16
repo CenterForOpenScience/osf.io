@@ -480,7 +480,7 @@ def tree_to_hgrid(tree, user, repo, node, parent='null', branch=None, sha=None, 
             'type': type_map[item['type']],
         }
 
-        if item['type'] == 'blob':
+        if type_map[item['type']] == 'file':
             row['sha'] = item['sha']
             row['url'] = item['url']
             row['size'] = [
