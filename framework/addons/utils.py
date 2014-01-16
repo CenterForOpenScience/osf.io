@@ -3,9 +3,9 @@ import os
 from mako.lookup import TemplateLookup
 
 CLASS_MAP = {
-    'Supported': 'success',
-    'Partially supported': 'warning',
-    'Not supported': 'danger',
+    'full': 'success',
+    'partial': 'warning',
+    'none': 'danger',
 }
 
 def read_capabilities(filename):
@@ -33,17 +33,22 @@ def read_capabilities(filename):
         infos = []
         for row, cap in caps:
             status = lines[row][col]
-            try:
-                message = lines[row][col+1]
-            except IndexError:
-                message = ''
+            split = status.split(' | ')
             infos.append({
                 'function': cap,
-                'status': status,
-                'detail': message,
-                'class': CLASS_MAP[status],
+                'status': split[0],
+                'detail': split[1] if len(split) > 1 else '',
+                'class': CLASS_MAP[split[0]],
             })
-        rv[addon] = infos
+        terms = [
+            line[col]
+            for line in lines[row+1:]
+            if len(line) > col
+        ]
+        rv[addon] = {
+            'capabilities': infos,
+            'terms': terms,
+        }
 
     return rv
 

@@ -114,7 +114,7 @@
             <ul class="nav navbar-nav">
                 <li><a href="${node['url']}">Dashboard</a></li>
 
-                <!-- Addon tabs -->
+                <!-- Add-on tabs -->
                 % for addon in addons_enabled:
                     % if addons[addon]['has_page']:
                         <li>

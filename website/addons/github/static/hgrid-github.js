@@ -79,7 +79,7 @@ var grid = HGrid.create({
     autoHeight: true,
     forceFitColumns: true,
     largeGuide: false,
-    dropZone: canEdit && hasAuth && isHead,
+    dropZone: canEdit && hasAccess && isHead,
     rowHeight: 30,
     topCrumb: false,
     dragToRoot: false,

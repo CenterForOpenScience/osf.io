@@ -1,15 +1,15 @@
 <%inherit file="base.mako"/>
-<%def name="title()">Addons</%def>
+<%def name="title()">Add-ons</%def>
 <%def name="content()">
 <div mod-meta='{"tpl": "include/subnav.mako", "replace": true}'></div>
 
-<h2>Addons</h2>
+<h2>Add-ons</h2>
 
 ##% for addon_id in addon_ids:
 ##    Render addon here
 ##% endfor
 
-<h3>Create addon</h3>
+<h3>Create add-on</h3>
 
 <form id="select-addon">
     <select name="addon-type">

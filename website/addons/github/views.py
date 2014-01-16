@@ -15,7 +15,7 @@ from hurry.filesize import size, alternative
 from dateutil.parser import parse as dateparse
 
 from framework import request, redirect, make_response
-from framework.auth import get_current_user, must_be_logged_in
+from framework.auth import get_current_user, must_be_logged_in, must_have_session_auth
 from framework.flask import secure_filename
 from framework.exceptions import HTTPError
 
@@ -28,6 +28,7 @@ from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 
+from . import settings as github_settings
 from .api import GitHub, raw_url, tree_to_hgrid
 from .auth import oauth_start_url, oauth_get_token
 
@@ -75,10 +76,11 @@ def _add_hook_log(node, github, action, path, date, committer, url=None, sha=Non
 @decorators.must_not_be_registration
 @decorators.must_have_addon('github', 'node')
 def github_hook_callback(*args, **kwargs):
-    """Add logs for commits from outside OSF
+    """Add logs for commits from outside OSF.
+
     """
     # Request must come from GitHub hooks IP
-    if not request.data['testing']:
+    if not request.json.get('test'):
         if HOOKS_IP not in request.remote_addr:
             raise HTTPError(http.BAD_REQUEST)
 
@@ -256,14 +258,21 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
     tree = connect.tree(
         github.user, github.repo, sha=sha or branch,
     )
-    if tree is None:
-        raise HTTPError(http.BAD_REQUEST)
+    tree = tree or {'tree': []}
+
+    show_grid = len(tree['tree']) <= github_settings.MAX_TREE_SIZE
 
     # Check permissions if authorized
-    has_auth = False
-    if github.user_settings and github.user_settings.has_auth:
+    has_access = False
+    has_auth = bool(github.user_settings and github.user_settings.has_auth)
+    if has_auth:
         repo = repo or connect.repo(github.user, github.repo)
-        has_auth = repo is not None and repo['permissions']['push']
+        has_access = (
+            repo is not None and (
+                'permissions' not in repo or
+                repo['permissions']['push']
+            )
+        )
 
     # Build HGrid JSON
     hgrid = tree_to_hgrid(
@@ -276,11 +285,13 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
         'gh_user': github.user,
         'repo': github.repo,
         'has_auth': has_auth,
+        'has_access': has_access,
+        'show_grid': show_grid,
         'is_head': sha is None or sha == head,
         'api_url': node.api_url,
         'branches': branches,
         'branch': branch,
-        'sha': sha if sha else '',
+        'sha': sha,
         'ref': sha or branch,
         'grid_data': json.dumps(hgrid),
         'registration_data': json.dumps(registered_branches),
@@ -408,10 +419,11 @@ def github_view_file(*args, **kwargs):
     start_sha = (sha or branch) if node.is_registration else branch
     commits = connect.history(github.user, github.repo, path, sha=start_sha)
     for commit in commits:
-        if repo['private']:
-            commit['download'] = os.path.join(node.api_url, 'github', 'file', path) + '?ref=' + commit['sha']
-        else:
-            commit['download'] = raw_url(github.user, github.repo, commit['sha'], path)
+        # TODO: Parameterize or remove hotlinking
+        #if repo['private']:
+        commit['download'] = os.path.join(node.api_url, 'github', 'file', path) + '?ref=' + commit['sha']
+        #else:
+        #    commit['download'] = raw_url(github.user, github.repo, commit['sha'], path)
         commit['view'] = os.path.join(node.url, 'github', 'file', path) + '?sha=' + commit['sha'] + '&branch=' + branch
 
     # Get current commit
