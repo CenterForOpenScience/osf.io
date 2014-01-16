@@ -24,7 +24,7 @@ def getHgrid(url,s3wrapper):
     'downloadUrl':url + URLADDONS['download'],
      'deleteUrl':url + URLADDONS['delete'],
     })
-    #checkFolders(s3wrapper,keyList)
+    checkFolders(s3wrapper,keyList)
     for k in keyList:
         #k.updateVersions(self) #TODO fix versioning
         if k.parentFolder is not None:
@@ -34,12 +34,12 @@ def getHgrid(url,s3wrapper):
             hgrid.append(wrapped_key_to_json(k,url))
     return hgrid
 
-#TODO Fix me
 def checkFolders(s3wrapper, keyList):
     for k in keyList:
-        if k.parentFolder != 'null' and k.parentFolder not in [x.name for x in keyList]:
-            newKey = s3wrapper.createFolder(k.pathTo)
-            keyList.append(S3Key(newKey))
+        if k.parentFolder is not None and k.parentFolder not in [x.name for x in keyList]:
+        	raise Exception
+        	newKey = s3wrapper.createFolder(k.pathTo)
+        	keyList.append(S3Key(newKey))
 
 def wrapped_key_to_json(wrapped_key,url,parent_uid=0):
     return {
