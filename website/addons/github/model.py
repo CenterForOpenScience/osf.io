@@ -32,7 +32,8 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         rv = super(AddonGitHubUserSettings, self).to_json(user)
         rv.update({
             'authorized': self.has_auth,
-            'github_user': self.github_user if self.github_user else '',
+            'authorized_github_user': self.github_user if self.github_user else '',
+            'show_submit': False,
         })
         return rv
 
@@ -60,13 +61,18 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             'github_user': self.user or '',
             'github_repo': self.repo or '',
             'user_has_authorization': github_user and github_user.has_auth,
+            'show_submit': True,
         })
         if self.user_settings and self.user_settings.has_auth:
             rv.update({
                 'authorized_user_name': self.user_settings.owner.fullname,
                 'authorized_user_id': self.user_settings.owner._id,
                 'authorized_github_user': self.user_settings.github_user,
-                'disabled': user != self.user_settings.owner,
+                'disabled': self.user_settings.owner != user,
+                'show_submit': (
+                    self.user_settings.owner is None or
+                    self.user_settings.owner == user
+                ),
             })
         return rv
 
