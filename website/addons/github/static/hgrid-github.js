@@ -87,6 +87,8 @@ HGrid.create({
     ajaxOnSuccess: function(lazyGrid) {
         grid = lazyGrid;
         grid.addColumn({id: "download", name: "Download", field: "download", width: 150, sortable: true, formatter: UploadBars});
+        // Expand the root directory
+        grid.expandItem(grid.data[0]);
         grid.hGridBeforeDelete.subscribe(function(e, args) {
             if (args['items'][0]['type'] !== 'fake') {
                 var msg = 'Are you sure you want to delete the file "' + args['items'][0]['name'] + '"?';
