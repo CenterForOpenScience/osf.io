@@ -25,7 +25,9 @@
                          </h1>
                     %endif
                 %endif
-                <h1 id="nodeTitleEditable" class="node-title">${node['title']}</h1>
+                <h1 class="node-title">
+                    <span id="nodeTitleEditable">${node['title']}</span>
+                </h1>
             </div><!-- end col-md-->
 
             <div class="col-md-4">
@@ -61,7 +63,7 @@
                             % if node["category"] == 'project' and user_name:
                                 href="#"
                                 class="btn btn-default node-fork-btn"
-                                onclick="NodeActions.forkNode();"
+                                onclick="NodeActions.beforeForkNode();"
                             % else:
                                 class="btn btn-default disabled node-fork-btn"
                             % endif
@@ -111,15 +113,28 @@
         <nav id="projectSubnav" class="navbar navbar-default ">
             <ul class="nav navbar-nav">
                 <li><a href="${node['url']}">Dashboard</a></li>
-                <li><a href="${node['url']}wiki/">Wiki</a></li>
+
+                <!-- Addon tabs -->
+                % for addon in addons_enabled:
+                    % if addons[addon]['has_page']:
+                        <li>
+                            <a href="${node['url']}${addons[addon]['short_name']}">
+                                % if addons[addon]['icon']:
+                                    <img src="${addons[addon]['icon']}" class="addon-logo"/>
+                                % endif
+                                ${addons[addon]['full_name']}
+                            </a>
+                        </li>
+                    % endif
+                % endfor
+
                 <li><a href="${node['url']}statistics/">Statistics</a></li>
-                <li><a href="${node['url']}files/">Files</a></li>
                 % if not node['is_registration']:
                     <li><a href="${node['url']}registrations/">Registrations</a></li>
                 % endif
-                <li><a href="${node['url']}forks/">Forks</a></li>
-                % if user['is_contributor'] and not node['is_registration']:
-                <li><a href="${node['url']}settings/">Settings</a></li>
+                    <li><a href="${node['url']}forks/">Forks</a></li>
+                % if user['can_edit']:
+                    <li><a href="${node['url']}settings/">Settings</a></li>
                 %endif
             </ul>
         </nav>
@@ -129,7 +144,9 @@
 ## TODO: Find a better place to put this initialization code
 <script>
 
+    var userId = '${user_id}';
     var nodeId = '${node['id']}';
+    var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
 
     $(document).ready(function(){

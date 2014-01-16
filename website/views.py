@@ -46,10 +46,11 @@ def _render_node(node):
     :param node:
     :return:
     """
-    return {'id': node._primary_key,
+    return {
+        'id': node._primary_key,
         'url': node.url,
         'api_url': node.api_url
-        }
+    }
 
 
 

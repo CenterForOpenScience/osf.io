@@ -22,7 +22,7 @@ from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
 from website.project.views.node import _view_project
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public
+    must_be_contributor, must_be_contributor_or_public, must_have_addon
 from website.project.model import NodeFile
 from website import settings
 
@@ -50,6 +50,7 @@ def get_file_tree(node_to_use, user):
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public
+@must_have_addon('files', 'node')
 def get_files(*args, **kwargs):
     """Build list of files for HGrid, ignoring contents of components to which
     the user does not have access. Note: This view hides the titles of
@@ -164,10 +165,10 @@ def _get_files(filetree, parent_id, check, user):
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
+@must_have_addon('files', 'node')
 def list_file_paths(*args, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
 
     return {'files': [
         NodeFile.load(fid).path
@@ -480,6 +481,6 @@ def delete_file(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
 
     if node_to_use.remove_file(user, api_key, filename):
-        return {'status' : 'success'}
+        return {'status': 'success'}
 
     raise HTTPError(http.BAD_REQUEST)

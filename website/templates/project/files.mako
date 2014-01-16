@@ -162,6 +162,7 @@ if (myGrid.dropZoneObj) {
     myGrid.dropZoneObj.options.parallelUploads = 1;
 }
 
+// TODO: Add to HGgrid
 myGrid.updateBreadcrumbsBox(myGrid.data[0]['uid']);
 
 myGrid.addColumn({id: "downloads", name: "Downloads", field: "downloads", width: 150, sortable: true, formatter: UploadBars});
@@ -267,6 +268,7 @@ $(window).on('beforeunload', function() {
         return 'Uploads(s) still in progress. Are you sure you want to leave this page?';
 });
 
+// Don't show dropped content if user drags outside grid
 window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };
 
