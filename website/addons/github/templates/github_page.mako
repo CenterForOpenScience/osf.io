@@ -58,7 +58,7 @@
 
 </div>
 
-% if show_grid and user['can_edit'] and has_auth:
+% if user['can_edit'] and has_auth:
 
     <div class="container" style="position: relative;">
         <h3 id="dropZoneHeader">Drag and drop (or <a href="#" id="gitFormUpload">click here</a>) to upload files</h3>
@@ -78,15 +78,8 @@
 
     <div id="gitCrumb"></div>
 
-    % if show_grid:
-        <div id="gitGrid"></div>
-    % else:
-        <br />
-        <div class="alert alert-danger">
-            GitHub repo has too many files to render. Sorry for the inconvenience;
-            this issue will be resolved soon.
-        </div>
-    % endif
+    <div id="gitGrid"></div>
+
 
 </div>
 
