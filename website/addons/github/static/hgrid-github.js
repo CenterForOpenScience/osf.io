@@ -76,6 +76,15 @@ HGrid.create({
     // NOTE: contextVars comes from the inline javascript on github_page.mako
     // Eventually, probably should inject it as a dependency when this is a module
     ajaxSource: contextVars.hgridUrl,
+    lazyLoad: true,
+    itemUrl: function(ajaxSource, item){
+        ret = ajaxSource + item.name;
+        console.log(ret);
+        return ret;
+    },
+    ajaxOnError: function(xhr, textstatus, error) {
+        console.log("Could not retrieve repo contents");
+    },
     ajaxOnSuccess: function(lazyGrid) {
         grid = lazyGrid;
         grid.addColumn({id: "download", name: "Download", field: "download", width: 150, sortable: true, formatter: UploadBars});
@@ -139,7 +148,6 @@ HGrid.create({
     enableCellNavigation: false,
     breadcrumbBox: "#gitCrumb",
     clickUploadElement: canEdit ? "#gitFormUpload" : null,
-    navLevel: gridData[0]['uid'],
     autoHeight: true,
     forceFitColumns: true,
     largeGuide: false,

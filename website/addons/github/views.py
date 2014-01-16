@@ -11,6 +11,7 @@ import datetime
 import pygments
 import httplib as http
 from collections import namedtuple
+import logging
 
 from hurry.filesize import size, alternative
 from dateutil.parser import parse as dateparse
@@ -29,8 +30,7 @@ from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 
-from . import settings as github_settings
-from .api import GitHub, raw_url, tree_to_hgrid
+from .api import GitHub, raw_url, tree_to_hgrid, path_to_uid
 from .auth import oauth_start_url, oauth_get_token
 
 MESSAGE_BASE = 'via the Open Science Framework'
@@ -42,6 +42,8 @@ MESSAGES = {
 
 # All GitHub hooks come from 192.30.252.0/22
 HOOKS_IP = '192.30.252.'
+
+logger = logging.getLogger(__name__)
 
 def _add_hook_log(node, github, action, path, date, committer, url=None, sha=None, save=False):
 
@@ -77,11 +79,10 @@ def _add_hook_log(node, github, action, path, date, committer, url=None, sha=Non
 @decorators.must_not_be_registration
 @decorators.must_have_addon('github', 'node')
 def github_hook_callback(*args, **kwargs):
-    """Add logs for commits from outside OSF.
-
+    """Add logs for commits from outside OSF
     """
     # Request must come from GitHub hooks IP
-    if not request.form['testing']:
+    if not request.data['testing']:
         if HOOKS_IP not in request.remote_addr:
             raise HTTPError(http.BAD_REQUEST)
 
@@ -307,20 +308,14 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
     tree = connect.tree(
         github.user, github.repo, sha=sha or branch,
     )
-    tree = tree or {'tree': []}
-
-    show_grid = len(tree['tree']) <= github_settings.MAX_TREE_SIZE
+    if tree is None:
+        raise HTTPError(http.BAD_REQUEST)
 
     # Check permissions if authorized
     has_auth = False
     if github.user_settings and github.user_settings.has_auth:
         repo = repo or connect.repo(github.user, github.repo)
-        has_auth = (
-            repo is not None and (
-                'permissions' not in repo or
-                repo['permissions']['push']
-            )
-        )
+        has_auth = repo is not None and repo['permissions']['push']
 
     # Build HGrid JSON
     hgrid = tree_to_hgrid(
@@ -345,12 +340,11 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
         'gh_user': github.user,
         'repo': github.repo,
         'has_auth': has_auth,
-        'show_grid': show_grid,
         'is_head': sha is None or sha == head,
         'api_url': node.api_url,
         'branches': branches,
         'branch': branch,
-        'sha': sha,
+        'sha': sha if sha else '',
         'ref': sha or branch,
         'grid_data': json.dumps(hgrid),
         'registration_data': json.dumps(registered_branches),
@@ -375,13 +369,39 @@ def github_hgrid_data(*args, **kwargs):
     branch, sha = _get_branch_and_sha(node_addon, req_branch, req_sha,
                                         connection=connect)
     # Get file tree
-    gh_tree = connect.tree(
-        node_addon.user, node_addon.repo, sha=sha or branch,
-        recursive=False
-    )
-    hgrid_tree = tree_to_hgrid(gh_tree['tree'], user=node_addon.user,
-        repo=node_addon.repo, node=node)
+    contents = connect.contents(
+        node_addon.user, node_addon.repo, ref=sha or branch, path='')
+    hgrid_tree = tree_to_hgrid(contents, user=node_addon.user,
+        repo=node_addon.repo, node=node, parent='null')
     return hgrid_tree
+
+
+@must_be_contributor_or_public
+@must_have_addon('github', 'node')
+def github_hgrid_data_contents(*args, **kwargs):
+    """Return a repo's file tree as a dict formatted for Hgrid.
+
+    """
+    node = kwargs['node'] or kwargs['project']
+    node_addon = kwargs['node_addon']
+    path = kwargs['path']
+
+    connect = GitHub.from_settings(node_addon.user_settings)
+    # The requested branch and sha
+    req_branch, req_sha = request.args.get('branch'), request.args.get('sha')
+    # The actual branch and sha to use, given the addon settings
+    branch, sha = _get_branch_and_sha(node_addon, req_branch, req_sha,
+                                        connection=connect)
+    # Get file tree
+    contents = connect.contents(
+        user=node_addon.user, repo=node_addon.repo, path=path,
+        ref=sha or branch,
+    )
+    parent = path_to_uid(path, kind='dir')
+    hgrid_tree = tree_to_hgrid(contents, user=node_addon.user,
+        repo=node_addon.repo, node=node, parent=parent)
+    return hgrid_tree
+
 
 
 @must_be_contributor_or_public

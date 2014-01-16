@@ -423,10 +423,21 @@ def raw_url(user, repo, ref, path):
 type_map = {
     'tree': 'folder',
     'blob': 'file',
+    'file': 'file',
+    'dir': 'folder'
 }
 
+def path_to_uid(path, kind):
+    """Convert a path name to a Hgrid uid.
 
-def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=False):
+    :param str name:
+    :param kind: Either 'dir' or 'file'
+
+    """
+    return kind + ':' + '||'.join(['__repo__', path])
+
+
+def tree_to_hgrid(tree, user, repo, node, parent='null', branch=None, sha=None, hotlink=False):
     """Convert GitHub tree data to HGrid format.
 
     :param list tree: JSON description of git tree
@@ -451,22 +462,9 @@ def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=False):
         if value
     })
 
-    parent = {
-        'uid': 'tree:__repo__',
-        'name': 'GitHub :: {0}'.format(repo),
-        'parent_uid': 'null',
-        'url': '',
-        'type': 'folder',
-        'uploadUrl': node.api_url + 'github/file/'
-    }
-    if ref:
-        parent['uploadUrl'] += '?' + ref
-
-    grid.append(parent)
-
     for item in tree:
 
-        # Types should be "blob" or "tree" but may also be "commit". Ignore
+        # Types should be "dir" or "file" but may also be "commit". Ignore
         # unexpected types.
         if item['type'] not in type_map:
             continue
@@ -478,7 +476,7 @@ def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=False):
         row = {
             'uid': item['type'] + ':' + '||'.join(['__repo__', item['path']]),
             'name': split[1],
-            'parent_uid': 'tree:' + '||'.join(['__repo__', split[0]]).strip('||'),
+            'parent_uid': parent,
             'type': type_map[item['type']],
         }
 
