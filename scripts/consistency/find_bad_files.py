@@ -32,7 +32,7 @@ def find_missing_files():
                 )
                 continue
             try:
-                node.get_file(fobj.path, version=version)
+                node.file(fobj.path, version=version)
             except:
                 print 'Inconsistency: Could not load file {} ({}) on node {} ({})'.format(
                     fobj.path,

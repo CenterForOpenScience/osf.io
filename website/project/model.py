@@ -17,19 +17,22 @@ from markdown.extensions import wikilinks
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 
+from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
-from framework.analytics import get_basic_counters, increment_user_activity_counters
+from framework.analytics import (
+    get_basic_counters, increment_user_activity_counters, piwik
+)
 from framework.git.exceptions import FileNotModified
 from framework.forms.utils import sanitize
 from framework import StoredObject, fields, utils
 from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
+from framework.addons import AddonModelMixin
 
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
-
 
 def utc_datetime_to_timestamp(dt):
     return float(
@@ -129,6 +132,7 @@ class NodeLog(StoredObject):
 
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
+    foreign_user = fields.StringField()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
@@ -191,7 +195,9 @@ class NodeLog(StoredObject):
         '''Return a dictionary representation of the log.'''
         return {
             'id': str(self._primary_key),
-            'user': self.user.serialize() if self.user else None,
+            'user': self.user.serialize()
+                    if isinstance(self.user, User)
+                    else {'fullname': self.foreign_user},
             'contributors': [self._render_log_contributor(c) for c in self.params.get("contributors", [])],
             'contributor': self._render_log_contributor(self.params.get("contributor", {})),
             'api_key': self.api_key.label if self.api_key else '',
@@ -261,7 +267,7 @@ class Tag(StoredObject):
         return '/search/?q=tags:{}'.format(self._id)
 
 
-class Node(GuidStoredObject):
+class Node(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
 
@@ -327,13 +333,21 @@ class Node(GuidStoredObject):
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
+    piwik_site_id = fields.StringField()
+
     ## Meta-data
     #comment_schema = OSF_META_SCHEMAS['osf_comment']
 
     _meta = {'optimistic': True}
 
     def __init__(self, *args, **kwargs):
+
         super(Node, self).__init__(*args, **kwargs)
+
+        # Crash if parent provided and not project
+        project = kwargs.get('project')
+        if project and project.category != 'project':
+            raise ValueError('Parent must be a project.')
 
         if kwargs.get('_is_loaded', False):
             return
@@ -355,13 +369,20 @@ class Node(GuidStoredObject):
     def save(self, *args, **kwargs):
 
         first_save = not self._is_loaded
-        needs_created_log = not self.is_registration and not self.is_fork
+        is_original = not self.is_registration and not self.is_fork
 
         saved_fields = super(Node, self).save(*args, **kwargs)
 
-        # Append to parent and create log on first save only
-        if first_save and needs_created_log:
+        if first_save and is_original:
+
+            #
+            for addon in settings.ADDONS_AVAILABLE:
+                if addon.added_to['node']:
+                    self.add_addon(addon.short_name)
+
+            #
             if getattr(self, 'project', None):
+
                 # Append log to parent
                 self.project.nodes.append(self)
                 self.project.save()
@@ -374,6 +395,7 @@ class Node(GuidStoredObject):
                 }
 
             else:
+
                 # Define log fields for non-component project
                 log_action = NodeLog.PROJECT_CREATED
                 log_params = {
@@ -389,9 +411,18 @@ class Node(GuidStoredObject):
                 save=True,
             )
 
-        # Only update Solr if at least one watched field has changed
-        if self.SOLR_UPDATE_FIELDS.intersection(saved_fields):
+        # Only update Solr if at least one stored field has changed, and if
+        # public or privacy setting has changed
+        update_solr = bool(self.SOLR_UPDATE_FIELDS.intersection(saved_fields))
+        if not self.is_public:
+            if first_save or 'is_public' not in saved_fields:
+                update_solr = False
+        if update_solr:
             self.update_solr()
+
+        # This method checks what has changed.
+        if settings.PIWIK_HOST:
+            piwik.update_node(self, saved_fields)
 
         # Return expected value for StoredObject::save
         return saved_fields
@@ -620,6 +651,12 @@ class Node(GuidStoredObject):
 
         forked.save()
 
+        # After fork callback
+        for addon in original.get_addons():
+            _, message = addon.after_fork(original, forked, user)
+            if message:
+                status.push_status_message(message)
+
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, forked._primary_key)
             Repo(folder_old).clone(folder_new)
@@ -665,6 +702,12 @@ class Node(GuidStoredObject):
 
         registered.save()
 
+        # After register callback
+        for addon in original.get_addons():
+            _, message = addon.after_register(original, registered, user)
+            if message:
+                status.push_status_message(message)
+
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, registered._primary_key)
             Repo(folder_old).clone(folder_new)
@@ -703,6 +746,14 @@ class Node(GuidStoredObject):
             node_contained.tags = original_node_contained.tags
 
             node_contained.save()
+
+            # After register callback
+            for addon in original_node_contained.get_addons():
+                _, message = addon.after_register(
+                    original_node_contained, node_contained, user
+                )
+                if message:
+                    status.push_status_message(message)
 
             registered.nodes.append(node_contained)
 
@@ -982,10 +1033,11 @@ class Node(GuidStoredObject):
 
         return node_file
 
-    def add_log(self, action, params, user, api_key=None, log_date=None, save=True):
+    def add_log(self, action, params, user, foreign_user=None, api_key=None, log_date=None, save=True):
         log = NodeLog()
-        log.action=action
-        log.user=user
+        log.action = action
+        log.user = user
+        log.foreign_user = foreign_user
         log.api_key = api_key
         if log_date:
             log.date=log_date
@@ -1131,25 +1183,46 @@ class Node(GuidStoredObject):
         )
         return True
 
+    def callback(self, callback, *args, **kwargs):
+
+        messages = []
+
+        for addon in self.get_addons():
+            method = getattr(addon, callback)
+            message = method(self, *args, **kwargs)
+            if message:
+                messages.append(message)
+
+        return messages
+
     def remove_contributor(self, contributor, user=None, api_key=None, log=True):
-        '''Remove a contributor from this project.
+        """Remove a contributor from this node.
 
         :param contributor: User object, the contributor to be removed
         :param user: User object, the user who is removing the contributor.
         :param api_key: ApiKey object
-        '''
+
+        """
         if not user._primary_key == contributor._id:
+
             self.contributors.remove(contributor._id)
             self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != contributor._id]
             self.save()
             removed_user = get_user(contributor._id)
+
+            # After remove callback
+            for addon in self.get_addons():
+                message = addon.after_remove_contributor(self, removed_user)
+                if message:
+                    status.push_status_message(message)
+
             if log:
                 self.add_log(
                     action=NodeLog.CONTRIB_REMOVED,
                     params={
-                        'project':self.parent_id,
-                        'node':self._primary_key,
-                        'contributor':removed_user._primary_key,
+                        'project': self.parent_id,
+                        'node': self._primary_key,
+                        'contributor': removed_user._primary_key,
                     },
                     user=user,
                     api_key=api_key,
@@ -1161,12 +1234,13 @@ class Node(GuidStoredObject):
     def add_contributor(self, contributor, user=None, log=True, api_key=None, save=False):
         """Add a contributor to the project.
 
-        :param contributor: A User object, the contributor to be added
-        :param user: A User object, the user who added the contributor or None.
-        :param log: Add log to self
-        :param api_key: API key used to add contributors
-        :param save: Save after adding contributor
-        :return: Boolean--whether contributor was added
+        :param User contributor: The contributor to be added
+        :param User user: The user who added the contributor or None.
+        :param NodeLog log: Add log to self
+        :param ApiKey api_key: API key used to add contributors
+        :param bool save: Save after adding contributor
+        :return bool: Whether contributor was added
+
         """
         MAX_RECENT_LENGTH = 15
 
@@ -1261,10 +1335,20 @@ class Node(GuidStoredObject):
         """
         if permissions == 'public' and not self.is_public:
             self.is_public = True
+            # If the node doesn't have a piwik site, make one.
+            if settings.PIWIK_HOST:
+                piwik.update_node(self)
         elif permissions == 'private' and self.is_public:
             self.is_public = False
         else:
             return False
+
+        # After set permissions callback
+        for addon in self.get_addons():
+            message = addon.after_set_permissions(self, permissions)
+            if message:
+                status.push_status_message(message)
+
         action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
         self.add_log(
             action=action,
