@@ -436,6 +436,11 @@ def path_to_uid(path, kind):
     """
     return kind + ':' + '||'.join(['__repo__', path])
 
+def path_is_root(path):
+    split = os.path.split(path) # returns tuple of path parts
+                                # path is root if first element is empty string
+    return bool(split[0])
+
 
 def tree_to_hgrid(tree, user, repo, node, parent='null', branch=None, sha=None, hotlink=False):
     """Convert GitHub tree data to HGrid format.
@@ -461,6 +466,20 @@ def tree_to_hgrid(tree, user, repo, node, parent='null', branch=None, sha=None, 
         }.iteritems()
         if value
     })
+
+    if parent is None:
+        parent_item = {
+            'uid': 'dir:__repo__',
+            'name': 'GitHub :: {0}'.format(repo),
+            'parent_uid': 'null',
+            'url': '',
+            'type': 'folder',
+            'uploadUrl': node.api_url + 'github/file/'
+        }
+        if ref:
+            parent_item['uploadUrl'] += '?' + ref
+        grid.append(parent_item)
+        parent = parent_item['uid']
 
     for item in tree:
 
