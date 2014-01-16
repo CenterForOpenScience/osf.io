@@ -1,6 +1,6 @@
 from api import S3Wrapper,S3Key
 from urllib import quote
-
+from boto.s3.cors import CORSConfiguration
 
 
 URLADDONS = {
@@ -8,6 +8,17 @@ URLADDONS = {
         'upload':'upload/',
         'download':'download/',
 }
+
+#This is for adjusting the cors of an s3 bucket, not used during development
+ALLOWED_ORIGIN = "osf.io"
+
+#TODO Finish me
+def adjust_cors(s3wrapper):
+	rules = s3wrapper.get_cors_rules()
+	#rules.add_rule('POST','*',expose_header=)
+
+	
+
 
 def getHgrid(url,s3wrapper):
     keyList = s3wrapper.get_wrapped_keys()

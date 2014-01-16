@@ -188,3 +188,31 @@ grid.hGridOnUpload.subscribe(function(e, args) {
     }
     return false;
 });
+
+
+function s3_upload(){
+            var s3upload = new S3Upload({
+        file_dom_selector: '#fileField',
+        s3_sign_put_url: 'http://127.0.0.1:5000/eha9r/s3/getsigned/',
+        onProgress: function(percent, message) {
+            $('#status').html('Upload progress: ' + percent + '% ' + message);
+        },
+        onFinishS3Put: function(public_url) {
+            $('#status').html('Upload completed. Uploaded to: '+ public_url);
+            $("#avatar_url").val(public_url);
+            $("#preview").html('<img src="'+public_url+'" style="width:300px;" />');
+        },
+        onError: function(status) {
+            $('#status').html('Upload error: ' + status);
+        }
+    });
+}
+
+$(document).ready(function() {
+    console.log("Ran")
+    $('#fileField').change(function()
+    {
+        alert('changed!');
+        s3_upload();
+    });
+});

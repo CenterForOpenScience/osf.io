@@ -172,8 +172,7 @@ class S3Wrapper:
             key = self.bucket.new_key(parentFolder + safeFilename)
         else:
             key = self.bucket.new_key(safeFilename)
-        key.set_contents_from_string(upFile.read())
-        return k
+        return key.set_contents_from_string(upFile.read())
 
     def get_version_data(self):
         versions = {}
@@ -189,6 +188,12 @@ class S3Wrapper:
         if fileName in v:
             return v[fileName]
         return []
+
+    def get_cors_rules(self):
+        pass
+
+    def set_cors_rules(self,rules):
+        pass
 
 class S3Key:
 

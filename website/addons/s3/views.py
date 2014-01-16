@@ -24,6 +24,7 @@ import time
 from datetime import date
 import os
 import utils
+import time, os, json, base64, urllib, hmac, sha
 
 @must_be_logged_in
 def s3_user_settings(*args, **kwargs):
@@ -176,8 +177,8 @@ def s3_download(*args, **kwargs):
     keyName = kwargs['key']
     if keyName is None:
         raise HTTPError(http.NOT_FOUND)
-    connect = S3Wrapper(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key),s3.s3_bucket)
-    return redirect(connect.downloadFileURL(keyName.replace('&spc',' ').replace('&sl','/')))
+    connect = S3Wrapper.from_addon(s3)
+    return redirect(connect.download_file_URL(keyName.replace('&spc',' ').replace('&sl','/')))
 
 @must_be_contributor
 @must_have_addon('s3','node')
@@ -221,7 +222,7 @@ def s3_delete(*args,**kwargs):
     s3 = node.get_addon('s3')
     dfile = request.json.get('keyPath')
     connect = S3Wrapper.from_addon(s3)
-    connect.deleteFile(dfile)
+    connect.delete_file(dfile)
     return {}
 
 @must_be_contributor
@@ -256,3 +257,30 @@ def s3_new_folder(*args, ** kwargs):
     connect.createFolder(folderPath)
     return {}
 
+@must_be_contributor
+@must_have_addon('s3','node')
+def generate_signed_url(*args, ** kwargs):
+    #Thanks/psuedo credit to http://codeartists.com/post/36892733572/how-to-directly-upload-files-to-amazon-s3-from-your
+    #not really sure how or where to put that....
+    node = kwargs['node'] or kwargs['project']
+    s3 = node.get_addon('s3')
+
+    file_name = urllib.quote_plus(request.json.get('name'))
+
+    expires = int(time.time()+ 10) #Ten seconds for the request to go through might need to be larger....
+
+    amz_headers = "x-amz-acl:public-read"
+
+    mime = request.json.get('type')
+
+    request_to_sign = str("PUT\n\n{mime_type}\n{expires}\n{amz_headers}\n/{resource}".format(mime_type=mime,expires=expires,amz_headers=amz_headers,resource=s3.s3_bucket+'/'+file_name))
+
+    url = 'https://' + s3.s3_bucket +'.s3.amazonaws.com/' + s3.s3_bucket + file_name
+    
+    signed = urllib.quote_plus(base64.encodestring(hmac.new(str(s3.s3_node_secret_key), request_to_sign, sha).digest()).strip())
+
+    return json.dumps({
+    'signed_request': '{url}?AWSAccessKeyId={access_key}&Expires={expires}&Signature={signed}'.format(url=url,access_key=s3.s3_node_access_key,expires=expires,signed=signed),
+    'url': "http://s3.amazonaws.com/#{bucket}/#{filename}".format(bucket=s3.s3_bucket,filename=file_name)
+    })
+    #/blackhttpmagick

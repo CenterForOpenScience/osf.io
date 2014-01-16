@@ -49,6 +49,10 @@ page_routes = {
             '/project/<pid>/s3/newfolder/<path>',
             '/project/<pid>/node/<nid>/s3/newfolder/<path>'
         ],'get',views.s3_new_folder, json_renderer),
+        Rule([
+            '/project/<pid>/s3/getsigned/',
+            '/project/<pid>/node/<nid>/s3/getsigned/'
+        ],'post',views.generate_signed_url, json_renderer),
     ],
 }
 

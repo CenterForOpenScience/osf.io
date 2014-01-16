@@ -31,6 +31,7 @@ INCLUDE_JS = {
         '/static/js/slickgrid.custom.min.js',
         '/static/js/hgrid.js',
         'hgrid-s3.js',
+        's3upload.js',
     ],
 }
 

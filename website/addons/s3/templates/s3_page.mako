@@ -1,7 +1,7 @@
 <%inherit file="project/addon/page.mako" />
 <html>
     Viewing Bucket: <b>${bucket}</b>
-
+    <input type="file" id="fileField">
     <script type="text/javascript">
         var gridData = ${grid},
         can_io = ${int(user['can_edit'])},
