@@ -263,10 +263,11 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
     show_grid = len(tree['tree']) <= github_settings.MAX_TREE_SIZE
 
     # Check permissions if authorized
-    has_auth = False
-    if github.user_settings and github.user_settings.has_auth:
+    has_access = False
+    has_auth = bool(github.user_settings and github.user_settings.has_auth)
+    if has_auth:
         repo = repo or connect.repo(github.user, github.repo)
-        has_auth = (
+        has_access = (
             repo is not None and (
                 'permissions' not in repo or
                 repo['permissions']['push']
@@ -284,6 +285,7 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
         'gh_user': github.user,
         'repo': github.repo,
         'has_auth': has_auth,
+        'has_access': has_access,
         'show_grid': show_grid,
         'is_head': sha is None or sha == head,
         'api_url': node.api_url,

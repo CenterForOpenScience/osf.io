@@ -1,14 +1,25 @@
 <%inherit file="project/addon/page.mako" />
 
-% if user['can_edit'] and not has_auth:
+% if user['can_edit']:
 
-    <div class="alert alert-danger">
-        This GitHub add-on has not been authenticated. To enable file uploads and deletion,
-        browse to the <a href="${node['url']}settings/">settings</a> page and authenticate this add-on.
-    </div>
+    % if not has_auth:
+
+        <div class="alert alert-warning">
+            This GitHub add-on has not been authorized. To enable file uploads and deletion,
+            browse to the <a href="${node['url']}settings/">settings</a> page and authorize this add-on.
+        </div>
+
+    % elif not has_access:
+
+        <div class="alert alert-warning">
+            Your GitHub authorization does not have access to this repo. To enable file uploads
+            and deletion, authorize using a GitHub account that has access to this repo, or
+            ask one of its owners to grant access to your GitHub account.
+        </div>
+
+    % endif
 
 % endif
-
 
 <div class="row">
 
@@ -58,7 +69,7 @@
 
 </div>
 
-% if show_grid and user['can_edit'] and has_auth:
+% if show_grid and user['can_edit'] and has_access:
 
     <div class="container" style="position: relative;">
         <h3 id="dropZoneHeader">Drag and drop (or <a href="#" id="gitFormUpload">click here</a>) to upload files</h3>
@@ -98,6 +109,7 @@
         sha = '${sha}',
         canEdit = ${int(user['can_edit'])},
         hasAuth = ${int(has_auth)},
+        hasAccess = ${int(has_access)},
         isHead = ${int(is_head)};
 
     // Submit branch form on change
