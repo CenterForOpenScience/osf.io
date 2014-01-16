@@ -286,7 +286,7 @@ def make_url_map(app):
 
         ### File Render ###
         # todo fix this so that it doesn't need api/v1, not sure why this works... (AJS)
-        Rule('/api/v1/project/<pid>/files/download/<fid>/version/<vid>/render', 'get', project_views.node.check_celery, json_renderer),
+        Rule('/api/v1/project/<pid>/files/download/<fid>/version/<vid>/render', 'get', project_views.node.check_file_exists, json_renderer),
 
         ### Files ###
 

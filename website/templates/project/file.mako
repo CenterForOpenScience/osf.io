@@ -13,8 +13,10 @@
       	<div id='file-rendered'>
       		${rendered}
       	</div>
+        % if not is_rendered:
            <script> FileRenderer.start("${download_path}render");</script>
-        </div>
+        % endif
+    </div>
     <div class="col-md-4">
       	<ol class="breadcrumb">
             <li><a href="${node['url']}files/">${node['title']}</a></li>

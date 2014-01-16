@@ -380,20 +380,24 @@ def view_file(*args, **kwargs):
     if not os.path.exists(cached_file_path):
         if not os.path.exists(cached_dir):
             os.makedirs(cached_dir)
-        with open(cached_file_path, 'w') as fp:
-            fp.write('<img src="/static/img/loading.gif">')
+        rendered = '<img src="/static/img/loading.gif">'
+        is_rendered = False
 
         #todo This really needs a timeout... timeout keywords seems to do nothing
         build_rendered_html.apply_async(
             [file_path, cached_file_path, download_path], task_id=celery_id
         )
+    # is_rendered = build_rendered_html.AsyncResult(celery_id).state == "SUCCESS"
+    else:
+        rendered = open(cached_file_path, 'r').read()
+        is_rendered = True
 
-    rendered = open(cached_file_path, 'r').read()
     rv = {
         'file_name': file_name,
         'download_path': download_path,
         'rendered': rendered,
         'renderer': renderer,
+        'is_rendered': is_rendered,
         'versions': versions,
     }
     rv.update(_view_project(node_to_use, user))

@@ -31,7 +31,7 @@ FileRenderer.STATIC_PATH = '/static/mfr'
 #     return True
 
 
-@celery.task
+@celery.task(time_limit=30000)
 def build_rendered_html(file_path, cached_file_path, download_path):
     FileRenderer.STATIC_PATH = '/static/mfr'
     file_pointer = open(file_path)

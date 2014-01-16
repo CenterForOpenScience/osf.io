@@ -190,12 +190,14 @@ window.FileRenderer = {
     start: function(url){
         var refreshContent = window.setInterval(function(){
             $.get( url, function(data) {
-                if(data){$('#file-rendered').html(data);
-                clearInterval(refreshContent);
-            }
-        })
-    }, 1000);
-    }}
+                if(data){
+                    $('#file-rendered').html(data);
+                    clearInterval(refreshContent);
+                }
+            })
+        }, 1000);
+    }
+};
 
 
 /*
