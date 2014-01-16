@@ -151,7 +151,7 @@ HGrid.create({
     autoHeight: true,
     forceFitColumns: true,
     largeGuide: false,
-    dropZone: true,
+    dropZone: canEdit && hasAccess && isHead,
     rowHeight: 30,
     topCrumb: false,
     dragToRoot: false,

@@ -8,7 +8,7 @@
         ${self.body()}
 
         <!-- Submit button -->
-        % if node and not node['is_registration'] and not disabled:
+        % if node and not node['is_registration'] and show_submit:
             <button id="addon-settings-submit" class="btn btn-success">
                 Submit
             </button>

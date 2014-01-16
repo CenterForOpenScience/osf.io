@@ -488,12 +488,15 @@ def tree_to_hgrid(tree, user, repo, node, parent='null', branch=None, sha=None, 
         if item['type'] not in type_map:
             continue
 
-        split = os.path.split(item['path'])
-        _, ext = os.path.splitext(item['path'])
+        path = item['path']
+        qpath = urllib.quote(path)
+
+        split = os.path.split(path)
+        _, ext = os.path.splitext(path)
         ext = ext.lstrip('.')
 
         row = {
-            'uid': item['type'] + ':' + '||'.join(['__repo__', item['path']]),
+            'uid': item['type'] + ':' + '||'.join(['__repo__', qpath]),
             'name': split[1],
             'parent_uid': parent,
             'type': type_map[item['type']],
@@ -507,18 +510,18 @@ def tree_to_hgrid(tree, user, repo, node, parent='null', branch=None, sha=None, 
                 size(item['size'], system=alternative)
             ]
             row['ext'] = ext
-            base_api_url = node.api_url + 'github/file/{0}/'.format(item['path'])
+            base_api_url = node.api_url + 'github/file/{0}/'.format(qpath)
             row['delete'] = base_api_url + '?' + ref
-            row['view'] = os.path.join(node.url, 'github', 'file', item['path']) + '/'
+            row['view'] = os.path.join(node.url, 'github', 'file', qpath) + '/'
             if ref is not None:
                 base_api_url += '?' + ref
                 row['view'] += '?' + ref
             if hotlink and ref:
-                row['download'] = raw_url(user, repo, sha or branch, item['path'])
+                row['download'] = raw_url(user, repo, sha or branch, qpath)
             else:
                 row['download'] = base_api_url
         else:
-            row['uploadUrl'] = node.api_url + 'github/file/{0}/'.format(item['path'])
+            row['uploadUrl'] = node.api_url + 'github/file/{0}/'.format(qpath)
             if ref is not None:
                  row['uploadUrl'] += '?' + ref
 

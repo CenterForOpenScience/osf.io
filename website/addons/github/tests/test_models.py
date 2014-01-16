@@ -8,12 +8,13 @@ from tests.factories import UserFactory, ProjectFactory
 from website.addons.base import AddonError
 from website.addons.github import settings as github_settings
 
+
 class TestCallbacks(DbTestCase):
 
     def setUp(self):
 
         super(TestCallbacks, self).setUp()
-
+        
         self.project = ProjectFactory.build()
         self.non_authenticator = UserFactory()
         self.project.add_contributor(
