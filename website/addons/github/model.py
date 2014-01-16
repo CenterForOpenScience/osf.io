@@ -103,9 +103,9 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         node_permissions = 'public' if node.is_public else 'private'
         repo_permissions = 'private' if repo['private'] else 'public'
         if repo_permissions != node_permissions:
-            return (
-                'This {category} is {node_perm}, but GitHub add-on '
-                '{user} / {repo} is {repo_perm}.'.format(
+            message = (
+                'Warnings: This OSF {category} is {node_perm}, but the GitHub '
+                'repo {user} / {repo} is {repo_perm}.'.format(
                     category=node.project_or_component,
                     node_perm=node_permissions,
                     repo_perm=repo_permissions,
@@ -113,6 +113,12 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                     repo=self.repo,
                 )
             )
+            if repo_permissions == 'private':
+                message += (
+                    ' Users can view the contents of this private GitHub '
+                    'repository through this public project.'
+                )
+            return message
 
     # TODO: Rename to before_remove_contributor_message
     def before_remove_contributor(self, node, removed):

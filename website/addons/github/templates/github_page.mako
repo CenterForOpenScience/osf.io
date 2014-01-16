@@ -1,12 +1,22 @@
 <%inherit file="project/addon/page.mako" />
 
+% if user['can_edit'] and not has_auth:
+
+    <div class="alert alert-danger">
+        This GitHub add-on has not been authenticated. To enable file uploads and deletion,
+        browse to the <a href="${node['url']}settings/">settings</a> page and authenticate this add-on.
+    </div>
+
+% endif
+
+
 <div class="row">
 
     <div class="col-md-6">
 
         <div>
 
-            Viewing ${gh_user} / ${repo} :
+            Viewing ${gh_user} / ${repo}
 
             % if len(branches) == 1:
 
@@ -48,32 +58,36 @@
 
 </div>
 
-% if user['can_edit']:
+% if show_grid and user['can_edit'] and has_auth:
 
-    % if has_auth:
-
-        <div class="container" style="position: relative;">
-            <h3 id="dropZoneHeader">Drag and drop (or <a href="#" id="gitFormUpload">click here</a>) to upload files</h3>
-            <div id="fallback"></div>
-            <div id="totalProgressActive" style="width: 35%; height: 20px; position: absolute; top: 73px; right: 0;" class>
-                <div id="totalProgress" class="progress-bar progress-bar-success" style="width: 0%;"></div>
-            </div>
+    <div class="container" style="position: relative;">
+        <h3 id="dropZoneHeader">Drag and drop (or <a href="#" id="gitFormUpload">click here</a>) to upload files</h3>
+        <div id="fallback"></div>
+        <div id="totalProgressActive" style="width: 35%; height: 20px; position: absolute; top: 73px; right: 0;" class>
+            <div id="totalProgress" class="progress-bar progress-bar-success" style="width: 0%;"></div>
         </div>
+    </div>
 
-    % else:
+% else:
 
-        <p>
-            This GitHub add-on has not been authenticated. To enable file uploads and deletion,
-            browse to the <a href="${node['url']}settings/">settings</a> page and authenticate this add-on.
-        <p>
-
-    % endif
+    <br />
 
 % endif
 
 <div id="grid">
+
     <div id="gitCrumb"></div>
-    <div id="gitGrid"></div>
+
+    % if show_grid:
+        <div id="gitGrid"></div>
+    % else:
+        <br />
+        <div class="alert alert-danger">
+            GitHub repo has too many files to render. Sorry for the inconvenience;
+            this issue will be resolved soon.
+        </div>
+    % endif
+
 </div>
 
 <script type="text/javascript">

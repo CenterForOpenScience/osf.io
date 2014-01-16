@@ -190,13 +190,15 @@ class GitHub(object):
             http://developer.github.com/v3/git/trees/
 
         """
+        # NOTE: GitHub will return the tree recursively as long as the
+        # recursive param is included, no matter what its value is
+        # Therefore, pass NO params for a NON-recursive tree
+        params = {'recursive': 1} if recursive else {}
         req = self._send(os.path.join(
                 API_URL, 'repos', user, repo, 'git', 'trees',
                 urllib.quote_plus(sha),
             ),
-            params={
-                'recursive': int(recursive)
-            },
+            params=params,
         )
 
         if req is not None:

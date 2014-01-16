@@ -28,6 +28,7 @@ from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 
+from . import settings as github_settings
 from .api import GitHub, raw_url, tree_to_hgrid
 from .auth import oauth_start_url, oauth_get_token
 
@@ -257,14 +258,20 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
     tree = connect.tree(
         github.user, github.repo, sha=sha or branch,
     )
-    if tree is None:
-        raise HTTPError(http.BAD_REQUEST)
+    tree = tree or {'tree': []}
+
+    show_grid = len(tree['tree']) <= github_settings.MAX_TREE_SIZE
 
     # Check permissions if authorized
     has_auth = False
     if github.user_settings and github.user_settings.has_auth:
         repo = repo or connect.repo(github.user, github.repo)
-        has_auth = repo is not None and repo['permissions']['push']
+        has_auth = (
+            repo is not None and (
+                'permissions' not in repo or
+                repo['permissions']['push']
+            )
+        )
 
     # Build HGrid JSON
     hgrid = tree_to_hgrid(
@@ -277,11 +284,12 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
         'gh_user': github.user,
         'repo': github.repo,
         'has_auth': has_auth,
+        'show_grid': show_grid,
         'is_head': sha is None or sha == head,
         'api_url': node.api_url,
         'branches': branches,
         'branch': branch,
-        'sha': sha if sha else '',
+        'sha': sha,
         'ref': sha or branch,
         'grid_data': json.dumps(hgrid),
         'registration_data': json.dumps(registered_branches),
