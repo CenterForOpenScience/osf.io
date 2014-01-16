@@ -63,14 +63,14 @@ HGrid.create({
         {id: "size", name: "Size", field: "size", formatter: PairFormatter, sortable: true}
     ],
     url: contextVars.uploadUrl,
-    urlAdd: function() {
+    urlAdd: function(grid) {
         var ans = {};
-        for (var i = 0; i < gridData.length; i++) {
-            if (gridData[i].type === 'folder') {
-                ans[gridData[i]['uid']] = gridData[i]['uploadUrl'];
+        for (var i = 0; i < grid.data.length; i++) {
+            if (grid.data[i].type === 'folder') {
+                ans[grid.data[i]['uid']] = grid.data[i]['uploadUrl'];
             }
         }
-        ans[null] = gridData[0]['uploadUrl'];
+        ans[null] = contextVars.uploadUrl;
         return ans;
     },
     // NOTE: contextVars comes from the inline javascript on github_page.mako
@@ -79,7 +79,6 @@ HGrid.create({
     lazyLoad: true,
     itemUrl: function(ajaxSource, item){
         ret = ajaxSource + item.name;
-        console.log(ret);
         return ret;
     },
     ajaxOnError: function(xhr, textstatus, error) {
@@ -145,7 +144,6 @@ HGrid.create({
             return false;
         });
     },
-    enableCellNavigation: false,
     breadcrumbBox: "#gitCrumb",
     clickUploadElement: canEdit ? "#gitFormUpload" : null,
     autoHeight: true,
