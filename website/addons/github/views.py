@@ -76,10 +76,11 @@ def _add_hook_log(node, github, action, path, date, committer, url=None, sha=Non
 @decorators.must_not_be_registration
 @decorators.must_have_addon('github', 'node')
 def github_hook_callback(*args, **kwargs):
-    """Add logs for commits from outside OSF
+    """Add logs for commits from outside OSF.
+
     """
     # Request must come from GitHub hooks IP
-    if not request.data['testing']:
+    if not request.form['testing']:
         if HOOKS_IP not in request.remote_addr:
             raise HTTPError(http.BAD_REQUEST)
 
