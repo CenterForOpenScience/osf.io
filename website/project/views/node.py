@@ -406,8 +406,12 @@ def _render_addon(node):
     for addon in node.get_addons():
 
         configs[addon.config.short_name] = addon.config.to_json()
+        js.extend(addon.config.include_js.get('widget', []))
+        css.extend(addon.config.include_css.get('widget', []))
 
-<<<<<<< HEAD
+    return widgets, configs, js, css
+
+
 @must_be_valid_project
 @must_be_contributor_or_public
 def project_log(*args, **kwargs):
@@ -421,13 +425,6 @@ def _view_logs(node_to_use, user, api_key=None, offset=0):
     recent_logs = list(reversed(node_to_use.logs))[offset:][:10]
     recent_logs_dicts = [log.serialize() for log in recent_logs]
     return {"logs": recent_logs_dicts}
-
-=======
-        js.extend(addon.config.include_js.get('widget', []))
-        css.extend(addon.config.include_css.get('widget', []))
->>>>>>> 947695d67935713d4e83c81e44473510ac8e7f78
-
-    return widgets, configs, js, css
 
 
 def _view_project(node_to_use, user, api_key=None, primary=False):
