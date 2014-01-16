@@ -10,7 +10,17 @@
           <div class="carousel-inner" style="height: 430px"  >
             <div class="item active row"  data-pause="hover" style="padding: 60px 40px 60px 40px;">
                 <div class="col-md-12 col-sm-offset-2" style = "font-size: 50px" class = "lead">
-                    <p><a href="http://cos.io/spsp/">Get pointers from the pros.</a></p>
+                    <p><strong>OSF's first add-on:</strong><br> <a href="/getting-started#github">Connect with your GitHub repos</p></a>
+                    <div class="row" style="padding-top: 20px">
+                        <div class="col-md-2" style="padding-top: 10px; padding-left: 35px"><img src="/static/img/Octocat.png" width="200px"></div>
+                        <div class="col-md-6 col-md-offset-1" ><p style="font-size: 30px"  class="lead">Add a GitHub repo
+                                to your project by visiting project settings.</p></div>
+                    </div>
+                </div>
+            </div>
+            <div class="item row"  data-pause="hover" style="padding: 60px 40px 60px 40px;">
+                <div class="col-md-12 col-sm-offset-2" style = "font-size: 50px" class = "lead">
+                    <p>Get pointers from the pros.</p>
                     <div class="row" style="padding-top: 20px">
                         <div class="col-md-2" style="padding-top: 10px"> <img src="/static/img/SPSP_logo_WEB.jpg" > </div>
                         <div class="col-md-6 col-md-offset-0" >
@@ -25,14 +35,16 @@
 
             <div class="item row" data-pause="hover" style="padding: 60px 40px 60px 40px" >
                 <div class="col-md-12 col-md-offset-1" class = "lead">
-                     <p style = "font-size: 40px; padding-left: 42px" ><strong><a  href="https://osf.io/awr6j/">OSF Project of the Week</a></strong></p>
-                    <img src="/static/img/potw_Jan1.png" width="800px" style="padding-left: 25px">
-                     <div class="col-md-9" style="font-size: 16px; padding-left: 40px; padding-top: 20px"  class="lead">
-                         <p>Take a look at Robert Calin-Jageman and Tracy Caldwell's submission to the <a href="https://osf.io/hxeza/wiki/home/">special issue of Social Psychology</a>. The pair took full advantage of OSF features, building a project that is comprehensive in its content. There are data and materials available as well as adept use of the wiki and registration features. <a  href="https://osf.io/awr6j/">Visit their project page</a> to see more.</p>
+                     <p style = "font-size: 40px; padding-left: 42px" ><strong><a  href="http://centerforopenscience.org/givinglibrary/">Support open science with a mouse click.</a></strong></p>
+                     <div class="row" style="padding-top: 20px">
+
+                        <div class="col-md-6 col-md-offset-2" ><p style="font-size: 25px; text-align: center"  class="lead">When you share the Center for Open Science page via <a href="http://centerforopenscience.org/givinglibrary/">Giving Library</a>,<br>
+                            a donation is made to support open science and open source developers.<Br><Br>
+                            <img src="http://givinglibrary.org/bundles/glcommon/images/logo-full.png"></p>
+                        </div>
                      </div>
                 </div>
             </div>
-
             <div class="item row" data-pause="hover" style="padding: 60px 40px 60px 40px" >
                 <div class="col-md-9 col-md-offset-3">
                     <p style = "font-size: 50px" class = "lead">Not sure where to begin?</p>
@@ -47,6 +59,15 @@
                     <td style="padding-left: 20px"><a class="btn btn-primary navbar-btn" href="/explore/activity" style="font-size: 20px">Browse Projects</a></td>
                     </tr>
                     </table>
+                </div>
+            </div>
+            <div class="item row" data-pause="hover" style="padding: 60px 40px 60px 40px" >
+                <div class="col-md-12 col-md-offset-1" class = "lead">
+                     <p style = "font-size: 40px; padding-left: 42px" ><strong><a  href="https://osf.io/awr6j/">Featured OSF Project</a></strong></p>
+                    <img src="/static/img/potw_Jan1.png" width="800px" style="padding-left: 25px">
+                     <div class="col-md-9" style="font-size: 16px; padding-left: 40px; padding-top: 20px"  class="lead">
+                         <p>Take a look at Robert Calin-Jageman and Tracy Caldwell's submission to the <a href="https://osf.io/hxeza/wiki/home/">special issue of Social Psychology</a>. The pair took full advantage of OSF features, building a project that is comprehensive in its content. There are data and materials available as well as adept use of the wiki and registration features. <a  href="https://osf.io/awr6j/">Visit their project page</a> to see more.</p>
+                     </div>
                 </div>
             </div>
 
