@@ -419,10 +419,11 @@ def github_view_file(*args, **kwargs):
     start_sha = (sha or branch) if node.is_registration else branch
     commits = connect.history(github.user, github.repo, path, sha=start_sha)
     for commit in commits:
-        if repo['private']:
-            commit['download'] = os.path.join(node.api_url, 'github', 'file', path) + '?ref=' + commit['sha']
-        else:
-            commit['download'] = raw_url(github.user, github.repo, commit['sha'], path)
+        # TODO: Parameterize or remove hotlinking
+        #if repo['private']:
+        commit['download'] = os.path.join(node.api_url, 'github', 'file', path) + '?ref=' + commit['sha']
+        #else:
+        #    commit['download'] = raw_url(github.user, github.repo, commit['sha'], path)
         commit['view'] = os.path.join(node.url, 'github', 'file', path) + '?sha=' + commit['sha'] + '&branch=' + branch
 
     # Get current commit
