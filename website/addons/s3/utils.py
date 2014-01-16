@@ -41,15 +41,18 @@ def checkFolders(s3wrapper, keyList):
             keyList.append(S3Key(newKey))
 
 def wrapped_key_to_json(wrapped_key,url,parent_uid=0):
+
+
+
     return {
     'uid': wrapped_key.fullPath,
     'type':wrapped_key.type,
     'name':wrapped_key.name,
     'parent_uid':parent_uid,
-    'version_id':wrapped_key.version,
-    'size':wrapped_key.size,
-    'lastMod':wrapped_key.lastMod,
-    'ext':wrapped_key.extension,
+    'version_id':wrapped_key.version if wrapped_key.version is not None else '--',
+    'size':wrapped_key.size if wrapped_key.size is not None else '--',
+    'lastMod':wrapped_key.lastMod.strftime("%Y-%m-%d %H:%M:%S") if wrapped_key.lastMod is not None else '--',
+    'ext':wrapped_key.extension if wrapped_key.extension is not None else '--',
     'uploadUrl': key_upload_path(wrapped_key,url),
     'downloadUrl':url + URLADDONS['download'],
     'deleteUrl':url + URLADDONS['delete'],

@@ -251,7 +251,7 @@ class S3Key:
         else:
             m= re.search('(.+?)-(.+?)-(\d*)T(\d*):(\d*):(\d*)',str(self.s3Key.last_modified))
             if m is not None:
-                return datetime(int(m.group(4)),int(m.group(2)),int(m.group(3)),int(m.group(4)),int(m.group(5)))
+                return datetime(int(m.group(1)),int(m.group(2)),int(m.group(3)),int(m.group(4)),int(m.group(5)))
             else:
                 return None
 
