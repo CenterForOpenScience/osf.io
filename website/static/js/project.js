@@ -154,19 +154,50 @@ NodeActions._openCloseNode = function(node_id) {
 /*
 refresh rendered file through mfr
 */
+//
+//window.ren = function(url) {
+//    var refreshContent = window.setInterval(function(){
+//        $.get( url, function( data ) {
+//            if(data){$('#file-rendered').html(data);
+//            clearInterval(refreshContent);
+//            }
+//        })
+//    }, 1000);
+//}
 
-window.ren = function(url) {
-    var refreshInterval = window.setInterval(function(){
-        $.get( url, function( data ) {
-            if(data){$('#file-rendered').html(data);
-            clearInterval(refreshInterval);
+
+//
+//var window.ren = {
+//    start: function(url)
+//    {
+//        var refreshContent = window.setInterval(function(){
+//        if(
+//            $.get(url, function(data){return data;}
+//            ))
+//        {
+//            $('#file-rendered').html(data);
+//            clearInterval(refreshContent);
+//        }
+//    }, 1000);}}
+
+//window.FileRenderer = {
+//    start: function(){
+//
+//    }
+//}
+
+window.FileRenderer = {
+    start: function(url){
+        var refreshContent = window.setInterval(function(){
+            $.get( url, function(data) {
+                if(data){$('#file-rendered').html(data);
+                clearInterval(refreshContent);
             }
         })
     }, 1000);
-}
+    }}
 
 
-"/project/j9gd7/files/download/div_data.pdf/version/1/render"
 /*
 Display recent logs for for a node on the project view page.
 */

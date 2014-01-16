@@ -537,19 +537,16 @@ def get_registrations(*args, **kwargs):
 
 
 def check_celery(*args, **kwargs):
-    "/Users/Alex/PycharmProjects/osf/website/cached/j9gd7/file_py_v1.html"
-
+    #todo this needs to match style of views/file celery id once it is made abstract
     celery_id = '/api/v1/project/{pid}/files/download/{fid}/version/{vid}/render'.format(
         pid=kwargs['pid'], fid=kwargs['fid'],  vid=kwargs['vid']
     )
     if build_rendered_html.AsyncResult(celery_id).state == "SUCCESS":
-
         cached_file_path = os.path.join(
-        settings.BASE_PATH,
-        "cached",
-        kwargs['pid'],
-        kwargs['fid'].replace('.', '_') + "_v" + kwargs['vid'] + ".html")
-        print cached_file_path
+            settings.BASE_PATH, "cached", kwargs['pid'],
+            kwargs['fid'].replace('.', '_') + "_v" + kwargs['vid'] + ".html"
+        )
+
         return open(cached_file_path, 'r').read()
     return None
 

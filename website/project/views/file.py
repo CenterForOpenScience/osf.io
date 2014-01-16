@@ -363,33 +363,32 @@ def view_file(*args, **kwargs):
 
     _, file_ext = os.path.splitext(file_path.lower())
 
-    # Check for cached rendered file
+    # Build cached paths and name
     vid = str(len(node_to_use.files_versions[file_name.replace('.', '_')]))
 
-    cached_name = file_name_clean +\
-        "_v" + vid
+    cached_name = file_name_clean + "_v" + vid
     cached_file_path = os.path.join(
-        settings.BASE_PATH,
-        "cached",
-        node_to_use._primary_key,
-        cached_name + ".html"
+        settings.BASE_PATH, "cached",
+        node_to_use._primary_key, cached_name + ".html"
     )
+
+    #todo Make this abstract to accommodate addon file rendering as well
     celery_id = download_path + "render"
     cached_dir = cached_file_path.strip(cached_file_path.split('/')[-1])
-    print cached_file_path
+
+    # Makes path if none exists
     if not os.path.exists(cached_file_path):
         if not os.path.exists(cached_dir):
             os.makedirs(cached_dir)
         with open(cached_file_path, 'w') as fp:
             fp.write('<img src="/static/img/loading.gif">')
 
+        #todo This really needs a timeout... timeout keywords seems to do nothing
         build_rendered_html.apply_async(
-            [file_path, cached_file_path, download_path],
-            task_id=celery_id
+            [file_path, cached_file_path, download_path], task_id=celery_id
         )
 
     rendered = open(cached_file_path, 'r').read()
-    print download_path
     rv = {
         'file_name': file_name,
         'download_path': download_path,

@@ -13,8 +13,8 @@
       	<div id='file-rendered'>
       		${rendered}
       	</div>
-        <script> window.ren("${download_path}render")</script>
-    </div>
+           <script> FileRenderer.start("${download_path}render");</script>
+        </div>
     <div class="col-md-4">
       	<ol class="breadcrumb">
             <li><a href="${node['url']}files/">${node['title']}</a></li>
