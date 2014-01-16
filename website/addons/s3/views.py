@@ -17,7 +17,7 @@ from framework.flask import secure_filename
 from framework.auth import get_current_user, must_be_logged_in
 
 from api import S3Wrapper
-from api import createLimitedUser, removeUser, hasAccess, doesBucketExist
+from api import create_limited_user, remove_user, has_access, does_bucket_exist
 from boto.exception import S3ResponseError
 
 import time
@@ -45,7 +45,7 @@ def s3_user_settings(*args, **kwargs):
 
 
     if changed:
-        if not hasAccess(s3_access_key,s3_secret_key):
+        if not has_access(s3_access_key,s3_secret_key):
             error_message = ('Looks like your creditials are incorrect'
                              'Could you have mistyped them?')
             return {'message':error_message},400
@@ -72,7 +72,7 @@ def s3_settings(*args, **kwargs):
 
     s3_bucket = request.json.get('s3_bucket', '')
 
-    if not s3_bucket or not doesBucketExist(s3_user.access_key,s3_user.secret_key,s3_bucket):
+    if not s3_bucket or not does_bucket_exist(s3_user.access_key,s3_user.secret_key,s3_bucket):
         error_message = ('Looks like this bucket does not exist.'
                          'Could you have mistyped it?')
         return {'message':error_message},400
@@ -97,7 +97,7 @@ def s3_create_access_key(*args, **kwargs):
     s3_node = kwargs['node_addon']
     s3_user = user.get_addon('s3')
 
-    u = createLimitedUser(s3_user.access_key,s3_user.secret_key,s3_node.s3_bucket)
+    u = create_limited_user(s3_user.access_key,s3_user.secret_key,s3_node.s3_bucket)
 
     if u:
         s3_node.s3_node_access_key = u['access_key_id']
@@ -116,7 +116,7 @@ def s3_delete_access_key(*args, **kwargs):
 
     #delete user from amazons data base
     #boto giveth and boto taketh away
-    removeUser(s3_user.access_key,s3_user.secret_key,s3_node.s3_bucket,s3_node.s3_node_access_key)
+    remove_user(s3_user.access_key,s3_user.secret_key,s3_node.s3_bucket,s3_node.s3_node_access_key)
 
 
     #delete our access and secret key
@@ -130,7 +130,7 @@ def _page_content(pid, s3):
     #nTODO use bucket name 
     # create new bucket if not found  inform use/ output error
    # try:
-    connect = S3Wrapper.fromAddon(s3)
+    connect = S3Wrapper.from_addon(s3)
     data = utils.getHgrid('/project/' + pid + '/s3/',connect) 
     #except S3ResponseError:
        # push_status_message("It appears you do not have access to this bucket. Are you settings correct?")
@@ -169,7 +169,6 @@ def s3_page(*args, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('s3','node')
-
 def s3_download(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
@@ -195,8 +194,8 @@ def s3_upload(*args,**kwargs):
 
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
-    connect = S3Wrapper.fromAddon(s3)
-    connect.flaskUpload(upload,filename,parentFolder)
+    connect = S3Wrapper.from_addon(s3)
+    connect.flask_upload(upload,filename,parentFolder)
     if parentFolder != 0:
         uid = str(parentFolder) + filename
     else:
@@ -221,7 +220,7 @@ def s3_delete(*args,**kwargs):
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
     dfile = request.json.get('keyPath')
-    connect = S3Wrapper.fromAddon(s3)
+    connect = S3Wrapper.from_addon(s3)
     connect.deleteFile(dfile)
     return {}
 
@@ -253,7 +252,7 @@ def s3_new_folder(*args, ** kwargs):
     s3 = node.get_addon('s3')
     folderPath =  request.json.get('path').replace('&spc',' ').replace('&sl','/')
 
-    connect = S3Wrapper.fromAddon(s3)
+    connect = S3Wrapper.from_addon(s3)
     connect.createFolder(folderPath)
     return {}
 

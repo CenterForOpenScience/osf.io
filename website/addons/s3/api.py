@@ -18,7 +18,7 @@ from urllib import quote
 
 
 
-def hasAccess(access_key, secret_key):
+def has_access(access_key, secret_key):
     try:
         c = S3Connection(access_key,secret_key)
         c.get_all_buckets()
@@ -26,7 +26,7 @@ def hasAccess(access_key, secret_key):
     except Exception:
         return False
 
-def createLimitedUser(accessKey, secretKey,bucketName):
+def create_limited_user(accessKey, secretKey,bucketName):
     policy = {
   "Version": "2012-10-17",
   "Statement": [
@@ -85,13 +85,13 @@ def createLimitedUser(accessKey, secretKey,bucketName):
     connection.put_user_policy(bucketName + '-osf-limited','policy-' + bucketName + '-osf-limited',json.dumps(policy))
     return connection.create_access_key(bucketName + '-osf-limited')['create_access_key_response']['create_access_key_result']['access_key'] 
 
-def removeUser(accessKey, secretKey,bucketName,otherKey):
+def remove_user(accessKey, secretKey,bucketName,otherKey):
     connection = IAMConnection(accessKey, secretKey)
     connection.delete_user_policy(bucketName + '-osf-limited','policy-'+bucketName + '-osf-limited')
     connection.delete_access_key(otherKey,bucketName + '-osf-limited')
     connection.delete_user(bucketName + '-osf-limited')
 
-def doesBucketExist(accessKey, secretKey,bucketName):
+def does_bucket_exist(accessKey, secretKey,bucketName):
     try:
         c = S3Connection(accessKey,secretKey)
         c.get_bucket(bucketName)
@@ -102,11 +102,11 @@ def doesBucketExist(accessKey, secretKey,bucketName):
 class S3Wrapper:
 
     @classmethod
-    def fromAddon(cls,s3):
+    def from_addon(cls,s3):
         return cls(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key),s3.s3_bucket)
 
     @classmethod
-    def bucketExist(cls,s3, bucketName):
+    def bucket_exist(cls,s3, bucketName):
         m = cls.fromAddon(s3)
         try:
             m.connection.get_bucket(bucketName.lower())
@@ -119,33 +119,33 @@ class S3Wrapper:
         self.connection = connect
         self.bucket = self.connection.get_bucket(bucketName)
 
-    def createKey(self,key):
+    def create_key(self,key):
         self.bucket.new_key(key)
 
-    def postString(self,title,contentspathToFolder=""):
+    def post_string(self,title,contentspathToFolder=""):
         k = self.bucket.new_key(pathToFolder + title)
         return k.set_contents_from_string(contents)
 
-    def getString(self,title):
+    def get_string(self,title):
         return self.bucket.get_key(title).get_contents_as_string()
 
-    def setMetadata(self,bucket,key,metadataName,metadata):
+    def set_metadata(self,bucket,key,metadataName,metadata):
         k = self.connection.get_bucket(bucket).get_key(key)
         return k.set_metadata(metadataName,metadata)
 
-    def getFileList(self):
+    def get_file_list(self):
         return self.bucket.list()
         
-    def createFolder(self,name,pathToFolder=""):
+    def create_folder(self,name,pathToFolder=""):
         if not name.endswith('/'):
             name.append("/")
         k = self.bucket.new_key(pathToFolder + name)
         return k.set_contents_from_string("")
 
-    def deleteFile(self,keyName):
+    def delete_file(self,keyName):
         return self.bucket.delete_key(keyName)
 
-    def getMD5(self,keyName):
+    def get_MD5(self,keyName):
         '''returns the MD5 hash of a file.
 
         params str keyName: The name of the key to hash
@@ -153,20 +153,20 @@ class S3Wrapper:
         '''
         return self.bucket.get_key(keyName).get_md5_from_hexdigest()
 
-    def downloadFileURL(self,keyName):
+    def download_file_URL(self,keyName):
         return self.bucket.get_key(keyName).generate_url(5)
 
-    def getWrappedKeys(self):
-        return [S3Key(x) for x in self.getFileList()]
+    def get_wrapped_keys(self):
+        return [S3Key(x) for x in self.get_file_list()]
 
-    def getWrappedKey(self,keyName):
+    def get_wrapped_key(self,keyName):
         return S3Key(self.bucket.get_key(keyName))
 
     @property
     def bucket_name(self):
         return self.bucket.name
 
-    def flaskUpload(self,upFile,safeFilename,parentFolder=None):
+    def flask_upload(self,upFile,safeFilename,parentFolder=None):
         #TODO fix me somehow
         if parentFolder:
             key = self.bucket.new_key(parentFolder + safeFilename)
@@ -175,7 +175,7 @@ class S3Wrapper:
         key.set_contents_from_string(upFile.read())
         return k
 
-    def getVersionData(self):
+    def get_version_data(self):
         versions = {}
         versions_list = self.bucket.list_versions()
         for p in versions_list:
@@ -184,8 +184,8 @@ class S3Wrapper:
         return versions
         #TODO update this to cache results later
 
-    def getFileVersions(self,fileName):
-        v = self.getVersionData() #TODO store list in self and check for changes
+    def get_file_versions(self,fileName):
+        v = self.get_version_data() #TODO store list in self and check for changes
         if fileName in v:
             return v[fileName]
         return []
@@ -271,4 +271,4 @@ class S3Key:
 
     def updateVersions(self, manager):
         if self.type != 'folder':
-            self.versions.extend(manager.getFileVersions(self._nameAsStr()))
+            self.versions.extend(manager.get_file_versions(self._nameAsStr()))

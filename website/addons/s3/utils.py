@@ -10,7 +10,7 @@ URLADDONS = {
 }
 
 def getHgrid(url,s3wrapper):
-    keyList = s3wrapper.getWrappedKeys()
+    keyList = s3wrapper.get_wrapped_keys()
     hgrid = []
     hgrid.append({
     'uid': 0,
@@ -34,6 +34,7 @@ def getHgrid(url,s3wrapper):
             hgrid.append(wrapped_key_to_json(k,url))
     return hgrid
 
+#TODO Fix me
 def checkFolders(s3wrapper, keyList):
     for k in keyList:
         if k.parentFolder != 'null' and k.parentFolder not in [x.name for x in keyList]:
@@ -41,9 +42,6 @@ def checkFolders(s3wrapper, keyList):
             keyList.append(S3Key(newKey))
 
 def wrapped_key_to_json(wrapped_key,url,parent_uid=0):
-
-
-
     return {
     'uid': wrapped_key.fullPath,
     'type':wrapped_key.type,
