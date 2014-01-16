@@ -361,9 +361,7 @@ def github_hgrid_data(*args, **kwargs):
     """
     node = kwargs['node'] or kwargs['project']
     node_addon = kwargs['node_addon']
-
     connect = GitHub.from_settings(node_addon.user_settings)
-    # The requested branch and sha
     req_branch, req_sha = request.args.get('branch'), request.args.get('sha')
     # The actual branch and sha to use, given the addon settings
     branch, sha = _get_branch_and_sha(node_addon, req_branch, req_sha,
@@ -372,7 +370,8 @@ def github_hgrid_data(*args, **kwargs):
     contents = connect.contents(
         node_addon.user, node_addon.repo, ref=sha or branch, path='')
     hgrid_tree = tree_to_hgrid(contents, user=node_addon.user,
-        repo=node_addon.repo, node=node, parent='null')
+        branch=branch, sha=sha,
+        repo=node_addon.repo, node=node, parent=None)
     return hgrid_tree
 
 
@@ -398,8 +397,12 @@ def github_hgrid_data_contents(*args, **kwargs):
         ref=sha or branch,
     )
     parent = path_to_uid(path, kind='dir')
-    hgrid_tree = tree_to_hgrid(contents, user=node_addon.user,
-        repo=node_addon.repo, node=node, parent=parent)
+    if contents:
+        hgrid_tree = tree_to_hgrid(contents, user=node_addon.user,
+            branch=branch, sha=sha,
+            repo=node_addon.repo, node=node, parent=parent)
+    else:
+        hgrid_tree = []
     return hgrid_tree
 
 

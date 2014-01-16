@@ -86,9 +86,8 @@
 <script type="text/javascript">
 
     // Import JS variables
-    // TODO: put these in contextVars namespace to avoid polluting global namespace
-    var gridData = ${grid_data},
-        branch = '${branch}',
+    // TODO: put these in contextVars namespace to avoid polluting global namespace,
+     var branch = '${branch}',
         sha = '${sha}',
         canEdit = ${int(user['can_edit'])},
         hasAuth = ${int(has_auth)},
