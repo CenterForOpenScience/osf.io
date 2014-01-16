@@ -124,6 +124,14 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                     ' Users can view the contents of this private GitHub '
                     'repository through this public project.'
                 )
+            else:
+                message += (
+                    ' The files in this GitHub repo can be viewed on GitHub '
+                    '<a href="https://github.com/{user}/{repo}/">here</a>.'
+                ).format(
+                    user=self.user,
+                    repo=self.repo,
+                )
             return message
 
     # TODO: Rename to before_remove_contributor_message

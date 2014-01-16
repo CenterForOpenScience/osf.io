@@ -1,11 +1,10 @@
 	Storage
 	GitHub
-View / download files	full
+Permissions	partial | Making an OSF project public or private is independent of making a GitHub repo public or private. The OSF does not alter the permissions of linked GitHub repos.
 View / download file versions	full
 Add / update files	full
 Delete files	full
-Logs	partial | GitHub dynamically updates OSF logs when files are modified outside the OSF. Changes to GitHub repos made before the repo is linked to the OSF will not be reflected in OSF logs.
-Permissions	partial | Making an OSF project public or private is independent of making a GitHub repo public or private. The OSF does not alter the permissions of linked GitHub repos.
+Logs	full | GitHub dynamically updates OSF logs when files are modified outside the OSF. Changes to GitHub repos made before the repo is linked to the OSF will not be reflected in OSF logs.
 Forking	partial | Forking a project or component does not copy Github authorization unless the user forking the project is the same user who authorized the Github add-on in the source project being forked.
 Registering	partial | Registering a project or component will copy GitHub authorization to the registered project; the state of all existing branches will be stored upon registration. Only the commit IDs of the branches will be stored; the underlying files and file information are not stored in the OSF. Further, if the GitHub repo is deleted, or if its commit IDs or history are changed, the contents of the registration will also change.
 	

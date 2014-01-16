@@ -25,9 +25,17 @@
             </a>
         </div>
     % else:
+        <div>
+            Adding a GitHub access token allows you and your collaborators to
+            update and delete files on your linked repository, and view its files
+            if this repository is private. If you do not add an access token, you
+            will be able to view and download files within the repository if it
+            is public.
+        </div>
+        <br />
         <a id="githubAddKey" class="btn btn-primary">
             % if user_has_authorization:
-                Authorize: Import Token from Profile
+                Authorize: Import Access Token from Profile
             % else:
                 Authorize: Create Access Token
             % endif
