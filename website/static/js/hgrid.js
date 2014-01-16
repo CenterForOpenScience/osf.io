@@ -135,15 +135,6 @@ var HGrid = {
         var _this = this;
         var self = Object.create(_this);
         self.options = $.extend({}, self.defaultOptions, options);
-        var urls = ['urlAdd','urlMove','urlEdit','urlDelete'];
-        for (var i = 0; i<urls.length; i++) {
-            if (!self.options[urls[i]]) {
-                self.options[urls[i]] = self.options['url'];
-            }
-            if (typeof self.options[urls[i]] === "function") {
-                self.options[urls[i]] = self.options[urls[i]]();
-            }
-        }
         if (self.options.ajaxSource) { // Get data from server
             var ajaxDefaults = {
                 url: self.options.ajaxSource, dataType: "json",
@@ -164,8 +155,9 @@ var HGrid = {
             var ajaxParams = $.extend(ajaxDefaults, self.options.ajaxOptions);
             $.ajax(ajaxParams);
         } else {  // Data were passed in directly as an array
-            return self.initialize.call(self);
+            self.initialize.call(self);
         }
+        return this;
     },
 
     initialize: function() {
@@ -339,7 +331,17 @@ var HGrid = {
             hGridAfterNav: new this.Slick.Event()
         });
         this.Slick.dataView.collapseAllGroups();
-
+        var urls = ['urlAdd','urlMove','urlEdit','urlDelete'];
+        for (var i = 0; i < urls.length; i++) {
+            if (!_this.options[urls[i]]) {
+                _this.options[urls[i]] = _this.options['url'];
+            }
+            if (typeof _this.options[urls[i]] === "function") {
+                // NOTE(sloria): The grid gets passed to urlAdd if it is a
+                // function. This is NOT in Hgrid master.
+                _this.options[urls[i]] = _this.options[urls[i]](_this);
+            }
+        }
         return this;
     },
 
