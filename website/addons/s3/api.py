@@ -12,16 +12,13 @@ import os
 import re
 from boto.iam import *
 import json
+from datetime import datetime
+from urllib import quote
 
 
 
-URLADDONS = {
-        'delete':'delete/',
-        'upload':'upload/',
-        'download':'download/',
-}
 
-def testAccess(access_key, secret_key):
+def hasAccess(access_key, secret_key):
     try:
         c = S3Connection(access_key,secret_key)
         c.get_all_buckets()
@@ -102,15 +99,15 @@ def doesBucketExist(accessKey, secretKey,bucketName):
     except Exception:
         return False
 
-class BucketManager:
+class S3Wrapper:
 
-    @staticmethod
-    def fromAddon(s3):
-        return BucketManager(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key),s3.s3_bucket)
+    @classmethod
+    def fromAddon(cls,s3):
+        return cls(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key),s3.s3_bucket)
 
-    @staticmethod
-    def bucketExist(s3, bucketName):
-        m = BucketManager.fromAddon(s3)
+    @classmethod
+    def bucketExist(cls,s3, bucketName):
+        m = cls.fromAddon(s3)
         try:
             m.connection.get_bucket(bucketName.lower())
             return True
@@ -120,154 +117,95 @@ class BucketManager:
     "S3 Bucket management"
     def __init__(self, connect,bucketName):
         self.connection = connect
-        self.bucket = self._getBucket(bucketName)
+        self.bucket = self.connection.get_bucket(bucketName)
 
-    @staticmethod
-    def getLoctions(self):
-        print '\n'.join(i for i in dir(Location) if i[0].isupper())
-
-    def _newBucket(self, name,location=Location.DEFAULT):
-        try:
-            self.connection.create_bucket(name.lower(),location)
-        except S3CreateError:
-            print "S3CreateError: Bucket name already in use."
-
-
-    def _getBucket(self,bucketName):
-        try:
-            return self.connection.get_bucket(bucketName.lower())
-        except S3PermissionsError:
-            print S3PermissionsError.message
-
-    def _listBuckets(self):
-       list = self.connection.get_all_buckets()
-       for bucket in list:
-            print bucket
-
-    def createKey(self,key,bucket):
-        Key(self[bucket]).key = key
-
-    def uploadFile(self,fileName,pathToFolder=""):
-        k = self.bucket.new_key(pathToFolder + basename(fileName))
-        k.set_contents_from_filename(fileName)
-
-    def downloadFile(self,fileName):
-         #Broken and or depricated
-         #TODO Remove
-        k.key = fileName
-       # k.get_contents_to_file(open("/Users/nan/Downloads/" + fileName,'a'))
+    def createKey(self,key):
+        self.bucket.new_key(key)
 
     def postString(self,title,contentspathToFolder=""):
         k = self.bucket.new_key(pathToFolder + title)
-        k.set_contents_from_string(contents)
+        return k.set_contents_from_string(contents)
 
     def getString(self,title):
         return self.bucket.get_key(title).get_contents_as_string()
 
     def setMetadata(self,bucket,key,metadataName,metadata):
         k = self.connection.get_bucket(bucket).get_key(key)
-        k.set_metadata(metadataName,metadata)
+        return k.set_metadata(metadataName,metadata)
 
     def getFileList(self):
-            return self.bucket.list()
+        return self.bucket.list()
         
     def createFolder(self,name,pathToFolder=""):
-        k = self.bucket.new_key(pathToFolder + name + "/")
-        k.set_contents_from_string("")
-
+        if not name.endswith('/'):
+            name.append("/")
+        k = self.bucket.new_key(pathToFolder + name)
+        return k.set_contents_from_string("")
 
     def deleteFile(self,keyName):
-            self.bucket.delete_key(keyName)
+        return self.bucket.delete_key(keyName)
 
     def getMD5(self,keyName):
+        '''returns the MD5 hash of a file.
+
+        params str keyName: The name of the key to hash
+
+        '''
         return self.bucket.get_key(keyName).get_md5_from_hexdigest()
 
     def downloadFileURL(self,keyName):
         return self.bucket.get_key(keyName).generate_url(5)
 
-    def getWrappedKeys(self, bucketList):
-        List = []
-        for k in bucketList:
-            List.append(S3Key(k))
-        return List
+    def getWrappedKeys(self):
+        return [S3Key(x) for x in self.getFileList()]
 
     def getWrappedKey(self,keyName):
         return S3Key(self.bucket.get_key(keyName))
 
-    def getHgrid(self,url):
-            keyList = self.getWrappedKeys(self.bucket.list())
-            hgrid = []
-            hgrid.append({
-            'uid': 0,
-            'name': str(self.bucket.name),
-            'type': 'folder',
-            'parent_uid': 'null',
-            'version_id': '--',
-            'lastMod': '--',
-            'size':'--',
-            'uploadUrl': url + URLADDONS['upload'],
-            'downloadUrl':url + URLADDONS['download'],
-            'deleteUrl':url + URLADDONS['delete'],
-            })
-            self.checkFolders(keyList)
-            for k in keyList:
-                k.updateVersions(self)
-                if k.parentFolder is not 'null':
-                    q = [x for x in keyList if k.parentFolder == x.name]
-                    hgrid.append(k.getAsDict(url,q[0].fullPath))
-                else:
-                    hgrid.append(k.getAsDict(url))
-            return hgrid
-
-    def checkFolders(self,keyList):
-        for k in keyList:
-            if k.parentFolder is not 'null' and k.parentFolder not in [x.name for x in keyList]:
-                newKey = self.bucket.new_key(k.pathTo)
-                newKey.set_contents_from_string("")
-                keyList.append(S3Key(newKey))
-                raise Exception
+    @property
+    def bucket_name(self):
+        return self.bucket.name
 
     def flaskUpload(self,upFile,safeFilename,parentFolder=None):
+        #TODO fix me somehow
         if parentFolder:
-            k = self.bucket.new_key(parentFolder + safeFilename)
+            key = self.bucket.new_key(parentFolder + safeFilename)
         else:
-            k = self.bucket.new_key(safeFilename)
-        k.set_contents_from_string(upFile.read())
+            key = self.bucket.new_key(safeFilename)
+        key.set_contents_from_string(upFile.read())
+        return k
 
     def getVersionData(self):
         versions = {}
-        for p in self.bucket.list_versions():
-            if type(p) is Key:
-                if str(p.version_id) != 'null':
-                    if str(p.key) not in versions:
-                        versions[str(p.key)] = []
-                    versions[str(p.key)].append(str(p.version_id))
+        versions_list = self.bucket.list_versions()
+        for p in versions_list:
+            if isinstance(p,Key) and str(p.version_id) != 'null' and str(p.key) not in versions:
+                versions[str(p.key)] = [str(k.version_id) for k in versions_list if p.key == k.key]
         return versions
-        #update this to cache results later
+        #TODO update this to cache results later
 
     def getFileVersions(self,fileName):
-        v = self.getVersionData()
+        v = self.getVersionData() #TODO store list in self and check for changes
         if fileName in v:
             return v[fileName]
         return []
 
 class S3Key:
 
-
     def __init__(self, key):
         self.s3Key = key
-        if self.type is 'file':
+        if self.type == 'file':
             self.versions = ['current']
         else:
-            self.version =  '--'
+            self.version =  None
 
     @property
     def name(self):
         d = self._nameAsStr().split('/')
-        if len(d) > 1 and self.type is 'file':
-            return d[len(d)-1]
-        elif self.type is 'folder':
-            return d[len(d)-2]
+        if len(d) > 1 and self.type == 'file':
+            return d[-1]
+        elif self.type == 'folder':
+            return d[-2]
         else:
             return d[0]
 
@@ -276,7 +214,7 @@ class S3Key:
 
     @property
     def type(self):
-        if not (str(self.s3Key.key).endswith('/')):
+        if not str(self.s3Key.key).endswith('/'):
             return 'file'
         else:
             return 'folder'
@@ -289,66 +227,48 @@ class S3Key:
     def parentFolder(self):
         d = self._nameAsStr().split('/')
 
-        if len(d) > 1 and self.type is 'file':
+        if len(d) > 1 and self.type == 'file':
             return d[len(d)-2]
-        elif len(d) > 2 and self.type is 'folder':
+        elif len(d) > 2 and self.type == 'folder':
             return d[len(d)-3]
         else:
-            return 'null'
-    def getAsDict(self,url,parent_uid=0):
-        return{
-            'uid': self.fullPath,
-            'type':self.type,
-            'name':self.name,
-            'parent_uid':parent_uid,
-            'version_id':self.version,
-            'size':self.size,
-            'lastMod':self.lastMod,
-            'ext':self.extention,
-            'uploadUrl': self.uploadPath(url),
-            'downloadUrl':url + URLADDONS['download'],
-            'deleteUrl':url + URLADDONS['delete'],
-        }
+            return None
+
     @property
     def pathTo(self):
         return self._nameAsStr()[:self._nameAsStr().rfind('/')] + '/'
 
     @property
     def size(self):
-        if self.type is 'folder':
-            return '--'
+        if self.type == 'folder':
+            return None
         else:
             return size(int(self.s3Key.size)).lower()
     @property
     def lastMod(self):
-        if self.type is 'folder':
-            return '--'
+        if self.type == 'folder':
+            return None
         else:
             m= re.search('(.+?)-(.+?)-(\d*)T(\d*):(\d*):(\d*)',str(self.s3Key.last_modified))
-            if(m is not None):
-                return "{month}/{day}/{year} {hour}:{minute}".format(month=m.group(2),day=m.group(3),year=m.group(4),hour=m.group(5),minute=m.group(6))
+            if m is not None:
+                return datetime(int(m.group(4)),int(m.group(2)),int(m.group(3)),int(m.group(4)),int(m.group(5)))
             else:
-                return '--'
+                return None
 
     @property
     def version(self):
         return self.versions
 
     @property
-    def extention(self):
-        if self.type is not 'folder':
+    def extension(self):
+        if self.type != 'folder':
             if os.path.splitext(self._nameAsStr())[1] is None:
-                return '--'
+                return None
             else:
                 return os.path.splitext(self._nameAsStr())[1][1:]
         else:
-            return '--'
-    def updateVersions(self, manager):
-        if self.type is not 'folder':
-            self.versions.extend(manager.getFileVersions(self._nameAsStr()))
+            return None
 
-    def uploadPath(self,url):
-        if self.type is not 'folder':
-            return url + URLADDONS['upload']
-        else:
-            return url + URLADDONS['upload'] + self.fullPath.replace(' ','&spc').replace('/','&sl') + '/'
+    def updateVersions(self, manager):
+        if self.type != 'folder':
+            self.versions.extend(manager.getFileVersions(self._nameAsStr()))

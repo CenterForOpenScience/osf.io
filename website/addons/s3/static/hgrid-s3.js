@@ -19,7 +19,7 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         var link = value;
         //if(dataContext['download']){
             //This will later be changed into a render function
-            link = "<a href=render/" + dataContext['s3path'] + ">" + value + "</a>";
+            link = "<a href=render/" +  dataContext['uid'].replace(' ','&spc').replace('/','&sl') + ">" + value + "</a>";
         //}
         var imageUrl = "/static\/img\/hgrid\/fatcowicons\/file_extension_" + dataContext['ext'] + ".png";
         if(extensions.indexOf(dataContext['ext'])==-1){

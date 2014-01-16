@@ -16,14 +16,14 @@ from framework import request, redirect, make_response
 from framework.flask import secure_filename
 from framework.auth import get_current_user, must_be_logged_in
 
-from api import BucketManager
-from api import createLimitedUser, removeUser, testAccess, doesBucketExist
+from api import S3Wrapper
+from api import createLimitedUser, removeUser, hasAccess, doesBucketExist
 from boto.exception import S3ResponseError
 
 import time
 from datetime import date
 import os
-
+import utils
 
 @must_be_logged_in
 def s3_user_settings(*args, **kwargs):
@@ -45,7 +45,7 @@ def s3_user_settings(*args, **kwargs):
 
 
     if changed:
-        if not testAccess(s3_access_key,s3_secret_key):
+        if not hasAccess(s3_access_key,s3_secret_key):
             error_message = ('Looks like your creditials are incorrect'
                              'Could you have mistyped them?')
             return {'message':error_message},400
@@ -130,8 +130,8 @@ def _page_content(pid, s3):
     #nTODO use bucket name 
     # create new bucket if not found  inform use/ output error
    # try:
-    connect = BucketManager.fromAddon(s3)
-    data = connect.getHgrid('/project/' + pid + '/s3/') 
+    connect = S3Wrapper.fromAddon(s3)
+    data = utils.getHgrid('/project/' + pid + '/s3/',connect) 
     #except S3ResponseError:
        # push_status_message("It appears you do not have access to this bucket. Are you settings correct?")
        # data = None
@@ -177,7 +177,7 @@ def s3_download(*args, **kwargs):
     keyName = kwargs['key']
     if keyName is None:
         raise HTTPError(http.NOT_FOUND)
-    connect = BucketManager(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key),s3.s3_bucket)
+    connect = S3Wrapper(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key),s3.s3_bucket)
     return redirect(connect.downloadFileURL(keyName.replace('&spc',' ').replace('&sl','/')))
 
 @must_be_contributor
@@ -195,10 +195,14 @@ def s3_upload(*args,**kwargs):
 
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
-    connect = BucketManager.fromAddon(s3)
+    connect = S3Wrapper.fromAddon(s3)
     connect.flaskUpload(upload,filename,parentFolder)
+    if parentFolder != 0:
+        uid = str(parentFolder) + filename
+    else:
+        uid = filename
     return [{
-            'uid': str(parentFolder) + filename,
+            'uid': uid,
             'type': 'file',
             'name': filename,
             'parent_uid': parentFolder,
@@ -213,19 +217,16 @@ def s3_upload(*args,**kwargs):
 
 @must_be_contributor
 @must_have_addon('s3','node')
-
 def s3_delete(*args,**kwargs):
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
     dfile = request.json.get('keyPath')
-    connect = BucketManager.fromAddon(s3)
+    connect = S3Wrapper.fromAddon(s3)
     connect.deleteFile(dfile)
     return {}
-    #raise Exception
 
 @must_be_contributor
 @must_have_addon('s3','node')
-
 def render_file(*args, **kwargs):
     user = kwargs['user']
     node = kwargs['node'] or kwargs['project']
@@ -238,21 +239,21 @@ def render_file(*args, **kwargs):
     rv.update({
         'addon_page_js': 'null',
         'addon_page_css': 'null',
+        'complete': 1,
         'filename':keyName.replace('&spc',' ').replace('&sl','/')
     })
 
-
+    rv.update(s3.config.to_json())
     return rv
 
 @must_be_contributor
 @must_have_addon('s3','node')
-
 def s3_new_folder(*args, ** kwargs):
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
     folderPath =  request.json.get('path').replace('&spc',' ').replace('&sl','/')
 
-    connect = BucketManager.fromAddon(s3)
+    connect = S3Wrapper.fromAddon(s3)
     connect.createFolder(folderPath)
     return {}
 
