@@ -18,11 +18,6 @@ app = website.app.init_app(routes=True, set_backends=False,
 
 github_mock = create_mock_github(user='fred', private=False)
 
-import website.app
-app = website.app.init_app(routes=True, set_backends=False,
-                            settings_module="website.settings")
-
-
 class TestGithubViews(DbTestCase):
 
     def setUp(self):

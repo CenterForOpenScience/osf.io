@@ -336,11 +336,6 @@ var HGrid = {
             if (!_this.options[urls[i]]) {
                 _this.options[urls[i]] = _this.options['url'];
             }
-            // if (typeof _this.options[urls[i]] === "function") {
-            //     // NOTE(sloria): The grid gets passed to urlAdd if it is a
-            //     // function. This is NOT in Hgrid master.
-            //     _this.options[urls[i]] = _this.options[urls[i]](_this);
-            // }
         }
         return this;
     },
