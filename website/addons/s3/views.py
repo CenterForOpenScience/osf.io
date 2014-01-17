@@ -83,10 +83,10 @@ def s3_settings(*args, **kwargs):
     )
     # Delete callback
     if changed:
-
+        
         # Update node settings
         s3_node.s3_bucket = s3_bucket
-
+        utils.adjust_cors(S3Wrapper.from_addon(s3_node))
         s3_node.save()
 
 @must_be_contributor
@@ -261,6 +261,8 @@ def s3_new_folder(*args, ** kwargs):
 @must_be_contributor
 @must_have_addon('s3','node')
 def generate_signed_url(*args, ** kwargs):
+    #TODO Generate file for hgrid and return with signed url
+
     #Thanks/psuedo credit to http://codeartists.com/post/36892733572/how-to-directly-upload-files-to-amazon-s3-from-your
     #not really sure how or where to put that....
     node = kwargs['node'] or kwargs['project']
@@ -268,7 +270,7 @@ def generate_signed_url(*args, ** kwargs):
 
     file_name = urllib.quote_plus(request.json.get('name'))
 
-    expires = int(time.time()+ 10) #Ten seconds for the request to go through might need to be larger....
+    expires = int(time.time()+ 10)
 
     amz_headers = "x-amz-acl:private"
 

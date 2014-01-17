@@ -5,6 +5,7 @@ from os.path import basename
 
 from boto.exception import *
 from boto.s3.connection import *
+from boto.s3.cors import CORSConfiguration
 
 from hurry.filesize import size
 
@@ -190,10 +191,13 @@ class S3Wrapper:
         return []
 
     def get_cors_rules(self):
-        pass
+        try:
+            return self.bucket.get_cors()
+        except:
+            return CORSConfiguration()
 
     def set_cors_rules(self,rules):
-        pass
+        return self.bucket.set_cors(rules)
 
 class S3Key:
 

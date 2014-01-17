@@ -12,13 +12,17 @@ URLADDONS = {
 #This is for adjusting the cors of an s3 bucket, not used during development
 ALLOWED_ORIGIN = "osf.io"
 
+CORS_RULE = '<CORSRule><AllowedMethod>POST</AllowedMethod><AllowedOrigin>*</AllowedOrigin><AllowedHeader>origin</AllowedHeader><AllowedHeader>Content-Type</AllowedHeader><AllowedHeader>x-amz-acl</AllowedHeader><AllowedHeader>Authorization</AllowedHeader></CORSRule>'
+
 #TODO Finish me
 def adjust_cors(s3wrapper):
-	rules = s3wrapper.get_cors_rules()
-	rules.add_rule('POST','*',allowed_header={'Authorization','Content-Type','x-amz-acl','origin'})
-    #Needed rules: PUT * 
+    rules = s3wrapper.get_cors_rules()
+    if not [rule for rule in rules if rule.to_xml() == CORS_RULE]:
+        rules.add_rule('PUT','*',allowed_header={'Authorization','Content-Type','x-amz-acl','origin'})
+        print rules
+        s3wrapper.set_cors_rules(rules)
 
-	s3wrapper.set_cors_rules(rules)
+    #Needed rules: PUT * 
 
 
 def getHgrid(url,s3wrapper):
