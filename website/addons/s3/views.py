@@ -184,6 +184,7 @@ def s3_download(*args, **kwargs):
 @must_be_contributor
 @must_have_addon('s3','node')
 def s3_upload(*args,**kwargs):
+    return {}
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
 
@@ -269,7 +270,7 @@ def generate_signed_url(*args, ** kwargs):
 
     expires = int(time.time()+ 10) #Ten seconds for the request to go through might need to be larger....
 
-    amz_headers = "x-amz-acl:public-read"
+    amz_headers = "x-amz-acl:private"
 
     mime = request.json.get('type') if request.json.get('type') != "" else 'application/octet-stream'
 
@@ -281,8 +282,5 @@ def generate_signed_url(*args, ** kwargs):
     
     signed = urllib.quote_plus(base64.encodestring(hmac.new(str(s3.s3_node_secret_key), request_to_sign, sha).digest()).strip())
 
-    return {
-    'signed_request': '{url}?AWSAccessKeyId={access_key}&Expires={expires}&Signature={signed}'.format(url=url,access_key=s3.s3_node_access_key,expires=expires,signed=signed),
-    'url': "http://s3.amazonaws.com/#{bucket}/#{filename}".format(bucket=s3.s3_bucket,filename=file_name)
-    }
+    return '{url}?AWSAccessKeyId={access_key}&Expires={expires}&Signature={signed}'.format(url=url,access_key=s3.s3_node_access_key,expires=expires,signed=signed),
     #/blackhttpmagick

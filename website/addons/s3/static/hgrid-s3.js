@@ -198,16 +198,15 @@ grid.dropZoneObj.on("addedfile", function (file)
       data: JSON.stringify({name:file.name,type:file.type}),
       contentType: 'application/json',
       dataType: 'json'
-        }).complete(function(r) {
-            result = JSON.parse(r.responseText);
+        }).success(function(url) {
 
             xhr = new XMLHttpRequest();
 
             if (xhr.withCredentials != null) {
-                xhr.open('PUT', result.signed_request, true);
+                xhr.open('PUT', url, true);
             } else if (typeof XDomainRequest !== "undefined") {
                 xhr = new XDomainRequest();
-                xhr.open(method, url);
+                xhr.open('PUT', url);
             } else {
                 xhr = null;
             }
@@ -232,7 +231,7 @@ grid.dropZoneObj.on("addedfile", function (file)
             type = file.type || 'application/octet-stream';
 
             xhr.setRequestHeader('Content-Type', type);
-            xhr.setRequestHeader('x-amz-acl', 'public-read');
+            xhr.setRequestHeader('x-amz-acl', 'private');
             return xhr.send(file);
 
         });
