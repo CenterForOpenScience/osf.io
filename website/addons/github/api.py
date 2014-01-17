@@ -104,7 +104,7 @@ class GitHub(object):
             if user
             else os.path.join(API_URL, 'user')
         )
-        return self._send(url)
+        return self._send(url, cache=False)
 
     def repo(self, user, repo):
         """Get a single Github repo's info.
