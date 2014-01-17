@@ -9,12 +9,12 @@
     <span></span>
 
 <h4>
+    ${full_name} Add-on
     % if capabilities:
         <span class="addon-capabilities">
             <i class="icon-question-sign"></i>
         </span>
     % endif
-    ${full_name} Add-on
 </h4>
 
 % if complete:
