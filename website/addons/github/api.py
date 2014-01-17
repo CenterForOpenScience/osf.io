@@ -427,6 +427,7 @@ type_map = {
     'dir': 'folder'
 }
 
+
 def path_to_uid(path, kind):
     """Convert a path name to a Hgrid uid.
 
@@ -434,13 +435,7 @@ def path_to_uid(path, kind):
     :param kind: Either 'dir' or 'file'
 
     """
-    return kind + ':' + '||'.join(['__repo__', path])
-
-def path_is_root(path):
-    split = os.path.split(path) # returns tuple of path parts
-                                # path is root if first element is empty string
-    return bool(split[0])
-
+    return kind + ':' + '||'.join(['__repo__', path]).strip('||')
 
 def tree_to_hgrid(tree, user, repo, node, parent='null', branch=None, sha=None, hotlink=False):
     """Convert GitHub tree data to HGrid format.
@@ -491,13 +486,13 @@ def tree_to_hgrid(tree, user, repo, node, parent='null', branch=None, sha=None, 
         path = item['path']
         qpath = urllib.quote(path)
 
-        split = os.path.split(path)
+        _, basename = os.path.split(path)
         _, ext = os.path.splitext(path)
         ext = ext.lstrip('.')
 
         row = {
             'uid': item['type'] + ':' + '||'.join(['__repo__', qpath]),
-            'name': split[1],
+            'name': basename,
             'parent_uid': parent,
             'type': type_map[item['type']],
         }
