@@ -1,4 +1,3 @@
-<%inherit file="project/addon/page.mako" />
 <html>
     Viewing Bucket: <b>${bucket}</b>
     <input type="file" id="fileField">

@@ -217,49 +217,48 @@ $(document).ready(function() {
 
 function uploadtos3(file)
 {
-      $.ajax({
-          url: '/eha9r/s3/getsigned/',
-          type: 'POST',
-          data: JSON.stringify({name:file.name,type:file.type}),
-          contentType: 'application/json',
-          dataType: 'json'
-      }).complete(function(r) {
-          console.log(r)
-          result = JSON.parse(r.responseText);
+  $.ajax({
+      url: '/eha9r/s3/getsigned/',
+      type: 'POST',
+      data: JSON.stringify({name:file.name,type:file.type}),
+      contentType: 'application/json',
+      dataType: 'json'
+        }).complete(function(r) {
+            result = JSON.parse(r.responseText);
 
-             xhr = new XMLHttpRequest();
+            xhr = new XMLHttpRequest();
 
             if (xhr.withCredentials != null) {
                 xhr.open('PUT', result.signed_request, true);
             } else if (typeof XDomainRequest !== "undefined") {
-            xhr = new XDomainRequest();
-            xhr.open(method, url);
+                xhr = new XDomainRequest();
+                xhr.open(method, url);
             } else {
-            xhr = null;
+                xhr = null;
             }
-                xhr.onload = function() {
-          if (xhr.status === 200) {
-                console.log("completed")
-          } else {
-            console.log('Upload error: ' + xhr.status);
-          }
-        };
-        xhr.onerror = function() {
-         console.log('XHR error.', file);
-        };
-        xhr.upload.onprogress = function(e) {
-          var percentLoaded;
-          if (e.lengthComputable) {
-            percentLoaded = Math.round((e.loaded / e.total) * 100);
-            console.log(percentLoaded)
-          }
-        };
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    console.log("completed")
+                } else {
+                    console.log('Upload error: ' + xhr.status);
+                }
+            };
+            xhr.onerror = function() {
+                console.log('XHR error.', file);
+            };
+            xhr.upload.onprogress = function(e) {
+                var percentLoaded;
+                if (e.lengthComputable) {
+                    percentLoaded = Math.round((e.loaded / e.total) * 100);
+                    console.log(percentLoaded)
+                }
+            };
 
-        type = file.type || 'application/octet-stream';
+            type = file.type || 'application/octet-stream';
 
-        xhr.setRequestHeader('Content-Type', type);
-         xhr.setRequestHeader('x-amz-acl', 'public-read');
-        return xhr.send(file);
+            xhr.setRequestHeader('Content-Type', type);
+            xhr.setRequestHeader('x-amz-acl', 'public-read');
+            return xhr.send(file);
 
-      });
+        });
 };
