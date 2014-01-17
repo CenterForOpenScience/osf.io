@@ -126,7 +126,7 @@ HGrid.create({
             grid.removeDraggerGuide();
             var path = args.parent['path'].slice();
             path.push(args.item.name);
-            var item = {name: args.item.name, parent_uid: args.parent['uid'],
+            var item = {name: args.item.name, parent_uid: args.parent.uid,
                         uid: args.item.name, type:"fake", uploadBar: true,
                         path: path, sortpath: path.join("/"), ext: "py",
                         size: args.item.size.toString()};
@@ -140,14 +140,13 @@ HGrid.create({
             var value = {};
             // Check if the server says that the file exists already
             var newSlickInfo = JSON.parse(args.xhr.response)[0];
+
             // Delete fake item
             var item = grid.getItemByValue(grid.data, args.name, "uid");
             grid.deleteItems([item.uid]);
             // If action taken is not null, create new item
             if (newSlickInfo.action_taken !== null) {
-                // FIXME: When item is added, it is added using addItem,
-                // it is added in the wrong place, so just reload for now.
-                window.location.reload(true);
+                grid.addItem(newSlickInfo);
                 return true;
             }
             return false;

@@ -690,7 +690,7 @@ def github_upload_file(*args, **kwargs):
         info = {
             'name': filename,
             'uid': os.path.join('__repo__', data['content']['path']),
-            'parent_uid': 'tree:' + '||'.join(['__repo__', path]).strip('||'),
+            'parent_uid': path_to_uid(path, 'dir'),
             'ext': ext,
             'size': [
                 data['content']['size'],
