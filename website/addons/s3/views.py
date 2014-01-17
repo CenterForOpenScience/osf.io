@@ -101,6 +101,7 @@ def s3_create_access_key(*args, **kwargs):
     u = create_limited_user(s3_user.access_key,s3_user.secret_key,s3_node.s3_bucket)
 
     if u:
+
         s3_node.s3_node_access_key = u['access_key_id']
         s3_node.s3_node_secret_key = u['secret_access_key']
         s3_node.node_auth = 1
@@ -182,7 +183,6 @@ def s3_download(*args, **kwargs):
 
 @must_be_contributor
 @must_have_addon('s3','node')
-
 def s3_upload(*args,**kwargs):
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
@@ -275,6 +275,7 @@ def generate_signed_url(*args, ** kwargs):
 
     request_to_sign = str("PUT\n\n{mime_type}\n{expires}\n{amz_headers}\n/{resource}".format(mime_type=mime,expires=expires,amz_headers=amz_headers,resource=s3.s3_bucket+'/'+file_name))
 
+    print request_to_sign
 
     url = 'https://s3.amazonaws.com/' + s3.s3_bucket + '/' + file_name
     

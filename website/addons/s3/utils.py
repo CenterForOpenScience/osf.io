@@ -15,9 +15,10 @@ ALLOWED_ORIGIN = "osf.io"
 #TODO Finish me
 def adjust_cors(s3wrapper):
 	rules = s3wrapper.get_cors_rules()
-	#rules.add_rule('POST','*',expose_header=)
+	rules.add_rule('POST','*',allowed_header={'Authorization','Content-Type','x-amz-acl','origin'})
+    #Needed rules: PUT * 
 
-	
+	s3wrapper.set_cors_rules(rules)
 
 
 def getHgrid(url,s3wrapper):
