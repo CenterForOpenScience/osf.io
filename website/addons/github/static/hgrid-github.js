@@ -162,6 +162,6 @@ HGrid.create({
     topCrumb: false,
     dragToRoot: false,
     dragDrop: false,
-    navigation: false
+    navigation: true // Double-click navigation
 });
 
