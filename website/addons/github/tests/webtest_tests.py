@@ -1,12 +1,8 @@
-import unittest
 import mock
 from nose.tools import *  # PEP8 asserts
-import json
 from tests.base import DbTestCase
-from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
+from tests.factories import ProjectFactory, AuthUserFactory
 from website.addons.github.tests.utils import create_mock_github
-from website.addons.github import views
-from website.addons.github.model import AddonGitHubNodeSettings
 
 
 from webtest_plus import TestApp
