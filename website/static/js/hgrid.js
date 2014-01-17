@@ -1545,6 +1545,8 @@ var HGrid = {
                     _this.dropZoneObj.options.dropDestination = item['uid'];
                 }
             }
+            _this.expandItem(item);
+
             e.preventDefault();
         });
 
