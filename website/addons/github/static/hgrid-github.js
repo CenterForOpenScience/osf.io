@@ -162,6 +162,7 @@ HGrid.create({
     rowHeight: 30,
     topCrumb: false,
     dragToRoot: false,
-    dragDrop: false
+    dragDrop: false,
+    navigation: false
 });
 
