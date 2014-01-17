@@ -82,7 +82,7 @@ HGrid.create({
         return ret;
     },
     ajaxOnError: function(xhr, textstatus, error) {
-        console.log("Could not retrieve repo contents");
+        bootbox.error("ERROR: Could not retrieve repo contents. Please try again later.");
     },
     ajaxOnSuccess: function(lazyGrid) {
         grid = lazyGrid;
