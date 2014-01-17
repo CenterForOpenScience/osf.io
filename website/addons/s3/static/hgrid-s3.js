@@ -190,32 +190,7 @@ grid.hGridOnUpload.subscribe(function(e, args) {
 });
 
 
-$(document).ready(function() {
-    $('#fileField').change(function()
-    {
-        var s3upload = new S3Upload({
-        file_dom_selector: '#fileField',
-        s3_sign_put_url: 'eha9r/s3/getsigned/',
-        onProgress: function(percent, message) {
-            $('#status').html('Upload progress: ' + percent + '% ' + message);
-        },
-        onFinishS3Put: function(public_url) {
-            $('#status').html('Upload completed. Uploaded to: '+ public_url);
-            $("#avatar_url").val(public_url);
-        },
-        onError: function(status) {
-            $('#status').html('Upload error: ' + status);
-        }
-    });
-    });
-
-    grid.dropZoneObj.on("addedfile", function (file) {
-        uploadtos3(file)
-    })
-});
-
-
-function uploadtos3(file)
+grid.dropZoneObj.on("addedfile", function (file)
 {
   $.ajax({
       url: '/eha9r/s3/getsigned/',
@@ -261,4 +236,4 @@ function uploadtos3(file)
             return xhr.send(file);
 
         });
-};
+})
