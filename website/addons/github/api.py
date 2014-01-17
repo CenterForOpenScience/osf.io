@@ -503,6 +503,8 @@ def tree_to_hgrid(tree, user, repo, node, parent='null', branch=None, sha=None, 
         }
 
         if type_map[item['type']] == 'file':
+            # The path to the file, e.g. 'my-repo/docs/help.rst'
+            row['ghPath'] = path
             row['sha'] = item['sha']
             row['url'] = item['url']
             row['size'] = [
@@ -521,6 +523,7 @@ def tree_to_hgrid(tree, user, repo, node, parent='null', branch=None, sha=None, 
             else:
                 row['download'] = base_api_url
         else:
+            row['ghPath'] = path
             row['uploadUrl'] = node.api_url + 'github/file/{0}/'.format(qpath)
             if ref is not None:
                  row['uploadUrl'] += '?' + ref

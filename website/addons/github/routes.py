@@ -5,7 +5,7 @@
 from framework.routing import Rule, json_renderer
 from website.routes import OsfWebRenderer
 
-from . import views
+from website.addons.github import views
 
 settings_routes = {
     'rules': [
@@ -81,7 +81,6 @@ settings_routes = {
             '/addons/github/callback/<uid>/',
             '/addons/github/callback/<uid>/<nid>/',
         ], 'get', views.github_oauth_callback, json_renderer),
-
     ],
     'prefix': '/api/v1',
 }

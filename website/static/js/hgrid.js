@@ -336,11 +336,11 @@ var HGrid = {
             if (!_this.options[urls[i]]) {
                 _this.options[urls[i]] = _this.options['url'];
             }
-            if (typeof _this.options[urls[i]] === "function") {
-                // NOTE(sloria): The grid gets passed to urlAdd if it is a
-                // function. This is NOT in Hgrid master.
-                _this.options[urls[i]] = _this.options[urls[i]](_this);
-            }
+            // if (typeof _this.options[urls[i]] === "function") {
+            //     // NOTE(sloria): The grid gets passed to urlAdd if it is a
+            //     // function. This is NOT in Hgrid master.
+            //     _this.options[urls[i]] = _this.options[urls[i]](_this);
+            // }
         }
         return this;
     },
@@ -542,6 +542,7 @@ var HGrid = {
         // Get the SlickGrid Row under the dragged file
         myDropzone.on("dragover", function(e){
             currentDropCell = hGrid.Slick.grid.getCellFromEvent(e);
+            var item = hGrid.Slick.dataView.getItem(currentDropCell['row']);
             if(currentDropCell===null){
                 dropHighlight = null;
                 myDropzone.options.dropDestination = null;
@@ -550,13 +551,12 @@ var HGrid = {
             else{
                 currentDropCell.insertBefore = currentDropCell['row'];
 
-                if(hGrid.Slick.dataView.getItem(currentDropCell['row'])['type']=='folder'){
-                    dropHighlight = hGrid.Slick.dataView.getItem(currentDropCell['row']);
-                    myDropzone.options.dropDestination = dropHighlight['uid'];
+                if(item.type === 'folder'){
+                    dropHighlight = item;
+                    myDropzone.options.dropDestination = dropHighlight.uid;
                 }
                 else{
-                    var childDropHighlight = hGrid.Slick.dataView.getItem(currentDropCell['row']);
-                    dropHighlight = hGrid.getItemByValue(hGrid.data, childDropHighlight['parent_uid'], 'uid');
+                    dropHighlight = hGrid.getItemByValue(hGrid.data, item['parent_uid'], 'uid');
                     myDropzone.options.dropDestination = dropHighlight['uid'];
                 }
                 if(dropHighlight['permission']=="true" || typeof dropHighlight['permission'] == 'undefined'){
@@ -564,12 +564,19 @@ var HGrid = {
                 }
             }
             if(bool){
-                myDropzone.options.url = hGrid.options['urlAdd'][myDropzone.options.dropDestination];
+                if (typeof(hGrid.options.urlAdd) === 'function') {
+                    // if urlAdd is a function, call it, passing in the
+                    // item
+                    // NOTE(sloria): This is modified from Hgrid master
+                    myDropzone.options.url = hGrid.options.urlAdd(item);
+                } else {
+                    myDropzone.options.url = hGrid.options['urlAdd'][myDropzone.options.dropDestination];
+                };
             }
 
         });
 
-        myDropzone.on("addedfile", function(file){
+        myDropzone.on("addedfile", function(file) {
             $('.bar').css('width', "0%");
             var parent;
             if (myDropzone.options.dropDestination===null){
@@ -613,7 +620,7 @@ var HGrid = {
 
                 },(1*1000));
             }
-        })
+        });
         // Hook the drop success to the grid view update
         myDropzone.on("success", function(file) {
             var value;

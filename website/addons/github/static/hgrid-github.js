@@ -63,22 +63,17 @@ HGrid.create({
         {id: "size", name: "Size", field: "size", formatter: PairFormatter, sortable: true}
     ],
     url: contextVars.uploadUrl,
-    urlAdd: function(grid) {
-        var ans = {};
-        for (var i = 0; i < grid.data.length; i++) {
-            if (grid.data[i].type === 'folder') {
-                ans[grid.data[i]['uid']] = grid.data[i]['uploadUrl'];
-            }
-        }
-        ans[null] = contextVars.uploadUrl;
-        return ans;
+    urlAdd: function(item) {
+        return item.uploadUrl;
     },
     // NOTE: contextVars comes from the inline javascript on github_page.mako
     // Eventually, probably should inject it as a dependency when this is a module
     ajaxSource: contextVars.hgridUrl,
     lazyLoad: true,
+    // Function that returns the URL for the endpoint to get a folder's contents
+    // "item" in this case is a folder
     itemUrl: function(ajaxSource, item){
-        ret = ajaxSource + item.name;
+        ret = ajaxSource + item.ghPath;
         return ret;
     },
     ajaxOnError: function(xhr, textstatus, error) {
@@ -124,7 +119,10 @@ HGrid.create({
             grid.removeDraggerGuide();
             var path = args.parent['path'].slice();
             path.push(args.item.name);
-            var item = {name: args.item.name, parent_uid: args.parent['uid'], uid: args.item.name, type:"fake", uploadBar: true, path: path, sortpath: path.join("/"), ext: "py", size: args.item.size.toString()};
+            var item = {name: args.item.name, parent_uid: args.parent['uid'],
+                        uid: args.item.name, type:"fake", uploadBar: true,
+                        path: path, sortpath: path.join("/"), ext: "py",
+                        size: args.item.size.toString()};
             var promise = $.when(grid.addItem(item));
             promise.done(function(bool){
                 return true;
