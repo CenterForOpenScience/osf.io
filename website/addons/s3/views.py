@@ -271,16 +271,17 @@ def generate_signed_url(*args, ** kwargs):
 
     amz_headers = "x-amz-acl:public-read"
 
-    mime = request.json.get('type')
+    mime = request.json.get('type') if request.json.get('type') != "" else 'application/octet-stream'
 
     request_to_sign = str("PUT\n\n{mime_type}\n{expires}\n{amz_headers}\n/{resource}".format(mime_type=mime,expires=expires,amz_headers=amz_headers,resource=s3.s3_bucket+'/'+file_name))
 
-    url = 'https://' + s3.s3_bucket +'.s3.amazonaws.com/' + s3.s3_bucket + file_name
+
+    url = 'https://s3.amazonaws.com/' + s3.s3_bucket + '/' + file_name
     
     signed = urllib.quote_plus(base64.encodestring(hmac.new(str(s3.s3_node_secret_key), request_to_sign, sha).digest()).strip())
 
-    return json.dumps({
+    return {
     'signed_request': '{url}?AWSAccessKeyId={access_key}&Expires={expires}&Signature={signed}'.format(url=url,access_key=s3.s3_node_access_key,expires=expires,signed=signed),
     'url': "http://s3.amazonaws.com/#{bucket}/#{filename}".format(bucket=s3.s3_bucket,filename=file_name)
-    })
+    }
     #/blackhttpmagick
