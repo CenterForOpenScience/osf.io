@@ -29,7 +29,7 @@
                         <table>
                             <tbody data-bind="foreach:{data:results, afterRender:addTips}">
                                 <tr data-bind="if:!($root.selected($data))">
-                                    <td>
+                                    <td style="padding-right: 10px;">
                                         <a
                                                 class="btn btn-default contrib-button"
                                                 data-bind="click:$root.add"
@@ -52,7 +52,7 @@
                         <table>
                             <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
                                 <tr>
-                                    <td>
+                                    <td style="padding-right: 10px;">
                                         <a
                                                 class="btn btn-default contrib-button"
                                                 data-bind="click:$root.remove"

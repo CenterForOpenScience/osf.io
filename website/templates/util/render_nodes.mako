@@ -4,8 +4,8 @@
                 "tpl": "util/render_node.mako",
                 "uri": "${each['api_url']}get_summary/",
                 "view_kwargs": {
-                    "rescale_ratio" : ${rescale_ratio},
-                    "uid" : "${user_id}"
+                    "rescale_ratio": ${rescale_ratio},
+                    "uid": "${user_id}"
                 },
                 "replace": true
             }'></div>
@@ -17,28 +17,35 @@
 % if sortable and user['can_edit']:
 
     <script>
+
         $(function(){
             $('.sortable').sortable({
                 containment: '#containment',
                 tolerance: 'pointer',
                 items: '> li',
                 stop: function(event, ui){
-                    var sort_list_elm = this;
-                    var id_list = $(sort_list_elm).sortable('toArray', {
-                       attribute: 'node_id'
-                    });
-                    checkListChange(id_list, sort_list_elm);
+                    var sortListElm = this;
+                    var idList = $(sortListElm).sortable(
+                        'toArray',
+                        {attribute: 'node_reference'}
+                    );
+                    checkListChange(idList, sortListElm);
                 }
             });
         });
-        function checkListChange(id_list, item){
-            var data_to_send = {};
-            data_to_send['new_list'] = JSON.stringify(id_list);
-            $.post('${node['api_url']}reorder_components/', data_to_send, function(response){
-                if(response['success']=='false'){
-                    $(item).sortable('cancel');
+
+        function checkListChange(idList, elm){
+            $.ajax({
+                type: 'POST',
+                url: '${node['api_url']}reorder_components/',
+                data: JSON.stringify({'new_list': idList}),
+                contentType: 'application/json',
+                dataType: 'json',
+                fail: function() {
+                    $(elm).sortable('cancel');
                 }
             });
-        };
+        }
+
     </script>
 % endif

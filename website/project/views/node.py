@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import json
+import re
 import logging
 import httplib as http
 from framework import (
@@ -7,6 +7,7 @@ from framework import (
     push_errors_to_status, get_current_user, Q,
     analytics
 )
+from framework import StoredObject
 from framework.analytics import update_counters
 import framework.status as status
 from framework.exceptions import HTTPError
@@ -225,19 +226,28 @@ def node_choose_addons(**kwargs):
 @must_not_be_registration
 @must_be_contributor # returns user, project
 def project_reorder_components(*args, **kwargs):
+
     project = kwargs['project']
-    user = get_current_user()
 
-    node_to_use = project
-    old_list = [i._id for i in node_to_use.nodes if not i.is_deleted]
-    new_list = json.loads(request.form['new_list'])
-
-    if len(old_list) == len(new_list) and set(new_list) == set(old_list):
-        node_to_use.nodes = new_list
-        if node_to_use.save():
-            return {'status': 'success'}
+    old_list = [
+        (node._id, node._name)
+        for node in project.nodes
+        if not node.is_deleted
+    ]
+    new_list = [
+        tuple(node.split(':'))
+        for node in request.json.get('new_list', [])
+    ]
+    nodes_new = [
+        StoredObject.get_collection(schema).load(key)
+        for key, schema in new_list
+    ]
+    if len(project.nodes) == len(nodes_new) and set(project.nodes) == set(nodes_new):
+        project.nodes = nodes_new
+        project.save()
+        return {}
     # todo log impossibility
-    return {'status': 'failure'}
+    raise HTTPError(http.BAD_REQUEST)
 
 
 ##############################################################################
@@ -653,8 +663,9 @@ def get_registrations(*args, **kwargs):
 def search_node(*args, **kwargs):
 
     user = get_current_user()
-    query = request.args.get('query', '')
     node = Node.load(request.args.get('nid'))
+
+    query = request.args.get('query', '').strip()
 
     # Build ODM query
     odm_query = (
@@ -667,9 +678,7 @@ def search_node(*args, **kwargs):
 
     # Exclude current node from query if provided
     if node:
-        ids = [node._id]
-        if node.nodes:
-            ids += node.nodes._to_primary_keys()
+        ids = [node._id] + node.node_ids
         odm_query = (
             odm_query &
             Q('_id', 'nin', ids)

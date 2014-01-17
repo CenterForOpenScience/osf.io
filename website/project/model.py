@@ -494,6 +494,13 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.save()
 
     @property
+    def node_ids(self):
+        return [
+            node._id if node.primary else node.node._id
+            for node in self.nodes
+        ]
+
+    @property
     def nodes_shortcut(self):
         return [
             node

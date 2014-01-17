@@ -2,6 +2,7 @@
 
     <li
             node_id="${summary['id']}"
+            node_reference="${summary['id']}:${'node' if summary['primary'] else 'shortcut'}"
             class="
                 project list-group-item list-group-item-node cite-container
                 ${'shortcut' if not summary['primary'] else ''}
