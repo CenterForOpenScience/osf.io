@@ -113,7 +113,6 @@ def project_new_node(*args, **kwargs):
 
 @must_have_session_auth
 @must_be_valid_project  # returns project
-@must_be_contributor  # returns user, project
 @must_not_be_registration
 def project_before_fork(*args, **kwargs):
 

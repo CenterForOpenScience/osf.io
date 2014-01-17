@@ -1,3 +1,5 @@
+<% import json %>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -108,7 +110,7 @@
                         <% parent_project = parent.get('id') or node.get('id') %>
                         cvars.push([2, "Project ID", "${ parent_project }", "page"]);
                         cvars.push([3, "Node ID", "${ node.get('id') }", "page"]);
-                        cvars.push([4, "Tags", "${ ','.join(node.get('tags')) }", "page"]);
+                        cvars.push([4, "Tags", ${ json.dumps(','.join(node.get('tags', []))) }, "page"]);
                     %endif
                     var foo = trackPiwik("${ piwik_host }", ${ piwik_site_id }, cvars);
                 });
@@ -144,4 +146,3 @@
 <%def name="javascript_bottom()">
     ### Javascript loaded at the bottom of the page ###
 </%def>
-
