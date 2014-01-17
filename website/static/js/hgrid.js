@@ -542,13 +542,14 @@ var HGrid = {
         // Get the SlickGrid Row under the dragged file
         myDropzone.on("dragover", function(e){
             currentDropCell = hGrid.Slick.grid.getCellFromEvent(e);
-            var item = hGrid.Slick.dataView.getItem(currentDropCell['row']);
+            var item;
             if(currentDropCell===null){
                 dropHighlight = null;
                 myDropzone.options.dropDestination = null;
                 hGrid.draggerGuide(dropHighlight);
             }
             else{
+                item = hGrid.Slick.dataView.getItem(currentDropCell['row']);
                 currentDropCell.insertBefore = currentDropCell['row'];
 
                 if(item.type === 'folder'){

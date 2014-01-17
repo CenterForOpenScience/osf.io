@@ -56,6 +56,7 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
 };
 
 var grid;
+var rootItem;
 HGrid.create({
     container: "#gitGrid",
     columns:[
@@ -64,7 +65,11 @@ HGrid.create({
     ],
     url: contextVars.uploadUrl,
     urlAdd: function(item) {
-        return item.uploadUrl;
+        if (item) {
+            return item.uploadUrl;
+        } else {
+            return contextVars.uploadUrl;
+        }
     },
     // NOTE: contextVars comes from the inline javascript on github_page.mako
     // Eventually, probably should inject it as a dependency when this is a module
@@ -81,6 +86,8 @@ HGrid.create({
     },
     ajaxOnSuccess: function(lazyGrid) {
         grid = lazyGrid;
+        // First datum is the root
+        rootItem = grid.data[0];
         grid.addColumn({id: "download", name: "Download", field: "download", width: 150, sortable: true, formatter: UploadBars});
         // Expand the root directory
         grid.expandItem(grid.data[0]);
@@ -135,10 +142,12 @@ HGrid.create({
             var newSlickInfo = JSON.parse(args.xhr.response)[0];
             // Delete fake item
             var item = grid.getItemByValue(grid.data, args.name, "uid");
-            grid.deleteItems([item['uid']]);
+            grid.deleteItems([item.uid]);
             // If action taken is not null, create new item
-            if (newSlickInfo['action_taken'] !== null) {
-                grid.addItem(newSlickInfo);
+            if (newSlickInfo.action_taken !== null) {
+                // FIXME: When item is added, it is added using addItem,
+                // it is added in the wrong place, so just reload for now.
+                window.location.reload(true);
                 return true;
             }
             return false;
