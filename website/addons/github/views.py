@@ -372,7 +372,7 @@ def github_hgrid_data(*args, **kwargs):
     req_branch, req_sha = request.args.get('branch'), request.args.get('sha')
     # The actual branch and sha to use, given the addon settings
     branch, sha = _get_branch_and_sha(node_addon, req_branch, req_sha,
-                                        connection=connect)
+                                      connection=connect)
     # Get file tree
     contents = connect.contents(
         node_addon.user, node_addon.repo, ref=sha or branch, path='')

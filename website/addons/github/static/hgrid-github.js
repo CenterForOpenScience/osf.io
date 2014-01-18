@@ -18,8 +18,8 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         }
     } else {
         var link = value;
-        if(dataContext['download']){
-            link = "<a href=" + dataContext['download'] + ">" + value + "</a>";
+        if(dataContext['view']){
+            link = "<a href=" + dataContext['view'] + ">" + value + "</a>";
         }
         var imageUrl = "/static\/img\/hgrid\/fatcowicons\/file_extension_" + dataContext['ext'] + ".png";
         if(extensions.indexOf(dataContext['ext'])==-1){
@@ -43,7 +43,7 @@ var UploadBars = function(row, cell, value, columnDef, dataContext) {
             var delButton = "<button type='button' class='btn btn-danger btn-mini' onclick='grid.deleteItems([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-trash icon-white'></i></button>"
             var downButton = '<a href="' + value + '" download="' + dataContext['name'] + '"><button type="button" class="btn btn-success btn-mini"><i class="icon-download-alt icon-white"></i></button></a>';
             var buttons = downButton;
-            if (canEdit) {
+            if (canEdit && hasAccess && isHead) {
                 buttons += ' ' + delButton;
             }
             return "<div>" + buttons + "</div>";
@@ -153,7 +153,7 @@ HGrid.create({
         });
     },
     breadcrumbBox: "#gitCrumb",
-    clickUploadElement: canEdit ? "#gitFormUpload" : null,
+    clickUploadElement: (canEdit && hasAccess && isHead) ? "#gitFormUpload" : null,
     autoHeight: true,
     forceFitColumns: true,
     largeGuide: false,

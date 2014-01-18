@@ -112,7 +112,7 @@
         // Upload URL
         uploadUrl: "${upload_url}",
         // URL to get the hgrid root data
-        hgridUrl: "${api_url + 'github/hgrid/'}",
+        hgridUrl: "${api_url + 'github/hgrid/'}" + window.location.search,
         // SHA and branch,
         sha: "${sha}",
         branch: "${branch}"
