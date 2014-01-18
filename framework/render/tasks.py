@@ -14,23 +14,6 @@ config = {
 FileRenderer.STATIC_PATH = '/static/mfr'
 
 
-# def render(file_name, **kwargs):
-#     file_pointer = open(file_name)
-#     for name, cls in FileRenderer.registry.items():
-#         renderer = cls(**config.get(name, {}))
-#         if renderer.detect(file_pointer):
-#             return renderer._render(file_pointer, file_name, **kwargs)
-#     return file_name
-#
-#
-# @celery.task
-# def build_rendered_html(file_path, cached_file_path, download_path):
-#     rendered = render(file_path, url=download_path)
-#     with open(cached_file_path, 'w') as fp:
-#         fp.write(rendered)
-#     return True
-
-
 @celery.task(time_limit=30000)
 def build_rendered_html(file_path, cached_file_path, download_path):
     FileRenderer.STATIC_PATH = '/static/mfr'

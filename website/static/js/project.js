@@ -188,11 +188,19 @@ refresh rendered file through mfr
 
 window.FileRenderer = {
     start: function(url){
+        var tries = 0
         var refreshContent = window.setInterval(function(){
             $.get( url, function(data) {
                 if(data){
                     $('#file-rendered').html(data);
                     clearInterval(refreshContent);
+                }else{
+                    console.log(tries);
+                    tries += 1;
+                    if(tries > 10){
+                    clearInterval(refreshContent);
+                    $('#file-rendered').html("Timeout occurred while loading, please refresh the page")
+                    }
                 }
             })
         }, 1000);
