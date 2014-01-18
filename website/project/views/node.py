@@ -548,20 +548,19 @@ def check_file_exists(*args, **kwargs):
         return None
 
 # todo will use later - JRS
-def check_celery(*args, **kwargs):
-    #todo this needs to match style of views/file celery id once it is made abstract
-    celery_id = '/api/v1/project/{pid}/files/download/{fid}/version/{vid}/render'.format(
-        pid=kwargs['pid'], fid=kwargs['fid'],  vid=kwargs['vid']
-    )
-
-    if build_rendered_html.AsyncResult(celery_id).state == "SUCCESS":
-        cached_file_path = os.path.join(
-            settings.BASE_PATH, "cached", kwargs['pid'],
-            kwargs['fid'].replace('.', '_') + "_v" + kwargs['vid'] + ".html"
-        )
-        return open(cached_file_path, 'r').read()
-
-    if build_rendered_html.AsyncResult(celery_id).state == "FAILURE":
-        return '<div> This file failed to render (timeout) </div>'
-    return None
-
+# def check_celery(*args, **kwargs):
+#     celery_id = '/api/v1/project/{pid}/files/download/{fid}/version/{vid}/render'.format(
+#         pid=kwargs['pid'], fid=kwargs['fid'],  vid=kwargs['vid']
+#     )
+#
+#     if build_rendered_html.AsyncResult(celery_id).state == "SUCCESS":
+#         cached_file_path = os.path.join(
+#             settings.BASE_PATH, "cached", kwargs['pid'],
+#             kwargs['fid'].replace('.', '_') + "_v" + kwargs['vid'] + ".html"
+#         )
+#         return open(cached_file_path, 'r').read()
+#
+#     if build_rendered_html.AsyncResult(celery_id).state == "FAILURE":
+#         return '<div> This file failed to render (timeout) </div>'
+#     return None
+#
