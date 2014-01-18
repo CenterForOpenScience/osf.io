@@ -36,11 +36,11 @@
                     %if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
                         % if user["is_contributor"]:
-                            <a class="btn btn-default" id="publicButton" data-target="${node['api_url']}permissions/public/">Make public</a>
+                            <a class="btn btn-default" id="publicButton" data-target="${node['api_url']}permissions/public/">Make Public</a>
                         % endif
                     %else:
                         % if user["is_contributor"]:
-                            <a class="btn btn-default" id="privateButton" data-target="${node['api_url']}permissions/private/">Make private</a>
+                            <a class="btn btn-default" id="privateButton" data-target="${node['api_url']}permissions/private/">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
                     %endif
@@ -73,6 +73,21 @@
 
                     </div><!-- end btn-grp -->
                 </div><!-- end btn-toolbar -->
+
+                <!-- Add pointers to me -->
+                <div class="btn-toolbar node-control pull-right">
+                    <div class="btn-group">
+                        <a
+                                class="btn btn-default ${'disable' if not user_name else ''}"
+                                data-toggle="modal"
+                                data-target="#addPointer"
+                                onclick="prepAddAsPointer()">
+                            Add Pointers to this ${node['category'].capitalize()}
+                            ${node['points']}
+                        </a>
+                    </div>
+                </div>
+
             </div><!-- end col-md-->
 
         </div><!-- end row -->
@@ -141,7 +156,7 @@
     </header>
 </div><!-- end projectScope -->
 <%include file="modal_add_contributor.mako"/>
-<%include file="modal_add_shortcut.mako"/>
+<%include file="modal_add_pointer.mako"/>
 ## TODO: Find a better place to put this initialization code
 <script>
 
@@ -151,40 +166,37 @@
     var nodeApiUrl = '${node['api_url']}';
 
     $(document).ready(function(){
-        $logScope = $("#logScope");
+
+        $logScope = $('#logScope');
         if ($logScope.length > 0) {
-            progressBar = $("#logProgressBar")
+            progressBar = $('#logProgressBar')
             progressBar.show();
         }
         // Get project data from the server and initiate the ProjectViewModel
         $.ajax({
             url: nodeApiUrl,
-            type: "get", contentType: "application/json",
-            dataType: "json",
+            type: 'get', contentType: 'application/json',
+            dataType: 'json',
             cache: false,
             success: function(data){
                 // Initialize ProjectViewModel with returned data
-                ko.applyBindings(new ProjectViewModel(data), $("#projectScope")[0]);
+                ko.applyBindings(new ProjectViewModel(data), $('#projectScope')[0]);
 
-                // Initiate AddContributorViewModel
-                var $addContributors = $('#addContributors');
-                var addContribVM = new AddContributorViewModel(data['node']['title'],
-                                                        data['parent']['id'],
-                                                        data['parent']['title']);
-                ko.applyBindings(addContribVM, $addContributors[0]);
-                // Clear user search modal when dismissed; catches dismiss by escape key
-                // or cancel button.
-                $addContributors.on('hidden', function() {
-                    addContribVM.clear();
-                });
-
-                var $addShortcut = $('#addShortcut');
-                var addShortcutVM = new AddShortcutViewModel();
-                ko.applyBindings(addShortcutVM, $addShortcut[0]);
-                $addShortcut.on('hidden', function() {
-                    addShortcutVM.clear();
-                });
-
+                if (data.user.can_edit) {
+                    // Initiate AddContributorViewModel
+                    var $addContributors = $('#addContributors');
+                    var addContribVM = new AddContributorViewModel(
+                            data.node.title,
+                            data.parent.id,
+                            data.parent.title
+                    );
+                    ko.applyBindings(addContribVM, $addContributors[0]);
+                    // Clear user search modal when dismissed; catches dismiss by escape key
+                    // or cancel button.
+                    $addContributors.on('hidden.bs.modal', function() {
+                        addContribVM.clear();
+                    });
+                }
 
                 // Initialize LogsViewModel when appropriate
                 if ($logScope.length > 0) {
@@ -193,16 +205,33 @@
                     // Create an array of Log model objects from the returned log data
                     var logModelObjects = createLogs(logs);
                     ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
-                };
+                }
             }
         });
     });
+
+    var $addPointer = $('#addPointer');
+    var addPointerVM = new AddPointerViewModel('${node['title']}');
+    ko.applyBindings(addPointerVM, $addPointer[0]);
+    $addPointer.on('hidden.bs.modal', function() {
+        addPointerVM.clear();
+    });
+
+    function prepAddAsPointer() {
+        addPointerVM.clear();
+        addPointerVM.mode('addAsPointer');
+    }
+
+    function prepAddPointer() {
+        addPointerVM.clear();
+        addPointerVM.mode('addPointer');
+    }
 
 </script>
 % if node.get('is_public') and node.get('piwik_site_id'):
 <script type="text/javascript">
     $(function() {
-        trackPiwik("${ piwik_host }", ${ node['piwik_site_id'] });
+        trackPiwik('${ piwik_host }, ${ node['piwik_site_id'] });
     });
 </script>
 % endif

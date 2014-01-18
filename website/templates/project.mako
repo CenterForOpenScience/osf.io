@@ -125,13 +125,13 @@
 
 <div class="page-header">
     % if node['category'] == 'project':
-        <div class="pull-right">
+        <div class="pull-right btn-group">
             % if user['can_edit']:
                 <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
-                <a class="btn btn-default" data-toggle="modal" data-target="#addShortcut">Add Shortcut</a>
+                <a class="btn btn-default" data-toggle="modal" data-target="#addPointer" onclick="prepAddPointer()">Add Pointers</a>
             % else:
                 <a class="btn btn-default disabled">Add Component</a>
-                <a class="btn btn-default disabled">Add Shortcut</a>
+                <a class="btn btn-default disabled">Add Pointers</a>
             % endif
         </div>
         <%include file="modal_add_component.mako"/>
@@ -190,17 +190,17 @@
         $('#node-tags').tagsInput({
             width: "100%",
             interactive:${'true' if user["can_edit"] else 'false'},
-            onAddTag:function(tag){
+            onAddTag: function(tag){
                 $.ajax({
-                    url:"${node['api_url']}" + "addtag/" + tag + "/",
-                    type:"POST",
+                    url: "${node['api_url']}" + "addtag/" + tag + "/",
+                    type: "POST",
                     contentType: "application/json"
                 });
             },
-            onRemoveTag:function(tag){
+            onRemoveTag: function(tag){
                 $.ajax({
-                    url:"${node['api_url']}" + "removetag/" + tag + "/",
-                    type:"POST",
+                    url: "${node['api_url']}" + "removetag/" + tag + "/",
+                    type: "POST",
                     contentType: "application/json"
                 });
             }

@@ -1,18 +1,23 @@
-<div class="modal fade" id="addShortcut">
+<div class="modal fade" id="addPointer">
 
     <div class="modal-dialog">
 
         <div class="modal-content">
 
             <div class="modal-header">
-                <h3>Add Shortcuts</h3>
+                <h3 data-bind="text:title"></h3>
             </div>
 
             <div class="modal-body">
 
                 <form>
                     <input style="margin-bottom: 8px;" data-bind="value:query" />
-                    <div><button class="btn btn-default" data-bind="click:search">Search</button></div>
+                    <div>
+                        <div class="btn-group">
+                            <button class="btn btn-default" data-bind="click:function(){search(true)}">Search all projects</button>
+                            <button class="btn btn-default" data-bind="click:function(){search(false)}">Search my projects</button>
+                        </div>
+                    </div>
                 </form>
 
                 <hr />
@@ -26,19 +31,19 @@
                             <a data-bind="click:addAll">Add all</a>
                         </div>
                         <div class="error" data-bind="if:errorMsg, text:errorMsg"></div>
-                        <table>
+                        <table class="table table-striped">
                             <tbody data-bind="foreach:{data:results, afterRender:addTips}">
                                 <tr data-bind="if:!($root.selected($data))">
-                                    <td style="padding-right: 10px;">
+                                    <td>
                                         <a
                                                 class="btn btn-default contrib-button"
                                                 data-bind="click:$root.add"
                                                 rel="tooltip"
-                                                title="Add shortcut"
+                                                title="Add pointer"
                                             >+</a>
                                     </td>
                                     <td data-bind="text:title"></td>
-                                    <td data-bind="text:description"></td>
+                                    <td data-bind="text:$root.authorText($data)"></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -49,19 +54,19 @@
                             <span class="modal-subheader">Adding</span>
                             <a data-bind="click:removeAll">Remove all</a>
                         </div>
-                        <table>
+                        <table class="table table-striped">
                             <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
                                 <tr>
-                                    <td style="padding-right: 10px;">
+                                    <td>
                                         <a
                                                 class="btn btn-default contrib-button"
                                                 data-bind="click:$root.remove"
                                                 rel="tooltip"
-                                                title="Remove shortcut"
+                                                title="Remove pointer"
                                             >-</a>
                                     </td>
                                     <td data-bind="text:title"></td>
-                                    <td data-bind="text:description"></td>
+                                    <td data-bind="text:$root.authorText($data)"></td>
                                 </tr>
                             </tbody>
                         </table>

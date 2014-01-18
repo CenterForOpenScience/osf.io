@@ -627,6 +627,21 @@ class TestNode(DbTestCase):
         })
         assert_equal(latest_log.user, self.user)
 
+    def test_add_pointer(self):
+        node2 = NodeFactory()
+        self.node.add_pointer(node2)
+        assert_equal(len(self.node.nodes), 1)
+        assert_false(self.node.nodes[0].primary)
+        assert_equal(self.node.nodes[0].node, node2)
+        assert_equal(node2.points, 1)
+
+    def test_rm_pointer(self):
+        node2 = NodeFactory()
+        self.node.add_pointer(node2)
+        self.node.rm_pointer(node2)
+        assert_equal(len(self.node.nodes), 0)
+        assert_equal(node2.points, 0)
+
     def test_add_file(self):
         #todo Add file series of tests
         pass
@@ -1023,6 +1038,12 @@ class TestForkNode(DbTestCase):
                 data_fork = fork.get_file(file_fork.path, vidx)
                 assert_equal(data_original, data_fork)
 
+        # Test that pointers were copied correctly
+        assert_equal(
+            [pointer.node for pointer in original.nodes_pointer],
+            [pointer.node for pointer in fork.nodes_pointer],
+        )
+
         # Test that add-ons were copied correctly
         assert_equal(
             original.get_addon_names(),
@@ -1058,6 +1079,12 @@ class TestForkNode(DbTestCase):
         self.subproject.add_file(
             self.user, None, 'test3.txt', 'test content3', 4, 'text/plain'
         )
+
+        # Add pointers to test copying
+        pointee = ProjectFactory()
+        self.project.add_pointer(pointee)
+        self.component.add_pointer(pointee)
+        self.subproject.add_pointer(pointee)
 
         # Add add-on to test copying
         self.project.add_addon('github')

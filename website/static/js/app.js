@@ -437,30 +437,49 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
 
 };
 
-var AddShortcutViewModel = function() {
+var AddPointerViewModel = function(nodeTitle) {
 
     var self = this;
+
+    self.TITLES = {
+        'addPointer': 'Add pointers from {title} to other projects',
+        'addAsPointer': 'Add pointers to {title} from other projects'
+    };
+
+    self.nodeTitle = nodeTitle;
+
+    self.mode = ko.observable();
+    self.title = ko.computed(function() {
+        if (self.mode()) {
+            return self.TITLES[self.mode()].replace('{title}', self.nodeTitle);
+        }
+    });
 
     self.query = ko.observable();
     self.results = ko.observableArray();
     self.selection = ko.observableArray();
     self.errorMsg = ko.observable('');
 
-    self.search = function() {
+    self.search = function(includePublic) {
         self.errorMsg('');
-        $.getJSON(
-            '/api/v1/search/node/',
-            {
+        $.ajax({
+            type: 'POST',
+            url: '/api/v1/search/node/',
+            data: JSON.stringify({
                 query: self.query(),
-                nid: nodeId
-            },
-            function(result) {
+                nodeId: nodeId,
+                includePublic: includePublic,
+                ignorePointers: self.mode() == 'addAsPointer'
+            }),
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function(result) {
                 if (!result.nodes.length) {
                     self.errorMsg('No results found.');
                 }
                 self.results(result['nodes']);
             }
-        )
+        })
     };
 
     self.addTips = function(elements) {
@@ -509,20 +528,19 @@ var AddShortcutViewModel = function() {
 
     self.submit = function() {
         var node_ids = attrMap(self.selection(), 'id');
-        $.ajax(
-            nodeApiUrl + 'addshortcuts/',
-            {
-                type: 'post',
-                data: JSON.stringify({
-                    node_ids: node_ids
-                }),
-                contentType: 'application/json',
-                dataType: 'json',
-                success: function(response) {
-                    window.location.reload();
-                }
+        $.ajax({
+            type: 'post',
+            url: nodeApiUrl + 'pointer/',
+            data: JSON.stringify({
+                node_ids: node_ids,
+                mode: self.mode()
+            }),
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function(response) {
+                window.location.reload();
             }
-        )
+        });
     };
 
     self.clear = function() {
@@ -530,6 +548,14 @@ var AddShortcutViewModel = function() {
         self.results([]);
         self.selection([]);
     };
+
+    self.authorText = function(node) {
+        rv = node.firstAuthor;
+        if (node.etal) {
+            rv += ' et al.';
+        }
+        return rv;
+    }
 
 };
 

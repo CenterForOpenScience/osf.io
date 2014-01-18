@@ -95,6 +95,10 @@ font-weight: bold;
 
 /* Global Styles */
 
+#addPointer td {
+    vertical-align: middle;
+}
+
 /* Add-on styles */
 
 /* Make embedded iframes responsive */
@@ -576,7 +580,7 @@ input.ui-autocomplete-input{
 li.list-group-item-node {
     margin-bottom: 10px;
 }
-li.shortcut {
+li.pointer {
     border-style: dashed;
 }
 

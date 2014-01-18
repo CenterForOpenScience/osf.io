@@ -19,7 +19,7 @@ from website.project import new_node, clean_template_name
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from website.project.forms import NewProjectForm, NewNodeForm
-from website.models import WatchConfig, Node, Shortcut
+from website.models import WatchConfig, Node, Pointer
 from website import settings
 from website.views import _render_nodes
 
@@ -480,6 +480,7 @@ def _view_project(node_to_use, user, api_key=None, primary=False):
 
             'watched_count': len(node_to_use.watchconfig__watched),
             'logs': recent_logs_dicts,
+            'points': node_to_use.points,
             'piwik_site_id': node_to_use.piwik_site_id,
         },
         'parent': {
@@ -512,8 +513,8 @@ def _get_children(node, user, indent=0):
 
     children = []
 
-    for child in node.nodes:
-        if node.can_view(user):
+    for child in node.nodes_primary:
+        if child.can_edit(user):
             children.append({
                 'id': child._primary_key,
                 'title': child.title,
@@ -573,7 +574,7 @@ def get_recent_logs(*args, **kwargs):
     logs = list(reversed(node_to_use.logs._to_primary_keys()))[:3]
     return {'logs': logs}
 
-def _get_summary(node, rescale_ratio):
+def _get_summary(node, user, rescale_ratio):
 
     user = get_current_user()
     api_key = get_api_key()
@@ -583,6 +584,7 @@ def _get_summary(node, rescale_ratio):
     if node.can_view(user, api_key):
         summary.update({
             'can_view': True,
+            'can_edit': node.can_edit(user),
             'id': node._primary_key,
             'url': node.url,
             # TODO: Make elegant
@@ -616,21 +618,23 @@ def _get_summary(node, rescale_ratio):
 def get_summary(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
+    user = get_current_user()
     rescale_ratio = kwargs.get('rescale_ratio')
 
-    return _get_summary(node, rescale_ratio)
+    return _get_summary(node, user, rescale_ratio)
 
 
-def shortcut_summary(*args, **kwargs):
+def pointer_summary(*args, **kwargs):
 
     sid = kwargs.get('sid')
-    shortcut = Shortcut.load(sid)
-    if shortcut is None:
+    pointer = Pointer.load(sid)
+    if pointer is None:
         raise HTTPError(http.BAD_REQUEST)
 
+    user = get_current_user()
     rescale_ratio = kwargs.get('rescale_ratio')
 
-    return _get_summary(shortcut, rescale_ratio)
+    return _get_summary(pointer, user, rescale_ratio)
 
 
 @must_be_contributor_or_public
@@ -662,25 +666,33 @@ def get_registrations(*args, **kwargs):
 def search_node(*args, **kwargs):
 
     user = get_current_user()
-    node = Node.load(request.args.get('nid'))
+    node = Node.load(request.json.get('nodeId'))
+    include_public = request.json.get('includePublic')
+    ignore_pointers = request.json.get('ignorePointers')
 
-    query = request.args.get('query', '').strip()
+    query = request.json.get('query', '').strip()
+    if not query:
+        return {'nodes': []}
 
     # Build ODM query
-    odm_query = (
-        Q('title', 'icontains', query) &
-        (
-            Q('contributors', 'eq', user) |
-            Q('is_public', 'eq', True)
-        )
-    )
+    title_query = Q('title', 'icontains', query)
+    visibility_query = Q('contributors', 'eq', user)
+    if include_public:
+        visibility_query = visibility_query | Q('is_public', 'eq', True)
+    odm_query = title_query & visibility_query
 
     # Exclude current node from query if provided
     if node:
-        ids = [node._id] + node.node_ids
+        nin = [node._id] + node.node_ids
+        if ignore_pointers:
+            for pointer in node.linked:
+                nin.extend([
+                    parent._id
+                    for parent in pointer.parent
+                ])
         odm_query = (
             odm_query &
-            Q('_id', 'nin', ids)
+            Q('_id', 'nin', nin)
         )
 
     # TODO: Parameterize limit; expose pagination
@@ -691,27 +703,71 @@ def search_node(*args, **kwargs):
             {
                 'id': node._id,
                 'title': node.title,
-                'description': node.description,
+                'firstAuthor': node.contributors[0].family_name,
+                'etal': len(node.contributors) > 1,
             }
             for node in cursor
         ]
     }
 
-@must_be_contributor
-def add_shortcuts(*args, **kwargs):
 
-    node = kwargs['node'] or kwargs['project']
-
-    node_ids = request.json.get('node_ids', [])
+def _add_pointers(node, pointers):
 
     added = False
-    for node_id in node_ids:
-        _node = Node.load(node_id)
-        if _node:
-            node.add_shortcut(_node, save=False)
-            added = True
+    for pointer in pointers:
+        node.add_pointer(pointer, save=False)
+        added = True
 
     if added:
         node.save()
 
+
+def _add_as_pointer(pointer, nodes):
+
+    for node in nodes:
+        node.add_pointer(pointer)
+
+
+@must_be_contributor
+def add_pointers(*args, **kwargs):
+    """Add pointers to a node.
+
+    """
+    node = kwargs['node'] or kwargs['project']
+    node_ids = request.json.get('node_ids', [])
+    mode = request.json.get('mode')
+
+    if node_ids is None:
+        raise HTTPError(http.BAD_REQUEST)
+    if mode not in ['addPointer', 'addAsPointer']:
+        raise HTTPError(http.BAD_REQUEST)
+
+    nodes = [
+        Node.load(node_id)
+        for node_id in node_ids
+    ]
+
+    if mode == 'addPointer':
+        _add_pointers(node, nodes)
+    elif mode == 'addAsPointer':
+        _add_as_pointer(node, nodes)
+
     return {}
+
+
+@must_be_contributor
+def remove_pointer(*args, **kwargs):
+    """Remove a pointer from a node, raising a 400 if the pointer is not
+    in `node.nodes`.
+
+    """
+    node = kwargs['node'] or kwargs['project']
+    pointer_id = request.json.get('pointerId')
+    pointer = Pointer.load(pointer_id)
+
+    try:
+        node.nodes.remove(pointer)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
+
+    node.save()

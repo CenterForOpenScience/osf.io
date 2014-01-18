@@ -267,18 +267,22 @@ class Tag(StoredObject):
         return '/search/?q=tags:{}'.format(self._id)
 
 
-class Shortcut(StoredObject):
+class Pointer(StoredObject):
+    """A link to a Node. The Pointer delegates all but a few methods to its
+    contained Node. Forking and registration are overridden such that the
+    link is cloned, but its contained Node is not.
 
+    """
     primary = False
 
     _id = fields.StringField()
-    node = fields.ForeignField('node', backref='linked')
+    node = fields.ForeignField('node', backref='pointed')
 
     _meta = {'optimistic': True}
 
     @property
     def api_url(self):
-        return '/api/v1/shortcut/{0}/'.format(self._id)
+        return '/api/v1/pointer/{0}/'.format(self._id)
 
     def _clone(self):
         if self.node:
@@ -294,10 +298,15 @@ class Shortcut(StoredObject):
         return self._clone()
 
     def __getattr__(self, item):
+        # Prevent backref lookups from being overriden by proxied node
+        try:
+            return super(Pointer, self).__getattr__(item)
+        except AttributeError:
+            pass
         if self.node:
             return getattr(self.node, item)
         raise AttributeError(
-            'Shortcut object has no attribute {0}'.format(
+            'Pointer object has no attribute {0}'.format(
                 item
             )
         )
@@ -464,32 +473,41 @@ class Node(GuidStoredObject, AddonModelMixin):
         # Return expected value for StoredObject::save
         return saved_fields
 
-    def add_shortcut(self, node, save=True):
-        """Add a shortcut to a node.
+    ############
+    # Pointers #
+    ############
+
+    def add_pointer(self, node, save=True):
+        """Add a pointer to a node.
 
         :param Node node: Node to add
         :param bool save: Save changes
 
         """
-        # Fail if node already in nodes / shortcuts
+        # Fail if node already in nodes / pointers
         if node._id in self.nodes._to_primary_keys():
             raise ValueError
 
-        # Append shortcut
-        shortcut = Shortcut(node=node)
-        shortcut.save()
-        self.nodes.append(shortcut)
+        # Append pointer
+        pointer = Pointer(node=node)
+        pointer.save()
+        self.nodes.append(pointer)
 
         # Optionally save changes
         if save:
             self.save()
 
-    def rm_shortcut(self, node, save=True):
-        self.nodes = [
-            _node
-            for _node in self.nodes
-            if _node.node != node
-        ]
+    def rm_pointer(self, node, save=True):
+        """Remove a pointer.
+
+        :param Node node: Node to remove
+        :param bool save: Save changes
+
+        """
+        for each in self.nodes_pointer:
+            if each.node == node:
+                Pointer.remove_one(each)
+
         if save:
             self.save()
 
@@ -501,7 +519,15 @@ class Node(GuidStoredObject, AddonModelMixin):
         ]
 
     @property
-    def nodes_shortcut(self):
+    def nodes_primary(self):
+        return [
+            node
+            for node in self.nodes
+            if node.primary
+        ]
+
+    @property
+    def nodes_pointer(self):
         return [
             node
             for node in self.nodes
@@ -509,12 +535,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         ]
 
     @property
-    def nodes_primary(self):
-        return [
-            node
-            for node in self.nodes
-            if node.primary
-        ]
+    def points(self):
+        return len(getattr(self, 'pointed', []))
 
     def get_recent_logs(self, n=10):
         '''Return a list of the n most recent logs, in reverse chronological

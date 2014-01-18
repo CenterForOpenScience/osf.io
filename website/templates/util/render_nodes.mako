@@ -14,9 +14,9 @@
 <%include file='log_templates.mako'/>
 </ul>
 
-% if sortable and user['can_edit']:
+<script>
 
-    <script>
+    % if sortable and user['can_edit']:
 
         $(function(){
             $('.sortable').sortable({
@@ -47,5 +47,35 @@
             });
         }
 
-    </script>
-% endif
+    % endif
+
+    function removePointer(pointerId, pointerElm) {
+        $.ajax({
+            type: 'DELETE',
+            url: nodeApiUrl + 'pointer/',
+            data: JSON.stringify({pointerId: pointerId}),
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function(response) {
+                pointerElm.remove();
+            }
+        })
+    }
+
+    $('.remove-pointer').on('click', function() {
+        bootbox.confirm(
+            'Are you sure you want to remove this pointer? This will not ' +
+            'remove the project this pointer is linked to.',
+            function(result) {
+                if (result) {
+                    var $this = $(this),
+                        pointerId = $this.attr('data-id'),
+                        pointerElm = $this.closest('.list-group-item');
+                    removePointer(pointerId, pointerElm);
+                }
+            }
+        )
+    });
+
+</script>
+

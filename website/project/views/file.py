@@ -34,16 +34,22 @@ def prune_file_list(file_list, max_depth):
     return [file for file in file_list if len([c for c in file if c == '/']) <= max_depth]
 
 
-def get_file_tree(node_to_use, user):
-    tree = []
-    for node in node_to_use.nodes:
-        if not node.is_deleted:
-            tree.append(get_file_tree(node, user))
+def get_file_tree(node_to_use, user, visited=None):
 
-    if node_to_use.can_view(user):
-        for i,v in node_to_use.files_current.items():
-            v = NodeFile.load(v)
-            tree.append(v)
+    tree = []
+    visited = visited or []
+
+    if node_to_use not in visited:
+
+        for node in node_to_use.nodes:
+            if not node.is_deleted and node not in visited:
+                visited.append(node)
+                tree.append(get_file_tree(node, user, visited))
+
+        if node_to_use.can_view(user):
+            for i,v in node_to_use.files_current.items():
+                v = NodeFile.load(v)
+                tree.append(v)
 
     return (node_to_use, tree)
 

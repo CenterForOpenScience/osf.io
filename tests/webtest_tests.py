@@ -238,7 +238,7 @@ class TestAUser(DbTestCase):
         project.save()
         # User goes to the project page
         res = self.app.get(project.url, auth=self.auth).maybe_follow()
-        assert_in('Make public', res)
+        assert_in('Make Public', res)
 
     def test_sees_logs_on_a_project(self):
         project = ProjectFactory(is_public=True)

@@ -56,8 +56,8 @@ class GitHub(object):
 
         # Add if-modified-since header if needed
         headers = kwargs.pop('headers', {})
-        cache_key = '{0}::{1}::{2}'.format(
-            url, method, str(kwargs)
+        cache_key = '{0}::{1}::{2}::{3}'.format(
+            url, method, str(kwargs), self.access_token,
         )
         cache_data = github_cache.get(cache_key)
         if cache and cache_data:
@@ -104,7 +104,7 @@ class GitHub(object):
             if user
             else os.path.join(API_URL, 'user')
         )
-        return self._send(url, cache=False)
+        return self._send(url)
 
     def repo(self, user, repo):
         """Get a single Github repo's info.
