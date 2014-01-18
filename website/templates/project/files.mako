@@ -122,20 +122,23 @@ if(typeof(browserComp) === 'undefined'){
 
 var useDropZone = ${int(user['can_edit'])} && browserComp;
 
+var gridData = ${info};
+var getUrlAdd = function() {
+    var ans = {};
+    for(var i = 0; i< gridData.length; i++){
+        if(${info}[i].isComponent==="true") {
+            ans[${info}[i]['uid']]= ${info}[i]['uploadUrl'];
+        }
+    }
+    ans[null]= gridData[0]['uploadUrl'];
+    return ans;
+}
+
 var myGrid = HGrid.create({
     container: "#myGrid",
-    info: ${info},
-    urlAdd: function(){
-        var ans = {};
-        for(var i =0; i<${info}.length; i++){
-            if(${info}[i].isComponent==="true") {
-                ans[${info}[i]['uid']]= ${info}[i]['uploadUrl'];
-            }
-        }
-        ans[null]=${info}[0]['uploadUrl'];
-        return ans;
-    },
-    url: ${info}[0]['uploadUrl'],
+    info: gridData,
+    urlAdd: getUrlAdd(),
+    url: gridData[0]['uploadUrl'],
     columns:[
         {id: "name", name: "Name", field: "name", width: 550, cssClass: "cell-title", formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
         {id: "date", name: "Date Modified", field: "dateModified", width: 160, sortable: true, formatter: PairFormatter},
