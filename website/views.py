@@ -106,13 +106,12 @@ def dashboard(*args, **kwargs):
     return {}
 
 @must_have_session_auth
-def watched_logs(*args, **kwargs):
+def watched_logs_get(*args, **kwargs):
     user = kwargs['user']
-    if request.method == 'POST' and request.json:
-        offset = request.json.get('offset', 0)
-    else:
-        offset = 0
-    recent_log_ids = list(user.get_recent_log_ids())[offset:][:10]
+    page_num = int(request.args.get('key', '').strip('/') or 0)
+    page_size = 10
+    offset = page_num * page_size
+    recent_log_ids = list(user.get_recent_log_ids())[offset:][:page_size]
     logs = [model.NodeLog.load(id) for id in recent_log_ids]
     return {
         "logs": [log.serialize() for log in logs]

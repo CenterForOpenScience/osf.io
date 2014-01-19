@@ -412,21 +412,6 @@ def _render_addon(node):
     return widgets, configs, js, css
 
 
-@must_be_valid_project
-@must_be_contributor_or_public
-def project_log(*args, **kwargs):
-    user = get_current_user()
-    node_to_use = kwargs['node'] or kwargs['project']
-    log_num = request.json["offset"]
-    return _view_logs(node_to_use, user, None, log_num)
-
-
-def _view_logs(node_to_use, user, api_key=None, offset=0):
-    recent_logs = list(reversed(node_to_use.logs))[offset:][:10]
-    recent_logs_dicts = [log.serialize() for log in recent_logs]
-    return {"logs": recent_logs_dicts}
-
-
 def _view_project(node_to_use, user, api_key=None, primary=False):
     """Build a JSON object containing everything needed to render
     project.view.mako.

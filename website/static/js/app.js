@@ -89,19 +89,14 @@ var LogsViewModel = function(logs, url) {
     }
     var self = this;
     self.logs = ko.observableArray(logs);
-    var offset=  0;
+    var page_num=  0;
     self.url = url;
 
     self.moreLogs = function(){
-        offset+=10;
-        var data_to_send={
-            "offset":offset
-        };
+        offset+=1;
         $.ajax({
-            url: self.url,
-            type: "POST", contentType: "application/json",
-            data:JSON.stringify(data_to_send),
-            dataType: "json",
+            url: self.url+"?key="+offset,
+            type: "get", contentType: "application/json",
             cache: false,
             success: function(response){
                 // Initialize LogViewModel

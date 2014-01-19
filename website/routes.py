@@ -415,11 +415,6 @@ def make_url_map(app):
         Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, json_renderer),
 
         Rule([
-            '/project/<pid>/more_logs/',
-            '/project/<pid>/node/<nid>/more_logs/',
-        ], 'POST', project_views.node.project_log, json_renderer),
-
-        Rule([
             '/project/<pid>/',
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, json_renderer),
@@ -443,6 +438,7 @@ def make_url_map(app):
         ], 'get', project_views.node.get_registrations, json_renderer),
 
         Rule('/log/<log_id>/', 'get', project_views.log.get_log, json_renderer),
+
         Rule([
             '/project/<pid>/log/',
             '/project/<pid>/node/<nid>/log/',
@@ -651,7 +647,7 @@ def make_url_map(app):
 
         Rule([
             '/watched/logs/'
-        ], ['get', 'post'], website_routes.watched_logs, json_renderer),
+        ], 'get', website_routes.watched_logs_get, json_renderer),
         ### Accounts ###
         Rule([
             '/user/merge/'
