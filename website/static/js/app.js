@@ -93,9 +93,9 @@ var LogsViewModel = function(logs, url) {
     self.url = url;
 
     self.moreLogs = function(){
-        offset+=1;
+        page_num+=1;
         $.ajax({
-            url: self.url+"?key="+offset,
+            url: self.url+"?key="+page_num,
             type: "get", contentType: "application/json",
             cache: false,
             success: function(response){
