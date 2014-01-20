@@ -24,7 +24,7 @@
 		</ol>
 		<table class="table table-striped" id='file-version-history'>
 			<thead>
-				<tr>st
+				<tr>
 					<th>Version</th>
 					<th>Date</th>
                     <th>User</th>
