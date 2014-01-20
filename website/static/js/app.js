@@ -95,8 +95,11 @@ var LogsViewModel = function(logs, url) {
     self.moreLogs = function(){
         page_num+=1;
         $.ajax({
-            url: self.url+"?key="+page_num,
-            type: "get", contentType: "application/json",
+            url: self.url,
+            data:{
+                pageNum:page_num
+            },
+            type: "get",
             cache: false,
             success: function(response){
                 // Initialize LogViewModel

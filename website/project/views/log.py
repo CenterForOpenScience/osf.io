@@ -29,7 +29,7 @@ def get_logs(*args, **kwargs):
     user = get_current_user()
     api_key = get_api_key()
     node_to_use = kwargs['node'] or kwargs['project']
-    page_num = int(request.args.get('key', '').strip('/') or 0)
+    page_num = int(request.args.get('pageNum', '').strip('/') or 0)
 
     if not node_to_use.can_view(user, api_key):
         raise HTTPError(http.FORBIDDEN)
