@@ -406,7 +406,6 @@ def _render_addon(node):
     for addon in node.get_addons():
 
         configs[addon.config.short_name] = addon.config.to_json()
-        
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
 
