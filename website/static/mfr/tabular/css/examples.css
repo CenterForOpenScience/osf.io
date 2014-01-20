@@ -34,12 +34,9 @@
   font-family: arial;
   font-size: 8pt;
 }
-
-#myGrid {
-  background: white;
-  outline: 0;
-  border: 1px solid gray;
-
+.slick-header-column.ui-state-default {
+    height: 25px;
+    font-size: 12px;
 }
 
 .grid-header {
@@ -114,6 +111,9 @@
   background: #52bd2b;
 }
 
+.slick-column-name{
+    height: 100px;
+}
 .slick-row.selected .cell-move-handle {
   background: #D5DC8D;
 }
