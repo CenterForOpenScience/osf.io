@@ -406,6 +406,7 @@ def _render_addon(node):
     for addon in node.get_addons():
 
         configs[addon.config.short_name] = addon.config.to_json()
+        
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
 
@@ -418,7 +419,7 @@ def _view_project(node_to_use, user, api_key=None, primary=False):
 
     """
     parent = node_to_use.parent
-    recent_logs = list(reversed(node_to_use.logs))[0:][:10]
+    recent_logs = list(reversed(node_to_use.logs)[:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
     widgets, configs, js, css = _render_addon(node_to_use)
     # Before page load callback; skip if not primary call
