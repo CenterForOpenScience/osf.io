@@ -108,7 +108,7 @@ def dashboard(*args, **kwargs):
 @must_have_session_auth
 def watched_logs_get(*args, **kwargs):
     user = kwargs['user']
-    page_num = int(request.args.get('key', '').strip('/') or 0)
+    page_num = int(request.args.get('pageNum', '').strip('/') or 0)
     page_size = 10
     offset = page_num * page_size
     recent_log_ids = list(user.get_recent_log_ids())[offset:][:page_size]
