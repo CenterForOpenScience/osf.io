@@ -537,6 +537,14 @@ def get_registrations(*args, **kwargs):
 
 
 def check_file_exists(*args, **kwargs):
+    """
+    From route kwargs builds path to the cached_file_path. Checks if the
+    html for the cached_file has been rendered and returns html or None.
+
+    :param args: None
+    :param kwargs: pid = project id; fid = file id; vid = version id
+    :return: Html from cached file
+    """
     cached_file_path = os.path.join(
         settings.BASE_PATH, "cached", kwargs['pid'],
         kwargs['fid'].replace('.', '_') + "_v" + kwargs['vid'] + ".html"

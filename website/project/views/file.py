@@ -5,14 +5,8 @@ import time
 from cStringIO import StringIO
 import httplib as http
 import logging
-import time
-import random
 
 from mfr.renderer import FileRenderer
-
-# mfr imports used in nested way, do not remove
-# from mfr.renderer import tabular, pdf, code, ipynb, image
-
 from hurry.filesize import size, alternative
 
 from framework import request, redirect, secure_filename, send_file
@@ -27,10 +21,6 @@ from website.project.decorators import must_not_be_registration, must_be_valid_p
 from website.project.model import NodeFile
 from website import settings
 from framework.render.tasks import build_rendered_html
-
-
-# TODO: Make MFR use this parameter
-FileRenderer.STATIC_PATH = '/static/mfr'
 
 
 logger = logging.getLogger(__name__)
@@ -367,27 +357,25 @@ def view_file(*args, **kwargs):
     vid = str(len(node_to_use.files_versions[file_name.replace('.', '_')]))
 
     cached_name = file_name_clean + "_v" + vid
+
     cached_file_path = os.path.join(
         settings.BASE_PATH, "cached",
         node_to_use._primary_key, cached_name + ".html"
     )
 
-    #todo Make this abstract to accommodate addon file rendering as well
-    celery_id = download_path + "render"
     cached_dir = cached_file_path.strip(cached_file_path.split('/')[-1])
 
     # Makes path if none exists
     if not os.path.exists(cached_file_path):
         if not os.path.exists(cached_dir):
             os.makedirs(cached_dir)
-        rendered = '<img src="/static/img/loading.gif">'
-        is_rendered = False
 
-        #todo This really needs a timeout... timeout keywords seems to do nothing
+        rendered = '<img src="/static/img/loading.gif">'
+
+        is_rendered = False
         build_rendered_html.apply_async(
-            [file_path, cached_file_path, download_path], task_id=celery_id
+            [file_path, cached_file_path, download_path]
         )
-    # is_rendered = build_rendered_html.AsyncResult(celery_id).state == "SUCCESS"
     else:
         rendered = open(cached_file_path, 'r').read()
         is_rendered = True
