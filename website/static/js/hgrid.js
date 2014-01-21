@@ -155,7 +155,7 @@ var HGrid = {
             var ajaxParams = $.extend(ajaxDefaults, self.options.ajaxOptions);
             $.ajax(ajaxParams);
         } else {  // Data were passed in directly as an array
-            self.initialize.call(self);
+            return self.initialize.call(self);
         }
         return this;
     },

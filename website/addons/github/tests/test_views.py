@@ -64,7 +64,7 @@ class TestGithubViews(DbTestCase):
         assert_true(res['is_head'])
         # TODO: Test authorization, access
         assert_equal(res['branches'], self.github.branches.return_value)
-        assert_equal(res['sha'], '')  # No sha provided
+        assert_equal(res['sha'], None)  # No sha provided
         # 'ref' is the default branch since sha nor branch were provided
         assert_equal(res['ref'], self.github.repo.return_value['default_branch'])
         # just check the existence of grid_data
