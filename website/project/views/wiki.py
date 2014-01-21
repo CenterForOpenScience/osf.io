@@ -14,13 +14,14 @@ from website.project.views.node import _view_project
 from website.project.model import NodeWikiPage
 from website.project import show_diff
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public
+    must_be_contributor, must_be_contributor_or_public, must_have_addon
 
 
 logger = logging.getLogger(__name__)
 
 
 @must_be_valid_project
+@must_have_addon('wiki', 'node')
 def project_wiki_home(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     link = request.args.get('key', '').strip('/')
@@ -54,6 +55,7 @@ def _get_wiki_versions(node, wid):
 @must_be_contributor_or_public # returns user, project
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
+@must_have_addon('wiki', 'node')
 def project_wiki_compare(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
@@ -81,7 +83,7 @@ def project_wiki_compare(*args, **kwargs):
                 'is_edit': True,
                 'version': pw.version,
             }
-            rv.update(_view_project(node_to_use, user))
+            rv.update(_view_project(node_to_use, user, primary=True))
             return rv
     raise HTTPError(http.NOT_FOUND)
 
@@ -90,6 +92,7 @@ def project_wiki_compare(*args, **kwargs):
 @must_be_contributor # returns user, project
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
+@must_have_addon('wiki', 'node')
 def project_wiki_version(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
@@ -110,7 +113,7 @@ def project_wiki_version(*args, **kwargs):
             'is_current': pw.is_current,
             'is_edit': False,
         }
-        rv.update(_view_project(node_to_use, user))
+        rv.update(_view_project(node_to_use, user, primary=True))
         return rv
 
     raise HTTPError(http.NOT_FOUND)
@@ -120,6 +123,7 @@ def project_wiki_version(*args, **kwargs):
 @must_be_contributor_or_public
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
+@must_have_addon('wiki', 'node')
 def project_wiki_page(*args, **kwargs):
 
     project = kwargs['project']
@@ -172,7 +176,8 @@ def project_wiki_page(*args, **kwargs):
         'url': node_to_use.url,
         'category': node_to_use.category
     }
-    rv.update(_view_project(node_to_use, user, link))
+
+    rv.update(_view_project(node_to_use, user, link, primary=True))
     return rv
 
 
@@ -180,6 +185,7 @@ def project_wiki_page(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
+@must_have_addon('wiki', 'node')
 def project_wiki_edit(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
@@ -207,7 +213,7 @@ def project_wiki_edit(*args, **kwargs):
         'is_current': is_current,
         'is_edit': True,
     }
-    rv.update(_view_project(node_to_use, user))
+    rv.update(_view_project(node_to_use, user, primary=True))
     return rv
 
 
@@ -215,6 +221,7 @@ def project_wiki_edit(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
+@must_have_addon('wiki', 'node')
 def project_wiki_edit_post(*args, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']

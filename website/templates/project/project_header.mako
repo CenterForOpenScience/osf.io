@@ -26,7 +26,9 @@
                          </h1>
                     %endif
                 %endif
-                <h1 id="nodeTitleEditable" class="node-title">${node['title']}</h1>
+                <h1 class="node-title">
+                    <span id="nodeTitleEditable">${node['title']}</span>
+                </h1>
             </div><!-- end col-md-->
 
             <div class="col-md-4">
@@ -62,7 +64,7 @@
                             % if node["category"] == 'project' and (user['is_contributor'] or node['is_public']):
                                 href="#"
                                 class="btn btn-default node-fork-btn"
-                                onclick="NodeActions.forkNode();"
+                                onclick="NodeActions.beforeForkNode();"
                             % else:
                                 class="btn btn-default disabled node-fork-btn"
                             % endif
@@ -111,10 +113,23 @@
 
         <nav id="projectSubnav" class="navbar navbar-default ">
             <ul class="nav navbar-nav">
+
                 <li><a href="${node['url']}${node['url_params']}">Dashboard</a></li>
-                <li><a href="${node['url']}wiki/${node['url_params']}">Wiki</a></li>
                 <li><a href="${node['url']}statistics/${node['url_params']}">Statistics</a></li>
-                <li><a href="${node['url']}files/${node['url_params']}">Files</a></li>
+                <!-- Add-on tabs -->
+                % for addon in addons_enabled:
+                    % if addons[addon]['has_page']:
+                        <li>
+                            <a href="${node['url']}${addons[addon]['short_name']}">
+                                % if addons[addon]['icon']:
+                                    <img src="${addons[addon]['icon']}" class="addon-logo"/>
+                                % endif
+                                ${addons[addon]['full_name']}
+                            </a>
+                        </li>
+                    % endif
+                % endfor
+
                 % if not node['is_registration']:
                     <li><a href="${node['url']}registrations/${node['url_params']}">Registrations</a></li>
                 % endif
@@ -132,7 +147,9 @@
 ## TODO: Find a better place to put this initialization code
 <script>
 
+    var userId = '${user_id}';
     var nodeId = '${node['id']}';
+    var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
 
     $(document).ready(function(){
@@ -193,3 +210,10 @@
     });
 
 </script>
+% if node.get('is_public') and node.get('piwik_site_id'):
+<script type="text/javascript">
+    $(function() {
+        trackPiwik("${ piwik_host }", ${ node['piwik_site_id'] });
+    });
+</script>
+% endif

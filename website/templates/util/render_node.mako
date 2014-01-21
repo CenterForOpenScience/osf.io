@@ -21,8 +21,7 @@
                     "node_url": "${summary['url']}"
                 },
                 "replace": true
-            }'>
-        </div>
+            }'></div>
 
         <!--Stacked bar to visualize user activity level against total activity level of a project -->
         <!--Length of the stacked bar is normalized over all projects -->

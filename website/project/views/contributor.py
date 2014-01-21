@@ -154,13 +154,27 @@ def get_recently_added_contributors(*args, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor  # returns user, project
 @must_not_be_registration
-def project_removecontributor(*args, **kwargs):
+def project_before_remove_contributor(*args, **kwargs):
 
-    project = kwargs['project']
-    node = kwargs['node']
+    node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     api_key = get_api_key()
-    node_to_use = node or project
+
+    contributor = User.load(request.json.get('id'))
+    prompts = node_to_use.callback('before_remove_contributor', contributor)
+
+    return {'prompts': prompts}
+
+
+@must_have_session_auth
+@must_be_valid_project  # returns project
+@must_be_contributor  # returns user, project
+@must_not_be_registration
+def project_removecontributor(*args, **kwargs):
+
+    node_to_use = kwargs['node'] or kwargs['project']
+    user = kwargs['user']
+    api_key = get_api_key()
 
     if request.json['id'].startswith('nr-'):
         outcome = node_to_use.remove_nonregistered_contributor(
@@ -175,7 +189,7 @@ def project_removecontributor(*args, **kwargs):
             contributor=contributor, user=user, api_key=api_key
         )
     if outcome:
-        framework.status.push_status_message("Contributor removed", "info")
+        framework.status.push_status_message('Contributor removed', 'info')
         return {'status': 'success'}
     raise HTTPError(http.BAD_REQUEST)
 
