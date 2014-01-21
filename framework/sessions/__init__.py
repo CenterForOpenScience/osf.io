@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import httplib as http
-
+import urllib
+import urlparse
 import bson.objectid
 import itsdangerous
 from werkzeug.local import LocalProxy
@@ -8,6 +9,27 @@ from werkzeug.local import LocalProxy
 from website import settings
 from framework.flask import app, request, redirect
 from .model import Session
+
+@app.before_request
+def prepare_private_key():
+    # Done if private_key in args
+    key_from_args = request.args.get('private_key')
+    if key_from_args:
+        return
+
+    # Check referrer for private key
+    parsed_referrer = urllib.urlparse(request.referrer)
+    referrer_args = dict(urllib.parse_qsl(parsed_referrer.query))
+    key_from_referrer = referrer_args.get('private_key')
+
+    # Update URL and redirect
+    if key_from_referrer:
+        parsed_path = urllib.urlparse(request.path)
+        path_args = dict(urllib.parse_qsl(parsed_path.query))
+        path_args['private_key'] = key_from_referrer
+        new_parsed_path = parsed_path._replace(query=urllib.urlencode(path_args))
+        new_path = urlparse.urlunparse(new_parsed_path)
+        return redirect(new_path, code=307)
 
 
 # todo 2-back page view queue
