@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-'''Base TextCase class for OSF unittests. Uses a temporary MongoDB database.'''
-import os
+'''Base TestCase class for OSF unittests. Uses a temporary MongoDB database.'''
 import unittest
 
 from pymongo import MongoClient
@@ -38,7 +37,10 @@ class DbTestCase(unittest.TestCase):
         klass._client = MongoClient(host=klass.db_host, port=klass.db_port)
         klass.db = klass._client[klass.db_name]
         # Set storage backend to MongoDb
-        set_up_storage(website.models.MODELS, storage.MongoStorage, db=klass.db)
+        set_up_storage(
+            website.models.MODELS, storage.MongoStorage,
+            addons=settings.ADDONS_AVAILABLE, db=klass.db,
+        )
 
     @classmethod
     def tearDownClass(klass):

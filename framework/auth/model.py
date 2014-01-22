@@ -12,6 +12,8 @@ from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import fields, Q, analytics
 from framework.guid.model import GuidStoredObject
 from framework.search import solr
+from framework.addons import AddonModelMixin
+
 from website import settings, filters
 
 name_formatters = {
@@ -23,7 +25,7 @@ name_formatters = {
    ),
 }
 
-class User(GuidStoredObject):
+class User(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
 
@@ -113,7 +115,7 @@ class User(GuidStoredObject):
 
     @property
     def api_url(self):
-        return '/api/v1/{0}/'.format(self._primary_key)
+        return '/api/v1/profile/{0}/'.format(self._primary_key)
 
     @property
     def absolute_url(self):
@@ -185,7 +187,8 @@ class User(GuidStoredObject):
             'id': self._primary_key,
             'fullname': self.fullname,
             'registered': self.is_registered,
-            'url': self.url
+            'url': self.url,
+            'api_url': self.api_url,
         }
 
     ###### OSF-Specific methods ######

@@ -84,10 +84,8 @@ font-weight: bold;
   border: 0;
   border-top: 1px solid #D9E8F4;
 }
-------------------------
+
 /*End Johanna's CSS*/
-
-
 
 /*
 'Modern Business' HTML Theme. Licensed under Apache 2.0.
@@ -95,21 +93,40 @@ font-weight: bold;
 
 /* Global Styles */
 
+/* Add-on styles */
+
+/* Make embedded iframes responsive */
+.addon-widget-container iframe {
+    max-width: 100%;
+}
+
+.addon-logo {
+    width: 20px;
+}
+
+.addon-widget-container:first-of-type h1,
+.addon-widget-container:first-of-type h2,
+.addon-widget-container:first-of-type h3 {
+    margin-top: 0;
+}
+
+/* End add-on styles */
+
 html, body {
-  height:100%;
+    height:100%;
 }
 
 body {
-  padding-top: 70px; /* body padding for fixed top nav */
+    padding-top: 70px; /* body padding for fixed top nav */
 }
 
 .img-home-portfolio,
 .img-customer,
 .portfolio-item {
-  margin-bottom: 30px;
-  position: relative;
-  padding-top: 60px;
-  background-color: #fff;
+    margin-bottom: 30px;
+    position: relative;
+    padding-top: 60px;
+    background-color: #fff;
 }
 
 a.disabled {
@@ -163,28 +180,28 @@ h4 {
 }
 
 .tab-pane {
-  margin-top: 15px;
+    margin-top: 15px;
 }
 
 
 /* Page Sections */
 .section,
 .section-colored {
-  padding: 50px 0;
+    padding: 50px 0;
 }
 
 .section-colored {
-  background-color: #e1e1e1; /* change this to change the background color of a colored section */
+    background-color: #e1e1e1; /* change this to change the background color of a colored section */
 }
 
 .sidebar {
-  margin-top: 40px;
+    margin-top: 40px;
 }
 
 .sidebar ul {
-  border-radius: 5px;
-  padding: 5px;
-  border: 1px solid #cccccc;
+    border-radius: 5px;
+    padding: 5px;
+    border: 1px solid #cccccc;
 }
 
 
@@ -192,70 +209,70 @@ h4 {
 
 
 .carousel {
-  height: 50%;
+    height: 50%;
 }
 
 .item,
 .carousel-inner {
-  height: 100%;
+    height: 100%;
 }
 
 .fill {
-  width: 100%;
-  height: 100%;
-  background-position: center;
-  background-size: cover;
+    width: 100%;
+    height: 100%;
+    background-position: center;
+    background-size: cover;
 }
 
 /* Social Icons Styles */
 .list-social-icons {
-  margin-bottom: 45px;
+    margin-bottom: 45px;
 }
 
 .tooltip-social a {
-  text-decoration: none;
-  color: inherit;
+    text-decoration: none;
+    color: inherit;
 }
 
 .facebook-link a:hover {
-  color: #3b5998;
+    color: #3b5998;
 }
 
 .linkedin-link a:hover {
-  color: #007fb1;
+    color: #007fb1;
 }
 
 .twitter-link a:hover {
-  color: #39a9e0;
+    color: #39a9e0;
 }
 
 .google-plus-link a:hover {
-  color: #d14836;
+    color: #d14836;
 }
 
 /* Service Page Styles */
 .service-icon {
-  font-size: 50px;
+    font-size: 50px;
 }
 
 /* 404 Page Styles */
 .error-404 {
-  font-size: 8em;
+    font-size: 8em;
 }
 
 /* Pricing Page Styles */
 .price {
-  font-size: 4em;
+    font-size: 4em;
 }
 
 .price-cents {
-  vertical-align: super;
-  font-size: 50%;
+    vertical-align: super;
+    font-size: 50%;
 }
 
 .price-month {
-  font-size: 35%;
-  font-style: italic;
+    font-size: 35%;
+    font-style: italic;
 }
 
 /* End Modern Biz theme */
@@ -379,7 +396,8 @@ h4 {
 }
 
 /* Make wiki images responsive */
-.wiki img {
+.wiki img,
+.addon-widget-container img {
   vertical-align: middle;
   display: block;
   max-width: 100%;
