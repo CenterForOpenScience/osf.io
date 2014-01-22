@@ -5,6 +5,12 @@
         <label for="s3_bucket">Bucket Name</label>
         <input class="form-control" id="s3_bucket" name="s3_bucket" value="${s3_bucket}" ${'disabled' if disabled else ''}/>
     </div>
+
+    <%def name="submit_btn()">
+        <button class="btn btn-danger addon-settings-submit">
+            Remove Access
+        </button>
+    </%def>
 %else:
     Amazon Simple Storage Service add-on is not configured properly.
     <br>
