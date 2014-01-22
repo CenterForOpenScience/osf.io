@@ -46,18 +46,18 @@
     <div id='devmode'><strong>WARNING</strong>: This site is running in development mode.</div>
     % endif
 
-    <div mod-meta='{"tpl": "nav.mako", "replace": true}'></div>
+    <%include file="nav.mako"/>
      ## TODO: shouldn't always have the watermark class
     <div class="watermarked">
         <div class="container">
             % if status:
-                <div mod-meta='{"tpl": "alert.mako", "replace": true}'></div>
+                <%include file="alert.mako"/>
             % endif
             ${self.content()}
         </div><!-- end container -->
     </div><!-- end watermarked -->
 
-    <div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+    <%include file="footer.mako"/>
 
         %if use_cdn:
             <div id="fb-root"></div>
