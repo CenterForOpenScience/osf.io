@@ -23,6 +23,14 @@ from website.models import WatchConfig
 from website import settings
 from website.views import _render_nodes
 
+
+#azeem's imports
+import CitationParser
+import os
+from citeproc import formatter
+CSL_PATH = 'styles'
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -358,7 +366,11 @@ def _view_project(node_to_use, user, api_key=None):
                 'apa': node_to_use.citation_apa,
                 'mla': node_to_use.citation_mla,
                 'chicago': node_to_use.citation_chicago,
-                'CSLTEST': node_to_use.to_CSL(node_to_use.to_csl(), os.path.join(CSL_PATH, 'harvard1.csl'), formatter.plain) #figure this out
+                'CSLTEST1': CitationParser.to_citation(node_to_use.to_csl(), os.path.join(CSL_PATH, 'harvard1.csl'), formatter.plain), #figure this out
+                'CSLTEST2': CitationParser.to_citation(node_to_use.to_csl(), os.path.join(CSL_PATH, 'apa.csl'), formatter.plain),
+                'BIBTEX': CitationParser.to_final('xml2bib', node_to_use.to_csl()),
+                'RIS': CitationParser.to_final('xml2ris', node_to_use.to_csl()),
+                #'format_citation test': node_to_use.format_citation(node=node_to_use, style='harvard1.csl'),
             },
             'is_public': node_to_use.is_public,
             'date_created': node_to_use.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
@@ -467,6 +479,23 @@ def _get_user_activity(node, user, rescale_ratio):
         non_ua = 0
 
     return ua_count, ua, non_ua
+
+
+@must_be_valid_project
+def format_citation(*args, **kwargs):
+
+    node = kwargs['node'] or kwargs['project']
+    style = kwargs.get('style')
+
+    csl = node.to_csl()
+    output = CitationParser.to_citation(
+        csl,
+        os.path.join(CSL_PATH, style),
+        formatter.plain
+    )
+
+    return {'output': output}
+
 
 @must_be_valid_project
 def get_recent_logs(*args, **kwargs):

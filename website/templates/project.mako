@@ -74,10 +74,26 @@
                     <dd class="citation-text">${node['citations']['mla']}</dd>
                 <dt>Chicago</dt>
                     <dd class="citation-text">${node['citations']['chicago']}</dd>
-                <dt>CSL TEST</dt>
-                    <dd class="citation-text">${node['citations']['CSLTEST']}</dd>
-
+                <dt>CSL TESTS</dt>
+                    <dd class="citation-text">${node['citations']['CSLTEST1']}</dd>
+                    <dd class="citation-text">${node['citations']['CSLTEST2']}</dd>
+                    <dd class="citation-text">${node['citations']['BIBTEX']}</dd>
+                    <dd class="citation-text">${node['citations']['RIS']}</dd>
             </dl>
+
+<form name = "stylesform" method = "post" action="??????????????">
+<select name="styles">
+  <option value="apa.csl">APA</option>
+  <option value="biochemical-journal.csl">Biochemical Journal</option>
+  <option value="canadian-public-policy.csl">Canadian Public Policy</option>
+  <option value="harvard1.csl">Harvard1</option>
+  <option value="modern-language-association.csl">MLA</option>
+
+
+</select>
+<input type="submit" value="Submit">
+</form>
+
         </div>
 
         <hr />

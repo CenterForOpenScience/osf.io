@@ -33,7 +33,6 @@ from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
 
 #azeem's imports
-import CitationParser
 
 def utc_datetime_to_timestamp(dt):
     return float(
@@ -1065,10 +1064,7 @@ class Node(GuidStoredObject):
             author_names[-1]
         )
 
-#return author(family_name1:
 
-#names[]
-#names.append(stuff)
 
     def to_csl(self):
 
@@ -1076,7 +1072,7 @@ class Node(GuidStoredObject):
             "id": "ITEM-1",
             "title": self.title,
              "author": [
-                 contributor.to_csl() #different to_csl() method in auth/model.py which parses the names
+                 contributor.authors_to_csl() #method in auth/model.py which parses the names of authors
                  for contributor in self.contributors
              ],
             "publisher": "Open Science Framework",
@@ -1086,6 +1082,20 @@ class Node(GuidStoredObject):
             "type": "Article",
             "URL": self.display_absolute_url,
         }
+
+
+#author section should look like this:
+# "author": [
+#{
+#"family": "Grignon",
+#"given": "Cyril"
+#},
+#{
+#"family": "Sentenac",
+#"given": "Corey"
+#}
+#],
+
 
     @property
     def citation_apa(self):
