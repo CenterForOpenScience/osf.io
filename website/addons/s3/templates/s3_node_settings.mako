@@ -1,4 +1,4 @@
-<%inherit file="project/addon/settings.mako" />
+<%inherit file="project/addon/node_settings.mako" />
 
 %if user_has_auth:
     <div class="form-group">

@@ -1,4 +1,4 @@
-<%inherit file="project/addon/settings.mako" />
+<%inherit file="project/addon/user_settings.mako" />
 
 <!-- Authorization -->
 <div>

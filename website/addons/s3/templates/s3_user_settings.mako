@@ -1,4 +1,4 @@
-<%inherit file="project/addon/settings.mako" />
+<%inherit file="project/addon/user_settings.mako" />
 
 <div class="form-group">
     <label for="s3Addon">Access Key</label>
