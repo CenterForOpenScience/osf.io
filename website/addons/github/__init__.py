@@ -1,10 +1,10 @@
-from .model import AddonGitHubUserSettings, AddonGitHubNodeSettings
-from .routes import settings_routes, page_routes, api_routes
+from . import routes, views, model
 
-USER_SETTINGS_MODEL = AddonGitHubUserSettings
-NODE_SETTINGS_MODEL = AddonGitHubNodeSettings
+MODELS = [model.AddonGitHubUserSettings, model.AddonGitHubNodeSettings]
+USER_SETTINGS_MODEL = model.AddonGitHubUserSettings
+NODE_SETTINGS_MODEL = model.AddonGitHubNodeSettings
 
-ROUTES = [api_routes, settings_routes, page_routes]
+ROUTES = [routes.api_routes, routes.settings_routes, routes.page_routes]
 
 SHORT_NAME = 'github'
 FULL_NAME = 'GitHub'
@@ -16,7 +16,7 @@ ADDED_TO = {
     'node': False,
 }
 
-VIEWS = ['widget', 'page']
+VIEWS = []
 CONFIGS = ['user', 'node']
 
 CATEGORIES = ['storage']
@@ -39,3 +39,6 @@ INCLUDE_CSS = {
 }
 
 WIDGET_HELP = 'GitHub Add-on Alpha'
+
+GET_HGRID_DATA = views.github_hgrid_data
+GET_HGRID_DUMMY = views.github_dummy_folder

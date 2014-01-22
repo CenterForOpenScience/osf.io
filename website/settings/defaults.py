@@ -123,7 +123,7 @@ CELERY_IMPORTS = (
 # Add-ons
 
 ADDONS_REQUESTED = [
-    'wiki', 'files',
+    'wiki', 'osffiles',
     'github',
     #'bitbucket', 'figshare',
     #'zotero',

@@ -34,6 +34,7 @@ from framework.addons import AddonModelMixin
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
 
+
 def utc_datetime_to_timestamp(dt):
     return float(
         str(calendar.timegm(dt.utcnow().utctimetuple())) + '.' + str(dt.microsecond)
@@ -206,54 +207,6 @@ class NodeLog(StoredObject):
             'date': utils.rfcformat(self.date),
             'node': self.node.serialize() if self.node else None
         }
-
-
-class NodeFile(GuidStoredObject):
-
-    redirect_mode = 'redirect'
-
-    _id = fields.StringField(primary=True)
-
-    path = fields.StringField()
-    filename = fields.StringField()
-    md5 = fields.StringField()
-    sha = fields.StringField()
-    size = fields.IntegerField()
-    content_type = fields.StringField()
-    git_commit = fields.StringField()
-    is_deleted = fields.BooleanField(default=False)
-
-    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    date_uploaded = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
-
-    node = fields.ForeignField('node', backref='uploads')
-    uploader = fields.ForeignField('user', backref='uploads')
-
-    @property
-    def url(self):
-        return '{0}files/{1}/'.format(self.node.url, self.filename)
-
-    @property
-    def deep_url(self):
-        return '{0}files/{1}/'.format(self.node.deep_url, self.filename)
-
-    @property
-    def api_url(self):
-        return '{0}files/{1}/'.format(self.node.api_url, self.filename)
-
-    @property
-    def clean_filename(self):
-        return self.filename.replace('.', '_')
-
-    @property
-    def latest_version_number(self):
-        return len(self.node.files_versions[self.clean_filename])
-
-    @property
-    def download_url(self):
-        return '{}files/download/{}/version/{}/'.format(
-            self.node.api_url, self.filename, self.latest_version_number)
 
 
 class Tag(StoredObject):
@@ -813,6 +766,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 self.save()
 
     def get_file(self, path, version=None):
+        from website.addons.osffiles.model import NodeFile
         if version is not None:
             folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
             if os.path.exists(os.path.join(folder_name, ".git")):
@@ -824,6 +778,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         return None, None
 
     def get_file_object(self, path, version=None):
+        from website.addons.osffiles.model import NodeFile
         if version is not None:
             directory = os.path.join(settings.UPLOADS_PATH, self._primary_key)
             if os.path.exists(os.path.join(directory, '.git')):
@@ -839,6 +794,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :return: True on success, False on failure
         '''
+        from website.addons.osffiles.model import NodeFile
 
         #FIXME: encoding the filename this way is flawed. For instance - foo.bar resolves to the same string as foo_bar.
         file_name_key = path.replace('.', '_')
@@ -939,6 +895,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         Instantiates a new NodeFile object, and adds it to the current Node as
         necessary.
         """
+        from website.addons.osffiles.model import NodeFile
         # TODO: Reading the whole file into memory is not scalable. Fix this.
 
         # This node's folder

@@ -30,7 +30,7 @@ from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 
-from .api import GitHub, raw_url, tree_to_hgrid, path_to_uid
+from .api import GitHub, raw_url, tree_to_hgrid, path_to_uid, ref_to_params
 from .auth import oauth_start_url, oauth_get_token
 
 MESSAGE_BASE = 'via the Open Science Framework'
@@ -79,7 +79,8 @@ def _add_hook_log(node, github, action, path, date, committer, url=None, sha=Non
 @decorators.must_not_be_registration
 @decorators.must_have_addon('github', 'node')
 def github_hook_callback(*args, **kwargs):
-    """Add logs for commits from outside OSF
+    """Add logs for commits from outside OSF.
+
     """
     # Request must come from GitHub hooks IP
     if not request.json.get('test'):
@@ -198,14 +199,14 @@ def _get_branch_and_sha(addon, branch=None, sha=None, connection=None):
         from the addon's user settings.
 
     """
-    connect = connection or GitHub.from_settings(addon.user_settings)
+    connection = connection or GitHub.from_settings(addon.user_settings)
 
     if sha and not branch:
         raise HTTPError(http.BAD_REQUEST)
 
     # Get default branch if not provided
     if not branch:
-        repo = connect.repo(addon.user, addon.repo)
+        repo = connection.repo(addon.user, addon.repo)
         branch = repo['default_branch']
 
     # Get registered branches if provided
@@ -229,6 +230,41 @@ def _get_branch_and_sha(addon, branch=None, sha=None, connection=None):
             sha = _branch['commit']['sha']
     GitRefs = namedtuple('GitRef', ['branch', 'sha'])
     return GitRefs(branch=branch, sha=sha)
+
+
+def _check_permissions(node_settings, user, connection, branch, sha=None, repo=None):
+
+    user_settings = node_settings.user_settings
+    has_access = False
+
+    has_auth = bool(user_settings and user_settings.has_auth)
+    if has_auth:
+        repo = repo or connection.repo(
+            node_settings.user, node_settings.repo
+        )
+        has_access = (
+            repo is not None and (
+                'permissions' not in repo or
+                repo['permissions']['push']
+            )
+        )
+
+    if sha:
+        branches = connection.branches(
+            node_settings.user, node_settings.repo, branch
+        )
+        is_head = sha == branches['commit']['sha']
+    else:
+        is_head = True
+
+    can_edit = (
+        node_settings.owner.can_edit(user) and
+        not node_settings.owner.is_registration and
+        has_access and
+        is_head
+    )
+
+    return can_edit
 
 
 # TODO: Change "github" to "node_settings" or something similar
@@ -282,12 +318,6 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
     if registered_branches and branch not in registered_branch_names:
         raise HTTPError(http.BAD_REQUEST)
 
-    if sha:
-        branches = connect.branches(github.user, github.repo, branch)
-        head = branches['commit']['sha']
-    else:
-        head = None
-
     # Use registered SHA if provided
     for _branch in registered_branches:
         if branch == _branch['name']:
@@ -312,21 +342,13 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
         raise HTTPError(http.BAD_REQUEST)
 
     # Check permissions if authorized
-    has_access = False
-    has_auth = bool(github.user_settings and github.user_settings.has_auth)
-    if has_auth:
-        repo = repo or connect.repo(github.user, github.repo)
-        has_access = (
-            repo is not None and (
-                'permissions' not in repo or
-                repo['permissions']['push']
-            )
-        )
+    has_auth, has_access, is_head = _check_permissions(github, connect, repo)
 
     # Build HGrid JSON
     hgrid = tree_to_hgrid(
         tree['tree'], github.user, github.repo, node,
         branch=branch, sha=sha, hotlink=hotlink,
+        uid=github._id,
     )
 
     params = urllib.urlencode({
@@ -347,7 +369,7 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
         'repo': github.repo,
         'has_auth': has_auth,
         'has_access': has_access,
-        'is_head': sha is None or sha == head,
+        'is_head': is_head,
         'api_url': node.api_url,
         'branches': branches,
         'branch': branch,
@@ -360,26 +382,90 @@ def _page_content(node, github, branch=None, sha=None, hotlink=False, _connectio
     }
 
 
-@must_be_contributor_or_public
-@must_have_addon('github', 'node')
-def github_hgrid_data(*args, **kwargs):
+def github_hgrid_data(addon, user, parent=None, dummy=False, branch=None, sha=None, **kwargs):
     """Return a repo's file tree as a dict formatted for Hgrid.
 
     """
-    node = kwargs['node'] or kwargs['project']
-    node_addon = kwargs['node_addon']
-    connect = GitHub.from_settings(node_addon.user_settings)
-    req_branch, req_sha = request.args.get('branch'), request.args.get('sha')
+    connection = GitHub.from_settings(addon.user_settings)
+    req_branch, req_sha = branch, sha
+
     # The actual branch and sha to use, given the addon settings
-    branch, sha = _get_branch_and_sha(node_addon, req_branch, req_sha,
-                                      connection=connect)
+    branch, sha = _get_branch_and_sha(
+        addon, req_branch, req_sha, connection=connection
+    )
+
     # Get file tree
-    contents = connect.contents(
-        node_addon.user, node_addon.repo, ref=sha or branch, path='')
-    hgrid_tree = tree_to_hgrid(contents, user=node_addon.user,
+    contents = connection.contents(
+        addon.user, addon.repo, ref=sha or branch,
+    )
+
+    # Check edit permissions
+    can_edit = _check_permissions(addon, user, connection, branch, sha)
+
+    hgrid_tree = tree_to_hgrid(
+        contents, user=addon.user,
         branch=branch, sha=sha,
-        repo=node_addon.repo, node=node, parent=None)
+        repo=addon.repo, node=addon.owner,
+        uid=addon._id, parent=parent,
+        can_edit=can_edit,
+        dummy=dummy,
+    )
+
     return hgrid_tree
+
+
+from mako.template import Template
+def github_branch_widget(branches):
+
+    template = Template('''
+        <select class="github-branch-select">
+            % for branch in branches:
+                <option value="${branch}">${branch}</option>
+            % endfor
+        </select>
+    ''')
+    return template.render(branches=branches)
+
+
+'''
+
+        <script text="text/javascript">
+            $('html, body').delegate('.github-branch-select', 'change', function() {
+                console.log(this);
+            });
+        </script>
+'''
+
+def github_dummy_folder(node_settings, user, parent=None, **kwargs):
+
+    connection = GitHub.from_settings(node_settings.user_settings)
+
+    branch, sha = _get_branch_and_sha(
+        node_settings, connection=connection
+    )
+    ref = ref_to_params(branch, sha)
+    can_edit = _check_permissions(
+        node_settings, user, connection, branch, sha
+    )
+
+    rv = {
+        'uid': 'github:{0}'.format(node_settings._id),
+        'name': 'GitHub: {0}/{1} {2}'.format(
+            node_settings.user, node_settings.repo,
+            github_branch_widget(['master', 'develop']),
+        ),
+        'parent_uid': parent or 'null',
+        'url': '',
+        'type': 'folder',
+        'uploadUrl': node_settings.owner.api_url + 'github/file/',
+        'can_edit': can_edit,
+        'lazyLoad': node_settings.owner.api_url + 'github/hgrid/',
+        'lazyDummy': 0,
+    }
+    if ref:
+        rv['uploadUrl'] += '?' + ref
+
+    return rv
 
 
 @must_be_contributor_or_public
@@ -388,9 +474,10 @@ def github_hgrid_data_contents(*args, **kwargs):
     """Return a repo's file tree as a dict formatted for Hgrid.
 
     """
+    user = kwargs['user']
     node = kwargs['node'] or kwargs['project']
     node_addon = kwargs['node_addon']
-    path = kwargs['path']
+    path = kwargs.get('path', '')
 
     connect = GitHub.from_settings(node_addon.user_settings)
     # The requested branch and sha
@@ -403,15 +490,20 @@ def github_hgrid_data_contents(*args, **kwargs):
         user=node_addon.user, repo=node_addon.repo, path=path,
         ref=sha or branch,
     )
-    parent = path_to_uid(path, kind='dir')
+    #parent = path_to_uid(path, kind='dir')
+    parent = request.args.get('parent', 'null')
+    can_edit = _check_permissions(node_addon, user, connect, branch, sha)
     if contents:
-        hgrid_tree = tree_to_hgrid(contents, user=node_addon.user,
+        hgrid_tree = tree_to_hgrid(
+            contents, user=node_addon.user,
             branch=branch, sha=sha,
-            repo=node_addon.repo, node=node, parent=parent)
+            repo=node_addon.repo, node=node,
+            uid=node_addon._id, parent=parent,
+            can_edit=can_edit,
+        )
     else:
         hgrid_tree = []
     return hgrid_tree
-
 
 
 @must_be_contributor_or_public
@@ -436,27 +528,6 @@ def github_widget(*args, **kwargs):
         rv.update(github.config.to_json())
         return rv
     raise HTTPError(http.NOT_FOUND)
-
-
-@must_be_contributor_or_public
-@must_have_addon('github', 'node')
-def github_page(*args, **kwargs):
-
-    user = kwargs['user']
-    node = kwargs['node'] or kwargs['project']
-    github = kwargs['node_addon']
-
-    data = _view_project(node, user, primary=True)
-    branch, sha = request.args.get('branch'), request.args.get('sha')
-    rv = _page_content(node, github, branch=branch, sha=sha)
-    rv.update({
-        'addon_page_js': github.config.include_js.get('page'),
-        'addon_page_css': github.config.include_css.get('page'),
-    })
-    rv.update(github.config.to_json())
-    rv.update(data)
-
-    return rv
 
 
 @must_be_contributor_or_public
@@ -690,18 +761,21 @@ def github_upload_file(*args, **kwargs):
         info = {
             'name': filename,
             'uid': os.path.join('__repo__', data['content']['path']),
-            'parent_uid': path_to_uid(path, 'dir'),
+            'parent_uid': path_to_uid(path, 'dir') if path else github._id,
+            'can_edit': True,
             'ext': ext,
             'size': [
                 data['content']['size'],
                 size(data['content']['size'], system=alternative)
             ],
             'type': 'file',
-            'sha': data['content']['sha'],
-            'url': data['content']['url'],
             'download': node.api_url + 'github/file/{0}/'.format(os.path.join(path, filename)),
             'view': os.path.join(node.url, 'github', 'file', path, filename),
             'delete': node.api_url + 'github/file/{0}/'.format(data['content']['path']),
+            'data': {
+                'sha': data['content']['sha'],
+                'branch': branch,
+            }
         }
 
         info['view'] += '?' + ref

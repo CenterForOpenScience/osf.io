@@ -7,6 +7,7 @@ from website.routes import OsfWebRenderer
 
 from website.addons.github import views
 
+
 settings_routes = {
     'rules': [
 
@@ -16,10 +17,6 @@ settings_routes = {
             '/project/<pid>/node/<nid>/github/settings/',
         ], 'post', views.github_set_config, json_renderer),
 
-        Rule([
-            '/project/<pid>/github/widget/',
-            '/project/<pid>/node/<nid>/github/widget/',
-        ], 'get', views.github_widget, json_renderer),
         Rule([
             '/project/<pid>/github/file/<path:path>',
             '/project/<pid>/node/<nid>/github/file/<path:path>',
@@ -87,27 +84,18 @@ settings_routes = {
 
 api_routes = {
     'rules': [
-        # Route from which to get the hgrid data
         Rule([
             '/project/<pid>/github/hgrid/',
             '/project/<pid>/node/<nid>/github/hgrid/',
-        ], 'get', views.github_hgrid_data, json_renderer),
-
-        Rule([
             '/project/<pid>/github/hgrid/<path:path>/',
             '/project/<pid>/node/<nid>/github/hgrid/<path:path>/',
         ], 'get', views.github_hgrid_data_contents, json_renderer),
-
     ],
     'prefix': '/api/v1'
 }
 
 page_routes = {
     'rules': [
-        Rule([
-            '/project/<pid>/github/',
-            '/project/<pid>/node/<nid>/github/',
-        ], 'get', views.github_page, OsfWebRenderer('../addons/github/templates/github_page.mako')),
         Rule([
             '/project/<pid>/github/file/<path:path>',
             '/project/<pid>/node/<nid>/github/file/<path:path>',

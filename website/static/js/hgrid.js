@@ -155,7 +155,7 @@ var HGrid = {
             var ajaxParams = $.extend(ajaxDefaults, self.options.ajaxOptions);
             $.ajax(ajaxParams);
         } else {  // Data were passed in directly as an array
-            self.initialize.call(self);
+            return self.initialize.call(self);
         }
         return this;
     },
@@ -552,10 +552,10 @@ var HGrid = {
                     myDropzone.options.dropDestination = dropHighlight.uid;
                 }
                 else{
-                    dropHighlight = hGrid.getItemByValue(hGrid.data, item['parent_uid'], 'uid');
-                    myDropzone.options.dropDestination = dropHighlight['uid'];
+                    dropHighlight = hGrid.getItemByValue(hGrid.data, item.parent_uid, 'uid');
+                    myDropzone.options.dropDestination = dropHighlight.uid;
                 }
-                if(dropHighlight['permission']=="true" || typeof dropHighlight['permission'] == 'undefined'){
+                if(dropHighlight.permission === "true" || typeof dropHighlight.permission === 'undefined'){
                     hGrid.draggerGuide(dropHighlight);
                 }
             }
@@ -564,7 +564,7 @@ var HGrid = {
                     // if urlAdd is a function, call it, passing in the
                     // item
                     // NOTE(sloria): This is modified from Hgrid master
-                    myDropzone.options.url = hGrid.options.urlAdd(item);
+                    myDropzone.options.url = hGrid.options.urlAdd(dropHighlight);
                 } else {
                     myDropzone.options.url = hGrid.options['urlAdd'][myDropzone.options.dropDestination];
                 };

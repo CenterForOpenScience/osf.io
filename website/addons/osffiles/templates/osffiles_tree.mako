@@ -17,7 +17,7 @@
 </div>
 
 <script type="text/javascript">
-    var gridData = ${grid_data};
+    var gridData = ${info};
 </script>
 
 <!--[if lte IE 9]>
@@ -43,17 +43,18 @@ var extensions = ["3gp", "7z", "ace", "ai", "aif", "aiff", "amr", "asf", "asx", 
     "tif", "tmp", "torrent", "ttf", "txt", "vcd", "vob", "wav", "wma", "wmv", "wps", "xls", "xpi", "zip"];
 
 var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
+    value = value.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
     var spacer = "<span style='display:inline-block;height:1px;width:" + (18 * dataContext["indent"]) + "px'></span>";
     if (dataContext['type']=='folder') {
         if (dataContext._collapsed) {
-            if (dataContext.can_view !== false) {
+            if(dataContext['can_view']!="false"){
                 return spacer + " <span class='toggle expand nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-open'></span>&nbsp;" + value + "</a>";
             }
             else{
                 return spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-delete'></span>&nbsp;" + "Private Component" + "</a>";
             }
         } else {
-            if (dataContext.can_view !== false) {
+            if(dataContext['can_view']!="false"){
                 return spacer + " <span class='toggle collapse nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-close'></span>&nbsp;" + value + "</a>";
             }
             else {
@@ -62,8 +63,8 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         }
     } else {
         var link = value;
-        if(dataContext.view){
-            link = "<a href=" + dataContext['view'] + ">" + value + "</a>";
+        if(dataContext['url']){
+            link = "<a href=" + dataContext['url'] + ">" + value + "</a>";
         }
         var imageUrl = "/static\/img\/hgrid\/fatcowicons\/file_extension_" + dataContext['ext'] + ".png";
         if(extensions.indexOf(dataContext['ext'])==-1){
@@ -76,15 +77,27 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
 };
 
 var UploadBars = function(row, cell, value, columnDef, dataContext) {
-    if (!dataContext.uploadBar) {
-        if (dataContext.download) {
+    if (!dataContext['uploadBar']){
+        var spacer = "<span style='display:inline-block;height:1px;width:30px'></span>";
+        if(dataContext['url']){
             var delButton = "<button type='button' class='btn btn-danger btn-mini' onclick='myGrid.deleteItems([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-trash icon-white'></i></button>"
-            var downButton = "<a href=" + dataContext['download'] + "><button type='button' class='btn btn-success btn-mini'><i class='icon-download-alt icon-white'></i></button></a>";
-            var buttons = downButton;
-            if (dataContext.can_edit) {
-                buttons += ' ' + delButton;
+            var url = dataContext['url'].replace('/files/', '/files/download/');
+            url = '/api/v1' + url;
+            var downButton = "<a href=" + JSON.stringify(url) + "><button type='button' class='btn btn-success btn-mini'><i class='icon-download-alt icon-white'></i></button></a>";
+            if(myGrid.getItemByValue(myGrid.data, dataContext['parent_uid'], 'uid')['can_edit']=='false'){
+                return "<div class='col-xs-6' style='padding-left:0;padding-right:0'>" +
+                        value +
+                        "</div>" +
+                        "<div class='hGridButton col-xs-6' style='padding-left:0; padding-right:0; text-align: right; display: inline;'>"
+                        + downButton +
+                        "</div>";
             }
-            return buttons;
+            else return "<div class='col-xs-6' style='padding-left:0;padding-right:0'>" +
+                        value +
+                        "</div>" +
+                        "<div class='hGridButton col-xs-6' style='padding-left:0; padding-right:0; text-align: right; display: inline;'>" +
+                        downButton + " " + delButton +
+                        "</div>";
         }
     }
     else{
@@ -113,21 +126,26 @@ if(typeof(browserComp) === 'undefined'){
 
 var useDropZone = ${int(user['can_edit'])} && browserComp;
 
+var getUrlAdd = function() {
+    var ans = {};
+    for(var i = 0; i< gridData.length; i++){
+        if(gridData[i].isComponent==="true") {
+            ans[gridData[i]['uid']]= gridData[i]['uploadUrl'];
+        }
+    }
+    ans[null]= gridData[0]['uploadUrl'];
+    return ans;
+}
+
 var myGrid = HGrid.create({
     container: "#myGrid",
     info: gridData,
-    urlAdd: function(item) {
-        if (item) {
-            return item.uploadUrl;
-        } else {
-            return contextVars.uploadUrl;
-        }
-    },
+    urlAdd: getUrlAdd(),
     url: gridData[0]['uploadUrl'],
     columns:[
         {id: "name", name: "Name", field: "name", width: 550, cssClass: "cell-title", formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
-##        {id: "date", name: "Date Modified", field: "dateModified", width: 160, sortable: true, formatter: PairFormatter},
-##        {id: "size", name: "Size", field: "sizeRead", width: 90, formatter: UploadBars, sortable: true, formatter: PairFormatter}
+        {id: "date", name: "Date Modified", field: "dateModified", width: 160, sortable: true, formatter: PairFormatter},
+        {id: "size", name: "Size", field: "sizeRead", width: 90, formatter: UploadBars, sortable: true, formatter: PairFormatter}
     ],
     enableCellNavigation: false,
     breadcrumbBox: "#myGridBreadcrumbs",
@@ -137,33 +155,11 @@ var myGrid = HGrid.create({
     dropZone: useDropZone,
     dropZonePreviewsContainer: false,
     rowHeight: 30,
-##    navLevel: gridData[0]['uid'],
+    navLevel: gridData[0]['uid'],
     topCrumb: false,
     clickUploadElement: "#clickable",
     dragToRoot: false,
-    dragDrop: false,
-
-    // Lazy load settings
-    lazyLoad: true,
-    // Function that returns the URL for the endpoint to get a folder's contents
-    // "item" in this case is a folder
-    itemUrl: function(ajaxSource, item){
-        var params = {
-            parent: item.uid,
-            lazyDummy: item.lazyDummy || 0
-        };
-        return item.lazyLoad + '?' + $.param(params);
-    }
-##    ajaxOnError: function(xhr, textstatus, error) {
-##        bootbox.error('Could not retrieve repo contents.');
-##    },
-##    ajaxOnSuccess: function(lazyGrid) {
-##        grid = lazyGrid;
-##        // First datum is the root
-##        rootItem = grid.data[0];
-##        // Expand the root directory
-##        grid.expandItem(grid.data[0]);
-##    }
+    dragDrop: false
 });
 
 // Only allow one upload at a time until Git collisions are resolved; see
@@ -172,36 +168,25 @@ if (myGrid.dropZoneObj) {
     myGrid.dropZoneObj.options.parallelUploads = 1;
 }
 
-##// TODO: Add to HGgrid
-##myGrid.updateBreadcrumbsBox(gridData[0]['uid']);
+// TODO: Add to HGgrid
+myGrid.updateBreadcrumbsBox(gridData[0]['uid']);
 
-myGrid.addColumn({id: "actions", name: "Actions", width: 150, sortable: true, formatter: UploadBars});
+myGrid.addColumn({id: "downloads", name: "Downloads", field: "downloads", width: 150, sortable: true, formatter: UploadBars});
+##myGrid.addColumn({id: "actions", name: "", field: "actions", width: 80, formatter: Buttons});
 myGrid.Slick.grid.setSortColumn("name");
 
 myGrid.hGridBeforeUpload.subscribe(function(e, args){
-    if (args.parent.can_edit) {
+    if(args.parent['can_edit']=='true'){
         myGrid.removeDraggerGuide();
-        var path = args.parent.path.slice();
+        var path = args.parent['path'].slice();
         path.push(args.item.name);
-        var item = {
-            name: args.item.name,
-            parent_uid: args.parent.uid,
-            uid: args.item.name,
-            type: 'fake',
-            uploadBar: true,
-            path: path,
-            sortpath: path.join("/"),
-            ext: null,
-            size: args.item.size.toString()
-        };
+        var item = {name: args.item.name, parent_uid: args.parent['uid'], uid: args.item.name, type:"fake", uploadBar: true, path: path, sortpath: path.join("/"), ext: "py", size: args.item.size.toString()};
         var promise = $.when(myGrid.addItem(item));
-        var d = $.Deferred();
-        promise.done(function() {
-            d.resolve(true);
+        promise.done(function(bool){
+            return true;
         });
-        return d;
     }
-    return false;
+    else return false;
 });
 
 myGrid.hGridBeforeMove.subscribe(function(e, args){
@@ -212,26 +197,22 @@ myGrid.hGridBeforeMove.subscribe(function(e, args){
 });
 
 myGrid.hGridBeforeDelete.subscribe(function(e, args) {
-    var item = args.items[0];
-    if (item['type'] !== 'fake') {
-        var msg = 'Are you sure you want to delete the file "' + item.name + '"?';
+    if (args['items'][0]['type'] !== 'fake') {
+        var msg = 'Are you sure you want to delete the file "' + args['items'][0]['name'] + '"?';
         var d = $.Deferred();
         bootbox.confirm(
             msg,
             function(result) {
                 if (result) {
-                    $.ajax({
-                        type: 'DELETE',
-                        url: item.delete,
-                        data: JSON.stringify(item.data || {}),
-                        contentType: 'application/json',
-                        dataType: 'json',
-                        success: function() {
-                            d.resolve(true);
-                        },
-                        error: function() {
-                            bootbox.error('Error deleting file.');
+                    var url = '/api/v1' + args['items'][0]['url'].replace('/files/', '/files/delete/');
+                    $.post(
+                        url
+                    ).done(function(response) {
+                        if (response['status'] != 'success') {
+                            bootbox.alert('Error deleting file');
                             d.resolve(false);
+                        } else {
+                            d.resolve(true);
                         }
                     });
                 } else {
@@ -248,12 +229,16 @@ myGrid.hGridAfterNav.subscribe(function (e, args){
 });
 
 myGrid.hGridOnMouseEnter.subscribe(function (e, args){
+##    $(myGrid.options.container).find(".row-hover").removeClass("row-hover");
+##    $(myGrid.options.container).find(".hGridButton").css('display', 'none');
     var parent = args.e.target.parentNode;
     $(parent).addClass("row-hover");
+##    $(parent).find('.hGridButton').css('display', 'inline');
 });
 
 myGrid.hGridOnMouseLeave.subscribe(function (e, args){
     $(myGrid.options.container).find(".row-hover").removeClass("row-hover");
+##    $(myGrid.options.container).find(".hGridButton").css('display', 'none');
 });
 
 myGrid.hGridOnUpload.subscribe(function(e, args){
@@ -292,6 +277,23 @@ $(window).on('beforeunload', function() {
 // Don't show dropped content if user drags outside grid
 window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };
+
+##var date1=0;
+##
+##myGrid.dropZoneObj.on("sending", function(file, xhr, formData){
+##    date1=Date.now();
+##    $('#progressStats').css("display", "inline");
+##});
+##
+##myGrid.dropZoneObj.on("uploadprogress", function(file, progress, bytesSent){
+##    var time = (Date.now() - date1) / 1000;
+##    var text = "Upload Speed: " + Math.round(bytesSent/time/1024) + " kb/s | Progress: " + progress + "%";
+##    $('#progressStats').text(text);
+##    console.log("Bytes Sent: " + bytesSent);
+##    console.log("Seconds since start: " + time);
+##    console.log("Bytes/sec: " + bytesSent/time/1024);
+##
+##});
 
 </script>
 </%def>

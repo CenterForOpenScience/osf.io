@@ -217,7 +217,7 @@ class GitHub(object):
             return req['name'], base64.b64decode(content), req['size']
         return None, None, None
 
-    def contents(self, user, repo, path, ref=None):
+    def contents(self, user, repo, path='', ref=None):
         """Get the contents of a path within a repo.
         http://developer.github.com/v3/repos/contents/#get-contents
 
@@ -437,7 +437,20 @@ def path_to_uid(path, kind):
     """
     return kind + ':' + '||'.join(['__repo__', path]).strip('||')
 
-def tree_to_hgrid(tree, user, repo, node, parent='null', branch=None, sha=None, hotlink=False):
+
+def ref_to_params(branch=None, sha=None):
+
+    return urllib.urlencode({
+        key: value
+        for key, value in {
+            'branch': branch,
+            'sha': sha,
+        }.iteritems()
+        if value
+    })
+
+
+def tree_to_hgrid(tree, user, repo, node, uid, parent=None, dummy=False, branch=None, sha=None, hotlink=False, can_edit=False):
     """Convert GitHub tree data to HGrid format.
 
     :param list tree: JSON description of git tree
@@ -453,28 +466,26 @@ def tree_to_hgrid(tree, user, repo, node, parent='null', branch=None, sha=None, 
     """
     grid = []
 
-    ref = urllib.urlencode({
-        key: value
-        for key, value in {
-            'branch': branch,
-            'sha': sha,
-        }.iteritems()
-        if value
-    })
+    ref = ref_to_params(branch, sha)
 
-    if parent is None:
+    lazy_url_parts = [node.api_url, 'github', 'hgrid']
+
+    if dummy:
         parent_item = {
-            'uid': 'dir:__repo__',
+            'uid': uid,
             'name': 'GitHub :: {0}'.format(repo),
-            'parent_uid': 'null',
+            'parent_uid': parent or 'null',
             'url': '',
             'type': 'folder',
-            'uploadUrl': node.api_url + 'github/file/'
+            'uploadUrl': node.api_url + 'github/file/',
+            'can_edit': can_edit,
         }
         if ref:
             parent_item['uploadUrl'] += '?' + ref
+        parent_uid = parent_item['uid']
         grid.append(parent_item)
-        parent = parent_item['uid']
+    else:
+        parent_uid = parent or 'null'
 
     for item in tree:
 
@@ -491,37 +502,46 @@ def tree_to_hgrid(tree, user, repo, node, parent='null', branch=None, sha=None, 
         ext = ext.lstrip('.')
 
         row = {
-            'uid': item['type'] + ':' + '||'.join(['__repo__', qpath]),
+            'uid': path_to_uid(qpath, item['type']),
             'name': basename,
-            'parent_uid': parent,
+            'parent_uid': parent_uid,
             'type': type_map[item['type']],
+            'can_edit': can_edit,
         }
 
+        # Build base URLs
+        base_url = os.path.join(node.url, 'github', 'file', qpath) + '/'
+        base_api_url = os.path.join(node.api_url, 'github', 'file', qpath) + '/'
+        if ref:
+            base_url += '?' + ref
+            base_api_url += '?' + ref
+
         if type_map[item['type']] == 'file':
-            # The path to the file, e.g. 'my-repo/docs/help.rst'
-            row['ghPath'] = path
-            row['sha'] = item['sha']
-            row['url'] = item['url']
+
             row['size'] = [
                 item['size'],
                 size(item['size'], system=alternative)
             ]
             row['ext'] = ext
-            base_api_url = node.api_url + 'github/file/{0}/'.format(qpath)
-            row['delete'] = base_api_url + '?' + ref
-            row['view'] = os.path.join(node.url, 'github', 'file', qpath) + '/'
-            if ref is not None:
-                base_api_url += '?' + ref
-                row['view'] += '?' + ref
+
+            row['data'] = {
+                'sha': item['sha'],
+                'branch': branch,
+            }
+
+            # URLs
+            row['view'] = base_url
+            row['delete'] = base_api_url
             if hotlink and ref:
                 row['download'] = raw_url(user, repo, sha or branch, qpath)
             else:
-                row['download'] = base_api_url
+                row['download'] = base_url
+
         else:
-            row['ghPath'] = path
-            row['uploadUrl'] = node.api_url + 'github/file/{0}/'.format(qpath)
-            if ref is not None:
-                 row['uploadUrl'] += '?' + ref
+
+            row['uploadUrl'] = base_api_url
+            row['lazyLoad'] = os.path.join(*lazy_url_parts + [item['path']]) + '/'
+            row['lazyDummy'] = 0
 
         grid.append(row)
 
