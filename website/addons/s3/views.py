@@ -64,53 +64,58 @@ def s3_settings(*args, **kwargs):
 
     user = kwargs['user']
 
-    s3_node = kwargs['node_addon']
-    s3_user = user.get_addon('s3')
+    if not user:
+        error_message = ''
+        return {'message': error_message}, 400
+
+    node = kwargs['node_addon']
+    s3_addon = user.get_addon('s3')
 
     # If authorized, only owner can change settings
-    if s3_user and s3_user.owner != user:
+    if s3_addon and s3_addon.owner != user:
         raise HTTPError(http.BAD_REQUEST)
 
     s3_bucket = request.json.get('s3_bucket', '')
 
-    if not s3_bucket or not does_bucket_exist(s3_user.access_key,s3_user.secret_key,s3_bucket):
+    if not s3_bucket or not does_bucket_exist(s3_addon.access_key,s3_addon.secret_key,s3_bucket):
         error_message = ('Looks like this bucket does not exist.'
                          'Could you have mistyped it?')
-        return {'message':error_message},400
+        return {'message': error_message}, 400
 
-    changed = (
-        s3_bucket != s3_node.s3_bucket
-    )
+    changed = s3_bucket != node.s3_bucket
+    
     # Delete callback
     if changed:
-        
+
+        #clean up a bit
+        if node.s3_bucket:
+            _s3_delete_access_key(s3_addon, node)
+
         # Update node settings
-        s3_node.s3_bucket = s3_bucket
-        utils.adjust_cors(S3Wrapper.from_addon(s3_node))
-        s3_node.save()
+        node.user_settings = s3_addon
+        node.s3_bucket = s3_bucket
+        node.save()
+        
+        #TODO create access key here figure out way to remove it later?
+        if not _s3_create_access_key(s3_addon, node):
+                    error_message = ''
+                    return {'message': error_message}, 400
 
-@must_be_contributor
-@must_have_addon('s3', 'node')
-def s3_create_access_key(*args, **kwargs):
+        #Last but no least make sure we can upload (must be last) (still no least(but actually))
+        utils.adjust_cors(S3Wrapper.from_addon(node))
 
-    user = kwargs['user']
-
-    s3_node = kwargs['node_addon']
-    s3_user = user.get_addon('s3')
-
-    u = create_limited_user(s3_user.access_key,s3_user.secret_key,s3_node.s3_bucket)
+def _s3_create_access_key(s3_user, s3_node):
+    u = create_limited_user(s3_user.access_key, s3_user.secret_key, s3_node.s3_bucket)
 
     if u:
-
         s3_node.s3_node_access_key = u['access_key_id']
         s3_node.s3_node_secret_key = u['secret_access_key']
-        s3_node.node_auth = 1
 
         s3_node.save()
+        return True
+    return False
 
-@must_be_contributor
-@must_have_addon('s3','node')
-def s3_delete_access_key(*args, **kwargs):
+def _s3_delete_access_key(s3_user, s3_node):
     user = kwargs['user']
 
     s3_node = kwargs['node_addon']
@@ -130,19 +135,19 @@ def s3_delete_access_key(*args, **kwargs):
 
 def _page_content(pid, s3):
     #TODO create new bucket if not found  inform use/ output error?
-    if not s3.user or not pid:
+    if not s3.user_settings or not pid:
         return {}
-    try:
-        connect = S3Wrapper.from_addon(s3)
-        data = utils.getHgrid('/project/' + pid + '/s3/',connect) 
-    except S3ResponseError:
-        push_status_message("It appears you do not have access to this bucket. Are you settings correct?")
-        data = None
+    #try:
+    connect = S3Wrapper.from_addon(s3)
+    data = utils.getHgrid('/project/' + pid + '/s3/',connect) 
+    # except S3ResponseError:
+    #     push_status_message("It appears you do not have access to this bucket. Are you settings correct?")
+    #     data = None
     #Error handling should occur here or one function up
     # ie if usersettings or settings is none etc etc
 
     rv = {
-        'complete': s3.node_auth and data is not None,
+        'complete': data is not None,
         'bucket': s3.s3_bucket,
         'grid': data,
     }

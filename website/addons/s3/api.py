@@ -82,7 +82,12 @@ def create_limited_user(accessKey, secretKey,bucketName):
   ]
 }
     connection = IAMConnection(accessKey,secretKey)
-    connection.create_user(bucketName + '-osf-limited')
+    try:
+        connection.create_user(bucketName + '-osf-limited')
+    except Exception:
+        pass
+        #user has been created already proceed normally
+        #TODO update me I may cause BIG problems
     connection.put_user_policy(bucketName + '-osf-limited','policy-' + bucketName + '-osf-limited',json.dumps(policy))
     return connection.create_access_key(bucketName + '-osf-limited')['create_access_key_response']['create_access_key_result']['access_key'] 
 

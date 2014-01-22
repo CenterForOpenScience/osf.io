@@ -49,17 +49,3 @@ page_routes = {
         ],'post',views.generate_signed_url, json_renderer),
     ],
 }
-
-user_settings_routes = {
-    'rules' : [
-         Rule([
-            '/project/<pid>/s3/makeKey/',
-            '/project/<pid>/node/<nid>/s3/makekey/'
-        ],'post',views.s3_create_access_key, json_renderer),
-         Rule([
-            '/project/<pid>/s3/key/delete/',
-            '/api/v1/project/eha9r/s3/key/delete/',
-        ],'post',views.s3_delete_access_key, json_renderer),
-    ],
-    'prefix': '/api/v1',
-}
