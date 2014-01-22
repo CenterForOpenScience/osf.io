@@ -8,7 +8,9 @@ from framework.search.solr import solr
 from framework.search.utils import clean_solr_doc
 from website.search.solr_search import search_solr
 from website.search.views import _search_contributor
+from website import settings
 
+@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
 class TestCleanSolr(unittest.TestCase):
     """Ensure that invalid XML characters are appropriately removed from
     Solr data documents.
@@ -56,7 +58,7 @@ class TestCleanSolr(unittest.TestCase):
             }
         )
 
-
+@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
 class SolrTestCase(DbTestCase):
 
     def tearDown(self):
@@ -73,7 +75,7 @@ def query_user(name):
     term = 'user:"{}"'.format(name)
     return query(term)
 
-
+@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
 class TestUserUpdate(SolrTestCase):
 
     def test_new_user(self):
@@ -103,6 +105,7 @@ class TestUserUpdate(SolrTestCase):
         docs_current = query_user(user.fullname)
         assert_equal(len(docs_current), 1)
 
+@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
 class TestProject(SolrTestCase):
 
     def setUp(self):
@@ -122,7 +125,7 @@ class TestProject(SolrTestCase):
         docs = query(self.project.title)
         assert_equal(len(docs), 1)
 
-
+@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
 class TestPublicProject(SolrTestCase):
 
     def setUp(self):
@@ -240,7 +243,7 @@ class TestPublicProject(SolrTestCase):
         docs = query('"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
 
-
+@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
 class TestAddContributor(SolrTestCase):
     """Tests of the _search_contributor helper.
 

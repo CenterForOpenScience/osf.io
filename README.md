@@ -62,6 +62,14 @@ To run a certain test method
 $ nosetests tests/test_module.py:TestClass.test_method
 ```
 
+### Testing Addons
+
+Addons tests are not run by default. To execute addons tests, run
+
+```bash
+$ invoke test_addons
+```
+
 ### Testing Email
 
 
