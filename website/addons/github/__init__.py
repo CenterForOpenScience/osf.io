@@ -1,10 +1,10 @@
 from .model import AddonGitHubUserSettings, AddonGitHubNodeSettings
-from .routes import settings_routes, page_routes
+from .routes import settings_routes, page_routes, api_routes
 
 USER_SETTINGS_MODEL = AddonGitHubUserSettings
 NODE_SETTINGS_MODEL = AddonGitHubNodeSettings
 
-ROUTES = [settings_routes, page_routes]
+ROUTES = [api_routes, settings_routes, page_routes]
 
 SHORT_NAME = 'github'
 FULL_NAME = 'GitHub'

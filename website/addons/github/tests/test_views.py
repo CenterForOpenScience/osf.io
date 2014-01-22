@@ -1,32 +1,34 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import unittest
 import mock
+import unittest
 from nose.tools import *  # PEP8 asserts
-import json
 from tests.base import DbTestCase
-from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
+from webtest_plus import TestApp
+
+import website.app
+from tests.factories import ProjectFactory, AuthUserFactory
 from website.addons.github.tests.utils import create_mock_github
 from website.addons.github import views
 from website.addons.github.model import AddonGitHubNodeSettings
+from website.addons.github import api
 
-
-from webtest_plus import TestApp
-import website.app
 app = website.app.init_app(routes=True, set_backends=False,
                             settings_module="website.settings")
 
+github_mock = create_mock_github(user='fred', private=False)
 
 class TestGithubViews(DbTestCase):
 
     def setUp(self):
-        self.user = AuthUserFactory()
         self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.auth = ('test', self.user.api_keys[0]._primary_key)
         self.project = ProjectFactory(creator=self.user)
         self.project.add_addon('github')
         self.project.creator.add_addon('github')
 
-        self.github = create_mock_github(user='fred', private=False)
+        self.github = github_mock
 
         self.node_settings = self.project.get_addon('github')
         self.node_settings.user_settings = self.project.creator.get_addon('github')
@@ -191,6 +193,49 @@ class TestGithubViews(DbTestCase):
             content_type="application/json").maybe_follow()
         self.project.reload()
         assert_not_equal(self.project.logs[-1].action, "github_file_removed")
+
+    @mock.patch('website.addons.github.views.GitHub', github_mock)
+    def test_hgrid_data(self):
+        url = '/api/v1/project/{0}/github/hgrid/'.format(self.project._id)
+        self.github.tree.return_value = {'tree': [
+              {
+                "type": "file",
+                "size": 625,
+                "name": "octokit.rb",
+                "path": "lib/octokit.rb",
+                "sha": "fff6fe3a23bf1c8ea0692b4a883af99bee26fd3b",
+                "url": "https://api.github.com/repos/pengwynn/octokit/contents/lib/octokit.rb",
+                "git_url": "https://api.github.com/repos/pengwynn/octokit/git/blobs/fff6fe3a23bf1c8ea0692b4a883af99bee26fd3b",
+                "html_url": "https://github.com/pengwynn/octokit/blob/master/lib/octokit.rb",
+                "_links": {
+                  "self": "https://api.github.com/repos/pengwynn/octokit/contents/lib/octokit.rb",
+                  "git": "https://api.github.com/repos/pengwynn/octokit/git/blobs/fff6fe3a23bf1c8ea0692b4a883af99bee26fd3b",
+                  "html": "https://github.com/pengwynn/octokit/blob/master/lib/octokit.rb"
+                }
+              },
+              {
+                "type": "dir",
+                "size": 0,
+                "name": "octokit",
+                "path": "lib/octokit",
+                "sha": "a84d88e7554fc1fa21bcbc4efae3c782a70d2b9d",
+                "url": "https://api.github.com/repos/pengwynn/octokit/contents/lib/octokit",
+                "git_url": "https://api.github.com/repos/pengwynn/octokit/git/trees/a84d88e7554fc1fa21bcbc4efae3c782a70d2b9d",
+                "html_url": "https://github.com/pengwynn/octokit/tree/master/lib/octokit",
+                "_links": {
+                  "self": "https://api.github.com/repos/pengwynn/octokit/contents/lib/octokit",
+                  "git": "https://api.github.com/repos/pengwynn/octokit/git/trees/a84d88e7554fc1fa21bcbc4efae3c782a70d2b9d",
+                  "html": "https://github.com/pengwynn/octokit/tree/master/lib/octokit"
+                }
+              }
+            ]
+        }
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        gh_tree = self.github.tree(user='octo-cat',
+                                    repo='mock-repo', sha='123abc')['tree']
+        hgrid_dict = api.tree_to_hgrid(gh_tree, user='octo-cat', repo='mock-repo',
+                                        node=self.project)
+        assert_equal(res.json, hgrid_dict)
 
 
 class TestRegistrationsWithGithub(DbTestCase):

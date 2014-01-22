@@ -4,7 +4,6 @@ from tests.base import DbTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
 from website.addons.github.tests.utils import create_mock_github
 
-
 from webtest_plus import TestApp
 import website.app
 app = website.app.init_app(routes=True, set_backends=False,
