@@ -30,8 +30,6 @@ class AddonS3UserSettings(AddonUserSettingsBase):
             })
         return rv
 
-
-
 class AddonS3NodeSettings(AddonNodeSettingsBase):
 
     s3_bucket = fields.StringField()
@@ -43,16 +41,18 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         'addons3usersettings', backref='authorized'
     )
 
-
     def to_json(self, user):
         rv = super(AddonS3NodeSettings, self).to_json(user)
         rv.update({
             's3_bucket': self.s3_bucket or '',
-            'has_bucket' : self.s3_bucket is not None,
-            'user_has_auth':self.user_settings.user_has_auth or 0,
-            'node_auth':self.node_auth or 0,
-            'access_key' : self.s3_node_access_key or '',
-            'secret_key' : self.s3_node_secret_key or ''
+            'has_bucket': self.s3_bucket is not None,
+            'node_auth': self.node_auth or 0,
+            'access_key': self.s3_node_access_key or '',
+            'secret_key': self.s3_node_secret_key or ''
+        })
+        if self.user_settings:
+            rv.update({
+            'user_has_auth': self.user_settings.user_has_auth or 0,
         })
 
         return rv

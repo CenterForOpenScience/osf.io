@@ -34,8 +34,8 @@ def s3_user_settings(*args, **kwargs):
     if not s3_user:
         raise HTTPError(http.BAD_REQUEST)
 
-    s3_access_key = request.json.get('access_key','') or ''
-    s3_secret_key = request.json.get('secret_key','') or ''
+    s3_access_key = request.json.get('access_key', '') or ''
+    s3_secret_key = request.json.get('secret_key', '') or ''
 
     has_auth = (s3_access_key and s3_secret_key)
 
