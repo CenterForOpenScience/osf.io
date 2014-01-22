@@ -69,7 +69,7 @@
 
 </div>
 
-% if show_grid and user['can_edit'] and has_access:
+% if user['can_edit'] and has_auth:
 
     <div class="container" style="position: relative;">
         <h3 id="dropZoneHeader">Drag and drop (or <a href="#" id="gitFormUpload">click here</a>) to upload files</h3>
@@ -89,28 +89,34 @@
 
     <div id="gitCrumb"></div>
 
-    % if show_grid:
-        <div id="gitGrid"></div>
-    % else:
-        <br />
-        <div class="alert alert-danger">
-            GitHub repo has too many files to render. Sorry for the inconvenience;
-            this issue will be resolved soon.
-        </div>
-    % endif
+    <div id="gitGrid"></div>
+
 
 </div>
 
 <script type="text/javascript">
 
     // Import JS variables
-    var gridData = ${grid_data},
-        branch = '${branch}',
+    // TODO: put these in contextVars namespace to avoid polluting global namespace,
+     var branch = '${branch}',
         sha = '${sha}',
         canEdit = ${int(user['can_edit'])},
         hasAuth = ${int(has_auth)},
         hasAccess = ${int(has_access)},
         isHead = ${int(is_head)};
+    // Namespace for variables grabbed from the python view through mako
+    // These are accessible in any of the Github JS modules
+    var contextVars = {
+        // Node API URL
+        apiUrl: "${api_url}",
+        // Upload URL
+        uploadUrl: "${upload_url}",
+        // URL to get the hgrid root data
+        hgridUrl: "${api_url + 'github/hgrid/'}" + window.location.search,
+        // SHA and branch,
+        sha: "${sha}",
+        branch: "${branch}"
+    };
 
     // Submit branch form on change
     % if len(branches) > 1:
