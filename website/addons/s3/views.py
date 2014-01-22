@@ -135,7 +135,7 @@ def _s3_delete_access_key(s3_user, s3_node):
 
 def _page_content(pid, s3):
     #TODO create new bucket if not found  inform use/ output error?
-    if not s3.user_settings or not pid:
+    if not s3.user_settings or not pid or not s3.s3_bucket:
         return {}
     #try:
     connect = S3Wrapper.from_addon(s3)

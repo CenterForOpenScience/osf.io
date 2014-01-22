@@ -8,7 +8,7 @@
 %else:
     Amazon Simple Storage Service add-on is not configured properly.
     <br>
-    Configure this add-on on the <a href="${node['url']}settings/">settings</a> page, or click <a class="widget-disable" href="${node['api_url']}s3/settings/disable/">here</a> to disable it.
+    Configure this add-on on the <a href="/settings/">settings</a> page, or click <a class="widget-disable" href="${node['api_url']}s3/settings/disable/">here</a> to disable it.
     <br>
 
     <script>
