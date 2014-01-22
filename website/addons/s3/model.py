@@ -26,7 +26,7 @@ class AddonS3UserSettings(AddonUserSettingsBase):
             'access_key': self.access_key,
             'secret_key': self.secret_key,
             'user_has_auth' : self.user_has_auth,
-            'has_submit_button' : 1,
+            'show_submit' : True,
             })
         return rv
 

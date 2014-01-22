@@ -31,12 +31,6 @@ page_routes = {
             '/project/<pid>/node/<nid>/s3/fetchurl/<key>',
             ], 'get', views.s3_download, json_renderer),
         Rule([
-            '/project/<pid>/s3/upload/',
-            '/project/<pid>/s3/upload/<path>',
-            '/project/<pid>/node/<nid>/s3/upload/',
-            '/project/<pid>/node/<nid>/s3/upload/<path>',
-        ], 'post', views.s3_upload, json_renderer),
-        Rule([
             '/project/<pid>/s3/delete/',
             '/<pid>/s3/delete/',
             '/project/<pid>/node/<nid>/s3/delete/',

@@ -167,14 +167,6 @@ class S3Wrapper:
     def bucket_name(self):
         return self.bucket.name
 
-    def flask_upload(self,upFile,safeFilename,parentFolder=None):
-        #TODO fix me somehow
-        if parentFolder:
-            key = self.bucket.new_key(parentFolder + safeFilename)
-        else:
-            key = self.bucket.new_key(safeFilename)
-        return key.set_contents_from_string(upFile.read())
-
     def get_version_data(self):
         versions = {}
         versions_list = self.bucket.list_versions()
@@ -199,6 +191,8 @@ class S3Wrapper:
     def set_cors_rules(self,rules):
         return self.bucket.set_cors(rules)
 
+
+#TODO Extend me and you bucket.setkeyclass
 class S3Key:
 
     def __init__(self, key):

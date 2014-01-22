@@ -34,8 +34,8 @@ def s3_user_settings(*args, **kwargs):
     if not s3_user:
         raise HTTPError(http.BAD_REQUEST)
 
-    s3_access_key = request.json.get('access_key','')
-    s3_secret_key = request.json.get('secret_key','')
+    s3_access_key = request.json.get('access_key','') or ''
+    s3_secret_key = request.json.get('secret_key','') or ''
 
     has_auth = (s3_access_key and s3_secret_key)
 
@@ -129,14 +129,15 @@ def s3_delete_access_key(*args, **kwargs):
 
 
 def _page_content(pid, s3):
-    #nTODO use bucket name 
-    # create new bucket if not found  inform use/ output error
-   # try:
-    connect = S3Wrapper.from_addon(s3)
-    data = utils.getHgrid('/project/' + pid + '/s3/',connect) 
-    #except S3ResponseError:
-       # push_status_message("It appears you do not have access to this bucket. Are you settings correct?")
-       # data = None
+    #TODO create new bucket if not found  inform use/ output error?
+    if not s3.user or not pid:
+        return {}
+    try:
+        connect = S3Wrapper.from_addon(s3)
+        data = utils.getHgrid('/project/' + pid + '/s3/',connect) 
+    except S3ResponseError:
+        push_status_message("It appears you do not have access to this bucket. Are you settings correct?")
+        data = None
     #Error handling should occur here or one function up
     # ie if usersettings or settings is none etc etc
 
@@ -181,9 +182,10 @@ def s3_download(*args, **kwargs):
     connect = S3Wrapper.from_addon(s3)
     return redirect(connect.download_file_URL(keyName.replace('&spc',' ').replace('&sl','/')))
 
+#TODO remove me and make sure I can be removed nicely
 @must_be_contributor
 @must_have_addon('s3','node')
-def s3_upload(*args,**kwargs):
+def s3_upload_unused(*args,**kwargs):
     return {}
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
@@ -272,17 +274,30 @@ def generate_signed_url(*args, ** kwargs):
 
     expires = int(time.time()+ 10)
 
-    amz_headers = "x-amz-acl:private"
+    amz_headers = 'x-amz-acl:private'
 
-    mime = request.json.get('type') if request.json.get('type') != "" else 'application/octet-stream'
+    mime = request.json.get('type') or 'application/octet-stream'
 
     request_to_sign = str("PUT\n\n{mime_type}\n{expires}\n{amz_headers}\n/{resource}".format(mime_type=mime,expires=expires,amz_headers=amz_headers,resource=s3.s3_bucket+'/'+file_name))
 
-    print request_to_sign
-
-    url = 'https://s3.amazonaws.com/' + s3.s3_bucket + '/' + file_name
+    url = 'https://s3.amazonaws.com/{bucket}/{filename}'.format(filename=file_name,bucket=s3.s3_bucket)
     
     signed = urllib.quote_plus(base64.encodestring(hmac.new(str(s3.s3_node_secret_key), request_to_sign, sha).digest()).strip())
+
+    #TODO Fix me up
+    faux_file = [{
+            'uid': uid,
+            'type': 'file',
+            'name': filename,
+            'parent_uid': 'fillmein',
+            'version_id': 'current',
+            'size': '--',
+            'lastMod': "--",
+            'ext':os.path.splitext(filename)[1][1:] or '',
+            'uploadUrl': " ",
+            'downloadUrl':'/project/' + str(kwargs['pid'] )+ '/s3/download/',
+            'deleteUrl': '/project/' + str(kwargs['pid'] )+ '/s3/delete/',
+        }]
 
     return '{url}?AWSAccessKeyId={access_key}&Expires={expires}&Signature={signed}'.format(url=url,access_key=s3.s3_node_access_key,expires=expires,signed=signed),
     #/blackhttpmagick

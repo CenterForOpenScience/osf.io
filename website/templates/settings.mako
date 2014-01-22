@@ -22,7 +22,10 @@
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href='#userProfile'>Profile Information</a></li>
-                <li><a href='#userAddons'>Add-ons</a></li>
+                <li><a href="#selectAddons">Select Add-ons to Configure</a></li>
+                % if addon_enabled_settings:
+                    <li><a href="#configureAddons">Configure Add-ons</a></li>
+                % endif
             </ul>
         </div><!-- end sidebar -->
     </div>
@@ -72,11 +75,11 @@
             </div>
         </div>
 
-        <div id="userAddons" class="panel panel-default">
-            <div class="panel-heading"><h3 class="panel-title">Add-ons</h3></div>
+        <div id="selectAddons" class="panel panel-default">
+            <div class="panel-heading"><h3 class="panel-title">Select Add-ons</h3></div>
             <div class="panel-body">
 
-                <form id="chooseAddonsForm">
+                <form id="selectAddonsForm">
 
                     % for category in addon_categories:
 
@@ -112,9 +115,14 @@
 
                 </form>
 
-                % if addon_enabled_settings:
+            </div>
+        </div>
 
-                    <hr />
+        % if addon_enabled_settings:
+
+            <div id="configureAddons" class="panel panel-default">
+                <div class="panel-heading"><h3 class="panel-title">Configure Add-ons</h3></div>
+                <div class="panel-body">
 
                     % for name in addon_enabled_settings:
 
@@ -129,10 +137,10 @@
 
                     % endfor
 
-                % endif
-
+                </div>
             </div>
-        </div>
+
+        % endif
 
     </div>
 
@@ -321,10 +329,10 @@
     });
 
     // Set up submission for addon selection form
-    $('#chooseAddonsForm').on('submit', function() {
+    $('#selectAddonsForm').on('submit', function() {
 
         var formData = {};
-        $('#chooseAddonsForm').find('input').each(function(idx, elm) {
+        $('#selectAddonsForm').find('input').each(function(idx, elm) {
             var $elm = $(elm);
             formData[$elm.attr('name')] = $elm.is(':checked');
         });

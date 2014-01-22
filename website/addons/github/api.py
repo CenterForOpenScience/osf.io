@@ -104,7 +104,7 @@ class GitHub(object):
             if user
             else os.path.join(API_URL, 'user')
         )
-        return self._send(url)
+        return self._send(url, cache=False)
 
     def repo(self, user, repo):
         """Get a single Github repo's info.
@@ -190,13 +190,15 @@ class GitHub(object):
             http://developer.github.com/v3/git/trees/
 
         """
+        # NOTE: GitHub will return the tree recursively as long as the
+        # recursive param is included, no matter what its value is
+        # Therefore, pass NO params for a NON-recursive tree
+        params = {'recursive': 1} if recursive else {}
         req = self._send(os.path.join(
                 API_URL, 'repos', user, repo, 'git', 'trees',
                 urllib.quote_plus(sha),
             ),
-            params={
-                'recursive': int(recursive)
-            },
+            params=params,
         )
 
         if req is not None:
@@ -421,10 +423,21 @@ def raw_url(user, repo, ref, path):
 type_map = {
     'tree': 'folder',
     'blob': 'file',
+    'file': 'file',
+    'dir': 'folder'
 }
 
 
-def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=False):
+def path_to_uid(path, kind):
+    """Convert a path name to a Hgrid uid.
+
+    :param str name:
+    :param kind: Either 'dir' or 'file'
+
+    """
+    return kind + ':' + '||'.join(['__repo__', path]).strip('||')
+
+def tree_to_hgrid(tree, user, repo, node, parent='null', branch=None, sha=None, hotlink=False):
     """Convert GitHub tree data to HGrid format.
 
     :param list tree: JSON description of git tree
@@ -449,38 +462,44 @@ def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=False):
         if value
     })
 
-    parent = {
-        'uid': 'tree:__repo__',
-        'name': 'GitHub :: {0}'.format(repo),
-        'parent_uid': 'null',
-        'url': '',
-        'type': 'folder',
-        'uploadUrl': node.api_url + 'github/file/'
-    }
-    if ref:
-        parent['uploadUrl'] += '?' + ref
-
-    grid.append(parent)
+    if parent is None:
+        parent_item = {
+            'uid': 'dir:__repo__',
+            'name': 'GitHub :: {0}'.format(repo),
+            'parent_uid': 'null',
+            'url': '',
+            'type': 'folder',
+            'uploadUrl': node.api_url + 'github/file/'
+        }
+        if ref:
+            parent_item['uploadUrl'] += '?' + ref
+        grid.append(parent_item)
+        parent = parent_item['uid']
 
     for item in tree:
 
-        # Types should be "blob" or "tree" but may also be "commit". Ignore
+        # Types should be "dir" or "file" but may also be "commit". Ignore
         # unexpected types.
         if item['type'] not in type_map:
             continue
 
-        split = os.path.split(item['path'])
-        _, ext = os.path.splitext(item['path'])
+        path = item['path']
+        qpath = urllib.quote(path)
+
+        _, basename = os.path.split(path)
+        _, ext = os.path.splitext(path)
         ext = ext.lstrip('.')
 
         row = {
-            'uid': item['type'] + ':' + '||'.join(['__repo__', item['path']]),
-            'name': split[1],
-            'parent_uid': 'tree:' + '||'.join(['__repo__', split[0]]).strip('||'),
+            'uid': item['type'] + ':' + '||'.join(['__repo__', qpath]),
+            'name': basename,
+            'parent_uid': parent,
             'type': type_map[item['type']],
         }
 
-        if item['type'] == 'blob':
+        if type_map[item['type']] == 'file':
+            # The path to the file, e.g. 'my-repo/docs/help.rst'
+            row['ghPath'] = path
             row['sha'] = item['sha']
             row['url'] = item['url']
             row['size'] = [
@@ -488,18 +507,19 @@ def tree_to_hgrid(tree, user, repo, node, branch=None, sha=None, hotlink=False):
                 size(item['size'], system=alternative)
             ]
             row['ext'] = ext
-            base_api_url = node.api_url + 'github/file/{0}/'.format(item['path'])
+            base_api_url = node.api_url + 'github/file/{0}/'.format(qpath)
             row['delete'] = base_api_url + '?' + ref
-            row['view'] = os.path.join(node.url, 'github', 'file', item['path']) + '/'
+            row['view'] = os.path.join(node.url, 'github', 'file', qpath) + '/'
             if ref is not None:
                 base_api_url += '?' + ref
                 row['view'] += '?' + ref
             if hotlink and ref:
-                row['download'] = raw_url(user, repo, sha or branch, item['path'])
+                row['download'] = raw_url(user, repo, sha or branch, qpath)
             else:
                 row['download'] = base_api_url
         else:
-            row['uploadUrl'] = node.api_url + 'github/file/{0}/'.format(item['path'])
+            row['ghPath'] = path
+            row['uploadUrl'] = node.api_url + 'github/file/{0}/'.format(qpath)
             if ref is not None:
                  row['uploadUrl'] += '?' + ref
 

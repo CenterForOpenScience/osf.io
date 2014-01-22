@@ -4,7 +4,8 @@
     <script type="text/javascript">
         var gridData = ${grid},
         can_io = ${int(user['can_edit'])},
-        can_dl = 1
+        can_dl = 1,
+        uplUrl = ${node['url']}
     </script>
 
                 <div class="container" style="position: relative;">

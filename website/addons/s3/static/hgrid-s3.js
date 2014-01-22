@@ -189,11 +189,11 @@ grid.hGridOnUpload.subscribe(function(e, args) {
     return false;
 });
 
-
+//TODO Dir
 grid.dropZoneObj.on("addedfile", function (file)
 {
   $.ajax({
-      url: '/eha9r/s3/getsigned/',
+      url: '/project' + uplUrl + 's3/getsigned/',
       type: 'POST',
       data: JSON.stringify({name:file.name,type:file.type}),
       contentType: 'application/json',

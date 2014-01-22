@@ -6,7 +6,11 @@
                 <i class="icon-question-sign"></i>
             </span>
         % endif
-        <span>${full_name}</span>
+        % if has_page:
+            <a href="${node['url']}${short_name}/">${full_name}</a>
+        % else:
+            <span>${full_name}</span>
+        % endif
     </h3>
 
     % if complete:
@@ -15,7 +19,7 @@
             ${self.body()}
         </div>
 
-        % if page and more:
+        % if has_page and more:
             <div>
                 <a href="${node['url']}${short_name}/">More</a>
             </div>

@@ -15,19 +15,22 @@ def wiki_widget(*args, **kwargs):
     wiki = node.get_addon('wiki')
     wiki_page = node.get_wiki_page('home')
 
+    more = False
     if wiki_page and wiki_page.html:
         wiki_html = wiki_page.html
         if len(wiki_html) > 500:
             wiki_html = BeautifulSoup(wiki_html[:500] + '...', 'html.parser')
+            more = True
         else:
             wiki_html = BeautifulSoup(wiki_html)
+            more = False
     else:
         wiki_html = None
 
     rv = {
         'complete': True,
         'content': wiki_html,
-        'more': False,
+        'more': more,
     }
     rv.update(wiki.config.to_json())
     return rv

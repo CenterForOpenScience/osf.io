@@ -1,3 +1,5 @@
+<% import json %>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -44,18 +46,18 @@
     <div id='devmode'><strong>WARNING</strong>: This site is running in development mode.</div>
     % endif
 
-    <div mod-meta='{"tpl": "nav.mako", "replace": true}'></div>
+    <%include file="nav.mako"/>
      ## TODO: shouldn't always have the watermark class
     <div class="watermarked">
         <div class="container">
             % if status:
-                <div mod-meta='{"tpl": "alert.mako", "replace": true}'></div>
+                <%include file="alert.mako"/>
             % endif
             ${self.content()}
         </div><!-- end container -->
     </div><!-- end watermarked -->
 
-    <div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+    <%include file="footer.mako"/>
 
         %if use_cdn:
             <div id="fb-root"></div>
@@ -108,7 +110,7 @@
                         <% parent_project = parent.get('id') or node.get('id') %>
                         cvars.push([2, "Project ID", "${ parent_project }", "page"]);
                         cvars.push([3, "Node ID", "${ node.get('id') }", "page"]);
-                        cvars.push([4, "Tags", "${ ','.join(node.get('tags')) }", "page"]);
+                        cvars.push([4, "Tags", ${ json.dumps(','.join(node.get('tags', []))) }, "page"]);
                     %endif
                     var foo = trackPiwik("${ piwik_host }", ${ piwik_site_id }, cvars);
                 });
@@ -144,4 +146,3 @@
 <%def name="javascript_bottom()">
     ### Javascript loaded at the bottom of the page ###
 </%def>
-

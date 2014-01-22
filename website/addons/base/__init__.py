@@ -122,11 +122,11 @@ class AddonConfig(object):
         return self._static_url(self.icon) if self.icon else None
 
     def to_json(self):
-
         return {
             'short_name': self.short_name,
             'full_name': self.full_name,
             'capabilities': self.short_name in settings.ADDON_CAPABILITIES,
+            'addon_capabilities': settings.ADDON_CAPABILITIES.get(self.short_name),
             'icon': self.icon_url,
             'has_page': 'page' in self.views,
             'has_widget': 'widget' in self.views,

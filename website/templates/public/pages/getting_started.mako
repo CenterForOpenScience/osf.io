@@ -62,7 +62,7 @@
             <p>You can choose to keep your project's contents visible only to contributors of the project, or to make them available for anyone to view. </p>
             <p>Components you have added can have their own privacy settings. So, making the project public does not make all of its components public.  For example, you can make your project idea public, but leave the data in a private component.</p>
 
-<p>Once you make a project public, you can gain more feedback about the impact of your work by tracking how many people that are visiting your projects and downloading or forking your research materials.</p>
+            <p>Once you make a project public, you can gain more feedback about the impact of your work by tracking how many people that are visiting your projects and downloading or forking your research materials.</p>
         </div>
     </div>
     <div class="row">
@@ -76,6 +76,18 @@
             <div class="video"><iframe width="550" height="309" src="//www.youtube-nocookie.com/embed/5qUAhUF1JL8?rel=0" frameborder="0" allowfullscreen></iframe></div>
         </div>
     </div>
+    <div class="row" id="github">
+        <div class="col-md-8 col-md-offset-2">
+            <h3>GitHub Add-on</h3>
+            <p>To link a GitHub repository to a project/component, click into the project/component you want to associate the repository with. Visit "Settings" on the grey navigation bar. Check "GitHub" under "Select Add-ons" to enable the add-on. Then, authenticate with GitHub by clicking the "Authorize" button. Finally, enter the user and repository names to indicate which repository you want to link to.</p>
+            <p>An easy way to find the user and repository names is to visit the repository's page on GitHub and look a the URL:</p>
+            <code>https://github.com/USER/REPO-NAME</code>
+            <div class="video"><iframe width="550" height="309" src="//www.youtube-nocookie.com/embed/C-2j20aiTI0?rel=0" frameborder="0" allowfullscreen></iframe></div>
+            <p>Repository files are viewable just like a regular file. In adding the repository to your OSF project, you are syncing the two. Both will update as you make changes to one. For example, when you add or delete a file on the OSF, your GitHub account will also reflect these changes and vice-versa.</p>
+            <div class="video"><iframe width="550" height="309" src="//www.youtube-nocookie.com/embed/0go22j5UoIU?rel=0" frameborder="0" allowfullscreen></iframe></div>
+        </div>
+    </div>
+
     <div class="row">
          <div class="col-md-8 col-md-offset-2">
             <h3>Contributors</h3>
@@ -99,7 +111,7 @@
     <div class="row">
         <div class="col-md-8 col-md-offset-2">
             <h3>Forking</h3>
-            <p>Forking a project means creates a copy of it to your dashboard so that you can adapt it for new purposes. You will be the only contributor to the forked project until you add others.</p>
+            <p>Forking a project means you have created a copy of it into your dashboard, and can change that copy for your own purposes. You will be the only contributor to the forked project until you add others.</p>
 
             <p>Forks will automatically reference the original project as a functional citation.  Over time, the network of forks trace the evolution of project materials.</p>
             <div class="video"><iframe width="550" height="309" src="//www.youtube-nocookie.com/embed/1GeAqTX51F8?rel=0" frameborder="0" allowfullscreen></iframe></div>

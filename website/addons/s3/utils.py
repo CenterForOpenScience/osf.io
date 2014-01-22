@@ -14,16 +14,13 @@ ALLOWED_ORIGIN = "osf.io"
 
 CORS_RULE = '<CORSRule><AllowedMethod>POST</AllowedMethod><AllowedOrigin>*</AllowedOrigin><AllowedHeader>origin</AllowedHeader><AllowedHeader>Content-Type</AllowedHeader><AllowedHeader>x-amz-acl</AllowedHeader><AllowedHeader>Authorization</AllowedHeader></CORSRule>'
 
-#TODO Finish me
+#TODO fix/figure out allowed origin....
 def adjust_cors(s3wrapper):
     rules = s3wrapper.get_cors_rules()
     if not [rule for rule in rules if rule.to_xml() == CORS_RULE]:
         rules.add_rule('PUT','*',allowed_header={'Authorization','Content-Type','x-amz-acl','origin'})
         print rules
         s3wrapper.set_cors_rules(rules)
-
-    #Needed rules: PUT * 
-
 
 def getHgrid(url,s3wrapper):
     keyList = s3wrapper.get_wrapped_keys()
@@ -53,8 +50,7 @@ def getHgrid(url,s3wrapper):
 def checkFolders(s3wrapper, keyList):
     for k in keyList:
         if k.parentFolder is not None and k.parentFolder not in [x.name for x in keyList]:
-        	raise Exception
-        	newKey = s3wrapper.createFolder(k.pathTo)
+        	newKey = s3wrapper.create_folder(k.pathTo)
         	keyList.append(S3Key(newKey))
 
 def wrapped_key_to_json(wrapped_key,url,parent_uid=0):
