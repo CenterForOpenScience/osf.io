@@ -57,7 +57,7 @@ def forgot_password():
             user_obj.verification_key = helper.random_string(20)
             user_obj.save()
             # TODO: This is OSF-specific
-            success = send_email.delay(
+            success = send_email(
                 from_addr=website.settings.FROM_EMAIL,
                 to_addr=form.email.data,
                 subject="Reset Password",
