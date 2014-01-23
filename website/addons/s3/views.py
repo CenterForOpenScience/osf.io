@@ -65,7 +65,7 @@ def s3_settings(*args, **kwargs):
     user = kwargs['user']
 
     if not user:
-        error_message = ''
+        error_message = 'Configure this add-on on the <a href="/settings/">settings</a>'
         return {'message': error_message}, 400
 
     node = kwargs['node_addon']
@@ -86,10 +86,6 @@ def s3_settings(*args, **kwargs):
     
     # Delete callback
     if changed:
-
-        #clean up a bit
-        if node.s3_bucket:
-            _s3_delete_access_key(s3_addon, node)
 
         # Update node settings
         node.user_settings = s3_addon
@@ -115,7 +111,9 @@ def _s3_create_access_key(s3_user, s3_node):
         return True
     return False
 
-def _s3_delete_access_key(s3_user, s3_node):
+@must_be_contributor
+@must_have_addon('s3', 'node')
+def s3_delete_access_key(*args, **kwargs):
     user = kwargs['user']
 
     s3_node = kwargs['node_addon']

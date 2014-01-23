@@ -26,7 +26,7 @@ class AddonS3UserSettings(AddonUserSettingsBase):
             'access_key': self.access_key,
             'secret_key': self.secret_key,
             'user_has_auth': self.user_has_auth,
-            'show_submit': True,
+            'show_submit': False,
             })
         return rv
 
@@ -45,12 +45,18 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     def to_json(self, user):
 
         rv = super(AddonS3NodeSettings, self).to_json(user)
+        s3_user_settings = user.get_addon('s3')
+
         rv.update({
             's3_bucket': self.s3_bucket or '',
             'has_bucket': self.s3_bucket is not None,
             'access_key': self.s3_node_access_key or '',
-            'secret_key': self.s3_node_secret_key or ''
+            'secret_key': self.s3_node_secret_key or '',
+            'user_has_auth': 0,
+            'node_auth': self.s3_node_access_key and self.s3_node_secret_key
         })
-        if self.user_settings:
-            rv['user_has_auth'] =  self.user_settings.user_has_auth or 0      
+        if s3_user_settings:
+            self.user_settings = s3_user_settings
+            rv['user_has_auth'] =  self.user_settings.user_has_auth
+
         return rv

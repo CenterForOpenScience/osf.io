@@ -10,11 +10,11 @@
     ##</button>
 </%def>
 
-##Inheritance gimmick. There does not seem a to be a better solution
-<%def name="submit()">
-    ${next.on_submit()}
-</%def>
+${next.submit()}
 
-<%def name="on_submit()">
-    ${parent.submit()}
+<%def name="submit()">
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('#${addon_short_name}').on('submit', on_submit);
+    </script>
 </%def>

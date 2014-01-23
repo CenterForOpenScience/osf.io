@@ -15,6 +15,11 @@ settings_routes = {
             '/project/<pid>/node/<nid>/s3/settings/',
         ], 'post', views.s3_settings, json_renderer),
         Rule([
+            '/project/<pid>/s3/settings/delete/',
+            '/api/v1/project/<pid>/s3/settings/delete/',
+            '/project/<pid>/node/<nid>/s3/settings/delete/',
+        ], 'post', views.s3_delete_access_key, json_renderer),
+        Rule([
             '/user/s3/settings/',
         ], 'post', views.s3_user_settings, json_renderer),
     ],

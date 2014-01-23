@@ -10,8 +10,14 @@
 </div>
 ## if use has other else delete key
 <%def name="submit_btn()">
-    <button class="btn btn-success addon-settings-submit">
-        Submit
-    </button>
+ 	%if user_has_auth:
+        <button id="removeAccess" class="btn btn-danger">
+            Remove Access
+        </button>
+    %else:
+	    <button class="btn btn-success addon-settings-submit">
+	        Submit
+	    </button>
+	%endif
 </%def>
 ##TODO create a remove access key

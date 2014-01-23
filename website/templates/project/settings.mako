@@ -163,6 +163,37 @@
         return text;
     }
 
+    function on_submit() {
+         var $this = $(this),
+            addon = $this.attr('data-addon'),
+            msgElm = $this.find('.addon-settings-message');
+
+        $.ajax({
+            url: nodeApiUrl + addon + '/settings/',
+            data: JSON.stringify(formToObj($this)),
+            type: 'POST',
+            contentType: 'application/json',
+            dataType: 'json'
+        }).success(function() {
+            msgElm.text('Settings updated')
+                .removeClass('text-danger').addClass('text-success')
+                .fadeOut(100).fadeIn();
+        }).fail(function(xhr) {
+            var message = 'Error: ';
+            var response = JSON.parse(xhr.responseText);
+            if (response && response.message) {
+                message += response.message;
+            } else {
+                message += 'Settings not updated.'
+            }
+            msgElm.text(message)
+                .removeClass('text-success').addClass('text-danger')
+                .fadeOut(100).fadeIn();
+        });
+
+        return false;
+    }
+
     $(document).ready(function() {
 
         // Set up submission for addon selection form
@@ -223,36 +254,7 @@
 
         });
 */
-        function on_submit() {
-             var $this = $(this),
-                addon = $this.attr('data-addon'),
-                msgElm = $this.find('.addon-settings-message');
 
-            $.ajax({
-                url: nodeApiUrl + addon + '/settings/',
-                data: JSON.stringify(formToObj($this)),
-                type: 'POST',
-                contentType: 'application/json',
-                dataType: 'json'
-            }).success(function() {
-                msgElm.text('Settings updated')
-                    .removeClass('text-danger').addClass('text-success')
-                    .fadeOut(100).fadeIn();
-            }).fail(function(xhr) {
-                var message = 'Error: ';
-                var response = JSON.parse(xhr.responseText);
-                if (response && response.message) {
-                    message += response.message;
-                } else {
-                    message += 'Settings not updated.'
-                }
-                msgElm.text(message)
-                    .removeClass('text-success').addClass('text-danger')
-                    .fadeOut(100).fadeIn();
-            });
-
-            return false;
-        }
 
         $('#delete-node').on('click', function() {
             var key = randomString();

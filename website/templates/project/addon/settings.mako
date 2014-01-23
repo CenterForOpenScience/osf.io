@@ -14,12 +14,3 @@
 
 </div>
 
-${next.submit()}
-
-
-<%def name="submit()">
-    <script type="text/javascript">
-        $(document).ready(function() {
-            $('#${addon_short_name}').on('submit', on_submit);
-    </script>
-</%def>
