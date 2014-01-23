@@ -64,8 +64,9 @@ def s3_settings(*args, **kwargs):
 
     user = kwargs['user']
 
+    #This should never happen....
     if not user:
-        error_message = 'Configure this add-on on the <a href="/settings/">settings</a>'
+        error_message = ''
         return {'message': error_message}, 400
 
     node = kwargs['node_addon']
@@ -88,7 +89,6 @@ def s3_settings(*args, **kwargs):
     if changed:
 
         # Update node settings
-        node.user_settings = s3_addon
         node.s3_bucket = s3_bucket
         node.save()
         
@@ -130,6 +130,17 @@ def s3_delete_access_key(*args, **kwargs):
     s3_node.node_auth = 0
     s3_node.save()
 
+@must_be_contributor
+@must_have_addon('s3', 'user')
+def s3_remove_user_settings(*args, **kwargs):
+    user = kwargs['user']
+    user_settings = user.get_addon('s3')
+
+    user_settings.access_key = ''
+    user_settings.secret_key = ''
+    user_settings.user_has_auth = False
+    user_settings.save()
+    return True
 
 def _page_content(pid, s3):
     #TODO create new bucket if not found  inform use/ output error?
