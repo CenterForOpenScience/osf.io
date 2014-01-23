@@ -18,8 +18,6 @@ def create_user(user):
     login = 'osf.' + user._id
     pw = str(uuid.uuid4())[:8]
 
-    user.piwik_token = md5(login + md5(pw).hexdigest()).hexdigest()
-
     response = requests.post(
         url=settings.PIWIK_HOST,
         data={
@@ -36,6 +34,8 @@ def create_user(user):
 
     if json.loads(response.content)['result'] == 'error':
         raise PiwikException('Piwik user not updated')
+
+    user.piwik_token = md5(login + md5(pw).hexdigest()).hexdigest()
 
     user.save()
 
