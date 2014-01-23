@@ -771,6 +771,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         original.registration_list.append(registered._id)
         original.save()
 
+        registered.save()
         return registered
 
     def remove_tag(self, tag, user, api_key, save=True):
