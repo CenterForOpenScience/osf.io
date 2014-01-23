@@ -13,7 +13,6 @@
 
 %endif
 
-
 <%def name="submit_btn()">
     %if user_has_auth and node_auth:
         <button class="btn btn-danger addon-settings-submit">
@@ -31,8 +30,9 @@
 
 ##TODO this should be in an if and in an external js file
 
-%if user_has_auth:
-    <%def name="on_submit()">
+
+<%def name="on_submit()">
+    %if node_auth:
         <script type="text/javascript">
          $(document).ready(function() {
             $('#${addon_short_name}').on('submit', function() {
@@ -59,5 +59,7 @@
             });
         });
         </script>
-    </%def>
-%endif
+    %else:
+        ${parent.on_submit()}
+    %endif
+</%def>
