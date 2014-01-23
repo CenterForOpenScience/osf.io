@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 import itertools
+import logging
 import urlparse
 import datetime as dt
 
@@ -24,6 +25,9 @@ name_formatters = {
        initial=user.given_name_initial
    ),
 }
+
+logger = logging.getLogger(__name__)
+
 
 class User(GuidStoredObject, AddonModelMixin):
 
@@ -158,7 +162,10 @@ class User(GuidStoredObject, AddonModelMixin):
         rv = super(User, self).save(*args, **kwargs)
         self.update_solr()
         if settings.PIWIK_HOST and not self.piwik_token:
-            piwik.create_user(self)
+            try:
+                piwik.create_user(self)
+            except (piwik.PiwikException, ValueError):
+                logger.error("Piwik user creation failed: " + self._id)
         return rv
 
     def update_solr(self):

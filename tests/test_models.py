@@ -1275,6 +1275,9 @@ class TestRegisterNode(DbTestCase):
         # Make a registration
         registration = RegistrationFactory(project=self.project)
 
+        # Reload the registration; else test won't catch failures to save
+        registration.reload()
+
         # Registration has the nodes
         assert_equal(len(registration.nodes), 2)
         assert_equal(
