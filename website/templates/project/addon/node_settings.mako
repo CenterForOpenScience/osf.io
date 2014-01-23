@@ -1,4 +1,6 @@
 <%inherit file="settings.mako" />
+        
+        <span data-owner="node"></span>
 
         ${next.body()}
 
@@ -19,7 +21,7 @@ ${next.on_submit()}
 <%def name="on_submit()">
     <script type="text/javascript">
         $(document).ready(function() {
-            $('#${addon_short_name}').on('submit', on_submit_node);
+            $('#${addon_short_name}').on('submit', on_submit_settings);
         });
     </script>
 </%def>
