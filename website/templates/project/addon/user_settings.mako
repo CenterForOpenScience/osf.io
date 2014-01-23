@@ -9,3 +9,12 @@
        ## Submit
     ##</button>
 </%def>
+
+##Inheritance gimmick. There does not seem a to be a better solution
+<%def name="submit()">
+    ${next.on_submit()}
+</%def>
+
+<%def name="on_submit()">
+    ${parent.submit()}
+</%def>
