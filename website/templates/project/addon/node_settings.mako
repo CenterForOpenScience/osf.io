@@ -19,7 +19,7 @@ ${next.submit()}
 <%def name="submit()">
     <script type="text/javascript">
         $(document).ready(function() {
-            $('#${addon_short_name}').on('submit', on_submit);
+            $('#${addon_short_name}').on('submit', on_submit_user);
         });
     </script>
 </%def>

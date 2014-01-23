@@ -18,7 +18,7 @@
 
 <%def name="submit_btn()">
     %if user_has_auth and node_auth:
-        <button class="btn btn-danger">
+        <button class="btn btn-danger addon-settings-submit">
             Remove Access
         </button>
 
@@ -32,16 +32,21 @@
 </%def>
 
 ##TODO this should be in an if and in an external js file
-##TODO Fixe me? whydoInotwork
+
 %if user_has_auth:
-    <%def name="on_submit()">
+    <%def name="submit()">
         <script type="text/javascript">
          $(document).ready(function() {
             $('#${addon_short_name}').on('submit', function() {
-                alert("called");
+                var $this = $(this),
+                addon = $this.attr('data-addon'),
+                msgElm = $this.find('.addon-settings-message');
+
                 $.ajax({
-                    url: nodeApiUrl + addon + '/settings/delete/`',
-                    type: 'POST'
+                    url: nodeApiUrl + '${addon_short_name}' + '/settings/delete/',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    dataType: 'json',
                 }).success(function() {
                     msgElm.text('Access key removed')
                         .removeClass('text-danger').addClass('text-success')
@@ -52,6 +57,7 @@
                         .removeClass('text-success').addClass('text-danger')
                         .fadeOut(100).fadeIn();
                 });
+                return false;
             });
         });
         </script>
