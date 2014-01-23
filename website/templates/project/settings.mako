@@ -188,7 +188,7 @@
             return false;
 
         });
-
+/*
         // Set up submission on addon settings forms
         $('form.addon-settings').on('submit', function() {
 
@@ -222,7 +222,7 @@
             return false;
 
         });
-
+*/
         $('#delete-node').on('click', function() {
             var key = randomString();
             bootbox.prompt(
