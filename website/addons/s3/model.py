@@ -25,8 +25,7 @@ class AddonS3UserSettings(AddonUserSettingsBase):
         rv.update({
             'access_key': self.access_key,
             'secret_key': self.secret_key,
-            'user_has_auth': self.user_has_auth,
-            'show_submit': False,
+            'user_has_auth': True if self.access_key and self.secret_key else False,
             })
         return rv
 
@@ -36,11 +35,6 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     s3_node_access_key = fields.StringField()
     s3_node_secret_key = fields.StringField()
     node_auth = fields.StringField()
-
-    #TODO can I be removed?
-    user_settings = fields.ForeignField(
-        'addons3usersettings', backref='authorized'
-    )
 
     def to_json(self, user):
 
@@ -52,11 +46,10 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             'has_bucket': self.s3_bucket is not None,
             'access_key': self.s3_node_access_key or '',
             'secret_key': self.s3_node_secret_key or '',
-            'user_has_auth': 0,
-            'node_auth': self.s3_node_access_key and self.s3_node_secret_key
+            'user_has_auth': False,
+            'node_auth': True if self.s3_node_access_key and self.s3_node_secret_key else False
         })
         if s3_user_settings:
-            self.user_settings = s3_user_settings
-            rv['user_has_auth'] =  self.user_settings.user_has_auth
+            rv['user_has_auth'] =  True if s3_user_settings.user_has_auth else False
 
         return rv
