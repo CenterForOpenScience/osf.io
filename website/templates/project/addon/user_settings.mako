@@ -7,7 +7,7 @@
 <%def name="submit_btn()">
 </%def>
 
-${next.submit()}
+${next.on_submit()}
 
 <%def name="on_submit()">
     <script type="text/javascript">
