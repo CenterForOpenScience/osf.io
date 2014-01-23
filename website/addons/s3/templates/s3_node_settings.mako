@@ -5,8 +5,6 @@
         <label for="s3_bucket">Bucket Name</label>
         <input class="form-control" id="s3_bucket" name="s3_bucket" value="${s3_bucket}" ${'disabled' if disabled else ''}/>
     </div>
-
-
 %else:
     Amazon Simple Storage Service add-on is not configured properly.
     <br>
@@ -34,7 +32,7 @@
 ##TODO this should be in an if and in an external js file
 
 %if user_has_auth:
-    <%def name="submit()">
+    <%def name="on_submit()">
         <script type="text/javascript">
          $(document).ready(function() {
             $('#${addon_short_name}').on('submit', function() {
