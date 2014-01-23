@@ -4,13 +4,13 @@ from framework.tasks import celery
 import time
 from website import settings  # TODO: Use framework's config module instead
 from mfr.renderer import FileRenderer
-from mfr.renderer import tabular, pdf, code, ipynb, image
+import mfr
+
+
 logger = logging.getLogger(__name__)
 
 
-config = {
-    'ImageRenderer': {'max_width': '400px'},
-}
+config = {}
 FileRenderer.STATIC_PATH = '/static/mfr'
 
 
@@ -27,17 +27,10 @@ def build_rendered_html(file_path, cached_file_path, download_path):
     :return: html file in cached_file_path used to render file at the file_path
 
     """
-
-    FileRenderer.STATIC_PATH = '/static/mfr'
     file_pointer = open(file_path)
-    for name, cls in FileRenderer.registry.items():
-        renderer = cls(**config.get(name, {}))
-        if renderer.detect(file_pointer):
-            rendered = renderer._render(
-                file_pointer, file_path, url=download_path
-            )
-    if not rendered:
-        rendered = 'This file type cannot currently be rendered, please <a href={}>download</a> the file to view it'.format(download_path)
+    rendered = mfr.render(file_pointer, url=download_path)
+    if rendered is None:
+        rendered = '<br>Unable to render, download file to view it'.format(download_path)
     with open(cached_file_path, 'w') as fp:
         fp.write(rendered)
     return True

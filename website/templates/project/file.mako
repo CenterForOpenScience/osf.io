@@ -10,12 +10,11 @@
               	<h1>${file_name} (current)</h1>
           	</div>
       	</section>
-      	<div id='file-rendered'>
+##        todo fix div id file-rendered to proper naming convention
+        <div> Download latest version<a href=${download_url}> here</a></div>
+        <div id='fileRendered' class="mfr mfr-file">
       		${rendered}
       	</div>
-        % if not is_rendered:
-           <script> FileRenderer.start("${download_path}render");</script>
-        % endif
     </div>
     <div class="col-md-4">
       	<ol class="breadcrumb">
@@ -56,4 +55,12 @@
     </div>
 </div>
 </%def>
+
+<%def name="javascript_bottom()">
+    % if not is_rendered:
+       <script> FileRenderer.start("${download_path}render", '#fileRendered');</script>
+    % endif
+</%def>
+
+
 

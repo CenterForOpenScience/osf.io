@@ -536,6 +536,17 @@ def get_registrations(*args, **kwargs):
     return _render_nodes(registrations)
 
 
+CACHE_PATH = os.path.join(settings.BASE_PATH, 'cached')
+
+def get_cache_path(pid, fid, vid):
+    """Return the file path in the cache directory for a given project and
+    file id.
+    """
+    return os.path.join(
+        CACHE_PATH, pid,
+        fid.replace('.', '_') + "_v" + vid + ".html"
+    )
+
 def check_file_exists(*args, **kwargs):
     """
     From route kwargs builds path to the cached_file_path. Checks if the
@@ -545,13 +556,14 @@ def check_file_exists(*args, **kwargs):
     :param kwargs: pid = project id; fid = file id; vid = version id
     :return: Html from cached file
     """
-    cached_file_path = os.path.join(
-        settings.BASE_PATH, "cached", kwargs['pid'],
-        kwargs['fid'].replace('.', '_') + "_v" + kwargs['vid'] + ".html"
-    )
+    cached_file_path = get_cache_path(pid=kwargs['pid'],
+                                      fid=kwargs['fid'],
+                                      vid=kwargs['vid'])
     cached_file_path_exists = os.path.exists(cached_file_path)
     if cached_file_path_exists:
-        return open(cached_file_path, 'r').read()
+        with open(cached_file_path, 'r') as fp:
+            contents = fp.read()
+        return contents
     else:
         return None
 

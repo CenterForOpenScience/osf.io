@@ -154,57 +154,28 @@ NodeActions._openCloseNode = function(node_id) {
 /*
 refresh rendered file through mfr
 */
-//
-//window.ren = function(url) {
-//    var refreshContent = window.setInterval(function(){
-//        $.get( url, function( data ) {
-//            if(data){$('#file-rendered').html(data);
-//            clearInterval(refreshContent);
-//            }
-//        })
-//    }, 1000);
-//}
-
-
-//
-//var window.ren = {
-//    start: function(url)
-//    {
-//        var refreshContent = window.setInterval(function(){
-//        if(
-//            $.get(url, function(data){return data;}
-//            ))
-//        {
-//            $('#file-rendered').html(data);
-//            clearInterval(refreshContent);
-//        }
-//    }, 1000);}}
-
-//window.FileRenderer = {
-//    start: function(){
-//
-//    }
-//}
 
 window.FileRenderer = {
-    start: function(url){
+    start: function(url, selector){
+        this.element = $(selector);
         var tries = 0
-        var refreshContent = window.setInterval(function(){
-            $.get( url, function(data) {
-                if(data){
-                    $('#file-rendered').html(data);
-                    clearInterval(refreshContent);
-                }else{
-                    console.log(tries);
-                    tries += 1;
-                    if(tries > 10){
-                    clearInterval(refreshContent);
-                    $('#file-rendered').html("Timeout occurred while loading, please refresh the page")
-                    }
+        var refreshContent = window.setInterval(this.getCachedFromServer, 1000);
+    },
+
+    getCachedFromServer: function() {
+        $.get( url, function(data) {
+            if(data){
+                this.element.html(data);
+                clearInterval(refreshContent);
+            }else{
+                tries += 1;
+                if(tries > 10){
+                clearInterval(refreshContent);
+                this.element.html("Timeout occurred while loading, please refresh the page")
                 }
-            })
-        }, 1000);
-    }
+            }
+        });
+     }
 };
 
 

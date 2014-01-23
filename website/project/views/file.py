@@ -6,7 +6,6 @@ from cStringIO import StringIO
 import httplib as http
 import logging
 
-from mfr.renderer import FileRenderer
 from hurry.filesize import size, alternative
 
 from framework import request, redirect, secure_filename, send_file
@@ -373,6 +372,7 @@ def view_file(*args, **kwargs):
         rendered = '<img src="/static/img/loading.gif">'
 
         is_rendered = False
+        # build_rendered_html(file_path, cached_file_path, download_path)
         build_rendered_html.apply_async(
             [file_path, cached_file_path, download_path]
         )
