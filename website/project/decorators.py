@@ -13,6 +13,14 @@ from framework import session
 from decorator import decorator
 
 
+def check_exception(user, node_to_use, api_node):
+    if user is None:
+        return redirect('/login/?next={0}'.format(request.path))
+    if not node_to_use.is_contributor(user) \
+            and api_node != node_to_use:
+        raise HTTPError(http.FORBIDDEN)
+
+
 def must_not_be_registration(fn):
     def wrapped(func, *args, **kwargs):
         if 'project' not in kwargs:
@@ -110,11 +118,7 @@ def must_be_contributor(fn):
         if not session:
             kwargs['link'] = link
             if link not in node_to_use.private_links:
-                if user is None:
-                    return redirect('/login/?next={0}'.format(request.path))
-                if not node_to_use.is_contributor(user) \
-                        and api_node != node_to_use:
-                    raise HTTPError(http.FORBIDDEN)
+                check_exception(user, node_to_use, api_node)
 
             return fn(*args, **kwargs)
         else:
@@ -122,11 +126,7 @@ def must_be_contributor(fn):
                 session.data['link'].append(link)
             key_ring = set(session.data['link'])
             if key_ring.isdisjoint(node_to_use.private_links):
-                if user is None:
-                    return redirect('/login/?next={0}'.format(request.path))
-                if not node_to_use.is_contributor(user) \
-                        and api_node != node_to_use:
-                    raise HTTPError(http.FORBIDDEN)
+                check_exception(user, node_to_use, api_node)
             if key_ring.intersection(
                 node_to_use.private_links
             ):
@@ -176,11 +176,7 @@ def must_be_contributor_or_public(fn):
             kwargs['link'] = link
             if not node_to_use.is_public:
                 if link not in node_to_use.private_links:
-                    if user is None:
-                        return redirect('/login/?next={0}'.format(request.path))
-                    if not node_to_use.is_contributor(user) \
-                            and api_node != node_to_use:
-                        raise HTTPError(http.FORBIDDEN)
+                    check_exception(user, node_to_use, api_node)
 
             return fn(*args, **kwargs)
         else:
@@ -189,16 +185,12 @@ def must_be_contributor_or_public(fn):
             key_ring = set(session.data['link'])
             if not node_to_use.is_public:
                 if key_ring.isdisjoint(node_to_use.private_links):
-                    if user is None:
-                        return redirect('/login/?next={0}'.format(request.path))
-                    if not node_to_use.is_contributor(user) \
-                            and api_node != node_to_use:
-                        raise HTTPError(http.FORBIDDEN)
+                    check_exception(user, node_to_use, api_node)
 
             if key_ring.intersection(
                 node_to_use.private_links
             ):
-                kwargs['link']= key_ring.intersection(
+                kwargs['link']=key_ring.intersection(
                     node_to_use.private_links
                 ).pop()
             else:
@@ -236,11 +228,7 @@ def must_be_contributor_and_no_private_link(fn):
 
         api_node = kwargs.get('api_node')
 
-        if user is None:
-            return redirect('/login/?next={0}'.format(request.path))
-        if not node_to_use.is_contributor(user) \
-                and api_node != node_to_use:
-            raise HTTPError(http.FORBIDDEN)
+        check_exception(user, node_to_use, api_node)
 
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)
