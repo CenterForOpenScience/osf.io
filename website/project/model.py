@@ -916,7 +916,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return committer
 
-
     def add_file(self, user, api_key, file_name, content, size, content_type):
         """
         Instantiates a new NodeFile object, and adds it to the current Node as
@@ -1017,9 +1016,8 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return node_file
 
-
     def add_private_link(self, link='', save=True):
-        link = link or str(uuid.uuid4())
+        link = link or str(uuid.uuid4()).replace("-", "6")
         self.private_links.append(link)
         if save:
             self.save()

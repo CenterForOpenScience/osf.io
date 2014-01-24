@@ -180,7 +180,6 @@ def node_forks(*args, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor # returns user, project
-@must_not_be_registration
 def node_setting(**kwargs):
 
     user = get_current_user()

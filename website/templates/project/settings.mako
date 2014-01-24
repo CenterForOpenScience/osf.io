@@ -15,114 +15,118 @@
 ##    }'></div>
 
 <div class="row">
-    <div class="col-md-3">
-        <div class="panel panel-default">
-            <ul class="nav nav-stacked nav-pills">
-                <li><a href="#configureNode">Configure ${node['category'].capitalize()}</a></li>
-                <li><a href="#selectAddons">Select Add-ons</a></li>
-                % if addon_enabled_settings:
-                    <li><a href="#configureAddons">Configure Add-ons</a></li>
-                % endif
-                <li><a href="#linkScope">Private Links</a></li>
-            </ul>
-        </div><!-- end sidebar -->
-    </div>
-    <div class="col-md-6">
-
-        <div id="configureNode" class="panel panel-default">
-
-            <div class="panel-heading">
-                <h3 class="panel-title">Configure ${node['category'].capitalize()}</h3>
-            </div>
-
-            <div class="panel-body">
-
-                <!-- Delete node -->
-                <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
-
-            </div>
-
-        </div>
-
-        <div id="selectAddons" class="panel panel-default">
-
-            <div class="panel-heading">
-                <h3 class="panel-title">Select Add-ons</h3>
-            </div>
-
-            <div class="panel-body">
-
-                <form id="selectAddonsForm">
-
-                    % for category in addon_categories:
-
-                        <%
-                            addons = [
-                                addon
-                                for addon in addons_available
-                                if category in addon.categories
-                            ]
-                        %>
-
-                        % if addons:
-                            <h3>${category.capitalize()}</h3>
-                            % for addon in addons:
-                                <div>
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            name="${addon.short_name}"
-                                            class="addon-select"
-                                            ${'checked' if addon.short_name in addons_enabled else ''}
-                                            ${'disabled' if node['is_registration'] else ''}
-                                        />
-                                        ${addon.full_name}
-                                    </label>
-                                </div>
-                            % endfor
-                        % endif
-
-                    % endfor
-
-                    <br />
-
-                    % if not node['is_registration']:
-                        <button id="settings-submit" class="btn btn-success">
-                            Submit
-                        </button>
+    % if not node['is_registration']:
+        <div class="col-md-3">
+            <div class="panel panel-default">
+                <ul class="nav nav-stacked nav-pills">
+                    <li><a href="#configureNode">Configure ${node['category'].capitalize()}</a></li>
+                    <li><a href="#selectAddons">Select Add-ons</a></li>
+                    % if addon_enabled_settings:
+                        <li><a href="#configureAddons">Configure Add-ons</a></li>
                     % endif
 
-                </form>
-
-            </div>
+                    <li><a href="#linkScope">Private Links</a></li>
+                </ul>
+            </div><!-- end sidebar -->
         </div>
-
-        % if addon_enabled_settings:
-
-            <div id="configureAddons" class="panel panel-default">
+    % endif
+    <div class="col-md-6">
+        % if not node['is_registration']:
+            <div id="configureNode" class="panel panel-default">
 
                 <div class="panel-heading">
-                    <h3 class="panel-title">Configure Add-ons</h3>
+                    <h3 class="panel-title">Configure ${node['category'].capitalize()}</h3>
                 </div>
 
                 <div class="panel-body">
 
-                    % for name in addon_enabled_settings or []:
+                    <!-- Delete node -->
+                    <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
 
-                        <div mod-meta='{
-                                "tpl": "../addons/${name}/templates/${name}_node_settings.mako",
-                                "uri": "${node['api_url']}${name}/settings/"
-                            }'></div>
+                </div>
 
-                        % if not loop.last:
-                            <hr />
+            </div>
+
+            <div id="selectAddons" class="panel panel-default">
+
+                <div class="panel-heading">
+                    <h3 class="panel-title">Select Add-ons</h3>
+                </div>
+
+                <div class="panel-body">
+
+                    <form id="selectAddonsForm">
+
+                        % for category in addon_categories:
+
+                            <%
+                                addons = [
+                                    addon
+                                    for addon in addons_available
+                                    if category in addon.categories
+                                ]
+                            %>
+
+                            % if addons:
+                                <h3>${category.capitalize()}</h3>
+                                % for addon in addons:
+                                    <div>
+                                        <label>
+                                            <input
+                                                type="checkbox"
+                                                name="${addon.short_name}"
+                                                class="addon-select"
+                                                ${'checked' if addon.short_name in addons_enabled else ''}
+                                                ${'disabled' if node['is_registration'] else ''}
+                                            />
+                                            ${addon.full_name}
+                                        </label>
+                                    </div>
+                                % endfor
+                            % endif
+
+                        % endfor
+
+                        <br />
+
+                        % if not node['is_registration']:
+                            <button id="settings-submit" class="btn btn-success">
+                                Submit
+                            </button>
                         % endif
 
-                    % endfor
+                    </form>
 
                 </div>
             </div>
 
+            % if addon_enabled_settings:
+
+                <div id="configureAddons" class="panel panel-default">
+
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Configure Add-ons</h3>
+                    </div>
+
+                    <div class="panel-body">
+
+                        % for name in addon_enabled_settings or []:
+
+                            <div mod-meta='{
+                                    "tpl": "../addons/${name}/templates/${name}_node_settings.mako",
+                                    "uri": "${node['api_url']}${name}/settings/"
+                                }'></div>
+
+                            % if not loop.last:
+                                <hr />
+                            % endif
+
+                        % endfor
+
+                    </div>
+                </div>
+
+            % endif
         % endif
         <div id="linkScope">
             <button id="generate-private-link" class="private-link" data-toggle="modal" href="#private-link">Generate Private Link</button>
