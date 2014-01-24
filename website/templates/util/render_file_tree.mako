@@ -28,7 +28,7 @@ $(document).ready(function() {
         if(dataContext.view){
             link = "<a href=" + dataContext['view'] + ">" + link + "</a>";
         }
-        if (dataContext['type']=='folder') {
+        if (dataContext['type'] == 'folder') {
             if (dataContext._collapsed) {
                 if (dataContext.can_view !== false) {
                     return spacer + " <span class='toggle expand nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-open'></span>&nbsp;" + link + "</a>";

@@ -100,23 +100,24 @@ font-weight: bold;
     max-width: 100%;
 }
 
-.addon-logo {
-    width: 20px;
-}
-
 .addon-widget-container:first-of-type h1,
 .addon-widget-container:first-of-type h2,
 .addon-widget-container:first-of-type h3 {
     margin-top: 0;
 }
 
-.hg-addon-helper {
-    display: inline-block;
-    height: 100%;
-    vertical-align: middle;
+/* Make wiki images responsive */
+.wiki img,
+.addon-widget-container img {
+  vertical-align: middle;
+  display: block;
+  max-width: 100%;
+  height: auto;
 }
-.hg-addon-icon {
+
+img.hg-addon-icon {
     width: 16px;
+    display: inline;
     vertical-align: middle;
 }
 
@@ -405,14 +406,6 @@ h4 {
 
 }
 
-/* Make wiki images responsive */
-.wiki img,
-.addon-widget-container img {
-  vertical-align: middle;
-  display: block;
-  max-width: 100%;
-  height: auto;
-}
 
 
 
