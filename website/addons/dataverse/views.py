@@ -12,7 +12,6 @@ from website.project import decorators
 from website.project.views.node import _view_project
 
 
-@decorators.must_be_contributor
 @decorators.must_have_addon('dataverse', 'user')
 def dataverse_set_user_config(*args, **kwargs):
 
@@ -21,26 +20,41 @@ def dataverse_set_user_config(*args, **kwargs):
     # Log in with DATAVERSE
     username = request.json.get('dataverse_username')
     password = request.json.get('dataverse_password')
-    print username
     connection = DvnConnection(
         username=username,
         password=password,
         host=TEST_HOST,
         cert=TEST_CERT,
     )
-    print connection
 
     # If success, save params
-    if connection:
+    try:
+        connection.get_dataverses()
         user_settings.dataverse_username = username
         user_settings.dataverse_password = password
-
         user_settings.save()
 
     # If fail, error msg
-    else:
+    except:
         raise HTTPError(http.BAD_REQUEST)
 
+
+@decorators.must_have_addon('dataverse', 'user')
+def dataverse_delete_user(*args, **kwargs):
+
+    dataverse_user = kwargs['user_addon']
+
+    # # Todo: Remove webhooks
+    # for node_settings in dataverse_user.addongithubnodesettings__authorized:
+    #     node_settings.delete_hook()
+
+    # Revoke access
+    dataverse_user.dataverse_username = None
+    dataverse_user.dataverse_password = None
+    dataverse_user.connection = None
+    dataverse_user.save()
+
+    return {}
 
 
 @decorators.must_be_contributor

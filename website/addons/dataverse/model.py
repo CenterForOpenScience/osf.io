@@ -10,7 +10,7 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
 
     dataverse_username = fields.StringField()
     dataverse_password = fields.StringField()
-
+    connection = fields.ForeignField('DvnConnection')
 
     def to_json(self, user):
         rv = super(AddonDataverseUserSettings, self).to_json(user)

@@ -1,6 +1,7 @@
 from .model import AddonDataverseUserSettings, AddonDataverseNodeSettings
 from .routes import settings_routes, page_routes
 
+MODELS = [AddonDataverseNodeSettings, AddonDataverseUserSettings]
 USER_SETTINGS_MODEL = AddonDataverseUserSettings
 NODE_SETTINGS_MODEL = AddonDataverseNodeSettings
 
@@ -37,5 +38,3 @@ INCLUDE_CSS = {
     'widget': [],
     'page': ['/static/css/hgrid-base.css'],
 }
-
-WIDGET_HELP = 'GitHub Add-on Alpha'
