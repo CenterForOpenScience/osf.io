@@ -460,8 +460,8 @@ def _view_project(node, user, link='', api_key=None, primary=False):
     # Before page load callback; skip if not primary call
     if primary:
         for addon in node.get_addons():
-            message = addon.before_page_load(node, user)
-            if message:
+            messages = addon.before_page_load(node, user) or []
+            for message in messages:
                 status.push_status_message(message)
     data = {
         'node': {

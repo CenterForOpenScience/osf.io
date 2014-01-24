@@ -49,9 +49,10 @@ def _collect_file_trees(node, user, link='', parent='null', **kwargs):
             dummy = addon.config.get_hgrid_dummy(
                 addon, user, parent, **kwargs
             )
-            dummy['iconUrl'] = addon.config.icon_url
             # Skip if dummy folder is falsy
             if dummy:
+                # Add add-on icon URL if specified
+                dummy['iconUrl'] = addon.config.icon_url
                 grid_data.append(dummy)
 
     # Collect component file trees

@@ -384,6 +384,7 @@ def download_file(*args, **kwargs):
     filename = kwargs['fid']
     link = kwargs['link']
     vid = len(node_to_use.files_versions[filename.replace('.', '_')])
+
     redirect_url = '{url}osffiles/download/{fid}/version/{vid}/'.format(
         url=node_to_use.api_url,
         fid=filename,
