@@ -16,7 +16,7 @@ ADDED_TO = {
     'node': False,
 }
 
-VIEWS = []
+VIEWS = ['widget']
 CONFIGS = ['user', 'node']
 
 CATEGORIES = ['storage']

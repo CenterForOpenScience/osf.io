@@ -21,10 +21,17 @@ settings_routes = {
             '/project/<pid>/github/file/<path:path>',
             '/project/<pid>/node/<nid>/github/file/<path:path>',
         ], 'get', views.crud.github_download_file, json_renderer),
+
+        # Widget routes
+        Rule([
+            '/project/<pid>/github/widget/',
+            '/project/<pid>/node/<nid>/github/widget/',
+        ], 'get', views.widget.github_widget, json_renderer),
         Rule([
             '/project/<pid>/github/',
             '/project/<pid>/node/<nid>/github/',
         ], 'get', views.widget.github_get_repo, json_renderer),
+
         Rule([
             '/project/<pid>/github/file/',
             '/project/<pid>/github/file/<path:path>',
