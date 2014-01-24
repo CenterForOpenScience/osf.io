@@ -6,7 +6,7 @@
 
         % for k in pages_current:
             <li>
-                <a href="/${node['id']}/wiki/${k}/${node['url_params']}">${k}</a>
+                <a href="/${node['id']}/wiki/${k}/">${k}</a>
             </li>
         % endfor
 

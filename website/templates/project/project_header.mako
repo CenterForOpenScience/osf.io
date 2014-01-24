@@ -17,7 +17,7 @@
                 %if parent['id']:
                     % if parent['can_be_viewed'] or parent['is_public'] or parent['is_contributor']:
                         <h1 class="node-parent-title">
-                            <a href="${parent['url']}${node['url_params']}">${parent['title']}</a> /
+                            <a href="${parent['url']}">${parent['title']}</a> /
 
                         </h1>
                     % else:
@@ -93,7 +93,7 @@
             % if node['is_registration'] and node['registered_meta']:
                 <br />Registration Supplement:
                 % for meta in node['registered_meta']:
-                    <a href="${node['url']}register/${meta['name_no_ext']}${node['url_params']}">${meta['name_clean']}</a>
+                    <a href="${node['url']}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
                 % endfor
             % endif
             <br />Date Created:
@@ -114,15 +114,15 @@
         <nav id="projectSubnav" class="navbar navbar-default ">
             <ul class="nav navbar-nav">
 
-                <li><a href="${node['url']}${node['url_params']}">Dashboard</a></li>
+                <li><a href="${node['url']}">Dashboard</a></li>
                 % if not node['url_params']:
-                    <li><a href="${node['url']}statistics/${node['url_params']}">Statistics</a></li>
+                    <li><a href="${node['url']}statistics/">Statistics</a></li>
                 % endif
                 <!-- Add-on tabs -->
                 % for addon in addons_enabled:
                     % if addons[addon]['has_page']:
                         <li>
-                            <a href="${node['url']}${addons[addon]['short_name']}${node['url_params']}">
+                            <a href="${node['url']}${addons[addon]['short_name']}">
                                 % if addons[addon]['icon']:
                                     <img src="${addons[addon]['icon']}" class="addon-logo"/>
                                 % endif
@@ -133,9 +133,9 @@
                 % endfor
 
                 % if not node['is_registration']:
-                    <li><a href="${node['url']}registrations/${node['url_params']}">Registrations</a></li>
+                    <li><a href="${node['url']}registrations/">Registrations</a></li>
                 % endif
-                <li><a href="${node['url']}forks/${node['url_params']}">Forks</a></li>
+                <li><a href="${node['url']}forks/">Forks</a></li>
                 % if not node['url_params']:
                     % if user['is_contributor']:
                         <li><a href="${node['url']}settings/">Settings</a></li>
@@ -164,7 +164,7 @@
         }
         // Get project data from the server and initiate the ProjectViewModel
         $.ajax({
-            url: nodeApiUrl+"${node['url_params']}",
+            url: nodeApiUrl,
             type: "get", contentType: "application/json",
             dataType: "json",
             cache: false,

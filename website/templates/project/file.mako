@@ -44,7 +44,7 @@
                         ${version['total']}
                     </td>
                     <td>
-                        <a href="${node['api_url']}files/download/${file_name}/version/${version['number']}/${node['url_params']}" >
+                        <a href="${node['api_url']}files/download/${file_name}/version/${version['number']}/" >
                             <i class="icon-download-alt"></i></
                     </td>
                 </tr>

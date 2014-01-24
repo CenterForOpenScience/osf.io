@@ -17,22 +17,20 @@ def prepare_private_key():
     if key_from_args:
         return
 
-    parsed_referrer = ''
-    # Check referrer for private key
     if request.referrer:
-        parsed_referrer = urlparse.urlparse(request.referrer)
-    referrer_args = ''
-    if parsed_referrer:
-        referrer_args = dict(urlparse.parse_qsl(parsed_referrer.query))
-    key_from_referrer = ''
-    if key_from_referrer:
-        key_from_referrer = referrer_args.get('key', '')
+        key = urlparse.parse_qs(
+                urlparse.urlparse(request.referrer).query
+            ).get('key')
+        if isinstance(key, list):
+            key = key[0]
+    else:
+        key = None
 
     # Update URL and redirect
-    if key_from_referrer:
+    if key:
         parsed_path = urlparse.urlparse(request.path)
         path_args = dict(urlparse.parse_qsl(parsed_path.query))
-        path_args['key'] = key_from_referrer
+        path_args['key'] = key
         new_parsed_path = parsed_path._replace(query=urllib.urlencode(path_args))
         new_path = urlparse.urlunparse(new_parsed_path)
         return redirect(new_path, code=307)
@@ -46,6 +44,8 @@ def set_previous_url(url=None):
     at set length.
 
     """
+    if not session:
+        return
     url = url or request.path
     if any([rule(url) for rule in settings.SESSION_HISTORY_IGNORE_RULES]):
         return
