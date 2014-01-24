@@ -17,7 +17,7 @@ from framework.auth import must_have_session_auth, get_api_key
 from website.models import Node
 from website.project import new_node, clean_template_name
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public, must_be_contributor_and_no_private_link
+    must_be_contributor, must_be_contributor_or_public
 from website.project.forms import NewProjectForm, NewNodeForm
 from website.models import WatchConfig
 from website import settings
