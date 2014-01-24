@@ -129,9 +129,8 @@ def must_be_contributor(fn):
                 if not node_to_use.is_contributor(user) \
                         and api_node != node_to_use:
                     raise HTTPError(http.FORBIDDEN)
-            if key_ring.intersection(
-                node_to_use.private_links
-            ):
+                kwargs['link'] = ''
+            else:
                 kwargs['link'] = key_ring.intersection(
                     node_to_use.private_links
                 ).pop()
@@ -143,8 +142,6 @@ def must_be_contributor(fn):
                         return redirect('{0}&key={1}'.format(request.path, kwargs['link']))
                     else:
                         return redirect('{0}?key={1}'.format(request.path, kwargs['link']))
-            else:
-                kwargs['link'] = ''
             return fn(*args, **kwargs)
     return decorator(wrapped, fn)
 
@@ -204,21 +201,19 @@ def must_be_contributor_or_public(fn):
                     if not node_to_use.is_contributor(user) \
                             and api_node != node_to_use:
                         raise HTTPError(http.FORBIDDEN)
-
-            if key_ring.intersection(
-                node_to_use.private_links
-            ):
-                kwargs['link'] = key_ring.intersection(
-                    node_to_use.private_links
-                ).pop()
-                if link != kwargs['link'] \
-                    and (not node_to_use.is_public or user is None
-                         or (not node_to_use.is_contributor(user)
-                             and api_node != node_to_use)):
-                    if '?' in request.path:
-                        return redirect('{0}&key={1}'.format(request.path, kwargs['link']))
-                    else:
-                        return redirect('{0}?key={1}'.format(request.path, kwargs['link']))
+                    kwargs['link'] = ''
+                else:
+                    kwargs['link'] = key_ring.intersection(
+                        node_to_use.private_links
+                    ).pop()
+                    if link != kwargs['link'] \
+                        and (user is None
+                             or (not node_to_use.is_contributor(user)
+                                 and api_node != node_to_use)):
+                        if '?' in request.path:
+                            return redirect('{0}&key={1}'.format(request.path, kwargs['link']))
+                        else:
+                            return redirect('{0}?key={1}'.format(request.path, kwargs['link']))
             else:
                 kwargs['link'] = ''
             return fn(*args, **kwargs)
