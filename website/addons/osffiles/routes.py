@@ -58,11 +58,6 @@ api_routes = {
             json_renderer,
         ),
 
-        #Rule([
-        #    '/project/<pid>/osffiles/',
-        #    '/project/<pid>/node/<nid>/osffiles/',
-        #], 'get', views.get_osffiles, json_renderer),
-
         Rule([
             '/project/<pid>/file_paths/',
             '/project/<pid>/node/<nid>/file_paths/',

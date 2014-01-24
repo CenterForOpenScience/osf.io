@@ -202,7 +202,6 @@ def upload_file_public(*args, **kwargs):
             float(uploaded_file_size),
             size(uploaded_file_size, system=alternative),
         ],
-        'size': str(uploaded_file_size),
 
         # URLs
         'view': fobj.url,
