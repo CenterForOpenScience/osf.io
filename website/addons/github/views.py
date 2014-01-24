@@ -444,9 +444,10 @@ def github_page(*args, **kwargs):
 
     user = kwargs['user']
     node = kwargs['node'] or kwargs['project']
+    link = kwargs['link']
     github = kwargs['node_addon']
 
-    data = _view_project(node, user, primary=True)
+    data = _view_project(node, user, link, primary=True)
     branch, sha = request.args.get('branch'), request.args.get('sha')
     rv = _page_content(node, github, branch=branch, sha=sha)
     rv.update({
@@ -506,6 +507,7 @@ def github_download_file(*args, **kwargs):
 def github_view_file(*args, **kwargs):
 
     user = kwargs['user']
+    link = kwargs['link']
     node = kwargs['node'] or kwargs['project']
     github = kwargs['node_addon']
 
@@ -603,7 +605,7 @@ def github_view_file(*args, **kwargs):
         'download_url': url,
         'commits': commits,
     }
-    rv.update(_view_project(node, user, primary=True))
+    rv.update(_view_project(node, user, link, primary=True))
     return rv
 
 

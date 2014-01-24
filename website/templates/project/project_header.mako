@@ -115,12 +115,14 @@
             <ul class="nav navbar-nav">
 
                 <li><a href="${node['url']}${node['url_params']}">Dashboard</a></li>
-                <li><a href="${node['url']}statistics/${node['url_params']}">Statistics</a></li>
+                % if not node['url_params']:
+                    <li><a href="${node['url']}statistics/${node['url_params']}">Statistics</a></li>
+                % endif
                 <!-- Add-on tabs -->
                 % for addon in addons_enabled:
                     % if addons[addon]['has_page']:
                         <li>
-                            <a href="${node['url']}${addons[addon]['short_name']}">
+                            <a href="${node['url']}${addons[addon]['short_name']}${node['url_params']}">
                                 % if addons[addon]['icon']:
                                     <img src="${addons[addon]['icon']}" class="addon-logo"/>
                                 % endif
