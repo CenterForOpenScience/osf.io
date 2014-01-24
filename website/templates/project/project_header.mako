@@ -9,6 +9,11 @@
     </style>
 % endif
 
+% if node['link'] and not node['is_public'] and not user['can_edit']:
+    <div class="alert alert-info">This ${node['category']} is viewed through private keys; the content of the ${node["category"]} cannot be edited and you are responsible to keep the private key safe.
+    </div>
+% endif
+
 <div id="projectScope">
     <header class="subhead" id="overview">
         <div class="row">
