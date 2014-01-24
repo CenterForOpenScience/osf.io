@@ -14,7 +14,7 @@ class TestCallbacks(DbTestCase):
     def setUp(self):
 
         super(TestCallbacks, self).setUp()
-        
+
         self.project = ProjectFactory.build()
         self.non_authenticator = UserFactory()
         self.project.add_contributor(
@@ -47,7 +47,9 @@ class TestCallbacks(DbTestCase):
 
     def test_node_settings_user_auth(self):
         s3 = AddonS3NodeSettings()
-        assert_equals(s3.to_json(self.project.creator)['user_has_auth'], 0)
+        assert_equals(s3.to_json(self.project.creator)['user_has_auth'], 1)
 
     def test_node_settings_moar_use(self):
         assert_equals(self.node_settings.to_json(self.project.creator)['user_has_auth'],1)
+
+    def test_

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import unittest
+import mock
 from nose.tools import *  # PEP8 asserts
 from tests.base import DbTestCase
 from webtest_plus import TestApp
@@ -28,7 +29,6 @@ class TestS3Views(DbTestCase):
         #self.s3 = s3_mock
 
         self.node_settings = self.project.get_addon('s3')
-        self.node_settings.user_settings = self.project.creator.get_addon('s3')
         # Set the node addon settings to correspond to the values of the mock repo
         #self.node_settings.user = self.s3.repo.return_value['owner']['login']
         #self.node_settings.repo = self.s3.repo.return_value['name']
@@ -48,3 +48,14 @@ class TestS3Views(DbTestCase):
         s3 = AddonS3NodeSettings(user='jimbob', s3_bucket='lul')
         res = views._page_content('', s3)
         assert_equals(res,{})
+
+    @mock.patch('website.addons.s3.api.does_bucket_exist')
+    @mock.patch('website.addons.s3.views._s3_create_access_key')
+    @mock.patch('website.addons.s3.utils.adjust_cors')
+    def test_s3_settings(self, mock_does_bucket_exist, mock_create_key, mock_cors):
+        mock_does_bucket_exist.return_value = True
+        mock_create_key.return_value = True
+        mock_cors.return_value = True
+        url = "/api/v1/project/{0}/s3/settings/".format(self.project._id)
+        res = self.app.post_json(url,{})
+        assert_true(views.s3_settings())
