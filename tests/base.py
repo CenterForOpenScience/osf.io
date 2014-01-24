@@ -8,9 +8,12 @@ from framework import storage, set_up_storage
 from framework.auth.model import User
 from framework.sessions.model import Session
 from framework.guid.model import Guid
-from website.project.model import (ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
+from website.project.model import (ApiKey, Node, NodeLog,
                                    Tag, WatchConfig, MetaData)
 from website import settings
+
+from website.addons.osffiles.model import NodeFile
+from website.addons.wiki.model import NodeWikiPage
 
 
 # All Models

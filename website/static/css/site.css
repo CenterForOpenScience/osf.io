@@ -110,6 +110,16 @@ font-weight: bold;
     margin-top: 0;
 }
 
+.hg-addon-helper {
+    display: inline-block;
+    height: 100%;
+    vertical-align: middle;
+}
+.hg-addon-icon {
+    width: 16px;
+    vertical-align: middle;
+}
+
 /* End add-on styles */
 
 html, body {

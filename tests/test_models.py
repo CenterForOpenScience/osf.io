@@ -19,7 +19,9 @@ from framework.bcrypt import check_password_hash
 from framework.git.exceptions import FileNotModified
 from website import settings, filters
 from website.profile.utils import serialize_user
-from website.project.model import ApiKey, NodeFile, NodeLog, ensure_schemas
+from website.project.model import ApiKey, NodeLog, ensure_schemas
+
+from website.addons.osffiles.model import NodeFile
 
 from tests.base import DbTestCase, test_app, Guid
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
@@ -319,7 +321,7 @@ class TestNodeFile(DbTestCase):
     def test_url(self):
         assert_equal(
             self.node_file.api_url,
-            '{0}files/{1}/'.format(self.node.api_url, self.node_file.filename),
+            '{0}osffiles/{1}/'.format(self.node.api_url, self.node_file.filename),
         )
 
     def test_clean(self):
@@ -330,7 +332,7 @@ class TestNodeFile(DbTestCase):
 
     def test_download_url(self):
         assert_equal(self.node_file.download_url,
-            self.node.api_url + 'files/download/{0}/version/1/'.format(self.node_file.filename))
+            self.node.api_url + 'osffiles/download/{0}/version/1/'.format(self.node_file.filename))
 
 
 class TestAddFile(DbTestCase):
@@ -563,7 +565,7 @@ class TestNode(DbTestCase):
 
     def test_delete_addon(self):
         addon_count = len(self.node.get_addon_names())
-        deleted = self.node.delete_addon('files')
+        deleted = self.node.delete_addon('wiki')
         assert_true(deleted)
         assert_equal(
             len(self.node.get_addon_names()),
@@ -976,6 +978,22 @@ class TestProject(DbTestCase):
         assert_equal(self.project.date_modified, self.project.logs[-1].date)
         assert_not_equal(self.project.date_modified, self.project.date_created)
 
+    def test_has_files(self):
+        assert_true(self.project.has_files)
+
+    def test_has_files_false(self):
+        self.project.delete_addon('osffiles')
+        assert_false(self.project.has_files)
+
+    def test_has_files_recursive(self):
+        child = NodeFactory(
+            category='hypothesis',
+            creator=self.user,
+            project=self.project,
+        )
+        self.project.delete_addon('files')
+        assert_true(child.has_files)
+        assert_true(self.project.has_files)
 
 class TestForkNode(DbTestCase):
 

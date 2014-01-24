@@ -114,9 +114,13 @@
         <nav id="projectSubnav" class="navbar navbar-default ">
             <ul class="nav navbar-nav">
 
+
                 <li><a href="${node['url']}">Dashboard</a></li>
                 % if not node['url_params']:
                     <li><a href="${node['url']}statistics/">Statistics</a></li>
+                % endif
+                % if has_files:
+                    <li><a href="${node['url']}files/">Files</a></li>
                 % endif
                 <!-- Add-on tabs -->
                 % for addon in addons_enabled:
@@ -155,22 +159,25 @@
     var nodeApiUrl = '${node['api_url']}';
 
     $(document).ready(function(){
+
         $logScope = $("#logScope");
         $linkScope= $("#linkScope");
+
         if ($logScope.length > 0) {
-            progressBar = $("#logProgressBar")
+            progressBar = $('#logProgressBar');
             progressBar.show();
 
         }
         // Get project data from the server and initiate the ProjectViewModel
         $.ajax({
+            type: 'get',
             url: nodeApiUrl,
-            type: "get", contentType: "application/json",
-            dataType: "json",
+            contentType: 'application/json',
+            dataType: 'json',
             cache: false,
             success: function(data){
                 // Initialize ProjectViewModel with returned data
-                ko.applyBindings(new ProjectViewModel(data), $("#projectScope")[0]);
+                ko.applyBindings(new ProjectViewModel(data), $('#projectScope')[0]);
 
                 // Initiate AddContributorViewModel
                 var $addContributors = $('#addContributors');
@@ -206,7 +213,6 @@
                     });
                 }
 
-
             }
         });
     });
@@ -215,6 +221,8 @@
 % if node.get('is_public') and node.get('piwik_site_id'):
 <script type="text/javascript">
     $(function() {
+        // Note: Don't use cookies for global site ID; cookies will accumulate
+        // indefinitely and overflow uwsgi header buffer.
         trackPiwik("${ piwik_host }", ${ node['piwik_site_id'] });
     });
 </script>

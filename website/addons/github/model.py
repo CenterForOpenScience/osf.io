@@ -50,6 +50,13 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     registration_data = fields.DictionaryField()
 
     @property
+    def repo_url(self):
+        if self.user and self.repo:
+            return 'https://github.com/{0}/{1}/'.format(
+                self.user, self.repo
+            )
+
+    @property
     def short_url(self):
         if self.user and self.repo:
             return '/'.join([self.user, self.repo])
@@ -60,6 +67,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         rv.update({
             'github_user': self.user or '',
             'github_repo': self.repo or '',
+            'github_url': self.repo_url if self.repo_url else '',
             'user_has_authorization': github_user and github_user.has_auth,
             'show_submit': True,
         })
@@ -291,10 +299,11 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         """
         if self.user_settings:
             return (
-                'Registering this {cat} will copy the authentication for its '
+                'Registering {cat} "{title}" will copy the authentication for its '
                 'GitHub add-on to the registered {cat}.'
             ).format(
                 cat=node.project_or_component,
+                title=node.title,
             )
 
     def after_register(self, node, registration, user, save=True):

@@ -426,73 +426,87 @@ def _render_addon(node):
 
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
+
+        if node.has_files:
+            js.extend(addon.config.include_js.get('files', []))
+            css.extend(addon.config.include_css.get('files', []))
+
+    if node.has_files:
+        js.extend([
+            '/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js',
+            '/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js',
+            '/static/vendor/dropzone/dropzone.js',
+            '/static/js/slickgrid.custom.min.js',
+            '/static/js/hgrid.js',
+        ])
+        css.extend([
+            '/static/css/hgrid-base.css',
+        ])
+
     return widgets, configs, js, css
 
 
-
-
-def _view_project(node_to_use, user, link='', api_key=None, primary=False):
+def _view_project(node, user, link='', api_key=None, primary=False):
     """Build a JSON object containing everything needed to render
 
     project.view.mako.
 
     """
-    parent = node_to_use.parent
-    recent_logs = list(reversed(node_to_use.logs)[:10])
+    parent = node.parent
+    recent_logs = list(reversed(node.logs)[:10])
     recent_logs_dicts = [log.serialize() for log in recent_logs]
-    widgets, configs, js, css = _render_addon(node_to_use)
+    widgets, configs, js, css = _render_addon(node)
     # Before page load callback; skip if not primary call
     if primary:
-        for addon in node_to_use.get_addons():
-            message = addon.before_page_load(node_to_use, user)
+        for addon in node.get_addons():
+            message = addon.before_page_load(node, user)
             if message:
                 status.push_status_message(message)
     data = {
         'node': {
-            'id': node_to_use._primary_key,
-            'title': node_to_use.title,
-            'category': node_to_use.project_or_component,
-            'description': node_to_use.description,
-            'url': node_to_use.url,
-            'api_url': node_to_use.api_url,
-            'absolute_url': node_to_use.absolute_url,
-            'display_absolute_url': node_to_use.display_absolute_url,
+            'id': node._primary_key,
+            'title': node.title,
+            'category': node.project_or_component,
+            'description': node.description,
+            'url': node.url,
+            'api_url': node.api_url,
+            'absolute_url': node.absolute_url,
+            'display_absolute_url': node.display_absolute_url,
             'citations': {
-                'apa': node_to_use.citation_apa,
-                'mla': node_to_use.citation_mla,
-                'chicago': node_to_use.citation_chicago,
+                'apa': node.citation_apa,
+                'mla': node.citation_mla,
+                'chicago': node.citation_chicago,
             },
-            'is_public': node_to_use.is_public,
-            'date_created': node_to_use.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
-            'date_modified': node_to_use.logs[-1].date.strftime('%m/%d/%Y %I:%M %p UTC') if node_to_use.logs else '',
+            'is_public': node.is_public,
+            'date_created': node.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
+            'date_modified': node.logs[-1].date.strftime('%m/%d/%Y %I:%M %p UTC') if node.logs else '',
 
-            'tags': [tag._primary_key for tag in node_to_use.tags],
-            'children': bool(node_to_use.nodes),
-            'children_ids': [str(child._primary_key) for child in node_to_use.nodes],
-            'is_registration': node_to_use.is_registration,
-            'registered_from_url': node_to_use.registered_from.url if node_to_use.is_registration else '',
-            'registered_date': node_to_use.registered_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_registration else '',
+            'tags': [tag._primary_key for tag in node.tags],
+            'children': bool(node.nodes),
+            'children_ids': [str(child._primary_key) for child in node.nodes],
+            'is_registration': node.is_registration,
+            'registered_from_url': node.registered_from.url if node.is_registration else '',
+            'registered_date': node.registered_date.strftime('%Y/%m/%d %I:%M %p') if node.is_registration else '',
             'registered_meta': [
                 {
                     'name_no_ext': from_mongo(meta),
                     'name_clean': clean_template_name(meta),
                 }
-                for meta in node_to_use.registered_meta or []
+                for meta in node.registered_meta or []
             ],
-            'registration_count': len(node_to_use.registration_list),
+            'registration_count': len(node.registration_list),
 
-            'is_fork': node_to_use.is_fork,
-            'forked_from_id': node_to_use.forked_from._primary_key if node_to_use.is_fork else '',
-            'forked_from_display_absolute_url': node_to_use.forked_from.display_absolute_url if node_to_use.is_fork else '',
-            'forked_date': node_to_use.forked_date.strftime('%Y/%m/%d %I:%M %p') if node_to_use.is_fork else '',
-            'fork_count': len(node_to_use.fork_list),
+            'is_fork': node.is_fork,
+            'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
+            'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
+            'forked_date': node.forked_date.strftime('%Y/%m/%d %I:%M %p') if node.is_fork else '',
+            'fork_count': len(node.fork_list),
 
-            'watched_count': len(node_to_use.watchconfig__watched),
+            'watched_count': len(node.watchconfig__watched),
             'logs': recent_logs_dicts,
-            'private_links': node_to_use.private_links,
+            'private_links': node.private_links,
             'url_params': '?key={0}'.format(link) if link else '',
-            'piwik_site_id': node_to_use.piwik_site_id,
-
+            'piwik_site_id': node.piwik_site_id,
         },
         'parent': {
             'id': parent._primary_key if parent else '',
@@ -505,15 +519,16 @@ def _view_project(node_to_use, user, link='', api_key=None, primary=False):
             'can_be_viewed': (link in parent.private_links) if parent else False
         },
         'user': {
-            'is_contributor': node_to_use.is_contributor(user),
-            'can_edit': (node_to_use.can_edit(user, api_key)
-                                and not node_to_use.is_registration),
-            'can_view': node_to_use.can_view(user, link, api_key),
-            'is_watching': user.is_watching(node_to_use) if user and not user == None else False,
+            'is_contributor': node.is_contributor(user),
+            'can_edit': (node.can_edit(user, api_key)
+                                and not node.is_registration),
+            'can_view': node.can_view(user, link, api_key),
+            'is_watching': user.is_watching(node) if user and not user == None else False,
             'piwik_token': user.piwik_token if user else '',
         },
         # TODO: Namespace with nested dicts
-        'addons_enabled': node_to_use.get_addon_names(),
+        'has_files': node.has_files,
+        'addons_enabled': node.get_addon_names(),
         'addons': configs,
         'addon_widgets': widgets,
         'addon_widget_js': js,
@@ -545,7 +560,7 @@ def get_editable_children(*args, **kwargs):
     user = get_current_user()
 
     if not node_to_use.can_edit(user):
-        return redirect('/login/?next={0}'.format(request.path))
+        return
 
     children = _get_children(node_to_use, user)
 
