@@ -62,3 +62,6 @@
     });
 
 </script>
+
+<%def name="submit_btn()"></%def>
+<%def name="on_submit()"></%def>

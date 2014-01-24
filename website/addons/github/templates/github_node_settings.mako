@@ -100,3 +100,15 @@
     });
 
 </script>
+
+<%def name="submit_btn()">
+    % if show_submit:
+        ${parent.submit_btn()}
+    % endif
+</%def>
+
+<%def name="on_submit()">
+    % if show_submit:
+        ${parent.on_submit()}
+    % endif
+</%def>

@@ -1,13 +1,14 @@
 <%inherit file="settings.mako" />
         
-        <span data-owner="node"></span>
+<span data-owner="node"></span>
 
-        ${next.body()}
+${self.body()}
 
-        % if node and not node['is_registration']:
-            ${next.submit_btn()}
-        % endif
+% if node and not node['is_registration']:
+    ${self.submit_btn()}
+% endif
 
+${self.on_submit()}
 
 <%def name="submit_btn()">
     <button class="btn btn-success addon-settings-submit">
@@ -15,13 +16,10 @@
     </button>
 </%def>
 
-
-${next.on_submit()}
-
 <%def name="on_submit()">
     <script type="text/javascript">
         $(document).ready(function() {
-            $('#${addon_short_name}').on('submit', on_submit_settings);
+            $('#addonSettings${addon_short_name.capitalize()}').on('submit', AddonHelper.onSubmitSettings);
         });
     </script>
 </%def>

@@ -1,20 +1,23 @@
 <%inherit file="settings.mako" />
 
-        <span data-owner="user"></span>
+<span data-owner="user"></span>
 
-        ${self.body()}
+${self.body()}
 
-        ${self.submit_btn()}
+${self.submit_btn()}
+
+${self.on_submit()}
 
 <%def name="submit_btn()">
+    <button class="btn btn-success addon-settings-submit">
+        Submit
+    </button>
 </%def>
-
-${next.on_submit()}
 
 <%def name="on_submit()">
     <script type="text/javascript">
         $(document).ready(function() {
-            $('#${addon_short_name}').on('submit', on_submit_settings);
+            $('#addonSettings${addon_short_name.capitalize()}').on('submit', AddonHelper.onSubmitSettings);
         });
     </script>
 </%def>
