@@ -12,6 +12,11 @@ from .model import Session
 
 @app.before_request
 def prepare_private_key():
+
+    # Done if not GET request
+    if request.method != 'GET':
+        return
+
     # Done if private_key in args
     key_from_args = request.args.get('key', '')
     if key_from_args:
@@ -28,12 +33,13 @@ def prepare_private_key():
 
     # Update URL and redirect
     if key:
-        parsed_path = urlparse.urlparse(request.path)
-        path_args = dict(urlparse.parse_qsl(parsed_path.query))
-        path_args['key'] = key
-        new_parsed_path = parsed_path._replace(query=urllib.urlencode(path_args))
-        new_path = urlparse.urlunparse(new_parsed_path)
-        return redirect(new_path, code=307)
+        if not session:
+            parsed_path = urlparse.urlparse(request.path)
+            path_args = dict(urlparse.parse_qsl(parsed_path.query))
+            path_args['key'] = key
+            new_parsed_path = parsed_path._replace(query=urllib.urlencode(path_args))
+            new_path = urlparse.urlunparse(new_parsed_path)
+            return redirect(new_path, code=307)
 
 
 # todo 2-back page view queue

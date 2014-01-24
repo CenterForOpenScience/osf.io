@@ -135,7 +135,10 @@ def must_be_contributor(fn):
                 kwargs['link'] = key_ring.intersection(
                     node_to_use.private_links
                 ).pop()
-                if link != kwargs['link']:
+                if link != kwargs['link'] \
+                    and (user is None
+                         or (not node_to_use.is_contributor(user)
+                             and api_node != node_to_use)):
                     return redirect('{0}?key={1}'.format(request.path, kwargs['link']))
             else:
                 kwargs['link'] = ''
@@ -205,9 +208,12 @@ def must_be_contributor_or_public(fn):
                 kwargs['link'] = key_ring.intersection(
                     node_to_use.private_links
                 ).pop()
-                if link != kwargs['link']:
-                    return redirect('{0}?key={1}'.format(
-                        request.path, kwargs['link']))
+                if link != kwargs['link'] \
+                    and (not node_to_use.is_public or user is None
+                         or (not node_to_use.is_contributor(user)
+                             and api_node != node_to_use)):
+                    # TODO: Check for existing URL params
+                    return redirect('{0}?key={1}'.format(request.path, kwargs['link']))
             else:
                 kwargs['link'] = ''
             return fn(*args, **kwargs)
