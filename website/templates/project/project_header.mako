@@ -116,7 +116,7 @@
 
 
                 <li><a href="${node['url']}">Dashboard</a></li>
-                % if not node['url_params']:
+                % if node['is_public'] or user['can_edit']:
                     <li><a href="${node['url']}statistics/">Statistics</a></li>
                 % endif
                 % if has_files:
@@ -140,10 +140,8 @@
                     <li><a href="${node['url']}registrations/">Registrations</a></li>
                 % endif
                 <li><a href="${node['url']}forks/">Forks</a></li>
-                % if not node['url_params']:
-                    % if user['is_contributor']:
+                % if not node['link'] or user['is_contributor']:
                         <li><a href="${node['url']}settings/">Settings</a></li>
-                    % endif
                 % endif
             </ul>
         </nav>

@@ -186,6 +186,9 @@ def node_setting(**kwargs):
     user = get_current_user()
     node = kwargs.get('node') or kwargs.get('project')
 
+    if not node.is_public and not node.can_edit(user):
+        raise HTTPError(http.FORBIDDEN)
+
     rv = _view_project(node, user, primary=True)
 
     addons_enabled = []
@@ -263,9 +266,7 @@ def project_statistics(*args, **kwargs):
     rv = {
         'csv' : csv,
     }
-
-    link = kwargs['link']
-    if link:
+    if not node_to_use.is_public and not node_to_use.can_edit(user):
         raise HTTPError(http.FORBIDDEN)
     else:
         rv.update(_view_project(node_to_use, user, primary=True))
@@ -505,7 +506,7 @@ def _view_project(node, user, link='', api_key=None, primary=False):
 
             'watched_count': len(node.watchconfig__watched),
             'private_links': node.private_links,
-            'url_params': '?key={0}'.format(link) if link else '',
+            'link': link,
             'logs': recent_logs,
             'piwik_site_id': node.piwik_site_id,
         },

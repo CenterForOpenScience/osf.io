@@ -5,6 +5,8 @@ from framework.exceptions import HTTPError
 from framework.auth import get_api_key
 from website.project import get_node
 from framework import session
+import urllib
+import urlparse
 
 ###############################################################################
 # Decorators
@@ -130,9 +132,11 @@ def must_be_contributor(fn):
             if key_ring.intersection(
                 node_to_use.private_links
             ):
-                kwargs['link']= key_ring.intersection(
+                kwargs['link'] = key_ring.intersection(
                     node_to_use.private_links
                 ).pop()
+                if link != kwargs['link']:
+                    return redirect('{0}?key={1}'.format(request.path, kwargs['link']))
             else:
                 kwargs['link'] = ''
             return fn(*args, **kwargs)
@@ -198,9 +202,12 @@ def must_be_contributor_or_public(fn):
             if key_ring.intersection(
                 node_to_use.private_links
             ):
-                kwargs['link']=key_ring.intersection(
+                kwargs['link'] = key_ring.intersection(
                     node_to_use.private_links
                 ).pop()
+                if link != kwargs['link']:
+                    return redirect('{0}?key={1}'.format(
+                        request.path, kwargs['link']))
             else:
                 kwargs['link'] = ''
             return fn(*args, **kwargs)
