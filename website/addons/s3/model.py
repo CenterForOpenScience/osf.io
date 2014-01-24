@@ -34,7 +34,6 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     s3_bucket = fields.StringField()
     s3_node_access_key = fields.StringField()
     s3_node_secret_key = fields.StringField()
-    node_auth = fields.StringField()
 
     def to_json(self, user):
 

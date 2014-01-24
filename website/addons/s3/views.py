@@ -84,14 +84,14 @@ def s3_settings(*args, **kwargs):
         return {'message': error_message}, 400
 
     changed = s3_bucket != node.s3_bucket
-    
+
     # Delete callback
     if changed:
 
         # Update node settings
         node.s3_bucket = s3_bucket
         node.save()
-        
+
         #TODO create access key here figure out way to remove it later?
         if not _s3_create_access_key(s3_addon, node):
                     error_message = ''
@@ -144,11 +144,12 @@ def s3_remove_user_settings(*args, **kwargs):
 
 def _page_content(pid, s3):
     #TODO create new bucket if not found  inform use/ output error?
-    if not s3.user_settings or not pid or not s3.s3_bucket:
+    if not pid or not s3.s3_bucket:
         return {}
     #try:
+    #FIX ME SOME HOW
     connect = S3Wrapper.from_addon(s3)
-    data = utils.getHgrid('/project/' + pid + '/s3/',connect) 
+    data = utils.getHgrid('/project/' + pid + '/s3/',connect)
     # except S3ResponseError:
     #     push_status_message("It appears you do not have access to this bucket. Are you settings correct?")
     #     data = None
@@ -295,7 +296,7 @@ def generate_signed_url(*args, ** kwargs):
     request_to_sign = str("PUT\n\n{mime_type}\n{expires}\n{amz_headers}\n/{resource}".format(mime_type=mime,expires=expires,amz_headers=amz_headers,resource=s3.s3_bucket+'/'+file_name))
 
     url = 'https://s3.amazonaws.com/{bucket}/{filename}'.format(filename=file_name,bucket=s3.s3_bucket)
-    
+
     signed = urllib.quote_plus(base64.encodestring(hmac.new(str(s3.s3_node_secret_key), request_to_sign, sha).digest()).strip())
 
     #TODO Fix me up
