@@ -11,14 +11,6 @@ from framework import session
 ###############################################################################
 
 from decorator import decorator
-#
-#
-#def check_exception(user, node_to_use, api_node):
-#    if user is None:
-#        return redirect('/login/?next={0}'.format(request.path))
-#    if not node_to_use.is_contributor(user) \
-#            and api_node != node_to_use:
-#        raise HTTPError(http.FORBIDDEN)
 
 
 def must_not_be_registration(fn):
@@ -244,7 +236,11 @@ def must_be_contributor_and_no_private_link(fn):
 
         api_node = kwargs.get('api_node')
 
-        check_exception(user, node_to_use, api_node)
+        if user is None:
+            return redirect('/login/?next={0}'.format(request.path))
+        if not node_to_use.is_contributor(user) \
+                and api_node != node_to_use:
+            raise HTTPError(http.FORBIDDEN)
 
         return fn(*args, **kwargs)
     return decorator(wrapped, fn)
