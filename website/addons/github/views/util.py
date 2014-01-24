@@ -1,9 +1,5 @@
-
 import httplib as http
-from collections import namedtuple
-
 from framework.exceptions import HTTPError
-
 from ..api import GitHub
 
 
@@ -61,9 +57,7 @@ def _get_branch_and_sha(addon, branch=None, sha=None, connection=None):
         if branch == _branch['name']:
             sha = _branch['commit']['sha']
 
-    GitRefs = namedtuple('GitRef', ['branch', 'sha', 'branches'])
-    return GitRefs(branch=branch, sha=sha, branches=branches)
-
+    return branch, sha, branches
 
 
 def _check_permissions(node_settings, user, connection, branch, sha=None, repo=None):
