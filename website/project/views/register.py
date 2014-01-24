@@ -70,6 +70,8 @@ def node_register_template_page(*args, **kwargs):
 
     schema = meta_schema.schema
 
+    # TODO: Notify if some components will not be registered
+
     rv = {
         'template_name': template_name,
         'schema': json.dumps(schema),
