@@ -11,14 +11,14 @@ from framework import session
 ###############################################################################
 
 from decorator import decorator
-
-
-def check_exception(user, node_to_use, api_node):
-    if user is None:
-        return redirect('/login/?next={0}'.format(request.path))
-    if not node_to_use.is_contributor(user) \
-            and api_node != node_to_use:
-        raise HTTPError(http.FORBIDDEN)
+#
+#
+#def check_exception(user, node_to_use, api_node):
+#    if user is None:
+#        return redirect('/login/?next={0}'.format(request.path))
+#    if not node_to_use.is_contributor(user) \
+#            and api_node != node_to_use:
+#        raise HTTPError(http.FORBIDDEN)
 
 
 def must_not_be_registration(fn):
@@ -117,16 +117,24 @@ def must_be_contributor(fn):
         link = request.args.get('key', '').strip('/')
         if not session:
             kwargs['link'] = link
-            if link not in node_to_use.private_links:
-                check_exception(user, node_to_use, api_node)
+            if link and link not in node_to_use.private_links:
+                if user is None:
+                    return redirect('/login/?next={0}'.format(request.path))
+                if not node_to_use.is_contributor(user) \
+                        and api_node != node_to_use:
+                    raise HTTPError(http.FORBIDDEN)
 
             return fn(*args, **kwargs)
         else:
-            if link not in session.data['link']:
+            if link and link not in session.data['link']:
                 session.data['link'].append(link)
             key_ring = set(session.data['link'])
             if key_ring.isdisjoint(node_to_use.private_links):
-                check_exception(user, node_to_use, api_node)
+                if user is None:
+                    return redirect('/login/?next={0}'.format(request.path))
+                if not node_to_use.is_contributor(user) \
+                        and api_node != node_to_use:
+                    raise HTTPError(http.FORBIDDEN)
             if key_ring.intersection(
                 node_to_use.private_links
             ):
@@ -175,17 +183,25 @@ def must_be_contributor_or_public(fn):
         if not session:
             kwargs['link'] = link
             if not node_to_use.is_public:
-                if link not in node_to_use.private_links:
-                    check_exception(user, node_to_use, api_node)
+                if link and link not in node_to_use.private_links:
+                    if user is None:
+                        return redirect('/login/?next={0}'.format(request.path))
+                    if not node_to_use.is_contributor(user) \
+                            and api_node != node_to_use:
+                        raise HTTPError(http.FORBIDDEN)
 
             return fn(*args, **kwargs)
         else:
-            if link not in session.data['link']:
+            if link and link not in session.data['link']:
                 session.data['link'].append(link)
             key_ring = set(session.data['link'])
             if not node_to_use.is_public:
                 if key_ring.isdisjoint(node_to_use.private_links):
-                    check_exception(user, node_to_use, api_node)
+                    if user is None:
+                        return redirect('/login/?next={0}'.format(request.path))
+                    if not node_to_use.is_contributor(user) \
+                            and api_node != node_to_use:
+                        raise HTTPError(http.FORBIDDEN)
 
             if key_ring.intersection(
                 node_to_use.private_links
