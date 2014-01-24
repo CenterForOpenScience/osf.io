@@ -22,97 +22,35 @@
             % if extra_addon_widgets:
 
                 <!-- Show widgets in left column if present -->
-                % for addon in addons_enabled:
-                    % if addons[addon]['has_widget']:
-                        <div class="addon-widget-container" mod-meta='{
-                                "tpl": "../addons/${addon}/templates/${addon}_widget.mako",
-                                "uri": "${node['api_url']}${addon}/widget/"
-                            }'></div>
-                    % endif
-                % endfor
+            % for addon in addons_enabled:
+                % if addons[addon]['has_widget']:
+<div class="addon-widget-container" mod-meta='{
+"tpl": "../addons/${addon}/templates/${addon}_widget.mako",
+"uri": "${node['api_url']}${addon}/widget/"
+}'></div>
+                % endif
+            % endfor
 
             % else:
 
-                % if 'wiki' in addons and addons['wiki']['has_widget']:
-                    <div class="addon-widget-container" mod-meta='{
-                            "tpl": "../addons/wiki/templates/wiki_widget.mako",
-                            "uri": "${node['api_url']}wiki/widget/"
-                        }'></div>
-                % endif
+            % if 'wiki' in addons and addons['wiki']['has_widget']:
+<div class="addon-widget-container" mod-meta='{
+"tpl": "../addons/wiki/templates/wiki_widget.mako",
+"uri": "${node['api_url']}wiki/widget/"
+}'></div>
+            % endif
 
                 <!-- If no widgets, show components -->
-                ${children()}
+            ${children()}
 
-                % if 'files' in addons and addons['files']['has_widget']:
-                    <div class="addon-widget-container" mod-meta='{
-                            "tpl": "../addons/files/templates/files_widget.mako",
-                            "uri": "${node['api_url']}files/widget/"
-                        }'></div>
-                % endif
+            % if 'files' in addons and addons['files']['has_widget']:
+<div class="addon-widget-container" mod-meta='{
+"tpl": "../addons/files/templates/files_widget.mako",
+"uri": "${node['api_url']}files/widget/"
+}'></div>
+            % endif
 
             % endif
-              <h2>Components</h2>
-          </div>
-          % if node["children"]:
-              <div mod-meta='{
-                      "tpl" : "util/render_nodes.mako",
-                      "uri" : "${node["api_url"]}get_children/",
-                      "replace" : true,
-                      "kwargs" : {"sortable" : true}
-                  }'></div>
-          % else:
-              <p>No components have been added to this project.</p>
-          % endif
-
-      <section id="Files">
-        <div>
-          <div class="page-header">
-              <h2>Files</h2>
-          </div>
-          <div mod-meta='{
-                  "tpl": "util/render_file_tree.mako",
-                  "uri": "${node["api_url"]}files/",
-                  "view_kwargs": {
-                      "dash": true
-                  },
-                  "replace": true
-              }'></div>
-        </div>
-      </section>
-    </div>
-
-    <div class="col-md-5">
-
-        <div class="citations">
-            <span class="citation-label">Citation:</span>
-            <span>${node['display_absolute_url']}</span>
-            <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
-            <dl class="citation-list">
-                <dt>APA</dt>
-                    <dd class="citation-text">${node['citations']['apa']}</dd>
-                <dt>MLA</dt>
-                    <dd class="citation-text">${node['citations']['mla']}</dd>
-                <dt>Chicago</dt>
-                    <dd class="citation-text">${node['citations']['chicago']}</dd>
-                <dt>CSL TESTS</dt>
-                    <dd class="citation-text">${node['citations']['CSLTEST1']}</dd>
-                    <dd class="citation-text">${node['citations']['CSLTEST2']}</dd>
-                    <dd class="citation-text">${node['citations']['BIBTEX']}</dd>
-                    <dd class="citation-text">${node['citations']['RIS']}</dd>
-            </dl>
-
-<form name = "stylesform" method = "post" action="??????????????">
-<select name="styles">
-  <option value="apa.csl">APA</option>
-  <option value="biochemical-journal.csl">Biochemical Journal</option>
-  <option value="canadian-public-policy.csl">Canadian Public Policy</option>
-  <option value="harvard1.csl">Harvard1</option>
-  <option value="modern-language-association.csl">MLA</option>
-
-
-</select>
-<input type="submit" value="Submit">
-</form>
 
         </div>
 
@@ -125,11 +63,28 @@
                 <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
                 <dl class="citation-list">
                     <dt>APA</dt>
-                        <dd class="citation-text">${node['citations']['apa']}</dd>
+                    <dd class="citation-text">${node['citations']['apa']}</dd>
                     <dt>MLA</dt>
-                        <dd class="citation-text">${node['citations']['mla']}</dd>
+                    <dd class="citation-text">${node['citations']['mla']}</dd>
                     <dt>Chicago</dt>
-                        <dd class="citation-text">${node['citations']['chicago']}</dd>
+                    <dd class="citation-text">${node['citations']['chicago']}</dd>
+                    <dt>CSL TESTS</dt>
+                    <dd class="citation-text">${node['citations']['CSLTEST1']}</dd>
+                    <dd class="citation-text">${node['citations']['CSLTEST2']}</dd>
+                    <dd class="citation-text">${node['citations']['BIBTEX']}</dd>
+                    <dd class="citation-text">${node['citations']['RIS']}</dd>
+
+                    <form name = "stylesform" method = "post" action="??????????????">
+                        <select name="styles">
+                            <option value="apa.csl">APA</option>
+                            <option value="biochemical-journal.csl">Biochemical Journal</option>
+                            <option value="canadian-public-policy.csl">Canadian Public Policy</option>
+                            <option value="harvard1.csl">Harvard1</option>
+                            <option value="modern-language-association.csl">MLA</option>
+                        </select>
+                        <input type="submit" value="Submit">
+                    </form>
+
                 </dl>
             </div>
 
@@ -148,107 +103,107 @@
 
             <div class="logs">
                 <div id='logScope'>
-                    <%include file="log_list.mako"/>
+                        <%include file="log_list.mako"/>
                 </div><!-- end #logScope -->
                 ## Hide More widget until paging for logs is implemented
                 ##<div class="paginate pull-right">more</div>
-            </div>
+                </div>
 
         </div>
 
-      </div>
+    </div>
 
 
-##<!-- Include Knockout and view model -->
-##<div mod-meta='{
-##        "tpl": "metadata/knockout.mako",
-##        "replace": true
-##    }'></div>
-##
-##<!-- Render comments -->
-##<div mod-meta='{
-##        "tpl": "metadata/comment_group.mako",
-##        "kwargs": {
-##            "guid": "${node['id']}",
-##            "top": true
-##        },
-##        "replace": true
-##    }'></div>
-##
-##<!-- Boilerplate comment JS -->
-##<div mod-meta='{
-##        "tpl": "metadata/comment_js.mako",
-##        "replace": true
-##    }'></div>
+    ##<!-- Include Knockout and view model -->
+    ##<div mod-meta='{
+    ## "tpl": "metadata/knockout.mako",
+    ## "replace": true
+    ## }'></div>
+    ##
+    ##<!-- Render comments -->
+    ##<div mod-meta='{
+    ## "tpl": "metadata/comment_group.mako",
+    ## "kwargs": {
+    ## "guid": "${node['id']}",
+    ## "top": true
+    ## },
+    ## "replace": true
+    ## }'></div>
+    ##
+    ##<!-- Boilerplate comment JS -->
+    ##<div mod-meta='{
+    ## "tpl": "metadata/comment_js.mako",
+    ## "replace": true
+    ## }'></div>
 
 </%def>
 
 <%def name="children()">
 
-<div class="page-header">
-    % if node['category'] == 'project':
-        <div class="pull-right">
+    <div class="page-header">
+        % if node['category'] == 'project':
+<div class="pull-right">
             % if user['can_edit']:
-                <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">
+<a class="btn btn-default" data-toggle="modal" data-target="#newComponent">
             % else:
-                <a class="btn btn-default disabled">
+<a class="btn btn-default disabled">
             % endif
-                Add Component
+        Add Component
         </a>
         </div>
         <%include file="modal_add_component.mako"/>
+        % endif
+        <h2>Components</h2>
+    </div>
+
+    % if node['children']:
+<div mod-meta='{
+"tpl": "util/render_nodes.mako",
+"uri": "${node["api_url"]}get_children/",
+"replace": true,
+"kwargs": {"sortable" : true}
+}'></div>
+    % else:
+<p>No components have been added to this project.</p>
     % endif
-    <h2>Components</h2>
-</div>
 
-% if node['children']:
-    <div mod-meta='{
-            "tpl": "util/render_nodes.mako",
-            "uri": "${node["api_url"]}get_children/",
-            "replace": true,
-            "kwargs": {"sortable" : true}
-        }'></div>
-% else:
-    <p>No components have been added to this project.</p>
-% endif
-
-% for name, capabilities in addon_capabilities.iteritems():
-    <script id="capabilities-${name}" type="text/html">${capabilities}</script>
-% endfor
+    % for name, capabilities in addon_capabilities.iteritems():
+<script id="capabilities-${name}" type="text/html">${capabilities}</script>
+    % endfor
 
 </%def>
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
     % for style in addon_widget_css:
-        <link rel="stylesheet" href="${style}" />
+<link rel="stylesheet" href="${style}" />
     % endfor
 </%def>
 
 <%def name="javascript_bottom()">
 
-% for script in addon_widget_js:
-    <script type="text/javascript" src="${script}"></script>
-% endfor
+    % for script in addon_widget_js:
+<script type="text/javascript" src="${script}"></script>
+    % endfor
 
-## Todo: Move to project.js
+        ## Todo: Move to project.js
 <script>
 
     $(document).ready(function() {
 
-        // Show capabilities modal on addon widget help
+// Show capabilities modal on addon widget help
         $('.addon-capabilities').on('click', function() {
             var $this = $(this),
-                $widget = $this.closest('.addon-widget'),
-                name = $widget.attr('name'),
-                conditions = $('#capabilities-' + name);
+                    $widget = $this.closest('.addon-widget'),
+                    name = $widget.attr('name'),
+                    conditions = $('#capabilities-' + name);
             bootbox.alert(conditions.html());
         });
 
-        // Tooltips
+// Tooltips
         $('[data-toggle="tooltip"]').tooltip();
 
-        // Tag input
+// Tag input
         $('#node-tags').tagsInput({
             width: "100%",
             interactive:${'true' if user["can_edit"] else 'false'},
@@ -268,7 +223,7 @@
             }
         });
 
-        // Remove delete UI if not contributor
+// Remove delete UI if not contributor
         % if not user['can_edit']:
             $('a[title="Removing tag"]').remove();
             $('span.tag span').each(function(idx, elm) {
@@ -278,6 +233,6 @@
 
     });
 
-</script>
+    </script>
 
 </%def>
