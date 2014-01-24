@@ -3,16 +3,6 @@
 <%def name="content()">
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
-%if user['can_edit']:
-<div class="container" style="position:relative;">
-    <h3 id="dropZoneHeader">Drag and drop (or <a href="#" id="clickable">click here</a>) to upload files into <element id="componentName"></element></h3>
-    <div id="fallback"></div>
-    <div id="totalProgressActive" style="width: 35%; height: 20px; position: absolute; top: 73px; right: 0;" class>
-        <div id="totalProgress" class="progress-bar progress-bar-success" style="width: 0%;"></div>
-    </div>
-</div>
-%endif
-<div id="myGridBreadcrumbs" style="margin-top: 10px"></div>
 <div id="myGrid" class="dropzone files-page"></div>
 </div>
 
@@ -34,42 +24,44 @@
 <![endif]-->
 <script>
 
-var extensions = ["3gp", "7z", "ace", "ai", "aif", "aiff", "amr", "asf", "asx", "bat", "bin", "bmp", "bup",
-    "cab", "cbr", "cda", "cdl", "cdr", "chm", "dat", "divx", "dll", "dmg", "doc", "docx", "dss", "dvf", "dwg",
-    "eml", "eps", "exe", "fla", "flv", "gif", "gz", "hqx", "htm", "html", "ifo", "indd", "iso", "jar",
-    "jpeg", "jpg", "lnk", "log", "m4a", "m4b", "m4p", "m4v", "mcd", "mdb", "mid", "mov", "mp2", "mp3", "mp4",
-    "mpeg", "mpg", "msi", "mswmm", "ogg", "pdf", "png", "pps", "ps", "psd", "pst", "ptb", "pub", "qbb",
-    "qbw", "qxd", "ram", "rar", "rm", "rmvb", "rtf", "sea", "ses", "sit", "sitx", "ss", "swf", "tgz", "thm",
-    "tif", "tmp", "torrent", "ttf", "txt", "vcd", "vob", "wav", "wma", "wmv", "wps", "xls", "xpi", "zip"];
+var extensions = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
+    'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
+    'eml', 'eps', 'exe', 'fla', 'flv', 'gif', 'gz', 'hqx', 'htm', 'html', 'ifo', 'indd', 'iso', 'jar',
+    'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
+    'mpeg', 'mpg', 'msi', 'mswmm', 'ogg', 'pdf', 'png', 'pps', 'ps', 'psd', 'pst', 'ptb', 'pub', 'qbb',
+    'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
+    'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip'];
 
 var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
     var spacer = "<span style='display:inline-block;height:1px;width:" + (18 * dataContext["indent"]) + "px'></span>";
+    var link = value;
+    if (dataContext.nameExtra) {
+        link += ' ' + dataContext.nameExtra;
+    }
+    if(dataContext.view){
+        link = "<a href=" + dataContext['view'] + ">" + link + "</a>";
+    }
     if (dataContext['type']=='folder') {
         if (dataContext._collapsed) {
             if (dataContext.can_view !== false) {
-                return spacer + " <span class='toggle expand nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-open'></span>&nbsp;" + value + "</a>";
+                return spacer + " <span class='toggle expand nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-open'></span>&nbsp;" + link + "</a>";
             }
             else{
-                return spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-delete'></span>&nbsp;" + "Private Component" + "</a>";
+                return spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span></span><span class='folder folder-delete'></span>&nbsp;" + link + "</a>";
             }
         } else {
             if (dataContext.can_view !== false) {
-                return spacer + " <span class='toggle collapse nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-close'></span>&nbsp;" + value + "</a>";
+                return spacer + " <span class='toggle collapse nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-close'></span>&nbsp;" + link + "</a>";
             }
             else {
-                return spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-delete'></span>&nbsp;" + "Private Component" + "</a>";
+                return spacer + " <span class='toggle nav-filter-item' data-hgrid-nav=" + dataContext['uid'] + "></span><span class='folder folder-delete'></span>&nbsp;" + link + "</a>";
             }
         }
     } else {
-        var link = value;
-        if(dataContext.view){
-            link = "<a href=" + dataContext['view'] + ">" + value + "</a>";
-        }
         var imageUrl = "/static\/img\/hgrid\/fatcowicons\/file_extension_" + dataContext['ext'] + ".png";
         if(extensions.indexOf(dataContext['ext'])==-1){
             imageUrl = "/static\/img\/hgrid\/file.png";
         }
-                ##        var element = spacer + " <span class='toggle'></span><span class='file-" + dataContext['ext'] + "'></span>&nbsp;" + link;
         var element = spacer + " <span class='toggle'></span><span class='file' style='background: url(" + imageUrl+ ") no-repeat left top;'></span>&nbsp;" + link;
         return element;
     }
@@ -100,17 +92,7 @@ var PairFormatter = function(row, cell, value, columnDef, dataContext) {
     return '';
 };
 
-var Buttons = function(row, cell, value, columnDef, dataContext) {
-##    console.log(myGrid.Slick.grid.getCellNode(myGrid.Slick.dataView.getRowById(dataContext['id']), myGrid.Slick.grid.getColumnIndex("downloads")).parentNode);
-
-};
-
-$('#componentName').text(gridData[0]['name']);
-
-if(typeof(browserComp) === 'undefined'){
-    browserComp = true;
-}
-
+browserComp = typeof(browserComp) === 'undefined' ? true : browserComp;
 var useDropZone = ${int(user['can_edit'])} && browserComp;
 
 var myGrid = HGrid.create({
@@ -123,47 +105,37 @@ var myGrid = HGrid.create({
             return contextVars.uploadUrl;
         }
     },
-    url: gridData[0]['uploadUrl'],
+    url: gridData[0].uploadUrl,
     columns:[
-        {id: "name", name: "Name", field: "name", width: 550, cssClass: "cell-title", formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
-##        {id: "date", name: "Date Modified", field: "dateModified", width: 160, sortable: true, formatter: PairFormatter},
-##        {id: "size", name: "Size", field: "sizeRead", width: 90, formatter: UploadBars, sortable: true, formatter: PairFormatter}
+        {id: 'name', name: 'Name', field: 'name', width: 550, cssClass: 'cell-title', formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
+        {id: 'size', name: 'Size', field: 'size', width: 90, formatter: UploadBars, sortable: true, formatter: PairFormatter}
     ],
     enableCellNavigation: false,
-    breadcrumbBox: "#myGridBreadcrumbs",
+    navigation: false,
     autoHeight: true,
     forceFitColumns: true,
     largeGuide: false,
     dropZone: useDropZone,
     dropZonePreviewsContainer: false,
     rowHeight: 30,
-##    navLevel: gridData[0]['uid'],
     topCrumb: false,
-    clickUploadElement: "#clickable",
     dragToRoot: false,
     dragDrop: false,
 
     // Lazy load settings
     lazyLoad: true,
     // Function that returns the URL for the endpoint to get a folder's contents
-    // "item" in this case is a folder
+    // 'item' in this case is a folder
     itemUrl: function(ajaxSource, item){
         var params = {
-            parent: item.uid,
-            lazyDummy: item.lazyDummy || 0
+            parent: item.uid
         };
+        $.each(item.data || {}, function(key, value) {
+            if (value)
+                params[key] = value;
+        });
         return item.lazyLoad + '?' + $.param(params);
     }
-##    ajaxOnError: function(xhr, textstatus, error) {
-##        bootbox.error('Could not retrieve repo contents.');
-##    },
-##    ajaxOnSuccess: function(lazyGrid) {
-##        grid = lazyGrid;
-##        // First datum is the root
-##        rootItem = grid.data[0];
-##        // Expand the root directory
-##        grid.expandItem(grid.data[0]);
-##    }
 });
 
 // Only allow one upload at a time until Git collisions are resolved; see
@@ -172,14 +144,15 @@ if (myGrid.dropZoneObj) {
     myGrid.dropZoneObj.options.parallelUploads = 1;
 }
 
-##// TODO: Add to HGgrid
-##myGrid.updateBreadcrumbsBox(gridData[0]['uid']);
-
-myGrid.addColumn({id: "actions", name: "Actions", width: 150, sortable: true, formatter: UploadBars});
-myGrid.Slick.grid.setSortColumn("name");
+myGrid.addColumn({id: 'actions', name: 'Actions', width: 150, sortable: true, formatter: UploadBars});
+myGrid.Slick.grid.setSortColumn('name');
 
 myGrid.hGridBeforeUpload.subscribe(function(e, args){
     if (args.parent.can_edit) {
+        if (args.parent.maxFilesize && args.item.size > args.parent.maxFilesize) {
+            bootbox.alert('File too large for ' + args.parent.addonName + ' add-on. Try a different storage add-on.');
+            return false;
+        }
         myGrid.removeDraggerGuide();
         var path = args.parent.path.slice();
         path.push(args.item.name);
@@ -190,7 +163,7 @@ myGrid.hGridBeforeUpload.subscribe(function(e, args){
             type: 'fake',
             uploadBar: true,
             path: path,
-            sortpath: path.join("/"),
+            sortpath: path.join('/'),
             ext: null,
             size: args.item.size.toString()
         };
@@ -205,7 +178,7 @@ myGrid.hGridBeforeUpload.subscribe(function(e, args){
 });
 
 myGrid.hGridBeforeMove.subscribe(function(e, args){
-    if(args['insertBefore']==0){
+    if (args['insertBefore']==0) {
         return false;
     }
     return true;
@@ -249,11 +222,11 @@ myGrid.hGridAfterNav.subscribe(function (e, args){
 
 myGrid.hGridOnMouseEnter.subscribe(function (e, args){
     var parent = args.e.target.parentNode;
-    $(parent).addClass("row-hover");
+    $(parent).addClass('row-hover');
 });
 
 myGrid.hGridOnMouseLeave.subscribe(function (e, args){
-    $(myGrid.options.container).find(".row-hover").removeClass("row-hover");
+    $(myGrid.options.container).find('.row-hover').removeClass('row-hover');
 });
 
 myGrid.hGridOnUpload.subscribe(function(e, args){
@@ -261,10 +234,10 @@ myGrid.hGridOnUpload.subscribe(function(e, args){
     // Check if the server says that the file exists already
     var newSlickInfo = JSON.parse(args.xhr.response)[0];
     // Delete fake item
-    var item = myGrid.getItemByValue(myGrid.data, args.name, "uid");
+    var item = myGrid.getItemByValue(myGrid.data, args.name, 'uid');
     myGrid.deleteItems([item['uid']]);
     // If action taken is not null, create new item
-    if (newSlickInfo['action_taken']!==null){
+    if (newSlickInfo.action_taken !== null) {
         myGrid.addItem(newSlickInfo);
         return true;
     }
@@ -272,10 +245,10 @@ myGrid.hGridOnUpload.subscribe(function(e, args){
 });
 
 if(myGrid.dropZoneObj){
-    myGrid.dropZoneObj.on("error", function(file, errorMessage, xhr){
-        if(errorMessage.indexOf("Max filesize")!=-1){
+    myGrid.dropZoneObj.on('error', function(file, errorMessage, xhr){
+        if(errorMessage.indexOf('Max filesize')!=-1){
             alert(errorMessage);
-            var item = myGrid.getItemByValue(myGrid.data, file.name, "uid")
+            var item = myGrid.getItemByValue(myGrid.data, file.name, 'uid')
             if(item){
                 myGrid.deleteItems([item['uid']]);
             }
@@ -285,7 +258,7 @@ if(myGrid.dropZoneObj){
 
 // Prompt user before changing URL if files are uploading
 $(window).on('beforeunload', function() {
-    if (myGrid.dropZoneObj.getUploadingFiles().length)
+    if (myGrid.dropZoneObj && myGrid.dropZoneObj.getUploadingFiles().length)
         return 'Uploads(s) still in progress. Are you sure you want to leave this page?';
 });
 
@@ -305,4 +278,7 @@ window.ondrop = function(e) { e.preventDefault(); };
 <script src="/static/vendor/dropzone/dropzone.js"></script>
 <script src="/static/js/slickgrid.custom.min.js"></script>
 <script src="/static/js/hgrid.js"></script>
+% for script in tree_js:
+    <script type="text/javascript" src="${script}"></script>
+% endfor
 </%def>

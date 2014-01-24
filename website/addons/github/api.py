@@ -428,16 +428,6 @@ type_map = {
 }
 
 
-def path_to_uid(path, kind):
-    """Convert a path name to a Hgrid uid.
-
-    :param str name:
-    :param kind: Either 'dir' or 'file'
-
-    """
-    return kind + ':' + '||'.join(['__repo__', path]).strip('||')
-
-
 def ref_to_params(branch=None, sha=None):
 
     return urllib.urlencode({
@@ -450,7 +440,7 @@ def ref_to_params(branch=None, sha=None):
     })
 
 
-def tree_to_hgrid(tree, user, repo, node, uid, parent=None, dummy=False, branch=None, sha=None, hotlink=False, can_edit=False):
+def tree_to_hgrid(tree, user, repo, node, node_settings, parent=None, branch=None, sha=None, hotlink=False, can_edit=False):
     """Convert GitHub tree data to HGrid format.
 
     :param list tree: JSON description of git tree
@@ -470,22 +460,7 @@ def tree_to_hgrid(tree, user, repo, node, uid, parent=None, dummy=False, branch=
 
     lazy_url_parts = [node.api_url, 'github', 'hgrid']
 
-    if dummy:
-        parent_item = {
-            'uid': uid,
-            'name': 'GitHub :: {0}'.format(repo),
-            'parent_uid': parent or 'null',
-            'url': '',
-            'type': 'folder',
-            'uploadUrl': node.api_url + 'github/file/',
-            'can_edit': can_edit,
-        }
-        if ref:
-            parent_item['uploadUrl'] += '?' + ref
-        parent_uid = parent_item['uid']
-        grid.append(parent_item)
-    else:
-        parent_uid = parent or 'null'
+    parent_uid = parent or 'null'
 
     for item in tree:
 
@@ -502,11 +477,12 @@ def tree_to_hgrid(tree, user, repo, node, uid, parent=None, dummy=False, branch=
         ext = ext.lstrip('.')
 
         row = {
-            'uid': path_to_uid(qpath, item['type']),
+            'uid': 'github:{0}:{1}'.format(node_settings._id, qpath),
             'name': basename,
             'parent_uid': parent_uid,
             'type': type_map[item['type']],
             'can_edit': can_edit,
+            'permission': can_edit,
         }
 
         # Build base URLs
@@ -518,16 +494,22 @@ def tree_to_hgrid(tree, user, repo, node, uid, parent=None, dummy=False, branch=
 
         if type_map[item['type']] == 'file':
 
-            row['size'] = [
-                item['size'],
-                size(item['size'], system=alternative)
-            ]
-            row['ext'] = ext
-
+            # Note: For files, `sha` is the hash of the file
             row['data'] = {
                 'sha': item['sha'],
                 'branch': branch,
             }
+
+            # Size may be None for partially uploaded files
+            if item['size']:
+                row['size'] = [
+                    item['size'],
+                    size(item['size'], system=alternative)
+                ]
+            else:
+                row['size'] = None
+
+            row['ext'] = ext
 
             # URLs
             row['view'] = base_url
@@ -539,9 +521,15 @@ def tree_to_hgrid(tree, user, repo, node, uid, parent=None, dummy=False, branch=
 
         else:
 
+            row['addonName'] = 'GitHub',
+            row['maxFilesize'] = node_settings.config.max_file_size,
+            # Note: For folders, `sha` is the hash of the last commit
+            row['data'] = {
+                'sha': sha,
+                'branch': branch,
+            }
             row['uploadUrl'] = base_api_url
             row['lazyLoad'] = os.path.join(*lazy_url_parts + [item['path']]) + '/'
-            row['lazyDummy'] = 0
 
         grid.append(row)
 

@@ -12,22 +12,35 @@ from website.project.views.node import _view_project
 
 
 def _get_dummy_container(node, user, parent=None):
+    """Create HGrid JSON for a dummy component container.
+
+    """
+    can_view = node.can_view(user)
     return {
         'uid': 'node:{0}'.format(node._id),
         'parent_uid': parent if parent else 'null',
-        'name': 'Component: {0}'.format(node.title),
+        'name': 'Component: {0}'.format(node.title)
+            if can_view
+            else 'Private Component',
         'type': 'folder',
-        'can_edit': node.can_edit(user),
+        'can_edit': node.can_edit(user) if can_view else False,
+        'can_view': can_view,
+        # Can never drag into component dummy folder
+        'permission': False,
         'lazyLoad': node.api_url + 'files/',
     }
 
 
 def _collect_file_trees(node, user, parent='null', **kwargs):
+    """Collect file trees for all add-ons implementing HGrid views. Create
+    dummy containers for each child of the target node, and for each add-on
+    implementing HGrid views.
 
+    """
     grid_data = []
 
     for addon in node.get_addons():
-        if addon.config.get_hgrid_dummy:
+        if addon.config.has_hgrid_files:
             grid_data.append(
                 addon.config.get_hgrid_dummy(
                     addon, user, parent, **kwargs
@@ -35,35 +48,42 @@ def _collect_file_trees(node, user, parent='null', **kwargs):
             )
 
     for child in node.nodes:
-        if child.can_view(user):
-            container = _get_dummy_container(child, user, parent)
-            grid_data.append(container)
+        container = _get_dummy_container(child, user, parent)
+        grid_data.append(container)
 
     return grid_data
 
 
+def _collect_tree_js(node):
+    """Collect JavaScript includes for all add-ons implementing HGrid views.
+
+    """
+    scripts = []
+    for addon in node.get_addons():
+        scripts.extend(addon.config.include_js.get('files', []))
+    return scripts
+
+
 @must_be_contributor_or_public
 def collect_file_trees(*args, **kwargs):
+    """Collect file trees for all add-ons implementing HGrid views, then
+    format data as appropriate.
 
+    """
     node = kwargs['node'] or kwargs['project']
+    mode = kwargs.get('mode')
     user = get_current_user()
     data = request.args.to_dict()
 
-    parent = data.pop('parent', 'null')
-
-    return _collect_file_trees(node, user, parent, **data)
-
-
-@must_be_contributor_or_public
-def show_file_trees(*args, **kwargs):
-
-    node = kwargs['node'] or kwargs['project']
-    user = get_current_user()
-    data = dict(request.args)
-
-    rv = _view_project(node, user)
-    rv['grid_data'] = json.dumps(
-        _collect_file_trees(node, user, **data)
-    )
-
-    return rv
+    grid_data = _collect_file_trees(node, user, **data)
+    if mode == 'page':
+        rv = _view_project(node, user)
+        rv.update({
+            'grid_data': json.dumps(grid_data),
+            'tree_js': _collect_tree_js(node),
+        })
+        return rv
+    elif mode == 'widget':
+        return {'grid_data': grid_data}
+    else:
+        return grid_data

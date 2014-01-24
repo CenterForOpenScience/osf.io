@@ -65,7 +65,11 @@ def _clean_file_name(name):
 def osffiles_dummy_folder(node_settings, user, parent=None, **kwargs):
 
     node = node_settings.owner
+    can_view = node.can_view(user)
+    can_edit = node.can_edit(user)
     return {
+        'addonName': 'OSF Files',
+        'maxFilesize': node_settings.config.max_file_size,
         'uid': 'osffiles:{0}'.format(node_settings._id),
         'parent_uid': parent or 'null',
         'uploadUrl': os.path.join(
@@ -75,10 +79,10 @@ def osffiles_dummy_folder(node_settings, user, parent=None, **kwargs):
         'sizeRead': '--',
         'dateModified': '--',
         'name': 'OSF Files',
-        'can_edit': True,
-        'can_view': True,
+        'can_view': can_view,
+        'can_edit': can_edit,
+        'permission': can_edit,
         'lazyLoad': node.api_url + 'osffiles/hgrid/',
-        'lazyDummy': 0,
     }
 
 
@@ -86,17 +90,19 @@ def osffiles_dummy_folder(node_settings, user, parent=None, **kwargs):
 @must_have_addon('osffiles', 'node')
 def get_osffiles(*args, **kwargs):
 
-    user = kwargs['user']
     node_settings = kwargs['node_addon']
+    node = node_settings.owner
+    user = kwargs['user']
     parent = request.args.get('parent', 'null')
 
-    can_edit = node_settings.owner.can_edit(user)
-    can_view = node_settings.owner.can_view(user)
+    can_edit = node.can_edit(user) and not node.is_registration
+    can_view = node.can_view(user)
 
     info = []
 
     if can_view:
-        for name, fid in node_settings.owner.files_current.iteritems():
+
+        for name, fid in node.files_current.iteritems():
             fobj = NodeFile.load(fid)
             unique, total = get_basic_counters(
                 'download:{0}:{1}'.format(
@@ -112,6 +118,7 @@ def get_osffiles(*args, **kwargs):
             item['delete'] = fobj.api_url
 
             item['can_edit'] = can_edit
+            item['permission'] = can_edit
 
             item['uid'] = fid
             item['downloads'] = total if total else 0
@@ -119,11 +126,10 @@ def get_osffiles(*args, **kwargs):
             item['type'] = 'file'
             item['name'] = _clean_file_name(fobj.path)
             item['ext'] = _clean_file_name(fobj.path.split('.')[-1])
-            item['sizeRead'] = [
+            item['size'] = [
                 float(fobj.size),
                 size(fobj.size, system=alternative)
             ]
-            item['size'] = str(fobj.size)
             item['dateModified'] = [
                 time.mktime(fobj.date_modified.timetuple()),
                 fobj.date_modified.strftime('%Y/%m/%d %I:%M %p')
@@ -192,7 +198,7 @@ def upload_file_public(*args, **kwargs):
 
     file_info = {
         'name': uploaded_filename,
-        'sizeRead': [
+        'size': [
             float(uploaded_file_size),
             size(uploaded_file_size, system=alternative),
         ],

@@ -107,6 +107,6 @@ class AddonModelMixin(StoredObject):
     @property
     def has_files(self):
         for addon in self.get_addons():
-            if addon.config.get_hgrid_data:
+            if addon.config.has_hgrid_files:
                 return True
         return False

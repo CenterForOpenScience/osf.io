@@ -31,6 +31,9 @@ INCLUDE_JS = {
         '/static/js/hgrid.js',
         'hgrid-github.js',
     ],
+    'files': [
+        'hgrid-files.js',
+    ]
 }
 
 INCLUDE_CSS = {
@@ -40,5 +43,7 @@ INCLUDE_CSS = {
 
 WIDGET_HELP = 'GitHub Add-on Alpha'
 
-GET_HGRID_DATA = views.github_hgrid_data
-GET_HGRID_DUMMY = views.github_dummy_folder
+HAS_HGRID_FILES = True
+GET_HGRID_DUMMY = views.hgrid.github_dummy_folder
+
+MAX_FILE_SIZE = 1024 * 1024

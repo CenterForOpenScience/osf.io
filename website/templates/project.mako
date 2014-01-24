@@ -43,11 +43,17 @@
                 <!-- If no widgets, show components -->
                 ${children()}
 
-                % if 'files' in addons and addons['files']['has_widget']:
-                    <div class="addon-widget-container" mod-meta='{
-                            "tpl": "../addons/files/templates/files_widget.mako",
-                            "uri": "${node['api_url']}files/widget/"
-                        }'></div>
+                % if has_files:
+                    <div class="addon-widget-container">
+                        <h3 class="addon-widget-header">Files</h3>
+                        <div mod-meta='{
+                                "tpl": "util/render_file_tree.mako",
+                                "uri": "${node['api_url']}files/",
+                                "view_kwargs": {
+                                    "mode": "widget"
+                                }
+                            }'></div>
+                    </div>
                 % endif
 
             % endif

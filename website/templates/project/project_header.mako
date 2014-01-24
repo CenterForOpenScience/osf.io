@@ -114,7 +114,7 @@
             <ul class="nav navbar-nav">
                 <li><a href="${node['url']}">Dashboard</a></li>
 
-                % if addons_has_files:
+                % if has_files:
                     <li><a href="${node['url']}files/">Files</a></li>
                 % endif
                 <!-- Add-on tabs -->

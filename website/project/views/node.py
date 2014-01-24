@@ -410,6 +410,22 @@ def _render_addon(node):
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
 
+        if node.has_files:
+            js.extend(addon.config.include_js.get('files', []))
+            css.extend(addon.config.include_css.get('files', []))
+
+    if node.has_files:
+        js.extend([
+            '/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js',
+            '/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js',
+            '/static/vendor/dropzone/dropzone.js',
+            '/static/js/slickgrid.custom.min.js',
+            '/static/js/hgrid.js',
+        ])
+        css.extend([
+            '/static/css/hgrid-base.css',
+        ])
+
     return widgets, configs, js, css
 
 
@@ -489,7 +505,7 @@ def _view_project(node, user, api_key=None, primary=False):
             'piwik_token': user.piwik_token if user else '',
         },
         # TODO: Namespace with nested dicts
-        'addons_has_files': node.has_files,
+        'has_files': node.has_files,
         'addons_enabled': node.get_addon_names(),
         'addons': configs,
         'addon_widgets': widgets,

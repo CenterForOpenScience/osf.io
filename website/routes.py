@@ -390,14 +390,17 @@ def make_url_map(app):
 
         ### Files ###
 
+        # Note: Web endpoint for files view must pass `mode` = `page` to
+        # include project view data and JS includes
         Rule(
             [
                 '/project/<pid>/files/',
                 '/project/<pid>/node/<nid>/files/',
             ],
             'get',
-            project_views.file.show_file_trees,
+            project_views.file.collect_file_trees,
             OsfWebRenderer('project/files.mako'),
+            endpoint_suffix='__page', view_kwargs={'mode': 'page'},
         ),
 
     ])
