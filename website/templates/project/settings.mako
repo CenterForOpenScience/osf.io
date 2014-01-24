@@ -3,22 +3,6 @@
 <%def name="content()">
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
-<!-- Delete node -->
-
-% if not node['is_registration']:
-    <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
-% endif
-<div class="col-md-6" id="linkScope">
-    <button id="generate-private-link" class="private-link" data-toggle="modal" href="#private-link">Generate Private Link</button>
-    % for link in node['private_links']:
-        <li class="list-group-item" >
-            <a class="remove-private-link btn btn-default" data-link="${link}">-</a>
-            <a class="link-name" >${node['absolute_url']}?key=${link}/</a>
-
-        </li>
-    % endfor
-</div>
-<%include file="modal_generate_private_link.mako"/>
 
 ##<!-- Show API key settings -->
 ##<div mod-meta='{
@@ -39,6 +23,7 @@
                 % if addon_enabled_settings:
                     <li><a href="#configureAddons">Configure Add-ons</a></li>
                 % endif
+                <li><a href="#linkScope">Private Links</a></li>
             </ul>
         </div><!-- end sidebar -->
     </div>
@@ -139,7 +124,18 @@
             </div>
 
         % endif
+        <div id="linkScope">
+            <button id="generate-private-link" class="private-link" data-toggle="modal" href="#private-link">Generate Private Link</button>
+            % for link in node['private_links']:
+                <li class="list-group-item" >
+                    <a class="remove-private-link btn btn-default" data-link="${link}">-</a>
+                    <a class="link-name" >${node['absolute_url']}?key=${link}/</a>
 
+                </li>
+            % endfor
+        </div>
+
+        <%include file="modal_generate_private_link.mako"/>
     </div>
 
 </div>
@@ -151,9 +147,12 @@
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>
 % endfor
 
+
+
 </%def>
 
 <%def name="javascript_bottom()">
+
 
 
 <script type="text/javascript" src="/static/js/metadata_1.js"></script>

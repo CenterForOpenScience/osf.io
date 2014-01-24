@@ -261,9 +261,13 @@ def project_statistics(*args, **kwargs):
     rv = {
         'csv' : csv,
     }
+
     link = kwargs['link']
-    rv.update(_view_project(node_to_use, user, link, primary=True))
-    return rv
+    if link:
+        raise HTTPError(http.FORBIDDEN)
+    else:
+        rv.update(_view_project(node_to_use, user, primary=True))
+        return rv
 
 
 ###############################################################################
