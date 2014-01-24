@@ -77,6 +77,12 @@ class User(GuidStoredObject, AddonModelMixin):
         '''Return a boolean of whether ``raw_password`` was correct.'''
         return check_password_hash(self.password, raw_password)
 
+    def authors_to_csl(self):
+        return {
+            'family': self.family_name,
+            'given': self.given_name,
+        }
+
     @property
     def biblio_name(self):
         given_names = self.given_name + ' ' + self.middle_names

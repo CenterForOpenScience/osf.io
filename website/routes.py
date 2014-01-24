@@ -492,6 +492,18 @@ def make_url_map(app):
         # Reorder components
         Rule('/project/<pid>/reorder_components/', 'post', project_views.node.project_reorder_components, json_renderer),
 
+        # Citations
+        Rule(
+            [
+                '/project/<pid>/citation/<style>/',
+                '/project/<pid>/node/<nid>/citation/<style>/'
+            ],
+            'get',
+            project_views.node.format_citation,
+            json_renderer,
+        ),
+#http://localhost:5000/api/v1/project/qbfu4/citation/apa.csl/
+
         # Edit node
         Rule([
             '/project/<pid>/edit/',

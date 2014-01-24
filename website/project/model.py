@@ -1108,6 +1108,39 @@ class Node(GuidStoredObject, AddonModelMixin):
             author_names[-1]
         )
 
+
+
+    def to_csl(self):
+
+        return {
+            "id": "ITEM-1",
+            "title": self.title,
+             "author": [
+                 contributor.authors_to_csl() #method in auth/model.py which parses the names of authors
+                 for contributor in self.contributors
+             ],
+            "publisher": "Open Science Framework",
+            "issued": {
+                "date-parts": [[self.logs[-1].date.year]]
+            },
+            "type": "Article",
+            "URL": self.display_absolute_url,
+        }
+
+
+#author section should look like this:
+# "author": [
+#{
+#"family": "Grignon",
+#"given": "Cyril"
+#},
+#{
+#"family": "Sentenac",
+#"given": "Corey"
+#}
+#],
+
+
     @property
     def citation_apa(self):
         return u'{authors}, ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{url}</a>'.format(
