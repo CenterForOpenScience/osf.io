@@ -13,3 +13,5 @@ class Session(StoredObject):
         # Initialize history to empty list if not found
         if 'history' not in self.data:
             self.data['history'] = []
+        if 'link' not in self.data:
+            self.data['link'] = []

@@ -30,7 +30,7 @@ from framework import StoredObject, fields, utils
 from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
-
+from framework import session
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
 
@@ -365,8 +365,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def can_view(self, user, link='', api_key=None):
-        return (self.is_public or self.can_edit(user, api_key)) \
-            if link not in self.private_links else True
+        if session:
+            key_ring = set(session.data['link'])
+            return (self.is_public or self.can_edit(user, api_key)) \
+                if key_ring.isdisjoint(self.private_links) else True
+        else:
+            return (self.is_public or self.can_edit(user, api_key)) \
+                if link not in self.private_links else True
 
     def save(self, *args, **kwargs):
 

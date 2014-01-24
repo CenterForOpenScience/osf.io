@@ -4,6 +4,7 @@ from framework import get_current_user, request, redirect
 from framework.exceptions import HTTPError
 from framework.auth import get_api_key
 from website.project import get_node
+from framework import session
 
 ###############################################################################
 # Decorators
@@ -105,14 +106,36 @@ def must_be_contributor(fn):
 
         api_node = kwargs.get('api_node')
 
-        if link not in node_to_use.private_links:
-            if user is None:
-                return redirect('/login/?next={0}'.format(request.path))
-            if not node_to_use.is_contributor(user) \
-                    and api_node != node_to_use:
-                raise HTTPError(http.FORBIDDEN)
+        link = request.args.get('key', '').strip('/')
+        if not session:
+            kwargs['link'] = link
+            if link not in node_to_use.private_links:
+                if user is None:
+                    return redirect('/login/?next={0}'.format(request.path))
+                if not node_to_use.is_contributor(user) \
+                        and api_node != node_to_use:
+                    raise HTTPError(http.FORBIDDEN)
 
-        return fn(*args, **kwargs)
+            return fn(*args, **kwargs)
+        else:
+            if link not in session.data['link']:
+                session.data['link'].append(link)
+            key_ring = set(session.data['link'])
+            if key_ring.isdisjoint(node_to_use.private_links):
+                if user is None:
+                    return redirect('/login/?next={0}'.format(request.path))
+                if not node_to_use.is_contributor(user) \
+                        and api_node != node_to_use:
+                    raise HTTPError(http.FORBIDDEN)
+            if key_ring.intersection(
+                node_to_use.private_links
+            ):
+                kwargs['link']= key_ring.intersection(
+                    node_to_use.private_links
+                ).pop()
+            else:
+                kwargs['link'] = ''
+            return fn(*args, **kwargs)
     return decorator(wrapped, fn)
 
 
@@ -136,8 +159,7 @@ def must_be_contributor_or_public(fn):
             kwargs['node'] = node
 
         node_to_use = node or project
-        link = request.args.get('key', '').strip('/')
-        kwargs['link'] = link
+
         if 'user' in kwargs:
             user = kwargs['user']
         else:
@@ -149,16 +171,40 @@ def must_be_contributor_or_public(fn):
         else:
             api_node = get_api_key()
             kwargs['api_node'] = api_node
+        link = request.args.get('key', '').strip('/')
+        if not session:
+            kwargs['link'] = link
+            if not node_to_use.is_public:
+                if link not in node_to_use.private_links:
+                    if user is None:
+                        return redirect('/login/?next={0}'.format(request.path))
+                    if not node_to_use.is_contributor(user) \
+                            and api_node != node_to_use:
+                        raise HTTPError(http.FORBIDDEN)
 
-        if not node_to_use.is_public:
-            if link not in node_to_use.private_links:
-                if user is None:
-                    return redirect('/login/?next={0}'.format(request.path))
-                if not node_to_use.is_contributor(user) \
-                        and api_node != node_to_use:
-                    raise HTTPError(http.FORBIDDEN)
+            return fn(*args, **kwargs)
+        else:
+            if link not in session.data['link']:
+                session.data['link'].append(link)
+            key_ring = set(session.data['link'])
+            if not node_to_use.is_public:
+                if key_ring.isdisjoint(node_to_use.private_links):
+                    if user is None:
+                        return redirect('/login/?next={0}'.format(request.path))
+                    if not node_to_use.is_contributor(user) \
+                            and api_node != node_to_use:
+                        raise HTTPError(http.FORBIDDEN)
 
-        return fn(*args, **kwargs)
+            if key_ring.intersection(
+                node_to_use.private_links
+            ):
+                kwargs['link']= key_ring.intersection(
+                    node_to_use.private_links
+                ).pop()
+            else:
+                kwargs['link'] = ''
+            return fn(*args, **kwargs)
+
     return decorator(wrapped, fn)
 
 

@@ -158,7 +158,6 @@ def before_request():
     #response = redirect(request.path, code=307)
     return create_session(None)
 
-
 @app.after_request
 def after_request(response):
     # Save if session exists and not authenticated by API
