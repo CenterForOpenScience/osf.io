@@ -73,3 +73,5 @@ osf.sublime-project
 .pydevproject
 .settings/
 website/addons/figshare/__init__.py.orig
+src/
+Notes.txt
