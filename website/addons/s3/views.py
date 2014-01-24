@@ -11,26 +11,21 @@ from website.project.decorators import must_be_contributor
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
-from framework.status import push_status_message
-from framework import request, redirect, make_response
-from framework.flask import secure_filename
 from framework.auth import get_current_user, must_be_logged_in
 
 from api import S3Wrapper
 from api import create_limited_user, remove_user, has_access, does_bucket_exist
-from boto.exception import S3ResponseError
 
 import time
 from datetime import date
 import os
 import utils
-import time, os, json, base64, urllib, hmac, sha
+import base64, urllib, hmac, sha
 
 @must_be_logged_in
 def s3_user_settings(*args, **kwargs):
     user = kwargs['user']
     s3_user = user.get_addon('s3')
-
     if not s3_user:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -44,18 +39,18 @@ def s3_user_settings(*args, **kwargs):
         s3_secret_key != s3_user.secret_key
         )
 
-
     if changed:
         if not has_access(s3_access_key,s3_secret_key):
             error_message = ('Looks like your creditials are incorrect'
                              'Could you have mistyped them?')
-            return {'message':error_message},400
+            return {'message': error_message}, 400
 
         s3_user.access_key = s3_access_key
         s3_user.secret_key = s3_secret_key
         s3_user.user_has_auth = has_auth
 
         s3_user.save()
+        return {}
 
 
 @must_be_contributor
@@ -144,7 +139,7 @@ def s3_remove_user_settings(*args, **kwargs):
 
 def _page_content(pid, s3):
     #TODO create new bucket if not found  inform use/ output error?
-    if not pid or not s3.s3_bucket:
+    if not pid or not s3.s3_bucket or not s3.node_auth:
         return {}
     #try:
     #FIX ME SOME HOW
@@ -169,6 +164,8 @@ def s3_page(*args, **kwargs):
 
 
     user = kwargs['user']
+    if not user:
+        return {}
     node = kwargs['node'] or kwargs['project']
 
     s3 = node.get_addon('s3')
@@ -197,41 +194,6 @@ def s3_download(*args, **kwargs):
     connect = S3Wrapper.from_addon(s3)
     return redirect(connect.download_file_URL(keyName.replace('&spc',' ').replace('&sl','/')))
 
-#TODO remove me and make sure I can be removed nicely
-@must_be_contributor
-@must_have_addon('s3','node')
-def s3_upload_unused(*args,**kwargs):
-    return {}
-    node = kwargs['node'] or kwargs['project']
-    s3 = node.get_addon('s3')
-
-    parentFolder = kwargs.get('path')
-    if parentFolder is not None:
-        parentFolder = parentFolder.replace('&spc',' ').replace('&sl','/')
-    else:
-        parentFolder=0
-
-    upload = request.files.get('file')
-    filename = secure_filename(upload.filename)
-    connect = S3Wrapper.from_addon(s3)
-    connect.flask_upload(upload,filename,parentFolder)
-    if parentFolder != 0:
-        uid = str(parentFolder) + filename
-    else:
-        uid = filename
-    return [{
-            'uid': uid,
-            'type': 'file',
-            'name': filename,
-            'parent_uid': parentFolder,
-            'version_id': 'current',
-            'size': '--',
-            'lastMod': "--",
-            'ext':os.path.splitext(filename)[1][1:],
-            'uploadUrl': " ",
-            'downloadUrl':'/project/' + str(kwargs['pid'] )+ '/s3/download/',
-            'deleteUrl': '/project/' + str(kwargs['pid'] )+ '/s3/delete/',
-        }]
 
 @must_be_contributor
 @must_have_addon('s3','node')

@@ -89,7 +89,7 @@ def create_limited_user(accessKey, secretKey,bucketName):
         #user has been created already proceed normally
         #TODO update me I may cause BIG problems
     connection.put_user_policy(bucketName + '-osf-limited','policy-' + bucketName + '-osf-limited',json.dumps(policy))
-    return connection.create_access_key(bucketName + '-osf-limited')['create_access_key_response']['create_access_key_result']['access_key'] 
+    return connection.create_access_key(bucketName + '-osf-limited')['create_access_key_response']['create_access_key_result']['access_key']
 
 def remove_user(accessKey, secretKey,bucketName,otherKey):
     connection = IAMConnection(accessKey, secretKey)
@@ -109,7 +109,7 @@ class S3Wrapper:
 
     @classmethod
     def from_addon(cls,s3):
-        return cls(S3Connection(s3.user_settings.access_key,s3.user_settings.secret_key),s3.s3_bucket)
+        return cls(S3Connection(s3.s3_node_access_key,s3.s3_node_secret_key),s3.s3_bucket)
 
     @classmethod
     def bucket_exist(cls,s3, bucketName):
@@ -141,7 +141,7 @@ class S3Wrapper:
 
     def get_file_list(self):
         return self.bucket.list()
-        
+
     def create_folder(self,name,pathToFolder=""):
         if not name.endswith('/'):
             name.append("/")

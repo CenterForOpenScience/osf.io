@@ -51,5 +51,3 @@ class TestCallbacks(DbTestCase):
 
     def test_node_settings_moar_use(self):
         assert_equals(self.node_settings.to_json(self.project.creator)['user_has_auth'],1)
-
-    def test_

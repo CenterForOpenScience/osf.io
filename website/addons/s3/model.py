@@ -35,6 +35,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     s3_node_access_key = fields.StringField()
     s3_node_secret_key = fields.StringField()
 
+    #TODO Change the naming here its kinda redundant and stupid
     def to_json(self, user):
 
         rv = super(AddonS3NodeSettings, self).to_json(user)
@@ -52,3 +53,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             rv['user_has_auth'] =  True if s3_user_settings.user_has_auth else False
 
         return rv
+
+    @property
+    def node_auth(self):
+        return True if self.s3_node_access_key and self.s3_node_secret_key else False
