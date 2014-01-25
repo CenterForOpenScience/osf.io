@@ -22,6 +22,7 @@ def prepare_private_key():
     if key_from_args:
         return
 
+    #grab querry key from previous request for not login user
     if request.referrer:
         key = urlparse.parse_qs(
             urlparse.urlparse(request.referrer).query
