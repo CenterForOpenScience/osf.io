@@ -41,7 +41,7 @@ def github_branch_widget(branches, branch, sha):
     )
 
 
-def github_dummy_folder(node_settings, user, parent=None, **kwargs):
+def github_dummy_folder(node_settings, user, link='', parent=None, **kwargs):
 
     # Quit if no repo linked
     if not node_settings.user or not node_settings.repo:
