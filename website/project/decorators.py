@@ -15,34 +15,6 @@ import urlparse
 from decorator import decorator
 
 
-#def session_redirect_helper(key_ring, node_to_use, user, api_node, link, request, *args, **kwargs):
-#    if key_ring.isdisjoint(node_to_use.private_links):
-#        if user is None:
-#            return redirect('/login/?next={0}'.format(request.path))
-#        if not node_to_use.is_contributor(user) \
-#                and api_node != node_to_use:
-#            raise HTTPError(http.FORBIDDEN)
-#        kwargs['link'] = ''
-#    else:
-#        parsed_path = urlparse.urlparse(request.path)
-#        args = request.args.to_dict()
-#        if link in node_to_use.private_links:
-#            args['key'] = link
-#            new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
-#            new_path = urlparse.urlunparse(new_parsed_path)
-#            return redirect(new_path)
-#        else:
-#            kwargs['link'] = key_ring.intersection(
-#                node_to_use.private_links
-#            ).pop()
-#            if user is None \
-#                or (not node_to_use.is_contributor(user) and api_node != node_to_use):
-#                args['key'] = kwargs['link']
-#                new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
-#                new_path = urlparse.urlunparse(new_parsed_path)
-#                return redirect(new_path)
-
-
 def must_not_be_registration(fn):
     def wrapped(func, *args, **kwargs):
         if 'project' not in kwargs:
@@ -161,7 +133,7 @@ def must_be_contributor(fn):
             else:
                 parsed_path = urlparse.urlparse(request.path)
                 args = request.args.to_dict()
-                if link in node_to_use.private_links:
+                if link and link in node_to_use.private_links:
                     args['key'] = link
                     new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
                     new_path = urlparse.urlunparse(new_parsed_path)
@@ -239,7 +211,7 @@ def must_be_contributor_or_public(fn):
                 else:
                     parsed_path = urlparse.urlparse(request.path)
                     args = request.args.to_dict()
-                    if link in node_to_use.private_links:
+                    if link and link in node_to_use.private_links:
                         args['key'] = link
                         new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
                         new_path = urlparse.urlunparse(new_parsed_path)
