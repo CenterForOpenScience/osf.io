@@ -35,9 +35,9 @@ def prepare_private_key():
     if key:
         if not session:
             parsed_path = urlparse.urlparse(request.path)
-            path_args = dict(urlparse.parse_qsl(parsed_path.query))
-            path_args['key'] = key
-            new_parsed_path = parsed_path._replace(query=urllib.urlencode(path_args))
+            args = request.args.to_dict()
+            args['key'] = key
+            new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
             new_path = urlparse.urlunparse(new_parsed_path)
             return redirect(new_path, code=307)
 

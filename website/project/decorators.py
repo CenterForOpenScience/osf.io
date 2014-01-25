@@ -120,6 +120,8 @@ def must_be_contributor(fn):
 
             return fn(*args, **kwargs)
         else:
+            parsed_path = urlparse.urlparse(request.path)
+            args = request.args.to_dict()
             if link and link not in session.data['link']:
                 session.data['link'].append(link)
             key_ring = set(session.data['link'])
@@ -131,17 +133,21 @@ def must_be_contributor(fn):
                     raise HTTPError(http.FORBIDDEN)
                 kwargs['link'] = ''
             else:
-                kwargs['link'] = key_ring.intersection(
-                    node_to_use.private_links
-                ).pop()
-                if link != kwargs['link'] \
-                    and (user is None
-                         or (not node_to_use.is_contributor(user)
-                             and api_node != node_to_use)):
-                    if '?' in request.path:
-                        return redirect('{0}&key={1}'.format(request.path, kwargs['link']))
-                    else:
-                        return redirect('{0}?key={1}'.format(request.path, kwargs['link']))
+                if link in node_to_use.private_links:
+                    args['key'] = link
+                    new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
+                    new_path = urlparse.urlunparse(new_parsed_path)
+                    return redirect(new_path)
+                else:
+                    kwargs['link'] = key_ring.intersection(
+                        node_to_use.private_links
+                    ).pop()
+                    if user is None \
+                        or (not node_to_use.is_contributor(user) and api_node != node_to_use):
+                        args['key'] = kwargs['link']
+                        new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
+                        new_path = urlparse.urlunparse(new_parsed_path)
+                        return redirect(new_path)
             return fn(*args, **kwargs)
     return decorator(wrapped, fn)
 
@@ -191,6 +197,8 @@ def must_be_contributor_or_public(fn):
 
             return fn(*args, **kwargs)
         else:
+            parsed_path = urlparse.urlparse(request.path)
+            args = request.args.to_dict()
             if link and link not in session.data['link']:
                 session.data['link'].append(link)
             key_ring = set(session.data['link'])
@@ -203,17 +211,21 @@ def must_be_contributor_or_public(fn):
                         raise HTTPError(http.FORBIDDEN)
                     kwargs['link'] = ''
                 else:
-                    kwargs['link'] = key_ring.intersection(
-                        node_to_use.private_links
-                    ).pop()
-                    if link != kwargs['link'] \
-                        and (user is None
-                             or (not node_to_use.is_contributor(user)
-                                 and api_node != node_to_use)):
-                        if '?' in request.path:
-                            return redirect('{0}&key={1}'.format(request.path, kwargs['link']))
-                        else:
-                            return redirect('{0}?key={1}'.format(request.path, kwargs['link']))
+                    if link in node_to_use.private_links:
+                        args['key'] = link
+                        new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
+                        new_path = urlparse.urlunparse(new_parsed_path)
+                        return redirect(new_path)
+                    else:
+                        kwargs['link'] = key_ring.intersection(
+                            node_to_use.private_links
+                        ).pop()
+                        if user is None \
+                            or (not node_to_use.is_contributor(user) and api_node != node_to_use):
+                            args['key'] = kwargs['link']
+                            new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
+                            new_path = urlparse.urlunparse(new_parsed_path)
+                            return redirect(new_path)
             else:
                 kwargs['link'] = ''
             return fn(*args, **kwargs)
