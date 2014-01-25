@@ -109,6 +109,8 @@ def must_be_contributor(fn):
         api_node = kwargs.get('api_node')
 
         link = request.args.get('key', '').strip('/')
+
+        #if not login user check if the link is valid or the other privilege
         if not session:
             kwargs['link'] = link
             if link not in node_to_use.private_links:
@@ -119,10 +121,16 @@ def must_be_contributor(fn):
                     raise HTTPError(http.FORBIDDEN)
 
             return fn(*args, **kwargs)
+
+        #for login user
         else:
+            #link first time show up record it in the key ring
             if link not in session.data['link']:
                 session.data['link'].append(link)
             key_ring = set(session.data['link'])
+
+            #check if the keyring has intersection with node's private link
+            # if no intersction check other privilege
             if key_ring.isdisjoint(node_to_use.private_links):
                 if user is None:
                     return redirect('/login/?next={0}'.format(request.path))
@@ -130,6 +138,9 @@ def must_be_contributor(fn):
                         and api_node != node_to_use:
                     raise HTTPError(http.FORBIDDEN)
                 kwargs['link'] = ''
+
+            #has intersection: check if the link is valid if not use other key
+            # in the key ring
             else:
                 if link in node_to_use.private_links:
                     kwargs['link'] = link
@@ -139,6 +150,8 @@ def must_be_contributor(fn):
                     kwargs['link'] = key_ring.intersection(
                         node_to_use.private_links
                     ).pop()
+                    #do a redirect to reappend the key to url only if the user
+                    # isn't a contributor
                     if user is None \
                         or (not node_to_use.is_contributor(user) and api_node != node_to_use):
                         args['key'] = kwargs['link']
@@ -182,6 +195,8 @@ def must_be_contributor_or_public(fn):
             api_node = get_api_key()
             kwargs['api_node'] = api_node
         link = request.args.get('key', '').strip('/')
+        
+        #if not login user check if the link is valid or the other privilege
         if not session:
             kwargs['link'] = link
             if not node_to_use.is_public:
@@ -193,10 +208,15 @@ def must_be_contributor_or_public(fn):
                         raise HTTPError(http.FORBIDDEN)
 
             return fn(*args, **kwargs)
+        #for login user
         else:
+            #link first time show up record it in the key ring
             if link not in session.data['link']:
                 session.data['link'].append(link)
             key_ring = set(session.data['link'])
+
+            #check if the keyring has intersection with node's private link
+            # if no intersction check other privilege
             if not node_to_use.is_public:
                 if key_ring.isdisjoint(node_to_use.private_links):
                     if user is None:
@@ -205,6 +225,9 @@ def must_be_contributor_or_public(fn):
                             and api_node != node_to_use:
                         raise HTTPError(http.FORBIDDEN)
                     kwargs['link'] = ''
+
+                #has intersection: check if the link is valid if not use other key
+                # in the key ring
                 else:
                     if link in node_to_use.private_links:
                         kwargs['link'] = link
@@ -214,6 +237,8 @@ def must_be_contributor_or_public(fn):
                         kwargs['link'] = key_ring.intersection(
                             node_to_use.private_links
                         ).pop()
+                        #do a redirect to reappend the key to url only if the user
+                        # isn't a contributor
                         if user is None \
                             or (not node_to_use.is_contributor(user) and api_node != node_to_use):
                             args['key'] = kwargs['link']
