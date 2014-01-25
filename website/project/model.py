@@ -316,11 +316,11 @@ class Node(GuidStoredObject, AddonModelMixin):
     def can_view(self, user, link='', api_key=None):
         if session:
             key_ring = set(session.data['link'])
-            return (self.is_public or self.can_edit(user, api_key)) \
-                if key_ring.isdisjoint(self.private_links) else True
+            return self.is_public or self.can_edit(user, api_key) \
+                or not key_ring.isdisjoint(self.private_links)
         else:
-            return (self.is_public or self.can_edit(user, api_key)) \
-                if link not in self.private_links else True
+            return self.is_public or self.can_edit(user, api_key) \
+                or link in self.private_links
 
     @property
     def has_files(self):
@@ -1017,7 +1017,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         return node_file
 
     def add_private_link(self, link='', save=True):
-        link = link or str(uuid.uuid4()).replace("-", "6")
+        link = link or str(uuid.uuid4()).strip("-")
         self.private_links.append(link)
         if save:
             self.save()
