@@ -69,7 +69,6 @@ def _clean_file_name(name):
     return encoded
 
 
-
 def osffiles_dummy_folder(node_settings, user, link='', parent=None, **kwargs):
 
     node = node_settings.owner
