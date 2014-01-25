@@ -111,7 +111,7 @@ def must_be_contributor(fn):
         link = request.args.get('key', '').strip('/')
         if not session:
             kwargs['link'] = link
-            if link and link not in node_to_use.private_links:
+            if link not in node_to_use.private_links:
                 if user is None:
                     return redirect('/login/?next={0}'.format(request.path))
                 if not node_to_use.is_contributor(user) \
@@ -120,7 +120,7 @@ def must_be_contributor(fn):
 
             return fn(*args, **kwargs)
         else:
-            if link and link not in session.data['link']:
+            if link not in session.data['link']:
                 session.data['link'].append(link)
             key_ring = set(session.data['link'])
             if key_ring.isdisjoint(node_to_use.private_links):
@@ -131,7 +131,7 @@ def must_be_contributor(fn):
                     raise HTTPError(http.FORBIDDEN)
                 kwargs['link'] = ''
             else:
-                if link and link in node_to_use.private_links:
+                if link in node_to_use.private_links:
                     kwargs['link'] = link
                 else:
                     parsed_path = urlparse.urlparse(request.path)
@@ -185,7 +185,7 @@ def must_be_contributor_or_public(fn):
         if not session:
             kwargs['link'] = link
             if not node_to_use.is_public:
-                if link and link not in node_to_use.private_links:
+                if link not in node_to_use.private_links:
                     if user is None:
                         return redirect('/login/?next={0}'.format(request.path))
                     if not node_to_use.is_contributor(user) \
@@ -194,7 +194,7 @@ def must_be_contributor_or_public(fn):
 
             return fn(*args, **kwargs)
         else:
-            if link and link not in session.data['link']:
+            if link not in session.data['link']:
                 session.data['link'].append(link)
             key_ring = set(session.data['link'])
             if not node_to_use.is_public:
@@ -206,7 +206,7 @@ def must_be_contributor_or_public(fn):
                         raise HTTPError(http.FORBIDDEN)
                     kwargs['link'] = ''
                 else:
-                    if link and link in node_to_use.private_links:
+                    if link in node_to_use.private_links:
                         kwargs['link'] = link
                     else:
                         parsed_path = urlparse.urlparse(request.path)
