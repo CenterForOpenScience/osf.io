@@ -131,14 +131,11 @@ def must_be_contributor(fn):
                     raise HTTPError(http.FORBIDDEN)
                 kwargs['link'] = ''
             else:
-                parsed_path = urlparse.urlparse(request.path)
-                args = request.args.to_dict()
                 if link and link in node_to_use.private_links:
-                    args['key'] = link
-                    new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
-                    new_path = urlparse.urlunparse(new_parsed_path)
-                    return redirect(new_path)
+                    kwargs['link'] = link
                 else:
+                    parsed_path = urlparse.urlparse(request.path)
+                    args = request.args.to_dict()
                     kwargs['link'] = key_ring.intersection(
                         node_to_use.private_links
                     ).pop()
@@ -209,14 +206,11 @@ def must_be_contributor_or_public(fn):
                         raise HTTPError(http.FORBIDDEN)
                     kwargs['link'] = ''
                 else:
-                    parsed_path = urlparse.urlparse(request.path)
-                    args = request.args.to_dict()
                     if link and link in node_to_use.private_links:
-                        args['key'] = link
-                        new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
-                        new_path = urlparse.urlunparse(new_parsed_path)
-                        return redirect(new_path)
+                        kwargs['link'] = link
                     else:
+                        parsed_path = urlparse.urlparse(request.path)
+                        args = request.args.to_dict()
                         kwargs['link'] = key_ring.intersection(
                             node_to_use.private_links
                         ).pop()
