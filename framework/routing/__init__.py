@@ -21,7 +21,10 @@ logger = logging.getLogger(__name__)
 
 TEMPLATE_DIR = settings.TEMPLATES_PATH
 _tpl_lookup = TemplateLookup(
-    directories=[TEMPLATE_DIR],
+    directories=[
+        TEMPLATE_DIR,
+        os.path.join(settings.BASE_PATH, 'addons/'),
+    ],
     module_directory='/tmp/mako_modules'
 )
 REDIRECT_CODES = [

@@ -24,8 +24,31 @@ def get_log(log_id):
     return {'log': log.serialize()}
 
 
+def _get_logs(node, count, user, api_key=None, offset=0):
+    """
+
+    :param Node node:
+    :param int count:
+    :param User user:
+    :param ApiKey api_key:
+    :return list: List of serialized logs
+
+    """
+    logs = []
+
+    for log in list(reversed(node.logs))[offset:]:
+        if log and log.node.can_view(user, api_key):
+            logs.append(log.serialize())
+        if len(logs) >= count:
+            break
+
+    return logs
+
 @must_be_valid_project
 def get_logs(*args, **kwargs):
+    """
+
+    """
     user = get_current_user()
     api_key = get_api_key()
     node_to_use = kwargs['node'] or kwargs['project']
@@ -42,9 +65,10 @@ def get_logs(*args, **kwargs):
     else:
         count = 10
     offset = page_num*count
+
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
-    chrono_logs = reversed(node_to_use.logs)
-    logs = [log for log in chrono_logs[offset:][:count]
-                    if log and log.node.can_view(user, api_key)]
-    return {'logs': [log.serialize() for log in logs]}
+    logs = _get_logs(node_to_use, count, user, api_key, offset)
+    return {'logs': logs}
+
+

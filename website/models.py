@@ -6,11 +6,11 @@ from framework.guid.model import Guid
 from framework.auth.model import User
 from framework.sessions.model import Session
 
-from website.project.model import (ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
+from website.project.model import (ApiKey, Node, NodeLog,
                                    Tag, WatchConfig, MetaData, MetaSchema)
 
 # All models
-MODELS = (User, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
+MODELS = (User, ApiKey, Node, NodeLog,
           Tag, WatchConfig, Session, Guid, MetaData, MetaSchema)
 
-GUID_MODELS = (User, Node, NodeFile, NodeWikiPage, Tag, MetaData)
+GUID_MODELS = (User, Node, Tag, MetaData)

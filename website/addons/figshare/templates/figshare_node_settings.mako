@@ -1,4 +1,4 @@
-<%inherit file="project/addon/settings.mako" />
+<%inherit file="project/addon/node_settings.mako" />
 
 <div class="form-group">
     <label for="figshareId">FigShare Article ID</label>

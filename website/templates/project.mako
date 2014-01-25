@@ -8,7 +8,7 @@
 
     <div class="row">
 
-        <div class="col-md-7" id="containment">
+        <div class="col-md-6" id="containment">
 
             <%
                 extra_addon_widgets = [
@@ -43,18 +43,25 @@
                 <!-- If no widgets, show components -->
                 ${children()}
 
-                % if 'files' in addons and addons['files']['has_widget']:
-                    <div class="addon-widget-container" mod-meta='{
-                            "tpl": "../addons/files/templates/files_widget.mako",
-                            "uri": "${node['api_url']}files/widget/"
-                        }'></div>
-                % endif
-
             % endif
+
+            % if has_files:
+                <div class="addon-widget-container">
+                    <h3 class="addon-widget-header">Files</h3>
+                    <div mod-meta='{
+                            "tpl": "util/render_file_tree.mako",
+                            "uri": "${node['api_url']}files/",
+                            "view_kwargs": {
+                                "mode": "widget"
+                            }
+                        }'></div>
+                </div>
+            % endif
+
 
         </div>
 
-        <div class="col-md-5">
+        <div class="col-md-6">
 
             <!-- Citations -->
             <div class="citations">
