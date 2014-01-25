@@ -63,9 +63,7 @@ logger = logging.getLogger(__name__)
 @must_have_addon('wiki', 'node')
 def project_wiki_home(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
-    link = request.args.get('key', '').strip('/')
-    url_fix = '?key={}'.format(link) if link else ''
-    return {}, None, None, '{}wiki/home/{}'.format(node_to_use.url, url_fix)
+    return {}, None, None, '{}wiki/home/'.format(node_to_use.url)
 
 
 def _get_wiki_versions(node, wid):
