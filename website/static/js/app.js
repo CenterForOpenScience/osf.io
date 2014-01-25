@@ -92,6 +92,7 @@ var LogsViewModel = function(logs, url) {
     var page_num=  0;
     self.url = url;
 
+    //send request to get more logs when the more button is clicked
     self.moreLogs = function(){
         page_num+=1;
         $.ajax({
