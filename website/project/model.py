@@ -1017,7 +1017,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         return node_file
 
     def add_private_link(self, link='', save=True):
-        link = link or str(uuid.uuid4()).strip("-")
+        link = link or str(uuid.uuid4()).replace("-", "")
         self.private_links.append(link)
         if save:
             self.save()
