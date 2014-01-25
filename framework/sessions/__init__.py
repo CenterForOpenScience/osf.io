@@ -24,8 +24,8 @@ def prepare_private_key():
 
     if request.referrer:
         key = urlparse.parse_qs(
-                urlparse.urlparse(request.referrer).query
-            ).get('key')
+            urlparse.urlparse(request.referrer).query
+        ).get('key')
         if isinstance(key, list):
             key = key[0]
     else:
