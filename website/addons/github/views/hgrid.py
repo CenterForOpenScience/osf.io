@@ -7,7 +7,7 @@ from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
 
 from ..api import GitHub, tree_to_hgrid, ref_to_params
-from .util import _get_branch_and_sha, _check_permissions, MESSAGES
+from .util import _get_refs, _check_permissions, MESSAGES
 
 github_branch_template = Template('''
     % if len(branches) > 1:
@@ -59,7 +59,7 @@ def github_dummy_folder(node_settings, user, parent=None, **kwargs):
         'permission': False,
     }
 
-    branch, sha, branches = _get_branch_and_sha(
+    branch, sha, branches = _get_refs(
         node_settings,
         branch=kwargs.get('branch'),
         sha=kwargs.get('sha'),
@@ -123,7 +123,7 @@ def github_hgrid_data_contents(*args, **kwargs):
     # The requested branch and sha
     req_branch, req_sha = request.args.get('branch'), request.args.get('sha')
     # The actual branch and sha to use, given the addon settings
-    branch, sha, branches = _get_branch_and_sha(node_addon, req_branch, req_sha,
+    branch, sha, branches = _get_refs(node_addon, req_branch, req_sha,
                                         connection=connection)
     # Get file tree
     contents = connection.contents(

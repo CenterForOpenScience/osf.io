@@ -352,42 +352,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/statistics/',
         ], 'get', project_views.node.project_statistics, OsfWebRenderer('project/statistics.mako')),
 
-        ### Wiki ###
-        Rule([
-            '/project/<pid>/wiki/',
-            '/project/<pid>/node/<nid>/wiki/',
-        ], 'get', project_views.wiki.project_wiki_home, OsfWebRenderer('project/wiki.mako')),
-
-        # View
-        Rule([
-            '/project/<pid>/wiki/<wid>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/',
-        ], 'get', project_views.wiki.project_wiki_page, OsfWebRenderer('project/wiki.mako')),
-
-        # Edit | GET
-        Rule([
-            '/project/<pid>/wiki/<wid>/edit/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
-        ], 'get', project_views.wiki.project_wiki_edit, OsfWebRenderer('project/wiki/edit.mako')),
-
-        # Edit | POST
-        Rule([
-            '/project/<pid>/wiki/<wid>/edit/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
-        ], 'post', project_views.wiki.project_wiki_edit_post, OsfWebRenderer('project/wiki/edit.mako')),
-
-        # Compare
-        Rule([
-            '/project/<pid>/wiki/<wid>/compare/<compare_id>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/compare/<compare_id>/',
-        ], 'get', project_views.wiki.project_wiki_compare, OsfWebRenderer('project/wiki/compare.mako')),
-
-        # Versions
-        Rule([
-            '/project/<pid>/wiki/<wid>/version/<vid>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/',
-        ], 'get', project_views.wiki.project_wiki_version, OsfWebRenderer('project/wiki/compare.mako')),
-
         ### Files ###
 
         # Note: Web endpoint for files view must pass `mode` = `page` to
@@ -569,30 +533,6 @@ def make_url_map(app):
 
 
         ### Wiki ###
-
-        # View
-        Rule([
-            '/project/<pid>/wiki/<wid>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/',
-        ], 'get', project_views.wiki.project_wiki_page, json_renderer),
-
-        # Edit | POST
-        Rule([
-            '/project/<pid>/wiki/<wid>/edit/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
-        ], 'post', project_views.wiki.project_wiki_edit_post, json_renderer),
-
-        # Compare
-        Rule([
-            '/project/<pid>/wiki/<wid>/compare/<compare_id>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/compare/<compare_id>/',
-        ], 'get', project_views.wiki.project_wiki_compare, json_renderer),
-
-        # Versions
-        Rule([
-            '/project/<pid>/wiki/<wid>/version/<vid>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/',
-        ], 'get', project_views.wiki.project_wiki_version, json_renderer),
 
         ### Watching ###
         Rule([
