@@ -324,19 +324,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/log/',
         ], 'get', project_views.log.get_logs, OsfWebRenderer('util/render_logs.mako')),
 
-
-        ### Files ###
-
-        Rule([
-            '/project/<pid>/files/',
-            '/project/<pid>/node/<nid>/files/',
-        ], 'get', project_views.file.get_files, OsfWebRenderer('project/files.mako')),
-
-        Rule([
-            '/project/<pid>/files/<fid>/',
-            '/project/<pid>/node/<nid>/files/<fid>/',
-        ], 'get', project_views.file.view_file, OsfWebRenderer('project/file.mako')),
-
         # View forks
         Rule([
             '/project/<pid>/forks/',
@@ -365,41 +352,20 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/statistics/',
         ], 'get', project_views.node.project_statistics, OsfWebRenderer('project/statistics.mako')),
 
-        ### Wiki ###
-        Rule([
-            '/project/<pid>/wiki/',
-            '/project/<pid>/node/<nid>/wiki/',
-        ], 'get', project_views.wiki.project_wiki_home, OsfWebRenderer('project/wiki.mako')),
+        ### Files ###
 
-        # View
-        Rule([
-            '/project/<pid>/wiki/<wid>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/',
-        ], 'get', project_views.wiki.project_wiki_page, OsfWebRenderer('project/wiki.mako')),
-
-        # Edit | GET
-        Rule([
-            '/project/<pid>/wiki/<wid>/edit/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
-        ], 'get', project_views.wiki.project_wiki_edit, OsfWebRenderer('project/wiki/edit.mako')),
-
-        # Edit | POST
-        Rule([
-            '/project/<pid>/wiki/<wid>/edit/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
-        ], 'post', project_views.wiki.project_wiki_edit_post, OsfWebRenderer('project/wiki/edit.mako')),
-
-        # Compare
-        Rule([
-            '/project/<pid>/wiki/<wid>/compare/<compare_id>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/compare/<compare_id>/',
-        ], 'get', project_views.wiki.project_wiki_compare, OsfWebRenderer('project/wiki/compare.mako')),
-
-        # Versions
-        Rule([
-            '/project/<pid>/wiki/<wid>/version/<vid>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/',
-        ], 'get', project_views.wiki.project_wiki_version, OsfWebRenderer('project/wiki/compare.mako')),
+        # Note: Web endpoint for files view must pass `mode` = `page` to
+        # include project view data and JS includes
+        Rule(
+            [
+                '/project/<pid>/files/',
+                '/project/<pid>/node/<nid>/files/',
+            ],
+            'get',
+            project_views.file.collect_file_trees,
+            OsfWebRenderer('project/files.mako'),
+            endpoint_suffix='__page', view_kwargs={'mode': 'page'},
+        ),
 
     ])
 
@@ -508,42 +474,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/removetag/<tag>/',
         ], 'post', project_views.tag.project_removetag, json_renderer),
 
-        ### Files ###
-        Rule([
-            '/project/<pid>/files/',
-            '/project/<pid>/node/<nid>/files/',
-        ], 'get', project_views.file.get_files, json_renderer),
-
-        Rule([
-            '/project/<pid>/file_paths/',
-            '/project/<pid>/node/<nid>/file_paths/',
-        ], 'get', project_views.file.list_file_paths, json_renderer),
-
-        # Download file
-        Rule([
-            '/project/<pid>/files/download/<fid>/',
-            '/project/<pid>/node/<nid>/files/download/<fid>/',
-        ], 'get', project_views.file.download_file, json_renderer),
-
-        # Download file by version
-        Rule([
-            '/project/<pid>/files/download/<fid>/version/<vid>/',
-            '/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
-        ], 'get', project_views.file.download_file_by_version, json_renderer),
-
-        Rule([
-            '/project/<pid>/files/upload/',
-            '/project/<pid>/node/<nid>/files/upload/',
-        ], 'get', project_views.file.upload_file_get, json_renderer),
-        Rule([
-            '/project/<pid>/files/upload/',
-            '/project/<pid>/node/<nid>/files/upload/',
-        ], 'post', project_views.file.upload_file_public, json_renderer),
-        Rule([
-            '/project/<pid>/files/delete/<fid>/',
-            '/project/<pid>/node/<nid>/files/delete/<fid>/',
-        ], 'post', project_views.file.delete_file, json_renderer),
-
         # Add / remove contributors
         Rule([
             '/project/<pid>/addcontributors/',
@@ -604,30 +534,6 @@ def make_url_map(app):
 
         ### Wiki ###
 
-        # View
-        Rule([
-            '/project/<pid>/wiki/<wid>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/',
-        ], 'get', project_views.wiki.project_wiki_page, json_renderer),
-
-        # Edit | POST
-        Rule([
-            '/project/<pid>/wiki/<wid>/edit/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
-        ], 'post', project_views.wiki.project_wiki_edit_post, json_renderer),
-
-        # Compare
-        Rule([
-            '/project/<pid>/wiki/<wid>/compare/<compare_id>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/compare/<compare_id>/',
-        ], 'get', project_views.wiki.project_wiki_compare, json_renderer),
-
-        # Versions
-        Rule([
-            '/project/<pid>/wiki/<wid>/version/<vid>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/',
-        ], 'get', project_views.wiki.project_wiki_version, json_renderer),
-
         ### Watching ###
         Rule([
             '/project/<pid>/watch/',
@@ -651,5 +557,16 @@ def make_url_map(app):
         Rule([
             '/user/merge/'
         ], 'post', auth_views.merge_user_post, json_renderer),
+
+        # Combined files
+        Rule(
+            [
+                '/project/<pid>/files/',
+                '/project/<pid>/node/<nid>/files/'
+            ],
+            'get',
+            project_views.file.collect_file_trees,
+            json_renderer,
+        ),
 
     ], prefix='/api/v1')

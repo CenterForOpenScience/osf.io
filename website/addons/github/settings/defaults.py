@@ -10,5 +10,3 @@ SET_PRIVACY = False
 
 # GitHub hook domain
 HOOK_DOMAIN = None
-
-MAX_TREE_SIZE = 500

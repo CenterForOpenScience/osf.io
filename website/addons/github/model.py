@@ -291,10 +291,11 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         """
         if self.user_settings:
             return (
-                'Registering this {cat} will copy the authentication for its '
+                'Registering {cat} "{title}" will copy the authentication for its '
                 'GitHub add-on to the registered {cat}.'
             ).format(
                 cat=node.project_or_component,
+                title=node.title,
             )
 
     def after_register(self, node, registration, user, save=True):

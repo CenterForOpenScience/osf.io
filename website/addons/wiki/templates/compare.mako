@@ -9,16 +9,9 @@
     </div>
 
     <div class="col-md-3">
-        <div mod-meta='{
-                "tpl": "project/wiki/nav.mako",
-                "replace": true
-            }'></div>
-        <div mod-meta='{
-                "tpl": "project/wiki/history.mako",
-                "replace": true
-            }'></div>
+        <%include file="wiki/templates/nav.mako" />
+        <%include file="wiki/templates/history.mako" />
     </div>
-
 
 </div>
 </%def>

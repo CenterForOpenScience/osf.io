@@ -1,6 +1,7 @@
 from .model import AddonLinkNodeSettings
 from .routes import settings_routes, page_routes
 
+MODELS = [AddonLinkNodeSettings]
 NODE_SETTINGS_MODEL = AddonLinkNodeSettings
 
 ROUTES = [settings_routes, page_routes]

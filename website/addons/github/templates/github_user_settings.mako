@@ -1,4 +1,4 @@
-<%inherit file="project/addon/settings.mako" />
+<%inherit file="project/addon/user_settings.mako" />
 
 <!-- Authorization -->
 <div>
@@ -62,3 +62,6 @@
     });
 
 </script>
+
+<%def name="submit_btn()"></%def>
+<%def name="on_submit()"></%def>

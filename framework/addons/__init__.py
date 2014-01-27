@@ -29,7 +29,7 @@ class AddonModelMixin(StoredObject):
     def _backref_key(self, addon_config):
 
         return '{0}__addons'.format(
-            addon_config.models[self._name]._name,
+            addon_config.settings_models[self._name]._name,
         )
 
     def get_addon(self, addon_name, deleted=False):
@@ -40,7 +40,7 @@ class AddonModelMixin(StoredObject):
 
         """
         addon_config = settings.ADDONS_AVAILABLE_DICT.get(addon_name)
-        if not addon_config or not addon_config.models.get(self._name):
+        if not addon_config or not addon_config.settings_models.get(self._name):
             return False
 
         backref_key = self._backref_key(addon_config)
@@ -67,11 +67,11 @@ class AddonModelMixin(StoredObject):
 
         # Get add-on settings model
         addon_config = settings.ADDONS_AVAILABLE_DICT.get(addon_name)
-        if not addon_config or not addon_config.models[self._name]:
+        if not addon_config or not addon_config.settings_models[self._name]:
             return False
 
         # Instantiate model
-        model = addon_config.models[self._name](owner=self)
+        model = addon_config.settings_models[self._name](owner=self)
         model.save()
 
         return True
@@ -103,3 +103,10 @@ class AddonModelMixin(StoredObject):
                 self.delete_addon(addon_name)
         if save:
             self.save()
+
+    @property
+    def has_files(self):
+        for addon in self.get_addons():
+            if addon.config.has_hgrid_files:
+                return True
+        return False

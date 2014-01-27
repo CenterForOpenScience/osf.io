@@ -5,7 +5,6 @@ from framework import session, create_session
 from framework import goback
 from framework import status, redirect, request
 from framework.auth.utils import parse_name
-from framework.exceptions import HTTPError
 import framework.flask as web
 import framework.bcrypt as bcrypt
 from modularodm.query.querydialect import DefaultQueryDialect as Q
@@ -14,8 +13,6 @@ from model import User
 
 from decorator import decorator
 import datetime
-
-import httplib as http
 
 
 def get_current_username():
