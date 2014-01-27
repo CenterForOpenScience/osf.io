@@ -193,7 +193,7 @@ grid.hGridOnUpload.subscribe(function(e, args) {
 grid.dropZoneObj.on("addedfile", function (file)
 {
   $.ajax({
-      url: '/project' + uplUrl + 's3/getsigned/',
+      url:  uplUrl + 's3/getsigned/',
       type: 'POST',
       data: JSON.stringify({name:file.name,type:file.type}),
       contentType: 'application/json',

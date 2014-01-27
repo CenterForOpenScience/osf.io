@@ -5,7 +5,7 @@
         var gridData = ${grid},
         can_io = ${int(user['can_edit'])},
         can_dl = 1,
-        uplUrl = ${node['url']}
+        uplUrl = "${node['api_url']}"
     </script>
 
                 <div class="container" style="position: relative;">

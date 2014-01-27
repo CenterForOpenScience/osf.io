@@ -8,6 +8,10 @@ from website.addons.s3.api import create_limited_user
 
 from website.addons.s3.utils import getHgrid
 
+from website import models
+
+import datetime
+
 import time
 import os
 import base64
@@ -43,16 +47,32 @@ def generate_signed_url(*args, ** kwargs):
     signed = urllib.quote_plus(base64.encodestring(
         hmac.new(str(s3.node_secret_key), request_to_sign, sha).digest()).strip())
 
+
+
+    #move into crud.py add a call back in hgrid upload
+    node.add_log(
+        action='s3_' + models.NodeLog.FILE_ADDED,
+        params={
+            'project': node.parent_id,
+            'node': node._primary_key,
+            'bucket': s3.bucket,
+            'path': file_name,
+        },
+        user=kwargs['user'],
+        api_key=None,
+        log_date=datetime.datetime.utcnow(),
+    )
+
     # TODO Fix me up
     faux_file = [{
-        'uid': uid,
+        'uid': 'uid',
         'type': 'file',
-        'name': filename,
+        'name': file_name,
         'parent_uid': 'fillmein',
         'version_id': 'current',
         'size': '--',
         'lastMod': "--",
-        'ext': os.path.splitext(filename)[1][1:] or '',
+        'ext': os.path.splitext(file_name)[1][1:] or '',
         'uploadUrl': " ",
         'downloadUrl': '/project/' + str(kwargs['pid']) + '/s3/download/',
         'deleteUrl': '/project/' + str(kwargs['pid']) + '/s3/delete/',
@@ -69,7 +89,7 @@ def _page_content(pid, s3):
     # try:
     # FIX ME SOME HOW
     connect = S3Wrapper.from_addon(s3)
-    data = getHgrid('/project/' + pid + '/s3/', connect)
+    data = getHgrid('/api/v1/project/' + pid + '/s3/', connect)
     # except S3ResponseError:
     #     push_status_message("It appears you do not have access to this bucket. Are you settings correct?")
     #     data = None

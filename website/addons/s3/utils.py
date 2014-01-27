@@ -37,7 +37,7 @@ def getHgrid(url, s3wrapper):
                  'version_id': '--',
                  'lastMod': '--',
                  'size': '--',
-                 'uploadUrl': url + URLADDONS['upload'],
+                 'uploadUrl': '/',#url + URLADDONS['upload'],
                  'downloadUrl': url + URLADDONS['download'],
                  'deleteUrl': url + URLADDONS['delete'],
                  })
