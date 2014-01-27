@@ -27,7 +27,7 @@ class TestCallbacks(DbTestCase):
         self.user_settings.user_has_auth = 1
         self.node_settings.user_settings = self.user_settings
         self.node_settings.user = 'Queen'
-        self.node_settings.s3_bucket = 'Sheer-Heart-Attack'
+        self.node_settings.bucket = 'Sheer-Heart-Attack'
         self.node_settings.save()
 
     def test_node_settings_empty_bucket(self):
@@ -36,7 +36,7 @@ class TestCallbacks(DbTestCase):
 
     def test_node_settings_full_bucket(self):
         s3 = AddonS3NodeSettings()
-        s3.s3_bucket = 'bucket'
+        s3.bucket = 'bucket'
         assert_equals(s3.to_json(self.project.creator)['has_bucket'], 1)
 
     def test_node_settings_user_auth(self):

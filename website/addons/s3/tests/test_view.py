@@ -36,23 +36,23 @@ class TestS3Views(DbTestCase):
         self.node_settings.save()
 
     def test_s3_page_no_user(self):
-        s3 = AddonS3NodeSettings(user=None, s3_bucket='lul')
+        s3 = AddonS3NodeSettings(user=None, bucket='lul')
         res = views.utils._page_content('873p', s3)
         assert_equals(res, {})
 
     def test_s3_page_no_pid(self):
-        s3 = AddonS3NodeSettings(user='jimbob', s3_bucket='lul')
+        s3 = AddonS3NodeSettings(user='jimbob', bucket='lul')
         res = views.utils._page_content(None, s3)
         assert_equals(res, {})
 
     def test_s3_page_empty_pid(self):
-        s3 = AddonS3NodeSettings(user='jimbob', s3_bucket='lul')
+        s3 = AddonS3NodeSettings(user='jimbob', bucket='lul')
         res = views.utils._page_content('', s3)
         assert_equals(res, {})
 
     def test_s3_page_no_auth(self):
-        s3 = AddonS3NodeSettings(user='jimbob', s3_bucket='lul')
-        s3.s3_node_access_key = ""
+        s3 = AddonS3NodeSettings(user='jimbob', bucket='lul')
+        s3.node_access_key = ""
         res = views.utils._page_content('', s3)
         assert_equals(res, {})
 
@@ -66,7 +66,7 @@ class TestS3Views(DbTestCase):
         url = "/api/v1/project/{0}/s3/settings/".format(self.project._id)
         res = self.app.post_json(url, {})
         self.project.reload()
-        assert_equals(self.node_settings.s3_bucket, None)
+        assert_equals(self.node_settings.bucket, None)
 
     @mock.patch('website.addons.s3.views.utils.create_limited_user')
     def test_s3_create_access_key_attrs(self, mock_create_limited_user):
@@ -74,7 +74,7 @@ class TestS3Views(DbTestCase):
             'access_key_id': 'Boo', 'secret_access_key': 'Riley'}
         user_settings = AddonS3UserSettings(user='Aticus-killing-mocking')
         views.utils._s3_create_access_key(user_settings, self.node_settings)
-        assert_equals(self.node_settings.s3_node_access_key, 'Boo')
+        assert_equals(self.node_settings.node_access_key, 'Boo')
 
     @mock.patch('website.addons.s3.views.utils.create_limited_user')
     def test_s3_create_access_key(self, mock_create_limited_user):

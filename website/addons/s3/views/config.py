@@ -64,20 +64,20 @@ def s3_settings(*args, **kwargs):
     if s3_addon and s3_addon.owner != user:
         raise HTTPError(http.BAD_REQUEST)
 
-    s3_bucket = request.json.get('s3_bucket', '')
+    bucket = request.json.get('bucket', '')
 
-    if not s3_bucket or not does_bucket_exist(s3_addon.access_key, s3_addon.secret_key, s3_bucket):
+    if not bucket or not does_bucket_exist(s3_addon.access_key, s3_addon.secret_key, bucket):
         error_message = ('Looks like this bucket does not exist.'
                          'Could you have mistyped it?')
         return {'message': error_message}, 400
 
-    changed = s3_bucket != node.s3_bucket
+    changed = bucket != node.bucket
 
     # Delete callback
     if changed:
 
         # Update node settings
-        node.s3_bucket = s3_bucket
+        node.bucket = bucket
         node.save()
 
         # TODO create access key here figure out way to remove it later?
@@ -101,11 +101,11 @@ def s3_delete_access_key(*args, **kwargs):
     # delete user from amazons data base
     # boto giveth and boto taketh away
     remove_user(s3_user.access_key, s3_user.secret_key,
-                s3_node.s3_bucket, s3_node.s3_node_access_key)
+                s3_node.bucket, s3_node.node_access_key)
 
     # delete our access and secret key
-    s3_node.s3_node_access_key = ''
-    s3_node.s3_node_secret_key = ''
+    s3_node.node_access_key = ''
+    s3_node.node_secret_key = ''
     s3_node.node_auth = 0
     s3_node.save()
 

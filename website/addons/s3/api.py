@@ -113,7 +113,7 @@ class S3Wrapper:
 
     @classmethod
     def from_addon(cls, s3):
-        return cls(S3Connection(s3.s3_node_access_key, s3.s3_node_secret_key), s3.s3_bucket)
+        return cls(S3Connection(s3.node_access_key, s3.node_secret_key), s3.bucket)
 
     @classmethod
     def bucket_exist(cls, s3, bucketName):
