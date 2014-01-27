@@ -36,12 +36,24 @@ class TestGitHubPage(DbTestCase):
     def test_github_widget_present(self):
         url = "/project/{0}/".format(self.project._id)
         res = self.app.get(url, auth=self.user.auth)
-        files_header = res.html.find(text='GitHub', attrs={'class': 'addon-widget-header'})
+        addon_headers = res.html.find_all(attrs={'class': 'addon-widget-header'})
+        assert_true(
+            any([
+                'GitHub' in header.text
+                for header in addon_headers
+            ])
+        )
 
     def test_files_widget_present(self):
         url = "/project/{0}/".format(self.project._id)
         res = self.app.get(url, auth=self.user.auth)
-        files_header = res.html.find(text='Files', attrs={'class': 'addon-widget-header'})
+        addon_headers = res.html.find_all(attrs={'class': 'addon-widget-header'})
+        assert_true(
+            any([
+                'Files' in header.text
+                for header in addon_headers
+            ])
+        )
 
     def test_github_widget_without_auth(self):
         self.node_settings.user = "nosense"
