@@ -17,24 +17,23 @@ from datetime import datetime
 from urllib import quote
 
 
-
-
 def has_access(access_key, secret_key):
     try:
-        c = S3Connection(access_key,secret_key)
+        c = S3Connection(access_key, secret_key)
         c.get_all_buckets()
         return True
     except Exception:
         return False
 
-def create_limited_user(accessKey, secretKey,bucketName):
+
+def create_limited_user(accessKey, secretKey, bucketName):
     policy = {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "Stmt1389718377000",
-      "Effect": "Allow",
-      "Action": [
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Sid": "Stmt1389718377000",
+                "Effect": "Allow",
+                "Action": [
         "s3:AbortMultipartUpload",
         "s3:CreateBucket",
         "s3:DeleteBucketPolicy",
@@ -74,45 +73,50 @@ def create_limited_user(accessKey, secretKey,bucketName):
         "s3:PutObject",
         "s3:PutObjectAcl",
         "s3:PutObjectVersionAcl"
-      ],
-      "Resource": [
-        "arn:aws:s3:::{bucketname}/*".format(bucketname=bucketName)
-      ]
+                ],
+                "Resource": [
+        "arn:aws:s3:::{bucketname}".format(bucketname=bucketName)
+                ]
+            }
+        ]
     }
-  ]
-}
-    connection = IAMConnection(accessKey,secretKey)
+    connection = IAMConnection(accessKey, secretKey)
     try:
         connection.create_user(bucketName + '-osf-limited')
     except Exception:
         pass
-        #user has been created already proceed normally
-        #TODO update me I may cause BIG problems
-    connection.put_user_policy(bucketName + '-osf-limited','policy-' + bucketName + '-osf-limited',json.dumps(policy))
+        # user has been created already proceed normally
+        # TODO update me I may cause BIG problems
+    connection.put_user_policy(
+        bucketName + '-osf-limited', 'policy-' + bucketName + '-osf-limited', json.dumps(policy))
     return connection.create_access_key(bucketName + '-osf-limited')['create_access_key_response']['create_access_key_result']['access_key']
 
-def remove_user(accessKey, secretKey,bucketName,otherKey):
+
+def remove_user(accessKey, secretKey, bucketName, otherKey):
     connection = IAMConnection(accessKey, secretKey)
-    connection.delete_user_policy(bucketName + '-osf-limited','policy-'+bucketName + '-osf-limited')
-    connection.delete_access_key(otherKey,bucketName + '-osf-limited')
+    connection.delete_user_policy(
+        bucketName + '-osf-limited', 'policy-' + bucketName + '-osf-limited')
+    connection.delete_access_key(otherKey, bucketName + '-osf-limited')
     connection.delete_user(bucketName + '-osf-limited')
 
-def does_bucket_exist(accessKey, secretKey,bucketName):
+
+def does_bucket_exist(accessKey, secretKey, bucketName):
     try:
-        c = S3Connection(accessKey,secretKey)
+        c = S3Connection(accessKey, secretKey)
         c.get_bucket(bucketName)
         return True
     except Exception:
         return False
 
+
 class S3Wrapper:
 
     @classmethod
-    def from_addon(cls,s3):
-        return cls(S3Connection(s3.s3_node_access_key,s3.s3_node_secret_key),s3.s3_bucket)
+    def from_addon(cls, s3):
+        return cls(S3Connection(s3.s3_node_access_key, s3.s3_node_secret_key), s3.s3_bucket)
 
     @classmethod
-    def bucket_exist(cls,s3, bucketName):
+    def bucket_exist(cls, s3, bucketName):
         m = cls.fromAddon(s3)
         try:
             m.connection.get_bucket(bucketName.lower())
@@ -121,37 +125,38 @@ class S3Wrapper:
             return False
 
     "S3 Bucket management"
-    def __init__(self, connect,bucketName):
+
+    def __init__(self, connect, bucketName):
         self.connection = connect
         self.bucket = self.connection.get_bucket(bucketName)
 
-    def create_key(self,key):
+    def create_key(self, key):
         self.bucket.new_key(key)
 
-    def post_string(self,title,contentspathToFolder=""):
+    def post_string(self, title, contentspathToFolder=""):
         k = self.bucket.new_key(pathToFolder + title)
         return k.set_contents_from_string(contents)
 
-    def get_string(self,title):
+    def get_string(self, title):
         return self.bucket.get_key(title).get_contents_as_string()
 
-    def set_metadata(self,bucket,key,metadataName,metadata):
+    def set_metadata(self, bucket, key, metadataName, metadata):
         k = self.connection.get_bucket(bucket).get_key(key)
-        return k.set_metadata(metadataName,metadata)
+        return k.set_metadata(metadataName, metadata)
 
     def get_file_list(self):
         return self.bucket.list()
 
-    def create_folder(self,name,pathToFolder=""):
+    def create_folder(self, name, pathToFolder=""):
         if not name.endswith('/'):
             name.append("/")
         k = self.bucket.new_key(pathToFolder + name)
         return k.set_contents_from_string("")
 
-    def delete_file(self,keyName):
+    def delete_file(self, keyName):
         return self.bucket.delete_key(keyName)
 
-    def get_MD5(self,keyName):
+    def get_MD5(self, keyName):
         '''returns the MD5 hash of a file.
 
         params str keyName: The name of the key to hash
@@ -159,13 +164,13 @@ class S3Wrapper:
         '''
         return self.bucket.get_key(keyName).get_md5_from_hexdigest()
 
-    def download_file_URL(self,keyName):
+    def download_file_URL(self, keyName):
         return self.bucket.get_key(keyName).generate_url(5)
 
     def get_wrapped_keys(self):
         return [S3Key(x) for x in self.get_file_list()]
 
-    def get_wrapped_key(self,keyName):
+    def get_wrapped_key(self, keyName):
         return S3Key(self.bucket.get_key(keyName))
 
     @property
@@ -176,13 +181,15 @@ class S3Wrapper:
         versions = {}
         versions_list = self.bucket.list_versions()
         for p in versions_list:
-            if isinstance(p,Key) and str(p.version_id) != 'null' and str(p.key) not in versions:
-                versions[str(p.key)] = [str(k.version_id) for k in versions_list if p.key == k.key]
+            if isinstance(p, Key) and str(p.version_id) != 'null' and str(p.key) not in versions:
+                versions[str(p.key)] = [str(k.version_id)
+                                        for k in versions_list if p.key == k.key]
         return versions
-        #TODO update this to cache results later
+        # TODO update this to cache results later
 
-    def get_file_versions(self,fileName):
-        v = self.get_version_data() #TODO store list in self and check for changes
+    def get_file_versions(self, fileName):
+        #TODO store list in self and check for changes
+        v = self.get_version_data()
         if fileName in v:
             return v[fileName]
         return []
@@ -193,11 +200,11 @@ class S3Wrapper:
         except:
             return CORSConfiguration()
 
-    def set_cors_rules(self,rules):
+    def set_cors_rules(self, rules):
         return self.bucket.set_cors(rules)
 
 
-#TODO Extend me and you bucket.setkeyclass
+# TODO Extend me and you bucket.setkeyclass
 class S3Key:
 
     def __init__(self, key):
@@ -205,7 +212,7 @@ class S3Key:
         if self.type == 'file':
             self.versions = ['current']
         else:
-            self.version =  None
+            self.version = None
 
     @property
     def name(self):
@@ -236,9 +243,9 @@ class S3Key:
         d = self._nameAsStr().split('/')
 
         if len(d) > 1 and self.type == 'file':
-            return d[len(d)-2]
+            return d[len(d) - 2]
         elif len(d) > 2 and self.type == 'folder':
-            return d[len(d)-3]
+            return d[len(d) - 3]
         else:
             return None
 
@@ -252,14 +259,16 @@ class S3Key:
             return None
         else:
             return size(int(self.s3Key.size)).lower()
+
     @property
     def lastMod(self):
         if self.type == 'folder':
             return None
         else:
-            m= re.search('(.+?)-(.+?)-(\d*)T(\d*):(\d*):(\d*)',str(self.s3Key.last_modified))
+            m = re.search(
+                '(.+?)-(.+?)-(\d*)T(\d*):(\d*):(\d*)', str(self.s3Key.last_modified))
             if m is not None:
-                return datetime(int(m.group(1)),int(m.group(2)),int(m.group(3)),int(m.group(4)),int(m.group(5)))
+                return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)))
             else:
                 return None
 
