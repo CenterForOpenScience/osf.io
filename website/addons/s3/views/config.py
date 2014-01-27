@@ -111,7 +111,7 @@ def s3_delete_access_key(*args, **kwargs):
     return True
 
 
-@must_be_contributor
+@must_be_logged_in
 @must_have_addon('s3', 'user')
 def s3_remove_user_settings(*args, **kwargs):
     user = kwargs['user']

@@ -32,16 +32,16 @@
                 addon = $this.attr('data-addon'),
                 msgElm = $this.find('.addon-settings-message');
                 $.ajax({
-                    url: nodeApiUrl + '${addon_short_name}' + '/settings/delete/' + force,
+                    url: '/api/v1/settings/s3/delete/',
                     type: 'POST',
                     contentType: 'application/json',
                     dataType: 'json',
                 }).success(function() {
-                    msgElm.text('Access key removed')
+                    msgElm.text('Keys removed')
                         .removeClass('text-danger').addClass('text-success')
                         .fadeOut(100).fadeIn();
                 }).fail(function(xhr) {
-                    var message = 'Error: Access key not removed';
+                    var message = 'Error: Keys not removed';
                     msgElm.text(message)
                         .removeClass('text-success').addClass('text-danger')
                         .fadeOut(100).fadeIn();
@@ -54,3 +54,27 @@
         ${parent.on_submit()}
     %endif
 </%def>
+
+
+##TODO make this work nicely. Somehow
+<%doc>
+<script type="text/javascript">
+     $(document).ready(function() {
+        $('#access_key').on('keydown', function() {
+            $('#removeAccess').attr('class', 'btn btn-primary addon-settings-submit');
+            $('#removeAccess').text('Update');
+            $('#${addon_short_name}').on('submit', on_submit_settings);
+            $('#secret_key').off('keydown')
+            $('#access_key').off('keydown')
+        });
+        $('#secret_key').on('keydown', function() {
+            $('#removeAccess').attr('class', 'btn btn-primary addon-settings-submit');
+            $('#removeAccess').text('Update');
+            $('#${addon_short_name}').off('submit', on_submit_settings);
+            $('#${addon_short_name}').submit(on_submit_settings);
+            $('#secret_key').off('keydown')
+            $('#access_key').off('keydown')
+        });
+    });
+</script>
+</%doc>

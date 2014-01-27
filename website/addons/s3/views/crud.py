@@ -16,19 +16,19 @@ from .utils import _page_content
 
 from website import models
 
+
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
 def s3_page(*args, **kwargs):
     user = kwargs['user']
-    if not user:
-        return {}
+    user_settings = user.get_addon('s3')
+
     node = kwargs['node'] or kwargs['project']
 
     s3 = node.get_addon('s3')
-
     data = _view_project(node, user, primary=True)
 
-    rv = _page_content(str(kwargs['pid']), s3)
+    rv = _page_content(str(kwargs['pid']), s3, user_settings)
     rv.update({
         'addon_page_js': s3.config.include_js['page'],
         'addon_page_css': s3.config.include_css['page'],

@@ -82,9 +82,9 @@ def generate_signed_url(*args, ** kwargs):
     #/blackhttpmagick
 
 
-def _page_content(pid, s3):
+def _page_content(pid, s3, user_settings):
     # TODO create new bucket if not found  inform use/ output error?
-    if not pid or not s3.bucket or not s3.node_auth:
+    if not pid or not s3.bucket or not s3.node_auth or not user_settings or not user_settings.has_auth:
         return {}
     # try:
     # FIX ME SOME HOW
