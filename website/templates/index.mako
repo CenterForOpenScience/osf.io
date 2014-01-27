@@ -14,7 +14,17 @@
 
           <!-- Wrapper for slides -->
           <div class="carousel-inner" style="height: 430px"  >
-            <div class="item active row"  data-pause="hover" style="padding: 60px 40px 60px 40px;">
+            <div class="item active row" data-pause="hover" style="padding: 60px 40px 60px 40px" >
+                <div class="col-md-12 col-md-offset-1" class = "lead">
+                     <p style = "font-size: 40px; padding-left: 42px" ><strong><a  href="https://osf.io/wfc6u/">Featured OSF Project</a></strong></p>
+                    <img src="/static/img/psichi_seal.jpg" width="150px"style="padding-left: 50px">
+                    <img src="/static/img/potw_Jan27.png" width="600px" style="padding-left:30px">
+                     <div class="col-md-9" style="font-size: 16px; padding-left: 40px; padding-top: 20px"  class="lead">
+                         <p>CREP is a large-scale replication effort seeking undergraduate participation. Many resources, including funding, are available. <a href="https://osf.io/wfc6u/">Visit their project page</a> to see more.</p>
+                     </div>
+                </div>
+            </div>
+            <div class="item row"  data-pause="hover" style="padding: 60px 40px 60px 40px;">
                 <div class="col-md-12 col-sm-offset-2" style = "font-size: 50px" class = "lead">
                     <p><strong>OSF's first add-on:</strong><br> <a href="/getting-started#github">Connect with your GitHub repos</p></a>
                     <div class="row" style="padding-top: 20px">
@@ -57,24 +67,8 @@
                 <a class="btn btn-primary span3 text-center" href="/getting-started" style="font-size: 20px">Getting Started</a>
                 <a class="btn btn-primary span3 text-center" href="/explore/activity/" style="font-size: 20px">Browse Projects</a>
                 </div>
-                ##<div class="col-md-3 col-md-offset-4" style="padding-top: 25px">
-                ##    <table>
-                ##    <tr>
-                ##    <td><a class="btn btn-primary navbar-btn" href="/getting-started" style="font-size: 20px">Getting Started</a></td>
-                ##    <td style="padding-left: 20px"><a class="btn btn-primary navbar-btn" href="/getting-started" style="font-size: 20px">Getting Started</a></td>
-                ##    </tr>
-                ##    </table>
-                ##</div>
             </div>
-            <div class="item row" data-pause="hover" style="padding: 60px 40px 60px 40px" >
-                <div class="col-md-12 col-md-offset-1" class = "lead">
-                     <p style = "font-size: 40px; padding-left: 42px" ><strong><a  href="https://osf.io/awr6j/">Featured OSF Project</a></strong></p>
-                    <img src="/static/img/potw_Jan1.png" width="800px"style="padding-left: 25px">
-                     <div class="col-md-9" style="font-size: 16px; padding-left: 40px; padding-top: 20px"  class="lead">
-                         <p>Take a look at Robert Calin-Jageman and Tracy Caldwell's submission to the <a href="https://osf.io/hxeza/wiki/home/">special issue of Social Psychology</a>. The pair took full advantage of OSF features, building a project that is comprehensive in its content. There are data and materials available as well as adept use of the wiki and registration features. <a  href="https://osf.io/awr6j/">Visit their project page</a> to see more.</p>
-                     </div>
-                </div>
-            </div>
+
 
 
           </div>
