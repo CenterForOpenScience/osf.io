@@ -3,7 +3,7 @@
 %if user_has_auth:
     <div class="form-group">
         <label for="s3_bucket">Bucket Name</label>
-        <input class="form-control" id="s3_bucket" name="s3_bucket" value="${s3_bucket}" ${'disabled' if disabled or node_auth else ''}/>
+        <input class="form-control" id="s3_bucket" name="s3_bucket" value="${bucket}" ${'disabled' if disabled or node_auth else ''}/>
     </div>
 %else:
     Amazon Simple Storage Service add-on is not configured properly.
@@ -28,8 +28,9 @@
     %endif
 </%def>
 
-##TODO this should be in an if and in an external js file
+##TODO in an external js file
 
+##TODO Load this after successful submit....
 
 <%def name="on_submit()">
     %if node_auth:

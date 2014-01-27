@@ -34,7 +34,7 @@ def s3_user_settings(*args, **kwargs):
 
     if changed:
         if not has_access(s3_access_key, s3_secret_key):
-            error_message = ('Looks like your creditials are incorrect '
+            error_message = ('Looks like your creditials are incorrect. '
                              'Could you have mistyped them?')
             return {'message': error_message}, 400
 
@@ -64,7 +64,7 @@ def s3_settings(*args, **kwargs):
     if s3_addon and s3_addon.owner != user:
         raise HTTPError(http.BAD_REQUEST)
 
-    bucket = request.json.get('bucket', '')
+    bucket = request.json.get('s3_bucket', '')
 
     if not bucket or not does_bucket_exist(s3_addon.access_key, s3_addon.secret_key, bucket):
         error_message = ('Looks like this bucket does not exist.'

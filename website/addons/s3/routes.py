@@ -9,11 +9,10 @@ from website.addons.s3 import views
 
 #TODO clean me up redo naming scheme
 
-settings_routes = {
+node_settings_routes = {
     'rules': [
         Rule([
             '/project/<pid>/s3/settings/',
-            '/api/v1/project/<pid>/s3/settings/',
             '/project/<pid>/node/<nid>/s3/settings/',
         ], 'post', views.config.s3_settings, json_renderer),
         Rule([
@@ -21,13 +20,20 @@ settings_routes = {
             '/api/v1/project/<pid>/s3/settings/delete/',
             '/project/<pid>/node/<nid>/s3/settings/delete/',
         ], 'post', views.config.s3_delete_access_key, json_renderer),
+    ],
+    'prefix': '/api/v1',
+}
+
+user_settings_routes = {
+    'rules': [
         Rule([
-            '/user/s3/settings/',
+            '/settings/s3/',
         ], 'post', views.config.s3_user_settings, json_renderer),
         Rule([
-            '/user/s3/settings/delete/',
+            '/settings/s3/delete/',
         ], 'post', views.config.s3_remove_user_settings, json_renderer),
     ],
+    'prefix': '/api/v1',
 }
 
 page_routes = {
@@ -58,4 +64,5 @@ page_routes = {
             '/project/<pid>/node/<nid>/s3/getsigned/'
         ],'post', views.utils.generate_signed_url, json_renderer),
     ],
+    'prefix': '/api/v1',
 }

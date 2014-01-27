@@ -7,8 +7,6 @@ Created on Jan 7, 2014
 
 """
 
-import json
-
 from framework import fields
 
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
@@ -22,11 +20,15 @@ class AddonS3UserSettings(AddonUserSettingsBase):
     def to_json(self, user):
         rv = super(AddonS3UserSettings, self).to_json(user)
         rv.update({
-            'access_key': self.access_key,
-            'secret_key': self.secret_key,
-            'user_has_auth': True if self.access_key and self.secret_key else False,
+            'access_key': self.access_key or '',
+            'secret_key': self.secret_key or '',
+            'has_auth': True if self.access_key and self.secret_key else False,
         })
         return rv
+
+    @property
+    def has_auth(self):
+        return True if self.access_key and self.secret_key else False
 
 
 class AddonS3NodeSettings(AddonNodeSettingsBase):
@@ -47,10 +49,10 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             'access_key': self.node_access_key or '',
             'secret_key': self.node_secret_key or '',
             'user_has_auth': False,
-            'node_auth': True if self.node_access_key and self.node_secret_key else False
+            'node_auth': self.node_auth,
         })
         if s3_user_settings:
-            rv['user_has_auth'] = True if s3_user_settings.user_has_auth else False
+            rv['user_has_auth'] = True if s3_user_settings.has_auth else False
 
         return rv
 

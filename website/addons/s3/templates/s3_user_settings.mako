@@ -8,7 +8,7 @@
     <label for="s3Addon">Secret Key</label>
     <input type="password" class="form-control" id="secret_key" name="secret_key" value="${secret_key}" ${'disabled' if disabled else ''} />
 </div>
-## if use has other else delete key
+
 <%def name="submit_btn()">
  	%if user_has_auth:
         <button id="removeAccess" class="btn btn-danger">
@@ -21,3 +21,4 @@
 	%endif
 </%def>
 ##TODO create a remove access key
+##Update button? maybe?
