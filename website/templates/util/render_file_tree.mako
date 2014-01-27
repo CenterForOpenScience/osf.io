@@ -19,6 +19,9 @@ $(document).ready(function() {
     var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
         var spacer = "<span style='display:inline-block;height:1px;width:" + (18 * dataContext["indent"]) + "px'></span>";
         var link = value;
+        if (dataContext.iconUrl) {
+            link = '<img class="hg-addon-icon" src="' + dataContext.iconUrl + '" /> ' + link;
+        }
         if (dataContext.nameExtra) {
             link += ' ' + dataContext.nameExtra;
         }
