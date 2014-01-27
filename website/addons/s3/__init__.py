@@ -1,10 +1,10 @@
 from .model import AddonS3UserSettings, AddonS3NodeSettings
-from .routes import node_settings_routes, user_settings_routes, page_routes
+from .routes import node_settings_routes, user_settings_routes, page_routes, crud_routes
 
 USER_SETTINGS_MODEL = AddonS3UserSettings
 NODE_SETTINGS_MODEL = AddonS3NodeSettings
 
-ROUTES = [node_settings_routes, user_settings_routes, page_routes]
+ROUTES = [node_settings_routes, user_settings_routes, page_routes, crud_routes]
 
 SHORT_NAME = 's3'
 FULL_NAME = 'Amazon Simple Storage Service'

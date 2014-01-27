@@ -1,5 +1,7 @@
 import httplib as http
 
+import datetime
+
 from framework import request
 from framework.exceptions import HTTPError
 
@@ -12,11 +14,11 @@ from website.addons.s3.api import S3Wrapper
 
 from .utils import _page_content
 
+from website import models
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
 def s3_page(*args, **kwargs):
-
     user = kwargs['user']
     if not user:
         return {}
@@ -58,6 +60,18 @@ def s3_delete(*args, **kwargs):
     dfile = request.json.get('keyPath')
     connect = S3Wrapper.from_addon(s3)
     connect.delete_file(dfile)
+    node.add_log(
+        action='s3_' + models.NodeLog.FILE_REMOVED,
+        params={
+            'project': node.parent_id,
+            'node': node._primary_key,
+            'bucket': s3.bucket,
+            'path': dfile,
+        },
+        user=kwargs['user'],
+        api_key=None,
+        log_date=datetime.datetime.utcnow(),
+    )
     return {}
 
 
@@ -94,3 +108,17 @@ def s3_new_folder(*args, ** kwargs):
     connect = S3Wrapper.from_addon(s3)
     connect.createFolder(folderPath)
     return {}
+
+#TODO Fix Me does not work because coming from main page?
+@must_be_contributor_or_public
+@must_have_addon('s3', 'node')
+def download(*args, **kwargs):
+
+    node = kwargs['node'] or kwargs['project']
+    s3 = node.get_addon('s3')
+    keyName = request.json.get('key', '')
+    assert 0,keyName
+    if keyName is None:
+        raise HTTPError(http.NOT_FOUND)
+    connect = S3Wrapper.from_addon(s3)
+    return redirect(connect.download_file_URL(keyName))

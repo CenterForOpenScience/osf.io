@@ -39,12 +39,8 @@ user_settings_routes = {
     'prefix': '/api/v1',
 }
 
-page_routes = {
+crud_routes = {
     'rules': [
-        Rule([
-            '/project/<pid>/s3/',
-            '/project/<pid>/node/<nid>/s3/',
-        ], 'get', views.crud.s3_page, OsfWebRenderer('../addons/s3/templates/s3_page.mako')),
         Rule([
             '/project/<pid>/s3/fetchurl/<key>',
             '/project/<pid>/node/<nid>/s3/fetchurl/<key>',
@@ -55,10 +51,6 @@ page_routes = {
             '/project/<pid>/node/<nid>/s3/delete/',
         ], 'delete', views.crud.s3_delete, json_renderer),
         Rule([
-            '/project/<pid>/s3/render/<key>',
-            '/project/<pid>/node/<nid>/s3/render/<key>'
-        ], 'get', views.crud.render_file, OsfWebRenderer('../addons/s3/templates/s3_render.mako')),
-        Rule([
             '/project/<pid>/s3/newfolder/<path>',
             '/project/<pid>/node/<nid>/s3/newfolder/<path>'
         ], 'get', views.crud.s3_new_folder, json_renderer),
@@ -66,5 +58,23 @@ page_routes = {
             '/project/<pid>/s3/getsigned/',
             '/project/<pid>/node/<nid>/s3/getsigned/'
         ], 'post', views.utils.generate_signed_url, json_renderer),
+        Rule([
+            '/project/<pid>/s3/download/',
+            '/project/<pid>/node/<nid>/s3/download/'
+        ], 'post', views.crud.download, json_renderer),
+    ],
+    'prefix': '/api/v1',
+}
+
+page_routes = {
+    'rules': [
+        Rule([
+            '/project/<pid>/s3/',
+            '/project/<pid>/node/<nid>/s3/',
+        ], 'get', views.crud.s3_page, OsfWebRenderer('../addons/s3/templates/s3_page.mako')),
+        Rule([
+            '/project/<pid>/s3/render/<key>',
+            '/project/<pid>/node/<nid>/s3/render/<key>'
+        ], 'get', views.crud.render_file, OsfWebRenderer('../addons/s3/templates/s3_render.mako')),
     ]
 }
