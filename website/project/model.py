@@ -315,6 +315,23 @@ class Node(GuidStoredObject, AddonModelMixin):
     def can_view(self, user, api_key=None):
         return self.is_public or self.can_edit(user, api_key)
 
+    @property
+    def has_files(self):
+        """Check whether the node has any add-ons or components that define
+        the files interface. Overrides AddonModelMixin::has_files to include
+        recursion over child nodes.
+
+        :return bool: Has files add-ons
+
+        """
+        rv = super(Node, self).has_files
+        if rv:
+            return rv
+        for child in self.nodes:
+            if child.has_files:
+                return True
+        return False
+
     def save(self, *args, **kwargs):
 
         first_save = not self._is_loaded
@@ -1140,8 +1157,14 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
         return True
 
-    def callback(self, callback, *args, **kwargs):
+    def callback(self, callback, recursive=False, *args, **kwargs):
+        """Invoke callbacks of attached add-ons and collect messages.
 
+        :param str callback: Name of callback method to invoke
+        :param bool recursive: Apply callback recursively over nodes
+        :return list: List of callback messages
+
+        """
         messages = []
 
         for addon in self.get_addons():
@@ -1149,6 +1172,14 @@ class Node(GuidStoredObject, AddonModelMixin):
             message = method(self, *args, **kwargs)
             if message:
                 messages.append(message)
+
+        if recursive:
+            for child in self.nodes:
+                messages.extend(
+                    child.callback(
+                        callback, recursive, *args, **kwargs
+                    )
+                )
 
         return messages
 

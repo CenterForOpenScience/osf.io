@@ -281,7 +281,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         nodeApiUrl + 'get_editable_children/',
         {},
         function(result) {
-            $.each(result['children'], function(idx, child) {
+            $.each(result['children'] || [], function(idx, child) {
                 child['margin'] = NODE_OFFSET + child['indent'] * NODE_OFFSET + 'px';
             });
             self.nodes(result['children']);

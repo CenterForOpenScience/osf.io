@@ -14,6 +14,8 @@ from website.project.views.node import _view_project
 def _get_dummy_container(node, user, parent=None):
     """Create HGrid JSON for a dummy component container.
 
+    :return dict: HGrid-formatted dummy container
+
     """
     can_view = node.can_view(user)
     return {
@@ -36,17 +38,22 @@ def _collect_file_trees(node, user, parent='null', **kwargs):
     dummy containers for each child of the target node, and for each add-on
     implementing HGrid views.
 
+    :return list: List of HGrid-formatted file trees
+
     """
     grid_data = []
 
+    # Collect add-on file trees
     for addon in node.get_addons():
         if addon.config.has_hgrid_files:
-            grid_data.append(
-                addon.config.get_hgrid_dummy(
-                    addon, user, parent, **kwargs
-                )
+            dummy = addon.config.get_hgrid_dummy(
+                addon, user, parent, **kwargs
             )
+            # Skip if dummy folder is falsy
+            if dummy:
+                grid_data.append(dummy)
 
+    # Collect component file trees
     for child in node.nodes:
         container = _get_dummy_container(child, user, parent)
         grid_data.append(container)
@@ -56,6 +63,8 @@ def _collect_file_trees(node, user, parent='null', **kwargs):
 
 def _collect_tree_js(node):
     """Collect JavaScript includes for all add-ons implementing HGrid views.
+
+    :return list: List of JavaScript include paths
 
     """
     scripts = []

@@ -43,6 +43,10 @@ def github_branch_widget(branches, branch, sha):
 
 def github_dummy_folder(node_settings, user, parent=None, **kwargs):
 
+    # Quit if no repo linked
+    if not node_settings.user or not node_settings.repo:
+        return
+
     connection = GitHub.from_settings(node_settings.user_settings)
 
     rv = {

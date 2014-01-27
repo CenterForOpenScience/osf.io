@@ -101,14 +101,14 @@ var myGrid = HGrid.create({
     urlAdd: function(item) {
         if (item) {
             return item.uploadUrl;
-        } else {
-            return contextVars.uploadUrl;
         }
     },
-    url: gridData[0].uploadUrl,
+    // Hack: HGrid crashes if no URL provided; use current URL as a placeholder
+    // if no URL given in gridData.
+    url: gridData[0].uploadUrl || window.location.href,
     columns:[
         {id: 'name', name: 'Name', field: 'name', width: 550, cssClass: 'cell-title', formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
-        {id: 'size', name: 'Size', field: 'size', width: 90, formatter: UploadBars, sortable: true, formatter: PairFormatter}
+        {id: 'size', name: 'Size', field: 'size', width: 90, sortable: true, formatter: PairFormatter}
     ],
     enableCellNavigation: false,
     navigation: false,

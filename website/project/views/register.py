@@ -94,7 +94,7 @@ def project_before_register(*args, **kwargs):
     user = kwargs['user']
     api_key = get_api_key()
 
-    prompts = node.callback('before_register', user)
+    prompts = node.callback('before_register', node, user)
 
     return {'prompts': prompts}
 

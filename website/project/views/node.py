@@ -538,7 +538,7 @@ def get_editable_children(*args, **kwargs):
     user = get_current_user()
 
     if not node_to_use.can_edit(user):
-        return redirect('/login/?next={0}'.format(request.path))
+        return
 
     children = _get_children(node_to_use, user)
 

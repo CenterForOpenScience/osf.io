@@ -966,6 +966,22 @@ class TestProject(DbTestCase):
         assert_equal(self.project.date_modified, self.project.logs[-1].date)
         assert_not_equal(self.project.date_modified, self.project.date_created)
 
+    def test_has_files(self):
+        assert_true(self.project.has_files)
+
+    def test_has_files_false(self):
+        self.project.delete_addon('osffiles')
+        assert_false(self.project.has_files)
+
+    def test_has_files_recursive(self):
+        child = NodeFactory(
+            category='hypothesis',
+            creator=self.user,
+            project=self.project,
+        )
+        self.project.delete_addon('files')
+        assert_true(child.has_files)
+        assert_true(self.project.has_files)
 
 class TestForkNode(DbTestCase):
 
