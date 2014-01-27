@@ -1,11 +1,8 @@
-import mock
-import unittest
 from nose.tools import *
 
 from tests.base import DbTestCase
 from tests.factories import UserFactory, ProjectFactory
 
-from website.addons.s3 import settings as s3_settings
 from website.addons.s3.model import AddonS3NodeSettings, AddonS3UserSettings
 
 
