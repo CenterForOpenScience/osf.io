@@ -37,23 +37,23 @@ class TestS3Views(DbTestCase):
     def test_s3_page_no_user(self):
         s3 = AddonS3NodeSettings(user=None, s3_bucket='lul')
         res = views._page_content('873p', s3)
-        assert_equals(res,{})
+        assert_equals(res, {})
 
     def test_s3_page_no_pid(self):
         s3 = AddonS3NodeSettings(user='jimbob', s3_bucket='lul')
         res = views._page_content(None, s3)
-        assert_equals(res,{})
+        assert_equals(res, {})
 
     def test_s3_page_empty_pid(self):
         s3 = AddonS3NodeSettings(user='jimbob', s3_bucket='lul')
         res = views._page_content('', s3)
-        assert_equals(res,{})
+        assert_equals(res, {})
 
     def test_s3_page_no_auth(self):
         s3 = AddonS3NodeSettings(user='jimbob', s3_bucket='lul')
         s3.s3_node_access_key = ""
         res = views._page_content('', s3)
-        assert_equals(res,{})
+        assert_equals(res, {})
 
     @mock.patch('website.addons.s3.views.does_bucket_exist')
     @mock.patch('website.addons.s3.views._s3_create_access_key')
@@ -77,7 +77,7 @@ class TestS3Views(DbTestCase):
     @mock.patch('website.addons.s3.views.create_limited_user')
     def test_s3_create_access_key(self, mock_create_limited_user):
         mock_create_limited_user.return_value = {'access_key_id': 'Boo', 'secret_access_key': 'Riley'}
-        user_settings = AddonS3UserSettings(user='Aticus-killing')
+        user_settings = AddonS3UserSettings(user='Aticus-killing-mocking')
         assert_true(views._s3_create_access_key(user_settings, self.node_settings))
 
 
