@@ -552,10 +552,10 @@ var HGrid = {
                     myDropzone.options.dropDestination = dropHighlight.uid;
                 }
                 else{
-                    dropHighlight = hGrid.getItemByValue(hGrid.data, item['parent_uid'], 'uid');
-                    myDropzone.options.dropDestination = dropHighlight['uid'];
+                    dropHighlight = hGrid.getItemByValue(hGrid.data, item.parent_uid, 'uid');
+                    myDropzone.options.dropDestination = dropHighlight.uid;
                 }
-                if(dropHighlight['permission']=="true" || typeof dropHighlight['permission'] == 'undefined'){
+                if (dropHighlight.permission === true || typeof(dropHighlight.permission) === 'undefined') {
                     hGrid.draggerGuide(dropHighlight);
                 }
             }
@@ -564,7 +564,7 @@ var HGrid = {
                     // if urlAdd is a function, call it, passing in the
                     // item
                     // NOTE(sloria): This is modified from Hgrid master
-                    myDropzone.options.url = hGrid.options.urlAdd(item);
+                    myDropzone.options.url = hGrid.options.urlAdd(dropHighlight);
                 } else {
                     myDropzone.options.url = hGrid.options['urlAdd'][myDropzone.options.dropDestination];
                 };
@@ -704,13 +704,13 @@ var HGrid = {
                             spliceId = comp['id']+1;
                             if(asc){
                                 if(compValue > itemValue){
-                                    spliceId = comp['id'];
+                                    spliceId = _this.data.indexOf(comp);
                                     break;
                                 }
                             }
                             else{
                                 if(compValue < itemValue){
-                                    spliceId = comp['id'];
+                                    spliceId = _this.data.indexOf(comp);
                                     break;
                                 }
                             }
@@ -723,7 +723,7 @@ var HGrid = {
                 else{
                     spliceId = parent['id']+1;
                 }
-                _this.data.splice(spliceId, 0,item);
+                _this.data.splice(spliceId, 0, item);
                 _this.prepJava(_this.data);
                 _this.Slick.dataView.setItems(_this.data);
                 _this.Slick.grid.setSelectedRows([]);
@@ -1319,10 +1319,10 @@ var HGrid = {
                     // Collapse folders by default
                     if (item.type === "folder") {
                         item._collapsed = true;
-                    };
+                    }
                     _this.addItem(item);
                 });
-            };
+            }
             parentItem._loaded = true;
             done && done(_this.data);
         });

@@ -1,6 +1,7 @@
 from .model import AddonBitbucketUserSettings, AddonBitbucketNodeSettings
 from .routes import settings_routes, page_routes
 
+MODELS = [AddonBitbucketUserSettings, AddonBitbucketNodeSettings]
 USER_SETTINGS_MODEL = AddonBitbucketUserSettings
 NODE_SETTINGS_MODEL = AddonBitbucketNodeSettings
 
