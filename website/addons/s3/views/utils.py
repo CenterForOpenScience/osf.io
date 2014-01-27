@@ -104,9 +104,9 @@ def _page_content(pid, s3, user_settings):
     return rv
 
 
-def _s3_create_access_key(s3_user, s3_node):
+def _s3_create_access_key(s3_user, s3_node, pid):
     u = create_limited_user(
-        s3_user.access_key, s3_user.secret_key, s3_node.bucket)
+        s3_user.access_key, s3_user.secret_key, s3_node.bucket, pid)
 
     if u:
         s3_node.node_access_key = u['access_key_id']

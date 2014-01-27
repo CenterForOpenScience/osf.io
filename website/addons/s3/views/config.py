@@ -52,8 +52,7 @@ def s3_settings(*args, **kwargs):
 
     # This should never happen....
     if not user:
-        error_message = ''
-        return {'message': error_message}, 400
+        return 400
 
     node = kwargs['node_addon']
     s3_addon = user.get_addon('s3')
@@ -79,7 +78,7 @@ def s3_settings(*args, **kwargs):
         node.save()
 
         # TODO create access key here figure out way to remove it later?
-        if not _s3_create_access_key(s3_addon, node):
+        if not _s3_create_access_key(s3_addon, node, str(kwargs['pid'])):
                     error_message = ''
                     return {'message': error_message}, 400
 
@@ -102,7 +101,7 @@ def s3_delete_access_key(*args, **kwargs):
     # delete user from amazons data base
     # boto giveth and boto taketh away
     remove_user(s3_user.access_key, s3_user.secret_key,
-                s3_node.bucket, s3_node.node_access_key)
+                s3_node.bucket, s3_node.node_access_key, str(kwargs['pid']))
 
     # delete our access and secret key
     s3_node.node_access_key = ''

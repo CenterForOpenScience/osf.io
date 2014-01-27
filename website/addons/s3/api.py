@@ -26,7 +26,7 @@ def has_access(access_key, secret_key):
         return False
 
 
-def create_limited_user(accessKey, secretKey, bucketName):
+def create_limited_user(accessKey, secretKey, bucketName, pid):
     policy = {
         "Version": "2012-10-17",
         "Statement": [
@@ -56,25 +56,21 @@ def create_limited_user(accessKey, secretKey, bucketName):
         ]
     }
     connection = IAMConnection(accessKey, secretKey)
-    try:
-        connection.create_user(bucketName + '-osf-limited')
-    except Exception:
-        pass
-        # user has been created already proceed normally
-        # TODO update me I may cause BIG problems
+    connection.create_user(bucketName + '-osf-limited-' + pid)
+    #This might need a bit more try catching
     connection.put_user_policy(
-        bucketName + '-osf-limited', 'policy-' + bucketName + '-osf-limited', json.dumps(policy))
-    return connection.create_access_key(bucketName + '-osf-limited')['create_access_key_response']['create_access_key_result']['access_key']
+        bucketName + '-osf-limited-' + pid, 'policy-' + bucketName + '-osf-limited-' + pid, json.dumps(policy))
+    return connection.create_access_key(bucketName + '-osf-limited-' + pid)['create_access_key_response']['create_access_key_result']['access_key']
 
 # TODO Add PID
 
 
-def remove_user(accessKey, secretKey, bucketName, otherKey):
+def remove_user(accessKey, secretKey, bucketName, otherKey, pid):
     connection = IAMConnection(accessKey, secretKey)
-    connection.delete_user_policy(
-        bucketName + '-osf-limited', 'policy-' + bucketName + '-osf-limited')
-    connection.delete_access_key(otherKey, bucketName + '-osf-limited')
-    connection.delete_user(bucketName + '-osf-limited')
+    connection.delete_user_policy(bucketName + '-osf-limited-' + pid, 'policy-' + bucketName + '-osf-limited-' + pid)
+        #bucketName + '-osf-limited', 'policy-' + bucketName + '-osf-limited-' + pid)
+    connection.delete_access_key(otherKey, bucketName + '-osf-limited-' + pid)
+    connection.delete_user(bucketName + '-osf-limited-' + pid)
 
 
 def does_bucket_exist(accessKey, secretKey, bucketName):
