@@ -30,9 +30,6 @@ class TestCallbacks(DbTestCase):
         self.node_settings.s3_bucket = 'Sheer-Heart-Attack'
         self.node_settings.save()
 
-    def test_something(self):
-        assert_equals(1, 1)
-
     def test_node_settings_empty_bucket(self):
         s3 = AddonS3NodeSettings()
         assert_equals(s3.to_json(self.project.creator)['has_bucket'], 0)

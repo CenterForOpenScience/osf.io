@@ -8,11 +8,12 @@ from website.project.decorators import must_have_addon
 from framework.auth import must_be_logged_in
 
 from website.addons.s3.api import S3Wrapper
-from website.addons.s3.api import has_access, does_bucket_exist
+from website.addons.s3.api import has_access, does_bucket_exist,remove_user
 
 from website.addons.s3.utils import adjust_cors
 
 from .utils import _s3_create_access_key
+
 
 @must_be_logged_in
 def s3_user_settings(*args, **kwargs):
@@ -32,8 +33,8 @@ def s3_user_settings(*args, **kwargs):
     )
 
     if changed:
-        if not has_access(s3_access_key,s3_secret_key):
-            error_message = ('Looks like your creditials are incorrect'
+        if not has_access(s3_access_key, s3_secret_key):
+            error_message = ('Looks like your creditials are incorrect '
                              'Could you have mistyped them?')
             return {'message': error_message}, 400
 
@@ -51,7 +52,7 @@ def s3_settings(*args, **kwargs):
 
     user = kwargs['user']
 
-    #This should never happen....
+    # This should never happen....
     if not user:
         error_message = ''
         return {'message': error_message}, 400
@@ -79,10 +80,44 @@ def s3_settings(*args, **kwargs):
         node.s3_bucket = s3_bucket
         node.save()
 
-        #TODO create access key here figure out way to remove it later?
+        # TODO create access key here figure out way to remove it later?
         if not _s3_create_access_key(s3_addon, node):
                     error_message = ''
                     return {'message': error_message}, 400
 
-        #Last but no least make sure we can upload (must be last) (still no least(but actually))
+        # Last but no least make sure we can upload (must be last) (still no
+        # least(but actually))
         adjust_cors(S3Wrapper.from_addon(node))
+
+
+@must_be_contributor
+@must_have_addon('s3', 'node')
+def s3_delete_access_key(*args, **kwargs):
+    user = kwargs['user']
+
+    s3_node = kwargs['node_addon']
+    s3_user = user.get_addon('s3')
+
+    # delete user from amazons data base
+    # boto giveth and boto taketh away
+    remove_user(s3_user.access_key, s3_user.secret_key,
+                s3_node.s3_bucket, s3_node.s3_node_access_key)
+
+    # delete our access and secret key
+    s3_node.s3_node_access_key = ''
+    s3_node.s3_node_secret_key = ''
+    s3_node.node_auth = 0
+    s3_node.save()
+
+
+@must_be_contributor
+@must_have_addon('s3', 'user')
+def s3_remove_user_settings(*args, **kwargs):
+    user = kwargs['user']
+    user_settings = user.get_addon('s3')
+
+    user_settings.access_key = ''
+    user_settings.secret_key = ''
+    user_settings.user_has_auth = False
+    user_settings.save()
+    return True

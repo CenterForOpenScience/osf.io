@@ -7,6 +7,8 @@ from website.routes import OsfWebRenderer
 
 from website.addons.s3 import views
 
+#TODO clean me up redo naming scheme
+
 settings_routes = {
     'rules': [
         Rule([
@@ -18,10 +20,13 @@ settings_routes = {
             '/project/<pid>/s3/settings/delete/',
             '/api/v1/project/<pid>/s3/settings/delete/',
             '/project/<pid>/node/<nid>/s3/settings/delete/',
-        ], 'post', views.crud.s3_delete_access_key, json_renderer),
+        ], 'post', views.config.s3_delete_access_key, json_renderer),
         Rule([
             '/user/s3/settings/',
         ], 'post', views.config.s3_user_settings, json_renderer),
+        Rule([
+            '/user/s3/settings/delete/',
+        ], 'post', views.config.s3_remove_user_settings, json_renderer),
     ],
 }
 

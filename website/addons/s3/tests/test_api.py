@@ -4,7 +4,7 @@ import unittest
 from nose.tools import *
 from tests.factories import ProjectFactory, UserFactory
 from tests.base import DbTestCase
-from .utils import create_mock_s3
+from utils import create_mock_s3
 from website.addons.s3 import api
 
 

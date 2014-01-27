@@ -9,42 +9,8 @@ from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 
 from website.addons.s3.api import S3Wrapper
-from website.addons.s3.api import remove_user
 
 from .utils import _page_content
-
-
-@must_be_contributor
-@must_have_addon('s3', 'node')
-def s3_delete_access_key(*args, **kwargs):
-    user = kwargs['user']
-
-    s3_node = kwargs['node_addon']
-    s3_user = user.get_addon('s3')
-
-    # delete user from amazons data base
-    # boto giveth and boto taketh away
-    remove_user(s3_user.access_key, s3_user.secret_key,
-                s3_node.s3_bucket, s3_node.s3_node_access_key)
-
-    # delete our access and secret key
-    s3_node.s3_node_access_key = ''
-    s3_node.s3_node_secret_key = ''
-    s3_node.node_auth = 0
-    s3_node.save()
-
-
-@must_be_contributor
-@must_have_addon('s3', 'user')
-def s3_remove_user_settings(*args, **kwargs):
-    user = kwargs['user']
-    user_settings = user.get_addon('s3')
-
-    user_settings.access_key = ''
-    user_settings.secret_key = ''
-    user_settings.user_has_auth = False
-    user_settings.save()
-    return True
 
 
 @must_be_contributor_or_public
