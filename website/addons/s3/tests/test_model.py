@@ -5,9 +5,9 @@ from nose.tools import *
 from tests.base import DbTestCase
 from tests.factories import UserFactory, ProjectFactory
 
-from website.addons.base import AddonError
 from website.addons.s3 import settings as s3_settings
 from website.addons.s3.model import AddonS3NodeSettings, AddonS3UserSettings
+
 
 class TestCallbacks(DbTestCase):
 
@@ -34,7 +34,7 @@ class TestCallbacks(DbTestCase):
         self.node_settings.save()
 
     def test_something(self):
-        assert_equals(1,1)
+        assert_equals(1, 1)
 
     def test_node_settings_empty_bucket(self):
         s3 = AddonS3NodeSettings()
@@ -50,4 +50,11 @@ class TestCallbacks(DbTestCase):
         assert_equals(s3.to_json(self.project.creator)['user_has_auth'], 1)
 
     def test_node_settings_moar_use(self):
-        assert_equals(self.node_settings.to_json(self.project.creator)['user_has_auth'],1)
+        assert_equals(self.node_settings.to_json(
+            self.project.creator)['user_has_auth'], 1)
+
+    def test_user_settings(self):
+        s3 = AddonS3UserSettings()
+        s3.access_key = "Sherlock"
+        s3.secret_key = "lives"
+        assert_equals(s3.to_json(self.project.creator)['user_has_auth'], 1)
