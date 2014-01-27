@@ -150,20 +150,21 @@
     var nodeApiUrl = '${node['api_url']}';
 
     $(document).ready(function(){
-        $logScope = $("#logScope");
+        $logScope = $('#logScope');
         if ($logScope.length > 0) {
-            progressBar = $("#logProgressBar")
+            progressBar = $('#logProgressBar');
             progressBar.show();
         }
         // Get project data from the server and initiate the ProjectViewModel
         $.ajax({
+            type: 'get',
             url: nodeApiUrl,
-            type: "get", contentType: "application/json",
-            dataType: "json",
+            contentType: 'application/json',
+            dataType: 'json',
             cache: false,
             success: function(data){
                 // Initialize ProjectViewModel with returned data
-                ko.applyBindings(new ProjectViewModel(data), $("#projectScope")[0]);
+                ko.applyBindings(new ProjectViewModel(data), $('#projectScope')[0]);
 
                 // Initiate AddContributorViewModel
                 var $addContributors = $('#addContributors');
@@ -184,7 +185,7 @@
                     // Create an array of Log model objects from the returned log data
                     var logModelObjects = createLogs(logs);
                     ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
-                };
+                }
             }
         });
     });
@@ -193,6 +194,8 @@
 % if node.get('is_public') and node.get('piwik_site_id'):
 <script type="text/javascript">
     $(function() {
+        // Note: Don't use cookies for global site ID; cookies will accumulate
+        // indefinitely and overflow uwsgi header buffer.
         trackPiwik("${ piwik_host }", ${ node['piwik_site_id'] });
     });
 </script>
