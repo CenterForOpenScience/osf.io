@@ -30,52 +30,27 @@ def create_limited_user(accessKey, secretKey, bucketName):
     policy = {
         "Version": "2012-10-17",
         "Statement": [
+        {
+        "Sid": "Stmt1390848602000",
+        "Effect": "Deny",
+        "Action": [
+        "s3:DeleteBucket"
+        ],
+            "Resource": [
+                "arn:aws:s3:::{bucketname}".format(bucketname=bucketName)
+            ]
+        },
             {
-                "Sid": "Stmt1389718377000",
+                "Sid": "Stmt1390848639000",
                 "Effect": "Allow",
                 "Action": [
-        "s3:AbortMultipartUpload",
-        "s3:CreateBucket",
-        "s3:DeleteBucketPolicy",
-        "s3:DeleteBucketWebsite",
-        "s3:DeleteObject",
-        "s3:DeleteObjectVersion",
-        "s3:GetBucketAcl",
-        "s3:GetBucketLocation",
-        "s3:GetBucketLogging",
-        "s3:GetBucketNotification",
-        "s3:GetBucketPolicy",
-        "s3:GetBucketRequestPayment",
-        "s3:GetBucketTagging",
-        "s3:GetBucketVersioning",
-        "s3:GetBucketWebsite",
-        "s3:GetLifecycleConfiguration",
-        "s3:GetObject",
-        "s3:GetObjectAcl",
-        "s3:GetObjectTorrent",
-        "s3:GetObjectVersion",
-        "s3:GetObjectVersionAcl",
-        "s3:GetObjectVersionTorrent",
-        "s3:ListAllMyBuckets",
-        "s3:ListBucket",
-        "s3:ListBucketMultipartUploads",
-        "s3:ListBucketVersions",
-        "s3:ListMultipartUploadParts",
-        "s3:PutBucketAcl",
-        "s3:PutBucketLogging",
-        "s3:PutBucketNotification",
-        "s3:PutBucketPolicy",
-        "s3:PutBucketRequestPayment",
-        "s3:PutBucketTagging",
-        "s3:PutBucketVersioning",
-        "s3:PutBucketWebsite",
-        "s3:PutLifecycleConfiguration",
-        "s3:PutObject",
-        "s3:PutObjectAcl",
-        "s3:PutObjectVersionAcl"
+                    "s3:*"
                 ],
                 "Resource": [
-        "arn:aws:s3:::{bucketname}".format(bucketname=bucketName)
+                    "arn:aws:s3:::{bucketname}".format(
+                        bucketname=bucketName),
+                    "arn:aws:s3:::{bucketname}/*".format(
+                        bucketname=bucketName)
                 ]
             }
         ]
@@ -90,6 +65,8 @@ def create_limited_user(accessKey, secretKey, bucketName):
     connection.put_user_policy(
         bucketName + '-osf-limited', 'policy-' + bucketName + '-osf-limited', json.dumps(policy))
     return connection.create_access_key(bucketName + '-osf-limited')['create_access_key_response']['create_access_key_result']['access_key']
+
+# TODO Add PID
 
 
 def remove_user(accessKey, secretKey, bucketName, otherKey):
@@ -114,6 +91,10 @@ class S3Wrapper:
     @classmethod
     def from_addon(cls, s3):
         return cls(S3Connection(s3.node_access_key, s3.node_secret_key), s3.bucket)
+
+    @classmethod
+    def from_user(cls, s3, bucket):
+        return cls(S3Connection(s3.access_key, s3.secret_key), bucket)
 
     @classmethod
     def bucket_exist(cls, s3, bucketName):
@@ -188,7 +169,7 @@ class S3Wrapper:
         # TODO update this to cache results later
 
     def get_file_versions(self, fileName):
-        #TODO store list in self and check for changes
+        # TODO store list in self and check for changes
         v = self.get_version_data()
         if fileName in v:
             return v[fileName]

@@ -25,14 +25,13 @@ def s3_user_settings(*args, **kwargs):
     s3_access_key = request.json.get('access_key', '') or ''
     s3_secret_key = request.json.get('secret_key', '') or ''
 
-    has_auth = (s3_access_key and s3_secret_key)
 
     changed = (
         s3_access_key != s3_user.access_key or
         s3_secret_key != s3_user.secret_key
     )
 
-    if changed:
+    if changed or not s3_user.has_auth:
         if not has_access(s3_access_key, s3_secret_key):
             error_message = ('Looks like your creditials are incorrect. '
                              'Could you have mistyped them?')
@@ -40,7 +39,6 @@ def s3_user_settings(*args, **kwargs):
 
         s3_user.access_key = s3_access_key
         s3_user.secret_key = s3_secret_key
-        s3_user.user_has_auth = has_auth
 
         s3_user.save()
         return {}
@@ -67,14 +65,14 @@ def s3_settings(*args, **kwargs):
     bucket = request.json.get('s3_bucket', '')
 
     if not bucket or not does_bucket_exist(s3_addon.access_key, s3_addon.secret_key, bucket):
-        error_message = ('Looks like this bucket does not exist.'
+        error_message = ('Looks like this bucket does not exist. '
                          'Could you have mistyped it?')
         return {'message': error_message}, 400
 
     changed = bucket != node.bucket
 
     # Delete callback
-    if changed:
+    if changed or not node.node_auth:
 
         # Update node settings
         node.bucket = bucket
@@ -87,9 +85,12 @@ def s3_settings(*args, **kwargs):
 
         # Last but no least make sure we can upload (must be last) (still no
         # least(but actually))
-        adjust_cors(S3Wrapper.from_addon(node))
+        #This fails for some reason....
+        #I dont like this solutions TODO find a better way
+        #Seems like there is some lag from creating the key hmmm
+        adjust_cors(S3Wrapper.from_user(s3_addon, bucket))
 
-
+#TODO Rename me
 @must_be_contributor
 @must_have_addon('s3', 'node')
 def s3_delete_access_key(*args, **kwargs):
@@ -106,8 +107,8 @@ def s3_delete_access_key(*args, **kwargs):
     # delete our access and secret key
     s3_node.node_access_key = ''
     s3_node.node_secret_key = ''
-    s3_node.node_auth = 0
     s3_node.save()
+    return True
 
 
 @must_be_contributor
@@ -118,6 +119,17 @@ def s3_remove_user_settings(*args, **kwargs):
 
     user_settings.access_key = ''
     user_settings.secret_key = ''
-    user_settings.user_has_auth = False
     user_settings.save()
+    return True
+
+
+@must_be_contributor
+@must_have_addon('s3', 'node')
+def force_removal(*args, **kwargs):
+    s3_node = kwargs['node_addon']
+
+    # delete our access and secret key
+    s3_node.node_access_key = ''
+    s3_node.node_secret_key = ''
+    s3_node.save()
     return True
