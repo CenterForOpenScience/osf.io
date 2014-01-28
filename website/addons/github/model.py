@@ -96,17 +96,27 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         :return str: Alert message
 
         """
+        messages = [
+            'The GitHub add-on page has been combined with the pre-existing '
+            'Files page, which also now includes files from your other add-ons. '
+            'To work with the files in your GitHub add-on, browse to the '
+            '<a href="{0}">Files</a> page.'.format(
+                node.url + 'files/'
+            )
+        ]
+
         # Quit if not contributor
         if not node.is_contributor(user):
-            return
+            return messages
 
         # Quit if not configured
         if self.user is None or self.repo is None:
-            return
+            return messages
 
         # Quit if no user authorization
         if self.user_settings is None:
-            return
+            return messages
+
         connect = GitHub.from_settings(self.user_settings)
         repo = connect.repo(self.user, self.repo)
 
@@ -140,7 +150,8 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                     user=self.user,
                     repo=self.repo,
                 )
-            return message
+            messages.append(message)
+            return messages
 
     # TODO: Rename to before_remove_contributor_message
     def before_remove_contributor(self, node, removed):
