@@ -319,7 +319,7 @@ def view_file(*args, **kwargs):
     if is_img:
         # Append version number to image URL so that old versions aren't
         # cached incorrectly. Resolves #208 [openscienceframework.org]
-        rendered='<img src="{url}osffiles/download/{fid}/?{vid}" />'.format(
+        rendered='<img src="{url}osffiles/{fid}/?{vid}" />'.format(
             url=node_to_use.api_url, fid=file_name, vid=len(versions),
         )
     elif file_ext == '.zip':
@@ -374,7 +374,7 @@ def download_file(*args, **kwargs):
 
     vid = len(node_to_use.files_versions[filename.replace('.', '_')])
 
-    return redirect('{url}osffiles/download/{fid}/version/{vid}/'.format(
+    return redirect('{url}osffiles/{fid}/version/{vid}/'.format(
         url=node_to_use.api_url,
         fid=filename,
         vid=vid,
