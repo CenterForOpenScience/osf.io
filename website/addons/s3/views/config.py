@@ -16,6 +16,7 @@ from .utils import _s3_create_access_key
 
 
 @must_be_logged_in
+@must_have_addon('s3', 'user')
 def s3_user_settings(*args, **kwargs):
     user = kwargs['user']
     s3_user = user.get_addon('s3')

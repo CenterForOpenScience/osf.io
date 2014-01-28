@@ -35,6 +35,8 @@ class TestS3Views(DbTestCase):
         #self.node_settings.user = self.s3.repo.return_value['owner']['login']
         #self.node_settings.repo = self.s3.repo.return_value['name']
         self.node_settings.save()
+        self.app.authenticate(*self.user.auth)
+
 
     def test_s3_page_no_user(self):
         s3 = AddonS3NodeSettings(user=None, bucket='lul')
@@ -65,7 +67,7 @@ class TestS3Views(DbTestCase):
         mock_create_key.return_value = True
         mock_cors.return_value = True
         url = "/api/v1/project/{0}/s3/settings/".format(self.project._id)
-        res = self.app.post_json(url, {})
+        res = self.app.post_json(url, {}, expect_errors=True)
         self.project.reload()
         assert_equals(self.node_settings.bucket, None)
 
@@ -87,18 +89,16 @@ class TestS3Views(DbTestCase):
 
     @mock.patch('framework.addons.AddonModelMixin.get_addon')
     @mock.patch('website.addons.s3.views.config.has_access')
-    @mock.patch('framework.auth.get_current_user')
-    def test_s3_remove_user_settings(self, mock_user, mock_access, mock_addon):
-        mock_access.return_value = True
-        mock_user.return_value = self.user
+    def test_s3_remove_user_settings(self, mock_access, mock_addon):
         mock_addon.return_value = self.user.get_addon('s3')
-        user_settings = self.user.get_addon('s3')
-        user_settings.access_key = 'to-kill-a-mocking-bucket'
-        user_settings.secret_key = 'itsasecret'
+        mock_access.return_value = True
+        self.user.get_addon('s3').access_key = 'to-kill-a-mocking-bucket'
+        self.user.get_addon('s3').secret_key = 'itsasecret'
+        self.user.get_addon('s3').save()
         url = '/api/v1/settings/s3/delete/'
-        self.app.post_json(url, {})
-        self.project.reload()
-        assert_equals(user_settings.access_key, None)
+        self.app.post_json(url, {}, auth=self.user.auth)
+        #self.project.reload()
+        assert_equals(self.user.get_addon('s3').access_key, '')
         # TODO finish me
 
     def test_download_no_file(self):
@@ -107,20 +107,16 @@ class TestS3Views(DbTestCase):
 
     # TODO fix me cant seem to be logged in.....
     @mock.patch('website.addons.s3.views.config.has_access')
-    @mock.patch('framework.auth.get_current_user')
-    def test_user_settings_no_auth(self, mock_user, mock_access):
+    def test_user_settings_no_auth(self, mock_access):
         mock_access.return_value = False
-        mock_user.return_value = self.user
         url = '/api/v1/settings/s3/'
         rv = self.app.post_json(url, {}, expect_errors=True)
         #assert_equals('Looks like your creditials are incorrect Could you have mistyped them?', rv['message'])
 
     @mock.patch('framework.addons.AddonModelMixin.get_addon')
     @mock.patch('website.addons.s3.views.config.has_access')
-    @mock.patch('framework.auth.get_current_user')
-    def test_user_settings(self, mock_user, mock_access, mock_addon):
+    def test_user_settings(self, mock_access, mock_addon):
         mock_access.return_value = True
-        mock_user.return_value = self.user
         mock_addon.return_value = self.user.get_addon('s3')
         url = '/api/v1/settings/s3/'
         rv = self.app.post_json(
@@ -128,16 +124,14 @@ class TestS3Views(DbTestCase):
         user_settings = self.user.get_addon('s3')
         assert_equals(user_settings.access_key, 'scout')
 
-    @mock.patch('framework.addons.AddonModelMixin.get_addon')
-    @mock.patch('website.addons.s3.views.config.has_access')
-    @mock.patch('framework.auth.get_current_user')
-    def test_s3_remove_node_settings(self, mock_user, mock_access, mock_addon):
+    #I dont work..... Settings not getting passed around properly?
+    @mock.patch('website.addons.s3.views.config.remove_user')
+    def test_s3_remove_node_settings(self, mock_access):
         mock_access.return_value = True
-        mock_user.return_value = self.user
-        mock_addon.return_value = self.user.get_addon('s3')
-        self.node_settings.access_key = 'to-kill-a-mocking-bucket'
-        self.node_settings.secret_key = 'itsasecret'
+        self.project.get_addon('s3').node_access_key = 'to-kill-a-mocking-bucket'
+        self.project.get_addon('s3').node_secret_key = 'itsasecret'
+        self.project.get_addon('s3').save()
         url = "/api/v1/project/{0}/s3/settings/delete/".format(self.project._id)
         self.app.post_json(url, {})
         self.project.reload()
-        assert_equals(self.node_settings.access_key, None)
+        assert_equals(self.project.get_addon('s3').node_access_key, '')

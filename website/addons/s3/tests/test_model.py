@@ -24,8 +24,8 @@ class TestCallbacks(DbTestCase):
         self.project.creator.add_addon('s3')
         self.node_settings = self.project.get_addon('s3')
         self.user_settings = self.project.creator.get_addon('s3')
-        self.user_settings.user_has_auth = 1
-        self.node_settings.user_settings = self.user_settings
+        self.user_settings.access_key = 'We-Will-Rock-You'
+        self.user_settings.secret_key = 'Idontknowanyqueensongs'
         self.node_settings.user = 'Queen'
         self.node_settings.bucket = 'Sheer-Heart-Attack'
         self.node_settings.save()
@@ -51,4 +51,4 @@ class TestCallbacks(DbTestCase):
         s3 = AddonS3UserSettings()
         s3.access_key = "Sherlock"
         s3.secret_key = "lives"
-        assert_equals(s3.to_json(self.project.creator)['user_has_auth'], 1)
+        assert_equals(s3.to_json(self.project.creator)['has_auth'], 1)
