@@ -156,28 +156,48 @@ refresh rendered file through mfr
 */
 
 window.FileRenderer = {
-    start: function(url, selector){
-        this.element = $(selector);
+    start: function(url){
         var tries = 0
-        var refreshContent = window.setInterval(this.getCachedFromServer, 1000);
-    },
-
-    getCachedFromServer: function() {
-        $.get( url, function(data) {
-            if(data){
-                this.element.html(data);
-                clearInterval(refreshContent);
-            }else{
-                tries += 1;
-                if(tries > 10){
-                clearInterval(refreshContent);
-                this.element.html("Timeout occurred while loading, please refresh the page")
+        var refreshContent = window.setInterval(function(){
+            $.get( url, function(data) {
+                if(data){
+                    $('#fileRendered').html(data);
+                    clearInterval(refreshContent);
+                }else{
+                    tries += 1;
+                    if(tries > 10){
+                    clearInterval(refreshContent);
+                    $('#fileRendered').html("Timeout occurred while loading, please refresh the page")
+                    }
                 }
-            }
-        });
-     }
+            })
+        }, 1000);
+    }
 };
 
+//window.FileRenderer = {
+//    start: function(url, selector){
+//        this.blarg = url;
+//        this.element = selector;
+//        this.tries = 0;
+//        this.refreshContent = window.setInterval(this.getCachedFromServer, 1000);
+//    },
+//
+//    getCachedFromServer: function() {
+//        $.get(this.blarg, function(data) {
+//            if(data){
+//                $(this.element).html(data);
+//                clearInterval(this.refreshContent);
+//            }else{
+//                this.tries += 1;
+//                if(this.tries > 10){
+//                clearInterval(this.refreshContent);
+//                $(this.element).html("Timeout occurred while loading, please refresh the page")
+//                }
+//            }
+//        });
+//     }
+//};
 
 /*
 Display recent logs for for a node on the project view page.

@@ -11,10 +11,15 @@
           	</div>
       	</section>
 ##        todo fix div id file-rendered to proper naming convention
-        <div> Download latest version<a href=${download_url}> here</a></div>
+        <div> <a href=${download_path}>Download latest version</a></div><br>
         <div id='fileRendered' class="mfr mfr-file">
       		${rendered}
       	</div>
+        ##todo remove this and fix the bottom one...
+    % if not is_rendered:
+       <script> FileRenderer.start("${download_path}render");</script>
+    % endif
+
     </div>
     <div class="col-md-4">
       	<ol class="breadcrumb">
@@ -55,12 +60,12 @@
     </div>
 </div>
 </%def>
-
-<%def name="javascript_bottom()">
-    % if not is_rendered:
-       <script> FileRenderer.start("${download_path}render", '#fileRendered');</script>
-    % endif
-</%def>
+##todo fix this -ajs
+##<%def name="javascript_bottom()">
+##    % if not is_rendered:
+##       <script> FileRenderer.start("${download_path}render");</script>
+##    % endif
+##</%def>
 
 
 

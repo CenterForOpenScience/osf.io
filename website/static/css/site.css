@@ -931,11 +931,15 @@ h1.unavailable {
     height: 500px;
     width: 25px;
     display:inline-block;
-    vertical-align: top;
     background: #F5F5F5;
     -moz-user-select: none;
     -khtml-user-select: none;
     -webkit-user-select: none;
+    border-style:none;
+    -webkit-box-shadow: none;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+    padding: 0;
 }
 
 .mfr-pdf-button.active {

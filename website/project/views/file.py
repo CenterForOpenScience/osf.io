@@ -372,10 +372,10 @@ def view_file(*args, **kwargs):
         rendered = '<img src="/static/img/loading.gif">'
 
         is_rendered = False
-        # build_rendered_html(file_path, cached_file_path, download_path)
-        build_rendered_html.apply_async(
-            [file_path, cached_file_path, download_path]
-        )
+        build_rendered_html(file_path, cached_file_path, download_path)
+        # build_rendered_html.apply_async(
+        #     [file_path, cached_file_path, download_path]
+        # )
     else:
         rendered = open(cached_file_path, 'r').read()
         is_rendered = True
