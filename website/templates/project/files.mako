@@ -35,6 +35,9 @@ var extensions = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 
 var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
     var spacer = "<span style='display:inline-block;height:1px;width:" + (18 * dataContext["indent"]) + "px'></span>";
     var link = value;
+    if (dataContext.iconUrl) {
+        link = '<img class="hg-addon-icon" src="' + dataContext.iconUrl + '" /> ' + link;
+    }
     if (dataContext.nameExtra) {
         link += ' ' + dataContext.nameExtra;
     }
@@ -101,14 +104,14 @@ var myGrid = HGrid.create({
     urlAdd: function(item) {
         if (item) {
             return item.uploadUrl;
-        } else {
-            return contextVars.uploadUrl;
         }
     },
-    url: gridData[0].uploadUrl,
+    // Hack: HGrid crashes if no URL provided; use current URL as a placeholder
+    // if no URL given in gridData.
+    url: gridData[0].uploadUrl || window.location.href,
     columns:[
         {id: 'name', name: 'Name', field: 'name', width: 550, cssClass: 'cell-title', formatter: TaskNameFormatter, sortable: true, defaultSortAsc: true},
-        {id: 'size', name: 'Size', field: 'size', width: 90, formatter: UploadBars, sortable: true, formatter: PairFormatter}
+        {id: 'size', name: 'Size', field: 'size', width: 90, sortable: true, formatter: PairFormatter}
     ],
     enableCellNavigation: false,
     navigation: false,
@@ -178,10 +181,7 @@ myGrid.hGridBeforeUpload.subscribe(function(e, args){
 });
 
 myGrid.hGridBeforeMove.subscribe(function(e, args){
-    if (args['insertBefore']==0) {
-        return false;
-    }
-    return true;
+    return args.insertBefore != 0;
 });
 
 myGrid.hGridBeforeDelete.subscribe(function(e, args) {

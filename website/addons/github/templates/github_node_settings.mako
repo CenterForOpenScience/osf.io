@@ -46,17 +46,46 @@
 <br />
 
 <div class="form-group">
-    <label for="githubUser">GitHub User</label>
+    <label for="githubUrl">GitHub URL (e.g. https://github.com/mitsuhiko/flask)</label>
+    <input class="form-control" id="githubUrl" value="${github_url}" ${'disabled' if disabled else ''} />
+</div>
+
+<div class="form-group">
+    <label for="githubUser">GitHub User (e.g. mitsuhiko)</label>
     <input class="form-control" id="githubUser" name="github_user" value="${github_user}" ${'disabled' if disabled else ''} />
 </div>
 <div class="form-group">
-    <label for="githubRepo">GitHub Repo</label>
+    <label for="githubRepo">GitHub Repo (e.g. flask)</label>
     <input class="form-control" id="githubRepo" name="github_repo" value="${github_repo}" ${'disabled' if disabled else ''} />
 </div>
 
 <script type="text/javascript">
 
     $(document).ready(function() {
+
+        // Update user and repo on changing URL
+        $('#githubUrl').on('blur', function() {
+            var url = $(this).val();
+            var urlParts = url.split('github.com');
+            if (urlParts.length > 1) {
+                repoParts = urlParts[1]
+                    .split('/')
+                    .filter(function(item) {
+                        return item
+                    });
+                $('#githubUser').val(repoParts[0]);
+                $('#githubRepo').val(repoParts[1]);
+            }
+        });
+
+        // Update URL on changing user or repo
+        $('#githubUser, #githubRepo').on('blur', function() {
+            var user = $('#githubUser').val();
+            var repo = $('#githubRepo').val();
+            if (user && repo) {
+                $('#githubUrl').val('https://github.com/' + user + '/' + repo + '/');
+            }
+        });
 
         $('#githubAddKey').on('click', function() {
             % if authorized_user_id:

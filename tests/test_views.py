@@ -35,9 +35,11 @@ class TestProjectViews(DbTestCase):
         self.auth = ('test', api_key._primary_key)
         self.user2 = UserFactory()
         # A project has 2 contributors
-        self.project = ProjectFactory(title="Ham",
-                                        description='Honey-baked',
-                                        creator=self.user1)
+        self.project = ProjectFactory(
+            title="Ham",
+            description='Honey-baked',
+            creator=self.user1
+        )
         self.project.add_contributor(self.user1)
         self.project.add_contributor(self.user2)
         self.project.api_keys.append(api_key)
@@ -187,45 +189,95 @@ class TestProjectViews(DbTestCase):
     def test_get_logs(self):
         # Add some logs
         for _ in range(5):
-            self.project.logs.append(NodeLogFactory(user=self.user1,
-                                                action="file_added",
-                                                params={"project": self.project._id}))
+            self.project.logs.append(
+                NodeLogFactory(
+                    user=self.user1,
+                    action='file_added',
+                    params={'project': self.project._id}
+                )
+            )
         self.project.save()
-        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
+        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
         self.project.reload()
         data = res.json
         assert_equal(len(data['logs']), len(self.project.logs))
         most_recent = data['logs'][0]
-        assert_equal(most_recent['action'], "file_added")
+        assert_equal(most_recent['action'], 'file_added')
 
     def test_get_logs_with_count_param(self):
         # Add some logs
         for _ in range(5):
-            self.project.logs.append(NodeLogFactory(user=self.user1,
-                                                    action="file_added",
-                                                    params={"project": self.project._id}))
+            self.project.logs.append(
+                NodeLogFactory(
+                    user=self.user1,
+                    action='file_added',
+                    params={'project': self.project._id}
+                )
+            )
         self.project.save()
-        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
-        res = self.app.get(url, {"count": 3}, auth=self.auth)
+        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        res = self.app.get(url, {'count': 3}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
 
     def test_get_logs_defaults_to_ten(self):
         # Add some logs
         for _ in range(12):
-            self.project.logs.append(NodeLogFactory(user=self.user1,
-                                                    action="file_added",
-                                                    params={"project": self.project._id}))
+            self.project.logs.append(
+                NodeLogFactory(
+                    user=self.user1,
+                    action='file_added',
+                    params={'project': self.project._id}
+                )
+            )
         self.project.save()
-        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
+        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), 10)
+
+    def test_logs_private(self):
+        """Add logs to a public project, then to its private component. Get
+        the ten most recent logs; assert that ten logs are returned and that
+        all belong to the project and not its component.
+
+        """
+        # Add some logs
+        for _ in range(15):
+            self.project.add_log(
+                user=self.user1,
+                action='file_added',
+                params={'project': self.project._id}
+            )
+        self.project.is_public = True
+        self.project.save()
+        child = NodeFactory(project=self.project)
+        for _ in range(5):
+            child.add_log(
+                user=self.user1,
+                action='file_added',
+                params={'project': child._id}
+            )
+        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        res = self.app.get(url).maybe_follow()
+        assert_equal(len(res.json['logs']), 10)
+        assert_equal(
+            [self.project._id] * 10,
+            [
+                log['params']['project']
+                for log in res.json['logs']
+            ]
+        )
 
     def test_logs_from_api_url(self):
         # Add some logs
         for _ in range(12):
-            self.project.logs.append(NodeLogFactory(user=self.user1, action="file_added",
-                                                    params={"project": self.project._id}))
+            self.project.logs.append(
+                NodeLogFactory(
+                    user=self.user1,
+                    action="file_added",
+                    params={"project": self.project._id}
+                )
+            )
         self.project.save()
         url = "/api/v1/project/{0}/".format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)

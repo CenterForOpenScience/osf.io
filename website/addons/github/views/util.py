@@ -1,9 +1,5 @@
-
 import httplib as http
-from collections import namedtuple
-
 from framework.exceptions import HTTPError
-
 from ..api import GitHub
 
 
@@ -15,7 +11,7 @@ MESSAGES = {
 }
 
 
-def _get_branch_and_sha(addon, branch=None, sha=None, connection=None):
+def _get_refs(addon, branch=None, sha=None, connection=None):
     """Get the appropriate branch name and sha given the addon settings object,
     and optionally the branch and sha from the request arguments.
 
@@ -45,8 +41,8 @@ def _get_branch_and_sha(addon, branch=None, sha=None, connection=None):
         else []
     )
     registered_branch_names = [
-        _branch['name']
-        for _branch in registered_branches
+        each['name']
+        for each in registered_branches
     ]
 
     # Fail if registered and branch not in registration data
@@ -57,13 +53,11 @@ def _get_branch_and_sha(addon, branch=None, sha=None, connection=None):
     branches = registered_branches or connection.branches(addon.user, addon.repo)
 
     # Use registered SHA if provided
-    for _branch in registered_branches:
-        if branch == _branch['name']:
-            sha = _branch['commit']['sha']
+    for each in registered_branches:
+        if branch == each['name']:
+            sha = each['commit']['sha']
 
-    GitRefs = namedtuple('GitRef', ['branch', 'sha', 'branches'])
-    return GitRefs(branch=branch, sha=sha, branches=branches)
-
+    return branch, sha, branches
 
 
 def _check_permissions(node_settings, user, connection, branch, sha=None, repo=None):

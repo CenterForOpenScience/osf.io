@@ -22,6 +22,8 @@ from website.models import WatchConfig
 from website import settings
 from website.views import _render_nodes
 
+from .log import _get_logs
+
 logger = logging.getLogger(__name__)
 
 
@@ -435,8 +437,7 @@ def _view_project(node, user, api_key=None, primary=False):
 
     """
     parent = node.parent
-    recent_logs = list(reversed(node.logs)[:10])
-    recent_logs_dicts = [log.serialize() for log in recent_logs]
+    recent_logs = _get_logs(node, 10, user, api_key)
     widgets, configs, js, css = _render_addon(node)
     # Before page load callback; skip if not primary call
     if primary:
@@ -485,7 +486,7 @@ def _view_project(node, user, api_key=None, primary=False):
             'fork_count': len(node.fork_list),
 
             'watched_count': len(node.watchconfig__watched),
-            'logs': recent_logs_dicts,
+            'logs': recent_logs,
             'piwik_site_id': node.piwik_site_id,
         },
         'parent': {
@@ -538,7 +539,7 @@ def get_editable_children(*args, **kwargs):
     user = get_current_user()
 
     if not node_to_use.can_edit(user):
-        return redirect('/login/?next={0}'.format(request.path))
+        return
 
     children = _get_children(node_to_use, user)
 
