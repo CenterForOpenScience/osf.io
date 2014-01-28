@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
 import re
 import itertools
+import logging
 import urlparse
 import datetime as dt
 
 import pytz
 import bson
 
+from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import fields, Q, analytics
 from framework.guid.model import GuidStoredObject
 from framework.search import solr
+from framework.addons import AddonModelMixin
+
 from website import settings, filters
 
 name_formatters = {
@@ -22,7 +26,10 @@ name_formatters = {
    ),
 }
 
-class User(GuidStoredObject):
+logger = logging.getLogger(__name__)
+
+
+class User(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
 
@@ -54,6 +61,8 @@ class User(GuidStoredObject):
     suffix = fields.StringField()
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
+
+    piwik_token = fields.StringField()
 
     date_last_login = fields.DateTimeField()
 
@@ -104,7 +113,7 @@ class User(GuidStoredObject):
 
     @property
     def api_url(self):
-        return '/api/v1/{0}/'.format(self._primary_key)
+        return '/api/v1/profile/{0}/'.format(self._primary_key)
 
     @property
     def absolute_url(self):
@@ -152,6 +161,11 @@ class User(GuidStoredObject):
     def save(self, *args, **kwargs):
         rv = super(User, self).save(*args, **kwargs)
         self.update_solr()
+        if settings.PIWIK_HOST and not self.piwik_token:
+            try:
+                piwik.create_user(self)
+            except (piwik.PiwikException, ValueError):
+                logger.error("Piwik user creation failed: " + self._id)
         return rv
 
     def update_solr(self):
@@ -174,7 +188,8 @@ class User(GuidStoredObject):
             'id': self._primary_key,
             'fullname': self.fullname,
             'registered': self.is_registered,
-            'url': self.url
+            'url': self.url,
+            'api_url': self.api_url,
         }
 
     ###### OSF-Specific methods ######

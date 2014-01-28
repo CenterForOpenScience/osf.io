@@ -12,7 +12,7 @@ if settings.DB_USER and settings.DB_PASS:
     db.authenticate(settings.DB_USER, settings.DB_PASS)
 
 
-def set_up_storage(schemas, storage_class, prefix='', *args, **kwargs):
+def set_up_storage(schemas, storage_class, prefix='', addons=None, *args, **kwargs):
     '''Setup the storage backend for each schema in ``schemas``.
     note::
         ``**kwargs`` are passed to the constructor of ``storage_class``
@@ -28,7 +28,13 @@ def set_up_storage(schemas, storage_class, prefix='', *args, **kwargs):
         >>> models = [User, ApiKey, Node, Tag]
         >>> set_up_storage(models, MongoStorage, db=db)
     '''
-    for schema in schemas:
+    _schemas = []
+    _schemas.extend(schemas)
+
+    for addon in (addons or []):
+        _schemas.extend(addon.models)
+
+    for schema in _schemas:
         collection = "{0}{1}".format(prefix, schema._name)
         schema.set_storage(storage_class(collection=collection, **kwargs))
     return None

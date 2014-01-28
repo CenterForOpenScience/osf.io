@@ -17,14 +17,21 @@
 ##</div>
 
 <div class="row">
+
     <div class="col-md-3">
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href='#userProfile'>Profile Information</a></li>
+                <li><a href="#selectAddons">Select Add-ons to Configure</a></li>
+                % if addon_enabled_settings:
+                    <li><a href="#configureAddons">Configure Add-ons</a></li>
+                % endif
             </ul>
         </div><!-- end sidebar -->
     </div>
+
     <div class="col-md-6">
+
         <div id="userProfile" class="panel panel-default">
             <div class="panel-heading"><h3 class="panel-title">Profile Information</h3></div>
             <div class="panel-body">
@@ -67,7 +74,76 @@
                 </div>
             </div>
         </div>
+
+        <div id="selectAddons" class="panel panel-default">
+            <div class="panel-heading"><h3 class="panel-title">Select Add-ons</h3></div>
+            <div class="panel-body">
+
+                <form id="selectAddonsForm">
+
+                    % for category in addon_categories:
+
+                        <%
+                            addons = [
+                                addon
+                                for addon in addons_available
+                                if category in addon.categories
+                            ]
+                        %>
+
+                        % if addons:
+                            <h3>${category.capitalize()}</h3>
+                            % for addon in addons:
+                                <div>
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            name="${addon.short_name}"
+                                            ${'checked' if addon.short_name in addons_enabled else ''}
+                                        />
+                                        ${addon.full_name}
+                                    </label>
+                                </div>
+                            % endfor
+                        % endif
+
+                    % endfor
+
+                    <button id="settings-submit" class="btn btn-success">
+                        Submit
+                    </button>
+
+                </form>
+
+            </div>
+        </div>
+
+        % if addon_enabled_settings:
+
+            <div id="configureAddons" class="panel panel-default">
+                <div class="panel-heading"><h3 class="panel-title">Configure Add-ons</h3></div>
+                <div class="panel-body">
+
+                    % for name in addon_enabled_settings:
+
+                        <div mod-meta='{
+                                "tpl": "../addons/${name}/templates/${name}_user_settings.mako",
+                                "uri": "${user_api_url}${name}/settings/"
+                            }'></div>
+
+                        % if not loop.last:
+                            <hr />
+                        % endif
+
+                    % endfor
+
+                </div>
+            </div>
+
+        % endif
+
     </div>
+
 </div>
 
 ## TODO: Review and un-comment
@@ -162,8 +238,8 @@
 
             // POST data asynchronously
             $.ajax({
-                url: '/api/v1/settings/names/parse/',
                 type: 'POST',
+                url: '/api/v1/settings/names/parse/',
                 data: JSON.stringify({fullname: fullname}),
                 contentType: 'application/json',
                 dataType: 'json',
@@ -194,8 +270,8 @@
 
             // POST data asynchronously
             $.ajax({
-                url: '/api/v1/settings/names/',
                 type: 'POST',
+                url: '/api/v1/settings/names/',
                 data: JSON.stringify(data),
                 contentType: 'application/json',
                 dataType: 'json'
@@ -215,6 +291,31 @@
         });
 
     });
+
+    // Set up submission for addon selection form
+    $('#selectAddonsForm').on('submit', function() {
+
+        var formData = {};
+        $('#selectAddonsForm').find('input').each(function(idx, elm) {
+            var $elm = $(elm);
+            formData[$elm.attr('name')] = $elm.is(':checked');
+        });
+
+        $.ajax({
+            type: 'POST',
+            url: '/api/v1/settings/addons/',
+            data: JSON.stringify(formData),
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function() {
+                window.location.reload();
+            }
+        });
+
+        return false;
+
+    });
+
 
 </script>
 

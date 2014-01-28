@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import os
 import cgi
 import json
@@ -29,29 +30,36 @@ def prune_file_list(file_list, max_depth):
     if max_depth is None:
         return file_list
     return [file for file in file_list if len([c for c in file if c == '/']) <= max_depth]
+=======
+"""
 
+"""
+>>>>>>> 561af2692d6e3c81dfe3bc390e8bf2cdbaf9a75c
 
-def get_file_tree(node_to_use, user):
-    tree = []
-    for node in node_to_use.nodes:
-        if not node.is_deleted:
-            tree.append(get_file_tree(node, user))
+import json
 
+from framework.flask import request
+from framework.auth import get_current_user
+
+<<<<<<< HEAD
     if node_to_use.can_view(user):
         for i, v in node_to_use.files_current.items():
             v = NodeFile.load(v)
             tree.append(v)
     return node_to_use, tree
+=======
+from website.project.decorators import must_be_contributor_or_public
+from website.project.views.node import _view_project
 
+>>>>>>> 561af2692d6e3c81dfe3bc390e8bf2cdbaf9a75c
 
-@must_be_valid_project # returns project
-@must_be_contributor_or_public
-def get_files(*args, **kwargs):
-    """Build list of files for HGrid, ignoring contents of components to which
-    the user does not have access. Note: This view hides the titles of
-    inaccessible components but includes their GUIDs.
+def _get_dummy_container(node, user, parent=None):
+    """Create HGrid JSON for a dummy component container.
+
+    :return dict: HGrid-formatted dummy container
 
     """
+<<<<<<< HEAD
     # Get arguments
     node_to_use = kwargs['node'] or kwargs['project']
     user = get_current_user()
@@ -267,42 +275,59 @@ def upload_file_public(*args, **kwargs):
             "node",
             str(node_to_use._id)
         ])
+=======
+    can_view = node.can_view(user)
+    return {
+        'uid': 'node:{0}'.format(node._id),
+        'parent_uid': parent if parent else 'null',
+        'name': 'Component: {0}'.format(node.title)
+            if can_view
+            else 'Private Component',
+        'type': 'folder',
+        'can_edit': node.can_edit(user) if can_view else False,
+        'can_view': can_view,
+        # Can never drag into component dummy folder
+        'permission': False,
+        'lazyLoad': node.api_url + 'files/',
+>>>>>>> 561af2692d6e3c81dfe3bc390e8bf2cdbaf9a75c
     }
 
-    if do_redirect:
-        return redirect(request.referrer)
 
-    return [file_info], 201
+def _collect_file_trees(node, user, parent='null', **kwargs):
+    """Collect file trees for all add-ons implementing HGrid views. Create
+    dummy containers for each child of the target node, and for each add-on
+    implementing HGrid views.
 
-@must_be_valid_project # returns project
-@must_be_contributor_or_public # returns user, project
-@update_counters('node:{pid}')
-@update_counters('node:{nid}')
-def view_file(*args, **kwargs):
-    user = kwargs['user']
-    node_to_use = kwargs['node'] or kwargs['project']
+    :return list: List of HGrid-formatted file trees
 
+<<<<<<< HEAD
     file_name = kwargs['fid']
     file_name_clean = file_name.replace('.', '_')
+=======
+    """
+    grid_data = []
+>>>>>>> 561af2692d6e3c81dfe3bc390e8bf2cdbaf9a75c
 
-    # Throw 404 and log error if file not found in files_versions
-    try:
-        latest_node_file_id = node_to_use.files_versions[file_name_clean][-1]
-    except KeyError:
-        logger.error('File {} not found in files_versions of component {}.'.format(
-            file_name_clean, node_to_use._id
-        ))
-        raise HTTPError(http.NOT_FOUND)
-    latest_node_file = NodeFile.load(latest_node_file_id)
+    # Collect add-on file trees
+    for addon in node.get_addons():
+        if addon.config.has_hgrid_files:
+            dummy = addon.config.get_hgrid_dummy(
+                addon, user, parent, **kwargs
+            )
+            # Skip if dummy folder is falsy
+            if dummy:
+                # Add add-on icon URL if specified
+                dummy['iconUrl'] = addon.config.icon_url
+                grid_data.append(dummy)
 
-    # Ensure NodeFile is attached to Node; should be fixed by actions or
-    # improved data modeling in future
-    if not latest_node_file.node:
-        latest_node_file.node = node_to_use
-        latest_node_file.save()
+    # Collect component file trees
+    for child in node.nodes:
+        container = _get_dummy_container(child, user, parent)
+        grid_data.append(container)
 
-    download_path = latest_node_file.download_url
+    return grid_data
 
+<<<<<<< HEAD
     file_path = os.path.join(
         settings.UPLOADS_PATH,
         node_to_use._primary_key,
@@ -312,27 +337,21 @@ def view_file(*args, **kwargs):
     if not os.path.isfile(file_path):
         logger.error('File {} not found on disk.'.format(file_path))
         raise HTTPError(http.NOT_FOUND)
+=======
 
-    versions = []
+def _collect_tree_js(node):
+    """Collect JavaScript includes for all add-ons implementing HGrid views.
+>>>>>>> 561af2692d6e3c81dfe3bc390e8bf2cdbaf9a75c
 
-    for idx, version in enumerate(list(reversed(node_to_use.files_versions[file_name_clean]))):
-        node_file = NodeFile.load(version)
-        number = len(node_to_use.files_versions[file_name_clean]) - idx
-        unique, total = get_basic_counters('download:{}:{}:{}'.format(
-            node_to_use._primary_key,
-            file_name_clean,
-            number,
-        ))
-        versions.append({
-            'file_name': file_name,
-            'number': number,
-            'display_number': number if idx > 0 else 'current',
-            'date_uploaded': node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
-            'total': total if total else 0,
-            'committer_name': node_file.uploader.fullname,
-            'committer_url': node_file.uploader.url,
-        })
+    :return list: List of JavaScript include paths
 
+    """
+    scripts = []
+    for addon in node.get_addons():
+        scripts.extend(addon.config.include_js.get('files', []))
+    return scripts
+
+<<<<<<< HEAD
     _, file_ext = os.path.splitext(file_path.lower())
 
     # Build cached paths and name
@@ -445,3 +464,29 @@ def delete_file(*args, **kwargs):
         return {'status' : 'success'}
 
     raise HTTPError(http.BAD_REQUEST)
+=======
+
+@must_be_contributor_or_public
+def collect_file_trees(*args, **kwargs):
+    """Collect file trees for all add-ons implementing HGrid views, then
+    format data as appropriate.
+
+    """
+    node = kwargs['node'] or kwargs['project']
+    mode = kwargs.get('mode')
+    user = get_current_user()
+    data = request.args.to_dict()
+
+    grid_data = _collect_file_trees(node, user, **data)
+    if mode == 'page':
+        rv = _view_project(node, user)
+        rv.update({
+            'grid_data': json.dumps(grid_data),
+            'tree_js': _collect_tree_js(node),
+        })
+        return rv
+    elif mode == 'widget':
+        return {'grid_data': grid_data}
+    else:
+        return grid_data
+>>>>>>> 561af2692d6e3c81dfe3bc390e8bf2cdbaf9a75c

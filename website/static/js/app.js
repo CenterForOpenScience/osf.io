@@ -120,7 +120,7 @@ var createLogs = function(logData){
         })
     });
     return mappedLogs;
-}
+};
 
 /**
  * Initialize the LogsViewModel. Fetches the logs data from the specified url
@@ -134,7 +134,7 @@ var initializeLogs = function(scopeSelector, url){
     // Initiate LogsViewModel
     $logScope = $(scopeSelector);
     ko.cleanNode($logScope[0]);
-    progressBar = $("#logProgressBar")
+    progressBar = $("#logProgressBar");
     progressBar.show();
     $.ajax({
         url: url,
@@ -150,7 +150,7 @@ var initializeLogs = function(scopeSelector, url){
             ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
         }
     });
-}
+};
 
 /**
  * The ProjectViewModel, scoped to the project header.
@@ -220,7 +220,7 @@ var ProjectViewModel = function(params) {
             emptytext: "No description",
             emptyclass: "text-muted"
         });
-    };
+    }
 
     /**
      * Toggle the watch status for this project.
@@ -281,7 +281,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         nodeApiUrl + 'get_editable_children/',
         {},
         function(result) {
-            $.each(result['children'], function(idx, child) {
+            $.each(result['children'] || [], function(idx, child) {
                 child['margin'] = NODE_OFFSET + child['indent'] * NODE_OFFSET + 'px';
             });
             self.nodes(result['children']);
@@ -453,3 +453,25 @@ ko.bindingHandlers.tooltip = {
     }
 };
 
+///////////
+// Piwik //
+///////////
+
+var trackPiwik = function(host, siteId, cvars, useCookies) {
+    cvars = Array.isArray(cvars) ? cvars : [];
+    useCookies = typeof(useCookies) !== 'undefined' ? useCookies : false;
+    try {
+        var piwikTracker = Piwik.getTracker(host + 'piwik.php', siteId);
+        piwikTracker.enableLinkTracking(true);
+        for(var i=0; i<cvars.length;i++)
+        {
+            piwikTracker.setCustomVariable.apply(null, cvars[i]);
+        }
+        if (!useCookies) {
+            piwikTracker.disableCookies();
+        }
+        piwikTracker.trackPageView();
+
+    } catch(err) { return false; }
+    return true;
+}

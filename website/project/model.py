@@ -11,25 +11,25 @@ import urllib
 import urlparse
 import logging
 
-import markdown
 import pytz
-from markdown.extensions import wikilinks
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 
+from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
-from framework.analytics import get_basic_counters, increment_user_activity_counters
+from framework.analytics import (
+    get_basic_counters, increment_user_activity_counters, piwik
+)
 from framework.git.exceptions import FileNotModified
-from framework.forms.utils import sanitize
 from framework import StoredObject, fields, utils
 from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
+from framework.addons import AddonModelMixin
 
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
-
 
 def utc_datetime_to_timestamp(dt):
     return float(
@@ -129,6 +129,7 @@ class NodeLog(StoredObject):
 
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
+    foreign_user = fields.StringField()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
@@ -191,7 +192,9 @@ class NodeLog(StoredObject):
         '''Return a dictionary representation of the log.'''
         return {
             'id': str(self._primary_key),
-            'user': self.user.serialize() if self.user else None,
+            'user': self.user.serialize()
+                    if isinstance(self.user, User)
+                    else {'fullname': self.foreign_user},
             'contributors': [self._render_log_contributor(c) for c in self.params.get("contributors", [])],
             'contributor': self._render_log_contributor(self.params.get("contributor", {})),
             'api_key': self.api_key.label if self.api_key else '',
@@ -200,54 +203,6 @@ class NodeLog(StoredObject):
             'date': utils.rfcformat(self.date),
             'node': self.node.serialize() if self.node else None
         }
-
-
-class NodeFile(GuidStoredObject):
-
-    redirect_mode = 'redirect'
-
-    _id = fields.StringField(primary=True)
-
-    path = fields.StringField()
-    filename = fields.StringField()
-    md5 = fields.StringField()
-    sha = fields.StringField()
-    size = fields.IntegerField()
-    content_type = fields.StringField()
-    git_commit = fields.StringField()
-    is_deleted = fields.BooleanField(default=False)
-
-    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    date_uploaded = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
-
-    node = fields.ForeignField('node', backref='uploads')
-    uploader = fields.ForeignField('user', backref='uploads')
-
-    @property
-    def url(self):
-        return '{0}files/{1}/'.format(self.node.url, self.filename)
-
-    @property
-    def deep_url(self):
-        return '{0}files/{1}/'.format(self.node.deep_url, self.filename)
-
-    @property
-    def api_url(self):
-        return '{0}files/{1}/'.format(self.node.api_url, self.filename)
-
-    @property
-    def clean_filename(self):
-        return self.filename.replace('.', '_')
-
-    @property
-    def latest_version_number(self):
-        return len(self.node.files_versions[self.clean_filename])
-
-    @property
-    def download_url(self):
-        return '{}files/download/{}/version/{}/'.format(
-            self.node.api_url, self.filename, self.latest_version_number)
 
 
 class Tag(StoredObject):
@@ -261,7 +216,7 @@ class Tag(StoredObject):
         return '/search/?q=tags:{}'.format(self._id)
 
 
-class Node(GuidStoredObject):
+class Node(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
 
@@ -327,13 +282,21 @@ class Node(GuidStoredObject):
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
+    piwik_site_id = fields.StringField()
+
     ## Meta-data
     #comment_schema = OSF_META_SCHEMAS['osf_comment']
 
     _meta = {'optimistic': True}
 
     def __init__(self, *args, **kwargs):
+
         super(Node, self).__init__(*args, **kwargs)
+
+        # Crash if parent provided and not project
+        project = kwargs.get('project')
+        if project and project.category != 'project':
+            raise ValueError('Parent must be a project.')
 
         if kwargs.get('_is_loaded', False):
             return
@@ -352,16 +315,40 @@ class Node(GuidStoredObject):
     def can_view(self, user, api_key=None):
         return self.is_public or self.can_edit(user, api_key)
 
+    @property
+    def has_files(self):
+        """Check whether the node has any add-ons or components that define
+        the files interface. Overrides AddonModelMixin::has_files to include
+        recursion over child nodes.
+
+        :return bool: Has files add-ons
+
+        """
+        rv = super(Node, self).has_files
+        if rv:
+            return rv
+        for child in self.nodes:
+            if child.has_files:
+                return True
+        return False
+
     def save(self, *args, **kwargs):
 
         first_save = not self._is_loaded
-        needs_created_log = not self.is_registration and not self.is_fork
+        is_original = not self.is_registration and not self.is_fork
 
         saved_fields = super(Node, self).save(*args, **kwargs)
 
-        # Append to parent and create log on first save only
-        if first_save and needs_created_log:
+        if first_save and is_original:
+
+            #
+            for addon in settings.ADDONS_AVAILABLE:
+                if addon.added_to['node']:
+                    self.add_addon(addon.short_name)
+
+            #
             if getattr(self, 'project', None):
+
                 # Append log to parent
                 self.project.nodes.append(self)
                 self.project.save()
@@ -374,6 +361,7 @@ class Node(GuidStoredObject):
                 }
 
             else:
+
                 # Define log fields for non-component project
                 log_action = NodeLog.PROJECT_CREATED
                 log_params = {
@@ -389,9 +377,18 @@ class Node(GuidStoredObject):
                 save=True,
             )
 
-        # Only update Solr if at least one watched field has changed
-        if self.SOLR_UPDATE_FIELDS.intersection(saved_fields):
+        # Only update Solr if at least one stored field has changed, and if
+        # public or privacy setting has changed
+        update_solr = bool(self.SOLR_UPDATE_FIELDS.intersection(saved_fields))
+        if not self.is_public:
+            if first_save or 'is_public' not in saved_fields:
+                update_solr = False
+        if update_solr:
             self.update_solr()
+
+        # This method checks what has changed.
+        if settings.PIWIK_HOST:
+            piwik.update_node(self, saved_fields)
 
         # Return expected value for StoredObject::save
         return saved_fields
@@ -471,6 +468,8 @@ class Node(GuidStoredObject):
         if not settings.USE_SOLR:
             return
 
+        from website.addons.wiki.model import NodeWikiPage
+
         if self.category == 'project':
             # All projects use their own IDs.
             solr_document_id = self._id
@@ -508,6 +507,7 @@ class Node(GuidStoredObject):
                 '{}_url'.format(self._id): self.url,
                 }
 
+            # TODO: Move to wiki add-on
             for wiki in [
                 NodeWikiPage.load(x)
                 for x in self.wiki_pages_current.values()
@@ -620,6 +620,12 @@ class Node(GuidStoredObject):
 
         forked.save()
 
+        # After fork callback
+        for addon in original.get_addons():
+            _, message = addon.after_fork(original, forked, user)
+            if message:
+                status.push_status_message(message)
+
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, forked._primary_key)
             Repo(folder_old).clone(folder_new)
@@ -665,6 +671,12 @@ class Node(GuidStoredObject):
 
         registered.save()
 
+        # After register callback
+        for addon in original.get_addons():
+            _, message = addon.after_register(original, registered, user)
+            if message:
+                status.push_status_message(message)
+
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, registered._primary_key)
             Repo(folder_old).clone(folder_new)
@@ -704,6 +716,14 @@ class Node(GuidStoredObject):
 
             node_contained.save()
 
+            # After register callback
+            for addon in original_node_contained.get_addons():
+                _, message = addon.after_register(
+                    original_node_contained, node_contained, user
+                )
+                if message:
+                    status.push_status_message(message)
+
             registered.nodes.append(node_contained)
 
         original.add_log(
@@ -720,6 +740,7 @@ class Node(GuidStoredObject):
         original.registration_list.append(registered._id)
         original.save()
 
+        registered.save()
         return registered
 
     def remove_tag(self, tag, user, api_key, save=True):
@@ -762,6 +783,7 @@ class Node(GuidStoredObject):
                 self.save()
 
     def get_file(self, path, version=None):
+        from website.addons.osffiles.model import NodeFile
         if version is not None:
             folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
             if os.path.exists(os.path.join(folder_name, ".git")):
@@ -773,6 +795,7 @@ class Node(GuidStoredObject):
         return None, None
 
     def get_file_object(self, path, version=None):
+        from website.addons.osffiles.model import NodeFile
         if version is not None:
             directory = os.path.join(settings.UPLOADS_PATH, self._primary_key)
             if os.path.exists(os.path.join(directory, '.git')):
@@ -788,6 +811,7 @@ class Node(GuidStoredObject):
 
         :return: True on success, False on failure
         '''
+        from website.addons.osffiles.model import NodeFile
 
         #FIXME: encoding the filename this way is flawed. For instance - foo.bar resolves to the same string as foo_bar.
         file_name_key = path.replace('.', '_')
@@ -888,6 +912,7 @@ class Node(GuidStoredObject):
         Instantiates a new NodeFile object, and adds it to the current Node as
         necessary.
         """
+        from website.addons.osffiles.model import NodeFile
         # TODO: Reading the whole file into memory is not scalable. Fix this.
 
         # This node's folder
@@ -982,10 +1007,11 @@ class Node(GuidStoredObject):
 
         return node_file
 
-    def add_log(self, action, params, user, api_key=None, log_date=None, save=True):
+    def add_log(self, action, params, user, foreign_user=None, api_key=None, log_date=None, save=True):
         log = NodeLog()
-        log.action=action
-        log.user=user
+        log.action = action
+        log.user = user
+        log.foreign_user = foreign_user
         log.api_key = api_key
         if log_date:
             log.date=log_date
@@ -1131,25 +1157,60 @@ class Node(GuidStoredObject):
         )
         return True
 
+    def callback(self, callback, recursive=False, *args, **kwargs):
+        """Invoke callbacks of attached add-ons and collect messages.
+
+        :param str callback: Name of callback method to invoke
+        :param bool recursive: Apply callback recursively over nodes
+        :return list: List of callback messages
+
+        """
+        messages = []
+
+        for addon in self.get_addons():
+            method = getattr(addon, callback)
+            message = method(self, *args, **kwargs)
+            if message:
+                messages.append(message)
+
+        if recursive:
+            for child in self.nodes:
+                messages.extend(
+                    child.callback(
+                        callback, recursive, *args, **kwargs
+                    )
+                )
+
+        return messages
+
     def remove_contributor(self, contributor, user=None, api_key=None, log=True):
-        '''Remove a contributor from this project.
+        """Remove a contributor from this node.
 
         :param contributor: User object, the contributor to be removed
         :param user: User object, the user who is removing the contributor.
         :param api_key: ApiKey object
-        '''
+
+        """
         if not user._primary_key == contributor._id:
+
             self.contributors.remove(contributor._id)
             self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != contributor._id]
             self.save()
             removed_user = get_user(contributor._id)
+
+            # After remove callback
+            for addon in self.get_addons():
+                message = addon.after_remove_contributor(self, removed_user)
+                if message:
+                    status.push_status_message(message)
+
             if log:
                 self.add_log(
                     action=NodeLog.CONTRIB_REMOVED,
                     params={
-                        'project':self.parent_id,
-                        'node':self._primary_key,
-                        'contributor':removed_user._primary_key,
+                        'project': self.parent_id,
+                        'node': self._primary_key,
+                        'contributor': removed_user._primary_key,
                     },
                     user=user,
                     api_key=api_key,
@@ -1161,12 +1222,13 @@ class Node(GuidStoredObject):
     def add_contributor(self, contributor, user=None, log=True, api_key=None, save=False):
         """Add a contributor to the project.
 
-        :param contributor: A User object, the contributor to be added
-        :param user: A User object, the user who added the contributor or None.
-        :param log: Add log to self
-        :param api_key: API key used to add contributors
-        :param save: Save after adding contributor
-        :return: Boolean--whether contributor was added
+        :param User contributor: The contributor to be added
+        :param User user: The user who added the contributor or None.
+        :param NodeLog log: Add log to self
+        :param ApiKey api_key: API key used to add contributors
+        :param bool save: Save after adding contributor
+        :return bool: Whether contributor was added
+
         """
         MAX_RECENT_LENGTH = 15
 
@@ -1261,10 +1323,20 @@ class Node(GuidStoredObject):
         """
         if permissions == 'public' and not self.is_public:
             self.is_public = True
+            # If the node doesn't have a piwik site, make one.
+            if settings.PIWIK_HOST:
+                piwik.update_node(self)
         elif permissions == 'private' and self.is_public:
             self.is_public = False
         else:
             return False
+
+        # After set permissions callback
+        for addon in self.get_addons():
+            message = addon.after_set_permissions(self, permissions)
+            if message:
+                status.push_status_message(message)
+
         action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
         self.add_log(
             action=action,
@@ -1277,9 +1349,9 @@ class Node(GuidStoredObject):
         )
         return True
 
+    # TODO: Move to wiki add-on
     def get_wiki_page(self, page, version=None):
-        # len(wiki_pages_versions) == 1, version 1
-        # len() == 2, version 1, 2
+        from website.addons.wiki.model import NodeWikiPage
 
         page = urllib.unquote_plus(page)
         page = to_mongo(page)
@@ -1306,6 +1378,7 @@ class Node(GuidStoredObject):
 
         return pw
 
+    # TODO: Move to wiki add-on
     def update_node_wiki(self, page, content, user, api_key=None):
         """Update the node's wiki page with new content.
 
@@ -1315,6 +1388,8 @@ class Node(GuidStoredObject):
         :param api_key: A string, the api key. Can be ``None``.
 
         """
+        from website.addons.wiki.model import NodeWikiPage
+
         temp_page = page
 
         page = urllib.unquote_plus(page)
@@ -1375,58 +1450,6 @@ class Node(GuidStoredObject):
             'api_url': self.api_url,
             'is_public': self.is_public
         }
-
-
-class NodeWikiPage(GuidStoredObject):
-
-    redirect_mode = 'redirect'
-
-    _id = fields.StringField(primary=True)
-
-    page_name = fields.StringField()
-    version = fields.IntegerField()
-    date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    is_current = fields.BooleanField()
-    content = fields.StringField()
-
-    user = fields.ForeignField('user')
-    node = fields.ForeignField('node')
-
-    @property
-    def deep_url(self):
-        return '{}wiki/{}/'.format(self.node.deep_url, self.page_name)
-
-    @property
-    def url(self):
-        return '{}wiki/{}/'.format(self.node.url, self.page_name)
-
-    @property
-    def html(self):
-        """The cleaned HTML of the page"""
-
-        html_output = markdown.markdown(
-            self.content,
-            extensions=[
-                wikilinks.WikiLinkExtension(
-                    configs=[('base_url', ''), ('end_url', '')]
-                )
-            ]
-        )
-
-        return sanitize(html_output, **settings.WIKI_WHITELIST)
-
-    @property
-    def raw_text(self):
-        """ The raw text of the page, suitable for using in a test search"""
-
-        return sanitize(self.html, tags=[], strip=True)
-
-    def save(self, *args, **kwargs):
-        rv = super(NodeWikiPage, self).save(*args, **kwargs)
-        if self.node:
-            self.node.update_solr()
-        return rv
-
 
 
 class WatchConfig(StoredObject):

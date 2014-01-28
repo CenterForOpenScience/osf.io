@@ -4,7 +4,7 @@
 (function(){
 
 // Messages, e.g. for confirmation dialogs, alerts, etc.
-Messages = {
+var Messages = {
     makePublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
                         'access to the data it contains can be complete prevented. Users ' +
                         'should assume that once a project is made public, it will always ' +
@@ -36,9 +36,41 @@ window.unblock = function() {
     $.unblockUI();
 };
 
+window.joinPrompts = function(prompts, base) {
+    var prompt = base || '';
+    if (prompts) {
+        prompt += '<hr />';
+        prompt += '<ul>';
+        for (var i=0; i<prompts.length; i++) {
+            prompt += '<li>' + prompts[i] + '</li>';
+        }
+        prompt += '</ul>';
+    }
+    return prompt;
+}
+
 window.NodeActions = {};  // Namespace for NodeActions
 // TODO: move me to the ProjectViewModel
-NodeActions.forkNode = function(){
+
+NodeActions.beforeForkNode = function() {
+
+    $.ajax({
+        url: nodeApiUrl + 'beforefork/',
+        contentType: 'application/json'
+    }).success(function(response) {
+        bootbox.confirm(
+            joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
+            function(result) {
+                if (result) {
+                    NodeActions.forkNode();
+                }
+            }
+        )
+    });
+
+};
+
+NodeActions.forkNode = function() {
 
     // Block page
     block();
@@ -72,7 +104,6 @@ NodeActions.addNodeToProject = function(node, project) {
 
 $(function(){
     $('#newComponent form').on('submit', function(e) {
-          e.preventDefault();
 
           $("#add-component-submit")
               .attr("disabled", "disabled")
@@ -85,6 +116,8 @@ $(function(){
               $("#add-component-submit")
                       .removeAttr("disabled","disabled")
                       .text("OK");
+
+              e.preventDefault();
           }
           else if ($(e.target).find("#title").val().length>200){
               $("#alert").text("The new component title cannot be more than 200 characters.");
@@ -92,45 +125,59 @@ $(function(){
               $("#add-component-submit")
                       .removeAttr("disabled","disabled")
                       .text("OK");
+
+              e.preventDefault();
+
           }
-          else{
-              $.ajax({
-                   url: $(e.target).attr("action"),
-                   type:"POST",
-                   timeout:60000,
-                   data:$(e.target).serialize()
-              }).success(function(){
-                  location.reload();
-              }).fail(function(jqXHR, textStatus, errorThrown){
-                    if(textStatus==="timeout") {
-                        $("#alert").text("Add component timed out"); //Handle the timeout
-                    }else{
-                        $("#alert").text('Add component failed');
-                    }
-                    $("#add-component-submit")
-                      .removeAttr("disabled","disabled")
-                      .text("OK");
-              });
-          }
+//          else{
+//              $.ajax({
+//                   url: $(e.target).attr("action"),
+//                   type:"POST",
+//                   timeout:60000,
+//                   data:$(e.target).serialize()
+//              }).success(function(){
+//                  location.reload();
+//              }).fail(function(jqXHR, textStatus, errorThrown){
+//                    if(textStatus==="timeout") {
+//                        $("#alert").text("Add component timed out"); //Handle the timeout
+//                    }else{
+//                        $("#alert").text('Add component failed');
+//                    }
+//                    $("#add-component-submit")
+//                      .removeAttr("disabled","disabled")
+//                      .text("OK");
+//              });
+//          }
+
      });
 });
 
 NodeActions.removeUser = function(userid, name) {
-    bootbox.confirm('Remove ' + name + ' from contributor list?', function(result) {
-        if (result) {
-            $.ajax({
-                type: "POST",
-                url: nodeApiUrl + "removecontributors/",
-                contentType: "application/json",
-                dataType: "json",
-                data: JSON.stringify({
-                    "id": userid,
-                    "name": name,
-                })
-            }).done(function(response) {
-                window.location.reload();
-            });
-        }
+    var data = JSON.stringify({
+        id: userid,
+        name: name
+    });
+    $.ajax({
+        type: 'POST',
+        url: nodeApiUrl + 'beforeremovecontributors/',
+        contentType: 'application/json',
+        dataType: 'json',
+        data: data
+    }).success(function(response) {
+        var prompt = joinPrompts(response.prompts, 'Remove ' + name + ' from contributor list?');
+        bootbox.confirm(prompt, function(result) {
+            if (result) {
+                $.ajax({
+                    type: 'POST',
+                    url: nodeApiUrl + 'removecontributors/',
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    data: data
+                }).done(function(response) {
+                    window.location.reload();
+                });
+            }
+        });
     });
     return false;
 };
@@ -197,7 +244,7 @@ NodeActions.openCloseNode = function(node_id){
                     $logs.addClass("served")
                 }
             );
-        };
+        }
         $logs.addClass("active");
     } else {
         $logs.removeClass("active");
@@ -267,6 +314,26 @@ $(document).ready(function() {
     $('#publicButton').on('click', function() {
         var url = $(this).data("target");
         setPermissions(url, 'public');
+    });
+
+    // Widgets
+
+    $('.widget-disable').on('click', function() {
+
+        var $this = $(this);
+
+        $.ajax({
+            url: $this.attr('href'),
+            type: 'POST',
+            contentType: 'application/json',
+            dataType: 'json',
+            complete: function() {
+                window.location = '/' + nodeId + '/';
+            }
+        });
+
+        return false;
+
     });
 
 });

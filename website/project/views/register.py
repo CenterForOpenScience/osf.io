@@ -2,8 +2,8 @@
 import json
 import logging
 
-from framework import request, status
-from framework.auth import must_have_session_auth
+from framework import request
+from framework.auth import must_have_session_auth, get_api_key
 from ..decorators import must_not_be_registration, must_be_valid_project, must_be_contributor, must_be_contributor_or_public
 from framework.forms.utils import process_payload
 from framework.mongo.utils import to_mongo
@@ -36,7 +36,7 @@ def node_register_page(*args, **kwargs):
             for metaschema in OSF_META_SCHEMAS
         ]
     }
-    rv.update(_view_project(node_to_use, user))
+    rv.update(_view_project(node_to_use, user, primary=True))
     return rv
 
 
@@ -70,6 +70,8 @@ def node_register_template_page(*args, **kwargs):
 
     schema = meta_schema.schema
 
+    # TODO: Notify if some components will not be registered
+
     rv = {
         'template_name': template_name,
         'schema': json.dumps(schema),
@@ -78,8 +80,23 @@ def node_register_template_page(*args, **kwargs):
         'registered': registered,
         'payload': payload,
     }
-    rv.update(_view_project(node_to_use, user))
+    rv.update(_view_project(node_to_use, user, primary=True))
     return rv
+
+
+@must_have_session_auth
+@must_be_valid_project  # returns project
+@must_be_contributor  # returns user, project
+@must_not_be_registration
+def project_before_register(*args, **kwargs):
+
+    node = kwargs['node'] or kwargs['project']
+    user = kwargs['user']
+    api_key = get_api_key()
+
+    prompts = node.callback('before_register', node, user)
+
+    return {'prompts': prompts}
 
 
 @must_have_session_auth

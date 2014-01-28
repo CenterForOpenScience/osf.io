@@ -1,7 +1,6 @@
-from .model import Node, NodeLog, NodeWikiPage
+from .model import Node, NodeLog
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
-
 
 def show_diff(seqm):
     """Unify operations between two compared strings
@@ -26,13 +25,22 @@ seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
 
 
 def new_node(category, title, user, description=None, project=None):
-    # tag: database
+    """Create a new project or component.
+
+    :param str category: Node category
+    :param str title: Node title
+    :param User user: User object
+    :param str description: Node description
+    :param Node project: Optional parent object
+    :return Node: Created node
+
+    """
     category = category.strip().lower()
     title = sanitize(title.strip())
     if description:
         description = sanitize(description.strip())
 
-    the_node = Node(
+    node = Node(
         title=title,
         category=category,
         creator=user,
@@ -40,20 +48,9 @@ def new_node(category, title, user, description=None, project=None):
         project=project,
     )
 
-    the_node.save()
+    node.save()
 
-    return the_node
-
-
-def get_wiki_page(project, node, wid):
-    if node and node.wiki and wid in node.wiki:
-        pw = NodeWikiPage.load(node.wiki_page_current[wid])
-    elif project and project.wiki and wid in project.wiki:
-        pw = NodeWikiPage.load(project.wiki_page_current[wid])
-    else:
-        pw = None
-
-    return pw
+    return node
 
 
 def get_node(id):

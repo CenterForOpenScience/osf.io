@@ -1,3 +1,5 @@
+<% import json %>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -44,18 +46,18 @@
     <div id='devmode'><strong>WARNING</strong>: This site is running in development mode.</div>
     % endif
 
-    <div mod-meta='{"tpl": "nav.mako", "replace": true}'></div>
+    <%include file="nav.mako"/>
      ## TODO: shouldn't always have the watermark class
     <div class="watermarked">
         <div class="container">
             % if status:
-                <div mod-meta='{"tpl": "alert.mako", "replace": true}'></div>
+                <%include file="alert.mako"/>
             % endif
             ${self.content()}
         </div><!-- end container -->
     </div><!-- end watermarked -->
 
-    <div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+    <%include file="footer.mako"/>
 
         %if use_cdn:
             <div id="fb-root"></div>
@@ -92,6 +94,31 @@
               })();
             </script>
         %endif
+
+        % if piwik_host:
+            <script src="${ piwik_host }piwik.js" type="text/javascript"></script>
+            <% is_public = node.get('is_public', 'ERROR') if node else True %>
+            <script type="text/javascript">
+
+                $(function() {
+                    var cvars = [];
+                    % if user_id:
+                        cvars.push([1, "User ID", "${ user_id }", "visit"])
+                        cvars.push([2, "User Name", "${ user_full_name }", "visit"])
+                    % endif
+                    % if node:
+                        <% parent_project = parent.get('id') or node.get('id') %>
+                        cvars.push([2, "Project ID", "${ parent_project }", "page"]);
+                        cvars.push([3, "Node ID", "${ node.get('id') }", "page"]);
+                        cvars.push([4, "Tags", ${ json.dumps(','.join(node.get('tags', []))) }, "page"]);
+                    % endif
+                    // Note: Use cookies for global site ID; only one cookie
+                    // will be used, so this won't overflow uwsgi header
+                    // buffer.
+                    trackPiwik("${ piwik_host }", ${ piwik_site_id }, cvars, true);
+                });
+            </script>
+        % endif
         ${self.javascript_bottom()}
     </body>
 </html>
@@ -122,4 +149,3 @@
 <%def name="javascript_bottom()">
     ### Javascript loaded at the bottom of the page ###
 </%def>
-
