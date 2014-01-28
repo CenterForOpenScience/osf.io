@@ -27,9 +27,10 @@ class TestS3Views(DbTestCase):
         self.project.add_addon('s3')
         self.project.creator.add_addon('s3')
         #self.s3 = s3_mock
-
+        self.user_settings = self.user.get_addon('s3')
         self.node_settings = self.project.get_addon('s3')
-        # Set the node addon settings to correspond to the values of the mock repo
+        # Set the node addon settings to correspond to the values of the mock
+        # repo
         self.node_settings = AddonS3NodeSettings()
         #self.node_settings.user = self.s3.repo.return_value['owner']['login']
         #self.node_settings.repo = self.s3.repo.return_value['name']
@@ -37,23 +38,23 @@ class TestS3Views(DbTestCase):
 
     def test_s3_page_no_user(self):
         s3 = AddonS3NodeSettings(user=None, bucket='lul')
-        res = views.utils._page_content('873p', s3)
+        res = views.utils._page_content('873p', s3, None)
         assert_equals(res, {})
 
     def test_s3_page_no_pid(self):
         s3 = AddonS3NodeSettings(user='jimbob', bucket='lul')
-        res = views.utils._page_content(None, s3)
+        res = views.utils._page_content(None, s3, self.user_settings)
         assert_equals(res, {})
 
     def test_s3_page_empty_pid(self):
         s3 = AddonS3NodeSettings(user='jimbob', bucket='lul')
-        res = views.utils._page_content('', s3)
+        res = views.utils._page_content('', s3, self.user_settings)
         assert_equals(res, {})
 
     def test_s3_page_no_auth(self):
         s3 = AddonS3NodeSettings(user='jimbob', bucket='lul')
         s3.node_access_key = ""
-        res = views.utils._page_content('', s3)
+        res = views.utils._page_content('', s3, self.user_settings)
         assert_equals(res, {})
 
     @mock.patch('website.addons.s3.views.config.does_bucket_exist')
@@ -73,7 +74,7 @@ class TestS3Views(DbTestCase):
         mock_create_limited_user.return_value = {
             'access_key_id': 'Boo', 'secret_access_key': 'Riley'}
         user_settings = AddonS3UserSettings(user='Aticus-killing-mocking')
-        views.utils._s3_create_access_key(user_settings, self.node_settings)
+        views.utils._s3_create_access_key(user_settings, self.node_settings, self.project._id)
         assert_equals(self.node_settings.node_access_key, 'Boo')
 
     @mock.patch('website.addons.s3.views.utils.create_limited_user')
@@ -82,7 +83,7 @@ class TestS3Views(DbTestCase):
             'access_key_id': 'Boo', 'secret_access_key': 'Riley'}
         user_settings = AddonS3UserSettings(user='Aticus-killing-mocking')
         assert_true(views.utils._s3_create_access_key(
-            user_settings, self.node_settings))
+            user_settings, self.node_settings, self.project._id))
 
     @mock.patch('framework.addons.AddonModelMixin.get_addon')
     @mock.patch('website.addons.s3.views.config.has_access')
@@ -94,7 +95,7 @@ class TestS3Views(DbTestCase):
         user_settings = self.user.get_addon('s3')
         user_settings.access_key = 'to-kill-a-mocking-bucket'
         user_settings.secret_key = 'itsasecret'
-        url = '/user/s3/settings/delete/'
+        url = '/api/v1/settings/s3/delete/'
         self.app.post_json(url, {})
         self.project.reload()
         assert_equals(user_settings.access_key, None)
@@ -110,7 +111,7 @@ class TestS3Views(DbTestCase):
     def test_user_settings_no_auth(self, mock_user, mock_access):
         mock_access.return_value = False
         mock_user.return_value = self.user
-        url = '/user/s3/settings/'
+        url = '/api/v1/settings/s3/'
         rv = self.app.post_json(url, {}, expect_errors=True)
         #assert_equals('Looks like your creditials are incorrect Could you have mistyped them?', rv['message'])
 
@@ -121,12 +122,11 @@ class TestS3Views(DbTestCase):
         mock_access.return_value = True
         mock_user.return_value = self.user
         mock_addon.return_value = self.user.get_addon('s3')
-        url = '/user/s3/settings/'
+        url = '/api/v1/settings/s3/'
         rv = self.app.post_json(
             url, {'access_key': 'scout', 'secret_key': 'Aticus'})
         user_settings = self.user.get_addon('s3')
         assert_equals(user_settings.access_key, 'scout')
-
 
     @mock.patch('framework.addons.AddonModelMixin.get_addon')
     @mock.patch('website.addons.s3.views.config.has_access')
