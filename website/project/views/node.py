@@ -538,6 +538,7 @@ def get_registrations(*args, **kwargs):
 
 CACHE_PATH = os.path.join(settings.BASE_PATH, 'cached')
 
+
 def get_cache_path(pid, fid, vid):
     """Return the file path in the cache directory for a given project and
     file id.
@@ -546,6 +547,7 @@ def get_cache_path(pid, fid, vid):
         CACHE_PATH, pid,
         fid.replace('.', '_') + "_v" + vid + ".html"
     )
+
 
 def check_file_exists(*args, **kwargs):
     """

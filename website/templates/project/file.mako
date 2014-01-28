@@ -17,7 +17,7 @@
       	</div>
         ##todo remove this and fix the bottom one...
     % if not is_rendered:
-       <script> FileRenderer.start("${download_path}render");</script>
+       <script> FileRenderer.start("${download_path}render", "#fileRendered");</script>
     % endif
 
     </div>

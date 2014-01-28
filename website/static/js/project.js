@@ -156,48 +156,29 @@ refresh rendered file through mfr
 */
 
 window.FileRenderer = {
-    start: function(url){
-        var tries = 0
-        var refreshContent = window.setInterval(function(){
-            $.get( url, function(data) {
-                if(data){
-                    $('#fileRendered').html(data);
-                    clearInterval(refreshContent);
-                }else{
-                    tries += 1;
-                    if(tries > 10){
-                    clearInterval(refreshContent);
-                    $('#fileRendered').html("Timeout occurred while loading, please refresh the page")
-                    }
-                }
-            })
-        }, 1000);
-    }
-};
+    start: function(url, selector){
+        this.url = url;
+        this.element = $(selector);
+        this.tries = 0;
+        var refreshContent = window.setInterval(this.getCachedFromServer.bind(this), 1000);
+    },
 
-//window.FileRenderer = {
-//    start: function(url, selector){
-//        this.blarg = url;
-//        this.element = selector;
-//        this.tries = 0;
-//        this.refreshContent = window.setInterval(this.getCachedFromServer, 1000);
-//    },
-//
-//    getCachedFromServer: function() {
-//        $.get(this.blarg, function(data) {
-//            if(data){
-//                $(this.element).html(data);
-//                clearInterval(this.refreshContent);
-//            }else{
-//                this.tries += 1;
-//                if(this.tries > 10){
-//                clearInterval(this.refreshContent);
-//                $(this.element).html("Timeout occurred while loading, please refresh the page")
-//                }
-//            }
-//        });
-//     }
-//};
+    getCachedFromServer: function() {
+        var self = this;
+        $.get( self.url, function(data) {
+            if(data){
+                self.element.html(data);
+                clearInterval(refreshContent);
+            }else{
+                self.tries += 1;
+                if(self.tries > 10){
+                    clearInterval(refreshContent);
+                    self.element.html("Timeout occurred while loading, please refresh the page")
+                }
+            }
+        });
+     }
+};
 
 /*
 Display recent logs for for a node on the project view page.

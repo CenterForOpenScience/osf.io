@@ -284,7 +284,6 @@ def view_file(*args, **kwargs):
 
     file_name = kwargs['fid']
     file_name_clean = file_name.replace('.', '_')
-    renderer = 'default'
 
     # Throw 404 and log error if file not found in files_versions
     try:
@@ -334,22 +333,6 @@ def view_file(*args, **kwargs):
             'committer_url': node_file.uploader.url,
         })
 
-    file_size = os.stat(file_path).st_size
-
-    if file_size > settings.MAX_RENDER_SIZE:
-
-        rv = {
-            'file_name': file_name,
-            'rendered': ('<p>This file is too large to be rendered online. '
-                         'Please <a href={path}>download the file</a> to view it locally.</p>'
-                         .format(path=download_path)),
-            'renderer': renderer,
-            'versions': versions,
-
-        }
-        rv.update(_view_project(node_to_use, user))
-        return rv
-
     _, file_ext = os.path.splitext(file_path.lower())
 
     # Build cached paths and name
@@ -366,16 +349,17 @@ def view_file(*args, **kwargs):
 
     # Makes path if none exists
     if not os.path.exists(cached_file_path):
+
+        # TODO: Move to celery or someplace reusable
+        # TODO: Try / except; see http://stackoverflow.com/questions/273192/create-directory-if-it-doesnt-exist-for-file-write
         if not os.path.exists(cached_dir):
             os.makedirs(cached_dir)
 
         rendered = '<img src="/static/img/loading.gif">'
 
         is_rendered = False
-        build_rendered_html(file_path, cached_file_path, download_path)
-        # build_rendered_html.apply_async(
-        #     [file_path, cached_file_path, download_path]
-        # )
+        # build_rendered_html(file_path, cached_file_path, download_path)
+        build_rendered_html.delay(file_path, cached_file_path, download_path)
     else:
         rendered = open(cached_file_path, 'r').read()
         is_rendered = True
@@ -384,7 +368,6 @@ def view_file(*args, **kwargs):
         'file_name': file_name,
         'download_path': download_path,
         'rendered': rendered,
-        'renderer': renderer,
         'is_rendered': is_rendered,
         'versions': versions,
     }

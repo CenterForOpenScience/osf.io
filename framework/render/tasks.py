@@ -21,7 +21,7 @@ def build_rendered_html(file_path, cached_file_path, download_path):
     Takes absolute and relative path to a file and builds the html used to render the file.
     Each render occurs is queued in celery.
     Writes the html to a file located at cached_file_path.
-    :param file_path: relative path
+    :param file_pointer: relative path
     :param cached_file_path: route to cache location
     :param download_path: absolute path
     :return: html file in cached_file_path used to render file at the file_path
@@ -30,7 +30,7 @@ def build_rendered_html(file_path, cached_file_path, download_path):
     file_pointer = open(file_path)
     rendered = mfr.render(file_pointer, url=download_path)
     if rendered is None:
-        rendered = '<br>Unable to render, download file to view it'.format(download_path)
+        rendered = 'Unable to render, download file to view it'.format(download_path)
     with open(cached_file_path, 'w') as fp:
         fp.write(rendered)
     return True
