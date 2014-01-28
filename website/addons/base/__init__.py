@@ -32,18 +32,20 @@ class AddonConfig(object):
 
     def __init__(self, short_name, full_name, owners, added_to, categories,
                  node_settings_model=None, user_settings_model=None, include_js=None, include_css=None,
-                 widget_help=None, views=None, configs=None,
+                 widget_help=None, views=None, configs=None, models=None,
+                 has_hgrid_files=False, get_hgrid_dummy=None, max_file_size=None,
                  **kwargs):
 
-        self.models = {}
+        self.models = models
+        self.settings_models = {}
 
         if node_settings_model:
             node_settings_model.config = self
-            self.models['node'] = node_settings_model
+            self.settings_models['node'] = node_settings_model
 
         if user_settings_model:
             user_settings_model.config = self
-            self.models['user'] = user_settings_model
+            self.settings_models['user'] = user_settings_model
 
         self.short_name = short_name
         self.full_name = full_name
@@ -58,6 +60,10 @@ class AddonConfig(object):
 
         self.views = views or []
         self.configs = configs or []
+
+        self.has_hgrid_files = has_hgrid_files
+        self.get_hgrid_dummy = get_hgrid_dummy
+        self.max_file_size = max_file_size
 
         # Build template lookup
         template_path = os.path.join('website', 'addons', short_name, 'templates')

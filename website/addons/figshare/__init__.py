@@ -1,6 +1,7 @@
 from .model import AddonFigShareNodeSettings
 from .routes import settings_routes
 
+MODELS = [AddonFigShareNodeSettings]
 NODE_SETTINGS_MODEL = AddonFigShareNodeSettings
 
 ROUTES = [settings_routes]

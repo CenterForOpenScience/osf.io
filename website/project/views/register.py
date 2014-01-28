@@ -70,6 +70,8 @@ def node_register_template_page(*args, **kwargs):
 
     schema = meta_schema.schema
 
+    # TODO: Notify if some components will not be registered
+
     rv = {
         'template_name': template_name,
         'schema': json.dumps(schema),
@@ -92,7 +94,7 @@ def project_before_register(*args, **kwargs):
     user = kwargs['user']
     api_key = get_api_key()
 
-    prompts = node.callback('before_register', user)
+    prompts = node.callback('before_register', node, user)
 
     return {'prompts': prompts}
 

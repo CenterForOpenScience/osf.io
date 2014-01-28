@@ -44,7 +44,7 @@ js = Bundle(
                 "vendor/moment/moment.min.js",
                 "vendor/jquery-blockui/jquery.blockui.js"),
         # Site-specific JS
-        Bundle("js/site.js", "js/project.js", "js/app.js", filters="jsmin"),
+        Bundle("js/site.js", "js/project.js", "js/app.js", "js/addons.js", filters="jsmin"),
         output="public/js/common.js"
 )
 
