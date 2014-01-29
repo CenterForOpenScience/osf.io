@@ -11,9 +11,7 @@ import urllib
 import urlparse
 import logging
 
-import markdown
 import pytz
-from markdown.extensions import wikilinks
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 
@@ -25,7 +23,6 @@ from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
 )
 from framework.git.exceptions import FileNotModified
-from framework.forms.utils import sanitize
 from framework import StoredObject, fields, utils
 from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
@@ -208,54 +205,6 @@ class NodeLog(StoredObject):
         }
 
 
-class NodeFile(GuidStoredObject):
-
-    redirect_mode = 'redirect'
-
-    _id = fields.StringField(primary=True)
-
-    path = fields.StringField()
-    filename = fields.StringField()
-    md5 = fields.StringField()
-    sha = fields.StringField()
-    size = fields.IntegerField()
-    content_type = fields.StringField()
-    git_commit = fields.StringField()
-    is_deleted = fields.BooleanField(default=False)
-
-    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    date_uploaded = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
-
-    node = fields.ForeignField('node', backref='uploads')
-    uploader = fields.ForeignField('user', backref='uploads')
-
-    @property
-    def url(self):
-        return '{0}files/{1}/'.format(self.node.url, self.filename)
-
-    @property
-    def deep_url(self):
-        return '{0}files/{1}/'.format(self.node.deep_url, self.filename)
-
-    @property
-    def api_url(self):
-        return '{0}files/{1}/'.format(self.node.api_url, self.filename)
-
-    @property
-    def clean_filename(self):
-        return self.filename.replace('.', '_')
-
-    @property
-    def latest_version_number(self):
-        return len(self.node.files_versions[self.clean_filename])
-
-    @property
-    def download_url(self):
-        return '{}files/download/{}/version/{}/'.format(
-            self.node.api_url, self.filename, self.latest_version_number)
-
-
 class Tag(StoredObject):
 
     _id = fields.StringField(primary=True)
@@ -365,6 +314,23 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def can_view(self, user, api_key=None):
         return self.is_public or self.can_edit(user, api_key)
+
+    @property
+    def has_files(self):
+        """Check whether the node has any add-ons or components that define
+        the files interface. Overrides AddonModelMixin::has_files to include
+        recursion over child nodes.
+
+        :return bool: Has files add-ons
+
+        """
+        rv = super(Node, self).has_files
+        if rv:
+            return rv
+        for child in self.nodes:
+            if child.has_files:
+                return True
+        return False
 
     def save(self, *args, **kwargs):
 
@@ -502,6 +468,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         if not settings.USE_SOLR:
             return
 
+        from website.addons.wiki.model import NodeWikiPage
+
         if self.category == 'project':
             # All projects use their own IDs.
             solr_document_id = self._id
@@ -539,6 +507,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 '{}_url'.format(self._id): self.url,
                 }
 
+            # TODO: Move to wiki add-on
             for wiki in [
                 NodeWikiPage.load(x)
                 for x in self.wiki_pages_current.values()
@@ -814,6 +783,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 self.save()
 
     def get_file(self, path, version=None):
+        from website.addons.osffiles.model import NodeFile
         if version is not None:
             folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
             if os.path.exists(os.path.join(folder_name, ".git")):
@@ -825,6 +795,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         return None, None
 
     def get_file_object(self, path, version=None):
+        from website.addons.osffiles.model import NodeFile
         if version is not None:
             directory = os.path.join(settings.UPLOADS_PATH, self._primary_key)
             if os.path.exists(os.path.join(directory, '.git')):
@@ -840,6 +811,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :return: True on success, False on failure
         '''
+        from website.addons.osffiles.model import NodeFile
 
         #FIXME: encoding the filename this way is flawed. For instance - foo.bar resolves to the same string as foo_bar.
         file_name_key = path.replace('.', '_')
@@ -940,6 +912,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         Instantiates a new NodeFile object, and adds it to the current Node as
         necessary.
         """
+        from website.addons.osffiles.model import NodeFile
         # TODO: Reading the whole file into memory is not scalable. Fix this.
 
         # This node's folder
@@ -1217,8 +1190,14 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
         return True
 
-    def callback(self, callback, *args, **kwargs):
+    def callback(self, callback, recursive=False, *args, **kwargs):
+        """Invoke callbacks of attached add-ons and collect messages.
 
+        :param str callback: Name of callback method to invoke
+        :param bool recursive: Apply callback recursively over nodes
+        :return list: List of callback messages
+
+        """
         messages = []
 
         for addon in self.get_addons():
@@ -1226,6 +1205,14 @@ class Node(GuidStoredObject, AddonModelMixin):
             message = method(self, *args, **kwargs)
             if message:
                 messages.append(message)
+
+        if recursive:
+            for child in self.nodes:
+                messages.extend(
+                    child.callback(
+                        callback, recursive, *args, **kwargs
+                    )
+                )
 
         return messages
 
@@ -1395,9 +1382,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
         return True
 
+    # TODO: Move to wiki add-on
     def get_wiki_page(self, page, version=None):
-        # len(wiki_pages_versions) == 1, version 1
-        # len() == 2, version 1, 2
+        from website.addons.wiki.model import NodeWikiPage
 
         page = urllib.unquote_plus(page)
         page = to_mongo(page)
@@ -1424,6 +1411,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return pw
 
+    # TODO: Move to wiki add-on
     def update_node_wiki(self, page, content, user, api_key=None):
         """Update the node's wiki page with new content.
 
@@ -1433,6 +1421,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param api_key: A string, the api key. Can be ``None``.
 
         """
+        from website.addons.wiki.model import NodeWikiPage
+
         temp_page = page
 
         page = urllib.unquote_plus(page)
@@ -1493,58 +1483,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             'api_url': self.api_url,
             'is_public': self.is_public
         }
-
-
-class NodeWikiPage(GuidStoredObject):
-
-    redirect_mode = 'redirect'
-
-    _id = fields.StringField(primary=True)
-
-    page_name = fields.StringField()
-    version = fields.IntegerField()
-    date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    is_current = fields.BooleanField()
-    content = fields.StringField()
-
-    user = fields.ForeignField('user')
-    node = fields.ForeignField('node')
-
-    @property
-    def deep_url(self):
-        return '{}wiki/{}/'.format(self.node.deep_url, self.page_name)
-
-    @property
-    def url(self):
-        return '{}wiki/{}/'.format(self.node.url, self.page_name)
-
-    @property
-    def html(self):
-        """The cleaned HTML of the page"""
-
-        html_output = markdown.markdown(
-            self.content,
-            extensions=[
-                wikilinks.WikiLinkExtension(
-                    configs=[('base_url', ''), ('end_url', '')]
-                )
-            ]
-        )
-
-        return sanitize(html_output, **settings.WIKI_WHITELIST)
-
-    @property
-    def raw_text(self):
-        """ The raw text of the page, suitable for using in a test search"""
-
-        return sanitize(self.html, tags=[], strip=True)
-
-    def save(self, *args, **kwargs):
-        rv = super(NodeWikiPage, self).save(*args, **kwargs)
-        if self.node:
-            self.node.update_solr()
-        return rv
-
 
 
 class WatchConfig(StoredObject):

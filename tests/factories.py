@@ -21,7 +21,9 @@ from framework import StoredObject
 from framework.auth import User, Q
 from framework.auth.utils import parse_name
 from website.project.model import (ApiKey, Node, NodeLog, WatchConfig,
-                                   MetaData, Tag, NodeWikiPage, MetaSchema)
+                                   MetaData, Tag, MetaSchema)
+
+from website.addons.wiki.model import NodeWikiPage
 
 
 # TODO: This is a hack. Check whether FactoryBoy can do this better

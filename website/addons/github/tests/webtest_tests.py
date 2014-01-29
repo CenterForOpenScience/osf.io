@@ -28,32 +28,32 @@ class TestGitHubPage(DbTestCase):
         self.node_settings.repo = self.github.repo.return_value['name']
         self.node_settings.save()
 
-    def test_can_see_github_tab(self):
+    def test_can_see_files_tab(self):
         url = "/project/{0}/".format(self.project._id)
         res = self.app.get(url, auth=self.user.auth)
-        assert_in('a href="/{0}/github"'.format(self.project._id), res)
-
-    def test_github_page_with_auth(self):
-        url = "/project/{0}/github/".format(self.project._id)
-        res = self.app.get(url, auth=self.user.auth)
-        assert_in("/addons/static/github/hgrid-github.js", res)
-        # TODO: Fix this assertion
-        # TODO: Assert github panel present
-        #assert_in("/addons/static/github/comicon.png", res)
-        assert_in("/{0}/github".format(self.project._id), res)
-
-    def test_github_page_without_auth(self):
-        self.node_settings.user = "nosense"
-        self.node_settings.save()
-        url = "/project/{0}/github/".format(self.project._id)
-        res = self.app.get(url, auth=self.user.auth)
-        assert_in(" GitHub add-on is not configured properly. Configure this add-on", res)
+        assert_in('a href="/{0}/files/"'.format(self.project._id), res)
 
     def test_github_widget_present(self):
         url = "/project/{0}/".format(self.project._id)
         res = self.app.get(url, auth=self.user.auth)
-        assert_in('a href="/{0}/github"'.format(self.project._id), res)
-        assert_in('<span>GitHub</span>', res)
+        addon_headers = res.html.find_all(attrs={'class': 'addon-widget-header'})
+        assert_true(
+            any([
+                'GitHub' in header.text
+                for header in addon_headers
+            ])
+        )
+
+    def test_files_widget_present(self):
+        url = "/project/{0}/".format(self.project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        addon_headers = res.html.find_all(attrs={'class': 'addon-widget-header'})
+        assert_true(
+            any([
+                'Files' in header.text
+                for header in addon_headers
+            ])
+        )
 
     def test_github_widget_without_auth(self):
         self.node_settings.user = "nosense"
@@ -112,4 +112,3 @@ class TestGitHubPage(DbTestCase):
         assert_in("file-version-history", res)
         assert_in("download the file", res)
         assert_in("icon-download-alt", res)
-
