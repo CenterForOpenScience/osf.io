@@ -290,7 +290,7 @@ def view_file(*args, **kwargs):
     cached_name = file_name_clean + "_v" + vid
 
     cached_file_path = os.path.join(
-        settings.BASE_PATH, "cached",
+        settings.MFR_CACHE_PATH,
         node_to_use._primary_key, cached_name + ".html"
     )
 
