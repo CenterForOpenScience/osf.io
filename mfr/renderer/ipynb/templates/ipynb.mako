@@ -1,6 +1,6 @@
-<link href="${STATIC_PATH}/css/pygments.css" rel="stylesheet">
-<link href="${STATIC_PATH}/css/style.min.css" rel="stylesheet">
-<link href="${STATIC_PATH}/css/theme/${css_theme}.css" rel="stylesheet">
+<link href="${STATIC_PATH}/ipynb/css/pygments.css" rel="stylesheet">
+<link href="${STATIC_PATH}/ipynb/css/style.min.css" rel="stylesheet">
+<link href="${STATIC_PATH}/ipynb/css/theme/cdp_1.css" rel="stylesheet">
 
 
 <style type="text/css">
@@ -39,4 +39,4 @@ ${ body | n }
 })();
 </script>
 
-<script src="${STATIC_PATH}/js/mathjax.js"type="text/javascript"></script>
+<script src="${STATIC_PATH}/ipynb/js/mathjax.js"type="text/javascript"></script>
