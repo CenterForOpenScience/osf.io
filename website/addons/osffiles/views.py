@@ -28,8 +28,6 @@ from .model import NodeFile
 
 logger = logging.getLogger(__name__)
 
-CACHE_PATH = os.path.join(settings.BASE_PATH, 'cached')
-
 
 @must_be_contributor_or_public
 @must_have_addon('osffiles', 'node')
@@ -405,7 +403,7 @@ def get_cache_path(pid, fid, vid):
     file id.
     """
     return os.path.join(
-        CACHE_PATH, pid,
+        settings.MFR_CACHE_PATH, pid,
         fid.replace('.', '_') + "_v" + vid + ".html"
     )
 

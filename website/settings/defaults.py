@@ -43,8 +43,8 @@ MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
 # TODO: Override in local.py in production
-CACHE_PATH = os.path.join(BASE_PATH, 'cache')
 UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
+MFR_CACHE_PATH = os.path.join(BASE_PATH, 'mfrcache')
 
 # TODO: Override in local.py in production
 DB_PORT = 20771
