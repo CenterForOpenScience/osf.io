@@ -98,6 +98,18 @@ api_routes = {
             json_renderer,
         ),
 
+        ### File Render ###
+        Rule(
+            [
+                '/project/<pid>/osffiles/<fid>/version/<vid>/render/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/render/',
+            ],
+            'get',
+            views.check_file_exists,
+            json_renderer,
+        ),
+
+
     ],
 
     'prefix': '/api/v1',

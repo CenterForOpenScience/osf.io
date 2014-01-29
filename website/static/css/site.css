@@ -406,7 +406,6 @@ h4 {
 
 }
 
-<<<<<<< HEAD
 /* Make wiki and mfr images responsive */
 .wiki img, .mfr img {
   vertical-align: middle;
@@ -414,8 +413,6 @@ h4 {
   max-width: 100%;
   height: auto;
 }
-=======
->>>>>>> 561af2692d6e3c81dfe3bc390e8bf2cdbaf9a75c
 
 
 

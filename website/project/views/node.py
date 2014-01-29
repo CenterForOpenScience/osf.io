@@ -23,14 +23,9 @@ from website.models import WatchConfig
 from website import settings
 from website.views import _render_nodes
 
-<<<<<<< HEAD
-from framework.render.tasks import build_rendered_html
-=======
 from .log import _get_logs
 
->>>>>>> 561af2692d6e3c81dfe3bc390e8bf2cdbaf9a75c
 logger = logging.getLogger(__name__)
-import time
 
 @must_have_session_auth
 @must_be_valid_project  # returns project
@@ -648,55 +643,3 @@ def get_registrations(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     registrations = node_to_use.node__registrations
     return _render_nodes(registrations)
-
-
-CACHE_PATH = os.path.join(settings.BASE_PATH, 'cached')
-
-
-def get_cache_path(pid, fid, vid):
-    """Return the file path in the cache directory for a given project and
-    file id.
-    """
-    return os.path.join(
-        CACHE_PATH, pid,
-        fid.replace('.', '_') + "_v" + vid + ".html"
-    )
-
-
-def check_file_exists(*args, **kwargs):
-    """
-    From route kwargs builds path to the cached_file_path. Checks if the
-    html for the cached_file has been rendered and returns html or None.
-
-    :param args: None
-    :param kwargs: pid = project id; fid = file id; vid = version id
-    :return: Html from cached file
-    """
-    cached_file_path = get_cache_path(pid=kwargs['pid'],
-                                      fid=kwargs['fid'],
-                                      vid=kwargs['vid'])
-    cached_file_path_exists = os.path.exists(cached_file_path)
-    if cached_file_path_exists:
-        with open(cached_file_path, 'r') as fp:
-            contents = fp.read()
-        return contents
-    else:
-        return None
-
-# todo will use later - JRS
-# def check_celery(*args, **kwargs):
-#     celery_id = '/api/v1/project/{pid}/files/download/{fid}/version/{vid}/render'.format(
-#         pid=kwargs['pid'], fid=kwargs['fid'],  vid=kwargs['vid']
-#     )
-#
-#     if build_rendered_html.AsyncResult(celery_id).state == "SUCCESS":
-#         cached_file_path = os.path.join(
-#             settings.BASE_PATH, "cached", kwargs['pid'],
-#             kwargs['fid'].replace('.', '_') + "_v" + kwargs['vid'] + ".html"
-#         )
-#         return open(cached_file_path, 'r').read()
-#
-#     if build_rendered_html.AsyncResult(celery_id).state == "FAILURE":
-#         return '<div> This file failed to render (timeout) </div>'
-#     return None
-#

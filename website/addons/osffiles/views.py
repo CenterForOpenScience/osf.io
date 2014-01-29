@@ -2,26 +2,20 @@
 
 """
 
-import re
 import os
 import cgi
-import json
 import time
-import zipfile
-import tarfile
 from cStringIO import StringIO
 import httplib as http
 import logging
 
-import pygments
-import pygments.lexers
-import pygments.formatters
 from hurry.filesize import size, alternative
 
+from framework.render.tasks import build_rendered_html
 from framework import request, redirect, secure_filename, send_file
 from framework.auth import must_have_session_auth
 from framework.git.exceptions import FileNotModified
-from framework.auth import get_current_user, get_api_key
+from framework.auth import get_api_key
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
 from website.project.views.node import _view_project
@@ -33,6 +27,8 @@ from .model import NodeFile
 
 
 logger = logging.getLogger(__name__)
+
+CACHE_PATH = os.path.join(settings.BASE_PATH, 'cached')
 
 
 @must_be_contributor_or_public
@@ -228,9 +224,9 @@ def upload_file_public(*args, **kwargs):
 
     return [file_info], 201
 
-
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
+@must_have_addon('osffiles', 'node')
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
 def view_file(*args, **kwargs):
@@ -239,7 +235,6 @@ def view_file(*args, **kwargs):
 
     file_name = kwargs['fid']
     file_name_clean = file_name.replace('.', '_')
-    renderer = 'default'
 
     # Throw 404 and log error if file not found in files_versions
     try:
@@ -264,7 +259,6 @@ def view_file(*args, **kwargs):
         node_to_use._primary_key,
         file_name
     )
-
     # Throw 404 and log error if file not found on disk
     if not os.path.isfile(file_path):
         logger.error('File {} not found on disk.'.format(file_path))
@@ -290,75 +284,42 @@ def view_file(*args, **kwargs):
             'committer_url': node_file.uploader.url,
         })
 
-    file_size = os.stat(file_path).st_size
-    if file_size > settings.MAX_RENDER_SIZE:
-
-        rv = {
-            'file_name': file_name,
-            'rendered': ('<p>This file is too large to be rendered online. '
-                         'Please <a href={path}>download the file</a> to view it locally.</p>'
-                         .format(path=download_path)),
-            'renderer': renderer,
-            'versions': versions,
-
-        }
-        rv.update(_view_project(node_to_use, user))
-        return rv
-
     _, file_ext = os.path.splitext(file_path.lower())
 
-    is_img = False
-    for fmt in settings.IMG_FMTS:
-        fmt_ptn = '^.{0}$'.format(fmt)
-        if re.search(fmt_ptn, file_ext):
-            is_img = True
-            break
+    # Build cached paths and name
+    vid = str(len(node_to_use.files_versions[file_name.replace('.', '_')]))
 
-    # TODO: this logic belongs in model
-    # todo: add bzip, etc
-    if is_img:
-        # Append version number to image URL so that old versions aren't
-        # cached incorrectly. Resolves #208 [openscienceframework.org]
-        rendered='<img src="{url}osffiles/{fid}/?{vid}" />'.format(
-            url=node_to_use.api_url, fid=file_name, vid=len(versions),
-        )
-    elif file_ext == '.zip':
-        archive = zipfile.ZipFile(file_path)
-        archive_files = prune_file_list(archive.namelist(), settings.ARCHIVE_DEPTH)
-        archive_files = [secure_filename(fi) for fi in archive_files]
-        file_contents = '\n'.join(['This archive contains the following files:'] + archive_files)
-        file_path = 'temp.txt'
-        renderer = 'pygments'
-    elif file_path.lower().endswith('.tar') or file_path.endswith('.tar.gz'):
-        archive = tarfile.open(file_path)
-        archive_files = prune_file_list(archive.getnames(), settings.ARCHIVE_DEPTH)
-        archive_files = [secure_filename(fi) for fi in archive_files]
-        file_contents = '\n'.join(['This archive contains the following files:'] + archive_files)
-        file_path = 'temp.txt'
-        renderer = 'pygments'
+    cached_name = file_name_clean + "_v" + vid
+
+    cached_file_path = os.path.join(
+        settings.BASE_PATH, "cached",
+        node_to_use._primary_key, cached_name + ".html"
+    )
+
+    cached_dir = cached_file_path.strip(cached_file_path.split('/')[-1])
+
+    # Makes path if none exists
+    if not os.path.exists(cached_file_path):
+
+        # TODO: Move to celery or someplace reusable
+        # TODO: Try / except; see http://stackoverflow.com/questions/273192/create-directory-if-it-doesnt-exist-for-file-write
+        if not os.path.exists(cached_dir):
+            os.makedirs(cached_dir)
+
+        rendered = '<img src="/static/img/loading.gif">'
+
+        is_rendered = False
+        # build_rendered_html(file_path, cached_file_path, download_path)
+        build_rendered_html.delay(file_path, cached_file_path, download_path)
     else:
-        renderer = 'pygments'
-        try:
-            file_contents = open(file_path, 'r').read()
-        except IOError:
-            raise HTTPError(http.NOT_FOUND)
-
-    if renderer == 'pygments':
-        try:
-            rendered = pygments.highlight(
-                file_contents,
-                pygments.lexers.guess_lexer_for_filename(file_path, file_contents),
-                pygments.formatters.HtmlFormatter()
-            )
-        except pygments.util.ClassNotFound:
-            rendered = ('<p>This file cannot be rendered online. '
-                        'Please <a href={path}>download the file</a> to view it locally.</p>'
-                        .format(path=download_path))
+        rendered = open(cached_file_path, 'r').read()
+        is_rendered = True
 
     rv = {
         'file_name': file_name,
+        'download_path': download_path,
         'rendered': rendered,
-        'renderer': renderer,
+        'is_rendered': is_rendered,
         'versions': versions,
     }
     rv.update(_view_project(node_to_use, user))
@@ -437,3 +398,52 @@ def delete_file(*args, **kwargs):
         return {}
 
     raise HTTPError(http.BAD_REQUEST)
+
+
+def get_cache_path(pid, fid, vid):
+    """Return the file path in the cache directory for a given project and
+    file id.
+    """
+    return os.path.join(
+        CACHE_PATH, pid,
+        fid.replace('.', '_') + "_v" + vid + ".html"
+    )
+
+
+def check_file_exists(*args, **kwargs):
+    """
+    From route kwargs builds path to the cached_file_path. Checks if the
+    html for the cached_file has been rendered and returns html or None.
+
+    :param args: None
+    :param kwargs: pid = project id; fid = file id; vid = version id
+    :return: Html from cached file
+    """
+    cached_file_path = get_cache_path(pid=kwargs['pid'],
+                                      fid=kwargs['fid'],
+                                      vid=kwargs['vid'])
+    cached_file_path_exists = os.path.exists(cached_file_path)
+    if cached_file_path_exists:
+        with open(cached_file_path, 'r') as fp:
+            contents = fp.read()
+        return contents
+    else:
+        return None
+
+# todo will use later - JRS
+# def check_celery(*args, **kwargs):
+#     celery_id = '/api/v1/project/{pid}/files/download/{fid}/version/{vid}/render'.format(
+#         pid=kwargs['pid'], fid=kwargs['fid'],  vid=kwargs['vid']
+#     )
+#
+#     if build_rendered_html.AsyncResult(celery_id).state == "SUCCESS":
+#         cached_file_path = os.path.join(
+#             settings.BASE_PATH, "cached", kwargs['pid'],
+#             kwargs['fid'].replace('.', '_') + "_v" + kwargs['vid'] + ".html"
+#         )
+#         return open(cached_file_path, 'r').read()
+#
+#     if build_rendered_html.AsyncResult(celery_id).state == "FAILURE":
+#         return '<div> This file failed to render (timeout) </div>'
+#     return None
+#

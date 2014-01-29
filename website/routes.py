@@ -289,13 +289,6 @@ def make_url_map(app):
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
         Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.mako')),
 
-<<<<<<< HEAD
-        Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('project.mako')),
-
-
-
-=======
->>>>>>> 561af2692d6e3c81dfe3bc390e8bf2cdbaf9a75c
         Rule([
             '/project/<pid>/settings/',
             '/project/<pid>/node/<nid>/settings/',
@@ -331,25 +324,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/log/',
         ], 'get', project_views.log.get_logs, OsfWebRenderer('util/render_logs.mako')),
 
-<<<<<<< HEAD
-        ### File Render ###
-        # todo fix this so that it doesn't need api/v1, not sure why this works... (AJS)
-        Rule('/api/v1/project/<pid>/files/download/<fid>/version/<vid>/render', 'get', project_views.node.check_file_exists, json_renderer),
-
-        ### Files ###
-
-        Rule([
-            '/project/<pid>/files/',
-            '/project/<pid>/node/<nid>/files/',
-        ], 'get', project_views.file.get_files, OsfWebRenderer('project/files.mako')),
-
-        Rule([
-            '/project/<pid>/files/<fid>/',
-            '/project/<pid>/node/<nid>/files/<fid>/',
-        ], 'get', project_views.file.view_file, OsfWebRenderer('project/file.mako')),
-
-=======
->>>>>>> 561af2692d6e3c81dfe3bc390e8bf2cdbaf9a75c
         # View forks
         Rule([
             '/project/<pid>/forks/',

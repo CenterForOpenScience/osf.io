@@ -207,7 +207,7 @@ window.FileRenderer = {
         this.url = url;
         this.element = $(selector);
         this.tries = 0;
-        var refreshContent = window.setInterval(this.getCachedFromServer.bind(this), 1000);
+        this.refreshContent = window.setInterval(this.getCachedFromServer.bind(this), 1000);
     },
 
     getCachedFromServer: function() {
@@ -215,11 +215,11 @@ window.FileRenderer = {
         $.get( self.url, function(data) {
             if(data){
                 self.element.html(data);
-                clearInterval(refreshContent);
+                clearInterval(self.refreshContent);
             }else{
                 self.tries += 1;
                 if(self.tries > 10){
-                    clearInterval(refreshContent);
+                    clearInterval(self.refreshContent);
                     self.element.html("Timeout occurred while loading, please refresh the page")
                 }
             }
