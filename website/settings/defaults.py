@@ -22,7 +22,7 @@ CONFIRM_REGISTRATIONS_BY_EMAIL = False # Not fully implemented
 ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 
-USE_SOLR = True
+USE_SOLR = False
 SOLR_URI = 'http://localhost:8983/solr/'
 
 # Sessions
@@ -46,6 +46,12 @@ MAIL_PASSWORD = ''  # Set this in local.py
 UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
 MFR_CACHE_PATH = os.path.join(BASE_PATH, 'mfrcache')
 
+# Use Celery for file rendering
+MFR_USE_QUEUE = True
+
+# File rendering timeout (in ms)
+MFR_TIMEOUT = 30000
+
 # TODO: Override in local.py in production
 DB_PORT = 20771
 DB_NAME = 'osf20130903'
@@ -67,16 +73,6 @@ SHORT_DOMAIN = 'osf.io'
 # Gravatar options
 GRAVATAR_SIZE_PROFILE = 120
 GRAVATAR_SIZE_ADD_CONTRIBUTOR = 80
-
-# File upload options
-MAX_UPLOAD_SIZE = 1024*1024*250     # In bytes
-
-# File render options
-MAX_RENDER_SIZE = 1024*1024*2.5     # In bytes
-IMG_FMTS = ['jpe?g', 'tiff?', 'png', 'gif', 'bmp', 'svg', 'ico']
-RENDER_ZIP = True
-RENDER_TAR = True
-ARCHIVE_DEPTH = 2               # Set to None for unlimited depth
 
 # User activity style
 USER_ACTIVITY_MAX_WIDTH = 325

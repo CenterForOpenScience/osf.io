@@ -11,7 +11,6 @@ import logging
 
 from hurry.filesize import size, alternative
 
-from framework.render.tasks import build_rendered_html
 from framework import request, redirect, secure_filename, send_file
 from framework.auth import must_have_session_auth
 from framework.git.exceptions import FileNotModified
@@ -21,10 +20,10 @@ from framework.analytics import get_basic_counters, update_counters
 from website.project.views.node import _view_project
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public, must_have_addon
+from website.project.views.file import get_cache_content
 from website import settings
 
 from .model import NodeFile
-
 
 logger = logging.getLogger(__name__)
 
@@ -228,7 +227,9 @@ def upload_file_public(*args, **kwargs):
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
 def view_file(*args, **kwargs):
+
     user = kwargs['user']
+    node_settings = kwargs['node_addon']
     node_to_use = kwargs['node'] or kwargs['project']
 
     file_name = kwargs['fid']
@@ -236,21 +237,21 @@ def view_file(*args, **kwargs):
 
     # Throw 404 and log error if file not found in files_versions
     try:
-        latest_node_file_id = node_to_use.files_versions[file_name_clean][-1]
+        file_id = node_to_use.files_versions[file_name_clean][-1]
     except KeyError:
         logger.error('File {} not found in files_versions of component {}.'.format(
             file_name_clean, node_to_use._id
         ))
         raise HTTPError(http.NOT_FOUND)
-    latest_node_file = NodeFile.load(latest_node_file_id)
+    file_object = NodeFile.load(file_id)
 
     # Ensure NodeFile is attached to Node; should be fixed by actions or
     # improved data modeling in future
-    if not latest_node_file.node:
-        latest_node_file.node = node_to_use
-        latest_node_file.save()
+    if not file_object.node:
+        file_object.node = node_to_use
+        file_object.save()
 
-    download_path = latest_node_file.download_url
+    download_path = file_object.download_url
 
     file_path = os.path.join(
         settings.UPLOADS_PATH,
@@ -284,40 +285,19 @@ def view_file(*args, **kwargs):
 
     _, file_ext = os.path.splitext(file_path.lower())
 
-    # Build cached paths and name
-    vid = str(len(node_to_use.files_versions[file_name.replace('.', '_')]))
-
-    cached_name = file_name_clean + "_v" + vid
-
-    cached_file_path = os.path.join(
-        settings.MFR_CACHE_PATH,
-        node_to_use._primary_key, cached_name + ".html"
+    cache_file = get_cache_file(
+        file_object.filename,
+        file_object.latest_version_number
     )
-
-    cached_dir = cached_file_path.strip(cached_file_path.split('/')[-1])
-
-    # Makes path if none exists
-    if not os.path.exists(cached_file_path):
-
-        # TODO: Move to celery or someplace reusable
-        # TODO: Try / except; see http://stackoverflow.com/questions/273192/create-directory-if-it-doesnt-exist-for-file-write
-        if not os.path.exists(cached_dir):
-            os.makedirs(cached_dir)
-
-        rendered = '<img src="/static/img/loading.gif">'
-
-        is_rendered = False
-        # build_rendered_html(file_path, cached_file_path, download_path)
-        build_rendered_html.delay(file_path, cached_file_path, download_path)
-    else:
-        rendered = open(cached_file_path, 'r').read()
-        is_rendered = True
+    rendered = get_cache_content(
+        node_settings, cache_file, start_render=True, file_path=file_path,
+        file_content=None, download_path=download_path,
+    )
 
     rv = {
         'file_name': file_name,
-        'download_path': download_path,
+        'render_url': download_path + 'render/',
         'rendered': rendered,
-        'is_rendered': is_rendered,
         'versions': versions,
     }
     rv.update(_view_project(node_to_use, user))
@@ -398,35 +378,22 @@ def delete_file(*args, **kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 
-def get_cache_path(pid, fid, vid):
-    """Return the file path in the cache directory for a given project and
-    file id.
-    """
-    return os.path.join(
-        settings.MFR_CACHE_PATH, pid,
-        fid.replace('.', '_') + "_v" + vid + ".html"
+def get_cache_file(fid, vid):
+    return '{0}_v{1}.html'.format(
+        fid.replace('.', '_'), vid,
     )
 
-
-def check_file_exists(*args, **kwargs):
+@must_be_valid_project
+@must_be_contributor_or_public
+@must_have_addon('osffiles', 'node')
+def osffiles_get_rendered_file(*args, **kwargs):
     """
-    From route kwargs builds path to the cached_file_path. Checks if the
-    html for the cached_file has been rendered and returns html or None.
 
-    :param args: None
-    :param kwargs: pid = project id; fid = file id; vid = version id
-    :return: Html from cached file
     """
-    cached_file_path = get_cache_path(pid=kwargs['pid'],
-                                      fid=kwargs['fid'],
-                                      vid=kwargs['vid'])
-    cached_file_path_exists = os.path.exists(cached_file_path)
-    if cached_file_path_exists:
-        with open(cached_file_path, 'r') as fp:
-            contents = fp.read()
-        return contents
-    else:
-        return None
+    node_settings = kwargs['node_addon']
+    cache_file = get_cache_file(kwargs['fid'], kwargs['vid'])
+    return get_cache_content(node_settings, cache_file)
+
 
 # todo will use later - JRS
 # def check_celery(*args, **kwargs):
