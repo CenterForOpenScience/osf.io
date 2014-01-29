@@ -467,9 +467,8 @@ def _view_project(node, user, api_key=None, primary=False):
                 'chicago': node.citation_chicago,
                 'CSLTEST1': CitationParser.to_citation(node.to_csl(), os.path.join(CSL_PATH, 'harvard1.csl'), formatter.plain), #figure this out
                 'CSLTEST2': CitationParser.to_citation(node.to_csl(), os.path.join(CSL_PATH, 'apa.csl'), formatter.plain),
-                'BIBTEX': CitationParser.to_final('xml2bib', node.to_csl()),
-                'RIS': CitationParser.to_final('xml2ris', node.to_csl()),
-                #'format_citation test': node_to_use.format_citation(node=node_to_use, style='harvard1.csl'),
+                'BIBTEX': CitationParser.to_machine_readable('xml2bib', node.to_csl()),
+                'RIS': CitationParser.to_machine_readable('xml2ris', node.to_csl()),
             },
             'is_public': node.is_public,
             'date_created': node.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
@@ -588,10 +587,12 @@ def _get_user_activity(node, user, rescale_ratio):
 
 
 @must_be_valid_project
-def format_citation(*args, **kwargs):
+def human_format_citation(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
     style = kwargs.get('style')
+    if style is None:
+        raise HTTPError(http.BAD_REQUEST)
 
     csl = node.to_csl()
     output = CitationParser.to_citation(
@@ -602,6 +603,21 @@ def format_citation(*args, **kwargs):
 
     return {'output': output}
 
+@must_be_valid_project
+def machine_format_citation(*args, **kwargs):
+
+    node = kwargs['node'] or kwargs['project']
+    utilname = kwargs.get('machine_style')
+    if utilname is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    csl = node.to_csl()
+    output = CitationParser.to_machine_readable(
+        utilname,
+        csl
+    )
+
+    return {'output': output}
 
 @must_be_valid_project
 def get_recent_logs(*args, **kwargs):

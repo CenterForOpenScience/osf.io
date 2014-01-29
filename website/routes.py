@@ -461,14 +461,26 @@ def make_url_map(app):
         # Citations
         Rule(
             [
-                '/project/<pid>/citation/<style>/',
-                '/project/<pid>/node/<nid>/citation/<style>/'
+                '/project/<pid>/citation/human/<style>/',
+                '/project/<pid>/node/<nid>/citation/human/<style>/'
             ],
             'get',
-            project_views.node.format_citation,
+            project_views.node.human_format_citation,
             json_renderer,
         ),
-#http://localhost:5000/api/v1/project/qbfu4/citation/apa.csl/
+#http://localhost:5000/api/v1/project/qbfu4/citation/human/apa.csl/
+
+        Rule(
+            [
+                '/project/<pid>/citation/machine/<machine_style>/',
+                '/project/<pid>/node/<nid>/citation/machine/<machine_style>/'
+            ],
+            'get',
+            project_views.node.machine_format_citation,
+            json_renderer,
+        ),
+#http://localhost:5000/api/v1/project/qbfu4/citation/machine/bib2xml/
+
 
         # Edit node
         Rule([

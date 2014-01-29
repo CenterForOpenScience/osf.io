@@ -42,7 +42,7 @@ def to_citation(project_data, citation_style, formatter_Style):
     return bibliography.bibliography()
 
 
-def to_final(utilname, csl_input):
+def to_machine_readable(utilname, csl_input):
     """following conversion from JSON to CSLformat (bibtex in this case), this method converts that to XMLintermediary
     and then to final user specified format"""
 
@@ -56,4 +56,4 @@ def to_final(utilname, csl_input):
 #print (to_citation(sample,os.path.join(CSL_PATH, 'harvard1.csl'), formatter.plain))
 #print (to_citation(sample,os.path.join(CSL_PATH, 'zootaxa.csl'), formatter.plain))
 
-#print(to_final('xml2bib', sample))
+#print(to_machine_readable('xml2bib', sample))
