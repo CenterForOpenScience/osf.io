@@ -88,11 +88,9 @@ def github_view_file(*args, **kwargs):
 
     # Get file history
     start_sha = (sha or branch) if node.is_registration else branch
-    commits = connection.history(node_settings.user, node_settings.repo, path, sha=start_sha)
-    params = ref_to_params(branch, sha)
-    for commit in commits:
-        commit['download'] = os.path.join(node.api_url, 'github', 'file', path) + '?ref=' + commit['sha']
-        commit['view'] = os.path.join(node.url, 'github', 'file', path) + '?' + params
+    commits = connection.history(
+        node_settings.user, node_settings.repo, path, sha=start_sha
+    )
 
     # Get current commit
     shas = [
@@ -101,6 +99,17 @@ def github_view_file(*args, **kwargs):
     ]
     current_sha = sha if sha in shas else shas[0]
 
+    for commit in commits:
+        commit['download'] = (
+            os.path.join(node.api_url, 'github', 'file', path) +
+            '?ref=' + ref_to_params(sha=commit['sha'])
+        )
+        commit['view'] = (
+            os.path.join(node.url, 'github', 'file', path)
+            + '?' + ref_to_params(branch, commit['sha'])
+        )
+
+    # Get or create rendered file
     cache_file = get_cache_file(
         path, current_sha,
     )

@@ -5,8 +5,6 @@
 
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
-<%def name="file_contents()"></%def>
-
     <div id="file-container" class="row">
 
         <div class="col-md-8">
@@ -16,6 +14,8 @@
         <div class="col-md-4">
             ${self.file_versions()}
         </div>
+
+    </div>
 
 </%def>
 

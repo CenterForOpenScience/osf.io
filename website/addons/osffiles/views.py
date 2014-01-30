@@ -285,6 +285,7 @@ def view_file(*args, **kwargs):
 
     _, file_ext = os.path.splitext(file_path.lower())
 
+    # Get or create rendered file
     cache_file = get_cache_file(
         file_object.filename,
         file_object.latest_version_number

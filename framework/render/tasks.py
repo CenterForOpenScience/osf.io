@@ -2,7 +2,7 @@ import logging
 import os
 import errno
 from framework.tasks import celery
-from website import settings  # TODO: Use framework's config module instead
+from website import settings
 from mfr.renderer import FileRenderer
 import mfr
 import tempfile
@@ -23,7 +23,8 @@ def ensure_path(path):
 
 
 @celery.task(time_limit=settings.MFR_TIMEOUT)
-def _build_rendered_html(file_name, file_content, cache_dir, cache_file_name, download_path):
+def _build_rendered_html(file_name, file_content, cache_dir, cache_file_name,
+                         download_path):
     """
 
     :param str file_name:
@@ -33,9 +34,10 @@ def _build_rendered_html(file_name, file_content, cache_dir, cache_file_name, do
     :param str download_path:
 
     """
-    # Open or create file pointer
+    # Open file pointer if no content provided
     if file_content is None:
         file_pointer = open(file_name)
+    # Else create temporary file with content
     else:
         file_pointer = tempfile.NamedTemporaryFile(
             suffix=os.path.splitext(file_name)[1],
@@ -44,6 +46,8 @@ def _build_rendered_html(file_name, file_content, cache_dir, cache_file_name, do
         file_pointer.seek(0)
 
     # Build path to cached content
+    # Note: Ensures that cache directories have the same owner as the files
+    # inside them
     ensure_path(cache_dir)
     cache_file_path = os.path.join(cache_dir, cache_file_name)
 
