@@ -74,6 +74,7 @@ def wrapped_key_to_json(wrapped_key, url, parent_uid=0):
         'deleteUrl': url + URLADDONS['delete'],
     }
 
+
 def wrapped_key_to_json_new(wrapped_key, node_api, parent):
     return {
         'uid': wrapped_key.fullPath,

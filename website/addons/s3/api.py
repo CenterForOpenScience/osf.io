@@ -164,7 +164,7 @@ class S3Wrapper:
         return [S3Key(x) for x in self.bucket.list(delimiter='/', prefix=directory) if isinstance(x, Key) and x.key != directory]
 
     def get_wrapped_directories_in_dir(self, directory=None):
-        return [S3Key(x) for x in self.bucket.list(prefix=directory) if isinstance(x, Key) and x.key.endswith('/')]
+        return [S3Key(x) for x in self.bucket.list(prefix=directory) if isinstance(x, Key) and x.key.endswith('/') and x.key != directory]
 
     @property
     def bucket_name(self):
