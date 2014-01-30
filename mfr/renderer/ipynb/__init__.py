@@ -21,7 +21,7 @@ class NbFormatError(Exception):
 class IPynbRenderer(FileRenderer):
     def _detect(self, file_pointer):
         _, ext = os.path.splitext(file_pointer.name)
-        return ext == '.ipynb'
+        return ext.lower() == '.ipynb'
 
     def _render(self, file_pointer, **kwargs):
         content = file_pointer.read()
