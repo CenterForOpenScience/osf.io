@@ -115,3 +115,7 @@ def _s3_create_access_key(s3_user, s3_node, pid):
         s3_node.save()
         return True
     return False
+
+
+def create_new_bucket(*args, **kwargs):
+    pass

@@ -2,7 +2,7 @@ import httplib as http
 
 import datetime
 
-from framework import request
+from framework import request, redirect
 from framework.exceptions import HTTPError
 
 from website.project.decorators import must_be_contributor
@@ -16,6 +16,7 @@ from .utils import _page_content
 
 from website import models
 
+from urllib import unquote
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
@@ -109,6 +110,7 @@ def s3_new_folder(*args, ** kwargs):
     connect.createFolder(folderPath)
     return {}
 
+
 #TODO Fix Me does not work because coming from main page?
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
@@ -116,9 +118,34 @@ def download(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
-    keyName = request.json.get('key', '')
-    assert 0,keyName
+    keyName = unquote(kwargs['path'])
+
     if keyName is None:
         raise HTTPError(http.NOT_FOUND)
     connect = S3Wrapper.from_addon(s3)
     return redirect(connect.download_file_URL(keyName))
+
+
+@must_be_contributor
+@must_have_addon('s3', 'node')
+def delete(*args, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    s3 = node.get_addon('s3')
+    dfile = unquote(kwargs['path'])
+
+    connect = S3Wrapper.from_addon(s3)
+    connect.delete_file(dfile)
+
+    node.add_log(
+        action='s3_' + models.NodeLog.FILE_REMOVED,
+        params={
+            'project': node.parent_id,
+            'node': node._primary_key,
+            'bucket': s3.bucket,
+            'path': dfile,
+        },
+        user=kwargs['user'],
+        api_key=None,
+        log_date=datetime.datetime.utcnow(),
+    )
+    return {}

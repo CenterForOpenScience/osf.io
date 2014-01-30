@@ -9,7 +9,7 @@ def s3_dummy_folder(node_settings, user, parent=None, **kwargs):
     if not node_settings.bucket or not node_settings.node_auth:
         return
 
-    #connection = GitHub.from_settings(node_settings.user_settings)
+    node = node_settings.owner
 
     rv = {
         'addonName': 'Amazon Simple Storage Service',
@@ -20,10 +20,10 @@ def s3_dummy_folder(node_settings, user, parent=None, **kwargs):
         ),
         'parent_uid': parent or 'null',
         'type': 'folder',
-        'can_view': True,
-        'can_edit': True,
-        'permission': True,
-        'lazyLoad': node_settings.owner.api_url + 's3/hgrid/',
+        'can_view': node.can_view(user),
+        'can_edit': node.can_edit(user) and not node.is_registration,
+        'permission': node.can_edit(user) and not node.is_registration,
+        'lazyLoad': node.api_url + 's3/hgrid/',
     }
 
     return rv
@@ -46,11 +46,6 @@ def s3_hgrid_data_contents(*args, **kwargs):
     can_view = node.can_view(user)
 
     s3wrapper = S3Wrapper.from_addon(s3_node_settings)
-
-    print parent
-    print parent
-    print parent
-
 
     files = []
     if 's3:' in parent:

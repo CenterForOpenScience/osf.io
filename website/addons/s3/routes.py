@@ -46,22 +46,17 @@ crud_routes = {
             '/project/<pid>/node/<nid>/s3/fetchurl/<key>',
         ], 'get', views.crud.s3_download, json_renderer),
         Rule([
-            '/project/<pid>/s3/delete/',
-            '/<pid>/s3/delete/',
-            '/project/<pid>/node/<nid>/s3/delete/',
-        ], 'delete', views.crud.s3_delete, json_renderer),
-        Rule([
-            '/project/<pid>/s3/newfolder/<path>',
-            '/project/<pid>/node/<nid>/s3/newfolder/<path>'
-        ], 'get', views.crud.s3_new_folder, json_renderer),
+            '/project/<pid>/s3/delete/<path:path>/',
+            '/project/<pid>/node/<nid>/s3/delete/<path:path>/',
+        ], 'delete', views.crud.delete, json_renderer),
         Rule([
             '/project/<pid>/s3/getsigned/',
             '/project/<pid>/node/<nid>/s3/getsigned/'
         ], 'post', views.utils.generate_signed_url, json_renderer),
         Rule([
-            '/project/<pid>/s3/download/',
-            '/project/<pid>/node/<nid>/s3/download/'
-        ], 'post', views.crud.download, json_renderer),
+            '/project/<pid>/s3/download/<path:path>/',
+            '/project/<pid>/node/<nid>/s3/download/<path:path>/'
+        ], 'get', views.crud.download, json_renderer),
     ],
     'prefix': '/api/v1',
 }

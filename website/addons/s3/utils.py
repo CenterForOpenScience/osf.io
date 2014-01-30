@@ -4,9 +4,9 @@ from boto.s3.cors import CORSConfiguration
 
 
 URLADDONS = {
-    'delete': 'delete/',
-    'upload': 'upload/',
-    'download': 'download/',
+    'delete': 's3/delete/',
+    'upload': 's3/upload/',
+    'download': 's3/download/',
 }
 
 # This is for adjusting the cors of an s3 bucket, not used during development
@@ -85,8 +85,8 @@ def wrapped_key_to_json_new(wrapped_key, node_api, parent):
         'lastMod': wrapped_key.lastMod.strftime("%Y/%m/%d %I:%M %p") if wrapped_key.lastMod is not None else '--',
         'ext': wrapped_key.extension if wrapped_key.extension is not None else '--',
         'upload': key_upload_path(wrapped_key, node_api),
-        'download': node_api + URLADDONS['download'],
-        'delete': node_api + URLADDONS['delete'],
+        'download': node_api + URLADDONS['download'] + quote(wrapped_key.fullPath) + '/',
+        'delete': node_api + URLADDONS['delete']+ quote(wrapped_key.fullPath) + '/',
     }
 
 
