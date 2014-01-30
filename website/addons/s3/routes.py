@@ -61,6 +61,10 @@ crud_routes = {
             '/project/<pid>/s3/download/<path:path>/',
             '/project/<pid>/node/<nid>/s3/download/<path:path>/'
         ], 'get', views.crud.download, json_renderer),
+        Rule([
+            '/project/<pid>/s3/view/<path:path>/',
+            '/project/<pid>/node/<nid>/s3/view/<path:path>/'
+        ], 'get', views.crud.view, json_renderer),
     ],
     'prefix': '/api/v1',
 }

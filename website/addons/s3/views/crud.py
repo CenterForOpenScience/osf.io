@@ -149,3 +149,6 @@ def delete(*args, **kwargs):
         log_date=datetime.datetime.utcnow(),
     )
     return {}
+
+def view(*args, **kwargs):
+    pass
