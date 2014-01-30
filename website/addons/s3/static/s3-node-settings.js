@@ -26,7 +26,7 @@ function onSubmitRemove() {
 };
 
 
-//TODO Fix me up set bucketname variable.
+//TODO Fix me up use id's maybe...
 function setDropDownListener() {
     $( document.body ).on( 'click', '.dropdown-menu li', function( event ) {
 
@@ -38,7 +38,10 @@ function setDropDownListener() {
           .children( '.dropdown-toggle' ).dropdown( 'toggle' );
           $('#s3_bucket').attr('value', $target.text());
         //Submit Form here
-        $('#addonSettingsS3').submit();
+        if ($target.text() === 'Create a new bucket')
+            newBucket();
+        else
+            $('#addonSettingsS3').submit();
         //AddonHelper.onSubmitSettings();
         return false;
 
@@ -46,6 +49,29 @@ function setDropDownListener() {
     });
 };
 
-function newBucket(bucketName) {
+function newBucket() {
+    bootbox.prompt('Name your new bucket', function(bucketName) {
 
+        $.ajax({
+            url: nodeApiUrl +  addonShortname + '/newbucket/',
+            type: 'POST',
+            contentType: 'application/json',
+            dataType: 'json',
+            data: JSON.stringify({bucket_name: bucketName})
+        }).success(function() {
+            msgElm.text('Access removed')
+                .removeClass('text-danger').addClass('text-success')
+                .fadeOut(100).fadeIn();
+        }).fail(function(xhr) {
+            var message = 'Error: Access not removed';
+            msgElm.text(message)
+                .removeClass('text-success').addClass('text-danger')
+                .fadeOut(100).fadeIn();
+            btn = $this.find('.addon-settings-submit');
+            btn.text('Force Removal');
+            btn.attr('class', 'btn btn-warning addon-settings-submit')
+            force = 'force/';
+        });
+        $('#addonSettingsS3').submit();
+    });
 };
