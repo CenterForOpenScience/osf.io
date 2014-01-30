@@ -37,6 +37,8 @@
                     contentType: 'application/json',
                     dataType: 'json',
                 }).success(function() {
+                    $('#access_key').val('');
+                    $('#secret_key').val('');
                     msgElm.text('Keys removed')
                         .removeClass('text-danger').addClass('text-success')
                         .fadeOut(100).fadeIn();
