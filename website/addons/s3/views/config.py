@@ -107,6 +107,7 @@ def s3_delete_access_key(*args, **kwargs):
     # delete our access and secret key
     s3_node.node_access_key = ''
     s3_node.node_secret_key = ''
+    s3_node.bucket = ''
     s3_node.save()
     return True
 
@@ -131,5 +132,6 @@ def force_removal(*args, **kwargs):
     # delete our access and secret key
     s3_node.node_access_key = ''
     s3_node.node_secret_key = ''
+    s3_node.bucket = ''
     s3_node.save()
     return True
