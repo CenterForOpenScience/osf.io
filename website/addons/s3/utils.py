@@ -7,6 +7,7 @@ URLADDONS = {
     'delete': 's3/delete/',
     'upload': 's3/upload/',
     'download': 's3/download/',
+    'view': 's3/view/'
 }
 
 # This is for adjusting the cors of an s3 bucket, not used during development
@@ -37,7 +38,7 @@ def getHgrid(url, s3wrapper):
                  'version_id': '--',
                  'lastMod': '--',
                  'size': '--',
-                 'uploadUrl': '/',#url + URLADDONS['upload'],
+                 'uploadUrl': '/',  # url + URLADDONS['upload'],
                  'downloadUrl': url + URLADDONS['download'],
                  'deleteUrl': url + URLADDONS['delete'],
                  })
@@ -84,9 +85,9 @@ def wrapped_key_to_json_new(wrapped_key, node_api, parent):
         'size': (wrapped_key.size, wrapped_key.size) if wrapped_key.size is not None else '--',
         'lastMod': wrapped_key.lastMod.strftime("%Y/%m/%d %I:%M %p") if wrapped_key.lastMod is not None else '--',
         'ext': wrapped_key.extension if wrapped_key.extension is not None else '--',
-        'upload': key_upload_path(wrapped_key, node_api),
-        'download': node_api + URLADDONS['download'] + quote(wrapped_key.fullPath) + '/',
-        'delete': node_api + URLADDONS['delete']+ quote(wrapped_key.fullPath) + '/',
+        'download': node_api + URLADDONS['download'] + quote(wrapped_key.fullPath) + '/' if wrapped_key.type == 'file' else None,
+        'delete': node_api + URLADDONS['delete'] + quote(wrapped_key.fullPath) + '/'if wrapped_key.type == 'file' else None,
+        'view': node_api + URLADDONS['view'] + quote(wrapped_key.fullPath) + '/'if wrapped_key.type == 'file' else None,
     }
 
 
@@ -99,13 +100,14 @@ def key_upload_path(wrapped_key, url):
         return quote(url + URLADDONS['upload'] + wrapped_key.fullPath + '/')
 
 
-    #TODO Add me in usersettings tojson
-def get_bucket_drop_down(user_settings,node_auth):
+    # TODO Add me in usersettings tojson
+def get_bucket_drop_down(user_settings, node_auth):
     dropdown_list = ''
     for bucket in get_bucket_list(user_settings):
         if node_auth:
-            dropdown_list += '<li role="presentation" class="disabled"><a href="#">' + bucket.name + '</a></li>'
+            dropdown_list += '<li role="presentation" class="disabled"><a href="#">' + \
+                bucket.name + '</a></li>'
         else:
-            dropdown_list += '<li role="presentation"><a href="#">' + bucket.name + '</a></li>'
+            dropdown_list += '<li role="presentation"><a href="#">' + \
+                bucket.name + '</a></li>'
     return dropdown_list
-
