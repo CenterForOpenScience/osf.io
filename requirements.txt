@@ -9,7 +9,7 @@ Werkzeug==0.9.4
 amqp==1.0.12
 beautifulsoup4==4.3.2
 billiard==2.7.3.31
-celery==3.0.21
+celery==3.1.8
 decorator==3.4.0
 dulwich==0.8.7
 httplib2==0.8
