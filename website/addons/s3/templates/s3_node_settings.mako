@@ -7,7 +7,7 @@
 
         <div class="btn-group btn-input">
           <button type="button" class="btn btn-default dropdown-toggle form-control" data-toggle="dropdown">
-            <span data-bind="label">${bucket if bucket else 'Select a bucket'}</span> <span class="caret"></span>
+            <span id="bucketlabel" data-bind="label">${bucket if bucket else 'Select a bucket'}</span> <span class="caret"></span>
           </button>
 
           <ul class="dropdown-menu" role="menu">

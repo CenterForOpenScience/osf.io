@@ -1,9 +1,9 @@
 from framework import request
 
 from website.project.decorators import must_have_addon
-from website.project.decorators import must_be_contributor
+from website.project.decorators import must_be_contributor, must_be_contributor_or_public
 
-from website.addons.s3.api import S3Wrapper
+from website.addons.s3.api import S3Wrapper, create_bucket
 from website.addons.s3.api import create_limited_user
 
 from website.addons.s3.utils import getHgrid
@@ -116,6 +116,12 @@ def _s3_create_access_key(s3_user, s3_node, pid):
         return True
     return False
 
-
+@must_be_contributor_or_public
+@must_have_addon('s3', 'node')
 def create_new_bucket(*args, **kwargs):
-    pass
+    user = kwargs['user']
+    user_settings = user.get_addon('s3')
+    if create_bucket(user_settings, request.json.get('bucket_name')):
+        return {},200
+    else:
+        return {},400

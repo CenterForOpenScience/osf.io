@@ -29,6 +29,12 @@ def has_access(access_key, secret_key):
 def get_bucket_list(user_settings):
         return S3Connection(user_settings.access_key, user_settings.secret_key).get_all_buckets()
 
+def create_bucket(user_settings, bucket_name):
+    try:
+        connect = S3Connection(user_settings.access_key,user_settings.secret_key)
+        return connect.create_bucket(bucket_name)
+    except Exception:
+        return False
 
 def create_limited_user(accessKey, secretKey, bucketName, pid):
     policy = {

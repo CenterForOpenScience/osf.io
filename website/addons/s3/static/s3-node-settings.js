@@ -59,19 +59,15 @@ function newBucket() {
             dataType: 'json',
             data: JSON.stringify({bucket_name: bucketName})
         }).success(function() {
-            msgElm.text('Access removed')
-                .removeClass('text-danger').addClass('text-success')
-                .fadeOut(100).fadeIn();
+            $('#bucketlabel').text(bucketName);
+            $('#s3_bucket').val(bucketName);
+            //$('#addonSettingsS3').submit();
         }).fail(function(xhr) {
-            var message = 'Error: Access not removed';
-            msgElm.text(message)
-                .removeClass('text-success').addClass('text-danger')
-                .fadeOut(100).fadeIn();
-            btn = $this.find('.addon-settings-submit');
-            btn.text('Force Removal');
-            btn.attr('class', 'btn btn-warning addon-settings-submit')
-            force = 'force/';
+            bootbox.confirm('Looks like that name is taken. Try another name?', function(result) {
+                if (result)
+                    newBucket();
+            })
         });
-        $('#addonSettingsS3').submit();
+
     });
 };
