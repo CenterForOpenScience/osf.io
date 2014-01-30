@@ -22,12 +22,12 @@
 </%def>
 ##TODO create a remove access key
 ##Update button? maybe?
-
+##TODO Clear key fields
 <%def name="on_submit()">
     %if has_auth:
         <script type="text/javascript">
          $(document).ready(function() {
-            $('#${addon_short_name}').on('submit', function() {
+            $('#addonSettings${addon_short_name.capitalize()}').on('submit', function() {
                 var $this = $(this),
                 addon = $this.attr('data-addon'),
                 msgElm = $this.find('.addon-settings-message');
