@@ -29,9 +29,6 @@ def s3_dummy_folder(node_settings, user, parent=None, **kwargs):
     return rv
 
 
-#TODO Polish me... A LOT
-#Again... Lazy loading?
-#Key prefixing!
 @must_be_contributor_or_public
 @must_have_addon('osffiles', 'node')
 def s3_hgrid_data_contents(*args, **kwargs):
