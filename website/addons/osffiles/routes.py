@@ -36,7 +36,7 @@ web_routes = {
         Rule([
             '/project/<pid>/osffiles/<fid>/',
             '/project/<pid>/node/<nid>/osffiles/<fid>/',
-        ], 'get', views.view_file, OsfWebRenderer('../addons/osffiles/templates/osffiles_file.mako')),
+        ], 'get', views.view_file, OsfWebRenderer('../addons/osffiles/templates/osffiles_view_file.mako')),
 
     ]
 
@@ -95,6 +95,17 @@ api_routes = {
             ],
             'delete',
             views.delete_file,
+            json_renderer,
+        ),
+
+        ### File Render ###
+        Rule(
+            [
+                '/project/<pid>/osffiles/<fid>/version/<vid>/render/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/render/',
+            ],
+            'get',
+            views.osffiles_get_rendered_file,
             json_renderer,
         ),
 
