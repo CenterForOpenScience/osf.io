@@ -66,6 +66,20 @@ crud_routes = {
     'prefix': '/api/v1',
 }
 
+hgrid_routes = {
+    'rules': [
+        Rule(
+        [
+            '/project/<pid>/s3/hgrid/',
+            '/project/<pid>/node/<nid>/s3/hgrid/',
+            '/project/<pid>/s3/hgrid/<path:path>/',
+            '/project/<pid>/node/<nid>/s3/hgrid/<path:path>/',
+        ],
+        'get', views.hgrid.s3_hgrid_data_contents, json_renderer),
+    ],
+    'prefix': '/api/v1'
+}
+
 page_routes = {
     'rules': [
         Rule([

@@ -1,4 +1,4 @@
-from api import S3Wrapper, S3Key
+from api import S3Wrapper, S3Key,  get_bucket_list
 from urllib import quote
 from boto.s3.cors import CORSConfiguration
 
@@ -74,6 +74,20 @@ def wrapped_key_to_json(wrapped_key, url, parent_uid=0):
         'deleteUrl': url + URLADDONS['delete'],
     }
 
+def wrapped_key_to_json_new(wrapped_key, node_api, parent):
+    return {
+        'uid': wrapped_key.fullPath,
+        'type': wrapped_key.type,
+        'name': wrapped_key.name,
+        'parent_uid': parent,
+        'size': (wrapped_key.size, wrapped_key.size) if wrapped_key.size is not None else '--',
+        'lastMod': wrapped_key.lastMod.strftime("%Y/%m/%d %I:%M %p") if wrapped_key.lastMod is not None else '--',
+        'ext': wrapped_key.extension if wrapped_key.extension is not None else '--',
+        'upload': key_upload_path(wrapped_key, node_api),
+        'download': node_api + URLADDONS['download'],
+        'delete': node_api + URLADDONS['delete'],
+    }
+
 
 def key_upload_path(wrapped_key, url):
     # TODO clean up url replacement etc
@@ -82,3 +96,12 @@ def key_upload_path(wrapped_key, url):
         return quote(url + URLADDONS['upload'])
     else:
         return quote(url + URLADDONS['upload'] + wrapped_key.fullPath + '/')
+
+
+    #TODO Add me in usersettings tojson
+def get_bucket_drop_down(user_settings):
+    dropdown_list = ''
+    for bucket in get_bucket_list(user_settings):
+        dropdown_list += '<li><a href="#">' + bucket.name + '</a></li>'
+    return dropdown_list
+

@@ -7,7 +7,7 @@ from boto.exception import *
 from boto.s3.connection import *
 from boto.s3.cors import CORSConfiguration
 
-from hurry.filesize import size
+from hurry.filesize import size, alternative
 
 import os
 import re
@@ -26,20 +26,24 @@ def has_access(access_key, secret_key):
         return False
 
 
+def get_bucket_list(user_settings):
+        return S3Connection(user_settings.access_key, user_settings.secret_key).get_all_buckets()
+
+
 def create_limited_user(accessKey, secretKey, bucketName, pid):
     policy = {
         "Version": "2012-10-17",
         "Statement": [
-        {
-        "Sid": "Stmt1390848602000",
-        "Effect": "Deny",
-        "Action": [
-        "s3:DeleteBucket"
-        ],
-            "Resource": [
-                "arn:aws:s3:::{bucketname}".format(bucketname=bucketName)
-            ]
-        },
+            {
+                "Sid": "Stmt1390848602000",
+                "Effect": "Deny",
+                "Action": [
+                    "s3:DeleteBucket"
+                ],
+                "Resource": [
+                    "arn:aws:s3:::{bucketname}".format(bucketname=bucketName)
+                ]
+            },
             {
                 "Sid": "Stmt1390848639000",
                 "Effect": "Allow",
@@ -57,7 +61,7 @@ def create_limited_user(accessKey, secretKey, bucketName, pid):
     }
     connection = IAMConnection(accessKey, secretKey)
     connection.create_user(bucketName + '-osf-limited-' + pid)
-    #This might need a bit more try catching
+    # This might need a bit more try catching
     connection.put_user_policy(
         bucketName + '-osf-limited-' + pid, 'policy-' + bucketName + '-osf-limited-' + pid, json.dumps(policy))
     return connection.create_access_key(bucketName + '-osf-limited-' + pid)['create_access_key_response']['create_access_key_result']['access_key']
@@ -67,8 +71,10 @@ def create_limited_user(accessKey, secretKey, bucketName, pid):
 
 def remove_user(accessKey, secretKey, bucketName, otherKey, pid):
     connection = IAMConnection(accessKey, secretKey)
-    connection.delete_user_policy(bucketName + '-osf-limited-' + pid, 'policy-' + bucketName + '-osf-limited-' + pid)
-        #bucketName + '-osf-limited', 'policy-' + bucketName + '-osf-limited-' + pid)
+    connection.delete_user_policy(
+        bucketName + '-osf-limited-' + pid, 'policy-' + bucketName + '-osf-limited-' + pid)
+        # bucketName + '-osf-limited', 'policy-' + bucketName + '-osf-limited-'
+        # + pid)
     connection.delete_access_key(otherKey, bucketName + '-osf-limited-' + pid)
     connection.delete_user(bucketName + '-osf-limited-' + pid)
 
@@ -121,8 +127,11 @@ class S3Wrapper:
         k = self.connection.get_bucket(bucket).get_key(key)
         return k.set_metadata(metadataName, metadata)
 
-    def get_file_list(self):
-        return self.bucket.list()
+    def get_file_list(self, prefix=None):
+        if not prefix:
+            return self.bucket.list()
+        else:
+            return self.bucket.list(prefix=prefix)
 
     def create_folder(self, name, pathToFolder=""):
         if not name.endswith('/'):
@@ -132,6 +141,7 @@ class S3Wrapper:
 
     def delete_file(self, keyName):
         return self.bucket.delete_key(keyName)
+
 
     def get_MD5(self, keyName):
         '''returns the MD5 hash of a file.
@@ -144,11 +154,17 @@ class S3Wrapper:
     def download_file_URL(self, keyName):
         return self.bucket.get_key(keyName).generate_url(5)
 
-    def get_wrapped_keys(self):
+    def get_wrapped_keys(self, prefix=None):
         return [S3Key(x) for x in self.get_file_list()]
 
     def get_wrapped_key(self, keyName):
         return S3Key(self.bucket.get_key(keyName))
+
+    def get_wrapped_keys_in_dir(self, directory=None):
+        return [S3Key(x) for x in self.bucket.list(delimiter='/', prefix=directory) if isinstance(x, Key) and x.key != directory]
+
+    def get_wrapped_directories_in_dir(self, directory=None):
+        return [S3Key(x) for x in self.bucket.list(prefix=directory) if isinstance(x, Key) and x.key.endswith('/')]
 
     @property
     def bucket_name(self):
@@ -235,8 +251,7 @@ class S3Key:
         if self.type == 'folder':
             return None
         else:
-            return size(int(self.s3Key.size)).lower()
-
+            return size(float(self.s3Key.size), system=alternative)
     @property
     def lastMod(self):
         if self.type == 'folder':
