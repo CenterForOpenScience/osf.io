@@ -4,7 +4,7 @@ function onSubmitRemove() {
     addon = $this.attr('data-addon'),
     msgElm = $this.find('.addon-settings-message');
     $.ajax({
-        url: nodeApiUrl + '${addon_short_name}' + '/settings/delete/' + force,
+        url: nodeApiUrl +  addonShortname + '/settings/delete/' + force,
         type: 'POST',
         contentType: 'application/json',
         dataType: 'json',
@@ -23,4 +23,29 @@ function onSubmitRemove() {
         force = 'force/';
     });
     return false;
-});
+};
+
+
+//TODO Fix me up set bucketname variable.
+function setDropDownListener() {
+    $( document.body ).on( 'click', '.dropdown-menu li', function( event ) {
+
+       var $target = $( event.currentTarget );
+
+       $target.closest( '.btn-group' )
+          .find( '[data-bind="label"]' ).text( $target.text() )
+             .end()
+          .children( '.dropdown-toggle' ).dropdown( 'toggle' );
+          $('#s3_bucket').attr('value', $target.text());
+        //Submit Form here
+        $('#addonSettingsS3').submit();
+        //AddonHelper.onSubmitSettings();
+        return false;
+
+
+    });
+};
+
+function newBucket(bucketName) {
+
+};
