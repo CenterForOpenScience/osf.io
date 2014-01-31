@@ -1,10 +1,10 @@
-var force = '';
+
 function onSubmitRemove() {
     var $this = $(this),
     addon = $this.attr('data-addon'),
     msgElm = $this.find('.addon-settings-message');
     $.ajax({
-        url: nodeApiUrl +  addonShortname + '/settings/delete/' + force,
+        url: nodeApiUrl +  addonShortname + '/settings/delete/',
         type: 'POST',
         contentType: 'application/json',
         dataType: 'json',
@@ -17,10 +17,6 @@ function onSubmitRemove() {
         msgElm.text(message)
             .removeClass('text-success').addClass('text-danger')
             .fadeOut(100).fadeIn();
-        btn = $this.find('.addon-settings-submit');
-        btn.text('Force Removal');
-        btn.attr('class', 'btn btn-warning addon-settings-submit')
-        force = 'force/';
     });
     return false;
 };
@@ -42,7 +38,7 @@ function setDropDownListener() {
             newBucket();
         else
             $('#addonSettingsS3').submit();
-        //AddonHelper.onSubmitSettings();
+
         return false;
 
 

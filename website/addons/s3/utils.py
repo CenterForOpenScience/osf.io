@@ -92,15 +92,12 @@ def wrapped_key_to_json_new(wrapped_key, node_api, parent):
 
 
 def key_upload_path(wrapped_key, url):
-    # TODO clean up url replacement etc
-    # TODO use urllib
     if wrapped_key.type != 'folder':
         return quote(url + URLADDONS['upload'])
     else:
         return quote(url + URLADDONS['upload'] + wrapped_key.fullPath + '/')
 
 
-    # TODO Add me in usersettings tojson
 def get_bucket_drop_down(user_settings, node_auth):
     dropdown_list = ''
     for bucket in get_bucket_list(user_settings):
