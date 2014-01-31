@@ -14,9 +14,9 @@
             <li role="presentation" class="dropdown-header">Your buckets</li>
             ${bucket_list}
             <li role="presentation" class="divider"></li>
-            <li role="presentation" ${'class="disabled"' if node_auth else ''}><a>Create a new bucket</a></li>
+            <li role="presentation" ${'class="disabled"' if node_auth else ''}><a href="#">Create a new bucket</a></li>
             %if user_has_auth and node_auth:
-                <li role="presentation"><a>Remove access to ${bucket}</a></li>
+                <li role="presentation"><a href="#">Remove access to ${bucket}</a></li>
             %endif
           </ul>
 
