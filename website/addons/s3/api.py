@@ -188,12 +188,8 @@ class S3Wrapper:
         return versions
         # TODO update this to cache results later
 
-    def get_file_versions(self, fileName):
-        # TODO store list in self and check for changes
-        v = self.get_version_data()
-        if fileName in v:
-            return v[fileName]
-        return []
+    def get_file_versions(self, file_name):
+        return [x for x in self.bucket.list_versions(prefix=file_name) if isinstance(x,Key)]
 
     def get_cors_rules(self):
         try:

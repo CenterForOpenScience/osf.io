@@ -2,5 +2,35 @@
 <%def name="title()">${file_name}</%def>
 
 <%def name="file_versions()">
+    <table class="table" id="file-version-history">
 
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Download</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            % for version in versions:
+                <tr class="${'active' if version['id'] == 'Current' else ''}">
+                    <td>
+                        <a href="${version['id']}" title="${version['id']}">
+                            ${version['id'][:10]}
+                        </a>
+                    </td>
+                    <td>
+                        ${version['date']}
+                    </td>
+                    <td>
+                        <a href="${version['download']}" download="${file_name}">
+                            <i class="icon-download-alt"></i>
+                        </a>
+                    </td>
+                </tr>
+            %endfor
+        </tbody>
+
+    </table>
 </%def>

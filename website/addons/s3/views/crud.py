@@ -14,6 +14,7 @@ from website.project.views.file import get_cache_content
 from website.addons.s3.api import S3Wrapper
 
 from .utils import _page_content, get_cache_file_name
+from website.addons.s3.utils import  create_version_list
 
 from website import models
 
@@ -184,16 +185,17 @@ def view(*args, **kwargs):
 
     cache_name = get_cache_file_name(path, key.md5)
 
-     # Download me here.... get as string?
-
     render = get_cache_content(node_settings, cache_name, start_render=True,
                                file_content=file_contents, download_path=download_url, file_path=path)
+
+    versions = create_version_list(wrapper, unquote(path))
 
     rv = {
         'file_name': key.name,
         'rendered': render,
         'download_url': download_url,
         'render_url': render_url,
+        'versions': versions,
     }
     rv.update(_view_project(node, user, primary=True))
 
