@@ -1071,3 +1071,9 @@ h1.unavailable {
     /*background: white;*/
     visibility:hidden;
 }
+.mfr-ipynb-body {
+  vertical-align: middle;
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
