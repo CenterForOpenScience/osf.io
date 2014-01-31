@@ -141,6 +141,20 @@ def new_project_form():
 
 ### GUID ###
 
+def _build_guid_url(url, prefix=None, suffix=None):
+    if not url.startswith('/'):
+        url = '/' + url
+    if not url.endswith('/'):
+        url += '/'
+    url = (
+        (prefix or '') +
+        url +
+        (suffix or '')
+    )
+    if not url.endswith('/'):
+        url += '/'
+    return url
+
 def resolve_guid(guid, suffix=None):
     """Resolve GUID to corresponding URL and return result of appropriate
     view function. This effectively yields a redirect without changing the
@@ -151,24 +165,32 @@ def resolve_guid(guid, suffix=None):
     :return: Werkzeug response
 
     """
+    # Get prefix; handles API routes
+    prefix = request.path.split(guid)[0].rstrip('/')
+
     # Look up GUID
     guid_object = Guid.load(guid)
     if guid_object:
         referent = guid_object.referent
         if referent is None:
-            logger.error('Referent of GUID {} not found'.format(guid))
+            logger.error('Referent of GUID {0} not found'.format(guid))
             raise HTTPError(http.NOT_FOUND)
         mode = referent.redirect_mode
         url = referent.deep_url if mode == 'proxy' else referent.url
-        url += suffix or ''
-        if not url.endswith('/'):
-            url += '/'
-        return proxy_url(url) if mode == 'proxy' else redirect(url)
+        url = _build_guid_url(url, prefix, suffix)
+        # Always redirect API URLs; URL should identify endpoint being called
+        if prefix or mode == 'redirect':
+            return redirect(url)
+        return proxy_url(url)
 
     # GUID not found; try lower-cased and redirect if exists
     guid_object_lower = Guid.load(guid.lower())
     if guid_object_lower:
-        return redirect('{0}/{1}'.format(guid.lower(), suffix or ''))
+        return redirect(
+            _build_guid_url(
+                guid.lower(), prefix, suffix
+            )
+        )
 
     # GUID not found
     raise HTTPError(http.NOT_FOUND)
