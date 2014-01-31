@@ -117,6 +117,7 @@ def s3_new_folder(*args, ** kwargs):
 
 
 # TODO Fix Me does not work because coming from main page?
+#TODO Version downloading
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
 def download(*args, **kwargs):
@@ -168,8 +169,10 @@ def view(*args, **kwargs):
     user = kwargs['user']
     node = kwargs['node'] or kwargs['project']
 
+    vid = request.args.get('vid')
+
     wrapper = S3Wrapper.from_addon(node_settings)
-    key = wrapper.get_wrapped_key(unquote(path))
+    key = wrapper.get_wrapped_key(unquote(path), vid=vid)
 
     # Test to see if the file size is within limit
     if key.s3Key.size > MAX_RENDER_SIZE:
@@ -194,6 +197,7 @@ def view(*args, **kwargs):
         'download_url': download_url,
         'render_url': render_url,
         'versions': versions,
+        'current': vid or 'Current',
     }
     rv.update(_view_project(node, user, primary=True))
 

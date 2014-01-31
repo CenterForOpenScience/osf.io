@@ -150,7 +150,7 @@ class S3Wrapper:
     def delete_file(self, keyName):
         return self.bucket.delete_key(keyName)
 
-
+    #TODO Test me I might not work
     def get_MD5(self, keyName):
         '''returns the MD5 hash of a file.
 
@@ -165,8 +165,8 @@ class S3Wrapper:
     def get_wrapped_keys(self, prefix=None):
         return [S3Key(x) for x in self.get_file_list()]
 
-    def get_wrapped_key(self, keyName):
-        return S3Key(self.bucket.get_key(keyName))
+    def get_wrapped_key(self, keyName, vid=None):
+        return S3Key(self.bucket.get_key(keyName, version_id=vid))
 
     def get_wrapped_keys_in_dir(self, directory=None):
         return [S3Key(x) for x in self.bucket.list(delimiter='/', prefix=directory) if isinstance(x, Key) and x.key != directory]

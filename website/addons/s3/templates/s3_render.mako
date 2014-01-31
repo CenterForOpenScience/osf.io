@@ -14,9 +14,9 @@
 
         <tbody>
             % for version in versions:
-                <tr class="${'active' if version['id'] == 'Current' else ''}">
+                <tr class="${'active' if version['id'] == current else ''}">
                     <td>
-                        <a href="${version['id']}" title="${version['id']}">
+                        <a href="?vid=${version['id']}" title="${version['id']}">
                             ${version['id'][:10]}
                         </a>
                     </td>
