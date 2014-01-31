@@ -53,9 +53,6 @@ def new_node(category, title, user, description=None, project=None):
     return node
 
 
-def get_node(id):
-    return Node.load(id)
-
 template_name_replacements = {
     ('.txt', ''),
     ('_', ' '),
