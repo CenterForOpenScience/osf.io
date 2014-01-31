@@ -14,7 +14,7 @@ from website.project.views.file import get_cache_content
 from website.addons.s3.api import S3Wrapper
 
 from .utils import _page_content, get_cache_file_name
-from website.addons.s3.utils import  create_version_list
+from website.addons.s3.utils import create_version_list
 
 from website import models
 
@@ -175,9 +175,7 @@ def view(*args, **kwargs):
     if key.s3Key.size > MAX_RENDER_SIZE:
         raise HTTPError(http.BAD_REQUEST)
 
-
-
-    download_url = node.api_url + 's3/download/' + path + '/' # TODO Finish Me
+    download_url = node.api_url + 's3/download/' + path + '/'
 
     file_contents = key.s3Key.get_contents_as_string()
 
@@ -212,4 +210,3 @@ def ping_render(*args, **kwargs):
     cache_file = get_cache_file_name(path, md5)
     print cache_file
     return get_cache_content(node_settings, cache_file)
-
