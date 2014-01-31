@@ -17,7 +17,7 @@ from .utils import _s3_create_access_key
 
 @must_be_logged_in
 @must_have_addon('s3', 'user')
-def s3_user_settings(*args, **kwargs):
+def user_settings(*args, **kwargs):
     user = kwargs['user']
     s3_user = user.get_addon('s3')
     if not s3_user:
@@ -46,7 +46,7 @@ def s3_user_settings(*args, **kwargs):
 
 @must_be_contributor
 @must_have_addon('s3', 'node')
-def s3_settings(*args, **kwargs):
+def node_settings(*args, **kwargs):
 
     user = kwargs['user']
 
@@ -94,7 +94,7 @@ def s3_settings(*args, **kwargs):
 
 @must_be_contributor
 @must_have_addon('s3', 'node')
-def s3_delete_access_key(*args, **kwargs):
+def delete_access_key(*args, **kwargs):
     user = kwargs['user']
 
     s3_node = kwargs['node_addon']
@@ -115,7 +115,7 @@ def s3_delete_access_key(*args, **kwargs):
 
 @must_be_logged_in
 @must_have_addon('s3', 'user')
-def s3_remove_user_settings(*args, **kwargs):
+def remove_user_settings(*args, **kwargs):
     user = kwargs['user']
     user_settings = user.get_addon('s3')
 

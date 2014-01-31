@@ -14,11 +14,11 @@ node_settings_routes = {
         Rule([
             '/project/<pid>/s3/settings/',
             '/project/<pid>/node/<nid>/s3/settings/',
-        ], 'post', views.config.s3_settings, json_renderer),
+        ], 'post', views.config.node_settings, json_renderer),
         Rule([
             '/project/<pid>/s3/settings/delete/',
             '/project/<pid>/node/<nid>/s3/settings/delete/',
-        ], 'post', views.config.s3_delete_access_key, json_renderer),
+        ], 'post', views.config.delete_access_key, json_renderer),
         Rule([
             '/project/<pid>/s3/settings/delete/force/',
             '/project/<pid>/node/<nid>/s3/settings/delete/force/',
@@ -35,10 +35,10 @@ user_settings_routes = {
     'rules': [
         Rule([
             '/settings/s3/',
-        ], 'post', views.config.s3_user_settings, json_renderer),
+        ], 'post', views.config.user_settings, json_renderer),
         Rule([
             '/settings/s3/delete/',
-        ], 'post', views.config.s3_remove_user_settings, json_renderer),
+        ], 'post', views.config.remove_user_settings, json_renderer),
     ],
     'prefix': '/api/v1',
 }

@@ -22,6 +22,9 @@ from urllib import unquote
 
 MAX_RENDER_SIZE = (1024 ** 2) * 3
 
+#TODO Anything begining with s3_ can be staged for removal
+#S3 Page is also staged to be removed
+
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
