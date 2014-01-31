@@ -328,7 +328,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         if rv:
             return rv
         for child in self.nodes:
-            if child.has_files:
+            if not child.is_deleted and child.has_files:
                 return True
         return False
 
@@ -1175,11 +1175,12 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         if recursive:
             for child in self.nodes:
-                messages.extend(
-                    child.callback(
-                        callback, recursive, *args, **kwargs
+                if not child.is_deleted:
+                    messages.extend(
+                        child.callback(
+                            callback, recursive, *args, **kwargs
+                        )
                     )
-                )
 
         return messages
 
