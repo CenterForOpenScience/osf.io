@@ -1,8 +1,3 @@
-__author__ = 'Chris Seto'
-
-
-from os.path import basename
-
 from boto.exception import *
 from boto.s3.connection import *
 from boto.s3.cors import CORSConfiguration
@@ -14,7 +9,6 @@ import re
 from boto.iam import *
 import json
 from datetime import datetime
-from urllib import quote
 
 
 def has_access(access_key, secret_key):
@@ -32,7 +26,8 @@ def get_bucket_list(user_settings):
 
 def create_bucket(user_settings, bucket_name):
     try:
-        connect = S3Connection(user_settings.access_key,user_settings.secret_key)
+        connect = S3Connection(
+            user_settings.access_key, user_settings.secret_key)
         return connect.create_bucket(bucket_name)
     except Exception:
         return False
@@ -150,7 +145,7 @@ class S3Wrapper:
     def delete_file(self, keyName):
         return self.bucket.delete_key(keyName)
 
-    #TODO Test me I might not work
+    # TODO Test me I might not work
     def get_MD5(self, keyName):
         '''returns the MD5 hash of a file.
 
@@ -189,7 +184,7 @@ class S3Wrapper:
         # TODO update this to cache results later
 
     def get_file_versions(self, file_name):
-        return [x for x in self.bucket.list_versions(prefix=file_name) if isinstance(x,Key)]
+        return [x for x in self.bucket.list_versions(prefix=file_name) if isinstance(x, Key)]
 
     def get_cors_rules(self):
         try:
@@ -256,6 +251,7 @@ class S3Key:
             return None
         else:
             return size(float(self.s3Key.size), system=alternative)
+
     @property
     def lastMod(self):
         if self.type == 'folder':

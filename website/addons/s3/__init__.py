@@ -1,12 +1,13 @@
-from .model import AddonS3UserSettings, AddonS3NodeSettings
-from .routes import node_settings_routes, user_settings_routes, page_routes, crud_routes, hgrid_routes
+from . import model
+from . import routes
 from . import views
 
-MODELS = [AddonS3UserSettings, AddonS3NodeSettings]
-USER_SETTINGS_MODEL = AddonS3UserSettings
-NODE_SETTINGS_MODEL = AddonS3NodeSettings
+MODELS = [model.AddonS3UserSettings, model.AddonS3NodeSettings]
+USER_SETTINGS_MODEL = model.AddonS3UserSettings
+NODE_SETTINGS_MODEL = model.AddonS3NodeSettings
 
-ROUTES = [node_settings_routes, user_settings_routes, page_routes, crud_routes, hgrid_routes]
+ROUTES = [routes.node_settings_routes, routes.user_settings_routes,
+          routes.page_routes, routes.crud_routes, routes.hgrid_routes]
 
 SHORT_NAME = 's3'
 FULL_NAME = 'Amazon Simple Storage Service'
@@ -19,7 +20,7 @@ ADDED_TO = {
     'node': False,
 }
 
-VIEWS = []#['page']
+VIEWS = []
 CONFIGS = ['user', 'node']
 
 CATEGORIES = ['storage']
@@ -43,4 +44,4 @@ INCLUDE_CSS = {
 
 HAS_HGRID_FILES = True
 GET_HGRID_DUMMY = views.hgrid.s3_dummy_folder
-MAX_FILE_SIZE = 1024 ** 1024  #This might actually need to be smaller.....
+MAX_FILE_SIZE = 1024 ** 1024  # There really shouldnt be a limit...

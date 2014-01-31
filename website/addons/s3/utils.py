@@ -1,6 +1,5 @@
-from api import S3Wrapper, S3Key,  get_bucket_list
+from api import S3Key,  get_bucket_list
 from urllib import quote
-from boto.s3.cors import CORSConfiguration
 from datetime import datetime
 import re
 
@@ -118,16 +117,17 @@ def create_version_list(wrapper, key_name, node_api):
     versions = wrapper.get_file_versions(key_name)
     return [{
             'id': x.version_id if x.version_id != 'null' else 'Current',
-            'date': _format_date(x.last_modified), #TODO Format me
-            'download': _get_download_url(key_name,x.version_id,node_api),
+            'date': _format_date(x.last_modified),  # TODO Format me
+            'download': _get_download_url(key_name, x.version_id, node_api),
             } for x in versions]
 
 
 def _format_date(date):
     m = re.search(
-                '(.+?)-(.+?)-(\d*)T(\d*):(\d*):(\d*)', str(date))
+        '(.+?)-(.+?)-(\d*)T(\d*):(\d*):(\d*)', str(date))
     if m is not None:
-        dt = datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)))
+        dt = datetime(int(m.group(1)), int(m.group(2)),
+                      int(m.group(3)), int(m.group(4)), int(m.group(5)))
         return dt.strftime("%Y/%m/%d %I:%M %p")
     else:
         return '--'

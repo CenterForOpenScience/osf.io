@@ -3,6 +3,7 @@ from website.addons.s3.api import S3Wrapper
 from website.addons.s3.utils import wrapped_key_to_json_new
 from framework import request
 
+
 def s3_dummy_folder(node_settings, user, parent=None, **kwargs):
 
     # Quit if no bucket
@@ -52,8 +53,9 @@ def s3_hgrid_data_contents(*args, **kwargs):
         key_list = s3wrapper.get_wrapped_keys_in_dir(parent)
         key_list.extend(s3wrapper.get_wrapped_directories_in_dir(parent))
 
-    for key in key_list:#parent):
-        temp_file = wrapped_key_to_json_new(key, node.api_url, parent or 'null')
+    for key in key_list:
+        temp_file = wrapped_key_to_json_new(
+            key, node.api_url, parent or 'null')
         temp_file['lazyLoad'] = node_settings.owner.api_url + 's3/hgrid/',
         temp_file['can_edit'] = can_edit
         temp_file['permission'] = can_edit

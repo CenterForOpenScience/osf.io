@@ -55,7 +55,8 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         })
         if s3_user_settings:
             rv['user_has_auth'] = True if s3_user_settings.has_auth else False
-            rv['bucket_list'] = get_bucket_drop_down(s3_user_settings, self.node_auth)
+            rv['bucket_list'] = get_bucket_drop_down(
+                s3_user_settings, self.node_auth)
 
         return rv
 

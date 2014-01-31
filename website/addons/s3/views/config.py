@@ -8,7 +8,7 @@ from website.project.decorators import must_have_addon
 from framework.auth import must_be_logged_in
 
 from website.addons.s3.api import S3Wrapper
-from website.addons.s3.api import has_access, does_bucket_exist,remove_user
+from website.addons.s3.api import has_access, does_bucket_exist, remove_user
 
 from website.addons.s3.utils import adjust_cors
 
@@ -25,7 +25,6 @@ def s3_user_settings(*args, **kwargs):
 
     s3_access_key = request.json.get('access_key', '') or ''
     s3_secret_key = request.json.get('secret_key', '') or ''
-
 
     changed = (
         s3_access_key != s3_user.access_key or
@@ -85,12 +84,14 @@ def s3_settings(*args, **kwargs):
 
         # Last but no least make sure we can upload (must be last) (still no
         # least(but actually))
-        #This fails for some reason....
-        #I dont like this solutions TODO find a better way
-        #Seems like there is some lag from creating the key hmmm
+        # This fails for some reason....
+        # I dont like this solutions TODO find a better way
+        # Seems like there is some lag from creating the key hmmm
         adjust_cors(S3Wrapper.from_user(s3_addon, bucket))
 
-#TODO Rename me
+# TODO Rename me
+
+
 @must_be_contributor
 @must_have_addon('s3', 'node')
 def s3_delete_access_key(*args, **kwargs):

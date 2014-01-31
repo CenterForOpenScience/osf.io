@@ -10,8 +10,6 @@ from website.addons.s3.utils import getHgrid
 
 from website import models
 
-from urllib import quote, unquote
-
 import datetime
 
 import time
@@ -49,9 +47,7 @@ def generate_signed_url(*args, ** kwargs):
     signed = urllib.quote_plus(base64.encodestring(
         hmac.new(str(s3.node_secret_key), request_to_sign, sha).digest()).strip())
 
-
-
-    #move into crud.py add a call back in hgrid upload
+    # move into crud.py add a call back in hgrid upload
     node.add_log(
         action='s3_' + models.NodeLog.FILE_ADDED,
         params={
@@ -85,7 +81,6 @@ def generate_signed_url(*args, ** kwargs):
 
 
 def _page_content(pid, s3, user_settings):
-    # TODO create new bucket if not found  inform use/ output error?
     if not pid or not s3.bucket or not s3.node_auth or not user_settings or not user_settings.has_auth:
         return {}
     # try:
@@ -118,6 +113,7 @@ def _s3_create_access_key(s3_user, s3_node, pid):
         return True
     return False
 
+
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
 def create_new_bucket(*args, **kwargs):
@@ -128,6 +124,6 @@ def create_new_bucket(*args, **kwargs):
     else:
         return {}, 400
 
+
 def get_cache_file_name(key_name, md5):
     return '{0}_{1}.html'.format(key_name.replace('/', ''), md5)
-
