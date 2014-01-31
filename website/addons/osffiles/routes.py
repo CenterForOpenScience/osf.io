@@ -77,6 +77,10 @@ api_routes = {
         Rule([
             '/project/<pid>/osffiles/<fid>/version/<vid>/',
             '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/',
+            # Note: Added these old URLs for backwards compatibility with
+            # hard-coded links.
+            '/project/<pid>/files/download/<fid>/version/<vid>/',
+            '/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
         ], 'get', views.download_file_by_version, json_renderer),
 
         Rule(
