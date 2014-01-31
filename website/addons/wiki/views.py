@@ -41,9 +41,9 @@ import logging
 import httplib as http
 import difflib
 
-from framework import request, get_current_user, status
+from framework import request, status
+from framework.auth import get_current_user
 from framework.analytics import update_counters
-from framework.auth import must_have_session_auth, get_api_key
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from framework.exceptions import HTTPError
@@ -96,7 +96,7 @@ def _get_wiki_versions(node, wid):
 def project_wiki_compare(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
-    user = kwargs['user']
+    auth = kwargs['auth']
     wid = kwargs['wid']
 
     node_to_use = node or project
@@ -120,7 +120,7 @@ def project_wiki_compare(*args, **kwargs):
                 'is_edit': True,
                 'version': pw.version,
             }
-            rv.update(_view_project(node_to_use, user, primary=True))
+            rv.update(_view_project(node_to_use, auth, primary=True))
             return rv
     raise HTTPError(http.NOT_FOUND)
 
@@ -163,13 +163,9 @@ def project_wiki_version(*args, **kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_page(*args, **kwargs):
 
-    project = kwargs['project']
-    node = kwargs['node']
     wid = kwargs['wid']
-
-    user = get_current_user()
-    api_key = get_api_key()
-    node_to_use = node or project
+    auth = kwargs['auth']
+    node_to_use = kwargs['node'] or kwargs['project']
 
     pw = node_to_use.get_wiki_page(wid)
 
@@ -193,7 +189,7 @@ def project_wiki_page(*args, **kwargs):
         }
         for child in node_to_use.nodes
         if not child.is_deleted
-            and child.can_view(user, api_key)
+            and child.can_view(auth)
     ]
 
     rv = {
@@ -213,11 +209,10 @@ def project_wiki_page(*args, **kwargs):
         'category': node_to_use.category
     }
 
-    rv.update(_view_project(node_to_use, user, primary=True))
+    rv.update(_view_project(node_to_use, auth, primary=True))
     return rv
 
 
-@must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -225,7 +220,7 @@ def project_wiki_page(*args, **kwargs):
 def project_wiki_edit(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
-    user = kwargs['user']
+    auth = kwargs['auth']
     wid = kwargs['wid']
 
     node_to_use = node or project
@@ -249,11 +244,10 @@ def project_wiki_edit(*args, **kwargs):
         'is_current': is_current,
         'is_edit': True,
     }
-    rv.update(_view_project(node_to_use, user, primary=True))
+    rv.update(_view_project(node_to_use, auth, primary=True))
     return rv
 
 
-@must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
@@ -261,10 +255,14 @@ def project_wiki_edit(*args, **kwargs):
 def project_wiki_edit_post(*args, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
+    auth = kwargs['auth']
+    user = auth.user
     wid = kwargs['wid']
-    logging.debug("{user} edited wiki page: {wid}".format(user=user.username,
-                                                          wid=wid))
+    logging.debug(
+        '{user} edited wiki page: {wid}'.format(
+            user=user.username, wid=wid
+        )
+    )
 
     if wid != sanitize(wid):
         status.push_status_message("This is an invalid wiki page name")
@@ -277,7 +275,7 @@ def project_wiki_edit_post(*args, **kwargs):
     else:
         content = ''
     if request.form['content'] != content:
-        node_to_use.update_node_wiki(wid, request.form['content'], user)
+        node_to_use.update_node_wiki(wid, request.form['content'], auth)
         return {
             'status' : 'success',
         }, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)

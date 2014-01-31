@@ -19,6 +19,7 @@ from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
+from framework.auth.decorators import Auth
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
 )
@@ -305,15 +306,25 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributors.append(self.creator)
             self.contributor_list.append({'id': self.creator._primary_key})
 
-    def can_edit(self, user, api_key=None):
-        return (
-            self.is_contributor(user)
-            or (api_key is not None and self is api_key.node)
-            or (bool(user) and user == self.creator)
-        )
+    def can_edit(self, auth):
 
-    def can_view(self, user, api_key=None):
-        return self.is_public or self.can_edit(user, api_key)
+        if auth is None:
+            return False
+
+        user = auth.user
+        api_node = auth.api_node
+
+        if self.is_contributor(user):
+            return True
+        if api_node == self:
+            return True
+        if user == self.creator:
+            return True
+
+        return False
+
+    def can_view(self, auth):
+        return self.is_public or self.can_edit(auth)
 
     @property
     def has_files(self):
@@ -372,7 +383,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.add_log(
                 log_action,
                 params=log_params,
-                user=self.creator,
+                auth=Auth(user=self.creator),
                 log_date=self.date_created,
                 save=True,
             )
@@ -409,7 +420,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         except IndexError:
             return None
 
-    def set_title(self, title, user, api_key=None, save=False):
+    def set_title(self, title, auth, save=False):
         """Set the title of this Node and log it.
 
         :param str title: The new title.
@@ -427,14 +438,13 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'title_new': self.title,
                 'title_original': original_title,
             },
-            user=user,
-            api_key=api_key,
+            auth=auth,
         )
         if save:
             self.save()
         return None
 
-    def set_description(self, description, user, api_key=None, save=False):
+    def set_description(self, description, auth, save=False):
         """Set the description and log the event.
 
         :param str description: The new description
@@ -455,8 +465,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'description_new': self.description,
                 'description_original': original
             },
-            user=user,
-            api_key=api_key
+            auth=auth,
         )
         return None
 
@@ -518,7 +527,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             update_solr(solr_document)
 
-    def remove_node(self, user, api_key=None, date=None, top=True):
+    def remove_node(self, auth, date=None, top=True):
         """Remove node and recursively remove its children. Does not remove
         nodes from database; instead, removed nodes are flagged as deleted.
         Git repos are also not deleted. Adds a log to the parent node if top
@@ -530,7 +539,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param top: Is this the first node being removed?
 
         """
-        if not self.can_edit(user, api_key):
+        if not self.can_edit(auth):
             return False
 
         date = date or datetime.datetime.utcnow()
@@ -538,7 +547,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         # Remove child nodes
         for node in self.nodes:
             if not node.category == 'project':
-                if not node.remove_node(user, api_key, date=date, top=False):
+                if not node.remove_node(auth, date=date, top=False):
                     return False
 
         # Add log to parent
@@ -548,7 +557,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 params={
                     'project': self._primary_key,
                 },
-                user=user,
+                auth=auth,
                 log_date=datetime.datetime.utcnow(),
             )
 
@@ -574,10 +583,12 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return True
 
-    def fork_node(self, user, api_key=None, title='Fork of '):
+    def fork_node(self, auth, title='Fork of '):
+
+        user = auth.user
 
         # todo: should this raise an error?
-        if not self.can_view(user, api_key):
+        if not self.can_view(auth):
             return
 
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
@@ -591,7 +602,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.tags = self.tags
 
         for node_contained in original.nodes:
-            forked_node = node_contained.fork_node(user, api_key=api_key, title='')
+            forked_node = node_contained.fork_node(auth, title='')
             if forked_node is not None:
                 forked.nodes.append(forked_node)
 
@@ -603,7 +614,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.creator = user
         forked.contributor_list = []
 
-        forked.add_contributor(user, log=False, save=False)
+        forked.add_contributor(user, auth, log=False, save=False)
 
         forked.add_log(
             action=NodeLog.NODE_FORKED,
@@ -612,8 +623,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'node': original._primary_key,
                 'registration': forked._primary_key,
             },
-            user=user,
-            api_key=api_key,
+            auth=auth,
             log_date=when,
             save=False,
         )
@@ -635,7 +645,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return forked
 
-    def register_node(self, schema, user, template, data, api_key=None):
+    def register_node(self, schema, auth, template, data):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -656,7 +666,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         registered.is_registration = True
         registered.registered_date = when
-        registered.registered_user = user
+        registered.registered_user = auth.user
         registered.registered_schema = schema
         registered.registered_from = original
         if not registered.registered_meta:
@@ -673,7 +683,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # After register callback
         for addon in original.get_addons():
-            _, message = addon.after_register(original, registered, user)
+            _, message = addon.after_register(original, registered, auth.user)
             if message:
                 status.push_status_message(message)
 
@@ -686,7 +696,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         # todo: should be recursive; see Node.fork_node()
         for original_node_contained in original.nodes:
 
-            if not original_node_contained.can_edit(user):
+            if not original_node_contained.can_edit(auth):
                 # todo: inform user that node can't be registered
                 continue
 
@@ -733,8 +743,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'node':original._primary_key,
                 'registration':registered._primary_key,
             },
-            user=user,
-            api_key=api_key,
+            auth=auth,
             log_date=when
         )
         original.registration_list.append(registered._id)
@@ -743,7 +752,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         registered.save()
         return registered
 
-    def remove_tag(self, tag, user, api_key, save=True):
+    def remove_tag(self, tag, auth, save=True):
         if tag in self.tags:
             self.tags.remove(tag)
             self.add_log(
@@ -753,13 +762,12 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'node':self._primary_key,
                     'tag':tag,
                 },
-                user=user,
-                api_key=api_key
+                auth=auth,
             )
             if save:
                 self.save()
 
-    def add_tag(self, tag, user, api_key, save=True):
+    def add_tag(self, tag, auth, save=True):
         if tag not in self.tags:
             new_tag = Tag.load(tag)
             if not new_tag:
@@ -776,8 +784,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'node': self._primary_key,
                     'tag': tag,
                 },
-                user=user,
-                api_key=api_key
+                auth=auth,
             )
             if save:
                 self.save()
@@ -803,7 +810,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             # TODO: Raise exception here
         return None, None # TODO: Raise exception here
 
-    def remove_file(self, user, api_key, path):
+    def remove_file(self, auth, path):
         '''Removes a file from the filesystem, NodeFile collection, and does a git delete ('git rm <file>')
 
         :param user:
@@ -830,7 +837,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             repo = Repo(repo_path)
 
             message = '{path} deleted'.format(path=path)
-            committer = self._get_committer(user, api_key)
+            committer = self._get_committer(auth)
 
             commit_id = repo.do_commit(message, committer)
 
@@ -864,16 +871,18 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'node':self._primary_key,
                 'path':path
             },
-            user=user,
-            api_key=api_key,
-            log_date=nf.date_modified
+            auth=auth,
+            log_date=nf.date_modified,
         )
 
         # self.save()
         return True
 
     @staticmethod
-    def _get_committer(user, api_key):
+    def _get_committer(auth):
+
+        user = auth.user
+        api_key = auth.api_key
 
         if api_key:
             commit_key_msg = ':{}'.format(api_key.label)
@@ -907,7 +916,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         return committer
 
 
-    def add_file(self, user, api_key, file_name, content, size, content_type):
+    def add_file(self, auth, file_name, content, size, content_type):
         """
         Instantiates a new NodeFile object, and adds it to the current Node as
         necessary.
@@ -959,7 +968,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         # Deal with git
         repo.stage([file_name])
 
-        committer = self._get_committer(user, api_key)
+        committer = self._get_committer(auth)
 
         commit_id = repo.do_commit(
             message=unicode(file_name +
@@ -973,7 +982,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             filename=file_name,
             size=size,
             node=self,
-            uploader=user,
+            uploader=auth.user,
             git_commit=commit_id,
             content_type=content_type,
         )
@@ -1000,22 +1009,24 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'path': node_file.path,
                 'version': len(self.files_versions)
             },
-            user=user,
-            api_key=api_key,
+            auth=auth,
             log_date=node_file.date_uploaded
         )
 
         return node_file
 
-    def add_log(self, action, params, user, foreign_user=None, api_key=None, log_date=None, save=True):
-        log = NodeLog()
-        log.action = action
-        log.user = user
-        log.foreign_user = foreign_user
-        log.api_key = api_key
+    def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
+        user = auth.user if auth else None
+        api_key = auth.api_key if auth else None
+        log = NodeLog(
+            action=action,
+            user=user,
+            foreign_user=foreign_user,
+            api_key=api_key,
+            params=params,
+        )
         if log_date:
-            log.date=log_date
-        log.params=params
+            log.date = log_date
         log.save()
         self.logs.append(log)
         if save:
@@ -1135,7 +1146,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def is_contributor(self, user):
         return (user is not None) and ((user in self.contributors) or user == self.creator)
 
-    def remove_nonregistered_contributor(self, user, api_key, name, hash_id):
+    def remove_nonregistered_contributor(self, auth, name, hash_id):
         deleted = False
         for idx, contrib in enumerate(self.contributor_list):
             if contrib.get('nr_name') == name and hashlib.md5(contrib.get('nr_email')).hexdigest() == hash_id:
@@ -1152,8 +1163,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'node': self._primary_key,
                 'contributor': contrib,
             },
-            user=user,
-            api_key=api_key,
+            auth=auth,
         )
         return True
 
@@ -1184,7 +1194,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return messages
 
-    def remove_contributor(self, contributor, user=None, api_key=None, log=True):
+    def remove_contributor(self, contributor, auth, log=True):
         """Remove a contributor from this node.
 
         :param contributor: User object, the contributor to be removed
@@ -1213,14 +1223,13 @@ class Node(GuidStoredObject, AddonModelMixin):
                         'node': self._primary_key,
                         'contributor': removed_user._primary_key,
                     },
-                    user=user,
-                    api_key=api_key,
+                    auth=auth,
                 )
             return True
         else:
             return False
 
-    def add_contributor(self, contributor, user=None, log=True, api_key=None, save=False):
+    def add_contributor(self, contributor, auth, log=True, save=False):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
@@ -1240,6 +1249,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributor_list.append({'id': contrib_to_add._primary_key})
 
             # Add contributor to recently added list for user
+            user = auth.user
             if user is not None:
                 if contrib_to_add in user.recently_added:
                     user.recently_added.remove(contrib_to_add)
@@ -1255,8 +1265,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                         'node': self._primary_key,
                         'contributors': [contrib_to_add._primary_key],
                     },
-                    user=user,
-                    api_key=api_key,
+                    auth=auth,
                     save=save,
                 )
             if save:
@@ -1265,7 +1274,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         else:
             return False
 
-    def add_contributors(self, contributors, user=None, log=True, api_key=None, save=False):
+    def add_contributors(self, contributors, auth, log=True, save=False):
         """Add multiple contributors
 
         :param contributors: A list of User objects to add as contributors.
@@ -1276,7 +1285,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         for contrib in contributors:
-            self.add_contributor(contributor=contrib, user=user, log=False, save=False)
+            self.add_contributor(contributor=contrib, auth=auth, log=False, save=False)
         if log:
             self.add_log(
                 action=NodeLog.CONTRIB_ADDED,
@@ -1285,14 +1294,13 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'node': self._primary_key,
                     'contributors': [c._id for c in contributors],
                 },
-                user=user,
-                api_key=api_key,
+                auth=auth,
                 save=save,
             )
         if save:
             self.save()
 
-    def add_nonregistered_contributor(self, name, email, user, api_key=None, save=False):
+    def add_nonregistered_contributor(self, name, email, auth, save=False):
         """Add a non-registered contributor to the project.
 
         :param name: A string, the full name of the person.
@@ -1308,18 +1316,15 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'node': self._primary_key,
                 'contributors': [{"nr_name": name, "nr_email": email}],
             },
-            user=user,
-            api_key=api_key
+            auth=auth,
         )
         if save:
             self.save()
 
-    def set_permissions(self, permissions, user=None, api_key=None):
+    def set_permissions(self, permissions, auth):
         """Set the permissions for this node.
 
         :param permissions: A string, either 'public' or 'private'
-        :param user: A User object, the user who set the permissions
-        :param api_key: API key used to change permissions
 
         """
         if permissions == 'public' and not self.is_public:
@@ -1345,8 +1350,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'project':self.parent_id,
                 'node':self._primary_key,
             },
-            user=user,
-            api_key=api_key
+            auth=auth,
         )
         return True
 
@@ -1380,7 +1384,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         return pw
 
     # TODO: Move to wiki add-on
-    def update_node_wiki(self, page, content, user, api_key=None):
+    def update_node_wiki(self, page, content, auth):
         """Update the node's wiki page with new content.
 
         :param page: A string, the page's name, e.g. ``"home"``.
@@ -1408,7 +1412,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         v = NodeWikiPage(
             page_name=temp_page,
             version=version,
-            user=user,
+            user=auth.user,
             is_current=True,
             node=self,
             content=content
@@ -1428,8 +1432,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'page': v.page_name,
                 'version': v.version,
             },
-            user=user,
-            api_key=api_key,
+            auth=auth,
             log_date=v.date
         )
 
