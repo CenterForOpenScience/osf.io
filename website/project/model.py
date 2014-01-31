@@ -328,7 +328,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         if rv:
             return rv
         for child in self.nodes:
-            if child.has_files:
+            if not child.is_deleted and child.has_files:
                 return True
         return False
 
@@ -1048,7 +1048,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def api_url(self):
         if not self.url:
-            logging.error("Node {0} has a parent that is not a project".format(self._id))
+            logging.error('Node {0} has a parent that is not a project'.format(self._id))
             return None
         return '/api/v1{0}'.format(self.deep_url)
 
@@ -1175,11 +1175,12 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         if recursive:
             for child in self.nodes:
-                messages.extend(
-                    child.callback(
-                        callback, recursive, *args, **kwargs
+                if not child.is_deleted:
+                    messages.extend(
+                        child.callback(
+                            callback, recursive, *args, **kwargs
+                        )
                     )
-                )
 
         return messages
 
