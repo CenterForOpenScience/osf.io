@@ -20,7 +20,7 @@ from website import models
 
 from urllib import unquote
 
-MAX_RENDER_SIZE = (1024 ** 2) * 3
+from website.addons.s3.settings import MAX_RENDER_SIZE
 
 #TODO Anything begining with s3_ can be staged for removal
 #S3 Page is also staged to be removed

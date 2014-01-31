@@ -135,3 +135,11 @@ def _get_download_url(key_name, version_id, node_api):
         return url + '?vid=' + version_id + '/'
     else:
         return url
+
+
+def serialize_bucket(s3wrapper):
+    return [{
+            'name': x.name,
+            'path': x.fullPath,
+            'version_id': x.version_id,
+            } for x in s3wrapper.get_wrapped_keys()]

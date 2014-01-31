@@ -10,7 +10,6 @@ from boto.iam import *
 import json
 from datetime import datetime
 
-
 def has_access(access_key, secret_key):
     try:
         c = S3Connection(access_key, secret_key)
@@ -95,7 +94,10 @@ class S3Wrapper:
 
     @classmethod
     def from_addon(cls, s3):
-        return cls(S3Connection(s3.node_access_key, s3.node_secret_key), s3.bucket)
+        if not s3.is_registration:
+            return cls(S3Connection(s3.node_access_key, s3.node_secret_key), s3.bucket)
+        else:
+            return registration_wrapper(s3)
 
     @classmethod
     def from_user(cls, s3, bucket):
@@ -194,6 +196,21 @@ class S3Wrapper:
 
     def set_cors_rules(self, rules):
         return self.bucket.set_cors(rules)
+
+
+class registration_wrapper(S3Wrapper):
+
+    def __init__(self, node_settings):
+        S3Wrapper.__init__(self,
+            S3Connection(node_settings.node_access_key, node_settings.node_secret_key), node_settings.bucket)
+        self.registration_data = node_settings.registration_data
+
+    def get_wrapped_keys_in_dir(self, directory=None):
+        assert 0, self.registration_data
+        return [S3Key(x) for x in self.bucket.list_versions(delimiter='/', prefix=directory) if isinstance(x, Key) and x.key != directory and x.version_id in self.registration_data['keys']]
+
+    def get_wrapped_directories_in_dir(self, directory=None):
+        return [S3Key(x) for x in self.bucket.list(prefix=directory) if isinstance(x, Key) and x.key.endswith('/') and x.key != directory]
 
 
 # TODO Extend me and you bucket.setkeyclass

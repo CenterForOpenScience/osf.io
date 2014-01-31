@@ -11,7 +11,9 @@ from framework import fields
 
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 
-from utils import get_bucket_drop_down
+from utils import get_bucket_drop_down, serialize_bucket
+
+from api import S3Wrapper
 
 
 class AddonS3UserSettings(AddonUserSettingsBase):
@@ -39,6 +41,8 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     node_access_key = fields.StringField()
     node_secret_key = fields.StringField()
 
+    registration_data = fields.DictionaryField()
+
     # TODO Considering removing node_ in naming
     def to_json(self, user):
 
@@ -63,3 +67,33 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     @property
     def node_auth(self):
         return True if self.node_access_key and self.node_secret_key else False
+
+    @property
+    def is_registration(self):
+        return True if self.registration_data else False
+
+    def after_register(self, node, registration, user, save=True):
+        """
+
+        :param Node node: Original node
+        :param Node registration: Registered node
+        :param User user: User creating registration
+        :param bool save: Save settings after callback
+        :return tuple: Tuple of cloned settings and alert message
+
+        """
+
+        clone, message = super(AddonS3NodeSettings, self).after_register(
+            node, registration, user, save=False
+        )
+
+        if self.bucket and self.node_auth:
+            clone.registration_data['bucket'] = self.bucket
+            clone.registration_data['keys'] = serialize_bucket(S3Wrapper.from_addon(self))
+
+        if save:
+            clone.save()
+
+        return clone, message
+
+
