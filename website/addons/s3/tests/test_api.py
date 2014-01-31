@@ -21,6 +21,5 @@ class TestS3Api(DbTestCase):
         self.node_settings = self.project.get_addon('s3')
         self.node_settings.user_settings = self.project.creator.get_addon('s3')
         # Set the node addon settings to correspond to the values of the mock repo
-        self.node_settings.has_bucket = True;
+        self.node_settings.has_bucket = True
         self.node_settings.save()
-

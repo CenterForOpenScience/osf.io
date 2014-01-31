@@ -37,7 +37,6 @@ class TestS3Views(DbTestCase):
         self.node_settings.save()
         self.app.authenticate(*self.user.auth)
 
-
     def test_s3_page_no_user(self):
         s3 = AddonS3NodeSettings(user=None, bucket='lul')
         res = views.utils._page_content('873p', s3, None)
@@ -76,7 +75,8 @@ class TestS3Views(DbTestCase):
         mock_create_limited_user.return_value = {
             'access_key_id': 'Boo', 'secret_access_key': 'Riley'}
         user_settings = AddonS3UserSettings(user='Aticus-killing-mocking')
-        views.utils._s3_create_access_key(user_settings, self.node_settings, self.project._id)
+        views.utils._s3_create_access_key(
+            user_settings, self.node_settings, self.project._id)
         assert_equals(self.node_settings.node_access_key, 'Boo')
 
     @mock.patch('website.addons.s3.views.utils.create_limited_user')
@@ -97,7 +97,7 @@ class TestS3Views(DbTestCase):
         self.user.get_addon('s3').save()
         url = '/api/v1/settings/s3/delete/'
         self.app.post_json(url, {}, auth=self.user.auth)
-        #self.project.reload()
+        # self.project.reload()
         assert_equals(self.user.get_addon('s3').access_key, '')
         # TODO finish me
 
@@ -124,7 +124,7 @@ class TestS3Views(DbTestCase):
         user_settings = self.user.get_addon('s3')
         assert_equals(user_settings.access_key, 'scout')
 
-    #I dont work..... Settings not getting passed around properly?
+    # I dont work..... Settings not getting passed around properly?
     @mock.patch('website.addons.s3.views.config.remove_user')
     def test_s3_remove_node_settings(self, mock_access):
         mock_access.return_value = True
