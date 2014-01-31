@@ -1,6 +1,7 @@
 import logging
 import os
 import errno
+import codecs
 from framework.tasks import celery
 from website import settings
 from mfr.renderer import FileRenderer
@@ -36,7 +37,7 @@ def _build_rendered_html(file_name, file_content, cache_dir, cache_file_name,
     """
     # Open file pointer if no content provided
     if file_content is None:
-        file_pointer = open(file_name)
+        file_pointer = codecs.open(file_name, 'r', 'utf-8')
     # Else create temporary file with content
     else:
         file_pointer = tempfile.NamedTemporaryFile(
@@ -60,7 +61,7 @@ def _build_rendered_html(file_name, file_content, cache_dir, cache_file_name,
     file_pointer.close()
 
     # Cache rendered content
-    with open(cache_file_path, 'w') as write_file_pointer:
+    with codecs.open(cache_file_path, 'w', 'utf-8') as write_file_pointer:
         write_file_pointer.write(rendered)
 
     return True

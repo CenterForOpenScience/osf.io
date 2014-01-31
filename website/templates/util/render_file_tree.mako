@@ -45,13 +45,13 @@ $(document).ready(function() {
                 }
             }
         } else {
-            var imageUrl = "/static\/img\/hgrid\/fatcowicons\/file_extension_" + dataContext['ext'] + ".png";
-            if(extensions.indexOf(dataContext['ext'])==-1){
-                imageUrl = "/static\/img\/hgrid\/file.png";
-            }
+            var ext = (dataContext.ext || '').toLowerCase();
+            var imageUrl = extensions.indexOf(ext) == -1 ?
+                    '/static\/img\/hgrid\/file.png' :
+                    '/static\/img\/hgrid\/fatcowicons\/file_extension_' + ext + '.png';
             return spacer + " <span class='toggle'></span><span class='file' style='background: url(" + imageUrl+ ") no-repeat left top;'></span>&nbsp;" + link;
         }
-    };
+    }
 
     myGrid = HGrid.create({
         container: "#myGrid",

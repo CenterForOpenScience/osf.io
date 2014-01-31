@@ -18,7 +18,7 @@ class ImageRenderer(FileRenderer):
 
         """
         _, ext = os.path.splitext(file_pointer.name)
-        if ext in ['.jpeg', '.jpg', '.png', '.bmp', '.gif']:
+        if ext.lower() in ['.jpeg', '.jpg', '.png', '.bmp', '.gif']:
             if imghdr.what(file_pointer):
                 return True
         return False

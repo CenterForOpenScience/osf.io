@@ -11,7 +11,7 @@ class PdfRenderer(FileRenderer):
 
     def _detect(self, file_pointer):
         _, ext = os.path.splitext(file_pointer.name)
-        if ext == ".pdf":
+        if ext.lower() == ".pdf":
             try:
                 PyPDF2.PdfFileReader(file_pointer)
             except PyPDF2.utils.PdfReadError:

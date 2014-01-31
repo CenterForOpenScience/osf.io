@@ -4,6 +4,7 @@
 
 import os
 import json
+import codecs
 
 from framework.flask import request
 from framework.auth import get_current_user
@@ -121,7 +122,7 @@ def get_cache_content(node_settings, cache_file, start_render=False,
     cache_path = get_cache_path(node_settings)
     cache_file_path = os.path.join(cache_path, cache_file)
     try:
-        return open(cache_file_path).read()
+        return codecs.open(cache_file_path, 'r', 'utf-8').read()
     except IOError:
         # Start rendering job if requested
         if start_render:

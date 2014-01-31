@@ -9,7 +9,7 @@ import os.path
 class CSVRenderer(TabularRenderer):
     def _detect(self, file_pointer):
         _, ext = os.path.splitext(file_pointer.name)
-        return ext == ".csv"
+        return ext.lower() == ".csv"
 
     def _build_df(self, file_pointer):
         return pd.read_csv(file_pointer)
@@ -18,7 +18,7 @@ class CSVRenderer(TabularRenderer):
 class STATARenderer(TabularRenderer):
     def _detect(self, file_pointer):
         _, ext = os.path.splitext(file_pointer.name)
-        return ext == ".dta"
+        return ext.lower() == ".dta"
 
     def _build_df(self, file_pointer):
         return pd.read_stata(file_pointer)
@@ -27,7 +27,7 @@ class STATARenderer(TabularRenderer):
 class ExcelRenderer(TabularRenderer):
     def _detect(self, file_pointer):
         _, ext = os.path.splitext(file_pointer.name)
-        return ext in [".xls", ".xlsx"]
+        return ext.lower() in [".xls", ".xlsx"]
 
     def _build_df(self, file_pointer):
         workbook = xlrd.open_workbook(file_pointer.name)
@@ -41,7 +41,7 @@ class ExcelRenderer(TabularRenderer):
 class SPSSRenderer(TabularRenderer):
     def _detect(self, file_pointer):
         _, ext = os.path.splitext(file_pointer.name)
-        return ext == ".sav"
+        return ext.lower() == ".sav"
 
     def _build_df(self, file_pointer):
         r = robjects
