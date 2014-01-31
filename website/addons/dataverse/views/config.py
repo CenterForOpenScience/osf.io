@@ -20,22 +20,14 @@ def dataverse_set_user_config(*args, **kwargs):
     # Log in with DATAVERSE
     username = request.json.get('dataverse_username')
     password = request.json.get('dataverse_password')
-    connection = DvnConnection(
-        username=username,
-        password=password,
-        host=TEST_HOST,
-        cert=TEST_CERT,
-    )
+    connection = user_settings.connect(username, password)
 
-    # If success, save params
-    try:
-        connection.get_dataverses()
+    if connection is not None:
         user_settings.dataverse_username = username
         user_settings.dataverse_password = password
+        user_settings.dv1 = connection.get_dataverses()[0].collection.title
         user_settings.save()
-
-    # If fail, error msg
-    except:
+    else:
         raise HTTPError(http.BAD_REQUEST)
 
 
@@ -45,13 +37,12 @@ def dataverse_delete_user(*args, **kwargs):
     dataverse_user = kwargs['user_addon']
 
     # # Todo: Remove webhooks
-    # for node_settings in dataverse_user.addongithubnodesettings__authorized:
+    # for node_settings in dataverse_user.addondataversenodesettings__authorized:
     #     node_settings.delete_hook()
 
     # Revoke access
     dataverse_user.dataverse_username = None
     dataverse_user.dataverse_password = None
-    dataverse_user.connection = None
     dataverse_user.save()
 
     return {}
@@ -60,21 +51,46 @@ def dataverse_delete_user(*args, **kwargs):
 @decorators.must_be_contributor
 @decorators.must_have_addon('dataverse', 'node')
 def dataverse_set_node_config(*args, **kwargs):
+
     # TODO: Validate
+
+    user = kwargs['user']
+
     node_settings = kwargs['node_addon']
+    dataverse_user = node_settings.user_settings
+
+    if dataverse_user and dataverse_user.owner != user:
+        raise HTTPError(http.BAD_REQUEST)
+
+    connection = dataverse_user.connect(dataverse_user.username, dataverse_user.password)
+
+    return {}
 
 
-
-    # Log in with DATAVERSE
-
-    # If success, save params
-
-    # If fail, error msg
-
-
-
+# Todo: Delete this. For testing only
+@decorators.must_be_contributor
+@decorators.must_have_addon('dataverse', 'node')
+def reset_dataverse(*args, **kwargs):
+    node_settings = kwargs['node_addon']
+    node_settings.dataverse_number = 0
+    node_settings.study_number = 0
     node_settings.save()
 
+
+@decorators.must_be_contributor
+@decorators.must_have_addon('dataverse', 'node')
+def set_dataverse(*args, **kwargs):
+
+    node_settings = kwargs['node_addon']
+
+    dv_num = request.json.get('dataverse_number')
+    if dv_num:
+        node_settings.dataverse_number = dv_num
+
+    node_settings.study_number = request.json.get('study_number')
+    node_settings.save()
+
+    return {}
 
 @decorators.must_be_contributor_or_public
 @decorators.must_have_addon('dataverse', 'node')

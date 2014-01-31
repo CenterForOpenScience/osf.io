@@ -89,7 +89,10 @@ class Study(object):
                    editUri=entry_element.base,   # edit iri
                    editMediaUri=edit_media_link,
                    hostDataverse=hostDataverse)  # edit-media iri
-                   
+
+    def get_title(self):
+        return get_elements(self.get_statement(), tag='title', numberOfElements=1).text
+
     def get_statement(self):
         if not self.statementUri:
             atomXml = self.get_entry()

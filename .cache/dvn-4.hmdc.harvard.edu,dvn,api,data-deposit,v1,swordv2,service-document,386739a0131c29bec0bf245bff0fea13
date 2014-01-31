@@ -3,7 +3,7 @@ content-location: https://dvn-4.hmdc.harvard.edu/dvn/api/data-deposit/v1/swordv2
 x-powered-by: Servlet/3.0 JSP/2.2 (GlassFish Server Open Source Edition 3.1.2
  Java/Oracle Corporation/1.7)
 server: GlassFish Server Open Source Edition 3.1.2
-date: Fri, 24 Jan 2014 22:33:10 GMT
+date: Fri, 31 Jan 2014 17:31:05 GMT
 content-type: application/atomserv+xml;charset=UTF-8
 
 <service xmlns="http://www.w3.org/2007/app" xmlns:atom="http://www.w3.org/2005/Atom"><workspace><atom:title type="text">Harvard</atom:title><collection href="https://dvn-4.hmdc.harvard.edu/dvn/api/data-deposit/v1/swordv2/collection/dataverse/rdv1"><atom:title type="text">Robert Dataverse 1</atom:title><collectionPolicy xmlns="http://purl.org/net/sword/terms/">Harvard deposit terms of use: &lt;p>The following terms and conditions govern all use of the IQSS Dataverse website (&lt;strong>http://dvn.iq.harvard.edu&lt;/strong>) (&lt;strong>the Site&lt;/strong>) and the services available on or at the Site (taken together, &lt;strong>the Service&lt;/strong>).  The Site is owned and operated by IQSS, of Harvard University (&lt;strong>IQSS&lt;/strong>).  The Service provides you with the ability to post User Submissions (&lt;strong>the "Materials"&lt;/strong>) to virtual archives (&lt;strong>the "Archive"&lt;/strong>) administered by third parties (&lt;strong>the "Archive Administrators"&lt;/strong>) subject to the permissions and terms of use required by that Archive.&lt;/p>
