@@ -1060,8 +1060,14 @@ h1.unavailable {
     -webkit-box-shadow: none;
     box-shadow: none;
     padding: 0;
+
 }
 
 .mfr-pdf-button.active {
     background: #D0D0D0;
+}
+
+.mfr-pdf-arrow.disabled {
+    /*background: white;*/
+    visibility:hidden;
 }
