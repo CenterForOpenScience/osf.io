@@ -68,6 +68,12 @@
             });
         });
 
+        $("#dataversePassword").keyup(function(event){
+            if(event.keyCode == 13){
+                $("#dataverseLinkAccount").click();
+            }
+        });
+
     });
 
 </script>
