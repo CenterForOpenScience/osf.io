@@ -19,7 +19,7 @@ VIEWS = ['widget']
 CONFIGS = ['node']
 
 CATEGORIES = ['storage']
-  
+
 INCLUDE_JS = {
     'widget': [],
     'page': [],

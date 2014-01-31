@@ -38,6 +38,7 @@ def get_addon_config(*args, **kwargs):
     addon = node.get_addon(addon_name)
     if addon is None:
         raise HTTPError(http.BAD_REQUEST)
+
     return addon.to_json(user)
 
 

@@ -58,4 +58,3 @@ def zotero_page(**kwargs):
     }
     rv.update(data)
     return rv
-
