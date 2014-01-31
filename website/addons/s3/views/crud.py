@@ -163,14 +163,13 @@ def delete(*args, **kwargs):
 def view(*args, **kwargs):
 
     path = kwargs.get('path')
+    vid = request.args.get('vid')
     if not path:
         raise HTTPError(http.NOT_FOUND)
 
     node_settings = kwargs['node_addon']
     user = kwargs['user']
     node = kwargs['node'] or kwargs['project']
-
-    vid = request.args.get('vid')
 
     wrapper = S3Wrapper.from_addon(node_settings)
     key = wrapper.get_wrapped_key(unquote(path), vid=vid)
@@ -213,5 +212,5 @@ def ping_render(*args, **kwargs):
     md5 = request.args.get('md5')
 
     cache_file = get_cache_file_name(path, md5)
-    print cache_file
+
     return get_cache_content(node_settings, cache_file)
