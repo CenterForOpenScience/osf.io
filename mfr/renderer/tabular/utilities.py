@@ -10,7 +10,7 @@ def column_population(dataframe):
     fields = dataframe.keys()
 
     print fields
-    columns = [{'id': str(k), 'name': str(k), 'field': str(k), } for k in fields]
+    columns = [{'id': unicode(k), 'name': unicode(k), 'field': unicode(k), } for k in fields]
     return columns
 
 
@@ -28,7 +28,7 @@ def row_population(dataframe):
     for n in range(len(dataframe[fields[0]])):
         rows.append({})
         for col_field in fields:
-            rows[n][str(col_field)] = str(dataframe[col_field][n])
+            rows[n][unicode(col_field)] = unicode(dataframe[col_field][n])
     return rows
 
 MAX_COLS = 400
