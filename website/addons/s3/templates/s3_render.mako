@@ -1,6 +1,6 @@
-<%inherit file="project/addon/page.mako" />
+<%inherit file="project/addon/view_file.mako" />
+<%def name="title()">${file_name}</%def>
 
+<%def name="file_versions()">
 
-Looks like you were trying to render "${filename}""
-<br>
-That feature is not yet finished.
+</%def>

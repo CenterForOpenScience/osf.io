@@ -9,14 +9,18 @@ from website.project.decorators import must_be_contributor
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
+from website.project.views.file import get_cache_content
 
 from website.addons.s3.api import S3Wrapper
 
-from .utils import _page_content
+from .utils import _page_content, get_cache_file_name
 
 from website import models
 
 from urllib import unquote
+
+MAX_RENDER_SIZE = (1024 ** 2) * 3
+
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
@@ -111,7 +115,7 @@ def s3_new_folder(*args, ** kwargs):
     return {}
 
 
-#TODO Fix Me does not work because coming from main page?
+# TODO Fix Me does not work because coming from main page?
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
 def download(*args, **kwargs):
@@ -150,5 +154,60 @@ def delete(*args, **kwargs):
     )
     return {}
 
+
+@must_be_contributor_or_public
+@must_have_addon('s3', 'node')
 def view(*args, **kwargs):
-    pass
+
+    path = kwargs.get('path')
+    if not path:
+        raise HTTPError(http.NOT_FOUND)
+
+    node_settings = kwargs['node_addon']
+    user = kwargs['user']
+    node = kwargs['node'] or kwargs['project']
+
+    wrapper = S3Wrapper.from_addon(node_settings)
+    key = wrapper.get_wrapped_key(unquote(path))
+
+    # Test to see if the file size is within limit
+    if key.s3Key.size > MAX_RENDER_SIZE:
+        raise HTTPError(http.BAD_REQUEST)
+
+
+
+    download_url = node.api_url + 's3/download/' + path + '/' # TODO Finish Me
+
+    file_contents = key.s3Key.get_contents_as_string()
+
+    render_url = node.api_url + 's3/render/' + path + '/?md5=' + key.md5
+
+    cache_name = get_cache_file_name(path, key.md5)
+
+     # Download me here.... get as string?
+
+    render = get_cache_content(node_settings, cache_name, start_render=True,
+                               file_content=file_contents, download_path=download_url, file_path=path)
+
+    rv = {
+        'file_name': key.name,
+        'rendered': render,
+        'download_url': download_url,
+        'render_url': render_url,
+    }
+    rv.update(_view_project(node, user, primary=True))
+
+    return rv
+
+
+@must_be_contributor_or_public
+@must_have_addon('s3', 'node')
+def ping_render(*args, **kwargs):
+    node_settings = kwargs['node_addon']
+    path = kwargs.get('path')
+    md5 = request.args.get('md5')
+
+    cache_file = get_cache_file_name(path, md5)
+    print cache_file
+    return get_cache_content(node_settings, cache_file)
+

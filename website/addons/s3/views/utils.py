@@ -10,6 +10,8 @@ from website.addons.s3.utils import getHgrid
 
 from website import models
 
+from urllib import quote, unquote
+
 import datetime
 
 import time
@@ -122,6 +124,10 @@ def create_new_bucket(*args, **kwargs):
     user = kwargs['user']
     user_settings = user.get_addon('s3')
     if create_bucket(user_settings, request.json.get('bucket_name')):
-        return {},200
+        return {}, 200
     else:
-        return {},400
+        return {}, 400
+
+def get_cache_file_name(key_name, md5):
+    return '{0}_{1}.html'.format(key_name, md5)
+

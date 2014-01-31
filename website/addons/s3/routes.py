@@ -64,7 +64,11 @@ crud_routes = {
         Rule([
             '/project/<pid>/s3/view/<path:path>/',
             '/project/<pid>/node/<nid>/s3/view/<path:path>/'
-        ], 'get', views.crud.view, json_renderer),
+        ], 'get', views.crud.view, OsfWebRenderer('../addons/s3/templates/s3_render.mako')),
+        Rule([
+            '/project/<pid>/s3/render/<path:path>/',
+            '/project/<pid>/node/<nid>/s3/render/<path:path>/',
+        ], 'get', views.crud.ping_render, json_renderer,),
     ],
     'prefix': '/api/v1',
 }

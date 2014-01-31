@@ -29,12 +29,14 @@ def has_access(access_key, secret_key):
 def get_bucket_list(user_settings):
         return S3Connection(user_settings.access_key, user_settings.secret_key).get_all_buckets()
 
+
 def create_bucket(user_settings, bucket_name):
     try:
         connect = S3Connection(user_settings.access_key,user_settings.secret_key)
         return connect.create_bucket(bucket_name)
     except Exception:
         return False
+
 
 def create_limited_user(accessKey, secretKey, bucketName, pid):
     policy = {
@@ -283,6 +285,10 @@ class S3Key:
                 return os.path.splitext(self._nameAsStr())[1][1:]
         else:
             return None
+
+    @property
+    def md5(self):
+        return self.s3Key.md5
 
     def updateVersions(self, manager):
         if self.type != 'folder':
