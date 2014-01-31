@@ -35,13 +35,17 @@
 
         </div>
 
-        %for file in files:
-            <div>${file}</div>
-        %endfor
+##        %for file in files:
+##            <div>${file}</div>
+##        %endfor
 
     % else:
 
-        You must have a dataverse account to use this feature.
+        % if authorized_dataverse_user:
+            This project has been linked to ${authorized_dataverse_user}'s account on the Dataverse.
+        % else:
+            You must have a Dataverse account to access this page.
+        % endif
 
     % endif
 </div>

@@ -26,13 +26,11 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
         except:
             return None
 
-
     def to_json(self, user):
         rv = super(AddonDataverseUserSettings, self).to_json(user)
         rv.update({
-            'connection': self.connection or '',
             'authorized': self.dataverse_username is not None,
-            'authorized_dataverse_user': self.dataverse_username if self.dataverse_username else '',
+            'authorized_dataverse_user': self.dataverse_username or '',
             'show_submit': True,
         })
         return rv
@@ -40,6 +38,7 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
 
 class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
+    dataverse_username = fields.StringField(default="blah")
     dataverse_number = fields.IntegerField(default=0)
     study_hdl = fields.StringField(default="None")
     user = fields.StringField()
@@ -50,15 +49,17 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
     def to_json(self, user):
         dataverse_user = user.get_addon('dataverse')
+        rv = super(AddonDataverseNodeSettings, self).to_json(user)
+        rv.update(connected=False, authorized_dataverse_user=self.dataverse_username)
+
+        # Make sure user is authorized
+        if dataverse_user is None or dataverse_user.dataverse_username != self.dataverse_username:
+            return rv
+
         connection = dataverse_user.connect(
             dataverse_user.dataverse_username,
             dataverse_user.dataverse_password
         )
-
-        rv = super(AddonDataverseNodeSettings, self).to_json(user)
-        rv.update({
-            'connected': connection is not None,
-        })
 
         if connection is not None:
 
@@ -66,16 +67,17 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             dataverses = connection.get_dataverses() or []
             dataverse = dataverses[int(self.dataverse_number)] if dataverses else None
             studies = dataverse.get_studies() if dataverse else []
-            study = dataverse.get_study_by_hdl(self.study_hdl) if 'hdl' in self.study_hdl else None
-            files = study.get_files() if study else []
+            study = dataverse.get_study_by_hdl(self.study_hdl) if dataverse and 'hdl' in self.study_hdl else None
+            #files = study.get_files() if study else []
 
             rv.update({
+                'connected': True,
                 'dataverses': [d.collection.title for d in dataverses],
                 'dataverse_number': self.dataverse_number,
                 'studies': [s.get_id() for s in studies],
                 'study_names': [s.get_title() for s in studies],
                 'study_hdl': self.study_hdl,
-                'files': [f.name for f in files],
+                # 'files': [f.name for f in files],
                 'show_submit': False #'hdl' in self.study_hdl
             })
         return rv

@@ -25,7 +25,6 @@ def dataverse_set_user_config(*args, **kwargs):
     if connection is not None:
         user_settings.dataverse_username = username
         user_settings.dataverse_password = password
-        user_settings.dv1 = connection.get_dataverses()[0].collection.title
         user_settings.save()
     else:
         raise HTTPError(http.BAD_REQUEST)
@@ -62,8 +61,6 @@ def dataverse_set_node_config(*args, **kwargs):
     if dataverse_user and dataverse_user.owner != user:
         raise HTTPError(http.BAD_REQUEST)
 
-    connection = dataverse_user.connect(dataverse_user.username, dataverse_user.password)
-
     return {}
 
 
@@ -71,6 +68,7 @@ def dataverse_set_node_config(*args, **kwargs):
 @decorators.must_have_addon('dataverse', 'node')
 def set_dataverse(*args, **kwargs):
 
+    user = kwargs['user']
     node_settings = kwargs['node_addon']
 
     dv_num = request.json.get('dataverse_number')
@@ -78,6 +76,7 @@ def set_dataverse(*args, **kwargs):
         node_settings.dataverse_number = dv_num
 
     node_settings.study_hdl = request.json.get('study_hdl')
+    node_settings.dataverse_username = user.get_addon('dataverse').dataverse_username
     node_settings.save()
 
     return {}
