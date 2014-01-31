@@ -13,11 +13,9 @@ URLADDONS = {
 # This is for adjusting the cors of an s3 bucket, not used during development
 ALLOWED_ORIGIN = "osf.io"
 
-CORS_RULE = '<CORSRule><AllowedMethod>POST</AllowedMethod><AllowedOrigin>*</AllowedOrigin><AllowedHeader>origin</AllowedHeader><AllowedHeader>Content-Type</AllowedHeader><AllowedHeader>x-amz-acl</AllowedHeader><AllowedHeader>Authorization</AllowedHeader></CORSRule>'
+CORS_RULE = '<CORSRule><AllowedMethod>PUT</AllowedMethod><AllowedOrigin>*</AllowedOrigin><AllowedHeader>origin</AllowedHeader><AllowedHeader>Content-Type</AllowedHeader><AllowedHeader>x-amz-acl</AllowedHeader><AllowedHeader>Authorization</AllowedHeader></CORSRule>'
 
 # TODO fix/figure out allowed origin....
-
-
 def adjust_cors(s3wrapper):
     rules = s3wrapper.get_cors_rules()
 
