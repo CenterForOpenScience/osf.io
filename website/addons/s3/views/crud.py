@@ -117,7 +117,6 @@ def s3_new_folder(*args, ** kwargs):
 
 
 # TODO Fix Me does not work because coming from main page?
-# TODO Version downloading
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
 def download(*args, **kwargs):
