@@ -19,11 +19,11 @@
 
             % if len(dataverses) > 0:
 
-                % for s in studies:
+                % for i, s in enumerate(studies):
                     % if s == study_hdl:
-                        <option selected>${s}</option>
+                        <option value=${s} selected>${study_names[i]}</option>
                     % else:
-                        <option>${s}</option>
+                        <option value=${s}>${study_names[i]}</option>
                     % endif
                 % endfor
 

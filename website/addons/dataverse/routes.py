@@ -19,12 +19,6 @@ settings_routes = {
             '/project/<pid>/node/<nid>/dataverse/set/',
         ], 'post', views.config.set_dataverse, json_renderer),
 
-        # Todo: Delete this. Testing only
-        Rule([
-            '/project/<pid>/dataverse/reset/',
-            '/project/<pid>/node/<nid>/dataverse/reset/',
-        ], 'post', views.config.reset_dataverse, json_renderer),
-
         # User Settings
         Rule(
             '/settings/dataverse/',

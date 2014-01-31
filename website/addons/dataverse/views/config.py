@@ -67,16 +67,6 @@ def dataverse_set_node_config(*args, **kwargs):
     return {}
 
 
-# Todo: Delete this. For testing only
-@decorators.must_be_contributor
-@decorators.must_have_addon('dataverse', 'node')
-def reset_dataverse(*args, **kwargs):
-    node_settings = kwargs['node_addon']
-    node_settings.dataverse_number = 0
-    node_settings.study_number = 0
-    node_settings.save()
-
-
 @decorators.must_be_contributor
 @decorators.must_have_addon('dataverse', 'node')
 def set_dataverse(*args, **kwargs):

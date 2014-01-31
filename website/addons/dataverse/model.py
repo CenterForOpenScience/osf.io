@@ -56,7 +56,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         )
         rv = super(AddonDataverseNodeSettings, self).to_json(user)
         rv.update({
-            'connected': False,
+            'connected': connection is not None,
         })
 
         #Define dataverse fields
@@ -68,12 +68,12 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
         if connection is not None:
             rv.update({
-                'connected': True,
                 'dataverses': [d.collection.title for d in dataverses],
                 'dataverse_number': self.dataverse_number,
                 'studies': [s.get_id() for s in studies],
-                'files': [f.name for f in files],
+                'study_names': [s.get_title() for s in studies],
                 'study_hdl': self.study_hdl,
+                'files': [f.name for f in files],
                 'show_submit': False #'hdl' in self.study_hdl
             })
         return rv
