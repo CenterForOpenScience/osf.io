@@ -40,8 +40,8 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
 
 class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
-    dataverse_number = fields.StringField(default=0)
-    study_number = fields.StringField()
+    dataverse_number = fields.IntegerField(default=0)
+    study_hdl = fields.StringField(default="None")
     user = fields.StringField()
 
     user_settings = fields.ForeignField(
@@ -63,7 +63,11 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         dataverses = [] if len(connection.get_dataverses()) == 0 \
             else [dataverse.collection.title for dataverse in connection.get_dataverses()]
         studies = [] if len(dataverses) == 0 or len(connection.get_dataverses()[int(self.dataverse_number)].get_studies()) == 0\
-            else [study.get_title() for study in connection.get_dataverses()[int(self.dataverse_number)].get_studies()]
+            else [study.get_id() for study in connection.get_dataverses()[int(self.dataverse_number)].get_studies()]
+
+        # if 'hdl' in self.study_hdl:
+        #     files = [f.name for f in connection.get_dataverses()[int(self.dataverse_number)].get_study_by_hdl(self.study_hdl).get_files()] \
+        #     if len(connection.get_dataverses()[int(self.dataverse_number)].get_study_by_hdl(self.study_hdl).get_files()) > 0 else []
 
         if connection is not None:
             rv.update({
@@ -71,7 +75,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                 'dataverses': dataverses,
                 'dataverse_number': self.dataverse_number or 0,
                 'studies': studies,
-                'study_number': self.study_number or 0,
-                'show_submit': False, #Todo: Check if drop downs are selected?
+                'study_hdl': self.study_hdl or "None",
+                'show_submit': False #'hdl' in self.study_hdl
             })
         return rv

@@ -87,7 +87,7 @@ def set_dataverse(*args, **kwargs):
     if dv_num:
         node_settings.dataverse_number = dv_num
 
-    node_settings.study_number = request.json.get('study_number')
+    node_settings.study_hdl = request.json.get('study_hdl')
     node_settings.save()
 
     return {}

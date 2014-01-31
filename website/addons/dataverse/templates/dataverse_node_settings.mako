@@ -15,25 +15,23 @@
 
         <select id="studyDropDown">
 
+            <option value="None">---</option>
+
             % if len(dataverses) > 0:
 
-                % for j, s in enumerate(studies):
-                    % if j == int(study_number):
-                        <option value=${j} selected>${s}</option>
+                % for s in studies:
+                    % if s == study_hdl:
+                        <option selected>${s}</option>
                     % else:
-                        <option value=${j}>${s}</option>
+                        <option>${s}</option>
                     % endif
                 % endfor
-
-            % else:
-
-                <option value=${0}>---</option>
 
             % endif
 
         </select>
         <div>
-            DV: ${dataverse_number} : ${study_number}
+            DV: ${dataverse_number} : ${study_hdl}
         </div>
     % else:
 
@@ -45,31 +43,29 @@
 <script>
     $("#dataverseDropDown").change(function() {
         var dn = '{"dataverse_number":"' + $(this).find(":selected").val() +
-                '", "study_number":"0"}'
+                '", "study_hdl":"None"}'
         $.ajax({
             url: nodeApiUrl + 'dataverse/set/',
             data: dn,
             type: 'POST',
             contentType: 'application/json',
-            dataType: 'json'
-        })
-        location.reload(true)
-        var show_studies = $(this).find(":selected").val();
-        console.log(dn);
+            dataType: 'json',
+            async: false
+        });
+        location.reload(true);
     });
 
     $("#studyDropDown").change(function() {
-        var sn = '{"study_number":"' + $(this).find(":selected").val() + '"}'
+        var sn = '{"study_hdl":"' + $(this).find(":selected").val() + '"}'
         $.ajax({
             url: nodeApiUrl + 'dataverse/set/',
             data: sn,
             type: 'POST',
             contentType: 'application/json',
-            dataType: 'json'
-        })
-        location.reload(true)
-        var show_studies = $(this).find(":selected").val();
-        console.log("the value you selected: " + show_studies);
+            dataType: 'json',
+            async: false
+        });
+        location.reload(true);
     });
 </script>
 
