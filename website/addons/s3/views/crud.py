@@ -125,11 +125,12 @@ def download(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
     keyName = unquote(kwargs['path'])
+    vid = request.args.get('vid')
 
     if keyName is None:
         raise HTTPError(http.NOT_FOUND)
     connect = S3Wrapper.from_addon(s3)
-    return redirect(connect.download_file_URL(keyName))
+    return redirect(connect.download_file_URL(keyName, vid))
 
 
 @must_be_contributor
@@ -189,7 +190,7 @@ def view(*args, **kwargs):
     render = get_cache_content(node_settings, cache_name, start_render=True,
                                file_content=file_contents, download_path=download_url, file_path=path)
 
-    versions = create_version_list(wrapper, unquote(path))
+    versions = create_version_list(wrapper, unquote(path), node.api_url)
 
     rv = {
         'file_name': key.name,

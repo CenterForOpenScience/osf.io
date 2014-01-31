@@ -114,12 +114,12 @@ def get_bucket_drop_down(user_settings, node_auth):
     return dropdown_list
 
 
-def create_version_list(wrapper, key_name):
+def create_version_list(wrapper, key_name, node_api):
     versions = wrapper.get_file_versions(key_name)
     return [{
             'id': x.version_id if x.version_id != 'null' else 'Current',
             'date': _format_date(x.last_modified), #TODO Format me
-            'download': '', #TODO Fill me
+            'download': _get_download_url(key_name,x.version_id,node_api),
             } for x in versions]
 
 
@@ -132,3 +132,10 @@ def _format_date(date):
     else:
         return '--'
 
+
+def _get_download_url(key_name, version_id, node_api):
+    url = node_api + 's3/download/' + quote(key_name) + '/'
+    if version_id is not None:
+        return url + '?vid=' + version_id + '/'
+    else:
+        return url
