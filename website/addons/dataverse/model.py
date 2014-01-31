@@ -54,19 +54,21 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             dataverse_user.dataverse_username,
             dataverse_user.dataverse_password
         )
+
         rv = super(AddonDataverseNodeSettings, self).to_json(user)
         rv.update({
             'connected': connection is not None,
         })
 
-        #Define dataverse fields
-        dataverses = connection.get_dataverses() or []
-        dataverse = dataverses[int(self.dataverse_number)] if dataverses else None
-        studies = dataverse.get_studies() if dataverse else []
-        study = dataverse.get_study_by_hdl(self.study_hdl) if 'hdl' in self.study_hdl else None
-        files = study.get_files() if study else []
-
         if connection is not None:
+
+            #Define dataverse fields
+            dataverses = connection.get_dataverses() or []
+            dataverse = dataverses[int(self.dataverse_number)] if dataverses else None
+            studies = dataverse.get_studies() if dataverse else []
+            study = dataverse.get_study_by_hdl(self.study_hdl) if 'hdl' in self.study_hdl else None
+            files = study.get_files() if study else []
+
             rv.update({
                 'dataverses': [d.collection.title for d in dataverses],
                 'dataverse_number': self.dataverse_number,

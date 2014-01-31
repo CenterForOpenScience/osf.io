@@ -34,17 +34,20 @@
             DV: ${dataverse_number} : ${study_hdl}
 
         </div>
+
         %for file in files:
             <div>${file}</div>
         %endfor
+
     % else:
 
-        Please go to account settings and connect to a dataverse.
+        You must have a dataverse account to use this feature.
 
     % endif
 </div>
 
 <script>
+
     $("#dataverseDropDown").change(function() {
         var dn = '{"dataverse_number":"' + $(this).find(":selected").val() +
                 '", "study_hdl":"None"}'
@@ -71,6 +74,7 @@
         });
         location.reload(true);
     });
+
 </script>
 
 <%def name="submit_btn()">
