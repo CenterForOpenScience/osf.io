@@ -37,7 +37,7 @@ def _build_rendered_html(file_name, file_content, cache_dir, cache_file_name,
     """
     # Open file pointer if no content provided
     if file_content is None:
-        file_pointer = codecs.open(file_name, 'r', 'utf-8')
+        file_pointer = codecs.open(file_name)
     # Else create temporary file with content
     else:
         file_pointer = tempfile.NamedTemporaryFile(
