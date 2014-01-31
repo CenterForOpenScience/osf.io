@@ -135,7 +135,7 @@ def _format_date(date):
 
 def _get_download_url(key_name, version_id, node_api):
     url = node_api + 's3/download/' + quote(key_name) + '/'
-    if version_id is not None:
+    if version_id != 'null':
         return url + '?vid=' + version_id + '/'
     else:
         return url
