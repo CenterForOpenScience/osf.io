@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
+import os
 import httplib as http
 from framework import (
     request, redirect, must_be_logged_in,
@@ -25,7 +26,6 @@ from website.views import _render_nodes
 from .log import _get_logs
 
 logger = logging.getLogger(__name__)
-
 
 @must_have_session_auth
 @must_be_valid_project  # returns project
