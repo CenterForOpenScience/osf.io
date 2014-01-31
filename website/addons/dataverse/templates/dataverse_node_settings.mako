@@ -32,7 +32,11 @@
         </select>
         <div>
             DV: ${dataverse_number} : ${study_hdl}
+
         </div>
+        %for file in files:
+            <div>${file}</div>
+        %endfor
     % else:
 
         Please go to account settings and connect to a dataverse.

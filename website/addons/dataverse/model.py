@@ -59,23 +59,21 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             'connected': False,
         })
 
-        #Define important fields
-        dataverses = [] if len(connection.get_dataverses()) == 0 \
-            else [dataverse.collection.title for dataverse in connection.get_dataverses()]
-        studies = [] if len(dataverses) == 0 or len(connection.get_dataverses()[int(self.dataverse_number)].get_studies()) == 0\
-            else [study.get_id() for study in connection.get_dataverses()[int(self.dataverse_number)].get_studies()]
-
-        # if 'hdl' in self.study_hdl:
-        #     files = [f.name for f in connection.get_dataverses()[int(self.dataverse_number)].get_study_by_hdl(self.study_hdl).get_files()] \
-        #     if len(connection.get_dataverses()[int(self.dataverse_number)].get_study_by_hdl(self.study_hdl).get_files()) > 0 else []
+        #Define dataverse fields
+        dataverses = connection.get_dataverses() or []
+        dataverse = dataverses[int(self.dataverse_number)] if dataverses else None
+        studies = dataverse.get_studies() if dataverse else []
+        study = dataverse.get_study_by_hdl(self.study_hdl) if 'hdl' in self.study_hdl else None
+        files = study.get_files() if study else []
 
         if connection is not None:
             rv.update({
                 'connected': True,
-                'dataverses': dataverses,
-                'dataverse_number': self.dataverse_number or 0,
-                'studies': studies,
-                'study_hdl': self.study_hdl or "None",
+                'dataverses': [d.collection.title for d in dataverses],
+                'dataverse_number': self.dataverse_number,
+                'studies': [s.get_id() for s in studies],
+                'files': [f.name for f in files],
+                'study_hdl': self.study_hdl,
                 'show_submit': False #'hdl' in self.study_hdl
             })
         return rv
