@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from nose.tools import *  # PEP8 asserts
+from tests.base import DbTestCase
+from webtest_plus import TestApp
+
+import website.app
+from tests.factories import ProjectFactory, AuthUserFactory
+
+app = website.app.init_app(
+    routes=True, set_backends=False,
+    settings_module='website.settings'
+)
+
+class TestFilesViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.auth = ('test', self.user.api_keys[0]._primary_key)
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_addon('osffiles')
+        self.node_settings = self.project.get_addon('osffiles')
+        self._upload_file('firstfile', 'firstcontent')
+
+    def _upload_file(self, name, content):
+        url = self.project.api_url + 'osffiles/'
+        res = self.app.post(
+            url,
+            upload_files=[
+                ('file', name, content),
+            ],
+            auth=self.auth,
+        )
+        return res
+
+    def _get_hgrid_files(self):
+        url = self.project.api_url + 'osffiles/hgrid/'
+        return self.app.get(url, auth=self.auth).maybe_follow()
+
+    def test_download_file(self):
+        url = self.project.api_url + 'osffiles/firstfile/version/1/'
+        res = self.app.get(url, auth=self.auth).maybe_follow()
+        assert_equal(res.body, 'firstcontent')
+
+    def test_upload_file(self):
+
+        post_res = self._upload_file('newfile', 'newcontent')
+        get_res = self._get_hgrid_files()
+
+        self.project.reload()
+        assert_equal(
+            self.project.logs[-1].action,
+            'file_added'
+        )
+
+        assert_equal(post_res.status_code, 201)
+        assert_equal(len(post_res.json), 1)
+        assert_equal(post_res.json[0]['name'], 'newfile')
+
+        assert_equal(len(get_res.json), 2)
+        assert_equal(get_res.json[1]['name'], 'newfile')
+
+    def test_delete_file(self):
+
+        url = self.project.api_url + 'osffiles/firstfile/'
+        post_res = self.app.delete(url, auth=self.auth).maybe_follow()
+        get_res = self._get_hgrid_files()
+
+        assert_equal(post_res.status_code, 200)
+        assert_equal(len(get_res.json), 0)

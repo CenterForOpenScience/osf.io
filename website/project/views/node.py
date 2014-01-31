@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
+import os
 import httplib as http
 from framework import (
     request, redirect, must_be_logged_in,
@@ -25,7 +26,6 @@ from website.views import _render_nodes
 from .log import _get_logs
 
 logger = logging.getLogger(__name__)
-
 
 @must_have_session_auth
 @must_be_valid_project  # returns project
@@ -442,8 +442,8 @@ def _view_project(node, user, api_key=None, primary=False):
     # Before page load callback; skip if not primary call
     if primary:
         for addon in node.get_addons():
-            message = addon.before_page_load(node, user)
-            if message:
+            messages = addon.before_page_load(node, user) or []
+            for message in messages:
                 status.push_status_message(message)
     data = {
         'node': {

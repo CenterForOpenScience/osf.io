@@ -2,13 +2,17 @@
 
 """
 
+import os
 import json
+import codecs
 
 from framework.flask import request
 from framework.auth import get_current_user
 
+from framework.render.tasks import build_rendered_html
 from website.project.decorators import must_be_contributor_or_public
 from website.project.views.node import _view_project
+from website import settings
 
 
 def _get_dummy_container(node, user, parent=None):
@@ -49,9 +53,10 @@ def _collect_file_trees(node, user, parent='null', **kwargs):
             dummy = addon.config.get_hgrid_dummy(
                 addon, user, parent, **kwargs
             )
-            dummy['iconUrl'] = addon.config.icon_url
             # Skip if dummy folder is falsy
             if dummy:
+                # Add add-on icon URL if specified
+                dummy['iconUrl'] = addon.config.icon_url
                 grid_data.append(dummy)
 
     # Collect component file trees
@@ -97,3 +102,32 @@ def collect_file_trees(*args, **kwargs):
         return {'grid_data': grid_data}
     else:
         return grid_data
+
+# File rendering
+
+def get_cache_path(node_settings):
+    return os.path.join(
+        settings.MFR_CACHE_PATH,
+        node_settings.config.short_name,
+        node_settings.owner._id,
+    )
+
+
+def get_cache_content(node_settings, cache_file, start_render=False,
+                      file_path=None, file_content=None, download_path=None):
+    """
+
+    """
+    # Get rendered content if present
+    cache_path = get_cache_path(node_settings)
+    cache_file_path = os.path.join(cache_path, cache_file)
+    try:
+        return codecs.open(cache_file_path, 'r', 'utf-8').read()
+    except IOError:
+        # Start rendering job if requested
+        if start_render:
+            build_rendered_html(
+                file_path, file_content, cache_path, cache_file_path,
+                download_path
+            )
+        return None
