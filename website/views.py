@@ -144,6 +144,8 @@ def new_project_form():
 def _build_guid_url(url, prefix=None, suffix=None):
     if not url.startswith('/'):
         url = '/' + url
+    if not url.endswith('/'):
+        url += '/'
     url = (
         (prefix or '') +
         url +
