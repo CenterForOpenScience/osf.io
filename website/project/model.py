@@ -1048,7 +1048,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def api_url(self):
         if not self.url:
-            logging.error("Node {0} has a parent that is not a project".format(self._id))
+            logging.error('Node {0} has a parent that is not a project'.format(self._id))
             return None
         return '/api/v1{0}'.format(self.deep_url)
 
