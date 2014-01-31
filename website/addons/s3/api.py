@@ -286,6 +286,10 @@ class S3Key:
     def md5(self):
         return self.s3Key.md5
 
+    @property
+    def version_id(self):
+        return self.s3Key.version_id if self.s3Key.version_id != 'null' else 'Current'
+
     def updateVersions(self, manager):
         if self.type != 'folder':
             self.versions.extend(manager.get_file_versions(self._nameAsStr()))

@@ -197,7 +197,7 @@ def view(*args, **kwargs):
         'download_url': download_url,
         'render_url': render_url,
         'versions': versions,
-        'current': vid or 'Current',
+        'current': key.version_id,
     }
     rv.update(_view_project(node, user, primary=True))
 
