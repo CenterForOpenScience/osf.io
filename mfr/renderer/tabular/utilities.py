@@ -2,6 +2,20 @@ class TooBigError(Exception):
     pass
 
 
+def _ensure_unicode(value):
+
+    if not isinstance(value, basestring):
+        return value
+
+    try:
+        return value.encode('utf-8')
+    except ValueError:
+        try:
+            return value.decode('utf-8')
+        except:
+            return u''
+
+
 def column_population(dataframe):
     """make column headers from the keys in dataframe
     :param dataframe:
@@ -9,8 +23,14 @@ def column_population(dataframe):
     """
     fields = dataframe.keys()
 
-    print fields
-    columns = [{'id': unicode(k), 'name': unicode(k), 'field': unicode(k), } for k in fields]
+    columns = []
+    for field in fields:
+        uni = _ensure_unicode(field)
+        columns.append({
+            'id': uni,
+            'name': uni,
+            'field': uni,
+        })
     return columns
 
 
@@ -28,7 +48,7 @@ def row_population(dataframe):
     for n in range(len(dataframe[fields[0]])):
         rows.append({})
         for col_field in fields:
-            rows[n][unicode(col_field)] = unicode(dataframe[col_field][n])
+            rows[n][_ensure_unicode(col_field)] = _ensure_unicode(dataframe[col_field][n])
     return rows
 
 MAX_COLS = 400
