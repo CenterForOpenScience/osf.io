@@ -509,10 +509,7 @@ def tree_to_hgrid(tree, user, repo, node, node_settings, parent=None, branch=Non
             # URLs
             row['view'] = base_url
             row['delete'] = base_api_url
-            if hotlink and ref:
-                row['download'] = raw_url(user, repo, sha or branch, qpath)
-            else:
-                row['download'] = base_url
+            row['download'] = base_url
 
         else:
 
@@ -527,5 +524,54 @@ def tree_to_hgrid(tree, user, repo, node, node_settings, parent=None, branch=Non
             row['lazyLoad'] = os.path.join(*lazy_url_parts + [item['path']]) + '/'
 
         grid.append(row)
+
+    return grid
+
+
+def to_hgrid(data, node_settings, branch, sha):
+
+    grid = []
+    cursor = grid
+
+    node = node_settings.owner
+    ref = ref_to_params(branch, sha)
+
+    for datum in data:
+
+        item = {}
+
+        path = datum['path']
+        qpath = urllib.quote(path)
+
+        # Build base URLs
+        base_url = os.path.join(node.url, 'github', 'file', qpath) + '/'
+        base_api_url = os.path.join(node.api_url, 'github', 'file', qpath) + '/'
+        #if ref:
+        #    base_url += '?' + ref
+        #    base_api_url += '?' + ref
+
+        if datum['type'] in ['file', 'blob']:
+            item['kind'] = 'item'
+            item['urls'] = {
+                'view': base_url,
+                'download': base_url + ref,
+                'delete': base_api_url,
+            }
+        elif datum['type'] in ['tree', 'dir']:
+            item['kind'] = 'folder'
+            item['children'] = []
+            item['urls'] = {
+                'upload': base_api_url,
+            }
+        else:
+            continue
+
+        path, item['name'] = os.path.split(datum['path'])
+
+        cursor.append(item)
+
+        # Update cursor
+        if item['kind'] == 'folder':
+            cursor = item['children']
 
     return grid
