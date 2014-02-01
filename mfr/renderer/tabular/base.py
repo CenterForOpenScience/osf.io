@@ -17,41 +17,40 @@ class TabularRenderer(FileRenderer):
             dataframe = self._build_df(file_pointer)
         except TooBigError:
             return """
-                <div>There was an error rendering {file_name}</div><br>
-                <div>Too many rows or columns</div>
+                <div>Unable to render; download file to view it: </div>
+                <div> oo many rows or columns</div>
                 <div>Max rows x cols: {max_rows} x {max_cols} </div>
                 """.format(
-                file_name=file_name,
                 max_rows=MAX_ROWS,
                 max_cols=MAX_COLS,
             )
 
         except (IndexError, CParserError):
             return """
-            <div>There was an error rendering {file_name}:</div><br>
-            <div>Is this file blank?</div>
-                """.format(file_name=file_name)
+                <div>Unable to render; download file to view it: </div>
+                <div>Is this file blank?</div>
+                """
 
         except ValueError:
             if ext == ".dta":
                 return """
-                <div>There was an error rendering {file_name}:</div><br>
-                <div> Version of given Stata file is not 104, 105, 108, 113 (Stata 8/9), 114 (Stata 10/11) or 115 (Stata 12) </div>
-                <div> Is this a valid Stata file?</div>
-                    """.format(file_name=file_name)
+                <div>Unable to render; download file to view it: </div>
+                <div>Version of given Stata file is not 104, 105, 108, 113 (Stata 8/9), 114 (Stata 10/11) or 115 (Stata 12) </div>
+                <div>Is this a valid Stata file?</div>
+                    """
             else:
                 raise Exception
 
         except (RRuntimeError, error, XLRDError):
             return """
-                <div>There was an error rendering {file_name}:</div><br>
-                <div> Is this a valid {ext} file?</div>
-                    """.format(file_name=file_name, ext=ext)
+                <div>Unable to render; download file to view it: </div>
+                <div>Is this a valid {ext} file?</div><br>
+                    """.format(ext=ext)
 
         if dataframe is None:
             return """
-        <div>There was an error rendering {file_name}</div><br>
-        <div>Is it a valid {ext} file?</div>
+        <div>Unable to render; download file to view it: </div>
+        <div>Is it a valid {ext} file?</div><br>
         <div>Is it empty?</div>
         """.format(file_name=file_name, ext=ext)
 
@@ -59,16 +58,13 @@ class TabularRenderer(FileRenderer):
             check_shape(dataframe)
         except TooBigError:
             return """
-                <div>There was an error rendering {file_name}:</div><br>
-                <div>Too many rows or columns: </div>
-                <div>Max rows x cols = {max_rows} x {max_cols};
-                 File rows x cols = {file_rows} x {file_cols}</div>
+                <div>Unable to render; download file to view it: </div>
+                <div>Too many rows or columns</div>
+                <div>Max rows x cols: {max_rows} x {max_cols} </div>
                 """.format(
-                file_name=file_name,
                 max_rows=MAX_ROWS,
                 max_cols=MAX_COLS,
-                file_rows=dataframe.shape[0],
-                file_cols=dataframe.shape[1],
+
             )
 
         columns = column_population(dataframe)
