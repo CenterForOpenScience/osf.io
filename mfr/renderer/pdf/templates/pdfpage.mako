@@ -21,7 +21,7 @@
 
 
 <script type="text/javascript" src="${STATIC_PATH}/pdf/js/pdf.min.js"></script>
-<script type="text/javascript" src="${STATIC_PATH}/pdf/js/compatibility.js"></script>
+<script type="text/javascript" src="${STATIC_PATH}/pdf/js/compatibility.min.js"></script>
 <script type="text/javascript">
     // TODO: Figure out why we have to do this
 
