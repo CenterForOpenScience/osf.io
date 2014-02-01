@@ -44,7 +44,7 @@ class TestAnUnregisteredUser(DbTestCase):
         form['register-password2'] = 'example'
         # Submits
         res = form.submit().follow()
-        # There's a flash message
+        # There's a flash messageset
         assert_in('You may now log in', res)
         # User logs in
         form = res.forms['signinForm']
@@ -344,7 +344,7 @@ class TestComponents(DbTestCase):
         self.user.save()
         self.auth = ('test', api_key._primary_key)
         self.project = ProjectFactory(creator=self.user)
-        self.project.add_contributor(contributor=self.user)
+        self.project.add_contributor(contributor=self.user, auth=self.auth)
         # project has a non-registered contributor
         self.nr_user = {'nr_name': 'Foo Bar', 'nr_email': 'foo@example.com'}
         self.project.contributor_list.append(self.nr_user)
@@ -355,8 +355,8 @@ class TestComponents(DbTestCase):
             project=self.project,
         )
         self.component.save()
-        self.component.set_permissions('public', self.user)
-        self.component.set_permissions('private', self.user)
+        self.component.set_permissions('public', self.auth)
+        self.component.set_permissions('private', self.auth)
         self.project.save()
 
     def test_can_create_component_from_a_project(self):

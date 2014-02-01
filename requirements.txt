@@ -16,7 +16,7 @@ httplib2==0.8
 hurry.filesize==0.9
 itsdangerous==0.23
 kombu==2.5.12
-lxml==3.2.3
+#lxml==3.2.3
 nameparser==0.2.8
 py-bcrypt==0.3
 pymongo==2.5.1
@@ -41,8 +41,8 @@ requests-oauthlib==0.4.0
 # MFR
 
 ipython==1.1.0
-pandas==0.12.0
+#pandas==0.12.0
 xlrd==0.9.2
-rpy2==2.3.8
-numpy==1.8.0
+#rpy2==2.3.8
+#numpy==1.8.0
 PyPDF2==1.19

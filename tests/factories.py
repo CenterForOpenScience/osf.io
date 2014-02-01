@@ -19,6 +19,7 @@ from factory import base, Sequence, SubFactory, post_generation
 
 from framework import StoredObject
 from framework.auth import User, Q
+from framework.auth.decorators import Auth
 from framework.auth.utils import parse_name
 from website.project.model import (ApiKey, Node, NodeLog, WatchConfig,
                                    MetaData, Tag, MetaSchema)
@@ -82,12 +83,18 @@ class UserFactory(ModularOdmFactory):
 
 
 class AuthUserFactory(UserFactory):
+    FACTORY_ROE = Auth
+    user = None
+    api_keys = []
+    api_node = None
+    private_key = None
+    
     @post_generation
     def add_api_key(self, create, extracted):
         key = ApiKeyFactory()
         self.api_keys.append(key)
         self.save()
-        self.auth = ('test', key._primary_key)
+
 
 
 class TagFactory(ModularOdmFactory):
