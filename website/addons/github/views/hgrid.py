@@ -6,8 +6,8 @@ from framework.auth import get_current_user
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
 
-from ..api import GitHub, tree_to_hgrid, ref_to_params
-from .util import _get_refs, _check_permissions, MESSAGES
+from ..api import GitHub, to_hgrid, ref_to_params
+from .util import _get_refs, _check_permissions
 
 github_branch_template = Template('''
     % if len(branches) > 1:
@@ -41,7 +41,7 @@ def github_branch_widget(branches, branch, sha):
     )
 
 
-def github_dummy_folder(node_settings, auth, parent=None, **kwargs):
+def github_hgrid_data(node_settings, user, contents=False, **kwargs):
 
     # Quit if no repo linked
     if not node_settings.user or not node_settings.repo:
@@ -52,11 +52,9 @@ def github_dummy_folder(node_settings, auth, parent=None, **kwargs):
     rv = {
         'addonName': 'GitHub',
         'maxFilesize': node_settings.config.max_file_size,
-        'uid': 'github:{0}'.format(node_settings._id),
         'name': 'GitHub: {0}/{1}'.format(
             node_settings.user, node_settings.repo,
         ),
-        'parent_uid': parent or 'null',
         'type': 'folder',
         'can_view': False,
         'can_edit': False,
@@ -92,6 +90,14 @@ def github_dummy_folder(node_settings, auth, parent=None, **kwargs):
         if ref:
             rv['uploadUrl'] += '?' + ref
 
+    if contents:
+        if sha is None:
+            branch, sha, branches = _get_refs(
+                node_settings, branch, sha, connection=connection
+            )
+        tree = _get_tree(node_settings, sha, connection)
+        rv['children'] = to_hgrid(tree, node_settings, branch, sha)
+
     return rv
 
 
@@ -109,8 +115,21 @@ def github_dummy_folder_public(*args, **kwargs):
 
     parent = data.pop('parent', 'null')
 
+<<<<<<< HEAD
     return github_dummy_folder(node_settings, auth, parent, **data)
+=======
+    return github_hgrid_data(node_settings, user, parent, contents=True, **data)
+>>>>>>> starting new hgrid integration
 
+
+def _get_tree(node_settings, sha, connection=None):
+
+    connection = connection or GitHub.from_settings(node_settings.user_settings)
+    tree = connection.tree(
+        node_settings.user, node_settings.repo, sha, recursive=True,
+    )
+    if tree:
+        return tree['tree']
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
@@ -127,8 +146,9 @@ def github_hgrid_data_contents(*args, **kwargs):
     # The requested branch and sha
     req_branch, req_sha = request.args.get('branch'), request.args.get('sha')
     # The actual branch and sha to use, given the addon settings
-    branch, sha, branches = _get_refs(node_addon, req_branch, req_sha,
-                                        connection=connection)
+    branch, sha, branches = _get_refs(
+        node_addon, req_branch, req_sha, connection=connection
+    )
     # Get file tree
     contents = connection.contents(
         user=node_addon.user, repo=node_addon.repo, path=path,
@@ -137,7 +157,7 @@ def github_hgrid_data_contents(*args, **kwargs):
     parent = request.args.get('parent', 'null')
     can_edit = _check_permissions(node_addon, auth, connection, branch, sha)
     if contents:
-        hgrid_tree = tree_to_hgrid(
+        hgrid_tree = to_hgrid(
             contents, user=node_addon.user,
             branch=branch, sha=sha,
             repo=node_addon.repo, node=node, node_settings=node_addon,

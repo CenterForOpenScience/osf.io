@@ -257,7 +257,7 @@ def github_delete_file(*args, **kwargs):
     if path is None:
         raise HTTPError(http.NOT_FOUND)
 
-    sha = request.json.get('sha')
+    sha = request.args.get('sha')
     if sha is None:
         raise HTTPError(http.BAD_REQUEST)
 
