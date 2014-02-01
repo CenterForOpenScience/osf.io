@@ -3,17 +3,19 @@
 
 <div>
     <nobr>
-
-        <button unselectable="on" id="previousButton" class="mfr-pdf-button">
-            <img id="leftArrow" src="/static/mfr/pdf/images/leftarrow.png" style="width: 25px">
-        </button>
+        <div id="leftDiv" style="display:inline-block;">
+            <button unselectable="on" id="previousButton" class="mfr-pdf-button">
+                <img id="leftArrow" class="mfr-pdf-arrow" src="/static/mfr/pdf/images/leftarrow.png" style="width: 25px">
+            </button>
+        </div>
 
         <canvas id="the-canvas" style="border:1px solid black"></canvas>
 
-        <button unselectable="on" id="nextButton" class="mfr-pdf-button">
-            <img id="rightArrow" src="/static/mfr/pdf/images/rightarrow.png" style="width: 25px;">
-        </button>
-
+        <div id="rightDiv" style="display:inline-block;">
+            <button unselectable="on" id="nextButton" class="mfr-pdf-button">
+                <img id="rightArrow" class="mfr-pdf-arrow" src="/static/mfr/pdf/images/rightarrow.png" style="width: 25px;">
+            </button>
+        </div>
     </nobr>
 </div>
 
@@ -41,6 +43,9 @@
     var $nextButton = $("#nextButton");
     var $rightArrow = $("#rightArrow");
     var $leftArrow = $("#leftArrow");
+    var $leftDiv = $("#leftDiv");
+    var $rightDiv = $("#rightDiv");
+
 
     function renderPage(num) {
         // Using promise to fetch the page
@@ -65,10 +70,26 @@
             page.render(renderContext);
       });
 
+    pageNum === 1 ? disableButton($prevButton) : setTimeout(function(){enableButton($prevButton)},1000);
+    pageNum === pdfDoc.numPages ? disableButton($nextButton) : setTimeout(function(){enableButton($nextButton)},1000);
+
+
       // Update page counters
       document.getElementById('pageNum').textContent = pageNum;
       document.getElementById('pageCount').textContent = pdfDoc.numPages;
     }
+
+    function disableButton($elem) {
+        $elem[0].disabled = true;
+        var $arrow = $elem.find('.mfr-pdf-arrow').addClass('disabled');
+    }
+
+    function enableButton($elem) {
+        $elem[0].disabled = false;
+        var $arrow = $elem.find('.mfr-pdf-arrow').removeClass('disabled');
+    }
+
+
 
     //
     // Go to previous page
@@ -78,28 +99,14 @@
         if (pageNum <= 1)
             return;
         pageNum--;
+
         renderPage(pageNum);
     }
 
-    $("#previousButton").click(function(){
-        goPrevious()
-        var nextButton = this;
-        nextButton.disabled = true;
-        setTimeout(function(){
-            nextButton.disabled = false
-        }, 1000);
+    $prevButton.click(function(){
+        disableButton($(this));
+        goPrevious();
     });
-
-    $prevButton.mouseout(function(){
-        $( this ).removeClass("active");
-    })
-    .mouseup(function() {
-        $( this ).removeClass("active");
-    })
-    .mousedown(function() {
-        $( this ).addClass("active");
-    });
-
 
     //
     // Go to next page
@@ -112,23 +119,9 @@
         renderPage(pageNum);
     }
 
-    $("#nextButton").click(function(){
-        goNext()
-        var nextButton = this;
-        nextButton.disabled = true;
-        setTimeout(function(){
-            nextButton.disabled = false
-        }, 1000);
-    });
-
-    $nextButton.mouseout(function(){
-        $( this ).removeClass("active");
-    })
-    .mouseup(function() {
-        $( this ).removeClass("active");
-    })
-    .mousedown(function() {
-        $( this ).addClass("active");
+    $nextButton.click(function(){
+        goNext();
+        disableButton($(this));
     });
 
     PDFJS.getDocument(url).then(function getPdf(_pdfDoc) {

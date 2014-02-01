@@ -1,7 +1,7 @@
 <link href="${STATIC_PATH}/ipynb/css/pygments.css" rel="stylesheet">
-<link href="${STATIC_PATH}/ipynb/css/style.min.css" rel="stylesheet">
-<link href="${STATIC_PATH}/ipynb/css/theme/cdp_1.css" rel="stylesheet">
-
+## TODO: Do we need these files? They break other OSF styling.
+##<link href="${STATIC_PATH}/ipynb/css/style.min.css" rel="stylesheet">
+##<link href="${STATIC_PATH}/ipynb/css/theme/cdp_1.css" rel="stylesheet">
 
 <style type="text/css">
     .imgwrap {
@@ -16,9 +16,9 @@
         border: none;
     }
 </style>
-
+<div class="mfr-ipynb-body">
 ${ body | n }
-
+</div>
 <script type="text/javascript">
     (function() {
     if (window.MathJax) {
