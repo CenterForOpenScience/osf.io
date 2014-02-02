@@ -7,7 +7,7 @@ import datetime as dt
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 from webtest import AppError
-
+from framework.auth.decorators import Auth
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, NodeLogFactory, ApiKeyFactory,
@@ -186,8 +186,9 @@ class TestAUser(DbTestCase):
         u2.save()
         project = ProjectFactory(creator=u2, is_public=True)
         project.add_contributor(u2)
+        auth = Auth(user=u2, api_key=key)
         # A file was added to the project
-        project.add_file(user=u2, api_key=key, file_name='test.html',
+        project.add_file(auth=auth, file_name='test.html',
                         content='123', size=2, content_type='text/html')
         project.save()
         # User watches the project
@@ -333,15 +334,20 @@ class TestRegistrations(DbTestCase):
         subnav = res.html.select('#projectSubnav')[0]
         assert_not_in('Registrations', subnav.text)
 
+
 class TestComponents(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        # Add an API key for quicker authentication
         self.user = UserFactory()
-        self.auth = AuthUserFactory(creator=self.user)
+        # Add an API key for quicker authentication
+        api_key = ApiKeyFactory()
+        self.user.api_keys.append(api_key)
+        self.user.save()
+        self.auth = ('test', api_key._primary_key)
+        self.consolidate_auth = Auth(user=self.user, api_key = api_key)
         self.project = ProjectFactory(creator=self.user)
-        self.project.add_contributor(contributor=self.user, auth=self.auth)
+        self.project.add_contributor(contributor=self.user, auth=self.consolidate_auth)
         # project has a non-registered contributor
         self.nr_user = {'nr_name': 'Foo Bar', 'nr_email': 'foo@example.com'}
         self.project.contributor_list.append(self.nr_user)
@@ -352,8 +358,8 @@ class TestComponents(DbTestCase):
             project=self.project,
         )
         self.component.save()
-        self.component.set_permissions('public', self.auth)
-        self.component.set_permissions('private', self.auth)
+        self.component.set_permissions('public', self.consolidate_auth)
+        self.component.set_permissions('private', self.consolidate_auth)
         self.project.save()
 
     def test_can_create_component_from_a_project(self):
@@ -535,6 +541,7 @@ class TestShortUrls(DbTestCase):
         self.user.api_keys.append(api_key)
         self.user.save()
         self.auth = ('test', api_key._primary_key)
+        self.consolidate_auth=Auth(user=self.user, api_key=api_key)
         self.project = ProjectFactory(creator=self.user)
         # A non-project componenet
         self.component = NodeFactory(category='hypothesis', creator=self.user)
@@ -542,9 +549,8 @@ class TestShortUrls(DbTestCase):
         self.component.save()
         # Hack: Add some logs to component; should be unnecessary pending
         # improvements to factories from @rliebz
-        self.component.set_permissions('public', user=self.user)
-        self.component.set_permissions('private', user=self.user)
-        self.project.save()
+        self.component.set_permissions('public', user=self.consolidate_auth)
+        self.component.set_permissions('private', user=self.consolidate_auth)
         self.wiki = NodeWikiFactory(user=self.user, node=self.component)
 
     def _url_to_body(self, url):
@@ -569,7 +575,7 @@ class TestShortUrls(DbTestCase):
         )
 
     def test_file_url(self):
-        node_file = self.component.add_file(self.user, None, 'test.txt',
+        node_file = self.component.add_file(self.consolidate_auth, 'test.txt',
                                          'test content', 4, 'text/plain')
         assert_equal(
             self._url_to_body(node_file.deep_url),
@@ -591,6 +597,7 @@ class TestPiwik(DbTestCase):
             AuthUserFactory()
             for _ in range(3)
         ]
+        self.consolidate_auth = Auth(user=self.users[0])
         self.project = ProjectFactory(creator=self.users[0], is_public=True)
         self.project.add_contributor(contributor=self.users[1])
         self.project.save()
@@ -625,7 +632,7 @@ class TestPiwik(DbTestCase):
         assert_in('token_auth=anonymous', res)
 
     def test_private_alert(self):
-        self.project.set_permissions('private', user=self.users[0])
+        self.project.set_permissions('private', auth=self.consolidate_auth)
         self.project.save()
         res = self.app.get(
             '/{0}/statistics/'.format(self.project._primary_key),

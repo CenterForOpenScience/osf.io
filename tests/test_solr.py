@@ -6,6 +6,7 @@ from tests.factories import UserFactory, ProjectFactory, TagFactory
 
 from framework.search.solr import solr
 from framework.search.utils import clean_solr_doc
+from framework.auth.decorators import Auth
 from website.search.solr_search import search_solr
 from website.search.views import _search_contributor
 from website import settings
@@ -130,6 +131,7 @@ class TestPublicProject(SolrTestCase):
 
     def setUp(self):
         self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(
             title='Red Special',
             creator=self.user,
@@ -148,7 +150,7 @@ class TestPublicProject(SolrTestCase):
         """
 
         """
-        self.project.remove_node(self.user)
+        self.project.remove_node(self.consolidate_auth)
         docs = query(self.project.title)
         assert_equal(len(docs), 0)
 
@@ -157,7 +159,8 @@ class TestPublicProject(SolrTestCase):
 
         """
         title_original = self.project.title
-        self.project.set_title(self.project.title[::-1], self.user, save=True)
+        self.project.set_title(
+            self.project.title[::-1], self.consolidate_auth, save=True)
 
         docs = query(title_original)
         assert_equal(len(docs), 0)
@@ -172,7 +175,7 @@ class TestPublicProject(SolrTestCase):
         docs = query(tag_text)
         assert_equal(len(docs), 0)
 
-        self.project.add_tag(tag_text, self.user, None)
+        self.project.add_tag(tag_text, self.consolidate_auth, None)
 
         docs = query(tag_text)
         assert_equal(len(docs), 1)
@@ -181,8 +184,8 @@ class TestPublicProject(SolrTestCase):
 
         tag_text = 'stonecoldcrazy'
 
-        self.project.add_tag(tag_text, self.user, None)
-        self.project.remove_tag(tag_text, self.user, None)
+        self.project.add_tag(tag_text, self.consolidate_auth, None)
+        self.project.remove_tag(tag_text, self.consolidate_auth, None)
 
         docs = query(tag_text)
         assert_equal(len(docs), 0)
@@ -197,7 +200,8 @@ class TestPublicProject(SolrTestCase):
         docs = query(wiki_content)
         assert_equal(len(docs), 0)
 
-        self.project.update_node_wiki('home', wiki_content, self.user)
+        self.project.update_node_wiki(
+            'home', wiki_content, self.consolidate_auth)
 
         docs = query(wiki_content)
         assert_equal(len(docs), 1)
@@ -208,12 +212,12 @@ class TestPublicProject(SolrTestCase):
 
         """
         wiki_content = 'Hammer to fall'
-        self.project.update_node_wiki('home', wiki_content, self.user)
-        self.project.update_node_wiki('home', '', self.user)
+        self.project.update_node_wiki(
+            'home', wiki_content, self.consolidate_auth)
+        self.project.update_node_wiki('home', '', self.consolidate_auth)
 
         docs = query(wiki_content)
         assert_equal(len(docs), 0)
-
 
     def test_add_contributor(self):
         """Add a contributor, then verify that project is found when searching

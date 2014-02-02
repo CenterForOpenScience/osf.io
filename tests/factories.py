@@ -82,13 +82,7 @@ class UserFactory(ModularOdmFactory):
             self.save()
 
 
-class AuthUserFactory(ModularOdmFactory):
-    FACTORY_ROE = Auth
-
-    api_keys = []
-    api_node = None
-    private_key = None
-    user = SubFactory(UserFactory)
+class AuthUserFactory(UserFactory):
 
     @post_generation
     def add_api_key(self, create, extracted):
@@ -150,10 +144,10 @@ class RegistrationFactory(AbstractNodeFactory):
         user = user or project.creator
         template = template or "Template1"
         data = data or "Some words"
-
+        auth = Auth(user=user)
         return project.register_node(
             schema=schema,
-            user=user,
+            auth=auth,
             template=template,
             data=data,
         )
