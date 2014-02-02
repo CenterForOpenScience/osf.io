@@ -32,6 +32,7 @@ from framework.addons import AddonModelMixin
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
 
+
 def utc_datetime_to_timestamp(dt):
     return float(
         str(calendar.timegm(dt.utcnow().utctimetuple())) + '.' + str(dt.microsecond)
@@ -424,9 +425,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         """Set the title of this Node and log it.
 
         :param str title: The new title.
-        :param User user: User who made the action.
-        :param ApiKey api_key: Optional API key.
-
+        :param auth: All the auth informtion including user, API key.
         """
         original_title = self.title
         self.title = title
@@ -448,8 +447,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         """Set the description and log the event.
 
         :param str description: The new description
-        :param User user: The user who changed the description.
-        :param ApiKey api_key: Optional API key.
+        :param auth: All the auth informtion including user, API key.
         :param bool save: Save self after updating.
 
         """
@@ -533,8 +531,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         Git repos are also not deleted. Adds a log to the parent node if top
         is True.
 
-        :param user: User removing the node
-        :param api_key: API key used to remove the node
+        :param auth: All the auth informtion including user, API key.
         :param date: Date node was removed
         :param top: Is this the first node being removed?
 
@@ -649,8 +646,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
-        :param user: User registering the node
-        :param api_key: API key registering the node
+        :param auth: All the auth informtion including user, API key.
         :template: Template name
         :data: Form data
 
@@ -711,7 +707,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             node_contained.is_registration = True
             node_contained.registered_date = when
-            node_contained.registered_user = user
+            node_contained.registered_user = auth.user
             node_contained.registered_schema = schema
             node_contained.registered_from = original_node_contained
             if not node_contained.registered_meta:
@@ -729,7 +725,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             # After register callback
             for addon in original_node_contained.get_addons():
                 _, message = addon.after_register(
-                    original_node_contained, node_contained, user
+                    original_node_contained, node_contained, auth.user
                 )
                 if message:
                     status.push_status_message(message)
@@ -813,7 +809,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def remove_file(self, auth, path):
         '''Removes a file from the filesystem, NodeFile collection, and does a git delete ('git rm <file>')
 
-        :param user:
+        :param auth: All the auth informtion including user, API key.
         :param path:
 
         :return: True on success, False on failure
@@ -1198,11 +1194,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         """Remove a contributor from this node.
 
         :param contributor: User object, the contributor to be removed
-        :param user: User object, the user who is removing the contributor.
-        :param api_key: ApiKey object
-
+        :param auth: All the auth informtion including user, API key.
         """
-        if not user._primary_key == contributor._id:
+        if not auth.user._primary_key == contributor._id:
 
             self.contributors.remove(contributor._id)
             self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != contributor._id]
@@ -1233,9 +1227,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
-        :param User user: The user who added the contributor or None.
+        :param User auth: All the auth informtion including user, API key.
         :param NodeLog log: Add log to self
-        :param ApiKey api_key: API key used to add contributors
         :param bool save: Save after adding contributor
         :return bool: Whether contributor was added
 
@@ -1278,9 +1271,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         """Add multiple contributors
 
         :param contributors: A list of User objects to add as contributors.
-        :param user: A User object, the user who added the contributors.
+        :param auth: All the auth informtion including user, API key.
         :param log: Add log to self
-        :param api_key: API key used to add contributors
         :param save: Save after adding contributor
 
         """
@@ -1305,7 +1297,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param name: A string, the full name of the person.
         :param email: A string, the email address of the person.
-        :param user: A User object, the user who added the person.
+        :param auth: All the auth informtion including user, API key.
 
         """
         self.contributor_list.append({'nr_name': name, 'nr_email': email})
@@ -1325,7 +1317,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         """Set the permissions for this node.
 
         :param permissions: A string, either 'public' or 'private'
-
+        :param auth: All the auth informtion including user, API key.
         """
         if permissions == 'public' and not self.is_public:
             self.is_public = True
@@ -1389,8 +1381,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param page: A string, the page's name, e.g. ``"home"``.
         :param content: A string, the posted content.
-        :param user: A `User` object.
-        :param api_key: A string, the api key. Can be ``None``.
+        :param auth: All the auth informtion including user, API key.
 
         """
         from website.addons.wiki.model import NodeWikiPage

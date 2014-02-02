@@ -84,6 +84,7 @@ class UserFactory(ModularOdmFactory):
 
 class AuthUserFactory(ModularOdmFactory):
     FACTORY_ROE = Auth
+
     api_keys = []
     api_node = None
     private_key = None

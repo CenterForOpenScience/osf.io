@@ -33,8 +33,7 @@ def _get_logs(node, count, auth):
 
     :param Node node:
     :param int count:
-    :param User user:
-    :param ApiKey api_key:
+    :param auth:
     :return list: List of serialized logs
 
     """
