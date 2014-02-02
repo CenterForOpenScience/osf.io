@@ -82,19 +82,18 @@ class UserFactory(ModularOdmFactory):
             self.save()
 
 
-class AuthUserFactory(UserFactory):
+class AuthUserFactory(ModularOdmFactory):
     FACTORY_ROE = Auth
-    user = None
     api_keys = []
     api_node = None
     private_key = None
-    
+    user = SubFactory(UserFactory)
+
     @post_generation
     def add_api_key(self, create, extracted):
         key = ApiKeyFactory()
         self.api_keys.append(key)
         self.save()
-
 
 
 class TagFactory(ModularOdmFactory):

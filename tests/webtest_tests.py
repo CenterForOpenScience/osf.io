@@ -337,12 +337,9 @@ class TestComponents(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.user = UserFactory(username='test@test.com')
         # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.auth = ('test', api_key._primary_key)
+        self.user = UserFactory()
+        self.auth = AuthUserFactory(creator=self.user)
         self.project = ProjectFactory(creator=self.user)
         self.project.add_contributor(contributor=self.user, auth=self.auth)
         # project has a non-registered contributor
