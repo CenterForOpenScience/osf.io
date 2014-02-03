@@ -24,7 +24,7 @@ function setDropDownListener() {
 
 function newBucket() {
     bootbox.prompt('Name your new bucket', function(bucketName) {
-
+        bucketName = bucketName.toLowerCase();
         $.ajax({
             url: nodeApiUrl +  addonShortname + '/newbucket/',
             type: 'POST',
