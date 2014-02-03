@@ -89,6 +89,7 @@ class AuthUserFactory(UserFactory):
         key = ApiKeyFactory()
         self.api_keys.append(key)
         self.save()
+        self.auth = ('test', key._primary_key)
 
 
 class TagFactory(ModularOdmFactory):
