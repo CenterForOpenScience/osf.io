@@ -160,6 +160,7 @@ def delete(*args, **kwargs):
 
 
 #TODO Check to see if file is already rendered?
+#TODO Change from MD5 to VID
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
 def view(*args, **kwargs):
