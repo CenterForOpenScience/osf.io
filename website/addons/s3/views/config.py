@@ -64,6 +64,7 @@ def node_settings(*args, **kwargs):
     if not bucket or not does_bucket_exist(s3_addon.access_key, s3_addon.secret_key, bucket):
         error_message = ('We are having trouble connecting to that bucket. '
                          'Try a different one.')
+        return {'message': error_message}, 400
 
     if bucket != node.bucket:
 
