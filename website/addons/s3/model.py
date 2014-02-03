@@ -184,3 +184,45 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             cat=node.project_or_component,
         )
 
+    def before_remove_contributor(self, node, removed):
+        """
+
+        :param Node node:
+        :param User removed:
+        :return str: Alert message
+
+        """
+        if self.node_auth and self.owner == removed:
+            return (
+                'The Amazon Simple Storage add-on for this {category} is authenticated '
+                'by {user}. Removing this user will also remove access '
+                'to {bucket} unless another contributor re-authenticates.'
+            ).format(
+                category=node.project_or_component,
+                user=removed.fullname,
+                bucket=self.bucket
+            )
+
+    def after_remove_contributor(self, node, removed):
+        """
+
+        :param Node node:
+        :param User removed:
+        :return str: Alert message
+
+        """
+        if self.node_auth and self.owner == removed:
+            self.access_key = None
+            self.node_secret_key = None
+            self.bucket = None
+            self.save()
+
+            return (
+                'Because the Amazon Simple Storage add-on for this project was authenticated '
+                'by {user}, authentication information has been deleted. You '
+                'can re-authenticate on the <a href="{url}settings/">'
+                'Settings</a> page.'.format(
+                    user=removed.fullname,
+                    url=node.url,
+                )
+            )
