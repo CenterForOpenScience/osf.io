@@ -100,15 +100,6 @@ class S3Wrapper:
     def delete_file(self, keyName):
         return self.bucket.delete_key(keyName)
 
-    # TODO Test me I might not work
-    def get_MD5(self, keyName):
-        '''returns the MD5 hash of a file.
-
-        params str keyName: The name of the key to hash
-
-        '''
-        return self.bucket.get_key(keyName).get_md5_from_hexdigest()
-
     def download_file_URL(self, keyName, vid=None):
         return self.bucket.get_key(keyName, version_id=vid).generate_url(5)
 
@@ -280,3 +271,7 @@ class S3Key:
     def updateVersions(self, manager):
         if self.type != 'folder':
             self.versions.extend(manager.get_file_versions(self._nameAsStr()))
+
+    @property
+    def etag(self):
+        return self.s3Key.etag.replace('"', '')

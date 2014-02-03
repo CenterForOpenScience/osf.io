@@ -111,5 +111,5 @@ def create_new_bucket(*args, **kwargs):
         return {}, 400
 
 
-def get_cache_file_name(key_name, md5):
-    return '{0}_{1}.html'.format(key_name.replace('/', ''), md5)
+def get_cache_file_name(key_name, etag):
+    return '{0}_{1}.html'.format(key_name.replace('/', ''), etag)

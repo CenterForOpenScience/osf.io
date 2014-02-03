@@ -163,10 +163,9 @@ def view(*args, **kwargs):
 
     file_contents = key.s3Key.get_contents_as_string()
 
-    #TODO Change me to url (not api/v1/)
-    render_url = node.url + 's3/render/' + path + '/?md5=' + key.md5
+    render_url = node.api_url + 's3/render/' + path + '/?etag=' + key.etag
 
-    cache_name = get_cache_file_name(path, key.md5)
+    cache_name = get_cache_file_name(path, key.etag)
 
     render = get_cache_content(node_settings, cache_name, start_render=True,
                                file_content=file_contents, download_path=download_url, file_path=path)
@@ -191,8 +190,8 @@ def view(*args, **kwargs):
 def ping_render(*args, **kwargs):
     node_settings = kwargs['node_addon']
     path = kwargs.get('path')
-    md5 = request.args.get('md5')
+    etag = request.args.get('etag')
 
-    cache_file = get_cache_file_name(path, md5)
+    cache_file = get_cache_file_name(path, etag)
 
     return get_cache_content(node_settings, cache_file)
