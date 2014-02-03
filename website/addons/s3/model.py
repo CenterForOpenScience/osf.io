@@ -132,7 +132,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         )
 
         # Copy authentication if authenticated by forking user
-        if user.get_addon('s3') and user.get_addon('s3').owner == user:
+        if user.get_addon('s3') and node.get_addon('s3').owner == user:
             clone.node_access_key = self.node_access_key
             clone.node_secret_key = self.node_secret_key
             clone.bucket = self.bucket
@@ -142,6 +142,9 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
                 cat=fork.project_or_component,
             )
         else:
+            clone.node_access_key = None
+            clone.node_secret_key = None
+            clone.bucket = None
             message = (
                 'Amazon Simple Storage authorization not copied to forked {cat}. You may '
                 'authorize this fork on the <a href={url}>Settings</a> '
@@ -164,7 +167,8 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         :return str: Alert message
 
         """
-        if user.get_addon('s3') and user.get_addon('s3').owner == user:
+
+        if user.get_addon('s3') and node.get_addon('s3').owner == user:
             return (
                 'Because you have authenticated the S3 add-on for this '
                 '{cat}, forking it will also transfer your authorization to '
