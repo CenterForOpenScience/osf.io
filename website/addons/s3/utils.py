@@ -141,5 +141,5 @@ def serialize_bucket(s3wrapper):
     return [{
             'name': x.name,
             'path': x.fullPath,
-            'version_id': x.version_id,
+            'version_id': s3wrapper.bucket.get_key(x.fullPath).version_id,
             } for x in s3wrapper.get_wrapped_keys()]

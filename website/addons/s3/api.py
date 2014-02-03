@@ -10,6 +10,7 @@ from boto.iam import *
 import json
 from datetime import datetime
 
+
 def has_access(access_key, secret_key):
     try:
         c = S3Connection(access_key, secret_key)
@@ -206,11 +207,15 @@ class registration_wrapper(S3Wrapper):
         self.registration_data = node_settings.registration_data
 
     def get_wrapped_keys_in_dir(self, directory=None):
-        assert 0, self.registration_data
-        return [S3Key(x) for x in self.bucket.list_versions(delimiter='/', prefix=directory) if isinstance(x, Key) and x.key != directory and x.version_id in self.registration_data['keys']]
+        #assert 0, self.registration_data
+        return [S3Key(x) for x in self.bucket.list_versions(delimiter='/', prefix=directory) if isinstance(x, Key) and x.key != directory and self.is_right_version(x)]
 
     def get_wrapped_directories_in_dir(self, directory=None):
-        return [S3Key(x) for x in self.bucket.list(prefix=directory) if isinstance(x, Key) and x.key.endswith('/') and x.key != directory]
+        return [S3Key(x) for x in self.bucket.list_versions(prefix=directory) if isinstance(x, Key) and x.key.endswith('/') and x.key != directory and self.is_right_version(x)]
+
+    def is_right_version(self, key):
+        return [x for x in self.registration_data['keys'] if x['version_id'] == key.version_id]
+
 
 
 # TODO Extend me and you bucket.setkeyclass
