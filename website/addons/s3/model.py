@@ -126,9 +126,8 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         )
 
         # Copy authentication if authenticated by forking user
-        if user.get_addon('s3') and node.get_addon('s3').owner == user:
-            clone.node_access_key = self.node_access_key
-            clone.node_secret_key = self.node_secret_key
+        if self.user_settings and self.user_settings.owner == user:
+            clone.user_settings = self.user_settings
             clone.bucket = self.bucket
             message = (
                 'Amazon Simple Storage authorization copied to forked {cat}.'
@@ -136,9 +135,6 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
                 cat=fork.project_or_component,
             )
         else:
-            clone.node_access_key = None
-            clone.node_secret_key = None
-            clone.bucket = None
             message = (
                 'Amazon Simple Storage authorization not copied to forked {cat}. You may '
                 'authorize this fork on the <a href={url}>Settings</a> '
@@ -162,7 +158,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
 
         """
 
-        if user.get_addon('s3') and node.get_addon('s3').owner == user:
+        if self.user_settings and self.user_settings.owner == user:
             return (
                 'Because you have authenticated the S3 add-on for this '
                 '{cat}, forking it will also transfer your authorization to '
@@ -186,7 +182,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         :return str: Alert message
 
         """
-        if self.node_auth and self.owner == removed:
+        if self.user_settings and self.user_settings.owner == removed:
             return (
                 'The Amazon Simple Storage add-on for this {category} is authenticated '
                 'by {user}. Removing this user will also remove access '
@@ -205,9 +201,8 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         :return str: Alert message
 
         """
-        if self.node_auth and self.owner.creator == removed:
-            self.node_access_key = None
-            self.node_secret_key = None
+        if self.user_settings and self.user_settings.owner == removed:
+            self.user_settings = None
             self.bucket = None
             self.save()
 
