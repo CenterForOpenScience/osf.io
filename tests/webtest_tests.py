@@ -549,8 +549,8 @@ class TestShortUrls(DbTestCase):
         self.component.save()
         # Hack: Add some logs to component; should be unnecessary pending
         # improvements to factories from @rliebz
-        self.component.set_permissions('public', user=self.consolidate_auth)
-        self.component.set_permissions('private', user=self.consolidate_auth)
+        self.component.set_permissions('public', auth=self.consolidate_auth)
+        self.component.set_permissions('private', auth=self.consolidate_auth)
         self.wiki = NodeWikiFactory(user=self.user, node=self.component)
 
     def _url_to_body(self, url):

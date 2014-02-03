@@ -611,7 +611,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.creator = user
         forked.contributor_list = []
 
-        forked.add_contributor(user, auth, log=False, save=False)
+        forked.add_contributor(contributor=user, log=False, save=False)
 
         forked.add_log(
             action=NodeLog.NODE_FORKED,

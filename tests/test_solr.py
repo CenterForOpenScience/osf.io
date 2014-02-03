@@ -242,7 +242,7 @@ class TestPublicProject(SolrTestCase):
         user2 = UserFactory()
 
         self.project.add_contributor(user2, save=True)
-        self.project.remove_contributor(user2, self.user)
+        self.project.remove_contributor(user2, self.consolidate_auth)
 
         docs = query('"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)

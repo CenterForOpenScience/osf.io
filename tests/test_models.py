@@ -258,7 +258,7 @@ class TestMergingUsers(DbTestCase):
         project.save()
         self._merge_dupe()
         assert_true(project.is_contributor(self.master))
-        assert_false(project.is_contributor(self.dupe))
+        assert_true(project.is_contributor(self.dupe))
 
     def test_inherits_projects_created_by_dupe(self):
         project = ProjectFactory(creator=self.dupe)
@@ -710,7 +710,7 @@ class TestAddonCallbacks(DbTestCase):
         for addon in self.node.addons:
             callback = addon.after_fork
             callback.assert_called_once_with(
-                self.node, fork, self.consolidate_auth
+                self.node, fork, self.user
             )
 
     @mock.patch('framework.status.push_status_message')
@@ -1090,9 +1090,10 @@ class TestForkNode(DbTestCase):
             [addon.config.short_name for addon in fork.get_addons()]
         )
 
+        fork_user_auth = Auth(user=fork_user)
         # Recursively compare children
         for idx, child in enumerate(original.nodes):
-            if child.can_view(fork_user):
+            if child.can_view(fork_user_auth):
                 self._cmp_fork_original(fork_user, fork_date, fork.nodes[idx],
                                         child, title_prepend='')
 
