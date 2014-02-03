@@ -148,6 +148,9 @@ def view(*args, **kwargs):
     if not path:
         raise HTTPError(http.NOT_FOUND)
 
+    if vid == 'Pre-versioning':
+        vid = 'null'
+
     node_settings = kwargs['node_addon']
     user = kwargs['user']
     node = kwargs['node'] or kwargs['project']

@@ -16,8 +16,8 @@
             % for version in versions:
                 <tr class="${'active' if version['id'] == current else ''}">
                     <td>
-                        <a href="${'?vid=' + version['id'] if version['id'] != 'Current' else ''}" title="${version['id']}">
-                            ${version['id'][:10]}
+                        <a href="${'?vid=' + version['id']}" title="${version['id']}">
+                            ${version['id'][:14]}
                         </a>
                     </td>
                     <td>

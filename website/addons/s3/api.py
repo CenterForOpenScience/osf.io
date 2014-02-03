@@ -266,7 +266,7 @@ class S3Key:
 
     @property
     def version_id(self):
-        return self.s3Key.version_id if self.s3Key.version_id != 'null' else 'Current'
+        return self.s3Key.version_id if self.s3Key.version_id != 'null' else 'Pre-versioning'
 
     def updateVersions(self, manager):
         if self.type != 'folder':

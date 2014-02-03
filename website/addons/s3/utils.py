@@ -104,8 +104,8 @@ def get_bucket_drop_down(user_settings):
 def create_version_list(wrapper, key_name, node_api):
     versions = wrapper.get_file_versions(key_name)
     return [{
-            'id': x.version_id if x.version_id != 'null' else 'Current',
-            'date': _format_date(x.last_modified),  # TODO Format me
+            'id': x.version_id if x.version_id != 'null' else 'Pre-versioning',
+            'date': _format_date(x.last_modified),
             'download': _get_download_url(key_name, x.version_id, node_api),
             } for x in versions]
 
