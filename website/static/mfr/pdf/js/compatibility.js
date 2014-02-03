@@ -361,11 +361,15 @@ if (typeof PDFJS === 'undefined') {
     if (index >= 0 && remove)
       list.splice(index, 1);
     element.className = list.join(' ');
+    return (index >= 0);
   }
 
   var classListPrototype = {
     add: function(name) {
       changeList(this.element, name, true, false);
+    },
+    contains: function(name) {
+      return changeList(this.element, name, false, false);
     },
     remove: function(name) {
       changeList(this.element, name, false, true);
@@ -435,6 +439,14 @@ if (typeof PDFJS === 'undefined') {
   if (navigator.userAgent.indexOf('Opera') != -1) {
     // use browser detection since we cannot feature-check this bug
     document.addEventListener('click', ignoreIfTargetDisabled, true);
+  }
+})();
+
+// Checks if possible to use URL.createObjectURL()
+(function checkOnBlobSupport() {
+  // sometimes IE loosing the data created with createObjectURL(), see #3977
+  if (navigator.userAgent.indexOf('Trident') >= 0) {
+    PDFJS.disableCreateObjectURL = true;
   }
 })();
 
