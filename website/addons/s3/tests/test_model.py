@@ -29,8 +29,7 @@ class TestCallbacks(DbTestCase):
         self.user_settings.access_key = 'We-Will-Rock-You'
         self.user_settings.secret_key = 'Idontknowanyqueensongs'
         self.node_settings.bucket = 'Sheer-Heart-Attack'
-        self.node_settings.node_access_key = 'opensaysme'
-        self.node_settings.node_secret_key = 'secret'
+        self.node_settings.user_settings = self.user_settings
         self.node_settings.save()
 
     @mock.patch('website.addons.s3.model.get_bucket_drop_down')
@@ -67,15 +66,15 @@ class TestCallbacks(DbTestCase):
     def test_after_fork_authenticator(self):
         fork = ProjectFactory()
         clone, message = self.node_settings.after_fork(self.project,
-                                                       fork, self.node_settings.owner)
-        assert_equal(self.node_settings.node_access_key, clone.node_access_key)
+                                                       fork, self.project.creator)
+        assert_equal(self.node_settings.user_settings, clone.user_settings)
 
     def test_after_fork_not_authenticator(self):
         fork = ProjectFactory()
         clone, message = self.node_settings.after_fork(
             self.project, fork, self.non_authenticator,
         )
-        assert_equal(clone.node_access_key, None)
+        assert_equal(clone.user_settings, None)
 
     @mock.patch('website.addons.s3.utils.get_bucket_list')
     def test_drop_down_disabled(self, mock_drop):
@@ -83,7 +82,7 @@ class TestCallbacks(DbTestCase):
         bucket.name = 'Aticus'
         mock_drop.return_value = [bucket]
         drop_list = self.node_settings.to_json(self.project.creator)['bucket_list']
-        assert_true('disabled' in drop_list)
+        assert_true('Aticus' in drop_list)
 
     @mock.patch('website.addons.s3.model.serialize_bucket')
     @mock.patch('website.addons.s3.model.S3Wrapper.from_addon')
@@ -100,4 +99,4 @@ class TestCallbacks(DbTestCase):
         self.node_settings.after_remove_contributor(
             self.project, self.project.creator
         )
-        assert_equal(self.node_settings.node_access_key, None)
+        assert_equal(self.node_settings.user_settings, None)
