@@ -64,30 +64,18 @@ class TestCallbacks(DbTestCase):
         s3.secret_key = "lives"
         assert_equals(s3.to_json(self.project.creator)['has_auth'], 1)
 
-    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
-    def test_after_fork_authenticator(self, mock_drop):
-        mock_drop.return_value = ''
+    def test_after_fork_authenticator(self):
         fork = ProjectFactory()
-        clone, message = self.node_settings.after_fork(
-            self.project, fork, self.project.creator,
-        )
-        assert_equal(
-            self.node_settings.node_access_key,
-            clone.node_access_key,
-        )
+        clone, message = self.node_settings.after_fork(self.project,
+                                                       fork, self.node_settings.owner)
+        assert_equal(self.node_settings.node_access_key, clone.node_access_key)
 
-    #Expected failure merge develop_s3_forking to fix
-    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
-    def test_after_fork_not_authenticator(self, mock_drop):
-        mock_drop.return_value = ''
+    def test_after_fork_not_authenticator(self):
         fork = ProjectFactory()
         clone, message = self.node_settings.after_fork(
             self.project, fork, self.non_authenticator,
         )
-        assert_equal(
-            clone.node_access_key,
-            None,
-        )
+        assert_equal(clone.node_access_key, None)
 
     @mock.patch('website.addons.s3.utils.get_bucket_list')
     def test_drop_down_disabled(self, mock_drop):
