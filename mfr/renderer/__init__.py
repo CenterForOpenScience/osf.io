@@ -1,10 +1,10 @@
 import os
 import inspect
-import abc
-
+import logging
 from hurry.filesize import size
 from mako.lookup import TemplateLookup
 
+logger = logging.getLogger(__name__)
 
 class FileMeta(type):
 
@@ -26,14 +26,14 @@ class FileMeta(type):
         )
         
 
-class RenderError(Exception):
-#todo fix this ajs
-    def __init__(self, *args, **kwargs):
-        super(RenderError, self).__init__(*args, **kwargs)
-        self.details = kwargs['details']
-
-    def to_html(self):
-        return self.base + self.details
+# class RenderError(Exception):
+#todo add later for specific renderer error handling -ajs
+#     def __init__(self, *args, **kwargs):
+#         super(RenderError, self).__init__(*args, **kwargs)
+#         self.details = kwargs['details']
+#
+#     def to_html(self):
+#         return self.base + self.details
 
 
 class FileRenderer(object):
@@ -63,12 +63,13 @@ class FileRenderer(object):
         _, file_name = os.path.split(file_pointer.name)
         try:
             rendered = self._render(file_pointer, **kwargs)
-        except RenderError as error:
-            rendered = error.to_html()
+        # except RenderError as error:
+        #     rendered = error.to_html()
+        except Exception as error:
+            logging.error(error)
+            rendered = 'Unable to render; download file to view it'
         return rendered
 
-
-    # @abc.abstractmethod
     def _detect(self, file_pointer):
         """Detects whether a given file pointer can be rendered by 
         this renderer. Each renderer needs a detect method that at minimum
@@ -81,7 +82,6 @@ class FileRenderer(object):
         """
         return False
 
-    # @abc.abstractmethod
     def _render(self, file_pointer, **kwargs):
         """Renders a file to HTML.
 
