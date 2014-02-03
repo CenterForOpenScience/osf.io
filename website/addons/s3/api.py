@@ -199,6 +199,8 @@ class S3Wrapper:
         return self.bucket.set_cors(rules)
 
 
+#TODO Add null checks etc
+#TODO Clean me up
 class registration_wrapper(S3Wrapper):
 
     def __init__(self, node_settings):
@@ -206,8 +208,8 @@ class registration_wrapper(S3Wrapper):
             S3Connection(node_settings.node_access_key, node_settings.node_secret_key), node_settings.bucket)
         self.registration_data = node_settings.registration_data
 
+        #Im a bit buggy
     def get_wrapped_keys_in_dir(self, directory=None):
-        #assert 0, self.registration_data
         return [S3Key(x) for x in self.bucket.list_versions(delimiter='/', prefix=directory) if isinstance(x, Key) and x.key != directory and self.is_right_version(x)]
 
     def get_wrapped_directories_in_dir(self, directory=None):
@@ -216,6 +218,16 @@ class registration_wrapper(S3Wrapper):
     def is_right_version(self, key):
         return [x for x in self.registration_data['keys'] if x['version_id'] == key.version_id]
 
+    def get_file_versions(self, key_name):
+        to_cut = [x for x in self.bucket.list_versions(prefix=key_name) if isinstance(x, Key)]
+        return to_cut[self._get_index_of(self._get_proper_version(key_name), to_cut):]
+
+    def _get_proper_version(self, key_name):
+        vid = [x['version_id'] for x in self.registration_data['keys'] if x['path'] == key_name][0]
+        return self.bucket.get_key(key_name, version_id=vid)
+
+    def _get_index_of(self, version, to_cut):
+        return to_cut.index([x for x in to_cut if x.version_id == version.version_id][0])
 
 
 # TODO Extend me and you bucket.setkeyclass

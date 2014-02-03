@@ -96,4 +96,22 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
 
         return clone, message
 
+    def before_register(self, node, user):
+        """
 
+        :param Node node:
+        :param User user:
+        :return str: Alert message
+
+        """
+        if user.get_addon('s3').has_auth:
+            return (
+                'Registering {cat} "{title}" will copy the authentication for its '
+                'Amazon Simple Storage add-on to the registered {cat}. '
+                'As well as turning versioning on in your bucket,'
+                'which may result in larger charges from Amazon'
+            ).format(
+                cat=node.project_or_component,
+                title=node.title,
+                bucket_name=self.bucket,
+            )
