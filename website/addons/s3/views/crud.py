@@ -86,28 +86,6 @@ def s3_delete(*args, **kwargs):
 
 @must_be_contributor
 @must_have_addon('s3', 'node')
-def render_file(*args, **kwargs):
-    user = kwargs['user']
-    node = kwargs['node'] or kwargs['project']
-    keyName = kwargs['key']
-
-    s3 = node.get_addon('s3')
-
-    rv = _view_project(node, user)
-
-    rv.update({
-        'addon_page_js': 'null',
-        'addon_page_css': 'null',
-        'complete': 1,
-        'filename': keyName.replace('&spc', ' ').replace('&sl', '/')
-    })
-
-    rv.update(s3.config.to_json())
-    return rv
-
-
-@must_be_contributor
-@must_have_addon('s3', 'node')
 def s3_new_folder(*args, ** kwargs):
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
@@ -186,7 +164,7 @@ def view(*args, **kwargs):
     file_contents = key.s3Key.get_contents_as_string()
 
     #TODO Change me to url (not api/v1/)
-    render_url = node.api_url + 's3/render/' + path + '/?md5=' + key.md5
+    render_url = node.url + 's3/render/' + path + '/?md5=' + key.md5
 
     cache_name = get_cache_file_name(path, key.md5)
 

@@ -55,7 +55,7 @@ def s3_hgrid_data_contents(*args, **kwargs):
 
     for key in key_list:
         temp_file = wrapped_key_to_json_new(
-            key, node.api_url, parent or 'null')
+            key, node.api_url, parent or 'null', node.url)
         temp_file['lazyLoad'] = node_settings.owner.api_url + 's3/hgrid/',
         temp_file['can_edit'] = can_edit
         temp_file['permission'] = can_edit
