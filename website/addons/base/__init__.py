@@ -186,11 +186,13 @@ class AddonSettingsBase(StoredObject):
 
     def delete(self, save=True):
         self.deleted = True
+        self.on_delete()
         if save:
             self.save()
 
     def undelete(self, save=True):
         self.deleted = False
+        self.on_add()
         if save:
             self.save()
 
@@ -209,6 +211,17 @@ class AddonUserSettingsBase(AddonSettingsBase):
         'abstract': True,
     }
 
+    #############
+    # Callbacks #
+    #############
+
+    def on_add(self):
+        """Called when the addon is added (or re-added) to a User"""
+        pass
+
+    def on_delete(self):
+        """Called when the addon is deleted from a User"""
+        pass
 
 class AddonNodeSettingsBase(AddonSettingsBase):
 
