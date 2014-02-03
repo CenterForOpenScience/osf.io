@@ -11,6 +11,12 @@ import json
 from datetime import datetime
 
 
+#Note: (from boto docs) this function is in beta
+def enable_versioning(settings):
+    wrapper = S3Wrapper.from_addon(settings)
+    wrapper.bucket.configure_versioning(True)
+
+
 def has_access(access_key, secret_key):
     try:
         c = S3Connection(access_key, secret_key)

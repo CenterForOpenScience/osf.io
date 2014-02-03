@@ -13,7 +13,7 @@ from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 
 from utils import get_bucket_drop_down, serialize_bucket
 
-from api import S3Wrapper
+from api import S3Wrapper, enable_versioning
 
 
 class AddonS3UserSettings(AddonUserSettingsBase):
@@ -85,6 +85,8 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         clone, message = super(AddonS3NodeSettings, self).after_register(
             node, registration, user, save=False
         )
+
+        enable_versioning(self)
 
         if self.bucket and self.has_auth:
             clone.registration_data['bucket'] = self.bucket
