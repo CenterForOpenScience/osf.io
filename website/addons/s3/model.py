@@ -48,14 +48,15 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
 
         self.user_settings = user.get_addon('s3')
         if self.user_settings:
+            rv['access_key'] = self.user_settings.access_key or ''
+            rv['secret_key'] = self.user_settings.secret_key or ''
             self.save()
-            rv['bucket_list'] = get_bucket_drop_down(self.user_settings)
+            if self.user_settings.has_auth:
+                rv['bucket_list'] = get_bucket_drop_down(self.user_settings)
 
         rv.update({
             'bucket': self.bucket or '',
             'has_bucket': self.bucket is not None,
-            'access_key': self.user_settings.access_key or '',
-            'secret_key': self.user_settings.secret_key or '',
             'user_has_auth': True if self.user_settings and self.user_settings.has_auth else False
         })
 
