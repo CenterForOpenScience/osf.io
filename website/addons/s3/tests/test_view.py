@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import unittest
 import mock
 from nose.tools import *  # PEP8 asserts
 #from tests.base import DbTestCase
@@ -32,9 +31,12 @@ class TestS3Views(DbTestCase):
         # Set the node addon settings to correspond to the values of the mock
         # repo
         self.node_settings = AddonS3NodeSettings()
-        #self.node_settings.user = self.s3.repo.return_value['owner']['login']
-        #self.node_settings.repo = self.s3.repo.return_value['name']
+        self.user_settings.access_key = 'We-Will-Rock-You'
+        self.user_settings.secret_key = 'Idontknowanyqueensongs'
+        self.node_settings.bucket = 'Sheer-Heart-Attack'
+        self.node_settings.user_settings = self.user_settings
         self.node_settings.save()
+        self.user_settings.save()
         self.app.authenticate(*self.user.auth)
 
     def test_s3_page_no_user(self):
@@ -59,25 +61,14 @@ class TestS3Views(DbTestCase):
         assert_equals(res, {})
 
     @mock.patch('website.addons.s3.views.config.does_bucket_exist')
-    @mock.patch('website.addons.s3.views.config._s3_create_access_key')
     @mock.patch('website.addons.s3.views.config.adjust_cors')
-    def test_s3_settings_no_bucket(self, mock_cors, mock_create_key, mock_does_bucket_exist):
+    def test_s3_settings_no_bucket(self, mock_cors, mock_does_bucket_exist):
         mock_does_bucket_exist.return_value = False
-        mock_create_key.return_value = True
         mock_cors.return_value = True
         url = "/api/v1/project/{0}/s3/settings/".format(self.project._id)
         res = self.app.post_json(url, {}, expect_errors=True)
         self.project.reload()
         assert_equals(self.node_settings.bucket, None)
-
-    @mock.patch('website.addons.s3.views.utils.create_limited_user')
-    def test_s3_create_access_key_attrs(self, mock_create_limited_user):
-        mock_create_limited_user.return_value = {
-            'access_key_id': 'Boo', 'secret_access_key': 'Riley'}
-        user_settings = AddonS3UserSettings(user='Aticus-killing-mocking')
-        views.utils._s3_create_access_key(
-            user_settings, self.node_settings, self.project._id)
-        assert_equals(self.node_settings.node_access_key, 'Boo')
 
     @mock.patch('website.addons.s3.views.utils.create_limited_user')
     def test_s3_create_access_key(self, mock_create_limited_user):
