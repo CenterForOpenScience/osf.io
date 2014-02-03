@@ -95,3 +95,9 @@ class TestCallbacks(DbTestCase):
             self.project, fork, self.project.creator,
         )
         assert_true(clone.is_registration)
+
+    def test_after_remove_contributor(self):
+        self.node_settings.after_remove_contributor(
+            self.project, self.project.creator
+        )
+        assert_equal(self.node_settings.node_access_key, None)
