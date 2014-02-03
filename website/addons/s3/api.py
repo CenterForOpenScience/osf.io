@@ -199,31 +199,36 @@ class S3Wrapper:
         return self.bucket.set_cors(rules)
 
 
-#TODO Add null checks etc
-#TODO Clean me up
+# TODO Add null checks etc
+# TODO Clean me up
 class registration_wrapper(S3Wrapper):
 
     def __init__(self, node_settings):
-        S3Wrapper.__init__(self,
-            S3Connection(node_settings.node_access_key, node_settings.node_secret_key), node_settings.bucket)
+        connection = S3Connection(
+            node_settings.node_access_key, node_settings.node_secret_key)
+        S3Wrapper.__init__(self, connection, node_settings.bucket)
         self.registration_data = node_settings.registration_data
 
-        #Im a bit buggy
     def get_wrapped_keys_in_dir(self, directory=None):
         return [S3Key(x) for x in self.bucket.list_versions(delimiter='/', prefix=directory) if isinstance(x, Key) and x.key != directory and self.is_right_version(x)]
 
     def get_wrapped_directories_in_dir(self, directory=None):
-        return [S3Key(x) for x in self.bucket.list_versions(prefix=directory) if isinstance(x, Key) and x.key.endswith('/') and x.key != directory and self.is_right_version(x)]
+        return [S3Key(x) for x in self.bucket.list_versions(prefix=directory) if self._directory_check(x, directory)]
+
+    def _directory_check(self, to_check, against):
+        return isinstance(to_check, Key) and to_check.key.endswith('/') and to_check.key != against and self.is_right_version(to_check)
 
     def is_right_version(self, key):
-        return [x for x in self.registration_data['keys'] if x['version_id'] == key.version_id]
+        return [x for x in self.registration_data['keys'] if x['version_id'] == key.version_id and x['path'] == key.key]
 
     def get_file_versions(self, key_name):
-        to_cut = [x for x in self.bucket.list_versions(prefix=key_name) if isinstance(x, Key)]
+        to_cut = [x for x in self.bucket.list_versions(
+            prefix=key_name) if isinstance(x, Key)]
         return to_cut[self._get_index_of(self._get_proper_version(key_name), to_cut):]
 
     def _get_proper_version(self, key_name):
-        vid = [x['version_id'] for x in self.registration_data['keys'] if x['path'] == key_name][0]
+        vid = [x['version_id']
+               for x in self.registration_data['keys'] if x['path'] == key_name][0]
         return self.bucket.get_key(key_name, version_id=vid)
 
     def _get_index_of(self, version, to_cut):
