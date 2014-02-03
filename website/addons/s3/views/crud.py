@@ -159,6 +159,7 @@ def delete(*args, **kwargs):
     return {}
 
 
+#TODO Check to see if file is already rendered?
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
 def view(*args, **kwargs):
@@ -183,6 +184,7 @@ def view(*args, **kwargs):
 
     file_contents = key.s3Key.get_contents_as_string()
 
+    #TODO Change me to url (not api/v1/)
     render_url = node.api_url + 's3/render/' + path + '/?md5=' + key.md5
 
     cache_name = get_cache_file_name(path, key.md5)
