@@ -86,7 +86,9 @@ class TestCallbacks(DbTestCase):
 
     @mock.patch('website.addons.s3.model.serialize_bucket')
     @mock.patch('website.addons.s3.model.S3Wrapper.from_addon')
-    def test_registration(self, mock_wrapper, mock_bucket):
+    @mock.patch('website.addons.s3.model.enable_versioning')
+    def test_registration(self, mock_wrapper, mock_bucket, mock_versioning):
+        mock_versioning.return_value = True
         mock_wrapper.return_value = None
         mock_bucket.return_value = {'Not None': 'None'}
         fork = ProjectFactory()

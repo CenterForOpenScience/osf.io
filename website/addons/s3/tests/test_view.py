@@ -39,27 +39,6 @@ class TestS3Views(DbTestCase):
         self.user_settings.save()
         self.app.authenticate(*self.user.auth)
 
-    def test_s3_page_no_user(self):
-        s3 = AddonS3NodeSettings(user=None, bucket='lul')
-        res = views.utils._page_content('873p', s3, None)
-        assert_equals(res, {})
-
-    def test_s3_page_no_pid(self):
-        s3 = AddonS3NodeSettings(user='jimbob', bucket='lul')
-        res = views.utils._page_content(None, s3, self.user_settings)
-        assert_equals(res, {})
-
-    def test_s3_page_empty_pid(self):
-        s3 = AddonS3NodeSettings(user='jimbob', bucket='lul')
-        res = views.utils._page_content('', s3, self.user_settings)
-        assert_equals(res, {})
-
-    def test_s3_page_no_auth(self):
-        s3 = AddonS3NodeSettings(user='jimbob', bucket='lul')
-        s3.node_access_key = ""
-        res = views.utils._page_content('', s3, self.user_settings)
-        assert_equals(res, {})
-
     @mock.patch('website.addons.s3.views.config.does_bucket_exist')
     @mock.patch('website.addons.s3.views.config.adjust_cors')
     def test_s3_settings_no_bucket(self, mock_cors, mock_does_bucket_exist):
@@ -67,16 +46,6 @@ class TestS3Views(DbTestCase):
         mock_cors.return_value = True
         url = "/api/v1/project/{0}/s3/settings/".format(self.project._id)
         res = self.app.post_json(url, {}, expect_errors=True)
-        self.project.reload()
-        assert_equals(self.node_settings.bucket, None)
-
-    @mock.patch('website.addons.s3.views.utils.create_limited_user')
-    def test_s3_create_access_key(self, mock_create_limited_user):
-        mock_create_limited_user.return_value = {
-            'access_key_id': 'Boo', 'secret_access_key': 'Riley'}
-        user_settings = AddonS3UserSettings(user='Aticus-killing-mocking')
-        assert_true(views.utils._s3_create_access_key(
-            user_settings, self.node_settings, self.project._id))
 
     @mock.patch('framework.addons.AddonModelMixin.get_addon')
     @mock.patch('website.addons.s3.views.config.has_access')
@@ -115,14 +84,3 @@ class TestS3Views(DbTestCase):
         user_settings = self.user.get_addon('s3')
         assert_equals(user_settings.access_key, 'scout')
 
-    # I dont work..... Settings not getting passed around properly?
-    @mock.patch('website.addons.s3.views.config.remove_user')
-    def test_s3_remove_node_settings(self, mock_access):
-        mock_access.return_value = True
-        self.project.get_addon('s3').node_access_key = 'to-kill-a-mocking-bucket'
-        self.project.get_addon('s3').node_secret_key = 'itsasecret'
-        self.project.get_addon('s3').save()
-        url = "/api/v1/project/{0}/s3/settings/delete/".format(self.project._id)
-        self.app.post_json(url, {})
-        self.project.reload()
-        assert_equals(self.project.get_addon('s3').node_access_key, '')

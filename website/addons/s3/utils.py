@@ -12,7 +12,6 @@ URLADDONS = {
 }
 
 
-# TODO fix/figure out allowed origin....
 def adjust_cors(s3wrapper):
     rules = s3wrapper.get_cors_rules()
 
