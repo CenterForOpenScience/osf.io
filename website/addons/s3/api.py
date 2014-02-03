@@ -32,56 +32,6 @@ def create_bucket(user_settings, bucket_name):
     except Exception:
         return False
 
-
-def create_limited_user(accessKey, secretKey, bucketName, pid):
-    policy = {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Sid": "Stmt1390848602000",
-                "Effect": "Deny",
-                "Action": [
-                    "s3:DeleteBucket"
-                ],
-                "Resource": [
-                    "arn:aws:s3:::{bucketname}".format(bucketname=bucketName)
-                ]
-            },
-            {
-                "Sid": "Stmt1390848639000",
-                "Effect": "Allow",
-                "Action": [
-                    "s3:*"
-                ],
-                "Resource": [
-                    "arn:aws:s3:::{bucketname}".format(
-                        bucketname=bucketName),
-                    "arn:aws:s3:::{bucketname}/*".format(
-                        bucketname=bucketName)
-                ]
-            }
-        ]
-    }
-    connection = IAMConnection(accessKey, secretKey)
-    connection.create_user(bucketName + '-osf-limited-' + pid)
-    # This might need a bit more try catching
-    connection.put_user_policy(
-        bucketName + '-osf-limited-' + pid, 'policy-' + bucketName + '-osf-limited-' + pid, json.dumps(policy))
-    return connection.create_access_key(bucketName + '-osf-limited-' + pid)['create_access_key_response']['create_access_key_result']['access_key']
-
-# TODO Add PID
-
-
-def remove_user(accessKey, secretKey, bucketName, otherKey, pid):
-    connection = IAMConnection(accessKey, secretKey)
-    connection.delete_user_policy(
-        bucketName + '-osf-limited-' + pid, 'policy-' + bucketName + '-osf-limited-' + pid)
-        # bucketName + '-osf-limited', 'policy-' + bucketName + '-osf-limited-'
-        # + pid)
-    connection.delete_access_key(otherKey, bucketName + '-osf-limited-' + pid)
-    connection.delete_user(bucketName + '-osf-limited-' + pid)
-
-
 def does_bucket_exist(accessKey, secretKey, bucketName):
     try:
         c = S3Connection(accessKey, secretKey)
@@ -96,13 +46,9 @@ class S3Wrapper:
     @classmethod
     def from_addon(cls, s3):
         if not s3.is_registration:
-            return cls(S3Connection(s3.node_access_key, s3.node_secret_key), s3.bucket)
+            return cls(S3Connection(s3.user_settings.access_key, s3.user_settings.secret_key), s3.bucket)
         else:
             return registration_wrapper(s3)
-
-    @classmethod
-    def from_user(cls, s3, bucket):
-        return cls(S3Connection(s3.access_key, s3.secret_key), bucket)
 
     @classmethod
     def bucket_exist(cls, s3, bucketName):

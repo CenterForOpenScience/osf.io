@@ -4,7 +4,6 @@ from website.project.decorators import must_have_addon
 from website.project.decorators import must_be_contributor, must_be_contributor_or_public
 
 from website.addons.s3.api import S3Wrapper, create_bucket
-from website.addons.s3.api import create_limited_user
 
 from website.addons.s3.utils import getHgrid
 

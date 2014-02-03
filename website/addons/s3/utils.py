@@ -97,13 +97,9 @@ def key_upload_path(wrapped_key, url):
         return quote(url + URLADDONS['upload'] + wrapped_key.fullPath + '/')
 
 
-def get_bucket_drop_down(user_settings, node_auth):
+def get_bucket_drop_down(user_settings):
     dropdown_list = ''
     for bucket in get_bucket_list(user_settings):
-        if node_auth:
-            dropdown_list += '<li role="presentation" class="disabled"><a href="#">' + \
-                bucket.name + '</a></li>'
-        else:
             dropdown_list += '<li role="presentation"><a href="#">' + \
                 bucket.name + '</a></li>'
     return dropdown_list

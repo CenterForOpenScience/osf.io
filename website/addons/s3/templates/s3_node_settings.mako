@@ -14,10 +14,7 @@
             <li role="presentation" class="dropdown-header">Your buckets</li>
             ${bucket_list}
             <li role="presentation" class="divider"></li>
-            <li role="presentation" ${'class="disabled"' if node_auth else ''}><a href="#">Create a new bucket</a></li>
-            %if user_has_auth and node_auth:
-                <li role="presentation"><a href="#">Remove access to ${bucket}</a></li>
-            %endif
+            <li role="presentation"><a href="#">Create a new bucket</a></li>
           </ul>
 
         </div>
@@ -27,7 +24,6 @@
     <br>
     Configure this add-on on the <a href="/settings/">settings</a> page, or click <a class="widget-disable" href="${node['api_url']}s3/settings/disable/">here</a> to disable it.
     <br>
-
 %endif
 
 
@@ -39,17 +35,3 @@
 
 <%def name="submit_btn()">
 </%def>
-
-<%def name="on_submit()">
-    %if user_has_auth and node_auth:
-        <script type="text/javascript">
-            $(document).ready(function() {
-                $('#addonSettings${addon_short_name.capitalize()}').on('submit', onSubmitRemove);
-            });
-        </script>
-    %elif user_has_auth:
-        ${parent.on_submit()}
-    %endif
-</%def>
-
-

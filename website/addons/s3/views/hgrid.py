@@ -7,7 +7,7 @@ from framework import request
 def s3_dummy_folder(node_settings, user, parent=None, **kwargs):
 
     # Quit if no bucket
-    if not node_settings.bucket or not node_settings.node_auth:
+    if not node_settings.bucket or not node_settings.user_settings or not node_settings.user_settings.has_auth:
         return
 
     node = node_settings.owner

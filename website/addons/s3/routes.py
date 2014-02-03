@@ -16,14 +16,6 @@ node_settings_routes = {
             '/project/<pid>/node/<nid>/s3/settings/',
         ], 'post', views.config.node_settings, json_renderer),
         Rule([
-            '/project/<pid>/s3/settings/delete/',
-            '/project/<pid>/node/<nid>/s3/settings/delete/',
-        ], 'post', views.config.delete_access_key, json_renderer),
-        Rule([
-            '/project/<pid>/s3/settings/delete/force/',
-            '/project/<pid>/node/<nid>/s3/settings/delete/force/',
-        ], 'post', views.config.force_removal, json_renderer),
-        Rule([
             '/project/<pid>/s3/newbucket/',
             '/project/<pid>/node/<nid>/s3/newbucket/',
         ], 'post', views.utils.create_new_bucket, json_renderer),

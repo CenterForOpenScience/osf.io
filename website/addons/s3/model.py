@@ -37,41 +37,35 @@ class AddonS3UserSettings(AddonUserSettingsBase):
 
 class AddonS3NodeSettings(AddonNodeSettingsBase):
 
-    bucket = fields.StringField()
-    node_access_key = fields.StringField()
-    node_secret_key = fields.StringField()
-
-    #'Special fields'
     registration_data = fields.DictionaryField()
+    bucket = fields.StringField()
+    user_settings = fields.ForeignField(
+        'addons3usersettings', backref='authorized'
+    )
 
-    # TODO Considering removing node_ in naming
     def to_json(self, user):
-
         rv = super(AddonS3NodeSettings, self).to_json(user)
-        s3_user_settings = user.get_addon('s3')
+
+        self.user_settings = user.get_addon('s3')
+        if self.user_settings:
+            self.save()
+            rv['bucket_list'] = get_bucket_drop_down(self.user_settings)
 
         rv.update({
             'bucket': self.bucket or '',
             'has_bucket': self.bucket is not None,
-            'access_key': self.node_access_key or '',
-            'secret_key': self.node_secret_key or '',
-            'user_has_auth': False,
-            'node_auth': self.node_auth,
+            'access_key': self.user_settings.access_key or '',
+            'secret_key': self.user_settings.secret_key or '',
+            'user_has_auth': True if self.user_settings and self.user_settings.has_auth else False
         })
-        if s3_user_settings:
-            rv['user_has_auth'] = True if s3_user_settings.has_auth else False
-            rv['bucket_list'] = get_bucket_drop_down(
-                s3_user_settings, self.node_auth)
 
         return rv
 
     @property
-    def node_auth(self):
-        return True if self.node_access_key and self.node_secret_key else False
-
-    @property
     def is_registration(self):
         return True if self.registration_data else False
+
+        #TODO Update callbacks
 
     def after_register(self, node, registration, user, save=True):
         """
@@ -211,8 +205,8 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         :return str: Alert message
 
         """
-        if self.node_auth and self.owner == removed:
-            self.access_key = None
+        if self.node_auth and self.owner.creator == removed:
+            self.node_access_key = None
             self.node_secret_key = None
             self.bucket = None
             self.save()
