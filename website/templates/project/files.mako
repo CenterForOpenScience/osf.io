@@ -42,9 +42,11 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
     if (dataContext.nameExtra) {
         link += ' ' + dataContext.nameExtra;
     }
-    if(dataContext.view){
-        link = "<a href=" + dataContext['view'] + ">" + link + "</a>";
-    }
+    var attrs = dataContext.attrs || {};
+    var attrString = $.map(attrs, function(value, key) {
+        return key + '="' + value + '"'
+    }).join(' ');
+    link = '<a ' + attrString + '>' + link + '</a>';
     if (dataContext['type']=='folder') {
         if (dataContext._collapsed) {
             if (dataContext.can_view !== false) {
@@ -74,8 +76,12 @@ var TaskNameFormatter = function(row, cell, value, columnDef, dataContext) {
 var UploadBars = function(row, cell, value, columnDef, dataContext) {
     if (!dataContext.uploadBar) {
         if (dataContext.download) {
+            var attrs = dataContext.attrs || {};
+            var attrString = $.map(attrs, function(value, key) {
+                return key + '="' + value + '"'
+            }).join(' ');
             var delButton = "<button type='button' class='btn btn-danger btn-mini' onclick='myGrid.deleteItems([" + JSON.stringify(dataContext['uid']) + "])'><i class='icon-trash icon-white'></i></button>"
-            var downButton = "<a href=" + dataContext['download'] + "><button type='button' class='btn btn-success btn-mini'><i class='icon-download-alt icon-white'></i></button></a>";
+            var downButton = "<a " + attrString + "><button type='button' class='btn btn-success btn-mini'><i class='icon-download-alt icon-white'></i></button></a>";
             var buttons = downButton;
             if (dataContext.can_edit) {
                 buttons += ' ' + delButton;
@@ -266,6 +272,20 @@ $(window).on('beforeunload', function() {
 // Don't show dropped content if user drags outside grid
 window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };
+
+var gridElm = $('#myGrid');
+
+gridElm.on('click', '.cell-title a', function() {
+    var viewUrl = $(this).attr('data-view');
+    window.location.href = viewUrl;
+    return false;
+});
+
+gridElm.on('click', '.icon-download-alt', function() {
+    var downUrl = $(this).closest('a').attr('data-download');
+    window.location.href = downUrl;
+    return false;
+});
 
 </script>
 </%def>

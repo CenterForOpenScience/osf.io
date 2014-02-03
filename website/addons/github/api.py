@@ -483,9 +483,11 @@ def tree_to_hgrid(tree, user, repo, node, node_settings, parent=None, branch=Non
         # Build base URLs
         base_url = os.path.join(node.url, 'github', 'file', qpath) + '/'
         base_api_url = os.path.join(node.api_url, 'github', 'file', qpath) + '/'
+        download_url = os.path.join(node.url, 'github', 'file', 'download', qpath)
         if ref:
             base_url += '?' + ref
             base_api_url += '?' + ref
+            download_url += '?' + ref
 
         if type_map[item['type']] == 'file':
 
@@ -507,12 +509,14 @@ def tree_to_hgrid(tree, user, repo, node, node_settings, parent=None, branch=Non
             row['ext'] = ext
 
             # URLs
-            row['view'] = base_url
+            row['view'] = ''
             row['delete'] = base_api_url
-            if hotlink and ref:
-                row['download'] = raw_url(user, repo, sha or branch, qpath)
-            else:
-                row['download'] = base_url
+            row['download'] = base_url
+            row['attrs'] = {
+                'data-view': base_url,
+                'data-download': download_url,
+                'data-addon': 'github',
+            }
 
         else:
 

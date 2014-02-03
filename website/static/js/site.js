@@ -55,23 +55,24 @@ $(document).ready(function(){
             .text('Creating');
     });
 
-    // Highlight active tabs and nav labels
-    if (typeof(nodeId) !== 'undefined' && nodeId) {
-        // Works for project pages; code used below won't highlight wiki tab
-        // on wiki pages because URLs (e.g. wiki/home) aren't contained in
-        // tab URLs (e.g. wiki)
-        var page = location.pathname.split(nodeId)[1]
-            .split('/')[1];
-        $('#projectSubnav a').filter(function() {
-            return page == $(this).attr('href')
-                .split(nodeId)[1]
-                .replace(/\//g, '');
-        }).parent().addClass('active');
-    } else {
-         // Works for user dashboard page
-         $('.nav a[href="' + location.pathname + '"]').parent().addClass('active');
-         $('.tabs a[href="' + location.pathname + '"]').parent().addClass('active');
-    }
+//    TODO: Make this work with file GUIDs [jmc]
+//    // Highlight active tabs and nav labels
+//    if (typeof(nodeId) !== 'undefined' && nodeId) {
+//        // Works for project pages; code used below won't highlight wiki tab
+//        // on wiki pages because URLs (e.g. wiki/home) aren't contained in
+//        // tab URLs (e.g. wiki)
+//        var page = location.pathname.split(nodeId)[1]
+//            .split('/')[1];
+//        $('#projectSubnav a').filter(function() {
+//            return page == $(this).attr('href')
+//                .split(nodeId)[1]
+//                .replace(/\//g, '');
+//        }).parent().addClass('active');
+//    } else {
+//         // Works for user dashboard page
+//         $('.nav a[href="' + location.pathname + '"]').parent().addClass('active');
+//         $('.tabs a[href="' + location.pathname + '"]').parent().addClass('active');
+//    }
 
     // Initiate tag input
     $('#tagitfy').tagit({

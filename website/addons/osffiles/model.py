@@ -2,16 +2,28 @@
 
 """
 
+import os
 import datetime
 
 from framework import GuidStoredObject, fields
-from website.addons.base import AddonNodeSettingsBase
+from website.addons.base import AddonNodeSettingsBase, GuidFile
 
 
 class AddonFilesNodeSettings(AddonNodeSettingsBase):
 
     def to_json(self, user):
         return{}
+
+
+class OsfGuidFile(GuidFile):
+
+    name = fields.StringField(index=True)
+
+    @property
+    def file_url(self):
+        if self.name is None:
+            raise ValueError('Path field must be defined.')
+        return os.path.join('osffiles', self.name)
 
 
 class NodeFile(GuidStoredObject):

@@ -25,9 +25,11 @@ $(document).ready(function() {
         if (dataContext.nameExtra) {
             link += ' ' + dataContext.nameExtra;
         }
-        if(dataContext.view){
-            link = "<a href=" + dataContext['view'] + ">" + link + "</a>";
-        }
+        var attrs = dataContext.attrs || {};
+        var attrString = $.map(attrs, function(value, key) {
+            return key + '="' + value + '"'
+        }).join(' ');
+        link = '<a ' + attrString + '>' + link + '</a>';
         if (dataContext['type'] == 'folder') {
             if (dataContext._collapsed) {
                 if (dataContext.can_view !== false) {
@@ -79,6 +81,20 @@ $(document).ready(function() {
             });
             return item.lazyLoad + '?' + $.param(params);
         }
+    });
+
+    var gridElm = $('#myGrid');
+
+    gridElm.on('click', '.cell-title a', function() {
+        var viewUrl = $(this).attr('data-view');
+        window.location.href = viewUrl;
+        return false;
+    });
+
+    gridElm.on('click', '.icon-download-alt', function() {
+        var downUrl = $(this).closest('a').attr('data-download');
+        window.location.href = downUrl;
+        return false;
     });
 
 });

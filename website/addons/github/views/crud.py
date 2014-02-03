@@ -5,7 +5,7 @@ import httplib as http
 
 from hurry.filesize import size, alternative
 
-from framework import request, make_response
+from framework import request, redirect, make_response, Q
 from framework.flask import secure_filename
 from framework.exceptions import HTTPError
 
@@ -15,8 +15,10 @@ from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
+from website.addons.base.views import check_file_guid
 
 from ..api import GitHub, ref_to_params
+from ..model import GithubGuidFile
 from .util import MESSAGES
 
 
@@ -70,6 +72,22 @@ def github_view_file(*args, **kwargs):
     if path is None:
         raise HTTPError(http.NOT_FOUND)
 
+    try:
+        guid = GithubGuidFile.find_one(
+            Q('node', 'eq', node) &
+            Q('path', 'eq', path)
+        )
+    except:
+        guid = GithubGuidFile(
+            node=node,
+            path=path,
+        )
+        guid.save()
+
+    redirect_url = check_file_guid(guid)
+    if redirect_url:
+        return redirect(redirect_url)
+
     connection = GitHub.from_settings(node_settings.user_settings)
 
     repo = connection.repo(node_settings.user, node_settings.repo)
@@ -100,12 +118,10 @@ def github_view_file(*args, **kwargs):
 
     for commit in commits:
         commit['download'] = (
-            os.path.join(node.api_url, 'github', 'file', path) +
-            '?ref=' + ref_to_params(sha=commit['sha'])
+            '/' + guid._id + '?ref=' + ref_to_params(sha=commit['sha'])
         )
         commit['view'] = (
-            os.path.join(node.url, 'github', 'file', path)
-            + '?' + ref_to_params(branch, commit['sha'])
+            '/' + guid._id + '/?' + ref_to_params(branch, commit['sha'])
         )
 
     # Get or create rendered file
@@ -191,7 +207,7 @@ def github_upload_file(*args, **kwargs):
                 'github': {
                     'user': github.user,
                     'repo': github.repo,
-                    'url': node.api_url + 'github/file/{0}/?ref={1}'.format(
+                    'url': node.url + 'github/file/{0}/?ref={1}'.format(
                         os.path.join(path, filename),
                         data['commit']['sha']
                     ),

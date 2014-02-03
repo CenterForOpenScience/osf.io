@@ -53,7 +53,9 @@
 
     $(document).ready(function() {
 
-        $('body').delegate('.github-branch-select', 'change', function() {
+        var $body = $('body');
+
+        $body.on('.github-branch-select', 'change', function() {
             var $this = $(this);
             var branch = $this.val();
             var cell = $this.closest('.slick-cell');

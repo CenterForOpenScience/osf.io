@@ -11,7 +11,7 @@ import logging
 
 from hurry.filesize import size, alternative
 
-from framework import request, redirect, secure_filename, send_file
+from framework import request, redirect, secure_filename, send_file, Q
 from framework.auth import must_have_session_auth
 from framework.git.exceptions import FileNotModified
 from framework.auth import get_api_key
@@ -21,9 +21,10 @@ from website.project.views.node import _view_project
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public, must_have_addon
 from website.project.views.file import get_cache_content
+from website.addons.base.views import check_file_guid
 from website import settings
 
-from .model import NodeFile
+from .model import NodeFile, OsfGuidFile
 
 logger = logging.getLogger(__name__)
 
@@ -106,8 +107,8 @@ def get_osffiles(*args, **kwargs):
             item = {}
 
             # URLs
-            item['view'] = fobj.url
-            item['download'] = fobj.api_url
+            item['view'] = True
+            item['download'] = True
             item['delete'] = fobj.api_url
 
             item['can_edit'] = can_edit
@@ -127,6 +128,11 @@ def get_osffiles(*args, **kwargs):
                 time.mktime(fobj.date_modified.timetuple()),
                 fobj.date_modified.strftime('%Y/%m/%d %I:%M %p')
             ]
+            item['attrs'] = {
+                'data-view': fobj.url,
+                'data-download': fobj.api_url,
+                'data-addon': 'osffiles',
+            }
             info.append(item)
 
     return info
@@ -234,6 +240,22 @@ def view_file(*args, **kwargs):
 
     file_name = kwargs['fid']
     file_name_clean = file_name.replace('.', '_')
+
+    try:
+        guid = OsfGuidFile.find_one(
+            Q('node', 'eq', node_to_use) &
+            Q('name', 'eq', file_name)
+        )
+    except:
+        guid = OsfGuidFile(
+            node=node_to_use,
+            name=file_name,
+        )
+        guid.save()
+
+    redirect_url = check_file_guid(guid)
+    if redirect_url:
+        return redirect(redirect_url)
 
     # Throw 404 and log error if file not found in files_versions
     try:

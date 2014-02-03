@@ -1,6 +1,10 @@
 from . import routes, views, model
 
-MODELS = [model.AddonFilesNodeSettings, model.NodeFile]
+MODELS = [
+    model.AddonFilesNodeSettings,
+    model.NodeFile,
+    model.OsfGuidFile,
+]
 NODE_SETTINGS_MODEL = model.AddonFilesNodeSettings
 
 ROUTES = [
