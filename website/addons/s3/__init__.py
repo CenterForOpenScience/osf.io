@@ -6,8 +6,7 @@ MODELS = [model.AddonS3UserSettings, model.AddonS3NodeSettings]
 USER_SETTINGS_MODEL = model.AddonS3UserSettings
 NODE_SETTINGS_MODEL = model.AddonS3NodeSettings
 
-ROUTES = [routes.node_settings_routes, routes.user_settings_routes,
-          routes.page_routes, routes.crud_routes, routes.hgrid_routes]
+ROUTES = [routes.settings_routes, routes.nonapi_routes, routes.api_routes]
 
 SHORT_NAME = 's3'
 FULL_NAME = 'Amazon Simple Storage Service'
