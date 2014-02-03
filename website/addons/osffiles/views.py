@@ -12,9 +12,7 @@ import logging
 from hurry.filesize import size, alternative
 
 from framework import request, redirect, secure_filename, send_file
-from framework.auth import must_have_session_auth
 from framework.git.exceptions import FileNotModified
-from framework.auth import get_api_key
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
 from website.project.views.node import _view_project
@@ -55,11 +53,11 @@ def _clean_file_name(name):
 
 
 
-def osffiles_dummy_folder(node_settings, user, parent=None, **kwargs):
+def osffiles_dummy_folder(node_settings, auth, parent=None, **kwargs):
 
     node = node_settings.owner
-    can_view = node.can_view(user)
-    can_edit = node.can_edit(user)
+    can_view = node.can_view(auth)
+    can_edit = node.can_edit(auth)
     return {
         'addonName': 'OSF Files',
         'maxFilesize': node_settings.config.max_file_size,
@@ -85,11 +83,11 @@ def get_osffiles(*args, **kwargs):
 
     node_settings = kwargs['node_addon']
     node = node_settings.owner
-    user = kwargs['user']
+    auth = kwargs['auth']
     parent = request.args.get('parent', 'null')
 
-    can_edit = node.can_edit(user) and not node.is_registration
-    can_view = node.can_view(user)
+    can_edit = node.can_edit(auth) and not node.is_registration
+    can_view = node.can_view(auth)
 
     info = []
 
@@ -145,15 +143,13 @@ def list_file_paths(*args, **kwargs):
     ]}
 
 
-@must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor  # returns user, project
 @must_not_be_registration
 @must_have_addon('osffiles', 'node')
 def upload_file_public(*args, **kwargs):
 
-    user = kwargs['user']
-    api_key = get_api_key()
+    auth = kwargs['auth']
     node_settings = kwargs['node_addon']
     node = kwargs['node'] or kwargs['project']
 
@@ -168,8 +164,7 @@ def upload_file_public(*args, **kwargs):
 
     try:
         fobj = node.add_file(
-            user,
-            api_key,
+            auth,
             uploaded_filename,
             uploaded_file_content,
             uploaded_file_size,
@@ -228,7 +223,7 @@ def upload_file_public(*args, **kwargs):
 @update_counters('node:{nid}')
 def view_file(*args, **kwargs):
 
-    user = kwargs['user']
+    auth = kwargs['auth']
     node_settings = kwargs['node_addon']
     node_to_use = kwargs['node'] or kwargs['project']
 
@@ -301,7 +296,7 @@ def view_file(*args, **kwargs):
         'rendered': rendered,
         'versions': versions,
     }
-    rv.update(_view_project(node_to_use, user))
+    rv.update(_view_project(node_to_use, auth))
     return rv
 
 
@@ -362,18 +357,16 @@ def download_file_by_version(*args, **kwargs):
     )
 
 
-@must_have_session_auth
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
 def delete_file(*args, **kwargs):
 
-    user = kwargs['user']
-    api_key = get_api_key()
+    auth = kwargs['auth']
     filename = kwargs['fid']
     node_to_use = kwargs['node'] or kwargs['project']
 
-    if node_to_use.remove_file(user, api_key, filename):
+    if node_to_use.remove_file(auth, filename):
         return {}
 
     raise HTTPError(http.BAD_REQUEST)

@@ -135,7 +135,7 @@ def github_view_file(*args, **kwargs):
 def github_upload_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
+    auth = kwargs['auth']
     github = kwargs['node_addon']
     now = datetime.datetime.utcnow()
 
@@ -197,8 +197,7 @@ def github_upload_file(*args, **kwargs):
                     ),
                 },
             },
-            user=user,
-            api_key=None,
+            auth=auth,
             log_date=now,
         )
 
@@ -247,7 +246,7 @@ def github_upload_file(*args, **kwargs):
 def github_delete_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
+    auth = kwargs['auth']
     github = kwargs['node_addon']
 
     now = datetime.datetime.utcnow()
@@ -263,8 +262,8 @@ def github_delete_file(*args, **kwargs):
     branch = request.json.get('branch')
 
     author = {
-        'name': user.fullname,
-        'email': '{0}@osf.io'.format(user._id),
+        'name': auth.user.fullname,
+        'email': '{0}@osf.io'.format(auth.user._id),
     }
 
     connection = GitHub.from_settings(github.user_settings)
@@ -288,8 +287,7 @@ def github_delete_file(*args, **kwargs):
                 'repo': github.repo,
             },
         },
-        user=user,
-        api_key=None,
+        auth=auth,
         log_date=now,
     )
 
