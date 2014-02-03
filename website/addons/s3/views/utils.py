@@ -100,19 +100,6 @@ def _page_content(pid, s3, user_settings):
     return rv
 
 
-def _s3_create_access_key(s3_user, s3_node, pid):
-    u = create_limited_user(
-        s3_user.access_key, s3_user.secret_key, s3_node.bucket, pid)
-
-    if u:
-        s3_node.node_access_key = u['access_key_id']
-        s3_node.node_secret_key = u['secret_access_key']
-
-        s3_node.save()
-        return True
-    return False
-
-
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
 def create_new_bucket(*args, **kwargs):

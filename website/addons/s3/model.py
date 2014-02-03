@@ -65,6 +65,9 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     def is_registration(self):
         return True if self.registration_data else False
 
+    @property
+    def has_auth(self):
+            return self.user_settings and self.user_settings.has_auth
         #TODO Update callbacks
 
     def after_register(self, node, registration, user, save=True):
@@ -82,7 +85,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             node, registration, user, save=False
         )
 
-        if self.bucket and self.node_auth:
+        if self.bucket and self.has_auth:
             clone.registration_data['bucket'] = self.bucket
             clone.registration_data['keys'] = serialize_bucket(S3Wrapper.from_addon(self))
 
