@@ -121,7 +121,7 @@ def project_before_fork(*args, **kwargs):
     user = kwargs['user']
     api_key = get_api_key()
 
-    prompts = node.callback('before_fork', user)
+    prompts = node.callback('before_fork', user=user)
 
     return {'prompts': prompts}
 
