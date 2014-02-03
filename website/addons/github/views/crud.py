@@ -8,7 +8,6 @@ from hurry.filesize import size, alternative
 from framework import request, make_response
 from framework.flask import secure_filename
 from framework.exceptions import HTTPError
-from framework.render.tasks import build_rendered_html
 
 from website import models
 from website.project.decorators import must_be_contributor_or_public

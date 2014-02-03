@@ -3,6 +3,7 @@
 <%def name="content()">
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
+<h4>Drag and drop files below to upload.</h4>
 <div id="myGrid" class="dropzone files-page"></div>
 </div>
 
