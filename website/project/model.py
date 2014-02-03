@@ -599,7 +599,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.tags = self.tags
 
         for node_contained in original.nodes:
-            forked_node = node_contained.fork_node(auth, title='')
+            forked_node = node_contained.fork_node(auth=auth, title='')
             if forked_node is not None:
                 forked.nodes.append(forked_node)
 
@@ -1223,7 +1223,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         else:
             return False
 
-    def add_contributor(self, contributor, auth, log=True, save=False):
+    def add_contributor(self, contributor, auth=None, log=True, save=False):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
@@ -1242,8 +1242,8 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributor_list.append({'id': contrib_to_add._primary_key})
 
             # Add contributor to recently added list for user
-            user = auth.user
-            if user is not None:
+            if auth is not None:
+                user = auth.user
                 if contrib_to_add in user.recently_added:
                     user.recently_added.remove(contrib_to_add)
                 user.recently_added.insert(0, contrib_to_add)
@@ -1267,7 +1267,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         else:
             return False
 
-    def add_contributors(self, contributors, auth, log=True, save=False):
+    def add_contributors(self, contributors, auth=None, log=True, save=False):
         """Add multiple contributors
 
         :param contributors: A list of User objects to add as contributors.
@@ -1313,7 +1313,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         if save:
             self.save()
 
-    def set_permissions(self, permissions, auth):
+    def set_permissions(self, permissions, auth=None):
         """Set the permissions for this node.
 
         :param permissions: A string, either 'public' or 'private'

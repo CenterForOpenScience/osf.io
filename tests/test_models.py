@@ -234,11 +234,9 @@ class TestMergingUsers(DbTestCase):
                             fullname='Joe Shmo',
                             is_registered=True,
                             emails=['joe@example.com'])
-        self.master_auth =Auth(user=self.master)
         self.dupe = UserFactory(username='joseph123@hotmail.com',
                             fullname='Joseph Shmo',
                             emails=['joseph123@hotmail.com'])
-        self.dupe_auth = Auth(user=self.dupe)
 
     def _merge_dupe(self):
         '''Do the actual merge.'''
@@ -259,8 +257,8 @@ class TestMergingUsers(DbTestCase):
         project.contributors.append(self.dupe)
         project.save()
         self._merge_dupe()
-        assert_true(project.is_contributor(self.master_auth))
-        assert_false(project.is_contributor(self.dupe_auth))
+        assert_true(project.is_contributor(self.master))
+        assert_false(project.is_contributor(self.dupe))
 
     def test_inherits_projects_created_by_dupe(self):
         project = ProjectFactory(creator=self.dupe)
@@ -271,8 +269,8 @@ class TestMergingUsers(DbTestCase):
         project = ProjectFactory(creator=UserFactory())
         self._merge_dupe()
         project.add_contributor(contributor=self.dupe)
-        assert_true(project.is_contributor(self.master_auth))
-        assert_false(project.is_contributor(self.dupe_auth))
+        assert_true(project.is_contributor(self.master))
+        assert_false(project.is_contributor(self.dupe))
 
 
 class TestGUID(DbTestCase):
@@ -696,10 +694,10 @@ class TestAddonCallbacks(DbTestCase):
         for addon in self.node.addons:
             callback = addon.after_set_permissions
             callback.assert_called_with(
-                self.node, 'public'
+                self.node, 'public',
             )
 
-        self.node.set_permissions('private', self.user)
+        self.node.set_permissions('private', self.consolidate_auth)
         for addon in self.node.addons:
             callback = addon.after_set_permissions
             callback.assert_called_with(
@@ -712,7 +710,7 @@ class TestAddonCallbacks(DbTestCase):
         for addon in self.node.addons:
             callback = addon.after_fork
             callback.assert_called_once_with(
-                self.node, fork, self.user
+                self.node, fork, self.consolidate_auth
             )
 
     @mock.patch('framework.status.push_status_message')
@@ -927,18 +925,16 @@ class TestProject(DbTestCase):
 
     def test_is_contributor(self):
         contributor = UserFactory()
-        contributor_auth = Auth(user=contributor)
         other_guy = UserFactory()
-        other_guy_auth = Auth(user=other_guy)
         self.project.add_contributor(
             contributor=contributor, auth=self.consolidate_auth)
         self.project.save()
-        assert_true(self.project.is_contributor(contributor_auth))
-        assert_false(self.project.is_contributor(other_guy_auth))
+        assert_true(self.project.is_contributor(contributor))
+        assert_false(self.project.is_contributor(other_guy))
         assert_false(self.project.is_contributor(None))
 
     def test_creator_is_contributor(self):
-        assert_true(self.project.is_contributor(self.consolidate_auth))
+        assert_true(self.project.is_contributor(self.user))
         assert_in(self.user, self.project.contributors)
 
     def test_cant_add_creator_as_contributor(self):
