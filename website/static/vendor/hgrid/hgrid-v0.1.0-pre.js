@@ -16,25 +16,508 @@ if (typeof jQuery === 'undefined') {
   window.HGrid = HGrid;
   window.HGridError = HGridError;
 
-  var BTN_CLASS = 'hg-btn';
   var DEFAULT_INDENT = 15;
   var ROOT_ID = 'root';
   var ITEM = 'item';
   var FOLDER = 'folder';
+  function noop() {}
+
+
+  /////////////////////
+  // Data Structures //
+  /////////////////////
+
+  var idCounter = 0; // Ensure unique IDs among trees and leaves
+  function getUID() {
+    return idCounter++;
+  }
+  /**
+   * A tree node. If constructed with no args, the node is
+   * considered a root,
+   *
+   * ```
+   * var root = new HGrid.Tree();
+   * root.depth // => 0
+   * var subtree = new Tree({name: 'A subtree', kind: 'folder'});
+   * root.add(subtree);
+   * subtree.depth  // => 1
+   * ```
+   *
+   * @class HGrid.Tree
+   * @constructor
+   * @param {Object} data Data to attach to the tree
+   */
+  function Tree(data) {
+    if (data === undefined) { // No args passed, it's a root
+      this.data = {};
+      this.id = ROOT_ID;
+      /**
+       * @attribute  depth
+       * @type {Number}
+       */
+      this.depth = 0;
+      this.dataView = new Slick.Data.DataView({
+        inlineFilters: true
+      });
+    } else {
+      this.data = data;
+      this.id = data.id ? data.id : getUID();
+      // Depth and dataView will be set by parent after being added as a subtree
+      this.depth = null;
+      this.dataView = null;
+    }
+    this.children = [];
+    this.parentID = null;
+  }
+  /**
+   * Construct a new Tree from either an object or an array of data.
+   *
+   * Example input:
+   * ```
+   * [{name: 'Documents', kind: 'folder',
+   *  children: [{name: 'mydoc.txt', type: 'item'}]},
+   *  {name: 'rootfile.txt', kind: 'item'}
+   *  ]
+   *  ```
+   *
+   * @method fromObject
+   * @param {Object} data
+   * @param {parent} [parent] Parent item.
+   *
+   */
+  Tree.fromObject = function(data, parent, args) {
+    args = args || {};
+    var tree, children, leaf, subtree;
+    // If data is an array, create a new root
+    if (Array.isArray(data)) {
+      tree = new Tree();
+      children = data;
+    } else { // data is an object, create a subtree
+      children = data.children || [];
+      tree = new Tree(data);
+      tree.depth = parent.depth + 1;
+      tree.dataView = parent.dataView;
+      if (args.collapse) {
+        // TODO: Hardcoded. Change this when _collapsed and _hidden states
+        // are saved on Tree and Leaf objects, and not just on the dataview items
+        tree.data._collapsed = true;
+      }
+    }
+    // Assumes nodes have a `kind` property. If `kind` is "item", create a leaf,
+    // else create a Tree.
+    // TODO: This logic might not be necessary. Could just create a tree node for
+    // every item.
+    for (var i = 0, len = children.length; i < len; i++) {
+      var child = children[i];
+      if (child.kind === ITEM) {
+        leaf = Leaf.fromObject(child, tree, args);
+        tree.add(leaf);
+      } else {
+        subtree = Tree.fromObject(child, tree, args);
+        tree.add(subtree);
+      }
+    }
+    return tree;
+  };
+
+  Tree.resetIDCounter = function() {
+    idCounter = 0;
+  };
+  Tree._getCurrentID = function() {
+    return idCounter;
+  };
 
   /**
-   * Custom Error for HGrid-related errors.
+   * Add a component to this node
+   * @method  add
+   * @param component      Either a Tree or Leaf.
+   * @param {Boolean} [updateDataView] Whether to insert the item into the DataView
+   */
+  Tree.prototype.add = function(component, updateDataView) {
+    // Set deptth, parent ID, and dataview
+    component.parentID = this.id;
+    component.depth = this.depth + 1;
+    component.dataView = this.dataView;
+    this.children.push(component);
+    if (updateDataView) {
+      this.insertIntoDataView(component);
+    }
+    return this;
+  };
+
+  /**
+   * Get the tree's corresponding item object from the dataview.
+   * @method  getItem
+   */
+  Tree.prototype.getItem = function() {
+    return this.dataView.getItemById(this.id);
+  };
+
+  /**
+   * Sort the tree in place, on a key.
+   * @method  sort
+   */
+  Tree.prototype.sort = function(key, asc) {
+    this.children.sort(function(child1, child2) {
+      var val1 = child1.data[key],
+        val2 = child2.data[key];
+      var sign = asc ? 1 : -1;
+      var ret = (val1 === val2 ? 0 : (val1 > val2 ? 1 : -1)) * sign;
+      if (ret !== 0) {
+        return ret;
+      }
+      return 0;
+    });
+    for (var i = 0, child; child = this.children[i]; i++) {
+      child.sort(key, asc);
+    }
+    return this;
+  };
+
+  // TODO: test me
+  Tree.prototype.sortCmp = function(cmp) {
+    this.children.sort(cmp);
+    for (var i = 0, child; child = this.children[i]; i++) {
+      child.sortCmp(key);
+    }
+    return this;
+  };
+
+  /**
+   * Computes the index in the DataView where to insert an item, based on
+   * the item's parentID property.
+   * @private
+   */
+  function computeAddIdx(item, dataView) {
+    var parent = dataView.getItemById(item.parentID);
+    if (parent) {
+      return dataView.getIdxById(parent.id) + 1;
+    }
+    return 0;
+  }
+
+  Tree.prototype.insertIntoDataView = function(component) {
+    var data = component.toData();
+    var idx;
+    if (Array.isArray(data)) {
+      for (var i = 0, len = data.length; i < len; i++) {
+        var datum = data[i];
+        idx = computeAddIdx(datum, this.dataView);
+        this.dataView.insertItem(idx, datum);
+      }
+    } else { // data is an Object, so component is a leaf
+      idx = computeAddIdx(data, this.dataView);
+      this.dataView.insertItem(idx, data);
+    }
+    return this;
+  };
+
+  Tree.prototype.ensureDataView = function(dataView) {
+    if (!dataView) {
+      dataView = this.dataView;
+    }
+    this.dataView = dataView;
+    for (var i = 0, node; node = this.children[i]; i++) {
+      node.ensureDataView(dataView);
+    }
+    return this;
+  };
+
+  /**
+   * Update the dataview with this tree's data. This should only be called on
+   * a root node.
+   */
+  Tree.prototype.updateDataView = function(onlySetItems) {
+    if (!this.dataView) {
+      throw new HGridError('Tree does not have a DataView. updateDataView must be called on a root node.');
+    }
+    if (!onlySetItems) {
+      this.ensureDataView();
+    }
+    this.dataView.beginUpdate();
+    this.dataView.setItems(this.toData());
+    this.dataView.endUpdate();
+    return this;
+  };
+
+  /**
+   * Convert the tree to SlickGrid-compatible data
    *
-   * @class  HGridError
+   * @param {Array} result Memoized result.
+   * @return {Array} Array of SlickGrid data
+   */
+  Tree.prototype.toData = function(result) {
+    // Add this node's data, unless it's a root
+    var data = result || [];
+    if (this.depth !== 0) {
+      var thisItem = $.extend({}, {
+        id: this.id,
+        parentID: this.parentID,
+        _node: this,
+        depth: this.depth
+      }, this.data);
+      data.push(thisItem);
+    }
+    for (var i = 0, len = this.children.length; i < len; i++) {
+      var child = this.children[i];
+      child.toData(data);
+    }
+    return data;
+  };
+
+  /**
+   * Collapse this and all children nodes, by setting the _collapsed attribute
+   * @method  collapse
+   * @param {Boolean} hideSelf Whether to hide this node as well
+   */
+  Tree.prototype.collapse = function(hideSelf, refresh) {
+    var item;
+    if (!this.isRoot()){
+      item = this.getItem();
+      // A node can be collapsed but not hidden. For example, if you click
+      // on a folder, it should collapse and hide all of its contents, but the folder
+      // should still be visible.
+      if (hideSelf) {
+        item._hidden = true;
+      } else {
+        item._collapsed = true;
+        item._hidden = false;
+      }
+    }
+    // Collapse and hide all children
+    for (var i = 0, node; node = this.children[i]; i++) {
+      node.collapse(true);
+    }
+    if (!this.isRoot() && refresh) {
+      this.dataView.updateItem(item.id, item); // need to update the item index
+    }
+    return this;
+  };
+
+  /**
+   * Performs breadth-first traversal of the tree, executing a function once
+   * per node.
+   * @method  bfTraverse
+   * @param  {Function} fun      Function to execute for each node
+   * @param  {Number} maxDepth Max depth to traverse to, or null.
+   */
+  Tree.prototype.bfTraverse = function(fun, maxDepth) {
+    var frontier = new Queue();
+    var next = this;
+    while (next) {
+      if (maxDepth && next.depth > maxDepth) {
+        break;
+      }
+      fun.call(this, next);
+      if (next.children.length) {
+        // enqueue all children
+        for (var i = 0, child; child = next.children[i]; i++){
+          frontier.enq(child);
+        }
+      }
+      next = frontier.deq();
+    }
+    return this;
+  };
+
+  /**
+   * Collapse all nodes at a certain depth
+   * @method  collapseAt
+   * @param  {Number} depth   The depth to collapse at
+   * @param  {Boolean} refresh Whether to refresh the DataView.
+   */
+  Tree.prototype.collapseAt = function(depth, refresh) {
+    if (depth === 0) {
+      return this.collapse(false, refresh);
+    }
+    this.bfTraverse(function(node) {
+      if (node.depth === depth && node instanceof Tree) {  // only collapse trees on the way
+        node.collapse(false, true);  // Make sure item is updated
+      }
+    }, depth);
+    if (refresh) {
+      this.dataView.refresh();
+    }
+    return this;
+  };
+
+  Tree.prototype.expandAt = function(depth, refresh) {
+    if (depth === 0) {
+      return this.expand(false, refresh);
+    }
+    this.bfTraverse(function(node) {
+      if (!node.isRoot() && node.depth < depth) {
+        node.expand(false, true);  // Make sure item is updated
+      }
+    }, depth);
+    if (refresh) {
+      this.dataView.refresh();
+    }
+    return this;
+  };
+
+  Tree.prototype.isHidden = function() {
+    return this.getItem()._hidden;
+  };
+
+  /**
+   * Expand this and all children nodes by setting the item's _collapsed attribute
+   * @method  expand
+   */
+  Tree.prototype.expand = function(notFirst, refresh) {
+    var item;
+    if (!this.isRoot()){
+      item = this.getItem();
+      if (!notFirst) {
+        item._collapsed = false;
+      }
+      item._hidden = false;
+    }
+    // Expand all children
+    for (var i = 0, node; node = this.children[i]; i++) {
+      if (!item._collapsed) { // Maintain subtree's collapsed state
+        node.expand(true);
+      }
+    }
+    if (!this.isRoot() && refresh) {
+      this.dataView.updateItem(item.id, item);
+    }
+    return this;
+  };
+
+  Tree.prototype.isRoot = function() {
+    return this.depth === 0;
+  };
+
+  /**
+   * @method isCollapsed
+   * @return {Boolean} Whether the node is collapsed.
+   */
+  Tree.prototype.isCollapsed = function() {
+    return Boolean(this.getItem()._collapsed);
+  };
+
+  /**
+   * Leaf representation
+   * @class  HGrid.Leaf
    * @constructor
    */
-  function HGridError(message) {
-    this.name = 'HGridError';
-    this.message = message || '';
+  function Leaf(data) {
+    this.data = data;
+    this.id  = data.id ? data.id : getUID();
+    this.parentID = null; // Set by parent
+    this.depth = null;
+    this.children = [];
+    this.dataView = null; // Set by parent
   }
-  HGridError.prototype = new Error();
+  /**
+   * Construct a new Leaf from an object.
+   * @method  fromObject
+   * @param obj
+   * @static
+   * @return {Leaf} The constructed Leaf.
+   */
+  Leaf.fromObject = function(obj, parent, args) {
+    args = args || {};
+    var leaf = new Leaf(obj);
+    if (parent) {
+      leaf.depth = parent.depth + 1;
+      leaf.parentID = parent.id;
+      leaf.dataView = parent.dataView;
+    }
+    if (args.collapse) {
+      // TODO: Hardcoded. Change this when _collapsed and _hidden states
+      // are saved on Tree and Leaf objects, and not just on the dataview items
+      leaf.data._collapsed = true;
+    }
+    return leaf;
+  };
 
-  function noop() {}
+  /**
+   * Get the leaf's corresponding item from the dataview.
+   * @method  getItem
+   */
+  Leaf.prototype.getItem = function() {
+    return this.dataView.getItemById(this.id);
+  };
+
+  /**
+   * Collapse this leaf by setting its item's _collapsed property.
+   * @method  collapse
+   */
+   /*jshint unused: false */
+  Leaf.prototype.collapse = function(hideSelf, refresh) {
+    var item = this.getItem();
+    item._collapsed = item._hidden = true;
+    return this;
+  };
+
+  /**
+   * Expand this leaf by setting its item's _collapse property
+   * @method  expand
+   */
+  Leaf.prototype.expand = function() {
+    var item = this.getItem();
+    item._collapsed = item._hidden = false;
+    return this;
+  };
+
+  /**
+   * Convert the Leaf to SlickGrid data format
+   * @method toData
+   * @param  {Array} [result] The memoized result
+   * @return {Object}        The leaf an item object.
+   */
+  Leaf.prototype.toData = function(result) {
+    var item = $.extend({}, {
+      id: this.id,
+      parentID: this.parentID,
+      _node: this,
+      depth: this.depth
+    }, this.data);
+    if (result) {
+      result.push(item);
+    }
+    return item;
+  };
+
+  Leaf.prototype.ensureDataView = function(dataView) {
+    if (!dataView) {
+      dataView = this.dataView;
+    }
+    this.dataView = dataView;
+    return this;
+  };
+
+  Leaf.prototype.sort = noop;
+
+  Leaf.prototype.isRoot = function() {
+    return this.depth === 0;
+  };
+
+  // An efficient, lightweight queue implementation, adapted from Queue.js by Steven Morley
+  function Queue() {
+    this.queue = [];
+    this.offset = 0;
+  }
+  Queue.prototype.enq = function(item) {
+    this.queue.push(item);
+  };
+  Queue.prototype.deq = function() {
+    if (this.queue.length === 0) {
+      return undefined;
+    }
+    // store item at front of queue
+    var item = this.queue[this.offset];
+    if (++ this.offset * 2 >= this.queue.length) {
+      this.queue = this.queue.slice(this.offset);
+      this.offset = 0;
+    }
+    return item;
+  };
+  Queue.prototype.isEmpty = function() {
+    return this.queue.length === 0;
+  };
 
   ////////////////
   // Formatting //
@@ -77,7 +560,7 @@ if (typeof jQuery === 'undefined') {
    * @return {String}      The rendered HTML
    */
   function asItem(item, html) {
-    var openTag = '<div class="hg-item-content" data-id="' + item.id + '">';
+    var openTag = '<div class="' + HGrid.Html.itemClass + '" data-id="' + item.id + '">';
     var closingTag = '</div>';
     return [openTag, html, closingTag].join('');
   }
@@ -94,9 +577,9 @@ if (typeof jQuery === 'undefined') {
     // For now, buttons are required to have the hg-btn class so that a click
     // event listener can be attacked to them later
     if (buttonDef.cssClass) {
-      cssClass = BTN_CLASS + ' ' + buttonDef.cssClass;
+      cssClass = HGrid.Html.buttonClass + ' ' + buttonDef.cssClass;
     } else {
-      cssClass = BTN_CLASS;
+      cssClass = HGrid.Html.buttonClass;
     }
     var action = buttonDef.action || 'noop';
     var openTag = '<button data-hg-action="' + action + '" class="' + cssClass + '">';
@@ -136,7 +619,7 @@ if (typeof jQuery === 'undefined') {
     var name = sanitized(row.name);
     // The + / - button for expanding/collapsing a folder
     var expander;
-    if (row._node.children.length > 0) {
+    if (row._node.children.length > 0 && row.depth > 0 || args.lazyLoad) {
       expander = row._collapsed ? HGrid.Html.expandElem : HGrid.Html.collapseElem;
     } else { // Folder is empty
       expander = '<span></span>';
@@ -170,11 +653,19 @@ if (typeof jQuery === 'undefined') {
     expandElem: '<span class="hg-toggle hg-expand"></span>',
     collapseElem: '<span class="hg-toggle hg-collapse"></span>',
     // Icons
-    folderIcon: ' <i class="hg-folder"></i>',
+    folderIcon: '<i class="hg-folder"></i>',
     fileIcon: '<i class="hg-file"></i>',
     // Placeholder for error messages. Upload error messages will be interpolated here
-    errorElem: '&nbsp;<span class="error" data-upload-errormessage></span>'
+    errorElem: '&nbsp;<span class="error" data-upload-errormessage></span>',
+    // CSS Classes
+    buttonClass: 'hg-btn',
+    itemClass: 'hg-item-content',
+    toggleClass: 'hg-toggle'
   };
+
+  ///////////
+  // HGrid //
+  ///////////
 
   // Formatting helpers public interface
   HGrid.Fmt = HGrid.Format = {
@@ -273,6 +764,19 @@ if (typeof jQuery === 'undefined') {
      */
     data: null,
     /**
+     * Options passed to jQuery.ajax on every request for additional data.
+     * @property [ajaxOptions]
+     * @type {Object}
+     */
+    ajaxOptions: {},
+    /**
+     * Returns the URL where to fetch the contents for a given folder. Enables
+     * lazy-loading of data.
+     * @param {Object} folder The folder data item.
+     * @property {Function} [fetchUrl]
+     */
+    fetchUrl: null,
+    /**
      * Enable uploads (requires DropZone)
      * @property [uploads]
      * @type {Boolean}
@@ -360,6 +864,8 @@ if (typeof jQuery === 'undefined') {
       // Open up a filepicker for the folder
       this.uploadToFolder(item);
     },
+    onExpand: function(event, item) {},
+    onCollapse: function(event, item) {},
     /**
      * Callback executed after an item is added.
      * @property [onItemAdded]
@@ -368,6 +874,7 @@ if (typeof jQuery === 'undefined') {
     // Dragging related callbacks
     onDragover: function(evt, item) {},
     onDragenter: function(evt, item) {},
+    onDragleave: function(evt, item) {},
     onDrop: function(event, item) {},
     /**
      *  Called when a column is sorted.
@@ -388,7 +895,7 @@ if (typeof jQuery === 'undefined') {
      */
     /*jshint unused: false */
     uploadProcessing: function(file, item) {
-      // TODO: display Cancel upload button text
+      // TODO: display Cancel upload button text?
     },
     /**
      * Called whenever an upload error occurs
@@ -465,382 +972,54 @@ if (typeof jQuery === 'undefined') {
      * Additional initialization. Useful for adding listeners.
      * @property {Function} init
      */
-    init: function() {}
+    init: function() {},
+    // CSS Selector for search input box
+    searchInput: null,
+    /**
+     * Search filter that returns true if an item should be displayed in the grid.
+     * By default, items will be searched by name (case insensitive).
+     * @param  {Object} item A data item
+     * @param {String} searchText The current text value in the search input box.
+     * @return {Boolean}      Whether or not to display an item.
+     */
+    searchFilter: function (item, searchText) {
+      return item.name.toLowerCase().indexOf(searchText) !== -1;
+    },
+    /**
+     * Function that determines whether a folder can be uploaded to.
+     */
+    canUpload: function(folder) {
+      return true;
+    },
+    /**
+     * Called when a user tries to upload to a folder they don't have permission
+     * to upload to. This is called before adding a file to the upload queue.
+     */
+    uploadDenied: function(folder) {}
   };
 
-  ///////////////////////////////////
-  // Tree and Leaf Representations //
-  ///////////////////////////////////
+  HGrid._defaults = defaults;
+  // Expose data structures via the HGrid namespace
+  HGrid.Tree = Tree;
+  HGrid.Leaf = Leaf;
+  HGrid.Queue = Queue;
 
-  var idCounter = 0; // Ensure unique IDs among trees and leaves
-  function getUID() {
-    return idCounter++;
-  }
+  // Constants
+  HGrid.ROOT_ID = ROOT_ID;
+  HGrid.FOLDER = FOLDER;
+  HGrid.ITEM = ITEM;
+
   /**
-   * A tree node. If constructed with no args, the node is
-   * considered a root,
+   * Custom Error for HGrid-related errors.
    *
-   * ```
-   * var root = new HGrid.Tree();
-   * root.depth // => 0
-   * var subtree = new Tree({name: 'A subtree', kind: 'folder'});
-   * root.add(subtree);
-   * subtree.depth  // => 1
-   * ```
-   *
-   * @class HGrid.Tree
-   * @constructor
-   * @param {Object} data Data to attach to the tree
-   */
-  function Tree(data) {
-    if (data === undefined) { // No args passed, it's a root
-      this.id = ROOT_ID;
-      /**
-       * @attribute  depth
-       * @type {Number}
-       */
-      this.depth = 0;
-      this.dataView = new Slick.Data.DataView({
-        inlineFilters: true
-      });
-    } else {
-      this.data = data;
-      if (data.id) {
-        this.id = data.id;
-      } else {
-        this.id = getUID();
-      }
-      // Depth and dataView will be set by parent after being added as a subtree
-      this.depth = null;
-      this.dataView = null;
-    }
-    this.children = [];
-    this.parentID = null;
-    return this;
-  }
-  /**
-   * Construct a new Tree from either an object or an array of data.
-   *
-   * Example input:
-   * ```
-   * [{name: 'Documents', kind: 'folder',
-   *  children: [{name: 'mydoc.txt', type: 'item'}]},
-   *  {name: 'rootfile.txt', kind: 'item'}
-   *  ]
-   *  ```
-   *
-   * @method fromObject
-   * @param {Object} data
-   * @param {parent} [parent] Parent item.
-   *
-   */
-  Tree.fromObject = function(data, parent) {
-    var tree, children, leaf, subtree;
-    // If data is an array, create a new root
-    if (Array.isArray(data)) {
-      tree = new Tree();
-      children = data;
-    } else { // data is an object, create a subtree
-      children = data.children || [];
-      tree = new Tree(data);
-      tree.depth = parent.depth + 1;
-    }
-    for (var i = 0, len = children.length; i < len; i++) {
-      var child = children[i];
-      if (child.kind === ITEM) {
-        leaf = Leaf.fromObject(child);
-        tree.add(leaf);
-      } else {
-        subtree = Tree.fromObject(child, tree);
-        tree.add(subtree);
-      }
-    }
-    return tree;
-  };
-
-  Tree.resetIDCounter = function() {
-    idCounter = 0;
-  };
-  Tree._getCurrentID = function() {
-    return idCounter;
-  };
-
-  /**
-   * Add a component to this node
-   * @method  add
-   * @param component      Either a Tree or Leaf.
-   * @param {Boolean} [updateDataView] Whether to insert the item into the DataView
-   */
-  Tree.prototype.add = function(component, updateDataView) {
-    // Set deptth, parent ID, and dataview
-    component.parentID = this.id;
-    component.depth = this.depth + 1;
-    component.dataView = this.dataView;
-    this.children.push(component);
-    if (updateDataView) {
-      this.insertIntoDataView(component);
-    }
-    return this;
-  };
-
-  /**
-   * Get the tree's corresponding item object from the dataview.
-   * @method  getItem
-   */
-  Tree.prototype.getItem = function() {
-    return this.dataView.getItemById(this.id);
-  };
-
-  /**
-   * Sort the tree in place, on a key.
-   * @method  sort
-   */
-  Tree.prototype.sort = function(key, asc) {
-    this.children.sort(function(child1, child2) {
-      var res, val1 = child1.data[key],
-        val2 = child2.data[key];
-      var sign = asc ? 1 : -1;
-      var ret = (val1 === val2 ? 0 : (val1 > val2 ? 1 : -1)) * sign;
-      if (ret !== 0) {
-        return ret;
-      }
-      return 0;
-    });
-    for (var i = 0, child; child = this.children[i]; i++) {
-      child.sort(key, asc);
-    }
-  };
-
-  // TODO: test me
-  Tree.prototype.sortCmp = function(cmp) {
-    this.children.sort(cmp);
-    for (var i = 0, child; child = this.children[i]; i++) {
-      child.sortCmp(key);
-    }
-  };
-
-  /**
-   * Computes the index in the DataView where to insert an item, based on
-   * the item's parentID property.
-   * @private
-   */
-  function computeAddIdx(item, dataView) {
-    var parent = dataView.getItemById(item.parentID);
-    if (parent) {
-      return dataView.getIdxById(parent.id) + 1;
-    }
-    return 0;
-  }
-
-  Tree.prototype.insertIntoDataView = function(component) {
-    var data = component.toData();
-    var idx;
-    if (Array.isArray(data)) {
-      for (var i = 0, len = data.length; i < len; i++) {
-        var datum = data[i];
-        idx = computeAddIdx(datum, this.dataView);
-        this.dataView.insertItem(idx, datum);
-      }
-    } else { // data is an Object, so component is a leaf
-      idx = computeAddIdx(data, this.dataView);
-      this.dataView.insertItem(idx, data);
-    }
-  };
-
-  Tree.prototype.ensureDataView = function(dataView) {
-    if (!dataView) {
-      dataView = this.dataView;
-    }
-    this.dataView = dataView;
-    for (var i = 0, node; node = this.children[i]; i++) {
-      node.ensureDataView(dataView);
-    }
-    return this;
-  };
-
-  /**
-   * Update the dataview with this tree's data. This should only be called on
-   * a root node.
-   */
-  Tree.prototype.updateDataView = function(onlySetItems) {
-    if (!this.dataView) {
-      throw new HGridError('Tree does not have a DataView. updateDataView must be called on a root node.');
-    }
-    if (!onlySetItems) {
-      this.ensureDataView();
-    }
-    this.dataView.beginUpdate();
-    this.dataView.setItems(this.toData());
-    this.dataView.endUpdate();
-    return this;
-  };
-
-  /**
-   * Convert the tree to SlickGrid-compatible data
-   *
-   * @param {Array} result Memoized result.
-   * @return {Array} Array of SlickGrid data
-   */
-  Tree.prototype.toData = function(result) {
-    // Add this node's data, unless it's a root
-    var data = result || [];
-    if (this.depth !== 0) {
-      var thisItem = $.extend({}, {
-        id: this.id,
-        parentID: this.parentID,
-        _node: this,
-        depth: this.depth
-      }, this.data);
-      data.push(thisItem);
-    }
-    for (var i = 0, len = this.children.length; i < len; i++) {
-      var child = this.children[i];
-      child.toData(data);
-    }
-    return data;
-  };
-
-  /**
-   * Collapse this and all children nodes, by setting the _collapsed attribute
-   * @method  collapse
-   * @param {Boolean} hideSelf Whether to hide this node as well
-   */
-  Tree.prototype.collapse = function(hideSelf) {
-    var item = this.getItem();
-    // A node can be collapsed but not hidden. For example, if you click
-    // on a folder, it should collapse and hide all of its contents, but the folder
-    // should still be visible.
-    if (hideSelf) {
-      item._hidden = true;
-    } else {
-      item._collapsed = true;
-      item._hidden = false;
-    }
-    // Collapse and hide all children
-    for (var i = 0, node; node = this.children[i]; i++) {
-      node.collapse(true);
-    }
-    return this;
-  };
-
-  /**
-   * Expand this and all children nodes by setting the item's _collapsed attribute
-   * @method  expand
-   */
-  Tree.prototype.expand = function(notFirst) {
-    var item = this.getItem();
-    if (!notFirst) {
-      item._collapsed = false;
-    }
-    item._hidden = false;
-    // Expand all children
-    for (var i = 0, node; node = this.children[i]; i++) {
-      if (!item._collapsed) { // Maintain subtree's collapsed state
-        node.expand(true);
-      }
-    }
-    return this;
-  };
-
-  /**
-   * @method isCollapsed
-   * @return {Boolean} Whether the node is collapsed.
-   */
-  Tree.prototype.isCollapsed = function() {
-    return this.getItem()._collapsed;
-  };
-
-  /**
-   * Leaf representation
-   * @class  HGrid.Leaf
+   * @class  HGridError
    * @constructor
    */
-  function Leaf(data) {
-    this.data = data;
-    if (data.id) {
-      this.id = data.id;
-    } else {
-      this.id = getUID(); // Set id then increment counter
-    }
-    this.parentID = null; // Set by parent
-    this.depth = null;
-    this.children = [];
-    this.dataView = null; // Set by parent
-    return this;
+  function HGridError(message) {
+    this.name = 'HGridError';
+    this.message = message || '';
   }
-  /**
-   * Construct a new Leaf from an object.
-   * @method  fromObject
-   * @param obj
-   * @static
-   * @return {Leaf} The constructed Leaf.
-   */
-  Leaf.fromObject = function(obj) {
-    var leaf = new Leaf(obj);
-    return leaf;
-  };
-
-  /**
-   * Get the leaf's corresponding item from the dataview.
-   * @method  getItem
-   */
-  Leaf.prototype.getItem = function() {
-    return this.dataView.getItemById(this.id);
-  };
-
-  /**
-   * Collapse this leaf by setting its item's _collapsed property.
-   * @method  collapse
-   */
-  Leaf.prototype.collapse = function() {
-    var item = this.getItem();
-    item._collapsed = item._hidden = true;
-    return this;
-  };
-
-  /**
-   * Expand this leaf by setting its item's _collapse property
-   * @method  expand
-   */
-  Leaf.prototype.expand = function() {
-    var item = this.getItem();
-    item._collapsed = item._hidden = false;
-    return this;
-  };
-
-  /**
-   * Convert the Leaf to SlickGrid data format
-   * @method toData
-   * @param  {Array} [result] The memoized result
-   * @return {Object}        The leaf an item object.
-   */
-  Leaf.prototype.toData = function(result) {
-    var item = $.extend({}, {
-      id: this.id,
-      parentID: this.parentID,
-      _node: this,
-      depth: this.depth
-    }, this.data);
-    if (result) {
-      result.push(item);
-    }
-    return item;
-  };
-
-  Leaf.prototype.ensureDataView = function(dataView) {
-    if (!dataView) {
-      dataView = this.dataView;
-    }
-    this.dataView = dataView;
-    return this;
-  };
-
-  Leaf.prototype.sort = function(key) {};
-
-
-  ///////////
-  // HGrid //
-  ///////////
+  HGridError.prototype = new Error();
 
   /**
    * Construct an HGrid.
@@ -851,50 +1030,83 @@ if (typeof jQuery === 'undefined') {
    * @param {Object} options
    */
   function HGrid(selector, options) {
-    this.selector = selector;
-    this.element = $(selector);
+    var self = this;
+    self.selector = selector;
+    self.element = $(selector);
     // Merge defaults with options passed in
-    this.options = $.extend({}, defaults, options);
-    // Can't pass both ajaxSource and data
-    if (this.options.data && this.options.ajaxSource) {
-      throw new HGridError('Cannot specify both "data" and "ajaxSource"');
-    }
-    this._defaults = defaults;
-    if (this.options.data) { // Might be an object with 'data' property or an array
-      if (Array.isArray(this.options.data)) {
-        this.tree = Tree.fromObject(this.options.data);
+    self.options = $.extend({}, defaults, options);
+    self.grid = null; // Set upon calling _initSlickGrid()
+    self.dropzone = null; // Set upon calling _initDropzone()
+    if (self.options.searchInput) {
+      var $searchInput = $(self.options.searchInput);
+      if ($searchInput.length) {
+        self.searchInput = $searchInput;
       } else {
-        this.tree = Tree.fromObject(this.options.data.data);
+        throw new HGridError('Invalid selector for searchInput.');
       }
-      this.tree.updateDataView(); // Sync Tree with its wrapped dataview
     } else {
-      this.tree = new Tree();
+      self.searchInput = null;
     }
-    /**
-     * The Slick.Grid object. This is set upon calling init()
-     * @attribute  grid
-     * @type {Slick.Grid}
-     */
-    this.grid = null;
-    /**
-     * The Dropzone object. This is set upon calling init()
-     * @type {Dropzone}
-     */
-    this.dropzone = null;
-    this.buttons = {
-      file: [],
-      folder: []
-    };
-    this.init();
+    if (typeof self.options.data === 'string') { // data is a URL, get the data asynchronously
+      self.getFromServer(self.options.data, function(data, error) {
+          self._initData(data);
+          self.init();
+        }
+      );
+    } else { // data is an object
+      self._initData(self.options.data);
+      self.init();
+    }
   }
 
-  // Expose Tree and Leaf via the HGrid namespace
-  HGrid.Tree = Tree;
-  HGrid.Leaf = Leaf;
+  /**
+   * Collapse all folders
+   * @return {[type]} [description]
+   */
+  HGrid.prototype.collapseAll = function() {
+    this.tree.collapseAt(1, true);
+  };
 
-  HGrid.ROOT_ID = ROOT_ID;
-  HGrid.FOLDER = FOLDER;
-  HGrid.ITEM = ITEM;
+  /**
+   * Helper for retrieving JSON data usin AJAX.
+   * @method  getFromServer
+   * @param {String} url
+   * @param {Function} done Callback that receives the JSON data and an
+   *                        error if there is one.
+   * @return {jQuery xhr} The xhr object returned by jQuery.ajax.
+   */
+  HGrid.prototype.getFromServer = function(url, done) {
+    var self = this;
+    var ajaxOpts = $.extend({}, {
+      url: url,
+      contentType: 'application/json',
+      dataType: 'json',
+      success: function(json) {
+        done && done.call(self, json);
+      },
+      error: function(xhr, textStatus, error) {
+        done && done.call(self, null, error, textStatus);
+      }
+    }, self.options.ajaxOptions);
+    return $.ajax(ajaxOpts);
+  };
+
+  HGrid.prototype._initData = function(data) {
+    var self = this;
+    if (data) {
+      // Tree.fromObject expects an Array, but `data` might be an array or an
+      // object with `data' property
+      if (Array.isArray(data)) {
+        self.tree = Tree.fromObject(data);
+      } else {
+        self.tree = Tree.fromObject(data.data);
+      }
+      self.tree.updateDataView(); // Sync Tree with its wrapped dataview
+    } else {
+      self.tree = new Tree();
+    }
+    return self;
+  };
 
   HGrid.prototype.init = function() {
     this.setHeight(this.options.height)
@@ -910,6 +1122,10 @@ if (typeof jQuery === 'undefined') {
     }
     // Attach the listeners last, after this.grid and this.dropzone are set
     this._initListeners();
+    // Collapse all top-level folders if lazy-loading
+    if (this.isLazy()) {
+      this.collapseAll();
+    }
     this.options.init.call(this);
     return this;
   };
@@ -939,7 +1155,8 @@ if (typeof jQuery === 'undefined') {
         colDef: colDef,
         row: row,
         cell: cell,
-        indent: args.indent
+        indent: args.indent,
+        lazyLoad: self.isLazy()
       };
       if (item.kind === FOLDER) {
         view = folderView;
@@ -1043,7 +1260,7 @@ if (typeof jQuery === 'undefined') {
       var item = this.getDataView().getItem(args.row);
       // Expand/collapse item
       if (this.canToggle(evt.target)) {
-        this.toggleCollapse(item);
+        this.toggleCollapse(item, evt);
       }
       this.options.onClick.call(this, evt, item);
       return this;
@@ -1145,12 +1362,30 @@ if (typeof jQuery === 'undefined') {
       if (this.options.uploadAccept) {
         // Override dropzone accept callback. Just calls options.uploadAccept with the right params
         this.dropzone.options.accept = function(file, done) {
-          var ret = self.options.uploadAccept.call(self, file, item, done);
-          return ret;
+          return self.options.uploadAccept.call(self, file, item, done);
         };
       }
     }
   };
+
+  HGrid.prototype.canUpload = function(item) {
+    return Boolean(item && this.options.canUpload(item));
+  };
+
+  HGrid.prototype.denyUpload = function(targetItem) {
+    // Need to throw an error to prevent dropzone's sequence of callbacks from firing
+    this.options.uploadDenied.call(this, targetItem);
+    throw new HGridError('Upload permission denied.');
+  };
+
+  HGrid.prototype.validateTarget = function(targetItem) {
+    if (!this.canUpload(targetItem)) {
+      return this.denyUpload(targetItem);
+    } else {
+      return targetItem;
+    }
+  };
+
   /**
    * DropZone events that the grid subscribes to.
    * For each function, `this` refers to the HGrid object.
@@ -1164,6 +1399,7 @@ if (typeof jQuery === 'undefined') {
   HGrid.prototype.dropzoneEvents = {
     drop: function(evt) {
       this.removeHighlight();
+      this.validateTarget(this.currentTarget);
       // update the dropzone options, eg. dropzone.options.url
       this.setUploadTarget(this.currentTarget);
       this.options.onDrop.call(this, evt, this.currentTarget);
@@ -1188,8 +1424,8 @@ if (typeof jQuery === 'undefined') {
     dragover: function(evt) {
       var currentTarget = this.currentTarget;
       var item = this.getItemFromEvent(evt);
-      if (currentTarget) {
-        if (currentTarget.allowUploads || typeof currentTarget.allowUploads === 'undefined') {
+      if(this.canUpload(currentTarget)) {
+        if (currentTarget) {
           this.addHighlight(currentTarget);
         }
       }
@@ -1203,18 +1439,22 @@ if (typeof jQuery === 'undefined') {
     // (the added item object) to the file object
     addedfile: function(file) {
       var currentTarget = this.currentTarget;
-      // Add a new row
-      var addedItem = this.addItem({
-        name: file.name,
-        kind: HGrid.ITEM,
-        parentID: currentTarget.id
-      });
-      var rowElem = this.getRowElement(addedItem.id),
-        $rowElem = $(rowElem);
-      // Save the item data and HTML element on the file object
-      file.gridItem = addedItem;
-      file.gridElement = rowElem;
-      $rowElem.addClass('hg-upload-started');
+      this.validateTarget(currentTarget);
+      var addedItem;
+      if (this.canUpload(currentTarget)){
+        // Add a new row
+        addedItem = this.addItem({
+          name: file.name,
+          kind: HGrid.ITEM,
+          parentID: currentTarget.id
+        });
+        var rowElem = this.getRowElement(addedItem.id),
+          $rowElem = $(rowElem);
+        // Save the item data and HTML element on the file object
+        file.gridItem = addedItem;
+        file.gridElement = rowElem;
+        $rowElem.addClass('hg-upload-started');
+      }
       this.options.uploadAdded.call(this, file, file.gridItem);
       return addedItem;
     },
@@ -1276,6 +1516,15 @@ if (typeof jQuery === 'undefined') {
       }, userCallback);
     }
     this.attachActionListeners();
+
+    if (self.searchInput) {
+      self.searchInput.keyup(function (e) {
+        self._searchText = this.value;
+        self.getDataView().refresh();
+        self.grid.invalidate();
+        self.grid.render();
+      });
+    }
   };
 
   /**
@@ -1318,17 +1567,30 @@ if (typeof jQuery === 'undefined') {
   };
 
   /**
-   * Filter used by SlickGrid for collapsing/expanding folder.
+   * Filter used by SlickGrid for searching and expanding/collapsing items.
+   * Receives an item and returns true if the item should be displayed in the
+   * grid.
    *
-   * @class  collapseFilter
+   * @class  hgFilter
    * @private
    * @returns {Boolean} Whether to display the item or not.
    */
-  function collapseFilter(item) {
-    return !item._hidden;
+  function hgFilter(item, args) {
+    var visible;
+
+    if (args.grid && args.grid._searchText) {
+      item.depth = 0;  // Show search results without indent
+      // Use search filter function
+      visible =  args.searchFilter.call(args.grid, item, args.grid._searchText);
+    } else {
+      item.depth = item._node.depth;  // Restore indent
+      visible = !item._hidden;  // Hide collapsed elements
+    }
+
+    return visible;
   }
   // Expose collapse filter for testing purposes
-  HGrid._collapseFilter = collapseFilter;
+  HGrid._hgFilter = hgFilter;
 
   /**
    * Sets up the DataView with the filter function. Must be executed after
@@ -1341,7 +1603,8 @@ if (typeof jQuery === 'undefined') {
     var self = this;
     var dataView = this.getDataView();
     dataView.beginUpdate();
-    dataView.setFilter(collapseFilter);
+    dataView.setFilterArgs({ grid: self, searchFilter: self.options.searchFilter });
+    dataView.setFilter(hgFilter);
     dataView.endUpdate();
     dataView.onRowCountChanged.subscribe(function(event, args) {
       self.grid.updateRowCount();
@@ -1429,22 +1692,58 @@ if (typeof jQuery === 'undefined') {
     return this.grid.getData();
   };
 
+  HGrid.prototype.getRefreshHints = function (item) {
+    var ignoreBefore = this.getDataView().getRowById(item.id);
+    var hints = {
+      expand: {
+        isFilterNarrowing: false, isFilterExpanding: true, ignoreDiffsBefore: ignoreBefore
+      },
+      collapse: {
+        isFilterNarrowing: true, isFilterExpanding: false, ignoreDiffsBefore: ignoreBefore
+      }
+    };
+    return hints;
+  };
+
+  HGrid.prototype.isLazy = function() {
+    return Boolean(this.options.fetchUrl);  // Assume lazy loading is enabled if fetchUrl is defined
+  };
+
+  HGrid.prototype._lazyLoad = function(item) {
+    var self = this;
+    var url = self.options.fetchUrl(item);
+    if (url !== null) {
+      return self.getFromServer(url, function(newData, error) {
+        if (!error) {
+          self.addData(newData, item.id);
+          item._node._loaded = true; // Add flag to make sure data are only fetched once.
+        } else {
+          throw new HGridError('Could not fetch data from url: "' + url + '". Error: ' + error);
+        }
+      });
+    }
+    return false;
+  };
+
   /**
    * Expand an item. Updates the dataview.
    * @method  expandItem
    * @param  {Object} item
    */
-  HGrid.prototype.expandItem = function(item) {
+  HGrid.prototype.expandItem = function(item, evt) {
+    var self = this;
+    item = typeof item === 'object' ? item : self.getByID(item);
+    var node = self.getNodeByID(item.id);
     item._node.expand();
-    var dataview = this.getDataView();
-    var ignoreBefore = dataview.getRowById(item.id);
-    dataview.setRefreshHints({
-      isFilterNarrowing: false,
-      isFilterExpanding: true,
-      ignoreDiffsBefore: ignoreBefore
-    });
-    this.getDataView().updateItem(item.id, item);
-    return this;
+    if (self.isLazy() && !node._loaded) {
+      this._lazyLoad(item);
+    }
+    var dataview = self.getDataView();
+    var hints = self.getRefreshHints(item).expand;
+    dataview.setRefreshHints(hints);
+    self.getDataView().updateItem(item.id, item);
+    self.options.onExpand.call(self, evt, item);
+    return self;
   };
 
   /**
@@ -1452,25 +1751,27 @@ if (typeof jQuery === 'undefined') {
    * @method  collapseItem
    * @param  {Object} item
    */
-  HGrid.prototype.collapseItem = function(item) {
+  HGrid.prototype.collapseItem = function(item, evt) {
+    item = typeof item === 'object' ? item : this.getByID(item);
     item._node.collapse();
     var dataview = this.getDataView();
-    var ignoreBefore = dataview.getRowById(item.id);
-    dataview.setRefreshHints({
-      isFilterNarrowing: true,
-      isFilterExpanding: false,
-      ignoreDiffsBefore: ignoreBefore
-    });
+    var hints = this.getRefreshHints(item).collapse;
+    dataview.setRefreshHints(hints);
     dataview.updateItem(item.id, item);
+    this.options.onCollapse.call(this, evt, item);
     return this;
   };
 
+  HGrid.prototype.updateItem = function(item) {
+    return this.getDataView().updateItem(item.id, item);
+  };
+
   HGrid.prototype.isCollapsed = function(item) {
-    return item._collapsed;
+    return Boolean(item._collapsed);
   };
 
   HGrid.prototype.canToggle = function(elem) {
-    return $(elem).hasClass('hg-toggle');
+    return $(elem).hasClass(HGrid.Html.toggleClass);
   };
 
   /**
@@ -1574,15 +1875,53 @@ if (typeof jQuery === 'undefined') {
    * @method  toggleCollapse
    * @param  {item} item A folder item
    */
-  HGrid.prototype.toggleCollapse = function(item) {
+  HGrid.prototype.toggleCollapse = function(item, event) {
     if (item) {
       if (this.isCollapsed(item)) {
-        this.expandItem(item);
+        this.expandItem(item, event);
       } else {
-        this.collapseItem(item);
+        this.collapseItem(item, event);
       }
     }
     return this;
+  };
+
+  /**
+   * Add more hierarchical data. The `data` param takes the same form as the
+   * input data.
+   * @param  data    Hierarchical data to add
+   * @param {Number} parentID ID of the parent node to add the data to
+   */
+  HGrid.prototype.addData = function(data, parentID) {
+    var self = this;
+    var tree = this.getNodeByID(parentID);
+    var toAdd;
+    if (Array.isArray(data)) {
+      toAdd = data;
+    } else { // Data is an object with a `data` property
+      toAdd = data.data;
+    }
+    for (var i = 0, datum; datum = toAdd[i]; i++) {
+      var node;
+      if (datum.kind === HGrid.FOLDER) {
+        var args = {collapse: self.isLazy()};
+        node = Tree.fromObject(datum, tree, args);
+      } else {
+        node = Leaf.fromObject(datum, tree);
+      }
+      tree.add(node, true); // ensure dataview is updated
+    }
+    return this;
+  };
+
+  $.fn.hgrid = function(options) {
+    this.each(function() {
+      if (!this.id) { // Must have ID because SlickGrid requires a selector
+        throw new HGridError('Element must have an ID if initializing HGrid with jQuery');
+      }
+      var selector = '#' + this.id;
+      return new HGrid(selector, options);
+    });
   };
 
 })(jQuery, window, document);
