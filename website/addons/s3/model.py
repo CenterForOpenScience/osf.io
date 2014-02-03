@@ -41,6 +41,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     node_access_key = fields.StringField()
     node_secret_key = fields.StringField()
 
+    #'Special fields'
     registration_data = fields.DictionaryField()
 
     # TODO Considering removing node_ in naming
@@ -115,3 +116,67 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
                 title=node.title,
                 bucket_name=self.bucket,
             )
+
+    def after_fork(self, node, fork, user, save=True):
+        """
+
+        :param Node node: Original node
+        :param Node fork: Forked node
+        :param User user: User creating fork
+        :param bool save: Save settings after callback
+        :return tuple: Tuple of cloned settings and alert message
+
+        """
+        clone, _ = super(AddonS3NodeSettings, self).after_fork(
+            node, fork, user, save=False
+        )
+
+        # Copy authentication if authenticated by forking user
+        if user.get_addon('s3') and user.get_addon('s3').owner == user:
+            clone.node_access_key = self.node_access_key
+            clone.node_secret_key = self.node_secret_key
+            clone.bucket = self.bucket
+            message = (
+                'Amazon Simple Storage authorization copied to forked {cat}.'
+            ).format(
+                cat=fork.project_or_component,
+            )
+        else:
+            message = (
+                'Amazon Simple Storage authorization not copied to forked {cat}. You may '
+                'authorize this fork on the <a href={url}>Settings</a> '
+                'page.'
+            ).format(
+                cat=fork.project_or_component,
+                url=fork.url + 'settings/'
+            )
+
+        if save:
+            clone.save()
+
+        return clone, message
+
+    def before_fork(self, node, user):
+        """
+
+        :param Node node:
+        :param User user:
+        :return str: Alert message
+
+        """
+        if user.get_addon('s3') and user.get_addon('s3').owner == user:
+            return (
+                'Because you have authenticated the S3 add-on for this '
+                '{cat}, forking it will also transfer your authorization to '
+                'the forked {cat}.'
+            ).format(
+                cat=node.project_or_component,
+            )
+        return (
+            'Because this S3 add-on has been authenticated by a different '
+            'user, forking it will not transfer authentication to the forked '
+            '{cat}.'
+        ).format(
+            cat=node.project_or_component,
+        )
+
