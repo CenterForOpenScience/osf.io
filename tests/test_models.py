@@ -258,7 +258,7 @@ class TestMergingUsers(DbTestCase):
         project.save()
         self._merge_dupe()
         assert_true(project.is_contributor(self.master))
-        assert_true(project.is_contributor(self.dupe))
+        assert_false(project.is_contributor(self.dupe))
 
     def test_inherits_projects_created_by_dupe(self):
         project = ProjectFactory(creator=self.dupe)
