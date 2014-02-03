@@ -1,6 +1,7 @@
 from api import S3Key,  get_bucket_list
 from urllib import quote
 from datetime import datetime
+from settings import CORS_RULE
 import re
 
 URLADDONS = {
@@ -9,11 +10,6 @@ URLADDONS = {
     'download': 's3/download/',
     'view': 's3/view/'
 }
-
-# This is for adjusting the cors of an s3 bucket, not used during development
-ALLOWED_ORIGIN = "osf.io"
-
-CORS_RULE = '<CORSRule><AllowedMethod>PUT</AllowedMethod><AllowedOrigin>*</AllowedOrigin><AllowedHeader>origin</AllowedHeader><AllowedHeader>Content-Type</AllowedHeader><AllowedHeader>x-amz-acl</AllowedHeader><AllowedHeader>Authorization</AllowedHeader></CORSRule>'
 
 
 # TODO fix/figure out allowed origin....
