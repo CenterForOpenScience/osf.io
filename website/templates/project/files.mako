@@ -25,37 +25,6 @@
 <![endif]-->
 <script>
 
-var extensions = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
-    'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
-    'eml', 'eps', 'exe', 'fla', 'flv', 'gif', 'gz', 'hqx', 'htm', 'html', 'ifo', 'indd', 'iso', 'jar',
-    'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
-    'mpeg', 'mpg', 'msi', 'mswmm', 'ogg', 'pdf', 'png', 'pps', 'ps', 'psd', 'pst', 'ptb', 'pub', 'qbb',
-    'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
-    'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip'];
-
-var grid = new HGrid('#myGrid', {
-    data: gridData,
-    columns: [
-        HGrid.Col.Name,
-        HGrid.Col.ActionButtons
-    ],
-    fetchUrl: function(row) {
-        return row.urls.fetch;
-    },
-    downloadUrl: function(row) {
-        return row.urls.download;
-    },
-    deleteUrl: function(row) {
-        return row.urls.delete;
-    },
-    deleteMethod: 'delete',
-    uploads: true,
-    uploadUrl: function(row) {
-        return row.urls.upload;
-    },
-    uploadMethod: 'post',
-});
-
 // Don't show dropped content if user drags outside grid
 window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };
@@ -70,6 +39,15 @@ window.ondrop = function(e) { e.preventDefault(); };
 <script src="/static/vendor/dropzone/dropzone.js"></script>
 <script src="/static/vendor/hgrid/hgrid.js"></script>
 % for script in tree_js:
-    <script type="text/javascript" src="${script}"></script>
+<script type="text/javascript" src="${script}"></script>
 % endfor
+</%def>
+
+<%def name="javascript_bottom()">
+<script src='/static/js/filebrowser.js'></script>
+<script>
+var filebrowser = new FileBrowser('#myGrid', {
+    data: gridData
+});
+</script>
 </%def>
