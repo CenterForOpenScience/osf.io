@@ -706,7 +706,7 @@ if (typeof jQuery === 'undefined') {
       isName: true,
       showExpander: function(item, args) {
         return item.kind === HGrid.FOLDER &&
-                item._node.children.length && item.depth || args.lazyLoad;
+                (item._node.children.length && item.depth || args.lazyLoad);
       }
     },
 
