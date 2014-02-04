@@ -133,9 +133,11 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         _registerListeners: function() {
             for (var addon in FileBrowser.cfg) {
                 var listeners = FileBrowser.cfg[addon].listeners;
-                // Add each listener to the hgrid options
-                for (var i = 0, listener; listener = listeners[i]; i++) {
-                    this.options.listeners.push(listener);
+                if (listeners){
+                    // Add each listener to the hgrid options
+                    for (var i = 0, listener; listener = listeners[i]; i++) {
+                        this.options.listeners.push(listener);
+                    }
                 }
             }
             return this;
