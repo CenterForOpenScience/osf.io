@@ -28,7 +28,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         var buttonDefs = [];
         if (this.options.uploads) {
           buttonDefs.push({
-            text: '\<i class="icon-cloud-upload icon-white"></i>',
+            text: '<i class="icon-cloud-upload icon-white"></i>',
             action: 'upload',
             cssClass: 'btn btn-primary btn-mini'
           });
@@ -80,14 +80,16 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         uploadUrl: function(row) {
             var cfgFunc = FileBrowser.getCfg(row, 'uploadUrl');
             if (cfgFunc) {
-                return cfgFunc(row);
+                return cfgFunc.call(this, row);
             }
             return row.urls.upload;
         },
         uploadAdded: function(file, row) {
+            var parent = this.getByID(row.parentID);
+            row.addon = parent.addon;
             var cfgFunc = FileBrowser.getCfg(row, 'uploadAdded');
             if (cfgFunc) {
-                return cfgFunc(file, row);
+                return cfgFunc.call(this, file, row);
             }
         },
         uploadMethod: 'post',
