@@ -72,10 +72,9 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
 
     rv = {
         'addon': 'GitHub',
-        'name': 'GitHub: {0}/{1}'.format(
-            node_settings.user, node_settings.repo,
+        'name': 'GitHub: {0}/{1} {2}'.format(
+            node_settings.user, node_settings.repo, name_append,
         ),
-        'nameAppend': name_append,
         'kind': 'folder',
         'urls': {
             'upload': node_settings.owner.api_url + 'github/file/' + ref,

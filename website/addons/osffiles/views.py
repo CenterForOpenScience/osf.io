@@ -59,21 +59,20 @@ def osffiles_dummy_folder(node_settings, auth, parent=None, **kwargs):
     can_view = node.can_view(auth)
     can_edit = node.can_edit(auth)
     return {
-        'addonName': 'OSF Files',
-        'maxFilesize': node_settings.config.max_file_size,
-        'uid': 'osffiles:{0}'.format(node_settings._id),
-        'parent_uid': parent or 'null',
-        'uploadUrl': os.path.join(
-            node_settings.owner.api_url, 'osffiles'
-        ) + '/',
-        'type': 'folder',
-        'sizeRead': '--',
-        'dateModified': '--',
+        'addon': 'OSF Files',
+        'kind': 'folder',
+        'accept': {
+            'maxSize': node_settings.config.max_file_size,
+        },
         'name': 'OSF Files',
-        'can_view': can_view,
-        'can_edit': can_edit,
-        'permission': can_edit,
-        'lazyLoad': node.api_url + 'osffiles/hgrid/',
+        'urls': {
+            'upload': os.path.join(node.api_url, 'osffiles') + '/',
+            'fetch': os.path.join(node.api_url, 'osffiles', 'hgrid') + '/',
+        },
+        'permissions': {
+            'view': can_view,
+            'edit': can_edit,
+        },
     }
 
 
@@ -107,7 +106,7 @@ def get_osffiles(*args, **kwargs):
                 'name': _clean_file_name(fobj.path),
                 'urls': {
                     'view': fobj.url,
-                    'download': fobj.api_url,
+                    'download': fobj.download_url,
                     'delete': fobj.api_url,
                 },
                 'permissions': {
@@ -194,23 +193,26 @@ def upload_file_public(*args, **kwargs):
         ],
 
         # URLs
-        'view': fobj.url,
-        'download': fobj.api_url,
-        'delete': fobj.api_url,
+        'urls': {
+            'view': fobj.url,
+            'download': fobj.download_url,
+            'delete': fobj.api_url,
+        },
 
-        'ext': uploaded_filename.split('.')[-1],
-        'type': 'file',
-        'can_edit': True,
-        'date_uploaded': fobj.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
-        'dateModified': [
-            time.mktime(fobj.date_uploaded.timetuple()),
-            fobj.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
-        ],
-        'downloads': total if total else 0,
-        'user_id': None,
-        'user_fullname': None,
-        'uid': fobj._id,
-        'parent_uid': 'osffiles:{0}'.format(node_settings._id)
+        'kind': 'file',
+        'permissions': {
+            'view': True,
+            'edit': True,
+        },
+
+        'dates': {
+            'uploaded': [
+                time.mktime(fobj.date_uploaded.timetuple()),
+                fobj.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
+            ],
+        },
+
+        'downloads': total or 0,
     }
 
     if do_redirect:

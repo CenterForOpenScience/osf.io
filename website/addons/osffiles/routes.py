@@ -23,20 +23,44 @@ widget_routes = {
     'prefix': '/api/v1',
 }
 
-
 web_routes = {
 
     'rules': [
 
-        Rule([
-            '/project/<pid>/osffiles/',
-            '/project/<pid>/node/<nid>/osffiles/',
-        ], 'get', views.get_osffiles, OsfWebRenderer('../addons/osffiles/templates/osffiles_tree.mako')),
+        Rule(
+            [
+                '/project/<pid>/osffiles/',
+                '/project/<pid>/node/<nid>/osffiles/',
+            ],
+            'get',
+            views.get_osffiles,
+            OsfWebRenderer('../addons/osffiles/templates/osffiles_tree.mako'),
+        ),
 
-        Rule([
-            '/project/<pid>/osffiles/<fid>/',
-            '/project/<pid>/node/<nid>/osffiles/<fid>/',
-        ], 'get', views.view_file, OsfWebRenderer('../addons/osffiles/templates/osffiles_view_file.mako')),
+        Rule(
+            [
+                '/project/<pid>/osffiles/<fid>/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/',
+            ],
+            'get',
+            views.view_file,
+            OsfWebRenderer('../addons/osffiles/templates/osffiles_view_file.mako'),
+        ),
+
+        # Download file by version
+        Rule(
+            [
+                '/project/<pid>/osffiles/download/<fid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/osffiles/download/<fid>/version/<vid>/',
+                # Note: Added these old URLs for backwards compatibility with
+                # hard-coded links.
+                '/project/<pid>/files/download/<fid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
+            ],
+            'get',
+            views.download_file_by_version,
+            json_renderer,
+        ),
 
     ]
 
@@ -65,23 +89,13 @@ api_routes = {
 
         # Download file
         Rule([
-            '/project/<pid>/osffiles/<fid>/',
-            '/project/<pid>/node/<nid>/osffiles/<fid>/',
+            '/project/<pid>/osffiles/download/<fid>/',
+            '/project/<pid>/node/<nid>/osffiles/download/<fid>/',
             # Note: Added these old URLs for backwards compatibility with
             # hard-coded links.
             '/project/<pid>/files/download/<fid>/',
             '/project/<pid>/node/<nid>/files/download/<fid>/',
         ], 'get', views.download_file, json_renderer),
-
-        # Download file by version
-        Rule([
-            '/project/<pid>/osffiles/<fid>/version/<vid>/',
-            '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/',
-            # Note: Added these old URLs for backwards compatibility with
-            # hard-coded links.
-            '/project/<pid>/files/download/<fid>/version/<vid>/',
-            '/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
-        ], 'get', views.download_file_by_version, json_renderer),
 
         Rule(
             [
