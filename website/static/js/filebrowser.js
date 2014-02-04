@@ -9,26 +9,9 @@ this.FileBrowser = (function($, HGrid, global) {
   var withIndent = HGrid.Fmt.withIndent;
   var sanitized = HGrid.Fmt.sanitized;
 
-  // Override how files and folders are rendered
-  HGrid.Col.Name.itemView = function(row, args) {
-    args = args || {};
-    var innerContent = [HGrid.Html.fileIcon, sanitized(row.name), HGrid.Html.errorElem].join('');
-    return asItem(row, withIndent(row, innerContent, args.indent));
-  };
-
-  HGrid.Col.Name.folderView = function(row, args) {
-    args = args || {};
-    var name = row.name;
-    // The + / - button for expanding/collapsing a folder
-    var expander;
-    if (row._node.children.length > 0 && row.depth > 0 || args.lazyLoad) {
-      expander = row._collapsed ? HGrid.Html.expandElem : HGrid.Html.collapseElem;
-    } else { // Folder is empty
-      expander = '<span></span>';
-    }
-    // Concatenate the expander, folder icon, and the folder name
-    var innerContent = [expander, HGrid.Html.folderIcon, name].join(' ');
-    return asItem(row, withIndent(row, innerContent, args.indent));
+  // Can't use microtemplate because microtemplate escapes html
+  HGrid.Col.Name.folderView = function (item) {
+    return HGrid.Html.folderIcon + item.name;
   };
 
   // TODO: This doesn't work yet.
