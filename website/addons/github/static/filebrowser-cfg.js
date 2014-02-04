@@ -12,7 +12,7 @@
         data.branch = branch;
         $.ajax({
             type: 'get',
-            url: item.lazyLoad + 'dummy/?branch=' + branch,
+            url: item.urls.fetch + 'dummy/?branch=' + branch,
             success: function(response) {
                 grid.emptyFolder(item);
                 response.parentID = parentID;
