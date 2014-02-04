@@ -22,7 +22,7 @@ from urllib import unquote
 
 from website.addons.s3.settings import MAX_RENDER_SIZE
 
-#TODO Anything begining with s3_ can be staged for removal
+# TODO Anything begining with s3_ can be staged for removal
 
 
 @must_be_contributor
@@ -78,7 +78,6 @@ def delete(*args, **kwargs):
     return {}
 
 
-#TODO Check to see if file is already rendered?
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
 def view(*args, **kwargs):
@@ -99,19 +98,20 @@ def view(*args, **kwargs):
     key = wrapper.get_wrapped_key(unquote(path), vid=vid)
 
     # Test to see if the file size is within limit
+    # TODO make a pretty File too large error
     if key.s3Key.size > MAX_RENDER_SIZE:
         raise HTTPError(http.BAD_REQUEST)
 
+    cache_name = get_cache_file_name(path, key.etag)
     download_url = node.api_url + 's3/download/' + path + '/'
-
-    file_contents = key.s3Key.get_contents_as_string()
-
     render_url = node.api_url + 's3/render/' + path + '/?etag=' + key.etag
 
-    cache_name = get_cache_file_name(path, key.etag)
-
-    render = get_cache_content(node_settings, cache_name, start_render=True,
-                               file_content=file_contents, download_path=download_url, file_path=path)
+    # Check to see if the file has already been rendered.
+    render = get_cache_content(node_settings, cache_name)
+    if render is None:
+        file_contents = key.s3Key.get_contents_as_string()
+        render = get_cache_content(node_settings, cache_name, start_render=True,
+                                   file_content=file_contents, download_path=download_url, file_path=path)
 
     versions = create_version_list(wrapper, unquote(path), node.api_url)
 
