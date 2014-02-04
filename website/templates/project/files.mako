@@ -5,7 +5,6 @@
 
 <h4>Drag and drop files below to upload.</h4>
 <div id="myGrid" class="hgrid"></div>
-</div>
 
 <script type="text/javascript">
     var gridData = ${grid_data};
@@ -96,8 +95,13 @@ window.ondrop = function(e) { e.preventDefault(); };
 <%def name="javascript_bottom()">
 <script src='/static/js/filebrowser.js'></script>
 <script>
+(function($, global, undefined) {
+
 var filebrowser = new FileBrowser('#myGrid', {
-    data: gridData
+    data: gridData,
+    width: 800
 });
+
+})(jQuery, window);
 </script>
 </%def>

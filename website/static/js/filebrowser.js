@@ -1,17 +1,13 @@
+/**
+ * Module to render the consolidated files view. Reads addon configurrations and
+ * initializes an HGrid.
+ */
 this.FileBrowser = (function($, HGrid, global) {
 
   // Aliases
   var asItem = HGrid.Fmt.asItem;
   var withIndent = HGrid.Fmt.withIndent;
   var sanitized = HGrid.Fmt.sanitized;
-
-  var extensions = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
-    'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
-    'eml', 'eps', 'exe', 'fla', 'flv', 'gif', 'gz', 'hqx', 'htm', 'html', 'ifo', 'indd', 'iso', 'jar',
-    'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
-    'mpeg', 'mpg', 'msi', 'mswmm', 'ogg', 'pdf', 'png', 'pps', 'ps', 'psd', 'pst', 'ptb', 'pub', 'qbb',
-    'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
-    'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip'];
 
   // Override how files and folders are rendered
   HGrid.Col.Name.itemView = function(row, args) {
@@ -32,8 +28,25 @@ this.FileBrowser = (function($, HGrid, global) {
     }
     // Concatenate the expander, folder icon, and the folder name
     var innerContent = [expander, HGrid.Html.folderIcon, name].join(' ');
-    return HGrid.Fmt.asItem(row, HGrid.Fmt.withIndent(row, innerContent, args.indent));
+    return asItem(row, withIndent(row, innerContent, args.indent));
   };
+
+  // TODO: This doesn't work yet.
+  function refreshGitHubTree(grid, item, branch) {
+      var parentID = item.parentID;
+      var data = item.data || {};
+      data.branch = branch;
+      $.ajax({
+        type: 'get',
+        url: item.lazyLoad + 'dummy/?branch=' + branch,
+        success: function(response) {
+          grid.removeFolder(item);
+          response.parentID = parentID;
+          grid.addItem(response);
+          grid.expandItem(response);
+        }
+      });
+  }
 
   hgridOptions = {
     columns: [
@@ -55,6 +68,31 @@ this.FileBrowser = (function($, HGrid, global) {
       return row.urls.upload;
     },
     uploadMethod: 'post',
+    uploadSuccess: function(file, item, data) {
+      data.parentID = item.parentID;
+      this.removeItem(item.id);
+      this.addItem(data);
+    },
+    listeners: [
+      // Go to file's detail page if name is clicked
+      {on: 'click', selector: '.hg-item-content',
+      callback: function(evt, row, grid) {
+        if (row) {
+          var viewUrl = grid.getByID(row.id).urls.view;
+          if (viewUrl) {
+              window.location.href = viewUrl;
+          }
+        }
+      }},
+      {on: 'change', selector: '.github-branch-select',
+      callback: function(evt, row, grid) {
+        var $this = $(evt.target);
+        var id = row.id;
+        var item = grid.getByID(id);
+        var branch = $this.val();
+        refreshGitHubTree(grid, item, branch);
+      }}
+    ]
   };
 
   function FileBrowser(selector, options){

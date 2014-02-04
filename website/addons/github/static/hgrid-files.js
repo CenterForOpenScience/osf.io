@@ -23,35 +23,3 @@
 //     };
 
 // })(FileBrowser);
-
-(function() {
-
-    function refreshGitHubTree(grid, item, branch) {
-        var parentID = item.parentID;
-        var data = item.data || {};
-        data.branch = branch;
-        $.ajax({
-            type: 'get',
-            url: item.lazyLoad + 'dummy/?branch=' + branch,
-            success: function(response) {
-                grid.removeFolder(item);
-                response.parentID = parentID;
-                grid.addItem(response);
-                grid.expandItem(response);
-            }
-        });
-    }
-
-    $(document).ready(function() {
-
-        $('body').delegate('.github-branch-select', 'change', function() {
-            var $this = $(this);
-            var id = $this.closest('.hg-item-content').attr('data-id');
-            var item = grid.getByID(id);
-            var branch = $this.val();
-            refreshGitHubTree(grid, item, branch);
-        });
-
-    });
-
-})();
