@@ -56,8 +56,12 @@
 ##        %endfor
 
     % else:
-
-        <a id="dataverseAuth" class="btn btn-success">Authorize</a>
+        % if user_dataverse_account:
+            <a id="dataverseAuth" class="btn btn-success">Authorize: Link to Dataverse Account</a>
+        % else:
+            In order to access this feature, please go to <a href="/settings/">user settings</a> and link your
+            account to a Dataverse account.
+        % endif
 
     % endif
 
@@ -78,9 +82,10 @@
             type: 'POST',
             contentType: 'application/json',
             dataType: 'json',
-            async: false
+            success: function() {
+                window.location.reload();
+            }
         });
-        location.reload(true);
     });
 
     $("#studyDropDown").change(function() {
@@ -91,9 +96,10 @@
             type: 'POST',
             contentType: 'application/json',
             dataType: 'json',
-            async: false
+            success: function() {
+                window.location.reload();
+            }
         });
-        location.reload(true);
     });
 
 
@@ -111,7 +117,7 @@
 
     $('#dataverseDeauth').on('click', function() {
             bootbox.confirm(
-                'Are you sure you want to detach your Dataverse access key? This will ' +
+                'Are you sure you want to unlink your Dataverse account? This will ' +
                     'revoke the ability to modify and upload files to the Harvard Dataverse. If ' +
                     'the associated repo is private, this will also disable viewing ' +
                     'and downloading files from Dataverse. This will not remove your ' +

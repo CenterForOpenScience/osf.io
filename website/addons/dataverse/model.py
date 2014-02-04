@@ -53,6 +53,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         rv = super(AddonDataverseNodeSettings, self).to_json(user)
         rv.update({
                 'connected': False,
+                'user_dataverse_account': user.get_addon('dataverse').dataverse_username,
                 'authorized_dataverse_user': self.dataverse_username,
                 'authorized_user_name': self.user.fullname if self.user else '',
                 'authorized_user_id': self.user._id if self.user else '',
