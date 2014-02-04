@@ -34,6 +34,7 @@ INCLUDE_JS = {
         '/static/js/hgrid.js',
         'hgrid-s3.js',
     ],
+    'files': ['hgrid-s3.js']
 }
 
 INCLUDE_CSS = {
