@@ -13,22 +13,22 @@ this.FileBrowser = (function($, HGrid, bootbox) {
 
     HGrid.Col.ActionButtons.itemView = function() {
       var buttonDefs = [{
-          text: '\<i class=\'icon-download-alt icon-white\'></i>',
+          text: '<i class="icon-download-alt icon-white"></i>',
           action: 'download',
           cssClass: 'btn btn-success btn-mini'
       }, {
-          text: '\<i class=\'icon-trash icon-white\'></i>',
+          text: '<i class="icon-trash icon-white"></i>',
           action: 'delete',
           cssClass: 'btn btn-danger btn-mini'
       }];
       return HGrid.Fmt.buttons(buttonDefs);
-    }
+    };
 
     HGrid.Col.ActionButtons.folderView = function() {
         var buttonDefs = [];
         if (this.options.uploads) {
           buttonDefs.push({
-            text: '\<i class=\'icon-cloud-upload icon-white\'></i>',
+            text: '\<i class="icon-cloud-upload icon-white"></i>',
             action: 'upload',
             cssClass: 'btn btn-primary btn-mini'
           });
@@ -37,7 +37,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
           return HGrid.Fmt.buttons(buttonDefs);
         }
         return '';
-      }
+    };
 
 
     // OSF-specific HGrid options common to all addons
