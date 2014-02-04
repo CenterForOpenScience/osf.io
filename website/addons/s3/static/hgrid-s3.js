@@ -5,23 +5,16 @@
 
     // Public stuff
     FileBrowser.cfg.s3 = {
-        listeners: [{
-            on: 'change',
-            selector: '.github-branch-select',
-            callback: function(evt, row, grid) {
-                var $this = $(evt.target);
-                var id = row.id;
-                var item = grid.getByID(id);
-                var branch = $this.val();
-                refreshGitHubTree(grid, item, branch);
-            }
-        }],
+
+        headers: {
+            'x-amz-acl': 'private'
+        },
+
         uploadMethod:'PUT',
 
         uploadAdded: function(file, item) {
-            console.log('Called up')
             var deferred = $.Deferred();
-            console.log(file)
+            var self = this;
             return $.ajax({
                 type: 'POST',
                 url: nodeApiUrl + 's3/upload/',
@@ -30,7 +23,8 @@
                 dataType: 'json'
             }).success(function (url) {
                 deferred.resolve(url);
-                this.dropzone.options.uploadUrl = deferred;
+                self.dropzone.options.url = url;
+                console.log(self.dropzone.options.url);
             });
         }
     };
