@@ -5,7 +5,6 @@
 
     // Private members
 
-    // FIXME: This doesn't work yet.
     function refreshGitHubTree(grid, item, branch) {
         var parentID = item.parentID;
         var data = item.data || {};
@@ -15,7 +14,6 @@
             type: 'get',
             url: url,
             success: function(response) {
-                console.log(response);
                 grid.emptyFolder(item, true);
                 parentID = response.parentID;
                 grid.addData([response], parentID);
