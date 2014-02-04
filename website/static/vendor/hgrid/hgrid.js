@@ -940,7 +940,7 @@ if (typeof jQuery === 'undefined') {
      * @property [uploadSuccess]
      */
     /*jshint unused: false */
-    uploadSuccess: function(file, item) {},
+    uploadSuccess: function(file, item, data) {},
     /**
      * Called when an upload completes (whether it is successful or not)
      * @property [uploadComplete]
@@ -1473,10 +1473,10 @@ if (typeof jQuery === 'undefined') {
     uploadprogress: function(file, progress, bytesSent) {
       return this.options.uploadProgress.call(this, file, progress, bytesSent, file.gridItem);
     },
-    success: function(file) {
+    success: function(file, data) {
       $(file.gridElement).addClass('hg-upload-success')
         .removeClass('hg-upload-processing');
-      return this.options.uploadSuccess.call(this, file, file.gridItem);
+      return this.options.uploadSuccess.call(this, file, file.gridItem, data);
     },
     complete: function(file) {
       return this.options.uploadComplete.call(this, file, file.gridItem);
