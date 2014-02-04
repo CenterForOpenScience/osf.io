@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+import logging
 from mako.template import Template
 
 from framework import request
@@ -8,6 +10,8 @@ from website.project.decorators import must_have_addon
 
 from ..api import GitHub, to_hgrid, ref_to_params
 from .util import _get_refs, _check_permissions
+
+logger = logging.getLogger(__name__)
 
 github_branch_template = Template('''
     % if len(branches) > 1:
@@ -31,7 +35,7 @@ def github_branch_widget(branches, branch, sha):
     name field of HGrid file trees.
 
     """
-    return github_branch_template.render(
+    rendered = github_branch_template.render(
         branches=[
             each['name']
             for each in branches
@@ -39,6 +43,7 @@ def github_branch_widget(branches, branch, sha):
         branch=branch,
         sha=sha,
     )
+    return rendered
 
 
 def github_hgrid_data(node_settings, user, contents=False, **kwargs):
@@ -62,8 +67,7 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
         can_edit = _check_permissions(
             node_settings, node_settings.user, connection, branch, sha
         )
-        name_append = github_branch_widget(branches, branch, sha),
-
+        name_append = github_branch_widget(branches, branch, sha)
     else:
 
         ref = None
