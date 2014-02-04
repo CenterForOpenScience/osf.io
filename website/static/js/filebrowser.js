@@ -55,8 +55,23 @@ this.FileBrowser = (function($, HGrid, global) {
       return row.urls.upload;
     },
     uploadMethod: 'post',
+    uploadSuccess: function(file, item, data) {
+      data.parentID = item.parentID;
+      this.removeItem(item.id);
+      this.addItem(data);
+    },
+    listeners: [
+      {on: 'click', selector: '.hg-item-content',
+      callback: function(evt, row, grid) {
+        var viewUrl = grid.getByID(row.id).urls.view;
+        if (viewUrl) {
+            window.location.href = viewUrl;
+        }
+      }}
+    ]
   };
 
+  // Public API
   function FileBrowser(selector, options){
     this.selector = selector;
     var opts = $.extend({}, hgridOptions, options);
@@ -65,7 +80,6 @@ this.FileBrowser = (function($, HGrid, global) {
   }
 
   FileBrowser.prototype = {
-      // methods
   };
 
   return FileBrowser;

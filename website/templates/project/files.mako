@@ -11,20 +11,7 @@
     var gridData = ${grid_data};
 </script>
 
-<!--[if lte IE 9]>
 <script>
-    browserComp = false;
-    var htmlString = "    <form action='" + gridData[0]['uploadUrl'] + "' method='POST' enctype=multipart/form-data>" +
-            "<p><input type=file name=file>" +
-            "<input type=submit value=Upload>" +
-            "<input type='hidden' name='redirect' value='true' />" +
-            "</form>"
-    $('#dropZoneHeader').css('display', 'none');
-    $('#fallback').html(htmlString);
-</script>
-<![endif]-->
-<script>
-
 // Don't show dropped content if user drags outside grid
 window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };

@@ -1353,17 +1353,18 @@ if (typeof jQuery === 'undefined') {
     // if upload url or upload method is a function, call it, passing in the target item,
     // and set dropzone to upload to the result
     if (self.currentTarget) {
-      if (typeof this.options.uploadUrl === 'function') {
-        self.dropzone.options.url = self.options.uploadUrl.call(self, item);
-      }
-      if (typeof self.options.uploadMethod === 'function') {
-        self.dropzone.options.method = self.options.uploadMethod.call(self, item);
-      }
-      if (this.options.uploadAccept) {
-        // Override dropzone accept callback. Just calls options.uploadAccept with the right params
-        this.dropzone.options.accept = function(file, done) {
-          return self.options.uploadAccept.call(self, file, item, done);
-        };
+      this.dropzone.options.accept = function(file, done) {
+        $.when(
+          typeof(self.options.uploadUrl) === 'function' ? self.options.uploadUrl.call(self, item) : self.options.uploadUrl,
+          self.options.uploadMethod.call(self, item)
+        ).done(function(uploadUrl, uploadMethod) {
+          self.dropzone.options.url = uploadUrl;
+          self.dropzone.options.method = uploadMethod;
+        });
+        if (self.options.uploadAccept) {
+          // Override dropzone accept callback. Just calls options.uploadAccept with the right params
+            return self.options.uploadAccept.call(self, file, item, done);
+        }
       }
     }
   };
