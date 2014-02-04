@@ -25,7 +25,7 @@ def s3_hgrid_data(node_settings, user, parent=None, **kwargs):
         },
         'urls': {
             'fetch': node.api_url + 's3/hgrid/',
-            'upload': ''
+            'upload': node.api_url + 's3/upload/'
         },
         'accept': {
             'maxSize': node_settings.config.max_file_size,
