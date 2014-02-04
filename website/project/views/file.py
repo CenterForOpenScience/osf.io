@@ -61,8 +61,9 @@ def _collect_file_trees(node, user, parent='null', **kwargs):
 
     # Collect component file trees
     for child in node.nodes:
-        container = _get_dummy_container(child, user, parent)
-        grid_data.append(container)
+        if not child.is_deleted:
+            container = _get_dummy_container(child, user, parent)
+            grid_data.append(container)
 
     return grid_data
 

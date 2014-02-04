@@ -121,7 +121,7 @@ def project_before_fork(*args, **kwargs):
     user = kwargs['user']
     api_key = get_api_key()
 
-    prompts = node.callback('before_fork', user)
+    prompts = node.callback('before_fork', user=user)
 
     return {'prompts': prompts}
 
@@ -521,7 +521,7 @@ def _get_children(node, user, indent=0):
     children = []
 
     for child in node.nodes:
-        if node.can_view(user):
+        if not child.is_deleted and node.can_view(user):
             children.append({
                 'id': child._primary_key,
                 'title': child.title,

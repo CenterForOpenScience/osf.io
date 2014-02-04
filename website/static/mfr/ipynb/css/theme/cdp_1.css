@@ -1,6 +1,6 @@
 @font-face {
     font-family: "Computer Modern";
-    src: url('http://mirrors.ctan.org/fonts/cm-unicode/fonts/otf/cmunss.otf');
+    src: url('//mirrors.ctan.org/fonts/cm-unicode/fonts/otf/cmunss.otf');
 }
 div.cell{
     width:800px;

@@ -1,7 +1,7 @@
 <link href="${STATIC_PATH}/ipynb/css/pygments.css" rel="stylesheet">
-<link href="${STATIC_PATH}/ipynb/css/style.min.css" rel="stylesheet">
-<link href="${STATIC_PATH}/ipynb/css/theme/cdp_1.css" rel="stylesheet">
-
+## TODO: Do we need these files? They break other OSF styling.
+##<link href="${STATIC_PATH}/ipynb/css/style.min.css" rel="stylesheet">
+##<link href="${STATIC_PATH}/ipynb/css/theme/cdp_1.css" rel="stylesheet">
 
 <style type="text/css">
     .imgwrap {
@@ -16,10 +16,9 @@
         border: none;
     }
 </style>
-
+<div class="mfr-ipynb-body">
 ${ body | n }
-
-
+</div>
 <script type="text/javascript">
     (function() {
     if (window.MathJax) {
@@ -39,4 +38,5 @@ ${ body | n }
 })();
 </script>
 
-<script src="${STATIC_PATH}/ipynb/js/mathjax.js"type="text/javascript"></script>
+## Use secure MathJax CDN to avoid SSL errors
+<script type="text/javascript" src="https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js"></script>
