@@ -93,7 +93,13 @@ this.FileBrowser = (function($, HGrid, bootbox) {
                 return cfgFunc.call(this, file, row);
             }
         },
-        uploadMethod: 'post',
+        uploadMethod: function(file, row) {
+            var cfgFunc = FileBrowser.getCfg(row, 'uploadMethod');
+            if (cfgFunc) {
+                return cfgFunc.call(this, file, row);
+            }
+            return 'post';
+        },
         listeners: [
             // Go to file's detail page if name is clicked
             {
