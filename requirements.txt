@@ -11,7 +11,7 @@ beautifulsoup4==4.3.2
 billiard==2.7.3.31
 celery==3.1.8
 decorator==3.4.0
-dulwich==0.8.7
+dulwich
 httplib2==0.8
 hurry.filesize==0.9
 itsdangerous==0.23
