@@ -24,12 +24,12 @@ def s3_hgrid_data(node_settings, user, parent=None, **kwargs):
             'edit': node.can_edit(user) and not node.is_registration,
         },
         'urls': {
-            'fetch': node.api_url + 's3/hgrid/' + '',
+            'fetch': node.api_url + 's3/hgrid/',
             'upload': ''
         },
         'accept': {
             'maxSize': node_settings.config.max_file_size,
-            'extensions': 'TODO'
+            'extensions': node_settings.config.accept_extensions
         }
     }
 
@@ -37,7 +37,7 @@ def s3_hgrid_data(node_settings, user, parent=None, **kwargs):
 
 
 @must_be_contributor_or_public
-@must_have_addon('osffiles', 'node')
+@must_have_addon('s3', 'node')
 def s3_hgrid_data_contents(*args, **kwargs):
 
     node_settings = kwargs['node_addon']
@@ -52,7 +52,7 @@ def s3_hgrid_data_contents(*args, **kwargs):
     s3wrapper = S3Wrapper.from_addon(s3_node_settings)
 
     files = []
-    #assert 0, path
+
     key_list = s3wrapper.get_wrapped_keys_in_dir(path)
     key_list.extend(s3wrapper.get_wrapped_directories_in_dir(path))
 
