@@ -32,10 +32,6 @@ settings_routes = {
 api_routes = {
     'rules': [
         Rule([
-            '/project/<pid>/s3/fetchurl/<key>',
-            '/project/<pid>/node/<nid>/s3/fetchurl/<key>',
-        ], 'get', views.crud.s3_download, json_renderer),
-        Rule([
             '/project/<pid>/s3/delete/<path:path>/',
             '/project/<pid>/node/<nid>/s3/delete/<path:path>/',
         ], 'delete', views.crud.delete, json_renderer),
@@ -64,10 +60,6 @@ api_routes = {
 
 nonapi_routes = {
     'rules': [
-        Rule([
-            '/project/<pid>/s3/',
-            '/project/<pid>/node/<nid>/s3/',
-        ], 'get', views.crud.s3_page, OsfWebRenderer('../addons/s3/templates/s3_page.mako')),
         Rule([
             '/project/<pid>/s3/view/<path:path>/',
             '/project/<pid>/node/<nid>/s3/view/<path:path>/'

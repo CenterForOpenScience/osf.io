@@ -13,7 +13,7 @@ from website.project.views.file import get_cache_content
 
 from website.addons.s3.api import S3Wrapper
 
-from .utils import _page_content, get_cache_file_name
+from .utils import get_cache_file_name
 from website.addons.s3.utils import create_version_list
 
 from website import models
@@ -23,65 +23,6 @@ from urllib import unquote
 from website.addons.s3.settings import MAX_RENDER_SIZE
 
 #TODO Anything begining with s3_ can be staged for removal
-#S3 Page is also staged to be removed
-
-
-@must_be_contributor_or_public
-@must_have_addon('s3', 'node')
-def s3_page(*args, **kwargs):
-    user = kwargs['user']
-    user_settings = user.get_addon('s3')
-
-    node = kwargs['node'] or kwargs['project']
-
-    s3 = node.get_addon('s3')
-    data = _view_project(node, user, primary=True)
-
-    rv = _page_content(str(kwargs['pid']), s3, user_settings)
-    rv.update({
-        'addon_page_js': s3.config.include_js['page'],
-        'addon_page_css': s3.config.include_css['page'],
-    })
-    rv.update(s3.config.to_json())
-    rv.update(data)
-
-    return rv
-
-
-@must_be_contributor_or_public
-@must_have_addon('s3', 'node')
-def s3_download(*args, **kwargs):
-    node = kwargs['node'] or kwargs['project']
-    s3 = node.get_addon('s3')
-
-    keyName = kwargs['key']
-    if keyName is None:
-        raise HTTPError(http.NOT_FOUND)
-    connect = S3Wrapper.from_addon(s3)
-    return redirect(connect.download_file_URL(keyName.replace('&spc', ' ').replace('&sl', '/')))
-
-
-@must_be_contributor
-@must_have_addon('s3', 'node')
-def s3_delete(*args, **kwargs):
-    node = kwargs['node'] or kwargs['project']
-    s3 = node.get_addon('s3')
-    dfile = request.json.get('keyPath')
-    connect = S3Wrapper.from_addon(s3)
-    connect.delete_file(dfile)
-    node.add_log(
-        action='s3_' + models.NodeLog.FILE_REMOVED,
-        params={
-            'project': node.parent_id,
-            'node': node._primary_key,
-            'bucket': s3.bucket,
-            'path': dfile,
-        },
-        user=kwargs['user'],
-        api_key=None,
-        log_date=datetime.datetime.utcnow(),
-    )
-    return {}
 
 
 @must_be_contributor
@@ -138,7 +79,6 @@ def delete(*args, **kwargs):
 
 
 #TODO Check to see if file is already rendered?
-#TODO Change from MD5 to VID
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
 def view(*args, **kwargs):

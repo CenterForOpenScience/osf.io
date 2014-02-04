@@ -3,9 +3,7 @@ from framework import request
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_be_contributor, must_be_contributor_or_public
 
-from website.addons.s3.api import S3Wrapper, create_bucket
-
-from website.addons.s3.utils import getHgrid
+from website.addons.s3.api import create_bucket
 
 from website import models
 
@@ -77,27 +75,6 @@ def generate_signed_url(*args, ** kwargs):
 
     return '{url}?AWSAccessKeyId={access_key}&Expires={expires}&Signature={signed}'.format(url=url, access_key=s3.node_access_key, expires=expires, signed=signed),
     #/blackhttpmagick
-
-
-def _page_content(pid, s3, user_settings):
-    if not pid or not s3.bucket or not s3.node_auth or not user_settings or not user_settings.has_auth:
-        return {}
-    # try:
-    # FIX ME SOME HOW
-    connect = S3Wrapper.from_addon(s3)
-    data = getHgrid('/api/v1/project/' + pid + '/s3/', connect)
-    # except S3ResponseError:
-    #     push_status_message("It appears you do not have access to this bucket. Are you settings correct?")
-    #     data = None
-    # Error handling should occur here or one function up
-    # ie if usersettings or settings is none etc etc
-
-    rv = {
-        'complete': data is not None,
-        'bucket': s3.bucket,
-        'grid': data,
-    }
-    return rv
 
 
 @must_be_contributor_or_public
