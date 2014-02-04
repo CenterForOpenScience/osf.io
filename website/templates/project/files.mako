@@ -41,7 +41,19 @@ var grid = new HGrid('#myGrid', {
     ],
     fetchUrl: function(row) {
         return row.urls.fetch;
-    }
+    },
+    downloadUrl: function(row) {
+        return row.urls.download;
+    },
+    deleteUrl: function(row) {
+        return row.urls.delete;
+    },
+    deleteMethod: 'delete',
+    uploads: true,
+    uploadUrl: function(row) {
+        return row.urls.upload;
+    },
+    uploadMethod: 'post',
 });
 
 // Don't show dropped content if user drags outside grid
