@@ -1,0 +1,14 @@
+.slick-row{
+    height: 30px !important;
+}
+
+.slick-cell, .hg-cell{
+    height: 100% !important;
+    border: 0px !important;
+}
+
+.btn-mini {
+  padding: 2px 6px;
+  font-size: 14px;
+  line-height: 14px;
+}
