@@ -107,3 +107,17 @@ def test():
     """Alias of `invoke test_osf`.
     """
     test_osf()
+
+@task
+def get_hgrid():
+    """Get the latest development version of hgrid and put it in the static
+    directory.
+    """
+    target = 'website/static/vendor/hgrid'
+    run('git clone https://github.com/CenterForOpenScience/hgrid.git')
+    print('Removing old version')
+    run('rm -rf {0}'.format(target))
+    print('Replacing with fresh version')
+    run('mv hgrid/dist/ {0}'.format(target))
+    run('rm -rf hgrid/')
+    print('Finished')

@@ -6,8 +6,8 @@ from framework.auth import get_current_user
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
 
-from ..api import GitHub, tree_to_hgrid, ref_to_params
-from .util import _get_refs, _check_permissions, MESSAGES
+from ..api import GitHub, to_hgrid, ref_to_params
+from .util import _get_refs, _check_permissions
 
 github_branch_template = Template('''
     % if len(branches) > 1:
@@ -41,27 +41,13 @@ def github_branch_widget(branches, branch, sha):
     )
 
 
-def github_dummy_folder(node_settings, user, parent=None, **kwargs):
+def github_hgrid_data(node_settings, user, contents=False, **kwargs):
 
     # Quit if no repo linked
     if not node_settings.user or not node_settings.repo:
         return
 
     connection = GitHub.from_settings(node_settings.user_settings)
-
-    rv = {
-        'addonName': 'GitHub',
-        'maxFilesize': node_settings.config.max_file_size,
-        'uid': 'github:{0}'.format(node_settings._id),
-        'name': 'GitHub: {0}/{1}'.format(
-            node_settings.user, node_settings.repo,
-        ),
-        'parent_uid': parent or 'null',
-        'type': 'folder',
-        'can_view': False,
-        'can_edit': False,
-        'permission': False,
-    }
 
     branch, sha, branches = _get_refs(
         node_settings,
@@ -76,21 +62,44 @@ def github_dummy_folder(node_settings, user, parent=None, **kwargs):
         can_edit = _check_permissions(
             node_settings, user, connection, branch, sha
         )
+        name_append = github_branch_widget(branches, branch, sha),
 
-        rv.update({
-            'nameExtra': github_branch_widget(branches, branch, sha),
-            'can_view': True,
-            'can_edit': can_edit,
-            'permission': can_edit,
-            'uploadUrl': node_settings.owner.api_url + 'github/file/',
-            'lazyLoad': node_settings.owner.api_url + 'github/hgrid/',
-            'data': {
-                'branch': branch,
-                'sha': sha,
-            },
-        })
-        if ref:
-            rv['uploadUrl'] += '?' + ref
+    else:
+
+        ref = None
+        can_edit = False
+        name_append = None
+
+    rv = {
+        'addon': 'GitHub',
+        'name': 'GitHub: {0}/{1} {2}'.format(
+            node_settings.user, node_settings.repo, name_append,
+        ),
+        'kind': 'folder',
+        'urls': {
+            'upload': node_settings.owner.api_url + 'github/file/' + ref,
+            'fetch': node_settings.owner.api_url + 'github/hgrid/' + ref,
+        },
+        'permissions': {
+            'view': True,
+            'edit': can_edit,
+        },
+        'accept': {
+            'maxSize': node_settings.config.max_file_size,
+            'extensions': node_settings.config.accept_extensions,
+        }
+    }
+
+    if False:#contents:
+        if sha is None:
+            branch, sha, branches = _get_refs(
+                node_settings, branch, sha, connection=connection
+            )
+        tree = _get_tree(node_settings, sha, connection)
+        rv['children'] = to_hgrid(
+            tree, node_settings.owner.url, node_settings.owner.api_url,
+            branch, sha
+        )
 
     return rv
 
@@ -109,8 +118,17 @@ def github_dummy_folder_public(*args, **kwargs):
 
     parent = data.pop('parent', 'null')
 
-    return github_dummy_folder(node_settings, user, parent, **data)
+    return github_hgrid_data(node_settings, user, parent, contents=False, **data)
 
+
+def _get_tree(node_settings, sha, connection=None):
+
+    connection = connection or GitHub.from_settings(node_settings.user_settings)
+    tree = connection.tree(
+        node_settings.user, node_settings.repo, sha, recursive=True,
+    )
+    if tree:
+        return tree['tree']
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
@@ -127,22 +145,19 @@ def github_hgrid_data_contents(*args, **kwargs):
     # The requested branch and sha
     req_branch, req_sha = request.args.get('branch'), request.args.get('sha')
     # The actual branch and sha to use, given the addon settings
-    branch, sha, branches = _get_refs(node_addon, req_branch, req_sha,
-                                        connection=connection)
+    branch, sha, branches = _get_refs(
+        node_addon, req_branch, req_sha, connection=connection
+    )
     # Get file tree
     contents = connection.contents(
         user=node_addon.user, repo=node_addon.repo, path=path,
         ref=sha or branch,
     )
-    parent = request.args.get('parent', 'null')
     can_edit = _check_permissions(node_addon, user, connection, branch, sha)
     if contents:
-        hgrid_tree = tree_to_hgrid(
-            contents, user=node_addon.user,
-            branch=branch, sha=sha,
-            repo=node_addon.repo, node=node, node_settings=node_addon,
-            parent=parent,
-            can_edit=can_edit,
+        hgrid_tree = to_hgrid(
+            contents, node_url=node.url, node_api_url=node.api_url,
+            branch=branch, sha=sha, can_edit=can_edit, parent=path,
         )
     else:
         hgrid_tree = []
