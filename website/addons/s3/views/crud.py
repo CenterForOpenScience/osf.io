@@ -22,21 +22,6 @@ from urllib import unquote
 
 from website.addons.s3.settings import MAX_RENDER_SIZE
 
-# TODO Anything begining with s3_ can be staged for removal
-
-
-@must_be_contributor
-@must_have_addon('s3', 'node')
-def s3_new_folder(*args, ** kwargs):
-    node = kwargs['node'] or kwargs['project']
-    s3 = node.get_addon('s3')
-    folderPath = request.json.get('path').replace(
-        '&spc', ' ').replace('&sl', '/')
-
-    connect = S3Wrapper.from_addon(s3)
-    connect.createFolder(folderPath)
-    return {}
-
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')

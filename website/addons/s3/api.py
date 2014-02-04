@@ -7,7 +7,6 @@ from hurry.filesize import size, alternative
 import os
 import re
 from boto.iam import *
-import json
 from datetime import datetime
 
 
@@ -143,7 +142,6 @@ class S3Wrapper:
 
 
 # TODO Add null checks etc
-# TODO Clean me up
 class registration_wrapper(S3Wrapper):
 
     def __init__(self, node_settings):
