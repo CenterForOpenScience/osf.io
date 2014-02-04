@@ -96,7 +96,10 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
                 node_settings, branch, sha, connection=connection
             )
         tree = _get_tree(node_settings, sha, connection)
-        rv['children'] = to_hgrid(tree, node_settings, branch, sha)
+        node_url = node_settings.owner.url
+        api_url = node_settings.owner.api_url
+        rv['children'] = to_hgrid(tree, node_url=node_url, node_api_url=api_url,
+            branch=branch, sha=sha)
 
     return rv
 

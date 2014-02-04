@@ -528,12 +528,11 @@ def tree_to_hgrid(tree, user, repo, node, node_settings, parent=None, branch=Non
     return grid
 
 
-def to_hgrid(data, node_settings, branch, sha):
+def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None):
 
     grid = []
     cursor = grid
 
-    node = node_settings.owner
     ref = ref_to_params(branch, sha)
 
     for datum in data:
@@ -544,8 +543,8 @@ def to_hgrid(data, node_settings, branch, sha):
         qpath = urllib.quote(path)
 
         # Build base URLs
-        base_url = os.path.join(node.url, 'github', 'file', qpath) + '/'
-        base_api_url = os.path.join(node.api_url, 'github', 'file', qpath) + '/'
+        base_url = os.path.join(node_url, 'github', 'file', qpath) + '/'
+        base_api_url = os.path.join(node_api_url, 'github', 'file', qpath) + '/'
         #if ref:
         #    base_url += '?' + ref
         #    base_api_url += '?' + ref
