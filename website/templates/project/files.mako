@@ -36,8 +36,38 @@
     sortable: true
   };
 
+    HGrid.Col.ActionButtons.itemView = function() {
+      var buttonDefs = [{
+          text: '\<i class=\'icon-download-alt icon-white\'></i>',
+          action: 'download',
+          cssClass: 'btn btn-success btn-mini'
+      }, {
+          text: '\<i class=\'icon-trash icon-white\'></i>',
+          action: 'delete',
+          cssClass: 'btn btn-danger btn-mini'
+      }];
+      return HGrid.Fmt.buttons(buttonDefs);
+    }
+
+    HGrid.Col.ActionButtons.folderView = function() {
+        var buttonDefs = [];
+        if (this.options.uploads) {
+          buttonDefs.push({
+            text: '\<i class=\'icon-cloud-upload icon-white\'></i>',
+            action: 'upload',
+            cssClass: 'btn btn-primary btn-mini'
+          });
+        }
+        if (buttonDefs) {
+          return HGrid.Fmt.buttons(buttonDefs);
+        }
+        return '';
+      }
+
+
 var grid = new HGrid('#myGrid', {
     data: gridData,
+    width: "100%",
     columns: [
         nameColumn,
         HGrid.Col.ActionButtons
@@ -82,6 +112,7 @@ window.ondrop = function(e) { e.preventDefault(); };
 </%def>
 <%def name="stylesheets()">
 <link rel="stylesheet" href="/static/vendor/hgrid/hgrid.css" type="text/css" />
+<link rel="stylesheet" href="/static/vendor/hgrid/osf-hgrid.css" type="text/css" />
 </%def>
 
 <%def name="javascript()">
