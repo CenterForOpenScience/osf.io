@@ -36,9 +36,9 @@ api_routes = {
             '/project/<pid>/node/<nid>/s3/delete/<path:path>/',
         ], 'delete', views.crud.delete, json_renderer),
         Rule([
-            '/project/<pid>/s3/getsigned/',
-            '/project/<pid>/node/<nid>/s3/getsigned/'
-        ], 'post', views.utils.generate_signed_url, json_renderer),
+            '/project/<pid>/s3/upload/',
+            '/project/<pid>/node/<nid>/s3/upload/'
+        ], 'post', views.crud.upload, json_renderer),
         Rule([
             '/project/<pid>/s3/download/<path:path>/',
             '/project/<pid>/node/<nid>/s3/download/<path:path>/'

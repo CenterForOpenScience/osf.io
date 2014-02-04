@@ -13,12 +13,12 @@ from website.project.views.file import get_cache_content
 
 from website.addons.s3.api import S3Wrapper
 
-from .utils import get_cache_file_name
+from .utils import get_cache_file_name, generate_signed_url
 from website.addons.s3.utils import create_version_list
 
 from website import models
 
-from urllib import unquote
+from urllib import unquote, quote_plus
 
 from website.addons.s3.settings import MAX_RENDER_SIZE
 
@@ -123,3 +123,30 @@ def ping_render(*args, **kwargs):
     cache_file = get_cache_file_name(path, etag)
 
     return get_cache_content(node_settings, cache_file)
+
+
+# TODO Generate file for hgrid and return with signed url
+@must_be_contributor
+@must_have_addon('s3', 'node')
+def upload(*args, ** kwargs):
+
+    node = kwargs['node'] or kwargs['project']
+    s3 = node.get_addon('s3')
+
+    file_name = quote_plus(request.json.get('name'))
+    mime = request.json.get('type') or 'application/octet-stream'
+
+    node.add_log(
+        action='s3_' + models.NodeLog.FILE_ADDED,
+        params={
+            'project': node.parent_id,
+            'node': node._primary_key,
+            'bucket': s3.bucket,
+            'path': file_name,
+        },
+        user=kwargs['user'],
+        api_key=None,
+        log_date=datetime.datetime.utcnow(),
+    )
+
+    return generate_signed_url(mime, file_name, s3)
