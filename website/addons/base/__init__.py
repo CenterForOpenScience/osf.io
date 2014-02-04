@@ -202,15 +202,6 @@ class AddonSettingsBase(StoredObject):
             'addon_full_name': self.config.full_name,
         }
 
-
-class AddonUserSettingsBase(AddonSettingsBase):
-
-    owner = fields.ForeignField('user', backref='addons')
-
-    _meta = {
-        'abstract': True,
-    }
-
     #############
     # Callbacks #
     #############
@@ -222,6 +213,17 @@ class AddonUserSettingsBase(AddonSettingsBase):
     def on_delete(self):
         """Called when the addon is deleted from a User"""
         pass
+
+
+
+class AddonUserSettingsBase(AddonSettingsBase):
+
+    owner = fields.ForeignField('user', backref='addons')
+
+    _meta = {
+        'abstract': True,
+    }
+
 
 class AddonNodeSettingsBase(AddonSettingsBase):
 

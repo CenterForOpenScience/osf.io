@@ -66,4 +66,30 @@
     <div class="col-md-1">&nbsp;</div>
 
 </div>
+
+<div class="modal fade" id="twoFactor">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 style="margin-bottom:0">Two-factor Authentication</h4>
+            </div>
+
+            <div class="modal-body">
+                <p>Two-factor authentication helps keep your account security by combining a traditional password ("something you know") with a second code generated on a mobile device, usually a smartphone ("something you have").</p>
+                <p>If you have enabled two-factor authentication on your account, enter the current verification code from your device in this field.</p>
+            </div><!-- end modal-body -->
+
+            <div class="modal-footer">
+
+                <a href="#" class="btn btn-default" data-dismiss="modal">OK</a>
+            </div><!-- end modal-footer -->
+        </div><!-- end modal-content -->
+    </div><!-- end modal-dialog -->
+</div><!-- end modal -->
+<script>
+    $(function() {
+        $('#twoFactorHelpText').wrap('<a data-toggle="modal" href="#twoFactor">');
+    });
+</script>
 </%def>
+

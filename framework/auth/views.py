@@ -94,7 +94,11 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
         form = SignInForm(framework.request.form)
         if form.validate():
             try:
-                response = login(form.username.data, form.password.data)
+                response = login(
+                    form.username.data,
+                    form.password.data,
+                    form.two_factor.data,
+                )
                 return response
             except auth.LoginNotAllowedError:
                 status.push_status_message(language.UNCONFIRMED, 'warning')

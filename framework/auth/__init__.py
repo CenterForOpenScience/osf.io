@@ -96,7 +96,7 @@ def authenticate(user, response):
     return response
 
 
-def login(username, password):
+def login(username, password, two_factor=None):
     """View helper function for logging in a user. Either authenticates a user
     and returns a ``Response`` or raises an ``AuthError``.
 
@@ -113,12 +113,16 @@ def login(username, password):
         if user:
             if not user.is_registered:
                 raise LoginNotAllowedError('User is not registered.')
-            elif not user.is_claimed:
-                raise LoginNotAllowedError('User is not claimed.')
-            else:
-                return authenticate(user, response=goback())
-    raise PasswordIncorrectError('Incorrect password attempt.')
 
+            if not user.is_claimed:
+                raise LoginNotAllowedError('User is not claimed.')
+
+            tfa = user.get_addon('twofactor')
+            if tfa and tfa.is_confirmed and not tfa.verify_code(two_factor):
+                raise PasswordIncorrectError('Two-Factor auth does not match.')
+
+            return authenticate(user, response=goback())
+    raise PasswordIncorrectError('Incorrect password attempt.')
 
 def logout():
     for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname']:
