@@ -89,6 +89,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         enable_versioning(self)
 
         if self.bucket and self.has_auth:
+            clone.user_settings = self.user_settings
             clone.registration_data['bucket'] = self.bucket
             clone.registration_data['keys'] = serialize_bucket(S3Wrapper.from_addon(self))
 
