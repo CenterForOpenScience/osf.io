@@ -11,6 +11,35 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         return HGrid.Html.folderIcon + item.name;
     };
 
+    HGrid.Col.ActionButtons.itemView = function() {
+      var buttonDefs = [{
+          text: '\<i class=\'icon-download-alt icon-white\'></i>',
+          action: 'download',
+          cssClass: 'btn btn-success btn-mini'
+      }, {
+          text: '\<i class=\'icon-trash icon-white\'></i>',
+          action: 'delete',
+          cssClass: 'btn btn-danger btn-mini'
+      }];
+      return HGrid.Fmt.buttons(buttonDefs);
+    }
+
+    HGrid.Col.ActionButtons.folderView = function() {
+        var buttonDefs = [];
+        if (this.options.uploads) {
+          buttonDefs.push({
+            text: '\<i class=\'icon-cloud-upload icon-white\'></i>',
+            action: 'upload',
+            cssClass: 'btn btn-primary btn-mini'
+          });
+        }
+        if (buttonDefs) {
+          return HGrid.Fmt.buttons(buttonDefs);
+        }
+        return '';
+      }
+
+
     // OSF-specific HGrid options common to all addons
     baseOptions = {
         columns: [
@@ -18,6 +47,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             HGrid.Col.ActionButtons
         ],
         width: '100%',
+        height: 700,
         fetchUrl: function(row) {
             return row.urls.fetch;
         },
@@ -90,7 +120,10 @@ this.FileBrowser = (function($, HGrid, bootbox) {
     FileBrowser.cfg = {};
 
     FileBrowser.getCfg = function(row, key) {
-        return this.cfg[row.addon][key];
+        if (this.cfg[row.addon]){
+            return this.cfg[row.addon][key];
+        }
+        return undefined;
     };
 
     FileBrowser.prototype = {

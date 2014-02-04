@@ -6,10 +6,6 @@
 <h4>Drag and drop files below to upload.</h4>
 <div id="myGrid" class="hgrid"></div>
 
-<script type="text/javascript">
-    var gridData = ${grid_data};
-</script>
-
 <script>
 // Don't show dropped content if user drags outside grid
 window.ondragover = function(e) { e.preventDefault(); };
@@ -19,6 +15,7 @@ window.ondrop = function(e) { e.preventDefault(); };
 </%def>
 <%def name="stylesheets()">
 <link rel="stylesheet" href="/static/vendor/hgrid/hgrid.css" type="text/css" />
+<link rel="stylesheet" href="/static/vendor/hgrid/osf-hgrid.css" type="text/css" />
 </%def>
 
 <%def name="javascript()">
@@ -34,9 +31,9 @@ window.ondrop = function(e) { e.preventDefault(); };
 
 <script>
 (function(global) {
-
+var gridData = ${grid_data};
 var filebrowser = new FileBrowser('#myGrid', {
-    data: gridData
+    data: gridData,
 });
 
 })(window);
