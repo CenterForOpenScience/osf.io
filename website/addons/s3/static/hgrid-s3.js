@@ -6,6 +6,7 @@
     // Public stuff
     FileBrowser.cfg.github = {
         uploadMethod = 'PUT';
+        //TODO can this be moved up a level?
         fileName = '';
         mimeType = '';
         uploadUrl: function(row) {
