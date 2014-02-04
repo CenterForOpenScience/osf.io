@@ -49,7 +49,17 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         deleteMethod: 'delete',
         uploads: true,
         uploadUrl: function(row) {
+            var cfgFunc = FileBrowser.getCfg(row, 'uploadUrl');
+            if (cfgFunc) {
+                return cfgFunc(row);
+            }
             return row.urls.upload;
+        },
+        uploadAdded: function(file, row) {
+            var cfgFunc = FileBrowser.getCfg(row, 'uploadAdded');
+            if (cfgFunc) {
+                return cfgFunc(file, row);
+            }
         },
         uploadMethod: 'post',
         listeners: [
@@ -78,6 +88,10 @@ this.FileBrowser = (function($, HGrid, bootbox) {
     }
     // Addon config registry
     FileBrowser.cfg = {};
+
+    FileBrowser.getCfg = function(row, key) {
+        return this.cfg[row.addon][key];
+    };
 
     FileBrowser.prototype = {
         constructor: FileBrowser,
