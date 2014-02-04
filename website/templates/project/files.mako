@@ -74,6 +74,7 @@ grid.element.on('click', '.hg-item-content', function() {
     }
 });
 
+
 // Don't show dropped content if user drags outside grid
 window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };
@@ -88,6 +89,15 @@ window.ondrop = function(e) { e.preventDefault(); };
 <script src="/static/vendor/dropzone/dropzone.js"></script>
 <script src="/static/vendor/hgrid/hgrid.js"></script>
 % for script in tree_js:
-    <script type="text/javascript" src="${script}"></script>
+<script type="text/javascript" src="${script}"></script>
 % endfor
+</%def>
+
+<%def name="javascript_bottom()">
+<script src='/static/js/filebrowser.js'></script>
+<script>
+var filebrowser = new FileBrowser('#myGrid', {
+    data: gridData
+});
+</script>
 </%def>
