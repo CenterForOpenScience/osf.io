@@ -5,19 +5,18 @@
 
     // Private members
 
-    // FIXME: This doesn't work yet.
     function refreshGitHubTree(grid, item, branch) {
         var parentID = item.parentID;
         var data = item.data || {};
         data.branch = branch;
+        var url = item.urls.branch + '?' + $.param({branch: branch});
         $.ajax({
             type: 'get',
-            url: item.urls.fetch + 'dummy/?branch=' + branch,
+            url: url,
             success: function(response) {
-                grid.emptyFolder(item);
-                response.parentID = parentID;
-                grid.addItem(response);
-                grid.expandItem(response);
+                grid.emptyFolder(item, true);
+                parentID = response.parentID;
+                grid.addData([response], parentID);
             }
         });
     }
@@ -35,6 +34,9 @@
                 refreshGitHubTree(grid, item, branch);
             }
         }],
+        uploadAdded: function(file, row) {
+            console.log(row);
+        }
 
     };
 

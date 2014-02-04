@@ -13,22 +13,22 @@ this.FileBrowser = (function($, HGrid, bootbox) {
 
     HGrid.Col.ActionButtons.itemView = function() {
       var buttonDefs = [{
-          text: '\<i class=\'icon-download-alt icon-white\'></i>',
+          text: '<i class="icon-download-alt icon-white"></i>',
           action: 'download',
           cssClass: 'btn btn-success btn-mini'
       }, {
-          text: '\<i class=\'icon-trash icon-white\'></i>',
+          text: '<i class="icon-trash icon-white"></i>',
           action: 'delete',
           cssClass: 'btn btn-danger btn-mini'
       }];
       return HGrid.Fmt.buttons(buttonDefs);
-    }
+    };
 
     HGrid.Col.ActionButtons.folderView = function() {
         var buttonDefs = [];
         if (this.options.uploads) {
           buttonDefs.push({
-            text: '\<i class=\'icon-cloud-upload icon-white\'></i>',
+            text: '<i class="icon-cloud-upload icon-white"></i>',
             action: 'upload',
             cssClass: 'btn btn-primary btn-mini'
           });
@@ -37,7 +37,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
           return HGrid.Fmt.buttons(buttonDefs);
         }
         return '';
-      }
+    };
 
 
     // OSF-specific HGrid options common to all addons
@@ -81,14 +81,16 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         uploadUrl: function(row) {
             var cfgFunc = FileBrowser.getCfg(row, 'uploadUrl');
             if (cfgFunc) {
-                return cfgFunc(row);
+                return cfgFunc.call(this, row);
             }
             return row.urls.upload;
         },
         uploadAdded: function(file, row) {
+            var parent = this.getByID(row.parentID);
+            row.addon = parent.addon;
             var cfgFunc = FileBrowser.getCfg(row, 'uploadAdded');
             if (cfgFunc) {
-                return cfgFunc(file, row);
+                return cfgFunc.call(this, file, row);
             }
         },
         uploadMethod: 'post',
@@ -135,9 +137,11 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         _registerListeners: function() {
             for (var addon in FileBrowser.cfg) {
                 var listeners = FileBrowser.cfg[addon].listeners;
-                // Add each listener to the hgrid options
-                for (var i = 0, listener; listener = listeners[i]; i++) {
-                    this.options.listeners.push(listener);
+                if (listeners){
+                    // Add each listener to the hgrid options
+                    for (var i = 0, listener; listener = listeners[i]; i++) {
+                        this.options.listeners.push(listener);
+                    }
                 }
             }
             return this;
