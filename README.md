@@ -1,6 +1,10 @@
 [This repository has moved; click here.](http://github.com/CenterForOpenScience/openscienceframework/)
 ===========================
 
+## Help
+
+Solutions to many common issues may be found in the [Troubleshooting Guide](docs/troubleshooting.rst).
+
 ## Quickstart
 
 These instructions should work on Mac OSX >= 10.7
