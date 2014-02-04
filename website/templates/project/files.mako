@@ -24,21 +24,21 @@ window.ondrop = function(e) { e.preventDefault(); };
 <%def name="javascript()">
 <script src="/static/vendor/dropzone/dropzone.js"></script>
 <script src="/static/vendor/hgrid/hgrid.js"></script>
-% for script in tree_js:
-<script type="text/javascript" src="${script}"></script>
-% endfor
+<script src='/static/js/filebrowser.js'></script>
 </%def>
 
 <%def name="javascript_bottom()">
-<script src='/static/js/filebrowser.js'></script>
+% for script in tree_js:
+<script type="text/javascript" src="${script}"></script>
+% endfor
+
 <script>
-(function($, global, undefined) {
+(function(global) {
 
 var filebrowser = new FileBrowser('#myGrid', {
-    data: gridData,
-    width: 800
+    data: gridData
 });
 
-})(jQuery, window);
+})(window);
 </script>
 </%def>
