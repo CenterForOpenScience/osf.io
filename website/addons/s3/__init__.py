@@ -43,4 +43,5 @@ INCLUDE_CSS = {
 
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.hgrid.s3_hgrid_data
-MAX_FILE_SIZE = 1024 ** 1024  # There really shouldnt be a limit...
+# 1024 ** 1024  # There really shouldnt be a limit...
+MAX_FILE_SIZE = float('inf')
