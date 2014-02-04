@@ -83,6 +83,7 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
         'urls': {
             'upload': node_settings.owner.api_url + 'github/file/' + ref,
             'fetch': node_settings.owner.api_url + 'github/hgrid/' + ref,
+            'branch': node_settings.owner.api_url + 'github/hgrid/root/',
         },
         'permissions': {
             'view': True,
@@ -110,8 +111,8 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_dummy_folder_public(*args, **kwargs):
-    """View function returning the dummy container for a GitHub repo. In
+def github_root_folder_public(*args, **kwargs):
+    """View function returning the root container for a GitHub repo. In
     contrast to other add-ons, this is exposed via the API for GitHub to
     accommodate switching between branches and commits.
 
@@ -119,7 +120,6 @@ def github_dummy_folder_public(*args, **kwargs):
     node_settings = kwargs['node_addon']
     auth = kwargs['auth']
     data = request.args.to_dict()
-
     parent = data.pop('parent', 'null')
 
     return github_hgrid_data(node_settings, auth, parent, contents=False, **data)
