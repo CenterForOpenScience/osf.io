@@ -60,7 +60,7 @@ def _get_refs(addon, branch=None, sha=None, connection=None):
     return branch, sha, branches
 
 
-def _check_permissions(node_settings, user, connection, branch, sha=None, repo=None):
+def _check_permissions(node_settings, auth, connection, branch, sha=None, repo=None):
 
     user_settings = node_settings.user_settings
     has_access = False
@@ -86,7 +86,7 @@ def _check_permissions(node_settings, user, connection, branch, sha=None, repo=N
         is_head = True
 
     can_edit = (
-        node_settings.owner.can_edit(user) and
+        node_settings.owner.can_edit(auth) and
         not node_settings.owner.is_registration and
         has_access and
         is_head
