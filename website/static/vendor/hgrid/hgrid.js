@@ -16,7 +16,7 @@ if (typeof jQuery === 'undefined') {
   window.HGrid = HGrid;
   window.HGridError = HGridError;
 
-  var DEFAULT_INDENT = 15;
+  var DEFAULT_INDENT = 20;
   var ROOT_ID = 'root';
   var ITEM = 'item';
   var FOLDER = 'folder';
@@ -142,6 +142,20 @@ if (typeof jQuery === 'undefined') {
     if (updateDataView) {
       this.insertIntoDataView(component);
     }
+    return this;
+  };
+
+  Tree.prototype.empty = function(removeSelf) {
+    if (removeSelf) {
+      // Clear children
+      var item = this.getItem();
+      this.dataView.deleteItem(item.id);
+    }
+    for(var i=0, child; child = this.children[i]; i++) {
+      child.empty(true);
+      child.children = [];
+    }
+    this.children = [];
     return this;
   };
 
@@ -495,6 +509,12 @@ if (typeof jQuery === 'undefined') {
     return this.depth === 0;
   };
 
+  Leaf.prototype.empty = function() {
+    var item = this.getItem();
+    this.dataView.deleteItem(item.id);
+    return this;
+  };
+
   // An efficient, lightweight queue implementation, adapted from Queue.js by Steven Morley
   function Queue() {
     this.queue = [];
@@ -559,9 +579,9 @@ if (typeof jQuery === 'undefined') {
    * @param  {string} html The inner HTML
    * @return {String}      The rendered HTML
    */
-  function asItem(item, html) {
-    var openTag = '<div class="' + HGrid.Html.itemClass + '" data-id="' + item.id + '">';
-    var closingTag = '</div>';
+  function asName(item, html) {
+    var openTag = '<span class="' + HGrid.Html.itemClass + '" data-id="' + item.id + '">';
+    var closingTag = '</span>';
     return [openTag, html, closingTag].join('');
   }
 
@@ -594,39 +614,6 @@ if (typeof jQuery === 'undefined') {
       return html;
     }).join('');
     return renderedButtons;
-  }
-
-  /**
-   * Default rendering function that renders a file item to HTML.
-   * @class defaultItemView
-   * @param  {Object} item The item data object.
-   * @return {String}      HTML for the item.
-   */
-  function defaultItemView(row, args) {
-    args = args || {};
-    var innerContent = [HGrid.Html.fileIcon, sanitized(row.name), HGrid.Html.errorElem].join('');
-    return asItem(row, withIndent(row, innerContent, args.indent));
-  }
-
-  /**
-   * Default rendering function that renders a folder row to HTML.
-   * @class defaultFolderView
-   * @param  {Object} row The folder data object.
-   * @return {String}      HTML for the folder.
-   */
-  function defaultFolderView(row, args) {
-    args = args || {};
-    var name = sanitized(row.name);
-    // The + / - button for expanding/collapsing a folder
-    var expander;
-    if (row._node.children.length > 0 && row.depth > 0 || args.lazyLoad) {
-      expander = row._collapsed ? HGrid.Html.expandElem : HGrid.Html.collapseElem;
-    } else { // Folder is empty
-      expander = '<span></span>';
-    }
-    // Concatenate the expander, folder icon, and the folder name
-    var innerContent = [expander, HGrid.Html.folderIcon, name, HGrid.Html.errorElem].join(' ');
-    return asItem(row, withIndent(row, innerContent, args.indent));
   }
 
   /**
@@ -670,7 +657,7 @@ if (typeof jQuery === 'undefined') {
   // Formatting helpers public interface
   HGrid.Fmt = HGrid.Format = {
     withIndent: withIndent,
-    asItem: asItem,
+    asName: asName,
     makeIndentElem: makeIndentElem,
     sanitized: sanitized,
     button: renderButton,
@@ -706,18 +693,21 @@ if (typeof jQuery === 'undefined') {
 
   // Predefined column schemas
   HGrid.Col = HGrid.Columns = {
-    defaultFolderView: defaultFolderView,
-    defaultItemView: defaultItemView,
-
     // Name field schema
     Name: {
       id: 'name',
       name: 'Name',
       sortkey: 'name',
       cssClass: 'hg-cell',
-      folderView: defaultFolderView,
-      itemView: defaultItemView,
-      sortable: true
+      folderView: HGrid.Html.folderIcon + ' {{name}}',
+      itemView: HGrid.Html.fileIcon + ' {{name}}',
+      sortable: true,
+      indent: DEFAULT_INDENT,
+      isName: true,
+      showExpander: function(item, args) {
+        return item.kind === HGrid.FOLDER &&
+                (item._node.children.length && item.depth || args.lazyLoad);
+      }
     },
 
     // Actions buttons schema
@@ -940,7 +930,7 @@ if (typeof jQuery === 'undefined') {
      * @property [uploadSuccess]
      */
     /*jshint unused: false */
-    uploadSuccess: function(file, item) {},
+    uploadSuccess: function(file, item, data) {},
     /**
      * Called when an upload completes (whether it is successful or not)
      * @property [uploadComplete]
@@ -1005,6 +995,7 @@ if (typeof jQuery === 'undefined') {
   HGrid.Queue = Queue;
 
   // Constants
+  HGrid.DEFAULT_INDENT = DEFAULT_INDENT;
   HGrid.ROOT_ID = ROOT_ID;
   HGrid.FOLDER = FOLDER;
   HGrid.ITEM = ITEM;
@@ -1065,6 +1056,17 @@ if (typeof jQuery === 'undefined') {
    */
   HGrid.prototype.collapseAll = function() {
     this.tree.collapseAt(1, true);
+  };
+
+  /**
+   * Remove a folder's contents from the grid.
+   * @param  {Object} item The folder item to empty.
+   */
+  HGrid.prototype.emptyFolder = function(item) {
+    item = typeof item === 'object' ? item : this.getByID(item);
+    item._node.empty();
+    this.getDataView().updateItem(item.id, item);
+    return this;
   };
 
   /**
@@ -1146,28 +1148,41 @@ if (typeof jQuery === 'undefined') {
   };
 
   // TODO: test me
-  // HGrid folderView and itemView (in column def) => SlickGrid Formatter
-  HGrid.prototype.makeFormatter = function(folderView, itemView, args) {
+  // HGrid column schmea => SlickGrid Formatter
+  HGrid.prototype.makeFormatter = function(schema) {
     var self = this,
-      view;
+      view, html;
+    var folderView = schema.folderView;
+    var itemView = schema.itemView;
+    var showExpander = schema.showExpander;
+    var indentWidth = typeof schema.indent === 'number' ? schema.indent : DEFAULT_INDENT;
     var formatter = function(row, cell, value, colDef, item) {
       var rendererArgs = {
-        colDef: colDef,
-        row: row,
-        cell: cell,
-        indent: args.indent,
-        lazyLoad: self.isLazy()
+        colDef: colDef, row: row, cell: cell, indent: schema.indent, lazyLoad: self.isLazy()
       };
-      if (item.kind === FOLDER) {
-        view = folderView;
-      } else {
-        view = itemView;
-      }
+      view = item.kind === FOLDER ? folderView : itemView;
       if (typeof view === 'function') {
-        return view.call(self, item, rendererArgs); // Returns the rendered HTML
+        html = view.call(self, item, rendererArgs); // Returns the rendered HTML
+      } else {
+        // Use template
+        html = HGrid.Format.tpl(view, item);
       }
-      // Use template
-      return HGrid.Format.tpl(view, item);
+      if (schema.isName) {
+        html = asName(item, html);
+      }
+      if (showExpander) {
+        var expander;
+        if (typeof showExpander === 'function' && showExpander(item, rendererArgs)) {
+          expander = item._collapsed ? HGrid.Html.expandElem : HGrid.Html.collapseElem;
+        } else {
+          expander = '<span></span>';
+        }
+        html = [expander, html].join('');
+      }
+      if (schema.indent) {
+        html = withIndent(item, html, indentWidth);
+      }
+      return html;
     };
     return formatter;
   };
@@ -1179,10 +1194,7 @@ if (typeof jQuery === 'undefined') {
       if (!('formatter' in col)) {
         // Create the formatter function from the columns definition's
         // "folderView" and "itemView" properties
-        col.formatter = self.makeFormatter.call(self, col.folderView,
-          col.itemView, {
-            indent: self.options.indent
-          });
+        col.formatter = self.makeFormatter.call(self, col);
       }
       if ('text' in col) { // Use 'text' instead of 'name' for column header text
         col.name = col.text;
@@ -1352,20 +1364,23 @@ if (typeof jQuery === 'undefined') {
     var self = this;
     // if upload url or upload method is a function, call it, passing in the target item,
     // and set dropzone to upload to the result
+    function resolveUrl(url) {
+      return typeof url === 'function' ? url.call(self, item) : url;
+    }
     if (self.currentTarget) {
-      this.dropzone.options.accept = function(file, done) {
-        $.when(
-          typeof(self.options.uploadUrl) === 'function' ? self.options.uploadUrl.call(self, item) : self.options.uploadUrl,
-          self.options.uploadMethod.call(self, item)
-        ).done(function(uploadUrl, uploadMethod) {
-          self.dropzone.options.url = uploadUrl;
-          self.dropzone.options.method = uploadMethod;
-        });
+      $.when(
+        resolveUrl(self.options.uploadUrl),
+        resolveUrl(self.options.uploadMethod)
+      ).done(function(uploadUrl, uploadMethod) {
+        self.dropzone.options.url = uploadUrl;
+        self.dropzone.options.method = uploadMethod;
         if (self.options.uploadAccept) {
           // Override dropzone accept callback. Just calls options.uploadAccept with the right params
+          self.dropzone.options.accept = function(file, done) {
             return self.options.uploadAccept.call(self, file, item, done);
+          };
         }
-      }
+      });
     }
   };
 
@@ -1509,11 +1524,13 @@ if (typeof jQuery === 'undefined') {
     // Attach extra listeners from options.listeners
     var userCallback = function(evt) {
       var row = self.getItemFromEvent(evt);
-      return evt.data.listenerObj.callback.call(self, evt, row);
+      return evt.data.listenerObj.callback(evt, row, evt.data.grid);
     };
+    // TODO: test me
     for (var i = 0, listener; listener = this.options.listeners[i]; i++) {
       self.element.on(listener.on, listener.selector, {
-        listenerObj: listener
+        listenerObj: listener,
+        grid: self
       }, userCallback);
     }
     this.attachActionListeners();

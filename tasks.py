@@ -4,7 +4,7 @@
 commands, run ``$ invoke --list``.
 '''
 import os
-from invoke import task, run, ctask
+from invoke import task, run
 
 from website import settings
 
@@ -118,6 +118,9 @@ def get_hgrid():
     print('Removing old version')
     run('rm -rf {0}'.format(target))
     print('Replacing with fresh version')
-    run('mv hgrid/dist/ {0}'.format(target))
+    run('mkdir {0}'.format(target))
+    run('mv hgrid/dist/hgrid.js {0}'.format(target))
+    run('mv hgrid/dist/hgrid.css {0}'.format(target))
+    run('mv hgrid/dist/images {0}'.format(target))
     run('rm -rf hgrid/')
     print('Finished')
