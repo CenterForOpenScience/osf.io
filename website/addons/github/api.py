@@ -450,6 +450,7 @@ def _build_github_urls(item, node_url, node_api_url, branch, sha):
     raise ValueError
 
 
+<<<<<<< HEAD
 def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
              can_edit=True, parent=None):
 
@@ -458,6 +459,29 @@ def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
 
     for datum in data:
 
+=======
+def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None):
+
+    grid = []
+    cursor = grid
+
+    ref = ref_to_params(branch, sha)
+
+    for datum in data:
+
+        item = {}
+
+        path = datum['path']
+        qpath = urllib.quote(path)
+
+        # Build base URLs
+        base_url = os.path.join(node_url, 'github', 'file', qpath) + '/'
+        base_api_url = os.path.join(node_api_url, 'github', 'file', qpath) + '/'
+        #if ref:
+        #    base_url += '?' + ref
+        #    base_api_url += '?' + ref
+
+>>>>>>> to_hgrid takes urls (strings) as parameters instead of node settings object
         if datum['type'] in ['file', 'blob']:
             item = {
                 'kind': 'item',
