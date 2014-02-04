@@ -29,18 +29,19 @@ def checkFolders(s3wrapper, keyList):
             keyList.append(S3Key(newKey))
 
 
-def wrapped_key_to_json_new(wrapped_key, node_api, parent, node_url):
+def wrapped_key_to_json(wrapped_key, node_api, node_url):
     return {
-        'uid': wrapped_key.fullPath,
-        'type': wrapped_key.type,
+        'kind': wrapped_key.type,
         'name': wrapped_key.name,
-        'parent_uid': parent,
         'size': (wrapped_key.size, wrapped_key.size) if wrapped_key.size is not None else '--',
         'lastMod': wrapped_key.lastMod.strftime("%Y/%m/%d %I:%M %p") if wrapped_key.lastMod is not None else '--',
         'ext': wrapped_key.extension if wrapped_key.extension is not None else '--',
-        'download': node_api + URLADDONS['download'] + quote(wrapped_key.fullPath) + '/' if wrapped_key.type == 'file' else None,
-        'delete': node_api + URLADDONS['delete'] + quote(wrapped_key.fullPath) + '/'if wrapped_key.type == 'file' else None,
-        'view': node_url + URLADDONS['view'] + quote(wrapped_key.fullPath) + '/'if wrapped_key.type == 'file' else None,
+        'urls': {
+            'download': node_api + URLADDONS['download'] + quote(wrapped_key.fullPath) + '/' if wrapped_key.type == 'file' else None,
+            'delete': node_api + URLADDONS['delete'] + quote(wrapped_key.fullPath) + '/'if wrapped_key.type == 'file' else None,
+            'view': node_url + URLADDONS['view'] + quote(wrapped_key.fullPath) + '/'if wrapped_key.type == 'file' else None,
+            'fetch': node_api + 's3/hgrid/' + wrapped_key.fullPath if wrapped_key.type == 'folder' else None
+        }
     }
 
 
