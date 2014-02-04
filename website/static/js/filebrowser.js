@@ -35,15 +35,12 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             var ajaxOptions = {
                 error: function() {
                     bootbox.alert('There was a problem deleting your file. Please try again later.');
-                },
-                success: function() {
-                    bootbox.alert('File deleted.');
                 }
             };
             bootbox.confirm(msg, function(confirmed) {
                 if (confirmed) {
-                    // Send request to delete file.
                     self.removeItem(row.id);
+                    // Send request to delete file.
                     self.deleteFile(row, ajaxOptions);
                 }
             });
