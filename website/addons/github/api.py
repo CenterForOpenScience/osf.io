@@ -415,17 +415,9 @@ class GitHub(object):
         )
 
 
-type_map = {
-    'tree': 'folder',
-    'blob': 'file',
-    'file': 'file',
-    'dir': 'folder'
-}
-
-
 def ref_to_params(branch=None, sha=None):
 
-    return urllib.urlencode({
+    params = urllib.urlencode({
         key: value
         for key, value in {
             'branch': branch,
@@ -434,143 +426,77 @@ def ref_to_params(branch=None, sha=None):
         if value
     })
 
+    if params:
+        return '?' + params
+    return ''
 
-def tree_to_hgrid(tree, user, repo, node, node_settings, parent=None, branch=None, sha=None, hotlink=False, can_edit=False):
-    """Convert GitHub tree data to HGrid format.
 
-    :param list tree: JSON description of git tree
-    :param str user: GitHub user name
-    :param str repo: GitHub repo name
-    :param Node node: OSF Node
-    :param str branch: Git branch
-    :param str sha: Git SHA
-    :param bool hotlink: Hotlink files if ref provided; will yield broken
-        links if repo is private
-    :return list: List of HGrid-formatted dicts
+def _build_github_urls(item, node_url, node_api_url, branch, sha):
 
-    """
-    grid = []
+    quote_path = urllib.quote_plus(item['path'])
+    params = ref_to_params(branch, sha)
 
-    ref = ref_to_params(branch, sha)
-
-    lazy_url_parts = [node.api_url, 'github', 'hgrid']
-
-    parent_uid = parent or 'null'
-
-    for item in tree:
-
-        # Types should be "dir" or "file" but may also be "commit". Ignore
-        # unexpected types.
-        if item['type'] not in type_map:
-            continue
-
-        path = item['path']
-        qpath = urllib.quote(path)
-
-        _, basename = os.path.split(path)
-        _, ext = os.path.splitext(path)
-        ext = ext.lstrip('.')
-
-        row = {
-            'uid': 'github:{0}:{1}'.format(node_settings._id, qpath),
-            'name': basename,
-            'parent_uid': parent_uid,
-            'type': type_map[item['type']],
-            'can_edit': can_edit,
-            'permission': can_edit,
+    if item['type'] in ['tree', 'dir']:
+        return {
+            'upload': os.path.join(node_api_url, 'github', 'file', quote_path) + '/' + params,
+            'fetch': os.path.join(node_api_url, 'github', 'hgrid', item['path']) + '/',
         }
-
-        # Build base URLs
-        base_url = os.path.join(node.url, 'github', 'file', qpath) + '/'
-        base_api_url = os.path.join(node.api_url, 'github', 'file', qpath) + '/'
-        if ref:
-            base_url += '?' + ref
-            base_api_url += '?' + ref
-
-        if type_map[item['type']] == 'file':
-
-            # Note: For files, `sha` is the hash of the file
-            row['data'] = {
-                'sha': item['sha'],
-                'branch': branch,
-            }
-
-            # Size may be None for partially uploaded files
-            if item['size']:
-                row['size'] = [
-                    item['size'],
-                    size(item['size'], system=alternative)
-                ]
-            else:
-                row['size'] = None
-
-            row['ext'] = ext
-
-            # URLs
-            row['view'] = base_url
-            row['delete'] = base_api_url
-            row['download'] = base_url
-
-        else:
-
-            row['addonName'] = 'GitHub',
-            row['maxFilesize'] = node_settings.config.max_file_size,
-            # Note: For folders, `sha` is the hash of the last commit
-            row['data'] = {
-                'sha': sha,
-                'branch': branch,
-            }
-            row['uploadUrl'] = base_api_url
-            row['lazyLoad'] = os.path.join(*lazy_url_parts + [item['path']]) + '/'
-
-        grid.append(row)
-
-    return grid
+    elif item['type'] in ['file', 'blob']:
+        return {
+            'view': os.path.join(node_url, 'github', 'file', quote_path) + '/' + params,
+            'download': os.path.join(node_url, 'github', 'file', 'download', quote_path) + '/' + params,
+            'delete': os.path.join(node_api_url, 'github', 'file', quote_path) + '/' + ref_to_params(branch, item['sha']),
+        }
+    raise ValueError
 
 
-def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None):
+def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
+             can_edit=True, parent=None):
 
     grid = []
-    cursor = grid
-
-    ref = ref_to_params(branch, sha)
+    folders = {}
 
     for datum in data:
 
-        item = {}
-
-        path = datum['path']
-        qpath = urllib.quote(path)
-
-        # Build base URLs
-        base_url = os.path.join(node_url, 'github', 'file', qpath) + '/'
-        base_api_url = os.path.join(node_api_url, 'github', 'file', qpath) + '/'
-        #if ref:
-        #    base_url += '?' + ref
-        #    base_api_url += '?' + ref
-
         if datum['type'] in ['file', 'blob']:
-            item['kind'] = 'item'
-            item['urls'] = {
-                'view': base_url,
-                'download': base_url + ref,
-                'delete': base_api_url,
+            item = {
+                'kind': 'item',
+                'urls': _build_github_urls(
+                    datum, node_url, node_api_url, branch, sha
+                )
             }
         elif datum['type'] in ['tree', 'dir']:
-            item['kind'] = 'folder'
-            item['children'] = []
-            item['urls'] = {
-                'upload': base_api_url,
+            item = {
+                'kind': 'folder',
+                'children': [],
             }
         else:
             continue
 
-        path, item['name'] = os.path.split(datum['path'])
+        item.update({
+            'addon': 'github',
+            'permission': {
+                'view': True,
+                'edit': can_edit,
+            },
+            'urls': _build_github_urls(
+                datum, node_url, node_api_url, branch, sha
+            ),
+        })
 
-        cursor.append(item)
+        head, item['name'] = os.path.split(datum['path'])
+        if parent:
+            head = head.split(parent)[-1]
+        if head:
+            folders[head]['children'].append(item)
+        else:
+            grid.append(item)
 
         # Update cursor
         if item['kind'] == 'folder':
-            cursor = item['children']
+            key = datum['path']
+            if parent:
+                key = key.split(parent)[-1]
+            folders[key] = item
 
     return grid

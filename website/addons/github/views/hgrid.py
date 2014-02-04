@@ -49,18 +49,6 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
 
     connection = GitHub.from_settings(node_settings.user_settings)
 
-    rv = {
-        'addonName': 'GitHub',
-        'maxFilesize': node_settings.config.max_file_size,
-        'name': 'GitHub: {0}/{1}'.format(
-            node_settings.user, node_settings.repo,
-        ),
-        'type': 'folder',
-        'can_view': False,
-        'can_edit': False,
-        'permission': False,
-    }
-
     branch, sha, branches = _get_refs(
         node_settings,
         branch=kwargs.get('branch'),
@@ -74,23 +62,36 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
         can_edit = _check_permissions(
             node_settings, user, connection, branch, sha
         )
+        name_append = github_branch_widget(branches, branch, sha),
 
-        rv.update({
-            'nameExtra': github_branch_widget(branches, branch, sha),
-            'can_view': True,
-            'can_edit': can_edit,
-            'permission': can_edit,
-            'uploadUrl': node_settings.owner.api_url + 'github/file/',
-            'lazyLoad': node_settings.owner.api_url + 'github/hgrid/',
-            'data': {
-                'branch': branch,
-                'sha': sha,
-            },
-        })
-        if ref:
-            rv['uploadUrl'] += '?' + ref
+    else:
 
-    if contents:
+        ref = None
+        can_edit = False
+        name_append = None
+
+    rv = {
+        'addon': 'GitHub',
+        'name': 'GitHub: {0}/{1}'.format(
+            node_settings.user, node_settings.repo,
+        ),
+        'nameAppend': name_append,
+        'kind': 'folder',
+        'urls': {
+            'upload': node_settings.owner.api_url + 'github/file/' + ref,
+            'fetch': node_settings.owner.api_url + 'github/hgrid/' + ref,
+        },
+        'permissions': {
+            'view': True,
+            'edit': can_edit,
+        },
+        'accept': {
+            'maxSize': node_settings.config.max_file_size,
+            'extensions': node_settings.config.accept_extensions,
+        }
+    }
+
+    if False:
         if sha is None:
             branch, sha, branches = _get_refs(
                 node_settings, branch, sha, connection=connection
@@ -100,7 +101,6 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
         api_url = node_settings.owner.api_url
         rv['children'] = to_hgrid(tree, node_url=node_url, node_api_url=api_url,
             branch=branch, sha=sha)
-
     return rv
 
 
@@ -118,7 +118,7 @@ def github_dummy_folder_public(*args, **kwargs):
 
     parent = data.pop('parent', 'null')
 
-    return github_hgrid_data(node_settings, user, parent, contents=True, **data)
+    return github_hgrid_data(node_settings, user, parent, contents=False, **data)
 
 
 def _get_tree(node_settings, sha, connection=None):
@@ -153,15 +153,11 @@ def github_hgrid_data_contents(*args, **kwargs):
         user=node_addon.user, repo=node_addon.repo, path=path,
         ref=sha or branch,
     )
-    parent = request.args.get('parent', 'null')
     can_edit = _check_permissions(node_addon, user, connection, branch, sha)
     if contents:
         hgrid_tree = to_hgrid(
-            contents, user=node_addon.user,
-            branch=branch, sha=sha,
-            repo=node_addon.repo, node=node, node_settings=node_addon,
-            parent=parent,
-            can_edit=can_edit,
+            contents, node_url=node.url, node_api_url=node.api_url,
+            branch=branch, sha=sha, can_edit=can_edit, parent=path,
         )
     else:
         hgrid_tree = []

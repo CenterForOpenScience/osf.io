@@ -86,7 +86,6 @@ def get_osffiles(*args, **kwargs):
     node_settings = kwargs['node_addon']
     node = node_settings.owner
     user = kwargs['user']
-    parent = request.args.get('parent', 'null')
 
     can_edit = node.can_edit(user) and not node.is_registration
     can_view = node.can_view(user)
@@ -96,6 +95,7 @@ def get_osffiles(*args, **kwargs):
     if can_view:
 
         for name, fid in node.files_current.iteritems():
+
             fobj = NodeFile.load(fid)
             unique, total = get_basic_counters(
                 'download:{0}:{1}'.format(
@@ -103,30 +103,32 @@ def get_osffiles(*args, **kwargs):
                     fobj.path.replace('.', '_')
                 )
             )
-            item = {}
 
-            # URLs
-            item['view'] = fobj.url
-            item['download'] = fobj.api_url
-            item['delete'] = fobj.api_url
+            item = {
+                'kind': 'file',
+                'name': _clean_file_name(fobj.path),
+                'urls': {
+                    'view': fobj.url,
+                    'download': fobj.api_url,
+                    'delete': fobj.api_url,
+                },
+                'permissions': {
+                    'view': True,
+                    'edit': can_edit,
+                },
+                'downloads': total or 0,
+                'size': [
+                    float(fobj.size),
+                    size(fobj.size, system=alternative)
+                ],
+                'dates': {
+                    'modified': [
+                        time.mktime(fobj.date_modified.timetuple()),
+                        fobj.date_modified.strftime('%Y/%m/%d %I:%M %p')
+                    ],
+                }
+            }
 
-            item['can_edit'] = can_edit
-            item['permission'] = can_edit
-
-            item['uid'] = fid
-            item['downloads'] = total if total else 0
-            item['parent_uid'] = parent or 'null'
-            item['type'] = 'file'
-            item['name'] = _clean_file_name(fobj.path)
-            item['ext'] = _clean_file_name(fobj.path.split('.')[-1])
-            item['size'] = [
-                float(fobj.size),
-                size(fobj.size, system=alternative)
-            ]
-            item['dateModified'] = [
-                time.mktime(fobj.date_modified.timetuple()),
-                fobj.date_modified.strftime('%Y/%m/%d %I:%M %p')
-            ]
             info.append(item)
 
     return info

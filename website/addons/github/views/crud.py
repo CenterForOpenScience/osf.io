@@ -16,7 +16,7 @@ from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
 
-from ..api import GitHub, ref_to_params
+from ..api import GitHub, ref_to_params, _build_github_urls
 from .util import MESSAGES
 
 
@@ -202,40 +202,22 @@ def github_upload_file(*args, **kwargs):
             log_date=now,
         )
 
-        ref = urllib.urlencode({
-            'branch': branch,
-        })
-
-        parent_uid = 'github:{0}'.format(github._id)
-        if path:
-            parent_uid += ':' + path
-
-        _, ext = os.path.splitext(filename)
-        ext = ext.lstrip('.')
-
         info = {
+            'addon': 'github',
             'name': filename,
-            'uid': os.path.join('__repo__', data['content']['path']),
-            'parent_uid': parent_uid,
-            'can_edit': True,
-            'ext': ext,
             'size': [
                 data['content']['size'],
                 size(data['content']['size'], system=alternative)
             ],
-            'type': 'file',
-            'download': node.api_url + 'github/file/{0}/'.format(os.path.join(path, filename)),
-            'view': os.path.join(node.url, 'github', 'file', path, filename),
-            'delete': node.api_url + 'github/file/{0}/'.format(data['content']['path']),
-            'data': {
-                'sha': data['content']['sha'],
-                'branch': branch,
-            }
+            'kind': 'file',
+            'urls': _build_github_urls(
+                data['content'], node.url, node.api_url, branch, sha,
+            ),
+            'permissions': {
+                'view': True,
+                'edit': True,
+            },
         }
-
-        info['view'] += '?' + ref
-        info['download'] += '?' + ref
-        info['delete'] += '?' + ref
 
         return [info]
 
@@ -260,7 +242,7 @@ def github_delete_file(*args, **kwargs):
     if sha is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    branch = request.json.get('branch')
+    branch = request.args.get('branch')
 
     author = {
         'name': user.fullname,
