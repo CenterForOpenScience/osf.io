@@ -99,11 +99,11 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/github/hgrid/dummy/',
-                '/project/<pid>/node/<nid>/github/hgrid/dummy/',
+                '/project/<pid>/github/hgrid/root/',
+                '/project/<pid>/node/<nid>/github/hgrid/root/',
             ],
             'get',
-            views.hgrid.github_dummy_folder_public,
+            views.hgrid.github_root_folder_public,
             json_renderer,
         ),
 
