@@ -219,7 +219,7 @@ def github_upload_file(*args, **kwargs):
             },
         }
 
-        return [info]
+        return info, 201
 
     raise HTTPError(http.BAD_REQUEST)
 

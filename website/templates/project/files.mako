@@ -11,32 +11,36 @@
     var gridData = ${grid_data};
 </script>
 
-<!--[if lte IE 9]>
-<script>
-    browserComp = false;
-    var htmlString = "    <form action='" + gridData[0]['uploadUrl'] + "' method='POST' enctype=multipart/form-data>" +
-            "<p><input type=file name=file>" +
-            "<input type=submit value=Upload>" +
-            "<input type='hidden' name='redirect' value='true' />" +
-            "</form>"
-    $('#dropZoneHeader').css('display', 'none');
-    $('#fallback').html(htmlString);
-</script>
-<![endif]-->
 <script>
 
-var extensions = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
-    'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
-    'eml', 'eps', 'exe', 'fla', 'flv', 'gif', 'gz', 'hqx', 'htm', 'html', 'ifo', 'indd', 'iso', 'jar',
-    'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
-    'mpeg', 'mpg', 'msi', 'mswmm', 'ogg', 'pdf', 'png', 'pps', 'ps', 'psd', 'pst', 'ptb', 'pub', 'qbb',
-    'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
-    'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip'];
+  function modFolderView(row, args) {
+    args = args || {};
+    var name = row.name;
+    // The + / - button for expanding/collapsing a folder
+    var expander;
+    if (row._node.children.length > 0 && row.depth > 0 || args.lazyLoad) {
+      expander = row._collapsed ? HGrid.Html.expandElem : HGrid.Html.collapseElem;
+    } else { // Folder is empty
+      expander = '<span></span>';
+    }
+    // Concatenate the expander, folder icon, and the folder name
+    var innerContent = [expander, HGrid.Html.folderIcon, name, HGrid.Html.errorElem].join(' ');
+    return HGrid.Fmt.asItem(row, HGrid.Fmt.withIndent(row, innerContent, args.indent));
+  }
+  var nameColumn = {
+    id: 'name',
+    name: 'Name',
+    sortkey: 'name',
+    cssClass: 'hg-cell',
+    folderView: modFolderView,
+    itemView: HGrid.Columns.defaultItemView,
+    sortable: true
+  };
 
 var grid = new HGrid('#myGrid', {
     data: gridData,
     columns: [
-        HGrid.Col.Name,
+        nameColumn,
         HGrid.Col.ActionButtons
     ],
     fetchUrl: function(row) {
@@ -54,6 +58,20 @@ var grid = new HGrid('#myGrid', {
         return row.urls.upload;
     },
     uploadMethod: 'post',
+    uploadSuccess: function(file, item, data) {
+        // TODO: Move to HGrid or HGrid-OSF
+        data.parentID = item.parentID;
+        this.removeItem(item.id);
+        this.addItem(data);
+    }
+});
+
+// TODO: Move to HGrid callback
+grid.element.on('click', '.hg-item-content', function() {
+    var viewUrl = grid.getByID($(this).attr('data-id')).urls.view;
+    if (viewUrl) {
+        window.location.href = viewUrl;
+    }
 });
 
 // Don't show dropped content if user drags outside grid

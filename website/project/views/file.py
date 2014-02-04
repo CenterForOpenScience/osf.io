@@ -51,7 +51,7 @@ def _collect_file_trees(node, user, parent='null', **kwargs):
     for addon in node.get_addons():
         if addon.config.has_hgrid_files:
             dummy = addon.config.get_hgrid_data(
-                addon, user, parent, **kwargs
+                addon, user, **kwargs
             )
             # Skip if dummy folder is falsy
             if dummy:
