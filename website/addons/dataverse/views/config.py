@@ -66,17 +66,56 @@ def dataverse_set_node_config(*args, **kwargs):
 
 @decorators.must_be_contributor
 @decorators.must_have_addon('dataverse', 'node')
-def set_dataverse(*args, **kwargs):
+def authorize(*args, **kwargs):
 
     user = kwargs['user']
     node_settings = kwargs['node_addon']
 
-    dv_num = request.json.get('dataverse_number')
-    if dv_num:
-        node_settings.dataverse_number = dv_num
-
-    node_settings.study_hdl = request.json.get('study_hdl')
     node_settings.dataverse_username = user.get_addon('dataverse').dataverse_username
+    node_settings.dataverse_password = user.get_addon('dataverse').dataverse_password
+    node_settings.user = user
+
+    node_settings.save()
+
+    return {}
+
+
+@decorators.must_be_contributor
+@decorators.must_have_addon('dataverse', 'node')
+def unauthorize(*args, **kwargs):
+
+    user = kwargs['user']
+    node_settings = kwargs['node_addon']
+    dataverse_user = node_settings.user_settings
+
+    if dataverse_user and dataverse_user.owner != user:
+        raise HTTPError(http.BAD_REQUEST)
+
+    node_settings.dataverse_username = None
+    node_settings.dataverse_password = None
+    node_settings.dataverse_number = 0
+    node_settings.study_hdl = "None"
+    node_settings.user = None
+
+    node_settings.save()
+
+    return {}
+
+
+@decorators.must_be_contributor
+@decorators.must_have_addon('dataverse', 'node')
+def set_dataverse(*args, **kwargs):
+
+    user = kwargs['user']
+    node_settings = kwargs['node_addon']
+    dataverse_user = node_settings.user_settings
+
+    if dataverse_user and dataverse_user.owner != user:
+        raise HTTPError(http.BAD_REQUEST)
+
+    node_settings.dataverse_number = request.json.get('dataverse_number') or node_settings.dataverse_number
+    node_settings.study_hdl = request.json.get('study_hdl')
+
     node_settings.save()
 
     return {}

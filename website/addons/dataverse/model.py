@@ -38,10 +38,11 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
 
 class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
-    dataverse_username = fields.StringField(default="blah")
+    dataverse_username = fields.StringField()
+    dataverse_password = fields.StringField()
     dataverse_number = fields.IntegerField(default=0)
     study_hdl = fields.StringField(default="None")
-    user = fields.StringField()
+    user = fields.ForeignField('user')
 
     user_settings = fields.ForeignField(
         'addondataverseusersettings', backref='authorized'
@@ -50,15 +51,16 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
     def to_json(self, user):
         dataverse_user = user.get_addon('dataverse')
         rv = super(AddonDataverseNodeSettings, self).to_json(user)
-        rv.update(connected=False, authorized_dataverse_user=self.dataverse_username)
-
-        # Make sure user is authorized
-        if dataverse_user is None or dataverse_user.dataverse_username != self.dataverse_username:
-            return rv
+        rv.update({
+                'connected': False,
+                'authorized_dataverse_user': self.dataverse_username,
+                'authorized_user_name': self.user.fullname if self.user else '',
+                'authorized_user_id': self.user._id if self.user else '',
+        })
 
         connection = dataverse_user.connect(
-            dataverse_user.dataverse_username,
-            dataverse_user.dataverse_password
+            self.dataverse_username,
+            self.dataverse_password,
         )
 
         if connection is not None:
@@ -72,10 +74,13 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
             rv.update({
                 'connected': True,
+                'authorized': dataverse_user.dataverse_username == self.dataverse_username,
                 'dataverses': [d.collection.title for d in dataverses],
+                'dataverse': dataverse.collection.title if dataverse else '',
                 'dataverse_number': self.dataverse_number,
                 'studies': [s.get_id() for s in studies],
                 'study_names': [s.get_title() for s in studies],
+                'study': study.get_title() if study else "None",
                 'study_hdl': self.study_hdl,
                 # 'files': [f.name for f in files],
                 'show_submit': False #'hdl' in self.study_hdl

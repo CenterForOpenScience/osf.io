@@ -3,36 +3,52 @@
 <div>
     % if connected:
 
-        <select id="dataverseDropDown">
-            % for i, dv in enumerate(dataverses):
-                % if i == int(dataverse_number):
-                    <option value=${i} selected>${dv}</option>
-                % else:
-                    <option value=${i}>${dv}</option>
-                % endif
-            % endfor
-        </select>
+        % if authorized:
+            <div style="padding-bottom: 10px">
+                <select id="dataverseDropDown" >
+                    % for i, dv in enumerate(dataverses):
+                        % if i == int(dataverse_number):
+                            <option value=${i} selected>${dv}</option>
+                        % else:
+                            <option value=${i}>${dv}</option>
+                        % endif
+                    % endfor
+                </select>
 
-        <select id="studyDropDown">
+                <select id="studyDropDown">
 
-            <option value="None">---</option>
+                    <option value="None">---</option>
 
-            % if len(dataverses) > 0:
-
-                % for i, s in enumerate(studies):
-                    % if s == study_hdl:
-                        <option value=${s} selected>${study_names[i]}</option>
-                    % else:
-                        <option value=${s}>${study_names[i]}</option>
+                    % if len(dataverses) > 0:
+                        % for i, s in enumerate(studies):
+                            % if s == study_hdl:
+                                <option value=${s} selected>${study_names[i]}</option>
+                            % else:
+                                <option value=${s}>${study_names[i]}</option>
+                            % endif
+                        % endfor
                     % endif
-                % endfor
 
-            % endif
+                </select>
 
-        </select>
+            </div>
+
+        % endif
+
         <div>
-            DV: ${dataverse_number} : ${study_hdl}
+            % if study_hdl != "None":
+                This node is linked to the Dataverse study ${study} on ${dataverse}.
+            % else:
+                This node has not yet been linked to a study.
+            % endif
+        </div>
 
+        <div style="padding-bottom: 10px">
+            Authorized by OSF user
+            <a href="${domain}/${authorized_user_id}" target="_blank">
+                ${authorized_user_name}
+            </a>
+            on behalf of Dataverse user ${authorized_dataverse_user}
         </div>
 
 ##        %for file in files:
@@ -41,13 +57,14 @@
 
     % else:
 
-        % if authorized_dataverse_user:
-            This project has been linked to ${authorized_dataverse_user}'s account on the Dataverse.
-        % else:
-            You must have a Dataverse account to access this page.
-        % endif
+        <a id="dataverseAuth" class="btn btn-success">Authorize</a>
 
     % endif
+
+    % if authorized:
+        <a id="dataverseDeauth" class="btn btn-danger" style="padding-top: 10px">Unauthorize</a>
+    % endif
+
 </div>
 
 <script>
@@ -78,6 +95,43 @@
         });
         location.reload(true);
     });
+
+
+    $('#dataverseAuth').on('click', function() {
+        $.ajax({
+            url: nodeApiUrl + 'dataverse/authorize/',
+            type: 'POST',
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function() {
+                window.location.reload();
+            }
+        });
+    });
+
+    $('#dataverseDeauth').on('click', function() {
+            bootbox.confirm(
+                'Are you sure you want to detach your Dataverse access key? This will ' +
+                    'revoke the ability to modify and upload files to the Harvard Dataverse. If ' +
+                    'the associated repo is private, this will also disable viewing ' +
+                    'and downloading files from Dataverse. This will not remove your ' +
+                    'Dataverse authorization from your <a href="/settings/">user settings</a> ' +
+                    'page.',
+                function(result) {
+                    if (result) {
+                        $.ajax({
+                            url: nodeApiUrl + 'dataverse/unauthorize/',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            dataType: 'json',
+                            success: function() {
+                                window.location.reload();
+                            }
+                        });
+                    }
+                }
+            )
+        });
 
 </script>
 
