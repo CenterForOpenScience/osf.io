@@ -120,7 +120,6 @@ def get_hgrid():
     print('Replacing with fresh version')
     run('mkdir {0}'.format(target))
     run('mv hgrid/dist/hgrid.js {0}'.format(target))
-    run('mv hgrid/dist/hgrid.min.js {0}'.format(target))
     run('mv hgrid/dist/hgrid.css {0}'.format(target))
     run('mv hgrid/dist/images {0}'.format(target))
     run('rm -rf hgrid/')

@@ -32,7 +32,7 @@ this.FileBrowser = (function($, HGrid, global) {
     }
     // Concatenate the expander, folder icon, and the folder name
     var innerContent = [expander, HGrid.Html.folderIcon, name].join(' ');
-    return asItem(row, withIndent(row, innerContent, args.indent));
+    return HGrid.Fmt.asItem(row, HGrid.Fmt.withIndent(row, innerContent, args.indent));
   };
 
   hgridOptions = {

@@ -1352,20 +1352,23 @@ if (typeof jQuery === 'undefined') {
     var self = this;
     // if upload url or upload method is a function, call it, passing in the target item,
     // and set dropzone to upload to the result
+    function resolveUrl(url) {
+      return typeof url === 'function' ? url.call(self, item) : url;
+    }
     if (self.currentTarget) {
-      this.dropzone.options.accept = function(file, done) {
-        $.when(
-          typeof(self.options.uploadUrl) === 'function' ? self.options.uploadUrl.call(self, item) : self.options.uploadUrl,
-          self.options.uploadMethod.call(self, item)
-        ).done(function(uploadUrl, uploadMethod) {
-          self.dropzone.options.url = uploadUrl;
-          self.dropzone.options.method = uploadMethod;
-        });
+      $.when(
+        resolveUrl(self.options.uploadUrl),
+        resolveUrl(self.options.uploadMethod)
+      ).done(function(uploadUrl, uploadMethod) {
+        self.dropzone.options.url = uploadUrl;
+        self.dropzone.options.method = uploadMethod;
         if (self.options.uploadAccept) {
           // Override dropzone accept callback. Just calls options.uploadAccept with the right params
+          self.dropzone.options.accept = function(file, done) {
             return self.options.uploadAccept.call(self, file, item, done);
+          };
         }
-      }
+      });
     }
   };
 
@@ -1509,11 +1512,13 @@ if (typeof jQuery === 'undefined') {
     // Attach extra listeners from options.listeners
     var userCallback = function(evt) {
       var row = self.getItemFromEvent(evt);
-      return evt.data.listenerObj.callback.call(self, evt, row);
+      return evt.data.listenerObj.callback(evt, row, evt.data.grid);
     };
+    // TODO: test me
     for (var i = 0, listener; listener = this.options.listeners[i]; i++) {
       self.element.on(listener.on, listener.selector, {
-        listenerObj: listener
+        listenerObj: listener,
+        grid: self
       }, userCallback);
     }
     this.attachActionListeners();
