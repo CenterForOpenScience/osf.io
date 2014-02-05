@@ -47,7 +47,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             HGrid.Col.ActionButtons
         ],
         width: '100%',
-        height: 700,
+        height: 600,
         fetchUrl: function(row) {
             return row.urls.fetch;
         },
