@@ -83,6 +83,7 @@ def github_hgrid_data(node_settings, auth, parent=None, contents=False, *args, *
             'fetch': node_settings.owner.api_url + 'github/hgrid/' + ref,
             'branch': node_settings.owner.api_url + 'github/hgrid/root/',
         },
+        'hasIcon': True,
         'permissions': {
             'view': True,
             'edit': can_edit,

@@ -5,7 +5,24 @@
 this.FileBrowser = (function($, HGrid, bootbox) {
     var tpl = HGrid.Fmt.tpl;
 
-    HGrid.Col.ActionButtons.itemView = function(row) {
+    // Can't use microtemplate because microtemplate escapes html
+    // Necessary for rendering, e.g. the github branch picker
+    HGrid.Col.Name.folderView = function(item) {
+        if (item.hasIcon)
+            return '<img class="hg-addon" src="/addons/static/' + item.addon + '/comicon.png">' +
+                item.name;
+        else
+            return HGrid.Html.folderIcon + item.name;
+    };
+
+    HGrid.Col.Name.itemView = function(item) {
+        var ext = item.name.split('.').pop().toLowerCase();
+        return HGrid.Extentions.indexOf(ext) == -1 ?
+            HGrid.Html.fileIcon + item.name:
+            HGrid.ExtentionSkeleton.replace('{{ext}}', ext) + item.name;
+    };
+
+    HGrid.Col.ActionButtons.itemView = function() {
       var buttonDefs = [{
           text: '<i class="icon-download-alt icon-white"></i>',
           action: 'download',
