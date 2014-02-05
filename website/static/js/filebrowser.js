@@ -79,6 +79,14 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             var cfgOption = resolveCfgOption.call(this, row, 'uploadSending', [file, row, xhr, formData]);
             return cfgOption || null;
         },
+        uploadSuccess: function(file, row, data) {
+            // Update the row with the returned server data
+            // This is necessary for the download and delete button to work.
+            $.extend(row, data[0]);
+            this.updateItem(row);
+            var cfgOption = resolveCfgOption.call(this, row, 'uploadSuccess', [file, row, data]);
+            return cfgOption || null;
+        },
         listeners: [
             // Go to file's detail page if name is clicked
             {
