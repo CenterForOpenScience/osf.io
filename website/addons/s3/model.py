@@ -86,7 +86,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             node, registration, user, save=False
         )
 
-        enable_versioning(self)
+        #enable_versioning(self)
 
         if self.bucket and self.has_auth:
             clone.registration_data['bucket'] = self.bucket
@@ -109,8 +109,8 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             return (
                 'Registering {cat} "{title}" will copy the authentication for its '
                 'Amazon Simple Storage add-on to the registered {cat}. '
-                'As well as turning versioning on in your bucket,'
-                'which may result in larger charges from Amazon'
+               # 'As well as turning versioning on in your bucket,'
+               # 'which may result in larger charges from Amazon'
             ).format(
                 cat=node.project_or_component,
                 title=node.title,
