@@ -16,3 +16,12 @@
 .btn-delete {
     color: #666666;
 }
+
+.btn-delete:hover {
+    text-decoration: none;
+}
+
+.hg-item-name:hover {
+    text-decoration: underline !important;
+    cursor: pointer;
+}
