@@ -1182,7 +1182,7 @@ this.HGrid = (function($, window, document, undefined) {
         if (typeof showExpander === 'function' && showExpander(item, rendererArgs)) {
           expander = item._collapsed ? HGrid.Html.expandElem : HGrid.Html.collapseElem;
         } else {
-          expander = '<span></span>';
+          expander = '<span style="width:16px;height:1px;display:inline-block;"></span>';
         }
         html = [expander, html].join('');
       }
