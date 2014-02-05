@@ -577,7 +577,8 @@ this.HGrid = (function($, window, document, undefined) {
    * @return {String}      The rendered HTML
    */
   function asName(item, html) {
-    var openTag = '<span class="' + HGrid.Html.itemClass + '" data-id="' + item.id + '">';
+    var cssClass = item.kind === FOLDER ? HGrid.Html.folderNameClass : HGrid.Html.itemNameClass;
+    var openTag = '<span class="' + HGrid.Html.nameClass +  ' ' + cssClass + '" data-id="' + item.id + '">';
     var closingTag = '</span>';
     return [openTag, html, closingTag].join('');
   }
@@ -644,7 +645,9 @@ this.HGrid = (function($, window, document, undefined) {
     errorElem: '&nbsp;<span class="error" data-upload-errormessage></span>',
     // CSS Classes
     buttonClass: 'hg-btn',
-    itemClass: 'hg-item-content',
+    nameClass: 'hg-name',
+    folderNameClass: 'hg-folder-name',
+    itemNameClass: 'hg-item-name',
     toggleClass: 'hg-toggle'
   };
 
