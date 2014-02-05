@@ -33,15 +33,6 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         return '';
     };
 
-    function resolveCfgOption(row, option, args) {
-        var prop = FileBrowser.getCfg(row, option);
-        if (prop) {
-            return typeof prop === 'function' ? prop.apply(this, args) : prop;
-        } else {
-            return null;
-        }
-    }
-
     // OSF-specific HGrid options common to all addons
     baseOptions = {
         /*jshint unused: false */
@@ -71,21 +62,21 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         deleteMethod: 'delete',
         uploads: true,
         uploadUrl: function(row) {
-            var cfgOption = resolveCfgOption(row, 'uploadUrl', [row]);
+            var cfgOption = resolveCfgOption.call(this, row, 'uploadUrl', [row]);
             return cfgOption || row.urls.upload;
         },
         uploadAdded: function(file, row) {
             var parent = this.getByID(row.parentID);
             row.addon = parent.addon;
-            var cfgOption = resolveCfgOption(row, 'uploadAdded', [file, row]);
+            var cfgOption = resolveCfgOption.call(this, row, 'uploadAdded', [file, row]);
             return cfgOption || null;
         },
         uploadMethod: function(row) {
-            var cfgOption = resolveCfgOption(row, 'uploadMethod', [row]);
+            var cfgOption = resolveCfgOption.call(this, row, 'uploadMethod', [row]);
             return cfgOption || 'post';
         },
         uploadSending: function(file, row, xhr, formData) {
-            var cfgOption = resolveCfgOption(row, 'uploadSending', [file, row, xhr, formData]);
+            var cfgOption = resolveCfgOption.call(this, row, 'uploadSending', [file, row, xhr, formData]);
             return cfgOption || null;
         },
         listeners: [
@@ -148,6 +139,19 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         }
         return undefined;
     };
+
+    // Gets a FileBrowser config option if it is defined by an addon dev.
+    // Calls it with `args` if it's a function otherwise returns the value.
+    // If the config option is not defined, return null
+    function resolveCfgOption(row, option, args) {
+        var self = this;
+        var prop = FileBrowser.getCfg(row, option);
+        if (prop) {
+            return typeof prop === 'function' ? prop.apply(self, args) : prop;
+        } else {
+            return null;
+        }
+    }
 
     FileBrowser.prototype = {
         constructor: FileBrowser,
