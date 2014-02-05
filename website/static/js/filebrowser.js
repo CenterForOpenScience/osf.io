@@ -65,9 +65,13 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             var cfgOption = resolveCfgOption.call(this, row, 'uploadUrl', [row]);
             return cfgOption || row.urls.upload;
         },
-        uploadAdded: function(file, row) {
+
+        uploadAdded: function(file, row, folder) {
+            // Need to set the added row's addon for other callbacks to work
             var parent = this.getByID(row.parentID);
             row.addon = parent.addon;
+            // expand the folder
+            this.expandItem(folder);
             var cfgOption = resolveCfgOption.call(this, row, 'uploadAdded', [file, row]);
             return cfgOption || null;
         },
@@ -79,11 +83,19 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             var cfgOption = resolveCfgOption.call(this, row, 'uploadSending', [file, row, xhr, formData]);
             return cfgOption || null;
         },
+        uploadSuccess: function(file, row, data) {
+            // Update the row with the returned server data
+            // This is necessary for the download and delete button to work.
+            $.extend(row, data[0]);
+            this.updateItem(row);
+            var cfgOption = resolveCfgOption.call(this, row, 'uploadSuccess', [file, row, data]);
+            return cfgOption || null;
+        },
         listeners: [
             // Go to file's detail page if name is clicked
             {
                 on: 'click',
-                selector: '.hg-item-content',
+                selector: '.' + HGrid.Html.nameClass,
                 callback: function(evt, row, grid) {
                     if (row) {
                         var viewUrl = grid.getByID(row.id).urls.view;
@@ -93,8 +105,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
                     }
                 }
             },
-            {
-                on: 'click', selector: '.confirm',
+            {on: 'click', selector: '.confirm',
                 callback: function(evt, row, grid) {
                     if (row) {
                         grid.deleteFile(row, {

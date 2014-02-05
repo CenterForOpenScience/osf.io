@@ -1402,25 +1402,29 @@ this.HGrid = (function($, window, document, undefined) {
 
   /**
    * Update the dropzone object's options dynamically. Lazily updates the
-   * upload url, method, etc.
+   * upload url, method, maxFilesize, etc.
    * @method  setUploadTarget
    */
   HGrid.prototype.setUploadTarget = function(item) {
     var self = this;
     // if upload url or upload method is a function, call it, passing in the target item,
     // and set dropzone to upload to the result
-    function resolveParam(url) {
-      return typeof url === 'function' ? url.call(self, item) : url;
+    function resolveParam(param) {
+      return typeof param === 'function' ? param.call(self, item) : param;
     }
     if (self.currentTarget) {
       $.when(
         resolveParam(self.options.uploadHeaders),
         resolveParam(self.options.uploadUrl),
-        resolveParam(self.options.uploadMethod)
-      ).done(function(uploadHeaders, uploadUrl, uploadMethod) {
+        resolveParam(self.options.uploadMethod),
+        resolveParam(self.options.maxFilesize),
+        resolveParam(self.options.acceptedFiles)
+      ).done(function(uploadHeaders, uploadUrl, uploadMethod, maxFilesize, acceptedFiles) {
         self.dropzone.options.headers = uploadHeaders;
         self.dropzone.options.url = uploadUrl;
         self.dropzone.options.method = uploadMethod;
+        self.dropzone.options.maxFilesize = maxFilesize;
+        self.setAcceptedFiles(acceptedFiles);
         if (self.options.uploadAccept) {
           // Override dropzone accept callback. Just calls options.uploadAccept with the right params
           self.dropzone.options.accept = function(file, done) {
@@ -1698,6 +1702,17 @@ this.HGrid = (function($, window, document, undefined) {
     previewTemplate: '<div></div>' // just a dummy template because dropzone requires it
   };
 
+  HGrid.prototype.setAcceptedFiles = function(fileTypes) {
+    var acceptedFiles;
+    if (Array.isArray(fileTypes)) {
+      acceptedFiles = fileTypes.join(',');
+    } else {
+      acceptedFiles = fileTypes;
+    }
+    this.dropzone.options.acceptedFiles = acceptedFiles;
+    return this;
+  };
+
   /**
    * Builds a new DropZone object and attaches it the "dropzone" attribute of
    * the grid.
@@ -1705,7 +1720,7 @@ this.HGrid = (function($, window, document, undefined) {
    * @private
    */
   HGrid.prototype._initDropzone = function() {
-    var uploadUrl, uploadMethod, headers;
+    var uploadUrl, uploadMethod, headers, acceptedFiles = null;
     // If a param is a string, return that, otherwise the param is a function,
     // so the value will be computed later.
     function resolveParam(param, fallback){
@@ -1714,13 +1729,16 @@ this.HGrid = (function($, window, document, undefined) {
     uploadUrl = resolveParam(this.options.uploadUrl, '/');
     uploadMethod = resolveParam(this.options.uploadMethod, 'POST');
     headers = resolveParam(this.options.uploadHeaders, {});
+    acceptedFiles = resolveParam(this.options.acceptedFiles, null);
+    if (Array.isArray(acceptedFiles)){
+      acceptedFiles = acceptedFiles.join(',');
+    }
     // Build up the options object, combining the HGrid options, required options,
     // and additional options
     var dropzoneOptions = $.extend({}, {
         url: uploadUrl,
         // Dropzone expects comma separated list
-        acceptedFiles: this.options.acceptedFiles ?
-          this.options.acceptedFiles.join(',') : null,
+        acceptedFiles: acceptedFiles,
         maxFilesize: this.options.maxFilesize,
         method: uploadMethod,
         headers: headers

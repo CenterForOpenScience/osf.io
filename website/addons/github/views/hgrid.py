@@ -3,7 +3,7 @@ import logging
 from mako.template import Template
 
 from framework import request
-from framework.auth import get_current_user
+from framework.auth.decorators import Auth
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
@@ -62,10 +62,10 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
     )
 
     if branch is not None:
-
+        auth = Auth(user=node_settings.user)
         ref = ref_to_params(branch, sha)
         can_edit = _check_permissions(
-            node_settings, user, connection, branch, sha
+            node_settings, auth, connection, branch, sha
         )
         name_append = github_branch_widget(branches, branch, sha)
     else:
@@ -73,7 +73,6 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
         ref = None
         can_edit = False
         name_append = None
-
     rv = {
         'addon': 'github',
         'name': 'GitHub: {0}/{1} {2}'.format(
@@ -95,16 +94,16 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
         }
     }
 
-    if False:
-        if sha is None:
-            branch, sha, branches = _get_refs(
-                node_settings, branch, sha, connection=connection
-            )
-        tree = _get_tree(node_settings, sha, connection)
-        node_url = node_settings.owner.url
-        api_url = node_settings.owner.api_url
-        rv['children'] = to_hgrid(tree, node_url=node_url, node_api_url=api_url,
-            branch=branch, sha=sha)
+    # if False:#contents:
+    #     if sha is None:
+    #         branch, sha, branches = _get_refs(
+    #             node_settings, branch, sha, connection=connection
+    #         )
+    #     tree = _get_tree(node_settings, sha, connection)
+    #     node_url = node_settings.owner.url
+    #     api_url = node_settings.owner.api_url
+    #     rv['children'] = to_hgrid(tree, node_url=node_url, node_api_url=api_url,
+    #         branch=branch, sha=sha)
     return rv
 
 
@@ -117,9 +116,10 @@ def github_root_folder_public(*args, **kwargs):
 
     """
     node_settings = kwargs['node_addon']
-    user = get_current_user()
+    auth = kwargs['auth']
     data = request.args.to_dict()
-    return github_hgrid_data(node_settings, user=user, contents=False, **data)
+    parent = data.pop('parent', 'null')
+    return github_hgrid_data(node_settings, auth, parent, contents=False, **data)
 
 
 def _get_tree(node_settings, sha, connection=None):
@@ -137,7 +137,7 @@ def github_hgrid_data_contents(*args, **kwargs):
     """Return a repo's file tree as a dict formatted for HGrid.
 
     """
-    user = kwargs['user']
+    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
     node_addon = kwargs['node_addon']
     path = kwargs.get('path', '')
@@ -154,7 +154,9 @@ def github_hgrid_data_contents(*args, **kwargs):
         user=node_addon.user, repo=node_addon.repo, path=path,
         ref=sha or branch,
     )
-    can_edit = _check_permissions(node_addon, user, connection, branch, sha)
+
+    can_edit = _check_permissions(node_addon, auth, connection, branch, sha)
+
     if contents:
         hgrid_tree = to_hgrid(
             contents, node_url=node.url, node_api_url=node.api_url,

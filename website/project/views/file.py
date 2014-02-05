@@ -7,7 +7,6 @@ import json
 import codecs
 
 from framework.flask import request
-from framework.auth import get_current_user
 
 from framework.render.tasks import build_rendered_html
 from website.project.decorators import must_be_contributor_or_public
@@ -15,13 +14,13 @@ from website.project.views.node import _view_project
 from website import settings
 
 
-def _get_dummy_container(node, user, parent=None):
+def _get_dummy_container(node, auth, parent=None):
     """Create HGrid JSON for a dummy component container.
 
     :return dict: HGrid-formatted dummy container
 
     """
-    can_view = node.can_view(user)
+    can_view = node.can_view(auth)
     return {
         'uid': 'node:{0}'.format(node._id),
         'parent_uid': parent if parent else 'null',
@@ -29,7 +28,7 @@ def _get_dummy_container(node, user, parent=None):
             if can_view
             else 'Private Component',
         'type': 'folder',
-        'can_edit': node.can_edit(user) if can_view else False,
+        'can_edit': node.can_edit(auth) if can_view else False,
         'can_view': can_view,
         # Can never drag into component dummy folder
         'permission': False,
@@ -37,7 +36,7 @@ def _get_dummy_container(node, user, parent=None):
     }
 
 
-def _collect_file_trees(node, user, parent='null', **kwargs):
+def _collect_file_trees(node, auth, parent='null', **kwargs):
     """Collect file trees for all add-ons implementing HGrid views. Create
     dummy containers for each child of the target node, and for each add-on
     implementing HGrid views.
@@ -51,7 +50,7 @@ def _collect_file_trees(node, user, parent='null', **kwargs):
     for addon in node.get_addons():
         if addon.config.has_hgrid_files:
             dummy = addon.config.get_hgrid_data(
-                addon, user, **kwargs
+                addon, auth, **kwargs
             )
             # Skip if dummy folder is falsy
             if dummy:
@@ -62,7 +61,7 @@ def _collect_file_trees(node, user, parent='null', **kwargs):
     # Collect component file trees
     for child in node.nodes:
         if not child.is_deleted:
-            container = _get_dummy_container(child, user, parent)
+            container = _get_dummy_container(child, auth, parent)
             grid_data.append(container)
 
     return grid_data
@@ -88,12 +87,12 @@ def collect_file_trees(*args, **kwargs):
     """
     node = kwargs['node'] or kwargs['project']
     mode = kwargs.get('mode')
-    user = get_current_user()
+    auth = kwargs['auth']
     data = request.args.to_dict()
 
-    grid_data = _collect_file_trees(node, user, **data)
+    grid_data = _collect_file_trees(node, auth, **data)
     if mode == 'page':
-        rv = _view_project(node, user)
+        rv = _view_project(node, auth)
         rv.update({
             'grid_data': json.dumps(grid_data),
             'tree_js': _collect_tree_js(node),
