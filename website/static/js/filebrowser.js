@@ -106,7 +106,12 @@ this.FileBrowser = (function($, HGrid, bootbox) {
                     }
                 }
             }
-        ]
+        ],
+        init: function() {
+            var self = this;
+            // Expand all first level items
+            this.getData().forEach(function(item) {self.expandItem(item);});
+        }
     };
 
     // Public API
