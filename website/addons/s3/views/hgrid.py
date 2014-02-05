@@ -15,6 +15,7 @@ def s3_hgrid_data(node_settings, user, parent=None, **kwargs):
 
     rv = {
         'addon': 's3',
+        'hasIcon': True,
         'name': 'Amazon S3: {0}'.format(
             node_settings.bucket
         ),
