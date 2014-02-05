@@ -102,3 +102,16 @@ class TestCallbacks(DbTestCase):
             self.project, self.project.creator
         )
         assert_equal(self.node_settings.user_settings, None)
+
+    @mock.patch('website.addons.s3.model.serialize_bucket')
+    @mock.patch('website.addons.s3.model.S3Wrapper.from_addon')
+    @mock.patch('website.addons.s3.model.enable_versioning')
+    def test_registration_settings(self, mock_wrapper, mock_bucket, mock_versioning):
+        mock_versioning.return_value = True
+        mock_wrapper.return_value = None
+        mock_bucket.return_value = {'Not None': 'None'}
+        fork = ProjectFactory()
+        clone, message = self.node_settings.after_register(
+            self.project, fork, self.project.creator,
+        )
+        assert_true(clone.user_settings)

@@ -1,7 +1,7 @@
 from api import S3Key,  get_bucket_list
 from urllib import quote
 from datetime import datetime
-from settings import CORS_RULE
+from settings import CORS_RULE_UPLOAD, CORS_RULE_VIEW, ALLOWED_ORIGIN
 import re
 
 URLADDONS = {
@@ -15,9 +15,11 @@ URLADDONS = {
 def adjust_cors(s3wrapper):
     rules = s3wrapper.get_cors_rules()
 
-    if not [rule for rule in rules if rule.to_xml() == CORS_RULE]:
-        rules.add_rule('PUT', '*', allowed_header={
+    if not [rule for rule in rules if rule.to_xml() == CORS_RULE_UPLOAD]:
+        rules.add_rule('PUT', ALLOWED_ORIGIN, allowed_header={
                        'Authorization', 'Content-Type', 'x-amz-acl', 'origin'})
+    if not [rule for rule in rules if rule.to_xml() == CORS_RULE_VIEW]:
+        rules.add_rule('GET', ALLOWED_ORIGIN, allowed_header={'Content-Disposition'})
         s3wrapper.set_cors_rules(rules)
 
 
