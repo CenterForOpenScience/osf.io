@@ -83,7 +83,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             // Go to file's detail page if name is clicked
             {
                 on: 'click',
-                selector: '.hg-item-content',
+                selector: '.' + HGrid.Html.nameClass,
                 callback: function(evt, row, grid) {
                     if (row) {
                         var viewUrl = grid.getByID(row.id).urls.view;
@@ -93,8 +93,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
                     }
                 }
             },
-            {
-                on: 'click', selector: '.confirm',
+            {on: 'click', selector: '.confirm',
                 callback: function(evt, row, grid) {
                     if (row) {
                         grid.deleteFile(row, {
