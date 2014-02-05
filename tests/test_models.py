@@ -166,7 +166,7 @@ class TestUser(DbTestCase):
         project = ProjectFactory()
 
         assert_true(hasattr(self.user, 'recently_added'))
-        
+
         # Two users added as contributors
         user2 = UserFactory()
         user3 = UserFactory()
@@ -336,7 +336,7 @@ class TestNodeFile(DbTestCase):
 
     def test_download_url(self):
         assert_equal(self.node_file.download_url,
-            self.node.api_url + 'osffiles/{0}/version/1/'.format(self.node_file.filename))
+            '/{0}/osffiles/download/{1}/version/1/'.format(self.node._id, self.node_file.filename))
 
 
 class TestAddFile(DbTestCase):
@@ -851,14 +851,14 @@ class TestProject(DbTestCase):
         hash_id = hashlib.md5(nr_user['email']).hexdigest()
         self.project.remove_nonregistered_contributor(
             auth=self.consolidate_auth,
-            name=nr_user['name'], 
+            name=nr_user['name'],
             hash_id=hash_id,
         )
         # List does not contain nonregistered contributor
         assert_not_in(nr_user, self.project.contributors)
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
         assert_not_in('Weezy F. Baby', [contrib.get('nr_name') for contrib in self.project.contributor_list])
-        
+
     def test_set_title(self):
         proj = ProjectFactory(title='That Was Then', creator=self.user)
         proj.set_title('This is now', auth=self.consolidate_auth)

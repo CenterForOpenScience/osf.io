@@ -3,7 +3,6 @@ import logging
 from mako.template import Template
 
 from framework import request
-from framework.auth import get_current_user
 from framework.auth.decorators import Auth
 
 from website.project.decorators import must_be_contributor_or_public
