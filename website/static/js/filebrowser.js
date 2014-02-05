@@ -126,7 +126,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
     FileBrowser.cfg = {};
 
     FileBrowser.getCfg = function(row, key) {
-        if (this.cfg[row.addon]){
+        if (row && row.addon && this.cfg[row.addon]){
             return this.cfg[row.addon][key];
         }
         return undefined;
