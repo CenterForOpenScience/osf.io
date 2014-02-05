@@ -9,7 +9,6 @@
 </div> -->
 <div id="myGrid" class="hgrid"></div>
 
-
 </%def>
 
 <%def name="stylesheets()">

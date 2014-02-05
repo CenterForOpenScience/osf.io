@@ -74,7 +74,6 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
         ref = None
         can_edit = False
         name_append = None
-
     rv = {
         'addon': 'github',
         'name': 'GitHub: {0}/{1} {2}'.format(
@@ -96,17 +95,16 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
         }
     }
 
-    if False:#contents:
-        if sha is None:
-            branch, sha, branches = _get_refs(
-                node_settings, branch, sha, connection=connection
-            )
-        tree = _get_tree(node_settings, sha, connection)
-        node_url = node_settings.owner.url
-        api_url = node_settings.owner.api_url
-        rv['children'] = to_hgrid(tree, node_url=node_url, node_api_url=api_url,
-            branch=branch, sha=sha)
-
+    # if False:#contents:
+    #     if sha is None:
+    #         branch, sha, branches = _get_refs(
+    #             node_settings, branch, sha, connection=connection
+    #         )
+    #     tree = _get_tree(node_settings, sha, connection)
+    #     node_url = node_settings.owner.url
+    #     api_url = node_settings.owner.api_url
+    #     rv['children'] = to_hgrid(tree, node_url=node_url, node_api_url=api_url,
+    #         branch=branch, sha=sha)
     return rv
 
 
@@ -160,6 +158,7 @@ def github_hgrid_data_contents(*args, **kwargs):
     )
 
     can_edit = _check_permissions(node_addon, auth, connection, branch, sha)
+
     if contents:
         hgrid_tree = to_hgrid(
             contents, node_url=node.url, node_api_url=node.api_url,

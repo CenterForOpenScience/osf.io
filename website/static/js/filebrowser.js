@@ -162,7 +162,6 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             return null;
         }
     }
-
     FileBrowser.prototype = {
         constructor: FileBrowser,
         init: function() {
