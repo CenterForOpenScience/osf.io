@@ -5,6 +5,7 @@ from boto.s3.connection import *
 from tests.base import DbTestCase
 from tests.factories import UserFactory, ProjectFactory
 
+from framework.auth.decorators import Auth
 from website.addons.s3.model import AddonS3NodeSettings, AddonS3UserSettings
 
 
@@ -18,7 +19,7 @@ class TestCallbacks(DbTestCase):
         self.non_authenticator = UserFactory()
         self.project.add_contributor(
             contributor=self.non_authenticator,
-            user=self.project.creator,
+            auth=Auth(self.project.creator),
         )
         self.project.save()
 
@@ -86,9 +87,7 @@ class TestCallbacks(DbTestCase):
 
     @mock.patch('website.addons.s3.model.serialize_bucket')
     @mock.patch('website.addons.s3.model.S3Wrapper.from_addon')
-    @mock.patch('website.addons.s3.model.enable_versioning')
-    def test_registration(self, mock_wrapper, mock_bucket, mock_versioning):
-        mock_versioning.return_value = True
+    def test_registration(self, mock_wrapper, mock_bucket):
         mock_wrapper.return_value = None
         mock_bucket.return_value = {'Not None': 'None'}
         fork = ProjectFactory()
@@ -105,9 +104,7 @@ class TestCallbacks(DbTestCase):
 
     @mock.patch('website.addons.s3.model.serialize_bucket')
     @mock.patch('website.addons.s3.model.S3Wrapper.from_addon')
-    @mock.patch('website.addons.s3.model.enable_versioning')
-    def test_registration_settings(self, mock_wrapper, mock_bucket, mock_versioning):
-        mock_versioning.return_value = True
+    def test_registration_settings(self, mock_wrapper, mock_bucket):
         mock_wrapper.return_value = None
         mock_bucket.return_value = {'Not None': 'None'}
         fork = ProjectFactory()
