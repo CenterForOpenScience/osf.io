@@ -10,7 +10,7 @@
 
 <%def name="stylesheets()">
 <link rel="stylesheet" href="/static/vendor/hgrid/hgrid.css" type="text/css" />
-<link rel="stylesheet" href="/static/vendor/hgrid/osf-hgrid.css" type="text/css" />
+<link rel="stylesheet" href="/static/css/osf-hgrid.css" type="text/css" />
 </%def>
 
 <%def name="javascript()">
