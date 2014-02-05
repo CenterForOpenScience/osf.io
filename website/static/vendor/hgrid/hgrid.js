@@ -3,18 +3,15 @@
  *  A Javascript-based hierarchical grid that can be used to manage and organize files and folders
  */
 /**
- * Provides the main HGrid class and HGridError.
+ * Provides the main HGrid class and HGrid.Error.
  * @module HGrid
  */
 ; // jshint ignore: line
 if (typeof jQuery === 'undefined') {
   throw new Error('HGrid requires jQuery to be loaded');
 }
-(function($, window, document, undefined) {
+this.HGrid = (function($, window, document, undefined) {
   'use strict';
-  // Exports
-  window.HGrid = HGrid;
-  window.HGridError = HGridError;
 
   var DEFAULT_INDENT = 20;
   var ROOT_ID = 'root';
@@ -243,7 +240,7 @@ if (typeof jQuery === 'undefined') {
    */
   Tree.prototype.updateDataView = function(onlySetItems) {
     if (!this.dataView) {
-      throw new HGridError('Tree does not have a DataView. updateDataView must be called on a root node.');
+      throw new HGrid.Error('Tree does not have a DataView. updateDataView must be called on a root node.');
     }
     if (!onlySetItems) {
       this.ensureDataView();
@@ -580,7 +577,8 @@ if (typeof jQuery === 'undefined') {
    * @return {String}      The rendered HTML
    */
   function asName(item, html) {
-    var openTag = '<span class="' + HGrid.Html.itemClass + '" data-id="' + item.id + '">';
+    var cssClass = item.kind === FOLDER ? HGrid.Html.folderNameClass : HGrid.Html.itemNameClass;
+    var openTag = '<span class="' + HGrid.Html.nameClass +  ' ' + cssClass + '" data-id="' + item.id + '">';
     var closingTag = '</span>';
     return [openTag, html, closingTag].join('');
   }
@@ -588,12 +586,13 @@ if (typeof jQuery === 'undefined') {
   /**
    * Render the html for a button, given an item and buttonDef. buttonDef is an
    * object of the form {text: "My button", cssClass: "btn btn-primary",
-   *                     onClick: function(evt, item) {alert(item.name); }}
+   *                     action: "download" }}
    * @class  renderButton
    * @private
    */
   function renderButton(buttonDef) {
     var cssClass;
+    var tag = buttonDef.tag || 'button';
     // For now, buttons are required to have the hg-btn class so that a click
     // event listener can be attacked to them later
     if (buttonDef.cssClass) {
@@ -602,9 +601,9 @@ if (typeof jQuery === 'undefined') {
       cssClass = HGrid.Html.buttonClass;
     }
     var action = buttonDef.action || 'noop';
-    var openTag = '<button data-hg-action="' + action + '" class="' + cssClass + '">';
-    var closingTag = '</button>';
-    var html = [openTag, buttonDef.text, closingTag].join('');
+    var data = {action: action, cssClass: cssClass, tag: tag, text: buttonDef.text};
+    var html = tpl('<{{tag}} data-hg-action="{{action}}" class="{{cssClass}}">{{text}}</{{tag}}>',
+      data);
     return html;
   }
 
@@ -630,7 +629,7 @@ if (typeof jQuery === 'undefined') {
       .replace(/\n/g, "\\n")
       .replace(/\r/g, "\\r")
       .replace(/'/g, "\\'")
-      .replace(/\{\{\s*(\w+)\s*\}\}/g, "'+(_.$1?(_.$1+'').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):(_.$1===0?0:''))+'") + "'"
+      .replace(/\{\{\s*(\w+)\s*\}\}/g, "'+(_.$1?(_.$1+''):(_.$1===0?0:''))+'") + "'"
     );
     return tpl_fn_cache[template](data);
   };
@@ -646,7 +645,9 @@ if (typeof jQuery === 'undefined') {
     errorElem: '&nbsp;<span class="error" data-upload-errormessage></span>',
     // CSS Classes
     buttonClass: 'hg-btn',
-    itemClass: 'hg-item-content',
+    nameClass: 'hg-name',
+    folderNameClass: 'hg-folder-name',
+    itemNameClass: 'hg-item-name',
     toggleClass: 'hg-toggle'
   };
 
@@ -706,7 +707,8 @@ if (typeof jQuery === 'undefined') {
       isName: true,
       showExpander: function(item, args) {
         return item.kind === HGrid.FOLDER &&
-                (item._node.children.length && item.depth || args.lazyLoad);
+                (item._node.children.length && item.depth || args.lazyLoad) &&
+                !item._processing;
       }
     },
 
@@ -830,6 +832,10 @@ if (typeof jQuery === 'undefined') {
      */
     uploadMethod: 'POST',
     /**
+     * Additional headers to send with upload requests.
+     */
+    uploadHeaders: {},
+    /**
      * Additional options passed to DropZone constructor
      * See: http://www.dropzonejs.com/
      * @property [dropzoneOptions]
@@ -847,7 +853,6 @@ if (typeof jQuery === 'undefined') {
       this.downloadItem(item, options);
     },
     onClickDelete: function(event, item, options) {
-      this.removeItem(item.id);
       this.deleteFile(item, options);
     },
     onClickUpload: function(event, item, options) {
@@ -877,8 +882,9 @@ if (typeof jQuery === 'undefined') {
      * Called whenever a file is added for uploaded
      * @param  {Object} file The file object. Has gridElement and gridItem bound to it.
      * @param  {Object} item The added item
+     * @param {Object} folder The folder item being uploaded to
      */
-    uploadAdded: function(file, item) {},
+    uploadAdded: function(file, item, folder) {},
     /**
      * Called whenever a file gets processed.
      * @property {Function} [uploadProcessing]
@@ -1003,14 +1009,14 @@ if (typeof jQuery === 'undefined') {
   /**
    * Custom Error for HGrid-related errors.
    *
-   * @class  HGridError
+   * @class  HGrid.Error
    * @constructor
    */
-  function HGridError(message) {
-    this.name = 'HGridError';
+  HGrid.Error = function(message) {
+    this.name = 'HGrid.Error';
     this.message = message || '';
-  }
-  HGridError.prototype = new Error();
+  };
+  HGrid.Error.prototype = new Error();
 
   /**
    * Construct an HGrid.
@@ -1033,7 +1039,7 @@ if (typeof jQuery === 'undefined') {
       if ($searchInput.length) {
         self.searchInput = $searchInput;
       } else {
-        throw new HGridError('Invalid selector for searchInput.');
+        throw new HGrid.Error('Invalid selector for searchInput.');
       }
     } else {
       self.searchInput = null;
@@ -1052,19 +1058,21 @@ if (typeof jQuery === 'undefined') {
 
   /**
    * Collapse all folders
-   * @return {[type]} [description]
+   * @method  collapseAll
    */
   HGrid.prototype.collapseAll = function() {
     this.tree.collapseAt(1, true);
+    return this;
   };
 
   /**
    * Remove a folder's contents from the grid.
+   * @method  emptyFolder
    * @param  {Object} item The folder item to empty.
+   * @param {Boolean} [removeFolder] Also remove the folder.
    */
   HGrid.prototype.emptyFolder = function(item, removeFolder) {
     item = typeof item === 'object' ? item : this.getByID(item);
-    // TODO: add removeFolder param to HGrid master
     item._node.empty(removeFolder);
     if (!removeFolder) {
       this.getDataView().updateItem(item.id, item);
@@ -1121,7 +1129,7 @@ if (typeof jQuery === 'undefined') {
 
     if (this.options.uploads) {
       if (typeof Dropzone === 'undefined') {
-        throw new HGridError('uploads=true requires DropZone to be loaded');
+        throw new HGrid.Error('uploads=true requires DropZone to be loaded');
       }
       this._initDropzone();
     }
@@ -1178,7 +1186,7 @@ if (typeof jQuery === 'undefined') {
         if (typeof showExpander === 'function' && showExpander(item, rendererArgs)) {
           expander = item._collapsed ? HGrid.Html.expandElem : HGrid.Html.collapseElem;
         } else {
-          expander = '<span></span>';
+          expander = '<span style="width:16px;height:1px;display:inline-block;"></span>';
         }
         html = [expander, html].join('');
       }
@@ -1291,7 +1299,7 @@ if (typeof jQuery === 'undefined') {
       var col = args.sortCol; // column to sort
       var key = col.field || col.sortkey; // key to sort on
       if (!key) {
-        throw new HGridError('Sortable column does not define a `sortkey` to sort on.');
+        throw new HGrid.Error('Sortable column does not define a `sortkey` to sort on.');
       }
       this.tree.sort(key, args.sortAsc);
       this.tree.updateDataView(true);
@@ -1331,24 +1339,23 @@ if (typeof jQuery === 'undefined') {
   /**
    * Send a delete request to an item's download URL.
    */
-  // TODO: untested
   HGrid.prototype.deleteFile = function(item, ajaxOptions) {
+    var self = this;
     var url, method;
     // TODO: repetition here
-    if (typeof this.options.deleteUrl === 'function') {
-      url = this.options.deleteUrl(item);
-    } else {
-      url = this.options.deleteUrl;
-    }
-    if (typeof this.options.deleteMethod === 'function') {
-      method = this.options.deleteMethod(item);
-    } else {
-      method = this.options.deleteMethod;
-    }
+    url = typeof this.options.deleteUrl === 'function' ?
+          this.options.deleteUrl(item) : this.options.deleteUrl;
+    method  = typeof this.options.deleteMethod === 'function' ?
+              this.options.deleteMethod(item) : this.options.deleteMethod;
     var options = $.extend({}, {
       url: url,
-      type: method
-    }, ajaxOptions);
+      type: method,
+      success: function(data) {
+        // Update parent
+        self.updateItem(self.getByID(item.parentID));
+        self.removeItem(item.id);
+      }
+    }, self.options.ajaxOptions, ajaxOptions);
     var promise = null;
     if (url) {
       promise = $.ajax(options);
@@ -1367,14 +1374,16 @@ if (typeof jQuery === 'undefined') {
     var self = this;
     // if upload url or upload method is a function, call it, passing in the target item,
     // and set dropzone to upload to the result
-    function resolveUrl(url) {
+    function resolveParam(url) {
       return typeof url === 'function' ? url.call(self, item) : url;
     }
     if (self.currentTarget) {
       $.when(
-        resolveUrl(self.options.uploadUrl),
-        resolveUrl(self.options.uploadMethod)
-      ).done(function(uploadUrl, uploadMethod) {
+        resolveParam(self.options.uploadHeaders),
+        resolveParam(self.options.uploadUrl),
+        resolveParam(self.options.uploadMethod)
+      ).done(function(uploadHeaders, uploadUrl, uploadMethod) {
+        self.dropzone.options.headers = uploadHeaders;
         self.dropzone.options.url = uploadUrl;
         self.dropzone.options.method = uploadMethod;
         if (self.options.uploadAccept) {
@@ -1394,7 +1403,7 @@ if (typeof jQuery === 'undefined') {
   HGrid.prototype.denyUpload = function(targetItem) {
     // Need to throw an error to prevent dropzone's sequence of callbacks from firing
     this.options.uploadDenied.call(this, targetItem);
-    throw new HGridError('Upload permission denied.');
+    throw new HGrid.Error('Upload permission denied.');
   };
 
   HGrid.prototype.validateTarget = function(targetItem) {
@@ -1474,7 +1483,7 @@ if (typeof jQuery === 'undefined') {
         file.gridElement = rowElem;
         $rowElem.addClass('hg-upload-started');
       }
-      this.options.uploadAdded.call(this, file, file.gridItem);
+      this.options.uploadAdded.call(this, file, file.gridItem, currentTarget);
       return addedItem;
     },
     thumbnail: noop,
@@ -1486,18 +1495,22 @@ if (typeof jQuery === 'undefined') {
     },
     processing: function(file) {
       $(file.gridElement).addClass('hg-upload-processing');
-      this.options.uploadProcessing.call(this, file, file.gridItem);
+      this.currentTarget._processing = true;
+      this.updateItem(this.currentTarget);
+      this.options.uploadProcessing.call(this, file, file.gridItem, this.currentTarget);
       return this;
     },
     uploadprogress: function(file, progress, bytesSent) {
       return this.options.uploadProgress.call(this, file, progress, bytesSent, file.gridItem);
     },
     success: function(file, data) {
-      $(file.gridElement).addClass('hg-upload-success')
-        .removeClass('hg-upload-processing');
+      $(file.gridElement).addClass('hg-upload-success');
       return this.options.uploadSuccess.call(this, file, file.gridItem, data);
     },
     complete: function(file) {
+      $(file.gridElement).removeClass('hg-upload-processing');
+      this.currentTarget._processing = false;
+      this.updateItem(this.currentTarget);
       return this.options.uploadComplete.call(this, file, file.gridItem);
     }
   };
@@ -1651,17 +1664,15 @@ if (typeof jQuery === 'undefined') {
    * @private
    */
   HGrid.prototype._initDropzone = function() {
-    var uploadUrl, uploadMethod;
-    if (typeof this.options.uploadUrl === 'string') {
-      uploadUrl = this.options.uploadUrl;
-    } else { // uploadUrl is a function, so compute the url lazily;
-      uploadUrl = '/'; // placeholder
+    var uploadUrl, uploadMethod, headers;
+    // If a param is a string, return that, otherwise the param is a function,
+    // so the value will be computed later.
+    function resolveParam(param, fallback){
+      return (typeof param === 'function' || param == null) ? fallback : param;
     }
-    if (typeof this.options.uploadMethod === 'string') {
-      uploadMethod = this.options.uploadMethod;
-    } else { // uploadMethod is a function, so compute the upload url lazily
-      uploadMethod = 'POST'; // placeholder
-    }
+    uploadUrl = resolveParam(this.options.uploadUrl, '/');
+    uploadMethod = resolveParam(this.options.uploadMethod, 'POST');
+    headers = resolveParam(this.options.uploadHeaders, {});
     // Build up the options object, combining the HGrid options, required options,
     // and additional options
     var dropzoneOptions = $.extend({}, {
@@ -1670,7 +1681,8 @@ if (typeof jQuery === 'undefined') {
         acceptedFiles: this.options.acceptedFiles ?
           this.options.acceptedFiles.join(',') : null,
         maxFilesize: this.options.maxFilesize,
-        method: uploadMethod
+        method: uploadMethod,
+        headers: headers
       },
       requiredDropzoneOpts,
       this.options.dropzoneOptions);
@@ -1739,7 +1751,7 @@ if (typeof jQuery === 'undefined') {
           self.addData(newData, item.id);
           item._node._loaded = true; // Add flag to make sure data are only fetched once.
         } else {
-          throw new HGridError('Could not fetch data from url: "' + url + '". Error: ' + error);
+          throw new HGrid.Error('Could not fetch data from url: "' + url + '". Error: ' + error);
         }
       });
     }
@@ -1935,15 +1947,27 @@ if (typeof jQuery === 'undefined') {
     return this;
   };
 
+  HGrid.prototype.render = function() {
+    this.grid.render();
+    return this;
+  };
+
+  HGrid.prototype.invalidate = function () {
+    this.grid.invalidate();
+    return this;
+  };
+
   $.fn.hgrid = function(options) {
     this.each(function() {
       if (!this.id) { // Must have ID because SlickGrid requires a selector
-        throw new HGridError('Element must have an ID if initializing HGrid with jQuery');
+        throw new HGrid.Error('Element must have an ID if initializing HGrid with jQuery');
       }
       var selector = '#' + this.id;
       return new HGrid(selector, options);
     });
   };
+
+  return HGrid;
 
 })(jQuery, window, document);
 
@@ -1960,17 +1984,17 @@ if (typeof jQuery === 'undefined') {
 
 // add the jquery instance method
 $.fn.drag = function( str, arg, opts ){
-	// figure out the event type
-	var type = typeof str == "string" ? str : "",
-	// figure out the event handler...
-	fn = $.isFunction( str ) ? str : $.isFunction( arg ) ? arg : null;
-	// fix the event type
-	if ( type.indexOf("drag") !== 0 )
-		type = "drag"+ type;
-	// were options passed
-	opts = ( str == fn ? arg : opts ) || {};
-	// trigger or bind event handler
-	return fn ? this.bind( type, opts, fn ) : this.trigger( type );
+  // figure out the event type
+  var type = typeof str == "string" ? str : "",
+  // figure out the event handler...
+  fn = $.isFunction( str ) ? str : $.isFunction( arg ) ? arg : null;
+  // fix the event type
+  if ( type.indexOf("drag") !== 0 )
+    type = "drag"+ type;
+  // were options passed
+  opts = ( str == fn ? arg : opts ) || {};
+  // trigger or bind event handler
+  return fn ? this.bind( type, opts, fn ) : this.trigger( type );
 };
 
 // local refs (increase compression)
@@ -1979,348 +2003,348 @@ $special = $event.special,
 // configure the drag special event
 drag = $special.drag = {
 
-	// these are the default settings
-	defaults: {
-		which: 1, // mouse button pressed to start drag sequence
-		distance: 0, // distance dragged before dragstart
-		not: ':input', // selector to suppress dragging on target elements
-		handle: null, // selector to match handle target elements
-		relative: false, // true to use "position", false to use "offset"
-		drop: true, // false to suppress drop events, true or selector to allow
-		click: false // false to suppress click events after dragend (no proxy)
-	},
+  // these are the default settings
+  defaults: {
+    which: 1, // mouse button pressed to start drag sequence
+    distance: 0, // distance dragged before dragstart
+    not: ':input', // selector to suppress dragging on target elements
+    handle: null, // selector to match handle target elements
+    relative: false, // true to use "position", false to use "offset"
+    drop: true, // false to suppress drop events, true or selector to allow
+    click: false // false to suppress click events after dragend (no proxy)
+  },
 
-	// the key name for stored drag data
-	datakey: "dragdata",
+  // the key name for stored drag data
+  datakey: "dragdata",
 
-	// prevent bubbling for better performance
-	noBubble: true,
+  // prevent bubbling for better performance
+  noBubble: true,
 
-	// count bound related events
-	add: function( obj ){
-		// read the interaction data
-		var data = $.data( this, drag.datakey ),
-		// read any passed options
-		opts = obj.data || {};
-		// count another realted event
-		data.related += 1;
-		// extend data options bound with this event
-		// don't iterate "opts" in case it is a node
-		$.each( drag.defaults, function( key, def ){
-			if ( opts[ key ] !== undefined )
-				data[ key ] = opts[ key ];
-		});
-	},
+  // count bound related events
+  add: function( obj ){
+    // read the interaction data
+    var data = $.data( this, drag.datakey ),
+    // read any passed options
+    opts = obj.data || {};
+    // count another realted event
+    data.related += 1;
+    // extend data options bound with this event
+    // don't iterate "opts" in case it is a node
+    $.each( drag.defaults, function( key, def ){
+      if ( opts[ key ] !== undefined )
+        data[ key ] = opts[ key ];
+    });
+  },
 
-	// forget unbound related events
-	remove: function(){
-		$.data( this, drag.datakey ).related -= 1;
-	},
+  // forget unbound related events
+  remove: function(){
+    $.data( this, drag.datakey ).related -= 1;
+  },
 
-	// configure interaction, capture settings
-	setup: function(){
-		// check for related events
-		if ( $.data( this, drag.datakey ) )
-			return;
-		// initialize the drag data with copied defaults
-		var data = $.extend({ related:0 }, drag.defaults );
-		// store the interaction data
-		$.data( this, drag.datakey, data );
-		// bind the mousedown event, which starts drag interactions
-		$event.add( this, "touchstart mousedown", drag.init, data );
-		// prevent image dragging in IE...
-		if ( this.attachEvent )
-			this.attachEvent("ondragstart", drag.dontstart );
-	},
+  // configure interaction, capture settings
+  setup: function(){
+    // check for related events
+    if ( $.data( this, drag.datakey ) )
+      return;
+    // initialize the drag data with copied defaults
+    var data = $.extend({ related:0 }, drag.defaults );
+    // store the interaction data
+    $.data( this, drag.datakey, data );
+    // bind the mousedown event, which starts drag interactions
+    $event.add( this, "touchstart mousedown", drag.init, data );
+    // prevent image dragging in IE...
+    if ( this.attachEvent )
+      this.attachEvent("ondragstart", drag.dontstart );
+  },
 
-	// destroy configured interaction
-	teardown: function(){
-		var data = $.data( this, drag.datakey ) || {};
-		// check for related events
-		if ( data.related )
-			return;
-		// remove the stored data
-		$.removeData( this, drag.datakey );
-		// remove the mousedown event
-		$event.remove( this, "touchstart mousedown", drag.init );
-		// enable text selection
-		drag.textselect( true );
-		// un-prevent image dragging in IE...
-		if ( this.detachEvent )
-			this.detachEvent("ondragstart", drag.dontstart );
-	},
+  // destroy configured interaction
+  teardown: function(){
+    var data = $.data( this, drag.datakey ) || {};
+    // check for related events
+    if ( data.related )
+      return;
+    // remove the stored data
+    $.removeData( this, drag.datakey );
+    // remove the mousedown event
+    $event.remove( this, "touchstart mousedown", drag.init );
+    // enable text selection
+    drag.textselect( true );
+    // un-prevent image dragging in IE...
+    if ( this.detachEvent )
+      this.detachEvent("ondragstart", drag.dontstart );
+  },
 
-	// initialize the interaction
-	init: function( event ){
-		// sorry, only one touch at a time
-		if ( drag.touched )
-			return;
-		// the drag/drop interaction data
-		var dd = event.data, results;
-		// check the which directive
-		if ( event.which != 0 && dd.which > 0 && event.which != dd.which )
-			return;
-		// check for suppressed selector
-		if ( $( event.target ).is( dd.not ) )
-			return;
-		// check for handle selector
-		if ( dd.handle && !$( event.target ).closest( dd.handle, event.currentTarget ).length )
-			return;
+  // initialize the interaction
+  init: function( event ){
+    // sorry, only one touch at a time
+    if ( drag.touched )
+      return;
+    // the drag/drop interaction data
+    var dd = event.data, results;
+    // check the which directive
+    if ( event.which != 0 && dd.which > 0 && event.which != dd.which )
+      return;
+    // check for suppressed selector
+    if ( $( event.target ).is( dd.not ) )
+      return;
+    // check for handle selector
+    if ( dd.handle && !$( event.target ).closest( dd.handle, event.currentTarget ).length )
+      return;
 
-		drag.touched = event.type == 'touchstart' ? this : null;
-		dd.propagates = 1;
-		dd.mousedown = this;
-		dd.interactions = [ drag.interaction( this, dd ) ];
-		dd.target = event.target;
-		dd.pageX = event.pageX;
-		dd.pageY = event.pageY;
-		dd.dragging = null;
-		// handle draginit event...
-		results = drag.hijack( event, "draginit", dd );
-		// early cancel
-		if ( !dd.propagates )
-			return;
-		// flatten the result set
-		results = drag.flatten( results );
-		// insert new interaction elements
-		if ( results && results.length ){
-			dd.interactions = [];
-			$.each( results, function(){
-				dd.interactions.push( drag.interaction( this, dd ) );
-			});
-		}
-		// remember how many interactions are propagating
-		dd.propagates = dd.interactions.length;
-		// locate and init the drop targets
-		if ( dd.drop !== false && $special.drop )
-			$special.drop.handler( event, dd );
-		// disable text selection
-		drag.textselect( false );
-		// bind additional events...
-		if ( drag.touched )
-			$event.add( drag.touched, "touchmove touchend", drag.handler, dd );
-		else
-			$event.add( document, "mousemove mouseup", drag.handler, dd );
-		// helps prevent text selection or scrolling
-		if ( !drag.touched || dd.live )
-			return false;
-	},
+    drag.touched = event.type == 'touchstart' ? this : null;
+    dd.propagates = 1;
+    dd.mousedown = this;
+    dd.interactions = [ drag.interaction( this, dd ) ];
+    dd.target = event.target;
+    dd.pageX = event.pageX;
+    dd.pageY = event.pageY;
+    dd.dragging = null;
+    // handle draginit event...
+    results = drag.hijack( event, "draginit", dd );
+    // early cancel
+    if ( !dd.propagates )
+      return;
+    // flatten the result set
+    results = drag.flatten( results );
+    // insert new interaction elements
+    if ( results && results.length ){
+      dd.interactions = [];
+      $.each( results, function(){
+        dd.interactions.push( drag.interaction( this, dd ) );
+      });
+    }
+    // remember how many interactions are propagating
+    dd.propagates = dd.interactions.length;
+    // locate and init the drop targets
+    if ( dd.drop !== false && $special.drop )
+      $special.drop.handler( event, dd );
+    // disable text selection
+    drag.textselect( false );
+    // bind additional events...
+    if ( drag.touched )
+      $event.add( drag.touched, "touchmove touchend", drag.handler, dd );
+    else
+      $event.add( document, "mousemove mouseup", drag.handler, dd );
+    // helps prevent text selection or scrolling
+    if ( !drag.touched || dd.live )
+      return false;
+  },
 
-	// returns an interaction object
-	interaction: function( elem, dd ){
-		var offset = $( elem )[ dd.relative ? "position" : "offset" ]() || { top:0, left:0 };
-		return {
-			drag: elem,
-			callback: new drag.callback(),
-			droppable: [],
-			offset: offset
-		};
-	},
+  // returns an interaction object
+  interaction: function( elem, dd ){
+    var offset = $( elem )[ dd.relative ? "position" : "offset" ]() || { top:0, left:0 };
+    return {
+      drag: elem,
+      callback: new drag.callback(),
+      droppable: [],
+      offset: offset
+    };
+  },
 
-	// handle drag-releatd DOM events
-	handler: function( event ){
-		// read the data before hijacking anything
-		var dd = event.data;
-		// handle various events
-		switch ( event.type ){
-			// mousemove, check distance, start dragging
-			case !dd.dragging && 'touchmove':
-				event.preventDefault();
-			case !dd.dragging && 'mousemove':
-				//  drag tolerance, x� + y� = distance�
-				if ( Math.pow(  event.pageX-dd.pageX, 2 ) + Math.pow(  event.pageY-dd.pageY, 2 ) < Math.pow( dd.distance, 2 ) )
-					break; // distance tolerance not reached
-				event.target = dd.target; // force target from "mousedown" event (fix distance issue)
-				drag.hijack( event, "dragstart", dd ); // trigger "dragstart"
-				if ( dd.propagates ) // "dragstart" not rejected
-					dd.dragging = true; // activate interaction
-			// mousemove, dragging
-			case 'touchmove':
-				event.preventDefault();
-			case 'mousemove':
-				if ( dd.dragging ){
-					// trigger "drag"
-					drag.hijack( event, "drag", dd );
-					if ( dd.propagates ){
-						// manage drop events
-						if ( dd.drop !== false && $special.drop )
-							$special.drop.handler( event, dd ); // "dropstart", "dropend"
-						break; // "drag" not rejected, stop
-					}
-					event.type = "mouseup"; // helps "drop" handler behave
-				}
-			// mouseup, stop dragging
-			case 'touchend':
-			case 'mouseup':
-			default:
-				if ( drag.touched )
-					$event.remove( drag.touched, "touchmove touchend", drag.handler ); // remove touch events
-				else
-					$event.remove( document, "mousemove mouseup", drag.handler ); // remove page events
-				if ( dd.dragging ){
-					if ( dd.drop !== false && $special.drop )
-						$special.drop.handler( event, dd ); // "drop"
-					drag.hijack( event, "dragend", dd ); // trigger "dragend"
-				}
-				drag.textselect( true ); // enable text selection
-				// if suppressing click events...
-				if ( dd.click === false && dd.dragging )
-					$.data( dd.mousedown, "suppress.click", new Date().getTime() + 5 );
-				dd.dragging = drag.touched = false; // deactivate element
-				break;
-		}
-	},
+  // handle drag-releatd DOM events
+  handler: function( event ){
+    // read the data before hijacking anything
+    var dd = event.data;
+    // handle various events
+    switch ( event.type ){
+      // mousemove, check distance, start dragging
+      case !dd.dragging && 'touchmove':
+        event.preventDefault();
+      case !dd.dragging && 'mousemove':
+        //  drag tolerance, x� + y� = distance�
+        if ( Math.pow(  event.pageX-dd.pageX, 2 ) + Math.pow(  event.pageY-dd.pageY, 2 ) < Math.pow( dd.distance, 2 ) )
+          break; // distance tolerance not reached
+        event.target = dd.target; // force target from "mousedown" event (fix distance issue)
+        drag.hijack( event, "dragstart", dd ); // trigger "dragstart"
+        if ( dd.propagates ) // "dragstart" not rejected
+          dd.dragging = true; // activate interaction
+      // mousemove, dragging
+      case 'touchmove':
+        event.preventDefault();
+      case 'mousemove':
+        if ( dd.dragging ){
+          // trigger "drag"
+          drag.hijack( event, "drag", dd );
+          if ( dd.propagates ){
+            // manage drop events
+            if ( dd.drop !== false && $special.drop )
+              $special.drop.handler( event, dd ); // "dropstart", "dropend"
+            break; // "drag" not rejected, stop
+          }
+          event.type = "mouseup"; // helps "drop" handler behave
+        }
+      // mouseup, stop dragging
+      case 'touchend':
+      case 'mouseup':
+      default:
+        if ( drag.touched )
+          $event.remove( drag.touched, "touchmove touchend", drag.handler ); // remove touch events
+        else
+          $event.remove( document, "mousemove mouseup", drag.handler ); // remove page events
+        if ( dd.dragging ){
+          if ( dd.drop !== false && $special.drop )
+            $special.drop.handler( event, dd ); // "drop"
+          drag.hijack( event, "dragend", dd ); // trigger "dragend"
+        }
+        drag.textselect( true ); // enable text selection
+        // if suppressing click events...
+        if ( dd.click === false && dd.dragging )
+          $.data( dd.mousedown, "suppress.click", new Date().getTime() + 5 );
+        dd.dragging = drag.touched = false; // deactivate element
+        break;
+    }
+  },
 
-	// re-use event object for custom events
-	hijack: function( event, type, dd, x, elem ){
-		// not configured
-		if ( !dd )
-			return;
-		// remember the original event and type
-		var orig = { event:event.originalEvent, type:event.type },
-		// is the event drag related or drog related?
-		mode = type.indexOf("drop") ? "drag" : "drop",
-		// iteration vars
-		result, i = x || 0, ia, $elems, callback,
-		len = !isNaN( x ) ? x : dd.interactions.length;
-		// modify the event type
-		event.type = type;
-		// remove the original event
-		event.originalEvent = null;
-		// initialize the results
-		dd.results = [];
-		// handle each interacted element
-		do if ( ia = dd.interactions[ i ] ){
-			// validate the interaction
-			if ( type !== "dragend" && ia.cancelled )
-				continue;
-			// set the dragdrop properties on the event object
-			callback = drag.properties( event, dd, ia );
-			// prepare for more results
-			ia.results = [];
-			// handle each element
-			$( elem || ia[ mode ] || dd.droppable ).each(function( p, subject ){
-				// identify drag or drop targets individually
-				callback.target = subject;
-				// force propagtion of the custom event
-				event.isPropagationStopped = function(){ return false; };
-				// handle the event
-				result = subject ? $event.dispatch.call( subject, event, callback ) : null;
-				// stop the drag interaction for this element
-				if ( result === false ){
-					if ( mode == "drag" ){
-						ia.cancelled = true;
-						dd.propagates -= 1;
-					}
-					if ( type == "drop" ){
-						ia[ mode ][p] = null;
-					}
-				}
-				// assign any dropinit elements
-				else if ( type == "dropinit" )
-					ia.droppable.push( drag.element( result ) || subject );
-				// accept a returned proxy element
-				if ( type == "dragstart" )
-					ia.proxy = $( drag.element( result ) || ia.drag )[0];
-				// remember this result
-				ia.results.push( result );
-				// forget the event result, for recycling
-				delete event.result;
-				// break on cancelled handler
-				if ( type !== "dropinit" )
-					return result;
-			});
-			// flatten the results
-			dd.results[ i ] = drag.flatten( ia.results );
-			// accept a set of valid drop targets
-			if ( type == "dropinit" )
-				ia.droppable = drag.flatten( ia.droppable );
-			// locate drop targets
-			if ( type == "dragstart" && !ia.cancelled )
-				callback.update();
-		}
-		while ( ++i < len )
-		// restore the original event & type
-		event.type = orig.type;
-		event.originalEvent = orig.event;
-		// return all handler results
-		return drag.flatten( dd.results );
-	},
+  // re-use event object for custom events
+  hijack: function( event, type, dd, x, elem ){
+    // not configured
+    if ( !dd )
+      return;
+    // remember the original event and type
+    var orig = { event:event.originalEvent, type:event.type },
+    // is the event drag related or drog related?
+    mode = type.indexOf("drop") ? "drag" : "drop",
+    // iteration vars
+    result, i = x || 0, ia, $elems, callback,
+    len = !isNaN( x ) ? x : dd.interactions.length;
+    // modify the event type
+    event.type = type;
+    // remove the original event
+    event.originalEvent = null;
+    // initialize the results
+    dd.results = [];
+    // handle each interacted element
+    do if ( ia = dd.interactions[ i ] ){
+      // validate the interaction
+      if ( type !== "dragend" && ia.cancelled )
+        continue;
+      // set the dragdrop properties on the event object
+      callback = drag.properties( event, dd, ia );
+      // prepare for more results
+      ia.results = [];
+      // handle each element
+      $( elem || ia[ mode ] || dd.droppable ).each(function( p, subject ){
+        // identify drag or drop targets individually
+        callback.target = subject;
+        // force propagtion of the custom event
+        event.isPropagationStopped = function(){ return false; };
+        // handle the event
+        result = subject ? $event.dispatch.call( subject, event, callback ) : null;
+        // stop the drag interaction for this element
+        if ( result === false ){
+          if ( mode == "drag" ){
+            ia.cancelled = true;
+            dd.propagates -= 1;
+          }
+          if ( type == "drop" ){
+            ia[ mode ][p] = null;
+          }
+        }
+        // assign any dropinit elements
+        else if ( type == "dropinit" )
+          ia.droppable.push( drag.element( result ) || subject );
+        // accept a returned proxy element
+        if ( type == "dragstart" )
+          ia.proxy = $( drag.element( result ) || ia.drag )[0];
+        // remember this result
+        ia.results.push( result );
+        // forget the event result, for recycling
+        delete event.result;
+        // break on cancelled handler
+        if ( type !== "dropinit" )
+          return result;
+      });
+      // flatten the results
+      dd.results[ i ] = drag.flatten( ia.results );
+      // accept a set of valid drop targets
+      if ( type == "dropinit" )
+        ia.droppable = drag.flatten( ia.droppable );
+      // locate drop targets
+      if ( type == "dragstart" && !ia.cancelled )
+        callback.update();
+    }
+    while ( ++i < len )
+    // restore the original event & type
+    event.type = orig.type;
+    event.originalEvent = orig.event;
+    // return all handler results
+    return drag.flatten( dd.results );
+  },
 
-	// extend the callback object with drag/drop properties...
-	properties: function( event, dd, ia ){
-		var obj = ia.callback;
-		// elements
-		obj.drag = ia.drag;
-		obj.proxy = ia.proxy || ia.drag;
-		// starting mouse position
-		obj.startX = dd.pageX;
-		obj.startY = dd.pageY;
-		// current distance dragged
-		obj.deltaX = event.pageX - dd.pageX;
-		obj.deltaY = event.pageY - dd.pageY;
-		// original element position
-		obj.originalX = ia.offset.left;
-		obj.originalY = ia.offset.top;
-		// adjusted element position
-		obj.offsetX = obj.originalX + obj.deltaX;
-		obj.offsetY = obj.originalY + obj.deltaY;
-		// assign the drop targets information
-		obj.drop = drag.flatten( ( ia.drop || [] ).slice() );
-		obj.available = drag.flatten( ( ia.droppable || [] ).slice() );
-		return obj;
-	},
+  // extend the callback object with drag/drop properties...
+  properties: function( event, dd, ia ){
+    var obj = ia.callback;
+    // elements
+    obj.drag = ia.drag;
+    obj.proxy = ia.proxy || ia.drag;
+    // starting mouse position
+    obj.startX = dd.pageX;
+    obj.startY = dd.pageY;
+    // current distance dragged
+    obj.deltaX = event.pageX - dd.pageX;
+    obj.deltaY = event.pageY - dd.pageY;
+    // original element position
+    obj.originalX = ia.offset.left;
+    obj.originalY = ia.offset.top;
+    // adjusted element position
+    obj.offsetX = obj.originalX + obj.deltaX;
+    obj.offsetY = obj.originalY + obj.deltaY;
+    // assign the drop targets information
+    obj.drop = drag.flatten( ( ia.drop || [] ).slice() );
+    obj.available = drag.flatten( ( ia.droppable || [] ).slice() );
+    return obj;
+  },
 
-	// determine is the argument is an element or jquery instance
-	element: function( arg ){
-		if ( arg && ( arg.jquery || arg.nodeType == 1 ) )
-			return arg;
-	},
+  // determine is the argument is an element or jquery instance
+  element: function( arg ){
+    if ( arg && ( arg.jquery || arg.nodeType == 1 ) )
+      return arg;
+  },
 
-	// flatten nested jquery objects and arrays into a single dimension array
-	flatten: function( arr ){
-		return $.map( arr, function( member ){
-			return member && member.jquery ? $.makeArray( member ) :
-				member && member.length ? drag.flatten( member ) : member;
-		});
-	},
+  // flatten nested jquery objects and arrays into a single dimension array
+  flatten: function( arr ){
+    return $.map( arr, function( member ){
+      return member && member.jquery ? $.makeArray( member ) :
+        member && member.length ? drag.flatten( member ) : member;
+    });
+  },
 
-	// toggles text selection attributes ON (true) or OFF (false)
-	textselect: function( bool ){
-		$( document )[ bool ? "unbind" : "bind" ]("selectstart", drag.dontstart )
-			.css("MozUserSelect", bool ? "" : "none" );
-		// .attr("unselectable", bool ? "off" : "on" )
-		document.unselectable = bool ? "off" : "on";
-	},
+  // toggles text selection attributes ON (true) or OFF (false)
+  textselect: function( bool ){
+    $( document )[ bool ? "unbind" : "bind" ]("selectstart", drag.dontstart )
+      .css("MozUserSelect", bool ? "" : "none" );
+    // .attr("unselectable", bool ? "off" : "on" )
+    document.unselectable = bool ? "off" : "on";
+  },
 
-	// suppress "selectstart" and "ondragstart" events
-	dontstart: function(){
-		return false;
-	},
+  // suppress "selectstart" and "ondragstart" events
+  dontstart: function(){
+    return false;
+  },
 
-	// a callback instance contructor
-	callback: function(){}
+  // a callback instance contructor
+  callback: function(){}
 
 };
 
 // callback methods
 drag.callback.prototype = {
-	update: function(){
-		if ( $special.drop && this.available.length )
-			$.each( this.available, function( i ){
-				$special.drop.locate( this, i );
-			});
-	}
+  update: function(){
+    if ( $special.drop && this.available.length )
+      $.each( this.available, function( i ){
+        $special.drop.locate( this, i );
+      });
+  }
 };
 
 // patch $.event.$dispatch to allow suppressing clicks
 var $dispatch = $event.dispatch;
 $event.dispatch = function( event ){
-	if ( $.data( this, "suppress."+ event.type ) - new Date().getTime() > 0 ){
-		$.removeData( this, "suppress."+ event.type );
-		return;
-	}
-	return $dispatch.apply( this, arguments );
+  if ( $.data( this, "suppress."+ event.type ) - new Date().getTime() > 0 ){
+    $.removeData( this, "suppress."+ event.type );
+    return;
+  }
+  return $dispatch.apply( this, arguments );
 };
 
 // event fix hooks for touch events...
@@ -2329,20 +2353,20 @@ $event.fixHooks.touchstart =
 $event.fixHooks.touchmove =
 $event.fixHooks.touchend =
 $event.fixHooks.touchcancel = {
-	props: "clientX clientY pageX pageY screenX screenY".split( " " ),
-	filter: function( event, orig ) {
-		if ( orig ){
-			var touched = ( orig.touches && orig.touches[0] )
-				|| ( orig.changedTouches && orig.changedTouches[0] )
-				|| null;
-			// iOS webkit: touchstart, touchmove, touchend
-			if ( touched )
-				$.each( touchHooks.props, function( i, prop ){
-					event[ prop ] = touched[ prop ];
-				});
-		}
-		return event;
-	}
+  props: "clientX clientY pageX pageY screenX screenY".split( " " ),
+  filter: function( event, orig ) {
+    if ( orig ){
+      var touched = ( orig.touches && orig.touches[0] )
+        || ( orig.changedTouches && orig.changedTouches[0] )
+        || null;
+      // iOS webkit: touchstart, touchmove, touchend
+      if ( touched )
+        $.each( touchHooks.props, function( i, prop ){
+          event[ prop ] = touched[ prop ];
+        });
+    }
+    return event;
+  }
 };
 
 // share the same special event configuration with related events...
@@ -2364,30 +2388,30 @@ $special.draginit = $special.dragstart = $special.dragend = drag;
 
 // add the jquery instance method
 $.fn.drop = function( str, arg, opts ){
-	// figure out the event type
-	var type = typeof str == "string" ? str : "",
-	// figure out the event handler...
-	fn = $.isFunction( str ) ? str : $.isFunction( arg ) ? arg : null;
-	// fix the event type
-	if ( type.indexOf("drop") !== 0 )
-		type = "drop"+ type;
-	// were options passed
-	opts = ( str == fn ? arg : opts ) || {};
-	// trigger or bind event handler
-	return fn ? this.bind( type, opts, fn ) : this.trigger( type );
+  // figure out the event type
+  var type = typeof str == "string" ? str : "",
+  // figure out the event handler...
+  fn = $.isFunction( str ) ? str : $.isFunction( arg ) ? arg : null;
+  // fix the event type
+  if ( type.indexOf("drop") !== 0 )
+    type = "drop"+ type;
+  // were options passed
+  opts = ( str == fn ? arg : opts ) || {};
+  // trigger or bind event handler
+  return fn ? this.bind( type, opts, fn ) : this.trigger( type );
 };
 
 // DROP MANAGEMENT UTILITY
 // returns filtered drop target elements, caches their positions
 $.drop = function( opts ){
-	opts = opts || {};
-	// safely set new options...
-	drop.multi = opts.multi === true ? Infinity :
-		opts.multi === false ? 1 : !isNaN( opts.multi ) ? opts.multi : drop.multi;
-	drop.delay = opts.delay || drop.delay;
-	drop.tolerance = $.isFunction( opts.tolerance ) ? opts.tolerance :
-		opts.tolerance === null ? null : drop.tolerance;
-	drop.mode = opts.mode || drop.mode || 'intersect';
+  opts = opts || {};
+  // safely set new options...
+  drop.multi = opts.multi === true ? Infinity :
+    opts.multi === false ? 1 : !isNaN( opts.multi ) ? opts.multi : drop.multi;
+  drop.delay = opts.delay || drop.delay;
+  drop.tolerance = $.isFunction( opts.tolerance ) ? opts.tolerance :
+    opts.tolerance === null ? null : drop.tolerance;
+  drop.mode = opts.mode || drop.mode || 'intersect';
 };
 
 // local refs (increase compression)
@@ -2396,254 +2420,254 @@ $special = $event.special,
 // configure the drop special event
 drop = $.event.special.drop = {
 
-	// these are the default settings
-	multi: 1, // allow multiple drop winners per dragged element
-	delay: 20, // async timeout delay
-	mode: 'overlap', // drop tolerance mode
+  // these are the default settings
+  multi: 1, // allow multiple drop winners per dragged element
+  delay: 20, // async timeout delay
+  mode: 'overlap', // drop tolerance mode
 
-	// internal cache
-	targets: [],
+  // internal cache
+  targets: [],
 
-	// the key name for stored drop data
-	datakey: "dropdata",
+  // the key name for stored drop data
+  datakey: "dropdata",
 
-	// prevent bubbling for better performance
-	noBubble: true,
+  // prevent bubbling for better performance
+  noBubble: true,
 
-	// count bound related events
-	add: function( obj ){
-		// read the interaction data
-		var data = $.data( this, drop.datakey );
-		// count another realted event
-		data.related += 1;
-	},
+  // count bound related events
+  add: function( obj ){
+    // read the interaction data
+    var data = $.data( this, drop.datakey );
+    // count another realted event
+    data.related += 1;
+  },
 
-	// forget unbound related events
-	remove: function(){
-		$.data( this, drop.datakey ).related -= 1;
-	},
+  // forget unbound related events
+  remove: function(){
+    $.data( this, drop.datakey ).related -= 1;
+  },
 
-	// configure the interactions
-	setup: function(){
-		// check for related events
-		if ( $.data( this, drop.datakey ) )
-			return;
-		// initialize the drop element data
-		var data = {
-			related: 0,
-			active: [],
-			anyactive: 0,
-			winner: 0,
-			location: {}
-		};
-		// store the drop data on the element
-		$.data( this, drop.datakey, data );
-		// store the drop target in internal cache
-		drop.targets.push( this );
-	},
+  // configure the interactions
+  setup: function(){
+    // check for related events
+    if ( $.data( this, drop.datakey ) )
+      return;
+    // initialize the drop element data
+    var data = {
+      related: 0,
+      active: [],
+      anyactive: 0,
+      winner: 0,
+      location: {}
+    };
+    // store the drop data on the element
+    $.data( this, drop.datakey, data );
+    // store the drop target in internal cache
+    drop.targets.push( this );
+  },
 
-	// destroy the configure interaction
-	teardown: function(){
-		var data = $.data( this, drop.datakey ) || {};
-		// check for related events
-		if ( data.related )
-			return;
-		// remove the stored data
-		$.removeData( this, drop.datakey );
-		// reference the targeted element
-		var element = this;
-		// remove from the internal cache
-		drop.targets = $.grep( drop.targets, function( target ){
-			return ( target !== element );
-		});
-	},
+  // destroy the configure interaction
+  teardown: function(){
+    var data = $.data( this, drop.datakey ) || {};
+    // check for related events
+    if ( data.related )
+      return;
+    // remove the stored data
+    $.removeData( this, drop.datakey );
+    // reference the targeted element
+    var element = this;
+    // remove from the internal cache
+    drop.targets = $.grep( drop.targets, function( target ){
+      return ( target !== element );
+    });
+  },
 
-	// shared event handler
-	handler: function( event, dd ){
-		// local vars
-		var results, $targets;
-		// make sure the right data is available
-		if ( !dd )
-			return;
-		// handle various events
-		switch ( event.type ){
-			// draginit, from $.event.special.drag
-			case 'mousedown': // DROPINIT >>
-			case 'touchstart': // DROPINIT >>
-				// collect and assign the drop targets
-				$targets =  $( drop.targets );
-				if ( typeof dd.drop == "string" )
-					$targets = $targets.filter( dd.drop );
-				// reset drop data winner properties
-				$targets.each(function(){
-					var data = $.data( this, drop.datakey );
-					data.active = [];
-					data.anyactive = 0;
-					data.winner = 0;
-				});
-				// set available target elements
-				dd.droppable = $targets;
-				// activate drop targets for the initial element being dragged
-				$special.drag.hijack( event, "dropinit", dd );
-				break;
-			// drag, from $.event.special.drag
-			case 'mousemove': // TOLERATE >>
-			case 'touchmove': // TOLERATE >>
-				drop.event = event; // store the mousemove event
-				if ( !drop.timer )
-					// monitor drop targets
-					drop.tolerate( dd );
-				break;
-			// dragend, from $.event.special.drag
-			case 'mouseup': // DROP >> DROPEND >>
-			case 'touchend': // DROP >> DROPEND >>
-				drop.timer = clearTimeout( drop.timer ); // delete timer
-				if ( dd.propagates ){
-					$special.drag.hijack( event, "drop", dd );
-					$special.drag.hijack( event, "dropend", dd );
-				}
-				break;
+  // shared event handler
+  handler: function( event, dd ){
+    // local vars
+    var results, $targets;
+    // make sure the right data is available
+    if ( !dd )
+      return;
+    // handle various events
+    switch ( event.type ){
+      // draginit, from $.event.special.drag
+      case 'mousedown': // DROPINIT >>
+      case 'touchstart': // DROPINIT >>
+        // collect and assign the drop targets
+        $targets =  $( drop.targets );
+        if ( typeof dd.drop == "string" )
+          $targets = $targets.filter( dd.drop );
+        // reset drop data winner properties
+        $targets.each(function(){
+          var data = $.data( this, drop.datakey );
+          data.active = [];
+          data.anyactive = 0;
+          data.winner = 0;
+        });
+        // set available target elements
+        dd.droppable = $targets;
+        // activate drop targets for the initial element being dragged
+        $special.drag.hijack( event, "dropinit", dd );
+        break;
+      // drag, from $.event.special.drag
+      case 'mousemove': // TOLERATE >>
+      case 'touchmove': // TOLERATE >>
+        drop.event = event; // store the mousemove event
+        if ( !drop.timer )
+          // monitor drop targets
+          drop.tolerate( dd );
+        break;
+      // dragend, from $.event.special.drag
+      case 'mouseup': // DROP >> DROPEND >>
+      case 'touchend': // DROP >> DROPEND >>
+        drop.timer = clearTimeout( drop.timer ); // delete timer
+        if ( dd.propagates ){
+          $special.drag.hijack( event, "drop", dd );
+          $special.drag.hijack( event, "dropend", dd );
+        }
+        break;
 
-		}
-	},
+    }
+  },
 
-	// returns the location positions of an element
-	locate: function( elem, index ){
-		var data = $.data( elem, drop.datakey ),
-		$elem = $( elem ),
-		posi = $elem.offset() || {},
-		height = $elem.outerHeight(),
-		width = $elem.outerWidth(),
-		location = {
-			elem: elem,
-			width: width,
-			height: height,
-			top: posi.top,
-			left: posi.left,
-			right: posi.left + width,
-			bottom: posi.top + height
-		};
-		// drag elements might not have dropdata
-		if ( data ){
-			data.location = location;
-			data.index = index;
-			data.elem = elem;
-		}
-		return location;
-	},
+  // returns the location positions of an element
+  locate: function( elem, index ){
+    var data = $.data( elem, drop.datakey ),
+    $elem = $( elem ),
+    posi = $elem.offset() || {},
+    height = $elem.outerHeight(),
+    width = $elem.outerWidth(),
+    location = {
+      elem: elem,
+      width: width,
+      height: height,
+      top: posi.top,
+      left: posi.left,
+      right: posi.left + width,
+      bottom: posi.top + height
+    };
+    // drag elements might not have dropdata
+    if ( data ){
+      data.location = location;
+      data.index = index;
+      data.elem = elem;
+    }
+    return location;
+  },
 
-	// test the location positions of an element against another OR an X,Y coord
-	contains: function( target, test ){ // target { location } contains test [x,y] or { location }
-		return ( ( test[0] || test.left ) >= target.left && ( test[0] || test.right ) <= target.right
-			&& ( test[1] || test.top ) >= target.top && ( test[1] || test.bottom ) <= target.bottom );
-	},
+  // test the location positions of an element against another OR an X,Y coord
+  contains: function( target, test ){ // target { location } contains test [x,y] or { location }
+    return ( ( test[0] || test.left ) >= target.left && ( test[0] || test.right ) <= target.right
+      && ( test[1] || test.top ) >= target.top && ( test[1] || test.bottom ) <= target.bottom );
+  },
 
-	// stored tolerance modes
-	modes: { // fn scope: "$.event.special.drop" object
-		// target with mouse wins, else target with most overlap wins
-		'intersect': function( event, proxy, target ){
-			return this.contains( target, [ event.pageX, event.pageY ] ) ? // check cursor
-				1e9 : this.modes.overlap.apply( this, arguments ); // check overlap
-		},
-		// target with most overlap wins
-		'overlap': function( event, proxy, target ){
-			// calculate the area of overlap...
-			return Math.max( 0, Math.min( target.bottom, proxy.bottom ) - Math.max( target.top, proxy.top ) )
-				* Math.max( 0, Math.min( target.right, proxy.right ) - Math.max( target.left, proxy.left ) );
-		},
-		// proxy is completely contained within target bounds
-		'fit': function( event, proxy, target ){
-			return this.contains( target, proxy ) ? 1 : 0;
-		},
-		// center of the proxy is contained within target bounds
-		'middle': function( event, proxy, target ){
-			return this.contains( target, [ proxy.left + proxy.width * .5, proxy.top + proxy.height * .5 ] ) ? 1 : 0;
-		}
-	},
+  // stored tolerance modes
+  modes: { // fn scope: "$.event.special.drop" object
+    // target with mouse wins, else target with most overlap wins
+    'intersect': function( event, proxy, target ){
+      return this.contains( target, [ event.pageX, event.pageY ] ) ? // check cursor
+        1e9 : this.modes.overlap.apply( this, arguments ); // check overlap
+    },
+    // target with most overlap wins
+    'overlap': function( event, proxy, target ){
+      // calculate the area of overlap...
+      return Math.max( 0, Math.min( target.bottom, proxy.bottom ) - Math.max( target.top, proxy.top ) )
+        * Math.max( 0, Math.min( target.right, proxy.right ) - Math.max( target.left, proxy.left ) );
+    },
+    // proxy is completely contained within target bounds
+    'fit': function( event, proxy, target ){
+      return this.contains( target, proxy ) ? 1 : 0;
+    },
+    // center of the proxy is contained within target bounds
+    'middle': function( event, proxy, target ){
+      return this.contains( target, [ proxy.left + proxy.width * .5, proxy.top + proxy.height * .5 ] ) ? 1 : 0;
+    }
+  },
 
-	// sort drop target cache by by winner (dsc), then index (asc)
-	sort: function( a, b ){
-		return ( b.winner - a.winner ) || ( a.index - b.index );
-	},
+  // sort drop target cache by by winner (dsc), then index (asc)
+  sort: function( a, b ){
+    return ( b.winner - a.winner ) || ( a.index - b.index );
+  },
 
-	// async, recursive tolerance execution
-	tolerate: function( dd ){
-		// declare local refs
-		var i, drp, drg, data, arr, len, elem,
-		// interaction iteration variables
-		x = 0, ia, end = dd.interactions.length,
-		// determine the mouse coords
-		xy = [ drop.event.pageX, drop.event.pageY ],
-		// custom or stored tolerance fn
-		tolerance = drop.tolerance || drop.modes[ drop.mode ];
-		// go through each passed interaction...
-		do if ( ia = dd.interactions[x] ){
-			// check valid interaction
-			if ( !ia )
-				return;
-			// initialize or clear the drop data
-			ia.drop = [];
-			// holds the drop elements
-			arr = [];
-			len = ia.droppable.length;
-			// determine the proxy location, if needed
-			if ( tolerance )
-				drg = drop.locate( ia.proxy );
-			// reset the loop
-			i = 0;
-			// loop each stored drop target
-			do if ( elem = ia.droppable[i] ){
-				data = $.data( elem, drop.datakey );
-				drp = data.location;
-				if ( !drp ) continue;
-				// find a winner: tolerance function is defined, call it
-				data.winner = tolerance ? tolerance.call( drop, drop.event, drg, drp )
-					// mouse position is always the fallback
-					: drop.contains( drp, xy ) ? 1 : 0;
-				arr.push( data );
-			} while ( ++i < len ); // loop
-			// sort the drop targets
-			arr.sort( drop.sort );
-			// reset the loop
-			i = 0;
-			// loop through all of the targets again
-			do if ( data = arr[ i ] ){
-				// winners...
-				if ( data.winner && ia.drop.length < drop.multi ){
-					// new winner... dropstart
-					if ( !data.active[x] && !data.anyactive ){
-						// check to make sure that this is not prevented
-						if ( $special.drag.hijack( drop.event, "dropstart", dd, x, data.elem )[0] !== false ){
-							data.active[x] = 1;
-							data.anyactive += 1;
-						}
-						// if false, it is not a winner
-						else
-							data.winner = 0;
-					}
-					// if it is still a winner
-					if ( data.winner )
-						ia.drop.push( data.elem );
-				}
-				// losers...
-				else if ( data.active[x] && data.anyactive == 1 ){
-					// former winner... dropend
-					$special.drag.hijack( drop.event, "dropend", dd, x, data.elem );
-					data.active[x] = 0;
-					data.anyactive -= 1;
-				}
-			} while ( ++i < len ); // loop
-		} while ( ++x < end ) // loop
-		// check if the mouse is still moving or is idle
-		if ( drop.last && xy[0] == drop.last.pageX && xy[1] == drop.last.pageY )
-			delete drop.timer; // idle, don't recurse
-		else  // recurse
-			drop.timer = setTimeout(function(){
-				drop.tolerate( dd );
-			}, drop.delay );
-		// remember event, to compare idleness
-		drop.last = drop.event;
-	}
+  // async, recursive tolerance execution
+  tolerate: function( dd ){
+    // declare local refs
+    var i, drp, drg, data, arr, len, elem,
+    // interaction iteration variables
+    x = 0, ia, end = dd.interactions.length,
+    // determine the mouse coords
+    xy = [ drop.event.pageX, drop.event.pageY ],
+    // custom or stored tolerance fn
+    tolerance = drop.tolerance || drop.modes[ drop.mode ];
+    // go through each passed interaction...
+    do if ( ia = dd.interactions[x] ){
+      // check valid interaction
+      if ( !ia )
+        return;
+      // initialize or clear the drop data
+      ia.drop = [];
+      // holds the drop elements
+      arr = [];
+      len = ia.droppable.length;
+      // determine the proxy location, if needed
+      if ( tolerance )
+        drg = drop.locate( ia.proxy );
+      // reset the loop
+      i = 0;
+      // loop each stored drop target
+      do if ( elem = ia.droppable[i] ){
+        data = $.data( elem, drop.datakey );
+        drp = data.location;
+        if ( !drp ) continue;
+        // find a winner: tolerance function is defined, call it
+        data.winner = tolerance ? tolerance.call( drop, drop.event, drg, drp )
+          // mouse position is always the fallback
+          : drop.contains( drp, xy ) ? 1 : 0;
+        arr.push( data );
+      } while ( ++i < len ); // loop
+      // sort the drop targets
+      arr.sort( drop.sort );
+      // reset the loop
+      i = 0;
+      // loop through all of the targets again
+      do if ( data = arr[ i ] ){
+        // winners...
+        if ( data.winner && ia.drop.length < drop.multi ){
+          // new winner... dropstart
+          if ( !data.active[x] && !data.anyactive ){
+            // check to make sure that this is not prevented
+            if ( $special.drag.hijack( drop.event, "dropstart", dd, x, data.elem )[0] !== false ){
+              data.active[x] = 1;
+              data.anyactive += 1;
+            }
+            // if false, it is not a winner
+            else
+              data.winner = 0;
+          }
+          // if it is still a winner
+          if ( data.winner )
+            ia.drop.push( data.elem );
+        }
+        // losers...
+        else if ( data.active[x] && data.anyactive == 1 ){
+          // former winner... dropend
+          $special.drag.hijack( drop.event, "dropend", dd, x, data.elem );
+          data.active[x] = 0;
+          data.anyactive -= 1;
+        }
+      } while ( ++i < len ); // loop
+    } while ( ++x < end ) // loop
+    // check if the mouse is still moving or is idle
+    if ( drop.last && xy[0] == drop.last.pageX && xy[1] == drop.last.pageY )
+      delete drop.timer; // idle, don't recurse
+    else  // recurse
+      drop.timer = setTimeout(function(){
+        drop.tolerate( dd );
+      }, drop.delay );
+    // remember event, to compare idleness
+    drop.last = drop.event;
+  }
 
 };
 

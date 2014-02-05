@@ -4,18 +4,16 @@
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 <h4>Drag and drop files below to upload.</h4>
+<!-- <div class="form-group">
+<input placeholder="Search" class='form-control search-input' type='text' id='searchInput'>
+</div> -->
 <div id="myGrid" class="hgrid"></div>
 
-<script>
-// Don't show dropped content if user drags outside grid
-window.ondragover = function(e) { e.preventDefault(); };
-window.ondrop = function(e) { e.preventDefault(); };
-
-</script>
 </%def>
+
 <%def name="stylesheets()">
 <link rel="stylesheet" href="/static/vendor/hgrid/hgrid.css" type="text/css" />
-<link rel="stylesheet" href="/static/vendor/hgrid/osf-hgrid.css" type="text/css" />
+<link rel="stylesheet" href="/static/css/osf-hgrid.css" type="text/css" />
 </%def>
 
 <%def name="javascript()">
@@ -25,15 +23,20 @@ window.ondrop = function(e) { e.preventDefault(); };
 </%def>
 
 <%def name="javascript_bottom()">
+
 % for script in tree_js:
 <script type="text/javascript" src="${script}"></script>
 % endfor
-
 <script>
 (function(global) {
+// Don't show dropped content if user drags outside grid
+global.ondragover = function(e) { e.preventDefault(); };
+global.ondrop = function(e) { e.preventDefault(); };
+
 var gridData = ${grid_data};
-var filebrowser = new FileBrowser('#myGrid', {
+global.filebrowser = new FileBrowser('#myGrid', {
     data: gridData,
+    // searchInput: '#searchInput'
 });
 
 })(window);

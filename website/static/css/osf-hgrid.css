@@ -1,0 +1,31 @@
+.slick-row{
+    height: 30px !important;
+}
+
+.slick-cell, .hg-cell{
+    height: 100% !important;
+    border: 0px !important;
+}
+
+.btn-mini {
+  padding: 2px 6px;
+  font-size: 14px;
+  line-height: 14px;
+}
+
+.btn-delete {
+    color: #999999;
+}
+
+.btn-delete:hover {
+    text-decoration: none;
+}
+
+.hg-item-name:hover {
+    text-decoration: underline !important;
+    cursor: pointer;
+}
+
+.search-input {
+  width: 250px;
+}

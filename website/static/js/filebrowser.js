@@ -5,32 +5,26 @@
 this.FileBrowser = (function($, HGrid, bootbox) {
     var tpl = HGrid.Fmt.tpl;
 
-    // Can't use microtemplate because microtemplate escapes html
-    // Necessary for rendering, e.g. the github branch picker
-    HGrid.Col.Name.folderView = function(item) {
-        return HGrid.Html.folderIcon + item.name;
-    };
-
-    HGrid.Col.ActionButtons.itemView = function() {
+    HGrid.Col.ActionButtons.itemView = function(row) {
       var buttonDefs = [{
           text: '<i class="icon-download-alt icon-white"></i>',
           action: 'download',
-          cssClass: 'btn btn-success btn-mini'
+          cssClass: 'btn btn-primary btn-mini'
       }, {
-          text: '<i class="icon-trash icon-white"></i>',
+          text: '&nbsp;<i class="icon-remove"></i>',
           action: 'delete',
-          cssClass: 'btn btn-danger btn-mini'
+          cssClass: 'btn btn-link btn-mini btn-delete'
       }];
       return HGrid.Fmt.buttons(buttonDefs);
     };
 
-    HGrid.Col.ActionButtons.folderView = function() {
+    HGrid.Col.ActionButtons.folderView = function(row) {
         var buttonDefs = [];
         if (this.options.uploads) {
           buttonDefs.push({
-            text: '<i class="icon-cloud-upload icon-white"></i>',
+            text: '<i class="icon-upload"></i>',
             action: 'upload',
-            cssClass: 'btn btn-primary btn-mini'
+            cssClass: 'btn btn-default btn-mini'
           });
         }
         if (buttonDefs) {
@@ -47,7 +41,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             HGrid.Col.ActionButtons
         ],
         width: '100%',
-        height: 700,
+        height: 600,
         fetchUrl: function(row) {
             return row.urls.fetch;
         },
@@ -58,22 +52,11 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             return row.urls.delete;
         },
         onClickDelete: function(evt, row) {
-            console.log(this);
             var self = this;
-            // TODO: This text should be configurable by addon devs
-            var msg = tpl('Are you sure you want to delete "{{name}}"?', row);
-            var ajaxOptions = {
-                error: function() {
-                    bootbox.alert('There was a problem deleting your file. Please try again later.');
-                }
-            };
-            bootbox.confirm(msg, function(confirmed) {
-                if (confirmed) {
-                    self.removeItem(row.id);
-                    // Send request to delete file.
-                    self.deleteFile(row, ajaxOptions);
-                }
-            });
+            var $elem = $(evt.target);
+            // Show inline confirm
+            // TODO: Make inline confirmation more reuseable
+            $elem.closest('[data-hg-action="delete"]').html('Are you sure? <a class="unconfirm" data-target="">No</a> / <a class="confirm" data-target="">Yes</a>');
             return this;
         },
         deleteMethod: 'delete',
@@ -93,7 +76,13 @@ this.FileBrowser = (function($, HGrid, bootbox) {
                 return cfgFunc.call(this, file, row);
             }
         },
-        uploadMethod: 'post',
+        uploadMethod: function(file, row) {
+            var cfgFunc = FileBrowser.getCfg(row, 'uploadMethod');
+            if (cfgFunc) {
+                return cfgFunc.call(this, file, row);
+            }
+            return 'post';
+        },
         listeners: [
             // Go to file's detail page if name is clicked
             {
@@ -107,8 +96,35 @@ this.FileBrowser = (function($, HGrid, bootbox) {
                         }
                     }
                 }
+            },
+            {
+                on: 'click', selector: '.confirm',
+                callback: function(evt, row, grid) {
+                    if (row) {
+                        grid.deleteFile(row, {
+                            error: function() {
+                                // TODO: This text should be configurable by addon devs
+                                bootbox.error('Could not delete ' + row.name + '. Please try again later.');
+                            }
+                        });
+                    }
+                }
+            },
+            {
+                on: 'click', selector: '.unconfirm',
+                callback: function(evt, row, grid) {
+                    if (row) {
+                        // restore row html
+                        grid.updateItem(row);
+                    }
+                }
             }
-        ]
+        ],
+        init: function() {
+            var self = this;
+            // Expand all first level items
+            this.getData().forEach(function(item) {self.expandItem(item);});
+        }
     };
 
     // Public API
@@ -122,7 +138,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
     FileBrowser.cfg = {};
 
     FileBrowser.getCfg = function(row, key) {
-        if (this.cfg[row.addon]){
+        if (row && row.addon && this.cfg[row.addon]){
             return this.cfg[row.addon][key];
         }
         return undefined;
