@@ -17,7 +17,7 @@
     background: url('./images/drag-handle.png') no-repeat center center;
 }
 
-.hg-toggle, .hg-folder, .hg-file {
+.hg-toggle, .hg-folder, .hg-file, .hg-addon {
     height: 16px;
     width: 16px;
     display: inline-block;
@@ -38,6 +38,8 @@
     background: url('./images/file.png') no-repeat left top;
     margin-left: 5px;
 }
+
+
 
 .hg-toggle.hg-collapse {
     background: url('./images/collapse.gif') no-repeat center center;
