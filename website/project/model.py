@@ -835,12 +835,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             message = '{path} deleted'.format(path=path)
             committer = self._get_committer(auth)
 
-            commit_id = repo.do_commit(message, committer)
+            repo.do_commit(message, committer)
 
         except subprocess.CalledProcessError:
             return False
-
-        # date_modified = datetime.datetime.now()
 
         if file_name_key in self.files_current:
             nf = NodeFile.load(self.files_current[file_name_key])
@@ -853,7 +851,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             for i in self.files_versions[file_name_key]:
                 nf = NodeFile.load(i)
                 nf.is_deleted = True
-                # nf.date_modified = date_modified
                 nf.save()
             self.files_versions.pop(file_name_key)
 
@@ -871,7 +868,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             log_date=nf.date_modified,
         )
 
-        # self.save()
         return True
 
     @staticmethod

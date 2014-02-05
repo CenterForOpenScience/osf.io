@@ -324,7 +324,7 @@ class TestNodeFile(DbTestCase):
 
     def test_url(self):
         assert_equal(
-            self.node_file.api_url,
+            self.node_file.api_url(self.node),
             '{0}osffiles/{1}/'.format(self.node.api_url, self.node_file.filename),
         )
 
@@ -335,8 +335,10 @@ class TestNodeFile(DbTestCase):
         assert_equal(self.node_file.latest_version_number, 1)
 
     def test_download_url(self):
-        assert_equal(self.node_file.download_url,
-            self.node.api_url + 'osffiles/{0}/version/1/'.format(self.node_file.filename))
+        assert_equal(
+            self.node_file.download_url(self.node),
+            self.node.api_url + 'osffiles/{0}/version/1/'.format(self.node_file.filename)
+        )
 
 
 class TestAddFile(DbTestCase):
