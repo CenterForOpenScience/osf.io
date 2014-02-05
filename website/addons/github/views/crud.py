@@ -62,7 +62,8 @@ def get_cache_file(path, sha):
 @must_have_addon('github', 'node')
 def github_view_file(*args, **kwargs):
 
-    user = kwargs['user']
+    auth = kwargs['auth']
+    user = auth.user
     node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
 
@@ -125,7 +126,7 @@ def github_view_file(*args, **kwargs):
         'download_url': url,
         'commits': commits,
     }
-    rv.update(_view_project(node, user, primary=True))
+    rv.update(_view_project(node, auth, primary=True))
     return rv
 
 
@@ -135,7 +136,8 @@ def github_view_file(*args, **kwargs):
 def github_upload_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
+    auth = kwargs['auth']
+    user = auth.user
     github = kwargs['node_addon']
     now = datetime.datetime.utcnow()
 
@@ -197,8 +199,7 @@ def github_upload_file(*args, **kwargs):
                     ),
                 },
             },
-            user=user,
-            api_key=None,
+            auth=auth,
             log_date=now,
         )
 
@@ -247,7 +248,7 @@ def github_upload_file(*args, **kwargs):
 def github_delete_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
+    auth = kwargs['auth']
     github = kwargs['node_addon']
 
     now = datetime.datetime.utcnow()
@@ -263,8 +264,8 @@ def github_delete_file(*args, **kwargs):
     branch = request.json.get('branch')
 
     author = {
-        'name': user.fullname,
-        'email': '{0}@osf.io'.format(user._id),
+        'name': auth.user.fullname,
+        'email': '{0}@osf.io'.format(auth.user._id),
     }
 
     connection = GitHub.from_settings(github.user_settings)
@@ -288,8 +289,7 @@ def github_delete_file(*args, **kwargs):
                 'repo': github.repo,
             },
         },
-        user=user,
-        api_key=None,
+        auth=auth,
         log_date=now,
     )
 
