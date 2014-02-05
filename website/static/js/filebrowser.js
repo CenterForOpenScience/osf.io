@@ -79,8 +79,6 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         },
         uploadMethod: function(row) {
             var cfgFunc = FileBrowser.getCfg(row, 'uploadMethod');
-            console.log('in filebrowser');
-            console.log(row);
             if (cfgFunc) {
                 return cfgFunc.call(this, row);
             }
