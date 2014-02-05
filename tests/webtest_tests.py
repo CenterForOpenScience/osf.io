@@ -582,10 +582,10 @@ class TestShortUrls(DbTestCase):
             'test content', 4, 'text/plain'
         )
         # Warm up to account for file rendering
-        _ = self._url_to_body(node_file.url)
+        _ = self._url_to_body(node_file.url(self.component))
         assert_equal(
-            self._url_to_body(node_file.deep_url),
-            self._url_to_body(node_file.url),
+            self._url_to_body(node_file.deep_url(self.component)),
+            self._url_to_body(node_file.url(self.component)),
         )
 
     def test_wiki_url(self):
