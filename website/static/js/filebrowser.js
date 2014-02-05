@@ -33,6 +33,18 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         return '';
     };
 
+    HGrid.Actions.delete = {
+        on: 'click',
+        callback: function(evt, item) {
+            var self = this;
+            $(evt.target).inlineConfirmation({
+                confirmCallback: function() {
+                    self.deleteFile(item);
+                }
+            });
+        }
+    };
+
 
     // OSF-specific HGrid options common to all addons
     baseOptions = {
@@ -52,10 +64,6 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             return row.urls.delete;
         },
         onClickDelete: function(evt, row) {
-            var self = this;
-            var $elem = $(evt.target);
-            // Show inline confirm
-            $elem.closest('[data-hg-action="delete"]').html('Are you sure? <a class="unconfirm" data-target="">No</a> / <a class="confirm" data-target="">Yes</a>');
             return this;
         },
         deleteMethod: 'delete',
@@ -93,28 +101,6 @@ this.FileBrowser = (function($, HGrid, bootbox) {
                         if (viewUrl) {
                             window.location.href = viewUrl;
                         }
-                    }
-                }
-            },
-            {
-                on: 'click', selector: '.confirm',
-                callback: function(evt, row, grid) {
-                    if (row) {
-                        grid.deleteFile(row, {
-                            error: function() {
-                                // TODO: This text should be configurable by addon devs
-                                bootbox.error('Could not delete ' + row.name + '. Please try again later.');
-                            }
-                        });
-                    }
-                }
-            },
-            {
-                on: 'click', selector: '.unconfirm',
-                callback: function(evt, row, grid) {
-                    if (row) {
-                        // restore row html
-                        grid.updateItem(row);
                     }
                 }
             }
