@@ -53,9 +53,6 @@
   opacity: 50%;
 }
 
-.hg-item-content .error {
-  color: red;
-}
 
 /*Progress bar*/
 .hg-progress {
