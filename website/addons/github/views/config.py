@@ -45,7 +45,7 @@ def github_set_config(*args, **kwargs):
             message = (
                 'Cannot access repo.'
             )
-        return {'message': message}, 400
+        return {'message': message}, http.BAD_REQUEST
 
     if not github_user_name or not github_repo_name:
         raise HTTPError(http.BAD_REQUEST)

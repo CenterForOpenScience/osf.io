@@ -37,18 +37,6 @@ class NodeFile(GuidStoredObject):
     uploader = fields.ForeignField('user', backref='uploads')
 
     @property
-    def url(self):
-        return '{0}osffiles/{1}/'.format(self.node.url, self.filename)
-
-    @property
-    def deep_url(self):
-        return '{0}osffiles/{1}/'.format(self.node.deep_url, self.filename)
-
-    @property
-    def api_url(self):
-        return '{0}osffiles/{1}/'.format(self.node.api_url, self.filename)
-
-    @property
     def clean_filename(self):
         return self.filename.replace('.', '_')
 
@@ -56,7 +44,15 @@ class NodeFile(GuidStoredObject):
     def latest_version_number(self):
         return len(self.node.files_versions[self.clean_filename])
 
-    @property
-    def download_url(self):
+    def url(self, node):
+        return '{0}osffiles/{1}/'.format(node.url, self.filename)
+
+    def deep_url(self, node):
+        return '{0}osffiles/{1}/'.format(node.deep_url, self.filename)
+
+    def api_url(self, node):
+        return '{0}osffiles/{1}/'.format(node.api_url, self.filename)
+
+    def download_url(self, node):
         return '{}osffiles/{}/version/{}/'.format(
-            self.node.api_url, self.filename, self.latest_version_number)
+            node.api_url, self.filename, self.latest_version_number)
