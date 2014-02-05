@@ -65,9 +65,12 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             var cfgOption = resolveCfgOption.call(this, row, 'uploadUrl', [row]);
             return cfgOption || row.urls.upload;
         },
-        uploadAdded: function(file, row) {
+        uploadAdded: function(file, row, folder) {
+            // Need to set the added row's addon for other callbacks to work
             var parent = this.getByID(row.parentID);
             row.addon = parent.addon;
+            // expand the folder
+            this.expandItem(folder);
             var cfgOption = resolveCfgOption.call(this, row, 'uploadAdded', [file, row]);
             return cfgOption || null;
         },
