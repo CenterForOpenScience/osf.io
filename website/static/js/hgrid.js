@@ -167,7 +167,6 @@ if (typeof jQuery === 'undefined') {
     // Icons
     folderIcon: ' <i class="hg-folder"></i>',
     fileIcon: '<i class="hg-file"></i>',
-    addonIcon: '<i class="hg-addon"></i>',
     // Placeholder for error messages. Upload error messages will be interpolated here
     errorElem: '&nbsp;<span class="error" data-upload-errormessage></span>',
     buttonClass: 'hg-btn'
