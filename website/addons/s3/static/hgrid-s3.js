@@ -2,39 +2,36 @@
 (function(FileBrowser) {
 
     // Private stuff
-
+console.log('S3 settings loaded')
     // Public stuff
     FileBrowser.cfg.s3 = {
 
-        headers: {
-            'x-amz-acl': 'private'
-        },
-
-        uploadMethod:'PUT',
+        uploadMethod: function(row){return 'PUT';},
 
         uploadAdded: function(file, item) {
             var deferred = $.Deferred();
             var self = this;
+            console.log(this.dropzone.url);
             return $.ajax({
                 type: 'POST',
                 url: nodeApiUrl + 's3/upload/',
                 data: JSON.stringify({name: file.name, type: file.type}),
                 contentType: 'application/json',
-                dataType: 'json'
+                dataType: 'json',
+                async: false
             }).success(function (url) {
                 deferred.resolve(url);
                 self.dropzone.options.url = url;
-                console.log(self.dropzone.options.url);
             });
+        },
+
+        uploadSending: function(file, formData, xhr) {
+            console.log('Called');
+            xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+            xhr.setRequestHeader('x-amz-acl', 'private');
         }
+
+
     };
 
 })(FileBrowser);
-
-/*
- *
- * xhr.setRequestHeader('Content-Type', type);
- * xhr.setRequestHeader('x-amz-acl', 'private');
- *
- *
- */
