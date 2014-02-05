@@ -29,3 +29,17 @@
 .search-input {
   width: 250px;
 }
+
+.hg-icon {
+    height: 16px;
+    width: 16px;
+    display: inline-block;
+    margin-bottom: -3px;
+    padding-right: 3px;
+    margin-left: 5px;
+}
+
+.hg-addon {
+    height: 16px;
+    width: 18px;
+}
