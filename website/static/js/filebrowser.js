@@ -5,21 +5,15 @@
 this.FileBrowser = (function($, HGrid, bootbox) {
     var tpl = HGrid.Fmt.tpl;
 
-    // Can't use microtemplate because microtemplate escapes html
-    // Necessary for rendering, e.g. the github branch picker
-    HGrid.Col.Name.folderView = function(item) {
-        return HGrid.Html.folderIcon + item.name;
-    };
-
     HGrid.Col.ActionButtons.itemView = function() {
       var buttonDefs = [{
           text: '<i class="icon-download-alt icon-white"></i>',
           action: 'download',
-          cssClass: 'btn btn-success btn-mini'
+          cssClass: 'btn btn-primary btn-mini'
       }, {
-          text: '<i class="icon-trash icon-white"></i>',
+          text: '&nbsp;<i class="icon-remove"></i>',
           action: 'delete',
-          cssClass: 'btn btn-danger btn-mini'
+          cssClass: 'btn btn-link btn-mini btn-delete'
       }];
       return HGrid.Fmt.buttons(buttonDefs);
     };
@@ -28,9 +22,9 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         var buttonDefs = [];
         if (this.options.uploads) {
           buttonDefs.push({
-            text: '<i class="icon-cloud-upload icon-white"></i>',
+            text: '<i class="icon-upload"></i>',
             action: 'upload',
-            cssClass: 'btn btn-primary btn-mini'
+            cssClass: 'btn btn-default btn-mini'
           });
         }
         if (buttonDefs) {
