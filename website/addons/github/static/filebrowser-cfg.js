@@ -33,11 +33,7 @@
                 var branch = $this.val();
                 refreshGitHubTree(grid, item, branch);
             }
-        }],
-        uploadAdded: function(file, row) {
-            console.log(row);
-        }
-
+        }]
     };
 
 })(FileBrowser);
