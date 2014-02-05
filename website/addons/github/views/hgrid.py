@@ -4,6 +4,7 @@ from mako.template import Template
 
 from framework import request
 from framework.auth import get_current_user
+from framework.auth.decorators import Auth
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
@@ -62,10 +63,10 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
     )
 
     if branch is not None:
-
+        auth = Auth(user=node_settings.user)
         ref = ref_to_params(branch, sha)
         can_edit = _check_permissions(
-            node_settings, node_settings.user, connection, branch, sha
+            node_settings, auth, connection, branch, sha
         )
         name_append = github_branch_widget(branches, branch, sha)
     else:
