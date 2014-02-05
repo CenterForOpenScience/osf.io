@@ -84,6 +84,10 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             var cfgOption = resolveCfgOption(row, 'uploadMethod', [row]);
             return cfgOption || 'post';
         },
+        uploadSending: function(file, row, xhr, formData) {
+            var cfgOption = resolveCfgOption(row, 'uploadSending', [file, row, xhr, formData]);
+            return cfgOption || null;
+        },
         listeners: [
             // Go to file's detail page if name is clicked
             {
