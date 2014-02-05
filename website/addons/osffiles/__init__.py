@@ -5,7 +5,7 @@ NODE_SETTINGS_MODEL = model.AddonFilesNodeSettings
 
 ROUTES = [
     routes.settings_routes,
-    routes.widget_routes,
+    #routes.widget_routes,
     routes.web_routes,
     routes.api_routes
 ]
