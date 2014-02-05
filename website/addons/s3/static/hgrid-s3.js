@@ -11,11 +11,16 @@ console.log('S3 settings loaded')
         uploadAdded: function(file, item) {
             var deferred = $.Deferred();
             var self = this;
-            console.log(this.dropzone.url);
+            var parent = this.getByID(item.parentID);
+            var name = file.name;
+            while (parent.depth > 1) {
+                name = parent.name + '/' + name;
+                parent = this.getByID(parent.parentID);
+            }
             return $.ajax({
                 type: 'POST',
                 url: nodeApiUrl + 's3/upload/',
-                data: JSON.stringify({name: file.name, type: file.type}),
+                data: JSON.stringify({name: name, type: file.type}),
                 contentType: 'application/json',
                 dataType: 'json',
                 async: false
@@ -26,11 +31,17 @@ console.log('S3 settings loaded')
         },
 
         uploadSending: function(file, formData, xhr) {
-            console.log('Called');
             xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
             xhr.setRequestHeader('x-amz-acl', 'private');
-        }
+        },
 
+        uploadSuccess: function(file, item, data) {
+            //Build nolonger dummy file here
+            console.log(file);
+            console.log(item);
+            console.log(data);
+
+        }
 
     };
 
