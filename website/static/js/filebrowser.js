@@ -33,9 +33,18 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         return '';
     };
 
+    function resolveCfgOption(row, option, args) {
+        var prop = FileBrowser.getCfg(row, option);
+        if (prop) {
+            return typeof prop === 'function' ? prop.apply(this, args) : prop;
+        } else {
+            return null;
+        }
+    }
 
     // OSF-specific HGrid options common to all addons
     baseOptions = {
+        /*jshint unused: false */
         columns: [
             HGrid.Col.Name,
             HGrid.Col.ActionButtons
@@ -52,7 +61,6 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             return row.urls.delete;
         },
         onClickDelete: function(evt, row) {
-            var self = this;
             var $elem = $(evt.target);
             // Show inline confirm
             // TODO: Make inline confirmation more reuseable
@@ -63,26 +71,18 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         deleteMethod: 'delete',
         uploads: true,
         uploadUrl: function(row) {
-            var cfgFunc = FileBrowser.getCfg(row, 'uploadUrl');
-            if (cfgFunc) {
-                return cfgFunc.call(this, row);
-            }
-            return row.urls.upload;
+            var cfgOption = resolveCfgOption(row, 'uploadUrl', [row]);
+            return cfgOption || row.urls.upload;
         },
         uploadAdded: function(file, row) {
             var parent = this.getByID(row.parentID);
             row.addon = parent.addon;
-            var cfgFunc = FileBrowser.getCfg(row, 'uploadAdded');
-            if (cfgFunc) {
-                return cfgFunc.call(this, file, row);
-            }
+            var cfgOption = resolveCfgOption(row, 'uploadAdded', [file, row]);
+            return cfgOption || null;
         },
         uploadMethod: function(row) {
-            var cfgFunc = FileBrowser.getCfg(row, 'uploadMethod');
-            if (cfgFunc) {
-                return cfgFunc.call(this, row);
-            }
-            return 'post';
+            var cfgOption = resolveCfgOption(row, 'uploadMethod', [row]);
+            return cfgOption || 'post';
         },
         listeners: [
             // Go to file's detail page if name is clicked
