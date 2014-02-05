@@ -5,7 +5,7 @@
 this.FileBrowser = (function($, HGrid, bootbox) {
     var tpl = HGrid.Fmt.tpl;
 
-    HGrid.Col.ActionButtons.itemView = function() {
+    HGrid.Col.ActionButtons.itemView = function(row) {
       var buttonDefs = [{
           text: '<i class="icon-download-alt icon-white"></i>',
           action: 'download',
@@ -18,7 +18,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
       return HGrid.Fmt.buttons(buttonDefs);
     };
 
-    HGrid.Col.ActionButtons.folderView = function() {
+    HGrid.Col.ActionButtons.folderView = function(row) {
         var buttonDefs = [];
         if (this.options.uploads) {
           buttonDefs.push({
@@ -53,19 +53,9 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         },
         onClickDelete: function(evt, row) {
             var self = this;
-            // TODO: This text should be configurable by addon devs
-            var msg = tpl('Are you sure you want to delete "{{name}}"?', row);
-            var ajaxOptions = {
-                error: function() {
-                    bootbox.alert('There was a problem deleting your file. Please try again later.');
-                }
-            };
-            bootbox.confirm(msg, function(confirmed) {
-                if (confirmed) {
-                    // Send request to delete file.
-                    self.deleteFile(row, ajaxOptions);
-                }
-            });
+            var $elem = $(evt.target);
+            // Show inline confirm
+            $elem.closest('[data-hg-action="delete"]').html('Are you sure? <a class="unconfirm" data-target="">No</a> / <a class="confirm" data-target="">Yes</a>');
             return this;
         },
         deleteMethod: 'delete',
@@ -103,6 +93,28 @@ this.FileBrowser = (function($, HGrid, bootbox) {
                         if (viewUrl) {
                             window.location.href = viewUrl;
                         }
+                    }
+                }
+            },
+            {
+                on: 'click', selector: '.confirm',
+                callback: function(evt, row, grid) {
+                    if (row) {
+                        grid.deleteFile(row, {
+                            error: function() {
+                                // TODO: This text should be configurable by addon devs
+                                bootbox.error('Could not delete ' + row.name + '. Please try again later.');
+                            }
+                        });
+                    }
+                }
+            },
+            {
+                on: 'click', selector: '.unconfirm',
+                callback: function(evt, row, grid) {
+                    if (row) {
+                        // restore row html
+                        grid.updateItem(row);
                     }
                 }
             }
