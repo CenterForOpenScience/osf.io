@@ -33,7 +33,7 @@ def link_widget(*args, **kwargs):
 @decorators.must_be_contributor_or_public
 def link_page(**kwargs):
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
     node = kwargs['node'] or kwargs['project']
     link = node.get_addon('link')
 

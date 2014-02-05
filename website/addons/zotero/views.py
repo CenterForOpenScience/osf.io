@@ -42,7 +42,7 @@ def zotero_widget(*args, **kwargs):
 @must_be_contributor_or_public
 def zotero_page(**kwargs):
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
     node = kwargs['node'] or kwargs['project']
     zotero = node.get_addon('zotero')
 

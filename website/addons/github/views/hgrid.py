@@ -41,7 +41,7 @@ def github_branch_widget(branches, branch, sha):
     )
 
 
-def github_dummy_folder(node_settings, user, parent=None, **kwargs):
+def github_dummy_folder(node_settings, auth, parent=None, **kwargs):
 
     # Quit if no repo linked
     if not node_settings.user or not node_settings.repo:
@@ -74,7 +74,7 @@ def github_dummy_folder(node_settings, user, parent=None, **kwargs):
 
         ref = ref_to_params(branch, sha)
         can_edit = _check_permissions(
-            node_settings, user, connection, branch, sha
+            node_settings, auth, connection, branch, sha
         )
 
         rv.update({
@@ -104,12 +104,12 @@ def github_dummy_folder_public(*args, **kwargs):
 
     """
     node_settings = kwargs['node_addon']
-    user = get_current_user()
+    auth = kwargs['auth']
     data = request.args.to_dict()
 
     parent = data.pop('parent', 'null')
 
-    return github_dummy_folder(node_settings, user, parent, **data)
+    return github_dummy_folder(node_settings, auth, parent, **data)
 
 
 @must_be_contributor_or_public
@@ -118,7 +118,7 @@ def github_hgrid_data_contents(*args, **kwargs):
     """Return a repo's file tree as a dict formatted for HGrid.
 
     """
-    user = kwargs['user']
+    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
     node_addon = kwargs['node_addon']
     path = kwargs.get('path', '')
@@ -135,7 +135,7 @@ def github_hgrid_data_contents(*args, **kwargs):
         ref=sha or branch,
     )
     parent = request.args.get('parent', 'null')
-    can_edit = _check_permissions(node_addon, user, connection, branch, sha)
+    can_edit = _check_permissions(node_addon, auth, connection, branch, sha)
     if contents:
         hgrid_tree = tree_to_hgrid(
             contents, user=node_addon.user,

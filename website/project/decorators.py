@@ -1,9 +1,10 @@
 import httplib as http
 import functools
 
-from framework import get_current_user, request, redirect
+from framework import request, redirect
 from framework.exceptions import HTTPError
-from framework.auth import get_api_key
+from framework.auth import get_current_user, get_api_key
+from framework.auth.decorators import Auth
 
 from website.models import Node
 
@@ -36,6 +37,8 @@ def _kwargs_to_nodes(kwargs):
 
 
 def must_be_valid_project(func):
+
+    # TODO: Check private link
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
@@ -78,8 +81,8 @@ def _must_be_contributor_factory(include_public):
             kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
             node = kwargs['node'] or kwargs['project']
 
-            user = kwargs.get('user') or get_current_user()
-            kwargs['user'] = user
+            kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
+            user = kwargs['auth'].user
 
             if 'api_node' in kwargs:
                 api_node = kwargs['api_node']
