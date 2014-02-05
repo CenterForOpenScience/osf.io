@@ -33,7 +33,7 @@ def generate_signed_url(mime, file_name, s3):
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
 def create_new_bucket(*args, **kwargs):
-    user = kwargs['user']
+    user = kwargs['auth'].user
     user_settings = user.get_addon('s3')
     if create_bucket(user_settings, request.json.get('bucket_name')):
         return {}, 200

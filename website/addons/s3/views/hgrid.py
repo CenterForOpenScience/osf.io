@@ -43,11 +43,11 @@ def s3_hgrid_data_contents(*args, **kwargs):
     node_settings = kwargs['node_addon']
     node = node_settings.owner
     s3_node_settings = node.get_addon('s3')
-    user = kwargs['user']
+    auth = kwargs['auth']
     path = unquote(kwargs.get('path', None)) + '/' if kwargs.get('path', None) else None
 
-    can_edit = node.can_edit(user) and not node.is_registration
-    can_view = node.can_view(user)
+    can_edit = node.can_edit(auth) and not node.is_registration
+    can_view = node.can_view(auth)
 
     s3wrapper = S3Wrapper.from_addon(s3_node_settings)
 
@@ -73,7 +73,7 @@ def s3_hgrid_data_contents(*args, **kwargs):
 @must_have_addon('s3', 'node')
 def s3_dummy_folder(*args, **kwargs):
     node_settings = kwargs['node_addon']
-    user = get_current_user()
+    user = kwargs['auth'].user#get_current_user()
     data = request.args.to_dict()
 
     parent = data.pop('parent', 'null')

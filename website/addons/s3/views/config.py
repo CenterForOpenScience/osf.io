@@ -5,7 +5,7 @@ from framework.exceptions import HTTPError
 
 from website.project.decorators import must_be_contributor
 from website.project.decorators import must_have_addon
-from framework.auth import must_be_logged_in
+from framework.auth.decorators import must_be_logged_in
 
 from website.addons.s3.api import S3Wrapper
 from website.addons.s3.api import has_access, does_bucket_exist
@@ -16,7 +16,7 @@ from website.addons.s3.utils import adjust_cors
 @must_be_logged_in
 @must_have_addon('s3', 'user')
 def user_settings(*args, **kwargs):
-    user = kwargs['user']
+    user = kwargs['auth'].user
     s3_user = user.get_addon('s3')
     if not s3_user:
         raise HTTPError(http.BAD_REQUEST)
@@ -46,7 +46,7 @@ def user_settings(*args, **kwargs):
 @must_have_addon('s3', 'node')
 def node_settings(*args, **kwargs):
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
 
     # This should never happen....
     if not user:
@@ -78,7 +78,7 @@ def node_settings(*args, **kwargs):
 @must_be_logged_in
 @must_have_addon('s3', 'user')
 def remove_user_settings(*args, **kwargs):
-    user = kwargs['user']
+    user = kwargs['auth'].user
     user_settings = user.get_addon('s3')
 
     user_settings.access_key = ''

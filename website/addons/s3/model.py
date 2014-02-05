@@ -13,7 +13,7 @@ from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 
 from utils import get_bucket_drop_down, serialize_bucket
 
-from api import S3Wrapper, enable_versioning
+from api import S3Wrapper
 
 
 class AddonS3UserSettings(AddonUserSettingsBase):
