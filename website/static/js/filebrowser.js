@@ -57,7 +57,6 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             return row.urls.delete;
         },
         onClickDelete: function(evt, row) {
-            console.log(this);
             var self = this;
             // TODO: This text should be configurable by addon devs
             var msg = tpl('Are you sure you want to delete "{{name}}"?', row);
@@ -68,7 +67,6 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             };
             bootbox.confirm(msg, function(confirmed) {
                 if (confirmed) {
-                    self.removeItem(row.id);
                     // Send request to delete file.
                     self.deleteFile(row, ajaxOptions);
                 }
