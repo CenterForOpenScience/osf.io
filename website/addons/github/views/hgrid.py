@@ -46,7 +46,7 @@ def github_branch_widget(branches, branch, sha):
     return rendered
 
 
-def github_hgrid_data(node_settings, user, contents=False, **kwargs):
+def github_hgrid_data(node_settings, auth, parent=None, contents=False, *args, **kwargs):
 
     # Quit if no repo linked
     if not node_settings.user or not node_settings.repo:
@@ -62,7 +62,6 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
     )
 
     if branch is not None:
-        auth = Auth(user=node_settings.user)
         ref = ref_to_params(branch, sha)
         can_edit = _check_permissions(
             node_settings, auth, connection, branch, sha
@@ -94,16 +93,6 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
         }
     }
 
-    # if False:#contents:
-    #     if sha is None:
-    #         branch, sha, branches = _get_refs(
-    #             node_settings, branch, sha, connection=connection
-    #         )
-    #     tree = _get_tree(node_settings, sha, connection)
-    #     node_url = node_settings.owner.url
-    #     api_url = node_settings.owner.api_url
-    #     rv['children'] = to_hgrid(tree, node_url=node_url, node_api_url=api_url,
-    #         branch=branch, sha=sha)
     return rv
 
 
@@ -120,7 +109,7 @@ def github_root_folder_public(*args, **kwargs):
     data = request.args.to_dict()
     parent = data.pop('parent', 'null')
 
-    return github_hgrid_data(node_settings, auth, parent, contents=False, **data)
+    return github_hgrid_data(node_settings, auth=auth, parent=parent, contents=False, **data)
 
 
 def _get_tree(node_settings, sha, connection=None):
