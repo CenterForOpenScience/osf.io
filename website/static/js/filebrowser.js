@@ -56,7 +56,8 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             var $elem = $(evt.target);
             // Show inline confirm
             // TODO: Make inline confirmation more reuseable
-            $elem.closest('[data-hg-action="delete"]').html('Are you sure? <a class="unconfirm" data-target="">No</a> / <a class="confirm" data-target="">Yes</a>');
+            $elem.closest('[data-hg-action="delete"]')
+                .html('Are you sure? <a class="unconfirm" data-target="">No</a> / <a class="confirm" data-target="">Yes</a>');
             return this;
         },
         deleteMethod: 'delete',
@@ -76,10 +77,12 @@ this.FileBrowser = (function($, HGrid, bootbox) {
                 return cfgFunc.call(this, file, row);
             }
         },
-        uploadMethod: function(file, row) {
+        uploadMethod: function(row) {
             var cfgFunc = FileBrowser.getCfg(row, 'uploadMethod');
+            console.log('in filebrowser');
+            console.log(row);
             if (cfgFunc) {
-                return cfgFunc.call(this, file, row);
+                return cfgFunc.call(this, row);
             }
             return 'post';
         },
