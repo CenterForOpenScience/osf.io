@@ -4,6 +4,9 @@
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 <h4>Drag and drop files below to upload.</h4>
+<!-- <div class="form-group">
+<input placeholder="Search" class='form-control search-input' type='text' id='searchInput'>
+</div> -->
 <div id="myGrid" class="hgrid"></div>
 
 </%def>
@@ -32,8 +35,9 @@ global.ondragover = function(e) { e.preventDefault(); };
 global.ondrop = function(e) { e.preventDefault(); };
 
 var gridData = ${grid_data};
-var filebrowser = new FileBrowser('#myGrid', {
+global.filebrowser = new FileBrowser('#myGrid', {
     data: gridData,
+    // searchInput: '#searchInput'
 });
 
 })(window);

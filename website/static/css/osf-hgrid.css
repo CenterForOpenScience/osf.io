@@ -14,7 +14,7 @@
 }
 
 .btn-delete {
-    color: #666666;
+    color: #999999;
 }
 
 .btn-delete:hover {
@@ -24,4 +24,8 @@
 .hg-item-name:hover {
     text-decoration: underline !important;
     cursor: pointer;
+}
+
+.search-input {
+  width: 250px;
 }
