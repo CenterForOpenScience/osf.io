@@ -62,7 +62,8 @@ def get_cache_file(path, sha):
 @must_have_addon('github', 'node')
 def github_view_file(*args, **kwargs):
 
-    user = kwargs['user']
+    auth = kwargs['auth']
+    user = auth.user
     node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
 
@@ -125,7 +126,7 @@ def github_view_file(*args, **kwargs):
         'download_url': url,
         'commits': commits,
     }
-    rv.update(_view_project(node, user, primary=True))
+    rv.update(_view_project(node, auth, primary=True))
     return rv
 
 
@@ -136,6 +137,7 @@ def github_upload_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
+    user = auth.user
     github = kwargs['node_addon']
     now = datetime.datetime.utcnow()
 

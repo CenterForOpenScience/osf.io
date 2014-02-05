@@ -42,7 +42,6 @@ import httplib as http
 import difflib
 
 from framework import request, status
-from framework.auth import get_current_user
 from framework.analytics import update_counters
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
@@ -133,7 +132,8 @@ def project_wiki_compare(*args, **kwargs):
 def project_wiki_version(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
-    user = kwargs['user']
+    auth = kwargs['auth']
+    user = auth.user
     wid = kwargs['wid']
     vid = kwargs['vid']
 
@@ -150,7 +150,7 @@ def project_wiki_version(*args, **kwargs):
             'is_current': pw.is_current,
             'is_edit': False,
         }
-        rv.update(_view_project(node_to_use, user, primary=True))
+        rv.update(_view_project(node_to_use, auth, primary=True))
         return rv
 
     raise HTTPError(http.NOT_FOUND)
@@ -280,4 +280,4 @@ def project_wiki_edit_post(*args, **kwargs):
             'status' : 'success',
         }, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
     else:
-        return {}, None, None, '{}wiki/{}/'.format(node_to_use.url,wid)
+        return {}, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)

@@ -18,7 +18,7 @@ from ..auth import oauth_start_url, oauth_get_token
 @must_have_addon('github', 'node')
 def github_add_user_auth(*args, **kwargs):
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
 
     github_user = user.get_addon('github')
     github_node = kwargs['node_addon']

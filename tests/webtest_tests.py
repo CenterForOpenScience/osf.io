@@ -21,8 +21,8 @@ from framework import app
 
 
 # Only uncomment if running these tests in isolation
-#from website.app import init_app
-#app = init_app(set_backends=False, routes=True)
+from website.app import init_app
+app = init_app(set_backends=False, routes=True)
 
 
 class TestAnUnregisteredUser(DbTestCase):
@@ -474,8 +474,10 @@ class TestMergingAccounts(DbTestCase):
         self.user.merge_user(self.dupe)
         self.user.save()
         # Now only the master user is shown at the project page
+        print 'debug', self.user._id, self.dupe._id, project.contributor_list
         res = self.app.get(project.url).maybe_follow()
         assert_in(self.user.fullname, res)
+        assert_true(self.dupe.is_merged)
         assert_not_in(self.dupe.fullname, res)
 
     def test_merged_user_has_alert_message_on_profile(self):
@@ -575,8 +577,12 @@ class TestShortUrls(DbTestCase):
         )
 
     def test_file_url(self):
-        node_file = self.component.add_file(self.consolidate_auth, 'test.txt',
-                                         'test content', 4, 'text/plain')
+        node_file = self.component.add_file(
+            self.consolidate_auth, 'test.txt',
+            'test content', 4, 'text/plain'
+        )
+        # Warm up to account for file rendering
+        _ = self._url_to_body(node_file.url)
         assert_equal(
             self._url_to_body(node_file.deep_url),
             self._url_to_body(node_file.url),

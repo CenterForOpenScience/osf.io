@@ -1140,7 +1140,14 @@ class Node(GuidStoredObject, AddonModelMixin):
         return 'project' if self.category == 'project' else 'component'
 
     def is_contributor(self, user):
-        return (user is not None) and (not user.is_merged) and ((user in self.contributors) or user == self.creator)
+        return (
+            user is not None
+            and not user.is_merged
+            and (
+                user in self.contributors
+                or user == self.creator
+            )
+        )
 
     def remove_nonregistered_contributor(self, auth, name, hash_id):
         deleted = False
