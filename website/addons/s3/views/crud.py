@@ -56,8 +56,7 @@ def delete(*args, **kwargs):
             'bucket': s3.bucket,
             'path': dfile,
         },
-        user=kwargs['auth'].user,
-        api_key=None,
+        auth=kwargs['auth'],
         log_date=datetime.datetime.utcnow(),
     )
     return {}
@@ -76,7 +75,7 @@ def view(*args, **kwargs):
         vid = 'null'
 
     node_settings = kwargs['node_addon']
-    user = kwargs['auth'].user
+    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
     wrapper = S3Wrapper.from_addon(node_settings)
@@ -110,7 +109,7 @@ def view(*args, **kwargs):
         'versions': versions,
         'current': key.version_id,
     }
-    rv.update(_view_project(node, user, primary=True))
+    rv.update(_view_project(node, auth, primary=True))
 
     return rv
 
@@ -146,8 +145,7 @@ def upload(*args, ** kwargs):
             'bucket': s3.bucket,
             'path': file_name,
         },
-        user=kwargs['auth'].user,
-        api_key=None,
+        auth=kwargs['auth'],
         log_date=datetime.datetime.utcnow(),
     )
 
