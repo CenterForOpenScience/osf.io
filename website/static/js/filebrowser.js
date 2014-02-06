@@ -39,7 +39,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         text: 'Status',
         folderView: '<span data-status></span>',
         itemView: '<span data-status></span>',
-        width: 15
+        width: 50
     };
 
     HGrid.prototype.changeStatus = function(row, html, fadeAfter) {
@@ -57,11 +57,17 @@ this.FileBrowser = (function($, HGrid, bootbox) {
     // TODO: This should be configurable by addon devs
     var status = {
         FETCH_SUCCESS: '',
-        FETCH_START: '<span class="text-muted">Fetching contents...</span>',
+        FETCH_START: '<span class="text-muted">Fetching contents. . .</span>',
         FETCH_ERROR: '<span class="text-info">Could not retrieve data. Please refresh the page and try again.</span>',
         UPLOAD_SUCCESS: '<span class="text-success">Successfully uploaded</span>',
         DELETED: function (row) {
-            return '<span class="text-success">Successfully deleted "' + row.name + '"</span>';
+            return '<span class="text-warning">Successfully deleted "' + row.name + '"</span>';
+        },
+        UPLOAD_ERROR: function(msg) {
+            return '<span class="text-danger">' + msg + '</span>';
+        },
+        UPLOAD_PROGRESS: function(progress) {
+            return '<span class="text-info">' + Math.floor(progress) + '%</span>';
         }
     };
 
@@ -88,7 +94,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             this.changeStatus(row, status.FETCH_START);
         },
         uploadProgress: function(file, progress, bytesSent, row) {
-            this.changeStatus(row, progress + '%');
+            this.changeStatus(row, status.UPLOAD_PROGRESS(progress));
         },
         downloadUrl: function(row) {
             return row.urls.download;
@@ -106,6 +112,10 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         },
         deleteMethod: 'delete',
         uploads: true,
+        maxFilesize: function(row) {
+            var cfgOption = resolveCfgOption.call(this, row, 'maxFilesize', [row]);
+            return cfgOption || row.urls.upload;
+        },
         uploadUrl: function(row) {
             var cfgOption = resolveCfgOption.call(this, row, 'uploadUrl', [row]);
             return cfgOption || row.urls.upload;
@@ -127,6 +137,12 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             var cfgOption = resolveCfgOption.call(this, row, 'uploadSending', [file, row, xhr, formData]);
             return cfgOption || null;
         },
+        uploadError: function(file, message, item, folder) {
+            // FIXME: can't use change status, because the folder item is updated
+            // on complete, which replaces the html row element
+            // for now, use bootbox
+            bootbox.alert(message);
+        },
         uploadSuccess: function(file, row, data) {
             // Update the row with the returned server data
             // This is necessary for the download and delete button to work.
@@ -136,6 +152,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             var cfgOption = resolveCfgOption.call(this, row, 'uploadSuccess', [file, row, data]);
             return cfgOption || null;
         },
+        // TODO: Set parallel uploads to 1 for now until git collision issue is fixed
         dropzoneOptions: {
             parallelUploads: 1
         },

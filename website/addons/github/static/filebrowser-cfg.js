@@ -32,7 +32,8 @@
                 var branch = $this.val();
                 refreshGitHubTree(grid, row, branch);
             }
-        }]
+        }],
+        maxFilesize: 10
     };
 
 })(FileBrowser);
