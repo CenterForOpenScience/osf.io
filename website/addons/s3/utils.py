@@ -16,10 +16,9 @@ def adjust_cors(s3wrapper):
     rules = s3wrapper.get_cors_rules()
 
     if not [rule for rule in rules if rule.to_xml() == CORS_RULE_UPLOAD]:
-        rules.add_rule('PUT', ALLOWED_ORIGIN, allowed_header={
-                       'Authorization', 'Content-Type', 'x-amz-acl', 'origin'})
+        rules.add_rule('PUT', ALLOWED_ORIGIN, allowed_header={'*'})
     if not [rule for rule in rules if rule.to_xml() == CORS_RULE_VIEW]:
-        rules.add_rule('GET', ALLOWED_ORIGIN, allowed_header={'Content-Disposition'})
+        rules.add_rule('GET', ALLOWED_ORIGIN, allowed_header={'*'})
         s3wrapper.set_cors_rules(rules)
 
 
@@ -42,7 +41,8 @@ def wrapped_key_to_json(wrapped_key, node_api, node_url):
             'download': node_api + URLADDONS['download'] + quote(wrapped_key.fullPath) + '/' if wrapped_key.type == 'file' else None,
             'delete': node_api + URLADDONS['delete'] + quote(wrapped_key.fullPath) + '/'if wrapped_key.type == 'file' else None,
             'view': node_url + URLADDONS['view'] + quote(wrapped_key.fullPath) + '/'if wrapped_key.type == 'file' else None,
-            'fetch': node_api + 's3/hgrid/' + wrapped_key.fullPath if wrapped_key.type == 'folder' else None
+            'fetch': node_api + 's3/hgrid/' + wrapped_key.fullPath if wrapped_key.type == 'folder' else None,
+            'upload': node_api + 's3/upload/'
         }
     }
 

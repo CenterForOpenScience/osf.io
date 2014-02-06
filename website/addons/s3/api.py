@@ -68,7 +68,7 @@ class S3Wrapper:
 
     def __init__(self, connect, bucketName):
         self.connection = connect
-        self.bucket = self.connection.get_bucket(bucketName)
+        self.bucket = self.connection.get_bucket(bucketName, validate=False)
 
     def create_key(self, key):
         self.bucket.new_key(key)
