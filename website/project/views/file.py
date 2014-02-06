@@ -15,6 +15,55 @@ from website.project.views.node import _view_project
 from website import settings
 
 
+class NodeFileCollector(object):
+
+    def __init__(self, node, auth, parent=None, **kwargs):
+        self.node = node
+        self.auth = auth
+        self.parent = parent
+        self.extra = kwargs
+        self.can_view = node.can_view(auth)
+        self.can_edit = node.can_edit(auth) if self.can_view else False
+
+    def __call__(self):
+        return self.to_hgrid()
+
+    def to_hgrid(self):
+        return self._collect_addons(self.node)#.extend(self._collect_components(self.node))
+
+    def _collect_components(self, node):
+        rv = []
+        for child in self.node.nodes:
+            if not child.is_deleted:
+                rv.append(self._create_dummy_component(child))
+        return rv
+
+    def _create_dummy(self, node):
+        return {
+            'name': 'Component: {0}'.format(node.title) if self.can_view else 'Private Component',
+            'kind': 'folder',
+            'permissions': {
+                'edit': self.can_edit,
+                'view': self.can_view
+            },
+            'urls': {
+                'upload': None,
+                'fetch': None  # ??
+            },
+            'children': self._collect_addons(node).extend(self._collect_components(node))
+        }
+
+    def _collect_addons(self, node):
+        rv = []
+        for addon in node.get_addons():
+            if addon.config.has_hgrid_files:
+                temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
+                if temp:
+                    temp['iconUrl'] = addon.config.icon_url
+                    rv.append(temp)
+        return rv
+
+
 def component_to_hgrid(node, auth, parent=None):
     """Create HGrid JSON for a dummy component container.
 
@@ -108,7 +157,8 @@ def collect_file_trees(*args, **kwargs):
     auth = kwargs['auth']
     data = request.args.to_dict()
 
-    grid_data = _collect_file_trees(node, auth, **data)
+    grid_data = NodeFileCollector(node, auth, **data)()
+    #_collect_file_trees(node, auth, **data)
     static_files = _collect_tree_static(node)
     if mode == 'page':
         rv = _view_project(node, auth)
