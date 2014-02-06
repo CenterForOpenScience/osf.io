@@ -37,7 +37,7 @@ global.ondragover = function(e) { e.preventDefault(); };
 global.ondrop = function(e) { e.preventDefault(); };
 
 var gridData = ${grid_data};
-global.filebrowser = new FileBrowser('#myGrid', {
+global.filebrowser = new Rubeus('#myGrid', {
     data: gridData,
     // searchInput: '#searchInput'
 });

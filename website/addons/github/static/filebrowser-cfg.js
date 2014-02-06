@@ -1,12 +1,11 @@
 /**
  * Github FileBrowser configuration module.
  */
-(function(FileBrowser) {
+(function(Rubeus) {
 
     // Private members
 
     function refreshGitHubTree(grid, item, branch) {
-        var parentID = item.parentID;
         var data = item.data || {};
         data.branch = branch;
         var url = item.urls.branch + '?' + $.param({branch: branch});
@@ -22,7 +21,7 @@
     }
 
     // Register configuration
-    FileBrowser.cfg.github = {
+    Rubeus.cfg.github = {
         // Handle changing the branch select
         listeners: [{
             on: 'change',
@@ -36,4 +35,4 @@
         maxFilesize: 10
     };
 
-})(FileBrowser);
+})(Rubeus);

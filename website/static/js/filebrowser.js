@@ -2,34 +2,38 @@
  * Module to render the consolidated files view. Reads addon configurrations and
  * initializes an HGrid.
  */
-this.FileBrowser = (function($, HGrid, bootbox) {
+this.Rubeus = (function($, HGrid, bootbox) {
     var tpl = HGrid.Fmt.tpl;
 
     HGrid.Col.ActionButtons.itemView = function(row) {
-      var buttonDefs = [{
-          text: '<i class="icon-download-alt icon-white"></i>',
-          action: 'download',
-          cssClass: 'btn btn-primary btn-mini'
-      }, {
-          text: '&nbsp;<i class="icon-remove"></i>',
-          action: 'delete',
-          cssClass: 'btn btn-link btn-mini btn-delete'
-      }];
-      return HGrid.Fmt.buttons(buttonDefs);
+        var buttonDefs = [{
+            text: '<i class="icon-download-alt icon-white"></i>',
+            action: 'download',
+            cssClass: 'btn btn-primary btn-mini'
+        }];
+        if (row.permissions && row.permissions.edit) {
+            buttonDefs.push({
+                text: '&nbsp;<i class="icon-remove"></i>',
+                action: 'delete',
+                cssClass: 'btn btn-link btn-mini btn-delete'
+            });
+        }
+
+        return HGrid.Fmt.buttons(buttonDefs);
     };
 
     HGrid.Col.ActionButtons.width = 15;
     HGrid.Col.ActionButtons.folderView = function(row) {
         var buttonDefs = [];
-        if (this.options.uploads) {
-          buttonDefs.push({
-            text: '<i class="icon-upload"></i>',
-            action: 'upload',
-            cssClass: 'btn btn-default btn-mini'
-          });
+        if (this.options.uploads && (row.permissions && row.permissions.edit)) {
+            buttonDefs.push({
+                text: '<i class="icon-upload"></i>',
+                action: 'upload',
+                cssClass: 'btn btn-default btn-mini'
+            });
         }
         if (buttonDefs) {
-          return HGrid.Fmt.buttons(buttonDefs);
+            return HGrid.Fmt.buttons(buttonDefs);
         }
         return '';
     };
@@ -46,7 +50,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         var rowElem = this.getRowElement(row.id);
         var $status = $(rowElem).find('[data-status]');
         $status.html(html);
-        if (fadeAfter){
+        if (fadeAfter) {
             setTimeout(function() {
                 $status.fadeOut('slow');
             }, fadeAfter);
@@ -60,7 +64,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         FETCH_START: '<span class="text-muted">Fetching contents. . .</span>',
         FETCH_ERROR: '<span class="text-info">Could not retrieve data. Please refresh the page and try again.</span>',
         UPLOAD_SUCCESS: '<span class="text-success">Successfully uploaded</span>',
-        DELETED: function (row) {
+        DELETED: function(row) {
             return '<span class="text-warning">Successfully deleted "' + row.name + '"</span>';
         },
         UPLOAD_ERROR: function(msg) {
@@ -167,10 +171,14 @@ this.FileBrowser = (function($, HGrid, bootbox) {
                         if (viewUrl) {
                             window.location.href = viewUrl;
                         }
+                        if (row.kind === HGrid.FOLDER && row.depth !== 0) {
+                            grid.toggleCollapse(row);
+                        }
                     }
                 }
-            },
-            {on: 'click', selector: '.confirm',
+            }, {
+                on: 'click',
+                selector: '.confirm',
                 callback: function(evt, row, grid) {
                     if (row) {
                         var rowCopy = $.extend({}, row);
@@ -188,9 +196,9 @@ this.FileBrowser = (function($, HGrid, bootbox) {
                         });
                     }
                 }
-            },
-            {
-                on: 'click', selector: '.unconfirm',
+            }, {
+                on: 'click',
+                selector: '.unconfirm',
                 callback: function(evt, row, grid) {
                     if (row) {
                         // restore row html
@@ -202,49 +210,51 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         init: function() {
             var self = this;
             // Expand all first level items
-            this.getData().forEach(function(item) {self.expandItem(item);});
+            this.getData().forEach(function(item) {
+                self.expandItem(item);
+            });
         }
     };
 
     // Public API
-    function FileBrowser(selector, options) {
+    function Rubeus(selector, options) {
         this.selector = selector;
         this.options = $.extend({}, baseOptions, options);
         this.grid = null; // Set by _initGrid
         this.init();
     }
     // Addon config registry
-    FileBrowser.cfg = {};
+    Rubeus.cfg = {};
 
-    FileBrowser.getCfg = function(row, key) {
-        if (row && row.addon && this.cfg[row.addon]){
+    Rubeus.getCfg = function(row, key) {
+        if (row && row.addon && this.cfg[row.addon]) {
             return this.cfg[row.addon][key];
         }
         return undefined;
     };
 
-    // Gets a FileBrowser config option if it is defined by an addon dev.
+    // Gets a Rubeus config option if it is defined by an addon dev.
     // Calls it with `args` if it's a function otherwise returns the value.
     // If the config option is not defined, return null
     function resolveCfgOption(row, option, args) {
         var self = this;
-        var prop = FileBrowser.getCfg(row, option);
+        var prop = Rubeus.getCfg(row, option);
         if (prop) {
             return typeof prop === 'function' ? prop.apply(self, args) : prop;
         } else {
             return null;
         }
     }
-    FileBrowser.prototype = {
-        constructor: FileBrowser,
+    Rubeus.prototype = {
+        constructor: Rubeus,
         init: function() {
             this._registerListeners()
                 ._initGrid();
         },
         _registerListeners: function() {
-            for (var addon in FileBrowser.cfg) {
-                var listeners = FileBrowser.cfg[addon].listeners;
-                if (listeners){
+            for (var addon in Rubeus.cfg) {
+                var listeners = Rubeus.cfg[addon].listeners;
+                if (listeners) {
                     // Add each listener to the hgrid options
                     for (var i = 0, listener; listener = listeners[i]; i++) {
                         this.options.listeners.push(listener);
@@ -260,6 +270,6 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         }
     };
 
-    return FileBrowser;
+    return Rubeus;
 
 })(jQuery, HGrid, bootbox);
