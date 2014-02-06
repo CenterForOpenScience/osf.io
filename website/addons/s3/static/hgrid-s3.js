@@ -1,10 +1,10 @@
 
-(function(FileBrowser) {
+(function(Rubeus) {
 
     // Private stuff
-console.log('S3 settings loaded')
+
     // Public stuff
-    FileBrowser.cfg.s3 = {
+    Rubeus.cfg.s3 = {
 
         uploadMethod: function(row){return 'PUT';},
 
@@ -13,6 +13,7 @@ console.log('S3 settings loaded')
             var self = this;
             var parent = this.getByID(item.parentID);
             var name = file.name;
+
             while (parent.depth > 1) {
                 name = parent.name + '/' + name;
                 parent = this.getByID(parent.parentID);
@@ -20,7 +21,7 @@ console.log('S3 settings loaded')
             return $.ajax({
                 type: 'POST',
                 url: nodeApiUrl + 's3/upload/',
-                data: JSON.stringify({name: name, type: file.type}),
+                data: JSON.stringify({name: name, type: file.type || 'application/octet-stream'}),
                 contentType: 'application/json',
                 dataType: 'json',
                 async: false
@@ -45,4 +46,4 @@ console.log('S3 settings loaded')
 
     };
 
-})(FileBrowser);
+})(Rubeus);
