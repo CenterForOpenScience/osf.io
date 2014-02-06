@@ -27,16 +27,19 @@ this.Rubeus = (function($, HGrid, bootbox) {
             HGrid.ExtensionSkeleton.replace('{{ext}}', ext) + item.name;
     };
 
-    HGrid.Col.ActionButtons.itemView = function() {
+    HGrid.Col.ActionButtons.itemView = function(item) {
       var buttonDefs = [{
           text: '<i class="icon-download-alt icon-white"></i>',
           action: 'download',
           cssClass: 'btn btn-primary btn-mini'
-      }, {
-          text: '&nbsp;<i class="icon-remove"></i>',
-          action: 'delete',
-          cssClass: 'btn btn-link btn-mini btn-delete'
       }];
+      if (item.permissions && item.permissions.edit) {
+          buttonDefs.push({
+              text: '&nbsp;<i class="icon-remove"></i>',
+              action: 'delete',
+              cssClass: 'btn btn-link btn-mini btn-delete'
+          });
+      }
       return HGrid.Fmt.buttons(buttonDefs);
     };
 
