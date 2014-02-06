@@ -18,6 +18,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
       return HGrid.Fmt.buttons(buttonDefs);
     };
 
+    HGrid.Col.ActionButtons.width = 15;
     HGrid.Col.ActionButtons.folderView = function(row) {
         var buttonDefs = [];
         if (this.options.uploads) {
@@ -33,17 +34,48 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         return '';
     };
 
+    // Custom status column
+    HGrid.Col.Status = {
+        text: 'Status',
+        folderView: '<span data-status></span>',
+        itemView: '<span data-status></span>',
+        width: 15
+    };
+
+    HGrid.prototype.changeStatus = function(row, html) {
+        var rowElem = this.getRowElement(row.id);
+        var $status = $(rowElem).find('[data-status]');
+        $status.html(html);
+        return this;
+    };
+
+    var status = {
+        FETCH_SUCCESS: '',
+        FETCH_START: '<span class="text-muted">Fetching contents...</span>',
+        FETCH_ERROR: '<span class="text-info">Could not retrieve data. Please refresh the page and try again.</span>'
+    };
+
     // OSF-specific HGrid options common to all addons
     baseOptions = {
         /*jshint unused: false */
         columns: [
             HGrid.Col.Name,
-            HGrid.Col.ActionButtons
+            HGrid.Col.ActionButtons,
+            HGrid.Col.Status
         ],
         width: '100%',
-        height: 600,
+        height: 500,
         fetchUrl: function(row) {
             return row.urls.fetch;
+        },
+        fetchSuccess: function(data, row) {
+            this.changeStatus(row, status.FETCH_SUCCESS);
+        },
+        fetchError: function(error, row) {
+            this.changeStatus(row, status.FETCH_ERROR);
+        },
+        fetchStart: function(row) {
+            this.changeStatus(row, status.FETCH_START);
         },
         downloadUrl: function(row) {
             return row.urls.download;
@@ -87,6 +119,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             // This is necessary for the download and delete button to work.
             $.extend(row, data[0]);
             this.updateItem(row);
+            this.changeStatus(row, '<span class="text-success">Success</success>');
             var cfgOption = resolveCfgOption.call(this, row, 'uploadSuccess', [file, row, data]);
             return cfgOption || null;
         },

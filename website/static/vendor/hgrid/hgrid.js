@@ -796,6 +796,9 @@ this.HGrid = (function($, window, document, undefined) {
      * @property {Function} [fetchUrl]
      */
     fetchUrl: null,
+    fetchSuccess: function(data, item) {},
+    fetchError: function(error, item) {},
+    fetchStart: function(item) {},
     /**
      * Enable uploads (requires DropZone)
      * @property [uploads]
@@ -1804,15 +1807,19 @@ this.HGrid = (function($, window, document, undefined) {
     return Boolean(this.options.fetchUrl);  // Assume lazy loading is enabled if fetchUrl is defined
   };
 
+  // TODO: test fetch callbacks
   HGrid.prototype._lazyLoad = function(item) {
     var self = this;
     var url = self.options.fetchUrl(item);
     if (url !== null) {
+      self.options.fetchStart.call(self, item);
       return self.getFromServer(url, function(newData, error) {
         if (!error) {
           self.addData(newData, item.id);
           item._node._loaded = true; // Add flag to make sure data are only fetched once.
+          self.options.fetchSuccess.call(self, newData, item);
         } else {
+          self.options.fetchError.call(self, error, item);
           throw new HGrid.Error('Could not fetch data from url: "' + url + '". Error: ' + error);
         }
       });
@@ -1830,13 +1837,13 @@ this.HGrid = (function($, window, document, undefined) {
     item = typeof item === 'object' ? item : self.getByID(item);
     var node = self.getNodeByID(item.id);
     item._node.expand();
-    if (self.isLazy() && !node._loaded) {
-      this._lazyLoad(item);
-    }
     var dataview = self.getDataView();
     var hints = self.getRefreshHints(item).expand;
     dataview.setRefreshHints(hints);
     self.getDataView().updateItem(item.id, item);
+    if (self.isLazy() && !node._loaded) {
+      this._lazyLoad(item);
+    }
     self.options.onExpand.call(self, evt, item);
     return self;
   };
