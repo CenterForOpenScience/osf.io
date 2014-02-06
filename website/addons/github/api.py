@@ -475,7 +475,7 @@ def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
 
         item.update({
             'addon': 'github',
-            'permission': {
+            'permissions': {
                 'view': True,
                 'edit': can_edit,
             },
