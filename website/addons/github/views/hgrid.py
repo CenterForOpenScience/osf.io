@@ -73,8 +73,8 @@ def github_hgrid_data(node_settings, auth, parent=None, contents=False, *args, *
         ref = None
         can_edit = False
         name_append = None
-    name_tpl = ('GitHub: <a class="github-repo-link" href="https://github.com/{user}/{repo}/">'
-                '{user}/{repo}</a>{widget}').format(user=node_settings.user,
+    name_tpl = ('<span class="github-repo-name">GitHub: '
+                '{user}/{repo}</span>{widget}').format(user=node_settings.user,
                                                     repo=node_settings.repo,
                                                     widget=name_append)
     rv = {
