@@ -1,5 +1,8 @@
 from mfr.renderer import FileRenderer
-from mfr.renderer import image, tabular, pdf, code, ipynb
+#from mfr.renderer import image, tabular, pdf, code, ipynb
+
+from mfr.renderer import image, pdf, code, ipynb
+
 
 config = {}
 

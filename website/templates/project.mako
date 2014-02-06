@@ -66,36 +66,52 @@
             <!-- Citations -->
             <div class="citations">
 
-                <form id="citationForm" action="#">
+
+                <span class="citation-label">Citation:</span>
+                <span>${node['display_absolute_url']}</span>
+                <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
+                <div class="citation-list">
+                <div style="padding-top: 10px;"><b>Human Readable Citation</b></div>
+                <form id="citationFormHuman" action="#">
                         <select name="styles">
                             <option value="apa.csl">APA</option>
-                            <option value="biochemical-journal.csl">Biochemical Journal</option>
-                            <option value="canadian-public-policy.csl">Canadian Public Policy</option>
-                            <option value="harvard1.csl">Harvard1</option>
-                            <option value="modern-language-association.csl">MLA</option>
+                            <option value="chicago-author-date.csl">Chicago: Author-Date</option>
+                            <option value="chicago-note-bibliography.csl">Chicago: Note-Bibliography</option>
+                            <option value="harvard1.csl">Harvard</option>
+                            <option value="modern-language-association-with-url.csl">MLA</option>
+                            <option value="turabian-fullnote-bibliography.csl">Turabian</option>
+                        </select>
+                        <input type="submit" value="Submit">
+                    </form>
+
+                <div style="padding-top: 5px;"><b>Machine Readable Citation</b></div>
+                <form id="citationFormMachine" action="#">
+                        <select name="styles">
+                            <option value="xml2bib">BibTeX</option>
+                            <option value="xml2end">EndNote</option>
+                            <option value="xml2isi">ISI</option>
+                            <option value="xml2ris">RIS</option>
+                            <option value="xml2wordbib">Word 2007 Bibliograpy</option>
                         </select>
                         <input type="submit" value="Submit">
                     </form>
 
                 <dl class="rendered-citation"></dl>
-
-
-                <span class="citation-label">Citation:</span>
-                <span>${node['display_absolute_url']}</span>
-                <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
-                <dl class="citation-list">
-                    <dt>APA</dt>
-                    <dd class="citation-text">${node['citations']['apa']}</dd>
-                    <dt>MLA</dt>
-                    <dd class="citation-text">${node['citations']['mla']}</dd>
-                    <dt>Chicago</dt>
-                    <dd class="citation-text">${node['citations']['chicago']}</dd>
-                    <dt>CSL TESTS</dt>
-                    <dd class="citation-text">${node['citations']['CSLTEST1']}</dd>
-                    <dd class="citation-text">${node['citations']['CSLTEST2']}</dd>
-                    <dd class="citation-text">${node['citations']['BIBTEX']}</dd>
-                    <dd class="citation-text">${node['citations']['RIS']}</dd>
-                    </dl>
+                </div>
+##                <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
+##                <dl class="citation-list">
+##                    <dt>APA</dt>
+##                    <dd class="citation-text">${node['citations']['apa']}</dd>
+##                    <dt>MLA</dt>
+##                    <dd class="citation-text">${node['citations']['mla']}</dd>
+##                    <dt>Chicago</dt>
+##                    <dd class="citation-text">${node['citations']['chicago']}</dd>
+##                    <dt>CSL TESTS</dt>
+##                    <dd class="citation-text">${node['citations']['CSLTEST1']}</dd>
+##                    <dd class="citation-text">${node['citations']['CSLTEST2']}</dd>
+##                    <dd class="citation-text">${node['citations']['BIBTEX']}</dd>
+##                    <dd class="citation-text">${node['citations']['RIS']}</dd>
+##                    </dl>
             </div>
 
             <hr />
@@ -201,11 +217,11 @@
 
     $(document).ready(function() {
 
-        $("#citationForm").find("input").on('click', function(){
+        $("#citationFormHuman").on('submit', function(){
         //console.log(nodeApiUrl);
             $.ajax({
                 type: "GET",
-                url: nodeApiUrl + 'citation/human/' + $('#citationForm select').val() ,
+                url: nodeApiUrl + 'citation/human/' + $('#citationFormHuman select').val() ,
                 success: function(response){
                     console.log(response.output);
                     $(".rendered-citation").text(response.output);
@@ -215,7 +231,20 @@
             return false;
         })
 
-   // $("#citationForm").find("input").on('click',function(){console.log('test')})
+         $("#citationFormMachine").on('submit', function(){
+        //console.log(nodeApiUrl);
+            $.ajax({
+                type: "GET",
+                url: nodeApiUrl + 'citation/machine/' + $('#citationFormMachine select').val() ,
+                success: function(response){
+                    console.log(response.output);
+                    $(".rendered-citation").text(response.output);
+                    return false;
+                }
+            })
+            return false;
+        })
+
 
 // Show capabilities modal on addon widget help
         $('.addon-capabilities').on('click', function() {
