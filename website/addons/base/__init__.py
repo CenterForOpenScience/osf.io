@@ -98,6 +98,7 @@ class AddonConfig(object):
         """
 
         """
+        # TODO: minify static assets
         return {
             key: [
                 self._static_url(item)
@@ -105,6 +106,8 @@ class AddonConfig(object):
             ]
             for key, value in include.iteritems()
         }
+
+    # TODO: Make INCLUDE_JS and INCLUDE_CSS one option
 
     @property
     def icon(self):
@@ -294,7 +297,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 # TODO: Move this
 LOG_TEMPLATES = 'website/templates/log_templates.mako'
 
-
+# TODO: No more magicks
 def init_addon(app, addon_name, routes=True):
     """Load addon module and create configuration object.
 

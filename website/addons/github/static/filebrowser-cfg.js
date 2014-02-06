@@ -1,12 +1,11 @@
 /**
  * Github FileBrowser configuration module.
  */
-(function(FileBrowser) {
+(function(Rubeus) {
 
     // Private members
 
     function refreshGitHubTree(grid, item, branch) {
-        var parentID = item.parentID;
         var data = item.data || {};
         data.branch = branch;
         var url = item.urls.branch + '?' + $.param({branch: branch});
@@ -16,19 +15,13 @@
             success: function(data) {
                 // Update the item with the new branch data
                 $.extend(item, data);
-                // TODO: Need to set _loaded to False, then re-expand the item to see new contents
-                // HGrid should have a reload method.
-                item._node._loaded = false;
-                grid.emptyFolder(item);
-                grid.updateItem(item);
-                grid.toggleCollapse(item);
-                grid.toggleCollapse(item);
+                grid.reloadFolder(item);
             }
         });
     }
 
     // Register configuration
-    FileBrowser.cfg.github = {
+    Rubeus.cfg.github = {
         // Handle changing the branch select
         listeners: [{
             on: 'change',
@@ -38,7 +31,8 @@
                 var branch = $this.val();
                 refreshGitHubTree(grid, row, branch);
             }
-        }]
+        }],
+        maxFilesize: 10
     };
 
-})(FileBrowser);
+})(Rubeus);

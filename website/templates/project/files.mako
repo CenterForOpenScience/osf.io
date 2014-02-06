@@ -7,13 +7,16 @@
 <!-- <div class="form-group">
 <input placeholder="Search" class='form-control search-input' type='text' id='searchInput'>
 </div> -->
-<div id="myGrid" class="hgrid"></div>
+<div id="myGrid" class="filebrowser hgrid"></div>
 
 </%def>
 
 <%def name="stylesheets()">
 <link rel="stylesheet" href="/static/vendor/hgrid/hgrid.css" type="text/css" />
 <link rel="stylesheet" href="/static/css/osf-hgrid.css" type="text/css" />
+% for stylesheet in tree_css:
+<link rel='stylesheet' href='${stylesheet}' type='text/css' />
+% endfor
 </%def>
 
 <%def name="javascript()">
@@ -23,7 +26,6 @@
 </%def>
 
 <%def name="javascript_bottom()">
-
 % for script in tree_js:
 <script type="text/javascript" src="${script}"></script>
 % endfor
@@ -35,7 +37,7 @@ global.ondragover = function(e) { e.preventDefault(); };
 global.ondrop = function(e) { e.preventDefault(); };
 
 var gridData = ${grid_data};
-global.filebrowser = new FileBrowser('#myGrid', {
+global.filebrowser = new Rubeus('#myGrid', {
     data: gridData,
     // searchInput: '#searchInput'
 });
