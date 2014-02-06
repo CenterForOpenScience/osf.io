@@ -45,19 +45,18 @@ this.Rubeus = (function($, HGrid, bootbox) {
 
     HGrid.Col.ActionButtons.width = 15;
     HGrid.Col.ActionButtons.folderView = function(row) {
-        // var buttonDefs = [];
-        // if (this.options.uploads &&
-        //     row.urls.upload
-        //     (row.permissions && row.permissions.edit)) {
-        //     buttonDefs.push({
-        //         text: '<i class="icon-upload"></i>',
-        //         action: 'upload',
-        //         cssClass: 'btn btn-default btn-mini'
-        //     });
-        // }
-        // if (buttonDefs) {
-        //     return HGrid.Fmt.buttons(buttonDefs);
-        // }
+        var buttonDefs = [];
+        if (this.options.uploads && row.urls.upload &&
+            (row.permissions && row.permissions.edit)) {
+            buttonDefs.push({
+                text: '<i class="icon-upload"></i>',
+                action: 'upload',
+                cssClass: 'btn btn-default btn-mini'
+            });
+        }
+        if (buttonDefs) {
+            return HGrid.Fmt.buttons(buttonDefs);
+        }
         return '';
     };
 
