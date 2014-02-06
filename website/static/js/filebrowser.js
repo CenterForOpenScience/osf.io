@@ -10,21 +10,34 @@ this.Rubeus = (function($, HGrid, bootbox) {
 
     var tpl = HGrid.Fmt.tpl;
 
-    HGrid.Col.ActionButtons.itemView = function(row) {
-        var buttonDefs = [{
-            text: '<i class="icon-download-alt icon-white"></i>',
-            action: 'download',
-            cssClass: 'btn btn-primary btn-mini'
-        }];
-        if (row.permissions && row.permissions.edit) {
-            buttonDefs.push({
-                text: '&nbsp;<i class="icon-remove"></i>',
-                action: 'delete',
-                cssClass: 'btn btn-link btn-mini btn-delete'
-            });
-        }
+    // Can't use microtemplate because microtemplate escapes html
+    // Necessary for rendering, e.g. the github branch picker
+    HGrid.Col.Name.folderView = function(item) {
+        if (item.hasIcon)
+            return '<img class="hg-addon" src="/addons/static/' + item.addon + '/comicon.png">' +
+                item.name;
+        else
+            return HGrid.Html.folderIcon + item.name;
+    };
 
-        return HGrid.Fmt.buttons(buttonDefs);
+    HGrid.Col.Name.itemView = function(item) {
+        var ext = item.name.split('.').pop().toLowerCase();
+        return HGrid.Extensions.indexOf(ext) == -1 ?
+            HGrid.Html.fileIcon + item.name:
+            HGrid.ExtensionSkeleton.replace('{{ext}}', ext) + item.name;
+    };
+
+    HGrid.Col.ActionButtons.itemView = function() {
+      var buttonDefs = [{
+          text: '<i class="icon-download-alt icon-white"></i>',
+          action: 'download',
+          cssClass: 'btn btn-primary btn-mini'
+      }, {
+          text: '&nbsp;<i class="icon-remove"></i>',
+          action: 'delete',
+          cssClass: 'btn btn-link btn-mini btn-delete'
+      }];
+      return HGrid.Fmt.buttons(buttonDefs);
     };
 
     HGrid.Col.ActionButtons.width = 15;
@@ -178,6 +191,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
             var cfgOption = resolveCfgOption.call(this, row, 'uploadUrl', [row]);
             return cfgOption || row.urls.upload;
         },
+
         uploadAdded: function(file, row, folder) {
             // Need to set the added row's addon for other callbacks to work
             var parent = this.getByID(row.parentID);
@@ -276,6 +290,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
             return null;
         }
     }
+
     Rubeus.prototype = {
         constructor: Rubeus,
         init: function() {
