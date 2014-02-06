@@ -279,19 +279,19 @@ this.Rubeus = (function($, HGrid, bootbox) {
     // Addon config registry
     Rubeus.cfg = {};
 
-    Rubeus.getCfg = function(row, key) {
+    function getCfg(row, key) {
         if (row && row.addon && this.cfg[row.addon]) {
-            return this.cfg[row.addon][key];
+            return Rubeus.cfg[row.addon][key];
         }
         return undefined;
-    };
+    }
 
     // Gets a Rubeus config option if it is defined by an addon dev.
     // Calls it with `args` if it's a function otherwise returns the value.
     // If the config option is not defined, return null
     function resolveCfgOption(row, option, args) {
         var self = this;
-        var prop = Rubeus.getCfg(row, option);
+        var prop = getCfg(row, option);
         if (prop) {
             return typeof prop === 'function' ? prop.apply(self, args) : prop;
         } else {
