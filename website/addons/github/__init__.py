@@ -34,6 +34,7 @@ INCLUDE_JS = {
 INCLUDE_CSS = {
     'widget': [],
     'page': ['/static/css/hgrid-base.css'],
+    'files': ['filebrowser.css']
 }
 
 WIDGET_HELP = 'GitHub Add-on Alpha'

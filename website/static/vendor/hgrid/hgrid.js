@@ -681,7 +681,7 @@ this.HGrid = (function($, window, document, undefined) {
     toggleClass: 'hg-toggle'
   };
 
-  HGrid.Extentions = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
+  HGrid.Extensions = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
     'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
     'eml', 'eps', 'exe', 'fla', 'flv', 'gif', 'gz', 'hqx', 'htm', 'html', 'ifo', 'indd', 'iso', 'jar',
     'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
@@ -689,7 +689,7 @@ this.HGrid = (function($, window, document, undefined) {
     'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
     'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip'];
 
-HGrid.ExtentionSkeleton = '<img class="hg-icon" src="/static\/img\/hgrid\/fatcowicons\/file_extension_{{ext}}.png">'
+HGrid.ExtensionSkeleton = '<img class="hg-icon" src="/static\/img\/hgrid\/fatcowicons\/file_extension_{{ext}}.png">'
 
   ///////////
   // HGrid //
@@ -739,7 +739,6 @@ HGrid.ExtentionSkeleton = '<img class="hg-icon" src="/static\/img\/hgrid\/fatcow
       id: 'name',
       name: 'Name',
       sortkey: 'name',
-      cssClass: 'hg-cell',
       folderView: HGrid.Html.folderIcon + ' {{name}}',
       itemView: HGrid.Html.fileIcon + ' {{name}}',
       sortable: true,
@@ -756,7 +755,6 @@ HGrid.ExtentionSkeleton = '<img class="hg-icon" src="/static\/img\/hgrid\/fatcow
     ActionButtons: {
       id: 'actions',
       name: 'Actions',
-      cssClass: 'hg-cell',
       width: 50,
       sortable: false,
       folderView: function() {
@@ -808,6 +806,9 @@ HGrid.ExtentionSkeleton = '<img class="hg-icon" src="/static\/img\/hgrid\/fatcow
      * @property {Function} [fetchUrl]
      */
     fetchUrl: null,
+    fetchSuccess: function(data, item) {},
+    fetchError: function(error, item) {},
+    fetchStart: function(item) {},
     /**
      * Enable uploads (requires DropZone)
      * @property [uploads]
@@ -1254,6 +1255,11 @@ HGrid.ExtentionSkeleton = '<img class="hg-icon" src="/static\/img\/hgrid\/fatcow
       }
       if ('text' in col) { // Use 'text' instead of 'name' for column header text
         col.name = col.text;
+      }
+      if ('cssClass' in col) {
+        col.cssClass = col.cssClass + ' ' + 'hg-cell';
+      } else {
+        col.cssClass = 'hg-cell';
       }
       return col;
     });
@@ -1811,15 +1817,19 @@ HGrid.ExtentionSkeleton = '<img class="hg-icon" src="/static\/img\/hgrid\/fatcow
     return Boolean(this.options.fetchUrl);  // Assume lazy loading is enabled if fetchUrl is defined
   };
 
+  // TODO: test fetch callbacks
   HGrid.prototype._lazyLoad = function(item) {
     var self = this;
     var url = self.options.fetchUrl(item);
     if (url !== null) {
+      self.options.fetchStart.call(self, item);
       return self.getFromServer(url, function(newData, error) {
         if (!error) {
           self.addData(newData, item.id);
           item._node._loaded = true; // Add flag to make sure data are only fetched once.
+          self.options.fetchSuccess.call(self, newData, item);
         } else {
+          self.options.fetchError.call(self, error, item);
           throw new HGrid.Error('Could not fetch data from url: "' + url + '". Error: ' + error);
         }
       });
@@ -1837,13 +1847,13 @@ HGrid.ExtentionSkeleton = '<img class="hg-icon" src="/static\/img\/hgrid\/fatcow
     item = typeof item === 'object' ? item : self.getByID(item);
     var node = self.getNodeByID(item.id);
     item._node.expand();
-    if (self.isLazy() && !node._loaded) {
-      this._lazyLoad(item);
-    }
     var dataview = self.getDataView();
     var hints = self.getRefreshHints(item).expand;
     dataview.setRefreshHints(hints);
     self.getDataView().updateItem(item.id, item);
+    if (self.isLazy() && !node._loaded) {
+      this._lazyLoad(item);
+    }
     self.options.onExpand.call(self, evt, item);
     return self;
   };
@@ -2011,6 +2021,27 @@ HGrid.ExtentionSkeleton = '<img class="hg-icon" src="/static\/img\/hgrid\/fatcow
       }
       tree.add(node, true); // ensure dataview is updated
     }
+    return this;
+  };
+
+  /**
+   * Reset a node's loaded state to false. When the node is expanded again and
+   * lazy loading is enabled, a new xhr request will be sent.
+   */
+  HGrid.prototype.resetLoadedState = function(folder, loaded) {
+    folder._node._loaded = Boolean(loaded);
+    return this;
+  };
+
+  /**
+   * Reload a folder contents. Will send a request even if lazy loading is enabled
+   * @method  reloadFolder
+   */
+  HGrid.prototype.reloadFolder = function(folder) {
+    this.resetLoadedState(folder);
+    this.emptyFolder(folder);
+    this.collapseItem(folder);
+    this.expandItem(folder);
     return this;
   };
 

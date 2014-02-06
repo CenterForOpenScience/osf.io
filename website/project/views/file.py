@@ -5,6 +5,7 @@
 import os
 import json
 import codecs
+import itertools
 
 from framework.flask import request
 
@@ -67,16 +68,25 @@ def _collect_file_trees(node, auth, parent='null', **kwargs):
     return grid_data
 
 
-def _collect_tree_js(node):
+def _collect_tree_static(node):
     """Collect JavaScript includes for all add-ons implementing HGrid views.
 
     :return list: List of JavaScript include paths
 
     """
-    scripts = []
-    for addon in node.get_addons():
-        scripts.extend(addon.config.include_js.get('files', []))
-    return scripts
+    js = itertools.chain.from_iterable(
+        addon.config.include_js.get('files', [])
+        for addon in node.get_addons()
+
+    )
+    css = itertools.chain.from_iterable(
+        addon.config.include_css.get('files', [])
+        for addon in node.get_addons()
+    )
+    return {
+        'js': js,
+        'css': css
+    }
 
 
 @must_be_contributor_or_public
@@ -91,11 +101,13 @@ def collect_file_trees(*args, **kwargs):
     data = request.args.to_dict()
 
     grid_data = _collect_file_trees(node, auth, **data)
+    static_files = _collect_tree_static(node)
     if mode == 'page':
         rv = _view_project(node, auth)
         rv.update({
             'grid_data': json.dumps(grid_data),
-            'tree_js': _collect_tree_js(node),
+            'tree_js': static_files['js'],
+            'tree_css': static_files['css']
         })
         return rv
     elif mode == 'widget':

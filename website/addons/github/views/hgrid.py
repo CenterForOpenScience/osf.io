@@ -15,22 +15,20 @@ logger = logging.getLogger(__name__)
 
 github_branch_template = Template('''
     % if len(branches) > 1:
-        <form style="display: inline;">
             <select class="github-branch-select">
                 % for each in branches:
                     <option value="${each}" ${"selected" if each == branch else ""}>${each}</option>
                 % endfor
             </select>
-        </form>
     % else:
         <span>${branch}</span>
     % endif
     % if sha:
-        <span class="github-sha">${sha}</span>
+        <a href="https://github.com/${owner}/${repo}/commit/${sha}" class="github-sha text-muted">${sha[:10]}</a>
     % endif
 ''')
 
-def github_branch_widget(branches, branch, sha):
+def github_branch_widget(branches, owner, repo, branch, sha):
     """Render branch selection widget for GitHub add-on. Displayed in the
     name field of HGrid file trees.
 
@@ -42,11 +40,13 @@ def github_branch_widget(branches, branch, sha):
         ],
         branch=branch,
         sha=sha,
+        owner=owner,
+        repo=repo
     )
     return rendered
 
 
-def github_hgrid_data(node_settings, user, contents=False, **kwargs):
+def github_hgrid_data(node_settings, auth, parent=None, contents=False, *args, **kwargs):
 
     # Quit if no repo linked
     if not node_settings.user or not node_settings.repo:
@@ -62,22 +62,24 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
     )
 
     if branch is not None:
-        auth = Auth(user=node_settings.user)
         ref = ref_to_params(branch, sha)
         can_edit = _check_permissions(
             node_settings, auth, connection, branch, sha
         )
-        name_append = github_branch_widget(branches, branch, sha)
+        name_append = github_branch_widget(branches, owner=node_settings.user,
+            repo=node_settings.repo, branch=branch, sha=sha)
     else:
 
         ref = None
         can_edit = False
         name_append = None
+    name_tpl = ('GitHub: <a class="github-repo-link" href="https://github.com/{user}/{repo}/">'
+                '{user}/{repo}</a>{widget}').format(user=node_settings.user,
+                                                    repo=node_settings.repo,
+                                                    widget=name_append)
     rv = {
-        'addon': 'github',
-        'name': 'GitHub: {0}/{1} {2}'.format(
-            node_settings.user, node_settings.repo, name_append,
-        ),
+        'addon': node_settings.config.short_name,
+        'name': name_tpl,
         'kind': 'folder',
         'urls': {
             'upload': node_settings.owner.api_url + 'github/file/' + ref,
@@ -95,16 +97,6 @@ def github_hgrid_data(node_settings, user, contents=False, **kwargs):
         }
     }
 
-    # if False:#contents:
-    #     if sha is None:
-    #         branch, sha, branches = _get_refs(
-    #             node_settings, branch, sha, connection=connection
-    #         )
-    #     tree = _get_tree(node_settings, sha, connection)
-    #     node_url = node_settings.owner.url
-    #     api_url = node_settings.owner.api_url
-    #     rv['children'] = to_hgrid(tree, node_url=node_url, node_api_url=api_url,
-    #         branch=branch, sha=sha)
     return rv
 
 
@@ -120,7 +112,8 @@ def github_root_folder_public(*args, **kwargs):
     auth = kwargs['auth']
     data = request.args.to_dict()
     parent = data.pop('parent', 'null')
-    return github_hgrid_data(node_settings, auth, parent, contents=False, **data)
+
+    return github_hgrid_data(node_settings, auth=auth, parent=parent, contents=False, **data)
 
 
 def _get_tree(node_settings, sha, connection=None):

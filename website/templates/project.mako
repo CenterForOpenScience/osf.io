@@ -45,20 +45,6 @@
 
             % endif
 
-            % if has_files:
-                <div class="addon-widget-container">
-                    <h3 class="addon-widget-header">Files</h3>
-                    <div mod-meta='{
-                            "tpl": "util/render_file_tree.mako",
-                            "uri": "${node['api_url']}files/",
-                            "view_kwargs": {
-                                "mode": "widget"
-                            }
-                        }'></div>
-                </div>
-            % endif
-
-
         </div>
 
         <div class="col-md-6">
