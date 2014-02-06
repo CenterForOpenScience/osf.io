@@ -37,6 +37,7 @@ def component_to_hgrid(node, auth, parent=None):
             'upload': None,
             'fetch': None
         },
+        'isComponent': True,
         'children': addon_tree
     }
 
