@@ -75,3 +75,7 @@
   background-color: inherit;
   opacity: 100%;
 }
+
+.hg-cell img {
+  display: inline;
+}

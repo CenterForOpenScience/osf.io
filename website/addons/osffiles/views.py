@@ -39,12 +39,6 @@ def osffiles_widget(*args, **kwargs):
 
 ###
 
-def prune_file_list(file_list, max_depth):
-    if max_depth is None:
-        return file_list
-    return [file for file in file_list if len([c for c in file if c == '/']) <= max_depth]
-
-
 def _clean_file_name(name):
     " HTML-escape file name and encode to UTF-8. "
     escaped = cgi.escape(name)
@@ -105,9 +99,9 @@ def get_osffiles(*args, **kwargs):
                 'kind': 'file',
                 'name': _clean_file_name(fobj.path),
                 'urls': {
-                    'view': fobj.url,
-                    'download': fobj.download_url,
-                    'delete': fobj.api_url,
+                    'view': fobj.url(node),
+                    'download': fobj.download_url(node),
+                    'delete': fobj.api_url(node),
                 },
                 'permissions': {
                     'view': True,
@@ -194,9 +188,9 @@ def upload_file_public(*args, **kwargs):
 
         # URLs
         'urls': {
-            'view': fobj.url,
-            'download': fobj.download_url,
-            'delete': fobj.api_url,
+            'view': fobj.url(node),
+            'download': fobj.download_url(node),
+            'delete': fobj.api_url(node),
         },
 
         'kind': 'file',
@@ -250,7 +244,7 @@ def view_file(*args, **kwargs):
         file_object.node = node_to_use
         file_object.save()
 
-    download_path = file_object.download_url
+    download_path = file_object.download_url(node_to_use)
 
     file_path = os.path.join(
         settings.UPLOADS_PATH,

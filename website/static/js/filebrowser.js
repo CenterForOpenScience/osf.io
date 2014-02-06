@@ -218,7 +218,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
         uploadSuccess: function(file, row, data) {
             // Update the row with the returned server data
             // This is necessary for the download and delete button to work.
-            $.extend(row, data[0]);
+            $.extend(row, data);
             this.updateItem(row);
             this.changeStatus(row, status.UPLOAD_SUCCESS, 2000);
             var cfgOption = resolveCfgOption.call(this, row, 'uploadSuccess', [file, row, data]);
