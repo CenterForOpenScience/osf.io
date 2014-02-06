@@ -56,6 +56,21 @@
   width: 250px;
 }
 
+.hg-icon {
+    height: 16px;
+    width: 16px;
+    display: inline-block;
+    margin-bottom: 3px;
+    padding-right: 3px;
+    margin-left: 5px;
+}
+
+.hg-addon {
+    height: 16px;
+    width: 16px;
+    margin-right: 3px;
+}
+
 .hgrid .slick-row.hg-upload-processing {
   background-color: inherit;
   opacity: 100%;
