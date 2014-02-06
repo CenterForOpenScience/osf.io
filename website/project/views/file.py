@@ -29,13 +29,13 @@ class NodeFileCollector(object):
         return self.to_hgrid()
 
     def to_hgrid(self):
-        return self._collect_addons(self.node)#.extend(self._collect_components(self.node))
+        return self._collect_addons(self.node) + self._collect_components(self.node)
 
     def _collect_components(self, node):
         rv = []
-        for child in self.node.nodes:
+        for child in node.nodes:
             if not child.is_deleted:
-                rv.append(self._create_dummy_component(child))
+                rv.append(self._create_dummy(child))
         return rv
 
     def _create_dummy(self, node):
@@ -50,7 +50,7 @@ class NodeFileCollector(object):
                 'upload': None,
                 'fetch': None  # ??
             },
-            'children': self._collect_addons(node).extend(self._collect_components(node))
+            'children': self._collect_addons(node) + self._collect_components(node)
         }
 
     def _collect_addons(self, node):
@@ -62,67 +62,6 @@ class NodeFileCollector(object):
                     temp['iconUrl'] = addon.config.icon_url
                     rv.append(temp)
         return rv
-
-
-def component_to_hgrid(node, auth, parent=None):
-    """Create HGrid JSON for a dummy component container.
-
-    :return dict: HGrid-formatted dummy container
-
-    """
-    can_view = node.can_view(auth)
-    addon_tree = _collect_addon_trees(node, auth)
-    return {
-        'name': 'Component: {0}'.format(node.title)
-            if can_view
-            else 'Private Component',
-        'kind': 'folder',
-        'permissions': {
-            'edit': node.can_edit(auth) if can_view else False,
-            'view': can_view
-        },
-        # Can never drag into component dummy folder
-        'urls': {
-            'upload': None,
-            'fetch': None
-        },
-        'children': addon_tree
-    }
-
-
-def _collect_addon_trees(node, auth, *args, **kwargs):
-    grid_data = []
-    # Collect add-on file trees
-    for addon in node.get_addons():
-        if addon.config.has_hgrid_files:
-            dummy = addon.config.get_hgrid_data(
-                addon, auth, **kwargs
-            )
-            # Skip if dummy folder is falsy
-            if dummy:
-                # Add add-on icon URL if specified
-                dummy['iconUrl'] = addon.config.icon_url
-                grid_data.append(dummy)
-    return grid_data
-
-
-def _collect_file_trees(node, auth, parent='null', **kwargs):
-    """Collect file trees for all add-ons implementing HGrid views. Create
-    dummy containers for each child of the target node, and for each add-on
-    implementing HGrid views.
-
-    :return list: List of HGrid-formatted file trees
-
-    """
-    grid_data = _collect_addon_trees(node, auth, **kwargs)
-
-    # Collect component file trees
-    for child in node.nodes:
-        if not child.is_deleted:
-            container = component_to_hgrid(child, auth, parent)
-            grid_data.append(container)
-
-    return grid_data
 
 
 def _collect_tree_static(node):
@@ -158,7 +97,6 @@ def collect_file_trees(*args, **kwargs):
     data = request.args.to_dict()
 
     grid_data = NodeFileCollector(node, auth, **data)()
-    #_collect_file_trees(node, auth, **data)
     static_files = _collect_tree_static(node)
     if mode == 'page':
         rv = _view_project(node, auth)
