@@ -15,38 +15,34 @@ from website.project.views.node import _view_project
 from website import settings
 
 
-def _get_dummy_container(node, auth, parent=None):
+def component_to_hgrid(node, auth, parent=None):
     """Create HGrid JSON for a dummy component container.
 
     :return dict: HGrid-formatted dummy container
 
     """
     can_view = node.can_view(auth)
+    addon_tree = _collect_addon_trees(node, auth)
     return {
-        'uid': 'node:{0}'.format(node._id),
-        'parent_uid': parent if parent else 'null',
         'name': 'Component: {0}'.format(node.title)
             if can_view
             else 'Private Component',
-        'type': 'folder',
-        'can_edit': node.can_edit(auth) if can_view else False,
-        'can_view': can_view,
+        'kind': 'folder',
+        'permissions': {
+            'edit': node.can_edit(auth) if can_view else False,
+            'view': can_view
+        },
         # Can never drag into component dummy folder
-        'permission': False,
-        'lazyLoad': node.api_url + 'files/',
+        'urls': {
+            'upload': None,
+            'fetch': None
+        },
+        'children': addon_tree
     }
 
 
-def _collect_file_trees(node, auth, parent='null', **kwargs):
-    """Collect file trees for all add-ons implementing HGrid views. Create
-    dummy containers for each child of the target node, and for each add-on
-    implementing HGrid views.
-
-    :return list: List of HGrid-formatted file trees
-
-    """
+def _collect_addon_trees(node, auth, *args, **kwargs):
     grid_data = []
-
     # Collect add-on file trees
     for addon in node.get_addons():
         if addon.config.has_hgrid_files:
@@ -58,11 +54,23 @@ def _collect_file_trees(node, auth, parent='null', **kwargs):
                 # Add add-on icon URL if specified
                 dummy['iconUrl'] = addon.config.icon_url
                 grid_data.append(dummy)
+    return grid_data
+
+
+def _collect_file_trees(node, auth, parent='null', **kwargs):
+    """Collect file trees for all add-ons implementing HGrid views. Create
+    dummy containers for each child of the target node, and for each add-on
+    implementing HGrid views.
+
+    :return list: List of HGrid-formatted file trees
+
+    """
+    grid_data = _collect_addon_trees(node, auth, **kwargs)
 
     # Collect component file trees
     for child in node.nodes:
         if not child.is_deleted:
-            container = _get_dummy_container(child, auth, parent)
+            container = component_to_hgrid(child, auth, parent)
             grid_data.append(container)
 
     return grid_data
