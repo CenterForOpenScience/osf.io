@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 @must_be_valid_project
 def get_node_contributors_abbrev(*args, **kwargs):
 
-    print "HERE I AM"
     auth = kwargs.get('auth')
     node_to_use = kwargs['node'] or kwargs['project']
 

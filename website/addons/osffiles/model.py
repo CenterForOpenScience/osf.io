@@ -44,6 +44,11 @@ class NodeFile(GuidStoredObject):
     def latest_version_number(self):
         return len(self.node.files_versions[self.clean_filename])
 
+    # URL methods. Note: since NodeFile objects aren't cloned on forking or
+    # registration, the `node` field doesn't necessarily refer to the project
+    # to which a given file is attached. These methods must take a `node`
+    # parameter to build their URLs.
+
     def url(self, node):
         return '{0}osffiles/{1}/'.format(node.url, self.filename)
 
