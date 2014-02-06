@@ -34,7 +34,12 @@
 }
 
 .btn-delete {
-    color: #999999;
+  color: #999999;
+  visibility: hidden;
+}
+
+.slick-row:hover .btn-delete {
+  visibility: visible;
 }
 
 .btn-delete:hover {
