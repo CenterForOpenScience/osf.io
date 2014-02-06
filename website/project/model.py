@@ -32,6 +32,7 @@ from framework.addons import AddonModelMixin
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
 
+logger = logging.getLogger(__name__)
 
 def utc_datetime_to_timestamp(dt):
     return float(
@@ -315,14 +316,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         user = auth.user
         api_node = auth.api_node
 
-        if self.is_contributor(user):
-            return True
-        if api_node == self:
-            return True
-        if user == self.creator:
-            return True
-
-        return False
+        return (
+            self.is_contributor(user)
+            or api_node == self
+            or user == self.creator
+        )
 
     def can_view(self, auth):
         return self.is_public or self.can_edit(auth)
@@ -581,7 +579,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         return True
 
     def fork_node(self, auth, title='Fork of '):
+        """Recursively fork a node.
 
+        :param Auth auth: Consolidated authorization
+        :param str title: Optional text to prepend to forked title
+        :return: Forked node
+
+        """
         user = auth.user
 
         # todo: should this raise an error?
@@ -593,6 +597,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         when = datetime.datetime.utcnow()
 
         original = self.load(self._primary_key)
+
+        # Note: Cloning a node copies its `files_current` and
+        # `wiki_pages_current` fields, but does not clone the underlying
+        # database objects to which these dictionaries refer. This means that
+        # the cloned node must pass itself to its file and wiki objects to
+        # build the correct URLs to that content.
         forked = original.clone()
 
         forked.logs = self.logs
@@ -658,6 +668,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         when = datetime.datetime.utcnow()
 
         original = self.load(self._primary_key)
+
+        # Note: Cloning a node copies its `files_current` and
+        # `wiki_pages_current` fields, but does not clone the underlying
+        # database objects to which these dictionaries refer. This means that
+        # the cloned node must pass itself to its file and wiki objects to
+        # build the correct URLs to that content.
         registered = original.clone()
 
         registered.is_registration = True
@@ -835,17 +851,24 @@ class Node(GuidStoredObject, AddonModelMixin):
             message = '{path} deleted'.format(path=path)
             committer = self._get_committer(auth)
 
-            commit_id = repo.do_commit(message, committer)
+            repo.do_commit(message, committer)
 
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as error:
+            # This exception can be ignored if the file has already been
+            # deleted, e.g. if two users attempt to delete a file at the same
+            # time. If another subprocess error is raised, fail.
+            if error.returncode == 128 and 'did not match any files' in error.output:
+                logger.warning(
+                    'Attempted to delete file {0}, but file was not found.'.format(
+                        path
+                    )
+                )
+                return True
             return False
-
-        # date_modified = datetime.datetime.now()
 
         if file_name_key in self.files_current:
             nf = NodeFile.load(self.files_current[file_name_key])
             nf.is_deleted = True
-            # nf.date_modified = date_modified
             nf.save()
             self.files_current.pop(file_name_key, None)
 
@@ -853,7 +876,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             for i in self.files_versions[file_name_key]:
                 nf = NodeFile.load(i)
                 nf.is_deleted = True
-                # nf.date_modified = date_modified
                 nf.save()
             self.files_versions.pop(file_name_key)
 
@@ -871,7 +893,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             log_date=nf.date_modified,
         )
 
-        # self.save()
         return True
 
     @staticmethod
