@@ -1,6 +1,6 @@
 <%inherit file="project/addon/node_settings.mako" />
 
-%if user_has_auth:
+%if user_has_auth and is_owner:
     <div class="form-group">
 
         <input type="hidden" id="s3_bucket" value="${bucket}" name="s3_bucket" />
@@ -19,6 +19,13 @@
 
         </div>
     </div>
+%elif user_has_auth:
+ Authorized by <a href="${owner_url}">${owner}</a><br></br>
+<div class="btn-group btn-input">
+          <button type="button" class="btn btn-default dropdown-toggle form-control" data-toggle="dropdown" disabled>
+            <span id="bucketlabel" data-bind="label">${bucket if bucket else 'Select a bucket'}</span> <span class="caret"></span>
+          </button>
+</div>
 %else:
     Amazon Simple Storage Service add-on is not configured properly.
     <br>

@@ -46,10 +46,14 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     def to_json(self, user):
         rv = super(AddonS3NodeSettings, self).to_json(user)
 
-        self.user_settings = user.get_addon('s3')
+        if not self.user_settings and user.get_addon('s3'):
+            self.user_settings = user.get_addon('s3')
+
         if self.user_settings:
             rv['access_key'] = self.user_settings.access_key or ''
             rv['secret_key'] = self.user_settings.secret_key or ''
+            rv['owner'] = self.user_settings.owner.fullname
+            rv['owner_url'] = self.user_settings.owner.url
             self.save()
             if self.user_settings.has_auth:
                 rv['bucket_list'] = get_bucket_drop_down(self.user_settings)
@@ -57,7 +61,8 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         rv.update({
             'bucket': self.bucket or '',
             'has_bucket': self.bucket is not None,
-            'user_has_auth': True if self.user_settings and self.user_settings.has_auth else False
+            'user_has_auth': True if self.user_settings and self.user_settings.has_auth else False,
+            'is_owner': True if self.user_settings and self.user_settings.owner == user else False,
         })
 
         return rv
