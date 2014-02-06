@@ -22,7 +22,7 @@ CONFIGS = ['user', 'node']
 CATEGORIES = ['storage']
 
 INCLUDE_JS = {
-    'widget': ['jquery.githubRepoWidget.js'],
+    'widget': ['jquery.githubRepoWidget.js', 'filebrowser-cfg.js'],
     'page': [
         'hgrid-github.js',
     ],

@@ -391,8 +391,10 @@ def _render_addon(node):
 
     widgets = {}
     configs = {}
-    js = []
-    css = []
+    js = ['/static/vendor/hgrid/hgrid.js',
+            '/static/js/filebrowser.js']
+    css = ['/static/vendor/hgrid/hgrid.css',
+            '/static/css/osf-hgrid.css']
 
     for addon in node.get_addons():
 
@@ -404,18 +406,6 @@ def _render_addon(node):
         if node.has_files:
             js.extend(addon.config.include_js.get('files', []))
             css.extend(addon.config.include_css.get('files', []))
-
-    if node.has_files:
-        js.extend([
-            '/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js',
-            '/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js',
-            '/static/vendor/dropzone/dropzone.js',
-            '/static/js/slickgrid.custom.min.js',
-            '/static/js/hgrid.js',
-        ])
-        css.extend([
-            '/static/css/hgrid-base.css',
-        ])
 
     return widgets, configs, js, css
 
