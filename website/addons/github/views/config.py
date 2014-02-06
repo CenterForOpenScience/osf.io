@@ -1,7 +1,7 @@
 import httplib as http
 
 from framework import request
-from framework.auth import must_be_logged_in
+from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
 from website.project.decorators import must_be_contributor
@@ -19,7 +19,7 @@ def github_set_user_config(*args, **kwargs):
 @must_have_addon('github', 'node')
 def github_set_config(*args, **kwargs):
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
 
     github_node = kwargs['node_addon']
     github_user = github_node.user_settings
@@ -45,7 +45,7 @@ def github_set_config(*args, **kwargs):
             message = (
                 'Cannot access repo.'
             )
-        return {'message': message}, 400
+        return {'message': message}, http.BAD_REQUEST
 
     if not github_user_name or not github_repo_name:
         raise HTTPError(http.BAD_REQUEST)

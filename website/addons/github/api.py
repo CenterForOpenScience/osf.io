@@ -414,11 +414,6 @@ class GitHub(object):
             )
         )
 
-def raw_url(user, repo, ref, path):
-    return os.path.join(
-        GH_URL, user, repo, 'blob', ref, path
-    ) + '?raw=true'
-
 
 type_map = {
     'tree': 'folder',

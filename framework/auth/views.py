@@ -16,7 +16,7 @@ import settings
 import helper
 
 import framework.auth
-from framework.auth import register, login, logout, DuplicateEmailError, get_user, must_have_session_auth, get_current_user
+from framework.auth import register, login, logout, DuplicateEmailError, get_user, get_current_user
 from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm, MergeAccountForm
 
 Q = framework.Q

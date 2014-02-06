@@ -2,14 +2,15 @@ import os
 import httplib as http
 
 from framework import request, redirect
-from framework.auth import get_current_user, must_be_logged_in
+from framework.auth import get_current_user
+from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
 from website import models
 from website.project.decorators import must_be_contributor
 from website.project.decorators import must_have_addon
 
-from ..api import GitHub, raw_url, tree_to_hgrid, ref_to_params
+from ..api import GitHub
 from ..auth import oauth_start_url, oauth_get_token
 
 
@@ -17,7 +18,7 @@ from ..auth import oauth_start_url, oauth_get_token
 @must_have_addon('github', 'node')
 def github_add_user_auth(*args, **kwargs):
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
 
     github_user = user.get_addon('github')
     github_node = kwargs['node_addon']

@@ -7,7 +7,7 @@ import datetime as dt
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 from webtest import AppError
-
+from framework.auth.decorators import Auth
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, NodeLogFactory, ApiKeyFactory,
@@ -21,8 +21,8 @@ from framework import app
 
 
 # Only uncomment if running these tests in isolation
-#from website.app import init_app
-#app = init_app(set_backends=False, routes=True)
+from website.app import init_app
+app = init_app(set_backends=False, routes=True)
 
 
 class TestAnUnregisteredUser(DbTestCase):
@@ -44,7 +44,7 @@ class TestAnUnregisteredUser(DbTestCase):
         form['register-password2'] = 'example'
         # Submits
         res = form.submit().follow()
-        # There's a flash message
+        # There's a flash messageset
         assert_in('You may now log in', res)
         # User logs in
         form = res.forms['signinForm']
@@ -186,8 +186,9 @@ class TestAUser(DbTestCase):
         u2.save()
         project = ProjectFactory(creator=u2, is_public=True)
         project.add_contributor(u2)
+        auth = Auth(user=u2, api_key=key)
         # A file was added to the project
-        project.add_file(user=u2, api_key=key, file_name='test.html',
+        project.add_file(auth=auth, file_name='test.html',
                         content='123', size=2, content_type='text/html')
         project.save()
         # User watches the project
@@ -333,18 +334,20 @@ class TestRegistrations(DbTestCase):
         subnav = res.html.select('#projectSubnav')[0]
         assert_not_in('Registrations', subnav.text)
 
+
 class TestComponents(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.user = UserFactory(username='test@test.com')
+        self.user = UserFactory()
         # Add an API key for quicker authentication
         api_key = ApiKeyFactory()
         self.user.api_keys.append(api_key)
         self.user.save()
         self.auth = ('test', api_key._primary_key)
+        self.consolidate_auth = Auth(user=self.user, api_key = api_key)
         self.project = ProjectFactory(creator=self.user)
-        self.project.add_contributor(contributor=self.user)
+        self.project.add_contributor(contributor=self.user, auth=self.consolidate_auth)
         # project has a non-registered contributor
         self.nr_user = {'nr_name': 'Foo Bar', 'nr_email': 'foo@example.com'}
         self.project.contributor_list.append(self.nr_user)
@@ -355,8 +358,8 @@ class TestComponents(DbTestCase):
             project=self.project,
         )
         self.component.save()
-        self.component.set_permissions('public', self.user)
-        self.component.set_permissions('private', self.user)
+        self.component.set_permissions('public', self.consolidate_auth)
+        self.component.set_permissions('private', self.consolidate_auth)
         self.project.save()
 
     def test_can_create_component_from_a_project(self):
@@ -471,8 +474,10 @@ class TestMergingAccounts(DbTestCase):
         self.user.merge_user(self.dupe)
         self.user.save()
         # Now only the master user is shown at the project page
+        print 'debug', self.user._id, self.dupe._id, project.contributor_list
         res = self.app.get(project.url).maybe_follow()
         assert_in(self.user.fullname, res)
+        assert_true(self.dupe.is_merged)
         assert_not_in(self.dupe.fullname, res)
 
     def test_merged_user_has_alert_message_on_profile(self):
@@ -538,6 +543,7 @@ class TestShortUrls(DbTestCase):
         self.user.api_keys.append(api_key)
         self.user.save()
         self.auth = ('test', api_key._primary_key)
+        self.consolidate_auth=Auth(user=self.user, api_key=api_key)
         self.project = ProjectFactory(creator=self.user)
         # A non-project componenet
         self.component = NodeFactory(category='hypothesis', creator=self.user)
@@ -545,9 +551,8 @@ class TestShortUrls(DbTestCase):
         self.component.save()
         # Hack: Add some logs to component; should be unnecessary pending
         # improvements to factories from @rliebz
-        self.component.set_permissions('public', user=self.user)
-        self.component.set_permissions('private', user=self.user)
-        self.project.save()
+        self.component.set_permissions('public', auth=self.consolidate_auth)
+        self.component.set_permissions('private', auth=self.consolidate_auth)
         self.wiki = NodeWikiFactory(user=self.user, node=self.component)
 
     def _url_to_body(self, url):
@@ -572,11 +577,15 @@ class TestShortUrls(DbTestCase):
         )
 
     def test_file_url(self):
-        node_file = self.component.add_file(self.user, None, 'test.txt',
-                                         'test content', 4, 'text/plain')
+        node_file = self.component.add_file(
+            self.consolidate_auth, 'test.txt',
+            'test content', 4, 'text/plain'
+        )
+        # Warm up to account for file rendering
+        _ = self._url_to_body(node_file.url(self.component))
         assert_equal(
-            self._url_to_body(node_file.deep_url),
-            self._url_to_body(node_file.url),
+            self._url_to_body(node_file.deep_url(self.component)),
+            self._url_to_body(node_file.url(self.component)),
         )
 
     def test_wiki_url(self):
@@ -594,6 +603,7 @@ class TestPiwik(DbTestCase):
             AuthUserFactory()
             for _ in range(3)
         ]
+        self.consolidate_auth = Auth(user=self.users[0])
         self.project = ProjectFactory(creator=self.users[0], is_public=True)
         self.project.add_contributor(contributor=self.users[1])
         self.project.save()
@@ -628,7 +638,7 @@ class TestPiwik(DbTestCase):
         assert_in('token_auth=anonymous', res)
 
     def test_private_alert(self):
-        self.project.set_permissions('private', user=self.users[0])
+        self.project.set_permissions('private', auth=self.consolidate_auth)
         self.project.save()
         res = self.app.get(
             '/{0}/statistics/'.format(self.project._primary_key),

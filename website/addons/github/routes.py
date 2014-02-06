@@ -111,6 +111,18 @@ api_routes = {
             views.hgrid.github_dummy_folder_public,
             json_renderer,
         ),
+
+        ### File Render ###
+        Rule(
+            [
+                '/project/<pid>/github/file/<path:path>/render/',
+                '/project/<pid>/node/<nid>/github/file/<path:path>/render/',
+            ],
+            'get',
+            views.crud.github_get_rendered_file,
+            json_renderer,
+        ),
+
     ],
     'prefix': '/api/v1'
 }
@@ -120,6 +132,6 @@ page_routes = {
         Rule([
             '/project/<pid>/github/file/<path:path>',
             '/project/<pid>/node/<nid>/github/file/<path:path>',
-        ], 'get', views.crud.github_view_file, OsfWebRenderer('../addons/github/templates/github_file.mako')),
+        ], 'get', views.crud.github_view_file, OsfWebRenderer('../addons/github/templates/github_view_file.mako')),
     ],
 }
