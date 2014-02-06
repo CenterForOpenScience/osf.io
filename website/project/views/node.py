@@ -391,10 +391,8 @@ def _render_addon(node):
 
     widgets = {}
     configs = {}
-    js = ['/static/vendor/hgrid/hgrid.js',
-            '/static/js/rubeus.js']
-    css = ['/static/vendor/hgrid/hgrid.css',
-            '/static/css/osf-hgrid.css']
+    js = []
+    css = []
 
     for addon in node.get_addons():
 

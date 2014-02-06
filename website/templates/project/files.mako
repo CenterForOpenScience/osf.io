@@ -12,17 +12,9 @@
 </%def>
 
 <%def name="stylesheets()">
-<link rel="stylesheet" href="/static/vendor/hgrid/hgrid.css" type="text/css" />
-<link rel="stylesheet" href="/static/css/osf-hgrid.css" type="text/css" />
 % for stylesheet in tree_css:
 <link rel='stylesheet' href='${stylesheet}' type='text/css' />
 % endfor
-</%def>
-
-<%def name="javascript()">
-<script src="/static/vendor/dropzone/dropzone.js"></script>
-<script src="/static/vendor/hgrid/hgrid.js"></script>
-<script src='/static/js/rubeus.js'></script>
 </%def>
 
 <%def name="javascript_bottom()">
@@ -36,7 +28,7 @@ global.ondragover = function(e) { e.preventDefault(); };
 global.ondrop = function(e) { e.preventDefault(); };
 
 var gridData = ${grid_data};
-global.filebrowser = new Rubeus('#myGrid', {
+filebrowser = new Rubeus('#myGrid', {
     data: gridData,
     // searchInput: '#searchInput'
 });
