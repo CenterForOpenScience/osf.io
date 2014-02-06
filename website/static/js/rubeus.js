@@ -13,11 +13,15 @@ this.Rubeus = (function($, HGrid, bootbox) {
     // Can't use microtemplate because microtemplate escapes html
     // Necessary for rendering, e.g. the github branch picker
     HGrid.Col.Name.folderView = function(item) {
+        var tpl = '';
         if (item.hasIcon)
-            return '<img class="hg-addon" src="/addons/static/' + item.addon + '/comicon.png">' +
-                item.name;
+            tpl += '<img class="hg-addon-icon" src="/addons/static/' + item.addon + '/comicon.png">';
         else
-            return HGrid.Html.folderIcon + item.name;
+            tpl += HGrid.Html.folderIcon;
+        tpl += '<span class="hg-folder-text">' + item.name + '</span>';
+        if(item.extra)
+            tpl += '<span class="hg-extras">' + item.extra + '</span>';
+        return tpl;
     };
 
     HGrid.Col.Name.itemView = function(item) {

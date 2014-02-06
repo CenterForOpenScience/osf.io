@@ -22,7 +22,7 @@
 <%def name="javascript()">
 <script src="/static/vendor/dropzone/dropzone.js"></script>
 <script src="/static/vendor/hgrid/hgrid.js"></script>
-<script src='/static/js/filebrowser.js'></script>
+<script src='/static/js/rubeus.js'></script>
 </%def>
 
 <%def name="javascript_bottom()">

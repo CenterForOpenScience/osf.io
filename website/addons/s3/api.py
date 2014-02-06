@@ -37,10 +37,11 @@ def create_bucket(user_settings, bucket_name):
     except Exception:
         return False
 
+
 def does_bucket_exist(accessKey, secretKey, bucketName):
     try:
         c = S3Connection(accessKey, secretKey)
-        c.get_bucket(bucketName)
+        c.get_bucket(bucketName, validate=false)
         return True
     except Exception:
         return False
@@ -58,11 +59,7 @@ class S3Wrapper:
     @classmethod
     def bucket_exist(cls, s3, bucketName):
         m = cls.fromAddon(s3)
-        try:
-            m.connection.get_bucket(bucketName.lower())
-            return True
-        except Exception:
-            return False
+        return not m.connection.lookup(bucketName.lower(), validate=False)
 
     "S3 Bucket management"
 
