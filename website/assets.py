@@ -51,7 +51,7 @@ js = Bundle(
                 "js/project.js",
                 "js/app.js",
                 "js/addons.js",
-                'js/filebrowser.js',
+                'js/rubeus.js',
                 filters="jsmin"),
         output="public/js/common.js"
 )

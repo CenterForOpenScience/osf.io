@@ -27,7 +27,7 @@ CATEGORIES = ['storage']
 INCLUDE_JS = {
     'widget': [],
     'page': [],
-    'files': ['hgrid-s3.js']
+    'files': ['s3-rubeus-cfg.js']
 }
 
 INCLUDE_CSS = {
