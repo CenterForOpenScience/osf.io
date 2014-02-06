@@ -13,6 +13,26 @@
   line-height: 14px;
 }
 
+.btn-default.btn-mini:hover,
+.btn-default.btn-mini:focus,
+.btn-default.btn-mini:active,
+.btn-default.btn-mini.active,
+.open .dropdown-toggle.btn-default.btn-mini {
+  color: #333333;
+  background-color: #ebebeb;
+  border-color: #adadad;
+}
+
+.btn-primary.btn-mini:hover,
+.btn-primary.btn-mini:focus,
+.btn-primary.btn-mini:active,
+.btn-primary.btn-mini.active,
+.open .dropdown-toggle.btn-primary.btn-mini {
+  color: #ffffff;
+  background-color: #3276b1;
+  border-color: #285e8e;
+}
+
 .btn-delete {
     color: #999999;
 }
