@@ -1,5 +1,5 @@
 """
-Enable the wiki and files add-ons for all existing nodes.
+
 """
 
 from website.app import init_app
@@ -18,7 +18,14 @@ def nodes_to_abstract():
                     [each, 'node']
                     for each in node['nodes']
                 ]
-                print node['_id'], abstract
+                node_mongo.update(
+                    {'_id': node['_id']},
+                    {'$set':
+                         {
+                            'nodes': abstract
+                         }
+                    }
+                )
 
 if __name__ == '__main__':
     nodes_to_abstract()
