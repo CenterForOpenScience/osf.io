@@ -14,6 +14,9 @@
 <%def name="stylesheets()">
 <link rel="stylesheet" href="/static/vendor/hgrid/hgrid.css" type="text/css" />
 <link rel="stylesheet" href="/static/css/osf-hgrid.css" type="text/css" />
+% for stylesheet in tree_css:
+<link rel='stylesheet' href='${stylesheet}' type='text/css' />
+% endfor
 </%def>
 
 <%def name="javascript()">
@@ -23,7 +26,6 @@
 </%def>
 
 <%def name="javascript_bottom()">
-
 % for script in tree_js:
 <script type="text/javascript" src="${script}"></script>
 % endfor
