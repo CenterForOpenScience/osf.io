@@ -17,9 +17,9 @@ this.FileBrowser = (function($, HGrid, bootbox) {
 
     HGrid.Col.Name.itemView = function(item) {
         var ext = item.name.split('.').pop().toLowerCase();
-        return HGrid.Extentions.indexOf(ext) == -1 ?
+        return HGrid.Extensions.indexOf(ext) == -1 ?
             HGrid.Html.fileIcon + item.name:
-            HGrid.ExtentionSkeleton.replace('{{ext}}', ext) + item.name;
+            HGrid.ExtensionSkeleton.replace('{{ext}}', ext) + item.name;
     };
 
     HGrid.Col.ActionButtons.itemView = function() {
