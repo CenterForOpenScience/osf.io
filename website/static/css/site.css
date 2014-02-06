@@ -1076,3 +1076,8 @@ h1.unavailable {
   max-width: 100%;
   height: auto;
 }
+
+/*Addons*/
+img.hg-addon {
+  display: inline;
+}
