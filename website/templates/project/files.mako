@@ -4,9 +4,7 @@
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 <h4>Drag and drop files below to upload.</h4>
-<!-- <div class="form-group">
-<input placeholder="Search" class='form-control search-input' type='text' id='searchInput'>
-</div> -->
+
 <div id="myGrid" class="filebrowser hgrid"></div>
 
 </%def>
@@ -28,10 +26,7 @@ global.ondragover = function(e) { e.preventDefault(); };
 global.ondrop = function(e) { e.preventDefault(); };
 
 var gridData = ${grid_data};
-filebrowser = new Rubeus('#myGrid', {
-    data: gridData,
-    // searchInput: '#searchInput'
-});
+filebrowser = new Rubeus('#myGrid', { data: gridData });
 
 })(window);
 </script>

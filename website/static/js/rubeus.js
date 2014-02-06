@@ -280,7 +280,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
     Rubeus.cfg = {};
 
     function getCfg(row, key) {
-        if (row && row.addon && this.cfg[row.addon]) {
+        if (row && row.addon && Rubeus.cfg[row.addon]) {
             return Rubeus.cfg[row.addon][key];
         }
         return undefined;
