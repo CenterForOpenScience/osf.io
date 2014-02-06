@@ -32,7 +32,7 @@ INCLUDE_JS = {
 }
 
 INCLUDE_CSS = {
-    'widget': [],
+    'widget': ['filebrowser.css'],
     'page': ['/static/css/hgrid-base.css'],
     'files': ['filebrowser.css']
 }
