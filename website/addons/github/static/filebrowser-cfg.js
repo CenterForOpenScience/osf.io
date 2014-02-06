@@ -16,13 +16,7 @@
             success: function(data) {
                 // Update the item with the new branch data
                 $.extend(item, data);
-                // TODO: Need to set _loaded to False, then re-expand the item to see new contents
-                // HGrid should have a reload method.
-                item._node._loaded = false;
-                grid.emptyFolder(item);
-                grid.updateItem(item);
-                grid.toggleCollapse(item);
-                grid.toggleCollapse(item);
+                grid.reloadFolder(item);
             }
         });
     }

@@ -2004,6 +2004,27 @@ this.HGrid = (function($, window, document, undefined) {
     return this;
   };
 
+  /**
+   * Reset a node's loaded state to false. When the node is expanded again and
+   * lazy loading is enabled, a new xhr request will be sent.
+   */
+  HGrid.prototype.resetLoadedState = function(folder, loaded) {
+    folder._node._loaded = Boolean(loaded);
+    return this;
+  };
+
+  /**
+   * Reload a folder contents. Will send a request even if lazy loading is enabled
+   * @method  reloadFolder
+   */
+  HGrid.prototype.reloadFolder = function(folder) {
+    this.resetLoadedState(folder);
+    this.emptyFolder(folder);
+    this.collapseItem(folder);
+    this.expandItem(folder);
+    return this;
+  };
+
   HGrid.prototype.render = function() {
     this.grid.render();
     return this;
