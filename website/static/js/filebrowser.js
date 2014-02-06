@@ -3,6 +3,11 @@
  * initializes an HGrid.
  */
 this.Rubeus = (function($, HGrid, bootbox) {
+
+    /////////////////////////
+    // HGrid configuration //
+    /////////////////////////
+
     var tpl = HGrid.Fmt.tpl;
 
     HGrid.Col.ActionButtons.itemView = function(row) {
@@ -45,10 +50,14 @@ this.Rubeus = (function($, HGrid, bootbox) {
         itemView: '<span data-status></span>',
         width: 50
     };
+    HGrid.Html.statusSelector = '[data-status]';
 
+    /**
+     * Changes the html in the status column.
+     */
     HGrid.prototype.changeStatus = function(row, html, fadeAfter) {
         var rowElem = this.getRowElement(row.id);
-        var $status = $(rowElem).find('[data-status]');
+        var $status = $(rowElem).find(HGrid.Html.statusSelector);
         $status.html(html);
         if (fadeAfter) {
             setTimeout(function() {
@@ -63,7 +72,11 @@ this.Rubeus = (function($, HGrid, bootbox) {
         FETCH_SUCCESS: '',
         FETCH_START: '<span class="text-muted">Fetching contents. . .</span>',
         FETCH_ERROR: '<span class="text-info">Could not retrieve data. Please refresh the page and try again.</span>',
+
         UPLOAD_SUCCESS: '<span class="text-success">Successfully uploaded</span>',
+        DELETING: function(row) {
+            return '<span class="text-muted">Deleting "' + row.name + '"</span>';
+        },
         DELETED: function(row) {
             return '<span class="text-warning">Successfully deleted "' + row.name + '"</span>';
         },
@@ -74,6 +87,47 @@ this.Rubeus = (function($, HGrid, bootbox) {
             return '<span class="text-info">' + Math.floor(progress) + '%</span>';
         }
     };
+
+    ////////////////////////
+    // Listener callbacks //
+    ////////////////////////
+
+    function onConfirmDelete(evt, row, grid) {
+        if (row) {
+            var rowCopy = $.extend({}, row);
+            // Show "Deleting..." message in parent folder's status column
+            var parent = grid.getByID(rowCopy.parentID);
+            grid.changeStatus(parent, status.DELETING(rowCopy));
+            grid.deleteFile(row, {
+                error: function() {
+                    // TODO: This text should be configurable by addon devs
+                    bootbox.error('Could not delete ' + row.name + '. Please try again later.');
+                },
+                success: function() {
+                    grid.getDataView().updateItem(parent.id, parent);
+                    grid.removeItem(rowCopy.id);
+                    // Show 'Successfully deleted' in folder's status column
+                    grid.changeStatus(parent, status.DELETED(rowCopy), 2000);
+                }
+            });
+        }
+    }
+
+    function onClickName(evt, row, grid) {
+        if (row) {
+            var viewUrl = grid.getByID(row.id).urls.view;
+            if (viewUrl) {
+                window.location.href = viewUrl;
+            }
+            if (row.kind === HGrid.FOLDER && row.depth !== 0) {
+                grid.toggleCollapse(row);
+            }
+        }
+    }
+
+    ///////////////////
+    // HGrid options //
+    ///////////////////
 
     // OSF-specific HGrid options common to all addons
     baseOptions = {
@@ -165,37 +219,11 @@ this.Rubeus = (function($, HGrid, bootbox) {
             {
                 on: 'click',
                 selector: '.' + HGrid.Html.nameClass,
-                callback: function(evt, row, grid) {
-                    if (row) {
-                        var viewUrl = grid.getByID(row.id).urls.view;
-                        if (viewUrl) {
-                            window.location.href = viewUrl;
-                        }
-                        if (row.kind === HGrid.FOLDER && row.depth !== 0) {
-                            grid.toggleCollapse(row);
-                        }
-                    }
-                }
+                callback: onClickName
             }, {
                 on: 'click',
                 selector: '.confirm',
-                callback: function(evt, row, grid) {
-                    if (row) {
-                        var rowCopy = $.extend({}, row);
-                        grid.deleteFile(row, {
-                            error: function() {
-                                // TODO: This text should be configurable by addon devs
-                                bootbox.error('Could not delete ' + row.name + '. Please try again later.');
-                            },
-                            success: function(data) {
-                                var parent = grid.getByID(rowCopy.parentID);
-                                grid.getDataView().updateItem(parent.id, parent);
-                                grid.removeItem(rowCopy.id);
-                                grid.changeStatus(parent, status.DELETED(rowCopy), 2000);
-                            }
-                        });
-                    }
-                }
+                callback: onConfirmDelete
             }, {
                 on: 'click',
                 selector: '.unconfirm',
@@ -216,7 +244,10 @@ this.Rubeus = (function($, HGrid, bootbox) {
         }
     };
 
-    // Public API
+    ///////////////////////
+    // Rubeus Public API //
+    ///////////////////////
+
     function Rubeus(selector, options) {
         this.selector = selector;
         this.options = $.extend({}, baseOptions, options);
