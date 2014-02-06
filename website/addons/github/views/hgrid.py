@@ -82,11 +82,10 @@ def github_hgrid_data(node_settings, auth, parent=None, contents=False, *args, *
         'name': name_tpl,
         'kind': 'folder',
         'urls': {
-            'upload': node_settings.owner.api_url + 'github/file/' + ref,
-            'fetch': node_settings.owner.api_url + 'github/hgrid/' + ref,
+            'upload': node_settings.owner.api_url + 'github/file/' + (ref or ''),
+            'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
             'branch': node_settings.owner.api_url + 'github/hgrid/root/',
         },
-        'hasIcon': True,
         'permissions': {
             'view': True,
             'edit': can_edit,
