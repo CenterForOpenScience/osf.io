@@ -1,17 +1,71 @@
 # -*- coding: utf-8 -*-
 import logging
+import os
 from mako.template import Template
 
 from framework import request
-from framework.auth.decorators import Auth
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
 
-from ..api import GitHub, to_hgrid, ref_to_params
+from ..api import GitHub, _build_github_urls, ref_to_params
 from .util import _get_refs, _check_permissions
 
+
 logger = logging.getLogger(__name__)
+
+
+def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
+             can_edit=True, parent=None):
+
+    grid = []
+    folders = {}
+
+    for datum in data:
+
+        if datum['type'] in ['file', 'blob']:
+            item = {
+                'kind': 'item',
+                'urls': _build_github_urls(
+                    datum, node_url, node_api_url, branch, sha
+                )
+            }
+        elif datum['type'] in ['tree', 'dir']:
+            item = {
+                'kind': 'folder',
+                'children': [],
+            }
+        else:
+            continue
+
+        item.update({
+            'addon': 'github',
+            'permissions': {
+                'view': True,
+                'edit': can_edit,
+            },
+            'urls': _build_github_urls(
+                datum, node_url, node_api_url, branch, sha
+            ),
+        })
+
+        head, item['name'] = os.path.split(datum['path'])
+        if parent:
+            head = head.split(parent)[-1]
+        if head:
+            folders[head]['children'].append(item)
+        else:
+            grid.append(item)
+
+        # Update cursor
+        if item['kind'] == 'folder':
+            key = datum['path']
+            if parent:
+                key = key.split(parent)[-1]
+            folders[key] = item
+
+    return grid
+
 
 github_branch_template = Template('''
     % if len(branches) > 1:
