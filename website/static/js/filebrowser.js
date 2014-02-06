@@ -59,7 +59,10 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         FETCH_SUCCESS: '',
         FETCH_START: '<span class="text-muted">Fetching contents...</span>',
         FETCH_ERROR: '<span class="text-info">Could not retrieve data. Please refresh the page and try again.</span>',
-        UPLOAD_SUCCESS: '<span class="text-success">Successfully uploaded</success>'
+        UPLOAD_SUCCESS: '<span class="text-success">Successfully uploaded</span>',
+        DELETED: function (row) {
+            return '<span class="text-success">Successfully deleted "' + row.name + '"</span>';
+        }
     };
 
     // OSF-specific HGrid options common to all addons
@@ -133,6 +136,9 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             var cfgOption = resolveCfgOption.call(this, row, 'uploadSuccess', [file, row, data]);
             return cfgOption || null;
         },
+        dropzoneOptions: {
+            parallelUploads: 1
+        },
         listeners: [
             // Go to file's detail page if name is clicked
             {
@@ -150,10 +156,17 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             {on: 'click', selector: '.confirm',
                 callback: function(evt, row, grid) {
                     if (row) {
+                        var rowCopy = $.extend({}, row);
                         grid.deleteFile(row, {
                             error: function() {
                                 // TODO: This text should be configurable by addon devs
                                 bootbox.error('Could not delete ' + row.name + '. Please try again later.');
+                            },
+                            success: function(data) {
+                                var parent = grid.getByID(rowCopy.parentID);
+                                grid.getDataView().updateItem(parent.id, parent);
+                                grid.removeItem(rowCopy.id);
+                                grid.changeStatus(parent, status.DELETED(rowCopy), 2000);
                             }
                         });
                     }
