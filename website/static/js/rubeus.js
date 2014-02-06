@@ -10,23 +10,23 @@ this.Rubeus = (function($, HGrid, bootbox) {
 
     var tpl = HGrid.Fmt.tpl;
 
-    // Can't use microtemplate because microtemplate escapes html
-    // Necessary for rendering, e.g. the github branch picker
     HGrid.Col.Name.folderView = function(item) {
-        var tpl = '';
-        if (item.hasIcon)
-            tpl += '<img class="hg-addon-icon" src="/addons/static/' + item.addon + '/comicon.png">';
-        else
-            tpl += HGrid.Html.folderIcon;
-        tpl += '<span class="hg-folder-text">' + item.name + '</span>';
-        if(item.extra)
-            tpl += '<span class="hg-extras">' + item.extra + '</span>';
-        return tpl;
+        var html = '';
+        if (item.hasIcon) {
+            html += '<img class="hg-addon-icon" src="/addons/static/' + item.addon + '/comicon.png">';
+        } else {
+            html += HGrid.Html.folderIcon;
+        }
+        html += '<span class="hg-folder-text">' + item.name + '</span>';
+        if(item.extra) {
+            html += '<span class="hg-extras">' + item.extra + '</span>';
+        }
+        return html;
     };
 
     HGrid.Col.Name.itemView = function(item) {
         var ext = item.name.split('.').pop().toLowerCase();
-        return HGrid.Extensions.indexOf(ext) == -1 ?
+        return HGrid.Extensions.indexOf(ext) === -1 ?
             HGrid.Html.fileIcon + item.name:
             HGrid.ExtensionSkeleton.replace('{{ext}}', ext) + item.name;
     };
