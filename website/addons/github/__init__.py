@@ -22,19 +22,19 @@ CONFIGS = ['user', 'node']
 CATEGORIES = ['storage']
 
 INCLUDE_JS = {
-    'widget': ['jquery.githubRepoWidget.js', 'filebrowser-cfg.js'],
+    'widget': ['jquery.githubRepoWidget.js', 'github-rubeus-cfg.js'],
     'page': [
         'hgrid-github.js',
     ],
     'files': [
-        'filebrowser-cfg.js',
+        'github-rubeus-cfg.js',
     ]
 }
 
 INCLUDE_CSS = {
-    'widget': ['filebrowser.css'],
+    'widget': ['github-rubeus.css'],
     'page': ['/static/css/hgrid-base.css'],
-    'files': ['filebrowser.css']
+    'files': ['github-rubeus.css']
 }
 
 WIDGET_HELP = 'GitHub Add-on Alpha'
