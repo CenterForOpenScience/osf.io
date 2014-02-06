@@ -46,7 +46,8 @@
     text-decoration: none;
 }
 
-.hg-item-name:hover {
+.hg-item-name:hover,
+.hg-folder-name:hover {
     text-decoration: underline !important;
     cursor: pointer;
 }

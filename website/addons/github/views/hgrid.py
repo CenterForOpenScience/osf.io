@@ -24,11 +24,11 @@ github_branch_template = Template('''
         <span>${branch}</span>
     % endif
     % if sha:
-        <span class="github-sha text-muted">${sha[:10]}</span>
+        <a href="https://github.com/${owner}/${repo}/commit/${sha}" class="github-sha text-muted">${sha[:10]}</a>
     % endif
 ''')
 
-def github_branch_widget(branches, branch, sha):
+def github_branch_widget(branches, owner, repo, branch, sha):
     """Render branch selection widget for GitHub add-on. Displayed in the
     name field of HGrid file trees.
 
@@ -40,6 +40,8 @@ def github_branch_widget(branches, branch, sha):
         ],
         branch=branch,
         sha=sha,
+        owner=owner,
+        repo=repo
     )
     return rendered
 
@@ -64,7 +66,8 @@ def github_hgrid_data(node_settings, auth, parent=None, contents=False, *args, *
         can_edit = _check_permissions(
             node_settings, auth, connection, branch, sha
         )
-        name_append = github_branch_widget(branches, branch, sha)
+        name_append = github_branch_widget(branches, owner=node_settings.user,
+            repo=node_settings.repo, branch=branch, sha=sha)
     else:
 
         ref = None
