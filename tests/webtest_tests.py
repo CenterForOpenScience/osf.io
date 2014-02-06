@@ -576,6 +576,7 @@ class TestShortUrls(DbTestCase):
             self._url_to_body(self.component.url),
         )
 
+    # TODO: Mock out the file
     def test_file_url(self):
         node_file = self.component.add_file(
             self.consolidate_auth, 'test.txt',
