@@ -16,7 +16,7 @@ import settings
 import helper
 
 import framework.auth
-from framework.auth import register, login, logout, DuplicateEmailError, get_user, must_have_session_auth, get_current_user
+from framework.auth import register, login, logout, DuplicateEmailError, get_user, get_current_user
 from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm, MergeAccountForm
 
 Q = framework.Q
@@ -57,7 +57,7 @@ def forgot_password():
             user_obj.verification_key = helper.random_string(20)
             user_obj.save()
             # TODO: This is OSF-specific
-            success = send_email.delay(
+            success = send_email(
                 from_addr=website.settings.FROM_EMAIL,
                 to_addr=form.email.data,
                 subject="Reset Password",

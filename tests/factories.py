@@ -19,9 +19,12 @@ from factory import base, Sequence, SubFactory, post_generation
 
 from framework import StoredObject
 from framework.auth import User, Q
+from framework.auth.decorators import Auth
 from framework.auth.utils import parse_name
 from website.project.model import (ApiKey, Node, NodeLog, WatchConfig,
-                                   MetaData, Tag, NodeWikiPage, MetaSchema)
+                                   MetaData, Tag, MetaSchema)
+
+from website.addons.wiki.model import NodeWikiPage
 
 
 # TODO: This is a hack. Check whether FactoryBoy can do this better
@@ -80,6 +83,7 @@ class UserFactory(ModularOdmFactory):
 
 
 class AuthUserFactory(UserFactory):
+
     @post_generation
     def add_api_key(self, create, extracted):
         key = ApiKeyFactory()
@@ -141,10 +145,10 @@ class RegistrationFactory(AbstractNodeFactory):
         user = user or project.creator
         template = template or "Template1"
         data = data or "Some words"
-
+        auth = Auth(user=user)
         return project.register_node(
             schema=schema,
-            user=user,
+            auth=auth,
             template=template,
             data=data,
         )

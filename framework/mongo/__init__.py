@@ -32,7 +32,7 @@ def set_up_storage(schemas, storage_class, prefix='', addons=None, *args, **kwar
     _schemas.extend(schemas)
 
     for addon in (addons or []):
-        _schemas.extend(addon.models.values())
+        _schemas.extend(addon.models)
 
     for schema in _schemas:
         collection = "{0}{1}".format(prefix, schema._name)

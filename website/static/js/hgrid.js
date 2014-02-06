@@ -52,6 +52,8 @@ var HGrid = {
         ajaxOnError: null,
         // Callback on AJAX complete
         ajaxOnComplete: null,
+        // Additional options to be passed into $.ajax when sending AJAX requests
+        ajaxOptions: {},
         lazyLoad: false,
         columns: [
             {id: "uid", name: "uid", width: 40, field: "uid"},
@@ -133,17 +135,8 @@ var HGrid = {
         var _this = this;
         var self = Object.create(_this);
         self.options = $.extend({}, self.defaultOptions, options);
-        var urls = ['urlAdd','urlMove','urlEdit','urlDelete'];
-        for (var i = 0; i<urls.length; i++) {
-            if (!self.options[urls[i]]) {
-                self.options[urls[i]] = self.options['url'];
-            }
-            if (typeof self.options[urls[i]] === "function") {
-                self.options[urls[i]] = self.options[urls[i]]();
-            }
-        }
         if (self.options.ajaxSource) { // Get data from server
-            $.ajax({
+            var ajaxDefaults = {
                 url: self.options.ajaxSource, dataType: "json",
                 success: function(json)  {
                     self.options.info = json;
@@ -157,10 +150,14 @@ var HGrid = {
                 complete: function(xhr){
                     return self.options.ajaxOnComplete && self.options.ajaxOnComplete(xhr);
                 }
-            });
+            };
+            // Add extra ajaxOptions
+            var ajaxParams = $.extend(ajaxDefaults, self.options.ajaxOptions);
+            $.ajax(ajaxParams);
         } else {  // Data were passed in directly as an array
             return self.initialize.call(self);
         }
+        return this;
     },
 
     initialize: function() {
@@ -334,7 +331,12 @@ var HGrid = {
             hGridAfterNav: new this.Slick.Event()
         });
         this.Slick.dataView.collapseAllGroups();
-
+        var urls = ['urlAdd','urlMove','urlEdit','urlDelete'];
+        for (var i = 0; i < urls.length; i++) {
+            if (!_this.options[urls[i]]) {
+                _this.options[urls[i]] = _this.options['url'];
+            }
+        }
         return this;
     },
 
@@ -376,8 +378,9 @@ var HGrid = {
      * @param  {Function} done Optional callback that takes the returned data as its argument.
      */
     getItemsFromServer: function(parentItem, done) {
-        var _this = this
-        $.ajax({
+        var _this = this;
+        // Build params for $.ajax
+        var ajaxOptions = {
             url: _this.getItemUrl(parentItem), dataType: "json",
             success: function(json) {
                 done && done(json);
@@ -385,7 +388,9 @@ var HGrid = {
             error: function(xhr, textStatus, error) {
                 done && done(null, error);
             }
-        });
+        };
+        var ajaxParams = $.extend(ajaxOptions, _this.options.ajaxOptions);
+        $.ajax(ajaxParams);
     },
 
 
@@ -532,34 +537,42 @@ var HGrid = {
         // Get the SlickGrid Row under the dragged file
         myDropzone.on("dragover", function(e){
             currentDropCell = hGrid.Slick.grid.getCellFromEvent(e);
+            var item;
             if(currentDropCell===null){
                 dropHighlight = null;
                 myDropzone.options.dropDestination = null;
                 hGrid.draggerGuide(dropHighlight);
             }
             else{
+                item = hGrid.Slick.dataView.getItem(currentDropCell['row']);
                 currentDropCell.insertBefore = currentDropCell['row'];
 
-                if(hGrid.Slick.dataView.getItem(currentDropCell['row'])['type']=='folder'){
-                    dropHighlight = hGrid.Slick.dataView.getItem(currentDropCell['row']);
-                    myDropzone.options.dropDestination = dropHighlight['uid'];
+                if(item.type === 'folder'){
+                    dropHighlight = item;
+                    myDropzone.options.dropDestination = dropHighlight.uid;
                 }
                 else{
-                    var childDropHighlight = hGrid.Slick.dataView.getItem(currentDropCell['row']);
-                    dropHighlight = hGrid.getItemByValue(hGrid.data, childDropHighlight['parent_uid'], 'uid');
-                    myDropzone.options.dropDestination = dropHighlight['uid'];
+                    dropHighlight = hGrid.getItemByValue(hGrid.data, item.parent_uid, 'uid');
+                    myDropzone.options.dropDestination = dropHighlight.uid;
                 }
-                if(dropHighlight['permission']=="true" || typeof dropHighlight['permission'] == 'undefined'){
+                if (dropHighlight.permission === true || typeof(dropHighlight.permission) === 'undefined') {
                     hGrid.draggerGuide(dropHighlight);
                 }
             }
             if(bool){
-                myDropzone.options.url = hGrid.options['urlAdd'][myDropzone.options.dropDestination];
+                if (typeof(hGrid.options.urlAdd) === 'function') {
+                    // if urlAdd is a function, call it, passing in the
+                    // item
+                    // NOTE(sloria): This is modified from Hgrid master
+                    myDropzone.options.url = hGrid.options.urlAdd(dropHighlight);
+                } else {
+                    myDropzone.options.url = hGrid.options['urlAdd'][myDropzone.options.dropDestination];
+                };
             }
 
         });
 
-        myDropzone.on("addedfile", function(file){
+        myDropzone.on("addedfile", function(file) {
             $('.bar').css('width', "0%");
             var parent;
             if (myDropzone.options.dropDestination===null){
@@ -603,7 +616,7 @@ var HGrid = {
 
                 },(1*1000));
             }
-        })
+        });
         // Hook the drop success to the grid view update
         myDropzone.on("success", function(file) {
             var value;
@@ -691,13 +704,13 @@ var HGrid = {
                             spliceId = comp['id']+1;
                             if(asc){
                                 if(compValue > itemValue){
-                                    spliceId = comp['id'];
+                                    spliceId = _this.data.indexOf(comp);
                                     break;
                                 }
                             }
                             else{
                                 if(compValue < itemValue){
-                                    spliceId = comp['id'];
+                                    spliceId = _this.data.indexOf(comp);
                                     break;
                                 }
                             }
@@ -710,7 +723,7 @@ var HGrid = {
                 else{
                     spliceId = parent['id']+1;
                 }
-                _this.data.splice(spliceId, 0,item);
+                _this.data.splice(spliceId, 0, item);
                 _this.prepJava(_this.data);
                 _this.Slick.dataView.setItems(_this.data);
                 _this.Slick.grid.setSelectedRows([]);
@@ -1306,10 +1319,10 @@ var HGrid = {
                     // Collapse folders by default
                     if (item.type === "folder") {
                         item._collapsed = true;
-                    };
+                    }
                     _this.addItem(item);
                 });
-            };
+            }
             parentItem._loaded = true;
             done && done(_this.data);
         });
@@ -1527,6 +1540,8 @@ var HGrid = {
                     _this.dropZoneObj.options.dropDestination = item['uid'];
                 }
             }
+            _this.expandItem(item);
+
             e.preventDefault();
         });
 

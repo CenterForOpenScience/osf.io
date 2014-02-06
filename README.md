@@ -1,6 +1,10 @@
 [This repository has moved; click here.](http://github.com/CenterForOpenScience/openscienceframework/)
 ===========================
 
+## Help
+
+Solutions to many common issues may be found in the [Troubleshooting Guide](docs/troubleshooting.rst).
+
 ## Quickstart
 
 These instructions should work on Mac OSX >= 10.7
@@ -60,6 +64,14 @@ To run a certain test method
 
 ```bash
 $ nosetests tests/test_module.py:TestClass.test_method
+```
+
+### Testing Addons
+
+Addons tests are not run by default. To execute addons tests, run
+
+```bash
+$ invoke test_addons
 ```
 
 ### Testing Email

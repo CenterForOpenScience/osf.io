@@ -59,7 +59,7 @@
 
                         <a
                             rel="tooltip"
-                            title="Number of times this node has been forked (copied)"
+                            title="Number of times this ${node['category']} has been forked (copied)"
                             % if node["category"] == 'project' and user_name:
                                 href="#"
                                 class="btn btn-default node-fork-btn"
@@ -70,23 +70,16 @@
                         >
                             <i class="icon-code-fork"></i>&nbsp;${node['fork_count']}
                         </a>
+                        <a
+                                rel="tooltip"
+                                class="btn btn-default"
+                                title="Number times this ${node['category']} has been linked"
+                            >
+                            <i id="linkCount" class="icon-hand-right">&nbsp;${node['points']}</i>
+                        </a>
 
                     </div><!-- end btn-grp -->
                 </div><!-- end btn-toolbar -->
-
-                <!-- Add pointers to me -->
-                <div class="btn-toolbar node-control pull-right">
-                    <div class="btn-group">
-                        <a
-                                class="btn btn-default ${'disable' if not user_name else ''}"
-                                data-toggle="modal"
-                                data-target="#addPointer"
-                                onclick="prepAddAsPointer()">
-                            Add Pointers to this ${node['category'].capitalize()}
-                            ${node['points']}
-                        </a>
-                    </div>
-                </div>
 
             </div><!-- end col-md-->
 
@@ -129,6 +122,9 @@
             <ul class="nav navbar-nav">
                 <li><a href="${node['url']}">Dashboard</a></li>
 
+                % if has_files:
+                    <li><a href="${node['url']}files/">Files</a></li>
+                % endif
                 <!-- Add-on tabs -->
                 % for addon in addons_enabled:
                     % if addons[addon]['has_page']:
@@ -174,8 +170,9 @@
         }
         // Get project data from the server and initiate the ProjectViewModel
         $.ajax({
+            type: 'get',
             url: nodeApiUrl,
-            type: 'get', contentType: 'application/json',
+            contentType: 'application/json',
             dataType: 'json',
             cache: false,
             success: function(data){
@@ -231,7 +228,9 @@
 % if node.get('is_public') and node.get('piwik_site_id'):
 <script type="text/javascript">
     $(function() {
-        trackPiwik('${ piwik_host }, ${ node['piwik_site_id'] });
+        // Note: Don't use cookies for global site ID; cookies will accumulate
+        // indefinitely and overflow uwsgi header buffer.
+        trackPiwik('${ piwik_host }', ${ node['piwik_site_id'] });
     });
 </script>
 % endif

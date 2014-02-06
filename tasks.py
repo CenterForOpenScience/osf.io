@@ -38,7 +38,7 @@ def mongoshell():
 @task
 def celery_worker(level="debug"):
     '''Run the Celery process.'''
-    run("celery worker -A framework -l {0}".format(level))
+    run("celery worker -A framework.tasks -l {0}".format(level))
 
 
 @task
@@ -77,19 +77,33 @@ def requirements():
     run("pip install --upgrade -r dev-requirements.txt", pty=True)
 
 
-@ctask(help={
-    'module': "Just runs tests/STRING.py.",
-})
-def test(ctx, module=None, coverage=False, browse=False):
+@task
+def test_module(module=None, coverage=False, browse=False):
     """
-    Run the test suite.
+    Helper for running tests.
     """
     # Allow selecting specific submodule
-    specific_module = " --tests=tests/%s.py" % module
-    args = (specific_module if module else " tests/")
+    args = " --tests=%s" % module
     if coverage:
         args += " --with-coverage --cover-html"
     # Use pty so the process buffers "correctly"
-    ctx.run("nosetests" + args, pty=True)
+    run("nosetests" + args, pty=True)
     if coverage and browse:
-        ctx.run("open cover/index.html")
+        run("open cover/index.html")
+
+@task
+def test_osf():
+    """Run the OSF test suite."""
+    test_module(module="tests/")
+
+@task
+def test_addons():
+    """Run all the tests in the addons directory.
+    """
+    test_module(module="website/addons/")
+
+@task
+def test():
+    """Alias of `invoke test_osf`.
+    """
+    test_osf()

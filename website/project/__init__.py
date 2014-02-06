@@ -1,4 +1,4 @@
-from .model import Node, NodeLog, NodeWikiPage
+from .model import Node, NodeLog
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 
@@ -52,20 +52,6 @@ def new_node(category, title, user, description=None, project=None):
 
     return node
 
-
-def get_wiki_page(project, node, wid):
-    if node and node.wiki and wid in node.wiki:
-        pw = NodeWikiPage.load(node.wiki_page_current[wid])
-    elif project and project.wiki and wid in project.wiki:
-        pw = NodeWikiPage.load(project.wiki_page_current[wid])
-    else:
-        pw = None
-
-    return pw
-
-
-def get_node(id):
-    return Node.load(id)
 
 template_name_replacements = {
     ('.txt', ''),

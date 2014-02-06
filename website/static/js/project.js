@@ -198,6 +198,62 @@ NodeActions._openCloseNode = function(node_id) {
     }
 };
 
+
+NodeActions.reorderChildren = function(idList, elm) {
+    $.ajax({
+        type: 'POST',
+        url: nodeApiUrl + 'reorder_components/',
+        data: JSON.stringify({'new_list': idList}),
+        contentType: 'application/json',
+        dataType: 'json',
+        fail: function() {
+            $(elm).sortable('cancel');
+        }
+    });
+};
+
+NodeActions.removePointer = function(pointerId, pointerElm) {
+    $.ajax({
+        type: 'DELETE',
+        url: nodeApiUrl + 'pointer/',
+        data: JSON.stringify({pointerId: pointerId}),
+        contentType: 'application/json',
+        dataType: 'json',
+        success: function(response) {
+            pointerElm.remove();
+        }
+    })
+};
+
+/*
+refresh rendered file through mfr
+*/
+
+window.FileRenderer = {
+    start: function(url, selector){
+        this.url = url;
+        this.element = $(selector);
+        this.tries = 0;
+        this.refreshContent = window.setInterval(this.getCachedFromServer.bind(this), 1000);
+    },
+
+    getCachedFromServer: function() {
+        var self = this;
+        $.get( self.url, function(data) {
+            if(data){
+                self.element.html(data);
+                clearInterval(self.refreshContent);
+            }else{
+                self.tries += 1;
+                if(self.tries > 10){
+                    clearInterval(self.refreshContent);
+                    self.element.html("Timeout occurred while loading, please refresh the page")
+                }
+            }
+        });
+     }
+};
+
 /*
 Display recent logs for for a node on the project view page.
 */
@@ -230,6 +286,21 @@ $(document).ready(function() {
     ////////////////////
     // Event Handlers //
     ////////////////////
+
+    $('.remove-pointer').on('click', function() {
+        bootbox.confirm(
+            'Are you sure you want to remove this pointer? This will not ' +
+            'remove the project this pointer is linked to.',
+            function(result) {
+                if (result) {
+                    var $this = $(this),
+                        pointerId = $this.attr('data-id'),
+                        pointerElm = $this.closest('.list-group-item');
+                    removePointer(pointerId, pointerElm);
+                }
+            }
+        )
+    });
 
     $('.citation-toggle').on('click', function() {
         $(this).closest('.citations').find('.citation-list').slideToggle();

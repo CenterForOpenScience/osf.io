@@ -8,9 +8,12 @@ from framework import storage, set_up_storage
 from framework.auth.model import User
 from framework.sessions.model import Session
 from framework.guid.model import Guid
-from website.project.model import (ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
+from website.project.model import (ApiKey, Node, NodeLog,
                                    Tag, WatchConfig, MetaData)
 from website import settings
+
+from website.addons.osffiles.model import NodeFile
+from website.addons.wiki.model import NodeWikiPage
 
 
 # All Models
@@ -21,7 +24,9 @@ import website.models
 from website.app import init_app
 
 # Just a simple app without routing set up or backends
-test_app = init_app(settings_module="website.settings", routes=False, set_backends=False)
+test_app = init_app(
+    settings_module='website.settings', routes=False, set_backends=False
+)
 
 class DbTestCase(unittest.TestCase):
     '''Base TestCase for tests that require a temporary MongoDB database.

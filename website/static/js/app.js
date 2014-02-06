@@ -281,7 +281,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         nodeApiUrl + 'get_editable_children/',
         {},
         function(result) {
-            $.each(result['children'], function(idx, child) {
+            $.each(result['children'] || [], function(idx, child) {
                 child['margin'] = NODE_OFFSET + child['indent'] * NODE_OFFSET + 'px';
             });
             self.nodes(result['children']);
@@ -579,14 +579,18 @@ ko.bindingHandlers.tooltip = {
 // Piwik //
 ///////////
 
-var trackPiwik = function(host, siteId, cvars) {
+var trackPiwik = function(host, siteId, cvars, useCookies) {
     cvars = Array.isArray(cvars) ? cvars : [];
+    useCookies = typeof(useCookies) !== 'undefined' ? useCookies : false;
     try {
         var piwikTracker = Piwik.getTracker(host + 'piwik.php', siteId);
         piwikTracker.enableLinkTracking(true);
         for(var i=0; i<cvars.length;i++)
         {
             piwikTracker.setCustomVariable.apply(null, cvars[i]);
+        }
+        if (!useCookies) {
+            piwikTracker.disableCookies();
         }
         piwikTracker.trackPageView();
 

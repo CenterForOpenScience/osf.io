@@ -29,53 +29,12 @@
                         'toArray',
                         {attribute: 'node_reference'}
                     );
-                    checkListChange(idList, sortListElm);
+                    NodeActions.reorderChildren(idList, sortListElm);
                 }
             });
         });
 
-        function checkListChange(idList, elm){
-            $.ajax({
-                type: 'POST',
-                url: '${node['api_url']}reorder_components/',
-                data: JSON.stringify({'new_list': idList}),
-                contentType: 'application/json',
-                dataType: 'json',
-                fail: function() {
-                    $(elm).sortable('cancel');
-                }
-            });
-        }
-
     % endif
-
-    function removePointer(pointerId, pointerElm) {
-        $.ajax({
-            type: 'DELETE',
-            url: nodeApiUrl + 'pointer/',
-            data: JSON.stringify({pointerId: pointerId}),
-            contentType: 'application/json',
-            dataType: 'json',
-            success: function(response) {
-                pointerElm.remove();
-            }
-        })
-    }
-
-    $('.remove-pointer').on('click', function() {
-        bootbox.confirm(
-            'Are you sure you want to remove this pointer? This will not ' +
-            'remove the project this pointer is linked to.',
-            function(result) {
-                if (result) {
-                    var $this = $(this),
-                        pointerId = $this.attr('data-id'),
-                        pointerElm = $this.closest('.list-group-item');
-                    removePointer(pointerId, pointerElm);
-                }
-            }
-        )
-    });
 
 </script>
 

@@ -12,7 +12,7 @@ from webtest_plus import TestApp
 import website.app
 from website.models import Node, NodeLog
 from website.project.model import ensure_schemas
-
+from framework.auth.decorators import Auth
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
                             WatchConfigFactory, NodeFactory, NodeLogFactory)
@@ -32,12 +32,15 @@ class TestProjectViews(DbTestCase):
         api_key = ApiKeyFactory()
         self.user1.api_keys.append(api_key)
         self.user1.save()
+        self.consolidate_auth1 = Auth(user=self.user1, api_key=api_key)
         self.auth = ('test', api_key._primary_key)
         self.user2 = UserFactory()
         # A project has 2 contributors
-        self.project = ProjectFactory(title="Ham",
-                                        description='Honey-baked',
-                                        creator=self.user1)
+        self.project = ProjectFactory(
+            title="Ham",
+            description='Honey-baked',
+            creator=self.user1
+        )
         self.project.add_contributor(self.user1)
         self.project.add_contributor(self.user2)
         self.project.api_keys.append(api_key)
@@ -118,9 +121,11 @@ class TestProjectViews(DbTestCase):
                    'invitations and account merging are done.')
     def test_project_remove_non_registered_contributor(self):
         # A non-registered user is added to the project
-        self.project.add_nonregistered_contributor(name="Vanilla Ice",
-                                                    email="iceice@baby.ice",
-                                                    user=self.user1)
+        self.project.add_nonregistered_contributor(
+            name="Vanilla Ice",
+            email="iceice@baby.ice",
+            auth=self.consolidate_auth1
+        )
         self.project.save()
         url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
         # the contributor is removed via the API
@@ -164,7 +169,7 @@ class TestProjectViews(DbTestCase):
         assert_in("footag", self.project.tags)
 
     def test_remove_tag(self):
-        self.project.add_tag("footag", user=self.user1, api_key=None, save=True)
+        self.project.add_tag("footag", auth=self.consolidate_auth1, save=True)
         assert_in("footag", self.project.tags)
         url = "/api/v1/project/{0}/removetag/{tag}/".format(self.project._primary_key,
                                                         tag="footag")
@@ -187,45 +192,95 @@ class TestProjectViews(DbTestCase):
     def test_get_logs(self):
         # Add some logs
         for _ in range(5):
-            self.project.logs.append(NodeLogFactory(user=self.user1,
-                                                action="file_added",
-                                                params={"project": self.project._id}))
+            self.project.logs.append(
+                NodeLogFactory(
+                    user=self.user1,
+                    action='file_added',
+                    params={'project': self.project._id}
+                )
+            )
         self.project.save()
-        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
+        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
         self.project.reload()
         data = res.json
         assert_equal(len(data['logs']), len(self.project.logs))
         most_recent = data['logs'][0]
-        assert_equal(most_recent['action'], "file_added")
+        assert_equal(most_recent['action'], 'file_added')
 
     def test_get_logs_with_count_param(self):
         # Add some logs
         for _ in range(5):
-            self.project.logs.append(NodeLogFactory(user=self.user1,
-                                                    action="file_added",
-                                                    params={"project": self.project._id}))
+            self.project.logs.append(
+                NodeLogFactory(
+                    user=self.user1,
+                    action='file_added',
+                    params={'project': self.project._id}
+                )
+            )
         self.project.save()
-        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
-        res = self.app.get(url, {"count": 3}, auth=self.auth)
+        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        res = self.app.get(url, {'count': 3}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
 
     def test_get_logs_defaults_to_ten(self):
         # Add some logs
         for _ in range(12):
-            self.project.logs.append(NodeLogFactory(user=self.user1,
-                                                    action="file_added",
-                                                    params={"project": self.project._id}))
+            self.project.logs.append(
+                NodeLogFactory(
+                    user=self.user1,
+                    action='file_added',
+                    params={'project': self.project._id}
+                )
+            )
         self.project.save()
-        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
+        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), 10)
+
+    def test_logs_private(self):
+        """Add logs to a public project, then to its private component. Get
+        the ten most recent logs; assert that ten logs are returned and that
+        all belong to the project and not its component.
+
+        """
+        # Add some logs
+        for _ in range(15):
+            self.project.add_log(
+                auth=self.consolidate_auth1,
+                action='file_added',
+                params={'project': self.project._id}
+            )
+        self.project.is_public = True
+        self.project.save()
+        child = NodeFactory(project=self.project)
+        for _ in range(5):
+            child.add_log(
+                auth=self.consolidate_auth1,
+                action='file_added',
+                params={'project': child._id}
+            )
+        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        res = self.app.get(url).maybe_follow()
+        assert_equal(len(res.json['logs']), 10)
+        assert_equal(
+            [self.project._id] * 10,
+            [
+                log['params']['project']
+                for log in res.json['logs']
+            ]
+        )
 
     def test_logs_from_api_url(self):
         # Add some logs
         for _ in range(12):
-            self.project.logs.append(NodeLogFactory(user=self.user1, action="file_added",
-                                                    params={"project": self.project._id}))
+            self.project.logs.append(
+                NodeLogFactory(
+                    user=self.user1,
+                    action="file_added",
+                    params={"project": self.project._id}
+                )
+            )
         self.project.save()
         url = "/api/v1/project/{0}/".format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
@@ -240,6 +295,7 @@ class TestWatchViews(DbTestCase):
         api_key = ApiKeyFactory()
         self.user.api_keys.append(api_key)
         self.user.save()
+        self.consolidate_auth = Auth(user=self.user, api_key=api_key)
         self.auth = ('test', self.user.api_keys[0]._id)  # used for requests auth
         # A public project
         self.project = ProjectFactory(is_public=True)
@@ -250,8 +306,7 @@ class TestWatchViews(DbTestCase):
         # A log added now
         self.last_log = self.project.add_log(
             NodeLog.TAG_ADDED, params={'project': self.project._primary_key},
-            user=self.user, log_date=dt.datetime.utcnow(),
-            api_key=self.auth[1],
+            auth=self.consolidate_auth, log_date=dt.datetime.utcnow(),
             save=True,
         )
         # Clear watched list
@@ -338,6 +393,7 @@ class TestWatchViews(DbTestCase):
         assert_equal(len(res.json['logs']), len(project.logs))
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
+
 class TestPublicViews(DbTestCase):
 
     def setUp(self):
@@ -346,6 +402,7 @@ class TestPublicViews(DbTestCase):
     def test_explore(self):
         res = self.app.get("/explore/").maybe_follow()
         assert_equal(res.status_code, 200)
+
 
 class TestAuthViews(DbTestCase):
 

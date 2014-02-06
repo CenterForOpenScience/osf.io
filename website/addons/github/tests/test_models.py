@@ -5,6 +5,7 @@ from nose.tools import *
 from tests.base import DbTestCase
 from tests.factories import UserFactory, ProjectFactory
 
+from framework.auth.decorators import Auth
 from website.addons.base import AddonError
 from website.addons.github import settings as github_settings
 
@@ -19,7 +20,7 @@ class TestCallbacks(DbTestCase):
         self.non_authenticator = UserFactory()
         self.project.add_contributor(
             contributor=self.non_authenticator,
-            user=self.project.creator,
+            auth=Auth(self.project.creator),
         )
         self.project.save()
 
@@ -78,11 +79,15 @@ class TestCallbacks(DbTestCase):
 
     def test_before_page_load_not_contributor(self):
         message = self.node_settings.before_page_load(self.project, UserFactory())
-        assert_false(message)
+        # Handle temporary combined files warning; revert later
+        assert_equal(len(message), 1)
+        #assert_false(message)
 
     def test_before_page_load_not_logged_in(self):
         message = self.node_settings.before_page_load(self.project, None)
-        assert_false(message)
+        # Handle temporary combined files warning; revert later
+        assert_equal(len(message), 1)
+        #assert_false(message)
 
     def test_before_remove_contributor_authenticator(self):
         message = self.node_settings.before_remove_contributor(

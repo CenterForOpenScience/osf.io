@@ -50,6 +50,13 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     registration_data = fields.DictionaryField()
 
     @property
+    def repo_url(self):
+        if self.user and self.repo:
+            return 'https://github.com/{0}/{1}/'.format(
+                self.user, self.repo
+            )
+
+    @property
     def short_url(self):
         if self.user and self.repo:
             return '/'.join([self.user, self.repo])
@@ -60,6 +67,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         rv.update({
             'github_user': self.user or '',
             'github_repo': self.repo or '',
+            'github_url': self.repo_url if self.repo_url else '',
             'user_has_authorization': github_user and github_user.has_auth,
             'show_submit': True,
         })
@@ -88,17 +96,27 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         :return str: Alert message
 
         """
+        messages = [
+            'The GitHub add-on page has been combined with the pre-existing '
+            'Files page, which also now includes files from your other add-ons. '
+            'To work with the files in your GitHub add-on, browse to the '
+            '<a href="{0}">Files</a> page.'.format(
+                node.url + 'files/'
+            )
+        ]
+
         # Quit if not contributor
         if not node.is_contributor(user):
-            return
+            return messages
 
         # Quit if not configured
         if self.user is None or self.repo is None:
-            return
+            return messages
 
         # Quit if no user authorization
         if self.user_settings is None:
-            return
+            return messages
+
         connect = GitHub.from_settings(self.user_settings)
         repo = connect.repo(self.user, self.repo)
 
@@ -132,7 +150,8 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                     user=self.user,
                     repo=self.repo,
                 )
-            return message
+            messages.append(message)
+            return messages
 
     # TODO: Rename to before_remove_contributor_message
     def before_remove_contributor(self, node, removed):
@@ -291,10 +310,11 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         """
         if self.user_settings:
             return (
-                'Registering this {cat} will copy the authentication for its '
+                'Registering {cat} "{title}" will copy the authentication for its '
                 'GitHub add-on to the registered {cat}.'
             ).format(
                 cat=node.project_or_component,
+                title=node.title,
             )
 
     def after_register(self, node, registration, user, save=True):

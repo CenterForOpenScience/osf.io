@@ -4,11 +4,12 @@ import httplib as http
 import datetime
 
 import framework
-from framework import Q, request, redirect, get_current_user
+from framework import Q, request, redirect
 from framework.exceptions import HTTPError
-from framework.auth import must_have_session_auth
 from framework.forms import utils
 from framework.routing import proxy_url
+from framework.auth import get_current_user
+from framework.auth.decorators import must_be_logged_in, Auth
 from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm)
 
@@ -33,7 +34,7 @@ def _rescale_ratio(nodes):
     counts = [
         len(node.logs)
         for node in nodes
-        if node.can_view(user)
+        if node.can_view(Auth(user=user))
     ]
     if counts:
         return float(max(counts))
@@ -91,9 +92,9 @@ def _get_user_activity(node, user, rescale_ratio):
     return ua_count, ua, non_ua
 
 
-@must_have_session_auth
+@must_be_logged_in
 def get_dashboard_nodes(*args, **kwargs):
-    user = kwargs['user']
+    user = kwargs['auth'].user
     nodes = user.node__contributed.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
@@ -102,13 +103,13 @@ def get_dashboard_nodes(*args, **kwargs):
     return _render_nodes(nodes)
 
 
-@framework.must_be_logged_in
+@must_be_logged_in
 def dashboard(*args, **kwargs):
     return {}
 
-@must_have_session_auth
+@must_be_logged_in
 def watched_logs_get(*args, **kwargs):
-    user = kwargs['user']
+    user = kwargs['auth'].user
     recent_log_ids = list(user.get_recent_log_ids())
     logs = [model.NodeLog.load(id) for id in recent_log_ids]
     return {
@@ -142,6 +143,20 @@ def new_project_form():
 
 ### GUID ###
 
+def _build_guid_url(url, prefix=None, suffix=None):
+    if not url.startswith('/'):
+        url = '/' + url
+    if not url.endswith('/'):
+        url += '/'
+    url = (
+        (prefix or '') +
+        url +
+        (suffix or '')
+    )
+    if not url.endswith('/'):
+        url += '/'
+    return url
+
 def resolve_guid(guid, suffix=None):
     """Resolve GUID to corresponding URL and return result of appropriate
     view function. This effectively yields a redirect without changing the
@@ -152,24 +167,32 @@ def resolve_guid(guid, suffix=None):
     :return: Werkzeug response
 
     """
+    # Get prefix; handles API routes
+    prefix = request.path.split(guid)[0].rstrip('/')
+
     # Look up GUID
     guid_object = Guid.load(guid)
     if guid_object:
         referent = guid_object.referent
         if referent is None:
-            logger.error('Referent of GUID {} not found'.format(guid))
+            logger.error('Referent of GUID {0} not found'.format(guid))
             raise HTTPError(http.NOT_FOUND)
         mode = referent.redirect_mode
         url = referent.deep_url if mode == 'proxy' else referent.url
-        url += suffix or ''
-        if not url.endswith('/'):
-            url += '/'
-        return proxy_url(url) if mode == 'proxy' else redirect(url)
+        url = _build_guid_url(url, prefix, suffix)
+        # Always redirect API URLs; URL should identify endpoint being called
+        if prefix or mode == 'redirect':
+            return redirect(url)
+        return proxy_url(url)
 
     # GUID not found; try lower-cased and redirect if exists
     guid_object_lower = Guid.load(guid.lower())
     if guid_object_lower:
-        return redirect('{0}/{1}'.format(guid.lower(), suffix or ''))
+        return redirect(
+            _build_guid_url(
+                guid.lower(), prefix, suffix
+            )
+        )
 
     # GUID not found
     raise HTTPError(http.NOT_FOUND)

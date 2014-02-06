@@ -1,10 +1,10 @@
-from .model import AddonGitHubUserSettings, AddonGitHubNodeSettings
-from .routes import settings_routes, page_routes
+from . import routes, views, model
 
-USER_SETTINGS_MODEL = AddonGitHubUserSettings
-NODE_SETTINGS_MODEL = AddonGitHubNodeSettings
+MODELS = [model.AddonGitHubUserSettings, model.AddonGitHubNodeSettings]
+USER_SETTINGS_MODEL = model.AddonGitHubUserSettings
+NODE_SETTINGS_MODEL = model.AddonGitHubNodeSettings
 
-ROUTES = [settings_routes, page_routes]
+ROUTES = [routes.api_routes, routes.settings_routes, routes.page_routes]
 
 SHORT_NAME = 'github'
 FULL_NAME = 'GitHub'
@@ -16,7 +16,7 @@ ADDED_TO = {
     'node': False,
 }
 
-VIEWS = ['widget', 'page']
+VIEWS = ['widget']
 CONFIGS = ['user', 'node']
 
 CATEGORIES = ['storage']
@@ -31,6 +31,9 @@ INCLUDE_JS = {
         '/static/js/hgrid.js',
         'hgrid-github.js',
     ],
+    'files': [
+        'hgrid-files.js',
+    ]
 }
 
 INCLUDE_CSS = {
@@ -39,3 +42,8 @@ INCLUDE_CSS = {
 }
 
 WIDGET_HELP = 'GitHub Add-on Alpha'
+
+HAS_HGRID_FILES = True
+GET_HGRID_DUMMY = views.hgrid.github_dummy_folder
+
+MAX_FILE_SIZE = 1024 * 1024
