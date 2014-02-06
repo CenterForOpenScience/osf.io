@@ -65,6 +65,21 @@
 
             <!-- Citations -->
             <div class="citations">
+
+                <form id="citationForm" action="#">
+                        <select name="styles">
+                            <option value="apa.csl">APA</option>
+                            <option value="biochemical-journal.csl">Biochemical Journal</option>
+                            <option value="canadian-public-policy.csl">Canadian Public Policy</option>
+                            <option value="harvard1.csl">Harvard1</option>
+                            <option value="modern-language-association.csl">MLA</option>
+                        </select>
+                        <input type="submit" value="Submit">
+                    </form>
+
+                <dl class="rendered-citation"></dl>
+
+
                 <span class="citation-label">Citation:</span>
                 <span>${node['display_absolute_url']}</span>
                 <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
@@ -80,19 +95,7 @@
                     <dd class="citation-text">${node['citations']['CSLTEST2']}</dd>
                     <dd class="citation-text">${node['citations']['BIBTEX']}</dd>
                     <dd class="citation-text">${node['citations']['RIS']}</dd>
-
-                    <form name = "stylesform" method = "post" action="??????????????">
-                        <select name="styles">
-                            <option value="apa.csl">APA</option>
-                            <option value="biochemical-journal.csl">Biochemical Journal</option>
-                            <option value="canadian-public-policy.csl">Canadian Public Policy</option>
-                            <option value="harvard1.csl">Harvard1</option>
-                            <option value="modern-language-association.csl">MLA</option>
-                        </select>
-                        <input type="submit" value="Submit">
-                    </form>
-
-                </dl>
+                    </dl>
             </div>
 
             <hr />
@@ -197,6 +200,22 @@
 <script>
 
     $(document).ready(function() {
+
+        $("#citationForm").find("input").on('click', function(){
+        //console.log(nodeApiUrl);
+            $.ajax({
+                type: "GET",
+                url: nodeApiUrl + 'citation/human/' + $('#citationForm select').val() ,
+                success: function(response){
+                    console.log(response.output);
+                    $(".rendered-citation").text(response.output);
+                    return false;
+                }
+            })
+            return false;
+        })
+
+   // $("#citationForm").find("input").on('click',function(){console.log('test')})
 
 // Show capabilities modal on addon widget help
         $('.addon-capabilities').on('click', function() {
