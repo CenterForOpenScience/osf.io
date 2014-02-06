@@ -212,7 +212,7 @@ def upload_file_public(*args, **kwargs):
     if do_redirect:
         return redirect(request.referrer)
 
-    return [file_info], 201
+    return file_info, 201
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
