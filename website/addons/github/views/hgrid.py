@@ -73,13 +73,14 @@ def github_hgrid_data(node_settings, auth, parent=None, contents=False, *args, *
         ref = None
         can_edit = False
         name_append = None
-    name_tpl = ('<span class="github-repo-name">GitHub: '
-                '{user}/{repo}</span>{widget}').format(user=node_settings.user,
-                                                    repo=node_settings.repo,
-                                                    widget=name_append)
+
+    name_tpl = ('GitHub: '
+                '{user}/{repo}').format(user=node_settings.user,
+                                                    repo=node_settings.repo)
     rv = {
         'addon': node_settings.config.short_name,
         'name': name_tpl,
+        'extra': name_append,
         'kind': 'folder',
         'hasIcon': True,
         'urls': {
