@@ -60,7 +60,7 @@
     height: 16px;
     width: 16px;
     display: inline-block;
-    margin-bottom: -3px;
+    margin-bottom: 3px;
     padding-right: 3px;
     margin-left: 5px;
 }
@@ -68,6 +68,7 @@
 .hg-addon {
     height: 16px;
     width: 16px;
+    margin-right: 3px;
 }
 
 .hgrid .slick-row.hg-upload-processing {
