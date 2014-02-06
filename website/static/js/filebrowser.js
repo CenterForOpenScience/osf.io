@@ -45,17 +45,19 @@ this.Rubeus = (function($, HGrid, bootbox) {
 
     HGrid.Col.ActionButtons.width = 15;
     HGrid.Col.ActionButtons.folderView = function(row) {
-        var buttonDefs = [];
-        if (this.options.uploads && (row.permissions && row.permissions.edit)) {
-            buttonDefs.push({
-                text: '<i class="icon-upload"></i>',
-                action: 'upload',
-                cssClass: 'btn btn-default btn-mini'
-            });
-        }
-        if (buttonDefs) {
-            return HGrid.Fmt.buttons(buttonDefs);
-        }
+        // var buttonDefs = [];
+        // if (this.options.uploads &&
+        //     row.urls.upload
+        //     (row.permissions && row.permissions.edit)) {
+        //     buttonDefs.push({
+        //         text: '<i class="icon-upload"></i>',
+        //         action: 'upload',
+        //         cssClass: 'btn btn-default btn-mini'
+        //     });
+        // }
+        // if (buttonDefs) {
+        //     return HGrid.Fmt.buttons(buttonDefs);
+        // }
         return '';
     };
 
@@ -159,7 +161,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
             return row.urls.fetch;
         },
         fetchSuccess: function(data, row) {
-            var elem = this.changeStatus(row, status.FETCH_SUCCESS);
+            this.changeStatus(row, status.FETCH_SUCCESS);
         },
         fetchError: function(error, row) {
             this.changeStatus(row, status.FETCH_ERROR);
@@ -188,7 +190,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
         uploads: true,
         maxFilesize: function(row) {
             var cfgOption = resolveCfgOption.call(this, row, 'maxFilesize', [row]);
-            return cfgOption || row.urls.upload;
+            return cfgOption || 128;
         },
         uploadUrl: function(row) {
             var cfgOption = resolveCfgOption.call(this, row, 'uploadUrl', [row]);

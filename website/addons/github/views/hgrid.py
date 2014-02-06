@@ -81,6 +81,7 @@ def github_hgrid_data(node_settings, auth, parent=None, contents=False, *args, *
         'addon': node_settings.config.short_name,
         'name': name_tpl,
         'kind': 'folder',
+        'hasIcon': True,
         'urls': {
             'upload': node_settings.owner.api_url + 'github/file/' + (ref or ''),
             'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
