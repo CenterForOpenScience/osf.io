@@ -49,3 +49,8 @@
 .search-input {
   width: 250px;
 }
+
+.hgrid .slick-row.hg-upload-processing {
+  background-color: inherit;
+  opacity: 100%;
+}

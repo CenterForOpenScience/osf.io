@@ -42,17 +42,24 @@ this.FileBrowser = (function($, HGrid, bootbox) {
         width: 15
     };
 
-    HGrid.prototype.changeStatus = function(row, html) {
+    HGrid.prototype.changeStatus = function(row, html, fadeAfter) {
         var rowElem = this.getRowElement(row.id);
         var $status = $(rowElem).find('[data-status]');
         $status.html(html);
-        return this;
+        if (fadeAfter){
+            setTimeout(function() {
+                $status.fadeOut('slow');
+            }, fadeAfter);
+        }
+        return $status;
     };
 
+    // TODO: This should be configurable by addon devs
     var status = {
         FETCH_SUCCESS: '',
         FETCH_START: '<span class="text-muted">Fetching contents...</span>',
-        FETCH_ERROR: '<span class="text-info">Could not retrieve data. Please refresh the page and try again.</span>'
+        FETCH_ERROR: '<span class="text-info">Could not retrieve data. Please refresh the page and try again.</span>',
+        UPLOAD_SUCCESS: '<span class="text-success">Successfully uploaded</success>'
     };
 
     // OSF-specific HGrid options common to all addons
@@ -69,13 +76,16 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             return row.urls.fetch;
         },
         fetchSuccess: function(data, row) {
-            this.changeStatus(row, status.FETCH_SUCCESS);
+            var elem = this.changeStatus(row, status.FETCH_SUCCESS);
         },
         fetchError: function(error, row) {
             this.changeStatus(row, status.FETCH_ERROR);
         },
         fetchStart: function(row) {
             this.changeStatus(row, status.FETCH_START);
+        },
+        uploadProgress: function(file, progress, bytesSent, row) {
+            this.changeStatus(row, progress + '%');
         },
         downloadUrl: function(row) {
             return row.urls.download;
@@ -119,7 +129,7 @@ this.FileBrowser = (function($, HGrid, bootbox) {
             // This is necessary for the download and delete button to work.
             $.extend(row, data[0]);
             this.updateItem(row);
-            this.changeStatus(row, '<span class="text-success">Success</success>');
+            this.changeStatus(row, status.UPLOAD_SUCCESS, 2000);
             var cfgOption = resolveCfgOption.call(this, row, 'uploadSuccess', [file, row, data]);
             return cfgOption || null;
         },

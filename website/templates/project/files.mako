@@ -7,7 +7,7 @@
 <!-- <div class="form-group">
 <input placeholder="Search" class='form-control search-input' type='text' id='searchInput'>
 </div> -->
-<div id="myGrid" class="hgrid"></div>
+<div id="myGrid" class="filebrowser hgrid"></div>
 
 </%def>
 
