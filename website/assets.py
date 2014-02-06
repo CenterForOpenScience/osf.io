@@ -25,7 +25,7 @@ css = Bundle(
         # Site-specific CSS
         Bundle(
             "css/site.css",
-            'css/osf-hgrid.css',
+            'css/rubeus.css',
             filters="cssmin"),
         output="public/css/common.css"
 )
