@@ -25,7 +25,7 @@ def collect_file_trees(*args, **kwargs):
     auth = kwargs['auth']
     data = request.args.to_dict()
 
-    return rubeus.get_hgrid(node, auth, mode, **data)
+    return rubeus.to_hgrid(node, auth, mode, **data)
 
 
 # File rendering

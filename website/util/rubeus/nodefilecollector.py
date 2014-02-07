@@ -1,5 +1,4 @@
 import itertools
-
 from website.project.views.node import _view_project
 import json
 
@@ -15,7 +14,7 @@ class NodeFileCollector(object):
         self.can_edit = node.can_edit(auth) if self.can_view else False
 
     def __call__(self, mode):
-        return json.dumps(self.to_hgrid(mode))
+        return self.to_hgrid(mode)
 
     def to_hgrid(self, mode):
         if mode == 'page':
@@ -28,17 +27,17 @@ class NodeFileCollector(object):
     def to_hgrid_page(self):
         rv = _view_project(self.node, self.auth, **self.extra)
         rv.update({
-            'grid_data': self._collect_addons(self.node) + self._collect_components(self.node),
+            'grid_data': self._get_grid_data(),
             'tree_js': self._collect_static_js(),
             'tree_css': self._collect_static_css()
         })
         return rv
 
     def to_hgrid_widget(self):
-        return {'grid_data': self._collect_addons(self.node) + self._collect_components(self.node)}
+        return {'grid_data': self._get_grid_data()}
 
     def to_hgrid_other(self):
-        return self._collect_addons(self.node) + self._collect_components(self.node)
+        return self._get_grid_data()
 
     def _collect_components(self, node):
         rv = []
@@ -46,6 +45,9 @@ class NodeFileCollector(object):
             if not child.is_deleted:
                 rv.append(self._create_dummy(child))
         return rv
+
+    def _get_grid_data(self):
+        return json.dumps(self._collect_addons(self.node) + self._collect_components(self.node))
 
     def _create_dummy(self, node):
         return {
@@ -78,11 +80,10 @@ class NodeFileCollector(object):
         :return list: List of JavaScript include paths
 
         """
-        rv = itertools.chain.from_iterable(
+        return itertools.chain.from_iterable(
             addon.config.include_js.get('files', [])
             for addon in self.node.get_addons()
         )
-        return rv
 
     def _collect_static_css(self):
         """Collect Css includes for all addons-ons implementing Hgrid views.
@@ -90,10 +91,8 @@ class NodeFileCollector(object):
         :return list: List of Css include paths
 
         """
-        #rv = itertools.chain.from_iterable(
-        #    addon.config.include_css.get('files', [])
-        #    for addon in self.node.get_addons()
-        #)
-        rv = [addon.config.include_css.get('files', []) for addon in self.node.get_addons()])
-        assert 0,rv
-        return rv
+        return itertools.chain.from_iterable(
+            addon.config.include_css.get('files', [])
+            for addon in self.node.get_addons()
+        )
+

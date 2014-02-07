@@ -8,7 +8,7 @@
 <input placeholder="Search" class='form-control search-input' type='text' id='searchInput'>
 </div> -->
 <div id="myGrid" class="filebrowser hgrid"></div>
-${grid_data}
+
 </%def>
 
 <%def name="stylesheets()">
