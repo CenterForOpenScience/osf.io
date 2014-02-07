@@ -41,7 +41,7 @@ def create_bucket(user_settings, bucket_name):
 def does_bucket_exist(accessKey, secretKey, bucketName):
     try:
         c = S3Connection(accessKey, secretKey)
-        c.get_bucket(bucketName, validate=false)
+        c.get_bucket(bucketName, validate=False)
         return True
     except Exception:
         return False
