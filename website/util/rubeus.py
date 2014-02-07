@@ -3,7 +3,7 @@ import itertools
 from website.project.views.node import _view_project
 
 
-class Rubeus(object):
+def build_hgrid_dummy():
     pass
 
 
