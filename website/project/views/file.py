@@ -3,86 +3,14 @@
 """
 
 import os
-import json
 import codecs
-import itertools
+from rubeus import NodeFileCollector
 
 from framework.flask import request
 
 from framework.render.tasks import build_rendered_html
 from website.project.decorators import must_be_contributor_or_public
-from website.project.views.node import _view_project
 from website import settings
-
-
-class NodeFileCollector(object):
-
-    def __init__(self, node, auth, parent=None, **kwargs):
-        self.node = node
-        self.auth = auth
-        self.parent = parent
-        self.extra = kwargs
-        self.can_view = node.can_view(auth)
-        self.can_edit = node.can_edit(auth) if self.can_view else False
-
-    def __call__(self):
-        return self.to_hgrid()
-
-    def to_hgrid(self):
-        return self._collect_addons(self.node) + self._collect_components(self.node)
-
-    def _collect_components(self, node):
-        rv = []
-        for child in node.nodes:
-            if not child.is_deleted:
-                rv.append(self._create_dummy(child))
-        return rv
-
-    def _create_dummy(self, node):
-        return {
-            'name': 'Component: {0}'.format(node.title) if self.can_view else 'Private Component',
-            'kind': 'folder',
-            'permissions': {
-                'edit': self.can_edit,
-                'view': self.can_view
-            },
-            'urls': {
-                'upload': None,
-                'fetch': None  # ??
-            },
-            'children': self._collect_addons(node) + self._collect_components(node)
-        }
-
-    def _collect_addons(self, node):
-        rv = []
-        for addon in node.get_addons():
-            if addon.config.has_hgrid_files:
-                temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
-                if temp:
-                    temp['iconUrl'] = addon.config.icon_url
-                    rv.append(temp)
-        return rv
-
-
-def _collect_tree_static(node):
-    """Collect JavaScript includes for all add-ons implementing HGrid views.
-
-    :return list: List of JavaScript include paths
-
-    """
-    js = itertools.chain.from_iterable(
-        addon.config.include_js.get('files', [])
-        for addon in node.get_addons()
-
-    )
-    css = itertools.chain.from_iterable(
-        addon.config.include_css.get('files', [])
-        for addon in node.get_addons()
-    )
-    return {
-        'js': js,
-        'css': css
-    }
 
 
 @must_be_contributor_or_public
@@ -91,25 +19,14 @@ def collect_file_trees(*args, **kwargs):
     format data as appropriate.
 
     """
+
     node = kwargs['node'] or kwargs['project']
     mode = kwargs.get('mode')
     auth = kwargs['auth']
     data = request.args.to_dict()
 
-    grid_data = NodeFileCollector(node, auth, **data)()
-    static_files = _collect_tree_static(node)
-    if mode == 'page':
-        rv = _view_project(node, auth)
-        rv.update({
-            'grid_data': json.dumps(grid_data),
-            'tree_js': static_files['js'],
-            'tree_css': static_files['css']
-        })
-        return rv
-    elif mode == 'widget':
-        return {'grid_data': grid_data}
-    else:
-        return grid_data
+    return NodeFileCollector(node, auth, **data)(mode)
+
 
 # File rendering
 
