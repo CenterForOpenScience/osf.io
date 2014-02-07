@@ -195,9 +195,9 @@ this.Rubeus = (function($, HGrid, bootbox) {
         maxFilesize: function(row) {
             return row.accept.maxSize || 128;
         },
-        acceptedFiles: function(row) {
-            return row.accept.extensions || null;
-        },
+        // acceptedFiles: function(row) {
+        //     return row.accept.acceptedFiles || null;
+        // },
         uploadUrl: function(row) {
             var cfgOption = resolveCfgOption.call(this, row, 'uploadUrl', [row]);
             return cfgOption || row.urls.upload;

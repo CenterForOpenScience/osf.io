@@ -30,7 +30,7 @@ def s3_hgrid_data(node_settings, user, parent=None, **kwargs):
         },
         'accept': {
             'maxSize': node_settings.config.max_file_size,
-            'extensions': node_settings.config.accept_extensions
+            'acceptedFiles': node_settings.config.accept_extensions
         },
         'isComponent': True
     }
