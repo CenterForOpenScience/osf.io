@@ -3,7 +3,7 @@ from website.addons.s3.api import S3Wrapper
 from website.addons.s3.utils import wrapped_key_to_json
 from framework import request
 from urllib import unquote
-
+from website.util import rubeus
 
 def s3_hgrid_data(node_settings, user, parent=None, **kwargs):
 
@@ -13,29 +13,11 @@ def s3_hgrid_data(node_settings, user, parent=None, **kwargs):
 
     node = node_settings.owner
 
-    rv = {
-        'addon': 's3',
-        'hasIcon': True,
-        'name': 'Amazon S3: {0}'.format(
-            node_settings.bucket
-        ),
-        'kind': 'folder',
-        'permissions': {
-            'view': node.can_view(user),
-            'edit': node.can_edit(user) and not node.is_registration,
-        },
-        'urls': {
-            'fetch': node.api_url + 's3/hgrid/',
-            'upload': node.api_url + 's3/upload/'
-        },
-        'accept': {
-            'maxSize': node_settings.config.max_file_size,
-            'extensions': node_settings.config.accept_extensions
-        },
-        'isComponent': True
+    permissions = {
+        'view': node.can_view(user),
+        'edit': node.can_edit(user) and not node.is_registration,
     }
-
-    return rv
+    return rubeus.build_dummy_folder(node_settings, node_settings.bucket, permissions=permissions)
 
 
 @must_be_contributor_or_public
