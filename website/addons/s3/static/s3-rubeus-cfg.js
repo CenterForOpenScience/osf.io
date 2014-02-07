@@ -15,7 +15,7 @@
                 parent = self.getByID(parent.parentID);
             }
             file.destination = name;
-            self.dropzone.options.signedUrl = parent.urls.upload;
+            self.dropzone.options.signedUrlFrom = parent.urls.upload;
         },
 
         uploadSending: function(file, formData, xhr) {

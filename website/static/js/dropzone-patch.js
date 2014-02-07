@@ -30,10 +30,10 @@ extend = function() {
  */
 Dropzone.prototype.getUrl = function(file) {
   var self = this;
-  if (this.options.signedUrl) {
+  if (this.options.signedUrlFrom) {
     return $.ajax({
         type: 'POST',
-        url: self.options.signedUrl,
+        url: self.options.signedUrlFrom,
         data: JSON.stringify({name: file.destination || file.name, type: file.type ||  'application/octet-stream'}),
         contentType: 'application/json',
         dataType: 'json',
