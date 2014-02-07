@@ -337,7 +337,7 @@ class TestNodeFile(DbTestCase):
     def test_download_url(self):
         assert_equal(
             self.node_file.download_url(self.node),
-            self.node.api_url + 'osffiles/{0}/version/1/'.format(self.node_file.filename)
+            self.node.url + 'osffiles/{0}/version/1/'.format(self.node_file.filename)
         )
 
 
@@ -677,8 +677,7 @@ class TestAddonCallbacks(DbTestCase):
                     getattr(mock_settings, callback)
                 )
 
-    @mock.patch('framework.status.push_status_message')
-    def test_remove_contributor_callback(self, status):
+    def test_remove_contributor_callback(self):
 
         user2 = UserFactory()
         self.node.add_contributor(contributor=user2, auth=self.consolidate_auth)
@@ -689,8 +688,7 @@ class TestAddonCallbacks(DbTestCase):
                 self.node, user2
             )
 
-    @mock.patch('framework.status.push_status_message')
-    def test_set_permissions_callback(self, status):
+    def test_set_permissions_callback(self):
 
         self.node.set_permissions('public', self.consolidate_auth)
         for addon in self.node.addons:
@@ -706,8 +704,7 @@ class TestAddonCallbacks(DbTestCase):
                 self.node, 'private'
             )
 
-    @mock.patch('framework.status.push_status_message')
-    def test_fork_callback(self, status):
+    def test_fork_callback(self):
         fork = self.node.fork_node(auth=self.consolidate_auth)
         for addon in self.node.addons:
             callback = addon.after_fork
@@ -715,8 +712,7 @@ class TestAddonCallbacks(DbTestCase):
                 self.node, fork, self.user
             )
 
-    @mock.patch('framework.status.push_status_message')
-    def test_register_callback(self, status):
+    def test_register_callback(self):
         registration = self.node.register_node(
             None, self.consolidate_auth, '', '',
         )
@@ -823,6 +819,8 @@ class TestProject(DbTestCase):
                         {'nr_name': 'Weezy F. Baby', 'nr_email': 'foo@bar.com'})
         # A log event was added
         assert_equal(self.project.logs[-1].action, 'contributor_added')
+
+
 
     def test_remove_contributor(self):
         # A user is added as a contributor

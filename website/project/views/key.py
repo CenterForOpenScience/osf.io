@@ -7,7 +7,7 @@ from .node import _view_project
 
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
-def get_node_keys(*args, **kwargs):
+def get_node_keys(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     return {
         'keys' : [
@@ -21,7 +21,7 @@ def get_node_keys(*args, **kwargs):
 
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
-def create_node_key(*args, **kwargs):
+def create_node_key(**kwargs):
 
     # Generate key
     api_key = ApiKey(label=request.form['label'])
@@ -37,7 +37,7 @@ def create_node_key(*args, **kwargs):
 
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
-def revoke_node_key(*args, **kwargs):
+def revoke_node_key(**kwargs):
 
     # Load key
     api_key = ApiKey.load(request.form['key'])
@@ -52,7 +52,7 @@ def revoke_node_key(*args, **kwargs):
 
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
-def node_key_history(*args, **kwargs):
+def node_key_history(**kwargs):
 
     api_key = ApiKey.load(kwargs['kid'])
     auth = kwargs['auth']

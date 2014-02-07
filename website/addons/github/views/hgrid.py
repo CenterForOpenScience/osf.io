@@ -97,7 +97,7 @@ def github_dummy_folder(node_settings, auth, parent=None, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_dummy_folder_public(*args, **kwargs):
+def github_dummy_folder_public(**kwargs):
     """View function returning the dummy container for a GitHub repo. In
     contrast to other add-ons, this is exposed via the API for GitHub to
     accommodate switching between branches and commits.
@@ -114,7 +114,7 @@ def github_dummy_folder_public(*args, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_hgrid_data_contents(*args, **kwargs):
+def github_hgrid_data_contents(**kwargs):
     """Return a repo's file tree as a dict formatted for HGrid.
 
     """

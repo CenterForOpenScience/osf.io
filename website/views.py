@@ -92,7 +92,7 @@ def _get_user_activity(node, user, rescale_ratio):
 
 
 @must_be_logged_in
-def get_dashboard_nodes(*args, **kwargs):
+def get_dashboard_nodes(**kwargs):
     user = kwargs['auth'].user
     nodes = user.node__contributed.find(
         Q('category', 'eq', 'project') &
@@ -103,12 +103,11 @@ def get_dashboard_nodes(*args, **kwargs):
 
 
 @must_be_logged_in
-def dashboard(*args, **kwargs):
+def dashboard(**kwargs):
     return {}
 
 @must_be_logged_in
-def watched_logs_get(*args, **kwargs):
-
+def watched_logs_get(**kwargs):
     user = kwargs['auth'].user
     page_num = int(request.args.get('pageNum', '').strip('/') or 0)
     page_size = 10
