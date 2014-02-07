@@ -34,16 +34,7 @@
         uploadSending: function(file, formData, xhr) {
             xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
             xhr.setRequestHeader('x-amz-acl', 'private');
-        },
-
-        uploadSuccess: function(file, item, data) {
-            //Build nolonger dummy file here
-            console.log(file);
-            console.log(item);
-            console.log(data);
-
         }
-
     };
 
 })(Rubeus);
