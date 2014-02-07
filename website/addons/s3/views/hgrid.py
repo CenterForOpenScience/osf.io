@@ -57,7 +57,7 @@ def s3_hgrid_data_contents(*args, **kwargs):
 @must_have_addon('s3', 'node')
 def s3_dummy_folder(*args, **kwargs):
     node_settings = kwargs['node_addon']
-    user = kwargs['auth'].user#get_current_user()
+    user = kwargs['auth'].user
     data = request.args.to_dict()
 
     parent = data.pop('parent', 'null')

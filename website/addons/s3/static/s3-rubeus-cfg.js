@@ -14,7 +14,7 @@
             var parent = this.getByID(item.parentID);
             var name = file.name;
 
-            while (parent.depth > 1 && !parent.isComponent) {
+            while (parent.depth > 1 && !parent.isAddonRoot) {
                 name = parent.name + '/' + name;
                 parent = this.getByID(parent.parentID);
             }
