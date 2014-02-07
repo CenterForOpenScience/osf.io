@@ -6,8 +6,9 @@ from website.addons.github.tests.utils import create_mock_github
 
 from webtest_plus import TestApp
 import website.app
-app = website.app.init_app(routes=True, set_backends=False,
-                            settings_module="website.settings")
+app = website.app.init_app(
+    routes=True, set_backends=False, settings_module='website.settings'
+)
 
 
 class TestGitHubPage(DbTestCase):
@@ -110,5 +111,4 @@ class TestGitHubPage(DbTestCase):
         assert_in("6dcb09b5b57875f334f61aebed695e2e4193db5e", res)
         assert_in("2011-04-14T16:00:49Z", res)
         assert_in("file-version-history", res)
-        assert_in("download the file", res)
         assert_in("icon-download-alt", res)

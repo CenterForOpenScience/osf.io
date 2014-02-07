@@ -5,6 +5,7 @@ from nose.tools import *
 from tests.base import DbTestCase
 from tests.factories import UserFactory, ProjectFactory
 
+from framework.auth.decorators import Auth
 from website.addons.base import AddonError
 from website.addons.github import settings as github_settings
 
@@ -19,7 +20,7 @@ class TestCallbacks(DbTestCase):
         self.non_authenticator = UserFactory()
         self.project.add_contributor(
             contributor=self.non_authenticator,
-            user=self.project.creator,
+            auth=Auth(self.project.creator),
         )
         self.project.save()
 

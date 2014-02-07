@@ -8,7 +8,7 @@ import datetime as dt
 from pytz import utc
 from nose.tools import *  # PEP8 asserts
 import bson
-
+from framework.auth.decorators import Auth
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ProjectFactory, ApiKeyFactory,
                             WatchConfigFactory)
@@ -23,20 +23,21 @@ class TestWatching(DbTestCase):
         api_key = ApiKeyFactory()
         self.user.api_keys.append(api_key)
         self.user.save()
+        self.consolidate_auth = Auth(user=self.user, api_key=api_key)
         # Clear project logs
         self.project.logs = []
         self.project.save()
         # A log added 100 days ago
         self.project.add_log('project_created',
                         params={'project': self.project._primary_key},
-                        user=self.user,
+                        auth=self.consolidate_auth,
                         log_date=dt.datetime.utcnow() - dt.timedelta(days=100),
-                        save=True, api_key=api_key)
+                        save=True)
         # Set the ObjectId to correspond with the log date
         # A log added now
         self.last_log = self.project.add_log('tag_added', params={'project': self.project._primary_key},
-                        user=self.user, log_date=dt.datetime.utcnow(),
-                        save=True, api_key=api_key)
+                        auth=self.consolidate_auth, log_date=dt.datetime.utcnow(),
+                        save=True)
         # Clear watched list
         self.user.watched = []
         self.user.save()

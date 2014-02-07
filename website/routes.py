@@ -76,10 +76,19 @@ def make_url_map(app):
 
     ### GUID ###
     process_rules(app, [
-        Rule([
-            '/<guid>/',
-            '/<guid>/<path:suffix>',
-        ], ['get', 'post'], website_routes.resolve_guid, OsfWebRenderer('', render_mako_string)),
+
+        Rule(
+            [
+                '/<guid>/',
+                '/<guid>/<path:suffix>',
+                '/api/v1/<guid>/',
+                '/api/v1/<guid>/<path:suffix>',
+            ],
+            ['get', 'post', 'put', 'patch', 'delete'],
+            website_routes.resolve_guid,
+            OsfWebRenderer('', render_mako_string),
+        ),
+
     ])
 
     process_rules(app, [

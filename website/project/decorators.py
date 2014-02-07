@@ -1,83 +1,54 @@
 import httplib as http
+import functools
 
-from framework import get_current_user, request, redirect
+from framework import request, redirect
 from framework.exceptions import HTTPError
-from framework.auth import get_api_key
-from website.project import get_node
 from framework import session
 import urllib
 import urlparse
-
-###############################################################################
-# Decorators
-###############################################################################
-
-from decorator import decorator
+from framework.auth import get_current_user, get_api_key
+from framework.auth.decorators import Auth
 
 
-def must_not_be_registration(fn):
-    def wrapped(func, *args, **kwargs):
-        if 'project' not in kwargs:
-            project = get_node(kwargs['pid'])
-            kwargs['project'] = project
-        else:
-            project = kwargs['project']
+from website.models import Node
 
-        if "nid" in kwargs or "node" in kwargs:
-            if 'node' not in kwargs:
-                node = get_node(kwargs['nid'])
-                kwargs['node'] = node
-            else:
-                node = kwargs['node']
-        else:
-            node = None
-            kwargs['node'] = node
 
-        if node:
-            node_to_use = node
-        else:
-            node_to_use = project
+def _kwargs_to_nodes(kwargs):
+    """Retrieve project and component objects from keyword arguments.
 
-        if node_to_use.is_registration:
+    :param dict kwargs: Dictionary of keyword arguments
+    :return: Tuple of project and component
+
+
+    """
+    project = kwargs.get('project') or Node.load(kwargs['pid'])
+    if not project:
+        raise HTTPError(http.NOT_FOUND)
+    if project.category != 'project':
+        raise HTTPError(http.BAD_REQUEST)
+    if project.is_deleted:
+        raise HTTPError(http.GONE)
+
+    if kwargs.get('nid') or kwargs.get('node'):
+        node = kwargs.get('node') or Node.load(kwargs.get('nid'))
+        if not node:
             raise HTTPError(http.NOT_FOUND)
-
-        return fn(*args, **kwargs)
-    return decorator(wrapped, fn)
-
-
-def must_be_valid_project(fn):
-    def wrapped(func, *args, **kwargs):
-        if 'project' not in kwargs:
-            project = get_node(kwargs['pid'])
-            kwargs['project'] = project
-        else:
-            project = kwargs['project']
-
-        if not project or not project.category == 'project':
-            raise HTTPError(http.NOT_FOUND)
-
-        if project.is_deleted:
+        if node.is_deleted:
             raise HTTPError(http.GONE)
+    else:
+        node = None
 
-        if 'nid' in kwargs or 'node' in kwargs:
-            if 'node' not in kwargs:
-                node = get_node(kwargs['nid'])
-                kwargs['node'] = node
-            else:
-                node = kwargs['node']
+    return project, node
 
-            if not node:
-                raise HTTPError(http.NOT_FOUND)
 
-            if node.is_deleted:
-                raise HTTPError(http.GONE)
+def must_be_valid_project(func):
 
-        else:
-            kwargs['node'] = None
+    # TODO: Check private link
 
-        return fn(*args, **kwargs)
-    return decorator(wrapped, fn)
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
 
+<<<<<<< HEAD
 
 def must_be_contributor(fn):
     def wrapped(func, *args, **kwargs):
@@ -86,17 +57,15 @@ def must_be_contributor(fn):
             kwargs['project'] = project
         else:
             project = kwargs['project']
+=======
+        kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
+        return func(*args, **kwargs)
 
-        if "nid" in kwargs or "node" in kwargs:
-            if 'node' not in kwargs:
-                node = get_node(kwargs['nid'])
-                kwargs['node'] = node
-            else:
-                node = kwargs['node']
-        else:
-            node = None
-            kwargs['node'] = node
+    return wrapped
+>>>>>>> 4267ab535d3476f8472b4010a012e7776d30c857
 
+
+<<<<<<< HEAD
         node_to_use = node or project
         link = request.args.get('key', '').strip('/')
         kwargs['link'] = link
@@ -105,9 +74,17 @@ def must_be_contributor(fn):
         else:
             user = get_current_user()
             kwargs['user'] = user
+=======
+def must_not_be_registration(func):
 
-        api_node = kwargs.get('api_node')
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+>>>>>>> 4267ab535d3476f8472b4010a012e7776d30c857
 
+        kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
+        node = kwargs['node'] or kwargs['project']
+
+<<<<<<< HEAD
         link = request.args.get('key', '').strip('/')
 
         #if not login user check if the link is valid or the other privilege
@@ -160,22 +137,39 @@ def must_be_contributor(fn):
                         return redirect(new_path)
             return fn(*args, **kwargs)
     return decorator(wrapped, fn)
+=======
+        if node.is_registration:
+            raise HTTPError(http.BAD_REQUEST)
+        return func(*args, **kwargs)
+
+    return wrapped
+>>>>>>> 4267ab535d3476f8472b4010a012e7776d30c857
 
 
-def must_be_contributor_or_public(fn):
-    def wrapped(func, *args, **kwargs):
+def _must_be_contributor_factory(include_public):
+    """Decorator factory for authorization wrappers. Decorators verify whether
+    the current user is a contributor on the current project, or optionally
+    whether the current project is public.
 
-        if 'project' not in kwargs:
-            project = get_node(kwargs['pid'])
-            kwargs['project'] = project
-        else:
-            project = kwargs['project']
+    :param bool include_public: Check whether current project is public
+    :return: Authorization decorator
 
-        if "nid" in kwargs or "node" in kwargs:
-            if 'node' not in kwargs:
-                node = get_node(kwargs['nid'])
-                kwargs['node'] = node
+    """
+    def wrapper(func):
+
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+
+            kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
+            node = kwargs['node'] or kwargs['project']
+
+            kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
+            user = kwargs['auth'].user
+
+            if 'api_node' in kwargs:
+                api_node = kwargs['api_node']
             else:
+<<<<<<< HEAD
                 node = kwargs['node']
         else:
             node = None
@@ -250,6 +244,28 @@ def must_be_contributor_or_public(fn):
             return fn(*args, **kwargs)
 
     return decorator(wrapped, fn)
+=======
+                api_node = get_api_key()
+                kwargs['api_node'] = api_node
+
+            if not node.is_public or not include_public:
+                if user is None:
+                    return redirect('/login/?next={0}'.format(request.path))
+                if not node.is_contributor(user) \
+                        and api_node != node:
+                    raise HTTPError(http.FORBIDDEN)
+
+            return func(*args, **kwargs)
+
+        return wrapped
+
+    return wrapper
+
+# Create authorization decorators
+must_be_contributor = _must_be_contributor_factory(False)
+must_be_contributor_or_public = _must_be_contributor_factory(True)
+
+>>>>>>> 4267ab535d3476f8472b4010a012e7776d30c857
 
 
 def must_have_addon(addon_name, model):
@@ -265,7 +281,10 @@ def must_have_addon(addon_name, model):
 
     """
     def wrapper(func):
+
+        @functools.wraps(func)
         def wrapped(*args, **kwargs):
+
             if model == 'node':
                 owner = kwargs['node'] or kwargs['project']
             elif model == 'user':
@@ -274,10 +293,14 @@ def must_have_addon(addon_name, model):
                     raise HTTPError(http.UNAUTHORIZED)
             else:
                 raise HTTPError(http.BAD_REQUEST)
+
             addon = owner.get_addon(addon_name)
             if addon is None:
                 raise HTTPError(http.NOT_FOUND)
             kwargs['{0}_addon'.format(model)] = addon
+
             return func(*args, **kwargs)
-        return decorator(wrapped, func)
+
+        return wrapped
+
     return wrapper

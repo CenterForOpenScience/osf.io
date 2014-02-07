@@ -271,11 +271,15 @@ class User(GuidStoredObject, AddonModelMixin):
         :param user: A User object to be merged.
         '''
         # Inherit emails
+        # TODO: Shouldn't import inside function call
+        from .decorators import Auth
         self.emails.extend(user.emails)
         # Inherit projects the user was a contributor for
         for node in user.node__contributed:
             node.add_contributor(contributor=self, log=False)
-            node.remove_contributor(contributor=user, user=self, log=False)
+            node.remove_contributor(
+                contributor=user, auth=Auth(user=self), log=False
+            )
             node.save()
         # Inherits projects the user created
         for node in user.node__created:
