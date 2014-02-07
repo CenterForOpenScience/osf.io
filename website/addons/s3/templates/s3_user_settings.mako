@@ -42,6 +42,7 @@
                     msgElm.text('Keys removed')
                         .removeClass('text-danger').addClass('text-success')
                         .fadeOut(100).fadeIn();
+                    location.reload();
                 }).fail(function(xhr) {
                     var message = 'Error: Keys not removed';
                     msgElm.text(message)
