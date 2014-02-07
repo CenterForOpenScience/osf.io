@@ -7,13 +7,15 @@
         uploadUrl: null,
         uploadAdded: function(file, item) {
             var self = this;
-            var parent = this.getByID(item.parentID);
+            var parent = self.getByID(item.parentID);
             var name = file.name;
+            // Make it possible to upload into subfolders
             while (parent.depth > 1 && !parent.isComponent) {
                 name = parent.name + '/' + name;
-                parent = this.getByID(parent.parentID);
+                parent = self.getByID(parent.parentID);
             }
-            this.dropzone.options.signedUrl = parent.urls.upload;
+            file.destination = name;
+            self.dropzone.options.signedUrl = parent.urls.upload;
         },
 
         uploadSending: function(file, formData, xhr) {

@@ -23,19 +23,22 @@ extend = function() {
 };
 
 
+/**
+ * Get the url to use for the upload request.
+ *
+ * NOTE: This is a hack to get S3 uploads to work.
+ */
 Dropzone.prototype.getUrl = function(file) {
   var self = this;
   if (this.options.signedUrl) {
-    var deferred = $.Deferred();
     return $.ajax({
         type: 'POST',
         url: self.options.signedUrl,
-        data: JSON.stringify({name: file.name, type: file.type ||  'application/octet-stream'}),
+        data: JSON.stringify({name: file.destination || file.name, type: file.type ||  'application/octet-stream'}),
         contentType: 'application/json',
         dataType: 'json',
     }).success(function (url) {
-        deferred.resolve(url);
-        self.options.url = url;
+        return self.options.url = url;
       });
   } else {
     return this.options.url;
@@ -51,6 +54,8 @@ Dropzone.prototype.uploadFiles = function(files) {
     file.xhr = xhr;
   }
 
+  // Defer sending the xhr until the URL has been resolved.
+  // NOTE: This will only work with multipleUploads turned off
   $.when(_this.getUrl(files[0])).done(function(uploadUrl) {
     xhr.open(_this.options.method, _this.options.url, true);
     xhr.withCredentials = !!_this.options.withCredentials;
