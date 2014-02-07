@@ -42,4 +42,4 @@ WIDGET_HELP = 'GitHub Add-on Alpha'
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.hgrid.github_hgrid_data
 
-MAX_FILE_SIZE = 1024 * 1024
+MAX_FILE_SIZE = 10  # MB

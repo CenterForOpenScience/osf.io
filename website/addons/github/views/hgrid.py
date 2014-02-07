@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
-             can_edit=True, parent=None):
+             can_edit=True, parent=None, **kwargs):
 
     grid = []
     folders = {}
@@ -47,6 +47,10 @@ def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
             'urls': _build_github_urls(
                 datum, node_url, node_api_url, branch, sha
             ),
+            'accept': {
+                'maxSize': kwargs.get('max_size', 128),
+                'acceptedFiles': kwargs.get('accepted_files', None)
+            }
         })
 
         head, item['name'] = os.path.split(datum['path'])
@@ -148,7 +152,7 @@ def github_hgrid_data(node_settings, auth, parent=None, contents=False, *args, *
         },
         'accept': {
             'maxSize': node_settings.config.max_file_size,
-            'extensions': node_settings.config.accept_extensions,
+            'acceptedFiles': node_settings.config.accept_extensions,
         }
     }
 
@@ -210,6 +214,8 @@ def github_hgrid_data_contents(*args, **kwargs):
         hgrid_tree = to_hgrid(
             contents, node_url=node.url, node_api_url=node.api_url,
             branch=branch, sha=sha, can_edit=can_edit, parent=path,
+            max_size=node_addon.config.max_file_size,
+            accepted_files=node_addon.config.accept_extensions
         )
     else:
         hgrid_tree = []

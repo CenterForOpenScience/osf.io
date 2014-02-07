@@ -10,6 +10,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
 
     var tpl = HGrid.Fmt.tpl;
 
+    // Override Name column folder view to allow for extra widgets, e.g. github branch picker
     HGrid.Col.Name.folderView = function(item) {
         var html = '';
         if (item.hasIcon) {
@@ -192,8 +193,10 @@ this.Rubeus = (function($, HGrid, bootbox) {
         deleteMethod: 'delete',
         uploads: true,
         maxFilesize: function(row) {
-            var cfgOption = resolveCfgOption.call(this, row, 'maxFilesize', [row]);
-            return cfgOption || 128;
+            return row.accept.maxSize || 128;
+        },
+        acceptedFiles: function(row) {
+            return row.accept.extensions || null;
         },
         uploadUrl: function(row) {
             var cfgOption = resolveCfgOption.call(this, row, 'uploadUrl', [row]);
