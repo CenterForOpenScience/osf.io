@@ -6,7 +6,7 @@
     // Public stuff
     Rubeus.cfg.s3 = {
 
-        uploadMethod: function(row){return 'PUT';},
+        uploadMethod: 'PUT',
 
         uploadAdded: function(file, item) {
             var deferred = $.Deferred();
