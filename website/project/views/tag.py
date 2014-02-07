@@ -1,6 +1,4 @@
-
 from ..decorators import must_not_be_registration, must_be_valid_project, must_be_contributor
-from framework.auth import must_have_session_auth
 from ..model import Tag
 
 
@@ -21,33 +19,29 @@ def project_tag(tag):
     }
 
 
-@must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
 def project_addtag(*args, **kwargs):
 
     tag = kwargs['tag']
-    user = kwargs['user']
-    api_key = kwargs['api_key']
+    auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
 
-    node_to_use.add_tag(tag=tag, user=user, api_key=api_key)
+    node_to_use.add_tag(tag=tag, auth=auth)
 
     return {'status' : 'success'}, 201
 
 
-@must_have_session_auth # returns user or api_node
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
 def project_removetag(*args, **kwargs):
 
     tag = kwargs['tag']
-    user = kwargs['user']
-    api_key = kwargs['api_key']
+    auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
 
-    node_to_use.remove_tag(tag=tag, user=user, api_key=api_key)
+    node_to_use.remove_tag(tag=tag, auth=auth)
 
     return {'status' : 'success'}

@@ -5,6 +5,7 @@ from nose.tools import *  # PEP8 asserts
 from tests.base import DbTestCase
 from webtest_plus import TestApp
 
+from framework.auth.decorators import Auth
 import website.app
 from tests.factories import ProjectFactory, AuthUserFactory
 
@@ -33,6 +34,7 @@ class TestFilesViews(DbTestCase):
             ],
             auth=self.auth,
         )
+        self.project.reload()
         return res
 
     def _get_hgrid_files(self):
@@ -70,3 +72,42 @@ class TestFilesViews(DbTestCase):
 
         assert_equal(post_res.status_code, 200)
         assert_equal(len(get_res.json), 0)
+
+    def test_file_urls(self):
+
+        url = self.project.api_url + 'osffiles/hgrid/'
+        res = self.app.get(url, auth=self.auth).maybe_follow()
+        assert_equal(len(res.json), 1)
+        for url in ['view', 'download', 'delete']:
+            assert_in(
+                self.project._id,
+                res.json[0][url]
+            )
+
+    def test_file_urls_fork(self):
+
+        fork = self.project.fork_node(auth=Auth(user=self.user))
+
+        url = fork.api_url + 'osffiles/hgrid/'
+        res = self.app.get(url, auth=self.auth).maybe_follow()
+        assert_equal(len(res.json), 1)
+        for url in ['view', 'download', 'delete']:
+            assert_in(
+                fork._id,
+                res.json[0][url]
+            )
+
+    def test_file_urls_registration(self):
+
+        registration = self.project.register_node(
+            None, Auth(user=self.user), '', ''
+        )
+
+        url = registration.api_url + 'osffiles/hgrid/'
+        res = self.app.get(url, auth=self.auth).maybe_follow()
+        assert_equal(len(res.json), 1)
+        for url in ['view', 'download', 'delete']:
+            assert_in(
+                registration._id,
+                res.json[0][url]
+            )

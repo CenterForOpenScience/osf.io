@@ -12,7 +12,7 @@
 <div class="row">
   <div class="col-md-12">
     <h1>Collaborator Network for Public Projects</h1>
-    <p>Projects with more than 10 connections are used to represent the connections between each of the collaborators on that project for clarity. Node radius represents total collaboration overall, while number of lines connecting to a node represent the individuals they collaborate with.</p>
+    <p>Dark circles in the graph below represent users who are contributors on <strong>10</strong> or more public projects or components. Light circles represent projects or components that have <strong>7</strong> or more contributors. Connections between circles represent co-contributorship.  Circle size is related to the number of projects/components contributed to (dark) or number of contributors (light).</p>
     <div style="font: 10px sans-serif;margin: 0px auto 22px;clear: both;width">
       <div id='chart'></div>
     </div>
@@ -33,7 +33,6 @@
 
 </style>
 
-
 <script>
 
 var margin = {top: 15, right: 20, bottom: 100, left: 40},
@@ -45,15 +44,15 @@ var margin = {top: 15, right: 20, bottom: 100, left: 40},
 var color = d3.scale.category20();
 
 var force = d3.layout.force()
-    .charge(-120)
-    .linkDistance(200)
+    .charge(-60)
+    .linkDistance(250)
     .size([width, height]);
 
 var svg = d3.select("div#chart").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-d3.json("/static/nodes.json", function(error, graph) {
+d3.json("/static/nodes_20140131.json", function(error, graph) {
   force
       .nodes(graph.nodes)
       .links(graph.links)
@@ -65,11 +64,27 @@ d3.json("/static/nodes.json", function(error, graph) {
       .attr("class", "link")
       .style("stroke-width", function(d) { return Math.sqrt(d.value); });
 
+  // Extract radius information for scale
+  var radi = [];
+  var i;
+  var len;
+  for(i=0, len=graph.nodes.length; node=graph.nodes[i], i<len; i++) {
+    radi.push(node.radius);
+  };
+
+  var node_radius_scale = d3.scale.log()
+    .domain([5, d3.max(radi), function(d) {
+      return d[0];
+    }])
+    .range([5, 30]);
+
   var node = svg.selectAll("circle.node")
       .data(graph.nodes)
     .enter().append("circle")
       .attr("class", "node")
-      .attr("r", function(d) { return d.radius; })
+      .attr("r", function(d) {
+        return node_radius_scale(d.radius);
+      })
       .style("fill", function(d) { return color(d.group); })
       .call(force.drag);
 

@@ -1,8 +1,6 @@
 import os
-import re
 import urllib
 import datetime
-import pygments
 import httplib as http
 
 from hurry.filesize import size, alternative
@@ -12,13 +10,13 @@ from framework.flask import secure_filename
 from framework.exceptions import HTTPError
 
 from website import models
-from website import settings
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
+from website.project.views.file import get_cache_content
 
-from ..api import GitHub, raw_url
+from ..api import GitHub, ref_to_params
 from .util import MESSAGES
 
 
@@ -54,47 +52,45 @@ def github_download_file(*args, **kwargs):
     return resp
 
 
+def get_cache_file(path, sha):
+    return '{0}_{1}.html'.format(
+        urllib.quote_plus(path), sha,
+    )
+
 # TODO: Remove unnecessary API calls
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
 def github_view_file(*args, **kwargs):
 
-    user = kwargs['user']
+    auth = kwargs['auth']
+    user = auth.user
     node = kwargs['node'] or kwargs['project']
-    github = kwargs['node_addon']
+    node_settings = kwargs['node_addon']
 
     path = kwargs.get('path')
     if path is None:
         raise HTTPError(http.NOT_FOUND)
 
-    connection = GitHub.from_settings(github.user_settings)
+    connection = GitHub.from_settings(node_settings.user_settings)
 
-    repo = connection.repo(github.user, github.repo)
+    repo = connection.repo(node_settings.user, node_settings.repo)
 
     # Get branch / commit
     branch = request.args.get('branch', repo['default_branch'])
     sha = request.args.get('sha', branch)
 
     file_name, data, size = connection.file(
-        github.user, github.repo, path, ref=sha,
+        node_settings.user, node_settings.repo, path, ref=sha,
     )
 
     # Get file URL
-    if repo is None or repo['private']:
-        url = os.path.join(node.api_url, 'github', 'file', path)
-    else:
-        url = raw_url(github.user, github.repo, sha, path)
+    url = os.path.join(node.api_url, 'github', 'file', path)
 
     # Get file history
     start_sha = (sha or branch) if node.is_registration else branch
-    commits = connection.history(github.user, github.repo, path, sha=start_sha)
-    for commit in commits:
-        # TODO: Parameterize or remove hotlinking
-        #if repo['private']:
-        commit['download'] = os.path.join(node.api_url, 'github', 'file', path) + '?ref=' + commit['sha']
-        #else:
-        #    commit['download'] = raw_url(github.user, github.repo, commit['sha'], path)
-        commit['view'] = os.path.join(node.url, 'github', 'file', path) + '?sha=' + commit['sha'] + '&branch=' + branch
+    commits = connection.history(
+        node_settings.user, node_settings.repo, path, sha=start_sha
+    )
 
     # Get current commit
     shas = [
@@ -103,61 +99,34 @@ def github_view_file(*args, **kwargs):
     ]
     current_sha = sha if sha in shas else shas[0]
 
-    # Pasted from views/file.py #
-    # TODO: Replace with modular-file-renderer
-
-    _, file_ext = os.path.splitext(path.lower())
-
-    is_img = False
-    for fmt in settings.IMG_FMTS:
-        fmt_ptn = '^.{0}$'.format(fmt)
-        if re.search(fmt_ptn, file_ext):
-            is_img = True
-            break
-
-    if is_img:
-
-        rendered='<img src="{url}/" />'.format(
-            url=url,
+    for commit in commits:
+        commit['download'] = (
+            os.path.join(node.api_url, 'github', 'file', path) +
+            '?ref=' + ref_to_params(sha=commit['sha'])
+        )
+        commit['view'] = (
+            os.path.join(node.url, 'github', 'file', path)
+            + '?' + ref_to_params(branch, commit['sha'])
         )
 
-    else:
-
-        if size > settings.MAX_RENDER_SIZE:
-            rendered = (
-                '<p>This file is too large to be rendered online. '
-                'Please <a href={url} download={name}>download the file</a> to view it locally.</p>'
-            ).format(
-                url=url,
-                name=file_name,
-            )
-
-        else:
-            try:
-                rendered = pygments.highlight(
-                    data,
-                    pygments.lexers.guess_lexer_for_filename(path, data),
-                    pygments.formatters.HtmlFormatter()
-                )
-            except pygments.util.ClassNotFound:
-                rendered = (
-                    '<p>This file cannot be rendered online. '
-                    'Please <a href={url} download={name}>download the file</a> to view it locally.</p>'
-                ).format(
-                    url=url,
-                    name=file_name,
-                )
-
-    # End pasted code #
+    # Get or create rendered file
+    cache_file = get_cache_file(
+        path, current_sha,
+    )
+    rendered = get_cache_content(
+        node_settings, cache_file, start_render=True, file_path=file_name,
+        file_content=data, download_path=url,
+    )
 
     rv = {
         'file_name': file_name,
         'current_sha': current_sha,
+        'render_url': url + '/render/' + '?sha=' + current_sha,
         'rendered': rendered,
         'download_url': url,
         'commits': commits,
     }
-    rv.update(_view_project(node, user, primary=True))
+    rv.update(_view_project(node, auth, primary=True))
     return rv
 
 
@@ -167,7 +136,8 @@ def github_view_file(*args, **kwargs):
 def github_upload_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
+    auth = kwargs['auth']
+    user = auth.user
     github = kwargs['node_addon']
     now = datetime.datetime.utcnow()
 
@@ -229,8 +199,7 @@ def github_upload_file(*args, **kwargs):
                     ),
                 },
             },
-            user=user,
-            api_key=None,
+            auth=auth,
             log_date=now,
         )
 
@@ -279,7 +248,7 @@ def github_upload_file(*args, **kwargs):
 def github_delete_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
+    auth = kwargs['auth']
     github = kwargs['node_addon']
 
     now = datetime.datetime.utcnow()
@@ -295,8 +264,8 @@ def github_delete_file(*args, **kwargs):
     branch = request.json.get('branch')
 
     author = {
-        'name': user.fullname,
-        'email': '{0}@osf.io'.format(user._id),
+        'name': auth.user.fullname,
+        'email': '{0}@osf.io'.format(auth.user._id),
     }
 
     connection = GitHub.from_settings(github.user_settings)
@@ -320,8 +289,7 @@ def github_delete_file(*args, **kwargs):
                 'repo': github.repo,
             },
         },
-        user=user,
-        api_key=None,
+        auth=auth,
         log_date=now,
     )
 
@@ -345,4 +313,17 @@ def github_download_starball(*args, **kwargs):
 
     return resp
 
+# File rendering #
 
+@must_be_contributor_or_public
+@must_have_addon('github', 'node')
+def github_get_rendered_file(*args, **kwargs):
+    """
+
+    """
+    node_settings = kwargs['node_addon']
+    path = kwargs.get('path')
+    sha = request.args.get('sha')
+
+    cache_file = get_cache_file(path, sha)
+    return get_cache_content(node_settings, cache_file)

@@ -3,7 +3,7 @@ import logging
 
 from framework import session, create_session
 from framework import goback
-from framework import status, redirect, request
+from framework import status
 from framework.auth.utils import parse_name
 import framework.flask as web
 import framework.bcrypt as bcrypt
@@ -11,7 +11,6 @@ from modularodm.query.querydialect import DefaultQueryDialect as Q
 import helper
 from model import User
 
-from decorator import decorator
 import datetime
 
 
@@ -47,13 +46,6 @@ def get_api_key():
     from website.project.model import ApiKey
     api_key = session.data.get('auth_api_key')
     return ApiKey.load(api_key)
-
-
-def get_user_or_node():
-    uid = get_current_user()
-    if uid:
-        return uid
-    return get_current_node()
 
 
 # check_password(actual_pw_hash, given_password) -> Boolean
@@ -194,50 +186,3 @@ def register(username, password, fullname):
         return newUser
     else:
         raise DuplicateEmailError
-
-#### Auth-related decorators ##################################################
-
-
-def must_be_logged_in(fn):
-    '''Require that user be logged in. Modifies kwargs to include the current
-    user.
-    '''
-    def wrapped(func, *args, **kwargs):
-        user = get_current_user()
-        if user:
-            kwargs['user'] = user
-            return func(*args, **kwargs)
-        else:
-            return redirect('/login/?next={0}'.format(request.path))
-    return decorator(wrapped, fn)
-
-
-def must_have_session_auth(fn):
-    '''Require session authentication. Modifies kwargs to include the current
-    user, api_key, and node if they exist.
-    '''
-    def wrapped(func, *args, **kwargs):
-
-        kwargs['user'] = get_current_user()
-        kwargs['api_key'] = get_api_key()
-        kwargs['api_node'] = get_current_node()
-        if kwargs['user'] or kwargs['api_key']:
-            return func(*args, **kwargs)
-        # kwargs['api_node'] = get_current_node()
-
-        # Get user from session
-        # user = get_current_user()
-        # if kwargs['user']:
-            # kwargs['user'] = user
-            # return func(*args, **kwargs)
-
-        # Get node from session
-        # node = get_current_node()
-        # if node:
-        # if kwargs['api_key']:
-            # kwargs['api_node'] = node
-            # return func(*args, **kwargs)
-        # No session authentication found
-        return redirect('/login/?next={0}'.format(request.path))
-
-    return decorator(wrapped, fn)

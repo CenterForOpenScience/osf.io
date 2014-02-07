@@ -12,7 +12,7 @@ from webtest_plus import TestApp
 import website.app
 from website.models import Node, NodeLog
 from website.project.model import ensure_schemas
-
+from framework.auth.decorators import Auth
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
                             WatchConfigFactory, NodeFactory, NodeLogFactory)
@@ -32,6 +32,7 @@ class TestProjectViews(DbTestCase):
         api_key = ApiKeyFactory()
         self.user1.api_keys.append(api_key)
         self.user1.save()
+        self.consolidate_auth1 = Auth(user=self.user1, api_key=api_key)
         self.auth = ('test', api_key._primary_key)
         self.user2 = UserFactory()
         # A project has 2 contributors
@@ -120,9 +121,11 @@ class TestProjectViews(DbTestCase):
                    'invitations and account merging are done.')
     def test_project_remove_non_registered_contributor(self):
         # A non-registered user is added to the project
-        self.project.add_nonregistered_contributor(name="Vanilla Ice",
-                                                    email="iceice@baby.ice",
-                                                    user=self.user1)
+        self.project.add_nonregistered_contributor(
+            name="Vanilla Ice",
+            email="iceice@baby.ice",
+            auth=self.consolidate_auth1
+        )
         self.project.save()
         url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
         # the contributor is removed via the API
@@ -166,7 +169,7 @@ class TestProjectViews(DbTestCase):
         assert_in("footag", self.project.tags)
 
     def test_remove_tag(self):
-        self.project.add_tag("footag", user=self.user1, api_key=None, save=True)
+        self.project.add_tag("footag", auth=self.consolidate_auth1, save=True)
         assert_in("footag", self.project.tags)
         url = "/api/v1/project/{0}/removetag/{tag}/".format(self.project._primary_key,
                                                         tag="footag")
@@ -255,7 +258,7 @@ class TestProjectViews(DbTestCase):
         # Add some logs
         for _ in range(15):
             self.project.add_log(
-                user=self.user1,
+                auth=self.consolidate_auth1,
                 action='file_added',
                 params={'project': self.project._id}
             )
@@ -264,7 +267,7 @@ class TestProjectViews(DbTestCase):
         child = NodeFactory(project=self.project)
         for _ in range(5):
             child.add_log(
-                user=self.user1,
+                auth=self.consolidate_auth1,
                 action='file_added',
                 params={'project': child._id}
             )
@@ -303,6 +306,7 @@ class TestWatchViews(DbTestCase):
         api_key = ApiKeyFactory()
         self.user.api_keys.append(api_key)
         self.user.save()
+        self.consolidate_auth = Auth(user=self.user, api_key=api_key)
         self.auth = ('test', self.user.api_keys[0]._id)  # used for requests auth
         # A public project
         self.project = ProjectFactory(is_public=True)
@@ -313,8 +317,7 @@ class TestWatchViews(DbTestCase):
         # A log added now
         self.last_log = self.project.add_log(
             NodeLog.TAG_ADDED, params={'project': self.project._primary_key},
-            user=self.user, log_date=dt.datetime.utcnow(),
-            api_key=self.auth[1],
+            auth=self.consolidate_auth, log_date=dt.datetime.utcnow(),
             save=True,
         )
         # Clear watched list
@@ -424,6 +427,7 @@ class TestPublicViews(DbTestCase):
     def test_explore(self):
         res = self.app.get("/explore/").maybe_follow()
         assert_equal(res.status_code, 200)
+
 
 class TestAuthViews(DbTestCase):
 

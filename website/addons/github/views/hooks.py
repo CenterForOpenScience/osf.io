@@ -41,9 +41,8 @@ def _add_hook_log(node, github, action, path, date, committer, url=None, sha=Non
             'path': path,
             'github': github_data,
         },
-        user=None,
+        auth=None,
         foreign_user=committer,
-        api_key=None,
         log_date=date,
         save=save,
     )
