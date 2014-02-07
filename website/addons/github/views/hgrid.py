@@ -10,6 +10,7 @@ from website.project.decorators import must_have_addon
 
 from ..api import GitHub, to_hgrid, ref_to_params
 from .util import _get_refs, _check_permissions
+from website.util import rubeus
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +99,12 @@ def github_hgrid_data(node_settings, auth, parent=None, contents=False, *args, *
         }
     }
 
-    return rv
+    return rubeus.build_dummy_folder(node_settings,'{user}/{repo}'.format(user=node_settings.user,
+                                                    repo=node_settings.repo), urls={
+            'upload': node_settings.owner.api_url + 'github/file/' + (ref or ''),
+            'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
+            'branch': node_settings.owner.api_url + 'github/hgrid/root/',
+        },extra=name_append)
 
 
 @must_be_contributor_or_public
