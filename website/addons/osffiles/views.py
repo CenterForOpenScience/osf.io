@@ -166,11 +166,10 @@ def upload_file_public(*args, **kwargs):
             uploaded_file_content_type
         )
     except FileNotModified as e:
-        return [{
-            'action_taken': None,
-            'message': e.message,
+        return {
+            'actionTaken': None,
             'name': uploaded_filename,
-        }]
+        }
 
     unique, total = get_basic_counters(
         'download:{0}:{1}'.format(

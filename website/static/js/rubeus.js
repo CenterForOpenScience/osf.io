@@ -96,6 +96,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
         FETCH_ERROR: '<span class="text-info">Could not retrieve data. Please refresh the page and try again.</span>',
 
         UPLOAD_SUCCESS: '<span class="text-success">Successfully uploaded</span>',
+        NO_CHANGES: '<span class="text-info">No changes made from previous version. Removing row. . .</span>',
         DELETING: function(row) {
             return '<span class="text-muted">Deleting "' + row.name + '"</span>';
         },
@@ -227,11 +228,25 @@ this.Rubeus = (function($, HGrid, bootbox) {
             bootbox.alert(message);
         },
         uploadSuccess: function(file, row, data) {
-            // Update the row with the returned server data
-            // This is necessary for the download and delete button to work.
-            $.extend(row, data);
-            this.updateItem(row);
-            this.changeStatus(row, status.UPLOAD_SUCCESS, 2000);
+            // If file hasn't changed, remove the duplicate item
+            // TODO: shows status in parent for now because the duplicate item
+            // is removed and we don't have access to the original row for the file
+            var self = this;
+            if (data.actionTaken === null) {
+                self.changeStatus(row, status.NO_CHANGES);
+                setTimeout(function() {
+                    $(self.getRowElement(row)).fadeOut(500, function() {
+                        self.removeItem(row.id);
+                    });
+                }, 2000);
+            } else{
+                // Update the row with the returned server data
+                // This is necessary for the download and delete button to work.
+                statusRow = row;
+                $.extend(row, data);
+                this.updateItem(row);
+                this.changeStatus(row, status.UPLOAD_SUCCESS, 2000);
+            }
             var cfgOption = resolveCfgOption.call(this, row, 'uploadSuccess', [file, row, data]);
             return cfgOption || null;
         },
