@@ -3,9 +3,8 @@
 
     Rubeus.cfg.s3 = {
 
-        uploadMethod: null,
+        uploadMethod: 'PUT',
         uploadUrl: null,
-
         uploadAdded: function(file, item) {
             var self = this;
             var parent = this.getByID(item.parentID);
