@@ -96,7 +96,8 @@ this.Rubeus = (function($, HGrid, bootbox) {
         FETCH_ERROR: '<span class="text-info">Could not retrieve data. Please refresh the page and try again.</span>',
 
         UPLOAD_SUCCESS: '<span class="text-success">Successfully uploaded</span>',
-        NO_CHANGES: '<span class="text-info">No changes made from previous version. Removing row. . .</span>',
+        NO_CHANGES: '<span class="text-info">No changes made from previous version. Removing duplicate row. . .</span>',
+        UPDATED: '<span class="text-info">Existing file updated. Removing duplicate row. . .</span>',
         DELETING: function(row) {
             return '<span class="text-muted">Deleting "' + row.name + '"</span>';
         },
@@ -239,10 +240,16 @@ this.Rubeus = (function($, HGrid, bootbox) {
                         self.removeItem(row.id);
                     });
                 }, 2000);
+            } else if (data.actionTaken === 'file_updated') {
+                self.changeStatus(row, status.UPDATED);
+                setTimeout(function() {
+                    $(self.getRowElement(row)).fadeOut(500, function() {
+                        self.removeItem(row.id);
+                    });
+                }, 2000);
             } else{
                 // Update the row with the returned server data
                 // This is necessary for the download and delete button to work.
-                statusRow = row;
                 $.extend(row, data);
                 this.updateItem(row);
                 this.changeStatus(row, status.UPLOAD_SUCCESS, 2000);

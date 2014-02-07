@@ -20,6 +20,7 @@ from website.project.decorators import must_not_be_registration, must_be_valid_p
     must_be_contributor, must_be_contributor_or_public, must_have_addon
 from website.project.views.file import get_cache_content
 from website import settings
+from website.project.model import NodeLog
 
 from .model import NodeFile
 
@@ -145,7 +146,6 @@ def list_file_paths(*args, **kwargs):
 def upload_file_public(*args, **kwargs):
 
     auth = kwargs['auth']
-    node_settings = kwargs['node_addon']
     node = kwargs['node'] or kwargs['project']
 
     do_redirect = request.form.get('redirect', False)
@@ -171,6 +171,8 @@ def upload_file_public(*args, **kwargs):
             'name': uploaded_filename,
         }
 
+    # existing file was updated?
+    was_updated = node.logs[-1].action == NodeLog.FILE_UPDATED
     unique, total = get_basic_counters(
         'download:{0}:{1}'.format(
             node._id,
@@ -206,6 +208,7 @@ def upload_file_public(*args, **kwargs):
         },
 
         'downloads': total or 0,
+        'actionTaken': NodeLog.FILE_UPDATED if was_updated else NodeLog.FILE_ADDED
     }
 
     if do_redirect:
