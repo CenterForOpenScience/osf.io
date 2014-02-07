@@ -3,13 +3,11 @@ import functools
 
 from framework import request, redirect
 from framework.exceptions import HTTPError
+from framework.auth import get_current_user, get_api_key
+from framework.auth.decorators import Auth
 from framework import session
 import urllib
 import urlparse
-from framework.auth import get_current_user, get_api_key
-from framework.auth.decorators import Auth
-
-
 from website.models import Node
 
 
@@ -18,7 +16,6 @@ def _kwargs_to_nodes(kwargs):
 
     :param dict kwargs: Dictionary of keyword arguments
     :return: Tuple of project and component
-
 
     """
     project = kwargs.get('project') or Node.load(kwargs['pid'])
@@ -48,102 +45,25 @@ def must_be_valid_project(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
 
-<<<<<<< HEAD
-
-def must_be_contributor(fn):
-    def wrapped(func, *args, **kwargs):
-        if 'project' not in kwargs:
-            project = get_node(kwargs['pid'])
-            kwargs['project'] = project
-        else:
-            project = kwargs['project']
-=======
         kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
         return func(*args, **kwargs)
 
     return wrapped
->>>>>>> 4267ab535d3476f8472b4010a012e7776d30c857
 
 
-<<<<<<< HEAD
-        node_to_use = node or project
-        link = request.args.get('key', '').strip('/')
-        kwargs['link'] = link
-        if 'user' in kwargs:
-            user = kwargs['user']
-        else:
-            user = get_current_user()
-            kwargs['user'] = user
-=======
 def must_not_be_registration(func):
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
->>>>>>> 4267ab535d3476f8472b4010a012e7776d30c857
 
         kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
         node = kwargs['node'] or kwargs['project']
 
-<<<<<<< HEAD
-        link = request.args.get('key', '').strip('/')
-
-        #if not login user check if the link is valid or the other privilege
-        if not session:
-            kwargs['link'] = link
-            if link not in node_to_use.private_links:
-                if user is None:
-                    return redirect('/login/?next={0}'.format(request.path))
-                if not node_to_use.is_contributor(user) \
-                        and api_node != node_to_use:
-                    raise HTTPError(http.FORBIDDEN)
-
-            return fn(*args, **kwargs)
-
-        #for login user
-        else:
-            #link first time show up record it in the key ring
-            if link not in session.data['link']:
-                session.data['link'].append(link)
-            key_ring = set(session.data['link'])
-
-            #check if the keyring has intersection with node's private link
-            # if no intersction check other privilege
-            if key_ring.isdisjoint(node_to_use.private_links):
-                if user is None:
-                    return redirect('/login/?next={0}'.format(request.path))
-                if not node_to_use.is_contributor(user) \
-                        and api_node != node_to_use:
-                    raise HTTPError(http.FORBIDDEN)
-                kwargs['link'] = ''
-
-            #has intersection: check if the link is valid if not use other key
-            # in the key ring
-            else:
-                if link in node_to_use.private_links:
-                    kwargs['link'] = link
-                else:
-                    parsed_path = urlparse.urlparse(request.path)
-                    args = request.args.to_dict()
-                    kwargs['link'] = key_ring.intersection(
-                        node_to_use.private_links
-                    ).pop()
-                    #do a redirect to reappend the key to url only if the user
-                    # isn't a contributor
-                    if user is None \
-                        or (not node_to_use.is_contributor(user) and api_node != node_to_use):
-                        args['key'] = kwargs['link']
-                        new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
-                        new_path = urlparse.urlunparse(new_parsed_path)
-                        return redirect(new_path)
-            return fn(*args, **kwargs)
-    return decorator(wrapped, fn)
-=======
         if node.is_registration:
             raise HTTPError(http.BAD_REQUEST)
         return func(*args, **kwargs)
 
     return wrapped
->>>>>>> 4267ab535d3476f8472b4010a012e7776d30c857
 
 
 def _must_be_contributor_factory(include_public):
@@ -169,93 +89,61 @@ def _must_be_contributor_factory(include_public):
             if 'api_node' in kwargs:
                 api_node = kwargs['api_node']
             else:
-<<<<<<< HEAD
-                node = kwargs['node']
-        else:
-            node = None
-            kwargs['node'] = node
-
-        node_to_use = node or project
-
-        if 'user' in kwargs:
-            user = kwargs['user']
-        else:
-            user = get_current_user()
-            kwargs['user'] = user
-
-        if 'api_node' in kwargs:
-            api_node = kwargs['api_node']
-        else:
-            api_node = get_api_key()
-            kwargs['api_node'] = api_node
-        link = request.args.get('key', '').strip('/')
-        
-        #if not login user check if the link is valid or the other privilege
-        if not session:
-            kwargs['link'] = link
-            if not node_to_use.is_public:
-                if link not in node_to_use.private_links:
-                    if user is None:
-                        return redirect('/login/?next={0}'.format(request.path))
-                    if not node_to_use.is_contributor(user) \
-                            and api_node != node_to_use:
-                        raise HTTPError(http.FORBIDDEN)
-
-            return fn(*args, **kwargs)
-        #for login user
-        else:
-            #link first time show up record it in the key ring
-            if link not in session.data['link']:
-                session.data['link'].append(link)
-            key_ring = set(session.data['link'])
-
-            #check if the keyring has intersection with node's private link
-            # if no intersction check other privilege
-            if not node_to_use.is_public:
-                if key_ring.isdisjoint(node_to_use.private_links):
-                    if user is None:
-                        return redirect('/login/?next={0}'.format(request.path))
-                    if not node_to_use.is_contributor(user) \
-                            and api_node != node_to_use:
-                        raise HTTPError(http.FORBIDDEN)
-                    kwargs['link'] = ''
-
-                #has intersection: check if the link is valid if not use other key
-                # in the key ring
-                else:
-                    if link in node_to_use.private_links:
-                        kwargs['link'] = link
-                    else:
-                        parsed_path = urlparse.urlparse(request.path)
-                        args = request.args.to_dict()
-                        kwargs['link'] = key_ring.intersection(
-                            node_to_use.private_links
-                        ).pop()
-                        #do a redirect to reappend the key to url only if the user
-                        # isn't a contributor
-                        if user is None \
-                            or (not node_to_use.is_contributor(user) and api_node != node_to_use):
-                            args['key'] = kwargs['link']
-                            new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
-                            new_path = urlparse.urlunparse(new_parsed_path)
-                            return redirect(new_path)
-            else:
-                kwargs['link'] = ''
-            return fn(*args, **kwargs)
-
-    return decorator(wrapped, fn)
-=======
                 api_node = get_api_key()
                 kwargs['api_node'] = api_node
 
-            if not node.is_public or not include_public:
-                if user is None:
-                    return redirect('/login/?next={0}'.format(request.path))
-                if not node.is_contributor(user) \
-                        and api_node != node:
-                    raise HTTPError(http.FORBIDDEN)
+            link = request.args.get('key', '').strip('/')
+            #if not login user check if the link is valid or the other privilege
+            if not session:
+                kwargs['link'] = link
+                if not node.is_public or not include_public:
+                    if link not in node.private_links:
+                        if user is None:
+                            return redirect('/login/?next={0}'.format(request.path))
+                        if not node.is_contributor(user) \
+                                and api_node != node:
+                            raise HTTPError(http.FORBIDDEN)
 
-            return func(*args, **kwargs)
+                return func(*args, **kwargs)
+            #for login user
+            else:
+                #link first time show up record it in the key ring
+                if link not in session.data['link']:
+                    session.data['link'].append(link)
+                key_ring = set(session.data['link'])
+
+                #check if the keyring has intersection with node's private link
+                # if no intersction check other privilege
+                if not node.is_public or not include_public:
+                    if key_ring.isdisjoint(node.private_links):
+                        if user is None:
+                            return redirect('/login/?next={0}'.format(request.path))
+                        if not node.is_contributor(user) \
+                                and api_node != node:
+                            raise HTTPError(http.FORBIDDEN)
+                        kwargs['link'] = ''
+
+                    #has intersection: check if the link is valid if not use other key
+                    # in the key ring
+                    else:
+                        if link in node.private_links:
+                            kwargs['link'] = link
+                        else:
+                            parsed_path = urlparse.urlparse(request.path)
+                            args = request.args.to_dict()
+                            kwargs['link'] = key_ring.intersection(
+                                node.private_links
+                            ).pop()
+                            #do a redirect to reappend the key to url only if the user
+                            # isn't a contributor
+                            if user is None or (not node.is_contributor(user) and api_node != node):
+                                args['key'] = kwargs['link']
+                                new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
+                                new_path = urlparse.urlunparse(new_parsed_path)
+                                return redirect(new_path)
+                else:
+                    kwargs['link'] = ''
+                return func(*args, **kwargs)
 
         return wrapped
 
@@ -264,8 +152,6 @@ def _must_be_contributor_factory(include_public):
 # Create authorization decorators
 must_be_contributor = _must_be_contributor_factory(False)
 must_be_contributor_or_public = _must_be_contributor_factory(True)
-
->>>>>>> 4267ab535d3476f8472b4010a012e7776d30c857
 
 
 def must_have_addon(addon_name, model):
