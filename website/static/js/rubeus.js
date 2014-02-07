@@ -14,8 +14,8 @@ this.Rubeus = (function($, HGrid, bootbox) {
     // Necessary for rendering, e.g. the github branch picker
     HGrid.Col.Name.folderView = function(item) {
         var tpl = '';
-        if (item.hasIcon)
-            tpl += '<img class="hg-addon-icon" src="/addons/static/' + item.addon + '/comicon.png">';
+        if (item.iconUrl)
+            tpl += '<img class="hg-addon-icon" src="' + item.iconUrl + '">';
         else
             tpl += HGrid.Html.folderIcon;
         tpl += '<span class="hg-folder-text">' + item.name + '</span>';
