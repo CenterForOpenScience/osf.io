@@ -4,7 +4,7 @@
 
 import os
 import codecs
-from rubeus import NodeFileCollector
+from website.util import rubeus
 
 from framework.flask import request
 
@@ -25,7 +25,7 @@ def collect_file_trees(*args, **kwargs):
     auth = kwargs['auth']
     data = request.args.to_dict()
 
-    return NodeFileCollector(node, auth, **data)(mode)
+    return rubeus.get_hgrid(node, auth, mode, **data)
 
 
 # File rendering
