@@ -96,7 +96,7 @@ def get_osffiles(*args, **kwargs):
             )
 
             item = {
-                'kind': 'file',
+                'kind': 'item',
                 'name': _clean_file_name(fobj.path),
                 'urls': {
                     'view': fobj.url(node),
@@ -193,7 +193,7 @@ def upload_file_public(*args, **kwargs):
             'delete': fobj.api_url(node),
         },
 
-        'kind': 'file',
+        'kind': 'item',
         'permissions': {
             'view': True,
             'edit': True,
