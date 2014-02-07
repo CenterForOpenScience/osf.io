@@ -193,7 +193,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
         deleteMethod: 'delete',
         uploads: true,
         maxFilesize: function(row) {
-            return row.accept.maxSize || 128;
+            return row.accept? (row.accept.maxSize || 128) : 128;
         },
         // acceptedFiles: function(row) {
         //     return row.accept.acceptedFiles || null;

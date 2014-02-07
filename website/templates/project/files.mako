@@ -19,6 +19,7 @@
 % for script in tree_js:
 <script type="text/javascript" src="${script}"></script>
 % endfor
+<script src="/static/js/dropzone-patch.js"></script>
 <script>
 (function(global) {
 // Don't show dropped content if user drags outside grid

@@ -1306,7 +1306,8 @@ HGrid.ExtensionSkeleton = '<img class="hg-icon" src="/static\/img\/hgrid\/fatcow
     if (typeof id === 'object') {
       id = id.id;
     }
-    return this.grid.getCellNode(this.getDataView().getRowById(id), 0).parentNode;
+    var cellNode = this.grid.getCellNode(this.getDataView().getRowById(id), 0);
+    return cellNode ? cellNode.parentNode : null;
   };
 
   HGrid.prototype.addHighlight = function(item) {
@@ -1538,8 +1539,7 @@ HGrid.ExtensionSkeleton = '<img class="hg-icon" src="/static\/img\/hgrid\/fatcow
         file.gridElement = rowElem;
         $rowElem.addClass('hg-upload-started');
       }
-      this.options.uploadAdded.call(this, file, file.gridItem, currentTarget);
-      return addedItem;
+      return this.options.uploadAdded.call(this, file, file.gridItem, currentTarget);
     },
     thumbnail: noop,
     // Just delegate error function to options.uploadError
