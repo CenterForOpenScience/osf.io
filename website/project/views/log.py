@@ -53,7 +53,7 @@ def _get_logs(node, count, auth, link):
 
 @collect_auth
 @must_be_valid_project
-def get_logs(*args, **kwargs):
+def get_logs(**kwargs):
     """
 
     """

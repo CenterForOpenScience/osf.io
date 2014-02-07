@@ -106,6 +106,7 @@ def get_osffiles(*args, **kwargs):
             item = {}
 
             # URLs
+
             item['view'] = url_builder(fobj.url, link)
             item['download'] = url_builder(fobj.api_url, link)
             item['delete'] = fobj.api_url
@@ -195,7 +196,7 @@ def upload_file_public(*args, **kwargs):
 
         # URLs
         'view': fobj.url(node),
-        'download': fobj.api_url(node),
+        'download': fobj.url(node),
         'delete': fobj.api_url(node),
 
         'ext': uploaded_filename.split('.')[-1],
@@ -294,7 +295,7 @@ def view_file(*args, **kwargs):
 
     rv = {
         'file_name': file_name,
-        'render_url': download_path + 'render/',
+        'render_url': '/api/v1' + download_path + 'render/',
         'rendered': rendered,
         'versions': versions,
     }
@@ -312,7 +313,7 @@ def download_file(*args, **kwargs):
     vid = len(node_to_use.files_versions[filename.replace('.', '_')])
 
     redirect_url = '{url}osffiles/{fid}/version/{vid}/'.format(
-        url=node_to_use.api_url,
+        url=node_to_use.url,
         fid=filename,
         vid=vid,
     )

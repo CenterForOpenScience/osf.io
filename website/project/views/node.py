@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 @must_be_valid_project  # returns project
 @must_be_contributor  # returns user, project
 @must_not_be_registration
-def edit_node(*args, **kwargs):
+def edit_node(**kwargs):
     project = kwargs['project']
     node = kwargs['node']
     auth = kwargs['auth']
@@ -53,12 +53,12 @@ def edit_node(*args, **kwargs):
 
 
 @must_be_logged_in
-def project_new(*args, **kwargs):
+def project_new(**kwargs):
     return {}
 
 
 @must_be_logged_in
-def project_new_post(*args, **kwargs):
+def project_new_post(**kwargs):
     user = kwargs['auth'].user
     form = NewProjectForm(request.form)
     if form.validate():
@@ -84,7 +84,7 @@ def project_new_post(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
-def project_new_node(*args, **kwargs):
+def project_new_node(**kwargs):
     form = NewNodeForm(request.form)
     project = kwargs['project']
     user = kwargs['auth'].user
@@ -111,20 +111,18 @@ def project_new_node(*args, **kwargs):
 @must_be_logged_in
 @must_be_valid_project  # returns project
 @must_not_be_registration
-def project_before_fork(*args, **kwargs):
+def project_before_fork(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
 
-    prompts = node.callback('before_fork', node, user)
-
-
+    prompts = node.callback('before_fork', user=user)
     return {'prompts': prompts}
 
 
 @must_be_logged_in
 @must_be_valid_project
-def node_fork_page(*args, **kwargs):
+def node_fork_page(**kwargs):
     project = kwargs['project']
     node = kwargs['node']
     auth = kwargs['auth']
@@ -152,11 +150,11 @@ def node_fork_page(*args, **kwargs):
 @must_be_contributor_or_public# returns user, project
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
-def node_registrations(*args, **kwargs):
+def node_registrations(**kwargs):
     link = kwargs['link']
     auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
-    return _view_project(node_to_use, auth, link,primary=True)
+    return _view_project(node_to_use, auth, link, primary=True)
 
 
 
@@ -164,7 +162,7 @@ def node_registrations(*args, **kwargs):
 @must_be_contributor_or_public # returns user, project
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
-def node_forks(*args, **kwargs):
+def node_forks(**kwargs):
     project = kwargs['project']
     node = kwargs['node']
     link = kwargs['link']
@@ -224,7 +222,7 @@ def node_choose_addons(**kwargs):
 @must_be_valid_project
 @must_not_be_registration
 @must_be_contributor # returns user, project
-def project_reorder_components(*args, **kwargs):
+def project_reorder_components(**kwargs):
     project = kwargs['project']
 
     node_to_use = project
@@ -244,7 +242,7 @@ def project_reorder_components(*args, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
-def project_statistics(*args, **kwargs):
+def project_statistics(**kwargs):
     project = kwargs['project']
     node = kwargs['node']
     auth = kwargs['auth']
@@ -274,7 +272,7 @@ def project_statistics(*args, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor
-def project_set_permissions(*args, **kwargs):
+def project_set_permissions(**kwargs):
 
     auth = kwargs['auth']
     permissions = kwargs['permissions']
@@ -292,7 +290,7 @@ def project_set_permissions(*args, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_not_be_registration
-def watch_post(*args, **kwargs):
+def watch_post(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
     watch_config = WatchConfig(node=node_to_use,
@@ -314,7 +312,7 @@ def watch_post(*args, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_not_be_registration
-def unwatch_post(*args, **kwargs):
+def unwatch_post(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
     watch_config = WatchConfig(node=node_to_use,
@@ -333,7 +331,7 @@ def unwatch_post(*args, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_not_be_registration
-def togglewatch_post(*args, **kwargs):
+def togglewatch_post(**kwargs):
     '''View for toggling watch mode for a node.'''
     node = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
@@ -359,7 +357,7 @@ def togglewatch_post(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
-def component_remove(*args, **kwargs):
+def component_remove(**kwargs):
     """Remove component, and recursively remove its children. If node has a
     parent, add log and redirect to parent; else redirect to user dashboard.
 
@@ -386,7 +384,7 @@ def component_remove(*args, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public
-def view_project(*args, **kwargs):
+def view_project(**kwargs):
     auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
     link = kwargs['link']
@@ -551,7 +549,7 @@ def _get_children(node, auth, indent=0):
 
 @collect_auth
 @must_be_valid_project
-def get_editable_children(*args, **kwargs):
+def get_editable_children(**kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
@@ -594,14 +592,14 @@ def _get_user_activity(node, auth, rescale_ratio):
     return ua_count, ua, non_ua
 
 @must_be_valid_project
-def get_recent_logs(*args, **kwargs):
+def get_recent_logs(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     logs = list(reversed(node_to_use.logs._to_primary_keys()))[:3]
     return {'logs': logs}
 
 @collect_auth
 @must_be_valid_project
-def get_summary(*args, **kwargs):
+def get_summary(**kwargs):
 
     auth = kwargs['auth']
     rescale_ratio = kwargs.get('rescale_ratio')
@@ -641,7 +639,7 @@ def get_summary(*args, **kwargs):
     }
 
 @must_be_contributor_or_public
-def get_children(*args, **kwargs):
+def get_children(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     return _render_nodes([
         node
@@ -650,7 +648,7 @@ def get_children(*args, **kwargs):
     ])
 
 @must_be_contributor_or_public
-def get_forks(*args, **kwargs):
+def get_forks(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     forks = node_to_use.node__forked.find(
         Q('is_deleted', 'eq', False)
@@ -658,7 +656,7 @@ def get_forks(*args, **kwargs):
     return _render_nodes(forks)
 
 @must_be_contributor_or_public
-def get_registrations(*args, **kwargs):
+def get_registrations(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     registrations = node_to_use.node__registrations
     return _render_nodes(registrations)
