@@ -128,7 +128,11 @@ class TestRubeus(DbTestCase):
         deep_eq(rubeus.build_dummy_folder(node_settings, node_settings.bucket, permissions=permissions, urls={}), rv, _assert=True)
 
     def test_hgrid_dummy_node_urls(self):
-        node_settings = self. node_settings
+        node_settings = self.node_settings
+        node_settings.config.urls = {
+                'fetch': node.api_url + 's3/hgrid/',
+                'upload': node.api_url + 's3/upload/'
+            },
         node = self.project
         user = Auth(self.project.creator)
         rv = {
@@ -143,7 +147,8 @@ class TestRubeus(DbTestCase):
                 'edit': node.can_edit(user) and not node.is_registration,
             },
             'urls': {
-
+                'fetch': node.api_url + 's3/hgrid/',
+                'upload': node.api_url + 's3/upload/'
             },
             'accept': {
                 'maxSize': node_settings.config.max_file_size,
@@ -156,7 +161,7 @@ class TestRubeus(DbTestCase):
             'view': node.can_view(user),
             'edit': node.can_edit(user) and not node.is_registration,
         }
-        deep_eq(rubeus.build_dummy_folder(node_settings, node_settings.bucket, permissions=permissions, urls={}), rv, _assert=True)
+        deep_eq(rubeus.build_dummy_folder(node_settings, node_settings.bucket, permissions=permissions), rv, _assert=True)
 
 
 
