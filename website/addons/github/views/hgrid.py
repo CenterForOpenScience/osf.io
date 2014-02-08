@@ -104,7 +104,7 @@ def github_branch_widget(branches, owner, repo, branch, sha):
     return rendered
 
 
-def github_hgrid_data(node_settings, auth, parent=None, contents=False, *args, **kwargs):
+def github_hgrid_data(node_settings, auth, contents=False, *args, **kwargs):
 
     # Quit if no repo linked
     if not node_settings.user or not node_settings.repo:
@@ -138,7 +138,7 @@ def github_hgrid_data(node_settings, auth, parent=None, contents=False, *args, *
     rv = {
         'addon': node_settings.config.short_name,
         'name': name_tpl,
-        'extra': name_append,
+        'extra': name_append,  # Extra html to go after the name (branch chooser)
         'kind': 'folder',
         'hasIcon': True,
         'urls': {
