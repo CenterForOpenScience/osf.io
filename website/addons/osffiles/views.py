@@ -9,35 +9,24 @@ from cStringIO import StringIO
 import httplib as http
 import logging
 
-from hurry.filesize import size, alternative
 
-from framework import request, redirect, secure_filename, send_file
+from framework import request, redirect, send_file, Q
 from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
 from website.project.views.node import _view_project
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public, must_have_addon
-from website.project.views.file import get_cache_content
+from website.project.views.file import get_cache_content, prepare_file
+from website.addons.base.views import check_file_guid
 from website import settings
+from website.project.model import NodeLog
+from website.util import rubeus
 
-from .model import NodeFile
+from .model import NodeFile, OsfGuidFile
 
 logger = logging.getLogger(__name__)
 
-
-@must_be_contributor_or_public
-@must_have_addon('osffiles', 'node')
-def osffiles_widget(*args, **kwargs):
-    node = kwargs['node'] or kwargs['project']
-    osffiles = node.get_addon('osffiles')
-    rv = {
-        'complete': True,
-    }
-    rv.update(osffiles.config.to_json())
-    return rv
-
-###
 
 def _clean_file_name(name):
     " HTML-escape file name and encode to UTF-8. "
@@ -46,39 +35,9 @@ def _clean_file_name(name):
     return encoded
 
 
-
-def osffiles_dummy_folder(node_settings, auth, parent=None, **kwargs):
+def get_osffiles(node_settings, auth, **kwargs):
 
     node = node_settings.owner
-    can_view = node.can_view(auth)
-    can_edit = node.can_edit(auth)
-    return {
-        'addonName': 'OSF Files',
-        'maxFilesize': node_settings.config.max_file_size,
-        'uid': 'osffiles:{0}'.format(node_settings._id),
-        'parent_uid': parent or 'null',
-        'uploadUrl': os.path.join(
-            node_settings.owner.api_url, 'osffiles'
-        ) + '/',
-        'type': 'folder',
-        'sizeRead': '--',
-        'dateModified': '--',
-        'name': 'OSF Files',
-        'can_view': can_view,
-        'can_edit': can_edit,
-        'permission': can_edit,
-        'lazyLoad': node.api_url + 'osffiles/hgrid/',
-    }
-
-
-@must_be_contributor_or_public
-@must_have_addon('osffiles', 'node')
-def get_osffiles(*args, **kwargs):
-
-    node_settings = kwargs['node_addon']
-    node = node_settings.owner
-    auth = kwargs['auth']
-    parent = request.args.get('parent', 'null')
 
     can_edit = node.can_edit(auth) and not node.is_registration
     can_view = node.can_view(auth)
@@ -88,6 +47,7 @@ def get_osffiles(*args, **kwargs):
     if can_view:
 
         for name, fid in node.files_current.iteritems():
+
             fobj = NodeFile.load(fid)
             unique, total = get_basic_counters(
                 'download:{0}:{1}'.format(
@@ -95,39 +55,48 @@ def get_osffiles(*args, **kwargs):
                     fobj.path.replace('.', '_')
                 )
             )
-            item = {}
-
-            # URLs
-            item['view'] = fobj.url(node)
-            item['download'] = fobj.url(node)
-            item['delete'] = fobj.api_url(node)
-
-            item['can_edit'] = can_edit
-            item['permission'] = can_edit
-
-            item['uid'] = fid
-            item['downloads'] = total if total else 0
-            item['parent_uid'] = parent or 'null'
-            item['type'] = 'file'
-            item['name'] = _clean_file_name(fobj.path)
-            item['ext'] = _clean_file_name(fobj.path.split('.')[-1])
-            item['size'] = [
-                float(fobj.size),
-                size(fobj.size, system=alternative)
-            ]
-            item['dateModified'] = [
-                time.mktime(fobj.date_modified.timetuple()),
-                fobj.date_modified.strftime('%Y/%m/%d %I:%M %p')
-            ]
+            item = {
+                rubeus.KIND: rubeus.FILE,
+                'name': _clean_file_name(fobj.path),
+                'urls': {
+                    'view': fobj.url(node),
+                    'download': fobj.download_url(node),
+                    'delete': fobj.api_url(node),
+                },
+                'permissions': {
+                    'view': True,
+                    'edit': can_edit,
+                },
+                'downloads': total or 0,
+                'size': [
+                    float(fobj.size),
+                    rubeus.format_filesize(fobj.size),
+                ],
+                'dates': {
+                    'modified': [
+                        time.mktime(fobj.date_modified.timetuple()),
+                        fobj.date_modified.strftime('%Y/%m/%d %I:%M %p')
+                    ],
+                }
+            }
             info.append(item)
 
     return info
 
 
+@must_be_contributor_or_public
+@must_have_addon('osffiles', 'node')
+def get_osffiles_public(**kwargs):
+
+    node_settings = kwargs['node_addon']
+    auth = kwargs['auth']
+    return get_osffiles(node_settings, auth)
+
+
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
 @must_have_addon('osffiles', 'node')
-def list_file_paths(*args, **kwargs):
+def list_file_paths(**kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
 
@@ -141,36 +110,31 @@ def list_file_paths(*args, **kwargs):
 @must_be_contributor  # returns user, project
 @must_not_be_registration
 @must_have_addon('osffiles', 'node')
-def upload_file_public(*args, **kwargs):
+def upload_file_public(**kwargs):
 
     auth = kwargs['auth']
-    node_settings = kwargs['node_addon']
     node = kwargs['node'] or kwargs['project']
 
     do_redirect = request.form.get('redirect', False)
 
-    uploaded_file = request.files.get('file')
-    uploaded_file_content = uploaded_file.read()
-    uploaded_file.seek(0, os.SEEK_END)
-    uploaded_file_size = uploaded_file.tell()
-    uploaded_file_content_type = uploaded_file.content_type
-    uploaded_filename = secure_filename(uploaded_file.filename)
+    name, content, content_type, size = prepare_file(request.files['file'])
 
     try:
         fobj = node.add_file(
             auth,
-            uploaded_filename,
-            uploaded_file_content,
-            uploaded_file_size,
-            uploaded_file_content_type
+            name,
+            content,
+            size,
+            content_type
         )
-    except FileNotModified as e:
-        return [{
-            'action_taken': None,
-            'message': e.message,
-            'name': uploaded_filename,
-        }]
+    except FileNotModified:
+        return {
+            'actionTaken': None,
+            'name': name,
+        }
 
+    # existing file was updated?
+    was_updated = node.logs[-1].action == NodeLog.FILE_UPDATED
     unique, total = get_basic_counters(
         'download:{0}:{1}'.format(
             node._id,
@@ -179,57 +143,75 @@ def upload_file_public(*args, **kwargs):
     )
 
     file_info = {
-        'name': uploaded_filename,
+        'name': name,
         'size': [
-            float(uploaded_file_size),
-            size(uploaded_file_size, system=alternative),
+            float(size),
+            rubeus.format_filesize(size),
         ],
 
         # URLs
-        'view': fobj.url(node),
-        'download': fobj.url(node),
-        'delete': fobj.api_url(node),
+        'urls': {
+            'view': fobj.url(node),
+            'download': fobj.download_url(node),
+            'delete': fobj.api_url(node),
+        },
 
-        'ext': uploaded_filename.split('.')[-1],
-        'type': 'file',
-        'can_edit': True,
-        'date_uploaded': fobj.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
-        'dateModified': [
-            time.mktime(fobj.date_uploaded.timetuple()),
-            fobj.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
-        ],
-        'downloads': total if total else 0,
-        'user_id': None,
-        'user_fullname': None,
-        'uid': fobj._id,
-        'parent_uid': 'osffiles:{0}'.format(node_settings._id)
+        rubeus.KIND: rubeus.FILE,
+        'permissions': {
+            'view': True,
+            'edit': True,
+        },
+
+        'dates': {
+            'uploaded': [
+                time.mktime(fobj.date_uploaded.timetuple()),
+                fobj.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
+            ],
+        },
+
+        'downloads': total or 0,
+        'actionTaken': NodeLog.FILE_UPDATED if was_updated else NodeLog.FILE_ADDED,
     }
 
     if do_redirect:
         return redirect(request.referrer)
 
-    return [file_info], 201
+    return file_info, 201
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
 @must_have_addon('osffiles', 'node')
-@update_counters('node:{pid}')
-@update_counters('node:{nid}')
-def view_file(*args, **kwargs):
+def view_file(**kwargs):
 
     auth = kwargs['auth']
     node_settings = kwargs['node_addon']
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
 
     file_name = kwargs['fid']
     file_name_clean = file_name.replace('.', '_')
 
+    try:
+        guid = OsfGuidFile.find_one(
+            Q('node', 'eq', node) &
+            Q('name', 'eq', file_name)
+        )
+    except:
+        guid = OsfGuidFile(
+            node=node,
+            name=file_name,
+        )
+        guid.save()
+
+    redirect_url = check_file_guid(guid)
+    if redirect_url:
+        return redirect(redirect_url)
+
     # Throw 404 and log error if file not found in files_versions
     try:
-        file_id = node_to_use.files_versions[file_name_clean][-1]
+        file_id = node.files_versions[file_name_clean][-1]
     except KeyError:
         logger.error('File {} not found in files_versions of component {}.'.format(
-            file_name_clean, node_to_use._id
+            file_name_clean, node._id
         ))
         raise HTTPError(http.NOT_FOUND)
     file_object = NodeFile.load(file_id)
@@ -237,14 +219,15 @@ def view_file(*args, **kwargs):
     # Ensure NodeFile is attached to Node; should be fixed by actions or
     # improved data modeling in future
     if not file_object.node:
-        file_object.node = node_to_use
+        file_object.node = node
         file_object.save()
 
-    download_path = file_object.download_url(node_to_use)
+    download_url = file_object.download_url(node)
+    render_url = file_object.render_url(node)
 
     file_path = os.path.join(
         settings.UPLOADS_PATH,
-        node_to_use._primary_key,
+        node._primary_key,
         file_name
     )
     # Throw 404 and log error if file not found on disk
@@ -254,16 +237,17 @@ def view_file(*args, **kwargs):
 
     versions = []
 
-    for idx, version in enumerate(list(reversed(node_to_use.files_versions[file_name_clean]))):
+    for idx, version in enumerate(list(reversed(node.files_versions[file_name_clean]))):
         node_file = NodeFile.load(version)
-        number = len(node_to_use.files_versions[file_name_clean]) - idx
+        number = len(node.files_versions[file_name_clean]) - idx
         unique, total = get_basic_counters('download:{}:{}:{}'.format(
-            node_to_use._primary_key,
+            node._primary_key,
             file_name_clean,
             number,
         ))
         versions.append({
             'file_name': file_name,
+            'download_url': node_file.download_url(node),
             'number': number,
             'display_number': number if idx > 0 else 'current',
             'date_uploaded': node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
@@ -281,22 +265,22 @@ def view_file(*args, **kwargs):
     )
     rendered = get_cache_content(
         node_settings, cache_file, start_render=True, file_path=file_path,
-        file_content=None, download_path=download_path,
+        file_content=None, download_path=download_url,
     )
 
     rv = {
         'file_name': file_name,
-        'render_url': '/api/v1' + download_path + 'render/',
+        'render_url': render_url,
         'rendered': rendered,
         'versions': versions,
     }
-    rv.update(_view_project(node_to_use, auth))
+    rv.update(_view_project(node, auth))
     return rv
 
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
-def download_file(*args, **kwargs):
+def download_file(**kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
@@ -316,7 +300,7 @@ def download_file(*args, **kwargs):
 @update_counters('download:{nid}:{fid}:{vid}')
 @update_counters('download:{pid}:{fid}')
 @update_counters('download:{nid}:{fid}')
-def download_file_by_version(*args, **kwargs):
+def download_file_by_version(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
 
@@ -354,7 +338,7 @@ def download_file_by_version(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
-def delete_file(*args, **kwargs):
+def delete_file(**kwargs):
 
     auth = kwargs['auth']
     filename = kwargs['fid']
@@ -374,7 +358,7 @@ def get_cache_file(fid, vid):
 @must_be_valid_project
 @must_be_contributor_or_public
 @must_have_addon('osffiles', 'node')
-def osffiles_get_rendered_file(*args, **kwargs):
+def osffiles_get_rendered_file(**kwargs):
     """
 
     """
@@ -384,7 +368,7 @@ def osffiles_get_rendered_file(*args, **kwargs):
 
 
 # todo will use later - JRS
-# def check_celery(*args, **kwargs):
+# def check_celery(**kwargs):
 #     celery_id = '/api/v1/project/{pid}/files/download/{fid}/version/{vid}/render'.format(
 #         pid=kwargs['pid'], fid=kwargs['fid'],  vid=kwargs['vid']
 #     )

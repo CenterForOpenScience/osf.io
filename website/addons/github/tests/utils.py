@@ -1,6 +1,7 @@
 import mock
-
+import github3
 from website.addons.github.api import GitHub
+from github3.repos.branch import Branch
 
 # TODO: allow changing the repo name
 def create_mock_github(user='octo-cat', private=False):
@@ -24,7 +25,7 @@ def create_mock_github(user='octo-cat', private=False):
     :return: An autospecced GitHub Mock object
     """
     github_mock = mock.create_autospec(GitHub)
-    github_mock.repo.return_value = {
+    github_mock.repo.return_value = github3.repos.Repository.from_json({
     u'archive_url': u'https://api.github.com/repos/{user}/mock-repo/{{archive_format}}{{/ref}}'.format(user=user),
      u'assignees_url': u'https://api.github.com/repos/{user}/mock-repo/assignees{{/user}}'.format(user=user),
      u'blobs_url': u'https://api.github.com/repos/{user}/mock-repo/git/blobs{{/sha}}'.format(user=user),
@@ -114,21 +115,55 @@ def create_mock_github(user='octo-cat', private=False):
      'permissions': {
         'push': True
      }
-     }
+     })
 
     github_mock.branches.return_value = [
-        {u'commit': {u'sha': u'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
+        Branch.from_json({u'commit': {u'sha': u'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
            u'url': u'https://api.github.com/repos/{user}/mock-repo/commits/e22d92d5d90bb8f9695e9a5e2e2311a5c1997230'.format(user=user)},
-          u'name': u'dev'},
-         {u'commit': {u'sha': u'444a74d0d90a4aea744dacb31a14f87b5c30759c',
+          u'name': u'dev'}),
+         Branch.from_json({u'commit': {u'sha': u'444a74d0d90a4aea744dacb31a14f87b5c30759c',
            u'url': u'https://api.github.com/repos/{user}/mock-repo/commits/444a74d0d90a4aea744dacb31a14f87b5c30759c'.format(user=user)},
-          u'name': u'master'},
-         {u'commit': {u'sha': u'c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6',
+          u'name': u'master'}),
+         Branch.from_json({u'commit': {u'sha': u'c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6',
            u'url': u'https://api.github.com/repos/{user}/mock-repo/commits/c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6'.format(user=user)},
-          u'name': u'no-bundle'}
+          u'name': u'no-bundle'})
       ]
 
-    github_mock.tree.return_value = {
+    # http://developer.github.com/v3/repos/contents/
+    github_mock.contents.return_value = {
+        'octokit.rb': github3.repos.contents.Contents.from_json({
+          "type": "file",
+          "size": 625,
+          "name": "octokit.rb",
+          "path": "octokit.rb",
+          "sha": "fff6fe3a23bf1c8ea0692b4a883af99bee26fd3b",
+          "url": "https://api.github.com/repos/{user}/octokit/contents/lib/octokit.rb".format(user=user),
+          "git_url": "https://api.github.com/repos/{user}/octokit/git/blobs/fff6fe3a23bf1c8ea0692b4a883af99bee26fd3b".format(user=user),
+          "html_url": "https://github.com/{user}/octokit/blob/master/lib/octokit.rb",
+          "_links": {
+            "self": "https://api.github.com/repos/{user}/octokit/contents/lib/octokit.rb".format(user=user),
+            "git": "https://api.github.com/repos/{user}/octokit/git/blobs/fff6fe3a23bf1c8ea0692b4a883af99bee26fd3b".format(user=user),
+            "html": "https://github.com/{user}/octokit/blob/master/lib/octokit.rb"
+          }
+        }),
+        'octokit': github3.repos.contents.Contents.from_json({
+          "type": "dir",
+          "size": 0,
+          "name": "octokit",
+          "path": "octokit",
+          "sha": "a84d88e7554fc1fa21bcbc4efae3c782a70d2b9d",
+          "url": "https://api.github.com/repos/{user}/octokit/contents/lib/octokit".format(user=user),
+          "git_url": "https://api.github.com/repos/{user}/octokit/git/trees/a84d88e7554fc1fa21bcbc4efae3c782a70d2b9d",
+          "html_url": "https://github.com/{user}/octokit/tree/master/lib/octokit".format(user=user),
+          "_links": {
+            "self": "https://api.github.com/repos/{user}/octokit/contents/lib/octokit".format(user=user),
+            "git": "https://api.github.com/repos/{user}/octokit/git/trees/a84d88e7554fc1fa21bcbc4efae3c782a70d2b9d".format(user=user),
+            "html": "https://github.com/{user}/octokit/tree/master/lib/octokit".format(user=user)
+          }
+        })
+      }
+
+    github_mock.tree.return_value = github3.git.Tree.from_json({
         'url': u'https://api.github.com/repos/{user}/mock-repo/git/trees/dev'.format(user=user),
         'sha': 'dev',
         'tree': [
@@ -151,5 +186,14 @@ def create_mock_github(user='octo-cat', private=False):
           u'type': u'blob',
           u'url': u'https://api.github.com/repos/{user}/mock-repo/git/blobs/86e1fef2834cc2682e753f3ed26ab3c2e100478c'.format(user=user)}
           ]
-    }
+    })
+    github_mock.commits.return_value = [
+        {
+            'sha': '12345',
+            'name': 'authname',
+            'email': 'authmail',
+            'date': 'yesterday',
+        }
+    ]
+
     return github_mock

@@ -9,7 +9,7 @@ from framework import (Rule, process_rules,
                        render_mako_string)
 from framework.auth import views as auth_views
 
-from website import settings
+from website import settings, language
 from website import views as website_routes
 from website.addons.base import views as addon_views
 from website.search import views as search_views
@@ -46,6 +46,9 @@ class OsfWebRenderer(WebRenderer):
         kwargs['data'] = get_globals
         super(OsfWebRenderer, self).__init__(*args, **kwargs)
 
+#: Use if a view only redirects or raises error
+notemplate = OsfWebRenderer('', render_mako_string)
+
 
 def favicon():
     return framework.send_from_directory(
@@ -56,7 +59,7 @@ def favicon():
 
 
 def goodbye(**kwargs):
-    status.push_status_message('You have successfully logged out.')
+    status.push_status_message(language.LOGOUT, 'info')
     return {}
 
 
@@ -108,6 +111,11 @@ def make_url_map(app):
         Rule('/getting-started/', 'get', {}, OsfWebRenderer('public/pages/getting_started.mako')),
         Rule('/explore/', 'get', {}, OsfWebRenderer('public/explore.mako')),
         Rule(['/messages/', '/help/'], 'get', {}, OsfWebRenderer('public/comingsoon.mako')),
+
+        Rule(
+            '/view/spsp2014/', 'get', project_views.email.spsp_results,
+            OsfWebRenderer('public/pages/spsp2014.mako')
+        ),
 
     ])
 
@@ -169,7 +177,8 @@ def make_url_map(app):
         Rule('/forms/signin/', 'get', website_routes.signin_form, json_renderer),
         Rule('/forms/forgot_password/', 'get', website_routes.forgot_password_form, json_renderer),
         Rule('/forms/reset_password/', 'get', website_routes.reset_password_form, json_renderer),
-        Rule('/forms/new_project/', 'get', website_routes.new_project_form, json_renderer)
+        Rule('/forms/new_project/', 'get', website_routes.new_project_form, json_renderer),
+        Rule('/forms/set_email_and_password/', 'get', website_routes.set_email_and_password_form, json_renderer),
 
     ], prefix='/api/v1')
 
@@ -188,6 +197,21 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule(
+            '/confirm/<uid>/<token>/',
+            'get',
+            auth_views.confirm_email_get,
+            # View will either redirect or display error message
+            OsfWebRenderer('error.mako', render_mako_string)
+        ),
+
+        Rule(
+            '/resend/',
+            ['get', 'post'],
+            auth_views.resend_confirmation,
+            OsfWebRenderer('resend.mako', render_mako_string)
+        ),
+
+        Rule(
             '/resetpassword/<verification_key>/',
             ['get', 'post'],
             auth_views.reset_password,
@@ -200,7 +224,7 @@ def make_url_map(app):
         Rule('/login/', 'post', auth_views.auth_login, OsfWebRenderer('public/login.mako'), endpoint_suffix='__post'),
         Rule('/login/first/', 'get', auth_views.auth_login, OsfWebRenderer('public/login.mako'), endpoint_suffix='__first', view_kwargs={'first': True}),
 
-        Rule('/logout/', 'get', auth_views.auth_logout, OsfWebRenderer('', render_mako_string)),
+        Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
 
         Rule('/forgotpassword/', 'post', auth_views.forgot_password, OsfWebRenderer('public/login.mako')),
 
@@ -222,8 +246,9 @@ def make_url_map(app):
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, OsfWebRenderer('profile/key_history.mako')),
         Rule('/addons/', 'get', profile_views.profile_addons, OsfWebRenderer('profile/addons.mako')),
         Rule(["/user/merge/"], 'get', auth_views.merge_user_get, OsfWebRenderer("merge_accounts.mako")),
-        Rule(["/user/merge/"], 'post', auth_views.merge_user_post, OsfWebRenderer("merge_accounts.mako"))
-
+        Rule(["/user/merge/"], 'post', auth_views.merge_user_post, OsfWebRenderer("merge_accounts.mako")),
+        # TODO: uncomment to enable user claiming
+        # Rule(['/user/claim/<signature>/'], ['get', 'post'], project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
     ])
 
     # API
@@ -260,6 +285,13 @@ def make_url_map(app):
         Rule('/search/', 'get', search_views.search_search, OsfWebRenderer('search.mako')),
 
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
+
+        Rule(
+            '/api/v1/search/node/',
+            'post',
+            project_views.node.search_node,
+            json_renderer,
+        ),
 
     ])
 
@@ -312,12 +344,6 @@ def make_url_map(app):
             '/api/v1/project/<pid>/settings/addons/',
             '/api/v1/project/<pid>/node/<nid>/settings/addons/',
         ], 'post', project_views.node.node_choose_addons, json_renderer),
-
-        # Remove
-        Rule([
-            '/project/<pid>/remove/',
-            '/project/<pid>/node/<nid>/remove/',
-        ], 'get', project_views.node.component_remove, WebRenderer('', render_mako_string)),
 
         # Permissions
         Rule([
@@ -377,11 +403,19 @@ def make_url_map(app):
             endpoint_suffix='__page', view_kwargs={'mode': 'page'},
         ),
 
+
     ])
 
     # API
 
     process_rules(app, [
+
+        Rule(
+            '/email/spsp2014/',
+            'post',
+            project_views.email.spsp_poster_hook,
+            json_renderer,
+        ),
 
         Rule([
             '/project/<pid>/contributors_abbrev/',
@@ -394,6 +428,34 @@ def make_url_map(app):
             '/project/<pid>/',
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, json_renderer),
+
+        Rule(
+            [
+                '/project/<pid>/pointer/',
+                '/project/<pid>/node/<nid>/pointer/',
+            ],
+            'get',
+            project_views.node.get_pointed,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/pointer/',
+                '/project/<pid>/node/<nid>/pointer/',
+            ],
+            'post',
+            project_views.node.add_pointers,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/pointer/',
+                '/project/<pid>/node/<nid>pointer/',
+            ],
+            'delete',
+            project_views.node.remove_pointer,
+            json_renderer,
+        ),
 
         Rule([
             '/project/<pid>/get_summary/',
@@ -441,16 +503,26 @@ def make_url_map(app):
         ], 'get', project_views.node.get_editable_children, json_renderer),
 
         # Create
-        Rule([
-            '/project/new/',
-            '/project/<pid>/newnode/',
-        ], 'post', project_views.node.project_new_node, json_renderer),
+        Rule(
+            [
+                '/project/new/',
+                '/project/<pid>/newnode/',
+            ],
+            'post',
+            project_views.node.project_new_node,
+            json_renderer,
+        ),
 
         # Remove
-        Rule([
-            '/project/<pid>/remove/',
-            '/project/<pid>/node/<nid>/remove/',
-        ], 'post', project_views.node.component_remove, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/remove/',
+                '/project/<pid>/node/<nid>/remove/',
+            ],
+            'delete',
+            project_views.node.component_remove,
+            json_renderer,
+        ),
 
         # API keys
         Rule([
@@ -500,14 +572,24 @@ def make_url_map(app):
         ], 'post', project_views.contributor.project_removecontributor, json_renderer),
 
         # Forks
-        Rule([
-            '/project/<pid>/beforefork/',
-            '/project/<pid>/node/<nid>/beforefork',
-        ], 'get', project_views.node.project_before_fork, json_renderer),
-        Rule([
-            '/project/<pid>/fork/',
-            '/project/<pid>/node/<nid>/fork/',
-        ], 'post', project_views.node.node_fork_page, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/fork/before/',
+                '/project/<pid>/node/<nid>/fork/before/',
+            ], 'get', project_views.node.project_before_fork, json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/fork/',
+                '/project/<pid>/node/<nid>/fork/',
+            ], 'post', project_views.node.node_fork_page, json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/pointer/fork/',
+                '/project/<pid>/node/<nid>/pointer/fork/',
+            ], 'post', project_views.node.fork_pointer, json_renderer,
+        ),
 
         # View forks
         Rule([
@@ -580,4 +662,24 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        # Endpoint to fetch Rubeus.JS/Hgrid-formatted data
+        Rule(
+            ['/project/<pid>/files/grid/',
+            '/project/<pid>/node/<nid>/files/grid/'
+            ],
+            'get',
+            project_views.file.grid_data,
+            json_renderer
+        ),
+
+        # Invite Users
+        Rule(
+            [
+                '/project/<pid>/invite_contributor/',
+                '/project/<pid>/node/<nid>/invite_contributor/'
+            ],
+            'post',
+            project_views.contributor.invite_contributor_post,
+            json_renderer
+        ),
     ], prefix='/api/v1')

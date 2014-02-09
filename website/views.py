@@ -11,7 +11,8 @@ from framework.routing import proxy_url
 from framework.auth import get_current_user
 from framework.auth.decorators import must_be_logged_in, Auth
 from framework.auth.forms import (RegistrationForm, SignInForm,
-                                  ForgotPasswordForm, ResetPasswordForm)
+                                  ForgotPasswordForm, ResetPasswordForm,
+                                  SetEmailAndPasswordForm)
 
 from website.models import Guid, Node, MetaData
 from website.project.forms import NewProjectForm
@@ -46,11 +47,13 @@ def _render_node(node):
 
     :param node:
     :return:
+
     """
     return {
         'id': node._primary_key,
         'url': node.url,
-        'api_url': node.api_url
+        'api_url': node.api_url,
+        'primary': node.primary,
     }
 
 
@@ -139,6 +142,10 @@ def reset_password_form():
     return utils.jsonify(ResetPasswordForm())
 
 
+def set_email_and_password_form():
+    return utils.jsonify(SetEmailAndPasswordForm())
+
+
 def new_project_form():
     return utils.jsonify(NewProjectForm())
 
@@ -184,6 +191,8 @@ def resolve_guid(guid, suffix=None):
         url = _build_guid_url(url, prefix, suffix)
         # Always redirect API URLs; URL should identify endpoint being called
         if prefix or mode == 'redirect':
+            if request.query_string:
+                url += '?' + request.query_string
             return redirect(url)
         return proxy_url(url)
 

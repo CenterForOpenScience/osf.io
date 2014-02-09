@@ -5,7 +5,6 @@
 <link rel="stylesheet" href="${STATIC_PATH}/tabular/css/slick-default-theme.css" type="text/css"/>
 
 <!-- SlickGrid JS -->
-<script src="${STATIC_PATH}/tabular/js/jquery-1.7.min.js"></script>
 <script src="${STATIC_PATH}/tabular/js/jquery.event.drag-2.2.js"></script>
 <script src="${STATIC_PATH}/tabular/js/slick.core.js"></script>
 <script src="${STATIC_PATH}/tabular/js/slick.grid.js"></script>

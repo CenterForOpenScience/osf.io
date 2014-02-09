@@ -9,7 +9,7 @@
         % else:
             <span
                 % if user['can_edit']:
-                    class="user-quickedit" data-userid="nr-${contributor['id']}" data-fullname="${contributor['fullname']}"
+                    class="user-quickedit" data-userid="${contributor['id']}" data-fullname="${contributor['fullname']}"
                 % endif
                 >${contributor['fullname']}</span>${', ' if not loop.last else ''}
         % endif

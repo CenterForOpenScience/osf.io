@@ -1,6 +1,10 @@
 from . import routes, views, model
 
-MODELS = [model.AddonGitHubUserSettings, model.AddonGitHubNodeSettings]
+MODELS = [
+    model.AddonGitHubUserSettings,
+    model.AddonGitHubNodeSettings,
+    model.GithubGuidFile,
+]
 USER_SETTINGS_MODEL = model.AddonGitHubUserSettings
 NODE_SETTINGS_MODEL = model.AddonGitHubNodeSettings
 
@@ -11,39 +15,35 @@ FULL_NAME = 'GitHub'
 
 OWNERS = ['user', 'node']
 
-ADDED_TO = {
-    'user': False,
-    'node': False,
-}
+ADDED_DEFAULT = []
+ADDED_MANDATORY = []
 
-VIEWS = ['widget']
+VIEWS = []
 CONFIGS = ['user', 'node']
 
 CATEGORIES = ['storage']
 
 INCLUDE_JS = {
-    'widget': ['jquery.githubRepoWidget.js'],
+    'widget': ['jquery.githubRepoWidget.js', 'github-rubeus-cfg.js'],
     'page': [
-        '/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js',
-        '/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js',
-        '/static/vendor/dropzone/dropzone.js',
-        '/static/js/slickgrid.custom.min.js',
-        '/static/js/hgrid.js',
         'hgrid-github.js',
     ],
     'files': [
-        'hgrid-files.js',
+        'github-rubeus-cfg.js',
     ]
 }
 
 INCLUDE_CSS = {
-    'widget': [],
+    'widget': ['github-rubeus.css'],
     'page': ['/static/css/hgrid-base.css'],
+    'files': ['github-rubeus.css']
 }
 
 WIDGET_HELP = 'GitHub Add-on Alpha'
 
 HAS_HGRID_FILES = True
-GET_HGRID_DUMMY = views.hgrid.github_dummy_folder
+GET_HGRID_DATA = views.hgrid.github_hgrid_data
 
-MAX_FILE_SIZE = 1024 * 1024
+# Note: Even though GitHub supports file sizes over 1 MB, uploads and
+# downloads through their API are capped at 1 MB.
+MAX_FILE_SIZE = 1
