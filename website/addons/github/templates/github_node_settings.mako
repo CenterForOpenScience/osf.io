@@ -1,143 +1,195 @@
 <%inherit file="project/addon/node_settings.mako" />
 
-<!-- Authorization -->
 <div>
-    <div class="alert alert-danger alert-dismissable">
-    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-        Authorizing this GitHub add-on will grant all contributors on this ${node['category']}
-        permission to upload, modify, and delete files on the associated GitHub repo.
-    </div>
-    <div class="alert alert-danger alert-dismissable">
-        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-        If one of your collaborators removes you from this ${node['category']},
-        your authorization for GitHub will automatically be revoked.
-    </div>
-    % if authorized_user_id:
-        <a id="githubDelKey" class="btn btn-danger">Unauthorize: Detach Access Token</a>
-        <div style="padding-top: 10px">
-            Authorized by OSF user
-            <a href="${domain}/${authorized_user_id}" target="_blank">
-                ${authorized_user_name}
-            </a>
+
+    <div data-bind="if: config.repo">
+
+        <input type="hidden" id="githubUser" name="github_user" data-bind="value: user" />
+        <input type="hidden" id="githubRepo" name="github_repo" data-bind="value: repo" />
+
+        <div class="well well-sm">
+            Authorized by
+            <a data-bind="text: config.user.osfUser, attr: {href: config.user.osfUrl}"></a>
             on behalf of GitHub user
-            <a href="https://github.com/${authorized_github_user}" target="_blank">
-                ${authorized_github_user}
-            </a>
+            <a target="_blank" data-bind="text: config.user.githubUser, attr: {href: config.user.githubUrl}"></a>
         </div>
-    % else:
+
+        <div class="btn-group">
+            <button type="button" class="btn btn-default" data-bind="disable: !config.user.owner">
+                <span id="githubRepoLabel" data-bind="text: repoLabel"></span>
+            </button>
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-bind="disable: !config.user.owner">
+                <span class="caret"></span>
+            </button>
+            <ul id="githubDropdown" class="dropdown-menu pull-right dropdown-scroll" role="menu" data-bind="foreach: repoModels">
+                <li role="presentation">
+                    <a href="#" data-bind="text: $data.format(), click: $root.selectRepo.bind($root)"></a>
+                </li>
+            </ul>
+        </div>
+
+        <br /><br />
+
         <div>
-            Adding a GitHub access token allows you and your collaborators to
-            update and delete files on your linked repository, and view its files
-            if this repository is private. If you do not add an access token, you
-            will be able to view and download files within the repository if it
-            is public.
+            <a class="btn btn-success" data-bind="visible: config.user.owner, click: newRepo">Create Repo</a>
+            <a class="btn btn-danger" data-bind="click: deauthorize">Deauthorize</a>
         </div>
-        <br />
-        <a id="githubAddKey" class="btn btn-primary">
-            % if user_has_authorization:
+
+    </div>
+
+    <div data-bind="ifnot: config.repo">
+
+        <a class="btn btn-primary" data-bind="click: addAuth">
+            <div data-bind="if: config.hasAuth">
                 Authorize: Import Access Token from Profile
-            % else:
+            </div>
+            <div data-bind="ifnot: config.hasAuth">
                 Authorize: Create Access Token
-            % endif
+            </div>
         </a>
-    % endif
-</div>
 
-<br />
+    </div>
 
-<div class="form-group">
-    <label for="githubUrl">GitHub URL (e.g. https://github.com/mitsuhiko/flask)</label>
-    <input class="form-control" id="githubUrl" value="${github_url}" ${'disabled' if disabled else ''} />
-</div>
-
-<div class="form-group">
-    <label for="githubUser">GitHub User (e.g. mitsuhiko)</label>
-    <input class="form-control" id="githubUser" name="github_user" value="${github_user}" ${'disabled' if disabled else ''} />
-</div>
-<div class="form-group">
-    <label for="githubRepo">GitHub Repo (e.g. flask)</label>
-    <input class="form-control" id="githubRepo" name="github_repo" value="${github_repo}" ${'disabled' if disabled else ''} />
 </div>
 
 <script type="text/javascript">
 
-    $(document).ready(function() {
+    var githubConfig = ${github_config};
 
-        // Update user and repo on changing URL
-        $('#githubUrl').on('blur', function() {
-            var url = $(this).val();
-            var urlParts = url.split('github.com');
-            if (urlParts.length > 1) {
-                repoParts = urlParts[1]
-                    .split('/')
-                    .filter(function(item) {
-                        return item
-                    });
-                $('#githubUser').val(repoParts[0]);
-                $('#githubRepo').val(repoParts[1]);
+    var GithubRepoModel = function(data) {
+        this.data = data;
+    };
+    GithubRepoModel.prototype.format = function() {
+        return this.data.owner.login + ' / ' + this.data.name;
+    };
+
+    var GithubSettingsModel = function($elm, config) {
+        var self = this;
+        this.$elm = $elm;
+        self.config = config;
+        self.user = ko.observable();
+        self.repo = ko.observable();
+        self.repoModels = ko.observableArray();
+        self.repoModel = ko.observable();
+        if (config.repo) {
+            self.user(config.repo.user);
+            self.repo(config.repo.repo);
+        }
+        self.repoLabel = ko.computed(function() {
+            var repoModel = self.repoModel();
+            if (repoModel) {
+                return repoModel.format();
+            } else if (self.user() && self.repo()) {
+                return self.user() + ' / ' + self.repo();
+            } else {
+                return 'Select a repository';
             }
         });
+        self.getRepos();
+    };
 
-        // Update URL on changing user or repo
-        $('#githubUser, #githubRepo').on('blur', function() {
-            var user = $('#githubUser').val();
-            var repo = $('#githubRepo').val();
-            if (user && repo) {
-                $('#githubUrl').val('https://github.com/' + user + '/' + repo + '/');
-            }
+    GithubSettingsModel.prototype.getRepos = function() {
+        var self = this;
+        if (self.config.user) {
+            $.ajax({
+                type: 'GET',
+                url: '/api/v1/github/user/repos/',
+                success: function(response) {
+                    self.repoModels(
+                        response.map(function(item) {
+                            return new GithubRepoModel(item)}
+                        )
+                    );
+                }
+            });
+        }
+    };
+
+    GithubSettingsModel.prototype.newRepo = function() {
+        var self = this;
+        bootbox.prompt('Name your new repo', function(repoName) {
+            $.ajax({
+                type: 'POST',
+                url: '/api/v1/github/repo/create/',
+                contentType: 'application/json',
+                dataType: 'json',
+                data: JSON.stringify({name: repoName}),
+                success: function(response) {
+                    self.user(response.user);
+                    self.repo(response.repo);
+                    self.submit();
+                },
+                error: function() {
+                    $('#addonSettingsGithub').find('.addon-settings-message')
+                        .text('Could not create repository')
+                        .removeClass('text-success').addClass('text-danger')
+                        .fadeOut(100).fadeIn();
+                }
+            });
         });
+    };
 
-        $('#githubAddKey').on('click', function() {
-            % if authorized_user_id:
+    GithubSettingsModel.prototype.selectRepo = function(repoModel) {
+
+        this.repoModel(repoModel);
+        this.repo(repoModel.data.name);
+        this.user(repoModel.data.owner.login);
+
+        // Hide dropdown
+        this.$elm.find('.dropdown-toggle')
+            .dropdown('toggle');
+
+        this.submit();
+
+    };
+
+    GithubSettingsModel.prototype.submit = function() {
+        this.$elm.submit();
+    };
+
+    GithubSettingsModel.prototype.deauthorize = function() {
+        var self = this;
+        bootbox.confirm('Are you sure you want to remove your GitHub authorization?', function(prompt) {
+            if (prompt) {
                 $.ajax({
-                    type: 'POST',
-                    url: nodeApiUrl + 'github/user_auth/',
-                    contentType: 'application/json',
-                    dataType: 'json',
+                    type: 'DELETE',
+                    url: nodeApiUrl + 'github/oauth/',
                     success: function(response) {
+                        // TODO: Single-page-ify
                         window.location.reload();
                     }
                 });
-            % else:
-                window.location.href = nodeApiUrl + 'github/oauth/';
-            % endif
+            }
         });
+    };
 
-        $('#githubDelKey').on('click', function() {
-            bootbox.confirm(
-                'Are you sure you want to detach your GitHub access key? This will ' +
-                    'revoke the ability to modify and upload files to GitHub. If ' +
-                    'the associated repo is private, this will also disable viewing ' +
-                    'and downloading files from GitHub. This will not remove your ' +
-                    'GitHub authorization from your <a href="/settings/">user settings</a> ' +
-                    'page.',
-                function(result) {
-                    if (result) {
-                        $.ajax({
-                            url: nodeApiUrl + 'github/oauth/delete/',
-                            type: 'POST',
-                            contentType: 'application/json',
-                            dataType: 'json',
-                            success: function() {
-                                window.location.reload();
-                            }
-                        });
-                    }
+    GithubSettingsModel.prototype.addAuth = function() {
+
+        var self = this;
+        if (self.config.authUser) {
+            $.ajax({
+                type: 'POST',
+                url: nodeApiUrl + 'github/user_auth/',
+                contentType: 'application/json',
+                dataType: 'json',
+                success: function(response) {
+                    window.location.reload();
                 }
-            )
-        });
+            });
+        } else {
+            window.location.href = nodeApiUrl + 'github/oauth/';
+        }
+    };
+
+    $(document).ready(function() {
+        var githubSettingsModel = new GithubSettingsModel($('#addonSettingsGithub'), githubConfig);
+        ko.applyBindings(githubSettingsModel, document.getElementById('addonSettingsGithub'));
     });
 
 </script>
 
-<%def name="submit_btn()">
-    % if show_submit:
-        ${parent.submit_btn()}
-    % endif
-</%def>
+<%def name="submit_btn()"></%def>
 
 <%def name="on_submit()">
-    % if show_submit:
-        ${parent.on_submit()}
-    % endif
+    ${parent.on_submit()}
 </%def>

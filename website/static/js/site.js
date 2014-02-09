@@ -1,52 +1,43 @@
-//////////////////
-// Site-wide JS //
-//////////////////
-(function() {
-
-
-var setStatus = function(status){
-    $('#alert-container').append(status);//'<div class=\'alert-message warning fade in\' data-alert=\'alert\'><a class=\'close\' href=\'#\'>&times;</a><p>'+ status +'</p></div>');
-};
-
-var urlDecode = function(str) {
-    return decodeURIComponent((str+'').replace(/\+/g, '%20'));
-}
-
+////////////////////////////
+// Site-wide JS utilities //
+////////////////////////////
+(function($) {
 
 /**
- * Display a modal confirmation window before relocating to an url.
- * @param  <String> message
- * @param  <String> url
+ * Posts JSON data.
+ *
+ * Example:
+ *     $.postJSON('/foo', {'email': 'bar@baz.com'}, function(data) {...})
+ *
+ * @param  {String} url  The url to post to
+ * @param  {Object} data JSON data to send to the endpoint
+ * @param  {Function} done Success callback. Takes returned data as its first argument
+ * @return {jQuery xhr}
  */
-var modalConfirm = function(message, url){
-    bootbox.confirm(message,
-        function(result) {
-            if (result) {
-                window.location.href = url;
-            }
-        }
-    )
-}
-
-var urlDecode = function(str) {
-    return decodeURIComponent((str+'').replace(/\+/g, '%20'));
-}
-
+$.postJSON = function(url, data, done) {
+    var ajaxOpts = {
+        url: url, type: 'post',
+        data: JSON.stringify(data),
+        success: done,
+        contentType: 'application/json', dataType: 'json'
+    };
+    return $.ajax(ajaxOpts);
+};
 
 /**
- * Display a modal confirmation window before relocating to an url.
- * @param  <String> message
- * @param  <String> url
+ * Get a URL parameter by name.
+ *
+ * https://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
  */
-var modalConfirm = function(message, url){
-    bootbox.confirm(message,
-        function(result) {
-            if (result) {
-                window.location.href = url;
-            }
-        }
-    )
+$.urlParam = function(name) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 };
+
+
+// TODO: this should be in project.js
 $(document).ready(function(){
     //block the create new project button when the form is submitted
     $('#projectForm').on('submit',function(){
@@ -55,23 +46,24 @@ $(document).ready(function(){
             .text('Creating');
     });
 
-    // Highlight active tabs and nav labels
-    if (typeof(nodeId) !== 'undefined' && nodeId) {
-        // Works for project pages; code used below won't highlight wiki tab
-        // on wiki pages because URLs (e.g. wiki/home) aren't contained in
-        // tab URLs (e.g. wiki)
-        var page = location.pathname.split(nodeId)[1]
-            .split('/')[1];
-        $('#projectSubnav a').filter(function() {
-            return page == $(this).attr('href')
-                .split(nodeId)[1]
-                .replace(/\//g, '');
-        }).parent().addClass('active');
-    } else {
-         // Works for user dashboard page
-         $('.nav a[href="' + location.pathname + '"]').parent().addClass('active');
-         $('.tabs a[href="' + location.pathname + '"]').parent().addClass('active');
-    }
+//    TODO: Make this work with file GUIDs [jmc]
+//    // Highlight active tabs and nav labels
+//    if (typeof(nodeId) !== 'undefined' && nodeId) {
+//        // Works for project pages; code used below won't highlight wiki tab
+//        // on wiki pages because URLs (e.g. wiki/home) aren't contained in
+//        // tab URLs (e.g. wiki)
+//        var page = location.pathname.split(nodeId)[1]
+//            .split('/')[1];
+//        $('#projectSubnav a').filter(function() {
+//            return page == $(this).attr('href')
+//                .split(nodeId)[1]
+//                .replace(/\//g, '');
+//        }).parent().addClass('active');
+//    } else {
+//         // Works for user dashboard page
+//         $('.nav a[href="' + location.pathname + '"]').parent().addClass('active');
+//         $('.tabs a[href="' + location.pathname + '"]').parent().addClass('active');
+//    }
 
     // Initiate tag input
     $('#tagitfy').tagit({
@@ -100,4 +92,4 @@ $(document).ready(function(){
 
 });
 
-}).call(this);
+}).call(this, jQuery);

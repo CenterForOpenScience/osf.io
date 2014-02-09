@@ -42,7 +42,6 @@ import httplib as http
 import difflib
 
 from framework import request, status
-from framework.analytics import update_counters
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from framework.exceptions import HTTPError
@@ -89,8 +88,6 @@ def _get_wiki_versions(node, wid):
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
-@update_counters('node:{pid}')
-@update_counters('node:{nid}')
 @must_have_addon('wiki', 'node')
 def project_wiki_compare(*args, **kwargs):
     project = kwargs['project']
@@ -126,8 +123,6 @@ def project_wiki_compare(*args, **kwargs):
 
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
-@update_counters('node:{pid}')
-@update_counters('node:{nid}')
 @must_have_addon('wiki', 'node')
 def project_wiki_version(*args, **kwargs):
     project = kwargs['project']
@@ -158,8 +153,6 @@ def project_wiki_version(*args, **kwargs):
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public
-@update_counters('node:{pid}')
-@update_counters('node:{nid}')
 @must_have_addon('wiki', 'node')
 def project_wiki_page(*args, **kwargs):
 

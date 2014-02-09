@@ -85,6 +85,8 @@ class AddonModelMixin(StoredObject):
         """
         addon = self.get_addon(addon_name)
         if addon:
+            if self._name in addon.config.added_mandatory:
+                raise ValueError('Cannot delete mandatory add-on.')
             addon.delete()
             return True
         return False
@@ -103,10 +105,3 @@ class AddonModelMixin(StoredObject):
                 self.delete_addon(addon_name)
         if save:
             self.save()
-
-    @property
-    def has_files(self):
-        for addon in self.get_addons():
-            if addon.config.has_hgrid_files:
-                return True
-        return False

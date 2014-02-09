@@ -2,6 +2,8 @@
 import httplib as http
 import urllib
 import urlparse
+import logging
+
 import bson.objectid
 import itsdangerous
 from werkzeug.local import LocalProxy
@@ -9,6 +11,7 @@ from werkzeug.local import LocalProxy
 from website import settings
 from framework.flask import app, request, redirect
 from .model import Session
+
 
 @app.before_request
 def prepare_private_key():
@@ -41,6 +44,8 @@ def prepare_private_key():
             new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
             new_path = urlparse.urlunparse(new_parsed_path)
             return redirect(new_path, code=307)
+
+logger = logging.getLogger(__name__)
 
 
 # todo 2-back page view queue

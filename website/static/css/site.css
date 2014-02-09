@@ -93,7 +93,17 @@ font-weight: bold;
 
 /* Global Styles */
 
+#addPointer td {
+    vertical-align: middle;
+}
+
 /* Add-on styles */
+
+.dropdown-scroll {
+    height: auto;
+    max-height: 200px;
+    overflow-x: hidden;
+}
 
 /* Make embedded iframes responsive */
 .addon-widget-container iframe {
@@ -182,7 +192,6 @@ h4 {
 .social {
     padding-right: 60px;
 }
-
 
 
 /* Navbar */
@@ -583,6 +592,9 @@ input.ui-autocomplete-input{
 
 li.list-group-item-node {
     margin-bottom: 10px;
+}
+li.pointer {
+    border-style: dashed;
 }
 
 li .project-meta {
@@ -1021,6 +1033,10 @@ h1.unavailable {
 }
 
 /* Logs */
+
+.log-file-link {
+    cursor: pointer;
+}
 
 .log-date {
     font-size: 13px;

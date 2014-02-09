@@ -44,7 +44,7 @@ def _get_logs(node, count, auth, link):
     logs = []
 
     for log in reversed(node.logs):
-        if log and log.node.can_view(auth, link):
+        if log and log.node__logged[0].can_view(auth, link):
             logs.append(log.serialize())
         if len(logs) >= count:
             break

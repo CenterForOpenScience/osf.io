@@ -95,7 +95,22 @@
                             </button>
                         % endif
 
+<<<<<<< HEAD
                     </form>
+=======
+                    % endfor
+
+                    <br />
+
+                    % if not node['is_registration']:
+                        <button id="settings-submit" class="btn btn-success">
+                            Submit
+                        </button>
+                        <div class="addon-settings-message text-success" style="padding-top: 10px;"></div>
+                    % endif
+
+                </form>
+>>>>>>> 360043dd990348ebccc4b791a80f6d78ca1da72f
 
                 </div>
             </div>
@@ -187,7 +202,7 @@
                 var $elm = $(elm);
                 formData[$elm.attr('name')] = $elm.is(':checked');
             });
-
+            var msgElm = $(this).find('.addon-settings-message');
             $.ajax({
                 url: nodeApiUrl + 'settings/addons/',
                 data: JSON.stringify(formData),
@@ -195,6 +210,7 @@
                 contentType: 'application/json',
                 dataType: 'json',
                 success: function() {
+                    msgElm.text('Settings updated').fadeIn();
                     window.location.reload();
                 }
             });
@@ -210,7 +226,13 @@
                     '<p style="font-weight: normal; font-size: medium; line-height: normal;">If you want to continue, type <strong>' + key + '</strong> and click OK.</p>',
                 function(result) {
                     if (result === key) {
-                        window.location.href = '${node['url']}remove/';
+                        $.ajax({
+                            type: 'DELETE',
+                            url: nodeApiUrl + 'remove/',
+                            success: function(response) {
+                                window.location.href = response.url;
+                            }
+                        });
                     }
                 }
             )
@@ -222,11 +244,11 @@
             var that = this,
                 $that = $(that);
             if ($that.is(':checked')) {
-                var name = $that.attr('name'),
-                    capabilities = $('#capabilities-' + name);
+                var name = $that.attr('name');
+                var capabilities = $('#capabilities-' + name).html();
                 if (capabilities) {
                     bootbox.confirm(
-                        capabilities.html(),
+                        capabilities,
                         function(result) {
                             if (!result) {
                                 $(that).attr('checked', false);

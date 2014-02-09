@@ -1,5 +1,7 @@
 import os
+import logging
 import httplib as http
+from github3 import GitHubError
 
 from framework import request, redirect
 from framework.auth import get_current_user
@@ -13,6 +15,7 @@ from website.project.decorators import must_have_addon
 
 from ..api import GitHub
 from ..auth import oauth_start_url, oauth_get_token
+logger = logging.getLogger(__name__)
 
 
 @must_be_contributor
@@ -21,14 +24,14 @@ def github_add_user_auth(**kwargs):
 
     user = kwargs['auth'].user
 
-    github_user = user.get_addon('github')
-    github_node = kwargs['node_addon']
+    user_settings = user.get_addon('github')
+    node_settings = kwargs['node_addon']
 
-    if github_node is None or github_user is None:
+    if node_settings is None or user_settings is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    github_node.user_settings = github_user
-    github_node.save()
+    node_settings.user_settings = user_settings
+    node_settings.save()
 
     return {}
 
@@ -46,23 +49,17 @@ def github_oauth_start(**kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     user.add_addon('github')
-    github_user = user.get_addon('github')
+    user_settings = user.get_addon('github')
 
     if node:
-
         github_node = node.get_addon('github')
-        github_node.user_settings = github_user
-
-        # Add webhook
-        if github_node.user and github_node.repo:
-            github_node.add_hook()
-
+        github_node.user_settings = user_settings
         github_node.save()
 
     authorization_url, state = oauth_start_url(user, node)
 
-    github_user.oauth_state = state
-    github_user.save()
+    user_settings.oauth_state = state
+    user_settings.save()
 
     return redirect(authorization_url)
 
@@ -70,19 +67,29 @@ def github_oauth_start(**kwargs):
 @must_have_addon('github', 'user')
 def github_oauth_delete_user(**kwargs):
 
-    github_user = kwargs['user_addon']
+    user_settings = kwargs['user_addon']
+
+    failed = False
 
     # Remove webhooks
-    for node_settings in github_user.addongithubnodesettings__authorized:
-        node_settings.delete_hook()
+    for node_settings in user_settings.addongithubnodesettings__authorized:
+        try:
+            node_settings.delete_hook()
+        except GitHubError as error:
+            if error.code == 401:
+                failed = True
+            else:
+                raise
 
-    # Revoke access token
-    connection = GitHub.from_settings(github_user)
-    connection.revoke_token()
+    if failed:
+        push_status_message(
+            'We were unable to remove your webhook from GitHub. Your GitHub '
+            'credentials may no longer be valid.'
+        )
 
-    github_user.oauth_access_token = None
-    github_user.oauth_token_type = None
-    github_user.save()
+    message = user_settings.clear_auth()
+    if message:
+        push_status_message(message)
 
     return {}
 
@@ -94,25 +101,19 @@ def github_oauth_delete_node(**kwargs):
     node_settings = kwargs['node_addon']
 
     # Remove webhook
-    node_settings.delete_hook()
+    try:
+        node_settings.delete_hook()
+    except GitHubError:
+        logger.error(
+            'Could not remove webhook from {0} in node {1}'.format(
+                node_settings.repo, node_settings.owner._id
+            )
+        )
 
     # Remove user settings
     node_settings.user_settings = None
-
-    # Remove user and repo if access lost
-    if node_settings.user and node_settings.repo:
-        connection = GitHub()
-        repo = connection.repo(node_settings.user, node_settings.repo)
-        if repo is None:
-            node_settings.user = None
-            node_settings.repo = None
-            push_status_message(
-                (
-                    'After removing your GitHub authorization, GitHub repo {0} / '
-                    '{1} can no longer be accessed. Please re-authorize your '
-                    'GitHub account or make your GitHub repo public to view it.'
-                ).format(node_settings.user, node_settings.repo)
-            )
+    node_settings.user = None
+    node_settings.repo = None
 
     # Save changes
     node_settings.save()
@@ -130,14 +131,14 @@ def github_oauth_callback(**kwargs):
     if kwargs.get('nid') and not node:
         raise HTTPError(http.NOT_FOUND)
 
-    github_user = user.get_addon('github')
-    if github_user is None:
+    user_settings = user.get_addon('github')
+    if user_settings is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    if github_user.oauth_state != request.args.get('state'):
+    if user_settings.oauth_state != request.args.get('state'):
         raise HTTPError(http.BAD_REQUEST)
 
-    github_node = node.get_addon('github') if node else None
+    node_settings = node.get_addon('github') if node else None
 
     code = request.args.get('code')
     if code is None:
@@ -145,22 +146,22 @@ def github_oauth_callback(**kwargs):
 
     token = oauth_get_token(code)
 
-    github_user.oauth_state = None
-    github_user.oauth_access_token = token['access_token']
-    github_user.oauth_token_type = token['token_type']
+    user_settings.oauth_state = None
+    user_settings.oauth_access_token = token['access_token']
+    user_settings.oauth_token_type = token['token_type']
 
-    connection = GitHub.from_settings(github_user)
+    connection = GitHub.from_settings(user_settings)
     user = connection.user()
 
-    github_user.github_user = user['login']
+    user_settings.github_user = user.login
 
-    github_user.save()
+    user_settings.save()
 
-    if github_node:
-        github_node.user_settings = github_user
-        if github_node.user and github_node.repo:
-            github_node.add_hook(save=False)
-        github_node.save()
+    if node_settings:
+        node_settings.user_settings = user_settings
+        if node_settings.user and node_settings.repo:
+            node_settings.add_hook(save=False)
+        node_settings.save()
 
     if node:
         return redirect(os.path.join(node.url, 'settings'))
