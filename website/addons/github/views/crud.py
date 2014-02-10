@@ -17,6 +17,7 @@ from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
 
 from ..api import GitHub, ref_to_params
+from .. import settings as github_settings
 from .util import MESSAGES
 
 
@@ -63,13 +64,13 @@ def get_cache_file(path, sha):
 def github_view_file(**kwargs):
 
     auth = kwargs['auth']
-    user = auth.user
     node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
 
     path = kwargs.get('path')
     if path is None:
         raise HTTPError(http.NOT_FOUND)
+    file_name = os.path.split(path)[1]
 
     connection = GitHub.from_settings(node_settings.user_settings)
 
@@ -78,10 +79,6 @@ def github_view_file(**kwargs):
     # Get branch / commit
     branch = request.args.get('branch', repo['default_branch'])
     sha = request.args.get('sha', branch)
-
-    file_name, data, size = connection.file(
-        node_settings.user, node_settings.repo, path, ref=sha,
-    )
 
     # Get file URL
     url = os.path.join(node.api_url, 'github', 'file', path)
@@ -113,10 +110,19 @@ def github_view_file(**kwargs):
     cache_file = get_cache_file(
         path, current_sha,
     )
-    rendered = get_cache_content(
-        node_settings, cache_file, start_render=True, file_path=file_name,
-        file_content=data, download_path=url,
-    )
+    rendered = get_cache_content(node_settings, cache_file)
+    if rendered is None:
+        _, data, size = connection.file(
+            node_settings.user, node_settings.repo, path, ref=sha,
+        )
+        # Skip if too large to be rendered.
+        if github_settings.MAX_RENDER_SIZE is not None and size > github_settings.MAX_RENDER_SIZE:
+            rendered = 'File too large to render; download file to view it'
+        else:
+            rendered = get_cache_content(
+                node_settings, cache_file, start_render=True,
+                file_path=file_name, file_content=data, download_path=url,
+            )
 
     rv = {
         'file_name': file_name,
