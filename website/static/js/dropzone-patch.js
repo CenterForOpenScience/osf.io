@@ -63,7 +63,7 @@
 
         Dropzone.prototype.uploadFiles = function(files) {
             var file, formData, handleError, headerName, headerValue, headers, input, inputName, inputType, key, option, progressObj, response, updateProgress, value, xhr, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _ref, _ref1, _ref2, _ref3, _ref4,
-                _this = this;
+                _this = this, wasSigned = this.options.signedUrlFrom;
             xhr = new XMLHttpRequest();
             for (_i = 0, _len = files.length; _i < _len; _i++) {
                 file = files[_i];
@@ -179,8 +179,8 @@
                     if (_this.options.uploadMultiple) {
                         _this.emit("sendingmultiple", files, xhr, formData);
                     }
-                    if (_this.options.signedUrlFrom) {
-                      //S3 SPECIFIC 
+                    if (wasSigned) {
+                      //S3 SPECIFIC
                       //Used for single file uploads only
                       //yaaay......
                         return xhr.send(files[0]);
