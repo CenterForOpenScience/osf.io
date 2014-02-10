@@ -22,7 +22,7 @@ from .util import MESSAGES
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_download_file(*args, **kwargs):
+def github_download_file(**kwargs):
 
     github = kwargs['node_addon']
 
@@ -60,7 +60,7 @@ def get_cache_file(path, sha):
 # TODO: Remove unnecessary API calls
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_view_file(*args, **kwargs):
+def github_view_file(**kwargs):
 
     auth = kwargs['auth']
     user = auth.user
@@ -133,7 +133,7 @@ def github_view_file(*args, **kwargs):
 @must_be_contributor_or_public
 @must_not_be_registration
 @must_have_addon('github', 'node')
-def github_upload_file(*args, **kwargs):
+def github_upload_file(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
@@ -245,7 +245,7 @@ def github_upload_file(*args, **kwargs):
 @must_be_contributor_or_public
 @must_not_be_registration
 @must_have_addon('github', 'node')
-def github_delete_file(*args, **kwargs):
+def github_delete_file(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
@@ -298,7 +298,7 @@ def github_delete_file(*args, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_download_starball(*args, **kwargs):
+def github_download_starball(**kwargs):
 
     github = kwargs['node_addon']
     archive = kwargs.get('archive', 'tar')
@@ -317,7 +317,7 @@ def github_download_starball(*args, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_get_rendered_file(*args, **kwargs):
+def github_get_rendered_file(**kwargs):
     """
 
     """
