@@ -53,16 +53,10 @@ def _get_refs(addon, branch=None, sha=None, connection=None):
     branches = registered_branches or connection.branches(addon.user, addon.repo)
 
     # Use registered SHA if provided
-    if registered_branches:
-        for each in registered_branches:
-            if branch == each['name']:
-                sha = each['commit']['sha']
-                break
-    elif sha is None:
-        branch_json = connection.branches(addon.user, addon.repo, branch)
-        if branch_json:
-            sha = branch_json['commit']['sha']
-
+    for each in branches:
+        if branch == each['name']:
+            sha = each['commit']['sha']
+            break
     return branch, sha, branches
 
 
