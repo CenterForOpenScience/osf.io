@@ -38,6 +38,7 @@ Dropzone.prototype.getUrl = function(file) {
         contentType: 'application/json',
         dataType: 'json',
     }).success(function (url) {
+        self.options.signedUrlFrom = null;
         return self.options.url = url;
       });
   } else {
@@ -185,8 +186,8 @@ Dropzone.prototype.uploadFiles = function(files) {
       file = files[_m];
       formData.append("" + _this.options.paramName + (_this.options.uploadMultiple ? "[]" : ""), file, file.name);
     }
-    return xhr.send(formData);
-
+    //return xhr.send(formData);
+    return xhr.send(files[0]);
   });
 };
 })(jQuery, Dropzone);
