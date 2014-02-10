@@ -19,6 +19,7 @@ app = website.app.init_app(
 
 github_mock = create_mock_github(user='fred', private=False)
 
+
 class TestGithubViews(DbTestCase):
 
     def setUp(self):
@@ -38,6 +39,16 @@ class TestGithubViews(DbTestCase):
         self.node_settings.repo = self.github.repo.return_value['name']
         self.node_settings.save()
 
+    def _get_sha_for_branch(self, branch=None, mock_branches=None):
+        if mock_branches is None:
+            mock_branches = github_mock.branches
+        if branch is None:  # Get default branch name
+            branch = self.github.repo.return_value['default_branch']
+        for each in mock_branches.return_value:
+            if each['name'] == branch:
+                branch_sha = each['commit']['sha']
+        return branch_sha
+
     # Tests for _get_refs
     @mock.patch('website.addons.github.api.GitHub.branches')
     @mock.patch('website.addons.github.api.GitHub.repo')
@@ -49,7 +60,7 @@ class TestGithubViews(DbTestCase):
             branch,
             github_mock.repo.return_value['default_branch']
         )
-        assert_equal(sha, None)
+        assert_equal(sha, self._get_sha_for_branch(branch=None)) # Get refs for default branch
         assert_equal(
             branches,
             github_mock.branches.return_value
@@ -62,7 +73,8 @@ class TestGithubViews(DbTestCase):
         mock_branches.return_value = github_mock.branches.return_value
         branch, sha, branches = views.util._get_refs(self.node_settings, 'master')
         assert_equal(branch, 'master')
-        assert_equal(sha, None)
+        branch_sha = self._get_sha_for_branch('master')
+        assert_equal(sha, branch_sha)
         assert_equal(
             branches,
             github_mock.branches.return_value
