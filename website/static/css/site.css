@@ -1076,5 +1076,9 @@ h1.unavailable {
   max-width: 100%;
   height: auto;
 }
+/*
+.addon-widget-header a {
+  color: #333;
+}*/
 
 

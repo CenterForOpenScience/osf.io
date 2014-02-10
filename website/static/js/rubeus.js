@@ -10,23 +10,22 @@ this.Rubeus = (function($, HGrid, bootbox) {
 
     var tpl = HGrid.Fmt.tpl;
 
-    // Can't use microtemplate because microtemplate escapes html
-    // Necessary for rendering, e.g. the github branch picker
+    // Override Name column folder view to allow for extra widgets, e.g. github branch picker
     HGrid.Col.Name.folderView = function(item) {
-        var tpl = '';
+        var html = '';
         if (item.iconUrl)
-            tpl += '<img class="hg-addon-icon" src="' + item.iconUrl + '">';
+            html += '<img class="hg-addon-icon" src="' + item.iconUrl + '">';
         else
-            tpl += HGrid.Html.folderIcon;
-        tpl += '<span class="hg-folder-text">' + item.name + '</span>';
+            html += HGrid.Html.folderIcon;
+        html += '<span class="hg-folder-text">' + item.name + '</span>';
         if(item.extra)
-            tpl += '<span class="hg-extras">' + item.extra + '</span>';
-        return tpl;
+            html += '<span class="hg-extras">' + item.extra + '</span>';
+        return html;
     };
 
     HGrid.Col.Name.itemView = function(item) {
         var ext = item.name.split('.').pop().toLowerCase();
-        return HGrid.Extensions.indexOf(ext) == -1 ?
+        return HGrid.Extensions.indexOf(ext) === -1 ?
             HGrid.Html.fileIcon + item.name:
             HGrid.ExtensionSkeleton.replace('{{ext}}', ext) + item.name;
     };
@@ -49,19 +48,18 @@ this.Rubeus = (function($, HGrid, bootbox) {
 
     HGrid.Col.ActionButtons.width = 15;
     HGrid.Col.ActionButtons.folderView = function(row) {
-        // var buttonDefs = [];
-        // if (this.options.uploads &&
-        //     row.urls.upload
-        //     (row.permissions && row.permissions.edit)) {
-        //     buttonDefs.push({
-        //         text: '<i class="icon-upload"></i>',
-        //         action: 'upload',
-        //         cssClass: 'btn btn-default btn-mini'
-        //     });
-        // }
-        // if (buttonDefs) {
-        //     return HGrid.Fmt.buttons(buttonDefs);
-        // }
+        var buttonDefs = [];
+        if (this.options.uploads && row.urls.upload &&
+            (row.permissions && row.permissions.edit)) {
+            buttonDefs.push({
+                text: '<i class="icon-upload"></i>',
+                action: 'upload',
+                cssClass: 'btn btn-default btn-mini'
+            });
+        }
+        if (buttonDefs) {
+            return HGrid.Fmt.buttons(buttonDefs);
+        }
         return '';
     };
 
@@ -96,6 +94,8 @@ this.Rubeus = (function($, HGrid, bootbox) {
         FETCH_ERROR: '<span class="text-info">Could not retrieve data. Please refresh the page and try again.</span>',
 
         UPLOAD_SUCCESS: '<span class="text-success">Successfully uploaded</span>',
+        NO_CHANGES: '<span class="text-info">No changes made from previous version. Removing duplicate row. . .</span>',
+        UPDATED: '<span class="text-info">Existing file updated. Removing duplicate row. . .</span>',
         DELETING: function(row) {
             return '<span class="text-muted">Deleting "' + row.name + '"</span>';
         },
@@ -193,9 +193,11 @@ this.Rubeus = (function($, HGrid, bootbox) {
         deleteMethod: 'delete',
         uploads: true,
         maxFilesize: function(row) {
-            var cfgOption = resolveCfgOption.call(this, row, 'maxFilesize', [row]);
-            return cfgOption || 128;
+            return row.accept? (row.accept.maxSize || 128) : 128;
         },
+        // acceptedFiles: function(row) {
+        //     return row.accept.acceptedFiles || null;
+        // },
         uploadUrl: function(row) {
             var cfgOption = resolveCfgOption.call(this, row, 'uploadUrl', [row]);
             return cfgOption || row.urls.upload;
@@ -225,11 +227,31 @@ this.Rubeus = (function($, HGrid, bootbox) {
             bootbox.alert(message);
         },
         uploadSuccess: function(file, row, data) {
-            // Update the row with the returned server data
-            // This is necessary for the download and delete button to work.
-            $.extend(row, data);
-            this.updateItem(row);
-            this.changeStatus(row, status.UPLOAD_SUCCESS, 2000);
+            // If file hasn't changed, remove the duplicate item
+            // TODO: shows status in parent for now because the duplicate item
+            // is removed and we don't have access to the original row for the file
+            var self = this;
+            if (data.actionTaken === null) {
+                self.changeStatus(row, status.NO_CHANGES);
+                setTimeout(function() {
+                    $(self.getRowElement(row)).fadeOut(500, function() {
+                        self.removeItem(row.id);
+                    });
+                }, 2000);
+            } else if (data.actionTaken === 'file_updated') {
+                self.changeStatus(row, status.UPDATED);
+                setTimeout(function() {
+                    $(self.getRowElement(row)).fadeOut(500, function() {
+                        self.removeItem(row.id);
+                    });
+                }, 2000);
+            } else{
+                // Update the row with the returned server data
+                // This is necessary for the download and delete button to work.
+                $.extend(row, data);
+                this.updateItem(row);
+                this.changeStatus(row, status.UPLOAD_SUCCESS, 2000);
+            }
             var cfgOption = resolveCfgOption.call(this, row, 'uploadSuccess', [file, row, data]);
             return cfgOption || null;
         },
@@ -280,19 +302,19 @@ this.Rubeus = (function($, HGrid, bootbox) {
     // Addon config registry
     Rubeus.cfg = {};
 
-    Rubeus.getCfg = function(row, key) {
-        if (row && row.addon && this.cfg[row.addon]) {
-            return this.cfg[row.addon][key];
+    function getCfg(row, key) {
+        if (row && row.addon && Rubeus.cfg[row.addon]) {
+            return Rubeus.cfg[row.addon][key];
         }
         return undefined;
-    };
+    }
 
     // Gets a Rubeus config option if it is defined by an addon dev.
     // Calls it with `args` if it's a function otherwise returns the value.
     // If the config option is not defined, return null
     function resolveCfgOption(row, option, args) {
         var self = this;
-        var prop = Rubeus.getCfg(row, option);
+        var prop = getCfg(row, option);
         if (prop) {
             return typeof prop === 'function' ? prop.apply(self, args) : prop;
         } else {

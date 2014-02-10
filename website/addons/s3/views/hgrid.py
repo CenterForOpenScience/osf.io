@@ -5,6 +5,7 @@ from framework import request
 from urllib import unquote
 from website.util import rubeus
 
+
 def s3_hgrid_data(node_settings, user, parent=None, **kwargs):
 
     # Quit if no bucket

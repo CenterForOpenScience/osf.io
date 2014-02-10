@@ -4,31 +4,22 @@
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 <h4>Drag and drop files below to upload.</h4>
-<!-- <div class="form-group">
-<input placeholder="Search" class='form-control search-input' type='text' id='searchInput'>
-</div> -->
+
 <div id="myGrid" class="filebrowser hgrid"></div>
 
 </%def>
 
 <%def name="stylesheets()">
-<link rel="stylesheet" href="/static/vendor/hgrid/hgrid.css" type="text/css" />
-<link rel="stylesheet" href="/static/css/osf-hgrid.css" type="text/css" />
 % for stylesheet in tree_css:
 <link rel='stylesheet' href='${stylesheet}' type='text/css' />
 % endfor
-</%def>
-
-<%def name="javascript()">
-<script src="/static/vendor/dropzone/dropzone.js"></script>
-<script src="/static/vendor/hgrid/hgrid.js"></script>
-<script src='/static/js/rubeus.js'></script>
 </%def>
 
 <%def name="javascript_bottom()">
 % for script in tree_js:
 <script type="text/javascript" src="${script}"></script>
 % endfor
+<script src="/static/js/dropzone-patch.js"></script>
 <script>
 (function(global) {
 // Don't show dropped content if user drags outside grid
@@ -36,10 +27,7 @@ global.ondragover = function(e) { e.preventDefault(); };
 global.ondrop = function(e) { e.preventDefault(); };
 
 var gridData = ${grid_data};
-global.filebrowser = new Rubeus('#myGrid', {
-    data: gridData,
-    // searchInput: '#searchInput'
-});
+filebrowser = new Rubeus('#myGrid', { data: gridData });
 
 })(window);
 </script>

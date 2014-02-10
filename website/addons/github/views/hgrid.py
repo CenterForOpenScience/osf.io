@@ -1,18 +1,76 @@
 # -*- coding: utf-8 -*-
 import logging
+import os
 from mako.template import Template
 
 from framework import request
-from framework.auth.decorators import Auth
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
 
-from ..api import GitHub, to_hgrid, ref_to_params
+from ..api import GitHub, _build_github_urls, ref_to_params
 from .util import _get_refs, _check_permissions
 from website.util import rubeus
 
+
 logger = logging.getLogger(__name__)
+
+
+def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
+             can_edit=True, parent=None, **kwargs):
+
+    grid = []
+    folders = {}
+
+    for datum in data:
+
+        if datum['type'] in ['file', 'blob']:
+            item = {
+                'kind': 'item',
+                'urls': _build_github_urls(
+                    datum, node_url, node_api_url, branch, sha
+                )
+            }
+        elif datum['type'] in ['tree', 'dir']:
+            item = {
+                'kind': 'folder',
+                'children': [],
+            }
+        else:
+            continue
+
+        item.update({
+            'addon': 'github',
+            'permissions': {
+                'view': True,
+                'edit': can_edit,
+            },
+            'urls': _build_github_urls(
+                datum, node_url, node_api_url, branch, sha
+            ),
+            'accept': {
+                'maxSize': kwargs.get('max_size', 128),
+                'acceptedFiles': kwargs.get('accepted_files', None)
+            }
+        })
+
+        head, item['name'] = os.path.split(datum['path'])
+        if parent:
+            head = head.split(parent)[-1]
+        if head:
+            folders[head]['children'].append(item)
+        else:
+            grid.append(item)
+
+        # Update cursor
+        if item['kind'] == 'folder':
+            key = datum['path']
+            if parent:
+                key = key.split(parent)[-1]
+            folders[key] = item
+
+    return grid
+
 
 github_branch_template = Template('''
     % if len(branches) > 1:
@@ -47,7 +105,7 @@ def github_branch_widget(branches, owner, repo, branch, sha):
     return rendered
 
 
-def github_hgrid_data(node_settings, auth, parent=None, contents=False, *args, **kwargs):
+def github_hgrid_data(node_settings, auth, contents=False, *args, **kwargs):
 
     # Quit if no repo linked
     if not node_settings.user or not node_settings.repo:
@@ -81,7 +139,7 @@ def github_hgrid_data(node_settings, auth, parent=None, contents=False, *args, *
     rv = {
         'addon': node_settings.config.short_name,
         'name': name_tpl,
-        'extra': name_append,
+        'extra': name_append,  # Extra html to go after the name (branch chooser)
         'kind': 'folder',
         'hasIcon': True,
         'urls': {
@@ -95,7 +153,7 @@ def github_hgrid_data(node_settings, auth, parent=None, contents=False, *args, *
         },
         'accept': {
             'maxSize': node_settings.config.max_file_size,
-            'extensions': node_settings.config.accept_extensions,
+            'acceptedFiles': node_settings.config.accept_extensions,
         }
     }
 
@@ -162,6 +220,8 @@ def github_hgrid_data_contents(*args, **kwargs):
         hgrid_tree = to_hgrid(
             contents, node_url=node.url, node_api_url=node.api_url,
             branch=branch, sha=sha, can_edit=can_edit, parent=path,
+            max_size=node_addon.config.max_file_size,
+            accepted_files=node_addon.config.accept_extensions
         )
     else:
         hgrid_tree = []

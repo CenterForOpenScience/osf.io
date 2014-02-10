@@ -1,5 +1,4 @@
-import unittest
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *
 
 from tests.base import DbTestCase
 from tests.factories import UserFactory, ProjectFactory
@@ -63,7 +62,8 @@ class TestRubeus(DbTestCase):
             'view': node.can_view(user),
             'edit': node.can_edit(user) and not node.is_registration,
         }
-        deep_eq(rubeus.build_dummy_folder(node_settings, node_settings.bucket, permissions=permissions), rv, _assert=True)
+        deep_eq(rubeus.build_dummy_folder(node_settings, node_settings.bucket,
+                permissions=permissions), rv, _assert=True)
 
     def test_hgrid_dummy_fail(self):
         node_settings = self. node_settings
@@ -94,7 +94,8 @@ class TestRubeus(DbTestCase):
             'view': node.can_view(user),
             'edit': node.can_edit(user) and not node.is_registration,
         }
-        assert_false(deep_eq(rubeus.build_dummy_folder(node_settings, node_settings.bucket, permissions=permissions), rv))
+        assert_false(deep_eq(rubeus.build_dummy_folder(
+            node_settings, node_settings.bucket, permissions=permissions), rv))
 
     def test_hgrid_dummy_overrides(self):
         node_settings = self. node_settings
@@ -125,14 +126,15 @@ class TestRubeus(DbTestCase):
             'view': node.can_view(user),
             'edit': node.can_edit(user) and not node.is_registration,
         }
-        deep_eq(rubeus.build_dummy_folder(node_settings, node_settings.bucket, permissions=permissions, urls={}), rv, _assert=True)
+        deep_eq(rubeus.build_dummy_folder(node_settings, node_settings.bucket,
+                permissions=permissions, urls={}), rv, _assert=True)
 
     def test_hgrid_dummy_node_urls(self):
         node_settings = self.node_settings
         node_settings.config.urls = {
-                'fetch': node.api_url + 's3/hgrid/',
-                'upload': node.api_url + 's3/upload/'
-            },
+            'fetch': node.api_url + 's3/hgrid/',
+            'upload': node.api_url + 's3/upload/'
+        },
         node = self.project
         user = Auth(self.project.creator)
         rv = {
@@ -161,14 +163,5 @@ class TestRubeus(DbTestCase):
             'view': node.can_view(user),
             'edit': node.can_edit(user) and not node.is_registration,
         }
-        deep_eq(rubeus.build_dummy_folder(node_settings, node_settings.bucket, permissions=permissions), rv, _assert=True)
-
-
-
-
-
-
-
-
-
-
+        deep_eq(rubeus.build_dummy_folder(node_settings, node_settings.bucket,
+                permissions=permissions), rv, _assert=True)
