@@ -16,7 +16,7 @@ from ..auth import oauth_start_url, oauth_get_token
 
 @must_be_contributor
 @must_have_addon('github', 'node')
-def github_add_user_auth(*args, **kwargs):
+def github_add_user_auth(**kwargs):
 
     user = kwargs['auth'].user
 
@@ -33,7 +33,7 @@ def github_add_user_auth(*args, **kwargs):
 
 
 @must_be_logged_in
-def github_oauth_start(*args, **kwargs):
+def github_oauth_start(**kwargs):
 
     user = get_current_user()
 
@@ -67,7 +67,7 @@ def github_oauth_start(*args, **kwargs):
 
 
 @must_have_addon('github', 'user')
-def github_oauth_delete_user(*args, **kwargs):
+def github_oauth_delete_user(**kwargs):
 
     github_user = kwargs['user_addon']
 
@@ -88,7 +88,7 @@ def github_oauth_delete_user(*args, **kwargs):
 
 @must_be_contributor
 @must_have_addon('github', 'node')
-def github_oauth_delete_node(*args, **kwargs):
+def github_oauth_delete_node(**kwargs):
 
     github_node = kwargs['node_addon']
 
@@ -101,7 +101,7 @@ def github_oauth_delete_node(*args, **kwargs):
     return {}
 
 
-def github_oauth_callback(*args, **kwargs):
+def github_oauth_callback(**kwargs):
 
     user = models.User.load(kwargs.get('uid'))
     node = models.Node.load(kwargs.get('nid'))
