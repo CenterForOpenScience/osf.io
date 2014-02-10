@@ -38,7 +38,7 @@ Dropzone.prototype.getUrl = function(file) {
         contentType: 'application/json',
         dataType: 'json',
     }).success(function (url) {
-        self.options.signedUrlFrom = null;
+      self.options.signedUrlFrom = null;
         return self.options.url = url;
       });
   } else {
@@ -148,14 +148,7 @@ Dropzone.prototype.uploadFiles = function(files) {
       headerValue = headers[headerName];
       xhr.setRequestHeader(headerName, headerValue);
     }
-    formData = new FormData();
-    if (_this.options.params) {
-      _ref1 = _this.options.params;
-      for (key in _ref1) {
-        value = _ref1[key];
-        formData.append(key, value);
-      }
-    }
+
     for (_j = 0, _len1 = files.length; _j < _len1; _j++) {
       file = files[_j];
       _this.emit("sending", file, xhr, formData);
@@ -163,31 +156,9 @@ Dropzone.prototype.uploadFiles = function(files) {
     if (_this.options.uploadMultiple) {
       _this.emit("sendingmultiple", files, xhr, formData);
     }
-    if (_this.element.tagName === "FORM") {
-      _ref2 = _this.element.querySelectorAll("input, textarea, select, button");
-      for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
-        input = _ref2[_k];
-        inputName = input.getAttribute("name");
-        inputType = input.getAttribute("type");
-        if (input.tagName === "SELECT" && input.hasAttribute("multiple")) {
-          _ref3 = input.options;
-          for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
-            option = _ref3[_l];
-            if (option.selected) {
-              formData.append(inputName, option.value);
-            }
-          }
-        } else if (!inputType || ((_ref4 = inputType.toLowerCase()) !== "checkbox" && _ref4 !== "radio") || input.checked) {
-          formData.append(inputName, input.value);
-        }
-      }
-    }
-    for (_m = 0, _len4 = files.length; _m < _len4; _m++) {
-      file = files[_m];
-      formData.append("" + _this.options.paramName + (_this.options.uploadMultiple ? "[]" : ""), file, file.name);
-    }
-    //return xhr.send(formData);
+
     return xhr.send(files[0]);
+
   });
 };
 })(jQuery, Dropzone);
