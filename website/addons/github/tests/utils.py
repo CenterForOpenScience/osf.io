@@ -128,6 +128,39 @@ def create_mock_github(user='octo-cat', private=False):
           u'name': u'no-bundle'}
       ]
 
+    # http://developer.github.com/v3/repos/contents/
+    github_mock.contents.return_value = [
+        {
+          "type": "file",
+          "size": 625,
+          "name": "octokit.rb",
+          "path": "octokit.rb",
+          "sha": "fff6fe3a23bf1c8ea0692b4a883af99bee26fd3b",
+          "url": "https://api.github.com/repos/{user}/octokit/contents/lib/octokit.rb".format(user=user),
+          "git_url": "https://api.github.com/repos/{user}/octokit/git/blobs/fff6fe3a23bf1c8ea0692b4a883af99bee26fd3b".format(user=user),
+          "html_url": "https://github.com/{user}/octokit/blob/master/lib/octokit.rb",
+          "_links": {
+            "self": "https://api.github.com/repos/{user}/octokit/contents/lib/octokit.rb".format(user=user),
+            "git": "https://api.github.com/repos/{user}/octokit/git/blobs/fff6fe3a23bf1c8ea0692b4a883af99bee26fd3b".format(user=user),
+            "html": "https://github.com/{user}/octokit/blob/master/lib/octokit.rb"
+          }
+        },
+        {
+          "type": "dir",
+          "size": 0,
+          "name": "octokit",
+          "path": "octokit",
+          "sha": "a84d88e7554fc1fa21bcbc4efae3c782a70d2b9d",
+          "url": "https://api.github.com/repos/{user}/octokit/contents/lib/octokit".format(user=user),
+          "git_url": "https://api.github.com/repos/{user}/octokit/git/trees/a84d88e7554fc1fa21bcbc4efae3c782a70d2b9d",
+          "html_url": "https://github.com/{user}/octokit/tree/master/lib/octokit".format(user=user),
+          "_links": {
+            "self": "https://api.github.com/repos/{user}/octokit/contents/lib/octokit".format(user=user),
+            "git": "https://api.github.com/repos/{user}/octokit/git/trees/a84d88e7554fc1fa21bcbc4efae3c782a70d2b9d".format(user=user),
+            "html": "https://github.com/{user}/octokit/tree/master/lib/octokit".format(user=user)
+          }
+        }
+    ]
     github_mock.tree.return_value = {
         'url': u'https://api.github.com/repos/{user}/mock-repo/git/trees/dev'.format(user=user),
         'sha': 'dev',

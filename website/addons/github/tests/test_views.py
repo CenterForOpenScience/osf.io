@@ -11,7 +11,7 @@ import website.app
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 from framework.auth.decorators import Auth
 from website.addons.github.tests.utils import create_mock_github
-from website.addons.github import views
+from website.addons.github import views, api
 
 app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings',
@@ -34,44 +34,27 @@ class TestHGridViews(DbTestCase):
         self.node_settings.save()
 
     def test_to_hgrid(self):
-        tree = github_mock.contents(user='octocat', repo='hello', ref='12345abc')['tree']
-        res = views.hgrid.to_hgrid(
-            tree, user='octocat', repo='hello', node=self.project,
-            node_settings=self.node_settings,
-        )
-        assert_equal(len(res), 3)
-        assert_equal(
-            'github:{0}:{1}'.format(
-                self.node_settings._id,
-                tree[0]['path']
-            ),
-            res[0]['uid']
-        )
-        assert_in(res[0]['name'], tree[0]['path'])
-        assert_equal(res[0]['parent_uid'], 'null')
-        assert_equal(res[0]['type'], 'file')
-        assert_equal(len(res[0]['size']), 2)
-        assert_equal(res[0]['size'][0], tree[0]['size'])
-        assert_equal(res[0]['ext'], '')
+        contents = github_mock.contents(user='octocat', repo='hello', ref='12345abc')
+        res = views.hgrid.to_hgrid(contents,
+            node_url=self.project.url, node_api_url=self.project.api_url,
+            max_size=10)
 
-        # Test URLs
-        assert_equal(
-            res[0]['view'],
-            '/{0}/github/file/{1}/'.format(
-                self.project._id,
-                tree[0]['path']
-            )
-        )
-        assert_equal(
-            res[0]['delete'],
-            '/api/v1/project/{0}/github/file/{1}/'.format(
-                self.project._id,
-                tree[0]['path']
-            )
-        )
+        assert_equal(len(res), 2)
+        assert_equal(res[0]['addon'], 'github')
+
+        assert_true(res[0]['permissions']['view'])  # can always view
+        expected_kind = 'item' if contents[0]['type'] == 'file' else 'folder'
+        assert_equal(res[0]['kind'], expected_kind)
+        assert_equal(res[0]['accept']['maxSize'], 10)
+        assert_equal(res[0]['accept']['acceptedFiles'], None)
+        assert_equal(res[0]['urls'], api._build_github_urls(contents[0],
+            self.project.url, self.project.api_url, branch=None, sha=None))
         # Files should not have lazy-load or upload URLs
         assert_not_in('lazyLoad', res[0])
         assert_not_in('uploadUrl', res[0])
+
+    # TODO: Test to_hgrid with branch and sha arguments
+
 
 class TestGithubViews(DbTestCase):
 
