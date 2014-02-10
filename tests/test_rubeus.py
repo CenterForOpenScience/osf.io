@@ -5,7 +5,6 @@ from tests.factories import UserFactory, ProjectFactory
 
 from framework.auth.decorators import Auth
 from website.util import rubeus
-from deep_eq import deep_eq
 
 
 class TestRubeus(DbTestCase):
@@ -62,11 +61,11 @@ class TestRubeus(DbTestCase):
             'view': node.can_view(user),
             'edit': node.can_edit(user) and not node.is_registration,
         }
-        deep_eq(rubeus.build_addon_root(node_settings, node_settings.bucket,
-                permissions=permissions), rv, _assert=True)
+        assert_equals(rubeus.build_addon_root(node_settings, node_settings.bucket,
+                permissions=permissions), rv)
 
     def test_hgrid_dummy_fail(self):
-        node_settings = self. node_settings
+        node_settings = self.node_settings
         node = self.project
         user = Auth(self.project.creator)
         rv = {
@@ -94,11 +93,12 @@ class TestRubeus(DbTestCase):
             'view': node.can_view(user),
             'edit': node.can_edit(user) and not node.is_registration,
         }
-        assert_false(deep_eq(rubeus.build_addon_root(
-            node_settings, node_settings.bucket, permissions=permissions), rv))
+        assert_not_equals(rubeus.build_addon_root(
+            node_settings, node_settings.bucket, permissions=permissions), rv)
 
     def test_hgrid_dummy_overrides(self):
-        node_settings = self. node_settings
+        node_settings = self.node_settings
+        node_settings.config.urls = None
         node = self.project
         user = Auth(self.project.creator)
         rv = {
@@ -126,8 +126,8 @@ class TestRubeus(DbTestCase):
             'view': node.can_view(user),
             'edit': node.can_edit(user) and not node.is_registration,
         }
-        deep_eq(rubeus.build_addon_root(node_settings, node_settings.bucket,
-                permissions=permissions, urls={}), rv, _assert=True)
+        assert_equals(rubeus.build_addon_root(node_settings, node_settings.bucket,
+                permissions=permissions, urls={}), rv)
 
     def test_hgrid_dummy_node_urls(self):
         node_settings = self.node_settings
@@ -137,7 +137,7 @@ class TestRubeus(DbTestCase):
         node_settings.config.urls = {
             'fetch': node.api_url + 's3/hgrid/',
             'upload': node.api_url + 's3/upload/'
-        },
+        }
 
         rv = {
             'addon': 's3',
@@ -165,5 +165,5 @@ class TestRubeus(DbTestCase):
             'view': node.can_view(user),
             'edit': node.can_edit(user) and not node.is_registration,
         }
-        deep_eq(rubeus.build_addon_root(node_settings, node_settings.bucket,
-                permissions=permissions), rv, _assert=True)
+        assert_equals(rubeus.build_addon_root(node_settings, node_settings.bucket,
+                permissions=permissions), rv)
