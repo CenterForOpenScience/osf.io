@@ -34,7 +34,6 @@
 
 %else:
 
-<div class="alert alert-warning">Amazon Simple Storage Service add-on is not configured properly.</div>
     <div class="form-group">
       <label for="s3Addon">Access Key</label>
         <input class="form-control" id="access_key" name="access_key"/>
