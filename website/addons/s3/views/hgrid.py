@@ -18,7 +18,7 @@ def s3_hgrid_data(node_settings, user, parent=None, **kwargs):
         'view': node.can_view(user),
         'edit': node.can_edit(user) and not node.is_registration,
     }
-    return rubeus.build_dummy_folder(node_settings, node_settings.bucket, permissions=permissions)
+    return rubeus.build_addon_root(node_settings, node_settings.bucket, permissions=permissions)
 
 
 @must_be_contributor_or_public

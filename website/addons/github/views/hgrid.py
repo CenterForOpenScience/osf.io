@@ -33,7 +33,7 @@ def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
             }
         elif datum['type'] in ['tree', 'dir']:
             item = {
-                'kind': 'folder',
+                'kind': rubeus.FOLDER,
                 'children': [],
             }
         else:
@@ -157,7 +157,7 @@ def github_hgrid_data(node_settings, auth, contents=False, *args, **kwargs):
         }
     }
 
-    return rubeus.build_dummy_folder(node_settings,'{user}/{repo}'.format(user=node_settings.user,
+    return rubeus.build_addon_root(node_settings,'{user}/{repo}'.format(user=node_settings.user,
                                                     repo=node_settings.repo), urls={
             'upload': node_settings.owner.api_url + 'github/file/' + (ref or ''),
             'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),

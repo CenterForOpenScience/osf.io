@@ -53,7 +53,7 @@ class TestRubeus(DbTestCase):
             },
             'accept': {
                 'maxSize': node_settings.config.max_file_size,
-                'extensions': node_settings.config.accept_extensions
+                'acceptedFiles': node_settings.config.accept_extensions
             },
             'isAddonRoot': True,
             'extra': None
@@ -62,7 +62,7 @@ class TestRubeus(DbTestCase):
             'view': node.can_view(user),
             'edit': node.can_edit(user) and not node.is_registration,
         }
-        deep_eq(rubeus.build_dummy_folder(node_settings, node_settings.bucket,
+        deep_eq(rubeus.build_addon_root(node_settings, node_settings.bucket,
                 permissions=permissions), rv, _assert=True)
 
     def test_hgrid_dummy_fail(self):
@@ -86,7 +86,7 @@ class TestRubeus(DbTestCase):
             },
             'accept': {
                 'maxSize': node_settings.config.max_file_size,
-                'extensions': node_settings.config.accept_extensions
+                'acceptedFiles': node_settings.config.accept_extensions
             },
             'isAddonRoot': True,
         }
@@ -94,7 +94,7 @@ class TestRubeus(DbTestCase):
             'view': node.can_view(user),
             'edit': node.can_edit(user) and not node.is_registration,
         }
-        assert_false(deep_eq(rubeus.build_dummy_folder(
+        assert_false(deep_eq(rubeus.build_addon_root(
             node_settings, node_settings.bucket, permissions=permissions), rv))
 
     def test_hgrid_dummy_overrides(self):
@@ -117,7 +117,7 @@ class TestRubeus(DbTestCase):
             },
             'accept': {
                 'maxSize': node_settings.config.max_file_size,
-                'extensions': node_settings.config.accept_extensions
+                'acceptedFiles': node_settings.config.accept_extensions
             },
             'isAddonRoot': True,
             'extra': None
@@ -126,17 +126,19 @@ class TestRubeus(DbTestCase):
             'view': node.can_view(user),
             'edit': node.can_edit(user) and not node.is_registration,
         }
-        deep_eq(rubeus.build_dummy_folder(node_settings, node_settings.bucket,
+        deep_eq(rubeus.build_addon_root(node_settings, node_settings.bucket,
                 permissions=permissions, urls={}), rv, _assert=True)
 
     def test_hgrid_dummy_node_urls(self):
         node_settings = self.node_settings
+        user = Auth(self.project.creator)
+
+        node = self.project
         node_settings.config.urls = {
             'fetch': node.api_url + 's3/hgrid/',
             'upload': node.api_url + 's3/upload/'
         },
-        node = self.project
-        user = Auth(self.project.creator)
+
         rv = {
             'addon': 's3',
             'iconUrl': node_settings.config.icon_url,
@@ -154,7 +156,7 @@ class TestRubeus(DbTestCase):
             },
             'accept': {
                 'maxSize': node_settings.config.max_file_size,
-                'extensions': node_settings.config.accept_extensions
+                'acceptedFiles': node_settings.config.accept_extensions
             },
             'isAddonRoot': True,
             'extra': None
@@ -163,5 +165,5 @@ class TestRubeus(DbTestCase):
             'view': node.can_view(user),
             'edit': node.can_edit(user) and not node.is_registration,
         }
-        deep_eq(rubeus.build_dummy_folder(node_settings, node_settings.bucket,
+        deep_eq(rubeus.build_addon_root(node_settings, node_settings.bucket,
                 permissions=permissions), rv, _assert=True)
