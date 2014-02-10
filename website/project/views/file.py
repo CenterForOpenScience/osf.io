@@ -80,7 +80,7 @@ def _collect_tree_js(node):
 
 
 @must_be_contributor_or_public
-def collect_file_trees(*args, **kwargs):
+def collect_file_trees(**kwargs):
     """Collect file trees for all add-ons implementing HGrid views, then
     format data as appropriate.
 
