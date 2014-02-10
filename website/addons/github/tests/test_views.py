@@ -8,24 +8,85 @@ from webtest_plus import TestApp
 
 from framework.exceptions import HTTPError
 import website.app
-from tests.factories import ProjectFactory, AuthUserFactory
+from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
+from framework.auth.decorators import Auth
 from website.addons.github.tests.utils import create_mock_github
 from website.addons.github import views
 
 app = website.app.init_app(
-    routes=True, set_backends=False,
-    settings_module='website.settings'
+    routes=True, set_backends=False, settings_module='website.settings',
 )
 
 github_mock = create_mock_github(user='fred', private=False)
 
+class TestHGridViews(DbTestCase):
+    def setUp(self):
+        self.github = github_mock
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_addon('github')
+        self.project.creator.add_addon('github')
+        self.node_settings = self.project.get_addon('github')
+        self.node_settings.user_settings = self.project.creator.get_addon('github')
+        # Set the node addon settings to correspond to the values of the mock repo
+        self.node_settings.user = self.github.repo.return_value['owner']['login']
+        self.node_settings.repo = self.github.repo.return_value['name']
+        self.node_settings.save()
+
+    def test_to_hgrid(self):
+        tree = github_mock.contents(user='octocat', repo='hello', ref='12345abc')['tree']
+        res = views.hgrid.to_hgrid(
+            tree, user='octocat', repo='hello', node=self.project,
+            node_settings=self.node_settings,
+        )
+        assert_equal(len(res), 3)
+        assert_equal(
+            'github:{0}:{1}'.format(
+                self.node_settings._id,
+                tree[0]['path']
+            ),
+            res[0]['uid']
+        )
+        assert_in(res[0]['name'], tree[0]['path'])
+        assert_equal(res[0]['parent_uid'], 'null')
+        assert_equal(res[0]['type'], 'file')
+        assert_equal(len(res[0]['size']), 2)
+        assert_equal(res[0]['size'][0], tree[0]['size'])
+        assert_equal(res[0]['ext'], '')
+
+        # Test URLs
+        assert_equal(
+            res[0]['view'],
+            '/{0}/github/file/{1}/'.format(
+                self.project._id,
+                tree[0]['path']
+            )
+        )
+        assert_equal(
+            res[0]['delete'],
+            '/api/v1/project/{0}/github/file/{1}/'.format(
+                self.project._id,
+                tree[0]['path']
+            )
+        )
+        # Files should not have lazy-load or upload URLs
+        assert_not_in('lazyLoad', res[0])
+        assert_not_in('uploadUrl', res[0])
+
 class TestGithubViews(DbTestCase):
 
     def setUp(self):
+
         self.app = TestApp(app)
         self.user = AuthUserFactory()
-        self.auth = ('test', self.user.api_keys[0]._primary_key)
-        self.project = ProjectFactory(creator=self.user)
+
+        self.project = ProjectFactory.build(creator=self.user)
+        self.non_authenticator = UserFactory()
+        self.project.add_contributor(
+            contributor=self.non_authenticator,
+            auth=Auth(self.project.creator),
+        )
+        self.project.save()
         self.project.add_addon('github')
         self.project.creator.add_addon('github')
 
@@ -38,6 +99,16 @@ class TestGithubViews(DbTestCase):
         self.node_settings.repo = self.github.repo.return_value['name']
         self.node_settings.save()
 
+    def _get_sha_for_branch(self, branch=None, mock_branches=None):
+        if mock_branches is None:
+            mock_branches = github_mock.branches
+        if branch is None:  # Get default branch name
+            branch = self.github.repo.return_value['default_branch']
+        for each in mock_branches.return_value:
+            if each['name'] == branch:
+                branch_sha = each['commit']['sha']
+        return branch_sha
+
     # Tests for _get_refs
     @mock.patch('website.addons.github.api.GitHub.branches')
     @mock.patch('website.addons.github.api.GitHub.repo')
@@ -49,7 +120,7 @@ class TestGithubViews(DbTestCase):
             branch,
             github_mock.repo.return_value['default_branch']
         )
-        assert_equal(sha, None)
+        assert_equal(sha, self._get_sha_for_branch(branch=None)) # Get refs for default branch
         assert_equal(
             branches,
             github_mock.branches.return_value
@@ -62,11 +133,30 @@ class TestGithubViews(DbTestCase):
         mock_branches.return_value = github_mock.branches.return_value
         branch, sha, branches = views.util._get_refs(self.node_settings, 'master')
         assert_equal(branch, 'master')
-        assert_equal(sha, None)
+        branch_sha = self._get_sha_for_branch('master')
+        assert_equal(sha, branch_sha)
         assert_equal(
             branches,
             github_mock.branches.return_value
         )
+
+    def test_before_remove_contributor_authenticator(self):
+        url = self.project.api_url + 'beforeremovecontributors/'
+        res = self.app.post_json(
+            url,
+            {'id': self.project.creator._id},
+            auth=self.user.auth,
+        ).maybe_follow()
+        assert_equal(len(res.json['prompts']), 1)
+
+    def test_before_remove_contributor_not_authenticator(self):
+        url = self.project.api_url + 'beforeremovecontributors/'
+        res = self.app.post_json(
+            url,
+            {'id': self.non_authenticator._id},
+            auth=self.user.auth,
+        ).maybe_follow()
+        assert_equal(len(res.json['prompts']), 0)
 
     def test_get_refs_sha_no_branch(self):
         with assert_raises(HTTPError):
