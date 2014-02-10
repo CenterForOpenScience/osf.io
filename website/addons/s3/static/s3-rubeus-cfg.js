@@ -10,7 +10,7 @@
             var parent = self.getByID(item.parentID);
             var name = file.name;
             // Make it possible to upload into subfolders
-            while (parent.depth > 1 && !parent.isComponent) {
+            while (parent.depth > 1 && !parent.isAddonRoot) {
                 name = parent.name + '/' + name;
                 parent = self.getByID(parent.parentID);
             }
@@ -24,8 +24,11 @@
         },
 
         uploadSuccess: function(file, item, data) {
-            // FIXME: need to update the item with new data, but can't do that
-            // from the returned data from S3
+            item.urls = {
+                'delete': nodeApiUrl + 's3/delete/' + file.destination + '/',
+                'download': nodeApiUrl + 's3/download/' + file.destination + '/',
+                'view': '/' + nodeId + '/s3/view/' + file.destination + '/'
+            }
         }
     };
 

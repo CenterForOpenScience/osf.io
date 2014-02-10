@@ -63,7 +63,7 @@ class AddonConfig(object):
         self.configs = configs or []
 
         self.has_hgrid_files = has_hgrid_files
-        self.get_hgrid_data = get_hgrid_data
+        self.get_hgrid_data = get_hgrid_data #if has_hgrid_files and not get_hgrid_data rubeus.make_dummy()
         self.max_file_size = max_file_size
         self.accept_extensions = accept_extensions
 
