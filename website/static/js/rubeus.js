@@ -131,7 +131,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
                     grid.changeStatus(row, status.DELETED(rowCopy));
                     setTimeout(function(){
                         grid.removeItem(rowCopy.id);
-                    }, 2000);
+                    }, 1000);
                 }
             });
         }
