@@ -186,7 +186,7 @@ def _get_tree(node_settings, sha, connection=None):
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_hgrid_data_contents(*args, **kwargs):
+def github_hgrid_data_contents(**kwargs):
     """Return a repo's file tree as a dict formatted for HGrid.
 
     """
