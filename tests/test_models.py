@@ -337,7 +337,7 @@ class TestNodeFile(DbTestCase):
     def test_download_url(self):
         assert_equal(
             self.node_file.download_url(self.node),
-            self.node.api_url + 'osffiles/{0}/version/1/'.format(self.node_file.filename)
+            self.node.url + 'osffiles/{0}/version/1/'.format(self.node_file.filename)
         )
 
 
