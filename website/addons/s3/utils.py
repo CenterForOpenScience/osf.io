@@ -16,7 +16,7 @@ def adjust_cors(s3wrapper):
     rules = s3wrapper.get_cors_rules()
 
     if not [rule for rule in rules if rule.to_xml() == CORS_RULE]:
-        rules.add_rule('PUT', ALLOWED_ORIGIN, allowed_header={'*'})
+        rules.add_rule(['PUT', 'GET'], ALLOWED_ORIGIN, allowed_header={'*'})
         s3wrapper.set_cors_rules(rules)
 
 

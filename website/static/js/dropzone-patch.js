@@ -182,7 +182,6 @@
                     if (wasSigned) {
                       //S3 SPECIFIC
                       //Used for single file uploads only
-                      //yaaay......
                         return xhr.send(files[0]);
                     } else {
                     if (_this.element.tagName === "FORM") {
