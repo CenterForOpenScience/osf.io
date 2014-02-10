@@ -5,6 +5,8 @@ import json
 
 class NodeFileCollector(object):
 
+    """A utility class for creating rubeus formatted node data"""
+
     def __init__(self, node, auth, parent=None, **kwargs):
         self.node = node
         self.auth = auth
@@ -14,6 +16,7 @@ class NodeFileCollector(object):
         self.can_edit = node.can_edit(auth) if self.can_view else False
 
     def __call__(self, mode):
+        """calls the to_hgrid method"""
         return self.to_hgrid(mode)
 
     def to_hgrid(self, mode):
@@ -95,4 +98,3 @@ class NodeFileCollector(object):
             addon.config.include_css.get('files', [])
             for addon in self.node.get_addons()
         )
-
