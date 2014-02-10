@@ -115,7 +115,7 @@ def project_before_fork(**kwargs):
     node = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
 
-    prompts = node.callback('before_fork', node=node, user=user)
+    prompts = node.callback('before_fork', user=user)
 
 
     return {'prompts': prompts}
