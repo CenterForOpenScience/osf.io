@@ -1,15 +1,15 @@
 import os
-import unittest
+from struct import error
 import pandas
 from pandas.util.testing import assert_frame_equal
 from nose.tools import *
 from pandas.parser import CParserError
 from rpy2.rinterface import RRuntimeError
-from struct import error
 from xlrd.biffh import XLRDError
 from .utilities import row_population, column_population,\
     MAX_COLS, MAX_ROWS, check_shape, TooBigError
 from .renderers import CSVRenderer, STATARenderer, ExcelRenderer, SPSSRenderer
+
 
 here, _ = os.path.split(os.path.abspath(__file__))
 
