@@ -13,6 +13,8 @@ function setDropDownListener() {
         //Submit Form here
         if ($target.text() === 'Create a new bucket')
             newBucket();
+        else if ($target.text() === 'Deauthorize')
+            return true;
         else
             $('#addonSettingsS3').submit();
 
