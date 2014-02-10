@@ -4,6 +4,7 @@ formated hgrid list/folders.
 import json
 import itertools
 
+#TODO Fix me, circular import. Still works for some reason....
 from website.project.views.node import _view_project
 
 # Rubeus defined Constants
