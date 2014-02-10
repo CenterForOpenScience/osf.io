@@ -15,10 +15,13 @@ from website.util import rubeus
 
 logger = logging.getLogger(__name__)
 
-
+# TODO: Probably should just take a node object instead of having to pass
+# in both url and api_url
 def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
              can_edit=True, parent=None, **kwargs):
-
+    """
+    :param list data: The return value of Github's `contents` endpoint.
+    """
     grid = []
     folders = {}
 

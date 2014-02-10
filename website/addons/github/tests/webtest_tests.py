@@ -11,7 +11,7 @@ app = website.app.init_app(
 )
 
 
-class TestGitHubWidget(DbTestCase):
+class TestGitHubFileView(DbTestCase):
 
     def setUp(self):
         self.user = AuthUserFactory()
