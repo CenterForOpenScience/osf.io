@@ -180,6 +180,9 @@
                         _this.emit("sendingmultiple", files, xhr, formData);
                     }
                     if (_this.options.signedUrlFrom) {
+                      //S3 SPECIFIC 
+                      //Used for single file uploads only
+                      //yaaay......
                         return xhr.send(files[0]);
                     } else {
                     if (_this.element.tagName === "FORM") {

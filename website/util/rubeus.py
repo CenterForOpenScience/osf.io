@@ -1,10 +1,11 @@
-import itertools
-from website.project.views.node import _view_project
-import json
-
 """Contanins Helper functions for generating correctly
 formated hgrid list/folders.
 """
+import json
+import itertools
+
+from website.project.views.node import _view_project
+
 # Rubeus defined Constants
 FOLDER = 'folder'
 LEAF = 'item'
