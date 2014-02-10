@@ -24,8 +24,11 @@
         },
 
         uploadSuccess: function(file, item, data) {
-            // FIXME: need to update the item with new data, but can't do that
-            // from the returned data from S3
+            item.urls = {
+                'delete': nodeApiUrl + 's3/delete/' + file.destination + '/',
+                'download': nodeApiUrl + 's3/download/' + file.destination + '/',
+                'view': '/' + nodeId + '/s3/view/' + file.destination + '/'
+            }
         }
     };
 
