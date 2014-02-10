@@ -31,7 +31,7 @@ def user_settings(*args, **kwargs):
 
     if changed or not s3_user.has_auth:
         if not has_access(s3_access_key, s3_secret_key):
-            error_message = ('Looks like your creditials are incorrect. '
+            error_message = ('Looks like your credentials are incorrect. '
                              'Could you have mistyped them?')
             return {'message': error_message}, 400
 
