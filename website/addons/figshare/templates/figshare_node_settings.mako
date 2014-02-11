@@ -1,4 +1,4 @@
-<%inherit file="project/addon/settings.mako" />
+<%inherit file="project/addon/node_settings.mako" />
 
 <!-- Authorization -->
 <div class="alert alert-danger alert-dismissable">

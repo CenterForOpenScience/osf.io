@@ -1,10 +1,10 @@
-from .model import AddonFigShareNodeSettings, AddonFigShareUserSettings
-from .routes import settings_routes, page_routes
+from . import routes, views, model
 
-USER_SETTINGS_MODEL = AddonFigShareUserSettings
-NODE_SETTINGS_MODEL = AddonFigShareNodeSettings
+MODELS = [model.AddonFigShareUserSettings, model.AddonFigShareNodeSettings] 
+USER_SETTINGS_MODEL = model.AddonFigShareUserSettings
+NODE_SETTINGS_MODEL = model.AddonFigShareNodeSettings
 
-ROUTES = [settings_routes, page_routes]
+ROUTES = [routes.api_routes, routes.settings_routes, routes.page_routes]
 
 SHORT_NAME = 'figshare'
 FULL_NAME = 'FigShare'
@@ -16,7 +16,7 @@ ADDED_TO = {
     'node': False,
 }
 
-VIEWS = ['widget', 'page']
+VIEWS = ['widget']
 CONFIGS = ['user', 'node']
 
 CATEGORIES = ['storage']
@@ -39,3 +39,8 @@ INCLUDE_CSS = {
 }
 
 WIDGET_HELP = 'FigShare Add-on Alpha'
+
+HAS_HGRID_FILES = True
+GET_HGRID_DUMMY = None
+
+MAX_FILE_SIZE = 1024*1024

@@ -70,13 +70,23 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         :return str: Alert message
 
         """
+
+        messages = [
+            'The FigShare add-on page has been combined with the pre-existing '
+            'Files page, which also now includes files from your other add-ons. '
+            'To work with the files in your FigShare add-on, browse to the '
+            '<a href="{0}">Files</a> page.'.format(
+                node.url + 'files/'
+            )
+        ]
+
         # Quit if not contributor
         if not node.is_contributor(user):
-            return
+            return messages
 
         # Quit if not configured
         if self.figshare_id is None:
-            return
+            return messages
 
         figshare = node.get_addon('figshare')
         # Quit if no user authorization
@@ -95,11 +105,12 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         if article_permissions != node_permissions:
             message = (
                 'Warnings: This OSF {category} is {node_perm}, but the FigShare '
-                'article {article} is {article_perm}. '.format(
+                '{node} {article} is {article_perm}. '.format(
                     category=node.project_or_component,
                     node_perm=node_permissions,
                     article_perm=article_permissions,                   
-                    article=self.figshare_id
+                    article=self.figshare_id,
+                    node=self.figshare_type
                 )
             )
             if article_permissions == 'private':
@@ -107,7 +118,8 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                     'Users can view the contents of this private FigShare '
                     'article through this public project.'
                 )
-            return message
+            messages.append(message)
+            return messages
 
     def before_remove_contributor(self, node, removed):
         """
