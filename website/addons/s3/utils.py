@@ -1,8 +1,11 @@
-from api import S3Key,  get_bucket_list
+import re
 from urllib import quote
 from datetime import datetime
+
+from website.util import rubeus
+
+from api import S3Key,  get_bucket_list
 from settings import CORS_RULE, ALLOWED_ORIGIN
-import re
 
 URLADDONS = {
     'delete': 's3/delete/',
@@ -30,7 +33,7 @@ def checkFolders(s3wrapper, keyList):
 
 def wrapped_key_to_json(wrapped_key, node_api, node_url):
     return {
-        'kind': wrapped_key.type,
+        rubeus.KIND: _key_type_to_rubeus(wrapped_key.type),
         'name': wrapped_key.name,
         'size': (wrapped_key.size, wrapped_key.size) if wrapped_key.size is not None else '--',
         'lastMod': wrapped_key.lastMod.strftime("%Y/%m/%d %I:%M %p") if wrapped_key.lastMod is not None else '--',
@@ -43,6 +46,13 @@ def wrapped_key_to_json(wrapped_key, node_api, node_url):
             'upload': node_api + 's3/upload/'
         }
     }
+
+
+def _key_type_to_rubeus(key_type):
+    if key_type == 'folder':
+        return rubeus.FOLDER
+    else:
+        return rubeus.FILE
 
 
 def key_upload_path(wrapped_key, url):

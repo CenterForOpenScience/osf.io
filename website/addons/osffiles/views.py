@@ -85,7 +85,7 @@ def get_osffiles(*args, **kwargs):
                 )
             )
             item = {
-                'kind': 'item',
+                rubeus.KIND: rubeus.FILE,
                 'name': _clean_file_name(fobj.path),
                 'urls': {
                     'view': fobj.url(node),
@@ -181,7 +181,7 @@ def upload_file_public(*args, **kwargs):
             'delete': fobj.api_url(node),
         },
 
-        'kind': 'item',
+        rubeus.KIND: rubeus.FILE,
         'permissions': {
             'view': True,
             'edit': True,

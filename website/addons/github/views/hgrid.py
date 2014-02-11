@@ -36,7 +36,7 @@ def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
             }
         elif datum['type'] in ['tree', 'dir']:
             item = {
-                'kind': rubeus.FOLDER,
+                rubeus.KIND: rubeus.FOLDER,
                 'children': [],
             }
         else:
@@ -66,7 +66,7 @@ def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
             grid.append(item)
 
         # Update cursor
-        if item['kind'] == rubeus.FOLDER:
+        if item[rubeus.KIND] == rubeus.FOLDER:
             key = datum['path']
             if parent:
                 key = key.split(parent)[-1]

@@ -11,8 +11,8 @@ from framework.auth.decorators import Auth
 
 # Rubeus defined Constants
 FOLDER = 'folder'
-LEAF = 'item'
-
+FILE = 'item'
+KIND = 'kind'
 
 # TODO Review me.
 DEFAULT_PERMISSIONS = {
@@ -70,7 +70,7 @@ def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS, urls=
         'addon': node_settings.config.short_name,
         'name': name,
         'iconUrl': node_settings.config.icon_url,
-        'kind': FOLDER,
+        KIND: FOLDER,
         'extra': extra,
         'isAddonRoot': True,
         'permissions': permissions,
@@ -84,6 +84,7 @@ def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS, urls=
     return rv
 
 
+# TODO finish or remove me....
 def build_addon_item():
     pass
 
