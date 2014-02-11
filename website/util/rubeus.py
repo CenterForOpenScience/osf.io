@@ -7,6 +7,7 @@ import itertools
 
 #TODO Fix me, circular import. Still works for some reason....
 from website.project.views.node import _view_project
+from framework.auth.decorators import Auth
 
 # Rubeus defined Constants
 FOLDER = 'folder'
@@ -45,7 +46,7 @@ def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS, urls=
     :param node_settings addonNodeSettingsBase: Addon settings
     :param name String: Additional information for the folder title
         eg. Repo name for Github or bucket name for S3
-    :param permissions dict: Dictionary of permissions for the addon's content
+    :param permissions dict or Auth: Dictionary of permissions for the addon's content or Auth for use in node.can_X methods
     :param urls dict: Hgrid related urls
     :param extra String: Html to be appened to the addon folder name
         eg. Branch switcher for github
@@ -54,11 +55,17 @@ def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS, urls=
 
     """
     name = node_settings.config.full_name + ': ' + \
-        name if name else node_settings.full_name
+        name if name else node_settings.config.full_name
     if hasattr(node_settings.config, 'urls') and node_settings.config.urls:
         urls = node_settings.config.urls
     if urls is None:
         urls = default_urls(node_settings.owner.api_url, node_settings.config.short_name)
+    if isinstance(permissions, Auth):
+        auth = permissions
+        permissions = {
+            'view': node_settings.owner.can_view(auth),
+            'edit': node_settings.owner.can_edit(auth) and not node_settings.owner.is_registration
+        }
     rv = {
         'addon': node_settings.config.short_name,
         'name': name,
@@ -75,6 +82,10 @@ def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS, urls=
     }
     rv.update(kwargs)
     return rv
+
+
+def build_addon_item():
+    pass
 
 
 def validate_row(item):

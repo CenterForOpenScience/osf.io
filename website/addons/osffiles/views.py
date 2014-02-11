@@ -21,6 +21,7 @@ from website.project.decorators import must_not_be_registration, must_be_valid_p
 from website.project.views.file import get_cache_content
 from website import settings
 from website.project.model import NodeLog
+from website.util import rubeus
 
 from .model import NodeFile
 
@@ -51,24 +52,12 @@ def _clean_file_name(name):
 def osffiles_dummy_folder(node_settings, auth, parent=None, **kwargs):
 
     node = node_settings.owner
-    can_view = node.can_view(auth)
-    can_edit = node.can_edit(auth)
-    return {
-        'addon': 'OSF Files',
-        'kind': 'folder',
-        'accept': {
-            'maxSize': node_settings.config.max_file_size,
-        },
-        'name': 'OSF Files',
-        'urls': {
-            'upload': os.path.join(node.api_url, 'osffiles') + '/',
-            'fetch': os.path.join(node.api_url, 'osffiles', 'hgrid') + '/',
-        },
-        'permissions': {
-            'view': can_view,
-            'edit': can_edit,
-        },
+    urls = {
+        'upload': os.path.join(node.api_url, 'osffiles') + '/',
+        'fetch': os.path.join(node.api_url, 'osffiles', 'hgrid') + '/',
     }
+
+    return rubeus.build_addon_root(node_settings, '', permissions=auth, urls=urls)
 
 
 @must_be_contributor_or_public
