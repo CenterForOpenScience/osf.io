@@ -66,7 +66,7 @@ def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
             grid.append(item)
 
         # Update cursor
-        if item['kind'] == 'folder':
+        if item['kind'] == rubeus.FOLDER:
             key = datum['path']
             if parent:
                 key = key.split(parent)[-1]
@@ -139,33 +139,25 @@ def github_hgrid_data(node_settings, auth, contents=False, *args, **kwargs):
     name_tpl = ('GitHub: '
                 '{user}/{repo}').format(user=node_settings.user,
                                                     repo=node_settings.repo)
-    rv = {
-        'addon': node_settings.config.short_name,
-        'name': name_tpl,
-        'extra': name_append,  # Extra html to go after the name (branch chooser)
-        'kind': 'folder',
-        'hasIcon': True,
-        'urls': {
-            'upload': node_settings.owner.api_url + 'github/file/' + (ref or ''),
-            'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
-            'branch': node_settings.owner.api_url + 'github/hgrid/root/',
-        },
-        'permissions': {
-            'view': True,
-            'edit': can_edit,
-        },
-        'accept': {
-            'maxSize': node_settings.config.max_file_size,
-            'acceptedFiles': node_settings.config.accept_extensions,
-        }
+    permissions = {
+        'edit': can_edit,
+        'view': True
     }
-
-    return rubeus.build_addon_root(node_settings,'{user}/{repo}'.format(user=node_settings.user,
-                                                    repo=node_settings.repo), urls={
-            'upload': node_settings.owner.api_url + 'github/file/' + (ref or ''),
-            'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
-            'branch': node_settings.owner.api_url + 'github/hgrid/root/',
-        },extra=name_append)
+    urls = {
+        'upload': node_settings.owner.api_url + 'github/file/' + (ref or ''),
+        'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
+        'branch': node_settings.owner.api_url + 'github/hgrid/root/',
+    }
+    return rubeus.build_addon_root(
+        node_settings,
+        '{user}/{repo}'.format(
+            user=node_settings.user,
+            repo=node_settings.repo
+        ),
+        urls=urls,
+        permissions=permissions,
+        extra=name_append
+    )
 
 
 @must_be_contributor_or_public
