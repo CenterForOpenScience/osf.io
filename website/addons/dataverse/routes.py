@@ -21,11 +21,11 @@ settings_routes = {
         Rule([
             '/project/<pid>/dataverse/authorize/',
             '/project/<pid>/node/<nid>/dataverse/authorize/',
-        ], 'post', views.config.authorize, json_renderer),
+        ], 'post', views.auth.authorize, json_renderer),
         Rule([
             '/project/<pid>/dataverse/unauthorize/',
             '/project/<pid>/node/<nid>/dataverse/unauthorize/',
-        ], 'post', views.config.unauthorize, json_renderer),
+        ], 'post', views.auth.unauthorize, json_renderer),
 
         # User Settings
         Rule(
@@ -34,11 +34,10 @@ settings_routes = {
             views.config.dataverse_set_user_config,
             json_renderer,
         ),
-
         Rule(
             '/settings/dataverse/delete',
             'post',
-            views.config.dataverse_delete_user,
+            views.auth.dataverse_delete_user,
             json_renderer,
         ),
 

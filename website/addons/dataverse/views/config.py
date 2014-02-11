@@ -6,8 +6,6 @@ import httplib as http
 
 from framework import request
 from framework.exceptions import HTTPError
-from website.addons.dataverse.config import TEST_CERT, TEST_HOST
-from website.addons.dataverse.dvn.connection import DvnConnection
 from website.project import decorators
 from website.project.views.node import _view_project
 
@@ -30,23 +28,6 @@ def dataverse_set_user_config(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
 
-@decorators.must_have_addon('dataverse', 'user')
-def dataverse_delete_user(*args, **kwargs):
-
-    dataverse_user = kwargs['user_addon']
-
-    # # Todo: Remove webhooks
-    # for node_settings in dataverse_user.addondataversenodesettings__authorized:
-    #     node_settings.delete_hook()
-
-    # Revoke access
-    dataverse_user.dataverse_username = None
-    dataverse_user.dataverse_password = None
-    dataverse_user.save()
-
-    return {}
-
-
 @decorators.must_be_contributor
 @decorators.must_have_addon('dataverse', 'node')
 def dataverse_set_node_config(*args, **kwargs):
@@ -60,44 +41,6 @@ def dataverse_set_node_config(*args, **kwargs):
 
     if dataverse_user and dataverse_user.owner != user:
         raise HTTPError(http.BAD_REQUEST)
-
-    return {}
-
-
-@decorators.must_be_contributor
-@decorators.must_have_addon('dataverse', 'node')
-def authorize(*args, **kwargs):
-
-    user = kwargs['user']
-    node_settings = kwargs['node_addon']
-
-    node_settings.dataverse_username = user.get_addon('dataverse').dataverse_username
-    node_settings.dataverse_password = user.get_addon('dataverse').dataverse_password
-    node_settings.user = user
-
-    node_settings.save()
-
-    return {}
-
-
-@decorators.must_be_contributor
-@decorators.must_have_addon('dataverse', 'node')
-def unauthorize(*args, **kwargs):
-
-    user = kwargs['user']
-    node_settings = kwargs['node_addon']
-    dataverse_user = node_settings.user_settings
-
-    if dataverse_user and dataverse_user.owner != user:
-        raise HTTPError(http.BAD_REQUEST)
-
-    node_settings.dataverse_username = None
-    node_settings.dataverse_password = None
-    node_settings.dataverse_number = 0
-    node_settings.study_hdl = "None"
-    node_settings.user = None
-
-    node_settings.save()
 
     return {}
 
@@ -120,6 +63,7 @@ def set_dataverse(*args, **kwargs):
 
     return {}
 
+
 @decorators.must_be_contributor_or_public
 @decorators.must_have_addon('dataverse', 'node')
 def dataverse_widget(*args, **kwargs):
@@ -133,6 +77,7 @@ def dataverse_widget(*args, **kwargs):
     }
     rv.update(dataverse.config.to_json())
     return rv
+
 
 @decorators.must_be_contributor_or_public
 def dataverse_page(**kwargs):
