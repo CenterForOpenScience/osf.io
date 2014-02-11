@@ -75,6 +75,7 @@ def mailserver(port=1025):
 def requirements():
     '''Install dependencies.'''
     run("pip install --upgrade -r dev-requirements.txt", pty=True)
+    addon_requirements()
 
 
 @task
@@ -91,10 +92,12 @@ def test_module(module=None, coverage=False, browse=False):
     if coverage and browse:
         run("open cover/index.html")
 
+
 @task
 def test_osf():
     """Run the OSF test suite."""
     test_module(module="tests/")
+
 
 @task
 def test_addons():
@@ -102,11 +105,13 @@ def test_addons():
     """
     test_module(module="website/addons/")
 
+
 @task
 def test():
     """Alias of `invoke test_osf`.
     """
     test_osf()
+
 
 @task
 def get_hgrid():
@@ -124,3 +129,26 @@ def get_hgrid():
     run('mv hgrid/dist/images {0}'.format(target))
     run('rm -rf hgrid/')
     print('Finished')
+
+
+@task
+def addon_requirements():
+    """Install all addon requirements."""
+    addon_root = 'website/addons'
+    for addon in [directory for directory in os.listdir(addon_root) if os.path.isdir(os.path.join(addon_root, directory))]:
+        try:
+            open('{0}/{1}/requirements.txt'.format(addon_root, addon)).close()
+            print 'Installing requirements for {0}'.format(addon)
+            run('pip install --upgrade -r {0}/{1}/requirements.txt'.format(addon_root, addon), pty=True)
+        except IOError:
+            pass
+    mfr_requirements()
+    print('Finished')
+
+
+@task
+def mfr_requirements():
+    """Install modular file renderer requirements"""
+    mfr = 'mfr'
+    print 'Installing mfr requirements'
+    run('pip install --upgrade -r {0}/requirements.txt'.format(mfr), pty=True)
