@@ -104,6 +104,8 @@
 
     });
     </script>
+  %else:
+    ${parent.on_submit()}
   %endif
 
 </%def>
