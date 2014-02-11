@@ -10,7 +10,7 @@ from ..api import GitHub
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_widget(*args, **kwargs):
+def github_widget(**kwargs):
 
     github = kwargs['node_addon']
     connection = GitHub.from_settings(github.user_settings)
@@ -34,7 +34,7 @@ def github_widget(*args, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_get_repo(*args, **kwargs):
+def github_get_repo(**kwargs):
     github = kwargs['node_addon']
     connection = GitHub.from_settings(github.user_settings)
     data = connection.repo(github.user, github.repo)

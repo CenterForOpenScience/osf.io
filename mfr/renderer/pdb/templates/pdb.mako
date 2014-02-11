@@ -1,3 +1,5 @@
+
+
 <!--
    GLmol - Molecular Viewer on WebGL/Javascript
 
@@ -76,5 +78,7 @@ catch(e){
         $("#errorDisp").html('File did not render properly. Try finding a current version on the <a href="http://www.rcsb.org/pdb/home/home.do">Protein Data Bank</a>');
     }
 });
-    glmol01.loadMolecule();
+
+glmol01.loadMolecule();
+
 </script>

@@ -60,4 +60,4 @@ class NodeFile(GuidStoredObject):
 
     def download_url(self, node):
         return '{}osffiles/{}/version/{}/'.format(
-            node.api_url, self.filename, self.latest_version_number)
+            node.url, self.filename, self.latest_version_number)
