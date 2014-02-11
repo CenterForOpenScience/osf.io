@@ -86,6 +86,7 @@
             msgElm.text('Settings updated')
                 .removeClass('text-danger').addClass('text-success')
                 .fadeOut(100).fadeIn();
+                window.location.reload();
         }).fail(function(xhr) {
             var message = 'Error: ';
             var response = JSON.parse(xhr.responseText);

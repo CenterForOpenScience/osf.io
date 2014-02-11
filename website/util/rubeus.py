@@ -96,7 +96,7 @@ def validate_row(item):
     try:
         item['addon']
         item['name']
-        item['kind']
+        item[KIND]
         item['urls']
         return True
     except AttributeError:
