@@ -166,7 +166,7 @@ class TestUser(DbTestCase):
         project = ProjectFactory()
 
         assert_true(hasattr(self.user, 'recently_added'))
-        
+
         # Two users added as contributors
         user2 = UserFactory()
         user3 = UserFactory()
@@ -337,7 +337,7 @@ class TestNodeFile(DbTestCase):
     def test_download_url(self):
         assert_equal(
             self.node_file.download_url(self.node),
-            self.node.api_url + 'osffiles/{0}/version/1/'.format(self.node_file.filename)
+            self.node.url + 'osffiles/download/{0}/version/1/'.format(self.node_file.filename)
         )
 
 
@@ -677,8 +677,7 @@ class TestAddonCallbacks(DbTestCase):
                     getattr(mock_settings, callback)
                 )
 
-    @mock.patch('framework.status.push_status_message')
-    def test_remove_contributor_callback(self, status):
+    def test_remove_contributor_callback(self):
 
         user2 = UserFactory()
         self.node.add_contributor(contributor=user2, auth=self.consolidate_auth)
@@ -689,8 +688,7 @@ class TestAddonCallbacks(DbTestCase):
                 self.node, user2
             )
 
-    @mock.patch('framework.status.push_status_message')
-    def test_set_permissions_callback(self, status):
+    def test_set_permissions_callback(self):
 
         self.node.set_permissions('public', self.consolidate_auth)
         for addon in self.node.addons:
@@ -706,8 +704,7 @@ class TestAddonCallbacks(DbTestCase):
                 self.node, 'private'
             )
 
-    @mock.patch('framework.status.push_status_message')
-    def test_fork_callback(self, status):
+    def test_fork_callback(self):
         fork = self.node.fork_node(auth=self.consolidate_auth)
         for addon in self.node.addons:
             callback = addon.after_fork
@@ -715,8 +712,7 @@ class TestAddonCallbacks(DbTestCase):
                 self.node, fork, self.user
             )
 
-    @mock.patch('framework.status.push_status_message')
-    def test_register_callback(self, status):
+    def test_register_callback(self):
         registration = self.node.register_node(
             None, self.consolidate_auth, '', '',
         )
@@ -824,6 +820,8 @@ class TestProject(DbTestCase):
         # A log event was added
         assert_equal(self.project.logs[-1].action, 'contributor_added')
 
+
+
     def test_remove_contributor(self):
         # A user is added as a contributor
         user2 = UserFactory()
@@ -853,14 +851,14 @@ class TestProject(DbTestCase):
         hash_id = hashlib.md5(nr_user['email']).hexdigest()
         self.project.remove_nonregistered_contributor(
             auth=self.consolidate_auth,
-            name=nr_user['name'], 
+            name=nr_user['name'],
             hash_id=hash_id,
         )
         # List does not contain nonregistered contributor
         assert_not_in(nr_user, self.project.contributors)
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
         assert_not_in('Weezy F. Baby', [contrib.get('nr_name') for contrib in self.project.contributor_list])
-        
+
     def test_set_title(self):
         proj = ProjectFactory(title='That Was Then', creator=self.user)
         proj.set_title('This is now', auth=self.consolidate_auth)

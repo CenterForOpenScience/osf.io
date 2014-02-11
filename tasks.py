@@ -4,7 +4,7 @@
 commands, run ``$ invoke --list``.
 '''
 import os
-from invoke import task, run, ctask
+from invoke import task, run
 
 from website import settings
 
@@ -72,9 +72,15 @@ def mailserver(port=1025):
 
 
 @task
-def requirements():
+def requirements(complete=False, addons=False):
     '''Install dependencies.'''
-    run("pip install --upgrade -r dev-requirements.txt", pty=True)
+    if complete:
+        run("pip install --upgrade -r dev-requirements.txt", pty=True)
+        addon_requirements()
+    elif addons:
+        addon_requirements()
+    else:
+        run("pip install --upgrade -r dev-requirements.txt", pty=True)
 
 
 @task
@@ -91,10 +97,12 @@ def test_module(module=None, coverage=False, browse=False):
     if coverage and browse:
         run("open cover/index.html")
 
+
 @task
 def test_osf():
     """Run the OSF test suite."""
     test_module(module="tests/")
+
 
 @task
 def test_addons():
@@ -102,8 +110,50 @@ def test_addons():
     """
     test_module(module="website/addons/")
 
+
 @task
 def test():
     """Alias of `invoke test_osf`.
     """
     test_osf()
+
+
+@task
+def get_hgrid():
+    """Get the latest development version of hgrid and put it in the static
+    directory.
+    """
+    target = 'website/static/vendor/hgrid'
+    run('git clone https://github.com/CenterForOpenScience/hgrid.git')
+    print('Removing old version')
+    run('rm -rf {0}'.format(target))
+    print('Replacing with fresh version')
+    run('mkdir {0}'.format(target))
+    run('mv hgrid/dist/hgrid.js {0}'.format(target))
+    run('mv hgrid/dist/hgrid.css {0}'.format(target))
+    run('mv hgrid/dist/images {0}'.format(target))
+    run('rm -rf hgrid/')
+    print('Finished')
+
+
+@task
+def addon_requirements():
+    """Install all addon requirements."""
+    addon_root = 'website/addons'
+    for addon in [directory for directory in os.listdir(addon_root) if os.path.isdir(os.path.join(addon_root, directory))]:
+        try:
+            open('{0}/{1}/requirements.txt'.format(addon_root, addon)).close()
+            print 'Installing requirements for {0}'.format(addon)
+            run('pip install --upgrade -r {0}/{1}/requirements.txt'.format(addon_root, addon), pty=True)
+        except IOError:
+            pass
+    mfr_requirements()
+    print('Finished')
+
+
+@task
+def mfr_requirements():
+    """Install modular file renderer requirements"""
+    mfr = 'mfr'
+    print 'Installing mfr requirements'
+    run('pip install --upgrade -r {0}/requirements.txt'.format(mfr), pty=True)

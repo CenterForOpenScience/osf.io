@@ -2,13 +2,11 @@
 
 <!-- Authorization -->
 <div>
-    <div class="alert alert-danger alert-dismissable">
-    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+    <div class="well well-sm">
         Authorizing this GitHub add-on will grant all contributors on this ${node['category']}
-        permission to upload, modify, and delete files on the associated GitHub repo.
+        permission to <strong>upload, modify,</strong> and <strong>delete</strong> files on the associated GitHub repo.
     </div>
-    <div class="alert alert-danger alert-dismissable">
-        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+    <div class="well well-sm">
         If one of your collaborators removes you from this ${node['category']},
         your authorization for GitHub will automatically be revoked.
     </div>

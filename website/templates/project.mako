@@ -10,16 +10,7 @@
 
         <div class="col-md-6" id="containment">
 
-            <%
-                extra_addon_widgets = [
-                    addon_name
-                    for addon_name, addon_config in addons.iteritems()
-                    if addon_name not in ['wiki', 'files']
-                        and addon_config['has_widget']
-                ]
-            %>
-
-            % if extra_addon_widgets:
+            % if addons:
 
                 <!-- Show widgets in left column if present -->
                 % for addon in addons_enabled:
@@ -47,7 +38,7 @@
 
             % if has_files:
                 <div class="addon-widget-container">
-                    <h3 class="addon-widget-header">Files</h3>
+                    <h3 class="addon-widget-header"><a href="${node['url']}/files/">Files</a></h3>
                     <div mod-meta='{
                             "tpl": "util/render_file_tree.mako",
                             "uri": "${node['api_url']}files/",
@@ -57,7 +48,6 @@
                         }'></div>
                 </div>
             % endif
-
 
         </div>
 
@@ -81,7 +71,7 @@
             <hr />
 
             <!-- Show child on right if widgets -->
-            % if extra_addon_widgets:
+            % if addons:
                 ${children()}
             % endif
 

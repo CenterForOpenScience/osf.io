@@ -15,7 +15,7 @@ BASE_PATH = parent_dir(HERE)  # website/ directory
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
-DOMAIN = 'https://openscienceframework.org/'
+DOMAIN = 'https://localhost:5000/'
 
 # User management & registration
 CONFIRM_REGISTRATIONS_BY_EMAIL = False # Not fully implemented
@@ -122,8 +122,7 @@ CELERY_IMPORTS = (
 ADDONS_REQUESTED = [
     'wiki', 'osffiles',
     'github', 'figshare'
-    #'bitbucket', 'figshare',
-    #'zotero',
+    #'bitbucket',
 ]
 
 ADDON_CATEGORIES = [
