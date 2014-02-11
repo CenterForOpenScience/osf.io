@@ -180,6 +180,8 @@
                         _this.emit("sendingmultiple", files, xhr, formData);
                     }
                     if (wasSigned) {
+                      //S3 SPECIFIC
+                      //Used for single file uploads only
                         return xhr.send(files[0]);
                     } else {
                     if (_this.element.tagName === "FORM") {

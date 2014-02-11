@@ -119,7 +119,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
             var rowCopy = $.extend({}, row);
             // Show "Deleting..." message in parent folder's status column
             var parent = grid.getByID(rowCopy.parentID);
-            grid.changeStatus(parent, status.DELETING(rowCopy));
+            grid.changeStatus(row, status.DELETING(rowCopy));
             grid.deleteFile(row, {
                 error: function() {
                     // TODO: This text should be configurable by addon devs
@@ -127,9 +127,11 @@ this.Rubeus = (function($, HGrid, bootbox) {
                 },
                 success: function() {
                     grid.getDataView().updateItem(parent.id, parent);
-                    grid.removeItem(rowCopy.id);
                     // Show 'Successfully deleted' in folder's status column
-                    grid.changeStatus(parent, status.DELETED(rowCopy), 2000);
+                    grid.changeStatus(row, status.DELETED(rowCopy));
+                    setTimeout(function(){
+                        grid.removeItem(rowCopy.id);
+                    }, 1000);
                 }
             });
         }

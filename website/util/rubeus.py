@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Contanins Helper functions for generating correctly
 formated hgrid list/folders.
 """
@@ -142,7 +143,7 @@ class NodeFileCollector(object):
     def _create_dummy(self, node):
         return {
             'name': 'Component: {0}'.format(node.title) if self.can_view else 'Private Component',
-            'kind': 'folder',
+            'kind': FOLDER,
             'permissions': {
                 'edit': self.can_edit,
                 'view': self.can_view

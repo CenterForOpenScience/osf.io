@@ -1,11 +1,12 @@
 import os
+import json
+from struct import error
 from .. import FileRenderer
 from .utilities import column_population, row_population, check_shape, MAX_COLS, MAX_ROWS, TooBigError
-import json
 from pandas.parser import CParserError
-from struct import error
 from rpy2.rinterface import RRuntimeError
 from xlrd.biffh import XLRDError
+
 
 
 class TabularRenderer(FileRenderer):

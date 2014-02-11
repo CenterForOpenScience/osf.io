@@ -582,6 +582,8 @@ class TestShortUrls(DbTestCase):
             self.consolidate_auth, 'test.txt',
             'test content', 4, 'text/plain'
         )
+        import time  # Temporary fix: see todo above
+        time.sleep(0.5)
         # Warm up to account for file rendering
         _ = self._url_to_body(node_file.url(self.component))
         assert_equal(
