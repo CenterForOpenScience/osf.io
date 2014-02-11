@@ -89,7 +89,7 @@ def project_before_register(**kwargs):
     node = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
 
-    prompts = node.callback('before_register', node=node, user=user)
+    prompts = node.callback('before_register', user=user)
 
     return {'prompts': prompts}
 

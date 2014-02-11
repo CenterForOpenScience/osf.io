@@ -95,7 +95,6 @@ def get_osffiles(*args, **kwargs):
                     fobj.path.replace('.', '_')
                 )
             )
-
             item = {
                 'kind': 'item',
                 'name': _clean_file_name(fobj.path),
@@ -120,7 +119,6 @@ def get_osffiles(*args, **kwargs):
                     ],
                 }
             }
-
             info.append(item)
 
     return info
@@ -292,7 +290,7 @@ def view_file(*args, **kwargs):
 
     rv = {
         'file_name': file_name,
-        'render_url': download_path + 'render/',
+        'render_url': '/api/v1' + download_path + 'render/',
         'rendered': rendered,
         'versions': versions,
     }
@@ -310,7 +308,7 @@ def download_file(*args, **kwargs):
     vid = len(node_to_use.files_versions[filename.replace('.', '_')])
 
     return redirect('{url}osffiles/{fid}/version/{vid}/'.format(
-        url=node_to_use.api_url,
+        url=node_to_use.url,
         fid=filename,
         vid=vid,
     ))

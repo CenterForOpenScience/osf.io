@@ -141,6 +141,16 @@ class TestGithubViews(DbTestCase):
         ).maybe_follow()
         assert_equal(len(res.json['prompts']), 0)
 
+    def test_before_fork(self):
+        url = self.project.api_url + 'beforefork/'
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        assert_equal(len(res.json['prompts']), 1)
+
+    def test_before_register(self):
+        url = self.project.api_url + 'beforeregister/'
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        assert_equal(len(res.json['prompts']), 1)
+
     def test_get_refs_sha_no_branch(self):
         with assert_raises(HTTPError):
             views.util._get_refs(self.node_settings, sha='12345')

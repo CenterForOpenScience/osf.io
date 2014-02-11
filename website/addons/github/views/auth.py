@@ -4,6 +4,7 @@ import httplib as http
 from framework import request, redirect
 from framework.auth import get_current_user
 from framework.auth.decorators import must_be_logged_in
+from framework.status import push_status_message
 from framework.exceptions import HTTPError
 
 from website import models
@@ -90,13 +91,31 @@ def github_oauth_delete_user(**kwargs):
 @must_have_addon('github', 'node')
 def github_oauth_delete_node(**kwargs):
 
-    github_node = kwargs['node_addon']
+    node_settings = kwargs['node_addon']
 
     # Remove webhook
-    github_node.delete_hook()
+    node_settings.delete_hook()
 
-    github_node.user_settings = None
-    github_node.save()
+    # Remove user settings
+    node_settings.user_settings = None
+
+    # Remove user and repo if access lost
+    if node_settings.user and node_settings.repo:
+        connection = GitHub()
+        repo = connection.repo(node_settings.user, node_settings.repo)
+        if repo is None:
+            node_settings.user = None
+            node_settings.repo = None
+            push_status_message(
+                (
+                    'After removing your GitHub authorization, GitHub repo {0} / '
+                    '{1} can no longer be accessed. Please re-authorize your '
+                    'GitHub account or make your GitHub repo public to view it.'
+                ).format(node_settings.user, node_settings.repo)
+            )
+
+    # Save changes
+    node_settings.save()
 
     return {}
 
