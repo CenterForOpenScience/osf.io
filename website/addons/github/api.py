@@ -11,6 +11,7 @@ import datetime
 import requests
 from requests_oauthlib import OAuth2Session
 from hurry.filesize import size, alternative
+from github3 import login
 
 from . import settings as github_settings
 
@@ -36,6 +37,7 @@ class GitHub(object):
                     'token_type': token_type,
                 }
             )
+            self.gh3 = login(token=access_token)
         else:
             self.session = requests
 
@@ -115,6 +117,7 @@ class GitHub(object):
             See http://developer.github.com/v3/repos/#get
 
         """
+
         return self._send(
             os.path.join(API_URL, 'repos', user, repo)
         )
@@ -129,10 +132,8 @@ class GitHub(object):
             http://developer.github.com/v3/repos/#list-branches
 
         """
-        url = os.path.join(API_URL, 'repos', user, repo, 'branches')
-        if branch:
-            url = os.path.join(url, branch)
-        return self._send(url)
+        repo = self.gh3.repository(user, repo)
+        return [branch for branch in repo.iter_branches()]
 
     def commits(self, user, repo, path=None, sha=None):
         """Get commits for a repo or file.

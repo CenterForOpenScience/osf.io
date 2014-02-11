@@ -54,8 +54,8 @@ def _get_refs(addon, branch=None, sha=None, connection=None):
 
     # Use registered SHA if provided
     for each in branches:
-        if branch == each['name']:
-            sha = each['commit']['sha']
+        if branch == each.name:
+            sha = each.commit.sha
             break
     return branch, sha, branches
 
@@ -81,7 +81,8 @@ def _check_permissions(node_settings, auth, connection, branch, sha=None, repo=N
         branches = connection.branches(
             node_settings.user, node_settings.repo, branch
         )
-        is_head = sha == branches['commit']['sha']
+        # TODO Will I ever return false?
+        is_head = next((True for branch in branches if sha == branch.commit.sha), None)
     else:
         is_head = True
 

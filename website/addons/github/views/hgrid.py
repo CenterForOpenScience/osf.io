@@ -96,10 +96,7 @@ def github_branch_widget(branches, owner, repo, branch, sha):
 
     """
     rendered = github_branch_template.render(
-        branches=[
-            each['name']
-            for each in branches
-        ],
+        branches=[each.name for each in branches],
         branch=branch,
         sha=sha,
         owner=owner,
