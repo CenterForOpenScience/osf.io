@@ -82,7 +82,7 @@
             type: 'POST',
             contentType: 'application/json',
             dataType: 'json'
-        }).success(function() {
+        }).done(function() {
             msgElm.text('Settings updated')
                 .removeClass('text-danger').addClass('text-success')
                 .fadeOut(100).fadeIn();

@@ -36,7 +36,7 @@
                     type: 'POST',
                     contentType: 'application/json',
                     dataType: 'json',
-                }).success(function() {
+                }).done(function() {
                     $('#access_key').val('');
                     $('#secret_key').val('');
                     msgElm.text('Keys removed')

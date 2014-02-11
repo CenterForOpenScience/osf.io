@@ -33,7 +33,7 @@ function newBucket() {
             contentType: 'application/json',
             dataType: 'json',
             data: JSON.stringify({bucket_name: bucketName})
-        }).success(function() {
+        }).done(function() {
             $('#bucketlabel').text(bucketName);
             $('#s3_bucket').val(bucketName);
             $('#addonSettingsS3').submit();
