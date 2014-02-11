@@ -410,18 +410,6 @@ def _render_addon(node):
             js.extend(addon.config.include_js.get('files', []))
             css.extend(addon.config.include_css.get('files', []))
 
-    if node.has_files:
-        js.extend([
-            '/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js',
-            '/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js',
-            '/static/vendor/dropzone/dropzone.js',
-            '/static/js/slickgrid.custom.min.js',
-            '/static/js/hgrid.js',
-        ])
-        css.extend([
-            '/static/css/hgrid-base.css',
-        ])
-
     return widgets, configs, js, css
 
 

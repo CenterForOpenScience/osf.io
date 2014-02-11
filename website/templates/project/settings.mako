@@ -88,6 +88,7 @@
                         <button id="settings-submit" class="btn btn-success">
                             Submit
                         </button>
+                        <div class="addon-settings-message text-success" style="padding-top: 10px;"></div>
                     % endif
 
                 </form>
@@ -165,7 +166,7 @@
                 var $elm = $(elm);
                 formData[$elm.attr('name')] = $elm.is(':checked');
             });
-
+            var msgElm = $(this).find('.addon-settings-message');
             $.ajax({
                 url: nodeApiUrl + 'settings/addons/',
                 data: JSON.stringify(formData),
@@ -173,6 +174,7 @@
                 contentType: 'application/json',
                 dataType: 'json',
                 success: function() {
+                    msgElm.text('Settings updated').fadeIn();
                     window.location.reload();
                 }
             });

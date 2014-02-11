@@ -159,6 +159,51 @@
 
 <script type="text/javascript">
 
+
+    function formToObj(form) {
+        var rv = {};
+        $.each($(form).serializeArray(), function(_, value) {
+            rv[value.name] = value.value;
+        });
+        return rv;
+    }
+
+    function on_submit_settings() {
+        var $this = $(this),
+            addon = $this.attr('data-addon'),
+            owner = $this.find('span[data-owner]').attr('data-owner'),
+            msgElm = $this.find('.addon-settings-message');
+
+        var url = owner == 'user'
+            ? '/api/v1/settings/' + addon + '/'
+            : nodeApiUrl + addon + '/settings/';
+
+        $.ajax({
+            url: url,
+            data: JSON.stringify(formToObj($this)),
+            type: 'POST',
+            contentType: 'application/json',
+            dataType: 'json'
+        }).success(function() {
+            msgElm.text('Settings updated')
+                .removeClass('text-danger').addClass('text-success')
+                .fadeOut(100).fadeIn();
+        }).fail(function(xhr) {
+            var message = 'Error: ';
+            var response = JSON.parse(xhr.responseText);
+            if (response && response.message) {
+                message += response.message;
+            } else {
+                message += 'Settings not updated.'
+            }
+            msgElm.text(message)
+                .removeClass('text-success').addClass('text-danger')
+                .fadeOut(100).fadeIn();
+        });
+
+        return false;
+    }
+
     function getInitials(names) {
         return names
             .split(' ')

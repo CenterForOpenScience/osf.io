@@ -840,7 +840,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             if not node_contained.registered_meta:
                 node_contained.registered_meta = {}
             node_contained.registered_meta[template] = data
-            
+
             node_contained.contributors = original_node_contained.contributors
             node_contained.forked_from = original_node_contained.forked_from
             node_contained.creator = original_node_contained.creator
@@ -1274,7 +1274,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     def is_contributor(self, user):
         return (
             user is not None
-            and not user.is_merged
             and (
                 user in self.contributors
                 or user == self.creator
