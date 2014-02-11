@@ -2,7 +2,9 @@ import os
 import httplib as http
 
 from framework import request, redirect
-from framework.auth import get_current_user, must_be_logged_in
+from framework.auth import get_current_user
+from framework.auth.decorators import must_be_logged_in
+from framework.status import push_status_message
 from framework.exceptions import HTTPError
 
 from website import models
@@ -15,9 +17,9 @@ from ..auth import oauth_start_url, oauth_get_token
 
 @must_be_contributor
 @must_have_addon('github', 'node')
-def github_add_user_auth(*args, **kwargs):
+def github_add_user_auth(**kwargs):
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
 
     github_user = user.get_addon('github')
     github_node = kwargs['node_addon']
@@ -32,7 +34,7 @@ def github_add_user_auth(*args, **kwargs):
 
 
 @must_be_logged_in
-def github_oauth_start(*args, **kwargs):
+def github_oauth_start(**kwargs):
 
     user = get_current_user()
 
@@ -66,7 +68,7 @@ def github_oauth_start(*args, **kwargs):
 
 
 @must_have_addon('github', 'user')
-def github_oauth_delete_user(*args, **kwargs):
+def github_oauth_delete_user(**kwargs):
 
     github_user = kwargs['user_addon']
 
@@ -87,20 +89,38 @@ def github_oauth_delete_user(*args, **kwargs):
 
 @must_be_contributor
 @must_have_addon('github', 'node')
-def github_oauth_delete_node(*args, **kwargs):
+def github_oauth_delete_node(**kwargs):
 
-    github_node = kwargs['node_addon']
+    node_settings = kwargs['node_addon']
 
     # Remove webhook
-    github_node.delete_hook()
+    node_settings.delete_hook()
 
-    github_node.user_settings = None
-    github_node.save()
+    # Remove user settings
+    node_settings.user_settings = None
+
+    # Remove user and repo if access lost
+    if node_settings.user and node_settings.repo:
+        connection = GitHub()
+        repo = connection.repo(node_settings.user, node_settings.repo)
+        if repo is None:
+            node_settings.user = None
+            node_settings.repo = None
+            push_status_message(
+                (
+                    'After removing your GitHub authorization, GitHub repo {0} / '
+                    '{1} can no longer be accessed. Please re-authorize your '
+                    'GitHub account or make your GitHub repo public to view it.'
+                ).format(node_settings.user, node_settings.repo)
+            )
+
+    # Save changes
+    node_settings.save()
 
     return {}
 
 
-def github_oauth_callback(*args, **kwargs):
+def github_oauth_callback(**kwargs):
 
     user = models.User.load(kwargs.get('uid'))
     node = models.Node.load(kwargs.get('nid'))

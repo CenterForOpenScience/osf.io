@@ -3,20 +3,17 @@
  *  A Javascript-based hierarchical grid that can be used to manage and organize files and folders
  */
 /**
- * Provides the main HGrid class and HGridError.
+ * Provides the main HGrid class and HGrid.Error.
  * @module HGrid
  */
 ; // jshint ignore: line
 if (typeof jQuery === 'undefined') {
   throw new Error('HGrid requires jQuery to be loaded');
 }
-(function($, window, document, undefined) {
+this.HGrid = (function($, window, document, undefined) {
   'use strict';
-  // Exports
-  window.HGrid = HGrid;
-  window.HGridError = HGridError;
 
-  var DEFAULT_INDENT = 15;
+  var DEFAULT_INDENT = 20;
   var ROOT_ID = 'root';
   var ITEM = 'item';
   var FOLDER = 'folder';
@@ -145,6 +142,48 @@ if (typeof jQuery === 'undefined') {
     return this;
   };
 
+  Tree.prototype.empty = function(removeSelf) {
+    if (removeSelf) {
+      // Clear children
+      var item = this.getItem();
+      this.dataView.deleteItem(item.id);
+    }
+    for(var i=0, child; child = this.children[i]; i++) {
+      child.empty(true);
+      child.children = [];
+    }
+    this.children = [];
+    return this;
+  };
+
+  // Remove an object from an array, searching by an attribute value
+  function removeByProperty(arr, attr, value){
+    var i = arr.length;
+    while(i--){
+      if(arr[i] && arr[i].hasOwnProperty(attr) && (arguments.length > 2 && arr[i][attr] === value )){
+         arr.splice(i,1);
+         return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Remove a child node.
+   * @param  {Object} child The child node to remove or an id.
+   */
+  Tree.prototype.remove = function(child) {
+    var childId = typeof child === 'object' ? child.id : child;
+    var removed = removeByProperty(this.children, 'id', child);
+    if(!removed) {
+      for (var i = 0, node; node = this.children[i]; i++) {
+        removed = node.remove(child);
+      }
+    } else {
+      this.dataView.deleteItem(childId);
+    }
+  };
+
   /**
    * Get the tree's corresponding item object from the dataview.
    * @method  getItem
@@ -229,7 +268,7 @@ if (typeof jQuery === 'undefined') {
    */
   Tree.prototype.updateDataView = function(onlySetItems) {
     if (!this.dataView) {
-      throw new HGridError('Tree does not have a DataView. updateDataView must be called on a root node.');
+      throw new HGrid.Error('Tree does not have a DataView. updateDataView must be called on a root node.');
     }
     if (!onlySetItems) {
       this.ensureDataView();
@@ -462,6 +501,8 @@ if (typeof jQuery === 'undefined') {
     return this;
   };
 
+  Leaf.prototype.remove = noop;
+
   /**
    * Convert the Leaf to SlickGrid data format
    * @method toData
@@ -493,6 +534,12 @@ if (typeof jQuery === 'undefined') {
 
   Leaf.prototype.isRoot = function() {
     return this.depth === 0;
+  };
+
+  Leaf.prototype.empty = function() {
+    var item = this.getItem();
+    this.dataView.deleteItem(item.id);
+    return this;
   };
 
   // An efficient, lightweight queue implementation, adapted from Queue.js by Steven Morley
@@ -559,21 +606,23 @@ if (typeof jQuery === 'undefined') {
    * @param  {string} html The inner HTML
    * @return {String}      The rendered HTML
    */
-  function asItem(item, html) {
-    var openTag = '<div class="' + HGrid.Html.itemClass + '" data-id="' + item.id + '">';
-    var closingTag = '</div>';
+  function asName(item, html) {
+    var cssClass = item.kind === FOLDER ? HGrid.Html.folderNameClass : HGrid.Html.itemNameClass;
+    var openTag = '<span class="' + HGrid.Html.nameClass +  ' ' + cssClass + '" data-id="' + item.id + '">';
+    var closingTag = '</span>';
     return [openTag, html, closingTag].join('');
   }
 
   /**
    * Render the html for a button, given an item and buttonDef. buttonDef is an
    * object of the form {text: "My button", cssClass: "btn btn-primary",
-   *                     onClick: function(evt, item) {alert(item.name); }}
+   *                     action: "download" }}
    * @class  renderButton
    * @private
    */
   function renderButton(buttonDef) {
     var cssClass;
+    var tag = buttonDef.tag || 'button';
     // For now, buttons are required to have the hg-btn class so that a click
     // event listener can be attacked to them later
     if (buttonDef.cssClass) {
@@ -582,9 +631,9 @@ if (typeof jQuery === 'undefined') {
       cssClass = HGrid.Html.buttonClass;
     }
     var action = buttonDef.action || 'noop';
-    var openTag = '<button data-hg-action="' + action + '" class="' + cssClass + '">';
-    var closingTag = '</button>';
-    var html = [openTag, buttonDef.text, closingTag].join('');
+    var data = {action: action, cssClass: cssClass, tag: tag, text: buttonDef.text};
+    var html = tpl('<{{tag}} data-hg-action="{{action}}" class="{{cssClass}}">{{text}}</{{tag}}>',
+      data);
     return html;
   }
 
@@ -594,39 +643,6 @@ if (typeof jQuery === 'undefined') {
       return html;
     }).join('');
     return renderedButtons;
-  }
-
-  /**
-   * Default rendering function that renders a file item to HTML.
-   * @class defaultItemView
-   * @param  {Object} item The item data object.
-   * @return {String}      HTML for the item.
-   */
-  function defaultItemView(row, args) {
-    args = args || {};
-    var innerContent = [HGrid.Html.fileIcon, sanitized(row.name), HGrid.Html.errorElem].join('');
-    return asItem(row, withIndent(row, innerContent, args.indent));
-  }
-
-  /**
-   * Default rendering function that renders a folder row to HTML.
-   * @class defaultFolderView
-   * @param  {Object} row The folder data object.
-   * @return {String}      HTML for the folder.
-   */
-  function defaultFolderView(row, args) {
-    args = args || {};
-    var name = sanitized(row.name);
-    // The + / - button for expanding/collapsing a folder
-    var expander;
-    if (row._node.children.length > 0 && row.depth > 0 || args.lazyLoad) {
-      expander = row._collapsed ? HGrid.Html.expandElem : HGrid.Html.collapseElem;
-    } else { // Folder is empty
-      expander = '<span></span>';
-    }
-    // Concatenate the expander, folder icon, and the folder name
-    var innerContent = [expander, HGrid.Html.folderIcon, name, HGrid.Html.errorElem].join(' ');
-    return asItem(row, withIndent(row, innerContent, args.indent));
   }
 
   /**
@@ -643,7 +659,7 @@ if (typeof jQuery === 'undefined') {
       .replace(/\n/g, "\\n")
       .replace(/\r/g, "\\r")
       .replace(/'/g, "\\'")
-      .replace(/\{\{\s*(\w+)\s*\}\}/g, "'+(_.$1?(_.$1+'').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):(_.$1===0?0:''))+'") + "'"
+      .replace(/\{\{\s*(\w+)\s*\}\}/g, "'+(_.$1?(_.$1+''):(_.$1===0?0:''))+'") + "'"
     );
     return tpl_fn_cache[template](data);
   };
@@ -659,9 +675,21 @@ if (typeof jQuery === 'undefined') {
     errorElem: '&nbsp;<span class="error" data-upload-errormessage></span>',
     // CSS Classes
     buttonClass: 'hg-btn',
-    itemClass: 'hg-item-content',
+    nameClass: 'hg-name',
+    folderNameClass: 'hg-folder-name',
+    itemNameClass: 'hg-item-name',
     toggleClass: 'hg-toggle'
   };
+
+  HGrid.Extensions = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
+    'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
+    'eml', 'eps', 'exe', 'fla', 'flv', 'gif', 'gz', 'hqx', 'htm', 'html', 'ifo', 'indd', 'iso', 'jar',
+    'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
+    'mpeg', 'mpg', 'msi', 'mswmm', 'ogg', 'pdf', 'png', 'pps', 'ps', 'psd', 'pst', 'ptb', 'pub', 'qbb',
+    'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
+    'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip'];
+
+HGrid.ExtensionSkeleton = '<img class="hg-icon" src="/static\/img\/hgrid\/fatcowicons\/file_extension_{{ext}}.png">'
 
   ///////////
   // HGrid //
@@ -670,7 +698,7 @@ if (typeof jQuery === 'undefined') {
   // Formatting helpers public interface
   HGrid.Fmt = HGrid.Format = {
     withIndent: withIndent,
-    asItem: asItem,
+    asName: asName,
     makeIndentElem: makeIndentElem,
     sanitized: sanitized,
     button: renderButton,
@@ -706,25 +734,27 @@ if (typeof jQuery === 'undefined') {
 
   // Predefined column schemas
   HGrid.Col = HGrid.Columns = {
-    defaultFolderView: defaultFolderView,
-    defaultItemView: defaultItemView,
-
     // Name field schema
     Name: {
       id: 'name',
       name: 'Name',
       sortkey: 'name',
-      cssClass: 'hg-cell',
-      folderView: defaultFolderView,
-      itemView: defaultItemView,
-      sortable: true
+      folderView: HGrid.Html.folderIcon + ' {{name}}',
+      itemView: HGrid.Html.fileIcon + ' {{name}}',
+      sortable: true,
+      indent: DEFAULT_INDENT,
+      isName: true,
+      showExpander: function(item, args) {
+        return item.kind === HGrid.FOLDER &&
+                (item._node.children.length && item.depth || args.lazyLoad) &&
+                !item._processing;
+      }
     },
 
     // Actions buttons schema
     ActionButtons: {
       id: 'actions',
       name: 'Actions',
-      cssClass: 'hg-cell',
       width: 50,
       sortable: false,
       folderView: function() {
@@ -776,6 +806,9 @@ if (typeof jQuery === 'undefined') {
      * @property {Function} [fetchUrl]
      */
     fetchUrl: null,
+    fetchSuccess: function(data, item) {},
+    fetchError: function(error, item) {},
+    fetchStart: function(item) {},
     /**
      * Enable uploads (requires DropZone)
      * @property [uploads]
@@ -840,6 +873,10 @@ if (typeof jQuery === 'undefined') {
      */
     uploadMethod: 'POST',
     /**
+     * Additional headers to send with upload requests.
+     */
+    uploadHeaders: {},
+    /**
      * Additional options passed to DropZone constructor
      * See: http://www.dropzonejs.com/
      * @property [dropzoneOptions]
@@ -857,7 +894,6 @@ if (typeof jQuery === 'undefined') {
       this.downloadItem(item, options);
     },
     onClickDelete: function(event, item, options) {
-      this.removeItem(item.id);
       this.deleteFile(item, options);
     },
     onClickUpload: function(event, item, options) {
@@ -887,8 +923,9 @@ if (typeof jQuery === 'undefined') {
      * Called whenever a file is added for uploaded
      * @param  {Object} file The file object. Has gridElement and gridItem bound to it.
      * @param  {Object} item The added item
+     * @param {Object} folder The folder item being uploaded to
      */
-    uploadAdded: function(file, item) {},
+    uploadAdded: function(file, item, folder) {},
     /**
      * Called whenever a file gets processed.
      * @property {Function} [uploadProcessing]
@@ -940,7 +977,7 @@ if (typeof jQuery === 'undefined') {
      * @property [uploadSuccess]
      */
     /*jshint unused: false */
-    uploadSuccess: function(file, item) {},
+    uploadSuccess: function(file, item, data) {},
     /**
      * Called when an upload completes (whether it is successful or not)
      * @property [uploadComplete]
@@ -958,6 +995,11 @@ if (typeof jQuery === 'undefined') {
     uploadAccept: function(file, folder, done) {
       return done();
     },
+    /**
+     * Called just before an upload request is sent.
+     * @property [uploadSending]
+     */
+    uploadSending: function(file, item, xhr, formData) {},
     /**
      * Returns the url where to download and item
      * @param  {Object} row The row object
@@ -1005,6 +1047,7 @@ if (typeof jQuery === 'undefined') {
   HGrid.Queue = Queue;
 
   // Constants
+  HGrid.DEFAULT_INDENT = DEFAULT_INDENT;
   HGrid.ROOT_ID = ROOT_ID;
   HGrid.FOLDER = FOLDER;
   HGrid.ITEM = ITEM;
@@ -1012,14 +1055,14 @@ if (typeof jQuery === 'undefined') {
   /**
    * Custom Error for HGrid-related errors.
    *
-   * @class  HGridError
+   * @class  HGrid.Error
    * @constructor
    */
-  function HGridError(message) {
-    this.name = 'HGridError';
+  HGrid.Error = function(message) {
+    this.name = 'HGrid.Error';
     this.message = message || '';
-  }
-  HGridError.prototype = new Error();
+  };
+  HGrid.Error.prototype = new Error();
 
   /**
    * Construct an HGrid.
@@ -1042,7 +1085,7 @@ if (typeof jQuery === 'undefined') {
       if ($searchInput.length) {
         self.searchInput = $searchInput;
       } else {
-        throw new HGridError('Invalid selector for searchInput.');
+        throw new HGrid.Error('Invalid selector for searchInput.');
       }
     } else {
       self.searchInput = null;
@@ -1061,10 +1104,26 @@ if (typeof jQuery === 'undefined') {
 
   /**
    * Collapse all folders
-   * @return {[type]} [description]
+   * @method  collapseAll
    */
   HGrid.prototype.collapseAll = function() {
     this.tree.collapseAt(1, true);
+    return this;
+  };
+
+  /**
+   * Remove a folder's contents from the grid.
+   * @method  emptyFolder
+   * @param  {Object} item The folder item to empty.
+   * @param {Boolean} [removeFolder] Also remove the folder.
+   */
+  HGrid.prototype.emptyFolder = function(item, removeFolder) {
+    item = typeof item === 'object' ? item : this.getByID(item);
+    item._node.empty(removeFolder);
+    if (!removeFolder) {
+      this.getDataView().updateItem(item.id, item);
+    }
+    return this;
   };
 
   /**
@@ -1116,7 +1175,7 @@ if (typeof jQuery === 'undefined') {
 
     if (this.options.uploads) {
       if (typeof Dropzone === 'undefined') {
-        throw new HGridError('uploads=true requires DropZone to be loaded');
+        throw new HGrid.Error('uploads=true requires DropZone to be loaded');
       }
       this._initDropzone();
     }
@@ -1146,28 +1205,41 @@ if (typeof jQuery === 'undefined') {
   };
 
   // TODO: test me
-  // HGrid folderView and itemView (in column def) => SlickGrid Formatter
-  HGrid.prototype.makeFormatter = function(folderView, itemView, args) {
+  // HGrid column schmea => SlickGrid Formatter
+  HGrid.prototype.makeFormatter = function(schema) {
     var self = this,
-      view;
+      view, html;
+    var folderView = schema.folderView;
+    var itemView = schema.itemView;
+    var showExpander = schema.showExpander;
+    var indentWidth = typeof schema.indent === 'number' ? schema.indent : DEFAULT_INDENT;
     var formatter = function(row, cell, value, colDef, item) {
       var rendererArgs = {
-        colDef: colDef,
-        row: row,
-        cell: cell,
-        indent: args.indent,
-        lazyLoad: self.isLazy()
+        colDef: colDef, row: row, cell: cell, indent: schema.indent, lazyLoad: self.isLazy()
       };
-      if (item.kind === FOLDER) {
-        view = folderView;
-      } else {
-        view = itemView;
-      }
+      view = item.kind === FOLDER ? folderView : itemView;
       if (typeof view === 'function') {
-        return view.call(self, item, rendererArgs); // Returns the rendered HTML
+        html = view.call(self, item, rendererArgs); // Returns the rendered HTML
+      } else {
+        // Use template
+        html = HGrid.Format.tpl(view, item);
       }
-      // Use template
-      return HGrid.Format.tpl(view, item);
+      if (schema.isName) {
+        html = asName(item, html);
+      }
+      if (showExpander) {
+        var expander;
+        if (typeof showExpander === 'function' && showExpander(item, rendererArgs)) {
+          expander = item._collapsed ? HGrid.Html.expandElem : HGrid.Html.collapseElem;
+        } else {
+          expander = '<span style="width:16px;height:1px;display:inline-block;"></span>';
+        }
+        html = [expander, html].join('');
+      }
+      if (schema.indent) {
+        html = withIndent(item, html, indentWidth);
+      }
+      return html;
     };
     return formatter;
   };
@@ -1179,13 +1251,15 @@ if (typeof jQuery === 'undefined') {
       if (!('formatter' in col)) {
         // Create the formatter function from the columns definition's
         // "folderView" and "itemView" properties
-        col.formatter = self.makeFormatter.call(self, col.folderView,
-          col.itemView, {
-            indent: self.options.indent
-          });
+        col.formatter = self.makeFormatter.call(self, col);
       }
       if ('text' in col) { // Use 'text' instead of 'name' for column header text
         col.name = col.text;
+      }
+      if ('cssClass' in col) {
+        col.cssClass = col.cssClass + ' ' + 'hg-cell';
+      } else {
+        col.cssClass = 'hg-cell';
       }
       return col;
     });
@@ -1232,7 +1306,8 @@ if (typeof jQuery === 'undefined') {
     if (typeof id === 'object') {
       id = id.id;
     }
-    return this.grid.getCellNode(this.getDataView().getRowById(id), 0).parentNode;
+    var cellNode = this.grid.getCellNode(this.getDataView().getRowById(id), 0);
+    return cellNode ? cellNode.parentNode : null;
   };
 
   HGrid.prototype.addHighlight = function(item) {
@@ -1276,7 +1351,7 @@ if (typeof jQuery === 'undefined') {
       var col = args.sortCol; // column to sort
       var key = col.field || col.sortkey; // key to sort on
       if (!key) {
-        throw new HGridError('Sortable column does not define a `sortkey` to sort on.');
+        throw new HGrid.Error('Sortable column does not define a `sortkey` to sort on.');
       }
       this.tree.sort(key, args.sortAsc);
       this.tree.updateDataView(true);
@@ -1316,24 +1391,23 @@ if (typeof jQuery === 'undefined') {
   /**
    * Send a delete request to an item's download URL.
    */
-  // TODO: untested
   HGrid.prototype.deleteFile = function(item, ajaxOptions) {
+    var self = this;
     var url, method;
     // TODO: repetition here
-    if (typeof this.options.deleteUrl === 'function') {
-      url = this.options.deleteUrl(item);
-    } else {
-      url = this.options.deleteUrl;
-    }
-    if (typeof this.options.deleteMethod === 'function') {
-      method = this.options.deleteMethod(item);
-    } else {
-      method = this.options.deleteMethod;
-    }
+    url = typeof this.options.deleteUrl === 'function' ?
+          this.options.deleteUrl(item) : this.options.deleteUrl;
+    method  = typeof this.options.deleteMethod === 'function' ?
+              this.options.deleteMethod(item) : this.options.deleteMethod;
     var options = $.extend({}, {
       url: url,
-      type: method
-    }, ajaxOptions);
+      type: method,
+      success: function(data) {
+        // Update parent
+        self.updateItem(self.getByID(item.parentID));
+        self.removeItem(item.id);
+      }
+    }, self.options.ajaxOptions, ajaxOptions);
     var promise = null;
     if (url) {
       promise = $.ajax(options);
@@ -1345,27 +1419,36 @@ if (typeof jQuery === 'undefined') {
 
   /**
    * Update the dropzone object's options dynamically. Lazily updates the
-   * upload url, method, etc.
+   * upload url, method, maxFilesize, etc.
    * @method  setUploadTarget
    */
   HGrid.prototype.setUploadTarget = function(item) {
     var self = this;
     // if upload url or upload method is a function, call it, passing in the target item,
     // and set dropzone to upload to the result
+    function resolveParam(param) {
+      return typeof param === 'function' ? param.call(self, item) : param;
+    }
     if (self.currentTarget) {
-      this.dropzone.options.accept = function(file, done) {
-        $.when(
-          typeof(self.options.uploadUrl) === 'function' ? self.options.uploadUrl.call(self, item) : self.options.uploadUrl,
-          self.options.uploadMethod.call(self, item)
-        ).done(function(uploadUrl, uploadMethod) {
-          self.dropzone.options.url = uploadUrl;
-          self.dropzone.options.method = uploadMethod;
-        });
+      $.when(
+        resolveParam(self.options.uploadHeaders),
+        resolveParam(self.options.uploadUrl),
+        resolveParam(self.options.uploadMethod),
+        resolveParam(self.options.maxFilesize),
+        resolveParam(self.options.acceptedFiles)
+      ).done(function(uploadHeaders, uploadUrl, uploadMethod, maxFilesize, acceptedFiles) {
+        self.dropzone.options.headers = uploadHeaders;
+        self.dropzone.options.url = uploadUrl;
+        self.dropzone.options.method = uploadMethod;
+        self.dropzone.options.maxFilesize = maxFilesize;
+        self.setAcceptedFiles(acceptedFiles);
         if (self.options.uploadAccept) {
           // Override dropzone accept callback. Just calls options.uploadAccept with the right params
+          self.dropzone.options.accept = function(file, done) {
             return self.options.uploadAccept.call(self, file, item, done);
+          };
         }
-      }
+      });
     }
   };
 
@@ -1376,7 +1459,7 @@ if (typeof jQuery === 'undefined') {
   HGrid.prototype.denyUpload = function(targetItem) {
     // Need to throw an error to prevent dropzone's sequence of callbacks from firing
     this.options.uploadDenied.call(this, targetItem);
-    throw new HGridError('Upload permission denied.');
+    throw new HGrid.Error('Upload permission denied.');
   };
 
   HGrid.prototype.validateTarget = function(targetItem) {
@@ -1456,32 +1539,41 @@ if (typeof jQuery === 'undefined') {
         file.gridElement = rowElem;
         $rowElem.addClass('hg-upload-started');
       }
-      this.options.uploadAdded.call(this, file, file.gridItem);
-      return addedItem;
+      return this.options.uploadAdded.call(this, file, file.gridItem, currentTarget);
     },
     thumbnail: noop,
     // Just delegate error function to options.uploadError
     error: function(file, message) {
       var $rowElem = $(file.gridElement);
       $rowElem.addClass('hg-upload-error').removeClass('hg-upload-processing');
-      return this.options.uploadError.call(this, file, message, file.gridItem);
+      // Remove the added row
+      this.removeItem(file.gridItem.id);
+      return this.options.uploadError.call(this, file, message);
     },
     processing: function(file) {
       $(file.gridElement).addClass('hg-upload-processing');
-      this.options.uploadProcessing.call(this, file, file.gridItem);
+      this.currentTarget._processing = true;
+      this.updateItem(this.currentTarget);
+      this.options.uploadProcessing.call(this, file, file.gridItem, this.currentTarget);
       return this;
     },
     uploadprogress: function(file, progress, bytesSent) {
       return this.options.uploadProgress.call(this, file, progress, bytesSent, file.gridItem);
     },
     success: function(file, data) {
-      $(file.gridElement).addClass('hg-upload-success')
-        .removeClass('hg-upload-processing');
+      $(file.gridElement).addClass('hg-upload-success');
       return this.options.uploadSuccess.call(this, file, file.gridItem, data);
     },
     complete: function(file) {
+      $(file.gridElement).removeClass('hg-upload-processing');
+      this.currentTarget._processing = false;
+      this.updateItem(this.currentTarget);
       return this.options.uploadComplete.call(this, file, file.gridItem);
+    },
+    sending: function(file, xhr, formData) {
+      return this.options.uploadSending(file, file.gridItem, xhr, formData);
     }
+
   };
 
   /**
@@ -1509,11 +1601,13 @@ if (typeof jQuery === 'undefined') {
     // Attach extra listeners from options.listeners
     var userCallback = function(evt) {
       var row = self.getItemFromEvent(evt);
-      return evt.data.listenerObj.callback.call(self, evt, row);
+      return evt.data.listenerObj.callback(evt, row, evt.data.grid);
     };
+    // TODO: test me
     for (var i = 0, listener; listener = this.options.listeners[i]; i++) {
       self.element.on(listener.on, listener.selector, {
-        listenerObj: listener
+        listenerObj: listener,
+        grid: self
       }, userCallback);
     }
     this.attachActionListeners();
@@ -1624,6 +1718,17 @@ if (typeof jQuery === 'undefined') {
     previewTemplate: '<div></div>' // just a dummy template because dropzone requires it
   };
 
+  HGrid.prototype.setAcceptedFiles = function(fileTypes) {
+    var acceptedFiles;
+    if (Array.isArray(fileTypes)) {
+      acceptedFiles = fileTypes.join(',');
+    } else {
+      acceptedFiles = fileTypes;
+    }
+    this.dropzone.options.acceptedFiles = acceptedFiles;
+    return this;
+  };
+
   /**
    * Builds a new DropZone object and attaches it the "dropzone" attribute of
    * the grid.
@@ -1631,26 +1736,28 @@ if (typeof jQuery === 'undefined') {
    * @private
    */
   HGrid.prototype._initDropzone = function() {
-    var uploadUrl, uploadMethod;
-    if (typeof this.options.uploadUrl === 'string') {
-      uploadUrl = this.options.uploadUrl;
-    } else { // uploadUrl is a function, so compute the url lazily;
-      uploadUrl = '/'; // placeholder
+    var uploadUrl, uploadMethod, headers, acceptedFiles = null;
+    // If a param is a string, return that, otherwise the param is a function,
+    // so the value will be computed later.
+    function resolveParam(param, fallback){
+      return (typeof param === 'function' || param == null) ? fallback : param;
     }
-    if (typeof this.options.uploadMethod === 'string') {
-      uploadMethod = this.options.uploadMethod;
-    } else { // uploadMethod is a function, so compute the upload url lazily
-      uploadMethod = 'POST'; // placeholder
+    uploadUrl = resolveParam(this.options.uploadUrl, '/');
+    uploadMethod = resolveParam(this.options.uploadMethod, 'POST');
+    headers = resolveParam(this.options.uploadHeaders, {});
+    acceptedFiles = resolveParam(this.options.acceptedFiles, null);
+    if (Array.isArray(acceptedFiles)){
+      acceptedFiles = acceptedFiles.join(',');
     }
     // Build up the options object, combining the HGrid options, required options,
     // and additional options
     var dropzoneOptions = $.extend({}, {
         url: uploadUrl,
         // Dropzone expects comma separated list
-        acceptedFiles: this.options.acceptedFiles ?
-          this.options.acceptedFiles.join(',') : null,
+        acceptedFiles: acceptedFiles,
         maxFilesize: this.options.maxFilesize,
-        method: uploadMethod
+        method: uploadMethod,
+        headers: headers
       },
       requiredDropzoneOpts,
       this.options.dropzoneOptions);
@@ -1710,16 +1817,20 @@ if (typeof jQuery === 'undefined') {
     return Boolean(this.options.fetchUrl);  // Assume lazy loading is enabled if fetchUrl is defined
   };
 
+  // TODO: test fetch callbacks
   HGrid.prototype._lazyLoad = function(item) {
     var self = this;
     var url = self.options.fetchUrl(item);
     if (url !== null) {
+      self.options.fetchStart.call(self, item);
       return self.getFromServer(url, function(newData, error) {
         if (!error) {
           self.addData(newData, item.id);
           item._node._loaded = true; // Add flag to make sure data are only fetched once.
+          self.options.fetchSuccess.call(self, newData, item);
         } else {
-          throw new HGridError('Could not fetch data from url: "' + url + '". Error: ' + error);
+          self.options.fetchError.call(self, error, item);
+          throw new HGrid.Error('Could not fetch data from url: "' + url + '". Error: ' + error);
         }
       });
     }
@@ -1736,13 +1847,13 @@ if (typeof jQuery === 'undefined') {
     item = typeof item === 'object' ? item : self.getByID(item);
     var node = self.getNodeByID(item.id);
     item._node.expand();
-    if (self.isLazy() && !node._loaded) {
-      this._lazyLoad(item);
-    }
     var dataview = self.getDataView();
     var hints = self.getRefreshHints(item).expand;
     dataview.setRefreshHints(hints);
     self.getDataView().updateItem(item.id, item);
+    if (self.isLazy() && !node._loaded) {
+      this._lazyLoad(item);
+    }
     self.options.onExpand.call(self, evt, item);
     return self;
   };
@@ -1853,9 +1964,7 @@ if (typeof jQuery === 'undefined') {
    * @return {Object}    The removed item
    */
   HGrid.prototype.removeItem = function(id) {
-    var item = this.getByID(id);
-    this.getDataView().deleteItem(id);
-    return item;
+    return this.tree.remove(id);
   };
 
   /**
@@ -1915,24 +2024,57 @@ if (typeof jQuery === 'undefined') {
     return this;
   };
 
+  /**
+   * Reset a node's loaded state to false. When the node is expanded again and
+   * lazy loading is enabled, a new xhr request will be sent.
+   */
+  HGrid.prototype.resetLoadedState = function(folder, loaded) {
+    folder._node._loaded = Boolean(loaded);
+    return this;
+  };
+
+  /**
+   * Reload a folder contents. Will send a request even if lazy loading is enabled
+   * @method  reloadFolder
+   */
+  HGrid.prototype.reloadFolder = function(folder) {
+    this.resetLoadedState(folder);
+    this.emptyFolder(folder);
+    this.collapseItem(folder);
+    this.expandItem(folder);
+    return this;
+  };
+
+  HGrid.prototype.render = function() {
+    this.grid.render();
+    return this;
+  };
+
+  HGrid.prototype.invalidate = function () {
+    this.grid.invalidate();
+    return this;
+  };
+
   $.fn.hgrid = function(options) {
     this.each(function() {
       if (!this.id) { // Must have ID because SlickGrid requires a selector
-        throw new HGridError('Element must have an ID if initializing HGrid with jQuery');
+        throw new HGrid.Error('Element must have an ID if initializing HGrid with jQuery');
       }
       var selector = '#' + this.id;
       return new HGrid(selector, options);
     });
   };
 
+  return HGrid;
+
 })(jQuery, window, document);
 
-/*! 
+/*!
  * jquery.event.drag - v 2.2
  * Copyright (c) 2010 Three Dub Media - http://threedubmedia.com
  * Open Source MIT License - http://threedubmedia.com/code/license
  */
-// Created: 2008-06-04 
+// Created: 2008-06-04
 // Updated: 2012-05-21
 // REQUIRES: jquery 1.7.x
 
@@ -1945,7 +2087,7 @@ $.fn.drag = function( str, arg, opts ){
 	// figure out the event handler...
 	fn = $.isFunction( str ) ? str : $.isFunction( arg ) ? arg : null;
 	// fix the event type
-	if ( type.indexOf("drag") !== 0 ) 
+	if ( type.indexOf("drag") !== 0 )
 		type = "drag"+ type;
 	// were options passed
 	opts = ( str == fn ? arg : opts ) || {};
@@ -1954,11 +2096,11 @@ $.fn.drag = function( str, arg, opts ){
 };
 
 // local refs (increase compression)
-var $event = $.event, 
+var $event = $.event,
 $special = $event.special,
-// configure the drag special event 
+// configure the drag special event
 drag = $special.drag = {
-	
+
 	// these are the default settings
 	defaults: {
 		which: 1, // mouse button pressed to start drag sequence
@@ -1969,38 +2111,38 @@ drag = $special.drag = {
 		drop: true, // false to suppress drop events, true or selector to allow
 		click: false // false to suppress click events after dragend (no proxy)
 	},
-	
+
 	// the key name for stored drag data
 	datakey: "dragdata",
-	
+
 	// prevent bubbling for better performance
 	noBubble: true,
-	
+
 	// count bound related events
-	add: function( obj ){ 
+	add: function( obj ){
 		// read the interaction data
 		var data = $.data( this, drag.datakey ),
-		// read any passed options 
+		// read any passed options
 		opts = obj.data || {};
 		// count another realted event
 		data.related += 1;
 		// extend data options bound with this event
-		// don't iterate "opts" in case it is a node 
+		// don't iterate "opts" in case it is a node
 		$.each( drag.defaults, function( key, def ){
 			if ( opts[ key ] !== undefined )
 				data[ key ] = opts[ key ];
 		});
 	},
-	
+
 	// forget unbound related events
 	remove: function(){
 		$.data( this, drag.datakey ).related -= 1;
 	},
-	
+
 	// configure interaction, capture settings
 	setup: function(){
 		// check for related events
-		if ( $.data( this, drag.datakey ) ) 
+		if ( $.data( this, drag.datakey ) )
 			return;
 		// initialize the drag data with copied defaults
 		var data = $.extend({ related:0 }, drag.defaults );
@@ -2009,42 +2151,42 @@ drag = $special.drag = {
 		// bind the mousedown event, which starts drag interactions
 		$event.add( this, "touchstart mousedown", drag.init, data );
 		// prevent image dragging in IE...
-		if ( this.attachEvent ) 
-			this.attachEvent("ondragstart", drag.dontstart ); 
+		if ( this.attachEvent )
+			this.attachEvent("ondragstart", drag.dontstart );
 	},
-	
+
 	// destroy configured interaction
 	teardown: function(){
 		var data = $.data( this, drag.datakey ) || {};
 		// check for related events
-		if ( data.related ) 
+		if ( data.related )
 			return;
 		// remove the stored data
 		$.removeData( this, drag.datakey );
 		// remove the mousedown event
 		$event.remove( this, "touchstart mousedown", drag.init );
 		// enable text selection
-		drag.textselect( true ); 
+		drag.textselect( true );
 		// un-prevent image dragging in IE...
-		if ( this.detachEvent ) 
-			this.detachEvent("ondragstart", drag.dontstart ); 
+		if ( this.detachEvent )
+			this.detachEvent("ondragstart", drag.dontstart );
 	},
-		
+
 	// initialize the interaction
-	init: function( event ){ 
+	init: function( event ){
 		// sorry, only one touch at a time
-		if ( drag.touched ) 
+		if ( drag.touched )
 			return;
 		// the drag/drop interaction data
 		var dd = event.data, results;
 		// check the which directive
-		if ( event.which != 0 && dd.which > 0 && event.which != dd.which ) 
-			return; 
+		if ( event.which != 0 && dd.which > 0 && event.which != dd.which )
+			return;
 		// check for suppressed selector
-		if ( $( event.target ).is( dd.not ) ) 
+		if ( $( event.target ).is( dd.not ) )
 			return;
 		// check for handle selector
-		if ( dd.handle && !$( event.target ).closest( dd.handle, event.currentTarget ).length ) 
+		if ( dd.handle && !$( event.target ).closest( dd.handle, event.currentTarget ).length )
 			return;
 
 		drag.touched = event.type == 'touchstart' ? this : null;
@@ -2055,7 +2197,7 @@ drag = $special.drag = {
 		dd.pageX = event.pageX;
 		dd.pageY = event.pageY;
 		dd.dragging = null;
-		// handle draginit event... 
+		// handle draginit event...
 		results = drag.hijack( event, "draginit", dd );
 		// early cancel
 		if ( !dd.propagates )
@@ -2072,43 +2214,43 @@ drag = $special.drag = {
 		// remember how many interactions are propagating
 		dd.propagates = dd.interactions.length;
 		// locate and init the drop targets
-		if ( dd.drop !== false && $special.drop ) 
+		if ( dd.drop !== false && $special.drop )
 			$special.drop.handler( event, dd );
 		// disable text selection
-		drag.textselect( false ); 
+		drag.textselect( false );
 		// bind additional events...
 		if ( drag.touched )
 			$event.add( drag.touched, "touchmove touchend", drag.handler, dd );
-		else 
+		else
 			$event.add( document, "mousemove mouseup", drag.handler, dd );
 		// helps prevent text selection or scrolling
 		if ( !drag.touched || dd.live )
 			return false;
-	},	
-	
+	},
+
 	// returns an interaction object
 	interaction: function( elem, dd ){
 		var offset = $( elem )[ dd.relative ? "position" : "offset" ]() || { top:0, left:0 };
 		return {
-			drag: elem, 
-			callback: new drag.callback(), 
+			drag: elem,
+			callback: new drag.callback(),
 			droppable: [],
 			offset: offset
 		};
 	},
-	
+
 	// handle drag-releatd DOM events
-	handler: function( event ){ 
+	handler: function( event ){
 		// read the data before hijacking anything
-		var dd = event.data;	
+		var dd = event.data;
 		// handle various events
 		switch ( event.type ){
 			// mousemove, check distance, start dragging
-			case !dd.dragging && 'touchmove': 
+			case !dd.dragging && 'touchmove':
 				event.preventDefault();
 			case !dd.dragging && 'mousemove':
 				//  drag tolerance, x� + y� = distance�
-				if ( Math.pow(  event.pageX-dd.pageX, 2 ) + Math.pow(  event.pageY-dd.pageY, 2 ) < Math.pow( dd.distance, 2 ) ) 
+				if ( Math.pow(  event.pageX-dd.pageX, 2 ) + Math.pow(  event.pageY-dd.pageY, 2 ) < Math.pow( dd.distance, 2 ) )
 					break; // distance tolerance not reached
 				event.target = dd.target; // force target from "mousedown" event (fix distance issue)
 				drag.hijack( event, "dragstart", dd ); // trigger "dragstart"
@@ -2119,42 +2261,42 @@ drag = $special.drag = {
 				event.preventDefault();
 			case 'mousemove':
 				if ( dd.dragging ){
-					// trigger "drag"		
+					// trigger "drag"
 					drag.hijack( event, "drag", dd );
 					if ( dd.propagates ){
 						// manage drop events
 						if ( dd.drop !== false && $special.drop )
-							$special.drop.handler( event, dd ); // "dropstart", "dropend"							
-						break; // "drag" not rejected, stop		
+							$special.drop.handler( event, dd ); // "dropstart", "dropend"
+						break; // "drag" not rejected, stop
 					}
 					event.type = "mouseup"; // helps "drop" handler behave
 				}
 			// mouseup, stop dragging
-			case 'touchend': 
-			case 'mouseup': 
+			case 'touchend':
+			case 'mouseup':
 			default:
 				if ( drag.touched )
 					$event.remove( drag.touched, "touchmove touchend", drag.handler ); // remove touch events
-				else 
-					$event.remove( document, "mousemove mouseup", drag.handler ); // remove page events	
+				else
+					$event.remove( document, "mousemove mouseup", drag.handler ); // remove page events
 				if ( dd.dragging ){
 					if ( dd.drop !== false && $special.drop )
 						$special.drop.handler( event, dd ); // "drop"
-					drag.hijack( event, "dragend", dd ); // trigger "dragend"	
+					drag.hijack( event, "dragend", dd ); // trigger "dragend"
 				}
 				drag.textselect( true ); // enable text selection
 				// if suppressing click events...
 				if ( dd.click === false && dd.dragging )
 					$.data( dd.mousedown, "suppress.click", new Date().getTime() + 5 );
-				dd.dragging = drag.touched = false; // deactivate element	
+				dd.dragging = drag.touched = false; // deactivate element
 				break;
 		}
 	},
-		
+
 	// re-use event object for custom events
 	hijack: function( event, type, dd, x, elem ){
 		// not configured
-		if ( !dd ) 
+		if ( !dd )
 			return;
 		// remember the original event and type
 		var orig = { event:event.originalEvent, type:event.type },
@@ -2184,7 +2326,7 @@ drag = $special.drag = {
 				callback.target = subject;
 				// force propagtion of the custom event
 				event.isPropagationStopped = function(){ return false; };
-				// handle the event	
+				// handle the event
 				result = subject ? $event.dispatch.call( subject, event, callback ) : null;
 				// stop the drag interaction for this element
 				if ( result === false ){
@@ -2199,25 +2341,25 @@ drag = $special.drag = {
 				// assign any dropinit elements
 				else if ( type == "dropinit" )
 					ia.droppable.push( drag.element( result ) || subject );
-				// accept a returned proxy element 
+				// accept a returned proxy element
 				if ( type == "dragstart" )
 					ia.proxy = $( drag.element( result ) || ia.drag )[0];
-				// remember this result	
+				// remember this result
 				ia.results.push( result );
 				// forget the event result, for recycling
 				delete event.result;
 				// break on cancelled handler
 				if ( type !== "dropinit" )
 					return result;
-			});	
-			// flatten the results	
-			dd.results[ i ] = drag.flatten( ia.results );	
+			});
+			// flatten the results
+			dd.results[ i ] = drag.flatten( ia.results );
 			// accept a set of valid drop targets
 			if ( type == "dropinit" )
 				ia.droppable = drag.flatten( ia.droppable );
 			// locate drop targets
 			if ( type == "dragstart" && !ia.cancelled )
-				callback.update(); 
+				callback.update();
 		}
 		while ( ++i < len )
 		// restore the original event & type
@@ -2226,9 +2368,9 @@ drag = $special.drag = {
 		// return all handler results
 		return drag.flatten( dd.results );
 	},
-		
+
 	// extend the callback object with drag/drop properties...
-	properties: function( event, dd, ia ){		
+	properties: function( event, dd, ia ){
 		var obj = ia.callback;
 		// elements
 		obj.drag = ia.drag;
@@ -2243,44 +2385,44 @@ drag = $special.drag = {
 		obj.originalX = ia.offset.left;
 		obj.originalY = ia.offset.top;
 		// adjusted element position
-		obj.offsetX = obj.originalX + obj.deltaX; 
+		obj.offsetX = obj.originalX + obj.deltaX;
 		obj.offsetY = obj.originalY + obj.deltaY;
 		// assign the drop targets information
 		obj.drop = drag.flatten( ( ia.drop || [] ).slice() );
 		obj.available = drag.flatten( ( ia.droppable || [] ).slice() );
-		return obj;	
+		return obj;
 	},
-	
+
 	// determine is the argument is an element or jquery instance
 	element: function( arg ){
 		if ( arg && ( arg.jquery || arg.nodeType == 1 ) )
 			return arg;
 	},
-	
+
 	// flatten nested jquery objects and arrays into a single dimension array
 	flatten: function( arr ){
 		return $.map( arr, function( member ){
-			return member && member.jquery ? $.makeArray( member ) : 
+			return member && member.jquery ? $.makeArray( member ) :
 				member && member.length ? drag.flatten( member ) : member;
 		});
 	},
-	
+
 	// toggles text selection attributes ON (true) or OFF (false)
-	textselect: function( bool ){ 
+	textselect: function( bool ){
 		$( document )[ bool ? "unbind" : "bind" ]("selectstart", drag.dontstart )
 			.css("MozUserSelect", bool ? "" : "none" );
 		// .attr("unselectable", bool ? "off" : "on" )
-		document.unselectable = bool ? "off" : "on"; 
+		document.unselectable = bool ? "off" : "on";
 	},
-	
+
 	// suppress "selectstart" and "ondragstart" events
-	dontstart: function(){ 
-		return false; 
+	dontstart: function(){
+		return false;
 	},
-	
+
 	// a callback instance contructor
 	callback: function(){}
-	
+
 };
 
 // callback methods
@@ -2304,9 +2446,9 @@ $event.dispatch = function( event ){
 };
 
 // event fix hooks for touch events...
-var touchHooks = 
-$event.fixHooks.touchstart = 
-$event.fixHooks.touchmove = 
+var touchHooks =
+$event.fixHooks.touchstart =
+$event.fixHooks.touchmove =
 $event.fixHooks.touchend =
 $event.fixHooks.touchcancel = {
 	props: "clientX clientY pageX pageY screenX screenY".split( " " ),
@@ -2314,9 +2456,9 @@ $event.fixHooks.touchcancel = {
 		if ( orig ){
 			var touched = ( orig.touches && orig.touches[0] )
 				|| ( orig.changedTouches && orig.changedTouches[0] )
-				|| null; 
+				|| null;
 			// iOS webkit: touchstart, touchmove, touchend
-			if ( touched ) 
+			if ( touched )
 				$.each( touchHooks.props, function( i, prop ){
 					event[ prop ] = touched[ prop ];
 				});
@@ -2329,12 +2471,12 @@ $event.fixHooks.touchcancel = {
 $special.draginit = $special.dragstart = $special.dragend = drag;
 
 })( jQuery );
-/*! 
+/*!
  * jquery.event.drop - v 2.2
  * Copyright (c) 2010 Three Dub Media - http://threedubmedia.com
  * Open Source MIT License - http://threedubmedia.com/code/license
  */
-// Created: 2008-06-04 
+// Created: 2008-06-04
 // Updated: 2012-05-21
 // REQUIRES: jquery 1.7.x, event.drag 2.2
 
@@ -2349,7 +2491,7 @@ $.fn.drop = function( str, arg, opts ){
 	// figure out the event handler...
 	fn = $.isFunction( str ) ? str : $.isFunction( arg ) ? arg : null;
 	// fix the event type
-	if ( type.indexOf("drop") !== 0 ) 
+	if ( type.indexOf("drop") !== 0 )
 		type = "drop"+ type;
 	// were options passed
 	opts = ( str == fn ? arg : opts ) || {};
@@ -2359,19 +2501,19 @@ $.fn.drop = function( str, arg, opts ){
 
 // DROP MANAGEMENT UTILITY
 // returns filtered drop target elements, caches their positions
-$.drop = function( opts ){ 
+$.drop = function( opts ){
 	opts = opts || {};
 	// safely set new options...
-	drop.multi = opts.multi === true ? Infinity : 
+	drop.multi = opts.multi === true ? Infinity :
 		opts.multi === false ? 1 : !isNaN( opts.multi ) ? opts.multi : drop.multi;
 	drop.delay = opts.delay || drop.delay;
-	drop.tolerance = $.isFunction( opts.tolerance ) ? opts.tolerance : 
+	drop.tolerance = $.isFunction( opts.tolerance ) ? opts.tolerance :
 		opts.tolerance === null ? null : drop.tolerance;
 	drop.mode = opts.mode || drop.mode || 'intersect';
 };
 
 // local refs (increase compression)
-var $event = $.event, 
+var $event = $.event,
 $special = $event.special,
 // configure the drop special event
 drop = $.event.special.drop = {
@@ -2380,36 +2522,36 @@ drop = $.event.special.drop = {
 	multi: 1, // allow multiple drop winners per dragged element
 	delay: 20, // async timeout delay
 	mode: 'overlap', // drop tolerance mode
-		
+
 	// internal cache
-	targets: [], 
-	
+	targets: [],
+
 	// the key name for stored drop data
 	datakey: "dropdata",
-		
+
 	// prevent bubbling for better performance
 	noBubble: true,
-	
+
 	// count bound related events
-	add: function( obj ){ 
+	add: function( obj ){
 		// read the interaction data
 		var data = $.data( this, drop.datakey );
 		// count another realted event
 		data.related += 1;
 	},
-	
+
 	// forget unbound related events
 	remove: function(){
 		$.data( this, drop.datakey ).related -= 1;
 	},
-	
+
 	// configure the interactions
 	setup: function(){
 		// check for related events
-		if ( $.data( this, drop.datakey ) ) 
+		if ( $.data( this, drop.datakey ) )
 			return;
 		// initialize the drop element data
-		var data = { 
+		var data = {
 			related: 0,
 			active: [],
 			anyactive: 0,
@@ -2421,29 +2563,29 @@ drop = $.event.special.drop = {
 		// store the drop target in internal cache
 		drop.targets.push( this );
 	},
-	
-	// destroy the configure interaction	
-	teardown: function(){ 
+
+	// destroy the configure interaction
+	teardown: function(){
 		var data = $.data( this, drop.datakey ) || {};
 		// check for related events
-		if ( data.related ) 
+		if ( data.related )
 			return;
 		// remove the stored data
 		$.removeData( this, drop.datakey );
 		// reference the targeted element
 		var element = this;
 		// remove from the internal cache
-		drop.targets = $.grep( drop.targets, function( target ){ 
-			return ( target !== element ); 
+		drop.targets = $.grep( drop.targets, function( target ){
+			return ( target !== element );
 		});
 	},
-	
+
 	// shared event handler
-	handler: function( event, dd ){ 
+	handler: function( event, dd ){
 		// local vars
 		var results, $targets;
 		// make sure the right data is available
-		if ( !dd ) 
+		if ( !dd )
 			return;
 		// handle various events
 		switch ( event.type ){
@@ -2464,7 +2606,7 @@ drop = $.event.special.drop = {
 				// set available target elements
 				dd.droppable = $targets;
 				// activate drop targets for the initial element being dragged
-				$special.drag.hijack( event, "dropinit", dd ); 
+				$special.drag.hijack( event, "dropinit", dd );
 				break;
 			// drag, from $.event.special.drag
 			case 'mousemove': // TOLERATE >>
@@ -2472,35 +2614,35 @@ drop = $.event.special.drop = {
 				drop.event = event; // store the mousemove event
 				if ( !drop.timer )
 					// monitor drop targets
-					drop.tolerate( dd ); 
+					drop.tolerate( dd );
 				break;
 			// dragend, from $.event.special.drag
 			case 'mouseup': // DROP >> DROPEND >>
 			case 'touchend': // DROP >> DROPEND >>
-				drop.timer = clearTimeout( drop.timer ); // delete timer	
+				drop.timer = clearTimeout( drop.timer ); // delete timer
 				if ( dd.propagates ){
-					$special.drag.hijack( event, "drop", dd ); 
-					$special.drag.hijack( event, "dropend", dd ); 
+					$special.drag.hijack( event, "drop", dd );
+					$special.drag.hijack( event, "dropend", dd );
 				}
 				break;
-				
+
 		}
 	},
-		
+
 	// returns the location positions of an element
-	locate: function( elem, index ){ 
+	locate: function( elem, index ){
 		var data = $.data( elem, drop.datakey ),
-		$elem = $( elem ), 
-		posi = $elem.offset() || {}, 
-		height = $elem.outerHeight(), 
+		$elem = $( elem ),
+		posi = $elem.offset() || {},
+		height = $elem.outerHeight(),
 		width = $elem.outerWidth(),
-		location = { 
-			elem: elem, 
-			width: width, 
+		location = {
+			elem: elem,
+			width: width,
 			height: height,
-			top: posi.top, 
-			left: posi.left, 
-			right: posi.left + width, 
+			top: posi.top,
+			left: posi.left,
+			right: posi.left + width,
 			bottom: posi.top + height
 		};
 		// drag elements might not have dropdata
@@ -2511,43 +2653,43 @@ drop = $.event.special.drop = {
 		}
 		return location;
 	},
-	
+
 	// test the location positions of an element against another OR an X,Y coord
 	contains: function( target, test ){ // target { location } contains test [x,y] or { location }
 		return ( ( test[0] || test.left ) >= target.left && ( test[0] || test.right ) <= target.right
-			&& ( test[1] || test.top ) >= target.top && ( test[1] || test.bottom ) <= target.bottom ); 
+			&& ( test[1] || test.top ) >= target.top && ( test[1] || test.bottom ) <= target.bottom );
 	},
-	
+
 	// stored tolerance modes
-	modes: { // fn scope: "$.event.special.drop" object 
+	modes: { // fn scope: "$.event.special.drop" object
 		// target with mouse wins, else target with most overlap wins
 		'intersect': function( event, proxy, target ){
 			return this.contains( target, [ event.pageX, event.pageY ] ) ? // check cursor
 				1e9 : this.modes.overlap.apply( this, arguments ); // check overlap
 		},
-		// target with most overlap wins	
+		// target with most overlap wins
 		'overlap': function( event, proxy, target ){
 			// calculate the area of overlap...
 			return Math.max( 0, Math.min( target.bottom, proxy.bottom ) - Math.max( target.top, proxy.top ) )
 				* Math.max( 0, Math.min( target.right, proxy.right ) - Math.max( target.left, proxy.left ) );
 		},
-		// proxy is completely contained within target bounds	
+		// proxy is completely contained within target bounds
 		'fit': function( event, proxy, target ){
 			return this.contains( target, proxy ) ? 1 : 0;
 		},
-		// center of the proxy is contained within target bounds	
+		// center of the proxy is contained within target bounds
 		'middle': function( event, proxy, target ){
 			return this.contains( target, [ proxy.left + proxy.width * .5, proxy.top + proxy.height * .5 ] ) ? 1 : 0;
 		}
-	},	
-	
+	},
+
 	// sort drop target cache by by winner (dsc), then index (asc)
 	sort: function( a, b ){
 		return ( b.winner - a.winner ) || ( a.index - b.index );
 	},
-		
+
 	// async, recursive tolerance execution
-	tolerate: function( dd ){		
+	tolerate: function( dd ){
 		// declare local refs
 		var i, drp, drg, data, arr, len, elem,
 		// interaction iteration variables
@@ -2560,30 +2702,30 @@ drop = $.event.special.drop = {
 		do if ( ia = dd.interactions[x] ){
 			// check valid interaction
 			if ( !ia )
-				return; 
+				return;
 			// initialize or clear the drop data
 			ia.drop = [];
 			// holds the drop elements
-			arr = []; 
+			arr = [];
 			len = ia.droppable.length;
 			// determine the proxy location, if needed
 			if ( tolerance )
-				drg = drop.locate( ia.proxy ); 
+				drg = drop.locate( ia.proxy );
 			// reset the loop
 			i = 0;
 			// loop each stored drop target
-			do if ( elem = ia.droppable[i] ){ 
+			do if ( elem = ia.droppable[i] ){
 				data = $.data( elem, drop.datakey );
 				drp = data.location;
 				if ( !drp ) continue;
 				// find a winner: tolerance function is defined, call it
-				data.winner = tolerance ? tolerance.call( drop, drop.event, drg, drp ) 
+				data.winner = tolerance ? tolerance.call( drop, drop.event, drg, drp )
 					// mouse position is always the fallback
-					: drop.contains( drp, xy ) ? 1 : 0; 
-				arr.push( data );	
-			} while ( ++i < len ); // loop 
+					: drop.contains( drp, xy ) ? 1 : 0;
+				arr.push( data );
+			} while ( ++i < len ); // loop
 			// sort the drop targets
-			arr.sort( drop.sort );			
+			arr.sort( drop.sort );
 			// reset the loop
 			i = 0;
 			// loop through all of the targets again
@@ -2593,7 +2735,7 @@ drop = $.event.special.drop = {
 					// new winner... dropstart
 					if ( !data.active[x] && !data.anyactive ){
 						// check to make sure that this is not prevented
-						if ( $special.drag.hijack( drop.event, "dropstart", dd, x, data.elem )[0] !== false ){ 	
+						if ( $special.drag.hijack( drop.event, "dropstart", dd, x, data.elem )[0] !== false ){
 							data.active[x] = 1;
 							data.anyactive += 1;
 						}
@@ -2605,32 +2747,32 @@ drop = $.event.special.drop = {
 					if ( data.winner )
 						ia.drop.push( data.elem );
 				}
-				// losers... 
+				// losers...
 				else if ( data.active[x] && data.anyactive == 1 ){
 					// former winner... dropend
-					$special.drag.hijack( drop.event, "dropend", dd, x, data.elem ); 
+					$special.drag.hijack( drop.event, "dropend", dd, x, data.elem );
 					data.active[x] = 0;
 					data.anyactive -= 1;
 				}
-			} while ( ++i < len ); // loop 		
+			} while ( ++i < len ); // loop
 		} while ( ++x < end ) // loop
 		// check if the mouse is still moving or is idle
-		if ( drop.last && xy[0] == drop.last.pageX && xy[1] == drop.last.pageY ) 
+		if ( drop.last && xy[0] == drop.last.pageX && xy[1] == drop.last.pageY )
 			delete drop.timer; // idle, don't recurse
 		else  // recurse
-			drop.timer = setTimeout(function(){ 
-				drop.tolerate( dd ); 
+			drop.timer = setTimeout(function(){
+				drop.tolerate( dd );
 			}, drop.delay );
 		// remember event, to compare idleness
-		drop.last = drop.event; 
+		drop.last = drop.event;
 	}
-	
+
 };
 
 // share the same special event configuration with related events...
 $special.dropinit = $special.dropstart = $special.dropend = drop;
 
-})(jQuery); // confine scope	
+})(jQuery); // confine scope
 /***
  * Contains core SlickGrid classes.
  * @module Core
@@ -3588,7 +3730,7 @@ $special.dropinit = $special.dropstart = $special.dropend = drop;
           group = groups[i];
           group.groups = extractGroups(group.rows, group);
         }
-      }      
+      }
 
       groups.sort(groupingInfos[level].comparer);
 

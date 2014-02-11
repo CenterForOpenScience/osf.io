@@ -11,7 +11,8 @@ from mako.template import Template
 from hurry.filesize import size, alternative
 
 from framework import request, redirect, make_response
-from framework.auth import get_current_user, must_be_logged_in
+from framework.auth import get_current_user
+from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
 from website import models
@@ -47,7 +48,7 @@ def _page_content(node, bitbucket, data, hotlink=True):
 @must_have_addon('bitbucket', 'node')
 def bitbucket_page(*args, **kwargs):
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
     node = kwargs['node'] or kwargs['project']
     bitbucket = kwargs['node_addon']
 
@@ -134,7 +135,7 @@ def bitbucket_set_privacy(*args, **kwargs):
 @must_have_addon('bitbucket', 'node')
 def bitbucket_add_user_auth(*args, **kwargs):
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
 
     bitbucket_user = user.get_addon('bitbucket')
     bitbucket_node = kwargs['node_addon']

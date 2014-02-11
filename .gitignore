@@ -54,6 +54,7 @@ website/static/public/js/*.js
 website/cache/*
 website/settings/uploads/*
 website/uploads/*
+website/mfrcache/*
 # Local settings
 */settings/local.py
 
@@ -68,3 +69,12 @@ scripts/solr-dev/solr/collection1/data/*
 website/addons/*/settings/local.py
 website/templates/log_templates.mako
 .cache/
+osf.sublime-workspace
+osf.sublime-project
+.project
+.pydevproject
+.settings/
+website/addons/figshare/__init__.py.orig
+src/
+Notes.txt
+website/mfrcache/

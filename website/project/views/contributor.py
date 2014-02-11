@@ -3,26 +3,25 @@ import httplib as http
 import logging
 
 import framework
-from framework import request, User, Q
+from framework import request, User
+from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
 from ..decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public
-from framework.auth import must_have_session_auth, get_current_user, get_api_key
+    must_be_contributor
 
 from website import settings
 from website.filters import gravatar
-from website.models import User
 from website.models import Node
 from website.profile import utils
 
 logger = logging.getLogger(__name__)
 
 
+@collect_auth
 @must_be_valid_project
-def get_node_contributors_abbrev(*args, **kwargs):
+def get_node_contributors_abbrev(**kwargs):
 
-    user = get_current_user()
-    api_key = get_api_key()
+    auth = kwargs.get('auth')
     node_to_use = kwargs['node'] or kwargs['project']
 
     max_count = kwargs.get('max_count', 3)
@@ -34,7 +33,7 @@ def get_node_contributors_abbrev(*args, **kwargs):
     else:
         users = node_to_use.contributors
 
-    if not node_to_use.can_view(user, api_key):
+    if not node_to_use.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
     contributors = []
@@ -94,32 +93,32 @@ def _jsonify_contribs(contribs):
     return data
 
 
+@collect_auth
 @must_be_valid_project
-def get_contributors(*args, **kwargs):
+def get_contributors(**kwargs):
 
-    user = get_current_user()
-    api_key = get_api_key()
+    auth = kwargs.get('auth')
     node_to_use = kwargs['node'] or kwargs['project']
 
-    if not node_to_use.can_view(user, api_key):
+    if not node_to_use.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = _jsonify_contribs(node_to_use.contributor_list)
     return {'contributors': contribs}
 
 
+@collect_auth
 @must_be_valid_project
-def get_contributors_from_parent(*args, **kwargs):
+def get_contributors_from_parent(**kwargs):
 
-    user = get_current_user()
-    api_key = get_api_key()
+    auth = kwargs.get('auth')
     node_to_use = kwargs['node'] or kwargs['project']
 
     parent = node_to_use.node__parent[0] if node_to_use.node__parent else None
     if not parent:
         raise HTTPError(http.BAD_REQUEST)
 
-    if not node_to_use.can_view(user, api_key):
+    if not node_to_use.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = [
@@ -132,53 +131,49 @@ def get_contributors_from_parent(*args, **kwargs):
 
 
 @must_be_contributor
-def get_recently_added_contributors(*args, **kwargs):
+def get_recently_added_contributors(**kwargs):
 
-    user = kwargs['user']
-    api_key = get_api_key()
+    auth = kwargs.get('auth')
     node_to_use = kwargs['node'] or kwargs['project']
 
-    if not node_to_use.can_view(user, api_key):
+    if not node_to_use.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = [
         _add_contributor_json(contrib)
-        for contrib in user.recently_added
+        for contrib in auth.user.recently_added
         if contrib not in node_to_use.contributors
     ]
 
     return {'contributors': contribs}
 
 
-@must_have_session_auth
 @must_be_valid_project  # returns project
 @must_be_contributor  # returns user, project
 @must_not_be_registration
-def project_before_remove_contributor(*args, **kwargs):
+def project_before_remove_contributor(**kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
-    api_key = get_api_key()
 
     contributor = User.load(request.json.get('id'))
-    prompts = node_to_use.callback('before_remove_contributor', contributor)
+    prompts = node_to_use.callback(
+        'before_remove_contributor', removed=contributor,
+    )
 
     return {'prompts': prompts}
 
 
-@must_have_session_auth
 @must_be_valid_project  # returns project
 @must_be_contributor  # returns user, project
 @must_not_be_registration
-def project_removecontributor(*args, **kwargs):
+def project_removecontributor(**kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
-    api_key = get_api_key()
+    auth = kwargs['auth']
 
     if request.json['id'].startswith('nr-'):
         outcome = node_to_use.remove_nonregistered_contributor(
-            user, api_key, request.json['name'],
+            auth, request.json['name'],
             request.json['id'].replace('nr-', '')
         )
     else:
@@ -186,7 +181,7 @@ def project_removecontributor(*args, **kwargs):
         if contributor is None:
             raise HTTPError(http.BAD_REQUEST)
         outcome = node_to_use.remove_contributor(
-            contributor=contributor, user=user, api_key=api_key
+            contributor=contributor, auth=auth,
         )
     if outcome:
         framework.status.push_status_message('Contributor removed', 'info')
@@ -194,26 +189,24 @@ def project_removecontributor(*args, **kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 
-@must_have_session_auth # returns user
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
-def project_addcontributors_post(*args, **kwargs):
+def project_addcontributors_post(**kwargs):
     """ Add contributors to a node. """
 
     node_to_use = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
-    api_key = get_api_key()
+    auth = kwargs['auth']
     user_ids = request.json.get('user_ids', [])
     node_ids = request.json.get('node_ids', [])
     users = [
         User.load(user_id)
         for user_id in user_ids
     ]
-    node_to_use.add_contributors(contributors=users, user=user, api_key=api_key)
+    node_to_use.add_contributors(contributors=users, auth=auth)
     node_to_use.save()
     for node_id in node_ids:
         node = Node.load(node_id)
-        node.add_contributors(contributors=users, user=user, api_key=api_key)
+        node.add_contributors(contributors=users, auth=auth)
         node.save()
     return {'status': 'success'}, 201
