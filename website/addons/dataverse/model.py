@@ -41,7 +41,9 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
     dataverse_username = fields.StringField()
     dataverse_password = fields.StringField()
     dataverse_number = fields.IntegerField(default=0)
+    dataverse = fields.StringField()
     study_hdl = fields.StringField(default="None")
+    study = fields.StringField()
     user = fields.ForeignField('user')
 
     user_settings = fields.ForeignField(
@@ -69,19 +71,21 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             #Define dataverse fields
             dataverses = connection.get_dataverses() or []
             dataverse = dataverses[int(self.dataverse_number)] if dataverses else None
+            self.dataverse = dataverse.collection.title if dataverse else None
             studies = dataverse.get_studies() if dataverse else []
             study = dataverse.get_study_by_hdl(self.study_hdl) if dataverse and 'hdl' in self.study_hdl else None
+            self.study = study.get_title() if study else "None"
             #files = study.get_files() if study else []
 
             rv.update({
                 'connected': True,
                 'authorized': dataverse_user.dataverse_username == self.dataverse_username,
                 'dataverses': [d.collection.title for d in dataverses],
-                'dataverse': dataverse.collection.title if dataverse else '',
+                'dataverse': self.dataverse or '',
                 'dataverse_number': self.dataverse_number,
                 'studies': [s.get_id() for s in studies],
                 'study_names': [s.get_title() for s in studies],
-                'study': study.get_title() if study else "None",
+                'study': self.study or "None",
                 'study_hdl': self.study_hdl,
                 # 'files': [f.name for f in files],
                 'show_submit': False #'hdl' in self.study_hdl
