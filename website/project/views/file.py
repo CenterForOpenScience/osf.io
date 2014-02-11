@@ -36,7 +36,7 @@ def _get_dummy_container(node, auth, parent=None):
     }
 
 
-def _collect_file_trees(node, auth, parent='null', visited=None, **kwargs):
+def _collect_file_trees(node, auth, parent='null', **kwargs):
     """Collect file trees for all add-ons implementing HGrid views. Create
     dummy containers for each child of the target node, and for each add-on
     implementing HGrid views.
@@ -47,7 +47,6 @@ def _collect_file_trees(node, auth, parent='null', visited=None, **kwargs):
 
     """
     grid_data = []
-    visited = visited or []
 
     # Collect add-on file trees
     for addon in node.get_addons():
@@ -63,10 +62,9 @@ def _collect_file_trees(node, auth, parent='null', visited=None, **kwargs):
 
     # Collect component file trees
     for child in node.nodes:
-        if not child.is_deleted and child not in visited:
+        if not child.is_deleted:
             container = _get_dummy_container(child, auth, parent)
             grid_data.append(container)
-            visited.append(child)
 
     return grid_data
 
@@ -84,7 +82,7 @@ def _collect_tree_js(node):
 
 
 @must_be_contributor_or_public
-def collect_file_trees(*args, **kwargs):
+def collect_file_trees(**kwargs):
     """Collect file trees for all add-ons implementing HGrid views, then
     format data as appropriate.
 

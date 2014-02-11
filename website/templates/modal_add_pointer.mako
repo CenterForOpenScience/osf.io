@@ -5,7 +5,7 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h3 data-bind="text:title"></h3>
+                <h3>Add Links</h3>
             </div>
 
             <div class="modal-body">
@@ -39,7 +39,7 @@
                                                 class="btn btn-default contrib-button"
                                                 data-bind="click:$root.add"
                                                 rel="tooltip"
-                                                title="Add pointer"
+                                                title="Add link"
                                             >+</a>
                                     </td>
                                     <td data-bind="text:title"></td>
@@ -62,7 +62,7 @@
                                                 class="btn btn-default contrib-button"
                                                 data-bind="click:$root.remove"
                                                 rel="tooltip"
-                                                title="Remove pointer"
+                                                title="Remove link"
                                             >-</a>
                                     </td>
                                     <td data-bind="text:title"></td>

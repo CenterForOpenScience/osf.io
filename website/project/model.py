@@ -228,13 +228,9 @@ class Pointer(StoredObject):
     primary = False
 
     _id = fields.StringField()
-    node = fields.ForeignField('node', backref='pointed')
+    node = fields.ForeignField('node', backref='_pointed')
 
     _meta = {'optimistic': True}
-
-    @property
-    def api_url(self):
-        return '/api/v1/pointer/{0}/'.format(self._id)
 
     def _clone(self):
         if self.node:
@@ -511,8 +507,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         ]
 
     @property
+    def pointed(self):
+        return getattr(self, '_pointed', [])
+
+    @property
     def points(self):
-        return len(getattr(self, 'pointed', []))
+        return len(self.pointed)
 
     def get_recent_logs(self, n=10):
         '''Return a list of the n most recent logs, in reverse chronological

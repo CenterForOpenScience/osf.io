@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 @must_be_valid_project  # returns project
 @must_be_contributor  # returns user, project
 @must_not_be_registration
-def edit_node(*args, **kwargs):
+def edit_node(**kwargs):
     project = kwargs['project']
     node = kwargs['node']
     auth = kwargs['auth']
@@ -53,12 +53,12 @@ def edit_node(*args, **kwargs):
 
 
 @must_be_logged_in
-def project_new(*args, **kwargs):
+def project_new(**kwargs):
     return {}
 
 
 @must_be_logged_in
-def project_new_post(*args, **kwargs):
+def project_new_post(**kwargs):
     user = kwargs['auth'].user
     form = NewProjectForm(request.form)
     if form.validate():
@@ -84,7 +84,7 @@ def project_new_post(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
-def project_new_node(*args, **kwargs):
+def project_new_node(**kwargs):
     form = NewNodeForm(request.form)
     project = kwargs['project']
     user = kwargs['auth'].user
@@ -111,20 +111,18 @@ def project_new_node(*args, **kwargs):
 @must_be_logged_in
 @must_be_valid_project  # returns project
 @must_not_be_registration
-def project_before_fork(*args, **kwargs):
+def project_before_fork(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
 
-    prompts = node.callback('before_fork', node, user)
-
-
+    prompts = node.callback('before_fork', user=user)
     return {'prompts': prompts}
 
 
 @must_be_logged_in
 @must_be_valid_project
-def node_fork_page(*args, **kwargs):
+def node_fork_page(**kwargs):
     project = kwargs['project']
     node = kwargs['node']
     auth = kwargs['auth']
@@ -152,7 +150,7 @@ def node_fork_page(*args, **kwargs):
 @must_be_contributor_or_public # returns user, project
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
-def node_registrations(*args, **kwargs):
+def node_registrations(**kwargs):
     auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
     return _view_project(node_to_use, auth, primary=True)
@@ -162,7 +160,7 @@ def node_registrations(*args, **kwargs):
 @must_be_contributor_or_public # returns user, project
 @update_counters('node:{pid}')
 @update_counters('node:{nid}')
-def node_forks(*args, **kwargs):
+def node_forks(**kwargs):
     project = kwargs['project']
     node = kwargs['node']
     auth = kwargs['auth']
@@ -219,15 +217,10 @@ def node_choose_addons(**kwargs):
 @must_be_valid_project
 @must_not_be_registration
 @must_be_contributor # returns user, project
-def project_reorder_components(*args, **kwargs):
+def project_reorder_components(**kwargs):
 
     project = kwargs['project']
 
-    old_list = [
-        (node._id, node._name)
-        for node in project.nodes
-        if not node.is_deleted
-    ]
     new_list = [
         tuple(node.split(':'))
         for node in request.json.get('new_list', [])
@@ -240,6 +233,7 @@ def project_reorder_components(*args, **kwargs):
         project.nodes = nodes_new
         project.save()
         return {}
+
     # todo log impossibility
     raise HTTPError(http.BAD_REQUEST)
 
@@ -249,7 +243,7 @@ def project_reorder_components(*args, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
-def project_statistics(*args, **kwargs):
+def project_statistics(**kwargs):
     project = kwargs['project']
     node = kwargs['node']
     auth = kwargs['auth']
@@ -276,7 +270,7 @@ def project_statistics(*args, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor
-def project_set_permissions(*args, **kwargs):
+def project_set_permissions(**kwargs):
 
     auth = kwargs['auth']
     permissions = kwargs['permissions']
@@ -294,7 +288,7 @@ def project_set_permissions(*args, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_not_be_registration
-def watch_post(*args, **kwargs):
+def watch_post(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
     watch_config = WatchConfig(node=node_to_use,
@@ -316,7 +310,7 @@ def watch_post(*args, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_not_be_registration
-def unwatch_post(*args, **kwargs):
+def unwatch_post(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
     watch_config = WatchConfig(node=node_to_use,
@@ -335,7 +329,7 @@ def unwatch_post(*args, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_not_be_registration
-def togglewatch_post(*args, **kwargs):
+def togglewatch_post(**kwargs):
     '''View for toggling watch mode for a node.'''
     node = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
@@ -361,7 +355,7 @@ def togglewatch_post(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
-def component_remove(*args, **kwargs):
+def component_remove(**kwargs):
     """Remove component, and recursively remove its children. If node has a
     parent, add log and redirect to parent; else redirect to user dashboard.
 
@@ -388,7 +382,7 @@ def component_remove(*args, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public
-def view_project(*args, **kwargs):
+def view_project(**kwargs):
     auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
     primary = '/api/v1' not in request.path
@@ -537,7 +531,7 @@ def _get_children(node, auth, indent=0):
 
 @collect_auth
 @must_be_valid_project
-def get_editable_children(*args, **kwargs):
+def get_editable_children(**kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
@@ -581,24 +575,24 @@ def _get_user_activity(node, auth, rescale_ratio):
 
 
 @must_be_valid_project
-def get_recent_logs(*args, **kwargs):
+def get_recent_logs(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     logs = list(reversed(node_to_use.logs._to_primary_keys()))[:3]
     return {'logs': logs}
 
 
-def _get_summary(node, auth, rescale_ratio):
+def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
 
-    summary = {'primary': node.primary}
+    summary = {}
 
     if node.can_view(auth):
         summary.update({
             'can_view': True,
             'can_edit': node.can_edit(auth),
-            'id': node._primary_key,
+            'id': link_id if link_id else node._primary_key,
             'url': node.url,
-            # TODO: Make elegant
-            'api_url': node.api_url if node.primary else node.node.api_url,
+            'primary': primary,
+            'api_url': node.api_url,
             'title': node.title,
             'is_registration': node.is_registration,
             'registered_date': node.registered_date.strftime('%m/%d/%y %I:%M %p') if node.is_registration else None,
@@ -627,31 +621,21 @@ def _get_summary(node, auth, rescale_ratio):
 
 @collect_auth
 @must_be_valid_project
-def get_summary(*args, **kwargs):
+def get_summary(**kwargs):
 
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
     rescale_ratio = kwargs.get('rescale_ratio')
+    primary = kwargs.get('primary')
+    link_id = kwargs.get('link_id')
 
-    return _get_summary(node, auth, rescale_ratio)
-
-
-@collect_auth
-def pointer_summary(*args, **kwargs):
-
-    auth = kwargs['auth']
-    pid = kwargs.get('pid')
-    pointer = Pointer.load(pid)
-    if pointer is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    rescale_ratio = kwargs.get('rescale_ratio')
-
-    return _get_summary(pointer, auth, rescale_ratio)
+    return _get_summary(
+        node, auth, rescale_ratio, primary=primary, link_id=link_id
+    )
 
 
 @must_be_contributor_or_public
-def get_children(*args, **kwargs):
+def get_children(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     return _render_nodes([
         node
@@ -661,7 +645,7 @@ def get_children(*args, **kwargs):
 
 
 @must_be_contributor_or_public
-def get_forks(*args, **kwargs):
+def get_forks(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     forks = node_to_use.node__forked.find(
         Q('is_deleted', 'eq', False)
@@ -670,20 +654,36 @@ def get_forks(*args, **kwargs):
 
 
 @must_be_contributor_or_public
-def get_registrations(*args, **kwargs):
+def get_registrations(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     registrations = node_to_use.node__registrations
     return _render_nodes(registrations)
 
 
-@must_be_logged_in
-def search_node(*args, **kwargs):
+def _serialize_node_search(node):
+    """Serialize a node for use in pointer search.
 
+    :param Node node: Node to serialize
+    :return: Dictionary of node data
+
+    """
+    return {
+        'id': node._id,
+        'title': node.title,
+        'firstAuthor': node.contributors[0].family_name,
+        'etal': len(node.contributors) > 1,
+    }
+
+
+@must_be_logged_in
+def search_node(**kwargs):
+    """
+
+    """
+    # Get arguments
     auth = kwargs['auth']
     node = Node.load(request.json.get('nodeId'))
     include_public = request.json.get('includePublic')
-    ignore_pointers = request.json.get('ignorePointers')
-
     query = request.json.get('query', '').strip()
     if not query:
         return {'nodes': []}
@@ -698,12 +698,6 @@ def search_node(*args, **kwargs):
     # Exclude current node from query if provided
     if node:
         nin = [node._id] + node.node_ids
-        if ignore_pointers:
-            for pointer in node.linked:
-                nin.extend([
-                    parent._id
-                    for parent in pointer.parent
-                ])
         odm_query = (
             odm_query &
             Q('_id', 'nin', nin)
@@ -714,19 +708,19 @@ def search_node(*args, **kwargs):
 
     return {
         'nodes': [
-            {
-                'id': node._id,
-                'title': node.title,
-                'firstAuthor': node.contributors[0].family_name,
-                'etal': len(node.contributors) > 1,
-            }
-            for node in cursor
+            _serialize_node_search(each)
+            for each in cursor
         ]
     }
 
 
 def _add_pointers(node, pointers):
+    """
 
+    :param Node node: Node to which pointers will be added
+    :param list pointers: Nodes to add as pointers
+
+    """
     added = False
     for pointer in pointers:
         node.add_pointer(pointer, save=False)
@@ -736,24 +730,15 @@ def _add_pointers(node, pointers):
         node.save()
 
 
-def _add_as_pointer(pointer, nodes):
-
-    for node in nodes:
-        node.add_pointer(pointer)
-
-
 @must_be_contributor
-def add_pointers(*args, **kwargs):
+def add_pointers(**kwargs):
     """Add pointers to a node.
 
     """
     node = kwargs['node'] or kwargs['project']
     node_ids = request.json.get('node_ids', [])
-    mode = request.json.get('mode')
 
     if node_ids is None:
-        raise HTTPError(http.BAD_REQUEST)
-    if mode not in ['addPointer', 'addAsPointer']:
         raise HTTPError(http.BAD_REQUEST)
 
     nodes = [
@@ -761,16 +746,13 @@ def add_pointers(*args, **kwargs):
         for node_id in node_ids
     ]
 
-    if mode == 'addPointer':
-        _add_pointers(node, nodes)
-    elif mode == 'addAsPointer':
-        _add_as_pointer(node, nodes)
+    _add_pointers(node, nodes)
 
     return {}
 
 
 @must_be_contributor
-def remove_pointer(*args, **kwargs):
+def remove_pointer(**kwargs):
     """Remove a pointer from a node, raising a 400 if the pointer is not
     in `node.nodes`.
 

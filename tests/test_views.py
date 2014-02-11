@@ -18,8 +18,9 @@ from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
                             WatchConfigFactory, NodeFactory, NodeLogFactory)
 
 
-app = website.app.init_app(routes=True, set_backends=False,
-                            settings_module="website.settings")
+app = website.app.init_app(
+    routes=True, set_backends=False, settings_module='website.settings',
+)
 
 
 class TestProjectViews(DbTestCase):

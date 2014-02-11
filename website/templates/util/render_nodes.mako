@@ -5,6 +5,8 @@
                 "uri": "${each['api_url']}get_summary/",
                 "view_kwargs": {
                     "rescale_ratio": ${rescale_ratio},
+                    "primary": ${int(each['primary'])},
+                    "link_id": "${each['id']}",
                     "uid": "${user_id}"
                 },
                 "replace": true

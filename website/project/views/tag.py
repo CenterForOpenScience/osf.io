@@ -22,7 +22,7 @@ def project_tag(tag):
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
-def project_addtag(*args, **kwargs):
+def project_addtag(**kwargs):
 
     tag = kwargs['tag']
     auth = kwargs['auth']
@@ -36,7 +36,7 @@ def project_addtag(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
-def project_removetag(*args, **kwargs):
+def project_removetag(**kwargs):
 
     tag = kwargs['tag']
     auth = kwargs['auth']

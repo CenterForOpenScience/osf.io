@@ -441,19 +441,7 @@ var AddPointerViewModel = function(nodeTitle) {
 
     var self = this;
 
-    self.TITLES = {
-        'addPointer': 'Add pointers from {title} to other projects',
-        'addAsPointer': 'Add pointers to {title} from other projects'
-    };
-
     self.nodeTitle = nodeTitle;
-
-    self.mode = ko.observable();
-    self.title = ko.computed(function() {
-        if (self.mode()) {
-            return self.TITLES[self.mode()].replace('{title}', self.nodeTitle);
-        }
-    });
 
     self.query = ko.observable();
     self.results = ko.observableArray();
@@ -469,7 +457,6 @@ var AddPointerViewModel = function(nodeTitle) {
                 query: self.query(),
                 nodeId: nodeId,
                 includePublic: includePublic,
-                ignorePointers: self.mode() == 'addAsPointer'
             }),
             contentType: 'application/json',
             dataType: 'json',
@@ -532,8 +519,7 @@ var AddPointerViewModel = function(nodeTitle) {
             type: 'post',
             url: nodeApiUrl + 'pointer/',
             data: JSON.stringify({
-                node_ids: node_ids,
-                mode: self.mode()
+                node_ids: node_ids
             }),
             contentType: 'application/json',
             dataType: 'json',

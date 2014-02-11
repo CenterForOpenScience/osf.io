@@ -288,15 +288,15 @@ $(document).ready(function() {
     ////////////////////
 
     $('.remove-pointer').on('click', function() {
+        var $this = $(this);
         bootbox.confirm(
             'Are you sure you want to remove this pointer? This will not ' +
             'remove the project this pointer is linked to.',
             function(result) {
                 if (result) {
-                    var $this = $(this),
-                        pointerId = $this.attr('data-id'),
-                        pointerElm = $this.closest('.list-group-item');
-                    removePointer(pointerId, pointerElm);
+                    var pointerId = $this.attr('data-id');
+                    var pointerElm = $this.closest('.list-group-item');
+                    NodeActions.removePointer(pointerId, pointerElm);
                 }
             }
         )

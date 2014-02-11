@@ -135,10 +135,10 @@
         <div class="pull-right btn-group">
             % if user['can_edit']:
                 <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
-                <a class="btn btn-default" data-toggle="modal" data-target="#addPointer" onclick="prepAddPointer()">Add Pointers</a>
+                <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
             % else:
                 <a class="btn btn-default disabled">Add Component</a>
-                <a class="btn btn-default disabled">Add Pointers</a>
+                <a class="btn btn-default disabled">Add Links</a>
             % endif
         </div>
         <%include file="modal_add_component.mako"/>

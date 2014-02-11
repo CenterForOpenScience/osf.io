@@ -400,12 +400,7 @@ def make_url_map(app):
             '/project/<pid>/',
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, json_renderer),
-        Rule(
-            '/pointer/<pid>/get_summary/',
-            'get',
-            project_views.node.pointer_summary,
-            json_renderer,
-        ),
+
         Rule(
             [
                 '/project/<pid>/pointer/',

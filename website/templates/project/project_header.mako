@@ -214,16 +214,6 @@
         addPointerVM.clear();
     });
 
-    function prepAddAsPointer() {
-        addPointerVM.clear();
-        addPointerVM.mode('addAsPointer');
-    }
-
-    function prepAddPointer() {
-        addPointerVM.clear();
-        addPointerVM.mode('addPointer');
-    }
-
 </script>
 % if node.get('is_public') and node.get('piwik_site_id'):
 <script type="text/javascript">
