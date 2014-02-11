@@ -1,5 +1,4 @@
 from .. import FileRenderer
-from flask import render_template
 
 class PdbRenderer(FileRenderer):
 
@@ -14,7 +13,5 @@ class PdbRenderer(FileRenderer):
         return self._render_mako(
             "pdb.mako",
             pdb_file=file_pointer.read(),
+            STATIC_PATH=self.STATIC_PATH,
         )
-
-    def export_pdb(self, fp):
-        return fp.read(), '.pdb'
