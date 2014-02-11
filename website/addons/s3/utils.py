@@ -2,10 +2,13 @@ import re
 from urllib import quote
 from datetime import datetime
 
+from boto.iam import IAMConnection
+from boto.exception import BotoServerError
+
 from website.util import rubeus
 
 from api import S3Key,  get_bucket_list
-from settings import CORS_RULE, ALLOWED_ORIGIN
+from settings import CORS_RULE, ALLOWED_ORIGIN, OSF_USER, OSF_USER_POLICY, OSF_USER_POLICY_NAME
 
 URLADDONS = {
     'delete': 's3/delete/',
@@ -63,12 +66,14 @@ def key_upload_path(wrapped_key, url):
 
 
 def get_bucket_drop_down(user_settings):
-    dropdown_list = ''
-    for bucket in get_bucket_list(user_settings):
-            dropdown_list += '<li role="presentation"><a href="#">' + \
-                bucket.name + '</a></li>'
-    return dropdown_list
-
+    try:
+        dropdown_list = ''
+        for bucket in get_bucket_list(user_settings):
+                dropdown_list += '<li role="presentation"><a href="#">' + \
+                    bucket.name + '</a></li>'
+        return dropdown_list
+    except BotoServerError:
+        return False
 
 def create_version_list(wrapper, key_name, node_api):
     versions = wrapper.get_file_versions(key_name)
@@ -104,3 +109,25 @@ def serialize_bucket(s3wrapper):
             'path': x.fullPath,
             'version_id': s3wrapper.bucket.get_key(x.fullPath).version_id,
             } for x in s3wrapper.get_wrapped_keys()]
+
+
+def create_osf_user(access_key, secret_key, name):
+    connection = IAMConnection(access_key, secret_key)
+    try:
+        connection.get_user(OSF_USER.format(name))
+    except BotoServerError:
+        connection.create_user(OSF_USER.format(name))
+
+    try:
+        connection.get_user_policy(OSF_USER.format(name), OSF_USER_POLICY)
+    except BotoServerError:
+        connection.put_user_policy(OSF_USER.format(name), OSF_USER_POLICY_NAME, OSF_USER_POLICY)
+
+    return connection.create_access_key(OSF_USER.format(name))['create_access_key_response']['create_access_key_result']['access_key']
+
+
+def remove_osf_user(user_settings, name):
+    connection = IAMConnection(user_settings.access_key, user_settings.secret_key)
+    connection.delete_access_key(user_settings.access_key, OSF_USER.format(name))
+    connection.delete_user_policy(OSF_USER.format(name), OSF_USER_POLICY_NAME)
+    return connection.delete_user(OSF_USER.format(name))

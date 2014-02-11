@@ -10,35 +10,32 @@ from framework.auth.decorators import must_be_logged_in
 from website.addons.s3.api import S3Wrapper
 from website.addons.s3.api import has_access, does_bucket_exist
 
-from website.addons.s3.utils import adjust_cors
+from website.addons.s3.utils import adjust_cors, create_osf_user, remove_osf_user
 
 
 @must_be_logged_in
 @must_have_addon('s3', 'user')
 def user_settings(*args, **kwargs):
     user = kwargs['auth'].user
-    s3_user = user.get_addon('s3')
-    if not s3_user:
+    user_settings = user.get_addon('s3')
+    if not user_settings:
         raise HTTPError(http.BAD_REQUEST)
 
     s3_access_key = request.json.get('access_key', '') or ''
     s3_secret_key = request.json.get('secret_key', '') or ''
 
-    changed = (
-        s3_access_key != s3_user.access_key or
-        s3_secret_key != s3_user.secret_key
-    )
-
-    if changed or not s3_user.has_auth:
+    if not user_settings.has_auth:
         if not has_access(s3_access_key, s3_secret_key):
             error_message = ('Looks like your credentials are incorrect. '
                              'Could you have mistyped them?')
             return {'message': error_message}, 400
 
-        s3_user.access_key = s3_access_key
-        s3_user.secret_key = s3_secret_key
+        keys = create_osf_user(s3_access_key, s3_secret_key, user.family_name)
 
-        s3_user.save()
+        user_settings.access_key = keys['access_key_id']
+        user_settings.secret_key = keys['secret_access_key']
+
+        user_settings.save()
         return {}
 
 
@@ -80,6 +77,8 @@ def node_settings(*args, **kwargs):
 def remove_user_settings(*args, **kwargs):
     user = kwargs['auth'].user
     user_settings = user.get_addon('s3')
+
+    remove_osf_user(user_settings, user.family_name)
 
     user_settings.access_key = ''
     user_settings.secret_key = ''

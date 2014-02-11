@@ -1,28 +1,32 @@
 <%inherit file="project/addon/node_settings.mako" />
 
-%if user_has_auth and is_owner:
+%if user_has_auth and is_owner and bucket_list:
     <div class="form-group">
         <div class="well well-sm">Authorized by <a href="${owner_url}">${owner}</a></div>
 
         <input type="hidden" id="s3_bucket" value="${bucket}" name="s3_bucket" />
 
-        <div class="btn-group btn-input">
-          <button type="button" class="btn btn-default dropdown-toggle form-control" data-toggle="dropdown">
-            <span id="bucketlabel" data-bind="label">${bucket if bucket else 'Select a bucket'}</span> <span class="caret"></span>
+        <div class="btn-group">
+          <button type="button" class="btn btn-default">
+            <span id="bucketlabel" data-bind="label">${bucket if bucket else 'Select a bucket'}</span>
+          </button>
+          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+            <span class="caret"></span>
           </button>
 
-          <ul class="dropdown-menu dropdown-menu-center" role="menu">
+          <ul class="dropdown-menu pull-right" role="menu">
             <li role="presentation" class="dropdown-header">Your buckets</li>
             ${bucket_list}
             <li role="presentation" class="divider"></li>
-            <li role="presentation"><a href="#">Create a new bucket</a></li>
-            <li role="presentation"><a href="/settings/#configureAddons">Deauthorize</a></li>
+            <li role="presentation"><a href="#"><i class="glyphicon glyphicon-plus"></i> Create a new bucket</a></li>
+            <li role="presentation"><a href="/settings/#configureAddons"><i class="glyphicon glyphicon-remove"></i> Deauthorize</a></li>
           </ul>
 
         </div>
 
     </div>
-
+%elif user_has_auth and is_owner:
+<div class="well well-sm">Looks like something went wrong<br>If you just submitted your settings try refreshing the page, sometime Amazon can be a bit slow.<br> If this is your second time seeing this message check your <a href='/settings/'>settings</a>.</div>
 %elif user_has_auth:
 
 <div class="well well-sm">Authorized by <a href="${owner_url}">${owner}</a></div>
