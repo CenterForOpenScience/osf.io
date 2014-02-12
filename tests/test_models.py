@@ -11,6 +11,8 @@ import datetime
 import urlparse
 from dateutil import parser
 
+from modularodm.exceptions import ValidationError
+
 from framework.analytics import get_total_activity_count
 from framework.auth import User
 from framework.auth.utils import parse_name
@@ -21,10 +23,9 @@ from framework.git.exceptions import FileNotModified
 from website import settings, filters
 from website.profile.utils import serialize_user
 from website.project.model import ApiKey, NodeLog, ensure_schemas
-
 from website.addons.osffiles.model import NodeFile
 
-from tests.base import DbTestCase, test_app, Guid
+from tests.base import DbTestCase, Guid
 from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
     NodeWikiFactory, UnregUserFactory, RegistrationFactory)
@@ -32,12 +33,22 @@ from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory, MetaDataFactory
 
-
+# TODO: Move me to test_auth.py (User is a framework model, not a website model)
 class TestUser(DbTestCase):
 
     def setUp(self):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
+
+    def test_cant_create_user_without_username(self):
+        u = User()  # No username given
+        with assert_raises(ValidationError):
+            u.save()
+
+    def test_cant_create_user_without_full_name(self):
+        u = User(username='fred@queen.com')
+        with assert_raises(ValidationError):
+            u.save()
 
     def test_factory(self):
         # Clear users
@@ -166,7 +177,7 @@ class TestUser(DbTestCase):
         project = ProjectFactory()
 
         assert_true(hasattr(self.user, 'recently_added'))
-        
+
         # Two users added as contributors
         user2 = UserFactory()
         user3 = UserFactory()
@@ -851,14 +862,14 @@ class TestProject(DbTestCase):
         hash_id = hashlib.md5(nr_user['email']).hexdigest()
         self.project.remove_nonregistered_contributor(
             auth=self.consolidate_auth,
-            name=nr_user['name'], 
+            name=nr_user['name'],
             hash_id=hash_id,
         )
         # List does not contain nonregistered contributor
         assert_not_in(nr_user, self.project.contributors)
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
         assert_not_in('Weezy F. Baby', [contrib.get('nr_name') for contrib in self.project.contributor_list])
-        
+
     def test_set_title(self):
         proj = ProjectFactory(title='That Was Then', creator=self.user)
         proj.set_title('This is now', auth=self.consolidate_auth)
