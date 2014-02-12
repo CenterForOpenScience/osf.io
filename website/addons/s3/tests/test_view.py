@@ -1,14 +1,10 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import mock
-from nose.tools import *  # PEP8 asserts
-#from tests.base import DbTestCase
+from nose.tools import *
 from webtest_plus import TestApp
 
 import website.app
 from tests.base import DbTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
-#from website.addons.s3.tests.utils import create_mock_s3
 from website.addons.s3 import views
 from website.addons.s3.model import AddonS3NodeSettings, AddonS3UserSettings
 
@@ -48,7 +44,7 @@ class TestS3Views(DbTestCase):
         res = self.app.post_json(url, {}, expect_errors=True)
 
     @mock.patch('framework.addons.AddonModelMixin.get_addon')
-    @mock.patch('website.addons.s3.views.config.has_access')
+    @mock.patch('website.addons.s3.views.config.remove_osf_user')
     def test_s3_remove_user_settings(self, mock_access, mock_addon):
         mock_addon.return_value = self.user.get_addon('s3')
         mock_access.return_value = True
@@ -57,12 +53,11 @@ class TestS3Views(DbTestCase):
         self.user.get_addon('s3').save()
         url = '/api/v1/settings/s3/delete/'
         self.app.post_json(url, {}, auth=self.user.auth)
-        # self.project.reload()
         assert_equals(self.user.get_addon('s3').access_key, '')
         # TODO finish me
 
     def test_download_no_file(self):
-        url = "/api/v1/project/{0}/s3/fetchurl/".format(self.project._id)
+        url = "/api/v1/project/{0}/s3/download/".format(self.project._id)
         self.app.post_json(url, {},  expect_errors=True)
 
     # TODO fix me cant seem to be logged in.....
@@ -75,12 +70,13 @@ class TestS3Views(DbTestCase):
 
     @mock.patch('framework.addons.AddonModelMixin.get_addon')
     @mock.patch('website.addons.s3.views.config.has_access')
-    def test_user_settings(self, mock_access, mock_addon):
+    @mock.patch('website.addons.s3.views.config.create_osf_user')
+    def test_user_settings(self, mock_user, mock_access, mock_addon):
+        user_settings = AddonS3UserSettings()
         mock_access.return_value = True
-        mock_addon.return_value = self.user.get_addon('s3')
+        mock_user.return_value = {'access_key_id': 'scout', 'secret_access_key': 'ssshhhhhhhhh'}
+        mock_addon.return_value = user_settings
         url = '/api/v1/settings/s3/'
         rv = self.app.post_json(
             url, {'access_key': 'scout', 'secret_key': 'Aticus'})
-        user_settings = self.user.get_addon('s3')
         assert_equals(user_settings.access_key, 'scout')
-

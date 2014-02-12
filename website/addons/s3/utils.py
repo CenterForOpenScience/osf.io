@@ -6,7 +6,7 @@ from boto.exception import BotoServerError
 
 from website.util import rubeus
 
-from api import S3Key,  get_bucket_list
+from api import get_bucket_list
 from settings import CORS_RULE, ALLOWED_ORIGIN, OSF_USER, OSF_USER_POLICY, OSF_USER_POLICY_NAME
 
 URLADDONS = {
@@ -23,14 +23,6 @@ def adjust_cors(s3wrapper):
     if not [rule for rule in rules if rule.to_xml() == CORS_RULE]:
         rules.add_rule(['PUT', 'GET'], ALLOWED_ORIGIN, allowed_header={'*'})
         s3wrapper.set_cors_rules(rules)
-
-
-#TODO remove if not needed in newest hgrid
-def checkFolders(s3wrapper, keyList):
-    for k in keyList:
-        if k.parentFolder is not None and k.parentFolder not in [x.name for x in keyList]:
-            newKey = s3wrapper.create_folder(k.pathTo)
-            keyList.append(S3Key(newKey))
 
 
 def wrapped_key_to_json(wrapped_key, node_api, node_url):

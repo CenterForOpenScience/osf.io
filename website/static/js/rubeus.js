@@ -73,7 +73,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
     HGrid.Html.statusSelector = '[data-status]';
 
     /**
-     * Get the status message from the addon, is any.
+     * Get the status message from the addon, if any.
      */
      function getStatusCfg(addon, whichStatus, extra) {
         if(addon && Rubeus.cfg[addon] && Rubeus.cfg[addon][whichStatus]) {
