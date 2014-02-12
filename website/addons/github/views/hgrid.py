@@ -171,7 +171,7 @@ def github_root_folder_public(*args, **kwargs):
 
     return github_hgrid_data(node_settings, auth=auth, parent=parent, contents=False, **data)
 
-
+# TODO I'm never used, can I go home?
 def _get_tree(node_settings, sha, connection=None):
 
     connection = connection or GitHub.from_settings(node_settings.user_settings)

@@ -3,18 +3,12 @@
 """
 
 import os
-import json
-import base64
 import urllib
 import datetime
-import StringIO
 
-import requests
-from requests_oauthlib import OAuth2Session
-from hurry.filesize import size, alternative
 import github3
-
-from . import settings as github_settings
+from dateutil.parser import parse
+from hurry.filesize import size, alternative
 
 GH_URL = 'https://github.com/'
 API_URL = 'https://api.github.com/'
@@ -27,8 +21,6 @@ class GitHub(object):
 
     def __init__(self, access_token=None, token_type=None):
 
-        self.access_token = access_token
-        self.token_type = token_type
         if access_token and token_type:
             self.gh3 = github3.login(token=access_token)
         else:
@@ -100,14 +92,14 @@ class GitHub(object):
 
         """
         req = self.commits(user, repo, path=path, sha=sha)
-        # TODO Fix variables
+
         if req:
             return [
                 {
                     'sha': commit.commit.sha,
                     'name': commit.commit.author['name'],
                     'email': commit.commit.author['email'],
-                    'date': commit.commit.author['date'], # Format me?
+                    'date': parse(commit.commit.author['date']).ctime(),
                 }
                 for commit in req
             ]
@@ -124,13 +116,8 @@ class GitHub(object):
             http://developer.github.com/v3/git/trees/
 
         """
-        # NOTE: GitHub will return the tree recursively as long as the
-        # recursive param is included, no matter what its value is
-        # Therefore, pass NO params for a NON-recursive tree
-
-        #TODO Test me
         tree = self.gh3.repository(user, repo).tree(sha)
-        assert 0, tree
+
         if recursive:
             return tree.recurse()
         return tree
@@ -183,7 +170,6 @@ class GitHub(object):
             return dict(req.headers), req.content
         return None, None
 
-    # TODO
     def set_privacy(self, user, repo, private):
         """Set privacy of GitHub repo.
 
@@ -193,19 +179,7 @@ class GitHub(object):
             http://developer.github.com/v3/repos/#edit
 
         """
-        req = self._send(
-            os.path.join(
-                API_URL, 'repos', user, repo
-            ),
-            method='patch',
-            cache=False,
-            data=json.dumps({
-                'name': repo,
-                'private': private,
-            })
-        )
-
-        return req
+        return self.gh3.repository(user, repo).edit(repo, private=private)
 
     #########
     # Hooks #
@@ -250,26 +224,8 @@ class GitHub(object):
     # CRUD #
     ########
 
-    # TODO
     def upload_file(self, user, repo, path, message, content, sha=None, branch=None, committer=None, author=None):
-
-        data = {
-            'message': message,
-            'content': base64.b64encode(content),
-            'sha': sha,
-            'branch': branch,
-            'committer': committer,
-            'author': author,
-        }
-
-        return self._send(
-            os.path.join(
-                API_URL, 'repos', user, repo, 'contents', path
-            ),
-            method='put',
-            cache=False,
-            data=json.dumps(data),
-        )
+            return self.gh3.repository(user, repo).create_file(path, message, content, branch, author=author)
 
     def delete_file(self, user, repo, path, message, sha, branch=None, committer=None, author=None):
 
@@ -283,7 +239,6 @@ class GitHub(object):
 
         if self.access_token is None:
             return
-        #TODO Test me
         return self.gh3.authorization().delete()
 
 

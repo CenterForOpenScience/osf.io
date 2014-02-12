@@ -165,10 +165,10 @@ def github_upload_file(**kwargs):
     tree = connection.tree(github.user, github.repo, sha=sha or branch)
     existing = [
         thing
-        for thing in tree['tree']
-        if thing['path'] == os.path.join(path, filename)
+        for thing in tree.tree
+        if thing.path == os.path.join(path, filename)
     ]
-    sha = existing[0]['sha'] if existing else None
+    sha = existing[0].sha if existing else None
 
     author = {
         'name': user.fullname,
@@ -200,7 +200,7 @@ def github_upload_file(**kwargs):
                     'repo': github.repo,
                     'url': node.api_url + 'github/file/{0}/?ref={1}'.format(
                         os.path.join(path, filename),
-                        data['commit']['sha']
+                        data['commit'].sha
                     ),
                 },
             },
@@ -212,8 +212,8 @@ def github_upload_file(**kwargs):
             'addon': 'github',
             'name': filename,
             'size': [
-                data['content']['size'],
-                size(data['content']['size'], system=alternative)
+                data['content'].size,
+                size(data['content'].size, system=alternative)
             ],
             'kind': 'file',
             'urls': _build_github_urls(

@@ -70,14 +70,13 @@ def _check_permissions(node_settings, auth, connection, branch, sha=None, repo=N
         repo = repo or connection.repo(
             node_settings.user, node_settings.repo
         )
-        #TODO FIX ME
-        has_access = False#(
-            #repo is not None and (
-                #repo.is_collaborator()
-             #   'permissions' not in repo or
-             #   repo['permissions']['push']
-           # )
-       # )
+
+        has_access = (
+            repo is not None and (
+                'permissions' not in repo.to_json() or
+                repo.to_json()['permissions']['push']
+            )
+        )
 
     if sha:
         branches = connection.branches(
