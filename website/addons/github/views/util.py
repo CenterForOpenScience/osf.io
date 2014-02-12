@@ -32,7 +32,7 @@ def _get_refs(addon, branch=None, sha=None, connection=None):
         repo = connection.repo(addon.user, addon.repo)
         if repo is None:
             return None, None, None
-        branch = repo['default_branch']
+        branch = repo.default_branch
 
     # Get registered branches if provided
     registered_branches = (
@@ -70,12 +70,14 @@ def _check_permissions(node_settings, auth, connection, branch, sha=None, repo=N
         repo = repo or connection.repo(
             node_settings.user, node_settings.repo
         )
-        has_access = (
-            repo is not None and (
-                'permissions' not in repo or
-                repo['permissions']['push']
-            )
-        )
+        #TODO FIX ME
+        has_access = False#(
+            #repo is not None and (
+                #repo.is_collaborator()
+             #   'permissions' not in repo or
+             #   repo['permissions']['push']
+           # )
+       # )
 
     if sha:
         branches = connection.branches(

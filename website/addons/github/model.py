@@ -125,7 +125,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             return
 
         node_permissions = 'public' if node.is_public else 'private'
-        repo_permissions = 'private' if repo['private'] else 'public'
+        repo_permissions = 'private' if repo.private else 'public'
         if repo_permissions != node_permissions:
             message = (
                 'Warnings: This OSF {category} is {node_perm}, but the GitHub '
@@ -219,7 +219,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if data is None or 'errors' in data:
             repo = connect.repo(self.user, self.repo)
             if repo is not None:
-                current_privacy = 'private' if repo['private'] else 'public'
+                current_privacy = 'private' if repo.private else 'public'
             else:
                 current_privacy = 'unknown'
             return (

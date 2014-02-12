@@ -49,6 +49,7 @@ def github_download_file(**kwargs):
     _, ext = os.path.splitext(name)
     if not ext:
         resp.headers['Content-Type'] = 'application/octet-stream'
+    assert 0, resp
 
     return resp
 
@@ -77,7 +78,7 @@ def github_view_file(**kwargs):
     repo = connection.repo(node_settings.user, node_settings.repo)
 
     # Get branch / commit
-    branch = request.args.get('branch', repo['default_branch'])
+    branch = request.args.get('branch', repo.default_branch)
     sha = request.args.get('sha', branch)
 
     # Get file URL
@@ -99,11 +100,11 @@ def github_view_file(**kwargs):
     for commit in commits:
         commit['download'] = (
             os.path.join(node.api_url, 'github', 'file', path) +
-            '?ref=' + ref_to_params(sha=commit['sha'])
+            '/?ref=' + ref_to_params(sha=commit['sha'])
         )
         commit['view'] = (
             os.path.join(node.url, 'github', 'file', path)
-            + '?' + ref_to_params(branch, commit['sha'])
+            + ref_to_params(branch, commit['sha'])
         )
 
     # Get or create rendered file

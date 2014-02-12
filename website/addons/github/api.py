@@ -7,6 +7,7 @@ import json
 import base64
 import urllib
 import datetime
+import StringIO
 
 import requests
 from requests_oauthlib import OAuth2Session
@@ -50,49 +51,6 @@ class GitHub(object):
             )
         return cls()
 
-    def _send(self, url, method='get', output='json', cache=True, **kwargs):
-        """
-
-        """
-        func = getattr(self.session, method.lower())
-
-        # Add if-modified-since header if needed
-        headers = kwargs.pop('headers', {})
-        cache_key = '{0}::{1}::{2}'.format(
-            url, method, str(kwargs)
-        )
-        cache_data = github_cache.get(cache_key)
-        if cache and cache_data:
-            if 'if-modified-since' not in headers:
-                headers['if-modified-since'] = cache_data['date'].strftime('%c')
-
-        # Send request
-        req = func(url, headers=headers, **kwargs)
-
-        # Pull from cache if not modified
-        if cache and cache_data and req.status_code == 304:
-            return cache_data['data']
-
-        # Get return value
-        rv = None
-        if 200 <= req.status_code < 300:
-            if output is None:
-                rv = req
-            else:
-                rv = getattr(req, output)
-                if callable(rv):
-                    rv = rv()
-
-        # Cache return value if needed
-        if cache and rv:
-            if req.headers.get('last-modified'):
-                github_cache[cache_key] = {
-                    'data': rv,
-                    'date': datetime.datetime.utcnow(),
-                }
-
-        return rv
-
     def user(self, user=None):
         """Fetch a user or the authenticated user.
 
@@ -101,12 +59,7 @@ class GitHub(object):
         :return dict: GitHub API response
 
         """
-        url = (
-            os.path.join(API_URL, 'users', user)
-            if user
-            else os.path.join(API_URL, 'user')
-        )
-        return self._send(url, cache=False)
+        return self.gh3.user(user)
 
     def repo(self, user, repo):
         """Get a single Github repo's info.
@@ -117,10 +70,7 @@ class GitHub(object):
             See http://developer.github.com/v3/repos/#get
 
         """
-
-        return self._send(
-            os.path.join(API_URL, 'repos', user, repo)
-        )
+        return self.gh3.repository(user, repo)
 
     def branches(self, user, repo, branch=None):
         """List a repo's branches or get a single branch.
@@ -132,8 +82,7 @@ class GitHub(object):
             http://developer.github.com/v3/repos/#list-branches
 
         """
-        repo = self.gh3.repository(user, repo)
-        return [branch for branch in repo.iter_branches()]
+        return [branch for branch in self.gh3.repository(user, repo).iter_branches()]
 
     def commits(self, user, repo, path=None, sha=None):
         """Get commits for a repo or file.
@@ -146,15 +95,7 @@ class GitHub(object):
             http://developer.github.com/v3/repos/commits/
 
         """
-        return self._send(
-            os.path.join(
-                API_URL, 'repos', user, repo, 'commits'
-            ),
-            params={
-                'path': path,
-                'sha': sha,
-            }
-        )
+        return [commit for commit in self.gh3.repository(user, repo).iter_commits(sha=sha, path=path)]
 
     def history(self, user, repo, path, sha=None):
         """Get commit history for a file.
@@ -167,14 +108,14 @@ class GitHub(object):
 
         """
         req = self.commits(user, repo, path=path, sha=sha)
-
+        # TODO Fix variables
         if req:
             return [
                 {
-                    'sha': commit['sha'],
-                    'name': commit['commit']['author']['name'],
-                    'email': commit['commit']['author']['email'],
-                    'date': commit['commit']['author']['date'],
+                    'sha': commit.commit.sha,
+                    'name': commit.commit.author['name'],
+                    'email': commit.commit.author['email'],
+                    'date': commit.commit.author['date'], # Format me?
                 }
                 for commit in req
             ]
@@ -194,17 +135,13 @@ class GitHub(object):
         # NOTE: GitHub will return the tree recursively as long as the
         # recursive param is included, no matter what its value is
         # Therefore, pass NO params for a NON-recursive tree
-        params = {'recursive': 1} if recursive else {}
-        req = self._send(os.path.join(
-                API_URL, 'repos', user, repo, 'git', 'trees',
-                urllib.quote_plus(sha),
-            ),
-            params=params,
-        )
 
-        if req is not None:
-            return req
-        return None
+        #TODO Test me
+        tree = self.gh3.repository(user, repo).tree(sha)
+        assert 0, tree
+        if recursive:
+            return tree.recurse()
+        return tree
 
     def file(self, user, repo, path, ref=None):
         """Get a file within a repo and its contents.
@@ -214,8 +151,7 @@ class GitHub(object):
         """
         req = self.contents(user=user, repo=repo, path=path, ref=ref)
         if req:
-            content = req['content']
-            return req['name'], base64.b64decode(content), req['size']
+            return req.name, req.decoded, req.size
         return None, None, None
 
     def contents(self, user, repo, path='', ref=None):
@@ -223,18 +159,7 @@ class GitHub(object):
         http://developer.github.com/v3/repos/contents/#get-contents
 
         """
-        params = {
-            'ref': ref,
-        }
-
-        req = self._send(
-            os.path.join(
-                API_URL, 'repos', user, repo, 'contents', path
-            ),
-            cache=True,
-            params=params,
-        )
-        return req
+        return self.gh3.repository(user, repo).contents(path, ref)
 
     def starball(self, user, repo, archive='tar', ref=None):
         """Get link for archive download.
@@ -246,6 +171,9 @@ class GitHub(object):
         :returns: tuple: Tuple of headers and file location
 
         """
+
+        return self.gh3.repository(user, repo).archive(archive + 'ball', ref=None)
+
         url_parts = [
             API_URL, 'repos', user, repo, archive + 'ball'
         ]
@@ -298,12 +226,7 @@ class GitHub(object):
             http://developer.github.com/v3/repos/hooks/#json-http
 
         """
-
-        return self._send(
-            os.path.join(
-                API_URL, 'repos', user, repo, 'hooks',
-            )
-        )
+        return [hook for hook in self.gh3.repository(user, repo).iter_hooks()]
 
     def add_hook(self, user, repo, name, config, events=None, active=True):
         """Create a webhook.
@@ -314,40 +237,20 @@ class GitHub(object):
             http://developer.github.com/v3/repos/hooks/#json-http
 
         """
-        data = {
-            'name': name,
-            'config': config,
-            'events': events or ['push'],
-            'active': active,
-        }
 
-        return self._send(
-            os.path.join(
-                API_URL, 'repos', user, repo, 'hooks'
-            ),
-            method='post',
-            cache=False,
-            data=json.dumps(data),
-        )
+        return self.gh3.repository(user, repo).create_hook(name, config, events, active)
 
     def delete_hook(self, user, repo, _id):
         """Delete a webhook.
 
         :param str user: GitHub user name
         :param str repo: GitHub repo name
-        :return requests.models.Response: Response object
+        :return bool: True if successfull False otherwise
 
         """
         # Note: Must set `output` to `None`; no JSON response from this
         # endpoint
-        return self._send(
-            os.path.join(
-                API_URL, 'repos', user, repo, 'hooks', str(_id),
-            ),
-            'delete',
-            cache=False,
-            output=None,
-        )
+        return self.gh3.repository(user, repo).hook(_id).delete()
 
     ########
     # CRUD #
@@ -375,22 +278,7 @@ class GitHub(object):
 
     def delete_file(self, user, repo, path, message, sha, branch=None, committer=None, author=None):
 
-        data = {
-            'message': message,
-            'sha': sha,
-            'branch': branch,
-            'committer': committer,
-            'author': author,
-        }
-
-        return self._send(
-            os.path.join(
-                API_URL, 'repos', user, repo, 'contents', path
-            ),
-            method='delete',
-            cache=False,
-            data=json.dumps(data),
-        )
+        return self.gh3.repository(user, repo).delete_file(path, message, sha, branch, committer, author)
 
     ########
     # Auth #
@@ -426,7 +314,6 @@ def ref_to_params(branch=None, sha=None):
         }.iteritems()
         if value
     })
-
     if params:
         return '?' + params
     return ''
@@ -434,18 +321,18 @@ def ref_to_params(branch=None, sha=None):
 
 def _build_github_urls(item, node_url, node_api_url, branch, sha):
 
-    quote_path = urllib.quote_plus(item['path'])
+    quote_path = urllib.quote_plus(item.path)
     params = ref_to_params(branch, sha)
 
-    if item['type'] in ['tree', 'dir']:
+    if item.type in ['tree', 'dir']:
         return {
             'upload': os.path.join(node_api_url, 'github', 'file', quote_path) + '/' + params,
-            'fetch': os.path.join(node_api_url, 'github', 'hgrid', item['path']) + '/',
+            'fetch': os.path.join(node_api_url, 'github', 'hgrid', item.path) + '/',
         }
-    elif item['type'] in ['file', 'blob']:
+    elif item.type in ['file', 'blob']:
         return {
             'view': os.path.join(node_url, 'github', 'file', quote_path) + '/' + params,
             'download': os.path.join(node_url, 'github', 'file', 'download', quote_path) + '/' + params,
-            'delete': os.path.join(node_api_url, 'github', 'file', quote_path) + '/' + ref_to_params(branch, item['sha']),
+            'delete': os.path.join(node_api_url, 'github', 'file', quote_path) + '/' + ref_to_params(branch, item.sha),
         }
     raise ValueError
