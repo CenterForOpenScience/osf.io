@@ -332,7 +332,7 @@ def _build_github_urls(item, node_url, node_api_url, branch, sha):
     elif item.type in ['file', 'blob']:
         return {
             'view': os.path.join(node_url, 'github', 'file', quote_path) + '/' + params,
-            'download': os.path.join(node_url, 'github', 'file', 'download', quote_path) + '/' + params,
+            'download': os.path.join(node_api_url, 'github', 'file', 'download', quote_path) + '/' + params,
             'delete': os.path.join(node_api_url, 'github', 'file', quote_path) + '/' + ref_to_params(branch, item.sha),
         }
     raise ValueError

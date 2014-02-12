@@ -350,7 +350,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     #########
     # Hooks #
     #########
-
+    # TODO Should Events be added here?
     def add_hook(self, save=True):
 
         if self.user_settings:
@@ -364,13 +364,12 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                         os.path.join(
                             self.owner.api_url, 'github', 'hook/'
                         )
-                    ),
-                    'content_type': 'json',
+                    )
                 }
             )
 
             if hook:
-                self.hook_id = hook['id']
+                self.hook_id = hook.id
                 if save:
                     self.save()
 
