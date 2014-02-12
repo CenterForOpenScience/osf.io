@@ -12,7 +12,7 @@ import StringIO
 import requests
 from requests_oauthlib import OAuth2Session
 from hurry.filesize import size, alternative
-from github3 import login
+import github3
 
 from . import settings as github_settings
 
@@ -29,18 +29,10 @@ class GitHub(object):
 
         self.access_token = access_token
         self.token_type = token_type
-
         if access_token and token_type:
-            self.session = OAuth2Session(
-                github_settings.CLIENT_ID,
-                token={
-                    'access_token': access_token,
-                    'token_type': token_type,
-                }
-            )
-            self.gh3 = login(token=access_token)
+            self.gh3 = github3.login(token=access_token)
         else:
-            self.session = requests
+            self.gh3 = github3.GitHub()
 
     @classmethod
     def from_settings(cls, settings):
@@ -161,6 +153,7 @@ class GitHub(object):
         """
         return self.gh3.repository(user, repo).contents(path, ref)
 
+    # TODO
     def starball(self, user, repo, archive='tar', ref=None):
         """Get link for archive download.
 
@@ -190,6 +183,7 @@ class GitHub(object):
             return dict(req.headers), req.content
         return None, None
 
+    # TODO
     def set_privacy(self, user, repo, private):
         """Set privacy of GitHub repo.
 
@@ -256,6 +250,7 @@ class GitHub(object):
     # CRUD #
     ########
 
+    # TODO
     def upload_file(self, user, repo, path, message, content, sha=None, branch=None, committer=None, author=None):
 
         data = {
@@ -288,20 +283,8 @@ class GitHub(object):
 
         if self.access_token is None:
             return
-
-        return self._send(
-            os.path.join(
-                API_URL, 'applications', github_settings.CLIENT_ID,
-                'tokens', self.access_token,
-            ),
-            method='delete',
-            cache=False,
-            output=None,
-            auth=(
-                github_settings.CLIENT_ID,
-                github_settings.CLIENT_SECRET,
-            )
-        )
+        #TODO Test me
+        return self.gh3.authorization().delete()
 
 
 def ref_to_params(branch=None, sha=None):
