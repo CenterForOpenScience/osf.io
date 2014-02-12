@@ -8,7 +8,10 @@ import datetime
 
 import github3
 from dateutil.parser import parse
+from httpcache import CachingHTTPAdapter
 from hurry.filesize import size, alternative
+
+from website.addons.github.settings import CACHE
 
 GH_URL = 'https://github.com/'
 API_URL = 'https://api.github.com/'
@@ -25,6 +28,11 @@ class GitHub(object):
             self.gh3 = github3.login(token=access_token)
         else:
             self.gh3 = github3.GitHub()
+
+        #Caching libary
+        if CACHE:
+            self.gh3._session.mount('http://', CachingHTTPAdapter())
+            self.gh3._session.mount('https://', CachingHTTPAdapter())
 
     @classmethod
     def from_settings(cls, settings):
