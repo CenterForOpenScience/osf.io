@@ -15,7 +15,7 @@ from website.addons.s3.utils import adjust_cors, create_osf_user, remove_osf_use
 
 @must_be_logged_in
 @must_have_addon('s3', 'user')
-def user_settings(*args, **kwargs):
+def s3_user_settings(*args, **kwargs):
     user = kwargs['auth'].user
     user_settings = user.get_addon('s3')
     if not user_settings:
@@ -41,7 +41,7 @@ def user_settings(*args, **kwargs):
 
 @must_be_contributor
 @must_have_addon('s3', 'node')
-def node_settings(*args, **kwargs):
+def s3_node_settings(*args, **kwargs):
 
     user = kwargs['auth'].user
 
@@ -74,7 +74,7 @@ def node_settings(*args, **kwargs):
 
 @must_be_logged_in
 @must_have_addon('s3', 'user')
-def remove_user_settings(*args, **kwargs):
+def s3_remove_user_settings(*args, **kwargs):
     user = kwargs['auth'].user
     user_settings = user.get_addon('s3')
 

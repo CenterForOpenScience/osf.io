@@ -25,7 +25,7 @@ from website.addons.s3.settings import MAX_RENDER_SIZE
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
-def download(*args, **kwargs):
+def s3_download(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
@@ -40,7 +40,7 @@ def download(*args, **kwargs):
 
 @must_be_contributor
 @must_have_addon('s3', 'node')
-def delete(*args, **kwargs):
+def s3_delete(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
     dfile = unquote(kwargs['path'])
@@ -64,7 +64,7 @@ def delete(*args, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
-def view(*args, **kwargs):
+def s3_view(*args, **kwargs):
 
     path = kwargs.get('path')
     vid = request.args.get('vid')
@@ -129,7 +129,7 @@ def ping_render(*args, **kwargs):
 # TODO Generate file for hgrid and return with signed url
 @must_be_contributor
 @must_have_addon('s3', 'node')
-def upload(*args, ** kwargs):
+def s3_upload(*args, ** kwargs):
 
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
