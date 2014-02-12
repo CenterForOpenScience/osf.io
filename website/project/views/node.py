@@ -7,7 +7,6 @@ from framework import (
     push_errors_to_status, Q,
     analytics
 )
-from framework.analytics import update_counters
 from framework.auth.decorators import must_be_logged_in, collect_auth
 import framework.status as status
 from framework.exceptions import HTTPError
@@ -149,8 +148,6 @@ def node_fork_page(*args, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
-@update_counters('node:{pid}')
-@update_counters('node:{nid}')
 def node_registrations(*args, **kwargs):
     auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
@@ -159,8 +156,6 @@ def node_registrations(*args, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
-@update_counters('node:{pid}')
-@update_counters('node:{nid}')
 def node_forks(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']

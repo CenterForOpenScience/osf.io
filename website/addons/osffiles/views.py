@@ -219,8 +219,6 @@ def upload_file_public(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
 @must_have_addon('osffiles', 'node')
-@update_counters('node:{pid}')
-@update_counters('node:{nid}')
 def view_file(*args, **kwargs):
 
     auth = kwargs['auth']
