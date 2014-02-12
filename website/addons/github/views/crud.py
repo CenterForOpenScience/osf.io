@@ -31,8 +31,7 @@ def github_download_file(**kwargs):
     if path is None:
         raise HTTPError(http.NOT_FOUND)
 
-    ref = request.args.get('ref')
-
+    ref = request.args.get('sha')
     connection = GitHub.from_settings(github.user_settings)
 
     name, data, _ = connection.file(github.user, github.repo, path, ref=ref)
@@ -49,7 +48,6 @@ def github_download_file(**kwargs):
     _, ext = os.path.splitext(name)
     if not ext:
         resp.headers['Content-Type'] = 'application/octet-stream'
-    assert 0, resp
 
     return resp
 
@@ -99,8 +97,8 @@ def github_view_file(**kwargs):
 
     for commit in commits:
         commit['download'] = (
-            os.path.join(node.api_url, 'github', 'file', path) +
-            '/?ref=' + ref_to_params(sha=commit['sha'])
+            os.path.join(node.api_url, 'github', 'file', 'download', path) +
+             ref_to_params(sha=commit['sha'])
         )
         commit['view'] = (
             os.path.join(node.url, 'github', 'file', path)
