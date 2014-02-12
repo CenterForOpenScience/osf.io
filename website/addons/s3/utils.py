@@ -1,6 +1,5 @@
-import re
 from urllib import quote
-from datetime import datetime
+from dateutil.parser import parse
 
 from boto.iam import IAMConnection
 from boto.exception import BotoServerError
@@ -39,7 +38,7 @@ def wrapped_key_to_json(wrapped_key, node_api, node_url):
         rubeus.KIND: _key_type_to_rubeus(wrapped_key.type),
         'name': wrapped_key.name,
         'size': (wrapped_key.size, wrapped_key.size) if wrapped_key.size is not None else '--',
-        'lastMod': wrapped_key.lastMod.strftime("%Y/%m/%d %I:%M %p") if wrapped_key.lastMod is not None else '--',
+        'lastMod': wrapped_key.lastMod.ctime() if wrapped_key.lastMod is not None else '--',
         'ext': wrapped_key.extension if wrapped_key.extension is not None else '--',
         'urls': {
             'download': node_api + URLADDONS['download'] + quote(wrapped_key.fullPath) + '/' if wrapped_key.type == 'file' else None,
@@ -75,24 +74,14 @@ def get_bucket_drop_down(user_settings):
     except BotoServerError:
         return False
 
+
 def create_version_list(wrapper, key_name, node_api):
     versions = wrapper.get_file_versions(key_name)
     return [{
             'id': x.version_id if x.version_id != 'null' else 'Pre-versioning',
-            'date': _format_date(x.last_modified),
+            'date': parse(x.last_modified).ctime(),
             'download': _get_download_url(key_name, x.version_id, node_api),
             } for x in versions]
-
-
-def _format_date(date):
-    m = re.search(
-        '(.+?)-(.+?)-(\d*)T(\d*):(\d*):(\d*)', str(date))
-    if m is not None:
-        dt = datetime(int(m.group(1)), int(m.group(2)),
-                      int(m.group(3)), int(m.group(4)), int(m.group(5)))
-        return dt.strftime("%Y/%m/%d %I:%M %p")
-    else:
-        return '--'
 
 
 def _get_download_url(key_name, version_id, node_api):

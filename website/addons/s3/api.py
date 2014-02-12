@@ -1,13 +1,13 @@
+import os
+
+from boto.iam import *
 from boto.exception import *
 from boto.s3.connection import *
 from boto.s3.cors import CORSConfiguration
 
-from hurry.filesize import size, alternative
+from dateutil.parser import parse
 
-import os
-import re
-from boto.iam import *
-from datetime import datetime
+from hurry.filesize import size, alternative
 
 
 #Note: (from boto docs) this function is in beta
@@ -234,12 +234,7 @@ class S3Key:
         if self.type == 'folder':
             return None
         else:
-            m = re.search(
-                '(.+?)-(.+?)-(\d*)T(\d*):(\d*):(\d*)', str(self.s3Key.last_modified))
-            if m is not None:
-                return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)))
-            else:
-                return None
+            return parse(self.s3Key.last_modified)
 
     @property
     def version(self):
