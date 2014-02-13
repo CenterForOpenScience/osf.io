@@ -72,7 +72,11 @@
                         </a>
                         <a
                                 rel="tooltip"
-                                class="btn btn-default"
+                                % if node['points']:
+                                    href="#showLinks"
+                                    data-toggle="modal"
+                                % endif
+                                class="btn btn-default ${'disabled' if node['points'] == 0 else ''}"
                                 title="Number times this ${node['category']} has been linked"
                             >
                             <i id="linkCount" class="icon-hand-right">&nbsp;${node['points']}</i>
@@ -153,6 +157,7 @@
 </div><!-- end projectScope -->
 <%include file="modal_add_contributor.mako"/>
 <%include file="modal_add_pointer.mako"/>
+<%include file="modal_show_links.mako"/>
 ## TODO: Find a better place to put this initialization code
 <script>
 
@@ -183,9 +188,9 @@
                     // Initiate AddContributorViewModel
                     var $addContributors = $('#addContributors');
                     var addContribVM = new AddContributorViewModel(
-                            data.node.title,
-                            data.parent.id,
-                            data.parent.title
+                        data.node.title,
+                        data.parent.id,
+                        data.parent.title
                     );
                     ko.applyBindings(addContribVM, $addContributors[0]);
                     // Clear user search modal when dismissed; catches dismiss by escape key
@@ -213,6 +218,11 @@
     $addPointer.on('hidden.bs.modal', function() {
         addPointerVM.clear();
     });
+
+    var linksModal = $('#showLinks')[0];
+    var linksVM = new LinksViewModel(linksModal);
+    ko.applyBindings(linksVM, linksModal);
+
 
 </script>
 % if node.get('is_public') and node.get('piwik_site_id'):

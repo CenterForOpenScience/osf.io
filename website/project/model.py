@@ -590,6 +590,9 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # Fork into current node and replace pointer with forked component
         forked = node.fork_node(auth)
+        if forked is None:
+            raise ValueError('Could not fork node')
+
         self.nodes[index] = forked
 
         # Optionally save changes

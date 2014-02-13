@@ -452,6 +452,15 @@ class TestPointerViews(DbTestCase):
 
     def test_remove_pointer_not_found(self):
         url = self.project.api_url + 'pointer/'
+        with assert_raises(AppError):
+            self.app.delete_json(
+                url,
+                {'pointerId': None},
+                auth=self.user.auth
+            )
+
+    def test_remove_pointer_not_in_nodes(self):
+        url = self.project.api_url + 'pointer/'
         node = NodeFactory()
         pointer = Pointer(node=node)
         with assert_raises(AppError):
@@ -461,17 +470,14 @@ class TestPointerViews(DbTestCase):
                 auth=self.user.auth,
             )
 
-    def test_remove_pointer_not_in_nodes(self):
-        pass
-
     def test_fork_pointer(self):
         url = self.project.api_url + 'pointer/fork/'
-        node = NodeFactory()
+        node = NodeFactory(creator=self.user)
         pointer = self.project.add_pointer(node, auth=self.consolidate_auth)
         self.app.post_json(
             url,
             {'pointerId': pointer._id},
-            auth=self.consolidate_auth
+            auth=self.user.auth
         )
 
     def test_fork_pointer_not_provided(self):
@@ -485,18 +491,18 @@ class TestPointerViews(DbTestCase):
             self.app.post_json(
                 url,
                 {'pointerId': None},
-                auth=self.consolidate_auth
+                auth=self.user.auth
             )
 
     def test_fork_pointer_not_in_nodes(self):
-        url = self.project.api_url + 'fork/pointer/'
+        url = self.project.api_url + 'pointer/fork/'
         node = NodeFactory()
         pointer = Pointer(node=node)
         with assert_raises(AppError):
             self.app.post_json(
                 url,
                 {'pointerId': pointer._id},
-                auth=self.consolidate_auth
+                auth=self.user.auth
             )
 
 

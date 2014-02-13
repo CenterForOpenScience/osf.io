@@ -2,13 +2,19 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h3></h3>
+                <h3>Links to this project</h3>
             </div>
 
             <div class="modal-body">
-                <table>
+                <table class="table table-striped">
+                    <thead>
+                        <th>Title</th>
+                        <th>Authors</th>
+                    </thead>
                     <tr data-bind="foreach: links">
-                        <td data-bind="text: title"></td>
+                        <td>
+                            <a data-bind="text: title, attr: {href: url}"></a>
+                        </td>
                         <td data-bind="text: authorShort"></td>
                     </tr>
                 </table>

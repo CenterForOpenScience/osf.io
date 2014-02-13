@@ -162,8 +162,9 @@ var LinksViewModel = function(elm) {
             $.ajax({
                 type: 'GET',
                 url: nodeApiUrl + 'pointer/',
+                dataType: 'json',
                 success: function(response) {
-                    self.links(response.links);
+                    self.links(response.pointed);
                 },
                 error: function() {
                     elm.modal('hide');

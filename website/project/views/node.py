@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import re
 import logging
 import httplib as http
 from framework import (
@@ -786,3 +785,22 @@ def fork_pointer(**kwargs):
         node.fork_pointer(pointer, auth=auth, save=True)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
+
+def abbrev_authors(node):
+    rv = node.contributors[0].family_name
+    if len(node.contributors) > 1:
+        rv += ' et al.'
+    return rv
+
+@must_be_contributor_or_public
+def get_pointed(**kwargs):
+
+    node = kwargs['node'] or kwargs['project']
+    return {'pointed': [
+        {
+            'url': each.url,
+            'title': each.title,
+            'authorShort': abbrev_authors(node),
+        }
+        for each in node.pointed
+    ]}

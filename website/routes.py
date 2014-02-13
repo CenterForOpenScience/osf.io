@@ -406,6 +406,15 @@ def make_url_map(app):
                 '/project/<pid>/pointer/',
                 '/project/<pid>/node/<nid>/pointer/',
             ],
+            'get',
+            project_views.node.get_pointed,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/pointer/',
+                '/project/<pid>/node/<nid>/pointer/',
+            ],
             'post',
             project_views.node.add_pointers,
             json_renderer,
