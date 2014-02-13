@@ -474,10 +474,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         pointer.save()
         self.nodes.append(pointer)
 
-        # Optionally save changes
-        if save:
-            self.save()
-
         # Add log
         self.add_log(
             action=NodeLog.POINTER_CREATED,
@@ -492,29 +488,25 @@ class Node(GuidStoredObject, AddonModelMixin):
                 },
             },
             auth=auth,
+            save=False,
         )
+
+        # Optionally save changes
+        if save:
+            self.save()
 
         return pointer
 
-    def rm_pointer(self, node, auth, save=True):
+    def rm_pointer(self, pointer, auth, save=True):
         """Remove a pointer.
 
-        :param Node node: Node to remove
+        :param Pointer pointer: Pointer to remove
         :param Auth auth: Consolidated authorization
         :param bool save: Save changes
 
         """
-        # Find and remove pointer
-        success = False
-        for each in self.nodes_pointer:
-            if each.node == node:
-                success = True
-                Pointer.remove_one(each)
-                break
-
-        # Crash if pointer not found
-        if not success:
-            raise ValueError('Pointer to {0} not in list'.format(node._id))
+        # Remove pointer from `nodes`
+        self.nodes.remove(pointer)
 
         # Add log
         self.add_log(
@@ -523,18 +515,20 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'project': self.parent_id,
                 'node': self._primary_key,
                 'pointer': {
-                    'id': node._id,
-                    'url': node.url,
-                    'title': node.title,
-                    'category': node.category,
+                    'id': pointer.node._id,
+                    'url': pointer.node.url,
+                    'title': pointer.node.title,
+                    'category': pointer.node.category,
                 },
             },
             auth=auth,
+            save=False,
         )
 
         # Optionally save changes
         if save:
             self.save()
+            pointer.remove_one(pointer)
 
     @property
     def node_ids(self):

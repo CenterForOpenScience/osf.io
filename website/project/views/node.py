@@ -748,6 +748,7 @@ def remove_pointer(**kwargs):
     in `node.nodes`.
 
     """
+    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
     pointer_id = request.json.get('pointerId')
@@ -759,7 +760,7 @@ def remove_pointer(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     try:
-        node.nodes.remove(pointer)
+        node.rm_pointer(pointer, auth=auth)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 

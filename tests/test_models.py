@@ -675,7 +675,7 @@ class TestNode(DbTestCase):
     def test_rm_pointer(self):
         node2 = NodeFactory(creator=self.user)
         pointer = self.node.add_pointer(node2, auth=self.consolidate_auth)
-        self.node.rm_pointer(node2, auth=self.consolidate_auth)
+        self.node.rm_pointer(pointer, auth=self.consolidate_auth)
         assert_equal(len(self.node.nodes), 0)
         assert_equal(node2.points, 0)
         assert_equal(
@@ -696,8 +696,9 @@ class TestNode(DbTestCase):
 
     def test_rm_pointer_not_present(self):
         node2 = NodeFactory(creator=self.user)
+        pointer = Pointer(node=node2)
         with assert_raises(ValueError):
-            self.node.rm_pointer(node2, auth=self.consolidate_auth)
+            self.node.rm_pointer(pointer, auth=self.consolidate_auth)
 
     def test_fork_pointer_not_present(self):
         pointer = PointerFactory()
