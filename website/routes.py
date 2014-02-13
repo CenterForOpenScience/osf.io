@@ -524,14 +524,24 @@ def make_url_map(app):
         ], 'post', project_views.contributor.project_removecontributor, json_renderer),
 
         # Forks
-        Rule([
-            '/project/<pid>/beforefork/',
-            '/project/<pid>/node/<nid>/beforefork',
-        ], 'get', project_views.node.project_before_fork, json_renderer),
-        Rule([
-            '/project/<pid>/fork/',
-            '/project/<pid>/node/<nid>/fork/',
-        ], 'post', project_views.node.node_fork_page, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/fork/before/',
+                '/project/<pid>/node/<nid>/fork/before/',
+            ], 'get', project_views.node.project_before_fork, json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/fork/',
+                '/project/<pid>/node/<nid>/fork/',
+            ], 'post', project_views.node.node_fork_page, json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/pointer/fork/',
+                '/project/<pid>/node/<nid>/pointer/fork/',
+            ], 'post', project_views.node.fork_pointer, json_renderer,
+        ),
 
         # View forks
         Rule([

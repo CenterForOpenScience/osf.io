@@ -152,6 +152,29 @@ var initializeLogs = function(scopeSelector, url){
     });
 };
 
+var LinksViewModel = function(elm) {
+
+    var self = this;
+    self.links = ko.observableArray([]);
+
+    $(elm).on('shown.bs.modal', function() {
+        if (self.links().length == 0) {
+            $.ajax({
+                type: 'GET',
+                url: nodeApiUrl + 'pointer/',
+                success: function(response) {
+                    self.links(response.links);
+                },
+                error: function() {
+                    elm.modal('hide');
+                    bootbox.alert('Could not get links');
+                }
+            });
+        }
+    });
+
+};
+
 /**
  * The ProjectViewModel, scoped to the project header.
  * @param {Object} params The parsed project data returned from the project's API url.
@@ -449,6 +472,7 @@ var AddPointerViewModel = function(nodeTitle) {
     self.errorMsg = ko.observable('');
 
     self.search = function(includePublic) {
+        self.results([]);
         self.errorMsg('');
         $.ajax({
             type: 'POST',
@@ -456,7 +480,7 @@ var AddPointerViewModel = function(nodeTitle) {
             data: JSON.stringify({
                 query: self.query(),
                 nodeId: nodeId,
-                includePublic: includePublic,
+                includePublic: includePublic
             }),
             contentType: 'application/json',
             dataType: 'json',
@@ -514,12 +538,12 @@ var AddPointerViewModel = function(nodeTitle) {
     };
 
     self.submit = function() {
-        var node_ids = attrMap(self.selection(), 'id');
+        var nodeIds = attrMap(self.selection(), 'id');
         $.ajax({
             type: 'post',
             url: nodeApiUrl + 'pointer/',
             data: JSON.stringify({
-                node_ids: node_ids
+                nodeIds: nodeIds
             }),
             contentType: 'application/json',
             dataType: 'json',

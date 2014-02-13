@@ -140,6 +140,9 @@ class NodeLog(StoredObject):
     PROJECT_CREATED = 'project_created'
     NODE_CREATED = 'node_created'
     NODE_REMOVED = 'node_removed'
+    POINTER_CREATED = 'pointer_created'
+    POINTER_REMOVED = 'pointer_removed'
+    POINTER_FORKED = 'pointer_forked'
     WIKI_UPDATED = 'wiki_updated'
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
@@ -449,16 +452,22 @@ class Node(GuidStoredObject, AddonModelMixin):
     # Pointers #
     ############
 
-    def add_pointer(self, node, save=True):
+    def add_pointer(self, node, auth, save=True):
         """Add a pointer to a node.
 
         :param Node node: Node to add
+        :param Auth auth: Consolidated authorization
         :param bool save: Save changes
+        :return: Created pointer
 
         """
-        # Fail if node already in nodes / pointers
-        if node._id in self.nodes._to_primary_keys():
-            raise ValueError
+        # Fail if node already in nodes / pointers. Note: cast node and node
+        # to primary keys to test for conflicts with both nodes and pointers
+        # contained in `self.nodes`.
+        if node._id in self.node_ids:
+            raise ValueError(
+                'Pointer to node {0} already in list'.format(node._id)
+            )
 
         # Append pointer
         pointer = Pointer(node=node)
@@ -469,17 +478,61 @@ class Node(GuidStoredObject, AddonModelMixin):
         if save:
             self.save()
 
-    def rm_pointer(self, node, save=True):
+        # Add log
+        self.add_log(
+            action=NodeLog.POINTER_CREATED,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'pointer': {
+                    'id': pointer.node._id,
+                    'url': pointer.node.url,
+                    'title': pointer.node.title,
+                    'category': pointer.node.category,
+                },
+            },
+            auth=auth,
+        )
+
+        return pointer
+
+    def rm_pointer(self, node, auth, save=True):
         """Remove a pointer.
 
         :param Node node: Node to remove
+        :param Auth auth: Consolidated authorization
         :param bool save: Save changes
 
         """
+        # Find and remove pointer
+        success = False
         for each in self.nodes_pointer:
             if each.node == node:
+                success = True
                 Pointer.remove_one(each)
+                break
 
+        # Crash if pointer not found
+        if not success:
+            raise ValueError('Pointer to {0} not in list'.format(node._id))
+
+        # Add log
+        self.add_log(
+            action=NodeLog.POINTER_REMOVED,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'pointer': {
+                    'id': node._id,
+                    'url': node.url,
+                    'title': node.title,
+                    'category': node.category,
+                },
+            },
+            auth=auth,
+        )
+
+        # Optionally save changes
         if save:
             self.save()
 
@@ -514,10 +567,65 @@ class Node(GuidStoredObject, AddonModelMixin):
     def points(self):
         return len(self.pointed)
 
+    def fork_pointer(self, pointer, auth, save=True):
+        """Replace a pointer with a fork. If the pointer points to a project,
+        fork the project and replace the pointer with a new pointer pointing
+        to the fork. If the pointer points to a component, fork the component
+        and add it to the current node.
+
+        :param Pointer pointer:
+        :param Auth auth:
+        :param bool save:
+        :return: Forked node
+
+        """
+        # Fail if pointer not contained in `nodes`
+        try:
+            index = self.nodes.index(pointer)
+        except ValueError:
+            raise ValueError('Pointer {0} not in list'.format(pointer._id))
+
+        # Get pointed node
+        node = pointer.node
+
+        # Fork into current node and replace pointer with forked component
+        forked = node.fork_node(auth)
+        self.nodes[index] = forked
+
+        # Optionally save changes
+        if save:
+            self.save()
+            # Garbage-collect pointer. Note: Must save current node before
+            # removing pointer, else remove will fail when trying to remove
+            # backref from self to pointer.
+            Pointer.remove_one(pointer)
+
+        # Add log
+        self.add_log(
+            NodeLog.POINTER_FORKED,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'pointer': {
+                    'id': pointer.node._id,
+                    'url': pointer.node.url,
+                    'title': pointer.node.title,
+                    'category': pointer.node.category,
+                },
+            },
+            auth=auth,
+        )
+
+        # Return forked content
+        return forked
+
     def get_recent_logs(self, n=10):
-        '''Return a list of the n most recent logs, in reverse chronological
+        """Return a list of the n most recent logs, in reverse chronological
         order.
-        '''
+
+        :param int n: Number of logs to retrieve
+
+        """
         return list(reversed(self.logs)[:n])
 
     @property
@@ -534,7 +642,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         """Set the title of this Node and log it.
 
         :param str title: The new title.
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
+
         """
         original_title = self.title
         self.title = title
@@ -621,7 +730,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 '{}_tags'.format(self._id): [x._id for x in self.tags],
                 '{}_description'.format(self._id): self.description,
                 '{}_url'.format(self._id): self.url,
-                }
+            }
 
             # TODO: Move to wiki add-on
             for wiki in [

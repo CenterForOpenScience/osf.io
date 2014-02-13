@@ -577,13 +577,16 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
         summary.update({
             'can_view': True,
             'can_edit': node.can_edit(auth),
-            'id': link_id if link_id else node._primary_key,
+            'id': link_id if link_id else node._id,
+            'primary_id': node._id,
             'url': node.url,
             'primary': primary,
             'api_url': node.api_url,
             'title': node.title,
             'is_registration': node.is_registration,
-            'registered_date': node.registered_date.strftime('%m/%d/%y %I:%M %p') if node.is_registration else None,
+            'registered_date': node.registered_date.strftime('%m/%d/%y %I:%M %p')
+                if node.is_registration
+                else None,
             'nlogs': None,
             'ua_count': None,
             'ua': None,
@@ -702,7 +705,7 @@ def search_node(**kwargs):
     }
 
 
-def _add_pointers(node, pointers):
+def _add_pointers(node, pointers, auth):
     """
 
     :param Node node: Node to which pointers will be added
@@ -711,7 +714,7 @@ def _add_pointers(node, pointers):
     """
     added = False
     for pointer in pointers:
-        node.add_pointer(pointer, save=False)
+        node.add_pointer(pointer, auth, save=False)
         added = True
 
     if added:
@@ -723,10 +726,11 @@ def add_pointers(**kwargs):
     """Add pointers to a node.
 
     """
+    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    node_ids = request.json.get('node_ids', [])
+    node_ids = request.json.get('nodeIds')
 
-    if node_ids is None:
+    if not node_ids:
         raise HTTPError(http.BAD_REQUEST)
 
     nodes = [
@@ -734,7 +738,7 @@ def add_pointers(**kwargs):
         for node_id in node_ids
     ]
 
-    _add_pointers(node, nodes)
+    _add_pointers(node, nodes, auth)
 
     return {}
 
@@ -746,8 +750,14 @@ def remove_pointer(**kwargs):
 
     """
     node = kwargs['node'] or kwargs['project']
+
     pointer_id = request.json.get('pointerId')
+    if pointer_id is None:
+        raise HTTPError(http.BAD_REQUEST)
+
     pointer = Pointer.load(pointer_id)
+    if pointer is None:
+        raise HTTPError(http.BAD_REQUEST)
 
     try:
         node.nodes.remove(pointer)
@@ -755,3 +765,24 @@ def remove_pointer(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     node.save()
+
+
+@must_be_contributor
+@must_not_be_registration
+def fork_pointer(**kwargs):
+    """Fork a pointer. Raises BAD_REQUEST if pointer not provided, not found,
+    or not present in `nodes`.
+
+    """
+    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
+    pointer_id = request.json.get('pointerId')
+    pointer = Pointer.load(pointer_id)
+
+    if pointer is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    try:
+        node.fork_pointer(pointer, auth=auth, save=True)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)

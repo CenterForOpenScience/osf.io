@@ -98,3 +98,18 @@ created fork from <span data-bind="text: nodeCategory"></span>
 <script type="text/html" id="edit_description">
 edited description of <span data-bind="text: nodeCategory"></span> <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
+
+<script type="text/html" id="pointer_created">
+created a link to <span data-bind="text: params.pointer_category"></span>
+<a class="log-node-title-link overflow" data-bind="text: params.pointer_title, attr: {href: params.pointer_url}"></a>
+</script>
+
+<script type="text/html" id="pointer_removed">
+removed a link to <span data-bind="text: params.pointer.category"></span>
+<a class="log-node-title-link overflow" data-bind="text: params.pointer.title, attr: {href: params.pointer.url}"></a>
+</script>
+
+<script type="text/html" id="pointer_forked">
+forked a link to <span data-bind="text: params.pointer.category"></span>
+<a class="log-node-title-link overflow" data-bind="text: params.pointer.title, attr: {href: params.pointer.url}"></a>
+</script>

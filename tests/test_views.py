@@ -10,12 +10,15 @@ from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
 import website.app
-from website.models import Node, NodeLog
+from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
+from webtest.app import AppError
 from tests.base import DbTestCase
-from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
-                            WatchConfigFactory, NodeFactory, NodeLogFactory)
+from tests.factories import (
+    UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
+    NodeFactory, NodeLogFactory, AuthUserFactory
+)
 
 
 app = website.app.init_app(
@@ -393,6 +396,108 @@ class TestWatchViews(DbTestCase):
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), len(project.logs))
         assert_equal(res.json['logs'][0]['action'], 'file_added')
+
+
+class TestPointerViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = ProjectFactory(creator=self.user)
+
+    def test_add_pointers(self):
+
+        url = self.project.api_url + 'pointer/'
+        node_ids = [
+            NodeFactory()._id
+            for _ in range(5)
+        ]
+        self.app.post_json(
+            url,
+            {'nodeIds': node_ids},
+            auth=self.user.auth,
+        ).maybe_follow()
+
+        self.project.reload()
+        assert_equal(
+            len(self.project.nodes),
+            5
+        )
+
+    def test_add_pointers_not_provided(self):
+        url = self.project.api_url + 'pointer/'
+        with assert_raises(AppError):
+            self.app.post_json(url, {}, auth=self.user.auth)
+
+    def test_remove_pointer(self):
+        url = self.project.api_url + 'pointer/'
+        node = NodeFactory()
+        pointer = self.project.add_pointer(node, auth=self.consolidate_auth)
+        self.app.delete_json(
+            url,
+            {'pointerId': pointer._id},
+            auth=self.user.auth,
+        )
+        self.project.reload()
+        assert_equal(
+            len(self.project.nodes),
+            0
+        )
+
+    def test_remove_pointer_not_provided(self):
+        url = self.project.api_url + 'pointer/'
+        with assert_raises(AppError):
+            self.app.delete_json(url, {}, auth=self.user.auth)
+
+    def test_remove_pointer_not_found(self):
+        url = self.project.api_url + 'pointer/'
+        node = NodeFactory()
+        pointer = Pointer(node=node)
+        with assert_raises(AppError):
+            self.app.delete_json(
+                url,
+                {'pointerId': pointer._id},
+                auth=self.user.auth,
+            )
+
+    def test_remove_pointer_not_in_nodes(self):
+        pass
+
+    def test_fork_pointer(self):
+        url = self.project.api_url + 'pointer/fork/'
+        node = NodeFactory()
+        pointer = self.project.add_pointer(node, auth=self.consolidate_auth)
+        self.app.post_json(
+            url,
+            {'pointerId': pointer._id},
+            auth=self.consolidate_auth
+        )
+
+    def test_fork_pointer_not_provided(self):
+        url = self.project.api_url + 'pointer/fork/'
+        with assert_raises(AppError):
+            self.app.post_json(url, {}, auth=self.user.auth)
+
+    def test_fork_pointer_not_found(self):
+        url = self.project.api_url + 'pointer/fork/'
+        with assert_raises(AppError):
+            self.app.post_json(
+                url,
+                {'pointerId': None},
+                auth=self.consolidate_auth
+            )
+
+    def test_fork_pointer_not_in_nodes(self):
+        url = self.project.api_url + 'fork/pointer/'
+        node = NodeFactory()
+        pointer = Pointer(node=node)
+        with assert_raises(AppError):
+            self.app.post_json(
+                url,
+                {'pointerId': pointer._id},
+                auth=self.consolidate_auth
+            )
 
 
 class TestPublicViews(DbTestCase):
