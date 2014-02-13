@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 '''Functional tests using WebTest.'''
 import unittest
+import os
 import re
 import datetime as dt
 from nose.tools import *  # PEP8 asserts
@@ -18,6 +19,10 @@ from website import settings
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.model import ensure_schemas
 from framework import app
+
+from website.project.views.file import get_cache_path
+from website.addons.osffiles.views import get_cache_file
+from framework.render.tasks import ensure_path
 
 
 # Only uncomment if running these tests in isolation
@@ -576,14 +581,21 @@ class TestShortUrls(DbTestCase):
             self._url_to_body(self.component.url),
         )
 
-    # TODO: Mock out the file
+    def _mock_rendered_file(self, component, fobj):
+        node_settings = component.get_addon('osffiles')
+        cache_dir = get_cache_path(node_settings)
+        cache_file = get_cache_file(fobj.filename, fobj.latest_version_number)
+        cache_file_path = os.path.join(cache_dir, cache_file)
+        ensure_path(cache_dir)
+        with open(cache_file_path, 'w') as fp:
+            fp.write('test content')
+
     def test_file_url(self):
         node_file = self.component.add_file(
             self.consolidate_auth, 'test.txt',
             'test content', 4, 'text/plain'
         )
-        import time  # Temporary fix: see todo above
-        time.sleep(0.5)
+        self._mock_rendered_file(self.component, node_file)
         # Warm up to account for file rendering
         _ = self._url_to_body(node_file.url(self.component))
         assert_equal(
