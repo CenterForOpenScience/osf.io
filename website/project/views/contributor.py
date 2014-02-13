@@ -19,9 +19,8 @@ logger = logging.getLogger(__name__)
 
 @collect_auth
 @must_be_valid_project
-def get_node_contributors_abbrev(*args, **kwargs):
+def get_node_contributors_abbrev(**kwargs):
 
-    print "HERE I AM"
     auth = kwargs.get('auth')
     node_to_use = kwargs['node'] or kwargs['project']
 
@@ -96,7 +95,7 @@ def _jsonify_contribs(contribs):
 
 @collect_auth
 @must_be_valid_project
-def get_contributors(*args, **kwargs):
+def get_contributors(**kwargs):
 
     auth = kwargs.get('auth')
     node_to_use = kwargs['node'] or kwargs['project']
@@ -110,7 +109,7 @@ def get_contributors(*args, **kwargs):
 
 @collect_auth
 @must_be_valid_project
-def get_contributors_from_parent(*args, **kwargs):
+def get_contributors_from_parent(**kwargs):
 
     auth = kwargs.get('auth')
     node_to_use = kwargs['node'] or kwargs['project']
@@ -132,7 +131,7 @@ def get_contributors_from_parent(*args, **kwargs):
 
 
 @must_be_contributor
-def get_recently_added_contributors(*args, **kwargs):
+def get_recently_added_contributors(**kwargs):
 
     auth = kwargs.get('auth')
     node_to_use = kwargs['node'] or kwargs['project']
@@ -152,12 +151,14 @@ def get_recently_added_contributors(*args, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor  # returns user, project
 @must_not_be_registration
-def project_before_remove_contributor(*args, **kwargs):
+def project_before_remove_contributor(**kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
 
     contributor = User.load(request.json.get('id'))
-    prompts = node_to_use.callback('before_remove_contributor', contributor)
+    prompts = node_to_use.callback(
+        'before_remove_contributor', removed=contributor,
+    )
 
     return {'prompts': prompts}
 
@@ -165,14 +166,14 @@ def project_before_remove_contributor(*args, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor  # returns user, project
 @must_not_be_registration
-def project_removecontributor(*args, **kwargs):
+def project_removecontributor(**kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
 
     if request.json['id'].startswith('nr-'):
         outcome = node_to_use.remove_nonregistered_contributor(
-            user, api_key, request.json['name'],
+            auth, request.json['name'],
             request.json['id'].replace('nr-', '')
         )
     else:
@@ -191,7 +192,7 @@ def project_removecontributor(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
-def project_addcontributors_post(*args, **kwargs):
+def project_addcontributors_post(**kwargs):
     """ Add contributors to a node. """
 
     node_to_use = kwargs['node'] or kwargs['project']

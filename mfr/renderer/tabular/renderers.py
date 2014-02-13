@@ -1,10 +1,11 @@
+import os.path
 import pandas as pd
 import xlrd
 import rpy2.robjects as robjects
 import pandas.rpy.common as com
 from .base import TabularRenderer
 from .utilities import TooBigError, MAX_COLS, MAX_ROWS
-import os.path
+
 
 class CSVRenderer(TabularRenderer):
     def _detect(self, file_pointer):

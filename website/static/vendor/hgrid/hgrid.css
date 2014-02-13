@@ -1,79 +1,80 @@
 .hgrid {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 13px;
+  border: 1px solid gray;
 }
 
-.btn-mini {
-  padding: 2px 6px;
-  font-size: 11px;
-  line-height: 14px;
+.hg-cell {
 }
 
-/*https://github.com/mleibman/SlickGrid/issues/742*/
-[class*="slickgrid_"],
-[class*="slickgrid_"] div {
-  -webkit-box-sizing: content-box;
-     -moz-box-sizing: content-box;
-          box-sizing: content-box;
+.hg-indent {
+  display:inline-block;
+  height:1px;
 }
-
 
 .slick-cell.cell-reorder {
-    cursor: move;
-    background: url('../img/hgrid/drag-handle.png') no-repeat center center;
+  cursor: move;
+  background: url('./images/drag-handle.png') no-repeat center center;
 }
 
-.toggle, .folder, .file {
-    height: 16px;
-    width: 16px;
-    display: inline-block;
-    margin-bottom: -3px;
-    padding-right: 3px;
+.hg-toggle, .hg-folder, .hg-file {
+  height: 16px;
+  width: 16px;
+  display: inline-block;
+  margin-bottom: -3px;
 }
 
-.dash-page .slick-header {
-    display: none
+.hg-toggle.hg-expand {
+    background: url('./images/expand.gif') no-repeat center center;
 }
 
-.toggle.expand {
-    background: url('../img/hgrid/expand.gif') no-repeat center center;
+.hg-folder {
+    background: url('./images/folder.png') no-repeat left top;
+
 }
 
-.folder-close {
-    background: url('../img/hgrid/fatcowicons/folder.png') no-repeat left top;
+.hg-file {
+    background: url('./images/file.png') no-repeat left top;
+    margin-left: 5px;
 }
 
-.folder-open {
-    background: url('../img/hgrid/fatcowicons/folder_horizontal_closed.png') no-repeat left top;
+.hg-toggle.hg-collapse {
+    background: url('./images/collapse.gif') no-repeat center center;
 }
 
-.folder-delete {
-    background: url('../img/hgrid/fatcowicons/folder_delete.png') no-repeat left top;
-}
-
-.file {
-    background: url('../img/hgrid/file.png') no-repeat left top;
-}
-
-.toggle.collapse {
-    background: url('../img/hgrid/collapse.gif') no-repeat center center;
-}
-
-.toggle.spacer {
+.hg-toggle.spacer {
     width: 32px;
 }
 
-.slick-row.dragger-guide {
+.hgrid .hg-row-highlight, .hgrid .slick-row .hg-row-highlight {
     background-color: rgba(0,0,255,0.5);
 }
 
-.slick-row.row-hover {
-    background-color: rgba(230, 230, 230, 0.50);
+.hgrid .slick-row.hg-upload-processing {
+  background-color: #99cccc;
+  opacity: 50%;
 }
 
-.slick-viewport.dragger-guide1{
-    border: 5px solid rgba(0,0,255,0.5);
+
+/*Progress bar*/
+.hg-progress {
+  position: absolute;
+  top: 100px;
+  left: 6px;
+  right: 6px;
+  height: 6px;
+  background: #d7d7d7;
+  display: none;
 }
+
+.hg-progress .hg-upload {
+  display: block;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0%;
+  background-color: #8cc657;
+}
+
 
 
 /* slick.grid.css
@@ -102,17 +103,14 @@ classes should alter those!
   overflow: hidden;
   -o-text-overflow: ellipsis;
   text-overflow: ellipsis;
-  height: 20px;
   line-height: 16px;
   margin: 0;
   padding: 4px;
   border-right: 1px solid silver;
-  border-left: 1px solid silver;
+  border-left: 0px;
   border-top: 0px;
   border-bottom: 0px;
   float: left;
-  font-weight: normal;
-  color: #000000
 }
 
 .slick-headerrow-column.ui-state-default {
@@ -133,11 +131,11 @@ classes should alter those!
 }
 
 .slick-sort-indicator-desc {
-  background: url('../img/hgrid/sort-desc.gif');
+  background: url('./images/sort-desc.gif');
 }
 
 .slick-sort-indicator-asc {
-  background: url('../img/hgrid/sort-asc.gif');
+  background: url('./images/sort-asc.gif');
 }
 
 .slick-resizable-handle {
@@ -168,8 +166,8 @@ classes should alter those!
 
 .slick-cell, .slick-headerrow-column {
   position: absolute;
-  border: 0px solid transparent;
-  border-right: 0px dotted silver;
+  border: 1px solid transparent;
+  border-right: 1px dotted silver;
   border-bottom-color: silver;
   overflow: hidden;
   -o-text-overflow: ellipsis;
@@ -220,17 +218,17 @@ classes should alter those!
 }
 
 .slick-header-columns {
-  background: url('../img/hgrid/header-columns-bg.gif') repeat-x center bottom;
+  background: url('./images/header-columns-bg.gif') repeat-x center bottom;
   border-bottom: 1px solid silver;
 }
 
 .slick-header-column {
-  background: url('../img/hgrid/header-columns-bg.gif') repeat-x center bottom;
+  background: url('./images/header-columns-bg.gif') repeat-x center bottom;
   border-right: 1px solid silver;
 }
 
 .slick-header-sortable:hover, .slick-header-column-active {
-  background: white url('../img/hgrid/header-columns-over-bg.gif') repeat-x center bottom;
+  background: white url('./images/header-columns-over-bg.gif') repeat-x center bottom;
 }
 
 .slick-row {
@@ -242,8 +240,4 @@ classes should alter those!
 
 .slick-sortable-placeholder {
   background: silver !important;
-}
-
-.dz-preview, .dz-message {
-    display: none;
 }

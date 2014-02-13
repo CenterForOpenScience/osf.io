@@ -261,6 +261,13 @@ def make_url_map(app):
 
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
+        Rule(
+            '/api/v1/search/node/',
+            'post',
+            project_views.node.search_node,
+            json_renderer,
+        ),
+
     ])
 
     # API
@@ -394,6 +401,34 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, json_renderer),
 
+        Rule(
+            [
+                '/project/<pid>/pointer/',
+                '/project/<pid>/node/<nid>/pointer/',
+            ],
+            'get',
+            project_views.node.get_pointed,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/pointer/',
+                '/project/<pid>/node/<nid>/pointer/',
+            ],
+            'post',
+            project_views.node.add_pointers,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/pointer/',
+                '/project/<pid>/node/<nid>pointer/',
+            ],
+            'delete',
+            project_views.node.remove_pointer,
+            json_renderer,
+        ),
+
         Rule([
             '/project/<pid>/get_summary/',
             '/project/<pid>/node/<nid>/get_summary/',
@@ -498,14 +533,24 @@ def make_url_map(app):
         ], 'post', project_views.contributor.project_removecontributor, json_renderer),
 
         # Forks
-        Rule([
-            '/project/<pid>/beforefork/',
-            '/project/<pid>/node/<nid>/beforefork',
-        ], 'get', project_views.node.project_before_fork, json_renderer),
-        Rule([
-            '/project/<pid>/fork/',
-            '/project/<pid>/node/<nid>/fork/',
-        ], 'post', project_views.node.node_fork_page, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/fork/before/',
+                '/project/<pid>/node/<nid>/fork/before/',
+            ], 'get', project_views.node.project_before_fork, json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/fork/',
+                '/project/<pid>/node/<nid>/fork/',
+            ], 'post', project_views.node.node_fork_page, json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/pointer/fork/',
+                '/project/<pid>/node/<nid>/pointer/fork/',
+            ], 'post', project_views.node.fork_pointer, json_renderer,
+        ),
 
         # View forks
         Rule([

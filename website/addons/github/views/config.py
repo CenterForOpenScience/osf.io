@@ -11,13 +11,13 @@ from ..api import GitHub
 
 
 @must_be_logged_in
-def github_set_user_config(*args, **kwargs):
+def github_set_user_config(**kwargs):
     return {}
 
 
 @must_be_contributor
 @must_have_addon('github', 'node')
-def github_set_config(*args, **kwargs):
+def github_set_config(**kwargs):
 
     user = kwargs['auth'].user
 
@@ -45,7 +45,7 @@ def github_set_config(*args, **kwargs):
             message = (
                 'Cannot access repo.'
             )
-        return {'message': message}, 400
+        return {'message': message}, http.BAD_REQUEST
 
     if not github_user_name or not github_repo_name:
         raise HTTPError(http.BAD_REQUEST)
@@ -77,7 +77,7 @@ def github_set_config(*args, **kwargs):
 
 @must_be_contributor
 @must_have_addon('github', 'node')
-def github_set_privacy(*args, **kwargs):
+def github_set_privacy(**kwargs):
 
     github = kwargs['node_addon']
     private = request.form.get('private')

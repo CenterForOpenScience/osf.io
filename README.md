@@ -128,15 +128,7 @@ invoke celery_worker
 
 ## Using Solr
 
-### Installing Solr
-
 - Make sure [Java is installed](https://www.java.com/en/download/help/index_installing.xml)
-- Install solr. On MacOSX with Homebrew:
-
-```bash
-$ brew update
-$ brew install solr
-```
 
 - Start the Solr server and migrate the models.
 

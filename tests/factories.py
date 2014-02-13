@@ -21,8 +21,9 @@ from framework import StoredObject
 from framework.auth import User, Q
 from framework.auth.decorators import Auth
 from framework.auth.utils import parse_name
-from website.project.model import (ApiKey, Node, NodeLog, WatchConfig,
-                                   MetaData, Tag, MetaSchema)
+from website.project.model import (
+    ApiKey, Node, NodeLog, WatchConfig, MetaData, Tag, MetaSchema, Pointer,
+)
 
 from website.addons.wiki.model import NodeWikiPage
 
@@ -152,6 +153,11 @@ class RegistrationFactory(AbstractNodeFactory):
             template=template,
             data=data,
         )
+
+
+class PointerFactory(ModularOdmFactory):
+    FACTORY_FOR = Pointer
+    node = SubFactory(NodeFactory)
 
 
 class NodeLogFactory(ModularOdmFactory):

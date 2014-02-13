@@ -51,7 +51,7 @@ def _add_hook_log(node, github, action, path, date, committer, url=None, sha=Non
 @must_be_valid_project
 @must_not_be_registration
 @must_have_addon('github', 'node')
-def github_hook_callback(*args, **kwargs):
+def github_hook_callback(**kwargs):
     """Add logs for commits from outside OSF.
 
     """
