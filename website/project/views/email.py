@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 
 import re
+import hmac
 import uuid
+import hashlib
 import logging
 import urlparse
+import httplib as http
 from mako.template import Template
 
 from framework import Q
+from framework.exceptions import HTTPError
 from framework.flask import request
 from framework.auth import helper
 from framework.auth import register
@@ -42,8 +46,8 @@ Come by SPSP booth 14 to claim your free COS T-shirt!
 % if user_created:
     Your account on the Open Science Framework has been created via email. To
     claim your account, please create a password by clicking here: [ ${set_password_url} ].
-% endif
 
+% endif
 Your SPSP 2014 poster has been added to the Open Science Framework (OSF). To view the persistent link to your
 poster, click here: <a href="${file_url}">${file_url}</a>. To view your project page link, where you can
 add more details about your research, click here: [ ${node_url} ].
@@ -139,7 +143,7 @@ def add_poster_by_email(address, fullname, subject, message, attachments, tags=N
         mimetype='plain',
     )
 
-def get_mailgun_sender():
+def get_mailgun_from():
     sender = request.form['sender']
     sender = re.sub(r'<.*?>', '', sender).strip()
     return sender
@@ -150,10 +154,32 @@ def get_mailgun_attachments():
         for idx in range(int(request.form['attachment-count']))
     ]
 
+def check_mailgun_headers():
+    """Verify that request comes from Mailgun. Based on sample code from
+    http://documentation.mailgun.com/user_manual.html#webhooks
+
+    """
+    signature = hmac.new(
+        key=settings.MAILGUN_API_KEY,
+        msg='{}{}'.format(
+            request.form['timestamp'],
+            request.form['token'],
+        ),
+        digestmod=hashlib.sha256
+    ).hexdigest()
+
+    if signature != request.form['signature']:
+        raise HTTPError(http.BAD_REQUEST)
+
 def spsp_poster_hook():
+
+    # Fail if not from Mailgun
+    check_mailgun_headers()
+
+    # Add poster
     add_poster_by_email(
-        address=get_mailgun_sender(),
-        fullname=request.form['from'],
+        address=request.form['sender'],
+        fullname=get_mailgun_from(),
         subject=request.form['subject'],
         message=request.form['stripped-text'],
         attachments=get_mailgun_attachments(),
