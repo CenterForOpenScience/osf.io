@@ -49,7 +49,7 @@ Come by SPSP booth 14 to claim your free COS T-shirt!
 
 % endif
 Your SPSP 2014 poster has been added to the Open Science Framework (OSF). To view the persistent link to your
-poster, click here: <a href="${file_url}">${file_url}</a>. To view your project page link, where you can
+poster, click here: [ ${file_url}">${file_url} ]. To view your project page link, where you can
 add more details about your research, click here: [ ${node_url} ].
 
 Get more from the OSF by enhancing your page with the following:
@@ -144,7 +144,7 @@ def add_poster_by_email(address, fullname, subject, message, attachments, tags=N
     )
 
 def get_mailgun_from():
-    sender = request.form['sender']
+    sender = request.form['from']
     sender = re.sub(r'<.*?>', '', sender).strip()
     return sender
 
