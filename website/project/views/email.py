@@ -130,8 +130,8 @@ def add_poster_by_email(address, fullname, subject, message, attachments, tags=N
         fullname=fullname,
         user_created=user_created,
         set_password_url=set_password_url,
-        node_url=node.url,
-        file_url=files[0].url,
+        node_url=urlparse.urljoin(settings.DOMAIN, node.url),
+        file_url=urlparse.urljoin(settings.DOMAIN, files[0].url(node)),
     )
 
     # Send confirmation email
@@ -149,9 +149,11 @@ def get_mailgun_from():
     return sender
 
 def get_mailgun_attachments():
+    attachment_count = request.form.get('attachment-count', 0)
+    attachment_count = int(attachment_count)
     return [
         request.files['attachment-{0}'.format(idx + 1)]
-        for idx in range(int(request.form['attachment-count']))
+        for idx in range(attachment_count)
     ]
 
 def check_mailgun_headers():
@@ -165,7 +167,7 @@ def check_mailgun_headers():
             request.form['timestamp'],
             request.form['token'],
         ),
-        digestmod=hashlib.sha256
+        digestmod=hashlib.sha256,
     ).hexdigest()
 
     if signature != request.form['signature']:
