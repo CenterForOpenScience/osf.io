@@ -42,7 +42,7 @@ class TestHGridViews(DbTestCase):
         assert_equal(len(res), 2)
         assert_equal(res[0]['addon'], 'github')
 
-        assert_true(res[0]['permissions']['view'])  # can always view
+        assert_true(res[0].to_json()['permissions']['view'])  # can always view
         expected_kind = 'item' if contents[0]['type'] == 'file' else 'folder'
         assert_equal(res[0]['kind'], expected_kind)
         assert_equal(res[0]['accept']['maxSize'], 10)
@@ -78,8 +78,8 @@ class TestGithubViews(DbTestCase):
         self.node_settings = self.project.get_addon('github')
         self.node_settings.user_settings = self.project.creator.get_addon('github')
         # Set the node addon settings to correspond to the values of the mock repo
-        self.node_settings.user = self.github.repo.return_value['owner']['login']
-        self.node_settings.repo = self.github.repo.return_value['name']
+        self.node_settings.user = self.github.repo.return_value.owner.login
+        self.node_settings.repo = self.github.repo.return_value.name
         self.node_settings.save()
 
     def _get_sha_for_branch(self, branch=None, mock_branches=None):
@@ -88,8 +88,8 @@ class TestGithubViews(DbTestCase):
         if branch is None:  # Get default branch name
             branch = self.github.repo.return_value['default_branch']
         for each in mock_branches.return_value:
-            if each['name'] == branch:
-                branch_sha = each['commit']['sha']
+            if each.name == branch:
+                branch_sha = each.commit.sha
         return branch_sha
 
     # Tests for _get_refs
