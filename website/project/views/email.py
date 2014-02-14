@@ -3,7 +3,6 @@
 import re
 import hmac
 import uuid
-import urllib
 import hashlib
 import logging
 import urlparse
@@ -93,12 +92,12 @@ def add_poster_by_email(address, fullname, subject, message, attachments, tags=N
     if user is None:
         password = str(uuid.uuid4())
         user = register(address, password, fullname)
-        base_password_url = urlparse.urljoin(settings.DOMAIN, 'resetpassword/')
-        password_query_string = urllib.urlencode({
-            'verification_key': user.verification_key,
-        })
-        set_password_url = base_password_url + '?' + password_query_string
         user.verification_key = helper.random_string(20)
+        set_password_url = urlparse.urljoin(
+            settings.DOMAIN, 'resetpassword/{0}/'.format(
+                user.verification_key
+            )
+        )
         user.save()
         user_created = True
 
