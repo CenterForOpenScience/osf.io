@@ -3,6 +3,7 @@
 import re
 import hmac
 import uuid
+import urllib
 import hashlib
 import logging
 import urlparse
@@ -44,8 +45,8 @@ Congratulations! You have successfully added your SPSP 2014 poster to the Open S
 Come by SPSP booth 14 to claim your free COS T-shirt!
 
 % if user_created:
-    Your account on the Open Science Framework has been created via email. To
-    claim your account, please create a password by clicking here: [ ${set_password_url} ].
+Your account on the Open Science Framework has been created via email. To
+claim your account, please create a password by clicking here: [ ${set_password_url} ].
 
 % endif
 Your SPSP 2014 poster has been added to the Open Science Framework (OSF). To view the persistent link to your
@@ -92,7 +93,11 @@ def add_poster_by_email(address, fullname, subject, message, attachments, tags=N
     if user is None:
         password = str(uuid.uuid4())
         user = register(address, password, fullname)
-        set_password_url = urlparse.urljoin(settings.DOMAIN, 'resetpassword')
+        base_password_url = urlparse.urljoin(settings.DOMAIN, 'resetpassword/')
+        password_query_string = urllib.urlencode({
+            'verification_key': user.verification_key,
+        })
+        set_password_url = base_password_url + '?' + password_query_string
         user.verification_key = helper.random_string(20)
         user.save()
         user_created = True
