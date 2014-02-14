@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import re
 import uuid
 import logging
 import urlparse
@@ -110,6 +111,11 @@ def add_poster_by_email(address, fullname, subject, message, attachments, tags=N
         mimetype='plain',
     )
 
+def get_mailgun_sender():
+    sender = request.form['sender']
+    sender = re.sub(r'<.*?>', '', sender).strip()
+    return sender
+
 def get_mailgun_attachments():
     return [
         request.files['attachment-{0}'.format(idx + 1)]
@@ -118,7 +124,7 @@ def get_mailgun_attachments():
 
 def spsp_poster_hook():
     add_poster_by_email(
-        address=request.form['sender'],
+        address=get_mailgun_sender(),
         fullname=request.form['from'],
         subject=request.form['subject'],
         message=request.form['stripped-text'],

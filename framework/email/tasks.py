@@ -22,7 +22,7 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
     :return: True if successful
     """
     if login and (settings.MAIL_USERNAME is None or settings.MAIL_PASSWORD is None):
-        logger.log('Mail username and password not set; skipping send.')
+        logger.error('Mail username and password not set; skipping send.')
         return
 
     msg = MIMEText(message, mimetype, _charset='utf-8')
