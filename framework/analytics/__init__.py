@@ -9,12 +9,20 @@ collection = db['pagecounters']
 def increment_user_activity_counters(user_id, action, date):
     collection = db['useractivitycounters']
     date = date.strftime('%Y/%m/%d') # todo remove slashes
-    d = {'$inc': {}}
-    d['$inc']['total'] = 1
-    d['$inc']['date.{0}.total'.format(date)] = 1
-    d['$inc']['action.{0}.total'.format(action)] = 1
-    d['$inc']['action.{0}.date.{1}'.format(action, date)] = 1
-    collection.update({'_id': user_id}, d, True, False)
+    query = {
+        '$inc': {
+            'total': 1,
+            'date.{0}.total'.format(date): 1,
+            'action.{0}.total'.format(action): 1,
+            'action.{0}.date.{1}'.format(action, date): 1,
+        }
+    }
+    collection.update(
+        {'_id': user_id},
+        query,
+        upsert=True,
+        manipulate=False,
+    )
     return True
 
 
