@@ -137,6 +137,9 @@ class S3Wrapper:
     def set_cors_rules(self, rules):
         return self.bucket.set_cors(rules)
 
+    def does_key_exist(self, key_name):
+        return self.bucket.get_key(key_name) is not None
+
 
 # TODO Add null checks etc
 class registration_wrapper(S3Wrapper):

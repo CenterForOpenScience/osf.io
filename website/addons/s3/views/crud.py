@@ -126,7 +126,6 @@ def ping_render(*args, **kwargs):
     return get_cache_content(node_settings, cache_file)
 
 
-# TODO Generate file for hgrid and return with signed url
 @must_be_contributor
 @must_have_addon('s3', 'node')
 def s3_upload(*args, ** kwargs):
@@ -137,8 +136,9 @@ def s3_upload(*args, ** kwargs):
     file_name = quote_plus(request.json.get('name'))
     mime = request.json.get('type') or 'application/octet-stream'
 
+    update = S3Wrapper.from_addon(s3).does_key_exist(file_name)
     node.add_log(
-        action='s3_' + models.NodeLog.FILE_ADDED,
+        action='s3_' + models.NodeLog.FILE_UPDATED if update else models.NodeLog.FILE_ADDED,
         params={
             'project': node.parent_id,
             'node': node._primary_key,
