@@ -11,6 +11,7 @@ from framework.analytics.piwik import PiwikClient
 from itertools import islice
 
 def activity():
+
     client = PiwikClient(
         url=settings.PIWIK_HOST,
         auth_token=settings.PIWIK_ADMIN_TOKEN,
@@ -26,7 +27,7 @@ def activity():
         Node.load(x.value) for x in islice(
             (
                 x for x in popular_project_ids
-                if Node.load(x.value).is_public
+                if Node.load(x.value) and Node.load(x.value).is_public
                 and not Node.load(x.value).is_registration
             ),
             10,
@@ -37,7 +38,7 @@ def activity():
         Node.load(x.value) for x in islice(
             (
                 x for x in popular_project_ids
-                if Node.load(x.value).is_public
+                if Node.load(x.value) and Node.load(x.value).is_public
                 and Node.load(x.value).is_registration
             ),
             10,
@@ -64,19 +65,6 @@ def activity():
     ).sort(
         '-date_created'
     ).limit(10)
-
-    most_viewed_project_ids = analytics['pagecounters'].find(
-        {
-            '_id': {
-                '$regex': '^node:'
-            }
-        },
-        {'_id' : 1}
-    ).sort(
-        'total',
-        direction=DESCENDING
-    )
-
 
     # Registrations
     recent_public_registrations = Node.find(

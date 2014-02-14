@@ -240,23 +240,9 @@ def project_reorder_components(**kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
 def project_statistics(**kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
     auth = kwargs['auth']
-
-    # todo not used
-    node_to_use = node or project
-
-    counters = analytics.get_day_total_list(
-        'node:{}'.format(node_to_use._primary_key)
-    )
-    csv = '\\n'.join(['date,price'] + ['{},{}'.format(counter[0], counter[1]) for counter in counters])
-
-    rv = {
-        'csv' : csv,
-    }
-    rv.update(_view_project(node_to_use, auth, primary=True))
-    return rv
+    node = kwargs['node'] or kwargs['project']
+    return _view_project(node, auth, primary=True)
 
 
 ###############################################################################
