@@ -63,15 +63,17 @@ def add_poster_by_email(address, fullname, subject, message, attachments, tags=N
 
     # Find or create user
     user = User.find(Q('username', 'iexact', address))
+    user = user[0] if user else None
     if user is None:
         password = str(uuid.uuid4())
-        register(address, password, fullname)
+        user = register(address, password, fullname)
         send_password_set_email(user)
 
     auth = Auth(user=user)
 
     # Find or create node
     node = Node.find(Q('title', 'iexact', subject))
+    node = node[0] if node else None
     if node is None or not node.is_contributor(user):
         node = new_node('project', subject, user, message)
 
@@ -110,8 +112,8 @@ def add_poster_by_email(address, fullname, subject, message, attachments, tags=N
 
 def get_mailgun_attachments():
     return [
-        request.files['attachment-{0}'.format(idx)]
-        for idx in range(request.form['attachment-count'])
+        request.files['attachment-{0}'.format(idx + 1)]
+        for idx in range(int(request.form['attachment-count']))
     ]
 
 def spsp_poster_hook():
