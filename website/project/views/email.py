@@ -15,7 +15,7 @@ from framework.email.tasks import send_email
 from website import settings
 from website.models import User, Node
 from website.project import new_node
-from website.addons.osffiles.views import prepare_file
+from website.project.views.file import prepare_file
 
 logger = logging.getLogger(__name__)
 

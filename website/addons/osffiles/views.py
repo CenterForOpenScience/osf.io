@@ -18,7 +18,7 @@ from framework.analytics import get_basic_counters, update_counters
 from website.project.views.node import _view_project
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public, must_have_addon
-from website.project.views.file import get_cache_content
+from website.project.views.file import get_cache_content, prepare_file
 from website import settings
 
 from .model import NodeFile
@@ -135,17 +135,6 @@ def list_file_paths(*args, **kwargs):
         NodeFile.load(fid).path
         for fid in node_to_use.files_current.values()
     ]}
-
-
-def prepare_file(file):
-
-    name = secure_filename(file.filename)
-    content = file.read()
-    content_type = file.content_type
-    file.seek(0, os.SEEK_END)
-    size = file.tell()
-
-    return name, content, content_type, size
 
 
 @must_be_valid_project # returns project

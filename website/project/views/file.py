@@ -6,7 +6,7 @@ import os
 import json
 import codecs
 
-from framework.flask import request
+from framework.flask import request, secure_filename
 
 from framework.render.tasks import build_rendered_html
 from website.project.decorators import must_be_contributor_or_public
@@ -131,3 +131,14 @@ def get_cache_content(node_settings, cache_file, start_render=False,
                 download_path
             )
         return None
+
+
+def prepare_file(file):
+
+    name = secure_filename(file.filename)
+    content = file.read()
+    content_type = file.content_type
+    file.seek(0, os.SEEK_END)
+    size = file.tell()
+
+    return name, content, content_type, size
