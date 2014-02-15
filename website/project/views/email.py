@@ -137,7 +137,7 @@ def add_poster_by_email(address, fullname, subject, attachments, tags=None,
         user_created=user_created,
         set_password_url=set_password_url,
         node_url=urlparse.urljoin(settings.DOMAIN, node.url),
-        file_url=urlparse.urljoin(settings.DOMAIN, files[0].url(node)),
+        file_url=urlparse.urljoin(settings.DOMAIN, files[0].download_url(node)),
     )
 
     # Send confirmation email
