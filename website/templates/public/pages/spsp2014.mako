@@ -4,15 +4,23 @@
 
 <h2>SPSP 2014 Posters & Talks</h2>
 
-<div id="grid" style="width:600px; height:600px;"></div>
+<div id="grid" style="width:800px; height:400px;"></div>
 
 <script type="text/javascript">
 
     var data = ${data};
 
+    function titleFormatter(row, cell, value, columnDef, dataContext) {
+        return '<a target="_blank" href="' + value.url + '">' +
+            value.label +
+        '</a>';
+    }
+
     function tagsFormatter(row, cell, value, columnDef, dataContext) {
         return value.map(function(item) {
-            return '<a href="' + item.url + '">' + item.label + '</a>';
+            return '<a target="_blank" href="' + item.url + '">' +
+                item.label +
+            '</a>';
         }).join(', ');
     }
 
@@ -29,7 +37,7 @@
     }
 
     var columns = [
-        {id: 'title', field: 'title', name: 'Title', sortable: true},
+        {id: 'title', field: 'title', name: 'Title', sortable: true, formatter: titleFormatter},
         {id: 'author', field: 'author', name: 'Author', sortable: true},
         {id: 'tags', field: 'tags', name: 'Tags', formatter: tagsFormatter},
         {id: 'download', field: 'download', name: 'Download', formatter: downloadFormatter}

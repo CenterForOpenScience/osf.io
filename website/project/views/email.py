@@ -11,6 +11,7 @@ import httplib as http
 from mako.template import Template
 
 from framework import Q
+from framework.forms.utils import sanitize
 from framework.exceptions import HTTPError
 from framework.flask import request
 from framework.auth import helper
@@ -68,8 +69,9 @@ Sincerely yours,
 The OSF Robot
 ''')
 
-def add_poster_by_email(recipient, address, fullname, subject, attachments, tags=None,
-                        system_tags=None, is_spam=False):
+def add_poster_by_email(recipient, address, fullname, subject, message,
+                        attachments, tags=None, system_tags=None,
+                        is_spam=False):
 
     # Fail if no attachments
     if not attachments:
@@ -118,12 +120,20 @@ def add_poster_by_email(recipient, address, fullname, subject, attachments, tags
             )
         )
 
+    # Add body
+    node.update_node_wiki(
+        page='home',
+        content=sanitize(message),
+        auth=auth,
+    )
+
     # Add tags
     tags = tags or []
     if 'talk' in recipient:
-        tags.append('talk')
-    elif 'poster' in recipient:
-        tags.append('poster')
+        poster_or_talk = 'talk'
+    else:
+        poster_or_talk = 'poster'
+    tags.append(poster_or_talk)
     for tag in tags:
         node.add_tag(tag, auth=auth)
 
@@ -159,6 +169,7 @@ def add_poster_by_email(recipient, address, fullname, subject, attachments, tags
         set_password_url=set_password_url,
         node_url=urlparse.urljoin(settings.DOMAIN, node.url),
         file_url=urlparse.urljoin(settings.DOMAIN, files[0].download_url(node)),
+        poster_or_talk=poster_or_talk,
         is_spam=False,#is_spam,
     )
 
@@ -233,6 +244,7 @@ def spsp_poster_hook():
         address=request.form['sender'],
         fullname=get_mailgun_from(),
         subject=request.form['subject'],
+        message=request.form['stripped-html'],
         attachments=get_mailgun_attachments(),
         tags=['spsp2014'],
         system_tags=['spsp2014'],
@@ -240,8 +252,10 @@ def spsp_poster_hook():
     )
 
 def _render_spsp_node(node):
+
     # Hack: Avoid circular import
     from website.addons.osffiles.model import NodeFile
+
     if node.files_current:
         file_id = node.files_current.values()[0]
         file_obj = NodeFile.load(file_id)
@@ -250,8 +264,12 @@ def _render_spsp_node(node):
     else:
         download_url = ''
         download_count = 0
+
     return {
-        'title': node.title,
+        'title': {
+            'label': node.title,
+            'url': node.url,
+        },
         'author': node.creator.family_name,
         'tags': [
             {
@@ -266,7 +284,7 @@ def _render_spsp_node(node):
         },
     }
 
-def spsp_results(**kwargs):
+def spsp_results():
 
     nodes = Node.find(
         Q('tags', 'eq', 'spsp2014') &
