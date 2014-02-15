@@ -11,7 +11,7 @@ import logging
 
 from hurry.filesize import size, alternative
 
-from framework import request, redirect, secure_filename, send_file
+from framework import request, redirect, send_file
 from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters

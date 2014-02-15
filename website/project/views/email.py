@@ -2,6 +2,7 @@
 
 import re
 import hmac
+import json
 import uuid
 import hashlib
 import logging
@@ -10,6 +11,7 @@ import httplib as http
 from mako.template import Template
 
 from framework import Q
+from framework.forms.utils import sanitize
 from framework.exceptions import HTTPError
 from framework.flask import request
 from framework.auth import helper
@@ -27,48 +29,49 @@ logger = logging.getLogger(__name__)
 
 CREATE_FAILED_SUBJECT = 'Open Science Framework Error: No files attached'
 CREATE_FAILED_TEMPLATE = Template('''
-Hello ${fullname},
+Hello, ${fullname},
 
 You recently tried to create a project on the Open Science Framework via email, but your message did not contain any file attachments. Please try again, making sure to attach the files you'd like to upload to your message.
 
-From the Open Science Framework Robot
+Sincerely yours,
+
+The OSF Robot
 ''')
 
 CREATED_PROJECT_SUBJECT = 'Project created on Open Science Framework'
 MESSAGE_TEMPLATE = Template('''
-Hello ${fullname},
+Hello, ${fullname},
 
-Congratulations! You have successfully added your SPSP 2014 poster to the Open Science Framework. If the conference is still going, come by SPSP booth 14 to claim your free Center for Open Science T-shirt (while supplies last)!
+Congratulations! You have successfully added your SPSP 2014 ${poster_or_talk} to the Open Science Framework (OSF). If the conference is still going, come by SPSP booth 14 to claim your free Center for Open Science T-shirt (while supplies last)!
 
 % if user_created:
-Your account on the Open Science Framework has been created via email. To claim your account, please create a password by clicking here: [ ${set_password_url} ].
+Your account on the Open Science Framework has been created. To claim your account, please create a password by clicking here: [ ${set_password_url} ].
 
 % endif
-Your SPSP 2014 poster has been added to the Open Science Framework (OSF). To view the persistent link to your poster, click here: [ ${file_url} ].
+You now have a permanent, citable URL, that you can share and more details about your research: [ ${node_url} ].
 
-To view your project page link, where you can add more details about your research, click here: [ ${node_url} ].
+Your SPSP 2014 poster has been added to the Open Science Framework. To view the persistent link to your ${poster_or_talk}, click here: [ ${file_url} ].
 
-% if is_spam:
-We have determined that the email used to create this project may have been spam, so this project has been made private. To make your work public, please log in, browse to your project page, and click the "Make Public" button at the top of the screen.
-%endif
 Get more from the OSF by enhancing your page with the following:
 
-* Collaborators/contributors to the poster.
-* Related details through the wiki.
-* Charts, graphs, and data that didn't make it onto the poster.
-* Links to related publications or reference lists.
-* Connect your GitHub account via add-on integration to share your code.
+* Collaborators/contributors to the poster
+* Charts, graphs, and data that didn't make it onto the poster
+* Links to related publications or reference lists
+* Connecting your GitHub account via add-on integration
 
-Visit the Center for Open Science team at SPSP booth 14 to learn more about using the Open Science Framework, our current job opportunities [ http://centerforopenscience.org/jobs/ ], and ways to get involved in replication projects [ http://centerforopenscience.org/spsp/ ]!
+To learn more about the OSF, visit [ http://osf.io/getting-started ], Center for Open Science (COS) job opportunities [ http://cos.io/jobs ], and ways to get involved in replication projects [ http://cos.io/spsp/ ]!
 
-Follow COS at @OSFramework on Twitter [ https://twitter.com/OSFramework ]
+Follow the COS at @OSFramework on Twitter [ https://twitter.com/OSFramework ]
 Like us on Facebook [ https://www.facebook.com/OpenScienceFramework ]
 
-From the Open Science Framework Robot
+Sincerely yours,
+
+The OSF Robot
 ''')
 
-def add_poster_by_email(recipient, address, fullname, subject, attachments, tags=None,
-                        system_tags=None, is_spam=False):
+def add_poster_by_email(recipient, address, fullname, subject, message,
+                        attachments, tags=None, system_tags=None,
+                        is_spam=False):
 
     # Fail if no attachments
     if not attachments:
@@ -117,12 +120,20 @@ def add_poster_by_email(recipient, address, fullname, subject, attachments, tags
             )
         )
 
+    # Add body
+    node.update_node_wiki(
+        page='home',
+        content=sanitize(message),
+        auth=auth,
+    )
+
     # Add tags
     tags = tags or []
     if 'talk' in recipient:
-        tags.append('talk')
-    elif 'poster' in recipient:
-        tags.append('poster')
+        poster_or_talk = 'talk'
+    else:
+        poster_or_talk = 'poster'
+    tags.append(poster_or_talk)
     for tag in tags:
         node.add_tag(tag, auth=auth)
 
@@ -158,6 +169,7 @@ def add_poster_by_email(recipient, address, fullname, subject, attachments, tags
         set_password_url=set_password_url,
         node_url=urlparse.urljoin(settings.DOMAIN, node.url),
         file_url=urlparse.urljoin(settings.DOMAIN, files[0].download_url(node)),
+        poster_or_talk=poster_or_talk,
         is_spam=False,#is_spam,
     )
 
@@ -232,8 +244,57 @@ def spsp_poster_hook():
         address=request.form['sender'],
         fullname=get_mailgun_from(),
         subject=request.form['subject'],
+        message=request.form['stripped-html'],
         attachments=get_mailgun_attachments(),
         tags=['spsp2014'],
         system_tags=['spsp2014'],
         is_spam=check_mailgun_spam(),
     )
+
+def _render_spsp_node(node):
+
+    # Hack: Avoid circular import
+    from website.addons.osffiles.model import NodeFile
+
+    if node.files_current:
+        file_id = node.files_current.values()[0]
+        file_obj = NodeFile.load(file_id)
+        download_url = file_obj.download_url(node)
+        download_count = file_obj.download_count(node)
+    else:
+        download_url = ''
+        download_count = 0
+
+    return {
+        'title': {
+            'label': node.title,
+            'url': node.url,
+        },
+        'author': node.creator.family_name,
+        'tags': [
+            {
+                'label': each._id,
+                'url': each.url,
+            }
+            for each in node.tags
+        ],
+        'download': {
+            'url': download_url,
+            'count': download_count,
+        },
+    }
+
+def spsp_results():
+
+    nodes = Node.find(
+        Q('tags', 'eq', 'spsp2014') &
+        Q('is_public', 'eq', True) &
+        Q('is_deleted', 'eq', False)
+    )
+
+    data = [
+        _render_spsp_node(each)
+        for each in nodes
+    ]
+
+    return {'data': json.dumps(data)}
