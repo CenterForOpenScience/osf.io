@@ -5,6 +5,7 @@
 import datetime
 
 from framework import GuidStoredObject, fields
+from framework.analytics import get_basic_counters
 from website.addons.base import AddonNodeSettingsBase
 
 
@@ -43,6 +44,16 @@ class NodeFile(GuidStoredObject):
     @property
     def latest_version_number(self):
         return len(self.node.files_versions[self.clean_filename])
+
+    # TODO: Test me
+    def download_count(self, node):
+        _, total = get_basic_counters(
+            'download:{0}:{1}'.format(
+                node._id,
+                self.path.replace('.', '_')
+            )
+        )
+        return total or 0
 
     # URL methods. Note: since NodeFile objects aren't cloned on forking or
     # registration, the `node` field doesn't necessarily refer to the project

@@ -2,6 +2,7 @@
 
 import re
 import hmac
+import json
 import uuid
 import hashlib
 import logging
@@ -237,3 +238,45 @@ def spsp_poster_hook():
         system_tags=['spsp2014'],
         is_spam=check_mailgun_spam(),
     )
+
+def _render_spsp_node(node):
+    # Hack: Avoid circular import
+    from website.addons.osffiles.model import NodeFile
+    if node.files_current:
+        file_id = node.files_current.values()[0]
+        file_obj = NodeFile.load(file_id)
+        download_url = file_obj.download_url(node)
+        download_count = file_obj.download_count(node)
+    else:
+        download_url = ''
+        download_count = 0
+    return {
+        'title': node.title,
+        'author': node.creator.family_name,
+        'tags': [
+            {
+                'label': each._id,
+                'url': each.url,
+            }
+            for each in node.tags
+        ],
+        'download': {
+            'url': download_url,
+            'count': download_count,
+        },
+    }
+
+def spsp_results(**kwargs):
+
+    nodes = Node.find(
+        Q('tags', 'eq', 'spsp2014') &
+        Q('is_public', 'eq', True) &
+        Q('is_deleted', 'eq', False)
+    )
+
+    data = [
+        _render_spsp_node(each)
+        for each in nodes
+    ]
+
+    return {'data': json.dumps(data)}
