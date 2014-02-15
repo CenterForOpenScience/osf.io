@@ -67,7 +67,7 @@ Like us on Facebook [ https://www.facebook.com/OpenScienceFramework ]
 From the Open Science Framework Robot
 ''')
 
-def add_poster_by_email(address, fullname, subject, attachments, tags=None,
+def add_poster_by_email(recipient, address, fullname, subject, attachments, tags=None,
                         system_tags=None, is_spam=False):
 
     # Fail if no attachments
@@ -84,7 +84,7 @@ def add_poster_by_email(address, fullname, subject, attachments, tags=None,
 
     # Find or create user
     user = User.find(Q('username', 'iexact', address))
-    user = user[0] if user else None
+    user = user[0] if user.count() else None
     user_created = False
     set_password_url = None
     if user is None:
@@ -103,12 +103,12 @@ def add_poster_by_email(address, fullname, subject, attachments, tags=None,
 
     # Find or create node
     node = Node.find(Q('title', 'iexact', subject))
-    node = node[0] if node else None
+    node = node[0] if node.count() else None
     if node is None or not node.is_contributor(user):
         node = new_node('project', subject, user)
 
     # Make public if confident that this is not spam
-    if not is_spam:
+    if True:#not is_spam:
         node.set_permissions('public', auth=auth)
     else:
         logger.warn(
@@ -118,12 +118,19 @@ def add_poster_by_email(address, fullname, subject, attachments, tags=None,
         )
 
     # Add tags
-    for tag in (tags or []):
+    tags = tags or []
+    if 'talk' in recipient:
+        tags.append('talk')
+    elif 'poster' in recipient:
+        tags.append('poster')
+    for tag in tags:
         node.add_tag(tag, auth=auth)
 
     # Add system tags
     system_tags = system_tags or []
-    system_tags.extend(['emailed'])
+    system_tags.append('emailed')
+    if is_spam:
+        system_tags.append('spam')
     for tag in system_tags:
         if tag not in node.system_tags:
             node.system_tags.append(tag)
@@ -151,7 +158,7 @@ def add_poster_by_email(address, fullname, subject, attachments, tags=None,
         set_password_url=set_password_url,
         node_url=urlparse.urljoin(settings.DOMAIN, node.url),
         file_url=urlparse.urljoin(settings.DOMAIN, files[0].download_url(node)),
-        is_spam=is_spam,
+        is_spam=False,#is_spam,
     )
 
     # Send confirmation email
@@ -191,6 +198,7 @@ def check_mailgun_headers():
     ).hexdigest()
 
     if signature != request.form['signature']:
+        logger.warn('Invalid headers on incoming mail')
         raise HTTPError(http.BAD_REQUEST)
 
 DKIM_PASS_VALUES = ['Pass']
@@ -205,8 +213,8 @@ def check_mailgun_spam():
     :return: Is message spam
 
     """
-    dkim_header = request.form['X-Mailgun-Dkim-Check-Result']
-    spf_header = request.form['X-Mailgun-Spf']
+    dkim_header = request.form.get('X-Mailgun-Dkim-Check-Result')
+    spf_header = request.form.get('X-Mailgun-Spf')
 
     return (
         dkim_header not in DKIM_PASS_VALUES or
@@ -220,11 +228,12 @@ def spsp_poster_hook():
 
     # Add poster
     add_poster_by_email(
+        recipient=request.form['recipient'],
         address=request.form['sender'],
         fullname=get_mailgun_from(),
         subject=request.form['subject'],
         attachments=get_mailgun_attachments(),
-        tags=['spsp2014', 'poster'],
+        tags=['spsp2014'],
         system_tags=['spsp2014'],
         is_spam=check_mailgun_spam(),
     )
