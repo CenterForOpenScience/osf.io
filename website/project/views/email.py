@@ -27,44 +27,44 @@ logger = logging.getLogger(__name__)
 
 CREATE_FAILED_SUBJECT = 'Open Science Framework Error: No files attached'
 CREATE_FAILED_TEMPLATE = Template('''
-Hello ${fullname},
+Hello, ${fullname},
 
 You recently tried to create a project on the Open Science Framework via email, but your message did not contain any file attachments. Please try again, making sure to attach the files you'd like to upload to your message.
 
-From the Open Science Framework Robot
+Sincerely yours,
+
+The OSF Robot
 ''')
 
 CREATED_PROJECT_SUBJECT = 'Project created on Open Science Framework'
 MESSAGE_TEMPLATE = Template('''
-Hello ${fullname},
+Hello, ${fullname},
 
-Congratulations! You have successfully added your SPSP 2014 poster to the Open Science Framework. If the conference is still going, come by SPSP booth 14 to claim your free Center for Open Science T-shirt (while supplies last)!
+Congratulations! You have successfully added your SPSP 2014 ${poster_or_talk} to the Open Science Framework (OSF). If the conference is still going, come by SPSP booth 14 to claim your free Center for Open Science T-shirt (while supplies last)!
 
 % if user_created:
-Your account on the Open Science Framework has been created via email. To claim your account, please create a password by clicking here: [ ${set_password_url} ].
+Your account on the Open Science Framework has been created. To claim your account, please create a password by clicking here: [ ${set_password_url} ].
 
 % endif
-Your SPSP 2014 poster has been added to the Open Science Framework (OSF). To view the persistent link to your poster, click here: [ ${file_url} ].
+You now have a permanent, citable URL, that you can share and more details about your research: [ ${node_url} ].
 
-To view your project page link, where you can add more details about your research, click here: [ ${node_url} ].
+Your SPSP 2014 poster has been added to the Open Science Framework. To view the persistent link to your ${poster_or_talk}, click here: [ ${file_url} ].
 
-% if is_spam:
-We have determined that the email used to create this project may have been spam, so this project has been made private. To make your work public, please log in, browse to your project page, and click the "Make Public" button at the top of the screen.
-%endif
 Get more from the OSF by enhancing your page with the following:
 
-* Collaborators/contributors to the poster.
-* Related details through the wiki.
-* Charts, graphs, and data that didn't make it onto the poster.
-* Links to related publications or reference lists.
-* Connect your GitHub account via add-on integration to share your code.
+* Collaborators/contributors to the poster
+* Charts, graphs, and data that didn't make it onto the poster
+* Links to related publications or reference lists
+* Connecting your GitHub account via add-on integration
 
-Visit the Center for Open Science team at SPSP booth 14 to learn more about using the Open Science Framework, our current job opportunities [ http://centerforopenscience.org/jobs/ ], and ways to get involved in replication projects [ http://centerforopenscience.org/spsp/ ]!
+To learn more about the OSF, visit [ http://osf.io/getting-started ], Center for Open Science (COS) job opportunities [ http://cos.io/jobs ], and ways to get involved in replication projects [ http://cos.io/spsp/ ]!
 
-Follow COS at @OSFramework on Twitter [ https://twitter.com/OSFramework ]
+Follow the COS at @OSFramework on Twitter [ https://twitter.com/OSFramework ]
 Like us on Facebook [ https://www.facebook.com/OpenScienceFramework ]
 
-From the Open Science Framework Robot
+Sincerely yours,
+
+The OSF Robot
 ''')
 
 def add_poster_by_email(recipient, address, fullname, subject, attachments, tags=None,
