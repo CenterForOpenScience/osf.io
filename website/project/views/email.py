@@ -48,6 +48,9 @@ Your SPSP 2014 poster has been added to the Open Science Framework (OSF). To vie
 
 To view your project page link, where you can add more details about your research, click here: [ ${node_url} ].
 
+% if is_spam:
+We have determined that the email used to create this project may have been spam, so this project has been made private. To make your work public, please log in, browse to your project page, and click the "Make Public" button at the top of the screen.
+%endif
 Get more from the OSF by enhancing your page with the following:
 
 * Collaborators/contributors to the poster.
@@ -65,7 +68,7 @@ From the Open Science Framework Robot
 ''')
 
 def add_poster_by_email(address, fullname, subject, attachments, tags=None,
-                        is_spam=False):
+                        system_tags=None, is_spam=False):
 
     # Fail if no attachments
     if not attachments:
@@ -118,6 +121,13 @@ def add_poster_by_email(address, fullname, subject, attachments, tags=None,
     for tag in (tags or []):
         node.add_tag(tag, auth=auth)
 
+    # Add system tags
+    system_tags = system_tags or []
+    system_tags.extend(['emailed'])
+    for tag in system_tags:
+        if tag not in node.system_tags:
+            node.system_tags.append(tag)
+
     # Add files
     files = []
     for attachment in attachments:
@@ -131,6 +141,9 @@ def add_poster_by_email(address, fullname, subject, attachments, tags=None,
         )
         files.append(file_object)
 
+    # Save changes
+    node.save()
+
     # Render message
     message = MESSAGE_TEMPLATE.render(
         fullname=fullname,
@@ -138,6 +151,7 @@ def add_poster_by_email(address, fullname, subject, attachments, tags=None,
         set_password_url=set_password_url,
         node_url=urlparse.urljoin(settings.DOMAIN, node.url),
         file_url=urlparse.urljoin(settings.DOMAIN, files[0].download_url(node)),
+        is_spam=is_spam,
     )
 
     # Send confirmation email
@@ -211,5 +225,6 @@ def spsp_poster_hook():
         subject=request.form['subject'],
         attachments=get_mailgun_attachments(),
         tags=['spsp2014', 'poster'],
+        system_tags=['spsp2014'],
         is_spam=check_mailgun_spam(),
     )

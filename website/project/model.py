@@ -278,6 +278,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
     tags = fields.ForeignField('tag', list=True, backref='tagged')
+    system_tags = fields.StringField(list=True)
 
     nodes = fields.ForeignField('node', list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked')
