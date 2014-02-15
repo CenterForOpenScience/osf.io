@@ -64,7 +64,8 @@ Like us on Facebook [ https://www.facebook.com/OpenScienceFramework ]
 From the Open Science Framework Robot
 ''')
 
-def add_poster_by_email(address, fullname, subject, attachments, tags=None):
+def add_poster_by_email(address, fullname, subject, attachments, tags=None,
+                        is_spam=False):
 
     # Fail if no attachments
     if not attachments:
@@ -103,8 +104,15 @@ def add_poster_by_email(address, fullname, subject, attachments, tags=None):
     if node is None or not node.is_contributor(user):
         node = new_node('project', subject, user)
 
-    # Make public
-    node.set_permissions('public', auth=auth)
+    # Make public if confident that this is not spam
+    if not is_spam:
+        node.set_permissions('public', auth=auth)
+    else:
+        logger.warn(
+            'Possible spam detected in email modification of user {} / node {}'.format(
+                user._id, node._id,
+            )
+        )
 
     # Add tags
     for tag in (tags or []):
@@ -171,6 +179,26 @@ def check_mailgun_headers():
     if signature != request.form['signature']:
         raise HTTPError(http.BAD_REQUEST)
 
+DKIM_PASS_VALUES = ['Pass']
+SPF_PASS_VALUES = ['Pass', 'Neutral']
+
+def check_mailgun_spam():
+    """Check DKIM and SPF verification to determine whether incoming message
+    is spam. Returns `True` if either criterion indicates spam, else False.
+    See http://documentation.mailgun.com/user_manual.html#spam-filter for
+    details.
+
+    :return: Is message spam
+
+    """
+    dkim_header = request.form['X-Mailgun-Dkim-Check-Result']
+    spf_header = request.form['X-Mailgun-Spf']
+
+    return (
+        dkim_header not in DKIM_PASS_VALUES or
+        spf_header not in SPF_PASS_VALUES
+    )
+
 def spsp_poster_hook():
 
     # Fail if not from Mailgun
@@ -183,4 +211,5 @@ def spsp_poster_hook():
         subject=request.form['subject'],
         attachments=get_mailgun_attachments(),
         tags=['spsp2014', 'poster'],
+        is_spam=check_mailgun_spam(),
     )
