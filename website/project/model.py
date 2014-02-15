@@ -1139,7 +1139,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         else:
             raise Exception('Must provide either user or api_key.')
 
-        committer = u'{name}{key_msg} <{category}-{id}@openscienceframework.org>'.format(
+        committer = u'{name}{key_msg} <{category}-{id}@osf.io>'.format(
             name=commit_name,
             key_msg=commit_key_msg,
             category=commit_category,

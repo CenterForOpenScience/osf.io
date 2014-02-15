@@ -109,6 +109,11 @@ def make_url_map(app):
         Rule('/explore/', 'get', {}, OsfWebRenderer('public/explore.mako')),
         Rule(['/messages/', '/help/'], 'get', {}, OsfWebRenderer('public/comingsoon.mako')),
 
+        Rule(
+            '/view/spsp2014/', 'get', project_views.email.spsp_results,
+            OsfWebRenderer('public/pages/spsp2014.mako')
+        ),
+
     ])
 
     process_rules(app, [
