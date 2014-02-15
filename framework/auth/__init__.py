@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 import logging
 
+from mako.template import Template
 from framework import session, create_session
 from framework import goback
 from framework import status
 from framework.auth.utils import parse_name
 import framework.flask as web
 import framework.bcrypt as bcrypt
+from framework.email.tasks import send_email
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 import helper
+import website
 from model import User
 
 import datetime
@@ -163,14 +166,40 @@ class DuplicateEmailError(BaseException):
     pass
 
 
-def register(username, password, fullname):
+WELCOME_EMAIL_SUBJECT = 'Welcome to the Open Science Framework'
+WELCOME_EMAIL_TEMPLATE = Template('''
+Hello ${fullname},
+
+Welcome to the Open Science Framework! To learn more about the OSF, check out our Getting Started guide [ https://osf.io/getting-started/ ] and our frequently asked questions [ https://osf.io/faq/ ].
+
+If you have any questions or comments about the OSF, please let us know at [ contact@osf.io ]!
+
+Follow OSF at @OSFramework on Twitter [ https://twitter.com/OSFramework ] or
+Like us on Facebook [ https://www.facebook.com/OpenScienceFramework ].
+
+From the Open Science Framework Robot
+''')
+
+def send_welcome_email(user):
+    send_email.delay(
+        from_addr=website.settings.FROM_EMAIL,
+        to_addr=user.username,
+        subject=WELCOME_EMAIL_SUBJECT,
+        message=WELCOME_EMAIL_TEMPLATE.render(
+            fullname=user.fullname,
+        ),
+        mimetype='plain',
+    )
+
+
+def register(username, password, fullname, send_welcome=True):
     username = username.strip().lower()
     fullname = fullname.strip()
 
     # TODO: This validation should occur at the database level, not the view
     if not get_user(username=username):
         parsed = parse_name(fullname)
-        newUser = User(
+        user = User(
             username=username,
             fullname=fullname,
             is_registered=True,
@@ -180,9 +209,11 @@ def register(username, password, fullname):
             **parsed
         )
         # Set the password
-        newUser.set_password(password.strip())
-        newUser.emails.append(username.strip())
-        newUser.save()
-        return newUser
+        user.set_password(password.strip())
+        user.emails.append(username.strip())
+        user.save()
+        if send_welcome:
+            send_welcome_email(user)
+        return user
     else:
         raise DuplicateEmailError
