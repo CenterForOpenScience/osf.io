@@ -166,13 +166,16 @@ class DuplicateEmailError(BaseException):
     pass
 
 
-WELCOME_EMAIL_SUBJECT = ''
+WELCOME_EMAIL_SUBJECT = 'Welcome to the Open Science Framework'
 WELCOME_EMAIL_TEMPLATE = Template('''
 Hello ${fullname},
 
 Welcome to the Open Science Framework! To learn more about the OSF, check out our Getting Started guide [ https://osf.io/getting-started/ ] and our frequently asked questions [ https://osf.io/faq/ ].
 
 If you have any questions or comments about the OSF, please let us know at [ contact@osf.io ]!
+
+Follow OSF at @OSFramework on Twitter [ https://twitter.com/OSFramework ] or
+Like us on Facebook [ https://www.facebook.com/OpenScienceFramework ].
 
 From the Open Science Framework Robot
 ''')
