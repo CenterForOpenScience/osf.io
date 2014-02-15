@@ -137,10 +137,7 @@ def auth_logout():
 
 def auth_register_post():
     if not website.settings.ALLOW_REGISTRATION:
-        status.push_status_message('We are currently in beta development and \
-            registration is only available to those with beta invitations. If you \
-            would like to be added to the invitation list, please email \
-            beta@openscienceframework.org.')
+        status.push_status_message('Registration currently unavailable.')
         return framework.redirect('/')
 
     form = RegistrationForm(framework.request.form, prefix='register')
