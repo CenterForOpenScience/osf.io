@@ -20,7 +20,7 @@ from framework.auth.decorators import Auth
 from framework.email.tasks import send_email
 
 from website import settings
-from website.models import User, Node
+from website.models import User, Node, MailRecord
 from website.project import new_node
 from website.project.views.file import prepare_file
 
@@ -69,6 +69,13 @@ Sincerely yours,
 The OSF Robot
 ''')
 
+def request_to_data():
+    return {
+        'headers': request.headers.to_dict(),
+        'form': request.form.to_dict(),
+        'args': request.args.to_dict(),
+    }
+
 def add_poster_by_email(recipient, address, fullname, subject, message,
                         attachments, tags=None, system_tags=None,
                         is_spam=False):
@@ -84,6 +91,8 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
             mimetype='plain',
         )
         return
+
+    created = []
 
     # Find or create user
     user = User.find(Q('username', 'iexact', address))
@@ -101,6 +110,7 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
         )
         user.save()
         user_created = True
+        created.append(user)
 
     auth = Auth(user=user)
 
@@ -109,6 +119,7 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
     node = node[0] if node.count() else None
     if node is None or not node.is_contributor(user):
         node = new_node('project', subject, user)
+        created.append(node)
 
     # Make public if confident that this is not spam
     if True:#not is_spam:
@@ -162,6 +173,13 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
     # Save changes
     node.save()
 
+    # Add mail record
+    mail_record = MailRecord(
+        data=request_to_data(request),
+        created=created,
+    )
+    mail_record.save()
+
     # Render message
     message = MESSAGE_TEMPLATE.render(
         fullname=fullname,
@@ -181,6 +199,13 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
         message=message,
         mimetype='plain',
     )
+
+def get_mailgun_subject():
+    subject = request.form['subject']
+    subject = re.sub(r'^re:', '', subject, flags=re.I)
+    subject = re.sub(r'^fwd:', '', subject, flags=re.I)
+    subject = subject.strip()
+    return subject
 
 def get_mailgun_from():
     sender = request.form['from']
@@ -243,7 +268,7 @@ def spsp_poster_hook():
         recipient=request.form['recipient'],
         address=request.form['sender'],
         fullname=get_mailgun_from(),
-        subject=request.form['subject'],
+        subject=get_mailgun_subject(),
         message=request.form['stripped-html'],
         attachments=get_mailgun_attachments(),
         tags=['spsp2014'],
@@ -251,7 +276,7 @@ def spsp_poster_hook():
         is_spam=check_mailgun_spam(),
     )
 
-def _render_spsp_node(node):
+def _render_spsp_node(node, idx):
 
     # Hack: Avoid circular import
     from website.addons.osffiles.model import NodeFile
@@ -266,17 +291,17 @@ def _render_spsp_node(node):
         download_count = 0
 
     return {
-        'title': {
-            'label': node.title,
-            'url': node.url,
-        },
-        'author': node.creator.family_name,
+        'id': idx,
+        'title': node.title,
+        'nodeUrl': node.url,
+        'author': node.creator.family_name if node.creator else '',
         'tags': [
             {
                 'label': each._id,
                 'url': each.url,
             }
             for each in node.tags
+            if each._id != 'spsp2014'
         ],
         'download': {
             'url': download_url,
@@ -293,8 +318,8 @@ def spsp_results():
     )
 
     data = [
-        _render_spsp_node(each)
-        for each in nodes
+        _render_spsp_node(each, idx)
+        for idx, each in enumerate(nodes)
     ]
 
     return {'data': json.dumps(data)}

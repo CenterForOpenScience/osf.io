@@ -1698,3 +1698,10 @@ class WatchConfig(StoredObject):
     node = fields.ForeignField('Node', backref='watched')
     digest = fields.BooleanField(default=False)
     immediate = fields.BooleanField(default=False)
+
+
+class MailRecord(StoredObject):
+
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    data = fields.DictionaryField()
+    records = fields.AbstractForeignField(list=True, backref='created')
