@@ -389,6 +389,13 @@ def make_url_map(app):
 
     process_rules(app, [
 
+        Rule(
+            '/email/spsp2014/',
+            'post',
+            project_views.email.spsp_poster_hook,
+            json_renderer,
+        ),
+
         Rule([
             '/project/<pid>/contributors_abbrev/',
             '/project/<pid>/node/<nid>/contributors_abbrev/',
