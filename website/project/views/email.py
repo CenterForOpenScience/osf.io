@@ -29,9 +29,7 @@ CREATE_FAILED_SUBJECT = 'Open Science Framework Error: No files attached'
 CREATE_FAILED_TEMPLATE = Template('''
 Hello ${fullname},
 
-You recently tried to create a project on the Open Science Framework via email, but your
-message did not contain any file attachments. Please try again, making sure to attach the files
-you'd like to upload to your message.
+You recently tried to create a project on the Open Science Framework via email, but your message did not contain any file attachments. Please try again, making sure to attach the files you'd like to upload to your message.
 
 From the Open Science Framework Robot
 ''')
@@ -40,17 +38,15 @@ CREATED_PROJECT_SUBJECT = 'Project created on Open Science Framework'
 MESSAGE_TEMPLATE = Template('''
 Hello ${fullname},
 
-Congratulations! You have successfully added your SPSP 2014 poster to the Open Science Framework.
-Come by SPSP booth 14 to claim your free COS T-shirt!
+Congratulations! You have successfully added your SPSP 2014 poster to the Open Science Framework. If the conference is still going, come by SPSP booth 14 to claim your free Center for Open Science T-shirt (while supplies last)!
 
 % if user_created:
-Your account on the Open Science Framework has been created via email. To
-claim your account, please create a password by clicking here: [ ${set_password_url} ].
+Your account on the Open Science Framework has been created via email. To claim your account, please create a password by clicking here: [ ${set_password_url} ].
 
 % endif
-Your SPSP 2014 poster has been added to the Open Science Framework (OSF). To view the persistent link to your
-poster, click here: [ ${file_url}">${file_url} ]. To view your project page link, where you can
-add more details about your research, click here: [ ${node_url} ].
+Your SPSP 2014 poster has been added to the Open Science Framework (OSF). To view the persistent link to your poster, click here: [ ${file_url} ].
+
+To view your project page link, where you can add more details about your research, click here: [ ${node_url} ].
 
 Get more from the OSF by enhancing your page with the following:
 
@@ -60,17 +56,15 @@ Get more from the OSF by enhancing your page with the following:
 * Links to related publications or reference lists.
 * Connect your GitHub account via add-on integration to share your code.
 
-Visit the Center for Open Science team at SPSP booth 14 to learn more about using the Open Science Framework,
-our current job opportunities [ http://centerforopenscience.org/jobs/ ], and ways to get involved in
-(and rewarded for!) replication projects [ http://centerforopenscience.org/spsp/ ]!
+Visit the Center for Open Science team at SPSP booth 14 to learn more about using the Open Science Framework, our current job opportunities [ http://centerforopenscience.org/jobs/ ], and ways to get involved in replication projects [ http://centerforopenscience.org/spsp/ ]!
 
-Follow COS at @OSFramework on Twitter [ https://twitter.com/OSFramework ] or
-Like us on Facebook [ https://www.facebook.com/OpenScienceFramework ].
+Follow COS at @OSFramework on Twitter [ https://twitter.com/OSFramework ]
+Like us on Facebook [ https://www.facebook.com/OpenScienceFramework ]
 
 From the Open Science Framework Robot
 ''')
 
-def add_poster_by_email(address, fullname, subject, message, attachments, tags=None):
+def add_poster_by_email(address, fullname, subject, attachments, tags=None):
 
     # Fail if no attachments
     if not attachments:
@@ -107,7 +101,7 @@ def add_poster_by_email(address, fullname, subject, message, attachments, tags=N
     node = Node.find(Q('title', 'iexact', subject))
     node = node[0] if node else None
     if node is None or not node.is_contributor(user):
-        node = new_node('project', subject, user, message)
+        node = new_node('project', subject, user)
 
     # Make public
     node.set_permissions('public', auth=auth)
@@ -187,7 +181,6 @@ def spsp_poster_hook():
         address=request.form['sender'],
         fullname=get_mailgun_from(),
         subject=request.form['subject'],
-        message=request.form['stripped-text'],
         attachments=get_mailgun_attachments(),
         tags=['spsp2014', 'poster'],
     )
