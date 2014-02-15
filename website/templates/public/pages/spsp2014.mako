@@ -3,6 +3,7 @@
 <%def name="content()">
 
 <h2>SPSP 2014 Posters & Talks</h2>
+Search results by title: <input id="gridSearch" />
 
 <div id="grid" style="width:800px; height:400px;"></div>
 
@@ -11,8 +12,8 @@
     var data = ${data};
 
     function titleFormatter(row, cell, value, columnDef, dataContext) {
-        return '<a target="_blank" href="' + value.url + '">' +
-            value.label +
+        return '<a target="_blank" href="' + dataContext.nodeUrl + '">' +
+            value +
         '</a>';
     }
 
@@ -36,6 +37,16 @@
         }
     }
 
+    function searchFilter(item, args) {
+        console.log(item);
+        if (args.searchString != "" && item.title.indexOf(args.searchString) == -1) {
+            console.log('no')
+            return false;
+        }
+        console.log('yes')
+        return true;
+    }
+
     var columns = [
         {id: 'title', field: 'title', name: 'Title', sortable: true, formatter: titleFormatter},
         {id: 'author', field: 'author', name: 'Author', sortable: true},
@@ -47,7 +58,9 @@
         forceFitColumns: true
     };
 
-    var grid = new Slick.Grid('#grid', data, columns, options);
+    var dataView = new Slick.Data.DataView({inlineFilters: true});
+    var grid = new Slick.Grid('#grid', dataView, columns, options);
+    var searchString = '';
 
     grid.onSort.subscribe(function(e, args) {
         var field = args.sortCol.field;
@@ -62,6 +75,50 @@
         grid.invalidate();
     });
 
+    // wire up model events to drive the grid
+    dataView.onRowCountChanged.subscribe(function (e, args) {
+        grid.updateRowCount();
+        grid.render();
+    });
+
+    dataView.onRowsChanged.subscribe(function (e, args) {
+        grid.invalidateRows(args.rows);
+        grid.render();
+    });
+
+    dataView.onPagingInfoChanged.subscribe(function (e, pagingInfo) {
+        var isLastPage = pagingInfo.pageNum == pagingInfo.totalPages - 1;
+        var enableAddRow = isLastPage || pagingInfo.pageSize == 0;
+        var options = grid.getOptions();
+
+        if (options.enableAddRow != enableAddRow) {
+            grid.setOptions({enableAddRow: enableAddRow});
+        }
+    });
+
+    $("#gridSearch").keyup(function (e) {
+        // clear on Esc
+        if (e.which == 27) {
+          this.value = '';
+        }
+        searchString = this.value;
+        updateFilter();
+    });
+
+    function updateFilter() {
+        dataView.setFilterArgs({
+            searchString: searchString
+        });
+        dataView.refresh();
+    }
+
+    dataView.beginUpdate();
+    dataView.setItems(data);
+    dataView.setFilterArgs({
+        searchString: searchString
+    });
+    dataView.setFilter(searchFilter);
+    dataView.endUpdate();
 
 </script>
 
