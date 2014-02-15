@@ -18,7 +18,7 @@ from framework.analytics import get_basic_counters, update_counters
 from website.project.views.node import _view_project
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public, must_have_addon
-from website.project.views.file import get_cache_content
+from website.project.views.file import get_cache_content, prepare_file
 from website import settings
 
 from .model import NodeFile
@@ -149,26 +149,21 @@ def upload_file_public(*args, **kwargs):
 
     do_redirect = request.form.get('redirect', False)
 
-    uploaded_file = request.files.get('file')
-    uploaded_file_content = uploaded_file.read()
-    uploaded_file.seek(0, os.SEEK_END)
-    uploaded_file_size = uploaded_file.tell()
-    uploaded_file_content_type = uploaded_file.content_type
-    uploaded_filename = secure_filename(uploaded_file.filename)
+    name, content, content_type, size = prepare_file(request.files['file'])
 
     try:
         fobj = node.add_file(
             auth,
-            uploaded_filename,
-            uploaded_file_content,
-            uploaded_file_size,
-            uploaded_file_content_type
+            name,
+            content,
+            size,
+            content_type
         )
     except FileNotModified as e:
         return [{
             'action_taken': None,
             'message': e.message,
-            'name': uploaded_filename,
+            'name': name,
         }]
 
     unique, total = get_basic_counters(
@@ -179,10 +174,10 @@ def upload_file_public(*args, **kwargs):
     )
 
     file_info = {
-        'name': uploaded_filename,
+        'name': name,
         'size': [
-            float(uploaded_file_size),
-            size(uploaded_file_size, system=alternative),
+            float(size),
+            size(size, system=alternative),
         ],
 
         # URLs
@@ -190,7 +185,7 @@ def upload_file_public(*args, **kwargs):
         'download': fobj.url(node),
         'delete': fobj.api_url(node),
 
-        'ext': uploaded_filename.split('.')[-1],
+        'ext': name.split('.')[-1],
         'type': 'file',
         'can_edit': True,
         'date_uploaded': fobj.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),

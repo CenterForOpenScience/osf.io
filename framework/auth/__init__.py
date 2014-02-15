@@ -174,8 +174,8 @@ Welcome to the Open Science Framework! To learn more about the OSF, check out ou
 
 If you have any questions or comments about the OSF, please let us know at [ contact@osf.io ]!
 
-Follow OSF at @OSFramework on Twitter [ https://twitter.com/OSFramework ] or
-Like us on Facebook [ https://www.facebook.com/OpenScienceFramework ].
+Follow OSF at @OSFramework on Twitter [ https://twitter.com/OSFramework ]
+Like us on Facebook [ https://www.facebook.com/OpenScienceFramework ]
 
 From the Open Science Framework Robot
 ''')
