@@ -295,6 +295,7 @@ def _render_spsp_node(node, idx):
         'title': node.title,
         'nodeUrl': node.url,
         'author': node.creator.family_name if node.creator else '',
+        'authorUrl': node.creator.url if node.creator else '',
         'tags': [
             {
                 'label': each._id,
