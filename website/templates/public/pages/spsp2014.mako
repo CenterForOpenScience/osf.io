@@ -13,7 +13,7 @@
 
     </div>
 
-    <div class="col-md-3 col-md-offset-2">
+    <div class="col-md-4 col-md-offset-1">
 
         <img src="/static/img/spsp2014/anna.jpg" class="img-responsive" style="padding-bottom: 15px" />
         <img src="/static/img/spsp2014/chris.jpg" class="img-responsive" style="padding-bottom: 15px" />

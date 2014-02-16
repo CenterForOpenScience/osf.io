@@ -48,9 +48,7 @@ Congratulations! You have successfully added your SPSP 2014 ${poster_or_talk} to
 Your account on the Open Science Framework has been created. To claim your account, please create a password by clicking here: [ ${set_password_url} ].
 
 % endif
-You now have a permanent, citable URL, that you can share and more details about your research: [ ${node_url} ].
-
-Your SPSP 2014 poster has been added to the Open Science Framework. To view the persistent link to your ${poster_or_talk}, click here: [ ${file_url} ].
+Your SPSP 2014 poster has been added to the Open Science Framework. You now have a permanent, citable URL, that you can share and more details about your research: [ ${node_url} ].
 
 Get more from the OSF by enhancing your page with the following:
 
