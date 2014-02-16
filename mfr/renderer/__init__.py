@@ -56,9 +56,8 @@ class FileRenderer(object):
             max_kb = size(self.MAX_SIZE)
             file_kb = size(os.stat(file_pointer.name).st_size)
             return """
-        There was an error rendering {}
         <div>This file is too big: Max size = {}; File size = {}</div>
-        """.format(file_pointer.name.encode("utf-8"), max_kb, file_kb)
+        """.format(max_kb, file_kb)
 
         _, file_name = os.path.split(file_pointer.name)
         try:

@@ -1,27 +1,12 @@
 <%inherit file="base.mako"/>
-<%def name="title()">FAQ</%def>
+<%def name="title()">SPSP 2014</%def>
 <%def name="content()">
 
 <h2 style="padding-bottom: 30px;">SPSP 2014 Posters & Talks</h2>
 
-<div class="row">
-
-    <div class="col-md-8">
-
-        <div style="padding-bottom: 30px;">Search results by title or author: <input id="gridSearch" /></div>
-        <div id="grid" style="width: 800px;"></div>
-
-    </div>
-
-    <div class="col-md-3 col-md-offset-1">
-
-        <img src="/static/img/spsp2014/anna.jpg" class="img-responsive" style="padding-bottom: 15px" />
-        <img src="/static/img/spsp2014/chris.jpg" class="img-responsive" style="padding-bottom: 15px" />
-        <img src="/static/img/spsp2014/frank.jpg" class="img-responsive" style="padding-bottom: 15px" />
-
-    </div>
-
-</div>
+<div style="padding-bottom: 30px;">Search results by title or author: <input id="gridSearch" /></div>
+<div id="grid" style="width: 100%;"></div>
+<div><a href="http://cos.io/spsp/">Add your SPSP poster or talk</a></div>
 
 <script type="text/javascript">
 
@@ -74,7 +59,7 @@
     }
 
     var columns = [
-        {id: 'title', field: 'title', name: 'Title', width: 300, sortable: true, formatter: titleFormatter},
+        {id: 'title', field: 'title', name: 'Title', width: 400, sortable: true, formatter: titleFormatter},
         {id: 'author', field: 'author', name: 'Author', width: 100, formatter: authorFormatter, sortable: true},
         {id: 'tags', field: 'tags', name: 'Tags', width: 100, formatter: tagsFormatter},
         {id: 'download', field: 'download', name: 'Downloads', width: 100, formatter: downloadFormatter}

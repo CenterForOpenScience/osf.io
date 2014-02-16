@@ -90,6 +90,9 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
         )
         return
 
+    # Use address as name if name missing
+    fullname = fullname or address
+
     created = []
 
     # Find or create user
@@ -206,9 +209,14 @@ def get_mailgun_subject():
     return subject
 
 def get_mailgun_from():
-    sender = request.form['from']
-    sender = re.sub(r'<.*?>', '', sender).strip()
-    return sender
+    """Get name and email address of sender. Note: this uses the `from` field
+    instead of the `sender` field, meaning that envelope headers are ignored.
+
+    """
+    name = re.sub(r'<.*?>', '', request.form['from']).strip()
+    match = re.search(r'<(.*?)>', request.form['from'])
+    address = match.groups()[0] if match else ''
+    return name, address
 
 def get_mailgun_attachments():
     attachment_count = request.form.get('attachment-count', 0)
@@ -260,12 +268,13 @@ def spsp_poster_hook():
 
     # Fail if not from Mailgun
     check_mailgun_headers()
+    name, address = get_mailgun_from()
 
     # Add poster
     add_poster_by_email(
         recipient=request.form['recipient'],
-        address=request.form['sender'],
-        fullname=get_mailgun_from(),
+        address=address,
+        fullname=name,
         subject=get_mailgun_subject(),
         message=request.form['stripped-text'],
         attachments=get_mailgun_attachments(),
