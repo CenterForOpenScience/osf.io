@@ -42,7 +42,7 @@ CREATED_PROJECT_SUBJECT = 'Project created on Open Science Framework'
 MESSAGE_TEMPLATE = Template('''
 Hello, ${fullname},
 
-Congratulations! You have successfully added your SPSP 2014 ${poster_or_talk} to the Open Science Framework (OSF). If the conference is still going, come by SPSP booth 14 to claim your free Center for Open Science T-shirt (while supplies last)!
+Congratulations! You have successfully added your SPSP 2014 ${poster_or_talk} to the Open Science Framework (OSF).
 
 % if user_created:
 Your account on the Open Science Framework has been created. To claim your account, please create a password by clicking here: [ ${set_password_url} ].
