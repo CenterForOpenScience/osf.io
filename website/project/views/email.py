@@ -45,7 +45,7 @@ Hello, ${fullname},
 Congratulations! You have successfully added your SPSP 2014 ${poster_or_talk} to the Open Science Framework (OSF).
 
 % if user_created:
-Your account on the Open Science Framework has been created. To claim your account, please create a password by clicking here: [ ${set_password_url} ].
+Your account on the Open Science Framework has been created. To claim your account, please create a password by clicking here: [ ${set_password_url} ]. Please verify your profile information at [ ${profile_url} ].
 
 % endif
 Your SPSP 2014 poster has been added to the Open Science Framework. You now have a permanent, citable URL, that you can share and more details about your research: [ ${node_url} ].
@@ -91,7 +91,7 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
         return
 
     # Use address as name if name missing
-    fullname = fullname or address
+    fullname = fullname or address.split('@')[0]
 
     created = []
 
@@ -186,6 +186,7 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
         fullname=fullname,
         user_created=user_created,
         set_password_url=set_password_url,
+        profile_url=user.url,
         node_url=urlparse.urljoin(settings.DOMAIN, node.url),
         file_url=urlparse.urljoin(settings.DOMAIN, files[0].download_url(node)),
         poster_or_talk=poster_or_talk,

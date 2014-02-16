@@ -53,11 +53,10 @@ class FileRenderer(object):
     def render(self, file_pointer, **kwargs):
 
         if self._check_size(file_pointer):
-            max_kb = size(self.MAX_SIZE)
-            file_kb = size(os.stat(file_pointer.name).st_size)
-            return """
-        <div>This file is too big: Max size = {}; File size = {}</div>
-        """.format(max_kb, file_kb)
+            return '''<div>
+                This file is too large to be displayed in your browser. To view this file,
+                download it and open it offline.
+            </div>'''
 
         _, file_name = os.path.split(file_pointer.name)
         try:
