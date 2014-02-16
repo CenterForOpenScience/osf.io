@@ -9,7 +9,7 @@
     <div class="col-md-7">
 
         <div style="padding-bottom: 30px;">Search results by title or author: <input id="gridSearch" /></div>
-        <div id="grid" style="width:600px; height:400px;"></div>
+        <div id="grid" style="width: 600px;"></div>
 
     </div>
 
@@ -81,6 +81,7 @@
     ];
 
     var options = {
+        autoHeight: true,
         forceFitColumns: true
     };
 
