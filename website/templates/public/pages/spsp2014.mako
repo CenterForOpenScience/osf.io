@@ -6,14 +6,14 @@
 
 <div class="row">
 
-    <div class="col-md-7">
+    <div class="col-md-8">
 
         <div style="padding-bottom: 30px;">Search results by title or author: <input id="gridSearch" /></div>
-        <div id="grid" style="width: 600px;"></div>
+        <div id="grid" style="width: 800px;"></div>
 
     </div>
 
-    <div class="col-md-4 col-md-offset-1">
+    <div class="col-md-3 col-md-offset-1">
 
         <img src="/static/img/spsp2014/anna.jpg" class="img-responsive" style="padding-bottom: 15px" />
         <img src="/static/img/spsp2014/chris.jpg" class="img-responsive" style="padding-bottom: 15px" />
@@ -74,10 +74,10 @@
     }
 
     var columns = [
-        {id: 'title', field: 'title', name: 'Title', width: 250, sortable: true, formatter: titleFormatter},
-        {id: 'author', field: 'author', name: 'Author', width: 150, formatter: authorFormatter, sortable: true},
-        {id: 'tags', field: 'tags', name: 'Tags', width: 150, formatter: tagsFormatter},
-        {id: 'download', field: 'download', name: 'Downloads', width: 150, formatter: downloadFormatter}
+        {id: 'title', field: 'title', name: 'Title', width: 300, sortable: true, formatter: titleFormatter},
+        {id: 'author', field: 'author', name: 'Author', width: 100, formatter: authorFormatter, sortable: true},
+        {id: 'tags', field: 'tags', name: 'Tags', width: 100, formatter: tagsFormatter},
+        {id: 'download', field: 'download', name: 'Downloads', width: 100, formatter: downloadFormatter}
     ];
 
     var options = {
