@@ -71,7 +71,7 @@ The OSF Robot
 
 def request_to_data():
     return {
-        'headers': request.headers.to_dict(),
+        'headers': dict(request.headers),
         'form': request.form.to_dict(),
         'args': request.args.to_dict(),
     }
@@ -175,8 +175,8 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
 
     # Add mail record
     mail_record = MailRecord(
-        data=request_to_data(request),
-        created=created,
+        data=request_to_data(),
+        records=created,
     )
     mail_record.save()
 
@@ -269,7 +269,7 @@ def spsp_poster_hook():
         address=request.form['sender'],
         fullname=get_mailgun_from(),
         subject=get_mailgun_subject(),
-        message=request.form['stripped-html'],
+        message=request.form['stripped-text'],
         attachments=get_mailgun_attachments(),
         tags=['spsp2014'],
         system_tags=['spsp2014'],
