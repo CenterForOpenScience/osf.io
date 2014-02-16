@@ -4,6 +4,8 @@ from tests.base import DbTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
 from website.addons.github.tests.utils import create_mock_github
 
+from github3.repos import Repository
+from github3.repos.commit import Commit
 from webtest_plus import TestApp
 import website.app
 app = website.app.init_app(
@@ -25,8 +27,8 @@ class TestGitHubFileView(DbTestCase):
         self.node_settings = self.project.get_addon('github')
         self.node_settings.user_settings = self.project.creator.get_addon('github')
         # Set the node addon settings to correspond to the values of the mock repo
-        self.node_settings.user = self.github.repo.return_value['owner']['login']
-        self.node_settings.repo = self.github.repo.return_value['name']
+        self.node_settings.user = self.github.repo.return_value.owner.login
+        self.node_settings.repo = self.github.repo.return_value.name
         self.node_settings.save()
 
     def test_can_see_files_tab(self):
@@ -34,7 +36,7 @@ class TestGitHubFileView(DbTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_in('a href="/{0}/files/"'.format(self.project._id), res)
 
-    @mock.patch('website.addons.github.api.GitHub.commits')
+    @mock.patch('website.addons.github.api.GitHub.history')
     @mock.patch('website.addons.github.api.GitHub.file')
     @mock.patch('website.addons.github.api.GitHub.repo')
     def test_file_view(self, mock_repo, mock_file, mock_commits):
@@ -51,7 +53,7 @@ class TestGitHubFileView(DbTestCase):
             }
         }]
 
-        mock_repo.return_value = {
+        mock_repo.return_value = Repository.from_json({
             "default_branch": "dev",
             'url': u'https://api.github.com/repos/{user}/mock-repo/git/trees/dev'.format(user=self.user),
             'sha': 'dev',
@@ -63,7 +65,7 @@ class TestGitHubFileView(DbTestCase):
                  u'size': 245,
                  u'type': u'file',
                  u'url': u'https://api.github.com/repos/{user}/mock-repo/git/blobs/92029ff5ce192425d346b598d7e7dd25f5f05185'.format(user=self.user)}]
-        }
+        })
 
         mock_file.return_value = {
             u'name': u'coveragerc',

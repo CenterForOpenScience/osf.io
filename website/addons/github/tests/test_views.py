@@ -29,8 +29,8 @@ class TestHGridViews(DbTestCase):
         self.node_settings = self.project.get_addon('github')
         self.node_settings.user_settings = self.project.creator.get_addon('github')
         # Set the node addon settings to correspond to the values of the mock repo
-        self.node_settings.user = self.github.repo.return_value['owner']['login']
-        self.node_settings.repo = self.github.repo.return_value['name']
+        self.node_settings.user = self.github.repo.return_value.owner.login
+        self.node_settings.repo = self.github.repo.return_value.name
         self.node_settings.save()
 
     def test_to_hgrid(self):
@@ -47,7 +47,7 @@ class TestHGridViews(DbTestCase):
         assert_equal(res[0]['kind'], expected_kind)
         assert_equal(res[0]['accept']['maxSize'], 10)
         assert_equal(res[0]['accept']['acceptedFiles'], None)
-        assert_equal(res[0]['urls'], api._build_github_urls(contents[0],
+        assert_equal(res[0].urls, api._build_github_urls(contents[0],
             self.project.url, self.project.api_url, branch=None, sha=None))
         # Files should not have lazy-load or upload URLs
         assert_not_in('lazyLoad', res[0])
@@ -86,7 +86,7 @@ class TestGithubViews(DbTestCase):
         if mock_branches is None:
             mock_branches = github_mock.branches
         if branch is None:  # Get default branch name
-            branch = self.github.repo.return_value['default_branch']
+            branch = self.github.repo.return_value.default_branch
         for each in mock_branches.return_value:
             if each.name == branch:
                 branch_sha = each.commit.sha
@@ -101,7 +101,7 @@ class TestGithubViews(DbTestCase):
         branch, sha, branches = views.util._get_refs(self.node_settings)
         assert_equal(
             branch,
-            github_mock.repo.return_value['default_branch']
+            github_mock.repo.return_value.default_branch
         )
         assert_equal(sha, self._get_sha_for_branch(branch=None)) # Get refs for default branch
         assert_equal(

@@ -4,7 +4,6 @@
 
 import os
 import urllib
-import datetime
 
 import github3
 from dateutil.parser import parse
