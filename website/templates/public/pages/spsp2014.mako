@@ -8,7 +8,7 @@
 
     <div class="col-md-7">
 
-        <div style="padding-bottom: 30px;">Search results by title: <input id="gridSearch" /></div>
+        <div style="padding-bottom: 30px;">Search results by title or author: <input id="gridSearch" /></div>
         <div id="grid" style="width:600px; height:400px;"></div>
 
     </div>
@@ -63,17 +63,21 @@
     }
 
     function searchFilter(item, args) {
-        if (args.searchString != "" && item.title.toLowerCase().indexOf(args.searchString) == -1) {
-            return false;
+        if (args.searchString == '') {
+            return true;
         }
-        return true;
+        if (item.title.toLowerCase().indexOf(args.searchString) != -1 ||
+                item.author.toLowerCase().indexOf(args.searchString) != -1) {
+            return true;
+        }
+        return false;
     }
 
     var columns = [
-        {id: 'title', field: 'title', name: 'Title', sortable: true, formatter: titleFormatter},
-        {id: 'author', field: 'author', name: 'Author', formatter: authorFormatter, sortable: true},
-        {id: 'tags', field: 'tags', name: 'Tags', formatter: tagsFormatter},
-        {id: 'download', field: 'download', name: 'Download', formatter: downloadFormatter}
+        {id: 'title', field: 'title', name: 'Title', width: 250, sortable: true, formatter: titleFormatter},
+        {id: 'author', field: 'author', name: 'Author', width: 150, formatter: authorFormatter, sortable: true},
+        {id: 'tags', field: 'tags', name: 'Tags', width: 150, formatter: tagsFormatter},
+        {id: 'download', field: 'download', name: 'Downloads', width: 150, formatter: downloadFormatter}
     ];
 
     var options = {
@@ -84,15 +88,18 @@
     var grid = new Slick.Grid('#grid', dataView, columns, options);
     var searchString = '';
 
-    grid.onSort.subscribe(function(e, args) {
-        var field = args.sortCol.field;
+    function sortView(field, sortAsc) {
         function comparator(a, b) {
             return a[field] > b[field] ? 1 :
                    a[field] < b[field] ? -1 :
                    0;
         }
-        dataView.sort(comparator, args.sortAsc);
+        dataView.sort(comparator, sortAsc);
         dataView.refresh();
+    }
+
+    grid.onSort.subscribe(function(e, args) {
+        sortView(args.sortCol.field, args.sortAsc)
     });
 
     dataView.onRowCountChanged.subscribe(function (e, args) {
@@ -113,6 +120,7 @@
             grid.setOptions({enableAddRow: enableAddRow});
         }
     });
+
     $("#gridSearch").keyup(function (e) {
         // clear on Esc
         if (e.which == 27) {
@@ -136,6 +144,9 @@
     });
     dataView.setFilter(searchFilter);
     dataView.endUpdate();
+
+    // Sort by title by default
+    sortView('title', true);
 
 </script>
 
