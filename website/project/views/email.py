@@ -217,6 +217,7 @@ def get_mailgun_from():
 
     """
     name = re.sub(r'<.*?>', '', request.form['from']).strip()
+    name = name.replace('"', '')
     match = re.search(r'<(.*?)>', request.form['from'])
     address = match.groups()[0] if match else ''
     return name, address
@@ -307,10 +308,8 @@ def _render_spsp_node(node, idx):
         'author': node.creator.family_name if node.creator else '',
         'authorUrl': node.creator.url if node.creator else '',
         'category': 'talk' if 'talk' in node.system_tags else 'poster',
-        'download': {
-            'url': download_url,
-            'count': download_count,
-        },
+        'download': download_count,
+        'downloadUrl': download_url,
     }
 
 def spsp_results():

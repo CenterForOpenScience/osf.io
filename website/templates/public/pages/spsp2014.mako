@@ -28,12 +28,12 @@
     }
 
     function downloadFormatter(row, cell, value, columnDef, dataContext) {
-        if (value.url) {
-            return '<a href="' + value.url + '">' +
-                '<button class="btn btn-success btn-mini">' +
+        if (value) {
+            return '<a href="' + dataContext.downloadUrl + '">' +
+                '<button class="btn btn-success btn-mini" style="margin-right: 10px;">' +
                     '<i class="icon-download-alt icon-white"></i>' +
                 '</button>' +
-            '</a>&nbsp;' + value.count;
+            '</a>&nbsp;' + value;
         } else {
             return '';
         }
@@ -54,7 +54,7 @@
         {id: 'title', field: 'title', name: 'Title', width: 400, sortable: true, formatter: titleFormatter},
         {id: 'author', field: 'author', name: 'Author', width: 100, formatter: authorFormatter, sortable: true},
         {id: 'category', field: 'category', name: 'Category', width: 100, sortable: true},
-        {id: 'download', field: 'download', name: 'Downloads', width: 100, formatter: downloadFormatter}
+        {id: 'download', field: 'download', name: 'Downloads', width: 100, sortable: true, formatter: downloadFormatter}
     ];
 
     var options = {
