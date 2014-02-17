@@ -8,6 +8,7 @@ import hashlib
 import logging
 import urlparse
 import httplib as http
+from nameparser import HumanName
 from mako.template import Template
 
 from framework import Q
@@ -218,6 +219,7 @@ def get_mailgun_from():
     """
     name = re.sub(r'<.*?>', '', request.form['from']).strip()
     name = name.replace('"', '')
+    name = str(HumanName(name))
     match = re.search(r'<(.*?)>', request.form['from'])
     address = match.groups()[0] if match else ''
     return name, address
