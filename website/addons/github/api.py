@@ -73,7 +73,7 @@ class GitHub(object):
             http://developer.github.com/v3/repos/#list-branches
 
         """
-        return [branch for branch in self.gh3.repository(user, repo).iter_branches()]
+        return self.gh3.repository(user, repo).iter_branches()
 
     def commits(self, user, repo, path=None, sha=None):
         """Get commits for a repo or file.
@@ -86,7 +86,7 @@ class GitHub(object):
             http://developer.github.com/v3/repos/commits/
 
         """
-        return [commit for commit in self.gh3.repository(user, repo).iter_commits(sha=sha, path=path)]
+        return self.gh3.repository(user, repo).iter_commits(sha=sha, path=path)
 
     def history(self, user, repo, path, sha=None):
         """Get commit history for a file.
@@ -201,7 +201,7 @@ class GitHub(object):
             http://developer.github.com/v3/repos/hooks/#json-http
 
         """
-        return [hook for hook in self.gh3.repository(user, repo).iter_hooks()]
+        return self.gh3.repository(user, repo).iter_hooks()
 
     def add_hook(self, user, repo, name, config, events=None, active=True):
         """Create a webhook.
