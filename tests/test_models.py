@@ -20,14 +20,16 @@ from framework.bcrypt import check_password_hash
 from framework.git.exceptions import FileNotModified
 from website import settings, filters
 from website.profile.utils import serialize_user
-from website.project.model import ApiKey, NodeLog, ensure_schemas
+from website.project.model import Pointer, ApiKey, NodeLog, ensure_schemas
 
 from website.addons.osffiles.model import NodeFile
 
 from tests.base import DbTestCase, test_app, Guid
-from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
+from tests.factories import (
+    UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
-    NodeWikiFactory, UnregUserFactory, RegistrationFactory)
+    NodeWikiFactory, UnregUserFactory, RegistrationFactory
+)
 
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory, MetaDataFactory
@@ -640,6 +642,100 @@ class TestNode(DbTestCase):
         })
         assert_equal(latest_log.user, self.user)
 
+    def test_add_pointer(self):
+        node2 = NodeFactory(creator=self.user)
+        pointer = self.node.add_pointer(node2, auth=self.consolidate_auth)
+        assert_equal(pointer, self.node.nodes[0])
+        assert_equal(len(self.node.nodes), 1)
+        assert_false(self.node.nodes[0].primary)
+        assert_equal(self.node.nodes[0].node, node2)
+        assert_equal(node2.points, 1)
+        assert_equal(
+            self.node.logs[-1].action, NodeLog.POINTER_CREATED
+        )
+        assert_equal(
+            self.node.logs[-1].params, {
+                'project': self.node.parent_id,
+                'node': self.node._primary_key,
+                'pointer': {
+                    'id': pointer.node._id,
+                    'url': pointer.node.url,
+                    'title': pointer.node.title,
+                    'category': pointer.node.category,
+                },
+            }
+        )
+
+    def test_add_pointer_already_present(self):
+        node2 = NodeFactory(creator=self.user)
+        self.node.add_pointer(node2, auth=self.consolidate_auth)
+        with assert_raises(ValueError):
+            self.node.add_pointer(node2, auth=self.consolidate_auth)
+
+    def test_rm_pointer(self):
+        node2 = NodeFactory(creator=self.user)
+        pointer = self.node.add_pointer(node2, auth=self.consolidate_auth)
+        self.node.rm_pointer(pointer, auth=self.consolidate_auth)
+        assert_equal(len(self.node.nodes), 0)
+        assert_equal(node2.points, 0)
+        assert_equal(
+            self.node.logs[-1].action, NodeLog.POINTER_REMOVED
+        )
+        assert_equal(
+            self.node.logs[-1].params, {
+                'project': self.node.parent_id,
+                'node': self.node._primary_key,
+                'pointer': {
+                    'id': pointer.node._id,
+                    'url': pointer.node.url,
+                    'title': pointer.node.title,
+                    'category': pointer.node.category,
+                },
+            }
+        )
+
+    def test_rm_pointer_not_present(self):
+        node2 = NodeFactory(creator=self.user)
+        pointer = Pointer(node=node2)
+        with assert_raises(ValueError):
+            self.node.rm_pointer(pointer, auth=self.consolidate_auth)
+
+    def test_fork_pointer_not_present(self):
+        pointer = PointerFactory()
+        with assert_raises(ValueError):
+            self.node.fork_pointer(pointer, auth=self.consolidate_auth)
+
+    def _fork_pointer(self, content):
+        pointer = self.node.add_pointer(content, auth=self.consolidate_auth)
+        forked = self.node.fork_pointer(pointer, auth=self.consolidate_auth)
+        assert_true(forked.is_fork)
+        assert_equal(forked.forked_from, content)
+        assert_true(self.node.nodes[-1].primary)
+        assert_equal(self.node.nodes[-1], forked)
+        assert_equal(
+            self.node.logs[-1].action, NodeLog.POINTER_FORKED
+        )
+        assert_equal(
+            self.node.logs[-1].params, {
+                'project': self.node.parent_id,
+                'node': self.node._primary_key,
+                'pointer': {
+                    'id': pointer.node._id,
+                    'url': pointer.node.url,
+                    'title': pointer.node.title,
+                    'category': pointer.node.category,
+                },
+            }
+        )
+
+    def test_fork_pointer_project(self):
+        project = ProjectFactory(creator=self.user)
+        self._fork_pointer(project)
+
+    def test_fork_pointer_component(self):
+        component = NodeFactory(creator=self.user)
+        self._fork_pointer(component)
+
     def test_add_file(self):
         #todo Add file series of tests
         pass
@@ -1080,6 +1176,12 @@ class TestForkNode(DbTestCase):
                 data_fork = fork.get_file(file_fork.path, vidx)
                 assert_equal(data_original, data_fork)
 
+        # Test that pointers were copied correctly
+        assert_equal(
+            [pointer.node for pointer in original.nodes_pointer],
+            [pointer.node for pointer in fork.nodes_pointer],
+        )
+
         # Test that add-ons were copied correctly
         assert_equal(
             original.get_addon_names(),
@@ -1116,6 +1218,12 @@ class TestForkNode(DbTestCase):
         self.subproject.add_file(
             self.consolidate_auth, 'test3.txt', 'test content3', 4, 'text/plain'
         )
+
+        # Add pointers to test copying
+        pointee = ProjectFactory()
+        self.project.add_pointer(pointee, auth=self.consolidate_auth)
+        self.component.add_pointer(pointee, auth=self.consolidate_auth)
+        self.subproject.add_pointer(pointee, auth=self.consolidate_auth)
 
         # Add add-on to test copying
         self.project.add_addon('github')
@@ -1439,6 +1547,51 @@ class TestNodeLog(DbTestCase):
         # Reparse the date
         parsed = parser.parse(iso_formatted)
         assert_equal(parsed, self.log.tz_date)
+
+
+class TestPointer(DbTestCase):
+
+    def setUp(self):
+        self.pointer = PointerFactory()
+
+    def test_title(self):
+        assert_equal(
+            self.pointer.title,
+            self.pointer.node.title
+        )
+
+    def test_contributors(self):
+        assert_equal(
+            self.pointer.contributors,
+            self.pointer.node.contributors
+        )
+
+    def _assert_clone(self, pointer, cloned):
+        assert_not_equal(
+            pointer._id,
+            cloned._id
+        )
+        assert_equal(
+            pointer.node,
+            cloned.node
+        )
+
+    def test_clone(self):
+        cloned = self.pointer._clone()
+        self._assert_clone(self.pointer, cloned)
+
+    def test_clone_no_node(self):
+        pointer = Pointer()
+        cloned = pointer._clone()
+        assert_equal(cloned, None)
+
+    def test_fork(self):
+        forked = self.pointer.fork_node()
+        self._assert_clone(self.pointer, forked)
+
+    def test_register(self):
+        registered = self.pointer.fork_node()
+        self._assert_clone(self.pointer, registered)
 
 
 class TestWatchConfig(DbTestCase):

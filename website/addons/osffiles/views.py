@@ -11,14 +11,14 @@ import logging
 
 from hurry.filesize import size, alternative
 
-from framework import request, redirect, secure_filename, send_file
+from framework import request, redirect, send_file
 from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
 from website.project.views.node import _view_project
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public, must_have_addon
-from website.project.views.file import get_cache_content
+from website.project.views.file import get_cache_content, prepare_file
 from website import settings
 from website.project.model import NodeLog
 from website.util import rubeus
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 @must_be_contributor_or_public
 @must_have_addon('osffiles', 'node')
-def osffiles_widget(*args, **kwargs):
+def osffiles_widget(**kwargs):
     node = kwargs['node'] or kwargs['project']
     osffiles = node.get_addon('osffiles')
     rv = {
@@ -62,7 +62,7 @@ def osffiles_dummy_folder(node_settings, auth, parent=None, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('osffiles', 'node')
-def get_osffiles(*args, **kwargs):
+def get_osffiles(**kwargs):
 
     node_settings = kwargs['node_addon']
     node = node_settings.owner
@@ -116,7 +116,7 @@ def get_osffiles(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
 @must_have_addon('osffiles', 'node')
-def list_file_paths(*args, **kwargs):
+def list_file_paths(**kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
 
@@ -130,32 +130,27 @@ def list_file_paths(*args, **kwargs):
 @must_be_contributor  # returns user, project
 @must_not_be_registration
 @must_have_addon('osffiles', 'node')
-def upload_file_public(*args, **kwargs):
+def upload_file_public(**kwargs):
 
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
     do_redirect = request.form.get('redirect', False)
 
-    uploaded_file = request.files.get('file')
-    uploaded_file_content = uploaded_file.read()
-    uploaded_file.seek(0, os.SEEK_END)
-    uploaded_file_size = uploaded_file.tell()
-    uploaded_file_content_type = uploaded_file.content_type
-    uploaded_filename = secure_filename(uploaded_file.filename)
+    name, content, content_type, size = prepare_file(request.files['file'])
 
     try:
         fobj = node.add_file(
             auth,
-            uploaded_filename,
-            uploaded_file_content,
-            uploaded_file_size,
-            uploaded_file_content_type
+            name,
+            content,
+            size,
+            content_type
         )
-    except FileNotModified as e:
+    except FileNotModified:
         return {
             'actionTaken': None,
-            'name': uploaded_filename,
+            'name': name,
         }
 
     # existing file was updated?
@@ -168,10 +163,10 @@ def upload_file_public(*args, **kwargs):
     )
 
     file_info = {
-        'name': uploaded_filename,
+        'name': name,
         'size': [
-            float(uploaded_file_size),
-            size(uploaded_file_size, system=alternative),
+            float(size),
+            size(size, system=alternative),
         ],
 
         # URLs
@@ -206,9 +201,7 @@ def upload_file_public(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
 @must_have_addon('osffiles', 'node')
-@update_counters('node:{pid}')
-@update_counters('node:{nid}')
-def view_file(*args, **kwargs):
+def view_file(**kwargs):
 
     auth = kwargs['auth']
     node_settings = kwargs['node_addon']
@@ -289,7 +282,7 @@ def view_file(*args, **kwargs):
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
-def download_file(*args, **kwargs):
+def download_file(**kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
@@ -309,7 +302,7 @@ def download_file(*args, **kwargs):
 @update_counters('download:{nid}:{fid}:{vid}')
 @update_counters('download:{pid}:{fid}')
 @update_counters('download:{nid}:{fid}')
-def download_file_by_version(*args, **kwargs):
+def download_file_by_version(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
 
@@ -347,7 +340,7 @@ def download_file_by_version(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_be_contributor # returns user, project
 @must_not_be_registration
-def delete_file(*args, **kwargs):
+def delete_file(**kwargs):
 
     auth = kwargs['auth']
     filename = kwargs['fid']
@@ -367,7 +360,7 @@ def get_cache_file(fid, vid):
 @must_be_valid_project
 @must_be_contributor_or_public
 @must_have_addon('osffiles', 'node')
-def osffiles_get_rendered_file(*args, **kwargs):
+def osffiles_get_rendered_file(**kwargs):
     """
 
     """
@@ -377,7 +370,7 @@ def osffiles_get_rendered_file(*args, **kwargs):
 
 
 # todo will use later - JRS
-# def check_celery(*args, **kwargs):
+# def check_celery(**kwargs):
 #     celery_id = '/api/v1/project/{pid}/files/download/{fid}/version/{vid}/render'.format(
 #         pid=kwargs['pid'], fid=kwargs['fid'],  vid=kwargs['vid']
 #     )

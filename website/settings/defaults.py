@@ -37,10 +37,13 @@ DEBUG_MODE = False
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
 
-FROM_EMAIL = 'openscienceframework-noreply@openscienceframework.org'
+FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
+
+# TODO: Override in local.py
+MAILGUN_API_KEY = None
 
 # TODO: Override in local.py in production
 UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
