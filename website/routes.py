@@ -110,11 +110,7 @@ def make_url_map(app):
         Rule(['/messages/', '/help/'], 'get', {}, OsfWebRenderer('public/comingsoon.mako')),
 
         Rule(
-            [
-                '/view/spsp2014/',
-                '/view/spsp2014/Sort/'
-            ],
-            'get', project_views.email.spsp_results,
+            '/view/spsp2014/', 'get', project_views.email.spsp_results,
             OsfWebRenderer('public/pages/spsp2014.mako')
         ),
 
