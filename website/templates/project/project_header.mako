@@ -36,11 +36,11 @@
                     %if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
                         % if user["is_contributor"]:
-                            <a class="btn btn-default" id="publicButton" data-target="${node['api_url']}permissions/public/">Make public</a>
+                            <a class="btn btn-default" id="publicButton" data-target="${node['api_url']}permissions/public/">Make Public</a>
                         % endif
                     %else:
                         % if user["is_contributor"]:
-                            <a class="btn btn-default" id="privateButton" data-target="${node['api_url']}permissions/private/">Make private</a>
+                            <a class="btn btn-default" id="privateButton" data-target="${node['api_url']}permissions/private/">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
                     %endif
@@ -59,20 +59,32 @@
 
                         <a
                             rel="tooltip"
-                            title="Number of times this node has been forked (copied)"
+                            title="Number of times this ${node['category']} has been forked (copied)"
                             % if node["category"] == 'project' and user_name:
                                 href="#"
                                 class="btn btn-default node-fork-btn"
-                                onclick="NodeActions.beforeForkNode();"
+                                onclick="NodeActions.forkNode();"
                             % else:
                                 class="btn btn-default disabled node-fork-btn"
                             % endif
                         >
                             <i class="icon-code-fork"></i>&nbsp;${node['fork_count']}
                         </a>
+                        <a
+                                rel="tooltip"
+                                % if node['points']:
+                                    href="#showLinks"
+                                    data-toggle="modal"
+                                % endif
+                                class="btn btn-default ${'disabled' if node['points'] == 0 else ''}"
+                                title="Number times this ${node['category']} has been linked"
+                            >
+                            <i id="linkCount" class="icon-hand-right">&nbsp;${node['points']}</i>
+                        </a>
 
                     </div><!-- end btn-grp -->
                 </div><!-- end btn-toolbar -->
+
             </div><!-- end col-md-->
 
         </div><!-- end row -->
@@ -144,6 +156,8 @@
     </header>
 </div><!-- end projectScope -->
 <%include file="modal_add_contributor.mako"/>
+<%include file="modal_add_pointer.mako"/>
+<%include file="modal_show_links.mako"/>
 ## TODO: Find a better place to put this initialization code
 <script>
 
@@ -153,9 +167,10 @@
     var nodeApiUrl = '${node['api_url']}';
 
     $(document).ready(function(){
+
         $logScope = $('#logScope');
         if ($logScope.length > 0) {
-            progressBar = $('#logProgressBar');
+            progressBar = $('#logProgressBar')
             progressBar.show();
         }
         // Get project data from the server and initiate the ProjectViewModel
@@ -169,17 +184,21 @@
                 // Initialize ProjectViewModel with returned data
                 ko.applyBindings(new ProjectViewModel(data), $('#projectScope')[0]);
 
-                // Initiate AddContributorViewModel
-                var $addContributors = $('#addContributors');
-                var addContribVM = new AddContributorViewModel(data['node']['title'],
-                                                        data['parent']['id'],
-                                                        data['parent']['title']);
-                ko.applyBindings(addContribVM, $addContributors[0]);
-                // Clear user search modal when dismissed; catches dismiss by escape key
-                // or cancel button.
-                $addContributors.on('hidden', function() {
-                    addContribVM.clear();
-                });
+                if (data.user.can_edit) {
+                    // Initiate AddContributorViewModel
+                    var $addContributors = $('#addContributors');
+                    var addContribVM = new AddContributorViewModel(
+                        data.node.title,
+                        data.parent.id,
+                        data.parent.title
+                    );
+                    ko.applyBindings(addContribVM, $addContributors[0]);
+                    // Clear user search modal when dismissed; catches dismiss by escape key
+                    // or cancel button.
+                    $addContributors.on('hidden.bs.modal', function() {
+                        addContribVM.clear();
+                    });
+                }
 
                 // Initialize LogsViewModel when appropriate
                 if ($logScope.length > 0) {
@@ -193,13 +212,25 @@
         });
     });
 
+    var $addPointer = $('#addPointer');
+    var addPointerVM = new AddPointerViewModel('${node['title']}');
+    ko.applyBindings(addPointerVM, $addPointer[0]);
+    $addPointer.on('hidden.bs.modal', function() {
+        addPointerVM.clear();
+    });
+
+    var linksModal = $('#showLinks')[0];
+    var linksVM = new LinksViewModel(linksModal);
+    ko.applyBindings(linksVM, linksModal);
+
+
 </script>
 % if node.get('is_public') and node.get('piwik_site_id'):
 <script type="text/javascript">
     $(function() {
         // Note: Don't use cookies for global site ID; cookies will accumulate
         // indefinitely and overflow uwsgi header buffer.
-        trackPiwik("${ piwik_host }", ${ node['piwik_site_id'] });
+        trackPiwik('${ piwik_host }', ${ node['piwik_site_id'] });
     });
 </script>
 % endif

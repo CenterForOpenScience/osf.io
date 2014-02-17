@@ -11,13 +11,50 @@ import website.app
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 from framework.auth.decorators import Auth
 from website.addons.github.tests.utils import create_mock_github
-from website.addons.github import views
+from website.addons.github import views, api
 
 app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings',
 )
 
 github_mock = create_mock_github(user='fred', private=False)
+
+class TestHGridViews(DbTestCase):
+    def setUp(self):
+        self.github = github_mock
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_addon('github')
+        self.project.creator.add_addon('github')
+        self.node_settings = self.project.get_addon('github')
+        self.node_settings.user_settings = self.project.creator.get_addon('github')
+        # Set the node addon settings to correspond to the values of the mock repo
+        self.node_settings.user = self.github.repo.return_value['owner']['login']
+        self.node_settings.repo = self.github.repo.return_value['name']
+        self.node_settings.save()
+
+    def test_to_hgrid(self):
+        contents = github_mock.contents(user='octocat', repo='hello', ref='12345abc')
+        res = views.hgrid.to_hgrid(contents,
+            node_url=self.project.url, node_api_url=self.project.api_url,
+            max_size=10)
+
+        assert_equal(len(res), 2)
+        assert_equal(res[0]['addon'], 'github')
+
+        assert_true(res[0]['permissions']['view'])  # can always view
+        expected_kind = 'item' if contents[0]['type'] == 'file' else 'folder'
+        assert_equal(res[0]['kind'], expected_kind)
+        assert_equal(res[0]['accept']['maxSize'], 10)
+        assert_equal(res[0]['accept']['acceptedFiles'], None)
+        assert_equal(res[0]['urls'], api._build_github_urls(contents[0],
+            self.project.url, self.project.api_url, branch=None, sha=None))
+        # Files should not have lazy-load or upload URLs
+        assert_not_in('lazyLoad', res[0])
+        assert_not_in('uploadUrl', res[0])
+
+    # TODO: Test to_hgrid with branch and sha arguments
+
 
 class TestGithubViews(DbTestCase):
 
@@ -45,6 +82,16 @@ class TestGithubViews(DbTestCase):
         self.node_settings.repo = self.github.repo.return_value['name']
         self.node_settings.save()
 
+    def _get_sha_for_branch(self, branch=None, mock_branches=None):
+        if mock_branches is None:
+            mock_branches = github_mock.branches
+        if branch is None:  # Get default branch name
+            branch = self.github.repo.return_value['default_branch']
+        for each in mock_branches.return_value:
+            if each['name'] == branch:
+                branch_sha = each['commit']['sha']
+        return branch_sha
+
     # Tests for _get_refs
     @mock.patch('website.addons.github.api.GitHub.branches')
     @mock.patch('website.addons.github.api.GitHub.repo')
@@ -56,7 +103,7 @@ class TestGithubViews(DbTestCase):
             branch,
             github_mock.repo.return_value['default_branch']
         )
-        assert_equal(sha, None)
+        assert_equal(sha, self._get_sha_for_branch(branch=None)) # Get refs for default branch
         assert_equal(
             branches,
             github_mock.branches.return_value
@@ -69,7 +116,8 @@ class TestGithubViews(DbTestCase):
         mock_branches.return_value = github_mock.branches.return_value
         branch, sha, branches = views.util._get_refs(self.node_settings, 'master')
         assert_equal(branch, 'master')
-        assert_equal(sha, None)
+        branch_sha = self._get_sha_for_branch('master')
+        assert_equal(sha, branch_sha)
         assert_equal(
             branches,
             github_mock.branches.return_value
