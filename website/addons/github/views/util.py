@@ -41,7 +41,7 @@ def _get_refs(addon, branch=None, sha=None, connection=None):
         else []
     )
     registered_branch_names = [
-        each['name']
+        each.name
         for each in registered_branches
     ]
 
