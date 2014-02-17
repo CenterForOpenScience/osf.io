@@ -140,17 +140,19 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
     )
 
     # Add tags
-    tags = tags or []
     if 'talk' in recipient:
         poster_or_talk = 'talk'
     else:
         poster_or_talk = 'poster'
+
+    tags = tags or []
     tags.append(poster_or_talk)
     for tag in tags:
         node.add_tag(tag, auth=auth)
 
     # Add system tags
     system_tags = system_tags or []
+    system_tags.append(poster_or_talk)
     system_tags.append('emailed')
     if is_spam:
         system_tags.append('spam')
@@ -304,14 +306,7 @@ def _render_spsp_node(node, idx):
         'nodeUrl': node.url,
         'author': node.creator.family_name if node.creator else '',
         'authorUrl': node.creator.url if node.creator else '',
-        'tags': [
-            {
-                'label': each._id,
-                'url': each.url,
-            }
-            for each in node.tags
-            if each._id != 'spsp2014'
-        ],
+        'category': 'talk' if 'talk' in node.system_tags else 'poster',
         'download': {
             'url': download_url,
             'count': download_count,

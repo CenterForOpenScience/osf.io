@@ -27,14 +27,6 @@
         return '';
     }
 
-    function tagsFormatter(row, cell, value, columnDef, dataContext) {
-        return value.map(function(item) {
-            return '<a target="_blank" href="' + item.url + '">' +
-                item.label +
-            '</a>';
-        }).join(', ');
-    }
-
     function downloadFormatter(row, cell, value, columnDef, dataContext) {
         if (value.url) {
             return '<a href="' + value.url + '">' +
@@ -61,7 +53,7 @@
     var columns = [
         {id: 'title', field: 'title', name: 'Title', width: 400, sortable: true, formatter: titleFormatter},
         {id: 'author', field: 'author', name: 'Author', width: 100, formatter: authorFormatter, sortable: true},
-        {id: 'tags', field: 'tags', name: 'Tags', width: 100, formatter: tagsFormatter},
+        {id: 'category', field: 'category', name: 'Category', width: 100, sortable: true},
         {id: 'download', field: 'download', name: 'Downloads', width: 100, formatter: downloadFormatter}
     ];
 
