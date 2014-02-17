@@ -93,6 +93,8 @@ def github_view_file(**kwargs):
         commit['sha']
         for commit in commits
     ]
+    if not shas:
+        raise HTTPError(http.NOT_FOUND)
     current_sha = sha if sha in shas else shas[0]
 
     for commit in commits:

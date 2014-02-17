@@ -81,9 +81,8 @@ def s3_view(*args, **kwargs):
     wrapper = S3Wrapper.from_addon(node_settings)
     key = wrapper.get_wrapped_key(unquote(path), vid=vid)
 
-    # Test to see if the file size is within limit
-    # TODO make a pretty File too large error
-
+    if key is None:
+        raise HTTPError(http.NOT_FOUND)
 
     cache_name = get_cache_file_name(path, key.etag)
     download_url = node.api_url + 's3/download/' + path + '/'

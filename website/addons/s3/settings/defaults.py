@@ -4,7 +4,7 @@ from website.settings import DOMAIN
 
 MAX_RENDER_SIZE = (1024 ** 2) * 3
 
-ALLOWED_ORIGIN = DOMAIN  # 'https://osf.io/' change for staging etc
+ALLOWED_ORIGIN = DOMAIN
 CORS_RULE = (
     '<CORSRule>'
     '<AllowedMethod>PUT</AllowedMethod>'

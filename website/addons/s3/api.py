@@ -103,7 +103,11 @@ class S3Wrapper:
         return [S3Key(x) for x in self.get_file_list()]
 
     def get_wrapped_key(self, keyName, vid=None):
-        return S3Key(self.bucket.get_key(keyName, version_id=vid))
+        key = self.bucket.get_key(keyName, version_id=vid)
+        if key:
+            return S3Key(key)
+        else:
+            return None
 
     def get_wrapped_keys_in_dir(self, directory=None):
         return [S3Key(x) for x in self.bucket.list(delimiter='/', prefix=directory) if isinstance(x, Key) and x.key != directory]
