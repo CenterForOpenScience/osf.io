@@ -202,7 +202,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
             this.changeStatus(row, statusType.FETCH_START);
         },
         uploadProgress: function(file, progress, bytesSent, row) {
-            this.changeStatus(row, statusType.UPLOAD_PROGRESS(progress));
+            this.changeStatus(row, statusType.UPLOAD_PROGRESS, progress);
         },
         downloadUrl: function(row) {
             return row.urls.download;
@@ -278,7 +278,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
                 // This is necessary for the download and delete button to work.
                 $.extend(row, data);
                 this.updateItem(row);
-                this.changeStatus(row, statusType.UPLOAD_SUCCESS, 2000);
+                this.changeStatus(row, statusType.UPLOAD_SUCCESS, null, 2000);
             }
             var cfgOption = resolveCfgOption.call(this, row, 'uploadSuccess', [file, row, data]);
             return cfgOption || null;
