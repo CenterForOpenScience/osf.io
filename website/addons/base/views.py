@@ -4,8 +4,9 @@
 
 import httplib as http
 
-from framework import auth, request
+from framework import request
 from framework.exceptions import HTTPError
+from framework.auth.decorators import must_be_logged_in
 from website.project import decorators
 
 
@@ -28,7 +29,7 @@ def disable_addon(*args, **kwargs):
 @decorators.must_be_contributor_or_public
 def get_addon_config(*args, **kwargs):
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
     node = kwargs['node'] or kwargs['project']
 
     addon_name = kwargs.get('addon')
@@ -42,10 +43,10 @@ def get_addon_config(*args, **kwargs):
     return addon.to_json(user)
 
 
-@auth.must_be_logged_in
+@must_be_logged_in
 def get_addon_user_config(*args, **kwargs):
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
 
     addon_name = kwargs.get('addon')
     if addon_name is None:
@@ -56,6 +57,7 @@ def get_addon_user_config(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     return addon.to_json(user)
+
 
 def check_file_guid(guid):
 

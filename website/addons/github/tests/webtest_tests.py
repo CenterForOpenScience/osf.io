@@ -6,11 +6,12 @@ from website.addons.github.tests.utils import create_mock_github
 
 from webtest_plus import TestApp
 import website.app
-app = website.app.init_app(routes=True, set_backends=False,
-                            settings_module="website.settings")
+app = website.app.init_app(
+    routes=True, set_backends=False, settings_module='website.settings'
+)
 
 
-class TestGitHubPage(DbTestCase):
+class TestGitHubFileView(DbTestCase):
 
     def setUp(self):
         self.user = AuthUserFactory()
@@ -32,37 +33,6 @@ class TestGitHubPage(DbTestCase):
         url = "/project/{0}/".format(self.project._id)
         res = self.app.get(url, auth=self.user.auth)
         assert_in('a href="/{0}/files/"'.format(self.project._id), res)
-
-    def test_github_widget_present(self):
-        url = "/project/{0}/".format(self.project._id)
-        res = self.app.get(url, auth=self.user.auth)
-        addon_headers = res.html.find_all(attrs={'class': 'addon-widget-header'})
-        assert_true(
-            any([
-                'GitHub' in header.text
-                for header in addon_headers
-            ])
-        )
-
-    def test_files_widget_present(self):
-        url = "/project/{0}/".format(self.project._id)
-        res = self.app.get(url, auth=self.user.auth)
-        addon_headers = res.html.find_all(attrs={'class': 'addon-widget-header'})
-        assert_true(
-            any([
-                'Files' in header.text
-                for header in addon_headers
-            ])
-        )
-
-    def test_github_widget_without_auth(self):
-        self.node_settings.user = "nosense"
-        self.node_settings.save()
-        url = "/project/{0}/".format(self.project._id)
-        res = self.app.get(url, auth=self.user.auth)
-        assert_in(" GitHub add-on is not configured properly. Configure this add-on", res)
-        self.node_settings.user = self.github.repo.return_value['owner']['login']
-        self.node_settings.save()
 
     @mock.patch('website.addons.github.api.GitHub.commits')
     @mock.patch('website.addons.github.api.GitHub.file')
@@ -110,5 +80,4 @@ class TestGitHubPage(DbTestCase):
         assert_in("6dcb09b5b57875f334f61aebed695e2e4193db5e", res)
         assert_in("2011-04-14T16:00:49Z", res)
         assert_in("file-version-history", res)
-        assert_in("download the file", res)
         assert_in("icon-download-alt", res)

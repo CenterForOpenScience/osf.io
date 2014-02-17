@@ -19,6 +19,7 @@ from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
+from framework.auth.decorators import Auth
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
 )
@@ -30,6 +31,8 @@ from framework.addons import AddonModelMixin
 
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
+
+logger = logging.getLogger(__name__)
 
 def utc_datetime_to_timestamp(dt):
     return float(
@@ -137,6 +140,9 @@ class NodeLog(StoredObject):
     PROJECT_CREATED = 'project_created'
     NODE_CREATED = 'node_created'
     NODE_REMOVED = 'node_removed'
+    POINTER_CREATED = 'pointer_created'
+    POINTER_REMOVED = 'pointer_removed'
+    POINTER_FORKED = 'pointer_forked'
     WIKI_UPDATED = 'wiki_updated'
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
@@ -216,9 +222,51 @@ class Tag(StoredObject):
         return '/search/?q=tags:{}'.format(self._id)
 
 
+class Pointer(StoredObject):
+    """A link to a Node. The Pointer delegates all but a few methods to its
+    contained Node. Forking and registration are overridden such that the
+    link is cloned, but its contained Node is not.
+
+    """
+    primary = False
+
+    _id = fields.StringField()
+    node = fields.ForeignField('node', backref='_pointed')
+
+    _meta = {'optimistic': True}
+
+    def _clone(self):
+        if self.node:
+            clone = self.clone()
+            clone.node = self.node
+            clone.save()
+            return clone
+
+    def fork_node(self, *args, **kwargs):
+        return self._clone()
+
+    def register_node(self, *args, **kwargs):
+        return self._clone()
+
+    def __getattr__(self, item):
+        # Prevent backref lookups from being overriden by proxied node
+        try:
+            return super(Pointer, self).__getattr__(item)
+        except AttributeError:
+            pass
+        if self.node:
+            return getattr(self.node, item)
+        raise AttributeError(
+            'Pointer object has no attribute {0}'.format(
+                item
+            )
+        )
+
+
 class Node(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
+    primary = True
 
     # Node fields that trigger an update to Solr on save
     SOLR_UPDATE_FIELDS = {
@@ -275,8 +323,9 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
     tags = fields.ForeignField('tag', list=True, backref='tagged')
+    system_tags = fields.StringField(list=True)
 
-    nodes = fields.ForeignField('node', list=True, backref='parent')
+    nodes = fields.AbstractForeignField(list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked')
     registered_from = fields.ForeignField('node', backref='registrations')
 
@@ -305,15 +354,22 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributors.append(self.creator)
             self.contributor_list.append({'id': self.creator._primary_key})
 
-    def can_edit(self, user, api_key=None):
+    def can_edit(self, auth):
+
+        if auth is None:
+            return False
+
+        user = auth.user
+        api_node = auth.api_node
+
         return (
             self.is_contributor(user)
-            or (api_key is not None and self is api_key.node)
-            or (bool(user) and user == self.creator)
+            or api_node == self
+            or user == self.creator
         )
 
-    def can_view(self, user, api_key=None):
-        return self.is_public or self.can_edit(user, api_key)
+    def can_view(self, auth):
+        return self.is_public or self.can_edit(auth)
 
     @property
     def has_files(self):
@@ -372,7 +428,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.add_log(
                 log_action,
                 params=log_params,
-                user=self.creator,
+                auth=Auth(user=self.creator),
                 log_date=self.date_created,
                 save=True,
             )
@@ -393,10 +449,181 @@ class Node(GuidStoredObject, AddonModelMixin):
         # Return expected value for StoredObject::save
         return saved_fields
 
+    ############
+    # Pointers #
+    ############
+
+    def add_pointer(self, node, auth, save=True):
+        """Add a pointer to a node.
+
+        :param Node node: Node to add
+        :param Auth auth: Consolidated authorization
+        :param bool save: Save changes
+        :return: Created pointer
+
+        """
+        # Fail if node already in nodes / pointers. Note: cast node and node
+        # to primary keys to test for conflicts with both nodes and pointers
+        # contained in `self.nodes`.
+        if node._id in self.node_ids:
+            raise ValueError(
+                'Pointer to node {0} already in list'.format(node._id)
+            )
+
+        # Append pointer
+        pointer = Pointer(node=node)
+        pointer.save()
+        self.nodes.append(pointer)
+
+        # Add log
+        self.add_log(
+            action=NodeLog.POINTER_CREATED,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'pointer': {
+                    'id': pointer.node._id,
+                    'url': pointer.node.url,
+                    'title': pointer.node.title,
+                    'category': pointer.node.category,
+                },
+            },
+            auth=auth,
+            save=False,
+        )
+
+        # Optionally save changes
+        if save:
+            self.save()
+
+        return pointer
+
+    def rm_pointer(self, pointer, auth, save=True):
+        """Remove a pointer.
+
+        :param Pointer pointer: Pointer to remove
+        :param Auth auth: Consolidated authorization
+        :param bool save: Save changes
+
+        """
+        # Remove pointer from `nodes`
+        self.nodes.remove(pointer)
+
+        # Add log
+        self.add_log(
+            action=NodeLog.POINTER_REMOVED,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'pointer': {
+                    'id': pointer.node._id,
+                    'url': pointer.node.url,
+                    'title': pointer.node.title,
+                    'category': pointer.node.category,
+                },
+            },
+            auth=auth,
+            save=False,
+        )
+
+        # Optionally save changes
+        if save:
+            self.save()
+            pointer.remove_one(pointer)
+
+    @property
+    def node_ids(self):
+        return [
+            node._id if node.primary else node.node._id
+            for node in self.nodes
+        ]
+
+    @property
+    def nodes_primary(self):
+        return [
+            node
+            for node in self.nodes
+            if node.primary
+        ]
+
+    @property
+    def nodes_pointer(self):
+        return [
+            node
+            for node in self.nodes
+            if not node.primary
+        ]
+
+    @property
+    def pointed(self):
+        return getattr(self, '_pointed', [])
+
+    @property
+    def points(self):
+        return len(self.pointed)
+
+    def fork_pointer(self, pointer, auth, save=True):
+        """Replace a pointer with a fork. If the pointer points to a project,
+        fork the project and replace the pointer with a new pointer pointing
+        to the fork. If the pointer points to a component, fork the component
+        and add it to the current node.
+
+        :param Pointer pointer:
+        :param Auth auth:
+        :param bool save:
+        :return: Forked node
+
+        """
+        # Fail if pointer not contained in `nodes`
+        try:
+            index = self.nodes.index(pointer)
+        except ValueError:
+            raise ValueError('Pointer {0} not in list'.format(pointer._id))
+
+        # Get pointed node
+        node = pointer.node
+
+        # Fork into current node and replace pointer with forked component
+        forked = node.fork_node(auth)
+        if forked is None:
+            raise ValueError('Could not fork node')
+
+        self.nodes[index] = forked
+
+        # Optionally save changes
+        if save:
+            self.save()
+            # Garbage-collect pointer. Note: Must save current node before
+            # removing pointer, else remove will fail when trying to remove
+            # backref from self to pointer.
+            Pointer.remove_one(pointer)
+
+        # Add log
+        self.add_log(
+            NodeLog.POINTER_FORKED,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'pointer': {
+                    'id': pointer.node._id,
+                    'url': pointer.node.url,
+                    'title': pointer.node.title,
+                    'category': pointer.node.category,
+                },
+            },
+            auth=auth,
+        )
+
+        # Return forked content
+        return forked
+
     def get_recent_logs(self, n=10):
-        '''Return a list of the n most recent logs, in reverse chronological
+        """Return a list of the n most recent logs, in reverse chronological
         order.
-        '''
+
+        :param int n: Number of logs to retrieve
+
+        """
         return list(reversed(self.logs)[:n])
 
     @property
@@ -409,12 +636,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         except IndexError:
             return None
 
-    def set_title(self, title, user, api_key=None, save=False):
+    def set_title(self, title, auth, save=False):
         """Set the title of this Node and log it.
 
         :param str title: The new title.
-        :param User user: User who made the action.
-        :param ApiKey api_key: Optional API key.
+        :param auth: All the auth information including user, API key.
 
         """
         original_title = self.title
@@ -427,19 +653,17 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'title_new': self.title,
                 'title_original': original_title,
             },
-            user=user,
-            api_key=api_key,
+            auth=auth,
         )
         if save:
             self.save()
         return None
 
-    def set_description(self, description, user, api_key=None, save=False):
+    def set_description(self, description, auth, save=False):
         """Set the description and log the event.
 
         :param str description: The new description
-        :param User user: The user who changed the description.
-        :param ApiKey api_key: Optional API key.
+        :param auth: All the auth informtion including user, API key.
         :param bool save: Save self after updating.
 
         """
@@ -455,8 +679,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'description_new': self.description,
                 'description_original': original
             },
-            user=user,
-            api_key=api_key
+            auth=auth,
         )
         return None
 
@@ -505,7 +728,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 '{}_tags'.format(self._id): [x._id for x in self.tags],
                 '{}_description'.format(self._id): self.description,
                 '{}_url'.format(self._id): self.url,
-                }
+            }
 
             # TODO: Move to wiki add-on
             for wiki in [
@@ -518,27 +741,26 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             update_solr(solr_document)
 
-    def remove_node(self, user, api_key=None, date=None, top=True):
+    def remove_node(self, auth, date=None, top=True):
         """Remove node and recursively remove its children. Does not remove
         nodes from database; instead, removed nodes are flagged as deleted.
         Git repos are also not deleted. Adds a log to the parent node if top
         is True.
 
-        :param user: User removing the node
-        :param api_key: API key used to remove the node
+        :param auth: All the auth informtion including user, API key.
         :param date: Date node was removed
         :param top: Is this the first node being removed?
 
         """
-        if not self.can_edit(user, api_key):
+        if not self.can_edit(auth):
             return False
 
         date = date or datetime.datetime.utcnow()
 
         # Remove child nodes
-        for node in self.nodes:
+        for node in self.nodes_primary:
             if not node.category == 'project':
-                if not node.remove_node(user, api_key, date=date, top=False):
+                if not node.remove_node(auth, date=date, top=False):
                     return False
 
         # Add log to parent
@@ -548,7 +770,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 params={
                     'project': self._primary_key,
                 },
-                user=user,
+                auth=auth,
                 log_date=datetime.datetime.utcnow(),
             )
 
@@ -574,10 +796,18 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return True
 
-    def fork_node(self, user, api_key=None, title='Fork of '):
+    def fork_node(self, auth, title='Fork of '):
+        """Recursively fork a node.
+
+        :param Auth auth: Consolidated authorization
+        :param str title: Optional text to prepend to forked title
+        :return: Forked node
+
+        """
+        user = auth.user
 
         # todo: should this raise an error?
-        if not self.can_view(user, api_key):
+        if not self.can_view(auth):
             return
 
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
@@ -585,13 +815,19 @@ class Node(GuidStoredObject, AddonModelMixin):
         when = datetime.datetime.utcnow()
 
         original = self.load(self._primary_key)
+
+        # Note: Cloning a node copies its `files_current` and
+        # `wiki_pages_current` fields, but does not clone the underlying
+        # database objects to which these dictionaries refer. This means that
+        # the cloned node must pass itself to its file and wiki objects to
+        # build the correct URLs to that content.
         forked = original.clone()
 
         forked.logs = self.logs
         forked.tags = self.tags
 
         for node_contained in original.nodes:
-            forked_node = node_contained.fork_node(user, api_key=api_key, title='')
+            forked_node = node_contained.fork_node(auth=auth, title='')
             if forked_node is not None:
                 forked.nodes.append(forked_node)
 
@@ -603,7 +839,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.creator = user
         forked.contributor_list = []
 
-        forked.add_contributor(user, log=False, save=False)
+        forked.add_contributor(contributor=user, log=False, save=False)
 
         forked.add_log(
             action=NodeLog.NODE_FORKED,
@@ -612,8 +848,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'node': original._primary_key,
                 'registration': forked._primary_key,
             },
-            user=user,
-            api_key=api_key,
+            auth=auth,
             log_date=when,
             save=False,
         )
@@ -635,12 +870,11 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return forked
 
-    def register_node(self, schema, user, template, data, api_key=None):
+    def register_node(self, schema, auth, template, data):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
-        :param user: User registering the node
-        :param api_key: API key registering the node
+        :param auth: All the auth informtion including user, API key.
         :template: Template name
         :data: Form data
 
@@ -652,11 +886,17 @@ class Node(GuidStoredObject, AddonModelMixin):
         when = datetime.datetime.utcnow()
 
         original = self.load(self._primary_key)
+
+        # Note: Cloning a node copies its `files_current` and
+        # `wiki_pages_current` fields, but does not clone the underlying
+        # database objects to which these dictionaries refer. This means that
+        # the cloned node must pass itself to its file and wiki objects to
+        # build the correct URLs to that content.
         registered = original.clone()
 
         registered.is_registration = True
         registered.registered_date = when
-        registered.registered_user = user
+        registered.registered_user = auth.user
         registered.registered_schema = schema
         registered.registered_from = original
         if not registered.registered_meta:
@@ -673,7 +913,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # After register callback
         for addon in original.get_addons():
-            _, message = addon.after_register(original, registered, user)
+            _, message = addon.after_register(original, registered, auth.user)
             if message:
                 status.push_status_message(message)
 
@@ -686,7 +926,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         # todo: should be recursive; see Node.fork_node()
         for original_node_contained in original.nodes:
 
-            if not original_node_contained.can_edit(user):
+            if not original_node_contained.can_edit(auth):
                 # todo: inform user that node can't be registered
                 continue
 
@@ -701,13 +941,13 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             node_contained.is_registration = True
             node_contained.registered_date = when
-            node_contained.registered_user = user
+            node_contained.registered_user = auth.user
             node_contained.registered_schema = schema
             node_contained.registered_from = original_node_contained
             if not node_contained.registered_meta:
                 node_contained.registered_meta = {}
             node_contained.registered_meta[template] = data
-            
+
             node_contained.contributors = original_node_contained.contributors
             node_contained.forked_from = original_node_contained.forked_from
             node_contained.creator = original_node_contained.creator
@@ -719,7 +959,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             # After register callback
             for addon in original_node_contained.get_addons():
                 _, message = addon.after_register(
-                    original_node_contained, node_contained, user
+                    original_node_contained, node_contained, auth.user
                 )
                 if message:
                     status.push_status_message(message)
@@ -733,9 +973,8 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'node':original._primary_key,
                 'registration':registered._primary_key,
             },
-            user=user,
-            api_key=api_key,
-            log_date=when
+            auth=auth,
+            log_date=when,
         )
         original.registration_list.append(registered._id)
         original.save()
@@ -743,7 +982,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         registered.save()
         return registered
 
-    def remove_tag(self, tag, user, api_key, save=True):
+    def remove_tag(self, tag, auth, save=True):
         if tag in self.tags:
             self.tags.remove(tag)
             self.add_log(
@@ -753,13 +992,12 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'node':self._primary_key,
                     'tag':tag,
                 },
-                user=user,
-                api_key=api_key
+                auth=auth,
             )
             if save:
                 self.save()
 
-    def add_tag(self, tag, user, api_key, save=True):
+    def add_tag(self, tag, auth, save=True):
         if tag not in self.tags:
             new_tag = Tag.load(tag)
             if not new_tag:
@@ -776,8 +1014,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'node': self._primary_key,
                     'tag': tag,
                 },
-                user=user,
-                api_key=api_key
+                auth=auth,
             )
             if save:
                 self.save()
@@ -803,10 +1040,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             # TODO: Raise exception here
         return None, None # TODO: Raise exception here
 
-    def remove_file(self, user, api_key, path):
+    def remove_file(self, auth, path):
         '''Removes a file from the filesystem, NodeFile collection, and does a git delete ('git rm <file>')
 
-        :param user:
+        :param auth: All the auth informtion including user, API key.
         :param path:
 
         :return: True on success, False on failure
@@ -830,19 +1067,26 @@ class Node(GuidStoredObject, AddonModelMixin):
             repo = Repo(repo_path)
 
             message = '{path} deleted'.format(path=path)
-            committer = self._get_committer(user, api_key)
+            committer = self._get_committer(auth)
 
-            commit_id = repo.do_commit(message, committer)
+            repo.do_commit(message, committer)
 
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as error:
+            # This exception can be ignored if the file has already been
+            # deleted, e.g. if two users attempt to delete a file at the same
+            # time. If another subprocess error is raised, fail.
+            if error.returncode == 128 and 'did not match any files' in error.output:
+                logger.warning(
+                    'Attempted to delete file {0}, but file was not found.'.format(
+                        path
+                    )
+                )
+                return True
             return False
-
-        # date_modified = datetime.datetime.now()
 
         if file_name_key in self.files_current:
             nf = NodeFile.load(self.files_current[file_name_key])
             nf.is_deleted = True
-            # nf.date_modified = date_modified
             nf.save()
             self.files_current.pop(file_name_key, None)
 
@@ -850,7 +1094,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             for i in self.files_versions[file_name_key]:
                 nf = NodeFile.load(i)
                 nf.is_deleted = True
-                # nf.date_modified = date_modified
                 nf.save()
             self.files_versions.pop(file_name_key)
 
@@ -864,16 +1107,17 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'node':self._primary_key,
                 'path':path
             },
-            user=user,
-            api_key=api_key,
-            log_date=nf.date_modified
+            auth=auth,
+            log_date=nf.date_modified,
         )
 
-        # self.save()
         return True
 
     @staticmethod
-    def _get_committer(user, api_key):
+    def _get_committer(auth):
+
+        user = auth.user
+        api_key = auth.api_key
 
         if api_key:
             commit_key_msg = ':{}'.format(api_key.label)
@@ -895,7 +1139,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         else:
             raise Exception('Must provide either user or api_key.')
 
-        committer = u'{name}{key_msg} <{category}-{id}@openscienceframework.org>'.format(
+        committer = u'{name}{key_msg} <{category}-{id}@osf.io>'.format(
             name=commit_name,
             key_msg=commit_key_msg,
             category=commit_category,
@@ -907,7 +1151,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         return committer
 
 
-    def add_file(self, user, api_key, file_name, content, size, content_type):
+    def add_file(self, auth, file_name, content, size, content_type):
         """
         Instantiates a new NodeFile object, and adds it to the current Node as
         necessary.
@@ -959,7 +1203,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         # Deal with git
         repo.stage([file_name])
 
-        committer = self._get_committer(user, api_key)
+        committer = self._get_committer(auth)
 
         commit_id = repo.do_commit(
             message=unicode(file_name +
@@ -973,7 +1217,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             filename=file_name,
             size=size,
             node=self,
-            uploader=user,
+            uploader=auth.user,
             git_commit=commit_id,
             content_type=content_type,
         )
@@ -998,24 +1242,30 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'project': self.parent_id,
                 'node': self._primary_key,
                 'path': node_file.path,
-                'version': len(self.files_versions)
+                'version': len(self.files_versions),
+                'urls': {
+                    'view': node_file.url(self),
+                    'download': node_file.download_url(self),
+                },
             },
-            user=user,
-            api_key=api_key,
+            auth=auth,
             log_date=node_file.date_uploaded
         )
 
         return node_file
 
-    def add_log(self, action, params, user, foreign_user=None, api_key=None, log_date=None, save=True):
-        log = NodeLog()
-        log.action = action
-        log.user = user
-        log.foreign_user = foreign_user
-        log.api_key = api_key
+    def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
+        user = auth.user if auth else None
+        api_key = auth.api_key if auth else None
+        log = NodeLog(
+            action=action,
+            user=user,
+            foreign_user=foreign_user,
+            api_key=api_key,
+            params=params,
+        )
         if log_date:
-            log.date=log_date
-        log.params=params
+            log.date = log_date
         log.save()
         self.logs.append(log)
         if save:
@@ -1133,9 +1383,15 @@ class Node(GuidStoredObject, AddonModelMixin):
         return 'project' if self.category == 'project' else 'component'
 
     def is_contributor(self, user):
-        return (user is not None) and ((user in self.contributors) or user == self.creator)
+        return (
+            user is not None
+            and (
+                user in self.contributors
+                or user == self.creator
+            )
+        )
 
-    def remove_nonregistered_contributor(self, user, api_key, name, hash_id):
+    def remove_nonregistered_contributor(self, auth, name, hash_id):
         deleted = False
         for idx, contrib in enumerate(self.contributor_list):
             if contrib.get('nr_name') == name and hashlib.md5(contrib.get('nr_email')).hexdigest() == hash_id:
@@ -1152,8 +1408,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'node': self._primary_key,
                 'contributor': contrib,
             },
-            user=user,
-            api_key=api_key,
+            auth=auth,
         )
         return True
 
@@ -1184,15 +1439,13 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return messages
 
-    def remove_contributor(self, contributor, user=None, api_key=None, log=True):
+    def remove_contributor(self, contributor, auth, log=True):
         """Remove a contributor from this node.
 
         :param contributor: User object, the contributor to be removed
-        :param user: User object, the user who is removing the contributor.
-        :param api_key: ApiKey object
-
+        :param auth: All the auth informtion including user, API key.
         """
-        if not user._primary_key == contributor._id:
+        if not auth.user._primary_key == contributor._id:
 
             self.contributors.remove(contributor._id)
             self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != contributor._id]
@@ -1213,20 +1466,18 @@ class Node(GuidStoredObject, AddonModelMixin):
                         'node': self._primary_key,
                         'contributor': removed_user._primary_key,
                     },
-                    user=user,
-                    api_key=api_key,
+                    auth=auth,
                 )
             return True
         else:
             return False
 
-    def add_contributor(self, contributor, user=None, log=True, api_key=None, save=False):
+    def add_contributor(self, contributor, auth=None, log=True, save=False):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
-        :param User user: The user who added the contributor or None.
+        :param User auth: All the auth informtion including user, API key.
         :param NodeLog log: Add log to self
-        :param ApiKey api_key: API key used to add contributors
         :param bool save: Save after adding contributor
         :return bool: Whether contributor was added
 
@@ -1240,7 +1491,8 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributor_list.append({'id': contrib_to_add._primary_key})
 
             # Add contributor to recently added list for user
-            if user is not None:
+            if auth is not None:
+                user = auth.user
                 if contrib_to_add in user.recently_added:
                     user.recently_added.remove(contrib_to_add)
                 user.recently_added.insert(0, contrib_to_add)
@@ -1255,8 +1507,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                         'node': self._primary_key,
                         'contributors': [contrib_to_add._primary_key],
                     },
-                    user=user,
-                    api_key=api_key,
+                    auth=auth,
                     save=save,
                 )
             if save:
@@ -1265,18 +1516,17 @@ class Node(GuidStoredObject, AddonModelMixin):
         else:
             return False
 
-    def add_contributors(self, contributors, user=None, log=True, api_key=None, save=False):
+    def add_contributors(self, contributors, auth=None, log=True, save=False):
         """Add multiple contributors
 
         :param contributors: A list of User objects to add as contributors.
-        :param user: A User object, the user who added the contributors.
+        :param auth: All the auth informtion including user, API key.
         :param log: Add log to self
-        :param api_key: API key used to add contributors
         :param save: Save after adding contributor
 
         """
         for contrib in contributors:
-            self.add_contributor(contributor=contrib, user=user, log=False, save=False)
+            self.add_contributor(contributor=contrib, auth=auth, log=False, save=False)
         if log:
             self.add_log(
                 action=NodeLog.CONTRIB_ADDED,
@@ -1285,19 +1535,18 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'node': self._primary_key,
                     'contributors': [c._id for c in contributors],
                 },
-                user=user,
-                api_key=api_key,
+                auth=auth,
                 save=save,
             )
         if save:
             self.save()
 
-    def add_nonregistered_contributor(self, name, email, user, api_key=None, save=False):
+    def add_nonregistered_contributor(self, name, email, auth, save=False):
         """Add a non-registered contributor to the project.
 
         :param name: A string, the full name of the person.
         :param email: A string, the email address of the person.
-        :param user: A User object, the user who added the person.
+        :param auth: All the auth informtion including user, API key.
 
         """
         self.contributor_list.append({'nr_name': name, 'nr_email': email})
@@ -1308,19 +1557,16 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'node': self._primary_key,
                 'contributors': [{"nr_name": name, "nr_email": email}],
             },
-            user=user,
-            api_key=api_key
+            auth=auth,
         )
         if save:
             self.save()
 
-    def set_permissions(self, permissions, user=None, api_key=None):
+    def set_permissions(self, permissions, auth=None):
         """Set the permissions for this node.
 
         :param permissions: A string, either 'public' or 'private'
-        :param user: A User object, the user who set the permissions
-        :param api_key: API key used to change permissions
-
+        :param auth: All the auth informtion including user, API key.
         """
         if permissions == 'public' and not self.is_public:
             self.is_public = True
@@ -1345,8 +1591,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'project':self.parent_id,
                 'node':self._primary_key,
             },
-            user=user,
-            api_key=api_key
+            auth=auth,
         )
         return True
 
@@ -1380,13 +1625,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         return pw
 
     # TODO: Move to wiki add-on
-    def update_node_wiki(self, page, content, user, api_key=None):
+    def update_node_wiki(self, page, content, auth):
         """Update the node's wiki page with new content.
 
         :param page: A string, the page's name, e.g. ``"home"``.
         :param content: A string, the posted content.
-        :param user: A `User` object.
-        :param api_key: A string, the api key. Can be ``None``.
+        :param auth: All the auth informtion including user, API key.
 
         """
         from website.addons.wiki.model import NodeWikiPage
@@ -1408,7 +1652,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         v = NodeWikiPage(
             page_name=temp_page,
             version=version,
-            user=user,
+            user=auth.user,
             is_current=True,
             node=self,
             content=content
@@ -1428,8 +1672,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'page': v.page_name,
                 'version': v.version,
             },
-            user=user,
-            api_key=api_key,
+            auth=auth,
             log_date=v.date
         )
 
@@ -1459,3 +1702,10 @@ class WatchConfig(StoredObject):
     node = fields.ForeignField('Node', backref='watched')
     digest = fields.BooleanField(default=False)
     immediate = fields.BooleanField(default=False)
+
+
+class MailRecord(StoredObject):
+
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    data = fields.DictionaryField()
+    records = fields.AbstractForeignField(list=True, backref='created')

@@ -15,8 +15,7 @@ import settings
 
 import helper
 
-import framework.auth
-from framework.auth import register, login, logout, DuplicateEmailError, get_user, must_have_session_auth, get_current_user
+from framework.auth import register, login, logout, DuplicateEmailError, get_user, get_current_user
 from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm, MergeAccountForm
 
 Q = framework.Q
@@ -138,10 +137,7 @@ def auth_logout():
 
 def auth_register_post():
     if not website.settings.ALLOW_REGISTRATION:
-        status.push_status_message('We are currently in beta development and \
-            registration is only available to those with beta invitations. If you \
-            would like to be added to the invitation list, please email \
-            beta@openscienceframework.org.')
+        status.push_status_message('Registration currently unavailable.')
         return framework.redirect('/')
 
     form = RegistrationForm(framework.request.form, prefix='register')

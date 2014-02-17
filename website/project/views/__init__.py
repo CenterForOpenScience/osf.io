@@ -1,2 +1,1 @@
-
-import contributor, key, log, node, register, tag, wiki, file
+import contributor, key, log, node, register, tag, file, email

@@ -10,16 +10,20 @@ from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
 import website.app
-from website.models import Node, NodeLog
+from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
-
+from framework.auth.decorators import Auth
+from webtest.app import AppError
 from tests.base import DbTestCase
-from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
-                            WatchConfigFactory, NodeFactory, NodeLogFactory)
+from tests.factories import (
+    UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
+    NodeFactory, NodeLogFactory, AuthUserFactory
+)
 
 
-app = website.app.init_app(routes=True, set_backends=False,
-                            settings_module="website.settings")
+app = website.app.init_app(
+    routes=True, set_backends=False, settings_module='website.settings',
+)
 
 
 class TestProjectViews(DbTestCase):
@@ -32,6 +36,7 @@ class TestProjectViews(DbTestCase):
         api_key = ApiKeyFactory()
         self.user1.api_keys.append(api_key)
         self.user1.save()
+        self.consolidate_auth1 = Auth(user=self.user1, api_key=api_key)
         self.auth = ('test', api_key._primary_key)
         self.user2 = UserFactory()
         # A project has 2 contributors
@@ -120,9 +125,11 @@ class TestProjectViews(DbTestCase):
                    'invitations and account merging are done.')
     def test_project_remove_non_registered_contributor(self):
         # A non-registered user is added to the project
-        self.project.add_nonregistered_contributor(name="Vanilla Ice",
-                                                    email="iceice@baby.ice",
-                                                    user=self.user1)
+        self.project.add_nonregistered_contributor(
+            name="Vanilla Ice",
+            email="iceice@baby.ice",
+            auth=self.consolidate_auth1
+        )
         self.project.save()
         url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
         # the contributor is removed via the API
@@ -166,7 +173,7 @@ class TestProjectViews(DbTestCase):
         assert_in("footag", self.project.tags)
 
     def test_remove_tag(self):
-        self.project.add_tag("footag", user=self.user1, api_key=None, save=True)
+        self.project.add_tag("footag", auth=self.consolidate_auth1, save=True)
         assert_in("footag", self.project.tags)
         url = "/api/v1/project/{0}/removetag/{tag}/".format(self.project._primary_key,
                                                         tag="footag")
@@ -244,7 +251,7 @@ class TestProjectViews(DbTestCase):
         # Add some logs
         for _ in range(15):
             self.project.add_log(
-                user=self.user1,
+                auth=self.consolidate_auth1,
                 action='file_added',
                 params={'project': self.project._id}
             )
@@ -253,7 +260,7 @@ class TestProjectViews(DbTestCase):
         child = NodeFactory(project=self.project)
         for _ in range(5):
             child.add_log(
-                user=self.user1,
+                auth=self.consolidate_auth1,
                 action='file_added',
                 params={'project': child._id}
             )
@@ -292,6 +299,7 @@ class TestWatchViews(DbTestCase):
         api_key = ApiKeyFactory()
         self.user.api_keys.append(api_key)
         self.user.save()
+        self.consolidate_auth = Auth(user=self.user, api_key=api_key)
         self.auth = ('test', self.user.api_keys[0]._id)  # used for requests auth
         # A public project
         self.project = ProjectFactory(is_public=True)
@@ -302,8 +310,7 @@ class TestWatchViews(DbTestCase):
         # A log added now
         self.last_log = self.project.add_log(
             NodeLog.TAG_ADDED, params={'project': self.project._primary_key},
-            user=self.user, log_date=dt.datetime.utcnow(),
-            api_key=self.auth[1],
+            auth=self.consolidate_auth, log_date=dt.datetime.utcnow(),
             save=True,
         )
         # Clear watched list
@@ -390,6 +397,115 @@ class TestWatchViews(DbTestCase):
         assert_equal(len(res.json['logs']), len(project.logs))
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
+
+class TestPointerViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = ProjectFactory(creator=self.user)
+
+    def test_add_pointers(self):
+
+        url = self.project.api_url + 'pointer/'
+        node_ids = [
+            NodeFactory()._id
+            for _ in range(5)
+        ]
+        self.app.post_json(
+            url,
+            {'nodeIds': node_ids},
+            auth=self.user.auth,
+        ).maybe_follow()
+
+        self.project.reload()
+        assert_equal(
+            len(self.project.nodes),
+            5
+        )
+
+    def test_add_pointers_not_provided(self):
+        url = self.project.api_url + 'pointer/'
+        with assert_raises(AppError):
+            self.app.post_json(url, {}, auth=self.user.auth)
+
+    def test_remove_pointer(self):
+        url = self.project.api_url + 'pointer/'
+        node = NodeFactory()
+        pointer = self.project.add_pointer(node, auth=self.consolidate_auth)
+        self.app.delete_json(
+            url,
+            {'pointerId': pointer._id},
+            auth=self.user.auth,
+        )
+        self.project.reload()
+        assert_equal(
+            len(self.project.nodes),
+            0
+        )
+
+    def test_remove_pointer_not_provided(self):
+        url = self.project.api_url + 'pointer/'
+        with assert_raises(AppError):
+            self.app.delete_json(url, {}, auth=self.user.auth)
+
+    def test_remove_pointer_not_found(self):
+        url = self.project.api_url + 'pointer/'
+        with assert_raises(AppError):
+            self.app.delete_json(
+                url,
+                {'pointerId': None},
+                auth=self.user.auth
+            )
+
+    def test_remove_pointer_not_in_nodes(self):
+        url = self.project.api_url + 'pointer/'
+        node = NodeFactory()
+        pointer = Pointer(node=node)
+        with assert_raises(AppError):
+            self.app.delete_json(
+                url,
+                {'pointerId': pointer._id},
+                auth=self.user.auth,
+            )
+
+    def test_fork_pointer(self):
+        url = self.project.api_url + 'pointer/fork/'
+        node = NodeFactory(creator=self.user)
+        pointer = self.project.add_pointer(node, auth=self.consolidate_auth)
+        self.app.post_json(
+            url,
+            {'pointerId': pointer._id},
+            auth=self.user.auth
+        )
+
+    def test_fork_pointer_not_provided(self):
+        url = self.project.api_url + 'pointer/fork/'
+        with assert_raises(AppError):
+            self.app.post_json(url, {}, auth=self.user.auth)
+
+    def test_fork_pointer_not_found(self):
+        url = self.project.api_url + 'pointer/fork/'
+        with assert_raises(AppError):
+            self.app.post_json(
+                url,
+                {'pointerId': None},
+                auth=self.user.auth
+            )
+
+    def test_fork_pointer_not_in_nodes(self):
+        url = self.project.api_url + 'pointer/fork/'
+        node = NodeFactory()
+        pointer = Pointer(node=node)
+        with assert_raises(AppError):
+            self.app.post_json(
+                url,
+                {'pointerId': pointer._id},
+                auth=self.user.auth
+            )
+
+
 class TestPublicViews(DbTestCase):
 
     def setUp(self):
@@ -398,6 +514,7 @@ class TestPublicViews(DbTestCase):
     def test_explore(self):
         res = self.app.get("/explore/").maybe_follow()
         assert_equal(res.status_code, 200)
+
 
 class TestAuthViews(DbTestCase):
 

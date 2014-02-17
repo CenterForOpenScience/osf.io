@@ -34,7 +34,8 @@ class AddonConfig(object):
     def __init__(self, short_name, full_name, owners, added_to, categories,
                  node_settings_model=None, user_settings_model=None, include_js=None, include_css=None,
                  widget_help=None, views=None, configs=None, models=None,
-                 has_hgrid_files=False, get_hgrid_dummy=None, max_file_size=None,
+                 has_hgrid_files=False, get_hgrid_data=None, max_file_size=None,
+                 accept_extensions=True,
                  **kwargs):
 
         self.models = models
@@ -63,8 +64,9 @@ class AddonConfig(object):
         self.configs = configs or []
 
         self.has_hgrid_files = has_hgrid_files
-        self.get_hgrid_dummy = get_hgrid_dummy
+        self.get_hgrid_data = get_hgrid_data #if has_hgrid_files and not get_hgrid_data rubeus.make_dummy()
         self.max_file_size = max_file_size
+        self.accept_extensions = accept_extensions
 
         # Build template lookup
         template_path = os.path.join('website', 'addons', short_name, 'templates')
@@ -97,6 +99,7 @@ class AddonConfig(object):
         """
 
         """
+        # TODO: minify static assets
         return {
             key: [
                 self._static_url(item)
@@ -104,6 +107,8 @@ class AddonConfig(object):
             ]
             for key, value in include.iteritems()
         }
+
+    # TODO: Make INCLUDE_JS and INCLUDE_CSS one option
 
     @property
     def icon(self):
@@ -318,7 +323,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 # TODO: Move this
 LOG_TEMPLATES = 'website/templates/log_templates.mako'
 
-
+# TODO: No more magicks
 def init_addon(app, addon_name, routes=True):
     """Load addon module and create configuration object.
 

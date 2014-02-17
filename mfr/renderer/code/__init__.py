@@ -6,6 +6,7 @@ import pygments.formatters
 
 
 KNOWN_EXTENSIONS = ['.rb',
+ '.c',
  '.cs',
  '.ahk',
  '.rs',

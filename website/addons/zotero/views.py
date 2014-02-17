@@ -42,11 +42,11 @@ def zotero_widget(*args, **kwargs):
 @must_be_contributor_or_public
 def zotero_page(**kwargs):
 
-    user = kwargs['user']
+    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
     zotero = node.get_addon('zotero')
 
-    data = _view_project(node, user)
+    data = _view_project(node, auth)
 
     xml = zotero._fetch_references()
 

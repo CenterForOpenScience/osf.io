@@ -1,14 +1,6 @@
-<script type="text/javascript">
-    function gitHubRedirect(item) {
-        url = item.params.github.url.replace('/api/v1', '');
-        window.location.href = url;
-        return false;
-    }
-</script>
-
 <script type="text/html" id="github_file_added">
 added file
-<a class="overflow" data-bind="click: gitHubRedirect, text: params.path"></a> to
+<a class="overflow" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
 GitHub repo
 <span data-bind="text: params.github.user"></span> /
 <span data-bind="text: params.github.repo"></span> in
@@ -18,7 +10,7 @@ GitHub repo
 
 <script type="text/html" id="github_file_updated">
 updated file
-<a class="overflow" data-bind="click: gitHubRedirect, text: params.path"></a> to
+<a class="overflow" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
 GitHub repo
 <span data-bind="text: params.github.user"></span> /
 <span data-bind="text: params.github.repo"></span> in

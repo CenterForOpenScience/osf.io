@@ -93,6 +93,10 @@ font-weight: bold;
 
 /* Global Styles */
 
+#addPointer td {
+    vertical-align: middle;
+}
+
 /* Add-on styles */
 
 /* Make embedded iframes responsive */
@@ -182,7 +186,6 @@ h4 {
 .social {
     padding-right: 60px;
 }
-
 
 
 /* Navbar */
@@ -583,6 +586,9 @@ input.ui-autocomplete-input{
 
 li.list-group-item-node {
     margin-bottom: 10px;
+}
+li.pointer {
+    border-style: dashed;
 }
 
 li .project-meta {
