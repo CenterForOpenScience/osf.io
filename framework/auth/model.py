@@ -68,6 +68,14 @@ class User(GuidStoredObject, AddonModelMixin):
 
     _meta = {'optimistic' : True}
 
+    def is_active(self):
+        """Returns True if the user is active. The user must have activated
+        their account, must not be deleted, suspended, etc.
+        """
+        return (self.is_registered and
+                self.password is not None and
+                not self.is_merged)
+
     def set_password(self, raw_password):
         '''Set the password for this user to the hash of ``raw_password``.'''
         self.password = generate_password_hash(raw_password)
