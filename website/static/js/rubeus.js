@@ -78,7 +78,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
      function getStatusCfg(addon, whichStatus, extra) {
         if(addon && Rubeus.cfg[addon] && Rubeus.cfg[addon][whichStatus]) {
             if (typeof(Rubeus.cfg[addon][whichStatus]) === 'function')
-                return Rubeus.cfg[addon][whichStatus].call(extra);
+                return Rubeus.cfg[addon][whichStatus](extra);
             else
                 return Rubeus.cfg[addon][whichStatus];
         }
