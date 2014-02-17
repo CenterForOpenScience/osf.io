@@ -232,10 +232,9 @@ class GitHub(object):
     ########
 
     def upload_file(self, user, repo, path, message, content, sha=None, branch=None, committer=None, author=None):
-            return self.gh3.repository(user, repo).create_file(path, message, content, branch, author=author)
+        return self.gh3.repository(user, repo).update_file(path, message, content, sha, branch, author, committer)
 
     def delete_file(self, user, repo, path, message, sha, branch=None, committer=None, author=None):
-
         return self.gh3.repository(user, repo).delete_file(path, message, sha, branch, committer, author)
 
     ########
