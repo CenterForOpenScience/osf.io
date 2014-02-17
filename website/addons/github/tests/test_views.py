@@ -142,7 +142,7 @@ class TestGithubViews(DbTestCase):
 
     #Expected Failure beforefork does not exist, stage for removal?
     def test_before_fork(self):
-        url = self.project.api_url + 'beforefork/'
+        url = self.project.api_url + 'fork/before/'
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(len(res.json['prompts']), 1)
 
