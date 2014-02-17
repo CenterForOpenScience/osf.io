@@ -9,7 +9,7 @@ from cStringIO import StringIO
 import httplib as http
 import logging
 
-from hurry.filesize import size, alternative
+import hurry
 
 from framework import request, redirect, send_file
 from framework.git.exceptions import FileNotModified
@@ -70,6 +70,10 @@ def osffiles_dummy_folder(node_settings, auth, parent=None, **kwargs):
         },
     }
 
+# TODO: move to rubeus.py?
+def format_filesize(size):
+    return hurry.filesize.size(size, system=hurry.filesize.alternative)
+
 
 @must_be_contributor_or_public
 @must_have_addon('osffiles', 'node')
@@ -110,7 +114,7 @@ def get_osffiles(**kwargs):
                 'downloads': total or 0,
                 'size': [
                     float(fobj.size),
-                    size(fobj.size, system=alternative)
+                    format_filesize(fobj.size),
                 ],
                 'dates': {
                     'modified': [
@@ -177,7 +181,7 @@ def upload_file_public(**kwargs):
         'name': name,
         'size': [
             float(size),
-            size(size, system=alternative),
+            format_filesize(size),
         ],
 
         # URLs
