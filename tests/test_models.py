@@ -36,7 +36,6 @@ from tests.factories import (
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory, MetaDataFactory
 
-# TODO: Move me to test_auth.py (User is a framework model, not a website model)
 class TestUser(DbTestCase):
 
     def setUp(self):
@@ -921,14 +920,17 @@ class TestProject(DbTestCase):
             auth=self.consolidate_auth
         )
         self.project.save()
-        # Contributor list include nonregistered contributor
-        latest_contributor = self.project.contributor_list[-1]
-        assert_dict_equal(latest_contributor,
+        latest_contributor = self.project.contributors[-1]
+        assert_true(isinstance(latest_contributor, User))
+        assert_equal(latest_contributor.username, 'foo@bar.com')
+        assert_equal(latest_contributor.name, 'Weezy F. Baby')
+        assert_false(latest_contributor.is_active())
+        # Contributor list includes nonregistered contributor
+        latest_contributor_dict = self.project.contributor_list[-1]
+        assert_dict_equal(latest_contributor_dict,
                         {'nr_name': 'Weezy F. Baby', 'nr_email': 'foo@bar.com'})
         # A log event was added
         assert_equal(self.project.logs[-1].action, 'contributor_added')
-
-
 
     def test_remove_contributor(self):
         # A user is added as a contributor
