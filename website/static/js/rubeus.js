@@ -110,6 +110,8 @@ this.Rubeus = (function($, HGrid, bootbox) {
         }
     };
 
+    Rubeus.Status = status;
+
     ////////////////////////
     // Listener callbacks //
     ////////////////////////
