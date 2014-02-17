@@ -19,6 +19,7 @@ from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
+from framework.auth import utils as auth_utils
 from framework.auth.decorators import Auth
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
@@ -1545,18 +1546,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth informtion including user, API key.
 
         """
-        self.contributor_list.append({'nr_name': name, 'nr_email': email})
-        self.add_log(
-            action=NodeLog.CONTRIB_ADDED,
-            params={
-                'project': self.parent_id,
-                'node': self._primary_key,
-                'contributors': [{"nr_name": name, "nr_email": email}],
-            },
-            auth=auth,
-        )
-        if save:
-            self.save()
+        parsed_name = auth_utils.parse_name(name)
+        contributor = User(fullname=name, username=email, is_registered=False,
+                        is_claimed=False, **parsed_name)
+        contributor.save()
+        return self.add_contributor(contributor, auth=auth, log=True, save=save)
 
     def set_permissions(self, permissions, auth=None):
         """Set the permissions for this node.

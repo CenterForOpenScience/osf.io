@@ -42,6 +42,25 @@ class TestUser(DbTestCase):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
 
+    def test_non_registered_user_is_not_active(self):
+        u = User(username='fred@queen.com',
+            fullname='Freddie Mercury',
+            is_registered=False)
+        u.set_password('killerqueen')
+        u.save()
+        assert_false(u.is_active())
+
+    def test_user_with_no_password_is_not_active(self):
+        u = User(username='fred@queen.com',
+            fullname='Freddie Mercury', is_registered=True)
+        u.save()
+        assert_false(u.is_active())
+
+    def test_merged_user_is_not_active(self):
+        master = UserFactory()
+        dupe = UserFactory(merged_by=master)
+        assert_false(dupe.is_active())
+
     def test_cant_create_user_without_username(self):
         u = User()  # No username given
         with assert_raises(ValidationError):
@@ -923,12 +942,12 @@ class TestProject(DbTestCase):
         latest_contributor = self.project.contributors[-1]
         assert_true(isinstance(latest_contributor, User))
         assert_equal(latest_contributor.username, 'foo@bar.com')
-        assert_equal(latest_contributor.name, 'Weezy F. Baby')
-        assert_false(latest_contributor.is_active())
+        assert_equal(latest_contributor.fullname, 'Weezy F. Baby')
+        assert_false(latest_contributor.is_registered)
         # Contributor list includes nonregistered contributor
         latest_contributor_dict = self.project.contributor_list[-1]
         assert_dict_equal(latest_contributor_dict,
-                        {'nr_name': 'Weezy F. Baby', 'nr_email': 'foo@bar.com'})
+                        {'id': latest_contributor._primary_key})
         # A log event was added
         assert_equal(self.project.logs[-1].action, 'contributor_added')
 
