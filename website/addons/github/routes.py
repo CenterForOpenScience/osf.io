@@ -106,7 +106,15 @@ api_routes = {
             views.hgrid.github_root_folder_public,
             json_renderer,
         ),
-
+        Rule(
+            [
+                '/project/<pid>/github/file/download/<path:path>/',
+                '/project/<pid>/node/<nid>/github/file/download/<path:path>',
+            ],
+            'get',
+            views.crud.github_download_file,
+            json_renderer,
+        ),
         ### File Render ###
         Rule(
             [
@@ -132,15 +140,6 @@ page_routes = {
             'get',
             views.crud.github_view_file,
             OsfWebRenderer('../addons/github/templates/github_view_file.mako')
-        ),
-        Rule(
-            [
-                '/project/<pid>/github/file/download/<path:path>',
-                '/project/<pid>/node/<nid>/github/file/download/<path:path>',
-            ],
-            'get',
-            views.crud.github_download_file,
-            json_renderer,
         ),
     ],
 }
