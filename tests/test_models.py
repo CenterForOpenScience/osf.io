@@ -164,6 +164,7 @@ class TestUser(DbTestCase):
         assert_equal(d['registered'], user.is_registered)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
+        assert_equal(d['active'], user.is_active())
 
     def test_serialize_user_full(self):
         master = UserFactory()

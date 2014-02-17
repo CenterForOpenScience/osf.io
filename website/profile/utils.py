@@ -34,6 +34,7 @@ def serialize_user(user, full=False):
         'registered': user.is_registered,
         'username': user.username,
         'fullname': user.fullname,
+        'active': user.is_active(),
     }
 
     if full:
