@@ -130,8 +130,8 @@ def create_mock_github(user='octo-cat', private=False):
       ]
 
     # http://developer.github.com/v3/repos/contents/
-    github_mock.contents.return_value = [
-        github3.repos.contents.Contents.from_json({
+    github_mock.contents.return_value = {
+        'octokit.rb': github3.repos.contents.Contents.from_json({
           "type": "file",
           "size": 625,
           "name": "octokit.rb",
@@ -146,7 +146,7 @@ def create_mock_github(user='octo-cat', private=False):
             "html": "https://github.com/{user}/octokit/blob/master/lib/octokit.rb"
           }
         }),
-        github3.repos.contents.Contents.from_json({
+        'octokit': github3.repos.contents.Contents.from_json({
           "type": "dir",
           "size": 0,
           "name": "octokit",
@@ -161,7 +161,7 @@ def create_mock_github(user='octo-cat', private=False):
             "html": "https://github.com/{user}/octokit/tree/master/lib/octokit".format(user=user)
           }
         })
-    ]
+      }
     github_mock.tree.return_value = github3.git.Tree.from_json({
         'url': u'https://api.github.com/repos/{user}/mock-repo/git/trees/dev'.format(user=user),
         'sha': 'dev',

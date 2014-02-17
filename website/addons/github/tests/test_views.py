@@ -41,13 +41,12 @@ class TestHGridViews(DbTestCase):
 
         assert_equal(len(res), 2)
         assert_equal(res[0]['addon'], 'github')
-
-        assert_true(res[0].to_json()['permissions']['view'])  # can always view
-        expected_kind = 'item' if contents[0]['type'] == 'file' else 'folder'
+        assert_true(res[0]['permissions']['view'])  # can always view
+        expected_kind = 'item' if contents['octokit'].type == 'file' else 'folder'
         assert_equal(res[0]['kind'], expected_kind)
         assert_equal(res[0]['accept']['maxSize'], 10)
         assert_equal(res[0]['accept']['acceptedFiles'], None)
-        assert_equal(res[0].urls, api._build_github_urls(contents[0],
+        assert_equal(res[0]['urls'], api._build_github_urls(contents['octokit'],
             self.project.url, self.project.api_url, branch=None, sha=None))
         # Files should not have lazy-load or upload URLs
         assert_not_in('lazyLoad', res[0])
