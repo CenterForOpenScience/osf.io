@@ -30,7 +30,7 @@ from tests.base import DbTestCase, test_app, Guid
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
-    NodeWikiFactory, UnregUserFactory, RegistrationFactory
+    NodeWikiFactory, UnregUserFactory, RegistrationFactory, UnregUserFactory
 )
 
 
@@ -253,6 +253,23 @@ class TestUser(DbTestCase):
             )
 
         assert_equal(len(self.user.recently_added), 15)
+
+    def test_add_unclaimed_record(self):
+        project = ProjectFactory()
+
+        referrer = UserFactory()
+        user = UnregUserFactory()
+
+        user.add_unclaimed_record(project_id=project._primary_key,
+            verification='123',
+            given_name='Fredd Merkury', referrer_id=referrer._primary_key)
+        user.save()
+        data = user.unclaimed_records[project._primary_key]
+        assert_equal(data, {
+            'name': 'Fredd Merkury',
+            'referrer_id': referrer._primary_key,
+            'verification': '123'
+        })
 
 
 class TestUserParse(unittest.TestCase):
