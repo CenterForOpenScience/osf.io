@@ -1,12 +1,10 @@
 import mock
 from nose.tools import *
-from webtest.app import AppError
 from webtest_plus import TestApp
 
 import website.app
 from tests.base import DbTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
-from website.addons.s3.model import AddonS3NodeSettings, AddonS3UserSettings
 
 app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings'
@@ -20,20 +18,21 @@ class TestS3ViewsConfig(DbTestCase):
         self.user = AuthUserFactory()
         self.auth = ('test', self.user.api_keys[0]._primary_key)
         self.project = ProjectFactory(creator=self.user)
+
         self.project.add_addon('s3')
         self.project.creator.add_addon('s3')
+
         self.user_settings = self.user.get_addon('s3')
-        self.node_settings = self.project.get_addon('s3')
-        # Set the node addon settings to correspond to the values of the mock
-        # repo
-        self.node_settings = AddonS3NodeSettings()
         self.user_settings.access_key = 'We-Will-Rock-You'
         self.user_settings.secret_key = 'Idontknowanyqueensongs'
-        self.node_settings.bucket = 'Sheer-Heart-Attack'
-        self.node_settings.user_settings = self.user_settings
-        self.node_settings.save()
         self.user_settings.save()
-        self.app.authenticate(*self.user.auth)
+
+        self.node_settings = self.project.get_addon('s3')
+        self.node_settings.bucket = 'Sheer-Heart-Attack'
+        self.node_settings.user_settings = self.project.creator.get_addon('s3')
+
+        self.node_settings.save()
+        self.node_url = '/api/v1/project/{0}/'.format(self.project._id)
 
     @mock.patch('website.addons.s3.views.config.does_bucket_exist')
     @mock.patch('website.addons.s3.views.config.adjust_cors')
@@ -41,7 +40,8 @@ class TestS3ViewsConfig(DbTestCase):
         mock_does_bucket_exist.return_value = False
         mock_cors.return_value = True
         url = "/api/v1/project/{0}/s3/settings/".format(self.project._id)
-        self.app.post_json(url, {}, expect_errors=True)
+        rv = self.app.post_json(url, {}, expect_errors=True, auth=self.user.auth)
+        assert_true('trouble' in rv.body)
 
     @mock.patch('website.addons.s3.views.config.remove_osf_user')
     def test_s3_remove_user_settings(self, mock_access):
@@ -50,22 +50,21 @@ class TestS3ViewsConfig(DbTestCase):
         self.user_settings.secret_key = 'itsasecret'
         self.user_settings.save()
         url = '/api/v1/settings/s3/'
-        self.app.delete_json(url, {}, auth=self.user.auth)
+        self.app.delete(url, auth=self.user.auth)
         self.user_settings.reload()
         assert_equals(self.user_settings.access_key, '')
-        # TODO finish me
+        assert_equals(self.user_settings.secret_key, '')
 
     def test_download_no_file(self):
         url = "/api/v1/project/{0}/s3/download/".format(self.project._id)
         self.app.post_json(url, {},  expect_errors=True)
 
-    # TODO fix me cant seem to be logged in.....
     @mock.patch('website.addons.s3.views.config.has_access')
     def test_user_settings_no_auth(self, mock_access):
         mock_access.return_value = False
         url = '/api/v1/settings/s3/'
-        with assert_raises(AppError):
-            self.app.post_json(url, {})
+        rv = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
+        assert_equals(rv.status_int, 400)
 
     @mock.patch('website.addons.s3.views.config.has_access')
     @mock.patch('website.addons.s3.views.config.create_osf_user')
@@ -81,10 +80,43 @@ class TestS3ViewsConfig(DbTestCase):
             {
                 'access_key': 'scout',
                 'secret_key': 'Aticus'
-            }
+            },
+            auth=self.user.auth
         )
         self.user_settings.reload()
         assert_equals(self.user_settings.access_key, 'scout')
+
+    @mock.patch('website.addons.s3.views.config.has_access')
+    @mock.patch('website.addons.s3.views.config.create_osf_user')
+    def test_node_settings_no_user_settings(self, mock_user, mock_access):
+        self.node_settings.user_settings = None
+        self.node_settings.save()
+        url = self.node_url + 's3/authorize/'
+
+        mock_access.return_value = True
+        mock_user.return_value = {
+            'access_key_id': 'scout',
+            'secret_access_key': 'ssshhhhhhhhh'
+        }
+        self.app.post_json(url, {'access_key': 'scout', 'secret_key': 'ssshhhhhhhhh'}, auth=self.user.auth)
+
+        self.user_settings.reload()
+        assert_equals(self.user_settings.access_key, 'scout')
+
+    def test_node_settings_no_user_settings_ui(self):
+        self.node_settings.user_settings.access_key = None
+        self.node_settings.user_settings = None
+        self.node_settings.save()
+        url = '/' + self.project._id + '/settings/'
+        rv = self.app.get(url, auth=self.user.auth)
+        assert_true('<label for="s3Addon">Access Key</label>' in rv.body)
+
+    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
+    def test_node_settings_user_settings_ui(self, dropdown):
+        dropdown.return_value = 'test'
+        url = '/' + self.project._id + '/settings/'
+        rv = self.app.get(url, auth=self.user.auth)
+        assert_true('Your buckets' in rv.body)
 
 
 class TestS3ViewsCRUD(DbTestCase):
