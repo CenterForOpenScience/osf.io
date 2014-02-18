@@ -1,11 +1,12 @@
 from .model import AddonDataverseUserSettings, AddonDataverseNodeSettings
-from .routes import settings_routes, page_routes
+from .routes import settings_routes, page_routes, api_routes
+import views
 
 MODELS = [AddonDataverseNodeSettings, AddonDataverseUserSettings]
 USER_SETTINGS_MODEL = AddonDataverseUserSettings
 NODE_SETTINGS_MODEL = AddonDataverseNodeSettings
 
-ROUTES = [settings_routes, page_routes]
+ROUTES = [settings_routes, page_routes, api_routes]
 
 SHORT_NAME = 'dataverse'
 FULL_NAME = 'Dataverse'
@@ -38,3 +39,8 @@ INCLUDE_CSS = {
     'widget': [],
     'page': ['/static/css/hgrid-base.css'],
 }
+
+HAS_HGRID_FILES = True
+GET_HGRID_DATA = views.hgrid.dataverse_hgrid_data
+
+MAX_FILE_SIZE = 10  # MB

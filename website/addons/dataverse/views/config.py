@@ -34,7 +34,7 @@ def dataverse_set_node_config(*args, **kwargs):
 
     # TODO: Validate
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
 
     node_settings = kwargs['node_addon']
     dataverse_user = node_settings.user_settings
@@ -49,7 +49,7 @@ def dataverse_set_node_config(*args, **kwargs):
 @decorators.must_have_addon('dataverse', 'node')
 def set_dataverse(*args, **kwargs):
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
     node_settings = kwargs['node_addon']
     dataverse_user = node_settings.user_settings
 
@@ -82,7 +82,7 @@ def dataverse_widget(*args, **kwargs):
 @decorators.must_be_contributor_or_public
 def dataverse_page(**kwargs):
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
     node = kwargs['node'] or kwargs['project']
     dataverse= node.get_addon('dataverse')
 

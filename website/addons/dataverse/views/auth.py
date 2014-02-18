@@ -7,14 +7,17 @@ from website.project import decorators
 
 @decorators.must_be_contributor
 @decorators.must_have_addon('dataverse', 'node')
-def authorize(*args, **kwargs):
+def authorize(**kwargs):
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
+
     node_settings = kwargs['node_addon']
+    dataverse_user = user.get_addon('dataverse')
 
     node_settings.dataverse_username = user.get_addon('dataverse').dataverse_username
     node_settings.dataverse_password = user.get_addon('dataverse').dataverse_password
     node_settings.user = user
+    node_settings.user_settings = dataverse_user
 
     node_settings.save()
 
@@ -25,7 +28,7 @@ def authorize(*args, **kwargs):
 @decorators.must_have_addon('dataverse', 'node')
 def unauthorize(*args, **kwargs):
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
     node_settings = kwargs['node_addon']
     dataverse_user = node_settings.user_settings
 

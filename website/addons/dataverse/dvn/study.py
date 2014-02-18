@@ -114,6 +114,11 @@ class Study(object):
             if file_name == f.name:
                 return f
 
+    def get_file_by_id(self, file_id):
+        for f in self.get_files():
+            if file_id == f.fileId:
+                return f
+
     def get_files(self):
         if not self.statementUri:
             atomXml = self.get_entry()

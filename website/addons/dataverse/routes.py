@@ -46,6 +46,18 @@ settings_routes = {
             '/project/<pid>/dataverse/widget/',
             '/project/<pid>/node/<nid>/dataverse/widget/',
         ], 'get', views.config.dataverse_widget, json_renderer),
+
+        # Files
+        Rule([
+            '/project/<pid>/dataverse/file/',
+            '/project/<pid>/dataverse/file/<path:path>',
+            '/project/<pid>/node/<nid>/dataverse/file/',
+            '/project/<pid>/node/<nid>/dataverse/file/<path:path>',
+        ], 'post', views.crud.dataverse_upload_file, json_renderer),
+        Rule([
+            '/project/<pid>/dataverse/file/<path:path>',
+            '/project/<pid>/node/<nid>/dataverse/file/<path:path>',
+        ], 'delete', views.crud.dataverse_delete_file, json_renderer),
     ],
     'prefix': '/api/v1',
 }
@@ -62,4 +74,40 @@ page_routes = {
             OsfWebRenderer('../addons/dataverse/templates/dataverse_view_file.mako')
         ),
     ],
+}
+
+api_routes = {
+    'rules': [
+        Rule(
+            [
+                '/project/<pid>/dataverse/hgrid/',
+                '/project/<pid>/node/<nid>/dataverse/hgrid/',
+                '/project/<pid>/dataverse/hgrid/<path:path>/',
+                '/project/<pid>/node/<nid>/dataverse/hgrid/<path:path>/',
+            ],
+            'get',
+            views.hgrid.dataverse_hgrid_data_contents,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/dataverse/hgrid/root/',
+                '/project/<pid>/node/<nid>/dataverse/hgrid/root/',
+            ],
+            'get',
+            views.hgrid.dataverse_root_folder_public,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/dataverse/file/download/<path:path>/',
+                '/project/<pid>/node/<nid>/dataverse/file/download/<path:path>',
+            ],
+            'get',
+            views.crud.dataverse_download_file,
+            json_renderer,
+        ),
+
+    ],
+    'prefix': '/api/v1'
 }
