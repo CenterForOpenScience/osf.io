@@ -35,6 +35,8 @@ def s3_download(*args, **kwargs):
     if keyName is None:
         raise HTTPError(http.NOT_FOUND)
     connect = S3Wrapper.from_addon(s3)
+    if not connect.does_key_exist(keyName):
+        raise HTTPError(http.NOT_FOUND)
     return redirect(connect.download_file_URL(keyName, vid))
 
 
