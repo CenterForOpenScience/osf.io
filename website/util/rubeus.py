@@ -40,7 +40,8 @@ def to_hgrid(node, auth, mode, **data):
     return NodeFileCollector(node, auth, **data)(mode)
 
 
-def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS, urls=None, extra=None, **kwargs):
+def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS,
+                     urls=None, extra=None, **kwargs):
     """Builds the root or "dummy" folder for an addon.
 
     :param node_settings addonNodeSettingsBase: Addon settings
@@ -89,6 +90,7 @@ def build_addon_item():
     pass
 
 
+# TODO: Is this used anywhere?
 def validate_row(item):
     """Returns whether or not the given item has the minimium
     requirements to be rendered in a rubeus grid
@@ -99,7 +101,7 @@ def validate_row(item):
         item[KIND]
         item['urls']
         return True
-    except AttributeError:
+    except KeyError:
         return False
 
 
@@ -189,9 +191,9 @@ class NodeFileCollector(object):
         )
 
     def _collect_static_css(self):
-        """Collect Css includes for all addons-ons implementing Hgrid views.
+        """Collect CSS includes for all addons-ons implementing Hgrid views.
 
-        :return list: List of Css include paths
+        :return list: List of CSS include paths
 
         """
         return itertools.chain.from_iterable(

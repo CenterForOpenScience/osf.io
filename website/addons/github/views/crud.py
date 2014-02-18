@@ -31,8 +31,7 @@ def github_download_file(**kwargs):
     if path is None:
         raise HTTPError(http.NOT_FOUND)
 
-    ref = request.args.get('ref')
-
+    ref = request.args.get('sha')
     connection = GitHub.from_settings(github.user_settings)
 
     name, data, _ = connection.file(github.user, github.repo, path, ref=ref)
@@ -77,7 +76,7 @@ def github_view_file(**kwargs):
     repo = connection.repo(node_settings.user, node_settings.repo)
 
     # Get branch / commit
-    branch = request.args.get('branch', repo['default_branch'])
+    branch = request.args.get('branch', repo.default_branch)
     sha = request.args.get('sha', branch)
 
     # Get file URL
@@ -94,16 +93,18 @@ def github_view_file(**kwargs):
         commit['sha']
         for commit in commits
     ]
+    if not shas:
+        raise HTTPError(http.NOT_FOUND)
     current_sha = sha if sha in shas else shas[0]
 
     for commit in commits:
         commit['download'] = (
-            os.path.join(node.api_url, 'github', 'file', path) +
-            '?ref=' + ref_to_params(sha=commit['sha'])
+            os.path.join(node.api_url, 'github', 'file', 'download', path) +
+             ref_to_params(sha=commit['sha'])
         )
         commit['view'] = (
             os.path.join(node.url, 'github', 'file', path)
-            + '?' + ref_to_params(branch, commit['sha'])
+            + ref_to_params(branch, commit['sha'])
         )
 
     # Get or create rendered file
@@ -166,10 +167,10 @@ def github_upload_file(**kwargs):
     tree = connection.tree(github.user, github.repo, sha=sha or branch)
     existing = [
         thing
-        for thing in tree['tree']
-        if thing['path'] == os.path.join(path, filename)
+        for thing in tree.tree
+        if thing.path == os.path.join(path, filename)
     ]
-    sha = existing[0]['sha'] if existing else None
+    sha = existing[0].sha if existing else None
 
     author = {
         'name': user.fullname,
@@ -201,7 +202,7 @@ def github_upload_file(**kwargs):
                     'repo': github.repo,
                     'url': node.api_url + 'github/file/{0}/?ref={1}'.format(
                         os.path.join(path, filename),
-                        data['commit']['sha']
+                        data['commit'].sha
                     ),
                 },
             },
@@ -213,8 +214,8 @@ def github_upload_file(**kwargs):
             'addon': 'github',
             'name': filename,
             'size': [
-                data['content']['size'],
-                size(data['content']['size'], system=alternative)
+                data['content'].size,
+                size(data['content'].size, system=alternative)
             ],
             'kind': 'file',
             'urls': _build_github_urls(
@@ -284,6 +285,7 @@ def github_delete_file(**kwargs):
     return {}
 
 
+# TODO Add me Test me
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
 def github_download_starball(**kwargs):

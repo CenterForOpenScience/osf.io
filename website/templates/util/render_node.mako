@@ -1,15 +1,30 @@
 % if summary['can_view']:
 
-    <li node_id="${summary['id']}" class="project list-group-item list-group-item-node cite-container">
+    <li
+            node_id="${summary['id']}"
+            node_reference="${summary['id']}:${'node' if summary['primary'] else 'pointer'}"
+            class="
+                project list-group-item list-group-item-node cite-container
+                ${'pointer' if not summary['primary'] else ''}
+        ">
 
         <h4 class="list-group-item-heading">
             <span class="overflow" style="display:inline-block;">
+            % if not summary['primary']:
+                <i class="icon-hand-right"></i>
+            % endif
             <a href="${summary['url']}">${summary['title']}</a>
             % if summary['is_registration']:
                 | Registered: ${summary['registered_date']}
             % endif
             </span>
-            <i id="icon-${summary['id']}" class="icon-plus pull-right" onclick="NodeActions.openCloseNode('${summary['id']}');"></i>
+            <div class="pull-right">
+                % if not summary['primary'] and summary['can_edit']:
+                    <i class="icon-remove remove-pointer" data-id="${summary['id']}"></i>
+                    <i class="icon-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');"></i>
+                % endif
+                <i id="icon-${summary['id']}" class="icon-plus" onclick="NodeActions.openCloseNode('${summary['id']}');"></i>
+            </div>
         </h4>
         <div class="list-group-item-text"></div>
 

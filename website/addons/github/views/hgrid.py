@@ -26,15 +26,14 @@ def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
     folders = {}
 
     for datum in data:
-
-        if datum['type'] in ['file', 'blob']:
+        if data[datum].type in ['file', 'blob']:
             item = {
-                'kind': 'item',
+                rubeus.KIND: rubeus.FILE,
                 'urls': _build_github_urls(
-                    datum, node_url, node_api_url, branch, sha
+                    data[datum], node_url, node_api_url, branch, sha
                 )
             }
-        elif datum['type'] in ['tree', 'dir']:
+        elif data[datum].type in ['tree', 'dir']:
             item = {
                 rubeus.KIND: rubeus.FOLDER,
                 'children': [],
@@ -49,7 +48,7 @@ def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
                 'edit': can_edit,
             },
             'urls': _build_github_urls(
-                datum, node_url, node_api_url, branch, sha
+                data[datum], node_url, node_api_url, branch, sha
             ),
             'accept': {
                 'maxSize': kwargs.get('max_size', 128),
@@ -57,7 +56,7 @@ def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
             }
         })
 
-        head, item['name'] = os.path.split(datum['path'])
+        head, item['name'] = os.path.split(data[datum].path)
         if parent:
             head = head.split(parent)[-1]
         if head:
@@ -67,7 +66,7 @@ def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
 
         # Update cursor
         if item[rubeus.KIND] == rubeus.FOLDER:
-            key = datum['path']
+            key = data[datum].path
             if parent:
                 key = key.split(parent)[-1]
             folders[key] = item
@@ -96,10 +95,7 @@ def github_branch_widget(branches, owner, repo, branch, sha):
 
     """
     rendered = github_branch_template.render(
-        branches=[
-            each['name']
-            for each in branches
-        ],
+        branches=[each.name for each in branches],
         branch=branch,
         sha=sha,
         owner=owner,
@@ -175,7 +171,7 @@ def github_root_folder_public(*args, **kwargs):
 
     return github_hgrid_data(node_settings, auth=auth, parent=parent, contents=False, **data)
 
-
+# TODO I'm never used, can I go home?
 def _get_tree(node_settings, sha, connection=None):
 
     connection = connection or GitHub.from_settings(node_settings.user_settings)

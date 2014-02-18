@@ -11,8 +11,8 @@
             <ul class="nav nav-stacked nav-pills">
                 <li><a href='#newPublicProjects'>Newest Public Projects</a></li>
                 <li><a href='#newPublicRegistrations'>Newest Public Registrations</a></li>
-                <li><a href='#popularPublicProjects'>Most Viewed Public Projects</a></li>
-                <li><a href='#popularPublicRegistrations'>Most Viewed Public Registrations</a></li>
+                <li><a href='#popularPublicProjects'>Popular Public Projects</a></li>
+                <li><a href='#popularPublicRegistrations'>Popular Public Registrations</a></li>
             </ul>
         </div><!-- end sidebar -->
     </div>
@@ -32,15 +32,15 @@
             </ul>
         </section>
         <section id='popularPublicProjects'>
-            <h3>Most Viewed Public Projects</h3>
+            <h3>Popular Public Projects</h3>
             <ul class='project-list list-group'>
-                ${node_list(most_viewed_projects, prefix='most_viewed')}
+                ${node_list(popular_public_projects, prefix='most_viewed', metric='hits')}
             </ul>
         </section>
         <section id='popularPublicRegistrations'>
-            <h3>Most Viewed Public Registrations</h3>
+            <h3>Popular Public Registrations</h3>
             <ul class='project-list list-group'>
-                ${node_list(most_viewed_registrations, prefix='most_viewed')}
+                ${node_list(popular_public_registrations, prefix='most_viewed', metric='hits')}
             </ul>
         </section>
     </div>
@@ -52,12 +52,6 @@
         <%
             #import locale
             #locale.setlocale(locale.LC_ALL, 'en_US')
-            unique_hits, hits = (
-                 #locale.format('%d', val, grouping=True) if val else
-                 #locale.format(0, val, grouping=True)
-                val if val else 0
-                for val in node.get_stats()
-            )
             explicit_date = '{month} {dt.day} {dt.year}'.format(
                 dt=node.date_created.date(),
                 month=node.date_created.date().strftime('%B')
@@ -68,8 +62,8 @@
                 <a href="${node.url}">${node.title}</a>
             </h4>
                 % if metric == 'hits':
-                    <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='${hits} hits (${unique_hits} unique)'>
-                        ${hits} views
+                    <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='${ hits[node._id].get('hits') } views (${ hits[node._id].get('visits') } visits)'>
+                        ${ hits[node._id].get('hits') } views (in the past week)
                     </span>
                 % elif metric == 'date_created':
                     <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='Created: ${explicit_date}'>
