@@ -218,9 +218,6 @@ def project_addcontributors_post(**kwargs):
 @must_be_contributor
 @must_not_be_registration
 def invite_contributor_post(**kwargs):
-    # TODO: Check if user is already in database
-    logger.error('JSON----')
-    logger.error(request.json)
     fullname, email = request.json.get('fullname'), request.json.get('email')
     if not fullname or not email:
         return {'status': 400, 'message': 'Must provide fullname and email'}, 400

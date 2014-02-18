@@ -71,7 +71,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @classmethod
     def create_unregistered(cls, email, fullname):
-        parsed= utils.parse_name(fullname)
+        parsed = utils.parse_name(fullname)
         user = cls(
             username=email,
             fullname=fullname,

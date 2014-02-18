@@ -293,24 +293,44 @@ class TestProjectViews(DbTestCase):
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['node']['logs']), 10)
 
+
+class TestUserInviteViews(DbTestCase):
+
+    def setUp(self):
+        ensure_schemas()
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
     @mock.patch('website.project.views.contributor.send_email')
     def test_invite_contributor_api_endpoint_sends_an_email(self, send_email):
         url = '/api/v1/project/{0}/invite_contributor/'.format(self.project._primary_key)
         self.app.post_json(url,
-            {'fullname': 'Brian May', 'email': 'brian@queen.com'}, auth=self.auth)
+            {'fullname': 'Brian May', 'email': 'brian@queen.com'}, auth=self.user.auth)
         assert_true(send_email.called)
 
     @mock.patch('website.project.views.contributor.send_email')
     def test_invite_contributor_api_endpoint_adds_a_non_registered_contributor(self, send_email):
         url = '/api/v1/project/{0}/invite_contributor/'.format(self.project._primary_key)
         res = self.app.post_json(url,
-            {'fullname': 'Brian May', 'email': 'brian@queen.com'}, auth=self.auth)
+            {'fullname': 'Brian May', 'email': 'brian@queen.com'}, auth=self.user.auth)
         latest_user = User.find()[len(User.find()) - 1]
         assert_equal(latest_user.fullname, 'Brian May')
         assert_equal(latest_user.username, 'brian@queen.com')
         assert_false(latest_user.is_registered)
         assert_equal(res.json['contributor'], _add_contributor_json(latest_user))
 
+    @mock.patch('website.project.views.contributor.send_email')
+    def test_invite_contributor_with_errors(self, send_email):
+        assert 0, 'finish me'
+
+    @mock.patch('website.project.views.contributor.send_email')
+    def test_cannot_invite_unreg_contributor_if_they_already_exist(self, send_email):
+        user = UserFactory()
+        url = '/api/v1/project/{0}/invite_contributor/'.format(self.project._primary_key)
+        res = self.app.post_json(url, {'fullname': 'Fred Mercury', 'email': user.username})
+        assert_in('User already exists', res.json['message'])
+        assert_in('contributor', res.json)
 
 class TestWatchViews(DbTestCase):
 
