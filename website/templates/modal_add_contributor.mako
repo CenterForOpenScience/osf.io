@@ -58,6 +58,10 @@
                                     </tr>
                                 </tbody>
                             </table>
+                                <a style="cursor:pointer"
+                                data-bind='visible: query, click:gotoInvite'>Add
+                                <em data-bind='text: query'></em>
+                                as a non-registered contributor</a>
                         </div><!-- ./col-md -->
 
                         <div class="col-md-6">
@@ -131,6 +135,24 @@
 
                 </div><!-- end component selection page -->
 
+                <!-- Invite user page -->
+                <div data-bind='if:page()=="invite"'>
+                    <form class='form-inline' data-bind='submit:sendInvite'>
+                        <div class="form-group">
+                            <label class='sr-only' for="inviteUserName">Full Name</label>
+                            <input type="text" class='form-control' id="inviteName"
+                                placeholder="Full name" data-bind='value: inviteName' required/>
+                        </div>
+                        <div class="form-group">
+                            <label class='sr-only' for="inviteUserEmail">Email</label>
+                            <input type="email" class='form-control' id="inviteUserEmail"
+                                    placeholder="Email" data-bind='value: inviteEmail' required />
+                        </div>
+                        <button class='btn btn-success'
+                         data-bind='enable: inviteEmail && inviteName'
+                         type="submit">Invite and add</button>
+                    </form>
+                </div><!-- end invite user page -->
 
             </div><!-- end modal-body -->
 

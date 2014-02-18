@@ -290,10 +290,10 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
     self.pageTitle = ko.computed(function() {
         return {
             whom: 'Add contributors',
-            which: 'Select components'
+            which: 'Select components',
+            invite: 'Add A Non-registered User'
         }[self.page()];
     });
-
     self.query = ko.observable();
     self.results = ko.observableArray();
     self.selection = ko.observableArray();
@@ -312,12 +312,21 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         }
     );
 
+    self.inviteName = ko.observable();
+    self.inviteEmail = ko.observable();
+
     self.selectWhom = function() {
         self.page('whom');
     };
     self.selectWhich = function() {
         self.page('which');
     };
+
+    self.gotoInvite = function() {
+        self.inviteName(self.query());
+        self.inviteEmail('');
+        self.page('invite');
+    }
 
     self.search = function() {
         self.errorMsg('');
@@ -368,8 +377,13 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         });
     };
 
+    // TODO
+    self.sendInvite = function() {
+        alert('sending email to ' + self.inviteEmail());
+    };
 
     self.add = function(data) {
+        console.log(data);
         self.selection.push(data);
         // Hack: Hide and refresh tooltips
         $('.tooltip').hide();
