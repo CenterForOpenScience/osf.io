@@ -6,13 +6,16 @@ import json
 import unittest
 import datetime as dt
 
+import mock
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
+from framework.auth.model import User
 
 import website.app
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
+from website.project.views.contributor import _add_contributor_json
 from webtest.app import AppError
 from tests.base import DbTestCase
 from tests.factories import (
@@ -289,6 +292,24 @@ class TestProjectViews(DbTestCase):
         url = "/api/v1/project/{0}/".format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['node']['logs']), 10)
+
+    @mock.patch('website.project.views.contributor.send_email')
+    def test_invite_contributor_api_endpoint_sends_an_email(self, send_email):
+        url = '/api/v1/project/{0}/invite_contributor/'.format(self.project._primary_key)
+        self.app.post_json(url,
+            {'fullname': 'Brian May', 'email': 'brian@queen.com'}, auth=self.auth)
+        assert_true(send_email.called)
+
+    @mock.patch('website.project.views.contributor.send_email')
+    def test_invite_contributor_api_endpoint_adds_a_non_registered_contributor(self, send_email):
+        url = '/api/v1/project/{0}/invite_contributor/'.format(self.project._primary_key)
+        res = self.app.post_json(url,
+            {'fullname': 'Brian May', 'email': 'brian@queen.com'}, auth=self.auth)
+        latest_user = User.find()[len(User.find()) - 1]
+        assert_equal(latest_user.fullname, 'Brian May')
+        assert_equal(latest_user.username, 'brian@queen.com')
+        assert_false(latest_user.is_registered)
+        assert_equal(res.json['contributor'], _add_contributor_json(latest_user))
 
 
 class TestWatchViews(DbTestCase):

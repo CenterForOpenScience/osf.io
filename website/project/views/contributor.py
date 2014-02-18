@@ -8,6 +8,7 @@ from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor
+from framework.email.tasks import send_email
 
 from website import settings
 from website.filters import gravatar
@@ -71,6 +72,8 @@ def _add_contributor_json(user):
     return {
         'fullname': user.fullname,
         'id': user._primary_key,
+        'registered': user.is_registered,
+        'active': user.is_active(),
         'gravatar': gravatar(
             user, use_ssl=True,
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
@@ -210,3 +213,17 @@ def project_addcontributors_post(**kwargs):
         node.add_contributors(contributors=users, auth=auth)
         node.save()
     return {'status': 'success'}, 201
+
+@must_be_valid_project
+@must_be_contributor
+@must_not_be_registration
+def invite_contributor_post(**kwargs):
+    # TODO: Check if user is already in database
+    logger.error('JSON----')
+    logger.error(request.json)
+    fullname, email = request.json.get('fullname'), request.json.get('email')
+    if not fullname or not email:
+        return {'status': 400, 'message': 'Must provide fullname and email'}, 400
+    new_user = User.create_unregistered(fullname=fullname, email=email)
+    new_user.save()
+    return {'status': 'success', 'contributor': _add_contributor_json(new_user)}

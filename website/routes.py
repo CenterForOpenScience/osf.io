@@ -635,4 +635,14 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        # Invite Users
+        Rule(
+            [
+                '/project/<pid>/invite_contributor/',
+                '/project/<pid>/node/<nid>/invite_contributor/'
+            ],
+            'post',
+            project_views.contributor.invite_contributor_post,
+            json_renderer
+        ),
     ], prefix='/api/v1')
