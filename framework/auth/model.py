@@ -45,12 +45,14 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # Per-project unclaimed user data:
     # Format: {
-    #   <project_id>: {
+    #   <project_id>: [{
     #       'name': <name that referrer provided>,
     #       'referrer_id': <user ID of referrer>,
     #       'verification': <token used for verification urls>
-    #   }
+    #   }...]
+    #   ...
     # }
+    # TODO: add verification
     unclaimed_records = fields.DictionaryField(required=False)
     # The user who merged this account
     merged_by = fields.ForeignField('user', default=None, backref="merged")
@@ -93,11 +95,15 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def add_unclaimed_record(self, project_id, given_name, referrer_id, verification):
         """Add a new project entry in the unclaimed records dictionary."""
-        self.unclaimed_records[project_id] = {
+        record = {
             'name': given_name,
             'referrer_id': referrer_id,
             'verification': verification
         }
+        if project_id in self.unclaimed_records:
+            self.unclaimed_records[project_id].append(record)
+        else:
+            self.unclaimed_records[project_id] = [record]
         return None
 
     def is_active(self):
