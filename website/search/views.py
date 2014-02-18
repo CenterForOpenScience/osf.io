@@ -227,14 +227,18 @@ def _search_contributor(query):
 
     users = []
     for doc in docs:
+        # TODO: use utils.serialize_user
+        user = User.load(doc['id'])
         users.append({
             'fullname': doc['user'],
             'id': doc['id'],
             'gravatar': gravatar(
-                User.load(doc['id']),
+                user,
                 use_ssl=True,
                 size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,
-            )
+            ),
+            'registered': user.is_registered,
+            'active': user.is_active()
         })
 
     return {'users': users}
