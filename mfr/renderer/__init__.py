@@ -40,7 +40,7 @@ class FileRenderer(object):
 
     __metaclass__ = FileMeta
 
-    STATIC_PATH = '/static/mfr/bla'
+    STATIC_PATH = '/static/mfr/'
     MAX_SIZE = 1024*1024*2.5
 
     @classmethod
