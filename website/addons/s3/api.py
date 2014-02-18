@@ -49,6 +49,8 @@ class S3Wrapper(object):
 
     @classmethod
     def from_addon(cls, s3):
+        if s3 is None or s3.user_settings is None:
+            return None
         if not s3.is_registration:
             return cls(S3Connection(s3.user_settings.access_key, s3.user_settings.secret_key), s3.bucket)
         else:

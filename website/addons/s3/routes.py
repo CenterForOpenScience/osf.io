@@ -7,7 +7,6 @@ from website.routes import OsfWebRenderer
 
 from website.addons.s3 import views
 
-# TODO clean me up redo naming scheme
 
 settings_routes = {
     'rules': [

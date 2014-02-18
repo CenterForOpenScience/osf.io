@@ -4,7 +4,8 @@ from website.addons.s3.utils import wrapped_key_to_json
 from framework import request
 from urllib import unquote
 from website.util import rubeus
-
+from framework.exceptions import HTTPError
+import httplib as http
 
 def s3_hgrid_data(node_settings, auth, parent=None, **kwargs):
 
@@ -30,6 +31,9 @@ def s3_hgrid_data_contents(*args, **kwargs):
 
     s3wrapper = S3Wrapper.from_addon(s3_node_settings)
 
+    if s3wrapper is None:
+        raise HTTPError(http.BAD_REQUEST)
+
     files = []
 
     key_list = s3wrapper.get_wrapped_keys_in_dir(path)
@@ -52,9 +56,7 @@ def s3_hgrid_data_contents(*args, **kwargs):
 @must_have_addon('s3', 'node')
 def s3_dummy_folder(*args, **kwargs):
     node_settings = kwargs['node_addon']
-    user = kwargs['auth'].user
+    auth = kwargs['auth']
     data = request.args.to_dict()
-
     parent = data.pop('parent', 'null')
-
-    return s3_hgrid_data(node_settings, user, parent, contents=False, **data)
+    return s3_hgrid_data(node_settings, auth, parent, contents=False, **data)
