@@ -14,6 +14,7 @@ from framework import fields, Q, analytics
 from framework.guid.model import GuidStoredObject
 from framework.search import solr
 from framework.addons import AddonModelMixin
+from framework.auth import utils
 
 from website import settings, filters
 
@@ -67,6 +68,18 @@ class User(GuidStoredObject, AddonModelMixin):
     date_last_login = fields.DateTimeField()
 
     _meta = {'optimistic' : True}
+
+    @classmethod
+    def create_unregistered(cls, email, fullname):
+        parsed= utils.parse_name(fullname)
+        user = cls(
+            username=email,
+            fullname=fullname,
+            emails=[email],
+            **parsed
+        )
+        user.is_registered = False
+        return user
 
     def is_active(self):
         """Returns True if the user is active. The user must have activated

@@ -50,6 +50,14 @@ class TestUser(DbTestCase):
         u.save()
         assert_false(u.is_active())
 
+    def test_create_unregistered(self):
+        u = User.create_unregistered(email='foo@bar.com',
+            fullname='Foo Bar')
+        u.save()
+        assert_equal(u.username, 'foo@bar.com')
+        assert_false(u.is_registered)
+        assert_true('foo@bar.com' in u.emails)
+
     def test_user_with_no_password_is_not_active(self):
         u = User(username='fred@queen.com',
             fullname='Freddie Mercury', is_registered=True)

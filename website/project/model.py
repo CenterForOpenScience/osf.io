@@ -1476,7 +1476,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param User auth: All the auth informtion including user, API key.
         :param NodeLog log: Add log to self
         :param bool save: Save after adding contributor
-        :return bool: Whether contributor was added
+        :returns: Whether contributor was added
 
         """
         MAX_RECENT_LENGTH = 15
@@ -1543,12 +1543,10 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param name: A string, the full name of the person.
         :param email: A string, the email address of the person.
-        :param auth: All the auth informtion including user, API key.
+        :param Auth auth: Auth object for the user adding the contributor.
 
         """
-        parsed_name = auth_utils.parse_name(name)
-        contributor = User(fullname=name, username=email, is_registered=False,
-                        is_claimed=False, **parsed_name)
+        contributor = User.create_unregistered(fullname=name, email=email)
         contributor.save()
         return self.add_contributor(contributor, auth=auth, log=True, save=save)
 
