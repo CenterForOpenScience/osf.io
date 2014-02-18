@@ -35,7 +35,7 @@ def _get_refs(addon, branch=None, sha=None, connection=None):
         branch = repo.default_branch
     # Get registered branches if provided
     registered_branches = (
-        [Branch.from_json(branch) for branch in addon.registration_data.get('branches', [])]
+        [Branch.from_json(b) for b in addon.registration_data.get('branches', [])]
         if addon.owner.is_registration
         else []
     )
@@ -45,7 +45,7 @@ def _get_refs(addon, branch=None, sha=None, connection=None):
         for each in registered_branches
     ]
     # Fail if registered and branch not in registration data
-    if branch['name'] not in registered_branch_names:
+    if registered_branches and branch not in registered_branch_names:
         raise HTTPError(http.BAD_REQUEST)
 
     # Get data from GitHub API if not registered
