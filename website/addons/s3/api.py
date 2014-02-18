@@ -1,6 +1,7 @@
 import os
 
 from boto.s3.connection import S3Connection, Key
+from boto.s3.connection import OrdinaryCallingFormat
 from boto.s3.cors import CORSConfiguration
 
 from dateutil.parser import parse
@@ -50,7 +51,7 @@ class S3Wrapper(object):
     @classmethod
     def from_addon(cls, s3):
         if not s3.is_registration:
-            return cls(S3Connection(s3.user_settings.access_key, s3.user_settings.secret_key), s3.bucket)
+            return cls(S3Connection(s3.user_settings.access_key, s3.user_settings.secret_key, calling_format=OrdinaryCallingFormat()), s3.bucket)
         else:
             return registration_wrapper(s3)
 
