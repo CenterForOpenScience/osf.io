@@ -32,7 +32,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
 
     HGrid.Col.ActionButtons.itemView = function(item) {
 	var buttonDefs = [];
-	if(item.permisssions.download !== false){
+	if(item.permissions.download !== false){
 	    buttonDefs.push({
 		text: '<i class="icon-download-alt icon-white"></i>',
 		action: 'download',
