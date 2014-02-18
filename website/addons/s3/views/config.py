@@ -52,16 +52,15 @@ def s3_authorize_node(**kwargs):
     user = kwargs['auth'].user
     node_settings = kwargs['node_addon']
 
-    if node_settings.user_settings:
-        raise HTTPError(http.BAD_REQUEST)
-
     s3_access_key = request.json.get('access_key')
     s3_secret_key = request.json.get('secret_key')
     if s3_access_key is None or s3_secret_key is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    user.add_addon('s3')
     user_settings = user.get_addon('s3')
+    if user_settings is None:
+        user.add_addon('s3')
+        user_settings = user.get_addon('s3')
 
     add_s3_auth(s3_access_key, s3_secret_key, user_settings)
 
