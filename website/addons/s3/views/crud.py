@@ -163,7 +163,7 @@ def s3_upload(**kwargs):
 
     update = S3Wrapper.from_addon(s3).does_key_exist(file_name)
     node.add_log(
-        action='s3_' + models.NodeLog.FILE_UPDATED if update else models.NodeLog.FILE_ADDED,
+        action='s3_' + (models.NodeLog.FILE_UPDATED if update else models.NodeLog.FILE_ADDED),
         params={
             'project': node.parent_id,
             'node': node._primary_key,

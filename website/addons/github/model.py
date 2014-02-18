@@ -349,7 +349,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         # Store current branch data
         if self.user and self.repo:
             connect = GitHub.from_settings(self.user_settings)
-            branches = connect.branches(self.user, self.repo)
+            branches = [branch.to_json() for branch in connect.branches(self.user, self.repo)]
             if branches is None:
                 raise AddonError('Could not fetch repo branches.')
             clone.registration_data['branches'] = branches
