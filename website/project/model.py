@@ -1042,6 +1042,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         if log_date:
             log.date=log_date
         log.params=params
+
+        self.callback('before_add_log', log=log)
         log.save()
         self.logs.append(log)
         if save:
@@ -1051,6 +1053,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         if self.node__parent:
             parent = self.node__parent[0]
             parent.logs.append(log)
+            parent.callback('before_add_log', log=log)
+
             parent.save()
         return log
 
@@ -1186,7 +1190,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def callback(self, callback, *args, **kwargs):
 
         messages = []
-
+        print self.get_addons()
         for addon in self.get_addons():
             method = getattr(addon, callback)
             message = method(self, *args, **kwargs)

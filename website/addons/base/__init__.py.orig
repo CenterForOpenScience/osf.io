@@ -281,10 +281,6 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
         return clone, None
 
-    def before_add_log(self, node, log):
-        pass
-
-
 
 # TODO: Move this
 LOG_TEMPLATES = 'website/templates/log_templates.mako'
