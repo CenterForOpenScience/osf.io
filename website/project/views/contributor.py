@@ -219,7 +219,7 @@ def project_addcontributors_post(**kwargs):
 @must_not_be_registration
 def invite_contributor_post(**kwargs):
     fullname, email = request.json.get('fullname'), request.json.get('email')
-    if not fullname or not email:
+    if not fullname:
         return {'status': 400, 'message': 'Must provide fullname and email'}, 400
     new_user = User.create_unregistered(fullname=fullname, email=email)
     new_user.save()
