@@ -27,15 +27,18 @@ def serialize_user(user, full=False):
     """
     rv = {
         'id': str(user._primary_key),
-        'url': user.url,
-        'absolute_url': user.absolute_url,
-        'display_absolute_url': user.display_absolute_url,
-        'date_registered': user.date_registered.strftime("%Y-%m-%d"),
         'registered': user.is_registered,
         'username': user.username,
         'fullname': user.fullname,
         'active': user.is_active(),
     }
+    if user.is_registered:
+        rv.update({
+            'url': user.url,
+            'absolute_url': user.absolute_url,
+            'display_absolute_url': user.display_absolute_url,
+            'date_registered': user.date_registered.strftime("%Y-%m-%d"),
+        })
 
     if full:
         if user.is_merged:
