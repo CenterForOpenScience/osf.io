@@ -41,7 +41,7 @@
                             </div>
                             <div class="error" data-bind="if:errorMsg, text:errorMsg"></div>
                             <table>
-                                <tbody data-bind="foreach:{data:results, afterRender:addTips}">
+                                <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
                                     <tr data-bind="if:!($root.selected($data))">
                                         <td style="padding-right: 10px;">
                                             <a
@@ -52,9 +52,12 @@
                                                 >+</a>
                                         </td>
                                         <td>
-                                            <img data-bind="attr:{src:gravatar}" />
+                                            <img data-bind="attr:{src:contributor.gravatar}" />
                                         </td>
-                                        <td data-bind="text:fullname"></td>
+                                        <td><span data-bind="text: contributor.fullname"></span>
+                                        <span class='text-muted'
+                                                data-bind="visible: !contributor.registered">(unregistered)
+                                        </span></td>
                                     </tr>
                                 </tbody>
                             </table>

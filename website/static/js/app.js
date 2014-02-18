@@ -291,7 +291,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         return {
             whom: 'Add contributors',
             which: 'Select components',
-            invite: 'Add A Non-registered User'
+            invite: 'Add An Unregistered User'
         }[self.page()];
     });
     self.query = ko.observable();
@@ -377,13 +377,37 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         });
     };
 
-    // TODO
+    function postInviteRequest(fullname, email, options) {
+        var ajaxOpts = $.extend({
+            url: nodeApiUrl + 'invite_contributor/',
+            type: 'POST',
+            data: JSON.stringify({'fullname': fullname, 'email': email}),
+            dataType: 'json', contentType: 'application/json'
+        }, options);
+        return $.ajax(ajaxOpts);
+    };
+
+    function inviteSuccess(result) {
+        self.page('whom');
+        self.add(result.contributor);
+    }
+
+    function inviteError(xhr, status, error) {
+        // TODO
+        console.log('An error occurred on sending invite');
+        console.log(error);
+    }
+
     self.sendInvite = function() {
-        alert('sending email to ' + self.inviteEmail());
+        return postInviteRequest(self.inviteName(), self.inviteEmail(),
+            {
+                success: inviteSuccess,
+                error: inviteError
+            }
+        );
     };
 
     self.add = function(data) {
-        console.log(data);
         self.selection.push(data);
         // Hack: Hide and refresh tooltips
         $('.tooltip').hide();
