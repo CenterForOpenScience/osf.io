@@ -6,19 +6,13 @@ from urllib import unquote
 from website.util import rubeus
 
 
-def s3_hgrid_data(node_settings, user, parent=None, **kwargs):
+def s3_hgrid_data(node_settings, auth, parent=None, **kwargs):
 
     # Quit if no bucket
     if not node_settings.bucket or not node_settings.user_settings or not node_settings.user_settings.has_auth:
         return
 
-    node = node_settings.owner
-
-    permissions = {
-        'view': node.can_view(user),
-        'edit': node.can_edit(user) and not node.is_registration,
-    }
-    return rubeus.build_addon_root(node_settings, node_settings.bucket, permissions=permissions)
+    return rubeus.build_addon_root(node_settings, node_settings.bucket, permissions=auth)
 
 
 @must_be_contributor_or_public

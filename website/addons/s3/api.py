@@ -1,13 +1,13 @@
+import os
+
+from boto.iam import *
 from boto.exception import *
 from boto.s3.connection import *
 from boto.s3.cors import CORSConfiguration
 
-from hurry.filesize import size, alternative
+from dateutil.parser import parse
 
-import os
-import re
-from boto.iam import *
-from datetime import datetime
+from hurry.filesize import size, alternative
 
 
 #Note: (from boto docs) this function is in beta
@@ -47,7 +47,7 @@ def does_bucket_exist(accessKey, secretKey, bucketName):
         return False
 
 
-class S3Wrapper:
+class S3Wrapper(object):
 
     @classmethod
     def from_addon(cls, s3):
@@ -103,7 +103,11 @@ class S3Wrapper:
         return [S3Key(x) for x in self.get_file_list()]
 
     def get_wrapped_key(self, keyName, vid=None):
-        return S3Key(self.bucket.get_key(keyName, version_id=vid))
+        key = self.bucket.get_key(keyName, version_id=vid)
+        if key:
+            return S3Key(key)
+        else:
+            return None
 
     def get_wrapped_keys_in_dir(self, directory=None):
         return [S3Key(x) for x in self.bucket.list(delimiter='/', prefix=directory) if isinstance(x, Key) and x.key != directory]
@@ -137,6 +141,9 @@ class S3Wrapper:
     def set_cors_rules(self, rules):
         return self.bucket.set_cors(rules)
 
+    def does_key_exist(self, key_name):
+        return self.bucket.get_key(key_name) is not None
+
 
 # TODO Add null checks etc
 class registration_wrapper(S3Wrapper):
@@ -144,11 +151,16 @@ class registration_wrapper(S3Wrapper):
     def __init__(self, node_settings):
         connection = S3Connection(
             node_settings.node_access_key, node_settings.node_secret_key)
-        S3Wrapper.__init__(self, connection, node_settings.bucket)
+        super(S3Wrapper, self).__init__(self, connection, node_settings.bucket)
         self.registration_data = node_settings.registration_data
 
     def get_wrapped_keys_in_dir(self, directory=None):
-        return [S3Key(x) for x in self.bucket.list_versions(delimiter='/', prefix=directory) if isinstance(x, Key) and x.key != directory and self.is_right_version(x)]
+        return [
+            S3Key(x)
+            for x in self.bucket.list_versions(delimiter='/', prefix=directory)
+            if isinstance(x, Key) and x.key != directory
+                and self.is_right_version(x)
+        ]
 
     def get_wrapped_directories_in_dir(self, directory=None):
         return [S3Key(x) for x in self.bucket.list_versions(prefix=directory) if self._directory_check(x, directory)]
@@ -174,7 +186,7 @@ class registration_wrapper(S3Wrapper):
 
 
 # TODO Extend me and you bucket.setkeyclass
-class S3Key:
+class S3Key(object):
 
     def __init__(self, key):
         self.s3Key = key
@@ -234,12 +246,7 @@ class S3Key:
         if self.type == 'folder':
             return None
         else:
-            m = re.search(
-                '(.+?)-(.+?)-(\d*)T(\d*):(\d*):(\d*)', str(self.s3Key.last_modified))
-            if m is not None:
-                return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)))
-            else:
-                return None
+            return parse(self.s3Key.last_modified)
 
     @property
     def version(self):

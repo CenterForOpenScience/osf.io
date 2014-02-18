@@ -7,11 +7,12 @@ import itertools
 
 #TODO Fix me, circular import. Still works for some reason....
 from website.project.views.node import _view_project
+from framework.auth.decorators import Auth
 
 # Rubeus defined Constants
 FOLDER = 'folder'
-LEAF = 'item'
-
+FILE = 'item'
+KIND = 'kind'
 
 # TODO Review me.
 DEFAULT_PERMISSIONS = {
@@ -46,7 +47,7 @@ def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS,
     :param node_settings addonNodeSettingsBase: Addon settings
     :param name String: Additional information for the folder title
         eg. Repo name for Github or bucket name for S3
-    :param permissions dict: Dictionary of permissions for the addon's content
+    :param permissions dict or Auth: Dictionary of permissions for the addon's content or Auth for use in node.can_X methods
     :param urls dict: Hgrid related urls
     :param extra String: Html to be appened to the addon folder name
         eg. Branch switcher for github
@@ -55,16 +56,22 @@ def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS,
 
     """
     name = node_settings.config.full_name + ': ' + \
-        name if name else node_settings.full_name
+        name if name else node_settings.config.full_name
     if hasattr(node_settings.config, 'urls') and node_settings.config.urls:
         urls = node_settings.config.urls
     if urls is None:
         urls = default_urls(node_settings.owner.api_url, node_settings.config.short_name)
+    if isinstance(permissions, Auth):
+        auth = permissions
+        permissions = {
+            'view': node_settings.owner.can_view(auth),
+            'edit': node_settings.owner.can_edit(auth) and not node_settings.owner.is_registration
+        }
     rv = {
         'addon': node_settings.config.short_name,
         'name': name,
         'iconUrl': node_settings.config.icon_url,
-        'kind': FOLDER,
+        KIND: FOLDER,
         'extra': extra,
         'isAddonRoot': True,
         'permissions': permissions,
@@ -78,6 +85,11 @@ def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS,
     return rv
 
 
+# TODO finish or remove me....
+def build_addon_item():
+    pass
+
+
 # TODO: Is this used anywhere?
 def validate_row(item):
     """Returns whether or not the given item has the minimium
@@ -86,7 +98,7 @@ def validate_row(item):
     try:
         item['addon']
         item['name']
-        item['kind']
+        item[KIND]
         item['urls']
         return True
     except KeyError:
