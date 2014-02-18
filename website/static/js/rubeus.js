@@ -39,6 +39,13 @@ this.Rubeus = (function($, HGrid, bootbox) {
 		cssClass: 'btn btn-primary btn-mini'
 	    });
 	}
+	if(item.permissions.update === true){
+	    buttonDefs.push({
+		text: '<i class="icon-retweet icon-green"></i>',
+		action: 'upload',
+		cssClass: 'btn btn-primary btn-mini'
+	    });
+	}
 	if (item.permissions && item.permissions.edit) {
 	    buttonDefs.push({
 		text: '&nbsp;<i class="icon-remove"></i>',
