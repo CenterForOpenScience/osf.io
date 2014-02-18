@@ -52,9 +52,14 @@ settings_routes = {
 
 page_routes = {
     'rules': [
-        Rule([
-            '/project/<pid>/dataverse/file/<path:path>',
-            '/project/<pid>/node/<nid>/dataverse/file/<path:path>',
-        ], 'get', views.config.dataverse_page, OsfWebRenderer('../addons/dataverse/templates/dataverse_file.mako')),
+        Rule(
+            [
+                '/project/<pid>/dataverse/file/<path:path>',
+                '/project/<pid>/node/<nid>/dataverse/file/<path:path>',
+            ],
+            'get',
+            views.config.dataverse_page,
+            OsfWebRenderer('../addons/dataverse/templates/dataverse_view_file.mako')
+        ),
     ],
 }
