@@ -137,20 +137,21 @@
 
                 <!-- Invite user page -->
                 <div data-bind='if:page()=="invite"'>
-                    <form class='form-inline' data-bind='submit:sendInvite'>
+                    <form class='form' data-bind='submit:sendInvite'>
                         <div class="form-group">
-                            <label class='sr-only' for="inviteUserName">Full Name</label>
+                            <label for="inviteUserName">Full Name</label>
                             <input type="text" class='form-control' id="inviteName"
                                 placeholder="Full name" data-bind='value: inviteName' required/>
                         </div>
                         <div class="form-group">
-                            <label class='sr-only' for="inviteUserEmail">Email</label>
+                            <label for="inviteUserEmail">Email</label>
                             <input type="email" class='form-control' id="inviteUserEmail"
                                     placeholder="Email" data-bind='value: inviteEmail' required />
                         </div>
                         <button class='btn btn-success'
                          data-bind='enable: inviteEmail && inviteName'
                          type="submit">Invite and add</button>
+                         <span class="help-block">We will notify the user that they have been added to your project.</span>
                     </form>
                 </div><!-- end invite user page -->
 
