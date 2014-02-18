@@ -72,6 +72,8 @@
                                 <span class="modal-subheader">Adding</span>
                                 <a data-bind="click:removeAll">Remove all</a>
                             </div>
+
+                            <!-- TODO: Duplication here: Put this in a KO template -->
                             <table>
                                 <tbody data-bind="foreach:{data:selection,
                                 as: 'contributor',

@@ -1648,13 +1648,12 @@ class TestWatchConfig(DbTestCase):
         assert_true(config.node._id)
 
 
-class TestUnregisteredUser(unittest.TestCase):
+class TestUnregisteredUser(DbTestCase):
     def test_factory(self):
         u1 = UnregUserFactory()
-        assert_true(u1['nr_name'])
-        assert_true(u1['nr_email'])
-        u2 = UnregUserFactory()
-        assert_not_equal(u1['nr_name'], u2['nr_name'])
+        assert_false(u1.is_registered)
+        assert_true(u1.password is None)
+        assert_true(u1.fullname)
 
 if __name__ == '__main__':
     unittest.main()
