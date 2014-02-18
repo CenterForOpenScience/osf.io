@@ -9,7 +9,7 @@ from cStringIO import StringIO
 import httplib as http
 import logging
 
-from hurry.filesize import size, alternative
+import hurry
 
 from framework import request, redirect, send_file
 from framework.git.exceptions import FileNotModified
@@ -21,6 +21,7 @@ from website.project.decorators import must_not_be_registration, must_be_valid_p
 from website.project.views.file import get_cache_content, prepare_file
 from website import settings
 from website.project.model import NodeLog
+from website.util import rubeus
 
 from .model import NodeFile
 
@@ -51,24 +52,16 @@ def _clean_file_name(name):
 def osffiles_dummy_folder(node_settings, auth, parent=None, **kwargs):
 
     node = node_settings.owner
-    can_view = node.can_view(auth)
-    can_edit = node.can_edit(auth)
-    return {
-        'addon': 'OSF Files',
-        'kind': 'folder',
-        'accept': {
-            'maxSize': node_settings.config.max_file_size,
-        },
-        'name': 'OSF Files',
-        'urls': {
-            'upload': os.path.join(node.api_url, 'osffiles') + '/',
-            'fetch': os.path.join(node.api_url, 'osffiles', 'hgrid') + '/',
-        },
-        'permissions': {
-            'view': can_view,
-            'edit': can_edit,
-        },
+    urls = {
+        'upload': os.path.join(node.api_url, 'osffiles') + '/',
+        'fetch': os.path.join(node.api_url, 'osffiles', 'hgrid') + '/',
     }
+    return rubeus.build_addon_root(node_settings, '', permissions=auth, urls=urls)
+
+
+# TODO: move to rubeus.py?
+def format_filesize(size):
+    return hurry.filesize.size(size, system=hurry.filesize.alternative)
 
 
 @must_be_contributor_or_public
@@ -96,7 +89,7 @@ def get_osffiles(**kwargs):
                 )
             )
             item = {
-                'kind': 'item',
+                rubeus.KIND: rubeus.FILE,
                 'name': _clean_file_name(fobj.path),
                 'urls': {
                     'view': fobj.url(node),
@@ -110,7 +103,7 @@ def get_osffiles(**kwargs):
                 'downloads': total or 0,
                 'size': [
                     float(fobj.size),
-                    size(fobj.size, system=alternative)
+                    format_filesize(fobj.size),
                 ],
                 'dates': {
                     'modified': [
@@ -177,7 +170,7 @@ def upload_file_public(**kwargs):
         'name': name,
         'size': [
             float(size),
-            size(size, system=alternative),
+            format_filesize(size),
         ],
 
         # URLs
@@ -187,7 +180,7 @@ def upload_file_public(**kwargs):
             'delete': fobj.api_url(node),
         },
 
-        'kind': 'item',
+        rubeus.KIND: rubeus.FILE,
         'permissions': {
             'view': True,
             'edit': True,

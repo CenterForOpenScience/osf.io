@@ -11,9 +11,9 @@ function setDropDownListener() {
           .children( '.dropdown-toggle' ).dropdown( 'toggle' );
           $('#s3_bucket').attr('value', $target.text());
         //Submit Form here
-        if ($target.text() === 'Create a new bucket')
+        if ($target.text().indexOf('Create a new bucket') != -1)
             newBucket();
-        else if ($target.text() === 'Deauthorize')
+        else if ($target.text().indexOf('Deauthorize') != -1)
             return true;
         else
             $('#addonSettingsS3').submit();
@@ -26,6 +26,8 @@ function setDropDownListener() {
 
 function newBucket() {
     bootbox.prompt('Name your new bucket', function(bucketName) {
+      if (!bucketName)
+        return;
         bucketName = bucketName.toLowerCase();
         $.ajax({
             url: nodeApiUrl +  addonShortname + '/newbucket/',

@@ -13,7 +13,7 @@
     <header class="subhead" id="overview">
         <div class="row">
 
-            <div class="col-md-8 cite-container">
+            <div class="col-md-7 cite-container">
                 %if parent['id']:
                     % if parent['is_public'] or parent['is_contributor']:
                         <h1 class="node-parent-title">
@@ -30,7 +30,7 @@
                 </h1>
             </div><!-- end col-md-->
 
-            <div class="col-md-4">
+            <div class="col-md-5">
                 <div class="btn-toolbar node-control pull-right">
                     <div class="btn-group">
                     %if not node["is_public"]:
