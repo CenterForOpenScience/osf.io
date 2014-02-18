@@ -4,7 +4,7 @@ MODELS = [model.AddonFigShareUserSettings, model.AddonFigShareNodeSettings]
 USER_SETTINGS_MODEL = model.AddonFigShareUserSettings
 NODE_SETTINGS_MODEL = model.AddonFigShareNodeSettings
 
-ROUTES = [routes.api_routes, routes.settings_routes, routes.page_routes]
+ROUTES = [routes.settings_routes, routes.page_routes, routes.api_routes]
 
 SHORT_NAME = 'figshare'
 FULL_NAME = 'FigShare'
@@ -41,6 +41,6 @@ INCLUDE_CSS = {
 WIDGET_HELP = 'FigShare Add-on Alpha'
 
 HAS_HGRID_FILES = True
-GET_HGRID_DUMMY = None
+GET_HGRID_DATA = views.hgrid.figshare_hgrid_data
 
 MAX_FILE_SIZE = 1024*1024

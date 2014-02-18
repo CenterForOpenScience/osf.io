@@ -5,33 +5,51 @@ from framework.auth import get_current_user
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
+from website.util import rubeus
 
 from ..api import Figshare
 
 @must_be_contributor_or_public
-@must_have_addon('github', 'node')
+@must_have_addon('figshare', 'node')
 def figshare_hgrid_data_contents(*args, **kwargs):
-    pass
+    
+    node_settings = kwargs.get('node_addon')
+    node = node_settings.owner
+    figshare_settings = node.get_addon('figshare')
+    auth = kwargs['auth']
+    path = ''
 
+    can_edit = node.can_edit(auth) and not node.is_registration
+    can_view = node.can_view(auth)
+
+    connect = Figshare.from_settings(figshare_settings.user_settings)
+
+    hgrid_tree = connect.tree_to_hgrid(node, 
+                                       node_settings, 
+                                       figshare_settings.figshare_id, 
+                                       figshare_settings.figshare_type)
+    
+    return hgrid_tree
+
+
+def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
+    if not node_settings.figshare_id:
+        return
+    return rubeus.build_addon_root(node_settings, node_settings.figshare_id, permissions=auth)
+
+
+@must_be_contributor_or_public
+@must_have_addon('figshare', 'node')
 def figshare_dummy_folder(node_settings, auth, parent=None, **kwargs):
     if not node_settings.figshare_id:
        return
 
-    connect = Figshare.from_settings(node_settings.user_settings)
+    node_settings = kwargs.get('node_addon')
+    user = kwargs.get('auth').user
+    data = request.args.to_dict()
 
-    rv = {
-        'addonName': 'FigShare',
-        'maxFilesize': node_settings.config.max_file_size,
-        'uid': 'figshare:{0}'.format(node_settings._id),
-        'name': 'FigShare: {0}/{1}'.format(
-            node_settings.user, node_settings.repo,
-        ),
-        'parent_uid': parent or 'null',
-        'type': 'folder',
-        'can_view': False,
-        'can_edit': False,
-        'permission': False,
-    }
+    parent = data.pop('parent', 'null')
 
-    return rv
+    return figshare_hgrid_data(node_settings, user, None, contents=False, **data)
+
 

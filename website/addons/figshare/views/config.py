@@ -48,3 +48,18 @@ def figshare_set_config(*args, **kwargs):
         figshare_node.save()
         
 
+@must_be_contributor
+@must_have_addon('figshare', 'node')
+def figshare_unlink(*args, **kwargs):
+    user = kwargs['auth'].user
+   
+    figshare_user = user.get_addon('figshare')
+    figshare_node = kwargs['node_addon']
+
+    # If authorized, only owner can change settings
+    if figshare_user and figshare_user.owner != user:
+        raise HTTPError(http.BAD_REQUEST)
+    
+    figshare_node.figshare_id = None
+    figshare_node.figshare_type = None
+    figshare_node.save()

@@ -96,12 +96,21 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             figshare.api_url = figshare_settings.API_OAUTH_URL
         figshare.save()    
 
-        connect = Figshare.from_settings(self.user_settings)
-        article_is_public = connect.article_is_public(self.figshare_id)
-        
         node_permissions = 'public' if node.is_public else 'private'
-        article_permissions = 'public' if article_is_public else 'private'
+
+        if figshare.figshare_type == 'project' and node_permissions == 'private':
+            message = (
+                'Warnings: This OSF {category} is private but FigShare project {project} may contain some public files or filesets'.format(category=node.project_or_component,
+                             project=figshare.figshare_id)
+                                                                                                                                    )
+            messages.append(message)
+            return messages
+            
+        connect = Figshare.from_settings(self.user_settings)
+        article_is_public = connect.article_is_public(self.figshare_id)        
         
+        article_permissions = 'public' if article_is_public else 'private'
+
         if article_permissions != node_permissions:
             message = (
                 'Warnings: This OSF {category} is {node_perm}, but the FigShare '

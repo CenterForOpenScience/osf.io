@@ -4,18 +4,13 @@
 <div class="alert alert-danger alert-dismissable">
     <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
         Authorizing this FigShare add-on will grant all contributors on this ${node['category']}
-        permission to upload, modify, and delete files on the associated FigShare article.
+        permission to upload, modify, and delete files on the associated FigShare ${figshare_type}.
     </div>
 <div class="alert alert-danger alert-dismissable">
         <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
         If one of your collaborators removes you from this ${node['category']},
         your authorization for FigShare will automatically be revoked.
-    </div>
-<div class="alert alert-info alert-dismissable">
-    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-        Please be sure that the value you provide below corresponds to an article with the FigShare type fileset. 
 </div>
-
 <div>
 % if authorized_user:
         <a id="figshareDelKey" class="btn btn-danger">Unauthorize: Delete Access Token</a>
@@ -33,9 +28,14 @@
 
 <br />
 
-<div class="form-group">
-    <label for="figshareId">FigShare Article or Project URL</label>
-    <input class="form-control" id="figshareId" name="figshare_id" value="${figshare_id}" />
+<div class="form-group">    
+    % if figshare_id != '':
+      <label for="figshareId">FigShare ${figshare_type.capitalize()}:</label><br />
+      <a id="figshareRemoveLinked" class="btn btn-warning">${"Remove {0} {1}".format(figshare_type.capitalize(), figshare_id)}</a>
+    % else:
+      <label for="figshareId">FigShare Article ${"or Project " if authorized_user else ""} URL</label>	
+      <input class="form-control" id="figshareId" name="figshare_id" value="" />
+    % endif
 </div>
 
 <br />
@@ -79,8 +79,28 @@
                         });
                     }
                 }
-            )
+            );
         });
+	
+	$('#figshareRemoveLinked').on('click', function(){
+	    bootbox.confirm(
+		'Are you sure you want to remove the linked Figshare ${figshare_type}?',
+		function(result){
+		  if(result){
+			$.ajax({
+			    url: nodeApiUrl + 'figshare/unlink/',
+			    type: 'POST',
+			    contentType: 'application/json',
+                            dataType: 'json',
+                            success: function() {
+                                window.location.reload();
+                            }
+			});
+		  }
+		}
+	    );				    
+	});
+
     });
 
 </script> 

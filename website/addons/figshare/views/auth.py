@@ -12,6 +12,8 @@ from website.project.decorators import must_have_addon
 
 from ..api import Figshare
 from ..auth import oauth_start_url, oauth_get_token
+from ..settings import API_URL, API_OAUTH_URL
+
 
 @must_be_logged_in
 def figshare_oauth_start(*args, **kwargs):
@@ -103,7 +105,7 @@ def figshare_oauth_callback(*args, **kwargs):
         
         figshare_node.user_settings = figshare_user
         # ensure api url is correct
-        figshare_node.api_url = figshare_settings.API_OAUTH_URL
+        figshare_node.api_url = API_OAUTH_URL
         figshare_node.save()
         
     if node:
@@ -128,7 +130,7 @@ def figshare_add_user_auth(*args, **kwargs):
 
     figshare_node.user_settings = figshare_user
     # ensure api url is correct
-    figshare_node.api_url = figshare_settings.API_OAUTH_URL
+    figshare_node.api_url = API_OAUTH_URL
     figshare_node.save()
 
     return {}

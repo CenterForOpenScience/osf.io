@@ -11,6 +11,10 @@ settings_routes = {
     'rules': [
         #Configuration
         Rule([
+            '/project/<pid>/figshare/unlink/',
+            '/project/<pid>/node/<nid>/figshare/unlink/'
+        ], 'post', views.config.figshare_unlink, json_renderer),        
+        Rule([
             '/project/<pid>/figshare/settings/',
             '/project/<pid>/node/<nid>/figshare/settings/',
         ], 'post', views.config.figshare_set_config, json_renderer),        
@@ -71,8 +75,7 @@ settings_routes = {
         Rule([
             '/addons/figshare/callback/<uid>/',
             '/addons/figshare/callback/<uid>/<nid>/',
-        ], 'get', views.auth.figshare_oauth_callback, json_renderer),             
-        
+        ], 'get', views.auth.figshare_oauth_callback, json_renderer),                     
     ],
     'prefix': '/api/v1',
 }
@@ -80,12 +83,14 @@ settings_routes = {
 api_routes = {
     'rules': [
         Rule([
-            '/project/<pid>/figshare/hgrid',
-            '/project/<pid>/node/<nid>/figshare/hgrid',
-            ], 'get', views.hgrid.figshare_hgrid_data_contents, json_renderer),
-        ### File Render ###
-        ],
-    'prefix': '/api/v1'
+            '/project/<pid>/figshare/hgrid/',
+            '/project/<pid>/node/<nid>/figshare/hgrid/',
+            '/project/<pid>/figshare/hgrid/<path:path>',
+            '/project/<pid>/node/<nid>/figshare/hgrid/<path:path>',
+
+        ], 'get', views.hgrid.figshare_hgrid_data_contents, json_renderer),
+     ],
+    'prefix': '/api/v1',
 }
 
 page_routes = {

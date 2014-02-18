@@ -11,3 +11,9 @@ def _check_permissions(node_settings, auth, connection)
     if has_auth: 
         connect = Figshare.from_settings(user_settings)
         has_access = Figshare.has_crud(node_settings.figshare_id)
+
+    can_edit = (node_settings.ower.can_edit(auth) and
+                not node_settings.owner.is_registration and
+                has_access)
+
+    return can_edit
