@@ -42,10 +42,10 @@
          */
         Dropzone.prototype.getUrl = function(file) {
             var self = this;
-            if (this.options.signedUrlFrom) {
+            if (file.signedUrlFrom) {
                 return $.ajax({
                     type: 'POST',
-                    url: self.options.signedUrlFrom,
+                    url: file.signedUrlFrom,
                     data: JSON.stringify({
                         name: file.destination || file.name,
                         type: file.type || 'application/octet-stream'
@@ -53,7 +53,7 @@
                     contentType: 'application/json',
                     dataType: 'json',
                 }).success(function(url) {
-                  self.options.signedUrlFrom = null;
+                  //self.options.signedUrlFrom = null;
                     return self.options.url = url;
                 });
             } else {
@@ -63,7 +63,7 @@
 
         Dropzone.prototype.uploadFiles = function(files) {
             var file, formData, handleError, headerName, headerValue, headers, input, inputName, inputType, key, option, progressObj, response, updateProgress, value, xhr, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _ref, _ref1, _ref2, _ref3, _ref4,
-                _this = this, wasSigned = this.options.signedUrlFrom;
+                _this = this, wasSigned = files[0].signedUrlFrom;
             xhr = new XMLHttpRequest();
             for (_i = 0, _len = files.length; _i < _len; _i++) {
                 file = files[_i];

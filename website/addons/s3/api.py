@@ -193,7 +193,7 @@ class S3Key(object):
         if self.type == 'file':
             self.versions = ['current']
         else:
-            self.version = None
+            self.versions = None
 
     @property
     def name(self):
