@@ -16,7 +16,7 @@ def _kwargs_to_nodes(kwargs):
     :return: Tuple of project and component
 
     """
-    project = kwargs.get('project') or Node.load(kwargs['pid'])
+    project = kwargs.get('project') or Node.load(kwargs.get('pid', kwargs.get('nid')))
     if not project:
         raise HTTPError(http.NOT_FOUND)
     if project.category != 'project':

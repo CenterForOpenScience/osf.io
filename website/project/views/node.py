@@ -13,11 +13,11 @@ from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 
 from website import language
-from website.project import new_node, clean_template_name
+from website.project import clean_template_name, new_node
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from website.project.forms import NewProjectForm, NewNodeForm
-from website.models import WatchConfig, Node, Pointer
+from website.models import Node, Pointer, WatchConfig
 from website import settings
 from website.views import _render_nodes
 
@@ -60,13 +60,41 @@ def project_new_post(**kwargs):
     user = kwargs['auth'].user
     form = NewProjectForm(request.form)
     if form.validate():
-        project = new_node(
-            'project', form.title.data, user, form.description.data
-        )
-        return {}, 201, None, project.url
+        if form.template.data:
+            original_node = Node.load(form.template.data)
+            project = original_node.use_as_template(
+                auth=kwargs['auth'],
+                changes={
+                    form.template.data: {
+                        'title': form.title.data,
+                    }
+                }
+            )
+                # node._fields['date_created'].__set__(new_date, safe=True)
+        else:
+            project = new_node(
+                'project', form.title.data, user, form.description.data
+            )
+            status.push_status_message(
+                'Welcome to your new {category}! Please select and configure your add-ons below.'.format(
+                    category=project.project_or_component,
+                )
+            )
+        return {}, 201, None, project.url + 'settings/'
     else:
         push_errors_to_status(form.errors)
     return {}, http.BAD_REQUEST
+
+
+@must_be_logged_in
+@must_be_valid_project
+def project_new_from_template(*args, **kwargs):
+    original_node = kwargs.get('node')
+    original_node.use_as_template(
+        auth=kwargs['auth'],
+        changes=dict(),
+    )
+    return {'url': original_node.url}, http.CREATED, None
 
 
 ##############################################################################
@@ -449,6 +477,7 @@ def _view_project(node, auth, primary=False):
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': node.forked_date.strftime('%Y/%m/%d %I:%M %p') if node.is_fork else '',
             'fork_count': len(node.fork_list),
+            'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'logs': recent_logs,
             'points': node.points,
@@ -789,8 +818,8 @@ def get_pointed(**kwargs):
     node = kwargs['node'] or kwargs['project']
     return {'pointed': [
         {
-            'url': each.url,
-            'title': each.title,
+            'url': each.node__parent[0].url,
+            'title': each.node__parent[0].title,
             'authorShort': abbrev_authors(node),
         }
         for each in node.pointed

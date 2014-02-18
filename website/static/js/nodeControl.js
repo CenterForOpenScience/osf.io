@@ -101,10 +101,11 @@ this.NodeControl = (function(ko, $, global) {
         self.user = data.user;
         // The button text to display (e.g. "Watch" if not watching)
         self.watchButtonDisplay = ko.computed(function() {
-            var text = self.userIsWatching() ? "Unwatch" : "Watch"
-            var full = text + " " +self.watchedCount().toString();
-            return full;
+            return self.watchedCount().toString();
         });
+        self.watchButtonAction = ko.computed(function() {
+            return self.userIsWatching() ? "Unwatch" : "Watch"
+        })
 
         // Editable Title and Description
         if (self.userCanEdit) {

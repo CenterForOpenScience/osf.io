@@ -3,6 +3,11 @@ created <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 
+<script type="text/html" id="created_from">
+created <span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> based on <a class="log-node-title-link overflow" data-bind="attr: {href: params.template_node.url}">another <span data-bind="text: nodeCategory"></span></a>
+</script>
+
 <script type="text/html" id="node_created">
 created <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>

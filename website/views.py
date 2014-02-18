@@ -49,6 +49,7 @@ def _render_node(node):
     :return:
 
     """
+    print repr(node)
     return {
         'id': node._primary_key,
         'url': node.url,

@@ -5,7 +5,7 @@ from wtforms import fields, Form, PasswordField, BooleanField, IntegerField, \
     SelectMultipleField, SubmitField, TextAreaField, TextField, FieldList, \
     validators
 
-from wtforms.widgets import TextInput, PasswordInput, html_params, TextArea
+from wtforms.widgets import TextInput, PasswordInput, html_params, TextArea, Select
 from wtforms.validators import ValidationError
 
 from wtfrecaptcha.fields import RecaptchaField
@@ -38,6 +38,47 @@ class BootstrapTextArea(TextArea):
         kwargs.setdefault('class_', 'form-control')
         html = super(BootstrapTextArea, self).__call__(field, **kwargs)
         return html
+
+
+class JqueryAutocomplete2(TextInput):
+    def __call__(self, field, **kwargs):
+        return ''.join((
+            super(JqueryAutocomplete2, self).__call__(field, **kwargs),
+            self._script,
+        ))
+
+    @property
+    def _script(self):
+        return '<!-- Script goes here -->'
+
+class JqueryAutocomplete(BootstrapTextInput):
+
+    def __call__(self, field, **kwargs):
+        _id = field.id
+        field.id = '_' + field.id
+        field.name = field.id
+        return ''.join((
+            '<!-- Stuff goes here -->',
+            super(JqueryAutocomplete, self).__call__(field, **kwargs),
+            '''<input type="hidden" name="''', _id, '''" id="''', _id, '''"/>
+            <script>$(function() {
+
+                var hidden = $("#''', _id, '''");
+                $("#''', field.id, '''").autocomplete({
+                    source: '/api/v1/search/projects/',
+                    minLength: 2,
+                    select: function(event, ui) {
+                        hidden.val( ui.item.id );
+                        $(this).val( ui.item.label );
+                        return false;
+                    }
+                }).on('change', function() {
+                    hidden.val('');
+                    $(this).val('');
+                });
+            });</script>''',
+        ))
+
 
 RecaptchaField = RecaptchaField
 
