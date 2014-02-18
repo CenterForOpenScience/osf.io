@@ -140,8 +140,8 @@ class registration_wrapper(S3Wrapper):
 
     def __init__(self, node_settings):
         connection = S3Connection(
-            node_settings.node_access_key, node_settings.node_secret_key)
-        super(S3Wrapper, self).__init__(self, connection, node_settings.bucket)
+            node_settings.user_settings.access_key, node_settings.user_settings.secret_key)
+        super(registration_wrapper, self).__init__(connection, node_settings.bucket)
         self.registration_data = node_settings.registration_data
 
     def get_wrapped_keys_in_dir(self, directory=None):
