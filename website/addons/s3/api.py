@@ -3,9 +3,8 @@ import re
 from datetime import datetime
 from dateutil.parser import parse
 
-from boto.iam import *
-from boto.exception import *
-from boto.s3.connection import *
+from boto.s3.connection import S3Connection, Key
+from boto.s3.connection import OrdinaryCallingFormat
 from boto.s3.cors import CORSConfiguration
 
 from hurry.filesize import size, alternative
@@ -52,8 +51,10 @@ class S3Wrapper(object):
 
     @classmethod
     def from_addon(cls, s3):
+        if s3 is None or s3.user_settings is None:
+            return None
         if not s3.is_registration:
-            return cls(S3Connection(s3.user_settings.access_key, s3.user_settings.secret_key), s3.bucket)
+            return cls(S3Connection(s3.user_settings.access_key, s3.user_settings.secret_key, calling_format=OrdinaryCallingFormat()), s3.bucket)
         else:
             return RegistrationWrapper(s3)
 
@@ -70,17 +71,6 @@ class S3Wrapper(object):
 
     def create_key(self, key):
         self.bucket.new_key(key)
-
-    def post_string(self, title, contentspathToFolder=""):
-        k = self.bucket.new_key(pathToFolder + title)
-        return k.set_contents_from_string(contents)
-
-    def get_string(self, title):
-        return self.bucket.get_key(title).get_contents_as_string()
-
-    def set_metadata(self, bucket, key, metadataName, metadata):
-        k = self.connection.get_bucket(bucket).get_key(key)
-        return k.set_metadata(metadataName, metadata)
 
     def get_file_list(self, prefix=None):
         if not prefix:
@@ -191,7 +181,7 @@ class S3Key(object):
         if self.type == 'file':
             self.versions = ['current']
         else:
-            self.version = None
+            self.versions = None
 
     @property
     def name(self):

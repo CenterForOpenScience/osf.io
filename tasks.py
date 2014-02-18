@@ -89,7 +89,7 @@ def test_module(module=None, coverage=False, browse=False):
     Helper for running tests.
     """
     # Allow selecting specific submodule
-    args = " --tests=%s" % module
+    args = " -s --tests=%s" % module
     if coverage:
         args += " --with-coverage --cover-html"
     # Use pty so the process buffers "correctly"

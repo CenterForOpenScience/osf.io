@@ -107,10 +107,15 @@ api_routes = {
             json_renderer,
         ),
 
-        Rule([
-            '/project/<pid>/file_paths/',
-            '/project/<pid>/node/<nid>/file_paths/',
-        ], 'get', views.list_file_paths, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/file_paths/',
+                '/project/<pid>/node/<nid>/file_paths/',
+            ],
+            'get',
+            views.list_file_paths,
+            json_renderer,
+        ),
 
         Rule(
             [

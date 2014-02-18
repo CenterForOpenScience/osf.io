@@ -32,14 +32,16 @@ from website.addons.s3.settings import MAX_RENDER_SIZE
 def s3_download(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    s3 = node.get_addon('s3')
-    keyName = unquote(kwargs['path'])
+    node_settings = kwargs['node_addon']
+    key_name = unquote(kwargs['path'])
     vid = request.args.get('vid')
 
-    if keyName is None:
+    if key_name is None:
         raise HTTPError(http.NOT_FOUND)
-    connect = S3Wrapper.from_addon(s3)
-    return redirect(connect.download_file_URL(keyName, vid))
+    connect = S3Wrapper.from_addon(node_settings)
+    if not connect.does_key_exist(key_name):
+        raise HTTPError(http.NOT_FOUND)
+    return redirect(connect.download_file_URL(key_name, vid))
 
 
 @must_be_contributor
@@ -47,10 +49,10 @@ def s3_download(**kwargs):
 def s3_delete(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    s3 = node.get_addon('s3')
+    node_settings = kwargs['node_addon']
     dfile = unquote(kwargs['path'])
 
-    connect = S3Wrapper.from_addon(s3)
+    connect = S3Wrapper.from_addon(node_settings)
     connect.delete_file(dfile)
 
     node.add_log(
@@ -58,7 +60,7 @@ def s3_delete(**kwargs):
         params={
             'project': node.parent_id,
             'node': node._primary_key,
-            'bucket': s3.bucket,
+            'bucket': node_settings.bucket,
             'path': dfile,
         },
         auth=kwargs['auth'],
