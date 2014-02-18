@@ -12,11 +12,13 @@
                 <div data-bind="if:page()=='whom'">
 
                     <!-- Find contributors -->
-                    <form>
+                    <form class='form'>
                         <div class="row">
                             <div class="col-md-6">
-                                <input style="margin-bottom: 8px;" data-bind="value:query" />
-                                <div><button class="btn btn-default" data-bind="click:search">Search</button></div>
+                                <div class="form-group">
+                                    <input class='form-control' style="margin-bottom: 8px;" data-bind="value:query" placeholder='Search users'/>
+                                </div>
+                                <div><button type='submit' class="btn btn-default" data-bind="click:search">Search</button></div>
                             </div>
                             <div class="col-md-6" data-bind="if:parentId">
                                 <a data-bind="click:importFromParent, text:'Import contributors from ' + parentTitle"></a>
@@ -56,7 +58,7 @@
                                     </tr>
                                 </tbody>
                             </table>
-                        </div>
+                        </div><!-- ./col-md -->
 
                         <div class="col-md-6">
                             <div>
@@ -86,7 +88,7 @@
                     </div>
 
                 </div>
-
+                <!-- Component selection page -->
                 <div data-bind="if:page()=='which'">
 
                     <div>
@@ -127,7 +129,8 @@
 
                     </div>
 
-                </div>
+                </div><!-- end component selection page -->
+
 
             </div><!-- end modal-body -->
 
@@ -143,6 +146,10 @@
                 <span data-bind="if:page() == 'which'">
                     <a class="btn btn-primary" data-bind="click:selectWhom">Back</a>
                     <a class="btn btn-success" data-bind="click:submit">Submit</a>
+                </span>
+
+                <span data-bind='if:page() == "invite"'>
+                    <a class="btn btn-primary" data-bind='click:selectWhom'>Back</a>
                 </span>
 
             </div><!-- end modal-footer -->
