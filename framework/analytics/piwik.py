@@ -180,3 +180,81 @@ def _provision_node(node):
             node,
             'view'
         )
+
+
+class PiwikClient(object):
+    def __init__(self, url,
+                 auth_token=None, site_id=None, period=None, date=None):
+        self.url = url
+        self.auth_token = auth_token
+        self.site_id = site_id
+        self.period = period
+        self.date = date
+
+    @property
+    def custom_variables(self):
+        return [
+            CustomVariableField(self, **x) for x in self.__call_api(
+                'CustomVariables.getCustomVariables',
+                period=self.period,
+                date=self.date,
+            )
+        ]
+
+    def _get_custom_variable_values(self, v):
+        return self.__call_api(
+            'CustomVariables.getCustomVariablesValuesFromNameId',
+            idSubtable=v.subtable_id,
+            period=self.period,
+            date=self.date,
+        )
+
+    def __call_api(self, method, **kwargs):
+        params = {
+            'token_auth': self.auth_token,
+            'idSite': self.site_id,
+            'module': 'API',
+            'method': method,
+            'format': 'json',
+        }
+        params.update(kwargs)
+
+        return requests.get(self.url, params=params).json()
+
+
+class CustomVariableField(object):
+    __values = None
+
+    def __init__(self, client, **kwargs):
+        # accepts a dictionary from Piwik's JSON repsonse.
+        # TODO: Not all variables here are captured
+        self.client = client
+        self.subtable_id = kwargs.get('idsubdatatable')
+        self.label = kwargs.get('label')
+
+    def __str__(self):
+        return u'<CustomVariableField: "%s">' % self.label
+    __unicode__ = __str__
+    __repr__ = __str__
+
+    @property
+    def values(self, _force=False):
+        if _force or not self.__values:
+            self.__values = [CustomVariableValue(**x) for x in
+                self.client._get_custom_variable_values(self)
+            ]
+
+        return self.__values
+
+
+class CustomVariableValue(object):
+    def __init__(self, **kwargs):
+        self.value = kwargs['label']
+        self.actions = kwargs.get('nb_actions', 0)
+        self.visits = kwargs.get('nb_visits', 0)
+        self.visitors = kwargs.get('sum_daily_nb_uniq_visitors', 0)
+
+    def __str__(self):
+        return '<CustomVariableValue: "%s">' % self.value
+    __unicode__ = __str__
+    __repr__ = __str__

@@ -10,7 +10,7 @@ var setStatus = function(status){
 
 var urlDecode = function(str) {
     return decodeURIComponent((str+'').replace(/\+/g, '%20'));
-}
+};
 
 
 /**

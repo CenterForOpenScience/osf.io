@@ -2,6 +2,8 @@ import mock
 import unittest
 from nose.tools import *
 
+from github3.repos import Repository
+
 from tests.base import DbTestCase
 from tests.factories import UserFactory, ProjectFactory
 
@@ -15,7 +17,7 @@ class TestCallbacks(DbTestCase):
     def setUp(self):
 
         super(TestCallbacks, self).setUp()
-        
+
         self.project = ProjectFactory.build()
         self.non_authenticator = UserFactory()
         self.project.add_contributor(
@@ -37,7 +39,7 @@ class TestCallbacks(DbTestCase):
     def test_before_page_load_osf_public_gh_public(self, mock_repo):
         self.project.is_public = True
         self.project.save()
-        mock_repo.return_value = {'private': False}
+        mock_repo.return_value = Repository.from_json({'private': False})
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -49,7 +51,7 @@ class TestCallbacks(DbTestCase):
     def test_before_page_load_osf_public_gh_private(self, mock_repo):
         self.project.is_public = True
         self.project.save()
-        mock_repo.return_value = {'private': True}
+        mock_repo.return_value = Repository.from_json({'private': True})
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -59,7 +61,7 @@ class TestCallbacks(DbTestCase):
 
     @mock.patch('website.addons.github.api.GitHub.repo')
     def test_before_page_load_osf_private_gh_public(self, mock_repo):
-        mock_repo.return_value = {'private': False}
+        mock_repo.return_value = Repository.from_json({'private': False})
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -69,7 +71,7 @@ class TestCallbacks(DbTestCase):
 
     @mock.patch('website.addons.github.api.GitHub.repo')
     def test_before_page_load_osf_private_gh_private(self, mock_repo):
-        mock_repo.return_value = {'private': True}
+        mock_repo.return_value = Repository.from_json({'private': True})
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,

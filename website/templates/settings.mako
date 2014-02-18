@@ -289,10 +289,10 @@
                 contentType: 'application/json',
                 dataType: 'json',
                 success: function(response) {
-                    modelData['given_name'].value(response['given_name']);
-                    modelData['middle_names'].value(response['middle_names']);
-                    modelData['family_name'].value(response['family_name']);
-                    modelData['suffix'].value(response['suffix']);
+                    modelData.given_name.value(response.given_name);
+                    modelData.middle_names.value(response.middle_names);
+                    modelData.family_name.value(response.family_name);
+                    modelData.suffix.value(response.suffix);
                 }
             });
 

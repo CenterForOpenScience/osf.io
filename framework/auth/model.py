@@ -36,9 +36,9 @@ class User(GuidStoredObject, AddonModelMixin):
     _id = fields.StringField(primary=True)
 
     # NOTE: In the OSF, username is an email
-    username = fields.StringField()
+    username = fields.StringField(required=True)
     password = fields.StringField()
-    fullname = fields.StringField()
+    fullname = fields.StringField(required=True)
     is_registered = fields.BooleanField()
     is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
     # The user who merged this account
