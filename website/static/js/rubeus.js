@@ -33,11 +33,11 @@ this.Rubeus = (function($, HGrid, bootbox) {
     HGrid.Col.ActionButtons.itemView = function(item) {
 	var buttonDefs = [];
 	if(item.permisssions.download !== false){
-	    buttonDefs.push{
+	    buttonDefs.push({
 		text: '<i class="icon-download-alt icon-white"></i>',
 		action: 'download',
 		cssClass: 'btn btn-primary btn-mini'
-	    };
+	    });
 	}
 	if (item.permissions && item.permissions.edit) {
 	    buttonDefs.push({
