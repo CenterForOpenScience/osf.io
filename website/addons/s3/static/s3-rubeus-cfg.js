@@ -1,4 +1,3 @@
-
 (function(Rubeus) {
 
     Rubeus.cfg.s3 = {
@@ -32,6 +31,7 @@
             var parent = this.getByID(item.parentID);
             item.permissions = parent.permissions;
             this.updateItem(item);
+            this.changeStatus(item, Rubeus.Status.UPLOAD_SUCCESS, 2000);
         }
     };
 

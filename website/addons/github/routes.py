@@ -105,7 +105,6 @@ api_routes = {
             views.hgrid.github_root_folder_public,
             json_renderer,
         ),
-
         ### File Render ###
         Rule(
             [

@@ -33,8 +33,7 @@ def github_download_file(**kwargs):
     if path is None:
         raise HTTPError(http.NOT_FOUND)
 
-    ref = request.args.get('ref')
-
+    ref = request.args.get('sha')
     connection = GitHub.from_settings(github.user_settings)
 
     name, data, _ = connection.file(github.user, github.repo, path, ref=ref)
@@ -108,7 +107,7 @@ def github_view_file(**kwargs):
     # Get default branch if neither SHA nor branch is provided
     if ref is None:
         repo = connection.repo(node_settings.user, node_settings.repo)
-        ref = branch = repo['default_branch']
+        ref = branch = repo.default_branch
 
     # Get file history; use SHA or branch if registered, else branch
     start_sha = ref if node.is_registration else branch
@@ -121,6 +120,8 @@ def github_view_file(**kwargs):
         commit['sha']
         for commit in commits
     ]
+    if not shas:
+        raise HTTPError(http.NOT_FOUND)
     current_sha = sha if sha in shas else shas[0]
 
     # Get file URL
@@ -195,10 +196,10 @@ def github_upload_file(**kwargs):
     tree = connection.tree(github.user, github.repo, sha=sha or branch)
     existing = [
         thing
-        for thing in tree['tree']
-        if thing['path'] == os.path.join(path, filename)
+        for thing in tree.tree
+        if thing.path == os.path.join(path, filename)
     ]
-    sha = existing[0]['sha'] if existing else None
+    sha = existing[0].sha if existing else None
 
     author = {
         'name': user.fullname,
@@ -251,8 +252,8 @@ def github_upload_file(**kwargs):
             'addon': 'github',
             'name': filename,
             'size': [
-                data['content']['size'],
-                size(data['content']['size'], system=alternative)
+                data['content'].size,
+                size(data['content'].size, system=alternative)
             ],
             'kind': 'file',
             'urls': _build_github_urls(
@@ -322,6 +323,7 @@ def github_delete_file(**kwargs):
     return {}
 
 
+# TODO Add me Test me
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
 def github_download_starball(**kwargs):

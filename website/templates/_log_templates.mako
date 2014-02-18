@@ -95,3 +95,18 @@ removed a link to <span data-bind="text: params.pointer.category"></span>
 forked a link to <span data-bind="text: params.pointer.category"></span>
 <a class="log-node-title-link overflow" data-bind="text: params.pointer.title, attr: {href: params.pointer.url}"></a>
 </script>
+
+<script type="text/html" id="pointer_created">
+created a link to <span data-bind="text: params.pointer.category"></span>
+<a class="log-node-title-link overflow" data-bind="text: params.pointer.title, attr: {href: params.pointer.url}"></a>
+</script>
+
+<script type="text/html" id="pointer_removed">
+removed a link to <span data-bind="text: params.pointer.category"></span>
+<a class="log-node-title-link overflow" data-bind="text: params.pointer.title, attr: {href: params.pointer.url}"></a>
+</script>
+
+<script type="text/html" id="pointer_forked">
+forked a link to <span data-bind="text: params.pointer.category"></span>
+<a class="log-node-title-link overflow" data-bind="text: params.pointer.title, attr: {href: params.pointer.url}"></a>
+</script>

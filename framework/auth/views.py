@@ -3,7 +3,7 @@ import httplib as http
 import logging
 
 import framework
-from framework import goback, set_previous_url, request, redirect, session
+from framework import goback, set_previous_url, request
 from framework.email.tasks import send_email
 from framework import status
 import framework.forms as forms

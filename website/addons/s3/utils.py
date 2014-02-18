@@ -1,16 +1,16 @@
-from api import S3Key,  get_bucket_list
-from urllib import quote
-from datetime import datetime
-from settings import CORS_RULE, ALLOWED_ORIGIN
 import re
+from urllib import quote
+from bson import ObjectId
+from datetime import datetime
 
+from boto.iam import IAMConnection
+from boto.s3.cors import CORSConfiguration
+from boto.exception import BotoServerError
 
-def adjust_cors(s3wrapper):
-    rules = s3wrapper.get_cors_rules()
+from website.util import rubeus
 
-    if not [rule for rule in rules if rule.to_xml() == CORS_RULE]:
-        rules.add_rule(['PUT', 'GET'], ALLOWED_ORIGIN, allowed_header={'*'})
-        s3wrapper.set_cors_rules(rules)
+from api import S3Key, get_bucket_list
+import settings as s3_settings
 
 
 #TODO remove if not needed in newest hgrid
@@ -21,11 +21,45 @@ def checkFolders(s3wrapper, keyList):
             keyList.append(S3Key(newKey))
 
 
+def adjust_cors(s3wrapper, clobber=False):
+    """Set CORS headers on a bucket, removing pre-existing headers set by the
+    OSF. Optionally clear all pre-existing headers.
+
+    :param S3Wrapper s3wrapper: S3 wrapper instance
+    :param bool clobber: Remove all pre-existing rules. Note: if this option
+        is set to True, remember to warn or prompt the user first!
+
+    """
+    rules = s3wrapper.get_cors_rules()
+
+    # Remove some / all pre-existing rules
+    if clobber:
+        rules = CORSConfiguration([])
+    else:
+        rules = CORSConfiguration([
+            rule
+            for rule in rules
+            if 'osf-s3' not in (rule.id or '')
+        ])
+
+    # Add new rule
+    rules.add_rule(
+        ['PUT', 'GET'],
+        s3_settings.ALLOWED_ORIGIN,
+        allowed_header=['*'],
+        id='osf-s3-{0}'.format(ObjectId()),
+    )
+
+    # Save changes
+    s3wrapper.set_cors_rules(rules)
+
+
 def wrapped_key_to_json(wrapped_key, node_api, node_url):
     return {
-        'kind': wrapped_key.type,
+        rubeus.KIND: _key_type_to_rubeus(wrapped_key.type),
         'name': wrapped_key.name,
         'size': (wrapped_key.size, wrapped_key.size) if wrapped_key.size is not None else '--',
+        'ext': wrapped_key.extension if wrapped_key.extension is not None else '--',
         'lastMod': wrapped_key.lastMod.strftime("%Y/%m/%d %I:%M %p") if wrapped_key.lastMod is not None else '--',
         'urls': {
             # TODO: Don't use ternary operators here
@@ -38,20 +72,30 @@ def wrapped_key_to_json(wrapped_key, node_api, node_url):
     }
 
 
+def get_bucket_drop_down(user_settings):
+    try:
+        dropdown_list = ''
+        for bucket in get_bucket_list(user_settings):
+                dropdown_list += '<li role="presentation"><a href="#">' + \
+                    bucket.name + '</a></li>'
+        return dropdown_list
+    except BotoServerError:
+        return False
+
+
+
+def _key_type_to_rubeus(key_type):
+    if key_type == 'folder':
+        return rubeus.FOLDER
+    else:
+        return rubeus.FILE
+
+
 def key_upload_path(wrapped_key, url):
     if wrapped_key.type != 'folder':
         return quote(url)
     else:
         return quote(url + '/' + wrapped_key.fullPath + '/')
-
-
-def get_bucket_drop_down(user_settings):
-    dropdown_list = ''
-    for bucket in get_bucket_list(user_settings):
-            dropdown_list += '<li role="presentation"><a href="#">' + \
-                bucket.name + '</a></li>'
-    return dropdown_list
-
 
 def create_version_list(wrapper, key_name, node_api):
     versions = wrapper.get_file_versions(key_name)
@@ -93,3 +137,39 @@ def serialize_bucket(s3wrapper):
         }
         for x in s3wrapper.get_wrapped_keys()
     ]
+
+def create_osf_user(access_key, secret_key, name):
+    connection = IAMConnection(access_key, secret_key)
+    try:
+        connection.get_user(s3_settings.OSF_USER.format(name))
+    except BotoServerError:
+        connection.create_user(s3_settings.OSF_USER.format(name))
+
+    try:
+        connection.get_user_policy(
+            s3_settings.OSF_USER.format(name),
+            s3_settings.OSF_USER_POLICY
+        )
+    except BotoServerError:
+        connection.put_user_policy(
+            s3_settings.OSF_USER.format(name),
+            s3_settings.OSF_USER_POLICY_NAME,
+            s3_settings.OSF_USER_POLICY
+        )
+
+    access_key = connection.create_access_key(s3_settings.OSF_USER.format(name))
+    return access_key['create_access_key_response']['create_access_key_result']['access_key']
+
+
+def remove_osf_user(user_settings):
+    name = user_settings.owner.family_name
+    connection = IAMConnection(user_settings.access_key, user_settings.secret_key)
+    connection.delete_access_key(
+        user_settings.access_key,
+        s3_settings.OSF_USER.format(name)
+    )
+    connection.delete_user_policy(
+        s3_settings.OSF_USER.format(name),
+        s3_settings.OSF_USER_POLICY_NAME
+    )
+    return connection.delete_user(s3_settings.OSF_USER.format(name))

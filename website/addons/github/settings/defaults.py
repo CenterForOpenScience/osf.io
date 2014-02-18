@@ -13,3 +13,5 @@ HOOK_DOMAIN = None
 
 # Max render size in bytes; no max if None
 MAX_RENDER_SIZE = None
+
+CACHE = True

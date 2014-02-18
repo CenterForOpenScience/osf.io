@@ -30,25 +30,26 @@ class TestHGridViews(DbTestCase):
         self.node_settings = self.project.get_addon('github')
         self.node_settings.user_settings = self.project.creator.get_addon('github')
         # Set the node addon settings to correspond to the values of the mock repo
-        self.node_settings.user = self.github.repo.return_value['owner']['login']
-        self.node_settings.repo = self.github.repo.return_value['name']
+        self.node_settings.user = self.github.repo.return_value.owner.login
+        self.node_settings.repo = self.github.repo.return_value.name
         self.node_settings.save()
 
     def test_to_hgrid(self):
         contents = github_mock.contents(user='octocat', repo='hello', ref='12345abc')
-        res = views.hgrid.to_hgrid(contents,
+        res = views.hgrid.to_hgrid(
+            contents,
             node_url=self.project.url, node_api_url=self.project.api_url,
-            max_size=10)
+            max_size=10
+        )
 
         assert_equal(len(res), 2)
         assert_equal(res[0]['addon'], 'github')
-
         assert_true(res[0]['permissions']['view'])  # can always view
-        expected_kind = 'item' if contents[0]['type'] == 'file' else 'folder'
+        expected_kind = 'item' if contents['octokit'].type == 'file' else 'folder'
         assert_equal(res[0]['kind'], expected_kind)
         assert_equal(res[0]['accept']['maxSize'], 10)
         assert_equal(res[0]['accept']['acceptedFiles'], None)
-        assert_equal(res[0]['urls'], api._build_github_urls(contents[0],
+        assert_equal(res[0]['urls'], api._build_github_urls(contents['octokit'],
             self.project.url, self.project.api_url, branch=None, sha=None))
         # Files should not have lazy-load or upload URLs
         assert_not_in('lazyLoad', res[0])
@@ -79,18 +80,18 @@ class TestGithubViews(DbTestCase):
         self.node_settings = self.project.get_addon('github')
         self.node_settings.user_settings = self.project.creator.get_addon('github')
         # Set the node addon settings to correspond to the values of the mock repo
-        self.node_settings.user = self.github.repo.return_value['owner']['login']
-        self.node_settings.repo = self.github.repo.return_value['name']
+        self.node_settings.user = self.github.repo.return_value.owner.login
+        self.node_settings.repo = self.github.repo.return_value.name
         self.node_settings.save()
 
     def _get_sha_for_branch(self, branch=None, mock_branches=None):
         if mock_branches is None:
             mock_branches = github_mock.branches
         if branch is None:  # Get default branch name
-            branch = self.github.repo.return_value['default_branch']
+            branch = self.github.repo.return_value.default_branch
         for each in mock_branches.return_value:
-            if each['name'] == branch:
-                branch_sha = each['commit']['sha']
+            if each.name == branch:
+                branch_sha = each.commit.sha
         return branch_sha
 
     # Tests for _get_refs
@@ -102,7 +103,7 @@ class TestGithubViews(DbTestCase):
         branch, sha, branches = views.util._get_refs(self.node_settings)
         assert_equal(
             branch,
-            github_mock.repo.return_value['default_branch']
+            github_mock.repo.return_value.default_branch
         )
         assert_equal(sha, self._get_sha_for_branch(branch=None)) # Get refs for default branch
         assert_equal(
@@ -143,7 +144,7 @@ class TestGithubViews(DbTestCase):
         assert_equal(len(res.json['prompts']), 0)
 
     def test_before_fork(self):
-        url = self.project.api_url + 'beforefork/'
+        url = self.project.api_url + 'fork/before/'
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(len(res.json['prompts']), 1)
 
@@ -192,11 +193,13 @@ class TestGithubViews(DbTestCase):
     def test_github_contents(self):
         pass
 
-    def test_github_widget(self):
-        url = "/api/v1/project/{0}/github/widget/".format(self.project._id)
+    @mock.patch('website.addons.github.api.GitHub.repo')
+    def test_github_widget(self, mock_repo):
+        mock_repo.return_value = {"owner": "osftest", "repo": "testing"}
+        url = '/api/v1/project/{0}/github/widget/'.format(self.project._id)
         res = self.app.get(url, auth=self.user.auth)
         # TODO: Test completeness
-        assert_equal(res.json["short_url"], self.node_settings.short_url)
+        assert_equal(res.json['short_url'], self.node_settings.short_url)
 
     @mock.patch('website.addons.github.api.GitHub.repo')
     def test_github_get_repo(self, mock_repo):
@@ -315,10 +318,12 @@ class TestGithubViews(DbTestCase):
         assert_not_equal(self.project.logs[-1].action, "github_file_removed")
 
     @mock.patch('website.addons.github.api.GitHub.history')
+    @mock.patch('website.addons.github.api.GitHub.contents')
     @mock.patch('website.addons.github.api.GitHub.repo')
-    def test_view_creates_guid(self, mock_repo, mock_history):
+    def test_view_creates_guid(self, mock_repo, mock_contents, mock_history):
 
         mock_repo.return_value = github_mock.repo.return_value
+        mock_contents.return_value = github_mock.contents.return_value['octokit']
         mock_history.return_value = github_mock.commits.return_value
 
         guid_count = GithubGuidFile.find().count()

@@ -1,5 +1,5 @@
 /**
- * Module to render the consolidated files view. Reads addon configurrations and
+ * Module to render the consolidated files view. Reads addon configurations and
  * initializes an HGrid.
  */
 this.Rubeus = (function($, HGrid, bootbox) {
@@ -7,8 +7,6 @@ this.Rubeus = (function($, HGrid, bootbox) {
     /////////////////////////
     // HGrid configuration //
     /////////////////////////
-
-    var tpl = HGrid.Fmt.tpl;
 
     // Override Name column folder view to allow for extra widgets, e.g. github branch picker
     HGrid.Col.Name.folderView = function(item) {
@@ -18,8 +16,9 @@ this.Rubeus = (function($, HGrid, bootbox) {
         else
             html += HGrid.Html.folderIcon;
         html += '<span class="hg-folder-text">' + item.name + '</span>';
-        if(item.extra)
+        if(item.extra) {
             html += '<span class="hg-extras">' + item.extra + '</span>';
+        }
         return html;
     };
 
@@ -50,7 +49,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
     HGrid.Col.ActionButtons.folderView = function(row) {
         var buttonDefs = [];
         if (this.options.uploads && row.urls.upload &&
-            (row.permissions && row.permissions.edit)) {
+                (row.permissions && row.permissions.edit)) {
             buttonDefs.push({
                 text: '<i class="icon-upload"></i>',
                 action: 'upload',
@@ -73,12 +72,28 @@ this.Rubeus = (function($, HGrid, bootbox) {
     HGrid.Html.statusSelector = '[data-status]';
 
     /**
+     * Get the status message from the addon, if any.
+     */
+     function getStatusCfg(addon, whichStatus, extra) {
+        if (addon && Rubeus.cfg[addon] && Rubeus.cfg[addon][whichStatus]) {
+            if (typeof(Rubeus.cfg[addon][whichStatus]) === 'function') {
+                return Rubeus.cfg[addon][whichStatus](extra);
+            }
+            return Rubeus.cfg[addon][whichStatus];
+        }
+        if (typeof(default_status[whichStatus]) === 'function') {
+            return default_status[whichStatus](extra);
+        }
+        return default_status[whichStatus];
+     }
+
+/**
      * Changes the html in the status column.
      */
-    HGrid.prototype.changeStatus = function(row, html, fadeAfter) {
+    HGrid.prototype.changeStatus = function(row, html, extra, fadeAfter) {
         var rowElem = this.getRowElement(row.id);
         var $status = $(rowElem).find(HGrid.Html.statusSelector);
-        $status.html(html);
+        $status.html(getStatusCfg(row.addon, html, extra));
         if (fadeAfter) {
             setTimeout(function() {
                 $status.fadeOut('slow');
@@ -87,8 +102,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
         return $status;
     };
 
-    // TODO: This should be configurable by addon devs
-    var status = {
+    var default_status = {
         FETCH_SUCCESS: '',
         FETCH_START: '<span class="text-muted">Fetching contents. . .</span>',
         FETCH_ERROR: '<span class="text-info">Could not retrieve data. Please refresh the page and try again.</span>',
@@ -109,7 +123,18 @@ this.Rubeus = (function($, HGrid, bootbox) {
             return '<span class="text-info">' + Math.floor(progress) + '%</span>';
         }
     };
-
+    var statusType = {
+        FETCH_SUCCESS: 'FETCH_SUCCESS',
+        FETCH_START: 'FETCH_START',
+        FETCH_ERROR: 'FETCH_ERROR',
+        UPLOAD_SUCCESS: 'UPLOAD_SUCCESS',
+        NO_CHANGES: 'NO_CHANGES',
+        UPDATED: 'UPDATED',
+        DELETING: 'DELETING',
+        DELETED: 'DELETED',
+        UPLOAD_ERROR: 'UPLOAD_ERROR',
+        UPLOAD_PROGRESS: 'UPLOAD_PROGRESS'
+    };
     ////////////////////////
     // Listener callbacks //
     ////////////////////////
@@ -119,7 +144,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
             var rowCopy = $.extend({}, row);
             // Show "Deleting..." message in parent folder's status column
             var parent = grid.getByID(rowCopy.parentID);
-            grid.changeStatus(row, status.DELETING(rowCopy));
+            grid.changeStatus(row, statusType.DELETING, rowCopy);
             grid.deleteFile(row, {
                 error: function() {
                     // TODO: This text should be configurable by addon devs
@@ -128,7 +153,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
                 success: function() {
                     grid.getDataView().updateItem(parent.id, parent);
                     // Show 'Successfully deleted' in folder's status column
-                    grid.changeStatus(row, status.DELETED(rowCopy));
+                    grid.changeStatus(row, statusType.DELETED, rowCopy);
                     setTimeout(function(){
                         grid.removeItem(rowCopy.id);
                     }, 1000);
@@ -167,16 +192,16 @@ this.Rubeus = (function($, HGrid, bootbox) {
             return row.urls.fetch;
         },
         fetchSuccess: function(data, row) {
-            this.changeStatus(row, status.FETCH_SUCCESS);
+            this.changeStatus(row, statusType.FETCH_SUCCESS);
         },
         fetchError: function(error, row) {
-            this.changeStatus(row, status.FETCH_ERROR);
+            this.changeStatus(row, statusType.FETCH_ERROR);
         },
         fetchStart: function(row) {
-            this.changeStatus(row, status.FETCH_START);
+            this.changeStatus(row, statusType.FETCH_START);
         },
         uploadProgress: function(file, progress, bytesSent, row) {
-            this.changeStatus(row, status.UPLOAD_PROGRESS(progress));
+            this.changeStatus(row, statusType.UPLOAD_PROGRESS, progress);
         },
         downloadUrl: function(row) {
             return row.urls.download;
@@ -234,14 +259,14 @@ this.Rubeus = (function($, HGrid, bootbox) {
             // is removed and we don't have access to the original row for the file
             var self = this;
             if (data.actionTaken === null) {
-                self.changeStatus(row, status.NO_CHANGES);
+                self.changeStatus(row, statusType.NO_CHANGES);
                 setTimeout(function() {
                     $(self.getRowElement(row)).fadeOut(500, function() {
                         self.removeItem(row.id);
                     });
                 }, 2000);
             } else if (data.actionTaken === 'file_updated') {
-                self.changeStatus(row, status.UPDATED);
+                self.changeStatus(row, statusType.UPDATED);
                 setTimeout(function() {
                     $(self.getRowElement(row)).fadeOut(500, function() {
                         self.removeItem(row.id);
@@ -252,7 +277,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
                 // This is necessary for the download and delete button to work.
                 $.extend(row, data);
                 this.updateItem(row);
-                this.changeStatus(row, status.UPLOAD_SUCCESS, 2000);
+                this.changeStatus(row, statusType.UPLOAD_SUCCESS, null, 2000);
             }
             var cfgOption = resolveCfgOption.call(this, row, 'uploadSuccess', [file, row, data]);
             return cfgOption || null;

@@ -1,13 +1,14 @@
+import os
+import re
+from datetime import datetime
+from dateutil.parser import parse
+
+from boto.iam import *
 from boto.exception import *
 from boto.s3.connection import *
 from boto.s3.cors import CORSConfiguration
 
 from hurry.filesize import size, alternative
-
-import os
-import re
-from boto.iam import *
-from datetime import datetime
 
 
 #Note: (from boto docs) this function is in beta
@@ -47,14 +48,14 @@ def does_bucket_exist(accessKey, secretKey, bucketName):
         return False
 
 
-class S3Wrapper:
+class S3Wrapper(object):
 
     @classmethod
     def from_addon(cls, s3):
         if not s3.is_registration:
             return cls(S3Connection(s3.user_settings.access_key, s3.user_settings.secret_key), s3.bucket)
         else:
-            return registration_wrapper(s3)
+            return RegistrationWrapper(s3)
 
     @classmethod
     def bucket_exist(cls, s3, bucketName):
@@ -137,14 +138,18 @@ class S3Wrapper:
     def set_cors_rules(self, rules):
         return self.bucket.set_cors(rules)
 
+    def does_key_exist(self, key_name):
+        return self.bucket.get_key(key_name) is not None
+
 
 # TODO Add null checks etc
-class registration_wrapper(S3Wrapper):
+class RegistrationWrapper(S3Wrapper):
 
     def __init__(self, node_settings):
         connection = S3Connection(
-            node_settings.node_access_key, node_settings.node_secret_key)
-        S3Wrapper.__init__(self, connection, node_settings.bucket)
+            node_settings.node_access_key, node_settings.node_secret_key
+        )
+        super(RegistrationWrapper, self).__init__(connection, node_settings.bucket)
         self.registration_data = node_settings.registration_data
 
     def get_wrapped_keys_in_dir(self, directory=None):
@@ -179,7 +184,7 @@ class registration_wrapper(S3Wrapper):
 
 
 # TODO Extend me and you bucket.setkeyclass
-class S3Key:
+class S3Key(object):
 
     def __init__(self, key):
         self.s3Key = key
@@ -239,12 +244,7 @@ class S3Key:
         if self.type == 'folder':
             return None
         else:
-            m = re.search(
-                '(.+?)-(.+?)-(\d*)T(\d*):(\d*):(\d*)', str(self.s3Key.last_modified))
-            if m is not None:
-                return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)))
-            else:
-                return None
+            return parse(self.s3Key.last_modified)
 
     @property
     def version(self):

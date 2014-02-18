@@ -73,7 +73,10 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             'bucket': self.bucket or '',
             'has_bucket': self.bucket is not None,
             'user_has_auth': True if self.user_settings and self.user_settings.has_auth else False,
-            'is_owner': True if self.user_settings and self.user_settings.owner == user else False,
+            'is_owner': (
+                self.user_settings is None and self.owner.is_contributor(user)
+                or self.user_settings and self.user_settings.owner == user
+            ),
         })
 
         return rv

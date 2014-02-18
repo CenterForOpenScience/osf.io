@@ -1,5 +1,4 @@
 import mock
-import random
 from website.addons.s3.api import S3Wrapper, S3Key
 
 

@@ -61,8 +61,12 @@ class TestRubeus(DbTestCase):
             'view': node.can_view(user),
             'edit': node.can_edit(user) and not node.is_registration,
         }
-        assert_equals(rubeus.build_addon_root(node_settings, node_settings.bucket,
-                permissions=permissions), rv)
+        assert_equals(
+            rubeus.build_addon_root(
+                node_settings, node_settings.bucket, permissions=permissions
+            ),
+            rv
+        )
 
     def test_hgrid_dummy_fail(self):
         node_settings = self.node_settings

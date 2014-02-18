@@ -11,6 +11,8 @@ import datetime
 import urlparse
 from dateutil import parser
 
+from modularodm.exceptions import ValidationError
+
 from framework.analytics import get_total_activity_count
 from framework.auth import User
 from framework.auth.utils import parse_name
@@ -34,12 +36,22 @@ from tests.factories import (
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory, MetaDataFactory
 
-
+# TODO: Move me to test_auth.py (User is a framework model, not a website model)
 class TestUser(DbTestCase):
 
     def setUp(self):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
+
+    def test_cant_create_user_without_username(self):
+        u = User()  # No username given
+        with assert_raises(ValidationError):
+            u.save()
+
+    def test_cant_create_user_without_full_name(self):
+        u = User(username='fred@queen.com')
+        with assert_raises(ValidationError):
+            u.save()
 
     def test_factory(self):
         # Clear users
@@ -339,7 +351,7 @@ class TestNodeFile(DbTestCase):
     def test_download_url(self):
         assert_equal(
             self.node_file.download_url(self.node),
-            self.node.url + 'osffiles/download/{0}/version/1/'.format(self.node_file.filename)
+            self.node.url + 'osffiles/{0}/version/1/download/'.format(self.node_file.filename)
         )
 
 

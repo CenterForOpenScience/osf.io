@@ -29,7 +29,7 @@ from website.addons.s3.settings import MAX_RENDER_SIZE
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
-def download(*args, **kwargs):
+def s3_download(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
@@ -44,7 +44,8 @@ def download(*args, **kwargs):
 
 @must_be_contributor
 @must_have_addon('s3', 'node')
-def delete(*args, **kwargs):
+def s3_delete(**kwargs):
+
     node = kwargs['node'] or kwargs['project']
     s3 = node.get_addon('s3')
     dfile = unquote(kwargs['path'])
@@ -68,7 +69,7 @@ def delete(*args, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
-def view(*args, **kwargs):
+def s3_view(**kwargs):
 
     path = kwargs.get('path')
     vid = request.args.get('vid')
@@ -101,9 +102,8 @@ def view(*args, **kwargs):
     wrapper = S3Wrapper.from_addon(node_settings)
     key = wrapper.get_wrapped_key(unquote(path), vid=vid)
 
-    # Test to see if the file size is within limit
-    # TODO make a pretty File too large error
-
+    if key is None:
+        raise HTTPError(http.NOT_FOUND)
 
     cache_name = get_cache_file_name(path, key.etag)
     download_url = node.api_url + 's3/' + path + '/download/'
@@ -139,7 +139,7 @@ def view(*args, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
-def ping_render(*args, **kwargs):
+def ping_render(**kwargs):
     node_settings = kwargs['node_addon']
     path = kwargs.get('path')
     etag = request.args.get('etag')
@@ -149,23 +149,24 @@ def ping_render(*args, **kwargs):
     return get_cache_content(node_settings, cache_file)
 
 
-# TODO Generate file for hgrid and return with signed url
 @must_be_contributor
 @must_have_addon('s3', 'node')
-def upload(**kwargs):
+def s3_upload(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
     s3 = kwargs['node_addon']
 
     file_name = quote_plus(request.json.get('name'))
-    mime = request.json.get('type', 'application/octet-stream')
+    mime = request.json.get('type') or 'application/octet-stream'
 
+    update = S3Wrapper.from_addon(s3).does_key_exist(file_name)
     node.add_log(
-        action='s3_' + models.NodeLog.FILE_ADDED,
+        action='s3_' + models.NodeLog.FILE_UPDATED if update else models.NodeLog.FILE_ADDED,
         params={
             'project': node.parent_id,
             'node': node._primary_key,
             'bucket': s3.bucket,
+            'path': file_name,
             'urls': {
                 'view': node.url + 's3/' + file_name + '/',
                 'download': node.url + 's3/' + file_name + '/download/',
