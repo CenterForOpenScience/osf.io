@@ -6,6 +6,8 @@ from nose.tools import *  # PEP8 asserts
 from tests.base import DbTestCase
 from webtest_plus import TestApp
 
+from github3.repos.branch import Branch
+
 from framework.exceptions import HTTPError
 import website.app
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
@@ -159,7 +161,10 @@ class TestGithubViews(DbTestCase):
 
     def test_get_refs_registered_missing_branch(self):
         self.node_settings.registration_data = {
-            'branches': github_mock.branches.return_value
+            'branches': [
+                branch.to_json()
+                for branch in github_mock.branches.return_value
+            ]
         }
         self.node_settings.owner.is_registration = True
         with assert_raises(HTTPError):
@@ -375,24 +380,23 @@ class TestRegistrationsWithGithub(DbTestCase):
 
     @mock.patch('website.addons.github.api.GitHub.branches')
     def test_registration_shows_only_commits_on_or_before_registration(self, mock_branches):
-        rv = [
-            {
+
+        mock_branches.return_value = [
+            Branch.from_json({
                 'name': 'master',
                 'commit': {
                     'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
                     'url': 'https://api.github.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc',
                 }
-            },
-            {
+            }),
+            Branch.from_json({
                 'name': 'develop',
                 'commit': {
                     'sha': '6dcb09b5b57875asdasedawedawedwedaewdwdass',
                     'url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
                 }
-            }
+            })
         ]
-
-        mock_branches.return_value = rv
         registration = ProjectFactory()
         clone, message = self.node_settings.after_register(
             self.project, registration, self.project.creator,
@@ -402,20 +406,20 @@ class TestRegistrationsWithGithub(DbTestCase):
             self.node_settings.repo,
         )
         rv = [
-            {
+            Branch.from_json({
                 'name': 'master',
                 'commit': {
                     'sha': 'danwelndwakjefnawjkefwe2e4193db5essssssss',
                     'url': 'https://api.github.com/repos/octocat/Hello-World/commits/dasdsdasdsdaasdsadsdasdsdac7fbeeda2479ccbc',
                 }
-            },
-            {
+            }),
+            Branch.from_json({
                 'name': 'develop',
                 'commit': {
                     'sha': '6dcb09b5b57875asdasedawedawedwedaewdwdass',
                     'url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
                 }
-            }
+            })
         ]
         assert_equal(
             self.node_settings.user,
@@ -426,11 +430,11 @@ class TestRegistrationsWithGithub(DbTestCase):
             clone.repo,
         )
         assert_in(
-            rv[1],
+            rv[1].to_json(),
             clone.registration_data['branches']
         )
         assert_not_in(
-            rv[0],
+            rv[0].to_json(),
             clone.registration_data['branches']
         )
         assert_equal(

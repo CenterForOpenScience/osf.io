@@ -85,6 +85,12 @@ def s3_view(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
+    wrapper = S3Wrapper.from_addon(node_settings)
+    key = wrapper.get_wrapped_key(unquote(path), vid=vid)
+
+    if key is None:
+        raise HTTPError(http.NOT_FOUND)
+
     try:
         guid = S3GuidFile.find_one(
             Q('node', 'eq', node) &
@@ -100,12 +106,6 @@ def s3_view(**kwargs):
     redirect_url = check_file_guid(guid)
     if redirect_url:
         return redirect(redirect_url)
-
-    wrapper = S3Wrapper.from_addon(node_settings)
-    key = wrapper.get_wrapped_key(unquote(path), vid=vid)
-
-    if key is None:
-        raise HTTPError(http.NOT_FOUND)
 
     cache_name = get_cache_file_name(path, key.etag)
     download_url = node.api_url + 's3/' + path + '/download/'

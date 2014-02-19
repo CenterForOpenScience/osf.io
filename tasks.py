@@ -140,13 +140,15 @@ def get_hgrid():
 def addon_requirements():
     """Install all addon requirements."""
     addon_root = 'website/addons'
-    for addon in [directory for directory in os.listdir(addon_root) if os.path.isdir(os.path.join(addon_root, directory))]:
-        try:
-            open('{0}/{1}/requirements.txt'.format(addon_root, addon)).close()
-            print 'Installing requirements for {0}'.format(addon)
-            run('pip install --upgrade -r {0}/{1}/requirements.txt'.format(addon_root, addon), pty=True)
-        except IOError:
-            pass
+    for directory in os.listdir(addon_root):
+        path = os.path.join(addon_root, directory)
+        if os.path.isdir(path):
+            try:
+                open(os.path.join(path, 'requirements.txt'))
+                print 'Installing requirements for {0}'.format(addon)
+                run('pip install --upgrade -r {0}/{1}/requirements.txt'.format(addon_root, addon), pty=True)
+            except IOError:
+                pass
     mfr_requirements()
     print('Finished')
 

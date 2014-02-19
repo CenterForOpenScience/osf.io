@@ -46,25 +46,6 @@ class TestS3ViewsConfig(DbTestCase):
         rv = self.app.post_json(url, {}, expect_errors=True, auth=self.user.auth)
         assert_true('trouble' in rv.body)
 
-    @mock.patch('website.addons.s3.views.config.remove_osf_user')
-    def test_s3_remove_user_settings(self, mock_access):
-        mock_access.return_value = True
-        self.user_settings.access_key = 'to-kill-a-mocking-bucket'
-        self.user_settings.secret_key = 'itsasecret'
-        self.user_settings.save()
-        url = '/api/v1/settings/s3/'
-        self.app.delete(url, auth=self.user.auth)
-        self.user_settings.reload()
-        assert_equals(self.user_settings.access_key, '')
-        assert_equals(self.user_settings.secret_key, '')
-
-    @mock.patch('website.addons.s3.views.config.has_access')
-    def test_user_settings_no_auth(self, mock_access):
-        mock_access.return_value = False
-        url = '/api/v1/settings/s3/'
-        rv = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
-        assert_equals(rv.status_int, 400)
-
     @mock.patch('website.addons.s3.views.config.has_access')
     @mock.patch('website.addons.s3.views.config.create_osf_user')
     def test_user_settings(self, mock_user, mock_access):
@@ -84,6 +65,25 @@ class TestS3ViewsConfig(DbTestCase):
         )
         self.user_settings.reload()
         assert_equals(self.user_settings.access_key, 'scout')
+
+    @mock.patch('website.addons.s3.views.config.remove_osf_user')
+    def test_s3_remove_user_settings(self, mock_access):
+        mock_access.return_value = True
+        self.user_settings.access_key = 'to-kill-a-mocking-bucket'
+        self.user_settings.secret_key = 'itsasecret'
+        self.user_settings.save()
+        url = '/api/v1/settings/s3/'
+        self.app.delete(url, auth=self.user.auth)
+        self.user_settings.reload()
+        assert_equals(self.user_settings.access_key, '')
+        assert_equals(self.user_settings.secret_key, '')
+
+    @mock.patch('website.addons.s3.views.config.has_access')
+    def test_user_settings_no_auth(self, mock_access):
+        mock_access.return_value = False
+        url = '/api/v1/settings/s3/'
+        rv = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
+        assert_equals(rv.status_int, 400)
 
     @mock.patch('website.addons.s3.api.S3Wrapper.get_wrapped_key')
     @mock.patch('website.addons.s3.api.S3Wrapper.from_addon')

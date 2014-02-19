@@ -66,7 +66,7 @@ class GitHub(object):
             http://developer.github.com/v3/repos/#list-branches
 
         """
-        return self.gh3.repository(user, repo).iter_branches()
+        return self.gh3.repository(user, repo).iter_branches() or []
 
     def commits(self, user, repo, path=None, sha=None):
         """Get commits for a repo or file.

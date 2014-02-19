@@ -80,7 +80,6 @@ class TestFilesViews(DbTestCase):
         res = self.app.get(url, auth=self.auth).maybe_follow()
         assert_equal(len(res.json), 1)
         for url in ['view', 'download', 'delete']:
-            print(res.json)
             assert_in(
                 self.project._id,
                 res.json[0]['urls'][url]
