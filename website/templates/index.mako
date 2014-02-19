@@ -14,46 +14,28 @@
 
           <!-- Wrapper for slides -->
           <div class="carousel-inner" style="height: 430px"  >
-            <div class="item active row" data-pause="hover" style="padding: 60px 40px 60px 40px" >
-                <div class="col-md-12 col-md-offset-1" class = "lead">
-                     <p style = "font-size: 40px; padding-left: 42px" ><strong><a  href="https://osf.io/wfc6u/">Featured OSF Project</a></strong></p>
-                    <img src="/static/img/psichi_seal.jpg" width="150px"style="padding-left: 50px">
-                    <img src="/static/img/potw_Jan27.png" width="600px" style="padding-left:30px">
-                     <div class="col-md-9" style="font-size: 16px; padding-left: 40px; padding-top: 20px"  class="lead">
-                         <p>CREP is a large-scale replication effort seeking undergraduate participation. Many resources, including funding, are available. <a href="https://osf.io/wfc6u/">Visit their project page</a> to see more.</p>
-                     </div>
-                </div>
-            </div>
-            <div class="item row"  data-pause="hover" style="padding: 60px 40px 60px 40px;">
+
+            <div class="item active row"  data-pause="hover" style="padding: 60px 40px 60px 40px;">
                 <div class="col-md-12 col-sm-offset-2" style = "font-size: 50px" class = "lead">
-                    <p><strong>OSF's first add-on:</strong><br> <a href="/getting-started#github">Connect with your GitHub repos</p></a>
-                    <div class="row" style="padding-top: 20px">
-                        <div class="col-md-2" style="padding-top: 10px; padding-left: 35px"><img src="/static/img/Octocat.png" style="width: 200px"></div>
-                        <div class="col-md-6 col-md-offset-1" ><p style="font-size: 30px"  class="lead">Add a GitHub repo
-                                to your project<br> by visiting project settings.</p></div>
-                    </div>
-                </div>
-            </div>
-            <div class="item row"  data-pause="hover" style="padding: 60px 40px 60px 40px;">
-                <div class="col-md-12 col-sm-offset-2" style = "font-size: 50px" class = "lead">
-                    <p>Get pointers from the pros.</p>
+                    <p><strong>SPSP Meeting 2014</strong></p>
                     <div class="row" style="padding-top: 20px">
                         <div class="col-md-2" style="padding-top: 10px"> <img src="/static/img/SPSP_logo_WEB.jpg" class="img-responsive"> </div>
-                        <div class="col-md-6 col-md-offset-0" ><p style="font-size: 30px"  class="lead">Bring your work and receive expert help from OSF developers. Organize your
-                                research. Build your projects. Get a t-shirt. <a href="http://centerforopenscience.org/spsp/">As usual, all for free.</a></p></div>
+                        <div class="col-md-6" >
+                            <p style="font-size: 30px"  class="lead">View and upload talks, posters, and presentations from SPSP.</p>
+                            <p style="font-size: 30px"  class="lead"><a href="https://osf.io/view/spsp2014/" style="text-decoration: none">Get started</a>.</p>
+                            </div>
                     </div>
                 </div>
             </div>
-            <div class="item row" data-pause="hover" style="padding: 60px 40px 60px 40px" >
-                <div class="col-md-12 col-md-offset-1" class = "lead">
-                     <p style = "font-size: 40px; padding-left: 42px" ><strong><a  href="http://centerforopenscience.org/givinglibrary/">Support open science with a mouse click.</a></strong></p>
-                     <div class="row" style="padding-top: 20px">
-
-                        <div class="col-md-6 col-md-offset-2" ><p style="font-size: 25px; text-align: center"  class="lead">When you share the Center for Open Science page via <a href="http://centerforopenscience.org/givinglibrary/">Giving Library</a>,<br>
-                            a donation is made to support open science and open source developers.<Br><Br>
-                            <img src="/static/img/givinglibrary.png"></p>
-                        </div>
-                     </div>
+            <div class="item row"  data-pause="hover" style="padding: 60px 40px 60px 40px;">
+                <div class="col-md-12 col-sm-offset-2" style = "font-size: 40px" class = "lead">
+                    <p><strong>Have code you want to attach<br> to your research?</strong></p>
+                    <div class="row" style="padding-top: 20px">
+                        <div class="col-md-2" style="padding-top: 10px; padding-left: 35px"><img src="/static/img/Octocat.png" style="width: 200px"></div>
+                        <div class="col-md-6 col-md-offset-1" ><p style="font-size: 30px"  class="lead">
+                            <a href="/getting-started#github" style="text-decoration: none">Add a GitHub repo</a>
+                                to your project<br> by visiting project settings.</p></div>
+                    </div>
                 </div>
             </div>
             <div class="item row" data-pause="hover" style="padding: 60px 40px 60px 30px" >
@@ -61,11 +43,11 @@
                     <p style = "font-size: 50px" class = "lead">Not sure where to begin?</p>
                 </div>
                 <div class="col-md-6 col-md-offset-3">
-                    <p style = "font-size: 20px" class = "lead FP_Center">We're here to help. Visit the pages below or <a href="mailto:contact@cos.io">contact us</a> with questions.</p>
+                    <p style = "font-size: 20px" class = "lead FP_Center">We're here to help. Visit the pages below or <a href="mailto:contact@cos.io"  style="text-decoration: none">contact us</a> with questions.</p>
                 </div>
                 <div class="col-md-6 col-md-offset-4">
-                <a class="btn btn-primary span3 text-center" href="/getting-started" style="font-size: 20px">Getting Started</a>
-                <a class="btn btn-primary span3 text-center" href="/explore/activity/" style="font-size: 20px">Browse Projects</a>
+                <a class="btn btn-primary span3 text-center" href="/getting-started" style="font-size: 20px; text-decoration: none">Getting Started</a>
+                <a class="btn btn-primary span3 text-center" href="/explore/activity/" style="font-size: 20px; text-decoration: none">Browse Projects</a>
                 </div>
             </div>
 
