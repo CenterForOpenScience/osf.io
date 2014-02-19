@@ -265,8 +265,8 @@ def invite_contributor_post(**kwargs):
     if not fullname:
         return {'status': 400, 'message': 'Must provide fullname and email'}, 400
     new_user = User.create_unregistered(fullname=fullname, email=email)
-    new_user.add_unclaimed_record(project_id=node._primary_key,
-        given_name=fullname, referrer_id=auth.user._primary_key)
+    new_user.add_unclaimed_record(node=node,
+        given_name=fullname, referrer=auth.user)
     new_user.save()
     if email:
         email_invite(email, new_user, referrer=auth.user, node=node)
