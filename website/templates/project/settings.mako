@@ -190,7 +190,13 @@
                     '<p style="font-weight: normal; font-size: medium; line-height: normal;">If you want to continue, type <strong>' + key + '</strong> and click OK.</p>',
                 function(result) {
                     if (result === key) {
-                        window.location.href = '${node['url']}remove/';
+                        $.ajax({
+                            type: 'DELETE',
+                            url: nodeApiUrl + 'remove/',
+                            success: function(response) {
+                                window.location.href = response.url;
+                            }
+                        });
                     }
                 }
             )

@@ -355,11 +355,11 @@ def component_remove(**kwargs):
         else:
             redirect_url = '/dashboard/'
         return {
-            'status': 'success',
-            'message': message,
-        }, None, None, redirect_url
-    else:
-        raise HTTPError(http.BAD_REQUEST, message='Could not delete component')
+            'url': redirect_url,
+        }
+    raise HTTPError(
+        http.BAD_REQUEST, message='Could not delete component'
+    )
 
 
 @must_be_valid_project
