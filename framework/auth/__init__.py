@@ -178,6 +178,7 @@ Like us on Facebook [ https://www.facebook.com/OpenScienceFramework ]
 From the Open Science Framework Robot
 ''')
 
+
 def send_welcome_email(user):
     send_email.delay(
         from_addr=website.settings.FROM_EMAIL,

@@ -45,11 +45,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # Per-project unclaimed user data:
     # Format: {
-    #   <project_id>: [{
+    #   <project_id>: {
     #       'name': <name that referrer provided>,
     #       'referrer_id': <user ID of referrer>,
     #       'verification': <token used for verification urls>
-    #   }...]
+    #   }
     #   ...
     # }
     # TODO: add verification
@@ -100,10 +100,7 @@ class User(GuidStoredObject, AddonModelMixin):
             'referrer_id': referrer_id,
             'verification': verification
         }
-        if project_id in self.unclaimed_records:
-            self.unclaimed_records[project_id].append(record)
-        else:
-            self.unclaimed_records[project_id] = [record]
+        self.unclaimed_records[project_id] = record
         return None
 
     def is_active(self):

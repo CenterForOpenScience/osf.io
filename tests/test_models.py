@@ -265,7 +265,7 @@ class TestUser(DbTestCase):
             given_name='Fredd Merkury', referrer_id=referrer._primary_key)
         user.save()
         data = user.unclaimed_records[project._primary_key]
-        assert_equal(data[0], {
+        assert_equal(data, {
             'name': 'Fredd Merkury',
             'referrer_id': referrer._primary_key,
             'verification': '123'
