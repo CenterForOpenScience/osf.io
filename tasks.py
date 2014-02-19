@@ -145,8 +145,8 @@ def addon_requirements():
         if os.path.isdir(path):
             try:
                 open(os.path.join(path, 'requirements.txt'))
-                print 'Installing requirements for {0}'.format(addon)
-                run('pip install --upgrade -r {0}/{1}/requirements.txt'.format(addon_root, addon), pty=True)
+                print 'Installing requirements for {0}'.format(directory)
+                run('pip install --upgrade -r {0}/{1}/requirements.txt'.format(addon_root, directory), pty=True)
             except IOError:
                 pass
     mfr_requirements()
