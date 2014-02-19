@@ -664,5 +664,21 @@ class TestPiwik(DbTestCase):
             res
         )
 
+class TestClaiming(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.referrer = UserFactory()
+        self.project = ProjectFactory(creator=self.referrer)
+        self.user = UnregUserFactory()
+
+    def add_unclaimed_record(self):
+        given_name = 'Fredd Merkury'
+        self.user.add_unclaimed_record(node=self.project,
+            given_name=given_name, referrer=self.referrer)
+        self.user.save()
+        data = self.user.unclaimed_records[self.project._primary_key]
+        return data
+
 if __name__ == '__main__':
     unittest.main()
