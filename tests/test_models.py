@@ -1689,6 +1689,15 @@ class TestUnregisteredUser(DbTestCase):
         assert_equal(self.user.get_claim_url(pk),
             settings.DOMAIN + 'claim/' + self.user.unclaimed_records[pk]['verification'])
 
+    def test_parse_claim_signature(self):
+        data = self.add_unclaimed_record()
+        parsed = User.parse_claim_signature(data['verification'])
+        assert_equal(parsed, {
+            'name': 'Fredd Merkury',
+            'referrer_id': self.referrer._primary_key,
+            'project_id': self.project._primary_key
+        })
+
     def test_get_claim_url_raises_value_error_if_not_valid_pid(self):
         with assert_raises(ValueError):
             self.user.get_claim_url('invalidinput')

@@ -117,6 +117,23 @@ class User(GuidStoredObject, AddonModelMixin):
         self.unclaimed_records[project_id] = record
         return record
 
+    @classmethod
+    def parse_claim_signature(cls, signature):
+        """Parses a verification code for claiming a user account.
+
+        :param str signature: The signature (verification key) to parse
+        :raises: itsdangerous.BadSignature if signature is invalid (bad secret)
+        :returns: A dictionary with 'name', 'referrer_id', and 'project_id'
+        """
+        data = hmac.load(signature)
+        project_id, referrer_id, given_name = data.split(':')
+        return {
+            'name': given_name,
+            'referrer_id': referrer_id,
+            'project_id': project_id
+        }
+
+
     def is_active(self):
         """Returns True if the user is active. The user must have activated
         their account, must not be deleted, suspended, etc.
