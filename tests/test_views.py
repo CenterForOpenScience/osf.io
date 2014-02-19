@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import json
 import unittest
 import datetime as dt
+import mock
 
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
@@ -561,6 +562,13 @@ class TestAuthViews(DbTestCase):
         self.user.reload()
         dupe.reload()
         assert_true(dupe.is_merged)
+
+    @mock.patch('framework.auth.views.send_email.delay')
+    def test_register_sends_confirm_email(self, send_email_delay):
+        url = '/register/'
+        self.app.post(url, {'username': 'fred@queen.com', 'password': 'killerqueen',
+            'password2': 'killerqueen'})
+        assert_true(send_email_delay.called)
 
     def test_change_names(self):
         self.app.post(

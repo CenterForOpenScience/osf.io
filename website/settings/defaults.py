@@ -18,7 +18,7 @@ TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 DOMAIN = 'http://localhost:5000/'
 
 # User management & registration
-CONFIRM_REGISTRATIONS_BY_EMAIL = False # Not fully implemented
+CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 
