@@ -2,6 +2,7 @@ import re
 from urllib import quote
 from bson import ObjectId
 from datetime import datetime
+from dateutil.parser import parse
 
 from boto.iam import IAMConnection
 from boto.s3.cors import CORSConfiguration
@@ -11,14 +12,6 @@ from website.util import rubeus
 
 from api import S3Key, get_bucket_list
 import settings as s3_settings
-
-
-#TODO remove if not needed in newest hgrid
-def checkFolders(s3wrapper, keyList):
-    for k in keyList:
-        if k.parentFolder is not None and k.parentFolder not in [x.name for x in keyList]:
-            newKey = s3wrapper.create_folder(k.pathTo)
-            keyList.append(S3Key(newKey))
 
 
 def adjust_cors(s3wrapper, clobber=False):
@@ -54,7 +47,8 @@ def adjust_cors(s3wrapper, clobber=False):
     s3wrapper.set_cors_rules(rules)
 
 
-def wrapped_key_to_json(wrapped_key, node_api, node_url):
+def wrapped_key_to_json(wrapped_key, node):
+    urls = build_urls(node, quote(wrapped_key.fullPath))
     return {
         rubeus.KIND: _key_type_to_rubeus(wrapped_key.type),
         'name': wrapped_key.name,
@@ -63,11 +57,11 @@ def wrapped_key_to_json(wrapped_key, node_api, node_url):
         'lastMod': wrapped_key.lastMod.strftime("%Y/%m/%d %I:%M %p") if wrapped_key.lastMod is not None else '--',
         'urls': {
             # TODO: Don't use ternary operators here
-            'download': node_url + 's3/' + quote(wrapped_key.fullPath) + '/download/' if wrapped_key.type == 'file' else None,
-            'delete': node_api + 's3/' + quote(wrapped_key.fullPath) + '/' if wrapped_key.type == 'file' else None,
-            'view': node_url + 's3/' + quote(wrapped_key.fullPath) + '/' if wrapped_key.type == 'file' else None,
-            'fetch': node_api + 's3/hgrid/' + wrapped_key.fullPath if wrapped_key.type == 'folder' else None,
-            'upload': node_api + 's3/',
+            'download': urls['download'] if wrapped_key.type == 'file' else None,
+            'delete': urls['delete'] if wrapped_key.type == 'file' else None,
+            'view': urls['view'] if wrapped_key.type == 'file' else None,
+            'fetch': node.api_url + 's3/hgrid/' + wrapped_key.fullPath if wrapped_key.type == 'folder' else None,
+            'upload': urls['upload'],
         }
     }
 
@@ -91,41 +85,16 @@ def _key_type_to_rubeus(key_type):
         return rubeus.FILE
 
 
-def key_upload_path(wrapped_key, url):
-    if wrapped_key.type != 'folder':
-        return quote(url)
-    else:
-        return quote(url + '/' + wrapped_key.fullPath + '/')
-
-def create_version_list(wrapper, key_name, node_api):
+def create_version_list(wrapper, key_name, node):
     versions = wrapper.get_file_versions(key_name)
     return [
         {
             'id': x.version_id if x.version_id != 'null' else 'Pre-versioning',
-            'date': _format_date(x.last_modified),
-            'download': _get_download_url(key_name, x.version_id, node_api),
+            'date': parse(x.last_modified).ctime(),
+            'download': build_urls(node, key_name, vid=x.version_id, url='download'),
         }
         for x in versions
     ]
-
-
-def _format_date(date):
-    m = re.search(
-        '(.+?)-(.+?)-(\d*)T(\d*):(\d*):(\d*)', str(date))
-    if m is not None:
-        dt = datetime(int(m.group(1)), int(m.group(2)),
-                      int(m.group(3)), int(m.group(4)), int(m.group(5)))
-        return dt.strftime("%Y/%m/%d %I:%M %p")
-    else:
-        return '--'
-
-
-def _get_download_url(key_name, version_id, node_api):
-    url = node_api + 's3/' + quote(key_name) + '/download/'
-    if version_id != 'null':
-        return url + '?vid=' + version_id + '/'
-    else:
-        return url
 
 
 def serialize_bucket(s3wrapper):
@@ -137,6 +106,7 @@ def serialize_bucket(s3wrapper):
         }
         for x in s3wrapper.get_wrapped_keys()
     ]
+
 
 def create_osf_user(access_key, secret_key, name):
     connection = IAMConnection(access_key, secret_key)
@@ -173,3 +143,20 @@ def remove_osf_user(user_settings):
         s3_settings.OSF_USER_POLICY_NAME
     )
     return connection.delete_user(s3_settings.OSF_USER.format(name))
+
+
+def build_urls(node, file_name, url=None, etag=None, vid=None):
+    rv = {
+        'upload': '{node_api}s3/'.format(node_api=node.api_url),
+        'download': '{node_url}s3/{file_name}/download/{vid}'.format(node_url=node.url, file_name=file_name, vid='' if not vid else '?vid={0}'.format(vid)),
+        'view': '{node_url}s3/{file_name}/'.format(node_url=node.url, file_name=file_name),
+        'delete': '{node_api}s3/{file_name}/'.format(node_api=node.api_url, file_name=file_name),
+        'render': '{node_api}s3/{file_name}/render/{etag}'.format(node_api=node.api_url,
+            file_name=file_name, etag='' if not etag else '?etag={0}'.format(etag)),
+        'fetch': '{node_api}s3/hgrid/{file_name}'.format(node_api=node.api_url, file_name=file_name)
+    }
+    if not url:
+        return rv
+    else:
+        return rv[url]
+

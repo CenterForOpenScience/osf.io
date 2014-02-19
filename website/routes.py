@@ -325,12 +325,6 @@ def make_url_map(app):
             '/api/v1/project/<pid>/node/<nid>/settings/addons/',
         ], 'post', project_views.node.node_choose_addons, json_renderer),
 
-        # Remove
-        Rule([
-            '/project/<pid>/remove/',
-            '/project/<pid>/node/<nid>/remove/',
-        ], 'get', project_views.node.component_remove, WebRenderer('', render_mako_string)),
-
         # Permissions
         Rule([
             '/project/<pid>/permissions/<permissions>/',
@@ -486,16 +480,26 @@ def make_url_map(app):
         ], 'get', project_views.node.get_editable_children, json_renderer),
 
         # Create
-        Rule([
-            '/project/new/',
-            '/project/<pid>/newnode/',
-        ], 'post', project_views.node.project_new_node, json_renderer),
+        Rule(
+            [
+                '/project/new/',
+                '/project/<pid>/newnode/',
+            ],
+            'post',
+            project_views.node.project_new_node,
+            json_renderer,
+        ),
 
         # Remove
-        Rule([
-            '/project/<pid>/remove/',
-            '/project/<pid>/node/<nid>/remove/',
-        ], 'post', project_views.node.component_remove, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/remove/',
+                '/project/<pid>/node/<nid>/remove/',
+            ],
+            'delete',
+            project_views.node.component_remove,
+            json_renderer,
+        ),
 
         # API keys
         Rule([

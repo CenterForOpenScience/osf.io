@@ -18,7 +18,7 @@ from ..api import S3Wrapper
 
 # TODO: Rename at least one utils module; could be confusing later on
 from .utils import get_cache_file_name, generate_signed_url
-from ..utils import create_version_list
+from ..utils import create_version_list, build_urls
 
 from website import models
 
@@ -31,7 +31,6 @@ from website.addons.s3.settings import MAX_RENDER_SIZE
 @must_have_addon('s3', 'node')
 def s3_download(**kwargs):
 
-    node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
     key_name = unquote(kwargs['path'])
     vid = request.args.get('vid')
@@ -61,7 +60,7 @@ def s3_delete(**kwargs):
             'project': node.parent_id,
             'node': node._primary_key,
             'bucket': node_settings.bucket,
-            'path': dfile,
+            'path': dfile
         },
         auth=kwargs['auth'],
         log_date=datetime.datetime.utcnow(),
@@ -108,8 +107,7 @@ def s3_view(**kwargs):
         return redirect(redirect_url)
 
     cache_name = get_cache_file_name(path, key.etag)
-    download_url = node.api_url + 's3/' + path + '/download/'
-    render_url = node.api_url + 's3/' + path + '/render/?etag=' + key.etag
+    urls = build_urls(node, path, etag=key.etag)
 
     if key.s3Key.size > MAX_RENDER_SIZE:
         render = 'File too large to render; download file to view it'
@@ -120,17 +118,17 @@ def s3_view(**kwargs):
             file_contents = key.s3Key.get_contents_as_string()
             render = get_cache_content(
                 node_settings, cache_name, start_render=True,
-                file_content=file_contents, download_path=download_url,
+                file_content=file_contents, download_path=urls['download'],
                 file_path=path,
             )
 
-    versions = create_version_list(wrapper, unquote(path), node.api_url)
+    versions = create_version_list(wrapper, unquote(path), node)
 
     rv = {
         'file_name': key.name,
         'rendered': render,
-        'download_url': download_url,
-        'render_url': render_url,
+        'download_url': urls['download'],
+        'render_url': urls['render'],
         'versions': versions,
         'current': key.version_id,
     }
@@ -169,10 +167,7 @@ def s3_upload(**kwargs):
             'node': node._primary_key,
             'bucket': s3.bucket,
             'path': file_name,
-            'urls': {
-                'view': node.url + 's3/' + file_name + '/',
-                'download': node.url + 's3/' + file_name + '/download/',
-            },
+            'urls': build_urls(node, file_name),
         },
         auth=kwargs['auth'],
         log_date=datetime.datetime.utcnow(),

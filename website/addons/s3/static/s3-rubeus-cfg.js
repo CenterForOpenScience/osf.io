@@ -24,9 +24,9 @@
         uploadSuccess: function(file, item, data) {
             // Update the added item's urls and permissions
             item.urls = {
-                'delete': nodeApiUrl + 's3/delete/' + file.destination + '/',
-                'download': nodeApiUrl + 's3/download/' + file.destination + '/',
-                'view': '/' + nodeId + '/s3/view/' + file.destination + '/'
+                'delete': nodeApiUrl + 's3/' + file.destination + '/',
+                'download': nodeId + 's3/' + file.destination + '/download/',
+                'view': '/' + nodeId + '/s3/' + file.destination + '/'
             };
             var parent = this.getByID(item.parentID);
             item.permissions = parent.permissions;

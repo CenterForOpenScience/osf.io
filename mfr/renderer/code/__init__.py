@@ -3,9 +3,12 @@ import os.path
 import pygments
 import pygments.lexers
 import pygments.formatters
+from pygments.util import ClassNotFound
 
 
-KNOWN_EXTENSIONS = ['.rb',
+KNOWN_EXTENSIONS = [
+ '',
+ '.rb',
  '.c',
  '.cs',
  '.ahk',
@@ -108,7 +111,6 @@ KNOWN_EXTENSIONS = ['.rb',
  '.cfm']
 
 
-
 class CodeRenderer(FileRenderer):
     def _detect(self, file_pointer):
         _, ext = os.path.splitext(file_pointer.name)
@@ -117,9 +119,12 @@ class CodeRenderer(FileRenderer):
     def _render(self, file_pointer, url):
         formatter = pygments.formatters.HtmlFormatter()
         content = file_pointer.read()
-        highlight = pygments.highlight(
-            content, pygments.lexers.guess_lexer_for_filename(
-                file_pointer.name, content), formatter)
+        try:
+            lexer = pygments.lexers.guess_lexer_for_filename(
+                file_pointer.name, content
+            )
+        except ClassNotFound:
+            lexer = pygments.lexers.guess_lexer(content)
+        highlight = pygments.highlight(content, lexer, formatter)
         link = 'href="{}/code/css/style.css" />'.format(self.STATIC_PATH)
         return '<link rel="stylesheet"' + link + '\n' + highlight
-

@@ -294,6 +294,29 @@ class TestProjectViews(DbTestCase):
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['node']['logs']), 10)
 
+    def test_remove_project(self):
+        url = self.project.api_url + 'remove/'
+        res = self.app.delete_json(url, {}, auth=self.auth).maybe_follow()
+        self.project.reload()
+        assert_equal(self.project.is_deleted, True)
+        assert_in('url', res.json)
+        assert_equal(res.json['url'], '/dashboard/')
+
+    def test_remove_project_with_component(self):
+        node = NodeFactory(project=self.project, creator=self.user1)
+        url = self.project.api_url + 'remove/'
+        self.app.delete_json(url, {}, auth=self.auth).maybe_follow()
+        node.reload()
+        assert_equal(node.is_deleted, True)
+
+    def test_remove_component(self):
+        node = NodeFactory(project=self.project, creator=self.user1)
+        url = node.api_url + 'remove/'
+        res = self.app.delete_json(url, {}, auth=self.auth).maybe_follow()
+        node.reload()
+        assert_equal(node.is_deleted, True)
+        assert_in('url', res.json)
+        assert_equal(res.json['url'], self.project.url)
 
 class TestUserInviteViews(DbTestCase):
 

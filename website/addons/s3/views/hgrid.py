@@ -41,7 +41,7 @@ def s3_hgrid_data_contents(*args, **kwargs):
 
     for key in key_list:
         temp_file = wrapped_key_to_json(
-            key, node.api_url, node.url)
+            key, node)
         temp_file['addon'] = 's3'
         temp_file['permissions'] = {
             'edit': can_edit,

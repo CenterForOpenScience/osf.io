@@ -445,11 +445,11 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # Only update Solr if at least one stored field has changed, and if
         # public or privacy setting has changed
-        update_solr = bool(self.SOLR_UPDATE_FIELDS.intersection(saved_fields))
+        need_update = bool(self.SOLR_UPDATE_FIELDS.intersection(saved_fields))
         if not self.is_public:
             if first_save or 'is_public' not in saved_fields:
-                update_solr = False
-        if update_solr:
+                need_update = False
+        if need_update:
             self.update_solr()
 
         # This method checks what has changed.
