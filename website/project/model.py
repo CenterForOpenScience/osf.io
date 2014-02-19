@@ -367,10 +367,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         if auth and user:
             raise ValueError('Cannot pass both `auth` and `user`')
         user = user or auth.user
-        api_node = auth.api_node
+        if auth:
+            is_api_node = auth.api_node == self
+        else:
+            is_api_node = False
         return (
             self.is_contributor(user)
-            or api_node == self
+            or is_api_node
             or user == self.creator
         )
 
