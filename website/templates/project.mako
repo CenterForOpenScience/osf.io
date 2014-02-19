@@ -80,6 +80,7 @@
                             <option value="harvard1.csl">Harvard</option>
                             <option value="modern-language-association-with-url.csl">MLA</option>
                             <option value="turabian-fullnote-bibliography.csl">Turabian</option>
+                            <option value="bibtex.csl">BIBTEX(TEST)</option>
                         </select>
                         <input type="submit" value="Submit">
                     </form>
@@ -223,7 +224,7 @@
                 type: "GET",
                 url: nodeApiUrl + 'citation/human/' + $('#citationFormHuman select').val() ,
                 success: function(response){
-                    console.log(response.output);
+##                    console.log(response.output);
                     $(".rendered-citation").text(response.output);
                     return false;
                 }
@@ -232,7 +233,7 @@
         })
 
          $("#citationFormMachine").on('submit', function(){
-        //console.log(nodeApiUrl);
+        console.log("nodeApiURL: " + nodeApiUrl);
             $.ajax({
                 type: "GET",
                 url: nodeApiUrl + 'citation/machine/' + $('#citationFormMachine select').val() ,

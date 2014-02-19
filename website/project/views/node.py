@@ -27,6 +27,8 @@ import CitationParser
 import os
 from citeproc import formatter
 CSL_PATH = 'styles'
+from flask import Flask, send_file
+import StringIO
 
 from .log import _get_logs
 
@@ -611,6 +613,13 @@ def machine_format_citation(*args, **kwargs):
     )
 
     return {'output': output}
+    #strIO = StringIO.StringIO()
+    #strIO.write('' + output)
+    #strIO.seek(0)
+    #return send_file(strIO,
+    #                 attachment_filename="testing.enw",
+    #                 as_attachment=True)
+
 
 @must_be_valid_project
 def get_recent_logs(*args, **kwargs):
