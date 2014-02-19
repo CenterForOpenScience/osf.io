@@ -8,16 +8,19 @@ from itsdangerous import BadSignature
 import framework
 from framework import request, User
 from framework.auth.decorators import collect_auth
+from framework.auth.utils import parse_name
 from framework.exceptions import HTTPError
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor
 from framework.email.tasks import send_email
+from framework import forms
+from framework.auth.forms import ResetPasswordForm
 
 from website import settings
 from website.filters import gravatar
 from website.models import Node
 from website.profile import utils
-from website import hmac
+
 
 logger = logging.getLogger(__name__)
 
@@ -260,12 +263,18 @@ def email_invite(to_addr, new_user, referrer, node):
 def claim_user(**kwargs):
     """View for rendering the set password page for a claimed user."""
     signature = kwargs['signature']
+    email = request.args.get('email', '')
     # Parse the signature; if invalid, raise 404
     try:
         referral_data = User.parse_claim_signature(signature)
     except BadSignature:
         raise HTTPError(http.NOT_FOUND)
-    return referral_data
+    parsed_name = parse_name(referral_data['name'])
+    return {
+        'firstname': parsed_name['given_name'],
+        'email': email,
+        'fullname': referral_data['name']
+    }
 
 @must_be_valid_project
 @must_be_contributor
