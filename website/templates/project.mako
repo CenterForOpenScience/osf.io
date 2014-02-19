@@ -8,7 +8,7 @@
 
     <div class="row">
 
-        <div class="col-md-6" id="containment">
+        <div class="col-md-6">
 
             % if addons:
 
@@ -137,12 +137,14 @@
 </div>
 
 % if node['children']:
-    <div mod-meta='{
-            "tpl": "util/render_nodes.mako",
-            "uri": "${node["api_url"]}get_children/",
-            "replace": true,
-            "kwargs": {"sortable" : true}
-        }'></div>
+    <div id="containment">
+        <div mod-meta='{
+                "tpl": "util/render_nodes.mako",
+                "uri": "${node["api_url"]}get_children/",
+                "replace": true,
+                "kwargs": {"sortable" : true}
+            }'></div>
+    </div>
 % else:
     <p>No components have been added to this project.</p>
 % endif
