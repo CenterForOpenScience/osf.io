@@ -159,7 +159,7 @@ def add_unclaimed_user(email, fullname):
         newUser.save()
         return newUser
 
-
+# TODO: should inherit from framework.excpeptions.FrameworkError
 class DuplicateEmailError(BaseException):
     pass
 

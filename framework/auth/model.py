@@ -15,6 +15,7 @@ from framework.guid.model import GuidStoredObject
 from framework.search import solr
 from framework.addons import AddonModelMixin
 from framework.auth import utils
+from framework.exceptions import PermissionsError
 
 from website import settings, filters, hmac
 
@@ -94,14 +95,19 @@ class User(GuidStoredObject, AddonModelMixin):
         user.is_registered = False
         return user
 
-    def add_unclaimed_record(self, project_id, referrer_id, given_name):
+    def add_unclaimed_record(self, node, referrer, given_name):
         """Add a new project entry in the unclaimed records dictionary.
 
-        :param str project_id: PK of the project this unclaimed user was added to.
-        :param str referrer_id: PK of the user who referred this user.
+        :param Node node: Node this unclaimed user was added to.
+        :param User referrer: User who referred this user.
         :param str given_name: The full name that the referrer gave for this user.
         :returns: The added record
         """
+        if not node.can_edit(user=referrer):
+            raise PermissionsError('Referrer does not have permission to add a contributor '
+                'to project {0}'.format(node._primary_key))
+        project_id = node._primary_key
+        referrer_id = referrer._primary_key
         data_to_sign = '{project_id}:{referrer_id}:{given_name}'.format(**locals())
         record = {
             'name': given_name,
@@ -124,13 +130,17 @@ class User(GuidStoredObject, AddonModelMixin):
         account. Return ``None`` if there is no unclaimed_record for the given
         project ID.
 
+        :param project_id: The project ID for the unclaimed record
+        :raises: ValueError if a record doesn't exist for the given project ID
+        :rtype: dict
+        :returns: The unclaimed record for the project
         """
         unclaimed_record = self.unclaimed_records.get(project_id, None)
         if unclaimed_record:
             verification = unclaimed_record['verification']
         else:
-            return None
-        return '{domain}{verification}'.format(domain=settings.DOMAIN,
+            raise ValueError('No unclaimed for ')
+        return '{domain}claim/{verification}'.format(domain=settings.DOMAIN,
             verification=verification)
 
     def set_password(self, raw_password):

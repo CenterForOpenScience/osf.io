@@ -14,6 +14,7 @@ from dateutil import parser
 from modularodm.exceptions import ValidationError
 
 from framework.analytics import get_total_activity_count
+from framework.exceptions import PermissionsError
 from framework.auth import User
 from framework.auth.utils import parse_name
 from framework.auth.decorators import Auth
@@ -1655,18 +1656,17 @@ class TestWatchConfig(DbTestCase):
 class TestUnregisteredUser(DbTestCase):
 
     def setUp(self):
-        self.project = ProjectFactory()
         self.referrer = UserFactory()
+        self.project = ProjectFactory(creator=self.referrer)
         self.user = UnregUserFactory()
 
     def add_unclaimed_record(self):
         given_name = 'Fredd Merkury'
-        self.user.add_unclaimed_record(project_id=self.project._primary_key,
-            given_name=given_name, referrer_id=self.referrer._primary_key)
+        self.user.add_unclaimed_record(node=self.project,
+            given_name=given_name, referrer=self.referrer)
         self.user.save()
         data = self.user.unclaimed_records[self.project._primary_key]
         return data
-
 
     def test_factory(self):
         u1 = UnregUserFactory()
@@ -1687,7 +1687,17 @@ class TestUnregisteredUser(DbTestCase):
         self.add_unclaimed_record()
         pk = self.project._primary_key
         assert_equal(self.user.get_claim_url(pk),
-            settings.DOMAIN + self.user.unclaimed_records[pk]['verification'])
+            settings.DOMAIN + 'claim/' + self.user.unclaimed_records[pk]['verification'])
+
+    def test_get_claim_url_raises_value_error_if_not_valid_pid(self):
+        with assert_raises(ValueError):
+            self.user.get_claim_url('invalidinput')
+
+    def test_cant_add_unclaimed_record_if_referrer_isnt_contributor(self):
+        project = ProjectFactory()  # referrer isn't a contributor to this project
+        with assert_raises(PermissionsError):
+            self.user.add_unclaimed_record(node=project,
+                given_name='fred m', referrer=self.referrer)
 
 
 if __name__ == '__main__':
