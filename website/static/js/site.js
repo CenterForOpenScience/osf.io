@@ -8,11 +8,6 @@ var setStatus = function(status){
     $('#alert-container').append(status);//'<div class=\'alert-message warning fade in\' data-alert=\'alert\'><a class=\'close\' href=\'#\'>&times;</a><p>'+ status +'</p></div>');
 };
 
-var urlDecode = function(str) {
-    return decodeURIComponent((str+'').replace(/\+/g, '%20'));
-};
-
-
 /**
  * Display a modal confirmation window before relocating to an url.
  * @param  <String> message
