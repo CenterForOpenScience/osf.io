@@ -4,8 +4,11 @@ import copy
 import httplib as http
 from framework.flask import request
 
+class FrameworkError(Exception):
+    """Base class from which framework-related errors inherit."""
+    pass
 
-class HTTPError(Exception):
+class HTTPError(FrameworkError):
 
     error_msgs = {
         http.BAD_REQUEST : {
@@ -57,3 +60,7 @@ class HTTPError(Exception):
         data['referrer'] = self.referrer
 
         return data
+
+
+class PermissionsError(FrameworkError):
+    pass
