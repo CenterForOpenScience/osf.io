@@ -2,6 +2,8 @@
 import httplib as http
 import logging
 
+from mako.template import Template
+
 import framework
 from framework import request, User
 from framework.auth.decorators import collect_auth
@@ -14,6 +16,7 @@ from website import settings
 from website.filters import gravatar
 from website.models import Node
 from website.profile import utils
+from website import hmac
 
 logger = logging.getLogger(__name__)
 
@@ -214,13 +217,57 @@ def project_addcontributors_post(**kwargs):
         node.save()
     return {'status': 'success'}, 201
 
+# TODO: finish me
+INVITE_EMAIL_SUBJECT = 'You have been added as a contributor to an OSF project.'
+INVITE_EMAIL = Template(u'''
+Hello ${new_user.fullname},
+
+You have been added by ${referrer.fullname} as a contributor to project
+"${node.title}" on the Open Science Framework. To set a password for your account,
+visit:
+
+${claim_url}
+
+Once you have set a password you will be able to make contributions to
+${node.title}.
+
+If you have
+
+Sincerely,
+
+The OSF Team
+''')
+
+def email_invite(to_addr, new_user, referrer, node):
+    claim_url = new_user.get_claim_url(node._primary_key)
+    message = INVITE_EMAIL.render(new_user=new_user, referrer=referrer, node=node,
+        claim_url=claim_url)
+    logger.debug('Sending invite email:')
+    logger.debug(message)
+    # Don't use ttls and auth if in dev mode
+    ttls = login = not settings.DEV_MODE
+    return send_email.delay(
+        settings.FROM_EMAIL,
+        to_addr=to_addr,
+        subject=INVITE_EMAIL_SUBJECT,
+        message=message,
+        mimetype='plain',
+        ttls=ttls, login=login
+    )
+
 @must_be_valid_project
 @must_be_contributor
 @must_not_be_registration
 def invite_contributor_post(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
     fullname, email = request.json.get('fullname'), request.json.get('email')
     if not fullname:
         return {'status': 400, 'message': 'Must provide fullname and email'}, 400
     new_user = User.create_unregistered(fullname=fullname, email=email)
+    new_user.add_unclaimed_record(project_id=node._primary_key,
+        given_name=fullname, referrer_id=auth.user._primary_key)
     new_user.save()
+    if email:
+        email_invite(email, new_user, referrer=auth.user, node=node)
     return {'status': 'success', 'contributor': _add_contributor_json(new_user)}
