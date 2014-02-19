@@ -1679,7 +1679,9 @@ class TestUnregisteredUser(DbTestCase):
         assert_equal(data, {
             'name': 'Fredd Merkury',
             'referrer_id': self.referrer._primary_key,
-            'verification': hmac.sign('{}:{}:{}'.format(self.project._primary_key,
+            'verification': hmac.sign('{}:{}:{}:{}'.format(
+                self.user._primary_key,
+                self.project._primary_key,
                 self.referrer._primary_key, 'Fredd Merkury'))
         })
 
@@ -1693,6 +1695,7 @@ class TestUnregisteredUser(DbTestCase):
         data = self.add_unclaimed_record()
         parsed = User.parse_claim_signature(data['verification'])
         assert_equal(parsed, {
+            '_id': self.user._primary_key,
             'name': 'Fredd Merkury',
             'referrer_id': self.referrer._primary_key,
             'project_id': self.project._primary_key

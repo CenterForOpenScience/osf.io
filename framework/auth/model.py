@@ -108,7 +108,7 @@ class User(GuidStoredObject, AddonModelMixin):
                 'to project {0}'.format(node._primary_key))
         project_id = node._primary_key
         referrer_id = referrer._primary_key
-        data_to_sign = '{project_id}:{referrer_id}:{given_name}'.format(**locals())
+        data_to_sign = '{self._primary_key}:{project_id}:{referrer_id}:{given_name}'.format(**locals())
         record = {
             'name': given_name,
             'referrer_id': referrer_id,
@@ -126,8 +126,9 @@ class User(GuidStoredObject, AddonModelMixin):
         :returns: A dictionary with 'name', 'referrer_id', and 'project_id'
         """
         data = hmac.load(signature)
-        project_id, referrer_id, given_name = data.split(':')
+        pk, project_id, referrer_id, given_name = data.split(':')
         return {
+            '_id': pk,
             'name': given_name,
             'referrer_id': referrer_id,
             'project_id': project_id
