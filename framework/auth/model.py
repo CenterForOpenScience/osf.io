@@ -157,7 +157,7 @@ class User(GuidStoredObject, AddonModelMixin):
             verification = unclaimed_record['verification']
         else:
             raise ValueError('No unclaimed for ')
-        return '{domain}claim/{verification}/'.format(domain=settings.DOMAIN,
+        return '{domain}user/claim/{verification}/'.format(domain=settings.DOMAIN,
             verification=verification)
 
     def set_password(self, raw_password):

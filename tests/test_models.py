@@ -1687,7 +1687,7 @@ class TestUnregisteredUser(DbTestCase):
         self.add_unclaimed_record()
         pk = self.project._primary_key
         assert_equal(self.user.get_claim_url(pk),
-            settings.DOMAIN + 'claim/' + self.user.unclaimed_records[pk]['verification'] + '/')
+            settings.DOMAIN + 'user/claim/' + self.user.unclaimed_records[pk]['verification'] + '/')
 
     def test_parse_claim_signature(self):
         data = self.add_unclaimed_record()
