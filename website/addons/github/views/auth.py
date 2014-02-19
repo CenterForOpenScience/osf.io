@@ -1,5 +1,6 @@
 import os
 import httplib as http
+from github3 import GitHubError
 
 from framework import request, redirect
 from framework.auth import get_current_user
@@ -54,8 +55,8 @@ def github_oauth_start(**kwargs):
         github_node.user_settings = github_user
 
         # Add webhook
-        if github_node.user and github_node.repo:
-            github_node.add_hook()
+       # if github_node.user and github_node.repo:
+       #     github_node.add_hook()
 
         github_node.save()
 
@@ -72,13 +73,18 @@ def github_oauth_delete_user(**kwargs):
 
     github_user = kwargs['user_addon']
 
-    # Remove webhooks
-    for node_settings in github_user.addongithubnodesettings__authorized:
-        node_settings.delete_hook()
-
-    # Revoke access token
-    connection = GitHub.from_settings(github_user)
-    connection.revoke_token()
+    try:
+        # Remove webhooks
+        for node_settings in github_user.addongithubnodesettings__authorized:
+            node_settings.delete_hook()
+        # Revoke access token
+        connection = GitHub.from_settings(github_user)
+        connection.revoke_token()
+    except GitHubError, e:
+        if e.code == 401:
+            push_status_message('Looks like your access token no longer valid. It has been removed from the framework but may still exist on GitHub.')
+        else:
+            raise e
 
     github_user.oauth_access_token = None
     github_user.oauth_token_type = None
@@ -94,8 +100,10 @@ def github_oauth_delete_node(**kwargs):
     node_settings = kwargs['node_addon']
 
     # Remove webhook
-    node_settings.delete_hook()
-
+    try:
+        node_settings.delete_hook()
+    except GitHubError, e:
+        pass
     # Remove user settings
     node_settings.user_settings = None
 
@@ -152,7 +160,7 @@ def github_oauth_callback(**kwargs):
     connection = GitHub.from_settings(github_user)
     user = connection.user()
 
-    github_user.github_user = user['login']
+    github_user.github_user = user.login
 
     github_user.save()
 

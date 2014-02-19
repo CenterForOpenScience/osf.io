@@ -44,7 +44,12 @@
                         .fadeOut(100).fadeIn();
                     location.reload();
                 }).fail(function(xhr) {
-                    var message = 'Error: Keys not removed';
+                    var response = JSON.parse(xhr.responseText);
+                    if (response && response.message) {
+                        message = response.message;
+                    } else {
+                        message = 'Error: Keys not removed';
+                    }
                     msgElm.text(message)
                         .removeClass('text-success').addClass('text-danger')
                         .fadeOut(100).fadeIn();

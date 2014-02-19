@@ -18,6 +18,7 @@ class GitHub(object):
 
         if access_token and token_type:
             self.gh3 = github3.login(token=access_token)
+            self.access_token = access_token
         else:
             self.gh3 = github3.GitHub()
 
@@ -238,6 +239,7 @@ def ref_to_params(branch=None, sha=None):
     if params:
         return '?' + params
     return ''
+
 
 def _build_github_urls(item, node_url, node_api_url, branch, sha):
 
