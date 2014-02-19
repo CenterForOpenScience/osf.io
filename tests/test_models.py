@@ -1020,6 +1020,9 @@ class TestProject(DbTestCase):
         assert_true(self.project.can_edit(contributor_auth))
         assert_false(self.project.can_edit(other_guy_auth))
 
+    def test_can_edit_can_be_passed_a_user(self):
+        assert_true(self.project.can_edit(user=self.user))
+
     def test_creator_can_edit(self):
         assert_true(self.project.can_edit(self.consolidate_auth))
 
