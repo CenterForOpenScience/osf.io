@@ -100,7 +100,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :param str project_id: PK of the project this unclaimed user was added to.
         :param str referrer_id: PK of the user who referred this user.
         :param str given_name: The full name that the referrer gave for this user.
-
+        :returns: The added record
         """
         data_to_sign = '{project_id}:{referrer_id}:{given_name}'.format(**locals())
         record = {
@@ -109,7 +109,7 @@ class User(GuidStoredObject, AddonModelMixin):
             'verification': hmac.sign(data_to_sign)
         }
         self.unclaimed_records[project_id] = record
-        return None
+        return record
 
     def is_active(self):
         """Returns True if the user is active. The user must have activated
@@ -118,6 +118,20 @@ class User(GuidStoredObject, AddonModelMixin):
         return (self.is_registered and
                 self.password is not None and
                 not self.is_merged)
+
+    def get_claim_url(self, project_id):
+        """Return the URL that an unclaimed user should use to claim their
+        account. Return ``None`` if there is no unclaimed_record for the given
+        project ID.
+
+        """
+        unclaimed_record = self.unclaimed_records.get(project_id, None)
+        if unclaimed_record:
+            verification = unclaimed_record['verification']
+        else:
+            return None
+        return '{domain}{verification}'.format(domain=settings.DOMAIN,
+            verification=verification)
 
     def set_password(self, raw_password):
         '''Set the password for this user to the hash of ``raw_password``.'''

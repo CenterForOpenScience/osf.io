@@ -9,13 +9,14 @@ import datetime as dt
 import mock
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
+from framework import Q
 from framework.auth.model import User
 
 import website.app
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
-from website.project.views.contributor import _add_contributor_json, generate_verification_key
+from website.project.views.contributor import _add_contributor_json
 from webtest.app import AppError
 from tests.base import DbTestCase
 from tests.factories import (
@@ -314,7 +315,8 @@ class TestUserInviteViews(DbTestCase):
     def test_invite_contributor_api_endpoint_adds_a_non_registered_contributor(self, send_email):
         res = self.app.post_json(self.url,
             {'fullname': 'Brian May', 'email': 'brian@queen.com'}, auth=self.user.auth)
-        latest_user = User.find()[len(User.find()) - 1]
+
+        latest_user = User.find_one(Q('username', 'eq', 'brian@queen.com'))
         assert_equal(latest_user.fullname, 'Brian May')
         assert_equal(latest_user.username, 'brian@queen.com')
         assert_false(latest_user.is_registered)
@@ -322,7 +324,7 @@ class TestUserInviteViews(DbTestCase):
 
     def test_invite_contributor_adds_unclaimed_data(self):
         res = self.app.post_json(self.url,
-            {'fullname': 'Briann May', 'email': 'brian@queen.com'}, auth=self.user.auth)
+            {'fullname': 'Briann May', 'email': 'brian2@queen.com'}, auth=self.user.auth)
         latest_user = User.find()[len(User.find()) - 1]
         data = latest_user.unclaimed_records[self.project._primary_key]
         assert_equal(data['name'], 'Briann May')
@@ -346,6 +348,7 @@ class TestUserInviteViews(DbTestCase):
             {'fullname': 'Fred Mercury', 'email': user.username}, auth=self.user.auth)
         assert_in('User already exists', res.json['message'])
         assert_in('contributor', res.json)
+
 
 class TestWatchViews(DbTestCase):
 

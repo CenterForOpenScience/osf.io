@@ -20,10 +20,9 @@ from framework.auth.decorators import Auth
 from framework import utils
 from framework.bcrypt import check_password_hash
 from framework.git.exceptions import FileNotModified
-from website import settings, filters
+from website import settings, filters, hmac
 from website.profile.utils import serialize_user
 from website.project.model import Pointer, ApiKey, NodeLog, ensure_schemas
-from website import hmac
 from website.addons.osffiles.model import NodeFile
 
 from tests.base import DbTestCase, test_app, Guid
@@ -254,23 +253,8 @@ class TestUser(DbTestCase):
 
         assert_equal(len(self.user.recently_added), 15)
 
-    def test_add_unclaimed_record(self):
-        project = ProjectFactory()
 
-        referrer = UserFactory()
-        user = UnregUserFactory()
 
-        given_name = 'Fredd Merkury'
-        user.add_unclaimed_record(project_id=project._primary_key,
-            given_name=given_name, referrer_id=referrer._primary_key)
-        user.save()
-        data = user.unclaimed_records[project._primary_key]
-        assert_equal(data, {
-            'name': given_name,
-            'referrer_id': referrer._primary_key,
-            'verification': hmac.sign('{}:{}:{}'.format(project._primary_key,
-                referrer._primary_key, given_name))
-        })
 
 class TestUserParse(unittest.TestCase):
 
@@ -1666,11 +1650,42 @@ class TestWatchConfig(DbTestCase):
 
 
 class TestUnregisteredUser(DbTestCase):
+
+    def setUp(self):
+        self.project = ProjectFactory()
+        self.referrer = UserFactory()
+        self.user = UnregUserFactory()
+
+    def add_unclaimed_record(self):
+        given_name = 'Fredd Merkury'
+        self.user.add_unclaimed_record(project_id=self.project._primary_key,
+            given_name=given_name, referrer_id=self.referrer._primary_key)
+        self.user.save()
+        data = self.user.unclaimed_records[self.project._primary_key]
+        return data
+
+
     def test_factory(self):
         u1 = UnregUserFactory()
         assert_false(u1.is_registered)
         assert_true(u1.password is None)
         assert_true(u1.fullname)
+
+    def test_add_unclaimed_record(self):
+        data = self.add_unclaimed_record()
+        assert_equal(data, {
+            'name': 'Fredd Merkury',
+            'referrer_id': self.referrer._primary_key,
+            'verification': hmac.sign('{}:{}:{}'.format(self.project._primary_key,
+                self.referrer._primary_key, 'Fredd Merkury'))
+        })
+
+    def test_get_claim_url(self):
+        self.add_unclaimed_record()
+        pk = self.project._primary_key
+        assert_equal(self.user.get_claim_url(pk),
+            settings.DOMAIN + self.user.unclaimed_records[pk]['verification'])
+
 
 if __name__ == '__main__':
     unittest.main()
