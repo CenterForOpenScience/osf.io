@@ -23,7 +23,7 @@ from framework.git.exceptions import FileNotModified
 from website import settings, filters
 from website.profile.utils import serialize_user
 from website.project.model import Pointer, ApiKey, NodeLog, ensure_schemas
-
+from website import hmac
 from website.addons.osffiles.model import NodeFile
 
 from tests.base import DbTestCase, test_app, Guid
@@ -260,17 +260,17 @@ class TestUser(DbTestCase):
         referrer = UserFactory()
         user = UnregUserFactory()
 
+        given_name = 'Fredd Merkury'
         user.add_unclaimed_record(project_id=project._primary_key,
-            verification='123',
-            given_name='Fredd Merkury', referrer_id=referrer._primary_key)
+            given_name=given_name, referrer_id=referrer._primary_key)
         user.save()
         data = user.unclaimed_records[project._primary_key]
         assert_equal(data, {
-            'name': 'Fredd Merkury',
+            'name': given_name,
             'referrer_id': referrer._primary_key,
-            'verification': '123'
+            'verification': hmac.sign('{}:{}:{}'.format(project._primary_key,
+                referrer._primary_key, given_name))
         })
-
 
 class TestUserParse(unittest.TestCase):
 

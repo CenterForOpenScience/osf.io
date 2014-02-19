@@ -15,7 +15,7 @@ import website.app
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
-from website.project.views.contributor import _add_contributor_json
+from website.project.views.contributor import _add_contributor_json, generate_verification_key
 from webtest.app import AppError
 from tests.base import DbTestCase
 from tests.factories import (
@@ -303,16 +303,15 @@ class TestUserInviteViews(DbTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.url = '/api/v1/project/{0}/invite_contributor/'.format(self.project._primary_key)
 
-    @mock.patch('website.project.views.contributor.send_email')
-    def test_invite_contributor_api_endpoint_sends_an_email(self, send_email):
+    @mock.patch('website.project.views.contributor.send_email.delay')
+    def test_invite_contributor_api_endpoint_sends_an_email(self, send_email_delay):
         url = '/api/v1/project/{0}/invite_contributor/'.format(self.project._primary_key)
         self.app.post_json(self.url,
             {'fullname': 'Brian May', 'email': 'brian@queen.com'}, auth=self.user.auth)
-        assert_true(send_email.called)
+        assert_true(send_email_delay.called)
 
     @mock.patch('website.project.views.contributor.send_email')
     def test_invite_contributor_api_endpoint_adds_a_non_registered_contributor(self, send_email):
-
         res = self.app.post_json(self.url,
             {'fullname': 'Brian May', 'email': 'brian@queen.com'}, auth=self.user.auth)
         latest_user = User.find()[len(User.find()) - 1]
@@ -320,6 +319,15 @@ class TestUserInviteViews(DbTestCase):
         assert_equal(latest_user.username, 'brian@queen.com')
         assert_false(latest_user.is_registered)
         assert_equal(res.json['contributor'], _add_contributor_json(latest_user))
+
+    def test_invite_contributor_adds_unclaimed_data(self):
+        res = self.app.post_json(self.url,
+            {'fullname': 'Briann May', 'email': 'brian@queen.com'}, auth=self.user.auth)
+        latest_user = User.find()[len(User.find()) - 1]
+        data = latest_user.unclaimed_records[self.project._primary_key]
+        assert_equal(data['name'], 'Briann May')
+        assert_equal(data['referrer_id'], self.user.id)
+        assert_true(data['verification'])
 
     @mock.patch('website.project.views.contributor.send_email')
     def test_invite_contributor_with_no_email(self, send_email):

@@ -16,7 +16,7 @@ from framework.search import solr
 from framework.addons import AddonModelMixin
 from framework.auth import utils
 
-from website import settings, filters
+from website import settings, filters, hmac
 
 name_formatters = {
    'long': lambda user: user.fullname,
@@ -52,10 +52,11 @@ class User(GuidStoredObject, AddonModelMixin):
     #   }
     #   ...
     # }
-    # TODO: add verification
+    # TODO: add validation
     unclaimed_records = fields.DictionaryField(required=False)
     # The user who merged this account
     merged_by = fields.ForeignField('user', default=None, backref="merged")
+    #: Verification key used for resetting password
     verification_key = fields.StringField()
     emails = fields.StringField(list=True)
     email_verifications = fields.DictionaryField()  # TODO: Unused. Remove me?
@@ -93,12 +94,19 @@ class User(GuidStoredObject, AddonModelMixin):
         user.is_registered = False
         return user
 
-    def add_unclaimed_record(self, project_id, given_name, referrer_id, verification):
-        """Add a new project entry in the unclaimed records dictionary."""
+    def add_unclaimed_record(self, project_id, referrer_id, given_name):
+        """Add a new project entry in the unclaimed records dictionary.
+
+        :param str project_id: PK of the project this unclaimed user was added to.
+        :param str referrer_id: PK of the user who referred this user.
+        :param str given_name: The full name that the referrer gave for this user.
+
+        """
+        data_to_sign = '{project_id}:{referrer_id}:{given_name}'.format(**locals())
         record = {
             'name': given_name,
             'referrer_id': referrer_id,
-            'verification': verification
+            'verification': hmac.sign(data_to_sign)
         }
         self.unclaimed_records[project_id] = record
         return None

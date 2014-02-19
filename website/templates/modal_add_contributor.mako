@@ -156,12 +156,14 @@
                         <div class="form-group">
                             <label for="inviteUserEmail">Email</label>
                             <input type="email" class='form-control' id="inviteUserEmail"
-                                    placeholder="Email" data-bind='value: inviteEmail' required />
+                                    placeholder="Email" data-bind='value: inviteEmail' />
                         </div>
                         <button class='btn btn-success'
                          data-bind='enable: inviteEmail && inviteName'
                          type="submit">Invite and add</button>
-                         <span class="help-block">We will notify the user that they have been added to your project.</span>
+                         <div class="help-block">
+                            <span>We will notify the user that they have been added to your project.</span>
+                        </div>
                     </form>
                 </div><!-- end invite user page -->
 
