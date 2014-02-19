@@ -37,6 +37,7 @@ function newBucket() {
         }).done(function() {
             $('#bucketlabel').text(bucketName);
             $('#s3_bucket').val(bucketName);
+            $('#s3-dropdown').find('li').first().after('<li role="presentation"><a href="#">' + bucketName + '</a></li>')
             $('#addonSettingsS3').submit();
         }).fail(function(xhr) {
             bootbox.confirm('Looks like that name is taken. Try another name?', function(result) {
