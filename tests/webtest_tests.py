@@ -684,10 +684,9 @@ class TestClaiming(DbTestCase):
     def test_user_can_set_password_on_claim_page(self):
         self.add_unclaimed_record()
         claim_url = self.user.get_claim_url(self.project._primary_key)
-        res = self.app.get(claim_url).maybe_follow()
+        res = self.app.get(claim_url)
         assert_in('Set password', res)
         assert 0, 'finish me'
-
 
 
 if __name__ == '__main__':
