@@ -1,17 +1,44 @@
 //////////////////
 // Site-wide JS //
 //////////////////
-(function() {
+(function($) {
 
+/**
+ * Posts JSON data.
+ *
+ * Example:
+ *     $.postJSON('/foo', {'email': 'bar@baz.com'}, function(data) {...})
+ *
+ * @param  {String} url  The url to post to
+ * @param  {Object} data JSON data to send to the endpoint
+ * @param  {Function} done Success callback. Takes returned data as its first argument
+ * @return {jQuery xhr}
+ */
+$.postJSON = function(url, data, done) {
+    var ajaxOpts = {
+        url: url, type: 'post',
+        data: JSON.stringify(data),
+        success: done,
+        contentType: 'application/json', dataType: 'json'
+    };
+    return $.ajax(ajaxOpts);
+};
+
+/**
+ * Get a URL parameter by name.
+ *
+ * https://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
+ */
+$.urlParam = function(name) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+};
 
 var setStatus = function(status){
     $('#alert-container').append(status);//'<div class=\'alert-message warning fade in\' data-alert=\'alert\'><a class=\'close\' href=\'#\'>&times;</a><p>'+ status +'</p></div>');
 };
-
-var urlDecode = function(str) {
-    return decodeURIComponent((str+'').replace(/\+/g, '%20'));
-};
-
 
 /**
  * Display a modal confirmation window before relocating to an url.
@@ -25,8 +52,8 @@ var modalConfirm = function(message, url){
                 window.location.href = url;
             }
         }
-    )
-}
+    );
+};
 
 var urlDecode = function(str) {
     return decodeURIComponent((str+'').replace(/\+/g, '%20'));
@@ -101,4 +128,4 @@ $(document).ready(function(){
 
 });
 
-}).call(this);
+}).call(this, jQuery);
