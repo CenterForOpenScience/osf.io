@@ -18,6 +18,7 @@ from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
 from website.project.views.contributor import _add_contributor_json
 from webtest.app import AppError
+from website import settings
 from tests.base import DbTestCase
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
@@ -318,6 +319,7 @@ class TestProjectViews(DbTestCase):
         assert_in('url', res.json)
         assert_equal(res.json['url'], self.project.url)
 
+@unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
 class TestUserInviteViews(DbTestCase):
 
     def setUp(self):
@@ -371,7 +373,7 @@ class TestUserInviteViews(DbTestCase):
         assert_in('User already exists', res.json['message'])
         assert_in('contributor', res.json)
 
-
+@unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
 class TestClaimViews(DbTestCase):
 
     def setUp(self):

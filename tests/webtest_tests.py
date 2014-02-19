@@ -24,9 +24,9 @@ from framework import app
 from website.project.views.file import get_cache_path
 from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
+from website import settings
 
 
-# Only uncomment if running these tests in isolation
 from website.app import init_app
 app = init_app(set_backends=False, routes=True)
 
@@ -665,6 +665,7 @@ class TestPiwik(DbTestCase):
             res
         )
 
+@unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
 class TestClaiming(DbTestCase):
 
     def setUp(self):

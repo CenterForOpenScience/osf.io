@@ -979,26 +979,6 @@ class TestProject(DbTestCase):
         )
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
 
-    def test_remove_nonregistered_contributor(self):
-        nr_user = {
-            'email': 'foo@bar.com',
-            'name': 'Weezy F. Baby',
-        }
-        self.project.add_nonregistered_contributor(
-            auth=self.consolidate_auth, **nr_user)
-        self.project.save()
-        # The user is removed
-        hash_id = hashlib.md5(nr_user['email']).hexdigest()
-        self.project.remove_nonregistered_contributor(
-            auth=self.consolidate_auth,
-            name=nr_user['name'],
-            hash_id=hash_id,
-        )
-        # List does not contain nonregistered contributor
-        assert_not_in(nr_user, self.project.contributors)
-        assert_equal(self.project.logs[-1].action, 'contributor_removed')
-        assert_not_in('Weezy F. Baby', [contrib.get('nr_name') for contrib in self.project.contributor_list])
-
     def test_set_title(self):
         proj = ProjectFactory(title='That Was Then', creator=self.user)
         proj.set_title('This is now', auth=self.consolidate_auth)
