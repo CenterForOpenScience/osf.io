@@ -391,8 +391,6 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         :return bool: Hook was deleted
 
         """
-        self.hook_id = None
-        self.save()
         if self.user_settings and self.hook_id:
             connect = GitHub.from_settings(self.user_settings)
             response = connect.delete_hook(self.user, self.repo, self.hook_id)

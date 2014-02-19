@@ -1,4 +1,5 @@
 import os
+import logging
 import httplib as http
 from github3 import GitHubError
 
@@ -14,6 +15,7 @@ from website.project.decorators import must_have_addon
 
 from ..api import GitHub
 from ..auth import oauth_start_url, oauth_get_token
+logger = logging.getLogger(__name__)
 
 
 @must_be_contributor
@@ -50,14 +52,8 @@ def github_oauth_start(**kwargs):
     github_user = user.get_addon('github')
 
     if node:
-
         github_node = node.get_addon('github')
         github_node.user_settings = github_user
-
-        # Add webhook
-       # if github_node.user and github_node.repo:
-       #     github_node.add_hook()
-
         github_node.save()
 
     authorization_url, state = oauth_start_url(user, node)
@@ -102,8 +98,8 @@ def github_oauth_delete_node(**kwargs):
     # Remove webhook
     try:
         node_settings.delete_hook()
-    except GitHubError, e:
-        pass
+    except GitHubError as error:
+        logger.error('Could not remove webhook from {0} in node {1}'.format(node_settings.repo, node_settings.owner._id))
     # Remove user settings
     node_settings.user_settings = None
 
