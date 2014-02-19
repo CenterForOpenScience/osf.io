@@ -332,6 +332,8 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
                     self.results(result['users']);
                 }
             )
+        } else {
+            self.results([]);
         };
     };
 
