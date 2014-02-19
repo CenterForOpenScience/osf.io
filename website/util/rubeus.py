@@ -9,7 +9,6 @@ import itertools
 from website.project.views.node import _view_project
 from framework.auth.decorators import Auth
 
-# Rubeus defined Constants
 FOLDER = 'folder'
 FILE = 'item'
 KIND = 'kind'
@@ -24,7 +23,7 @@ DEFAULT_PERMISSIONS = {
 def default_urls(node_api, short_name):
     return {
         'fetch': '{node_api}{addonshort}/hgrid/'.format(node_api=node_api, addonshort=short_name),
-        'upload': '{node_api}{addonshort}/upload/'.format(node_api=node_api, addonshort=short_name)
+        'upload': '{node_api}{addonshort}/'.format(node_api=node_api, addonshort=short_name),
     }
 
 
@@ -55,8 +54,10 @@ def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS,
     :return dict: Hgrid formatted dictionary for the addon root folder
 
     """
-    name = node_settings.config.full_name + ': ' + \
-        name if name else node_settings.config.full_name
+    if name:
+        name = '{0}: {1}'.format(node_settings.config.full_name, name)
+    else:
+        name = node_settings.config.full_name
     if hasattr(node_settings.config, 'urls') and node_settings.config.urls:
         urls = node_settings.config.urls
     if urls is None:

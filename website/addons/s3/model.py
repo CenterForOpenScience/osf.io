@@ -7,13 +7,24 @@ Created on Jan 7, 2014
 
 """
 
+import os
+
 from framework import fields
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from .utils import get_bucket_drop_down, serialize_bucket
+from .api import S3Wrapper
 
-from utils import get_bucket_drop_down, serialize_bucket
 
-from api import S3Wrapper
+class S3GuidFile(GuidFile):
+
+    path = fields.StringField(index=True)
+
+    @property
+    def file_url(self):
+        if self.path is None:
+            raise ValueError('Path field must be defined.')
+        return os.path.join('s3', self.path)
 
 
 class AddonS3UserSettings(AddonUserSettingsBase):

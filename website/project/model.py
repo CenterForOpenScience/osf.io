@@ -1243,7 +1243,11 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'project': self.parent_id,
                 'node': self._primary_key,
                 'path': node_file.path,
-                'version': len(self.files_versions)
+                'version': len(self.files_versions),
+                'urls': {
+                    'view': node_file.url(self),
+                    'download': node_file.download_url(self),
+                },
             },
             auth=auth,
             log_date=node_file.date_uploaded

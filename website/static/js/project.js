@@ -68,7 +68,7 @@ function beforeForkNode(url, done) {
         )
     });
 
-};
+}
 
 NodeActions.forkNode = function() {
 
@@ -118,6 +118,13 @@ NodeActions.forkPointer = function(pointerId, nodeId) {
     });
 
 };
+
+
+NodeActions.addonFileRedirect = function(item) {
+    window.location.href = item.params.urls.view;
+    return false;
+};
+
 
 // todo: discuss; this code not used
 NodeActions.addNodeToProject = function(node, project) {
@@ -271,10 +278,10 @@ window.FileRenderer = {
     getCachedFromServer: function() {
         var self = this;
         $.get( self.url, function(data) {
-            if(data){
+            if (data) {
                 self.element.html(data);
                 clearInterval(self.refreshContent);
-            }else{
+            } else {
                 self.tries += 1;
                 if(self.tries > 10){
                     clearInterval(self.refreshContent);

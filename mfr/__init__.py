@@ -1,6 +1,18 @@
+import logging
+import importlib
 from mfr.renderer import FileRenderer
-from mfr.renderer import image, pdf, pdb, code, ipynb
-from mfr.renderer.tabular import renderers
+
+logger = logging.getLogger(__name__)
+
+modules = [
+    'image', 'pdf', 'pdb', 'code', 'ipynb', 'docx',
+    'tabular.renderers',
+]
+for module in modules:
+    try:
+        importlib.import_module('mfr.renderer.' + module)
+    except ImportError:
+        logger.error('Could not import module {0}'.format(module))
 
 config = {}
 

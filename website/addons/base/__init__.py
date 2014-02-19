@@ -11,6 +11,7 @@ from mako.lookup import TemplateLookup
 
 from framework import StoredObject, fields
 from framework.routing import process_rules
+from framework.guid.model import GuidStoredObject
 
 from website import settings
 
@@ -142,6 +143,31 @@ class AddonConfig(object):
             'has_page': 'page' in self.views,
             'has_widget': 'widget' in self.views,
         }
+
+
+class GuidFile(GuidStoredObject):
+
+    redirect_mode = 'proxy'
+
+    _id = fields.StringField(primary=True)
+    node = fields.ForeignField('node', index=True)
+
+    _meta = {
+        'abstract': True,
+    }
+
+    @property
+    def file_url(self):
+        raise NotImplementedError
+
+    @property
+    def deep_url(self):
+        if self.node is None:
+            raise ValueError('Node field must be defined.')
+        return os.path.join(
+            self.node.deep_url, self.file_url,
+        )
+
 
 
 class AddonSettingsBase(StoredObject):

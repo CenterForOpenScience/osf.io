@@ -66,7 +66,7 @@ class GitHub(object):
             http://developer.github.com/v3/repos/#list-branches
 
         """
-        return self.gh3.repository(user, repo).iter_branches()
+        return self.gh3.repository(user, repo).iter_branches() or []
 
     def commits(self, user, repo, path=None, sha=None):
         """Get commits for a repo or file.
@@ -239,7 +239,6 @@ def ref_to_params(branch=None, sha=None):
         return '?' + params
     return ''
 
-
 def _build_github_urls(item, node_url, node_api_url, branch, sha):
 
     quote_path = urllib.quote_plus(item.path)
@@ -253,7 +252,7 @@ def _build_github_urls(item, node_url, node_api_url, branch, sha):
     elif item.type in ['file', 'blob']:
         return {
             'view': os.path.join(node_url, 'github', 'file', quote_path) + '/' + params,
-            'download': os.path.join(node_api_url, 'github', 'file', 'download', quote_path) + '/' + params,
+            'download': os.path.join(node_url, 'github', 'file', quote_path, 'download') + '/' + params,
             'delete': os.path.join(node_api_url, 'github', 'file', quote_path) + '/' + ref_to_params(branch, item.sha),
         }
     raise ValueError

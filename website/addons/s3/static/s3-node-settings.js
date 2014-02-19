@@ -1,4 +1,3 @@
-
 //TODO Fix me up use id's maybe...
 function setDropDownListener() {
     $( document.body ).on( 'click', '.dropdown-menu li', function( event ) {
@@ -11,18 +10,18 @@ function setDropDownListener() {
           .children( '.dropdown-toggle' ).dropdown( 'toggle' );
           $('#s3_bucket').attr('value', $target.text());
         //Submit Form here
-        if ($target.text().indexOf('Create a new bucket') != -1)
+        if ($target.text().indexOf('Create a new bucket') != -1) {
             newBucket();
-        else if ($target.text().indexOf('Deauthorize') != -1)
+        } else if ($target.text().indexOf('Deauthorize') != -1) {
             return true;
-        else
+        } else {
             $('#addonSettingsS3').submit();
+        }
 
         return false;
 
-
     });
-};
+}
 
 function newBucket() {
     bootbox.prompt('Name your new bucket', function(bucketName) {

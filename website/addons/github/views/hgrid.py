@@ -132,6 +132,7 @@ def github_hgrid_data(node_settings, auth, contents=False, *args, **kwargs):
         can_edit = False
         name_append = None
 
+    # TODO: Not used
     name_tpl = ('GitHub: '
                 '{user}/{repo}').format(user=node_settings.user,
                                                     repo=node_settings.repo)
@@ -171,6 +172,7 @@ def github_root_folder_public(*args, **kwargs):
 
     return github_hgrid_data(node_settings, auth=auth, parent=parent, contents=False, **data)
 
+
 # TODO I'm never used, can I go home?
 def _get_tree(node_settings, sha, connection=None):
 
@@ -180,6 +182,7 @@ def _get_tree(node_settings, sha, connection=None):
     )
     if tree:
         return tree['tree']
+
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')

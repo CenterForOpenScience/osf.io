@@ -1,18 +1,15 @@
 <%inherit file="project/addon/user_settings.mako" />
 
-%if not has_auth:
-
-<div class="form-group">
-    <label for="s3Addon">Access Key</label>
-    <input class="form-control" id="access_key" name="access_key" value="${access_key}" ${'disabled' if disabled else ''} />
-</div>
-
-<div class="form-group">
-    <label for="s3Addon">Secret Key</label>
-    <input type="password" class="form-control" id="secret_key" name="secret_key" value="${secret_key}" ${'disabled' if disabled else ''} />
-</div>
-
-%endif
+% if not has_auth:
+    <div class="form-group">
+        <label for="s3Addon">Access Key</label>
+        <input class="form-control" id="access_key" name="access_key" value="${access_key}" ${'disabled' if disabled else ''} />
+    </div>
+    <div class="form-group">
+        <label for="s3Addon">Secret Key</label>
+        <input type="password" class="form-control" id="secret_key" name="secret_key" value="${secret_key}" ${'disabled' if disabled else ''} />
+    </div>
+% endif
 
 <%def name="submit_btn()">
  	% if has_auth:
@@ -60,3 +57,4 @@
         ${parent.on_submit()}
     %endif
 </%def>
+

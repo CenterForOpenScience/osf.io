@@ -27,12 +27,6 @@
 
     </div>
 
-% elif user_has_auth and is_owner:
-
-    <div class="well well-sm">
-        Updating settings. Please refresh the page in a moment to view your buckets.
-    </div>
-
 % elif user_has_auth:
 
     <div class="well well-sm">Authorized by <a href="${owner_url}">${owner}</a></div>
@@ -46,11 +40,11 @@
 
     <div class="form-group">
       <label for="s3Addon">Access Key</label>
-        <input class="form-control" id="access_key" name="access_key" />
+        <input class="form-control" id="access_key" name="access_key"/>
       </div>
       <div class="form-group">
         <label for="s3Addon">Secret Key</label>
-        <input type="password" class="form-control" id="secret_key" name="secret_key" />
+        <input type="password" class="form-control" id="secret_key" name="secret_key"/>
     </div>
 
 % endif
@@ -64,8 +58,9 @@
 %endif
 
 <%def name="submit_btn()">
+
   %if not user_has_auth and is_owner:
-    <button class="btn btn-success addon-settings-submit">
+    <button class="btn btn-success btn-block addon-settings-submit">
         Submit
     </button>
   %endif
@@ -95,7 +90,6 @@
             msgElm.text('Settings updated')
                 .removeClass('text-danger').addClass('text-success')
                 .fadeOut(100).fadeIn();
-                window.location.reload();
         }).fail(function(xhr) {
             var message = 'Error: ';
             var response = JSON.parse(xhr.responseText);

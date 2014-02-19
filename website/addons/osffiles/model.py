@@ -2,17 +2,29 @@
 
 """
 
+import os
 import datetime
 
 from framework import GuidStoredObject, fields
 from framework.analytics import get_basic_counters
-from website.addons.base import AddonNodeSettingsBase
+from website.addons.base import AddonNodeSettingsBase, GuidFile
 
 
 class AddonFilesNodeSettings(AddonNodeSettingsBase):
 
     def to_json(self, user):
         return{}
+
+
+class OsfGuidFile(GuidFile):
+
+    name = fields.StringField(index=True)
+
+    @property
+    def file_url(self):
+        if self.name is None:
+            raise ValueError('Name field must be defined.')
+        return os.path.join('osffiles', self.name)
 
 
 class NodeFile(GuidStoredObject):
@@ -70,5 +82,9 @@ class NodeFile(GuidStoredObject):
         return '{0}osffiles/{1}/'.format(node.api_url, self.filename)
 
     def download_url(self, node):
-        return '{}osffiles/download/{}/version/{}/'.format(
+        return '{}osffiles/{}/version/{}/download/'.format(
             node.url, self.filename, self.latest_version_number)
+
+    def render_url(self, node):
+        return '{}osffiles/{}/version/{}/render/'.format(
+            node.api_url, self.filename, self.latest_version_number)
