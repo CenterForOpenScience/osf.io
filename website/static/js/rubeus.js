@@ -123,6 +123,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
             return '<span class="text-info">' + Math.floor(progress) + '%</span>';
         }
     };
+
     var statusType = {
         FETCH_SUCCESS: 'FETCH_SUCCESS',
         FETCH_START: 'FETCH_START',
@@ -135,6 +136,8 @@ this.Rubeus = (function($, HGrid, bootbox) {
         UPLOAD_ERROR: 'UPLOAD_ERROR',
         UPLOAD_PROGRESS: 'UPLOAD_PROGRESS'
     };
+
+    Rubeus.Status = statusType
     ////////////////////////
     // Listener callbacks //
     ////////////////////////

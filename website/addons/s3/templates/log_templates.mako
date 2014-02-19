@@ -1,6 +1,6 @@
 <script type="text/html" id="s3_file_added">
 added file
-<a class="overflow" data-bind="text: params.path, attr: {href: nodeUrl + 's3/view/' + params.path}"></a> to
+<a class="overflow" data-bind="text: params.path, attr: {href: params.urls.view}"></a> to
 bucket
 <span data-bind="text: params.bucket"></span> in
 <span data-bind="text: nodeCategory"></span>
@@ -9,7 +9,7 @@ bucket
 
 <script type="text/html" id="s3_file_updated">
 updated file
-<a class="overflow" data-bind="text: params.path, attr: {href: nodeUrl + 's3/view/' + params.path}"></a> in
+<a class="overflow" data-bind="text: params.path, attr: {href: params.urls.view}"></a> in
 bucket
 <span data-bind="text: params.bucket"></span> in
 <span data-bind="text: nodeCategory"></span>

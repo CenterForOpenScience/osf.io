@@ -1,11 +1,10 @@
 import os
-import re
-from datetime import datetime
 from dateutil.parser import parse
 
 from boto.s3.connection import S3Connection, Key
 from boto.s3.connection import OrdinaryCallingFormat
 from boto.s3.cors import CORSConfiguration
+from boto.exception import S3ResponseError
 
 from hurry.filesize import size, alternative
 
@@ -94,7 +93,10 @@ class S3Wrapper(object):
         return [S3Key(x) for x in self.get_file_list()]
 
     def get_wrapped_key(self, keyName, vid=None):
-        return S3Key(self.bucket.get_key(keyName, version_id=vid))
+        try:
+            return S3Key(self.bucket.get_key(keyName, version_id=vid))
+        except S3ResponseError:
+            return None
 
     def get_wrapped_keys_in_dir(self, directory=None):
         return [S3Key(x) for x in self.bucket.list(delimiter='/', prefix=directory) if isinstance(x, Key) and x.key != directory]
