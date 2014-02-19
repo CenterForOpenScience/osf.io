@@ -208,11 +208,11 @@
             var that = this,
                 $that = $(that);
             if ($that.is(':checked')) {
-                var name = $that.attr('name'),
-                    capabilities = $('#capabilities-' + name);
+                var name = $that.attr('name');
+                var capabilities = $('#capabilities-' + name).html();
                 if (capabilities) {
                     bootbox.confirm(
-                        capabilities.html(),
+                        capabilities,
                         function(result) {
                             if (!result) {
                                 $(that).attr('checked', false);
