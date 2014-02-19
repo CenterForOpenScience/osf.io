@@ -5,7 +5,9 @@ import pygments.lexers
 import pygments.formatters
 
 
-KNOWN_EXTENSIONS = ['.rb',
+KNOWN_EXTENSIONS = [
+ '',
+ '.rb',
  '.c',
  '.cs',
  '.ahk',
@@ -108,7 +110,6 @@ KNOWN_EXTENSIONS = ['.rb',
  '.cfm']
 
 
-
 class CodeRenderer(FileRenderer):
     def _detect(self, file_pointer):
         _, ext = os.path.splitext(file_pointer.name)
@@ -122,4 +123,3 @@ class CodeRenderer(FileRenderer):
                 file_pointer.name, content), formatter)
         link = 'href="{}/code/css/style.css" />'.format(self.STATIC_PATH)
         return '<link rel="stylesheet"' + link + '\n' + highlight
-
