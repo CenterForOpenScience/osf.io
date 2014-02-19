@@ -31,7 +31,6 @@ from website.addons.s3.settings import MAX_RENDER_SIZE
 @must_have_addon('s3', 'node')
 def s3_download(**kwargs):
 
-    node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
     key_name = unquote(kwargs['path'])
     vid = request.args.get('vid')
@@ -109,8 +108,6 @@ def s3_view(**kwargs):
 
     cache_name = get_cache_file_name(path, key.etag)
     urls = build_urls(node, path, etag=key.etag)
-    #download_url = node.url + 's3/' + path + '/download/'
-    #render_url = node.api_url + 's3/' + path + '/render/?etag=' + key.etag
 
     if key.s3Key.size > MAX_RENDER_SIZE:
         render = 'File too large to render; download file to view it'

@@ -206,15 +206,20 @@ def github_upload_file(**kwargs):
         'email': '{0}@osf.io'.format(user._id),
     }
 
-    data = connection.upload_file(
-        github.user, github.repo, os.path.join(path, filename),
-        MESSAGES['update' if sha else 'add'], content, sha=sha, branch=branch,
-        author=author,
-    )
+    if existing:
+        data = connection.update_file(
+            github.user, github.repo, os.path.join(path, filename),
+            MESSAGES['update'], content, sha=sha, branch=branch, author=author
+        )
+    else:
+        data = connection.create_file(
+            github.user, github.repo, os.path.join(path, filename),
+            MESSAGES['update'], content, branch=branch, author=author
+        )
 
     if data is not None:
 
-        ref = ref_to_params(sha=data['commit']['sha'])
+        ref = ref_to_params(sha=data['commit'].sha)
         view_url = os.path.join(
             node.url, 'github', 'file', path, filename
         ) + '/' + ref
@@ -241,7 +246,7 @@ def github_upload_file(**kwargs):
                 'github': {
                     'user': github.user,
                     'repo': github.repo,
-                    'sha': data['commit']['sha'],
+                    'sha': data['commit'].sha,
                 },
             },
             auth=auth,
