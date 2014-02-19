@@ -12,7 +12,8 @@ from framework.auth.decorators import Auth
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, NodeLogFactory, ApiKeyFactory,
-                             NodeFactory, NodeWikiFactory, RegistrationFactory)
+                             NodeFactory, NodeWikiFactory, RegistrationFactory,
+                             UnregUserFactory)
 from tests.test_features import requires_piwik
 
 from website import settings
@@ -679,6 +680,15 @@ class TestClaiming(DbTestCase):
         self.user.save()
         data = self.user.unclaimed_records[self.project._primary_key]
         return data
+
+    def test_user_can_set_password_on_claim_page(self):
+        self.add_unclaimed_record()
+        claim_url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(claim_url).maybe_follow()
+        assert_in('Set password', res)
+        assert 0, 'finish me'
+
+
 
 if __name__ == '__main__':
     unittest.main()

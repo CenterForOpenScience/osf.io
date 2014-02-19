@@ -255,6 +255,12 @@ def email_invite(to_addr, new_user, referrer, node):
         ttls=ttls, login=login
     )
 
+
+def claim_user(**kwargs):
+    """View for rendering the set password page for a claimed user."""
+    signature = kwargs['signature']
+    return {}
+
 @must_be_valid_project
 @must_be_contributor
 @must_not_be_registration

@@ -368,7 +368,8 @@ class TestClaimViews(DbTestCase):
     def test_valid_claim_url(self):
         self.add_unclaimed_record()
         url = self.user.get_claim_url(self.project._primary_key)
-        assert_equal(self.app.get(url).status_code, 200)
+        res = self.app.get(url).maybe_follow()
+        assert_equal(res.status_code, 200)
 
 class TestWatchViews(DbTestCase):
 
