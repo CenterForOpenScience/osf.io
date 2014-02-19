@@ -95,6 +95,33 @@ class User(GuidStoredObject, AddonModelMixin):
         user.is_registered = False
         return user
 
+    @classmethod
+    def parse_claim_signature(cls, signature):
+        """Parses a verification code for claiming a user account.
+
+        :param str signature: The signature (verification key) to parse
+        :raises: itsdangerous.BadSignature if signature is invalid (bad secret)
+        :returns: A dictionary with 'name', 'referrer_id', and 'project_id'
+        """
+        data = hmac.load(signature)
+        pk, project_id, referrer_id, given_name = data.split(':')
+        return {
+            '_id': pk,
+            'name': given_name,
+            'referrer_id': referrer_id,
+            'project_id': project_id
+        }
+
+    def register(self, username, password):
+        """Registers the user.
+        """
+        self.username = username
+        self.set_password(password)
+        if username not in self.emails:
+            self.emails.append(username)
+        self.is_registered = True
+        return self
+
     def add_unclaimed_record(self, node, referrer, given_name):
         """Add a new project entry in the unclaimed records dictionary.
 
@@ -116,24 +143,6 @@ class User(GuidStoredObject, AddonModelMixin):
         }
         self.unclaimed_records[project_id] = record
         return record
-
-    @classmethod
-    def parse_claim_signature(cls, signature):
-        """Parses a verification code for claiming a user account.
-
-        :param str signature: The signature (verification key) to parse
-        :raises: itsdangerous.BadSignature if signature is invalid (bad secret)
-        :returns: A dictionary with 'name', 'referrer_id', and 'project_id'
-        """
-        data = hmac.load(signature)
-        pk, project_id, referrer_id, given_name = data.split(':')
-        return {
-            '_id': pk,
-            'name': given_name,
-            'referrer_id': referrer_id,
-            'project_id': project_id
-        }
-
 
     def is_active(self):
         """Returns True if the user is active. The user must have activated

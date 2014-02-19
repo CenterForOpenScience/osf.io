@@ -1711,6 +1711,18 @@ class TestUnregisteredUser(DbTestCase):
             self.user.add_unclaimed_record(node=project,
                 given_name='fred m', referrer=self.referrer)
 
+    def test_register(self):
+        assert_false(self.user.is_registered)  # sanity check
+        self.user.register(username='foo@bar.com', password='killerqueen')
+        self.user.save()
+        assert_true(self.user.is_registered)
+        assert_true(self.user.check_password('killerqueen'))
+        assert_equal(self.user.username, 'foo@bar.com')
+
+    def test_registering_with_a_different_email_adds_to_emails_list(self):
+        user = UnregUserFactory(email='fred@queen.com')
+        assert_equal(user.password, None)  # sanity check
+        user.register(username='brian@queen.com', password='killerqueen')
 
 if __name__ == '__main__':
     unittest.main()
