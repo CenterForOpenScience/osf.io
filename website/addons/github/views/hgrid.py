@@ -1,67 +1,116 @@
+# -*- coding: utf-8 -*-
+import logging
+import os
 from mako.template import Template
 
 from framework import request
-from framework.auth import get_current_user
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
 
-from ..api import GitHub, tree_to_hgrid, ref_to_params
-from .util import _get_refs, _check_permissions, MESSAGES
+from ..api import GitHub, _build_github_urls, ref_to_params
+from .util import _get_refs, _check_permissions
+from website.util import rubeus
+
+
+logger = logging.getLogger(__name__)
+
+# TODO: Probably should just take a node object instead of having to pass
+# in both url and api_url
+def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
+             can_edit=True, parent=None, **kwargs):
+    """
+    :param list data: The return value of Github's `contents` endpoint.
+    """
+    grid = []
+    folders = {}
+
+    for datum in data:
+        if data[datum].type in ['file', 'blob']:
+            item = {
+                rubeus.KIND: rubeus.FILE,
+                'urls': _build_github_urls(
+                    data[datum], node_url, node_api_url, branch, sha
+                )
+            }
+        elif data[datum].type in ['tree', 'dir']:
+            item = {
+                rubeus.KIND: rubeus.FOLDER,
+                'children': [],
+            }
+        else:
+            continue
+
+        item.update({
+            'addon': 'github',
+            'permissions': {
+                'view': True,
+                'edit': can_edit,
+            },
+            'urls': _build_github_urls(
+                data[datum], node_url, node_api_url, branch, sha
+            ),
+            'accept': {
+                'maxSize': kwargs.get('max_size', 128),
+                'acceptedFiles': kwargs.get('accepted_files', None)
+            }
+        })
+
+        head, item['name'] = os.path.split(data[datum].path)
+        if parent:
+            head = head.split(parent)[-1]
+        if head:
+            folders[head]['children'].append(item)
+        else:
+            grid.append(item)
+
+        # Update cursor
+        if item[rubeus.KIND] == rubeus.FOLDER:
+            key = data[datum].path
+            if parent:
+                key = key.split(parent)[-1]
+            folders[key] = item
+
+    return grid
+
 
 github_branch_template = Template('''
     % if len(branches) > 1:
-        <form style="display: inline;">
             <select class="github-branch-select">
                 % for each in branches:
                     <option value="${each}" ${"selected" if each == branch else ""}>${each}</option>
                 % endfor
             </select>
-        </form>
     % else:
         <span>${branch}</span>
     % endif
     % if sha:
-        <span class="github-sha">${sha}</span>
+        <a href="https://github.com/${owner}/${repo}/commit/${sha}" class="github-sha text-muted">${sha[:10]}</a>
     % endif
 ''')
 
-def github_branch_widget(branches, branch, sha):
+def github_branch_widget(branches, owner, repo, branch, sha):
     """Render branch selection widget for GitHub add-on. Displayed in the
     name field of HGrid file trees.
 
     """
-    return github_branch_template.render(
-        branches=[
-            each['name']
-            for each in branches
-        ],
+    rendered = github_branch_template.render(
+        branches=[each.name for each in branches],
         branch=branch,
         sha=sha,
+        owner=owner,
+        repo=repo
     )
+    return rendered
 
 
-def github_dummy_folder(node_settings, auth, parent=None, **kwargs):
+def github_hgrid_data(node_settings, auth, contents=False, *args, **kwargs):
 
     # Quit if no repo linked
     if not node_settings.user or not node_settings.repo:
         return
 
     connection = GitHub.from_settings(node_settings.user_settings)
-
-    rv = {
-        'addonName': 'GitHub',
-        'maxFilesize': node_settings.config.max_file_size,
-        'uid': 'github:{0}'.format(node_settings._id),
-        'name': 'GitHub: {0}/{1}'.format(
-            node_settings.user, node_settings.repo,
-        ),
-        'parent_uid': parent or 'null',
-        'type': 'folder',
-        'can_view': False,
-        'can_edit': False,
-        'permission': False,
-    }
 
     branch, sha, branches = _get_refs(
         node_settings,
@@ -71,34 +120,47 @@ def github_dummy_folder(node_settings, auth, parent=None, **kwargs):
     )
 
     if branch is not None:
-
         ref = ref_to_params(branch, sha)
         can_edit = _check_permissions(
             node_settings, auth, connection, branch, sha
         )
+        name_append = github_branch_widget(branches, owner=node_settings.user,
+            repo=node_settings.repo, branch=branch, sha=sha)
+    else:
 
-        rv.update({
-            'nameExtra': github_branch_widget(branches, branch, sha),
-            'can_view': True,
-            'can_edit': can_edit,
-            'permission': can_edit,
-            'uploadUrl': node_settings.owner.api_url + 'github/file/',
-            'lazyLoad': node_settings.owner.api_url + 'github/hgrid/',
-            'data': {
-                'branch': branch,
-                'sha': sha,
-            },
-        })
-        if ref:
-            rv['uploadUrl'] += '?' + ref
+        ref = None
+        can_edit = False
+        name_append = None
 
-    return rv
+    # TODO: Not used
+    name_tpl = ('GitHub: '
+                '{user}/{repo}').format(user=node_settings.user,
+                                                    repo=node_settings.repo)
+    permissions = {
+        'edit': can_edit,
+        'view': True
+    }
+    urls = {
+        'upload': node_settings.owner.api_url + 'github/file/' + (ref or ''),
+        'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
+        'branch': node_settings.owner.api_url + 'github/hgrid/root/',
+    }
+    return rubeus.build_addon_root(
+        node_settings,
+        '{user}/{repo}'.format(
+            user=node_settings.user,
+            repo=node_settings.repo
+        ),
+        urls=urls,
+        permissions=permissions,
+        extra=name_append
+    )
 
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_dummy_folder_public(*args, **kwargs):
-    """View function returning the dummy container for a GitHub repo. In
+def github_root_folder_public(*args, **kwargs):
+    """View function returning the root container for a GitHub repo. In
     contrast to other add-ons, this is exposed via the API for GitHub to
     accommodate switching between branches and commits.
 
@@ -106,15 +168,25 @@ def github_dummy_folder_public(*args, **kwargs):
     node_settings = kwargs['node_addon']
     auth = kwargs['auth']
     data = request.args.to_dict()
-
     parent = data.pop('parent', 'null')
 
-    return github_dummy_folder(node_settings, auth, parent, **data)
+    return github_hgrid_data(node_settings, auth=auth, parent=parent, contents=False, **data)
+
+
+# TODO I'm never used, can I go home?
+def _get_tree(node_settings, sha, connection=None):
+
+    connection = connection or GitHub.from_settings(node_settings.user_settings)
+    tree = connection.tree(
+        node_settings.user, node_settings.repo, sha, recursive=True,
+    )
+    if tree:
+        return tree['tree']
 
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_hgrid_data_contents(*args, **kwargs):
+def github_hgrid_data_contents(**kwargs):
     """Return a repo's file tree as a dict formatted for HGrid.
 
     """
@@ -127,22 +199,23 @@ def github_hgrid_data_contents(*args, **kwargs):
     # The requested branch and sha
     req_branch, req_sha = request.args.get('branch'), request.args.get('sha')
     # The actual branch and sha to use, given the addon settings
-    branch, sha, branches = _get_refs(node_addon, req_branch, req_sha,
-                                        connection=connection)
+    branch, sha, branches = _get_refs(
+        node_addon, req_branch, req_sha, connection=connection
+    )
     # Get file tree
     contents = connection.contents(
         user=node_addon.user, repo=node_addon.repo, path=path,
         ref=sha or branch,
     )
-    parent = request.args.get('parent', 'null')
+
     can_edit = _check_permissions(node_addon, auth, connection, branch, sha)
+
     if contents:
-        hgrid_tree = tree_to_hgrid(
-            contents, user=node_addon.user,
-            branch=branch, sha=sha,
-            repo=node_addon.repo, node=node, node_settings=node_addon,
-            parent=parent,
-            can_edit=can_edit,
+        hgrid_tree = to_hgrid(
+            contents, node_url=node.url, node_api_url=node.api_url,
+            branch=branch, sha=sha, can_edit=can_edit, parent=path,
+            max_size=node_addon.config.max_file_size,
+            accepted_files=node_addon.config.accept_extensions
         )
     else:
         hgrid_tree = []

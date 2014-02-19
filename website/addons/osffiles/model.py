@@ -2,16 +2,29 @@
 
 """
 
+import os
 import datetime
 
 from framework import GuidStoredObject, fields
-from website.addons.base import AddonNodeSettingsBase
+from framework.analytics import get_basic_counters
+from website.addons.base import AddonNodeSettingsBase, GuidFile
 
 
 class AddonFilesNodeSettings(AddonNodeSettingsBase):
 
     def to_json(self, user):
         return{}
+
+
+class OsfGuidFile(GuidFile):
+
+    name = fields.StringField(index=True)
+
+    @property
+    def file_url(self):
+        if self.name is None:
+            raise ValueError('Name field must be defined.')
+        return os.path.join('osffiles', self.name)
 
 
 class NodeFile(GuidStoredObject):
@@ -44,6 +57,16 @@ class NodeFile(GuidStoredObject):
     def latest_version_number(self):
         return len(self.node.files_versions[self.clean_filename])
 
+    # TODO: Test me
+    def download_count(self, node):
+        _, total = get_basic_counters(
+            'download:{0}:{1}'.format(
+                node._id,
+                self.path.replace('.', '_')
+            )
+        )
+        return total or 0
+
     # URL methods. Note: since NodeFile objects aren't cloned on forking or
     # registration, the `node` field doesn't necessarily refer to the project
     # to which a given file is attached. These methods must take a `node`
@@ -59,5 +82,9 @@ class NodeFile(GuidStoredObject):
         return '{0}osffiles/{1}/'.format(node.api_url, self.filename)
 
     def download_url(self, node):
-        return '{}osffiles/{}/version/{}/'.format(
+        return '{}osffiles/{}/version/{}/download/'.format(
+            node.url, self.filename, self.latest_version_number)
+
+    def render_url(self, node):
+        return '{}osffiles/{}/version/{}/render/'.format(
             node.api_url, self.filename, self.latest_version_number)

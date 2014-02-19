@@ -6,9 +6,11 @@ import os
 import urlparse
 
 from framework import fields
+from framework.guid.model import GuidStoredObject
 
 from website import settings
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from website.addons.base import GuidFile
 from website.addons.base import AddonError
 
 from . import settings as github_settings
@@ -36,6 +38,16 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
             'show_submit': False,
         })
         return rv
+
+class GithubGuidFile(GuidFile):
+
+    path = fields.StringField(index=True)
+
+    @property
+    def file_url(self):
+        if self.path is None:
+            raise ValueError('Path field must be defined.')
+        return os.path.join('github', 'file', self.path)
 
 class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
@@ -125,7 +137,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             return
 
         node_permissions = 'public' if node.is_public else 'private'
-        repo_permissions = 'private' if repo['private'] else 'public'
+        repo_permissions = 'private' if repo.private else 'public'
         if repo_permissions != node_permissions:
             message = (
                 'Warnings: This OSF {category} is {node_perm}, but the GitHub '
@@ -219,7 +231,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if data is None or 'errors' in data:
             repo = connect.repo(self.user, self.repo)
             if repo is not None:
-                current_privacy = 'private' if repo['private'] else 'public'
+                current_privacy = 'private' if repo.private else 'public'
             else:
                 current_privacy = 'unknown'
             return (
@@ -337,8 +349,8 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         # Store current branch data
         if self.user and self.repo:
             connect = GitHub.from_settings(self.user_settings)
-            branches = connect.branches(self.user, self.repo)
-            if branches is None:
+            branches = [branch.to_json() for branch in connect.branches(self.user, self.repo)]
+            if not branches:
                 raise AddonError('Could not fetch repo branches.')
             clone.registration_data['branches'] = branches
 
@@ -350,7 +362,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     #########
     # Hooks #
     #########
-
+    # TODO Should Events be added here?
     def add_hook(self, save=True):
 
         if self.user_settings:
@@ -364,13 +376,12 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                         os.path.join(
                             self.owner.api_url, 'github', 'hook/'
                         )
-                    ),
-                    'content_type': 'json',
+                    )
                 }
             )
 
             if hook:
-                self.hook_id = hook['id']
+                self.hook_id = hook.id
                 if save:
                     self.save()
 

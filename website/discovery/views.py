@@ -1,12 +1,45 @@
-import framework
-from framework import db as analytics
-
+from website import settings
 from website.project import Node
-from pymongo import DESCENDING
 
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
+from framework.analytics.piwik import PiwikClient
+
 def activity():
+
+    client = PiwikClient(
+        url=settings.PIWIK_HOST,
+        auth_token=settings.PIWIK_ADMIN_TOKEN,
+        site_id=settings.PIWIK_SITE_ID,
+        period='week',
+        date='today',
+    )
+    popular_project_ids = [
+        x for x in client.custom_variables if x.label == 'Project ID'
+    ][0].values
+
+    popular_public_projects = []
+    popular_public_registrations = []
+    for nid in popular_project_ids:
+        node = Node.load(nid.value)
+        if node is None:
+            continue
+        if node.is_public and not node.is_registration:
+            if len(popular_public_projects) < 10:
+                popular_public_projects.append(node)
+        elif node.is_public and node.is_registration:
+            if len(popular_public_registrations) < 10:
+                popular_public_registrations.append(node)
+        if len(popular_public_projects) >= 10 and len(popular_public_registrations) >= 10:
+            break
+
+    hits = {
+        x.value: {
+            'hits': x.actions,
+            'visits': x.visits
+        } for x in popular_project_ids
+    }
+
     # Projects
 
     recent_query = (
@@ -26,34 +59,6 @@ def activity():
         '-date_created'
     ).limit(10)
 
-    most_viewed_project_ids = analytics['pagecounters'].find(
-        {
-            '_id': {
-                '$regex': '^node:'
-            }
-        },
-        {'_id' : 1}
-    ).sort(
-        'total',
-        direction=DESCENDING
-    )
-
-    most_viewed_projects = []
-    while len(most_viewed_projects) < 10:
-        try:
-            node_id = next(most_viewed_project_ids)['_id']
-        except StopIteration:
-            break
-        node = Node.load(node_id.split(':')[1])
-        if (
-            node and
-            node.is_public and
-            node.category == 'project' and
-            (not node.is_deleted) and
-            (not node.is_registration)
-        ):
-            most_viewed_projects.append(node)
-
     # Registrations
     recent_public_registrations = Node.find(
         recent_query &
@@ -62,36 +67,10 @@ def activity():
         '-date_created'
     ).limit(10)
 
-    most_viewed_registration_ids = analytics['pagecounters'].find(
-        {
-            '_id': {
-                '$regex': '^node:'
-            }
-        }
-    ).sort(
-        'total',
-        direction=DESCENDING
-    )
-
-    most_viewed_registrations = []
-    while len(most_viewed_registrations) < 10:
-        try:
-            node_id = next(most_viewed_registration_ids)['_id']
-        except StopIteration:
-            break
-        node = Node.load(node_id.split(':')[1])
-        if (
-            node is not None and
-            node.is_public and
-            node.category == 'project' and
-            (not node.is_deleted) and
-            node.is_registration
-        ):
-            most_viewed_registrations.append(node)
-
     return {
         'recent_public_projects': recent_public_projects,
-        'most_viewed_projects': most_viewed_projects,
         'recent_public_registrations': recent_public_registrations,
-        'most_viewed_registrations': most_viewed_registrations,
+        'popular_public_projects': popular_public_projects,
+        'popular_public_registrations': popular_public_registrations,
+        'hits': hits,
     }

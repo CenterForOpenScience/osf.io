@@ -47,46 +47,84 @@ window.joinPrompts = function(prompts, base) {
         prompt += '</ul>';
     }
     return prompt;
-}
+};
 
 window.NodeActions = {};  // Namespace for NodeActions
 // TODO: move me to the ProjectViewModel
 
-NodeActions.beforeForkNode = function() {
+function beforeForkNode(url, done) {
 
     $.ajax({
-        url: nodeApiUrl + 'beforefork/',
+        url: url,
         contentType: 'application/json'
     }).success(function(response) {
         bootbox.confirm(
             joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
             function(result) {
                 if (result) {
-                    NodeActions.forkNode();
+                    done && done();
                 }
             }
         )
     });
 
-};
+}
 
 NodeActions.forkNode = function() {
 
-    // Block page
-    block();
+    beforeForkNode(nodeApiUrl + 'fork/before/', function() {
 
-    // Fork node
-    $.ajax({
-        url: nodeApiUrl + 'fork/',
-        type: 'POST'
-    }).done(function(response) {
-        window.location = response;
-    }).fail(function() {
-        unblock();
-        bootbox.alert('Forking failed');
+        // Block page
+        block();
+
+        // Fork node
+        $.ajax({
+            url: nodeApiUrl + 'fork/',
+            type: 'POST'
+        }).success(function(response) {
+            window.location = response;
+        }).error(function() {
+            unblock();
+            bootbox.alert('Forking failed');
+        });
+
     });
 
 };
+
+NodeActions.forkPointer = function(pointerId, nodeId) {
+
+    beforeForkNode('/api/v1/' + nodeId + '/fork/before/', function() {
+
+        // Block page
+        block();
+
+        // Fork pointer
+        $.ajax({
+            type: 'post',
+            url: nodeApiUrl + 'pointer/fork/',
+            data: JSON.stringify({'pointerId': pointerId}),
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function(response) {
+                window.location.reload();
+            },
+            error: function() {
+                unblock();
+                bootbox.alert('Could not fork link.');
+            }
+        });
+
+    });
+
+};
+
+
+NodeActions.addonFileRedirect = function(item) {
+    window.location.href = item.params.urls.view;
+    return false;
+};
+
 
 // todo: discuss; this code not used
 NodeActions.addNodeToProject = function(node, project) {
@@ -198,6 +236,33 @@ NodeActions._openCloseNode = function(node_id) {
     }
 };
 
+
+NodeActions.reorderChildren = function(idList, elm) {
+    $.ajax({
+        type: 'POST',
+        url: nodeApiUrl + 'reorder_components/',
+        data: JSON.stringify({'new_list': idList}),
+        contentType: 'application/json',
+        dataType: 'json',
+        fail: function() {
+            $(elm).sortable('cancel');
+        }
+    });
+};
+
+NodeActions.removePointer = function(pointerId, pointerElm) {
+    $.ajax({
+        type: 'DELETE',
+        url: nodeApiUrl + 'pointer/',
+        data: JSON.stringify({pointerId: pointerId}),
+        contentType: 'application/json',
+        dataType: 'json',
+        success: function(response) {
+            pointerElm.remove();
+        }
+    })
+};
+
 /*
 refresh rendered file through mfr
 */
@@ -213,10 +278,10 @@ window.FileRenderer = {
     getCachedFromServer: function() {
         var self = this;
         $.get( self.url, function(data) {
-            if(data){
+            if (data) {
                 self.element.html(data);
                 clearInterval(self.refreshContent);
-            }else{
+            } else {
                 self.tries += 1;
                 if(self.tries > 10){
                     clearInterval(self.refreshContent);
@@ -259,6 +324,21 @@ $(document).ready(function() {
     ////////////////////
     // Event Handlers //
     ////////////////////
+
+    $('.remove-pointer').on('click', function() {
+        var $this = $(this);
+        bootbox.confirm(
+            'Are you sure you want to remove this pointer? This will not ' +
+            'remove the project this pointer is linked to.',
+            function(result) {
+                if (result) {
+                    var pointerId = $this.attr('data-id');
+                    var pointerElm = $this.closest('.list-group-item');
+                    NodeActions.removePointer(pointerId, pointerElm);
+                }
+            }
+        )
+    });
 
     $('.citation-toggle').on('click', function() {
         $(this).closest('.citations').find('.citation-list').slideToggle();

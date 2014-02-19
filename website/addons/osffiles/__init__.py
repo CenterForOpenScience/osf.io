@@ -1,11 +1,15 @@
 from . import routes, views, model
 
-MODELS = [model.AddonFilesNodeSettings, model.NodeFile]
+MODELS = [
+    model.AddonFilesNodeSettings,
+    model.NodeFile,
+    model.OsfGuidFile,
+]
 NODE_SETTINGS_MODEL = model.AddonFilesNodeSettings
 
 ROUTES = [
     routes.settings_routes,
-    routes.widget_routes,
+    #routes.widget_routes,
     routes.web_routes,
     routes.api_routes
 ]
@@ -25,6 +29,6 @@ CONFIGS = []
 CATEGORIES = ['storage']
 
 HAS_HGRID_FILES = True
-GET_HGRID_DUMMY = views.osffiles_dummy_folder
+GET_HGRID_DATA = views.osffiles_dummy_folder
 
 MAX_FILE_SIZE = 1024 * 1024 * 128

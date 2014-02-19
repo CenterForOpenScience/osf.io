@@ -8,6 +8,7 @@ from webtest_plus import TestApp
 from framework.auth.decorators import Auth
 import website.app
 from tests.factories import ProjectFactory, AuthUserFactory
+from website.addons.osffiles.model import OsfGuidFile
 
 app = website.app.init_app(
     routes=True, set_backends=False,
@@ -42,8 +43,8 @@ class TestFilesViews(DbTestCase):
         return self.app.get(url, auth=self.auth).maybe_follow()
 
     def test_download_file(self):
-        url = self.project.api_url + 'osffiles/firstfile/version/1/'
-        res = self.app.get(url, auth=self.auth).maybe_follow()
+        url = self.project.uploads[0].download_url(self.project)
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(res.body, 'firstcontent')
 
     def test_upload_file(self):
@@ -58,8 +59,8 @@ class TestFilesViews(DbTestCase):
         )
 
         assert_equal(post_res.status_code, 201)
-        assert_equal(len(post_res.json), 1)
-        assert_equal(post_res.json[0]['name'], 'newfile')
+        assert_true(isinstance(post_res.json, dict), 'return value is a dict')
+        assert_equal(post_res.json['name'], 'newfile')
 
         assert_equal(len(get_res.json), 2)
         assert_equal(get_res.json[1]['name'], 'newfile')
@@ -81,7 +82,7 @@ class TestFilesViews(DbTestCase):
         for url in ['view', 'download', 'delete']:
             assert_in(
                 self.project._id,
-                res.json[0][url]
+                res.json[0]['urls'][url]
             )
 
     def test_file_urls_fork(self):
@@ -94,7 +95,7 @@ class TestFilesViews(DbTestCase):
         for url in ['view', 'download', 'delete']:
             assert_in(
                 fork._id,
-                res.json[0][url]
+                res.json[0]['urls'][url]
             )
 
     def test_file_urls_registration(self):
@@ -109,5 +110,36 @@ class TestFilesViews(DbTestCase):
         for url in ['view', 'download', 'delete']:
             assert_in(
                 registration._id,
-                res.json[0][url]
+                res.json[0]['urls'][url]
             )
+
+    def test_view_creates_guid(self):
+
+        guid_count = OsfGuidFile.find().count()
+
+        # View file for the first time
+        url = self.project.uploads[0].url(self.project)
+        res = self.app.get(url, auth=self.user.auth).maybe_follow(auth=self.user.auth)
+
+        guids = OsfGuidFile.find()
+
+        # GUID count has been incremented by one
+        assert_equal(
+            guids.count(),
+            guid_count + 1
+        )
+
+        # Client has been redirected to GUID
+        assert_equal(
+            res.request.path.strip('/'),
+            guids[guids.count() - 1]._id
+        )
+
+        # View file for the second time
+        self.app.get(url, auth=self.user.auth).maybe_follow()
+
+        # GUID count has not been incremented
+        assert_equal(
+            OsfGuidFile.find().count(),
+            guid_count + 1
+        )

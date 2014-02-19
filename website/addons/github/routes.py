@@ -7,7 +7,6 @@ from website.routes import OsfWebRenderer
 
 from website.addons.github import views
 
-
 settings_routes = {
     'rules': [
 
@@ -16,11 +15,6 @@ settings_routes = {
             '/project/<pid>/github/settings/',
             '/project/<pid>/node/<nid>/github/settings/',
         ], 'post', views.config.github_set_config, json_renderer),
-
-        Rule([
-            '/project/<pid>/github/file/<path:path>',
-            '/project/<pid>/node/<nid>/github/file/<path:path>',
-        ], 'get', views.crud.github_download_file, json_renderer),
 
         # Widget routes
         Rule([
@@ -104,14 +98,13 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/github/hgrid/dummy/',
-                '/project/<pid>/node/<nid>/github/hgrid/dummy/',
+                '/project/<pid>/github/hgrid/root/',
+                '/project/<pid>/node/<nid>/github/hgrid/root/',
             ],
             'get',
-            views.hgrid.github_dummy_folder_public,
+            views.hgrid.github_root_folder_public,
             json_renderer,
         ),
-
         ### File Render ###
         Rule(
             [
@@ -129,9 +122,23 @@ api_routes = {
 
 page_routes = {
     'rules': [
-        Rule([
-            '/project/<pid>/github/file/<path:path>',
-            '/project/<pid>/node/<nid>/github/file/<path:path>',
-        ], 'get', views.crud.github_view_file, OsfWebRenderer('../addons/github/templates/github_view_file.mako')),
+        Rule(
+            [
+                '/project/<pid>/github/file/<path:path>',
+                '/project/<pid>/node/<nid>/github/file/<path:path>',
+            ],
+            'get',
+            views.crud.github_view_file,
+            OsfWebRenderer('../addons/github/templates/github_view_file.mako'),
+        ),
+        Rule(
+            [
+                '/project/<pid>/github/file/<path:path>/download/',
+                '/project/<pid>/node/<nid>/github/file/<path:path>/download/',
+            ],
+            'get',
+            views.crud.github_download_file,
+            json_renderer,
+        ),
     ],
 }

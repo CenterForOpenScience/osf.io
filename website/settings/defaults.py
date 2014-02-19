@@ -15,7 +15,7 @@ BASE_PATH = parent_dir(HERE)  # website/ directory
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
-DOMAIN = 'https://openscienceframework.org/'
+DOMAIN = 'http://localhost:5000/'
 
 # User management & registration
 CONFIRM_REGISTRATIONS_BY_EMAIL = False # Not fully implemented
@@ -37,10 +37,13 @@ DEBUG_MODE = False
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
 
-FROM_EMAIL = 'openscienceframework-noreply@openscienceframework.org'
+FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
+
+# TODO: Override in local.py
+MAILGUN_API_KEY = None
 
 # TODO: Override in local.py in production
 UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
@@ -121,8 +124,8 @@ CELERY_IMPORTS = (
 
 ADDONS_REQUESTED = [
     'wiki', 'osffiles',
-    'github',
-    #'bitbucket', 'figshare',
+    'github', 's3'
+    #'bitbucket', 'figshare', 's3',
     #'zotero',
 ]
 

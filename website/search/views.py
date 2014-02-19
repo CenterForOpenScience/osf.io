@@ -241,4 +241,3 @@ def _search_contributor(query):
 
 def search_contributor():
     return _search_contributor(request.args.get('query', ''))
-

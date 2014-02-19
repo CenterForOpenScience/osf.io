@@ -3,41 +3,28 @@
 """
 
 import os
-import json
-import base64
 import urllib
-import datetime
 
-import requests
-from requests_oauthlib import OAuth2Session
-from hurry.filesize import size, alternative
+import github3
+from dateutil.parser import parse
+from httpcache import CachingHTTPAdapter
 
-from . import settings as github_settings
-
-GH_URL = 'https://github.com/'
-API_URL = 'https://api.github.com/'
-
-# TODO: Move to redis / memcached
-github_cache = {}
+from website.addons.github import settings as github_settings
 
 
 class GitHub(object):
 
     def __init__(self, access_token=None, token_type=None):
 
-        self.access_token = access_token
-        self.token_type = token_type
-
         if access_token and token_type:
-            self.session = OAuth2Session(
-                github_settings.CLIENT_ID,
-                token={
-                    'access_token': access_token,
-                    'token_type': token_type,
-                }
-            )
+            self.gh3 = github3.login(token=access_token)
         else:
-            self.session = requests
+            self.gh3 = github3.GitHub()
+
+        #Caching libary
+        if github_settings.CACHE:
+            self.gh3._session.mount('http://', CachingHTTPAdapter())
+            self.gh3._session.mount('https://', CachingHTTPAdapter())
 
     @classmethod
     def from_settings(cls, settings):
@@ -48,49 +35,6 @@ class GitHub(object):
             )
         return cls()
 
-    def _send(self, url, method='get', output='json', cache=True, **kwargs):
-        """
-
-        """
-        func = getattr(self.session, method.lower())
-
-        # Add if-modified-since header if needed
-        headers = kwargs.pop('headers', {})
-        cache_key = '{0}::{1}::{2}'.format(
-            url, method, str(kwargs)
-        )
-        cache_data = github_cache.get(cache_key)
-        if cache and cache_data:
-            if 'if-modified-since' not in headers:
-                headers['if-modified-since'] = cache_data['date'].strftime('%c')
-
-        # Send request
-        req = func(url, headers=headers, **kwargs)
-
-        # Pull from cache if not modified
-        if cache and cache_data and req.status_code == 304:
-            return cache_data['data']
-
-        # Get return value
-        rv = None
-        if 200 <= req.status_code < 300:
-            if output is None:
-                rv = req
-            else:
-                rv = getattr(req, output)
-                if callable(rv):
-                    rv = rv()
-
-        # Cache return value if needed
-        if cache and rv:
-            if req.headers.get('last-modified'):
-                github_cache[cache_key] = {
-                    'data': rv,
-                    'date': datetime.datetime.utcnow(),
-                }
-
-        return rv
-
     def user(self, user=None):
         """Fetch a user or the authenticated user.
 
@@ -99,12 +43,7 @@ class GitHub(object):
         :return dict: GitHub API response
 
         """
-        url = (
-            os.path.join(API_URL, 'users', user)
-            if user
-            else os.path.join(API_URL, 'user')
-        )
-        return self._send(url, cache=False)
+        return self.gh3.user(user)
 
     def repo(self, user, repo):
         """Get a single Github repo's info.
@@ -115,9 +54,7 @@ class GitHub(object):
             See http://developer.github.com/v3/repos/#get
 
         """
-        return self._send(
-            os.path.join(API_URL, 'repos', user, repo)
-        )
+        return self.gh3.repository(user, repo)
 
     def branches(self, user, repo, branch=None):
         """List a repo's branches or get a single branch.
@@ -129,10 +66,7 @@ class GitHub(object):
             http://developer.github.com/v3/repos/#list-branches
 
         """
-        url = os.path.join(API_URL, 'repos', user, repo, 'branches')
-        if branch:
-            url = os.path.join(url, branch)
-        return self._send(url)
+        return self.gh3.repository(user, repo).iter_branches() or []
 
     def commits(self, user, repo, path=None, sha=None):
         """Get commits for a repo or file.
@@ -145,15 +79,7 @@ class GitHub(object):
             http://developer.github.com/v3/repos/commits/
 
         """
-        return self._send(
-            os.path.join(
-                API_URL, 'repos', user, repo, 'commits'
-            ),
-            params={
-                'path': path,
-                'sha': sha,
-            }
-        )
+        return self.gh3.repository(user, repo).iter_commits(sha=sha, path=path)
 
     def history(self, user, repo, path, sha=None):
         """Get commit history for a file.
@@ -170,10 +96,10 @@ class GitHub(object):
         if req:
             return [
                 {
-                    'sha': commit['sha'],
-                    'name': commit['commit']['author']['name'],
-                    'email': commit['commit']['author']['email'],
-                    'date': commit['commit']['author']['date'],
+                    'sha': commit.commit.sha,
+                    'name': commit.commit.author['name'],
+                    'email': commit.commit.author['email'],
+                    'date': parse(commit.commit.author['date']).ctime(),
                 }
                 for commit in req
             ]
@@ -190,20 +116,11 @@ class GitHub(object):
             http://developer.github.com/v3/git/trees/
 
         """
-        # NOTE: GitHub will return the tree recursively as long as the
-        # recursive param is included, no matter what its value is
-        # Therefore, pass NO params for a NON-recursive tree
-        params = {'recursive': 1} if recursive else {}
-        req = self._send(os.path.join(
-                API_URL, 'repos', user, repo, 'git', 'trees',
-                urllib.quote_plus(sha),
-            ),
-            params=params,
-        )
+        tree = self.gh3.repository(user, repo).tree(sha)
 
-        if req is not None:
-            return req
-        return None
+        if recursive:
+            return tree.recurse()
+        return tree
 
     def file(self, user, repo, path, ref=None):
         """Get a file within a repo and its contents.
@@ -213,8 +130,7 @@ class GitHub(object):
         """
         req = self.contents(user=user, repo=repo, path=path, ref=ref)
         if req:
-            content = req['content']
-            return req['name'], base64.b64decode(content), req['size']
+            return req.name, req.decoded, req.size
         return None, None, None
 
     def contents(self, user, repo, path='', ref=None):
@@ -222,19 +138,9 @@ class GitHub(object):
         http://developer.github.com/v3/repos/contents/#get-contents
 
         """
-        params = {
-            'ref': ref,
-        }
+        return self.gh3.repository(user, repo).contents(path, ref)
 
-        req = self._send(
-            os.path.join(
-                API_URL, 'repos', user, repo, 'contents', path
-            ),
-            cache=True,
-            params=params,
-        )
-        return req
-
+    # TODO
     def starball(self, user, repo, archive='tar', ref=None):
         """Get link for archive download.
 
@@ -245,21 +151,8 @@ class GitHub(object):
         :returns: tuple: Tuple of headers and file location
 
         """
-        url_parts = [
-            API_URL, 'repos', user, repo, archive + 'ball'
-        ]
-        if ref:
-            url_parts.append(ref)
 
-        req = self._send(
-            os.path.join(*url_parts),
-            cache=False,
-            output=None,
-        )
-
-        if req.status_code == 200:
-            return dict(req.headers), req.content
-        return None, None
+        return self.gh3.repository(user, repo).archive(archive + 'ball', ref=None)
 
     def set_privacy(self, user, repo, private):
         """Set privacy of GitHub repo.
@@ -270,19 +163,7 @@ class GitHub(object):
             http://developer.github.com/v3/repos/#edit
 
         """
-        req = self._send(
-            os.path.join(
-                API_URL, 'repos', user, repo
-            ),
-            method='patch',
-            cache=False,
-            data=json.dumps({
-                'name': repo,
-                'private': private,
-            })
-        )
-
-        return req
+        return self.gh3.repository(user, repo).edit(repo, private=private)
 
     #########
     # Hooks #
@@ -297,12 +178,7 @@ class GitHub(object):
             http://developer.github.com/v3/repos/hooks/#json-http
 
         """
-
-        return self._send(
-            os.path.join(
-                API_URL, 'repos', user, repo, 'hooks',
-            )
-        )
+        return self.gh3.repository(user, repo).iter_hooks()
 
     def add_hook(self, user, repo, name, config, events=None, active=True):
         """Create a webhook.
@@ -313,83 +189,41 @@ class GitHub(object):
             http://developer.github.com/v3/repos/hooks/#json-http
 
         """
-        data = {
-            'name': name,
-            'config': config,
-            'events': events or ['push'],
-            'active': active,
-        }
 
-        return self._send(
-            os.path.join(
-                API_URL, 'repos', user, repo, 'hooks'
-            ),
-            method='post',
-            cache=False,
-            data=json.dumps(data),
-        )
+        return self.gh3.repository(user, repo).create_hook(name, config, events, active)
 
     def delete_hook(self, user, repo, _id):
         """Delete a webhook.
 
         :param str user: GitHub user name
         :param str repo: GitHub repo name
-        :return requests.models.Response: Response object
+        :return bool: True if successfull False otherwise
 
         """
         # Note: Must set `output` to `None`; no JSON response from this
         # endpoint
-        return self._send(
-            os.path.join(
-                API_URL, 'repos', user, repo, 'hooks', str(_id),
-            ),
-            'delete',
-            cache=False,
-            output=None,
-        )
+        return self.gh3.repository(user, repo).hook(_id).delete()
 
     ########
     # CRUD #
     ########
 
-    def upload_file(self, user, repo, path, message, content, sha=None, branch=None, committer=None, author=None):
+    def create_file(self, user, repo, path, message, content, branch=None, committer=None, author=None):
+        return self.gh3.repository(
+            user, repo
+        ).create_file(
+            path, message, content, branch, author, committer
+        )
 
-        data = {
-            'message': message,
-            'content': base64.b64encode(content),
-            'sha': sha,
-            'branch': branch,
-            'committer': committer,
-            'author': author,
-        }
-
-        return self._send(
-            os.path.join(
-                API_URL, 'repos', user, repo, 'contents', path
-            ),
-            method='put',
-            cache=False,
-            data=json.dumps(data),
+    def update_file(self, user, repo, path, message, content, sha=None, branch=None, committer=None, author=None):
+        return self.gh3.repository(
+            user, repo
+        ).update_file(
+            path, message, content, sha, branch, author, committer
         )
 
     def delete_file(self, user, repo, path, message, sha, branch=None, committer=None, author=None):
-
-        data = {
-            'message': message,
-            'sha': sha,
-            'branch': branch,
-            'committer': committer,
-            'author': author,
-        }
-
-        return self._send(
-            os.path.join(
-                API_URL, 'repos', user, repo, 'contents', path
-            ),
-            method='delete',
-            cache=False,
-            data=json.dumps(data),
-        )
+        return self.gh3.repository(user, repo).delete_file(path, message, sha, branch, committer, author)
 
     ########
     # Auth #
@@ -399,33 +233,12 @@ class GitHub(object):
 
         if self.access_token is None:
             return
-
-        return self._send(
-            os.path.join(
-                API_URL, 'applications', github_settings.CLIENT_ID,
-                'tokens', self.access_token,
-            ),
-            method='delete',
-            cache=False,
-            output=None,
-            auth=(
-                github_settings.CLIENT_ID,
-                github_settings.CLIENT_SECRET,
-            )
-        )
-
-
-type_map = {
-    'tree': 'folder',
-    'blob': 'file',
-    'file': 'file',
-    'dir': 'folder'
-}
+        return self.gh3.authorization().delete()
 
 
 def ref_to_params(branch=None, sha=None):
 
-    return urllib.urlencode({
+    params = urllib.urlencode({
         key: value
         for key, value in {
             'branch': branch,
@@ -433,99 +246,24 @@ def ref_to_params(branch=None, sha=None):
         }.iteritems()
         if value
     })
+    if params:
+        return '?' + params
+    return ''
 
+def _build_github_urls(item, node_url, node_api_url, branch, sha):
 
-def tree_to_hgrid(tree, user, repo, node, node_settings, parent=None, branch=None, sha=None, hotlink=False, can_edit=False):
-    """Convert GitHub tree data to HGrid format.
+    quote_path = urllib.quote_plus(item.path)
+    params = ref_to_params(branch, sha)
 
-    :param list tree: JSON description of git tree
-    :param str user: GitHub user name
-    :param str repo: GitHub repo name
-    :param Node node: OSF Node
-    :param str branch: Git branch
-    :param str sha: Git SHA
-    :param bool hotlink: Hotlink files if ref provided; will yield broken
-        links if repo is private
-    :return list: List of HGrid-formatted dicts
-
-    """
-    grid = []
-
-    ref = ref_to_params(branch, sha)
-
-    lazy_url_parts = [node.api_url, 'github', 'hgrid']
-
-    parent_uid = parent or 'null'
-
-    for item in tree:
-
-        # Types should be "dir" or "file" but may also be "commit". Ignore
-        # unexpected types.
-        if item['type'] not in type_map:
-            continue
-
-        path = item['path']
-        qpath = urllib.quote(path)
-
-        _, basename = os.path.split(path)
-        _, ext = os.path.splitext(path)
-        ext = ext.lstrip('.')
-
-        row = {
-            'uid': 'github:{0}:{1}'.format(node_settings._id, qpath),
-            'name': basename,
-            'parent_uid': parent_uid,
-            'type': type_map[item['type']],
-            'can_edit': can_edit,
-            'permission': can_edit,
+    if item.type in ['tree', 'dir']:
+        return {
+            'upload': os.path.join(node_api_url, 'github', 'file', quote_path) + '/' + params,
+            'fetch': os.path.join(node_api_url, 'github', 'hgrid', item.path) + '/',
         }
-
-        # Build base URLs
-        base_url = os.path.join(node.url, 'github', 'file', qpath) + '/'
-        base_api_url = os.path.join(node.api_url, 'github', 'file', qpath) + '/'
-        if ref:
-            base_url += '?' + ref
-            base_api_url += '?' + ref
-
-        if type_map[item['type']] == 'file':
-
-            # Note: For files, `sha` is the hash of the file
-            row['data'] = {
-                'sha': item['sha'],
-                'branch': branch,
-            }
-
-            # Size may be None for partially uploaded files
-            if item['size']:
-                row['size'] = [
-                    item['size'],
-                    size(item['size'], system=alternative)
-                ]
-            else:
-                row['size'] = None
-
-            row['ext'] = ext
-
-            # URLs
-            row['view'] = base_url
-            row['delete'] = base_api_url
-            if hotlink and ref:
-                row['download'] = raw_url(user, repo, sha or branch, qpath)
-            else:
-                row['download'] = base_url
-
-        else:
-
-            row['addonName'] = 'GitHub',
-            row['maxFilesize'] = node_settings.config.max_file_size,
-            # Note: For folders, `sha` is the hash of the last commit
-            row['data'] = {
-                'sha': sha,
-                'branch': branch,
-            }
-            row['uploadUrl'] = base_api_url
-            row['lazyLoad'] = os.path.join(*lazy_url_parts + [item['path']]) + '/'
-
-        grid.append(row)
-
-    return grid
+    elif item.type in ['file', 'blob']:
+        return {
+            'view': os.path.join(node_url, 'github', 'file', quote_path) + '/' + params,
+            'download': os.path.join(node_url, 'github', 'file', quote_path, 'download') + '/' + params,
+            'delete': os.path.join(node_api_url, 'github', 'file', quote_path) + '/' + ref_to_params(branch, item.sha),
+        }
+    raise ValueError

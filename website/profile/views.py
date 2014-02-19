@@ -14,7 +14,7 @@ from framework.auth.utils import parse_name
 
 from website.models import ApiKey, User
 from website.views import _render_nodes
-from website import settings, filters
+from website import settings
 from website.profile import utils
 
 

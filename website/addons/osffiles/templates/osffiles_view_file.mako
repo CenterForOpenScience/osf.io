@@ -38,7 +38,7 @@
                         ${version['total']}
                     </td>
                     <td>
-                        <a href="${node['api_url']}osffiles/${file_name}/version/${version['number']}/">
+                        <a href="${version['download_url']}" download="${version['file_name']}">
                             <i class="icon-download-alt"></i>
                         </a>
                     </td>
