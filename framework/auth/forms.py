@@ -61,6 +61,9 @@ class ResetPasswordForm(Form):
     password = password_field
     password2 = confirm_password_field
 
+class SetEmailAndPasswordForm(ResetPasswordForm):
+    username = email_field
+
 
 class RegistrationForm(Form):
     fullname = name_field

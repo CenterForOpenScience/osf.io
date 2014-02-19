@@ -8,14 +8,9 @@
     <div class="col-md-6 col-md-offset-3">
     <p>Hello ${firstname}! Welcome to the Open Science Framework. Please set a password to claim your account.</p>
 
-        <div class="form-group">
-            <label for="email">Email</label>
-            <input value="${email}" id="email" type='email' class='form-control'
-                ${'disabled' if email else ''} />
-        </div>
         <div mod-meta='{
                 "tpl": "util/render_form.mako",
-                "uri": "/api/v1/forms/reset_password/",
+                "uri": "/api/v1/forms/set_email_and_password/",
                 "kwargs": {
                     "name": "resetpassword",
                     "method_string": "POST",
@@ -33,5 +28,8 @@
         </div>
     </div>
 </div>
+</%def>
+
+<%def name="javascript_bottom()">
 
 </%def>
