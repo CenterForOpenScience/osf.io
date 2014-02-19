@@ -46,7 +46,10 @@
                 }).fail(function(xhr) {
                     var response = JSON.parse(xhr.responseText);
                     if (response && response.message) {
-                        message = response.message;
+                        if(response.message === 'reload')
+                            window.location.reload();
+                        else
+                            message = response.message;
                     } else {
                         message = 'Error: Keys not removed';
                     }

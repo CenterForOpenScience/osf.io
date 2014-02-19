@@ -15,7 +15,7 @@
             <span class="caret"></span>
           </button>
 
-          <ul class="dropdown-menu pull-right" role="menu">
+          <ul class="dropdown-menu pull-right" role="menu" id="s3-dropdown">
             <li role="presentation" class="dropdown-header">Your buckets</li>
             ${bucket_list}
             <li role="presentation" class="divider"></li>
@@ -26,6 +26,14 @@
         </div>
 
     </div>
+
+% elif user_has_auth and is_owner:
+
+    <div class="well well-sm">Your access keys are not currently working. You can change them in <a href="/settings/">settings</a>.</div>
+
+% elif user_has_auth and not bucket_list:
+
+    <div class="well well-sm"><a href="${owner_url}">${owner}'s</a> access keys are not currently working.</div>
 
 % elif user_has_auth:
 

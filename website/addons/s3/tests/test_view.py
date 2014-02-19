@@ -245,3 +245,7 @@ class TestS3ViewsHgrid(DbTestCase):
         url = "/api/v1/project/{0}/s3/hgrid/dummy/".format(self.project._id)
         rv = self.app.get(url, auth=self.user.auth)
         assert_equals(rv.body, 'null')
+
+#TODO
+#removed access key
+#
