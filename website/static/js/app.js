@@ -298,6 +298,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
     self.results = ko.observableArray();
     self.selection = ko.observableArray();
     self.errorMsg = ko.observable('');
+    self.inviteError = ko.observable('');
 
     self.nodes = ko.observableArray([]);
     self.nodesToChange = ko.observableArray();
@@ -400,6 +401,10 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         // TODO
         console.log('An error occurred on sending invite');
         console.log(error);
+        console.log(JSON.parse(xhr.responseText))
+        var response = JSON.parse(xhr.responseText);
+        // Update error message
+        self.inviteError(response.message);
     }
 
     self.sendInvite = function() {

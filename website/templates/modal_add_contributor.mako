@@ -162,7 +162,8 @@
                          data-bind='enable: inviteEmail && inviteName'
                          type="submit">Invite and add</button>
                          <div class="help-block">
-                            <span>We will notify the user that they have been added to your project.</span>
+                            <p>We will notify the user that they have been added to your project.</p>
+                            <p class='text-danger' data-bind='text: inviteError'></p>
                         </div>
                     </form>
                 </div><!-- end invite user page -->

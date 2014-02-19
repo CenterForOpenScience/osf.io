@@ -350,7 +350,7 @@ class TestUserInviteViews(DbTestCase):
         latest_user = User.find()[len(User.find()) - 1]
         data = latest_user.unclaimed_records[self.project._primary_key]
         assert_equal(data['name'], 'Briann May')
-        assert_equal(data['referrer_id'], self.user.id)
+        assert_equal(data['referrer_id'], self.user._primary_key)
         assert_true(data['verification'])
 
     @mock.patch('website.project.views.contributor.send_email')
@@ -397,6 +397,11 @@ class TestClaimViews(DbTestCase):
     def test_invalid_claim_url_responds_with_404(self):
         res = self.app.get('/claim/badsignature/', expect_errors=True).maybe_follow()
         assert_equal(res.status_code, 404)
+
+    def test_posting_to_claim_url_with_valid_data(self):
+        url = self.user.get_claim_url(self.project._primary_key)
+        # res = self.app.post(url, )
+        assert 0, 'finish me'
 
 
 class TestWatchViews(DbTestCase):

@@ -14,7 +14,7 @@ from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor
 from framework.email.tasks import send_email
 from framework import forms
-from framework.auth.forms import ResetPasswordForm
+from framework.auth.forms import SetEmailAndPasswordForm
 
 from website import settings
 from website.filters import gravatar
@@ -243,7 +243,9 @@ The OSF Team
 ''')
 
 def email_invite(to_addr, new_user, referrer, node):
-    claim_url = new_user.get_claim_url(node._primary_key)
+    # Add querystring with email, so that set password form can prepopulate the
+    # email field
+    claim_url = new_user.get_claim_url(node._primary_key) + '?email={0}'.format(to_addr)
     message = INVITE_EMAIL.render(new_user=new_user, referrer=referrer, node=node,
         claim_url=claim_url)
     logger.debug('Sending invite email:')
@@ -260,16 +262,39 @@ def email_invite(to_addr, new_user, referrer, node):
     )
 
 
-def claim_user(**kwargs):
-    """View for rendering the set password page for a claimed user."""
+def claim_user_form(**kwargs):
+    """View for rendering the set password page for a claimed user.
+
+    Renders the set password form, validates it, and sets the user's password.
+    """
+    # There shouldn't be a user logged in
+    if framework.auth.get_current_user():
+        # TODO: should display more useful info to the user instead of an error page
+        raise HTTPError(400)
     signature = kwargs['signature']
     email = request.args.get('email', '')
+    form = SetEmailAndPasswordForm(request.form)
     # Parse the signature; if invalid, raise 404
     try:
         referral_data = User.parse_claim_signature(signature)
     except BadSignature:
         raise HTTPError(http.NOT_FOUND)
+    user = framework.auth.get_user(id=referral_data['_id'])
+    # user ID is invalid. Unregistered user is not in database
+    if not user:
+        raise HTTPError(400)
     parsed_name = parse_name(referral_data['name'])
+    if request.method == 'POST':
+        if form.validate():
+            username = form.username.data.strip()
+            password = form.password.data.strip()
+            user.register(username=username, password=password)
+            user.save()
+            project_id = referral_data['project_id']
+            # Go to project page
+            return framework.redirect('/{project_id}/'.format(project_id=project_id))
+        else:
+            forms.push_errors_to_status(form.errors)
     return {
         'firstname': parsed_name['given_name'],
         'email': email,
@@ -290,10 +315,16 @@ def invite_contributor_post(**kwargs):
     fullname, email = request.json.get('fullname'), request.json.get('email')
     if not fullname:
         return {'status': 400, 'message': 'Must provide fullname and email'}, 400
-    new_user = User.create_unregistered(fullname=fullname, email=email)
-    new_user.add_unclaimed_record(node=node,
-        given_name=fullname, referrer=auth.user)
-    new_user.save()
+    new_user = framework.auth.get_user(username=email)
+    if not new_user:
+        new_user = User.create_unregistered(fullname=fullname, email=email)
+        new_user.save()  # Need to save so that user has an ID
+    if node._primary_key not in new_user.unclaimed_records:
+        new_user.add_unclaimed_record(node=node,
+            given_name=fullname, referrer=auth.user)
+        new_user.save()
+    else:
+        return {'status': 400, 'message': 'User is already a contributor to this project.'}, 400
     if email:
         email_invite(email, new_user, referrer=auth.user, node=node)
     return {'status': 'success', 'contributor': _add_contributor_json(new_user)}
