@@ -321,16 +321,18 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
 
     self.search = function() {
         self.errorMsg('');
-        $.getJSON(
-            '/api/v1/user/search/',
-            {query: self.query()},
-            function(result) {
-                if (!result.users.length) {
-                    self.errorMsg('No results found.');
+        if (self.query()) {
+            $.getJSON(
+                '/api/v1/user/search/',
+                {query: self.query()},
+                function(result) {
+                    if (!result.users.length) {
+                        self.errorMsg('No results found.');
+                    }
+                    self.results(result['users']);
                 }
-                self.results(result['users']);
-            }
-        )
+            )
+        };
     };
 
     self.importFromParent = function() {
