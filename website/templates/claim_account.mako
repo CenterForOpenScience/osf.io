@@ -31,5 +31,13 @@
 </%def>
 
 <%def name="javascript_bottom()">
-
+<script>
+## Prepopulate email address with the 'email' url param
+(function($) {
+    var emailVal = $.urlParam('email').trim()
+    if (emailVal.length) {
+        $('#username').val(emailVal);
+    }
+})(jQuery);
+</script>
 </%def>
