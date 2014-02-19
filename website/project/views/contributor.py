@@ -3,6 +3,7 @@ import httplib as http
 import logging
 
 from mako.template import Template
+from itsdangerous import BadSignature
 
 import framework
 from framework import request, User
@@ -259,12 +260,22 @@ def email_invite(to_addr, new_user, referrer, node):
 def claim_user(**kwargs):
     """View for rendering the set password page for a claimed user."""
     signature = kwargs['signature']
-    return {}
+    # Parse the signature; if invalid, raise 404
+    try:
+        referral_data = User.parse_claim_signature(signature)
+    except BadSignature:
+        raise HTTPError(http.NOT_FOUND)
+    return referral_data
 
 @must_be_valid_project
 @must_be_contributor
 @must_not_be_registration
 def invite_contributor_post(**kwargs):
+    """API view for inviting an unregistered user.
+    Expects JSON arguments with 'fullname' (required) and email (not required)
+    Creates a new unregistered user in the database.
+    If email is provided, emails the invited user.
+    """
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
     fullname, email = request.json.get('fullname'), request.json.get('email')

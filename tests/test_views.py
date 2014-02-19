@@ -371,6 +371,11 @@ class TestClaimViews(DbTestCase):
         res = self.app.get(url).maybe_follow()
         assert_equal(res.status_code, 200)
 
+    def test_invalid_claim_url_responds_with_404(self):
+        res = self.app.get('/claim/badsignature/', expect_errors=True).maybe_follow()
+        assert_equal(res.status_code, 404)
+
+
 class TestWatchViews(DbTestCase):
 
     def setUp(self):
