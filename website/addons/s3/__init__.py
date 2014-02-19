@@ -2,7 +2,7 @@ from . import model
 from . import routes
 from . import views
 
-MODELS = [model.AddonS3UserSettings, model.AddonS3NodeSettings]
+MODELS = [model.AddonS3UserSettings, model.AddonS3NodeSettings, model.S3GuidFile]
 USER_SETTINGS_MODEL = model.AddonS3UserSettings
 NODE_SETTINGS_MODEL = model.AddonS3NodeSettings
 

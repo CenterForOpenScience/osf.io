@@ -6,9 +6,11 @@ import os
 import urlparse
 
 from framework import fields
+from framework.guid.model import GuidStoredObject
 
 from website import settings
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from website.addons.base import GuidFile
 from website.addons.base import AddonError
 
 from . import settings as github_settings
@@ -36,6 +38,16 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
             'show_submit': False,
         })
         return rv
+
+class GithubGuidFile(GuidFile):
+
+    path = fields.StringField(index=True)
+
+    @property
+    def file_url(self):
+        if self.path is None:
+            raise ValueError('Path field must be defined.')
+        return os.path.join('github', 'file', self.path)
 
 class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
@@ -337,8 +349,8 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         # Store current branch data
         if self.user and self.repo:
             connect = GitHub.from_settings(self.user_settings)
-            branches = connect.branches(self.user, self.repo)
-            if branches is None:
+            branches = [branch.to_json() for branch in connect.branches(self.user, self.repo)]
+            if not branches:
                 raise AddonError('Could not fetch repo branches.')
             clone.registration_data['branches'] = branches
 

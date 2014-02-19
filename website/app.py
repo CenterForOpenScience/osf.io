@@ -44,8 +44,8 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
     settings = importlib.import_module(settings_module)
     try:
         init_addons(settings, routes)
-    except AssertionError:  # Addon Route map has already been created
-        pass
+    except AssertionError as error:  # Addon Route map has already been created
+        logger.error(error)
 
     app.debug = settings.DEBUG_MODE
     if set_backends:

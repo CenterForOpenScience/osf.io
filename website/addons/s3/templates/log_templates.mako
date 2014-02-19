@@ -9,7 +9,7 @@ bucket
 
 <script type="text/html" id="s3_file_updated">
 updated file
-<a class="overflow" data-bind="text: params.path, attr: {href: nodeUrl + 's3/view/' + params.path}"></a> to
+<a class="overflow" data-bind="text: params.path, attr: {href: nodeUrl + 's3/view/' + params.path}"></a> in
 bucket
 <span data-bind="text: params.bucket"></span> in
 <span data-bind="text: nodeCategory"></span>

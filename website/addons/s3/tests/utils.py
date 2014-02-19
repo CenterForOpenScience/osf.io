@@ -1,5 +1,4 @@
 import mock
-import random
 from website.addons.s3.api import S3Wrapper, S3Key
 
 
@@ -29,9 +28,15 @@ def create_mock_s3(bucket_name='to-kill-a-mocking-bucket'):
 	'</CORSConfiguration>"""
 
 
+def create_mock_wrapper():
+    mock_wrapper = mock.create_autospec(S3Wrapper)
+    mock_wrapper.get_wrapped_key.return_value = create_mock_key()
+    return mock_wrapper
+
+
 def create_mock_key():
     mock_key = mock.create_autospec(S3Key)
-
-
-def _random_string(length):
-    return ''.join(random.choice(string.lowercase) for i in range(length))
+    mock_key.size = 1
+    mock_key.s3Key = mock.MagicMock()
+    mock_key.s3Key.get_contents_as_string.return_value = 'hi'
+    return mock_key

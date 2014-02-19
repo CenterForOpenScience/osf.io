@@ -52,16 +52,15 @@ def s3_authorize_node(**kwargs):
     user = kwargs['auth'].user
     node_settings = kwargs['node_addon']
 
-    if node_settings.user_settings:
-        raise HTTPError(http.BAD_REQUEST)
-
     s3_access_key = request.json.get('access_key')
     s3_secret_key = request.json.get('secret_key')
     if s3_access_key is None or s3_secret_key is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    user.add_addon('s3')
     user_settings = user.get_addon('s3')
+    if user_settings is None:
+        user.add_addon('s3')
+        user_settings = user.get_addon('s3')
 
     add_s3_auth(s3_access_key, s3_secret_key, user_settings)
 
@@ -76,34 +75,34 @@ def s3_authorize_node(**kwargs):
 def s3_node_settings(**kwargs):
 
     user = kwargs['auth'].user
-    node = kwargs['node_addon']
-    s3_addon = user.get_addon('s3')
+    node_settings = kwargs['node_addon']
+    user_settings = user.get_addon('s3')
 
     # If authorized, only owner can change settings
-    if s3_addon and s3_addon.owner != user:
+    if user_settings and user_settings.owner != user:
         raise HTTPError(http.BAD_REQUEST)
 
     bucket = request.json.get('s3_bucket', '')
 
-    if not bucket or not does_bucket_exist(s3_addon.access_key, s3_addon.secret_key, bucket):
+    if not bucket or not does_bucket_exist(user_settings.access_key, user_settings.secret_key, bucket):
         error_message = ('We are having trouble connecting to that bucket. '
                          'Try a different one.')
         return {'message': error_message}, 400
 
-    if bucket != node.bucket:
+    if bucket != node_settings.bucket:
 
         # Update node settings
-        node.bucket = bucket
-        node.save()
+        node_settings.bucket = bucket
+        node_settings.save()
 
-        adjust_cors(S3Wrapper.from_addon(node))
+        adjust_cors(S3Wrapper.from_addon(node_settings))
 
 
 @must_be_logged_in
 @must_have_addon('s3', 'user')
 def s3_remove_user_settings(**kwargs):
-    user = kwargs['auth'].user
-    user_settings = user.get_addon('s3')
+
+    user_settings = kwargs['user_addon']
 
     remove_osf_user(user_settings)
 
