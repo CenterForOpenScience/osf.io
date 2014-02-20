@@ -14,8 +14,9 @@ from framework import fields, Q, analytics
 from framework.guid.model import GuidStoredObject
 from framework.search import solr
 from framework.addons import AddonModelMixin
+from framework.auth import utils
 
-from website import settings, filters
+from website import settings, filters, security
 
 name_formatters = {
    'long': lambda user: user.fullname,
@@ -27,6 +28,9 @@ name_formatters = {
 }
 
 logger = logging.getLogger(__name__)
+
+def generate_confirm_token():
+    return security.random_string(30)
 
 
 class User(GuidStoredObject, AddonModelMixin):
@@ -76,6 +80,28 @@ class User(GuidStoredObject, AddonModelMixin):
     def check_password(self, raw_password):
         '''Return a boolean of whether ``raw_password`` was correct.'''
         return check_password_hash(self.password, raw_password)
+
+    @classmethod
+    def create_unconfirmed(cls, username, password, fullname):
+        """Create a new user who has begun registration but needs to verify
+        their primary email address (username).
+        """
+        parsed = utils.parse_name(fullname)
+        user = cls(
+            username=username,
+            fullname=fullname,
+            **parsed
+        )
+        user.set_password(password)
+        user.add_email_verification(username)
+        user.is_registered = False
+        return user
+
+    def add_email_verification(self, email):
+        """Add an email verification token for a given email."""
+        token = generate_confirm_token()
+        self.email_verifications[token] = {'email': email}
+        return token
 
     @property
     def biblio_name(self):

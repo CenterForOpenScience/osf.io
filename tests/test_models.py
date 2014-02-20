@@ -48,10 +48,29 @@ class TestUser(DbTestCase):
         with assert_raises(ValidationError):
             u.save()
 
+    def test_create_unconfirmed(self):
+        u = User.create_unconfirmed(username='bar@baz.com', password='foobar',
+            fullname='Bar Baz')
+        u.save()
+        assert_false(u.is_registered)
+        assert_true(u.check_password('foobar'))
+        assert_true(u._id)
+        assert_equal(len(u.email_verifications.keys()), 1)
+        assert_equal(len(u.emails), 0, 'primary email has not been added to emails list')
+
     def test_cant_create_user_without_full_name(self):
         u = User(username='fred@queen.com')
         with assert_raises(ValidationError):
             u.save()
+
+    @mock.patch('website.security.random_string')
+    def test_add_email_verification(self, random_string):
+        random_string.return_value = '12345'
+        u = UserFactory()
+        assert_equal(len(u.email_verifications.keys()), 0)
+        u.add_email_verification('foo@bar.com')
+        assert_equal(len(u.email_verifications.keys()), 1)
+        assert_equal(u.email_verifications['12345']['email'], 'foo@bar.com')
 
     def test_factory(self):
         # Clear users
