@@ -1,4 +1,23 @@
 # -*- coding: utf-8 -*-
+"""OSF mailing utilities.
+
+Email templates go in website/templates/emails
+Templates must end in ``.txt.mako`` for plaintext emails or``.html.mako`` for html emails.
+
+You can then create a `Mail` object given the basename of the template and
+the email subject. ::
+
+    CONFIRM_EMAIL = Mail(tpl_prefix='confirm', subject="Confirm your email address")
+
+You can then use ``send_mail`` to send the email.
+
+Usage: ::
+
+    from website import mails
+    ...
+    mails.send_mail('foo@bar.com', mails.CONFIRM_EMAIL, user=user)
+
+"""
 import os
 import logging
 
@@ -79,6 +98,6 @@ def send_mail(to_addr, mail, mimetype='plain', **context):
         ttls=ttls, login=login
     )
 
-# The Emails
+# Predefined Emails
 
 TEST = Mail('test', subject='A test email')
