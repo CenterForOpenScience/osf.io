@@ -43,7 +43,7 @@
         % endif
 
         <div>
-            % if study_hdl != "None":
+            % if study_hdl:
                 This node is linked to the Dataverse study ${study} on ${dataverse}.
             % elif len(dataverses) != 0:
                 This node has not yet been linked to a study.

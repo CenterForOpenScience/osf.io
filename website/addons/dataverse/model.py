@@ -42,7 +42,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
     dataverse_password = fields.StringField()
     dataverse_number = fields.IntegerField(default=0)
     dataverse = fields.StringField()
-    study_hdl = fields.StringField(default="None")
+    study_hdl = fields.StringField()
     study = fields.StringField()
     user = fields.ForeignField('user')
 
@@ -71,7 +71,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             # Get list of dataverses and studies
             dataverses = connection.get_dataverses() or []
             studies = dataverses[int(self.dataverse_number)].get_studies() if dataverses else []
-            #study = dataverse.get_study_by_hdl(self.study_hdl) if dataverse and self.study_hdl is not 'None' else None
+            #study = dataverse.get_study_by_hdl(self.study_hdl) if dataverse and self.study_hdl else None
             #files = study.get_files() if study else []
 
             rv.update({
@@ -82,7 +82,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                 'dataverse_number': self.dataverse_number,
                 'studies': [s.get_id() for s in studies],
                 'study_names': [s.get_title() for s in studies],
-                'study': self.study or "None",
+                'study': self.study,
                 'study_hdl': self.study_hdl,
                 # 'files': [f.name for f in files],
                 'show_submit': False #'hdl' in self.study_hdl

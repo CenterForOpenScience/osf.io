@@ -62,16 +62,17 @@ def set_dataverse(*args, **kwargs):
     if dataverse_user and dataverse_user.owner != user and connection is not None:
         raise HTTPError(http.BAD_REQUEST)
 
-    # Set selected Dataverse name and number
+    # Set selected Dataverse
     node_settings.dataverse_number = request.json.get('dataverse_number') or node_settings.dataverse_number
     dataverses = connection.get_dataverses() or []
     dataverse = dataverses[int(node_settings.dataverse_number)] if dataverses else None
     node_settings.dataverse = dataverse.collection.title if dataverse else None
 
     # Set selected Study
-    node_settings.study_hdl = request.json.get('study_hdl')
+    hdl = request.json.get('study_hdl')
+    node_settings.study_hdl = hdl if hdl != 'None' else None
     node_settings.study = dataverse.get_study_by_hdl(node_settings.study_hdl).get_title() \
-        if dataverse and '/' in node_settings.study_hdl  else None
+        if dataverse and node_settings.study_hdl else None
 
     node_settings.save()
 

@@ -10,13 +10,12 @@ import hurry
 def dataverse_hgrid_data(node_settings, user, contents=False, **kwargs):
 
     # Quit if no study linked
-    hdl = node_settings.study_hdl
     connection = node_settings.user_settings.connect(
         node_settings.dataverse_username,
         node_settings.dataverse_password
     )
 
-    if hdl == "None" or connection is None:
+    if node_settings.study_hdl is None or connection is None:
         return
 
     can_edit = True # TODO: Validate user

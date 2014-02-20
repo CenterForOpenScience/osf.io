@@ -38,7 +38,7 @@ def unauthorize(*args, **kwargs):
     node_settings.dataverse_username = None
     node_settings.dataverse_password = None
     node_settings.dataverse_number = 0
-    node_settings.study_hdl = "None"
+    node_settings.study_hdl = None
     node_settings.user = None
 
     node_settings.save()
