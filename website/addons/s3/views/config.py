@@ -81,6 +81,9 @@ def s3_node_settings(**kwargs):
     node_settings = kwargs['node_addon']
     user_settings = user.get_addon('s3')
 
+    # Claiming the node settings
+    if not node_settings.user_settings:
+        node_settings.user_settings = user_settings
     # If authorized, only owner can change settings
     if user_settings and user_settings.owner != user:
         raise HTTPError(http.BAD_REQUEST)
@@ -99,6 +102,15 @@ def s3_node_settings(**kwargs):
         node_settings.save()
 
         adjust_cors(S3Wrapper.from_addon(node_settings))
+
+
+@must_be_contributor
+@must_have_addon('s3', 'node')
+def s3_remove_node_settings(**kwargs):
+    node_settings = kwargs['node_addon']
+    node_settings.user_settings = None
+    node_settings.bucket = None
+    node_settings.save()
 
 
 #TODO Dry up

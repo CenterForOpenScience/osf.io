@@ -6,7 +6,7 @@ from urllib import unquote
 from website.util import rubeus
 from framework.exceptions import HTTPError
 import httplib as http
-from framework.status import push_status_message
+
 
 def s3_hgrid_data(node_settings, auth, parent=None, **kwargs):
 

@@ -13,7 +13,8 @@ function setDropDownListener() {
         if ($target.text().indexOf('Create a new bucket') != -1) {
             newBucket();
         } else if ($target.text().indexOf('Deauthorize') != -1) {
-            return true;
+            removeNodeAuth();
+            return false;
         } else {
             $('#addonSettingsS3').submit();
         }
@@ -48,3 +49,17 @@ function newBucket() {
 
     });
 };
+
+function removeNodeAuth()
+{
+    $.ajax({
+        url: nodeApiUrl + addonShortname + '/settings/',
+        type: 'DELETE',
+        contentType: 'application/json',
+        dataType: 'json'
+    }).done(function() {
+        location.reload();
+    }).fail(function(xhr) {
+        //TODO Do something here
+    });
+}
