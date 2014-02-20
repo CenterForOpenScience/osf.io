@@ -101,3 +101,4 @@ def send_mail(to_addr, mail, mimetype='plain', **context):
 # Predefined Emails
 
 TEST = Mail('test', subject='A test email')
+CONFIRM_EMAIL = Mail('confirm', subject='Confirm your email address')
