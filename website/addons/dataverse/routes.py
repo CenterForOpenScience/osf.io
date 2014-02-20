@@ -70,8 +70,17 @@ page_routes = {
                 '/project/<pid>/node/<nid>/dataverse/file/<path:path>',
             ],
             'get',
-            views.config.dataverse_page,
+            views.crud.dataverse_view_file,
             OsfWebRenderer('../addons/dataverse/templates/dataverse_view_file.mako')
+        ),
+        Rule(
+            [
+                '/project/<pid>/dataverse/file/<path:path>/download/',
+                '/project/<pid>/node/<nid>/dataverse/file/<path:path>/download/',
+            ],
+            'get',
+            views.crud.dataverse_view_file, # TODO: Why does dataverse_download_file cause crashing?
+            json_renderer,
         ),
     ],
 }

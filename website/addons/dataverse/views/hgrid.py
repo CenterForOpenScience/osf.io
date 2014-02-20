@@ -11,13 +11,13 @@ def dataverse_hgrid_data(node_settings, user, contents=False, **kwargs):
 
     # Quit if no study linked
     hdl = node_settings.study_hdl
-    if hdl == "None":
-        return
+    connection = node_settings.user_settings.connect(
+        node_settings.dataverse_username,
+        node_settings.dataverse_password
+    )
 
-    # connection = node_settings.user_settings.connect(
-    #     node_settings.dataverse_username,
-    #     node_settings.dataverse_password
-    # )
+    if hdl == "None" or connection is None:
+        return
 
     can_edit = True # TODO: Validate user
 
@@ -37,8 +37,10 @@ def dataverse_hgrid_data(node_settings, user, contents=False, **kwargs):
 
     return rubeus.build_addon_root(
         node_settings,
-        'Dataverse: {0}/{1} {2}'.format(
-            node_settings.dataverse_username, node_settings.dataverse, node_settings.study,
+        'Dataverse: {0}/{1}/{2}'.format(
+            node_settings.dataverse_username,
+            node_settings.dataverse,
+            node_settings.study,
         ),
         urls=urls,
         permissions=permissions,
@@ -67,7 +69,7 @@ def dataverse_hgrid_data_contents(**kwargs):
         node_settings.dataverse_password
     )
 
-    info = [node_settings.user_settings]
+    info = []
 
     study = connection.get_dataverses()[int(node_settings.dataverse_number)].get_study_by_hdl(node_settings.study_hdl)
 
@@ -77,9 +79,9 @@ def dataverse_hgrid_data_contents(**kwargs):
             rubeus.KIND: rubeus.FILE,
             'name': f.name,
             'urls': { # TODO: Get some real URLs
-                'view': node_settings.owner.api_url + 'dataverse/file/' + (f.fileId or ''),
-                'download': node_settings.owner.api_url + 'dataverse/hgrid/' + (f.fileId or ''),
-                'delete': node_settings.owner.api_url + 'dataverse/hgrid/root/',
+                'view': node_settings.owner.api_url + 'dataverse/file/' + f.fileId + '/',
+                'download': node_settings.owner.api_url + 'dataverse/file/' + f.fileId + '/download/',
+                'delete': node_settings.owner.api_url + 'dataverse/file/' + f.fileId + '/',
             },
             'permissions': {
                 'view': True,
@@ -90,12 +92,6 @@ def dataverse_hgrid_data_contents(**kwargs):
                     float(0), # TODO: Implement file size (if possible?),
                     hurry.filesize.size(0, system=hurry.filesize.alternative)
             ],
-            'dates': { # TODO: Real times
-                'modified': [
-                    time.mktime(node_settings.study_hdl.date_modified.timetuple()),
-                    node_settings.study_hdl.date_modified.strftime('%Y/%m/%d %I:%M %p')
-                ],
-            }
         }
         info.append(item)
 

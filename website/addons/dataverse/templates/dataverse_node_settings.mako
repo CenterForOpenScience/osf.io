@@ -5,6 +5,9 @@
 
         % if authorized:
             <div style="padding-bottom: 10px">
+
+                % if len(dataverses) != 0:
+
                 <select id="dataverseDropDown" >
                     % for i, dv in enumerate(dataverses):
                         % if i == int(dataverse_number):
@@ -31,6 +34,10 @@
 
                 </select>
 
+                % else:
+                    This Dataverse account does not yet have a Dataverse.
+                % endif
+
             </div>
 
         % endif
@@ -38,7 +45,7 @@
         <div>
             % if study_hdl != "None":
                 This node is linked to the Dataverse study ${study} on ${dataverse}.
-            % else:
+            % elif len(dataverses) != 0:
                 This node has not yet been linked to a study.
             % endif
         </div>

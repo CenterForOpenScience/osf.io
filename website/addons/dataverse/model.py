@@ -73,8 +73,9 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             dataverse = dataverses[int(self.dataverse_number)] if dataverses else None
             self.dataverse = dataverse.collection.title if dataverse else None
             studies = dataverse.get_studies() if dataverse else []
-            study = dataverse.get_study_by_hdl(self.study_hdl) if dataverse and 'hdl' in self.study_hdl else None
+            study = dataverse.get_study_by_hdl(self.study_hdl) if dataverse and  self.study_hdl is not 'None' else None
             self.study = study.get_title() if study else "None"
+            self.save()
             #files = study.get_files() if study else []
 
             rv.update({
