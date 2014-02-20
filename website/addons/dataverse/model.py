@@ -68,14 +68,10 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
         if connection is not None:
 
-            #Define dataverse fields
+            # Get list of dataverses and studies
             dataverses = connection.get_dataverses() or []
-            dataverse = dataverses[int(self.dataverse_number)] if dataverses else None
-            self.dataverse = dataverse.collection.title if dataverse else None
-            studies = dataverse.get_studies() if dataverse else []
-            study = dataverse.get_study_by_hdl(self.study_hdl) if dataverse and  self.study_hdl is not 'None' else None
-            self.study = study.get_title() if study else "None"
-            self.save()
+            studies = dataverses[int(self.dataverse_number)].get_studies() if dataverses else []
+            #study = dataverse.get_study_by_hdl(self.study_hdl) if dataverse and self.study_hdl is not 'None' else None
             #files = study.get_files() if study else []
 
             rv.update({

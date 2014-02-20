@@ -53,11 +53,25 @@ def set_dataverse(*args, **kwargs):
     node_settings = kwargs['node_addon']
     dataverse_user = node_settings.user_settings
 
-    if dataverse_user and dataverse_user.owner != user:
+    # Make a connection
+    connection = dataverse_user.connect(
+        node_settings.dataverse_username,
+        node_settings.dataverse_password,
+    )
+
+    if dataverse_user and dataverse_user.owner != user and connection is not None:
         raise HTTPError(http.BAD_REQUEST)
 
+    # Set selected Dataverse name and number
     node_settings.dataverse_number = request.json.get('dataverse_number') or node_settings.dataverse_number
+    dataverses = connection.get_dataverses() or []
+    dataverse = dataverses[int(node_settings.dataverse_number)] if dataverses else None
+    node_settings.dataverse = dataverse.collection.title if dataverse else None
+
+    # Set selected Study
     node_settings.study_hdl = request.json.get('study_hdl')
+    node_settings.study = dataverse.get_study_by_hdl(node_settings.study_hdl).get_title() \
+        if dataverse and '/' in node_settings.study_hdl  else None
 
     node_settings.save()
 
