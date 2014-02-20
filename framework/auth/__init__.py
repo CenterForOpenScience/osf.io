@@ -10,8 +10,9 @@ import framework.flask as web
 import framework.bcrypt as bcrypt
 from framework.email.tasks import send_email
 from modularodm.query.querydialect import DefaultQueryDialect as Q
-import helper
+
 import website
+from website import security
 from model import User
 
 import datetime
@@ -159,11 +160,12 @@ def add_unclaimed_user(email, fullname):
         newUser.save()
         return newUser
 
-
+# TODO: should inherit from framework.excpeptions.FrameworkError
 class DuplicateEmailError(BaseException):
     pass
 
 
+# TODO: Use mails.py interface
 WELCOME_EMAIL_SUBJECT = 'Welcome to the Open Science Framework'
 WELCOME_EMAIL_TEMPLATE = Template('''
 Hello ${fullname},
@@ -177,6 +179,7 @@ Like us on Facebook [ https://www.facebook.com/OpenScienceFramework ]
 
 From the Open Science Framework Robot
 ''')
+
 
 def send_welcome_email(user):
     send_email.delay(
@@ -197,12 +200,13 @@ def register(username, password, fullname, send_welcome=True):
     # TODO: This validation should occur at the database level, not the view
     if not get_user(username=username):
         parsed = parse_name(fullname)
+        # TODO: add User.create_registered() class method
         user = User(
             username=username,
             fullname=fullname,
             is_registered=True,
             is_claimed=True,
-            verification_key=helper.random_string(15),
+            verification_key=security.random_string(15),
             date_registered=datetime.datetime.utcnow(),
             **parsed
         )
