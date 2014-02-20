@@ -3,6 +3,7 @@ import logging
 
 from mako.template import Template
 from framework import session, create_session
+from framework.exceptions import FrameworkError
 from framework import goback
 from framework import status
 from framework.auth.utils import parse_name
@@ -158,8 +159,7 @@ def add_unclaimed_user(email, fullname):
         newUser.save()
         return newUser
 
-# TODO: should inherit from framework.excpeptions.FrameworkError
-class DuplicateEmailError(BaseException):
+class DuplicateEmailError(FrameworkError):
     pass
 
 
