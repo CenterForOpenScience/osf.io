@@ -11,6 +11,8 @@ from httpcache import CachingHTTPAdapter
 
 from website.addons.github import settings as github_settings
 
+http_cache = CachingHTTPAdapter()
+https_cache = CachingHTTPAdapter()
 
 class GitHub(object):
 
@@ -24,8 +26,8 @@ class GitHub(object):
 
         #Caching libary
         if github_settings.CACHE:
-            self.gh3._session.mount('http://', CachingHTTPAdapter())
-            self.gh3._session.mount('https://', CachingHTTPAdapter())
+            self.gh3._session.mount('http://', http_cache)
+            self.gh3._session.mount('https://', https_cache)
 
     @classmethod
     def from_settings(cls, settings):
