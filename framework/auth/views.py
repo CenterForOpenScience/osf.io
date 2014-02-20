@@ -141,11 +141,6 @@ def auth_register_post():
         return framework.redirect('/')
 
     form = RegistrationForm(framework.request.form, prefix='register')
-
-    if not settings.registrationEnabled:
-        status.push_status_message('Registration is currently disabled')
-        return framework.redirect(framework.url_for('OsfWebRenderer__auth_login'))
-
     set_previous_url()
 
     # Process form
