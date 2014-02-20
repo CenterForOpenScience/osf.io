@@ -29,6 +29,7 @@ name_formatters = {
 
 logger = logging.getLogger(__name__)
 
+
 def generate_confirm_token():
     return security.random_string(30)
 
@@ -69,6 +70,8 @@ class User(GuidStoredObject, AddonModelMixin):
     piwik_token = fields.StringField()
 
     date_last_login = fields.DateTimeField()
+
+    date_confirmed = fields.DateTimeField()
 
     _meta = {'optimistic' : True}
 
@@ -123,6 +126,25 @@ class User(GuidStoredObject, AddonModelMixin):
         base_url = self.absolute_url if external else self.url
         token = self.get_confirmation_token(email)
         return "{0}?confirmToken={1}".format(base_url, token)
+
+    def verify_confirmation_token(self, token):
+        """Return whether or not a confirmation token is valid for this user.
+        """
+        return token in self.email_verifications.keys()
+
+    def confirm_email(self, token):
+        if self.verify_confirmation_token(token):
+            email = self.email_verifications[token]['email']
+            self.emails.append(email)
+            # Complete registration if primary email
+            if email == self.username:
+                self.is_registered = True
+                self.date_confirmed = dt.datetime.utcnow()
+            # Revoke token
+            del self.email_verifications[token]
+            return True
+        else:
+            return False
 
     @property
     def biblio_name(self):

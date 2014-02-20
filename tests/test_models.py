@@ -90,7 +90,28 @@ class TestUser(DbTestCase):
         u = UserFactory()
         u.add_email_verification('foo@bar.com')
         assert_equal(u.get_confirmation_url('foo@bar.com'),
-                '/{0}/?confirmToken={1}'.format(u._primary_key, 'abcde'))
+                '{0}?confirmToken={1}'.format(u.absolute_url, 'abcde'))
+
+    def test_confirm_primary_email(self):
+        u = UserFactory.build(username='foo@bar.com')
+        u.is_registered = False
+        u.add_email_verification('foo@bar.com')
+        u.save()
+        token = u.get_confirmation_token('foo@bar.com')
+        confirmed = u.confirm_email(token)
+        u.save()
+        assert_true(confirmed)
+        assert_equal(len(u.email_verifications.keys()), 0)
+        assert_in('foo@bar.com', u.emails)
+        assert_true(u.is_registered)
+
+    def test_verify_confirmation_token(self):
+        u = UserFactory.build()
+        u.add_email_verification('foo@bar.com')
+        u.save()
+        assert_false(u.verify_confirmation_token('badtoken'))
+        valid_token = u.get_confirmation_token('foo@bar.com')
+        assert_true(u.verify_confirmation_token(valid_token))
 
     def test_factory(self):
         # Clear users
