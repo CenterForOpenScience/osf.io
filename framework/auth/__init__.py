@@ -10,8 +10,9 @@ import framework.flask as web
 import framework.bcrypt as bcrypt
 from framework.email.tasks import send_email
 from modularodm.query.querydialect import DefaultQueryDialect as Q
-import helper
+
 import website
+from website import security
 from model import User
 
 import datetime
@@ -205,7 +206,7 @@ def register(username, password, fullname, send_welcome=True):
             fullname=fullname,
             is_registered=True,
             is_claimed=True,
-            verification_key=helper.random_string(15),
+            verification_key=security.random_string(15),
             date_registered=datetime.datetime.utcnow(),
             **parsed
         )

@@ -24,10 +24,9 @@ import logging
 
 from faker import Factory
 
-import helper
 from framework.auth.decorators import Auth
 from website.app import init_app
-from website import models
+from website import models, security
 from framework.auth import utils
 from tests.factories import UserFactory, ProjectFactory
 
@@ -42,7 +41,7 @@ def create_fake_user():
     parsed = utils.parse_name(name)
     user = UserFactory.build(username=email, fullname=name,
         is_registered=True, is_claimed=True,
-        verification_key=helper.random_string(15),
+        verification_key=security.random_string(15),
         date_registered=fake.date_time(),
         emails=[email],
         **parsed

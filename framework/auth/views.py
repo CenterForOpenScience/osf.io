@@ -11,9 +11,9 @@ from modularodm.exceptions import NoResultsFound
 
 
 import website.settings  # TODO: Use framework settings module instead
+from website import security
 import settings
 
-import helper
 
 from framework.auth import register, login, logout, DuplicateEmailError, get_user, get_current_user
 from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm, MergeAccountForm
@@ -53,7 +53,7 @@ def forgot_password():
     if form.validate():
         user_obj = get_user(username=form.email.data)
         if user_obj:
-            user_obj.verification_key = helper.random_string(20)
+            user_obj.verification_key = security.random_string(20)
             user_obj.save()
             # TODO: This is OSF-specific
             success = send_email(
