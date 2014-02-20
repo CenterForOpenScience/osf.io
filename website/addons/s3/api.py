@@ -53,7 +53,7 @@ class S3Wrapper(object):
         if s3 is None or s3.user_settings is None:
             return None
         if not s3.is_registration:
-            return cls(S3Connection(s3.user_settings.access_key, s3.user_settings.secret_key, calling_format=OrdinaryCallingFormat()), s3.bucket)
+            return cls(S3Connection(s3.user_settings.access_key, s3.user_settings.secret_key), s3.bucket)
         else:
             return RegistrationWrapper(s3)
 
@@ -66,6 +66,8 @@ class S3Wrapper(object):
 
     def __init__(self, connect, bucketName):
         self.connection = connect
+        if bucketName != bucketName.lower():
+            self.connection.calling_format = OrdinaryCallingFormat()
         self.bucket = self.connection.get_bucket(bucketName, validate=False)
 
     def create_key(self, key):
