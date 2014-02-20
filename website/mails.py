@@ -81,4 +81,4 @@ def send_mail(to_addr, mail, mimetype='plain', **context):
 
 # The Emails
 
-TEST = Mail(name='test', subject='A test email')
+TEST = Mail('test', subject='A test email')
