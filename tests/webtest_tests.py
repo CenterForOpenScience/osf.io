@@ -35,9 +35,6 @@ class TestAnUnregisteredUser(DbTestCase):
     def setUp(self):
         self.app = TestApp(app)
 
-    def test_confirmation_email_message_after_successful_register(self):
-        assert 0, 'finish me'
-
     def test_can_register(self):
         # Goes to home page
         res = self.app.get('/').maybe_follow()
@@ -51,15 +48,10 @@ class TestAnUnregisteredUser(DbTestCase):
         form['register-password'] = 'example'
         form['register-password2'] = 'example'
         # Submits
-        res = form.submit().follow()
-        # There's a flash messageset
-        assert_in('You may now log in', res)
-        # User logs in
-        form = res.forms['signinForm']
-        form['username'] = 'nickcage@example.com'
-        form['password'] = 'example'
-        # Submits
         res = form.submit().maybe_follow()
+        # There's a flash messageset
+        assert_in('Registration successful. Please check nickcage@example.com '
+            'to confirm your email address.', res)
 
     def test_sees_error_if_email_is_already_registered(self):
         # A user is already registered
