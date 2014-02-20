@@ -11,6 +11,8 @@ from framework.auth.decorators import Auth
 from website.addons.base import AddonError
 from website.addons.github import settings as github_settings
 
+from .utils import create_mock_github
+mock_github = create_mock_github()
 
 class TestCallbacks(DbTestCase):
 
@@ -193,16 +195,7 @@ class TestCallbacks(DbTestCase):
 
     @mock.patch('website.addons.github.api.GitHub.branches')
     def test_after_register(self, mock_branches):
-        rv = [
-            {
-                'name': 'master',
-                'commit': {
-                    'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-                    'url': 'https://api.github.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc',
-                }
-            }
-        ]
-        mock_branches.return_value = rv
+        mock_branches.return_value = mock_github.branches.return_value
         registration = ProjectFactory()
         clone, message = self.node_settings.after_register(
             self.project, registration, self.project.creator,
@@ -221,7 +214,10 @@ class TestCallbacks(DbTestCase):
         )
         assert_equal(
             clone.registration_data,
-            {'branches': rv},
+            {'branches': [
+                branch.to_json()
+                for branch in mock_github.branches.return_value
+            ]},
         )
         assert_equal(
             clone.user_settings,
@@ -230,7 +226,7 @@ class TestCallbacks(DbTestCase):
 
     @mock.patch('website.addons.github.api.GitHub.branches')
     def test_after_register_api_fail(self, mock_branches):
-        mock_branches.return_value = None
+        mock_branches.return_value = []
         registration = ProjectFactory()
         with assert_raises(AddonError):
             self.node_settings.after_register(

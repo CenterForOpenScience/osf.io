@@ -1028,6 +1028,10 @@ h1.unavailable {
 
 /* Logs */
 
+.log-file-link {
+    cursor: pointer;
+}
+
 .log-date {
     font-size: 13px;
 }

@@ -351,7 +351,7 @@ class TestNodeFile(DbTestCase):
     def test_download_url(self):
         assert_equal(
             self.node_file.download_url(self.node),
-            self.node.url + 'osffiles/download/{0}/version/1/'.format(self.node_file.filename)
+            self.node.url + 'osffiles/{0}/version/1/download/'.format(self.node_file.filename)
         )
 
 
@@ -988,6 +988,9 @@ class TestProject(DbTestCase):
         self.project.save()
         assert_true(self.project.can_edit(contributor_auth))
         assert_false(self.project.can_edit(other_guy_auth))
+
+    def test_can_edit_can_be_passed_a_user(self):
+        assert_true(self.project.can_edit(user=self.user))
 
     def test_creator_can_edit(self):
         assert_true(self.project.can_edit(self.consolidate_auth))

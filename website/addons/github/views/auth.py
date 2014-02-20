@@ -152,7 +152,7 @@ def github_oauth_callback(**kwargs):
     connection = GitHub.from_settings(github_user)
     user = connection.user()
 
-    github_user.github_user = user['login']
+    github_user.github_user = user.login
 
     github_user.save()
 

@@ -4,11 +4,9 @@ import httplib as http
 from framework import (
     request,
     push_errors_to_status, Q,
-    analytics
 )
 
 from framework import StoredObject
-from framework.analytics import update_counters
 from framework.auth.decorators import must_be_logged_in, collect_auth
 import framework.status as status
 from framework.exceptions import HTTPError
@@ -66,11 +64,11 @@ def project_new_post(**kwargs):
             'project', form.title.data, user, form.description.data
         )
         status.push_status_message(
-            'Welcome to your new {category}! Please select and configure your add-ons below.'.format(
+            'Welcome to your new {category}!'.format(
                 category=project.project_or_component,
             )
         )
-        return {}, 201, None, project.url + 'settings/'
+        return {}, 201, None, project.url
     else:
         push_errors_to_status(form.errors)
     return {}, http.BAD_REQUEST
@@ -355,11 +353,11 @@ def component_remove(**kwargs):
         else:
             redirect_url = '/dashboard/'
         return {
-            'status': 'success',
-            'message': message,
-        }, None, None, redirect_url
-    else:
-        raise HTTPError(http.BAD_REQUEST, message='Could not delete component')
+            'url': redirect_url,
+        }
+    raise HTTPError(
+        http.BAD_REQUEST, message='Could not delete component'
+    )
 
 
 @must_be_valid_project

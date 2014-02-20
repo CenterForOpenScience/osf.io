@@ -1,7 +1,5 @@
 import json
 
-from website.settings import DOMAIN
-
 MAX_RENDER_SIZE = (1024 ** 2) * 3
 
 ALLOWED_ORIGIN = '*'

@@ -354,17 +354,26 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributors.append(self.creator)
             self.contributor_list.append({'id': self.creator._primary_key})
 
-    def can_edit(self, auth):
+    def can_edit(self, auth=None, user=None):
+        """Return if a user is authorized to edit this node.
+        Must specify one of (`auth`, `user`).
 
-        if auth is None:
-            return False
-
-        user = auth.user
-        api_node = auth.api_node
-
+        :param Auth auth: Auth object to check
+        :param User user: User object to check
+        :returns: Whether user has permission to edit this node.
+        """
+        if not auth and not user:
+            raise ValueError('Must pass either `auth` or `user`')
+        if auth and user:
+            raise ValueError('Cannot pass both `auth` and `user`')
+        user = user or auth.user
+        if auth:
+            is_api_node = auth.api_node == self
+        else:
+            is_api_node = False
         return (
             self.is_contributor(user)
-            or api_node == self
+            or is_api_node
             or user == self.creator
         )
 
@@ -435,11 +444,11 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # Only update Solr if at least one stored field has changed, and if
         # public or privacy setting has changed
-        update_solr = bool(self.SOLR_UPDATE_FIELDS.intersection(saved_fields))
+        need_update = bool(self.SOLR_UPDATE_FIELDS.intersection(saved_fields))
         if not self.is_public:
             if first_save or 'is_public' not in saved_fields:
-                update_solr = False
-        if update_solr:
+                need_update = False
+        if need_update:
             self.update_solr()
 
         # This method checks what has changed.
@@ -1242,7 +1251,11 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'project': self.parent_id,
                 'node': self._primary_key,
                 'path': node_file.path,
-                'version': len(self.files_versions)
+                'version': len(self.files_versions),
+                'urls': {
+                    'view': node_file.url(self),
+                    'download': node_file.download_url(self),
+                },
             },
             auth=auth,
             log_date=node_file.date_uploaded

@@ -183,6 +183,8 @@ def resolve_guid(guid, suffix=None):
         url = _build_guid_url(url, prefix, suffix)
         # Always redirect API URLs; URL should identify endpoint being called
         if prefix or mode == 'redirect':
+            if request.query_string:
+                url += '?' + request.query_string
             return redirect(url)
         return proxy_url(url)
 

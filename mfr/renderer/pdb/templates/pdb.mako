@@ -1,4 +1,5 @@
 
+
 <!--
    GLmol - Molecular Viewer on WebGL/Javascript
 
@@ -39,7 +40,8 @@
 
 var glmol01 = new GLmol('glmol01', true);
 
-glmol01.defineRepresentation = function() {
+(glmol01.defineRepresentation = function() {
+    try{
   var all = this.getAllAtoms();
   var hetatm = this.removeSolvents(this.getHetatms(all));
   this.colorByAtom(all, {});
@@ -70,7 +72,12 @@ glmol01.defineRepresentation = function() {
     this.protein.biomtMatrices
   );
   this.modelGroup.add(asu);
-};
+}
+catch(e){
+        $("#glmol01").remove();
+        $("#errorDisp").html('File did not render properly. Try finding a current version on the <a href="http://www.rcsb.org/pdb/home/home.do">Protein Data Bank</a>');
+    }
+});
 
 glmol01.loadMolecule();
 

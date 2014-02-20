@@ -1,5 +1,5 @@
 /**
- * Module to render the consolidated files view. Reads addon configurrations and
+ * Module to render the consolidated files view. Reads addon configurations and
  * initializes an HGrid.
  */
 this.Rubeus = (function($, HGrid, bootbox) {
@@ -7,8 +7,6 @@ this.Rubeus = (function($, HGrid, bootbox) {
     /////////////////////////
     // HGrid configuration //
     /////////////////////////
-
-    var tpl = HGrid.Fmt.tpl;
 
     // Override Name column folder view to allow for extra widgets, e.g. github branch picker
     HGrid.Col.Name.folderView = function(item) {
@@ -18,8 +16,9 @@ this.Rubeus = (function($, HGrid, bootbox) {
         else
             html += HGrid.Html.folderIcon;
         html += '<span class="hg-folder-text">' + item.name + '</span>';
-        if(item.extra)
+        if(item.extra) {
             html += '<span class="hg-extras">' + item.extra + '</span>';
+        }
         return html;
     };
 
@@ -50,7 +49,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
     HGrid.Col.ActionButtons.folderView = function(row) {
         var buttonDefs = [];
         if (this.options.uploads && row.urls.upload &&
-            (row.permissions && row.permissions.edit)) {
+                (row.permissions && row.permissions.edit)) {
             buttonDefs.push({
                 text: '<i class="icon-upload"></i>',
                 action: 'upload',
@@ -76,19 +75,19 @@ this.Rubeus = (function($, HGrid, bootbox) {
      * Get the status message from the addon, if any.
      */
      function getStatusCfg(addon, whichStatus, extra) {
-        if(addon && Rubeus.cfg[addon] && Rubeus.cfg[addon][whichStatus]) {
-            if (typeof(Rubeus.cfg[addon][whichStatus]) === 'function')
+        if (addon && Rubeus.cfg[addon] && Rubeus.cfg[addon][whichStatus]) {
+            if (typeof(Rubeus.cfg[addon][whichStatus]) === 'function') {
                 return Rubeus.cfg[addon][whichStatus](extra);
-            else
-                return Rubeus.cfg[addon][whichStatus];
+            }
+            return Rubeus.cfg[addon][whichStatus];
         }
-        if (typeof(default_status[whichStatus]) === 'function')
+        if (typeof(default_status[whichStatus]) === 'function') {
             return default_status[whichStatus](extra);
-        else
-            return default_status[whichStatus];
-     };
+        }
+        return default_status[whichStatus];
+     }
 
-    /**
+/**
      * Changes the html in the status column.
      */
     HGrid.prototype.changeStatus = function(row, html, extra, fadeAfter) {
@@ -138,8 +137,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
         UPLOAD_PROGRESS: 'UPLOAD_PROGRESS'
     };
 
-    Rubeus.Status = status;
-
+    Rubeus.Status = statusType
     ////////////////////////
     // Listener callbacks //
     ////////////////////////
