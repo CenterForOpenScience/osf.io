@@ -114,13 +114,14 @@ class User(GuidStoredObject, AddonModelMixin):
                 return token
         raise KeyError('No confirmation token for email {0!r}'.format(email))
 
-    def get_confirmation_url(self, email):
+    def get_confirmation_url(self, email, external=True):
         """Return the confirmation url for a given email.
 
         :raises: KeyError if there is no token for the email.
         """
+        base_url = self.absolute_url if external else self.url
         token = self.get_confirmation_token(email)
-        return "{0}?confirmToken={1}".format(self.url, token)
+        return "{0}?confirmToken={1}".format(base_url, token)
 
     @property
     def biblio_name(self):
