@@ -4,7 +4,8 @@ import logging
 
 from modularodm.exceptions import NoResultsFound
 import framework
-from framework import goback, set_previous_url, request
+from framework import set_previous_url, request
+from framework.exceptions import HTTPError
 from framework.email.tasks import send_email
 from framework import status
 import framework.forms as forms
@@ -141,8 +142,8 @@ def confirm_email_get(**kwargs):
     if user:
         if user.confirm_email(token):  # Confirm and register the usre
             # Go to settings page
-            response = redirect('/settings/')
-            return authenticate(user, response=response)
+            response = framework.redirect('/settings/')
+            return auth.authenticate(user, response=response)
     raise HTTPError(http.UNAUTHORIZED)
 
 
