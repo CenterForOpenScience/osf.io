@@ -48,6 +48,11 @@ class TestUser(DbTestCase):
         with assert_raises(ValidationError):
             u.save()
 
+    def test_date_registered_upon_saving(self):
+        u = User(username='foo@bar.com', fullname='Foo bar')
+        u.save()
+        assert_true(u.date_registered)
+
     def test_create_unconfirmed(self):
         u = User.create_unconfirmed(username='bar@baz.com', password='foobar',
             fullname='Bar Baz')

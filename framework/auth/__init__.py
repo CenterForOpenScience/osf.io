@@ -219,7 +219,6 @@ def register(username, password, fullname, send_welcome=True):
             is_registered=True,
             is_claimed=True,
             verification_key=security.random_string(15),
-            date_registered=datetime.datetime.utcnow(),
             **parsed
         )
         # Set the password
