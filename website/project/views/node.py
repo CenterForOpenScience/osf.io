@@ -572,10 +572,6 @@ def human_format_citation(*args, **kwargs):
 
     return {'output': output}
 
-
-
-
-
 @must_be_valid_project
 def machine_format_citation(*args, **kwargs):
 
@@ -589,43 +585,24 @@ def machine_format_citation(*args, **kwargs):
         utilname,
         csl
     )
+    ##if utilname == 'xml2bib':
+    ##    return {'output': output}
 
-    #return {'output': output}
-
-    #if utilname == 'xml2bib':
-    #    return {'output': output}
-
-    if utilname == 'xml2bib':
-        extension = 'bibtex'
-        mime = 'application/x-bibtex'
-
-    if utilname == 'xml2end':
-        extension = 'enw'
-        mime = 'application/x-endnote-refer'
-
-    if utilname == 'xml2ris':
-        extension = 'ris'
-        mime = 'application/x-Research-Info-Systems'
-
-    if utilname == 'xml2wordbib':
-        extension = 'xml'
-        mime = 'application/x-xml'
-
-    if utilname == 'xml2isi':
-        extension = 'isi'
-        mime = ''
-
-    #extension = citation_map[utilname]['extension'] make a 2 level dictioary and access them to avoid repeating code
+    bibutilsMap = {
+        'xml2bib':{'extension':'bibtex', 'mime':'application/x-bibtex'},
+        'xml2end':{'extension':'enw', 'mime':'application/x-endnote-refer'},
+        'xml2ris':{'extension':'ris', 'mime':'application/x-Research-Info-Systems'},
+        'xml2wordbib':{'extension':'xml', 'mime':'application/x-xml'},
+        'xml2isi':{'extension':'isi', 'mime':''},
+    }
 
     strIO = StringIO.StringIO()
     strIO.write('' + output)
     strIO.seek(0)
     return send_file(strIO,
-                     mimetype = mime,
-                     attachment_filename="citation." + extension,
+                     mimetype = bibutilsMap[utilname]['mime'],
+                     attachment_filename="citation." + bibutilsMap[utilname]['extension'],
                      as_attachment=True)
-
-
 
 
 @must_be_valid_project

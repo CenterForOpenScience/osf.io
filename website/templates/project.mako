@@ -203,7 +203,6 @@
                 type: "GET",
                 url: nodeApiUrl + 'citation/human/' + $('#citationFormHuman select').val() ,
                 success: function(response){
-##                    console.log(response.output);
                     $(".rendered-citation").text(response.output);
                     return false;
                 }
@@ -222,7 +221,6 @@
 ##                type: "GET",
 ##                url: nodeApiUrl + 'citation/machine/' + $citationFormSelect.val() ,
 ##                success: function(response){
-##                    console.log(response.output);
 ##                    window.location.href = this.url;
 ##
 ####                    $(".rendered-citation").text(response.output);

@@ -1340,10 +1340,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             author_names[-1]
         )
 
-
-
     def to_csl(self):
-
         return {
             "id": "ITEM-1",
             "title": self.title,
@@ -1358,20 +1355,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             "type": "Article",
             "URL": self.display_absolute_url,
         }
-
-
-#author section should look like this:
-# "author": [
-#{
-#"family": "Grignon",
-#"given": "Cyril"
-#},
-#{
-#"family": "Sentenac",
-#"given": "Corey"
-#}
-#],
-
 
     @property
     def citation_apa(self):
