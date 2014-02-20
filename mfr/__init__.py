@@ -1,10 +1,6 @@
 import logging
 import importlib
 from mfr.renderer import FileRenderer
-#from mfr.renderer import image, tabular, pdf, code, ipynb
-
-from mfr.renderer import image, pdf, code, ipynb
-
 
 
 logger = logging.getLogger(__name__)

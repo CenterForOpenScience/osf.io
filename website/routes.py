@@ -528,7 +528,6 @@ def make_url_map(app):
             project_views.node.human_format_citation,
             json_renderer,
         ),
-#http://localhost:5000/api/v1/project/qbfu4/citation/human/apa.csl/
 
         Rule(
             [
@@ -539,8 +538,6 @@ def make_url_map(app):
             project_views.node.machine_format_citation,
             json_renderer,
         ),
-#http://localhost:5000/api/v1/project/qbfu4/citation/machine/bib2xml/
-
 
         # Edit node
         Rule([

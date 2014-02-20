@@ -70,7 +70,6 @@
                             <option value="harvard1.csl">Harvard</option>
                             <option value="modern-language-association-with-url.csl">MLA</option>
                             <option value="turabian-fullnote-bibliography.csl">Turabian</option>
-                            <option value="bibtex.csl">BIBTEX(TEST)</option>
                         </select>
                         <input type="submit" value="Submit">
                     </form>
@@ -84,25 +83,11 @@
                             <option value="xml2ris">RIS</option>
                             <option value="xml2wordbib">Word 2007 Bibliograpy</option>
                         </select>
-                        <input type="submit" value="Submit">
+                        <input type="submit" value="Download">
                     </form>
-
+                <p></p>
                 <dl class="rendered-citation"></dl>
                 </div>
-##                <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
-##                <dl class="citation-list">
-##                    <dt>APA</dt>
-##                    <dd class="citation-text">${node['citations']['apa']}</dd>
-##                    <dt>MLA</dt>
-##                    <dd class="citation-text">${node['citations']['mla']}</dd>
-##                    <dt>Chicago</dt>
-##                    <dd class="citation-text">${node['citations']['chicago']}</dd>
-##                    <dt>CSL TESTS</dt>
-##                    <dd class="citation-text">${node['citations']['CSLTEST1']}</dd>
-##                    <dd class="citation-text">${node['citations']['CSLTEST2']}</dd>
-##                    <dd class="citation-text">${node['citations']['BIBTEX']}</dd>
-##                    <dd class="citation-text">${node['citations']['RIS']}</dd>
-##                    </dl>
             </div>
 
             <hr />
@@ -171,19 +156,6 @@
         </div>
         <%include file="modal_add_component.mako"/>
         % endif
-        <h2>Components</h2>
-    </div>
-
-    % if node['children']:
-<div mod-meta='{
-"tpl": "util/render_nodes.mako",
-"uri": "${node["api_url"]}get_children/",
-"replace": true,
-"kwargs": {"sortable" : true}
-}'></div>
-    % else:
-<p>No components have been added to this project.</p>
-    % endif
 
     <h2>Components</h2>
 </div>
@@ -227,7 +199,6 @@
     $(document).ready(function() {
 
         $("#citationFormHuman").on('submit', function(){
-        //console.log(nodeApiUrl);
             $.ajax({
                 type: "GET",
                 url: nodeApiUrl + 'citation/human/' + $('#citationFormHuman select').val() ,
@@ -240,20 +211,32 @@
             return false;
         })
 
-         $("#citationFormMachine").on('submit', function(){
+
+        var $citationFormMachine = $('#citationFormMachine');
+        $citationFormSelect = $citationFormMachine.find('select');
+         $citationFormMachine.on('submit', function(){
+              window.location.href =nodeApiUrl + 'citation/machine/' + $citationFormSelect.val() ;
+
         console.log("nodeApiURL: " + nodeApiUrl);
-            $.ajax({
-                type: "GET",
-                url: nodeApiUrl + 'citation/machine/' + $('#citationFormMachine select').val() ,
-                success: function(response){
-                    console.log(response.output);
-                    $(".rendered-citation").text(response.output);
-                    return false;
-                }
-            })
+##            $.ajax({
+##                type: "GET",
+##                url: nodeApiUrl + 'citation/machine/' + $citationFormSelect.val() ,
+##                success: function(response){
+##                    console.log(response.output);
+##                    window.location.href = this.url;
+##
+####                    $(".rendered-citation").text(response.output);
+####                    if ($citationFormSelect.val()==='xml2bib'){
+####                      $(".rendered-citation").text(response.output);
+####                    } else{
+####                        window.location.href = this.url;
+####                    }
+##                    return false;
+##                }
+##            })
             return false;
         })
-
+##move JS to another file
 
 // Show capabilities modal on addon widget help
         $('.addon-capabilities').on('click', function() {

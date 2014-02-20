@@ -553,6 +553,7 @@ def _get_user_activity(node, auth, rescale_ratio):
 
     return ua_count, ua, non_ua
 
+# /cite/<style>
 
 @must_be_valid_project
 def human_format_citation(*args, **kwargs):
@@ -571,6 +572,10 @@ def human_format_citation(*args, **kwargs):
 
     return {'output': output}
 
+
+
+
+
 @must_be_valid_project
 def machine_format_citation(*args, **kwargs):
 
@@ -585,13 +590,40 @@ def machine_format_citation(*args, **kwargs):
         csl
     )
 
-    return {'output': output}
-    #strIO = StringIO.StringIO()
-    #strIO.write('' + output)
-    #strIO.seek(0)
-    #return send_file(strIO,
-    #                 attachment_filename="testing.enw",
-    #                 as_attachment=True)
+    #return {'output': output}
+
+    #if utilname == 'xml2bib':
+    #    return {'output': output}
+
+    if utilname == 'xml2bib':
+        extension = 'bibtex'
+        mime = 'application/x-bibtex'
+
+    if utilname == 'xml2end':
+        extension = 'enw'
+        mime = 'application/x-endnote-refer'
+
+    if utilname == 'xml2ris':
+        extension = 'ris'
+        mime = 'application/x-Research-Info-Systems'
+
+    if utilname == 'xml2wordbib':
+        extension = 'xml'
+        mime = 'application/x-xml'
+
+    if utilname == 'xml2isi':
+        extension = 'isi'
+        mime = ''
+
+    #extension = citation_map[utilname]['extension'] make a 2 level dictioary and access them to avoid repeating code
+
+    strIO = StringIO.StringIO()
+    strIO.write('' + output)
+    strIO.seek(0)
+    return send_file(strIO,
+                     mimetype = mime,
+                     attachment_filename="citation." + extension,
+                     as_attachment=True)
 
 
 
