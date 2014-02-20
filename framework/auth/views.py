@@ -88,17 +88,18 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
 
     """
     direct_call = registration_form or forgot_password_form
-
     if framework.request.method == 'POST' and not direct_call:
         form = SignInForm(framework.request.form)
         if form.validate():
             response = login(form.username.data, form.password.data)
             if response:
                 if response == 2:
-                    status.push_status_message('''Please check your email (and spam
-                        folder) and click the verification link before logging
-                        in.''')
-                    return goback()
+                    status.push_status_message('This login email has been registered '
+                        'but not verified. Please check your email (and spam '
+                        'folder) and click the verification link before logging '
+                        'in.')
+                    # Don't go anywhere
+                    return {'next': ''}
                 return response
             else:
                 status.push_status_message('''Log-in failed. Please try again or
