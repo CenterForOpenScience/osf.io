@@ -192,6 +192,20 @@ def send_welcome_email(user):
         mimetype='plain',
     )
 
+def add_unconfirmed_user(username, password, fullname):
+    username_clean = username.strip().lower()
+    password_clean = password.strip()
+    fullname_clean = fullname.strip()
+
+    if not get_user(username=username):
+        user = User.create_unconfirmed(username=username_clean,
+            password=password_clean,
+            fullname=fullname_clean)
+        user.save()
+        return user
+    else:
+        raise DuplicateEmailError('User {0!r} already exists'.format(username_clean))
+
 
 def register(username, password, fullname, send_welcome=True):
     username = username.strip().lower()
