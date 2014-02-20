@@ -6,10 +6,11 @@ from framework import (
     must_be_logged_in,
     request,
     redirect,
+    status
 )
 from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
-from framework.auth import get_current_user
+from framework.auth import get_current_user, authenticate
 from framework.auth.utils import parse_name
 
 from website.models import ApiKey, User

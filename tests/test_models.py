@@ -90,7 +90,7 @@ class TestUser(DbTestCase):
         u = UserFactory()
         u.add_email_verification('foo@bar.com')
         assert_equal(u.get_confirmation_url('foo@bar.com'),
-                '{0}?confirmToken={1}'.format(u.absolute_url, 'abcde'))
+                '{0}confirm/?token={1}'.format(u.absolute_url, 'abcde'))
 
     def test_confirm_primary_email(self):
         u = UserFactory.build(username='foo@bar.com')

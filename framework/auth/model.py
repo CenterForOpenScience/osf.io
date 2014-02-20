@@ -125,7 +125,7 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         base_url = self.absolute_url if external else self.url
         token = self.get_confirmation_token(email)
-        return "{0}?confirmToken={1}".format(base_url, token)
+        return "{0}confirm/?token={1}".format(base_url, token)
 
     def verify_confirmation_token(self, token):
         """Return whether or not a confirmation token is valid for this user.

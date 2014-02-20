@@ -135,6 +135,17 @@ def auth_logout():
     return rv
 
 
+def confirm_email_get(**kwargs):
+    user = get_user(id=kwargs['uid'])
+    token = kwargs['token']
+    if user:
+        if user.confirm_email(token):  # Confirm and register the usre
+            # Go to settings page
+            response = redirect('/settings/')
+            return authenticate(user, response=response)
+    raise HTTPError(http.UNAUTHORIZED)
+
+
 def send_confirm_email(user, email):
     confirmation_url = user.get_confirmation_url(email, external=True)
     mails.send_mail(email, mails.CONFIRM_EMAIL, 'plain',
