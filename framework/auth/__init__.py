@@ -72,7 +72,7 @@ def get_user(id=None, username=None, password=None, verification_key=None):
             for query_part in query_list[1:]:
                 query = query & query_part
             user = User.find_one(query)
-        except Exception as err:
+        except Exception as err:  # TODO: catch ModularODMError
             logging.error(err)
             user = None
         if user and not user.check_password(password):
@@ -90,6 +90,17 @@ def get_user(id=None, username=None, password=None, verification_key=None):
     except Exception as err:  # TODO: Should catch a specific type of exception
         logging.error(err)
         return None
+
+
+def authenticate(user, response):
+    data = session.data if session._get_current_object() else {}
+    data.update({
+        'auth_user_username': user.username,
+        'auth_user_id': user._primary_key,
+        'auth_user_fullname': user.fullname,
+    })
+    response = create_session(response, data=data)
+    return response
 
 
 def login(username, password):
@@ -122,14 +133,7 @@ def login(username, password):
                                         '<a href="/getting-started/">Getting Started</a> '
                                         'page.')
                     response = web.redirect('/settings/')
-                data = session.data if session._get_current_object() else {}
-                data.update({
-                    'auth_user_username': user.username,
-                    'auth_user_id': user._primary_key,
-                    'auth_user_fullname': user.fullname,
-                })
-                response = create_session(response, data=data)
-                return response
+                return authenticate(user, response=response)
     return False
 
 def logout():
