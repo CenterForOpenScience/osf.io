@@ -72,6 +72,21 @@ class TestUser(DbTestCase):
         assert_equal(len(u.email_verifications.keys()), 1)
         assert_equal(u.email_verifications['12345']['email'], 'foo@bar.com')
 
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_token(self, random_string):
+        random_string.return_value = '12345'
+        u = UserFactory()
+        u.add_email_verification('foo@bar.com')
+        assert_equal(u.get_confirmation_token('foo@bar.com'), '12345')
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_url(self, random_string):
+        random_string.return_value = 'abcde'
+        u = UserFactory()
+        u.add_email_verification('foo@bar.com')
+        assert_equal(u.get_confirmation_url('foo@bar.com'),
+                '/{0}/?confirmToken={1}'.format(u._primary_key, 'abcde'))
+
     def test_factory(self):
         # Clear users
         User.remove()

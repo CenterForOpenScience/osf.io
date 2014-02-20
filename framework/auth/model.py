@@ -8,6 +8,7 @@ import datetime as dt
 import pytz
 import bson
 
+import framework
 from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import fields, Q, analytics
@@ -102,6 +103,24 @@ class User(GuidStoredObject, AddonModelMixin):
         token = generate_confirm_token()
         self.email_verifications[token] = {'email': email}
         return token
+
+    def get_confirmation_token(self, email):
+        """Return the confirmation token for a given email.
+
+        :raises: KeyError if there no token for the email
+        """
+        for token, info in self.email_verifications.items():
+            if info['email'] == email:
+                return token
+        raise KeyError('No confirmation token for email {0!r}'.format(email))
+
+    def get_confirmation_url(self, email):
+        """Return the confirmation url for a given email.
+
+        :raises: KeyError if there is no token for the email.
+        """
+        token = self.get_confirmation_token(email)
+        return "{0}?confirmToken={1}".format(self.url, token)
 
     @property
     def biblio_name(self):
