@@ -563,12 +563,20 @@ class TestAuthViews(DbTestCase):
         dupe.reload()
         assert_true(dupe.is_merged)
 
-    @mock.patch('framework.auth.views.send_email.delay')
-    def test_register_sends_confirm_email(self, send_email_delay):
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_register_sends_confirm_email(self, send_mail):
         url = '/register/'
-        self.app.post(url, {'username': 'fred@queen.com', 'password': 'killerqueen',
-            'password2': 'killerqueen'})
-        assert_true(send_email_delay.called)
+        self.app.post(url, {
+            'register-fullname': 'Freddie Mercury',
+            'register-username': 'fred@queen.com',
+            'register-password': 'killerqueen',
+            'register-username2': 'fred@queen.com',
+            'register-password2': 'killerqueen',
+        })
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr='fred@queen.com'
+        ))
 
     def test_change_names(self):
         self.app.post(

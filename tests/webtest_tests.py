@@ -35,6 +35,9 @@ class TestAnUnregisteredUser(DbTestCase):
     def setUp(self):
         self.app = TestApp(app)
 
+    def test_confirmation_email_message_after_successful_register(self):
+        assert 0, 'finish me'
+
     def test_can_register(self):
         # Goes to home page
         res = self.app.get('/').maybe_follow()

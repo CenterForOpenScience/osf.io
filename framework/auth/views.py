@@ -2,21 +2,19 @@
 import httplib as http
 import logging
 
+from modularodm.exceptions import NoResultsFound
 import framework
 from framework import goback, set_previous_url, request
 from framework.email.tasks import send_email
 from framework import status
 import framework.forms as forms
-from modularodm.exceptions import NoResultsFound
-
-
-import website.settings  # TODO: Use framework settings module instead
-from website import security
-import settings
-
-
-from framework.auth import register, login, logout, DuplicateEmailError, get_user, get_current_user
+from framework import auth
+from framework.auth import login, logout, DuplicateEmailError, get_user, get_current_user
 from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm, MergeAccountForm
+
+import website.settings
+from website import security, mails
+
 
 Q = framework.Q
 User = framework.auth.model.User
@@ -135,6 +133,14 @@ def auth_logout():
     rv.delete_cookie(website.settings.COOKIE_NAME)
     return rv
 
+
+def send_confirm_email(user, email):
+    confirmation_url = user.get_confirmation_url(email, external=True)
+    mails.send_mail(email, mails.CONFIRM_EMAIL, 'plain',
+        user=user,
+        confirmation_url=confirmation_url)
+
+
 def auth_register_post():
     if not website.settings.ALLOW_REGISTRATION:
         status.push_status_message('Registration currently unavailable.')
@@ -146,22 +152,20 @@ def auth_register_post():
     # Process form
     if form.validate():
         try:
-            u = register(form.username.data, form.password.data, form.fullname.data)
+            u = auth.add_unconfirmed_user(
+                form.username.data,
+                form.password.data,
+                form.fullname.data)
         except DuplicateEmailError:
             status.push_status_message('The email <em>%s</em> has already been registered.' % form.username.data)
             return auth_login(registration_form=form)
         if u:
             if website.settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
-                # TODO: The sendRegistration method does not exist, this block
-                #   will fail if email confirmation is on.
-                raise NotImplementedError(
-                    'Registration confirmation by email has not been fully'
-                    'implemented.'
-                )
-                sendRegistration(u)
+                send_confirm_email(u, email=u.username)
                 status.push_status_message('Registration successful. Please \
-                    check %s to confirm your email address, %s.' %
-                    (str(u.username), str(u.fullname)))
+                    check %s to confirm your email address.' %
+                    (str(u.username)))
+                return auth_login(registration_form=form)
             else:
                 return framework.redirect('/login/first/')
                 #status.push_status_message('You may now log in')
@@ -169,7 +173,6 @@ def auth_register_post():
 
     else:
         forms.push_errors_to_status(form.errors)
-
         return auth_login(registration_form=form)
 
 
