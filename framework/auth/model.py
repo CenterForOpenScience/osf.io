@@ -8,7 +8,6 @@ import datetime as dt
 import pytz
 import bson
 
-import framework
 from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import fields, Q, analytics
@@ -52,7 +51,7 @@ class User(GuidStoredObject, AddonModelMixin):
     emails = fields.StringField(list=True)
     email_verifications = fields.DictionaryField()  # TODO: Unused. Remove me?
     aka = fields.StringField(list=True)
-    date_registered = fields.DateTimeField()#auto_now_add=True)
+    date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow)
     # Watched nodes are stored via a list of WatchConfigs
     watched = fields.ForeignField("WatchConfig", list=True, backref="watched")
 

@@ -94,8 +94,6 @@ def get_user(id=None, username=None, password=None, verification_key=None):
 def login(username, password):
     username = username.strip().lower()
     password = password.strip()
-    logging.info("Attempting to log in {0}".format(username))
-
     if username and password:
         user = get_user(
             username=username,
