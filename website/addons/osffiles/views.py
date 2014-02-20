@@ -67,6 +67,30 @@ def format_filesize(size):
 
 @must_be_contributor_or_public
 @must_have_addon('osffiles', 'node')
+def get_osffiles_r(**kwargs):
+
+    node_settings = kwargs['node_addon']
+    node = node_settings.owner
+    auth = kwargs['auth']
+    can_view = node.can_view(auth)
+
+    info = []
+
+    if can_view:
+        for name, fid in node.files_current.iteritems():
+            fobj = NodeFile.load(fid)
+            item = {
+                'name': _clean_file_name(fobj.path),
+                'download': fobj.download_url(node),
+                'size': format_filesize(fobj.size),
+                'date_modified': fobj.date_modified.strftime('%Y/%m/%d %I:%M %p'),
+                'versions': node.files_versions[name]
+            }
+            info.append(item)
+    return info
+
+@must_be_contributor_or_public
+@must_have_addon('osffiles', 'node')
 def get_osffiles(**kwargs):
 
     node_settings = kwargs['node_addon']
