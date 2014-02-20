@@ -80,6 +80,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def check_password(self, raw_password):
         '''Return a boolean of whether ``raw_password`` was correct.'''
+        if not self.password or not raw_password:
+            return False
         return check_password_hash(self.password, raw_password)
 
     @classmethod
