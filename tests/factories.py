@@ -185,34 +185,22 @@ class NodeWikiFactory(ModularOdmFactory):
     node = SubFactory(NodeFactory)
 
 
-class UnregUser(object):
-    '''A dummy "model" for an unregistered user.'''
-    def __init__(self, nr_name, nr_email):
-        self.nr_name = nr_name
-        self.nr_email = nr_email
+class UnregUserFactory(ModularOdmFactory):
+    """Factory for an unregistered user. Uses User.create_unregistered()
+    to crete an instance.
 
-    def to_dict(self):
-        return {"nr_name": self.nr_name, "nr_email": self.nr_email}
-
-
-class UnregUserFactory(base.Factory):
-    """Generates a dictonary represenation of an unregistered user, in the
-    format expected by the OSF.
-    ::
-
-        >>> from tests.factories import UnregUserFactory
-        >>> UnregUserFactory()
-        {'nr_name': 'Tom Jones0', 'nr_email': 'tom0@example.com'}
-        >>> UnregUserFactory()
-        {'nr_name': 'Tom Jones1', 'nr_email': 'tom1@example.com'}
     """
-    FACTORY_FOR = UnregUser
+    FACTORY_FOR = User
+    email = Sequence(lambda n: "brian{0}@queen.com".format(n))
+    fullname = Sequence(lambda n: "Brian May{0}".format(n))
 
-    nr_name = Sequence(lambda n: "Tom Jones{0}".format(n))
-    nr_email = Sequence(lambda n: "tom{0}@example.com".format(n))
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        '''Build an object without saving it.'''
+        return target_class.create_unregistered(*args, **kwargs)
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
-        return target_class(*args, **kwargs).to_dict()
-
-    _build = _create
+        instance = target_class.create_unregistered(*args, **kwargs)
+        instance.save()
+        return instance

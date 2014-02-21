@@ -2,7 +2,7 @@ import unittest
 from nose.tools import *  # PEP8 asserts
 
 from tests.base import DbTestCase
-from tests.factories import UserFactory, ProjectFactory, TagFactory
+from tests.factories import UserFactory, ProjectFactory, UnregUserFactory
 
 from framework.search.solr import solr
 from framework.search.utils import clean_solr_doc
@@ -257,6 +257,11 @@ class TestAddContributor(SolrTestCase):
         self.name1 = 'Roger1 Taylor1'
         self.name2 = 'John2 Deacon2'
         self.user = UserFactory(fullname=self.name1)
+
+    def test_unreg_users_dont_show_in_search(self):
+        unreg = UnregUserFactory()
+        contribs = _search_contributor(unreg.fullname)
+        assert_equal(len(contribs['users']), 0)
 
     def test_search_fullname(self):
         """Verify that searching for full name yields exactly one result.

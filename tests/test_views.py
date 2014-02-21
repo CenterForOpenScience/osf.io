@@ -6,18 +6,23 @@ import json
 import unittest
 import datetime as dt
 
+import mock
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
+from framework import Q
+from framework.auth.model import User
 
 import website.app
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
+from website.project.views.contributor import _add_contributor_json
 from webtest.app import AppError
+from website import settings
 from tests.base import DbTestCase
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
-    NodeFactory, NodeLogFactory, AuthUserFactory
+    NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory
 )
 
 
@@ -313,6 +318,93 @@ class TestProjectViews(DbTestCase):
         assert_equal(node.is_deleted, True)
         assert_in('url', res.json)
         assert_equal(res.json['url'], self.project.url)
+
+@unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
+class TestUserInviteViews(DbTestCase):
+
+    def setUp(self):
+        ensure_schemas()
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.invite_url = '/api/v1/project/{0}/invite_contributor/'.format(self.project._primary_key)
+
+    @mock.patch('website.project.views.contributor.send_email.delay')
+    def test_invite_contributor_api_endpoint_sends_an_email(self, send_email_delay):
+        self.app.post_json(self.invite_url,
+            {'fullname': 'Brian May', 'email': 'brian@queen.com'}, auth=self.user.auth)
+        assert_true(send_email_delay.called)
+
+    @mock.patch('website.project.views.contributor.send_email')
+    def test_invite_contributor_api_endpoint_adds_a_non_registered_contributor(self, send_email):
+        res = self.app.post_json(self.invite_url,
+            {'fullname': 'Brian May', 'email': 'brian@queen.com'}, auth=self.user.auth)
+
+        latest_user = User.find_one(Q('username', 'eq', 'brian@queen.com'))
+        assert_equal(latest_user.fullname, 'Brian May')
+        assert_equal(latest_user.username, 'brian@queen.com')
+        assert_false(latest_user.is_registered)
+        assert_equal(res.json['contributor'], _add_contributor_json(latest_user))
+
+    def test_invite_contributor_adds_unclaimed_data(self):
+        res = self.app.post_json(self.invite_url,
+            {'fullname': 'Briann May', 'email': 'brian2@queen.com'}, auth=self.user.auth)
+        latest_user = User.find()[len(User.find()) - 1]
+        data = latest_user.unclaimed_records[self.project._primary_key]
+        assert_equal(data['name'], 'Briann May')
+        assert_equal(data['referrer_id'], self.user._primary_key)
+        assert_true(data['verification'])
+
+    @mock.patch('website.project.views.contributor.send_email')
+    def test_invite_contributor_with_no_email(self, send_email):
+        assert 0, 'finish me'
+
+    def test_invite_contributor_requires_fullname(self):
+        res = self.app.post_json(self.invite_url,
+            {'email': 'brian@queen.com', 'fullname': ''}, auth=self.user.auth,
+            expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    @mock.patch('website.project.views.contributor.send_email')
+    def test_cannot_invite_unreg_contributor_if_they_already_exist(self, send_email):
+        user = UserFactory()
+        res = self.app.post_json(self.invite_url,
+            {'fullname': 'Fred Mercury', 'email': user.username}, auth=self.user.auth)
+        assert_in('User already exists', res.json['message'])
+        assert_in('contributor', res.json)
+
+@unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
+class TestClaimViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.referrer = UserFactory()
+        self.user = UnregUserFactory()
+        self.project = ProjectFactory(creator=self.referrer)
+
+    def add_unclaimed_record(self):
+        given_name = 'Fredd Merkury'
+        self.user.add_unclaimed_record(node=self.project,
+            given_name=given_name, referrer=self.referrer)
+        self.user.save()
+        data = self.user.unclaimed_records[self.project._primary_key]
+        return data
+
+    def test_valid_claim_url(self):
+        self.add_unclaimed_record()
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(url).maybe_follow()
+        assert_equal(res.status_code, 200)
+
+    def test_invalid_claim_url_responds_with_404(self):
+        res = self.app.get('/claim/badsignature/', expect_errors=True).maybe_follow()
+        assert_equal(res.status_code, 404)
+
+    def test_posting_to_claim_url_with_valid_data(self):
+        url = self.user.get_claim_url(self.project._primary_key)
+        # res = self.app.post(url, )
+        assert 0, 'finish me'
+
 
 class TestWatchViews(DbTestCase):
 
