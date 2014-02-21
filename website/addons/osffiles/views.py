@@ -152,7 +152,7 @@ def upload_file_public(**kwargs):
         'name': name,
         'size': [
             float(size),
-            format_filesize(size),
+            rubeus.format_filesize(size),
         ],
 
         # URLs
