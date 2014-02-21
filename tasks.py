@@ -38,7 +38,7 @@ def make_shell_context():
 def format_context(context):
     lines = []
     for name, obj in context.items():
-        line = "{name}: {obj}".format(**locals())
+        line = "{name}: {obj!r}".format(**locals())
         lines.append(line)
     return '\n'.join(lines)
 
