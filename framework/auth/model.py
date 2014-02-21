@@ -136,14 +136,16 @@ class User(GuidStoredObject, AddonModelMixin):
         }
 
 
-    def register(self, username, password):
+    def register(self, username, password=None):
         """Registers the user.
         """
         self.username = username
-        self.set_password(password)
+        if password:
+            self.set_password(password)
         if username not in self.emails:
             self.emails.append(username)
         self.is_registered = True
+        self.is_claimed = True
         return self
 
     def add_unclaimed_record(self, node, referrer, given_name):
@@ -243,7 +245,7 @@ class User(GuidStoredObject, AddonModelMixin):
             self.emails.append(email)
             # Complete registration if primary email
             if email == self.username:
-                self.is_registered = True
+                self.register(self.username)
                 self.date_confirmed = dt.datetime.utcnow()
             # Revoke token
             del self.email_verifications[token]

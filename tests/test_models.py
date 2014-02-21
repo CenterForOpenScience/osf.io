@@ -6,7 +6,6 @@ import unittest
 from nose.tools import *  # PEP8 asserts
 
 import pytz
-import hashlib
 import datetime
 import urlparse
 from dateutil import parser
@@ -123,6 +122,7 @@ class TestUser(DbTestCase):
     def test_confirm_primary_email(self):
         u = UserFactory.build(username='foo@bar.com')
         u.is_registered = False
+        u.is_claimed = False
         u.add_email_verification('foo@bar.com')
         u.save()
         token = u.get_confirmation_token('foo@bar.com')
@@ -132,6 +132,7 @@ class TestUser(DbTestCase):
         assert_equal(len(u.email_verifications.keys()), 0)
         assert_in('foo@bar.com', u.emails)
         assert_true(u.is_registered)
+        assert_true(u.is_claimed)
 
     def test_verify_confirmation_token(self):
         u = UserFactory.build()
@@ -1755,8 +1756,10 @@ class TestUnregisteredUser(DbTestCase):
 
     def test_register(self):
         assert_false(self.user.is_registered)  # sanity check
+        assert_false(self.user.is_claimed)
         self.user.register(username='foo@bar.com', password='killerqueen')
         self.user.save()
+        assert_true(self.user.is_claimed)
         assert_true(self.user.is_registered)
         assert_true(self.user.check_password('killerqueen'))
         assert_equal(self.user.username, 'foo@bar.com')

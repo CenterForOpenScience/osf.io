@@ -18,6 +18,8 @@ from model import User
 
 import datetime
 
+logger = logging.getLogger(__name__)
+
 
 def get_current_username():
     return session.data.get('auth_user_username')
@@ -114,6 +116,7 @@ def login(username, password):
         if user:
             if not user.is_registered:
                 logging.debug("User is not registered")
+                # TODO: Raise Error instead of returning magic value
                 return 2
             elif not user.is_claimed:
                 logging.debug("User is not claimed")
