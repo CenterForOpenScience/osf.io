@@ -99,6 +99,12 @@ font-weight: bold;
 
 /* Add-on styles */
 
+.dropdown-scroll {
+    height: auto;
+    max-height: 200px;
+    overflow-x: hidden;
+}
+
 /* Make embedded iframes responsive */
 .addon-widget-container iframe {
     max-width: 100%;
