@@ -42,4 +42,4 @@ def create_new_bucket(*args, **kwargs):
 
 
 def get_cache_file_name(key_name, etag):
-    return '{0}_{1}.html'.format(key_name.replace('/', ''), etag)
+    return u'{0}_{1}.html'.format(key_name.replace('/', ''), etag)

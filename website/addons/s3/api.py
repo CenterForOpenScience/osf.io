@@ -189,7 +189,7 @@ class S3Key(object):
 
     @property
     def name(self):
-        d = self._nameAsStr().split('/')
+        d = self.s3Key.key.split('/')
         if len(d) > 1 and self.type == 'file':
             return d[-1]
         elif self.type == 'folder':
@@ -197,23 +197,16 @@ class S3Key(object):
         else:
             return d[0]
 
-    def _nameAsStr(self):
-        return str(self.s3Key.key)
-
     @property
     def type(self):
-        if not str(self.s3Key.key).endswith('/'):
+        if not self.s3Key.key.endswith('/'):
             return 'file'
         else:
             return 'folder'
 
     @property
-    def fullPath(self):
-        return self._nameAsStr()
-
-    @property
     def parentFolder(self):
-        d = self._nameAsStr().split('/')
+        d = self.s3Key.key.split('/')
 
         if len(d) > 1 and self.type == 'file':
             return d[len(d) - 2]
@@ -224,7 +217,7 @@ class S3Key(object):
 
     @property
     def pathTo(self):
-        return self._nameAsStr()[:self._nameAsStr().rfind('/')] + '/'
+        return self.s3Key.key[:self.s3Key.key.rfind('/')] + '/'
 
     @property
     def size(self):
@@ -247,10 +240,10 @@ class S3Key(object):
     @property
     def extension(self):
         if self.type != 'folder':
-            if os.path.splitext(self._nameAsStr())[1] is None:
+            if os.path.splitext(self.s3Key.key)[1] is None:
                 return None
             else:
-                return os.path.splitext(self._nameAsStr())[1][1:]
+                return os.path.splitext(self.s3Key.key)[1][1:]
         else:
             return None
 
@@ -264,7 +257,7 @@ class S3Key(object):
 
     def updateVersions(self, manager):
         if self.type != 'folder':
-            self.versions.extend(manager.get_file_versions(self._nameAsStr()))
+            self.versions.extend(manager.get_file_versions(self.s3Key.key))
 
     @property
     def etag(self):

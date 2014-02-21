@@ -1,7 +1,5 @@
-import re
 from urllib import quote
 from bson import ObjectId
-from datetime import datetime
 from dateutil.parser import parse
 
 from boto.iam import IAMConnection
@@ -48,7 +46,7 @@ def adjust_cors(s3wrapper, clobber=False):
 
 
 def wrapped_key_to_json(wrapped_key, node):
-    urls = build_urls(node, quote(wrapped_key.fullPath))
+    urls = build_urls(node, quote(wrapped_key.s3Key.key.encode('utf-8')))
     return {
         rubeus.KIND: _key_type_to_rubeus(wrapped_key.type),
         'name': wrapped_key.name,
@@ -60,7 +58,7 @@ def wrapped_key_to_json(wrapped_key, node):
             'download': urls['download'] if wrapped_key.type == 'file' else None,
             'delete': urls['delete'] if wrapped_key.type == 'file' else None,
             'view': urls['view'] if wrapped_key.type == 'file' else None,
-            'fetch': node.api_url + 's3/hgrid/' + wrapped_key.fullPath if wrapped_key.type == 'folder' else None,
+            'fetch': node.api_url + 's3/hgrid/' + wrapped_key.s3Key.key if wrapped_key.type == 'folder' else None,
             'upload': urls['upload'],
         }
     }
@@ -101,8 +99,8 @@ def serialize_bucket(s3wrapper):
     return [
         {
             'name': x.name,
-            'path': x.fullPath,
-            'version_id': s3wrapper.bucket.get_key(x.fullPath).version_id,
+            'path': x.s3Key.key,
+            'version_id': s3wrapper.bucket.get_key(x.s3Key.key).version_id,
         }
         for x in s3wrapper.get_wrapped_keys()
     ]
@@ -147,13 +145,13 @@ def remove_osf_user(user_settings):
 
 def build_urls(node, file_name, url=None, etag=None, vid=None):
     rv = {
-        'upload': '{node_api}s3/'.format(node_api=node.api_url),
-        'download': '{node_url}s3/{file_name}/download/{vid}'.format(node_url=node.url, file_name=file_name, vid='' if not vid else '?vid={0}'.format(vid)),
-        'view': '{node_url}s3/{file_name}/'.format(node_url=node.url, file_name=file_name),
-        'delete': '{node_api}s3/{file_name}/'.format(node_api=node.api_url, file_name=file_name),
-        'render': '{node_api}s3/{file_name}/render/{etag}'.format(node_api=node.api_url,
+        'upload': u'{node_api}s3/'.format(node_api=node.api_url),
+        'download': u'{node_url}s3/{file_name}/download/{vid}'.format(node_url=node.url, file_name=file_name, vid='' if not vid else '?vid={0}'.format(vid)),
+        'view': u'{node_url}s3/{file_name}/'.format(node_url=node.url, file_name=file_name),
+        'delete': u'{node_api}s3/{file_name}/'.format(node_api=node.api_url, file_name=file_name),
+        'render': u'{node_api}s3/{file_name}/render/{etag}'.format(node_api=node.api_url,
             file_name=file_name, etag='' if not etag else '?etag={0}'.format(etag)),
-        'fetch': '{node_api}s3/hgrid/{file_name}'.format(node_api=node.api_url, file_name=file_name)
+        'fetch': u'{node_api}s3/hgrid/{file_name}'.format(node_api=node.api_url, file_name=file_name)
     }
     if not url:
         return rv
