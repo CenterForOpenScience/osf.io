@@ -29,19 +29,6 @@ from .model import NodeFile, OsfGuidFile
 logger = logging.getLogger(__name__)
 
 
-@must_be_contributor_or_public
-@must_have_addon('osffiles', 'node')
-def osffiles_widget(**kwargs):
-    node = kwargs['node'] or kwargs['project']
-    osffiles = node.get_addon('osffiles')
-    rv = {
-        'complete': True,
-    }
-    rv.update(osffiles.config.to_json())
-    return rv
-
-###
-
 def _clean_file_name(name):
     " HTML-escape file name and encode to UTF-8. "
     escaped = cgi.escape(name)

@@ -13,16 +13,6 @@ settings_routes = {
     'prefix': '/api/v1',
 }
 
-widget_routes = {
-    'rules': [
-        Rule([
-            '/project/<pid>/osffiles/widget/',
-            '/project/<pid>/node/<nid>/osffiles/widget/',
-        ], 'get', views.osffiles_widget, json_renderer),
-    ],
-    'prefix': '/api/v1',
-}
-
 web_routes = {
 
     'rules': [
