@@ -95,15 +95,11 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
             try:
                 return login(form.username.data, form.password.data)
             except auth.LoginNotAllowedError:
-                status.push_status_message('This login email has been registered '
-                    'but not verified. Please check your email (and spam '
-                    'folder) and click the verification link before logging '
-                    'in.')
+                status.push_status_message(language.UNCONFIRMED, 'warning')
                 # Don't go anywhere
                 return {'next': ''}
             except auth.PasswordIncorrectError:
-                status.push_status_message('Log-in failed. Please try again or '
-                    'reset your password')
+                status.push_status_message(language.LOGIN_FAILED)
         forms.push_errors_to_status(form.errors)
 
     if kwargs.get('first', False):
@@ -118,7 +114,7 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
         )
     )
     if next_url:
-        status.push_status_message('You must log in to access this resource')
+        status.push_status_message(language.MUST_LOGIN)
     return {
         'next': next_url,
     }
@@ -129,7 +125,7 @@ def auth_logout():
 
     """
     logout()
-    status.push_status_message('You have successfully logged out.')
+    status.push_status_message(language.LOGOUT, 'info')
     rv = framework.redirect('/goodbye/')
     rv.delete_cookie(website.settings.COOKIE_NAME)
     return rv
@@ -154,9 +150,7 @@ def confirm_email_get(**kwargs):
             response = framework.redirect('/settings/')
             return auth.authenticate(user, response=response)
     # Return data for the error template
-    return {'code': 400, 'message_short': 'Link Expired', 'message_long':
-        ('This confirmation link has expired. Please <a href="/login/">log in</a> '
-            'to continue.')}, 400
+    return {'code': 400, 'message_short': 'Link Expired', 'message_long': language.LINK_EXPIRED}, 400
 
 
 def send_confirm_email(user, email):
@@ -168,7 +162,7 @@ def send_confirm_email(user, email):
 
 def auth_register_post():
     if not website.settings.ALLOW_REGISTRATION:
-        status.push_status_message('Registration currently unavailable.')
+        status.push_status_message(language.REGISTRATION_UNAVAILABLE)
         return framework.redirect('/')
 
     form = RegistrationForm(framework.request.form, prefix='register')
@@ -182,14 +176,13 @@ def auth_register_post():
                 form.password.data,
                 form.fullname.data)
         except DuplicateEmailError:
-            status.push_status_message('The email <em>%s</em> has already been registered.' % form.username.data)
+            status.push_status_message(language.ALREADY_REGISTERED.format(email=form.username.data))
             return auth_login(registration_form=form)
         if u:
             if website.settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
                 send_confirm_email(u, email=u.username)
-                status.push_status_message('Registration successful. Please \
-                    check %s to confirm your email address.' %
-                    (str(u.username)))
+                message = language.REGISTRATION_SUCCESS.format(email=u.username)
+                status.push_status_message(message, 'success')
                 return auth_login(registration_form=form)
             else:
                 return framework.redirect('/login/first/')
