@@ -200,11 +200,17 @@ def resend_confirmation():
     if request.method == 'POST':
         if form.validate():
             clean_email = form.email.data.lower().strip()
+            # TODO: This pattern (validate form then get user, then validate user) is
+            # repeated many times. This logic (checking that a user exists) should
+            # be added to form validation
             user = get_user(username=clean_email)
             if user:
                 status.push_status_message('Resent email to <em>{0}</em>'.format(clean_email),
                     'success')
                 send_confirm_email(user, clean_email)
+            else:
+                msg = language.EMAIL_NOT_FOUND.format(email=clean_email)
+                status.push_status_message(msg, 'error')
         else:
             forms.push_errors_to_status(form.errors)
     # Don't go anywhere

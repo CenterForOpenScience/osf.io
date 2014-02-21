@@ -23,7 +23,7 @@ from framework import app
 from website.project.views.file import get_cache_path
 from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
-from website import settings
+from website import settings, language
 from website.app import init_app
 
 app = init_app(set_backends=False, routes=True)
@@ -690,6 +690,23 @@ class TestConfirmingEmail(DbTestCase):
         res = self.app.get(self.confirmation_url, expect_errors=True)
         assert_in('Link Expired', res)
 
+    def test_sees_flash_message_if_email_unconfirmed(self):
+        # set a password for user
+        self.user.set_password('bicycle')
+        self.user.save()
+        # Goes to log in page
+        res = self.app.get('/account/').maybe_follow()
+        # Fills the form with incorrect password
+        form  = res.forms['signinForm']
+        form['username'] = self.user.username
+        form['password'] = 'bicycle'
+        res = form.submit().maybe_follow()
+        assert_in(language.UNCONFIRMED, res, 'shows flash message')
+        # clicks on resend link in flash message
+        res = res.click('Click here')
+        assert_equal(res.request.path, '/resend/', 'at resend page')
+
+
     @mock.patch('framework.auth.views.send_confirm_email')
     def test_resend_form(self, send_confirm_email):
         res = self.app.get('/resend/')
@@ -698,6 +715,14 @@ class TestConfirmingEmail(DbTestCase):
         res = form.submit()
         assert_true(send_confirm_email.called)
         assert_in('Resent email to', res)
+
+    def test_resend_form_shows_error_message_if_email_not_in_db(self):
+        res = self.app.get('/resend/')
+        form = res.forms['resendForm']
+        form['email'] = 'nowheretobefound@foo.com'
+        res = form.submit()
+        assert_in(language.EMAIL_NOT_FOUND.format(email="nowheretobefound@foo.com"),
+            res, 'flashes error msg')
 
 
 if __name__ == '__main__':
