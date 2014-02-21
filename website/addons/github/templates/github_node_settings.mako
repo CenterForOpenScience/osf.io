@@ -93,7 +93,7 @@
         if (self.config.user) {
             $.ajax({
                 type: 'GET',
-                url: '/api/v1/github/users/' + self.config.user.githubUser + '/repos/',
+                url: '/api/v1/github/user/repos/',
                 success: function(response) {
                     self.repoModels(
                         response.map(function(item) {

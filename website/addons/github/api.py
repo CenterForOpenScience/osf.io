@@ -63,7 +63,10 @@ class GitHub(object):
         """
         return self.gh3.repository(user, repo)
 
-    def repos(self, user):
+    def repos(self):
+        return self.gh3.iter_repos(type='all', sort='full_name')
+
+    def user_repos(self, user):
         return self.gh3.iter_user_repos(user, type='all', sort='full_name')
 
     def create_repo(self, repo, **kwargs):
