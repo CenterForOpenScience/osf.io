@@ -20,7 +20,7 @@ from website.addons.base.views import check_file_guid
 from ..api import GitHub, ref_to_params, _build_github_urls
 from ..model import GithubGuidFile
 from .. import settings as github_settings
-from .util import MESSAGES
+from .util import MESSAGES, get_path
 
 
 @must_be_contributor_or_public
@@ -29,9 +29,7 @@ def github_download_file(**kwargs):
 
     github = kwargs['node_addon']
 
-    path = kwargs.get('path')
-    if path is None:
-        raise HTTPError(http.NOT_FOUND)
+    path = get_path(kwargs)
 
     ref = request.args.get('sha')
     connection = GitHub.from_settings(github.user_settings)
@@ -68,9 +66,7 @@ def github_view_file(**kwargs):
     node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
 
-    path = kwargs.get('path')
-    if path is None:
-        raise HTTPError(http.NOT_FOUND)
+    path = get_path(kwargs)
     file_name = os.path.split(path)[1]
 
     # Get branch / commit
@@ -177,7 +173,7 @@ def github_upload_file(**kwargs):
     github = kwargs['node_addon']
     now = datetime.datetime.utcnow()
 
-    path = kwargs.get('path', '')
+    path = get_path(kwargs, required=False) or ''
 
     branch = request.args.get('branch')
     sha = request.args.get('sha')
@@ -285,9 +281,7 @@ def github_delete_file(**kwargs):
 
     now = datetime.datetime.utcnow()
 
-    path = kwargs.get('path')
-    if path is None:
-        raise HTTPError(http.NOT_FOUND)
+    path = get_path(kwargs)
 
     sha = request.args.get('sha')
     if sha is None:
@@ -355,7 +349,7 @@ def github_get_rendered_file(**kwargs):
 
     """
     node_settings = kwargs['node_addon']
-    path = kwargs.get('path')
+    path = get_path(kwargs)
     sha = request.args.get('sha')
 
     cache_file = get_cache_file(path, sha)
