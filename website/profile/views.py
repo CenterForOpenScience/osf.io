@@ -104,19 +104,16 @@ profile_schema = {
                     'type': 'textfield',
                     'label': 'Full/display name',
                     'required': True,
-                    'helpText': 'The field below is your full name and the name that will be '
-                                'displayed in your profile. We are also '
-                                'generating common citation formats for your '
-                                'work using the Citation Style Language '
-                                'definition. You can use the "Guess fields below" button '
-                                'or edit them directly in order to accurately generate '
+                    'helpText': 'The field above is your full name and the name that will be '
+                                'displayed in your profile. You can use the "Guess fields" button '
+                                'or edit the fields below in order to accurately generate '
                                 'citations.',
                 },
                 {
                     'id': 'impute',
                     'type': 'htmlfield',
                     'label': '',
-                    'content': '<button id="profile-impute" class="btn btn-default">Guess fields below</button>',
+                    'content': '<button id="profile-impute" class="btn btn-default">Guess fields</button>',
                 },
                 {
                     'id': 'given_name',

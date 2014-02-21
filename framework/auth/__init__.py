@@ -150,21 +150,7 @@ def login(username, password):
             elif not user.is_claimed:
                 raise LoginNotAllowedError('User is not claimed.')
             else:
-                is_first_login = user.date_last_login is None
-                user.date_last_login = datetime.datetime.utcnow()
-                user.save()
-                if not is_first_login:
-                    response = goback()
-                else:
-                    # Direct user to settings page if first login; need to
-                    # verify imputed names
-                    status.push_status_message('Welcome to the OSF! Please update the '
-                                        'following settings. If you need assistance '
-                                        'in getting started, please visit the '
-                                        '<a href="/getting-started/">Getting Started</a> '
-                                        'page.')
-                    response = web.redirect('/settings/')
-                return authenticate(user, response=response)
+                return authenticate(user, response=goback())
     raise PasswordIncorrectError('Incorrect password attempt.')
 
 
