@@ -28,6 +28,9 @@ for m in REQUIRED_MODULES:
 def test_piwik_enabled():
     assert_true(settings.PIWIK_HOST is not None)
 
+def test_claiming_enabled():
+    assert_true(settings.ALLOW_CLAIMING, 'Claiming is disabled.')
+
 requires_piwik = unittest.skipIf(
     settings.PIWIK_HOST is None,
     'no PIWIK_HOST specified in settings'

@@ -75,8 +75,8 @@ class TestS3ViewsConfig(DbTestCase):
         url = '/api/v1/settings/s3/'
         self.app.delete(url, auth=self.user.auth)
         self.user_settings.reload()
-        assert_equals(self.user_settings.access_key, '')
-        assert_equals(self.user_settings.secret_key, '')
+        assert_equals(self.user_settings.access_key, None)
+        assert_equals(self.user_settings.secret_key, None)
 
     @mock.patch('website.addons.s3.views.config.has_access')
     def test_user_settings_no_auth(self, mock_access):
@@ -245,3 +245,7 @@ class TestS3ViewsHgrid(DbTestCase):
         url = "/api/v1/project/{0}/s3/hgrid/dummy/".format(self.project._id)
         rv = self.app.get(url, auth=self.user.auth)
         assert_equals(rv.body, 'null')
+
+#TODO
+#removed access key
+#

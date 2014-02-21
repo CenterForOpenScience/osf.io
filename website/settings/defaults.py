@@ -21,6 +21,7 @@ DOMAIN = 'http://localhost:5000/'
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
+ALLOW_CLAIMING = False
 
 USE_SOLR = False
 SOLR_URI = 'http://localhost:8983/solr/'

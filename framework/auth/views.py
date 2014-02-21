@@ -137,6 +137,12 @@ def auth_logout():
 
 
 def confirm_email_get(**kwargs):
+    """View for email confirmation links.
+    Authenticates and redirects to user settings page if confirmation is
+    successful, otherwise shows an "Expired Link" error.
+
+    methods: GET
+    """
     user = get_user(id=kwargs['uid'])
     token = kwargs['token']
     if user:

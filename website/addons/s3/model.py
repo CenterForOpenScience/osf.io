@@ -57,8 +57,16 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     def to_json(self, user):
         rv = super(AddonS3NodeSettings, self).to_json(user)
 
-        if not self.user_settings and user.get_addon('s3'):
-            self.user_settings = user.get_addon('s3')
+        rv.update({
+            'bucket': self.bucket or '',
+            'has_bucket': self.bucket is not None,
+            'is_owner': (
+                self.user_settings and self.user_settings.owner == user
+            ),
+            'user_has_auth': False,
+            'owner': None,  # needed?
+            'bucket_list': None
+        })
 
         if self.user_settings:
             rv['access_key'] = self.user_settings.access_key or ''
@@ -68,16 +76,14 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             self.save()
             if self.user_settings.has_auth:
                 rv['bucket_list'] = get_bucket_drop_down(self.user_settings)
+                rv['user_has_auth'] = True
 
-        rv.update({
-            'bucket': self.bucket or '',
-            'has_bucket': self.bucket is not None,
-            'user_has_auth': True if self.user_settings and self.user_settings.has_auth else False,
-            'is_owner': (
-                self.user_settings is None and self.owner.is_contributor(user)
-                or self.user_settings and self.user_settings.owner == user
-            ),
-        })
+        elif user.get_addon('s3'):
+            rv['access_key'] = user.get_addon('s3').access_key or ''
+            rv['secret_key'] = user.get_addon('s3').secret_key or ''
+            if user.get_addon('s3').has_auth:
+                rv['bucket_list'] = get_bucket_drop_down(user.get_addon('s3'))
+                rv['user_has_auth'] = True
 
         return rv
 

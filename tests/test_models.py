@@ -14,34 +14,60 @@ from dateutil import parser
 from modularodm.exceptions import ValidationError
 
 from framework.analytics import get_total_activity_count
+from framework.exceptions import PermissionsError
 from framework.auth import User
 from framework.auth.utils import parse_name
 from framework.auth.decorators import Auth
 from framework import utils
 from framework.bcrypt import check_password_hash
 from framework.git.exceptions import FileNotModified
-from website import settings, filters
+from website import settings, filters, hmac
 from website.profile.utils import serialize_user
 from website.project.model import Pointer, ApiKey, NodeLog, ensure_schemas
-
 from website.addons.osffiles.model import NodeFile
 
 from tests.base import DbTestCase, test_app, Guid
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
-    NodeWikiFactory, UnregUserFactory, RegistrationFactory
+    NodeWikiFactory, UnregUserFactory, RegistrationFactory, UnregUserFactory
 )
 
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory, MetaDataFactory
 
-# TODO: Move me to test_auth.py (User is a framework model, not a website model)
 class TestUser(DbTestCase):
 
     def setUp(self):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
+
+    def test_non_registered_user_is_not_active(self):
+        u = User(username='fred@queen.com',
+            fullname='Freddie Mercury',
+            is_registered=False)
+        u.set_password('killerqueen')
+        u.save()
+        assert_false(u.is_active())
+
+    def test_create_unregistered(self):
+        u = User.create_unregistered(email='foo@bar.com',
+            fullname='Foo Bar')
+        u.save()
+        assert_equal(u.username, 'foo@bar.com')
+        assert_false(u.is_registered)
+        assert_true('foo@bar.com' in u.emails)
+
+    def test_user_with_no_password_is_not_active(self):
+        u = User(username='fred@queen.com',
+            fullname='Freddie Mercury', is_registered=True)
+        u.save()
+        assert_false(u.is_active())
+
+    def test_merged_user_is_not_active(self):
+        master = UserFactory()
+        dupe = UserFactory(merged_by=master)
+        assert_false(dupe.is_active())
 
     def test_cant_create_user_without_username(self):
         u = User()  # No username given
@@ -206,6 +232,7 @@ class TestUser(DbTestCase):
         assert_equal(d['registered'], user.is_registered)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
+        assert_equal(d['active'], user.is_active())
 
     def test_serialize_user_full(self):
         master = UserFactory()
@@ -286,6 +313,8 @@ class TestUser(DbTestCase):
             )
 
         assert_equal(len(self.user.recently_added), 15)
+
+
 
 
 class TestUserParse(unittest.TestCase):
@@ -981,14 +1010,17 @@ class TestProject(DbTestCase):
             auth=self.consolidate_auth
         )
         self.project.save()
-        # Contributor list include nonregistered contributor
-        latest_contributor = self.project.contributor_list[-1]
-        assert_dict_equal(latest_contributor,
-                        {'nr_name': 'Weezy F. Baby', 'nr_email': 'foo@bar.com'})
+        latest_contributor = self.project.contributors[-1]
+        assert_true(isinstance(latest_contributor, User))
+        assert_equal(latest_contributor.username, 'foo@bar.com')
+        assert_equal(latest_contributor.fullname, 'Weezy F. Baby')
+        assert_false(latest_contributor.is_registered)
+        # Contributor list includes nonregistered contributor
+        latest_contributor_dict = self.project.contributor_list[-1]
+        assert_dict_equal(latest_contributor_dict,
+                        {'id': latest_contributor._primary_key})
         # A log event was added
         assert_equal(self.project.logs[-1].action, 'contributor_added')
-
-
 
     def test_remove_contributor(self):
         # A user is added as a contributor
@@ -1006,26 +1038,6 @@ class TestProject(DbTestCase):
             [contrib.get('id') for contrib in self.project.contributor_list]
         )
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
-
-    def test_remove_nonregistered_contributor(self):
-        nr_user = {
-            'email': 'foo@bar.com',
-            'name': 'Weezy F. Baby',
-        }
-        self.project.add_nonregistered_contributor(
-            auth=self.consolidate_auth, **nr_user)
-        self.project.save()
-        # The user is removed
-        hash_id = hashlib.md5(nr_user['email']).hexdigest()
-        self.project.remove_nonregistered_contributor(
-            auth=self.consolidate_auth,
-            name=nr_user['name'],
-            hash_id=hash_id,
-        )
-        # List does not contain nonregistered contributor
-        assert_not_in(nr_user, self.project.contributors)
-        assert_equal(self.project.logs[-1].action, 'contributor_removed')
-        assert_not_in('Weezy F. Baby', [contrib.get('nr_name') for contrib in self.project.contributor_list])
 
     def test_set_title(self):
         proj = ProjectFactory(title='That Was Then', creator=self.user)
@@ -1681,13 +1693,76 @@ class TestWatchConfig(DbTestCase):
         assert_true(config.node._id)
 
 
-class TestUnregisteredUser(unittest.TestCase):
+class TestUnregisteredUser(DbTestCase):
+
+    def setUp(self):
+        self.referrer = UserFactory()
+        self.project = ProjectFactory(creator=self.referrer)
+        self.user = UnregUserFactory()
+
+    def add_unclaimed_record(self):
+        given_name = 'Fredd Merkury'
+        self.user.add_unclaimed_record(node=self.project,
+            given_name=given_name, referrer=self.referrer)
+        self.user.save()
+        data = self.user.unclaimed_records[self.project._primary_key]
+        return data
+
     def test_factory(self):
         u1 = UnregUserFactory()
-        assert_true(u1['nr_name'])
-        assert_true(u1['nr_email'])
-        u2 = UnregUserFactory()
-        assert_not_equal(u1['nr_name'], u2['nr_name'])
+        assert_false(u1.is_registered)
+        assert_true(u1.password is None)
+        assert_true(u1.fullname)
+
+    def test_add_unclaimed_record(self):
+        data = self.add_unclaimed_record()
+        assert_equal(data, {
+            'name': 'Fredd Merkury',
+            'referrer_id': self.referrer._primary_key,
+            'verification': hmac.sign('{}:{}:{}:{}'.format(
+                self.user._primary_key,
+                self.project._primary_key,
+                self.referrer._primary_key, 'Fredd Merkury'))
+        })
+
+    def test_get_claim_url(self):
+        self.add_unclaimed_record()
+        pk = self.project._primary_key
+        assert_equal(self.user.get_claim_url(pk),
+            settings.DOMAIN + 'user/claim/' + self.user.unclaimed_records[pk]['verification'] + '/')
+
+    def test_parse_claim_signature(self):
+        data = self.add_unclaimed_record()
+        parsed = User.parse_claim_signature(data['verification'])
+        assert_equal(parsed, {
+            '_id': self.user._primary_key,
+            'name': 'Fredd Merkury',
+            'referrer_id': self.referrer._primary_key,
+            'project_id': self.project._primary_key
+        })
+
+    def test_get_claim_url_raises_value_error_if_not_valid_pid(self):
+        with assert_raises(ValueError):
+            self.user.get_claim_url('invalidinput')
+
+    def test_cant_add_unclaimed_record_if_referrer_isnt_contributor(self):
+        project = ProjectFactory()  # referrer isn't a contributor to this project
+        with assert_raises(PermissionsError):
+            self.user.add_unclaimed_record(node=project,
+                given_name='fred m', referrer=self.referrer)
+
+    def test_register(self):
+        assert_false(self.user.is_registered)  # sanity check
+        self.user.register(username='foo@bar.com', password='killerqueen')
+        self.user.save()
+        assert_true(self.user.is_registered)
+        assert_true(self.user.check_password('killerqueen'))
+        assert_equal(self.user.username, 'foo@bar.com')
+
+    def test_registering_with_a_different_email_adds_to_emails_list(self):
+        user = UnregUserFactory(email='fred@queen.com')
+        assert_equal(user.password, None)  # sanity check
+        user.register(username='brian@queen.com', password='killerqueen')
 
 if __name__ == '__main__':
     unittest.main()

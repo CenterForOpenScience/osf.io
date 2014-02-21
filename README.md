@@ -52,6 +52,14 @@ $ invoke mongo
 $ invoke server
 ```
 
+## Running the shell
+
+To open the interactive Python shell, run:
+
+```bash
+$ invoke shell
+```
+
 ## Running Tests
 
 To run all tests:

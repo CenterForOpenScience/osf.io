@@ -15,8 +15,9 @@ from framework.guid.model import GuidStoredObject
 from framework.search import solr
 from framework.addons import AddonModelMixin
 from framework.auth import utils
+from website import settings, filters, security, hmac
+from framework.exceptions import PermissionsError
 
-from website import settings, filters, security
 
 name_formatters = {
    'long': lambda user: user.fullname,
@@ -46,8 +47,21 @@ class User(GuidStoredObject, AddonModelMixin):
     fullname = fields.StringField(required=True)
     is_registered = fields.BooleanField()
     is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
+
+    # Per-project unclaimed user data:
+    # Format: {
+    #   <project_id>: {
+    #       'name': <name that referrer provided>,
+    #       'referrer_id': <user ID of referrer>,
+    #       'verification': <token used for verification urls>
+    #   }
+    #   ...
+    # }
+    # TODO: add validation
+    unclaimed_records = fields.DictionaryField(required=False)
     # The user who merged this account
     merged_by = fields.ForeignField('user', default=None, backref="merged")
+    #: Verification key used for resetting password
     verification_key = fields.StringField()
     emails = fields.StringField(list=True)
     email_verifications = fields.DictionaryField()  # TODO: Unused. Remove me?
@@ -75,16 +89,34 @@ class User(GuidStoredObject, AddonModelMixin):
 
     _meta = {'optimistic' : True}
 
-    def set_password(self, raw_password):
-        '''Set the password for this user to the hash of ``raw_password``.'''
-        self.password = generate_password_hash(raw_password)
-        return None
+    @classmethod
+    def create_unregistered(cls, email, fullname):
+        parsed = utils.parse_name(fullname)
+        user = cls(
+            username=email,
+            fullname=fullname,
+            emails=[email],
+            **parsed
+        )
+        user.is_registered = False
+        return user
 
-    def check_password(self, raw_password):
-        '''Return a boolean of whether ``raw_password`` was correct.'''
-        if not self.password or not raw_password:
-            return False
-        return check_password_hash(self.password, raw_password)
+    @classmethod
+    def parse_claim_signature(cls, signature):
+        """Parses a verification code for claiming a user account.
+
+        :param str signature: The signature (verification key) to parse
+        :raises: itsdangerous.BadSignature if signature is invalid (bad secret)
+        :returns: A dictionary with 'name', 'referrer_id', and 'project_id'
+        """
+        data = hmac.load(signature)
+        pk, project_id, referrer_id, given_name = data.split(':')
+        return {
+            '_id': pk,
+            'name': given_name,
+            'referrer_id': referrer_id,
+            'project_id': project_id
+        }
 
     @classmethod
     def create_unconfirmed(cls, username, password, fullname):
@@ -101,6 +133,77 @@ class User(GuidStoredObject, AddonModelMixin):
         user.add_email_verification(username)
         user.is_registered = False
         return user
+
+    def register(self, username, password):
+        """Registers the user.
+        """
+        self.username = username
+        self.set_password(password)
+        if username not in self.emails:
+            self.emails.append(username)
+        self.is_registered = True
+        return self
+
+    def add_unclaimed_record(self, node, referrer, given_name):
+        """Add a new project entry in the unclaimed records dictionary.
+
+        :param Node node: Node this unclaimed user was added to.
+        :param User referrer: User who referred this user.
+        :param str given_name: The full name that the referrer gave for this user.
+        :returns: The added record
+        """
+        if not node.can_edit(user=referrer):
+            raise PermissionsError('Referrer does not have permission to add a contributor '
+                'to project {0}'.format(node._primary_key))
+        project_id = node._primary_key
+        referrer_id = referrer._primary_key
+        data_to_sign = '{self._primary_key}:{project_id}:{referrer_id}:{given_name}'.format(**locals())
+        record = {
+            'name': given_name,
+            'referrer_id': referrer_id,
+            'verification': hmac.sign(data_to_sign)
+        }
+        self.unclaimed_records[project_id] = record
+        return record
+
+    def is_active(self):
+        """Returns True if the user is active. The user must have activated
+        their account, must not be deleted, suspended, etc.
+        """
+        return (self.is_registered and
+                self.password is not None and
+                not self.is_merged and
+                self.is_confirmed())
+
+    def get_claim_url(self, project_id):
+        """Return the URL that an unclaimed user should use to claim their
+        account. Return ``None`` if there is no unclaimed_record for the given
+        project ID.
+
+        :param project_id: The project ID for the unclaimed record
+        :raises: ValueError if a record doesn't exist for the given project ID
+        :rtype: dict
+        :returns: The unclaimed record for the project
+        """
+        unclaimed_record = self.unclaimed_records.get(project_id, None)
+        if unclaimed_record:
+            verification = unclaimed_record['verification']
+        else:
+            raise ValueError('No unclaimed for ')
+        return '{domain}user/claim/{verification}/'.format(domain=settings.DOMAIN,
+            verification=verification)
+
+    def set_password(self, raw_password):
+        '''Set the password for this user to the hash of ``raw_password``.'''
+        self.password = generate_password_hash(raw_password)
+        return None
+
+    def check_password(self, raw_password):
+        '''Return a boolean of whether ``raw_password`` was correct.'''
+        if not self.password or not raw_password:
+            return False
+        return check_password_hash(self.password, raw_password)
+
 
     def add_email_verification(self, email):
         """Add an email verification token for a given email."""
@@ -125,7 +228,7 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         base = settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email)
-        return "{0}confirm/{1}/{2}".format(base, self._primary_key, token)
+        return "{0}confirm/{1}/{2}/".format(base, self._primary_key, token)
 
     def verify_confirmation_token(self, token):
         """Return whether or not a confirmation token is valid for this user.
@@ -146,6 +249,9 @@ class User(GuidStoredObject, AddonModelMixin):
             return True
         else:
             return False
+
+    def is_confirmed(self):
+        return bool(self.date_confirmed)
 
     @property
     def biblio_name(self):

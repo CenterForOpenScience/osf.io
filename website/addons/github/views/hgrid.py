@@ -107,10 +107,20 @@ def github_branch_widget(branches, owner, repo, branch, sha):
 def github_hgrid_data(node_settings, auth, contents=False, *args, **kwargs):
 
     # Quit if no repo linked
-    if not node_settings.user or not node_settings.repo:
+    if not node_settings.complete:
         return
 
     connection = GitHub.from_settings(node_settings.user_settings)
+
+    # Initialize repo here in the event that it is set in the privacy check
+    # below. This potentially saves an API call in _check_permissions, below.
+    repo = None
+
+    # Quit if privacy mismatch and not contributor
+    if node_settings.owner.is_public:
+        repo = connection.repo(node_settings.user, node_settings.repo)
+        if repo.private:
+            return
 
     branch, sha, branches = _get_refs(
         node_settings,
@@ -122,7 +132,7 @@ def github_hgrid_data(node_settings, auth, contents=False, *args, **kwargs):
     if branch is not None:
         ref = ref_to_params(branch, sha)
         can_edit = _check_permissions(
-            node_settings, auth, connection, branch, sha
+            node_settings, auth, connection, branch, sha, repo=repo,
         )
         name_append = github_branch_widget(branches, owner=node_settings.user,
             repo=node_settings.repo, branch=branch, sha=sha)
@@ -132,10 +142,10 @@ def github_hgrid_data(node_settings, auth, contents=False, *args, **kwargs):
         can_edit = False
         name_append = None
 
-    # TODO: Not used
-    name_tpl = ('GitHub: '
-                '{user}/{repo}').format(user=node_settings.user,
-                                                    repo=node_settings.repo)
+    name_tpl = 'GitHub: {user}/{repo}'.format(
+        user=node_settings.user, repo=node_settings.repo
+    )
+
     permissions = {
         'edit': can_edit,
         'view': True
@@ -147,10 +157,7 @@ def github_hgrid_data(node_settings, auth, contents=False, *args, **kwargs):
     }
     return rubeus.build_addon_root(
         node_settings,
-        '{user}/{repo}'.format(
-            user=node_settings.user,
-            repo=node_settings.repo
-        ),
+        name_tpl,
         urls=urls,
         permissions=permissions,
         extra=name_append

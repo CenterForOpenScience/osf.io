@@ -12,7 +12,8 @@ from framework.auth.decorators import Auth
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, NodeLogFactory, ApiKeyFactory,
-                             NodeFactory, NodeWikiFactory, RegistrationFactory)
+                             NodeFactory, NodeWikiFactory, RegistrationFactory,
+                             UnregUserFactory)
 from tests.test_features import requires_piwik
 
 from website import settings
@@ -23,9 +24,9 @@ from framework import app
 from website.project.views.file import get_cache_path
 from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
+from website import settings
 
 
-# Only uncomment if running these tests in isolation
 from website.app import init_app
 app = init_app(set_backends=False, routes=True)
 
@@ -658,6 +659,31 @@ class TestPiwik(DbTestCase):
             'Usage statistics are collected only for public resources.',
             res
         )
+
+@unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
+class TestClaiming(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.referrer = UserFactory()
+        self.project = ProjectFactory(creator=self.referrer)
+        self.user = UnregUserFactory()
+
+    def add_unclaimed_record(self):
+        given_name = 'Fredd Merkury'
+        self.user.add_unclaimed_record(node=self.project,
+            given_name=given_name, referrer=self.referrer)
+        self.user.save()
+        data = self.user.unclaimed_records[self.project._primary_key]
+        return data
+
+    def test_user_can_set_password_on_claim_page(self):
+        self.add_unclaimed_record()
+        claim_url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(claim_url)
+        assert_in('Set password', res)
+        assert 0, 'finish me'
+
 
 if __name__ == '__main__':
     unittest.main()

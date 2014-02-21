@@ -83,14 +83,11 @@ class TestCallbacks(DbTestCase):
 
     def test_before_page_load_not_contributor(self):
         message = self.node_settings.before_page_load(self.project, UserFactory())
-        # Handle temporary combined files warning; revert later
-        assert_equal(len(message), 1)
-        #assert_false(message)
+        assert_false(message)
 
     def test_before_page_load_not_logged_in(self):
         message = self.node_settings.before_page_load(self.project, None)
-        # Handle temporary combined files warning; revert later
-        assert_equal(len(message), 1)
+        assert_false(message)
 
     def test_before_remove_contributor_authenticator(self):
         message = self.node_settings.before_remove_contributor(

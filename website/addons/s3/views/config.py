@@ -1,7 +1,10 @@
 import httplib as http
 
+from boto.exception import BotoServerError
+
 from framework import request
 from framework.exceptions import HTTPError
+from framework.status import push_status_message
 from framework.auth.decorators import must_be_logged_in
 
 from website.project.decorators import must_be_contributor
@@ -16,7 +19,7 @@ from website.addons.s3.utils import adjust_cors, create_osf_user, remove_osf_use
 def add_s3_auth(access_key, secret_key, user_settings):
 
     if not has_access(access_key, secret_key):
-        return {'message': 'Incorrect credentials'}, 400
+        return {'message': 'Incorrect credentials'}, http.BAD_REQUEST
 
     keys = create_osf_user(access_key, secret_key, user_settings.owner.family_name)
 
@@ -78,6 +81,9 @@ def s3_node_settings(**kwargs):
     node_settings = kwargs['node_addon']
     user_settings = user.get_addon('s3')
 
+    # Claiming the node settings
+    if not node_settings.user_settings:
+        node_settings.user_settings = user_settings
     # If authorized, only owner can change settings
     if user_settings and user_settings.owner != user:
         raise HTTPError(http.BAD_REQUEST)
@@ -87,7 +93,7 @@ def s3_node_settings(**kwargs):
     if not bucket or not does_bucket_exist(user_settings.access_key, user_settings.secret_key, bucket):
         error_message = ('We are having trouble connecting to that bucket. '
                          'Try a different one.')
-        return {'message': error_message}, 400
+        return {'message': error_message}, http.BAD_REQUEST
 
     if bucket != node_settings.bucket:
 
@@ -98,16 +104,40 @@ def s3_node_settings(**kwargs):
         adjust_cors(S3Wrapper.from_addon(node_settings))
 
 
+@must_be_contributor
+@must_have_addon('s3', 'node')
+def s3_remove_node_settings(**kwargs):
+    node_settings = kwargs['node_addon']
+    node_settings.user_settings = None
+    node_settings.bucket = None
+    node_settings.save()
+
+
 @must_be_logged_in
 @must_have_addon('s3', 'user')
 def s3_remove_user_settings(**kwargs):
 
     user_settings = kwargs['user_addon']
+    success = True
 
-    remove_osf_user(user_settings)
+    try:
+        remove_osf_user(user_settings)
+    except BotoServerError as e:
+        if e.code in ['InvalidClientTokenId', 'ValidationError']:
+            success = False
+        else:
+            raise HTTPError(http.BAD_REQUEST)
 
-    user_settings.access_key = ''
-    user_settings.secret_key = ''
+    user_settings.access_key = None
+    user_settings.secret_key = None
     user_settings.save()
+
+    if not success:
+        push_status_message(
+            'Your Amazon credentials were removed from the OSF, but we were '
+            'unable to revoke your OSF information from Amazon. Your Amazon '
+            'credentials may no longer be valid.'
+        )
+        return {'message': 'reload'}, http.BAD_REQUEST
 
     return {}
