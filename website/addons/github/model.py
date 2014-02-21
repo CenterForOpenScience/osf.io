@@ -73,6 +73,13 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if self.user and self.repo:
             return '/'.join([self.user, self.repo])
 
+    @property
+    def complete(self):
+        return (
+            self.user and self.repo and
+            self.user_settings and self.user_settings.has_auth
+        )
+
     def to_json(self, user):
         rv = super(AddonGitHubNodeSettings, self).to_json(user)
         user_settings = user.get_addon('github')
