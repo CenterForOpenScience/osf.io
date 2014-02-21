@@ -13,6 +13,7 @@
                 "tpl": "util/render_form.mako",
                 "uri": "/resend/",
                 "kwargs": {
+                    "id": "resendForm",
                     "name": "resend_confirmation",
                     "method_string": "POST",
                     "action_string": "#",

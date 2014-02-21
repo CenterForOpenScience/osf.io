@@ -4,8 +4,11 @@
 import unittest
 import os
 import re
+import mock
+
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
+
 from framework.auth.decorators import Auth
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
@@ -13,19 +16,16 @@ from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              NodeFactory, NodeWikiFactory, RegistrationFactory,
                              UnregUserFactory)
 from tests.test_features import requires_piwik
-
 from website import settings
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.model import ensure_schemas
 from framework import app
-
 from website.project.views.file import get_cache_path
 from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
 from website import settings
-
-
 from website.app import init_app
+
 app = init_app(set_backends=False, routes=True)
 
 
@@ -690,6 +690,14 @@ class TestConfirmingEmail(DbTestCase):
         res = self.app.get(self.confirmation_url, expect_errors=True)
         assert_in('Link Expired', res)
 
+    @mock.patch('framework.auth.views.send_confirm_email')
+    def test_resend_form(self, send_confirm_email):
+        res = self.app.get('/resend/')
+        form = res.forms['resendForm']
+        form['email'] = self.user.username
+        res = form.submit()
+        assert_true(send_confirm_email.called)
+        assert_in('Resent email to', res)
 
 
 if __name__ == '__main__':
