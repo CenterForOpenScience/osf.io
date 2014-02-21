@@ -54,7 +54,7 @@ def forgot_password():
         if user_obj:
             user_obj.verification_key = security.random_string(20)
             user_obj.save()
-            # TODO: This is OSF-specific
+            # TODO: Use mails.py interface
             success = send_email(
                 from_addr=website.settings.FROM_EMAIL,
                 to_addr=form.email.data,
@@ -142,6 +142,9 @@ def confirm_email_get(**kwargs):
     if user:
         if user.confirm_email(token):  # Confirm and register the usre
             # Go to settings page
+            status.push_status_message('<strong>Successfully completed registration. </strong>'
+                'Welcome to the OSF! This is the settings page where you can '
+                'update your profile information.', 'info')
             response = framework.redirect('/settings/')
             return auth.authenticate(user, response=response)
     raise HTTPError(http.UNAUTHORIZED)
