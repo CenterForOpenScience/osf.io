@@ -4,9 +4,11 @@ import httplib as http
 from framework import (
     request,
     push_errors_to_status, Q,
+    analytics
 )
 
 from framework import StoredObject
+from framework.analytics import update_counters
 from framework.auth.decorators import must_be_logged_in, collect_auth
 import framework.status as status
 from framework.exceptions import HTTPError
@@ -64,11 +66,11 @@ def project_new_post(**kwargs):
             'project', form.title.data, user, form.description.data
         )
         status.push_status_message(
-            'Welcome to your new {category}!'.format(
+            'Welcome to your new {category}! Please select and configure your add-ons below.'.format(
                 category=project.project_or_component,
             )
         )
-        return {}, 201, None, project.url
+        return {}, 201, None, project.url + 'settings/'
     else:
         push_errors_to_status(form.errors)
     return {}, http.BAD_REQUEST
@@ -661,10 +663,11 @@ def search_node(**kwargs):
 
     # Build ODM query
     title_query = Q('title', 'icontains', query)
+    not_deleted_query = Q('is_deleted', 'eq', False)
     visibility_query = Q('contributors', 'eq', auth.user)
     if include_public:
         visibility_query = visibility_query | Q('is_public', 'eq', True)
-    odm_query = title_query & visibility_query
+    odm_query = title_query & not_deleted_query & visibility_query
 
     # Exclude current node from query if provided
     if node:
