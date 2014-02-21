@@ -205,6 +205,8 @@ def resend_confirmation():
                 status.push_status_message('Resent email to <em>{0}</em>'.format(clean_email),
                     'success')
                 send_confirm_email(user, clean_email)
+        else:
+            forms.push_errors_to_status(form.errors)
     # Don't go anywhere
     return forms.utils.jsonify(form)
 
