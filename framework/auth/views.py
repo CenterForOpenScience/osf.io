@@ -6,7 +6,6 @@ import datetime
 from modularodm.exceptions import NoResultsFound
 import framework
 from framework import set_previous_url, request
-from framework.exceptions import HTTPError
 from framework.email.tasks import send_email
 from framework import status
 import framework.forms as forms
@@ -15,7 +14,7 @@ from framework.auth import login, logout, DuplicateEmailError, get_user, get_cur
 from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm, MergeAccountForm
 
 import website.settings
-from website import security, mails
+from website import security, mails, language
 
 
 Q = framework.Q
@@ -135,12 +134,7 @@ def auth_logout():
     rv.delete_cookie(website.settings.COOKIE_NAME)
     return rv
 
-WELCOME_MESSAGE = '''
-Welcome to the OSF!
-Please update the following settings. If you need assistance
-in getting started, please visit the <a href="/getting-started/">Getting Started</a>
-page.
-'''
+
 
 def confirm_email_get(**kwargs):
     """View for email confirmation links.
@@ -156,7 +150,7 @@ def confirm_email_get(**kwargs):
             user.date_last_login = datetime.datetime.utcnow()
             user.save()
             # Go to settings page
-            status.push_status_message(WELCOME_MESSAGE, 'success')
+            status.push_status_message(language.WELCOME_MESSAGE, 'success')
             response = framework.redirect('/settings/')
             return auth.authenticate(user, response=response)
     # Return data for the error template
