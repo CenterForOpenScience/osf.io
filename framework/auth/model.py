@@ -98,6 +98,23 @@ class User(GuidStoredObject, AddonModelMixin):
             emails=[email],
             **parsed
         )
+        user.add_email_verification(email)
+        user.is_registered = False
+        return user
+
+    @classmethod
+    def create_unconfirmed(cls, username, password, fullname):
+        """Create a new user who has begun registration but needs to verify
+        their primary email address (username).
+        """
+        parsed = utils.parse_name(fullname)
+        user = cls(
+            username=username,
+            fullname=fullname,
+            **parsed
+        )
+        user.set_password(password)
+        user.add_email_verification(username)
         user.is_registered = False
         return user
 
@@ -118,21 +135,6 @@ class User(GuidStoredObject, AddonModelMixin):
             'project_id': project_id
         }
 
-    @classmethod
-    def create_unconfirmed(cls, username, password, fullname):
-        """Create a new user who has begun registration but needs to verify
-        their primary email address (username).
-        """
-        parsed = utils.parse_name(fullname)
-        user = cls(
-            username=username,
-            fullname=fullname,
-            **parsed
-        )
-        user.set_password(password)
-        user.add_email_verification(username)
-        user.is_registered = False
-        return user
 
     def register(self, username, password):
         """Registers the user.

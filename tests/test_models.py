@@ -57,6 +57,8 @@ class TestUser(DbTestCase):
         assert_equal(u.username, 'foo@bar.com')
         assert_false(u.is_registered)
         assert_true('foo@bar.com' in u.emails)
+        assert_equal(len(u.email_verifications.keys()), 1,
+            'email verification code was added')
 
     def test_user_with_no_password_is_not_active(self):
         u = User(username='fred@queen.com',
