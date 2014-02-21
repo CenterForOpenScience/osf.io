@@ -123,9 +123,9 @@ class User(GuidStoredObject, AddonModelMixin):
 
         :raises: KeyError if there is no token for the email.
         """
-        base_url = self.absolute_url if external else self.url
+        base = settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email)
-        return "{0}confirm/?token={1}".format(base_url, token)
+        return "{0}confirm/{1}/{2}".format(base, self._primary_key, token)
 
     def verify_confirmation_token(self, token):
         """Return whether or not a confirmation token is valid for this user.

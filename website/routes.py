@@ -7,6 +7,7 @@ from framework.exceptions import HTTPError
 from framework import (Rule, process_rules,
                        WebRenderer, json_renderer,
                        render_mako_string)
+from framework.routing import NullRenderer
 from framework.auth import views as auth_views
 
 from website import settings
@@ -191,6 +192,13 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
+
+        Rule(
+            '/confirm/<uid>/<token>/',
+            'get',
+            auth_views.confirm_email_get,
+            NullRenderer()
+        ),
 
         Rule(
             '/resetpassword/<verification_key>/',
