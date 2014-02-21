@@ -199,7 +199,8 @@ def make_url_map(app):
             '/confirm/<uid>/<token>/',
             'get',
             auth_views.confirm_email_get,
-            notemplate
+            # View will either redirect or display error message
+            OsfWebRenderer('error.mako', render_mako_string)
         ),
 
         Rule(

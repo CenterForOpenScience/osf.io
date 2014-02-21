@@ -147,7 +147,10 @@ def confirm_email_get(**kwargs):
                 'update your profile information.', 'info')
             response = framework.redirect('/settings/')
             return auth.authenticate(user, response=response)
-    raise HTTPError(http.UNAUTHORIZED)
+    # Return data for the error template
+    return {'code': 400, 'message_short': 'Link Expired', 'message_long':
+        ('This confirmation link has expired. Please <a href="/login/">log in</a> '
+            'to continue.')}, 400
 
 
 def send_confirm_email(user, email):
