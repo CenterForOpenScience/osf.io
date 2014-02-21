@@ -1397,7 +1397,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             user is not None
             and (
                 user in self.contributors
-                or user == self.creator
             )
         )
 
