@@ -1,5 +1,5 @@
 <div id="alert-container">
-% for s in status:
-    <div class='alert alert-block alert-warning fade in'><a class='close' data-dismiss='alert' href='#'>&times;</a><p>${s}</p></div>
+% for message, css_class in status:
+    <div class='alert alert-block alert-${css_class} fade in'><a class='close' data-dismiss='alert' href='#'>&times;</a><p>${message}</p></div>
 % endfor
 </div>
