@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import json
 import unittest
 import datetime as dt
+import mock
 
 import mock
 from nose.tools import *  # PEP8 asserts
@@ -653,6 +654,42 @@ class TestAuthViews(DbTestCase):
         self.user.reload()
         dupe.reload()
         assert_true(dupe.is_merged)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_register_sends_confirm_email(self, send_mail):
+        url = '/register/'
+        self.app.post(url, {
+            'register-fullname': 'Freddie Mercury',
+            'register-username': 'fred@queen.com',
+            'register-password': 'killerqueen',
+            'register-username2': 'fred@queen.com',
+            'register-password2': 'killerqueen',
+        })
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr='fred@queen.com'
+        ))
+
+    def test_confirmation_link_registers_user(self):
+        user = User.create_unconfirmed('brian@queen.com', 'bicycle123', 'Brian May')
+        assert_false(user.is_registered)  # sanity check
+        user.save()
+        confirmation_url = user.get_confirmation_url('brian@queen.com', external=False)
+        res = self.app.get(confirmation_url)
+        assert_equal(res.status_code, 302, 'redirects to settings page')
+        res = res.follow()
+        user.reload()
+        assert_true(user.is_registered)
+
+    def test_expired_link_returns_400(self):
+        user = User.create_unconfirmed('brian1@queen.com', 'bicycle123', 'Brian May')
+        user.save()
+        token = user.get_confirmation_token('brian1@queen.com')
+        url = user.get_confirmation_url('brian1@queen.com', external=False)
+        user.confirm_email(token)
+        user.save()
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
     def test_change_names(self):
         self.app.post(

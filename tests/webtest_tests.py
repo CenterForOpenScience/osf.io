@@ -4,10 +4,8 @@
 import unittest
 import os
 import re
-import datetime as dt
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
-from webtest import AppError
 from framework.auth.decorators import Auth
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
@@ -49,15 +47,10 @@ class TestAnUnregisteredUser(DbTestCase):
         form['register-password'] = 'example'
         form['register-password2'] = 'example'
         # Submits
-        res = form.submit().follow()
-        # There's a flash messageset
-        assert_in('You may now log in', res)
-        # User logs in
-        form = res.forms['signinForm']
-        form['username'] = 'nickcage@example.com'
-        form['password'] = 'example'
-        # Submits
         res = form.submit().maybe_follow()
+        # There's a flash messageset
+        assert_in('Registration successful. Please check nickcage@example.com '
+            'to confirm your email address.', res)
 
     def test_sees_error_if_email_is_already_registered(self):
         # A user is already registered
@@ -124,20 +117,6 @@ class TestAUser(DbTestCase):
         # Goes to homepage
         res = self.app.get('/').maybe_follow()  # Redirects
         assert_equal(res.status_code, 200)
-
-    def test_can_log_in_first_time(self):
-        # Goes to home page
-        res = self.app.get('/').maybe_follow()
-        # Clicks sign in button
-        res = res.click('Create an Account or Sign-In').maybe_follow()
-        # Fills out login info
-        form = res.forms['signinForm']  # Get the form from its ID
-        form['username'] = self.user.username
-        form['password'] = 'science'
-        # submits
-        res = form.submit().maybe_follow()
-        # Sees dashboard with projects and watched projects
-        assert_in('Account Settings', res)
 
     def test_can_log_in(self):
         # Log in and out
@@ -565,9 +544,11 @@ class TestShortUrls(DbTestCase):
         return self.app.get(url, auth=self.auth).maybe_follow().normal_body
 
     def test_profile_url(self):
+        res1 = self.app.get('/{}/'.format(self.user._primary_key)).maybe_follow()
+        res2 = self.app.get('/profile/{}/'.format(self.user._primary_key)).maybe_follow()
         assert_equal(
-            self.app.get('/{}/'.format(self.user._primary_key)).maybe_follow().normal_body,
-            self.app.get('/profile/{}/'.format(self.user._primary_key)).maybe_follow().normal_body
+            res1.normal_body,
+            res2.normal_body
         )
 
     def test_project_url(self):
@@ -688,6 +669,27 @@ class TestClaiming(DbTestCase):
         res = self.app.get(claim_url)
         assert_in('Set password', res)
         assert 0, 'finish me'
+
+class TestConfirmingEmail(DbTestCase):
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = UnregUserFactory()
+        self.confirmation_url = self.user.get_confirmation_url(self.user.username,
+            external=False)
+        self.confirmation_token = self.user.get_confirmation_token(self.user.username)
+
+    def test_redirects_to_settings(self):
+        res = self.app.get(self.confirmation_url).follow()
+        assert_equal(res.request.path, '/settings/', 'redirected to settings page')
+        assert_in('Welcome to the OSF!', res, 'shows flash message')
+        assert_in('Please update the following settings.', res)
+
+    def test_error_page_if_confirm_link_is_expired(self):
+        self.user.confirm_email(self.confirmation_token)
+        self.user.save()
+        res = self.app.get(self.confirmation_url, expect_errors=True)
+        assert_in('Link Expired', res)
+
 
 
 if __name__ == '__main__':

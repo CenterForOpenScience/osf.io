@@ -6,7 +6,6 @@ import unittest
 from nose.tools import *  # PEP8 asserts
 
 import pytz
-import hashlib
 import datetime
 import urlparse
 from dateutil import parser
@@ -57,6 +56,8 @@ class TestUser(DbTestCase):
         assert_equal(u.username, 'foo@bar.com')
         assert_false(u.is_registered)
         assert_true('foo@bar.com' in u.emails)
+        assert_equal(len(u.email_verifications.keys()), 1,
+            'email verification code was added')
 
     def test_user_with_no_password_is_not_active(self):
         u = User(username='fred@queen.com',
@@ -74,10 +75,72 @@ class TestUser(DbTestCase):
         with assert_raises(ValidationError):
             u.save()
 
+    def test_date_registered_upon_saving(self):
+        u = User(username='foo@bar.com', fullname='Foo bar')
+        u.save()
+        assert_true(u.date_registered)
+
+    def test_create_unconfirmed(self):
+        u = User.create_unconfirmed(username='bar@baz.com', password='foobar',
+            fullname='Bar Baz')
+        u.save()
+        assert_false(u.is_registered)
+        assert_true(u.check_password('foobar'))
+        assert_true(u._id)
+        assert_equal(len(u.email_verifications.keys()), 1)
+        assert_equal(len(u.emails), 0, 'primary email has not been added to emails list')
+
     def test_cant_create_user_without_full_name(self):
         u = User(username='fred@queen.com')
         with assert_raises(ValidationError):
             u.save()
+
+    @mock.patch('website.security.random_string')
+    def test_add_email_verification(self, random_string):
+        random_string.return_value = '12345'
+        u = UserFactory()
+        assert_equal(len(u.email_verifications.keys()), 0)
+        u.add_email_verification('foo@bar.com')
+        assert_equal(len(u.email_verifications.keys()), 1)
+        assert_equal(u.email_verifications['12345']['email'], 'foo@bar.com')
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_token(self, random_string):
+        random_string.return_value = '12345'
+        u = UserFactory()
+        u.add_email_verification('foo@bar.com')
+        assert_equal(u.get_confirmation_token('foo@bar.com'), '12345')
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_url(self, random_string):
+        random_string.return_value = 'abcde'
+        u = UserFactory()
+        u.add_email_verification('foo@bar.com')
+        assert_equal(u.get_confirmation_url('foo@bar.com'),
+                '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._primary_key, 'abcde'))
+
+    def test_confirm_primary_email(self):
+        u = UserFactory.build(username='foo@bar.com')
+        u.is_registered = False
+        u.is_claimed = False
+        u.add_email_verification('foo@bar.com')
+        u.save()
+        token = u.get_confirmation_token('foo@bar.com')
+        confirmed = u.confirm_email(token)
+        u.save()
+        assert_true(confirmed)
+        assert_equal(len(u.email_verifications.keys()), 0)
+        assert_in('foo@bar.com', u.emails)
+        assert_true(u.is_registered)
+        assert_true(u.is_claimed)
+
+    def test_verify_confirmation_token(self):
+        u = UserFactory.build()
+        u.add_email_verification('foo@bar.com')
+        u.save()
+        assert_false(u.verify_confirmation_token('badtoken'))
+        valid_token = u.get_confirmation_token('foo@bar.com')
+        assert_true(u.verify_confirmation_token(valid_token))
 
     def test_factory(self):
         # Clear users
@@ -1693,8 +1756,10 @@ class TestUnregisteredUser(DbTestCase):
 
     def test_register(self):
         assert_false(self.user.is_registered)  # sanity check
+        assert_false(self.user.is_claimed)
         self.user.register(username='foo@bar.com', password='killerqueen')
         self.user.save()
+        assert_true(self.user.is_claimed)
         assert_true(self.user.is_registered)
         assert_true(self.user.check_password('killerqueen'))
         assert_equal(self.user.username, 'foo@bar.com')

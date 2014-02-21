@@ -13,8 +13,7 @@ Example usage: ::
 Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
-import datetime as dt
-
+import datetime
 from factory import base, Sequence, SubFactory, post_generation
 
 from framework import StoredObject
@@ -67,12 +66,7 @@ class UserFactory(ModularOdmFactory):
     is_registered = True
     is_claimed = True
     api_keys = []
-
-    @post_generation
-    def set_date_registered(self, create, extracted):
-        self.date_registered = dt.datetime.utcnow()
-        if create:
-            self.save()
+    date_confirmed = datetime.datetime(2014, 2, 21)
 
     @post_generation
     def set_names(self, create, extracted):

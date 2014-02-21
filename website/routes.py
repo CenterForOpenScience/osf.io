@@ -46,6 +46,9 @@ class OsfWebRenderer(WebRenderer):
         kwargs['data'] = get_globals
         super(OsfWebRenderer, self).__init__(*args, **kwargs)
 
+#: Use if a view only redirects or raises error
+notemplate = OsfWebRenderer('', render_mako_string)
+
 
 def favicon():
     return framework.send_from_directory(
@@ -193,6 +196,14 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
+
+        Rule(
+            '/confirm/<uid>/<token>/',
+            'get',
+            auth_views.confirm_email_get,
+            # View will either redirect or display error message
+            OsfWebRenderer('error.mako', render_mako_string)
+        ),
 
         Rule(
             '/resetpassword/<verification_key>/',

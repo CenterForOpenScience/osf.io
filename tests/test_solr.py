@@ -258,6 +258,7 @@ class TestAddContributor(SolrTestCase):
         self.name2 = 'John2 Deacon2'
         self.user = UserFactory(fullname=self.name1)
 
+
     def test_unreg_users_dont_show_in_search(self):
         unreg = UnregUserFactory()
         contribs = _search_contributor(unreg.fullname)

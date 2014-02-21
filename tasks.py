@@ -27,18 +27,19 @@ def server():
     run("python main.py")
 
 def make_shell_context():
+    from framework import Q
     from framework.auth.model import User
     from framework import db
     from website.app import init_app
     from website.project.model import Node
     app = init_app()
-    return {'app': app, 'db': db, 'User': User, 'Node': Node}
+    return {'app': app, 'db': db, 'User': User, 'Node': Node, 'Q': Q}
 
 
 def format_context(context):
     lines = []
     for name, obj in context.items():
-        line = "{name}: {obj}".format(**locals())
+        line = "{name}: {obj!r}".format(**locals())
         lines.append(line)
     return '\n'.join(lines)
 

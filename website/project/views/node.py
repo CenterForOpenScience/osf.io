@@ -735,7 +735,8 @@ def remove_pointer(**kwargs):
     """
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-
+    # TODO: since these a delete request, shouldn't use request body. put pointer
+    # id in the URL instead
     pointer_id = request.json.get('pointerId')
     if pointer_id is None:
         raise HTTPError(http.BAD_REQUEST)

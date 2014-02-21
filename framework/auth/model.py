@@ -15,9 +15,9 @@ from framework.guid.model import GuidStoredObject
 from framework.search import solr
 from framework.addons import AddonModelMixin
 from framework.auth import utils
+from website import settings, filters, security, hmac
 from framework.exceptions import PermissionsError
 
-from website import settings, filters, hmac
 
 name_formatters = {
    'long': lambda user: user.fullname,
@@ -29,6 +29,10 @@ name_formatters = {
 }
 
 logger = logging.getLogger(__name__)
+
+
+def generate_confirm_token():
+    return security.random_string(30)
 
 
 class User(GuidStoredObject, AddonModelMixin):
@@ -62,7 +66,7 @@ class User(GuidStoredObject, AddonModelMixin):
     emails = fields.StringField(list=True)
     email_verifications = fields.DictionaryField()  # TODO: Unused. Remove me?
     aka = fields.StringField(list=True)
-    date_registered = fields.DateTimeField()#auto_now_add=True)
+    date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow)
     # Watched nodes are stored via a list of WatchConfigs
     watched = fields.ForeignField("WatchConfig", list=True, backref="watched")
 
@@ -81,6 +85,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
     date_last_login = fields.DateTimeField()
 
+    date_confirmed = fields.DateTimeField()
+
     _meta = {'optimistic' : True}
 
     @classmethod
@@ -92,6 +98,23 @@ class User(GuidStoredObject, AddonModelMixin):
             emails=[email],
             **parsed
         )
+        user.add_email_verification(email)
+        user.is_registered = False
+        return user
+
+    @classmethod
+    def create_unconfirmed(cls, username, password, fullname):
+        """Create a new user who has begun registration but needs to verify
+        their primary email address (username).
+        """
+        parsed = utils.parse_name(fullname)
+        user = cls(
+            username=username,
+            fullname=fullname,
+            **parsed
+        )
+        user.set_password(password)
+        user.add_email_verification(username)
         user.is_registered = False
         return user
 
@@ -112,14 +135,17 @@ class User(GuidStoredObject, AddonModelMixin):
             'project_id': project_id
         }
 
-    def register(self, username, password):
+
+    def register(self, username, password=None):
         """Registers the user.
         """
         self.username = username
-        self.set_password(password)
+        if password:
+            self.set_password(password)
         if username not in self.emails:
             self.emails.append(username)
         self.is_registered = True
+        self.is_claimed = True
         return self
 
     def add_unclaimed_record(self, node, referrer, given_name):
@@ -150,7 +176,8 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         return (self.is_registered and
                 self.password is not None and
-                not self.is_merged)
+                not self.is_merged and
+                self.is_confirmed())
 
     def get_claim_url(self, project_id):
         """Return the URL that an unclaimed user should use to claim their
@@ -177,7 +204,58 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def check_password(self, raw_password):
         '''Return a boolean of whether ``raw_password`` was correct.'''
+        if not self.password or not raw_password:
+            return False
         return check_password_hash(self.password, raw_password)
+
+
+    def add_email_verification(self, email):
+        """Add an email verification token for a given email."""
+        token = generate_confirm_token()
+        self.email_verifications[token] = {'email': email}
+        return token
+
+    def get_confirmation_token(self, email):
+        """Return the confirmation token for a given email.
+
+        :raises: KeyError if there no token for the email
+        """
+        for token, info in self.email_verifications.items():
+            if info['email'] == email:
+                return token
+        raise KeyError('No confirmation token for email {0!r}'.format(email))
+
+    def get_confirmation_url(self, email, external=True):
+        """Return the confirmation url for a given email.
+
+        :raises: KeyError if there is no token for the email.
+        """
+        base = settings.DOMAIN if external else '/'
+        token = self.get_confirmation_token(email)
+        return "{0}confirm/{1}/{2}/".format(base, self._primary_key, token)
+
+    def verify_confirmation_token(self, token):
+        """Return whether or not a confirmation token is valid for this user.
+        """
+        return token in self.email_verifications.keys()
+
+    def confirm_email(self, token):
+        if self.verify_confirmation_token(token):
+            email = self.email_verifications[token]['email']
+            self.emails.append(email)
+            # Complete registration if primary email
+            if email == self.username:
+                self.register(self.username)
+                self.date_confirmed = dt.datetime.utcnow()
+            # Revoke token
+            del self.email_verifications[token]
+            self.save()
+            return True
+        else:
+            return False
+
+    def is_confirmed(self):
+        return bool(self.date_confirmed)
 
     @property
     def biblio_name(self):
