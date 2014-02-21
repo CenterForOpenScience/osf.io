@@ -21,6 +21,30 @@ import datetime
 logger = logging.getLogger(__name__)
 
 
+class AuthError(FrameworkError):
+    """Base class for auth-related errors."""
+    pass
+
+
+class DuplicateEmailError(AuthError):
+    """Raised if a user tries to register an email that is already in the
+    database.
+    """
+    pass
+
+
+class LoginNotAllowedError(AuthError):
+    """Raised if user login is called for a user that is not registered or
+    is not claimed, etc.
+    """
+    pass
+
+class PasswordIncorrectError(AuthError):
+    """Raised if login is called with an incorrect password attempt.
+    """
+    pass
+
+
 def get_current_username():
     return session.data.get('auth_user_username')
 
@@ -106,6 +130,12 @@ def authenticate(user, response):
 
 
 def login(username, password):
+    """View helper function for logging in a user. Either authenticates a user
+    and returns a ``Response`` or raises an ``AuthError``.
+
+    :raises: AuthError on a bad login
+    :returns: Redirect response to settings page on successful login.
+    """
     username = username.strip().lower()
     password = password.strip()
     if username and password:
@@ -113,14 +143,12 @@ def login(username, password):
             username=username,
             password=password
         )
+        # TODO: Too much nesting here. Rethink
         if user:
             if not user.is_registered:
-                logging.debug("User is not registered")
-                # TODO: Raise Error instead of returning magic value
-                return 2
+                raise LoginNotAllowedError('User is not registered.')
             elif not user.is_claimed:
-                logging.debug("User is not claimed")
-                return False
+                raise LoginNotAllowedError('User is not claimed.')
             else:
                 is_first_login = user.date_last_login is None
                 user.date_last_login = datetime.datetime.utcnow()
@@ -137,7 +165,8 @@ def login(username, password):
                                         'page.')
                     response = web.redirect('/settings/')
                 return authenticate(user, response=response)
-    return False
+    raise PasswordIncorrectError('Incorrect password attempt.')
+
 
 def logout():
     for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname']:
@@ -165,9 +194,6 @@ def add_unclaimed_user(email, fullname):
         newUser._optimistic_insert()
         newUser.save()
         return newUser
-
-class DuplicateEmailError(FrameworkError):
-    pass
 
 
 # TODO: Use mails.py interface

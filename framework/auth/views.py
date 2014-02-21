@@ -92,20 +92,18 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
     if framework.request.method == 'POST' and not direct_call:
         form = SignInForm(framework.request.form)
         if form.validate():
-            response = login(form.username.data, form.password.data)
-            if response:
-                if response == 2:
-                    status.push_status_message('This login email has been registered '
-                        'but not verified. Please check your email (and spam '
-                        'folder) and click the verification link before logging '
-                        'in.')
-                    # Don't go anywhere
-                    return {'next': ''}
-                return response
-            else:
-                status.push_status_message('''Log-in failed. Please try again or
-                    reset your password''')
-
+            try:
+                return login(form.username.data, form.password.data)
+            except auth.LoginNotAllowedError:
+                status.push_status_message('This login email has been registered '
+                    'but not verified. Please check your email (and spam '
+                    'folder) and click the verification link before logging '
+                    'in.')
+                # Don't go anywhere
+                return {'next': ''}
+            except auth.PasswordIncorrectError:
+                status.push_status_message('Log-in failed. Please try again or '
+                    'reset your password')
         forms.push_errors_to_status(form.errors)
 
     if kwargs.get('first', False):
@@ -124,6 +122,7 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
     return {
         'next': next_url,
     }
+
 
 def auth_logout():
     """Log out and delete cookie.

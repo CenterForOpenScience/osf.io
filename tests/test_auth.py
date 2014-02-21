@@ -3,15 +3,18 @@
 import unittest
 from nose.tools import *  # PEP8 asserts
 import mock
+import datetime
 
 from flask import Flask
+from werkzeug.wrappers import BaseResponse
 from webtest_plus import TestApp
 
 import framework.auth as auth
 from tests.base import DbTestCase
-from tests.factories import UserFactory
+from tests.factories import UserFactory, UnregUserFactory
 
 from framework import Q
+from framework import app
 from framework.auth.model import User
 from framework.auth.decorators import must_be_logged_in, Auth
 
@@ -39,6 +42,31 @@ class TestAuthUtils(DbTestCase):
         user.set_password('killerqueen')
         assert_false(auth.get_user(username=user.username,
             password='wrong'))
+
+    def test_login_success_authenticates_user(self):
+        user = UserFactory.build(date_last_login=datetime.datetime.utcnow())
+        user.set_password('killerqueen')
+        user.save()
+        # need request context because login returns a rsponse
+        with app.test_request_context():
+            res = auth.login(user.username, 'killerqueen')
+            assert_true(isinstance(res, BaseResponse))
+            assert_equal(res.status_code, 302)
+
+    def test_login_unregistered_user(self):
+        user = UnregUserFactory()
+        user.set_password('killerqueen')
+        user.save()
+        with assert_raises(auth.LoginNotAllowedError):
+            # password is correct, but user is unregistered
+            auth.login(user.username, 'killerqueen')
+
+    def test_login_with_incorrect_password_returns_false(self):
+        user = UserFactory.build()
+        user.set_password('rhapsody')
+        user.save()
+        with assert_raises(auth.PasswordIncorrectError):
+            auth.login(user.username, 'wrongpassword')
 
 
 class TestAuthObject(DbTestCase):
