@@ -142,7 +142,7 @@ def github_hgrid_data(node_settings, auth, contents=False, *args, **kwargs):
         can_edit = False
         name_append = None
 
-    name_tpl = 'GitHub: {user}/{repo}'.format(
+    name_tpl = '{user}/{repo}'.format(
         user=node_settings.user, repo=node_settings.repo
     )
 

@@ -49,7 +49,7 @@
                     </div><!-- end btn-group -->
 
                     <div class="btn-group">
-                        % if user_name:
+                        % if user_name and not node['is_registration']:
                             <a rel="tooltip" title="Watch" class="btn btn-default" href="#" data-bind="click: toggleWatch">
                         % else:
                             <a rel="tooltip" title="Watch" class="btn btn-default disabled" href="#">
@@ -62,7 +62,7 @@
                         <a
                             rel="tooltip"
                             title="Number of times this ${node['category']} has been forked (copied)"
-                            % if node["category"] == 'project' and user_name:
+                            % if node["category"] == 'project' and not node['is_registration'] and user_name:
                                 href="#"
                                 class="btn btn-default node-fork-btn"
                                 onclick="NodeActions.forkNode();"

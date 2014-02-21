@@ -10,8 +10,8 @@ from hurry.filesize import size, alternative
 
 
 #Note: (from boto docs) this function is in beta
-def enable_versioning(settings):
-    wrapper = S3Wrapper.from_addon(settings)
+def enable_versioning(user_settings):
+    wrapper = S3Wrapper.from_addon(user_settings)
     wrapper.bucket.configure_versioning(True)
 
 
@@ -64,11 +64,11 @@ class S3Wrapper(object):
 
     "S3 Bucket management"
 
-    def __init__(self, connect, bucketName):
-        self.connection = connect
-        if bucketName != bucketName.lower():
+    def __init__(self, connection, bucket_name):
+        self.connection = connection
+        if bucket_name != bucket_name.lower():
             self.connection.calling_format = OrdinaryCallingFormat()
-        self.bucket = self.connection.get_bucket(bucketName, validate=False)
+        self.bucket = self.connection.get_bucket(bucket_name, validate=False)
 
     def create_key(self, key):
         self.bucket.new_key(key)
@@ -150,9 +150,13 @@ class S3Wrapper(object):
 class RegistrationWrapper(S3Wrapper):
 
     def __init__(self, node_settings):
-        connection = S3Connection(
-            node_settings.node_access_key, node_settings.node_secret_key
-        )
+        if node_settings.user_settings:
+            connection = S3Connection(
+                node_settings.user_settings.access_key,
+                node_settings.user_settings.secret_key,
+            )
+        else:
+            connection = S3Connection()
         super(RegistrationWrapper, self).__init__(connection, node_settings.bucket)
         self.registration_data = node_settings.registration_data
 

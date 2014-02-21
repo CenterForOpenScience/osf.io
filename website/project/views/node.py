@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 import logging
 import httplib as http
-from framework import (
-    request,
-    push_errors_to_status, Q,
-    analytics
-)
+
+from framework.flask import request
+from framework import push_errors_to_status, Q
 
 from framework import StoredObject
-from framework.analytics import update_counters
 from framework.auth.decorators import must_be_logged_in, collect_auth
 import framework.status as status
 from framework.exceptions import HTTPError
@@ -70,7 +67,7 @@ def project_new_post(**kwargs):
                 category=project.project_or_component,
             )
         )
-        return {}, 201, None, project.url + 'settings/'
+        return {}, 201, None, project.url
     else:
         push_errors_to_status(form.errors)
     return {}, http.BAD_REQUEST
@@ -640,9 +637,12 @@ def _serialize_node_search(node):
     :return: Dictionary of node data
 
     """
+    title = node.title
+    if node.is_registration:
+        title += ' (registration)'
     return {
         'id': node._id,
-        'title': node.title,
+        'title': title,
         'firstAuthor': node.contributors[0].family_name,
         'etal': len(node.contributors) > 1,
     }
@@ -706,6 +706,7 @@ def _add_pointers(node, pointers, auth):
 
 
 @must_be_contributor
+@must_not_be_registration
 def add_pointers(**kwargs):
     """Add pointers to a node.
 
@@ -728,6 +729,7 @@ def add_pointers(**kwargs):
 
 
 @must_be_contributor
+@must_not_be_registration
 def remove_pointer(**kwargs):
     """Remove a pointer from a node, raising a 400 if the pointer is not
     in `node.nodes`.
