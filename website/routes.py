@@ -180,7 +180,6 @@ def make_url_map(app):
         Rule('/forms/new_project/', 'get', website_routes.new_project_form, json_renderer),
         Rule('/forms/set_email_and_password/', 'get', website_routes.set_email_and_password_form, json_renderer),
 
-
     ], prefix='/api/v1')
 
     ### Discovery ###
@@ -203,6 +202,13 @@ def make_url_map(app):
             auth_views.confirm_email_get,
             # View will either redirect or display error message
             OsfWebRenderer('error.mako', render_mako_string)
+        ),
+
+        Rule(
+            '/resend/',
+            ['get', 'post'],
+            auth_views.resend_confirmation,
+            OsfWebRenderer('resend.mako', render_mako_string)
         ),
 
         Rule(

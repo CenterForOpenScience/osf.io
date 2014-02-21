@@ -31,8 +31,8 @@ The email <em>{email}</em> has already been registered.
 
 # Shown if user tries to login with an email that is not yet confirmed
 UNCONFIRMED = '''
-This login email has been registered but not verified. Please check your email (and spam
-folder) and click the verification link before logging in.
+This login email has been registered but not confirmed. Please check your email (and spam
+folder). <a href="/resend/">Click here</a> to resend your confirmation email.
 '''
 
 # Shown on incorrect password attempt
@@ -48,6 +48,10 @@ You must log in to access this resource.
 # Shown on logout
 LOGOUT = '''
 You have successfully logged out.
+'''
+
+EMAIL_NOT_FOUND = '''
+<strong>{email}</strong> was not found in our records.
 '''
 
 
