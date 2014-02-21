@@ -42,6 +42,7 @@ def format_context(context):
         lines.append(line)
     return '\n'.join(lines)
 
+# Shell command adapted from Flask-Script. See NOTICE for license info.
 @task
 def shell():
     context = make_shell_context()
