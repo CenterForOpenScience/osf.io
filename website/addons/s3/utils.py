@@ -135,7 +135,6 @@ def create_osf_user(access_key, secret_key, name):
 
 
 def remove_osf_user(user_settings):
-    name = user_settings.owner.family_name
     connection = IAMConnection(user_settings.access_key, user_settings.secret_key)
     connection.delete_access_key(
         user_settings.access_key,

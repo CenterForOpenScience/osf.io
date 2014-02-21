@@ -62,14 +62,14 @@ class TestS3ViewsConfig(DbTestCase):
             url,
             {
                 'access_key': 'scout',
-                'secret_key': 'Aticus'
+                'secret_key': 'Atticus'
             },
             auth=self.user.auth
         )
         self.user_settings.reload()
         assert_equals(self.user_settings.access_key, 'scout')
 
-    @mock.patch('website.addons.s3.views.config.remove_osf_user')
+    @mock.patch('website.addons.s3.model.AddonS3UserSettings.remove_iam_user')
     def test_s3_remove_user_settings(self, mock_access):
         mock_access.return_value = True
         self.user_settings.access_key = 'to-kill-a-mocking-bucket'

@@ -1,6 +1,5 @@
 <%inherit file="project/addon/node_settings.mako" />
 
-
 % if user_has_auth and is_owner and bucket_list:
 
     <div class="form-group">

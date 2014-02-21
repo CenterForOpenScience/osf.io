@@ -1,7 +1,5 @@
 import httplib as http
 
-from boto.exception import BotoServerError
-
 from framework import request
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
@@ -13,7 +11,7 @@ from website.project.decorators import must_have_addon
 from website.addons.s3.api import S3Wrapper
 from website.addons.s3.api import has_access, does_bucket_exist
 
-from website.addons.s3.utils import adjust_cors, create_osf_user, remove_osf_user
+from website.addons.s3.utils import adjust_cors, create_osf_user
 
 
 def add_s3_auth(access_key, secret_key, user_settings):
@@ -121,20 +119,8 @@ def s3_remove_node_settings(**kwargs):
 def s3_remove_user_settings(**kwargs):
 
     user_settings = kwargs['user_addon']
-    success = True
 
-    try:
-        remove_osf_user(user_settings)
-    except BotoServerError as e:
-        if e.code in ['InvalidClientTokenId', 'ValidationError']:
-            success = False
-        else:
-            raise HTTPError(http.BAD_REQUEST)
-
-    user_settings.s3_osf_user = None
-    user_settings.access_key = None
-    user_settings.secret_key = None
-    user_settings.save()
+    success = user_settings.revoke_auth()
 
     if not success:
         push_status_message(

@@ -94,9 +94,19 @@ class S3Wrapper(object):
     def get_wrapped_keys(self, prefix=None):
         return [S3Key(x) for x in self.get_file_list()]
 
-    def get_wrapped_key(self, keyName, vid=None):
+    def get_wrapped_key(self, key_name, vid=None):
+        """Get S3 key.
+
+        :param str key_name: Name of S3 key
+        :param str version_id: Optional file version
+        :return: Wrapped S3 key if found, else None
+
+        """
         try:
-            return S3Key(self.bucket.get_key(keyName, version_id=vid))
+            key = self.bucket.get_key(key_name, version_id=vid)
+            if key is not None:
+                return S3Key(key)
+            return None
         except S3ResponseError:
             return None
 
