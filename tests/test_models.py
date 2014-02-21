@@ -1093,6 +1093,19 @@ class TestProject(DbTestCase):
         assert_true(self.project.can_view(contributor_auth))
         assert_false(self.project.can_view(other_guy_auth))
 
+    def test_creator_cannot_edit_project_if_they_are_removed(self):
+        creator = UserFactory()
+        project = ProjectFactory(creator=creator)
+        contrib = UserFactory()
+        project.add_contributor(contrib, auth=Auth(user=creator))
+        project.save()
+        assert_in(creator, project.contributors)
+        # Creator is removed from project
+        project.remove_contributor(creator, auth=Auth(user=contrib))
+        assert_false(project.can_view(Auth(user=creator)))
+        assert_false(project.can_edit(Auth(user=creator)))
+        assert_false(project.is_contributor(Auth(user=creator)))
+
     def test_can_view_public(self):
         # Create contributor and noncontributor
         contributor = UserFactory()

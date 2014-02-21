@@ -32,8 +32,17 @@ def make_shell_context():
     from framework import db
     from website.app import init_app
     from website.project.model import Node
+    from website import models  # all models
     app = init_app()
-    return {'app': app, 'db': db, 'User': User, 'Node': Node, 'Q': Q}
+    context = {'app': app, 'db': db, 'User': User, 'Node': Node, 'Q': Q,
+            'models': models}
+    try: # Add a fake factory for generating fake names, emails, etc.
+        from faker import Factory
+        fake = Factory.create()
+        context['fake'] = fake
+    except ImportError:
+        pass
+    return context
 
 
 def format_context(context):
