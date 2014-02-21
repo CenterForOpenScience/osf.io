@@ -142,6 +142,7 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.date_confirmed = dt.datetime.utcnow()
             # Revoke token
             del self.email_verifications[token]
+            self.save()
             return True
         else:
             return False

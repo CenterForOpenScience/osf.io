@@ -7,7 +7,6 @@ from framework.exceptions import HTTPError
 from framework import (Rule, process_rules,
                        WebRenderer, json_renderer,
                        render_mako_string)
-from framework.routing import NullRenderer
 from framework.auth import views as auth_views
 
 from website import settings
@@ -46,6 +45,9 @@ class OsfWebRenderer(WebRenderer):
     def __init__(self, *args, **kwargs):
         kwargs['data'] = get_globals
         super(OsfWebRenderer, self).__init__(*args, **kwargs)
+
+#: Use if a view only redirects or raises error
+notemplate = OsfWebRenderer('', render_mako_string)
 
 
 def favicon():
@@ -197,7 +199,7 @@ def make_url_map(app):
             '/confirm/<uid>/<token>/',
             'get',
             auth_views.confirm_email_get,
-            NullRenderer()
+            notemplate
         ),
 
         Rule(
