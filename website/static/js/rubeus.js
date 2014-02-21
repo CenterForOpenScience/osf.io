@@ -8,18 +8,29 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     // HGrid configuration //
     /////////////////////////
 
+    // Custom folder icon indicating private component
+    HGrid.Html.folderIconPrivate = '<img class="hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
     // Override Name column folder view to allow for extra widgets, e.g. github branch picker
     HGrid.Col.Name.folderView = function(item) {
         var html = '';
-        if (item.iconUrl)
+        if (item.iconUrl) {
             html += '<img class="hg-addon-icon" src="' + item.iconUrl + '">';
+        }
         else
-            html += HGrid.Html.folderIcon;
+            if (!item.permissions.view) {
+                html += HGrid.Html.folderIconPrivate;
+            } else {
+                html += HGrid.Html.folderIcon;
+            }
         html += '<span class="hg-folder-text">' + item.name + '</span>';
         if(item.extra) {
             html += '<span class="hg-extras">' + item.extra + '</span>';
         }
         return html;
+    };
+
+    HGrid.Col.Name.showExpander = function(row) {
+        return row.permissions.view;
     };
 
     HGrid.Col.Name.itemView = function(item) {
@@ -61,6 +72,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         }
         return '';
     };
+
 
     // Custom status column
     HGrid.Col.Status = {

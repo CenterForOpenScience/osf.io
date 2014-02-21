@@ -153,7 +153,7 @@ class NodeFileCollector(object):
     def _collect_components(self, node):
         rv = []
         for child in node.nodes:
-            if not child.is_deleted:
+            if not child.is_deleted and node.can_view(self.auth):
                 rv.append(self._create_dummy(child))
         return rv
 
@@ -161,18 +161,24 @@ class NodeFileCollector(object):
         return json.dumps(self._collect_addons(self.node) + self._collect_components(self.node))
 
     def _create_dummy(self, node):
+        can_edit = node.can_edit(auth=self.auth)
+        can_view = node.can_view(auth=self.auth)
+        if can_view:
+            children = self._collect_addons(node) + self._collect_components(node)
+        else:
+            children = []
         return {
-            'name': u'Component: {0}'.format(node.title) if self.can_view else u'Private Component',
+            'name': u'Component: {0}'.format(node.title) if can_view else u'Private Component',
             'kind': FOLDER,
             'permissions': {
-                'edit': self.can_edit,
-                'view': self.can_view
+                'edit': can_edit,
+                'view': can_view
             },
             'urls': {
                 'upload': None,
                 'fetch': None
             },
-            'children': self._collect_addons(node) + self._collect_components(node)
+            'children': children
         }
 
     def _collect_addons(self, node):
