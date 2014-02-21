@@ -1328,6 +1328,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         author_names = [
             author.biblio_name
             for author in self.contributors
+            if author
         ]
         if len(author_names) < 2:
             return ' {0} '.format(and_delim).join(author_names)

@@ -8,7 +8,6 @@ import time
 from cStringIO import StringIO
 import httplib as http
 import logging
-import hurry
 
 
 from framework import request, redirect, send_file, Q
@@ -29,19 +28,6 @@ from .model import NodeFile, OsfGuidFile
 logger = logging.getLogger(__name__)
 
 
-@must_be_contributor_or_public
-@must_have_addon('osffiles', 'node')
-def osffiles_widget(**kwargs):
-    node = kwargs['node'] or kwargs['project']
-    osffiles = node.get_addon('osffiles')
-    rv = {
-        'complete': True,
-    }
-    rv.update(osffiles.config.to_json())
-    return rv
-
-###
-
 def _clean_file_name(name):
     " HTML-escape file name and encode to UTF-8. "
     escaped = cgi.escape(name)
@@ -58,11 +44,6 @@ def osffiles_dummy_folder(node_settings, auth, parent=None, **kwargs):
         'fetch': os.path.join(node.api_url, 'osffiles', 'hgrid') + '/',
     }
     return rubeus.build_addon_root(node_settings, '', permissions=auth, urls=urls)
-
-
-# TODO: move to rubeus.py?
-def format_filesize(size):
-    return hurry.filesize.size(size, system=hurry.filesize.alternative)
 
 
 @must_be_contributor_or_public
@@ -104,7 +85,7 @@ def get_osffiles(**kwargs):
                 'downloads': total or 0,
                 'size': [
                     float(fobj.size),
-                    format_filesize(fobj.size),
+                    rubeus.format_filesize(fobj.size),
                 ],
                 'dates': {
                     'modified': [
@@ -171,7 +152,7 @@ def upload_file_public(**kwargs):
         'name': name,
         'size': [
             float(size),
-            format_filesize(size),
+            rubeus.format_filesize(size),
         ],
 
         # URLs

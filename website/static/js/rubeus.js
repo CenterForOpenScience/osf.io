@@ -2,7 +2,7 @@
  * Module to render the consolidated files view. Reads addon configurations and
  * initializes an HGrid.
  */
-this.Rubeus = (function($, HGrid, bootbox) {
+this.Rubeus = (function($, HGrid, bootbox, window) {
 
     /////////////////////////
     // HGrid configuration //
@@ -355,8 +355,14 @@ this.Rubeus = (function($, HGrid, bootbox) {
     Rubeus.prototype = {
         constructor: Rubeus,
         init: function() {
+            var self = this;
             this._registerListeners()
                 ._initGrid();
+            $(window).on('beforeunload', function() {
+                if (self.grid.dropzone && self.grid.dropzone.getUploadingFiles().length) {
+                    return 'Uploads(s) still in progress. Are you sure you want to leave this page?';
+                }
+            });
         },
         _registerListeners: function() {
             for (var addon in Rubeus.cfg) {
@@ -379,4 +385,4 @@ this.Rubeus = (function($, HGrid, bootbox) {
 
     return Rubeus;
 
-})(jQuery, HGrid, bootbox);
+})(jQuery, HGrid, bootbox, window);

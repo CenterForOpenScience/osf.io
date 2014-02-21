@@ -29,6 +29,7 @@ class S3GuidFile(GuidFile):
 
 class AddonS3UserSettings(AddonUserSettingsBase):
 
+    s3_osf_user = fields.StringField()
     access_key = fields.StringField()
     secret_key = fields.StringField()
 

@@ -1,3 +1,5 @@
+<% import json %>
+
 % if node['is_registration']:
     <div class="alert alert-info">This ${node['category']} is a registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node["category"]}</a>; the content of the ${node["category"]} has been frozen and cannot be edited.
     </div>
@@ -213,7 +215,7 @@
     });
 
     var $addPointer = $('#addPointer');
-    var addPointerVM = new AddPointerViewModel('${node['title']}');
+    var addPointerVM = new AddPointerViewModel(${json.dumps(node['title'])});
     ko.applyBindings(addPointerVM, $addPointer[0]);
     $addPointer.on('hidden.bs.modal', function() {
         addPointerVM.clear();

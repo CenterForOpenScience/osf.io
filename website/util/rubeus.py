@@ -4,6 +4,7 @@ formated hgrid list/folders.
 """
 import json
 import itertools
+import hurry
 
 #TODO Fix me, circular import. Still works for some reason....
 from website.project.views.node import _view_project
@@ -20,10 +21,14 @@ DEFAULT_PERMISSIONS = {
 }
 
 
+def format_filesize(size):
+    return hurry.filesize.size(size, system=hurry.filesize.alternative)
+
+
 def default_urls(node_api, short_name):
     return {
-        'fetch': '{node_api}{addonshort}/hgrid/'.format(node_api=node_api, addonshort=short_name),
-        'upload': '{node_api}{addonshort}/'.format(node_api=node_api, addonshort=short_name),
+        'fetch': u'{node_api}{addonshort}/hgrid/'.format(node_api=node_api, addonshort=short_name),
+        'upload': u'{node_api}{addonshort}/'.format(node_api=node_api, addonshort=short_name),
     }
 
 
@@ -55,7 +60,7 @@ def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS,
 
     """
     if name:
-        name = '{0}: {1}'.format(node_settings.config.full_name, name)
+        name = u'{0}: {1}'.format(node_settings.config.full_name, name)
     else:
         name = node_settings.config.full_name
     if hasattr(node_settings.config, 'urls') and node_settings.config.urls:
@@ -157,7 +162,7 @@ class NodeFileCollector(object):
 
     def _create_dummy(self, node):
         return {
-            'name': 'Component: {0}'.format(node.title) if self.can_view else 'Private Component',
+            'name': u'Component: {0}'.format(node.title) if self.can_view else u'Private Component',
             'kind': FOLDER,
             'permissions': {
                 'edit': self.can_edit,

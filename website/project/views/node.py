@@ -684,6 +684,7 @@ def search_node(**kwargs):
         'nodes': [
             _serialize_node_search(each)
             for each in cursor
+            if each.contributors
         ]
     }
 

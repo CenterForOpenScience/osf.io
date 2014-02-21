@@ -1,6 +1,6 @@
 //TODO Fix me up use id's maybe...
 function setDropDownListener() {
-    $( document.body ).on( 'click', '.dropdown-menu li', function( event ) {
+    $( document.body ).on( 'click', '#addonSettingsS3 .dropdown-menu li', function( event ) {
 
        var $target = $( event.currentTarget );
 

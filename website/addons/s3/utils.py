@@ -1,7 +1,5 @@
-import re
 from urllib import quote
 from bson import ObjectId
-from datetime import datetime
 from dateutil.parser import parse
 
 from boto.iam import IAMConnection
@@ -10,7 +8,7 @@ from boto.exception import BotoServerError
 
 from website.util import rubeus
 
-from api import S3Key, get_bucket_list
+from api import get_bucket_list
 import settings as s3_settings
 
 
@@ -48,7 +46,7 @@ def adjust_cors(s3wrapper, clobber=False):
 
 
 def wrapped_key_to_json(wrapped_key, node):
-    urls = build_urls(node, quote(wrapped_key.fullPath))
+    urls = build_urls(node, quote(wrapped_key.s3Key.key.encode('utf-8')))
     return {
         rubeus.KIND: _key_type_to_rubeus(wrapped_key.type),
         'name': wrapped_key.name,
@@ -60,7 +58,7 @@ def wrapped_key_to_json(wrapped_key, node):
             'download': urls['download'] if wrapped_key.type == 'file' else None,
             'delete': urls['delete'] if wrapped_key.type == 'file' else None,
             'view': urls['view'] if wrapped_key.type == 'file' else None,
-            'fetch': node.api_url + 's3/hgrid/' + wrapped_key.fullPath if wrapped_key.type == 'folder' else None,
+            'fetch': node.api_url + 's3/hgrid/' + wrapped_key.s3Key.key if wrapped_key.type == 'folder' else None,
             'upload': urls['upload'],
         }
     }
@@ -101,34 +99,39 @@ def serialize_bucket(s3wrapper):
     return [
         {
             'name': x.name,
-            'path': x.fullPath,
-            'version_id': s3wrapper.bucket.get_key(x.fullPath).version_id,
+            'path': x.s3Key.key,
+            'version_id': s3wrapper.bucket.get_key(x.s3Key.key).version_id,
         }
         for x in s3wrapper.get_wrapped_keys()
     ]
 
 
 def create_osf_user(access_key, secret_key, name):
+
     connection = IAMConnection(access_key, secret_key)
+
+    user_name = u'osf-{0}-{1}'.format(name, ObjectId())
+
     try:
-        connection.get_user(s3_settings.OSF_USER.format(name))
+        connection.get_user(user_name)
     except BotoServerError:
-        connection.create_user(s3_settings.OSF_USER.format(name))
+        connection.create_user(user_name)
 
     try:
         connection.get_user_policy(
-            s3_settings.OSF_USER.format(name),
+            user_name,
             s3_settings.OSF_USER_POLICY
         )
     except BotoServerError:
         connection.put_user_policy(
-            s3_settings.OSF_USER.format(name),
+            user_name,
             s3_settings.OSF_USER_POLICY_NAME,
             s3_settings.OSF_USER_POLICY
         )
 
-    access_key = connection.create_access_key(s3_settings.OSF_USER.format(name))
-    return access_key['create_access_key_response']['create_access_key_result']['access_key']
+    response = connection.create_access_key(user_name)
+    access_key = response['create_access_key_response']['create_access_key_result']['access_key']
+    return user_name, access_key
 
 
 def remove_osf_user(user_settings):
@@ -139,21 +142,21 @@ def remove_osf_user(user_settings):
         s3_settings.OSF_USER.format(name)
     )
     connection.delete_user_policy(
-        s3_settings.OSF_USER.format(name),
+        user_settings.s3_osf_user,
         s3_settings.OSF_USER_POLICY_NAME
     )
-    return connection.delete_user(s3_settings.OSF_USER.format(name))
+    return connection.delete_user(user_settings.s3_osf_user)
 
 
 def build_urls(node, file_name, url=None, etag=None, vid=None):
     rv = {
-        'upload': '{node_api}s3/'.format(node_api=node.api_url),
-        'download': '{node_url}s3/{file_name}/download/{vid}'.format(node_url=node.url, file_name=file_name, vid='' if not vid else '?vid={0}'.format(vid)),
-        'view': '{node_url}s3/{file_name}/'.format(node_url=node.url, file_name=file_name),
-        'delete': '{node_api}s3/{file_name}/'.format(node_api=node.api_url, file_name=file_name),
-        'render': '{node_api}s3/{file_name}/render/{etag}'.format(node_api=node.api_url,
+        'upload': u'{node_api}s3/'.format(node_api=node.api_url),
+        'download': u'{node_url}s3/{file_name}/download/{vid}'.format(node_url=node.url, file_name=file_name, vid='' if not vid else '?vid={0}'.format(vid)),
+        'view': u'{node_url}s3/{file_name}/'.format(node_url=node.url, file_name=file_name),
+        'delete': u'{node_api}s3/{file_name}/'.format(node_api=node.api_url, file_name=file_name),
+        'render': u'{node_api}s3/{file_name}/render/{etag}'.format(node_api=node.api_url,
             file_name=file_name, etag='' if not etag else '?etag={0}'.format(etag)),
-        'fetch': '{node_api}s3/hgrid/{file_name}'.format(node_api=node.api_url, file_name=file_name)
+        'fetch': u'{node_api}s3/hgrid/{file_name}'.format(node_api=node.api_url, file_name=file_name)
     }
     if not url:
         return rv
