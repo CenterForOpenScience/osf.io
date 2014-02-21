@@ -1,5 +1,7 @@
 import os
+import logging
 import httplib as http
+from github3 import GitHubError
 
 from framework import request, redirect
 from framework.auth import get_current_user
@@ -13,6 +15,7 @@ from website.project.decorators import must_have_addon
 
 from ..api import GitHub
 from ..auth import oauth_start_url, oauth_get_token
+logger = logging.getLogger(__name__)
 
 
 @must_be_contributor
@@ -66,13 +69,38 @@ def github_oauth_delete_user(**kwargs):
 
     user_settings = kwargs['user_addon']
 
+    failed = False
+
     # Remove webhooks
     for node_settings in user_settings.addongithubnodesettings__authorized:
-        node_settings.delete_hook()
+        try:
+            node_settings.delete_hook()
+        except GitHubError as error:
+            if error.code == 401:
+                failed = True
+            else:
+                raise
+
+    if failed:
+        push_status_message(
+            'We were unable to remove your webhook from GitHub. Your GitHub '
+            'credentials may no longer be valid.'
+        )
 
     # Revoke access token
     connection = GitHub.from_settings(user_settings)
-    connection.revoke_token()
+    try:
+        connection.revoke_token()
+    except GitHubError as error:
+        if error.code == 401:
+            push_status_message(
+                'Your GitHub credentials were removed from the OSF, but we '
+                'were unable to revoke your access token from GitHub. Your '
+                'GitHub credentials may no longer be valid.'
+            )
+        else:
+            raise
+
 
     user_settings.oauth_access_token = None
     user_settings.oauth_token_type = None
@@ -88,9 +116,16 @@ def github_oauth_delete_node(**kwargs):
     node_settings = kwargs['node_addon']
 
     # Remove webhook
-    node_settings.delete_hook()
+    try:
+        node_settings.delete_hook()
+    except GitHubError:
+        logger.error(
+            'Could not remove webhook from {0} in node {1}'.format(
+                node_settings.repo, node_settings.owner._id
+            )
+        )
 
-    # Remove settings
+    # Remove user settings
     node_settings.user_settings = None
     node_settings.user = None
     node_settings.repo = None

@@ -11,7 +11,6 @@ from httpcache import CachingHTTPAdapter
 
 from website.addons.github import settings as github_settings
 
-
 # Initialize caches
 http_cache = CachingHTTPAdapter()
 https_cache = CachingHTTPAdapter()
@@ -261,6 +260,7 @@ def ref_to_params(branch=None, sha=None):
     if params:
         return '?' + params
     return ''
+
 
 def _build_github_urls(item, node_url, node_api_url, branch, sha):
 

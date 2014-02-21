@@ -7,6 +7,7 @@ from website.util import rubeus
 from framework.exceptions import HTTPError
 import httplib as http
 
+
 def s3_hgrid_data(node_settings, auth, parent=None, **kwargs):
 
     # Quit if no bucket

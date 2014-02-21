@@ -1,7 +1,10 @@
 import httplib as http
 
+from boto.exception import BotoServerError
+
 from framework import request
 from framework.exceptions import HTTPError
+from framework.status import push_status_message
 from framework.auth.decorators import must_be_logged_in
 
 from website.project.decorators import must_be_contributor
@@ -78,6 +81,9 @@ def s3_node_settings(**kwargs):
     node_settings = kwargs['node_addon']
     user_settings = user.get_addon('s3')
 
+    # Claiming the node settings
+    if not node_settings.user_settings:
+        node_settings.user_settings = user_settings
     # If authorized, only owner can change settings
     if user_settings and user_settings.owner != user:
         raise HTTPError(http.BAD_REQUEST)
@@ -98,14 +104,32 @@ def s3_node_settings(**kwargs):
         adjust_cors(S3Wrapper.from_addon(node_settings))
 
 
+@must_be_contributor
+@must_have_addon('s3', 'node')
+def s3_remove_node_settings(**kwargs):
+    node_settings = kwargs['node_addon']
+    node_settings.user_settings = None
+    node_settings.bucket = None
+    node_settings.save()
+
+
+#TODO Dry up
 @must_be_logged_in
 @must_have_addon('s3', 'user')
 def s3_remove_user_settings(**kwargs):
 
     user_settings = kwargs['user_addon']
-
-    remove_osf_user(user_settings)
-
+    try:
+        remove_osf_user(user_settings)
+    except BotoServerError as e:
+        if e.code in ['InvalidClientTokenId', 'ValidationError']:
+            user_settings.access_key = ''
+            user_settings.secret_key = ''
+            user_settings.save()
+            push_status_message('Looks like your access keys are no longer valid. They have been removed from the framework but may still exist on Amazon.')
+            return {'message': 'reload'}, 400
+        else:
+            return 400
     user_settings.access_key = ''
     user_settings.secret_key = ''
     user_settings.save()

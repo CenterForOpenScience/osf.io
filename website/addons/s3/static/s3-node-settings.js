@@ -13,7 +13,8 @@ function setDropDownListener() {
         if ($target.text().indexOf('Create a new bucket') != -1) {
             newBucket();
         } else if ($target.text().indexOf('Deauthorize') != -1) {
-            return true;
+            removeNodeAuth();
+            return false;
         } else {
             $('#addonSettingsS3').submit();
         }
@@ -37,6 +38,7 @@ function newBucket() {
         }).done(function() {
             $('#bucketlabel').text(bucketName);
             $('#s3_bucket').val(bucketName);
+            $('#s3-dropdown').find('li').first().after('<li role="presentation"><a href="#">' + bucketName + '</a></li>')
             $('#addonSettingsS3').submit();
         }).fail(function(xhr) {
             bootbox.confirm('Looks like that name is taken. Try another name?', function(result) {
@@ -47,3 +49,17 @@ function newBucket() {
 
     });
 };
+
+function removeNodeAuth()
+{
+    $.ajax({
+        url: nodeApiUrl + addonShortname + '/settings/',
+        type: 'DELETE',
+        contentType: 'application/json',
+        dataType: 'json'
+    }).done(function() {
+        location.reload();
+    }).fail(function(xhr) {
+        //TODO Do something here
+    });
+}
