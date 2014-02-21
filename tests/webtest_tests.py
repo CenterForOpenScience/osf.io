@@ -118,20 +118,6 @@ class TestAUser(DbTestCase):
         res = self.app.get('/').maybe_follow()  # Redirects
         assert_equal(res.status_code, 200)
 
-    def test_can_log_in_first_time(self):
-        # Goes to home page
-        res = self.app.get('/').maybe_follow()
-        # Clicks sign in button
-        res = res.click('Create an Account or Sign-In').maybe_follow()
-        # Fills out login info
-        form = res.forms['signinForm']  # Get the form from its ID
-        form['username'] = self.user.username
-        form['password'] = 'science'
-        # submits
-        res = form.submit().maybe_follow()
-        # Sees dashboard with projects and watched projects
-        assert_in('Account Settings', res)
-
     def test_can_log_in(self):
         # Log in and out
         self._login(self.user.username, 'science')
@@ -558,9 +544,11 @@ class TestShortUrls(DbTestCase):
         return self.app.get(url, auth=self.auth).maybe_follow().normal_body
 
     def test_profile_url(self):
+        res1 = self.app.get('/{}/'.format(self.user._primary_key)).maybe_follow()
+        res2 = self.app.get('/profile/{}/'.format(self.user._primary_key)).maybe_follow()
         assert_equal(
-            self.app.get('/{}/'.format(self.user._primary_key)).maybe_follow().normal_body,
-            self.app.get('/profile/{}/'.format(self.user._primary_key)).maybe_follow().normal_body
+            res1.normal_body,
+            res2.normal_body
         )
 
     def test_project_url(self):
@@ -693,7 +681,8 @@ class TestConfirmingEmail(DbTestCase):
     def test_redirects_to_settings(self):
         res = self.app.get(self.confirmation_url).follow()
         assert_equal(res.request.path, '/settings/', 'redirected to settings page')
-        assert_in('Successfully completed registration.', res, 'shows flash message')
+        assert_in('Welcome to the OSF!', res, 'shows flash message')
+        assert_in('Please update the following settings.', res)
 
     def test_error_page_if_confirm_link_is_expired(self):
         self.user.confirm_email(self.confirmation_token)
