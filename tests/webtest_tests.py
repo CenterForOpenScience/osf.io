@@ -4,10 +4,8 @@
 import unittest
 import os
 import re
-import datetime as dt
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
-from webtest import AppError
 from framework.auth.decorators import Auth
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
@@ -683,6 +681,26 @@ class TestClaiming(DbTestCase):
         res = self.app.get(claim_url)
         assert_in('Set password', res)
         assert 0, 'finish me'
+
+class TestConfirmingEmail(DbTestCase):
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = UnregUserFactory()
+        self.confirmation_url = self.user.get_confirmation_url(self.user.username,
+            external=False)
+        self.confirmation_token = self.user.get_confirmation_token(self.user.username)
+
+    def test_redirects_to_settings(self):
+        res = self.app.get(self.confirmation_url).follow()
+        assert_equal(res.request.path, '/settings/', 'redirected to settings page')
+        assert_in('Successfully completed registration.', res, 'shows flash message')
+
+    def test_error_page_if_confirm_link_is_expired(self):
+        self.user.confirm_email(self.confirmation_token)
+        self.user.save()
+        res = self.app.get(self.confirmation_url, expect_errors=True)
+        assert_in('Link Expired', res)
+
 
 
 if __name__ == '__main__':
