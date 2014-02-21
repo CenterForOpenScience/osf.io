@@ -300,6 +300,16 @@ class Renderer(object):
         return make_response(rendered, status_code, headers)
 
 
+class NullRenderer(Renderer):
+    """Renderer that does not render a view. Use for views that only redirect
+    or return an error response.
+    """
+    def render(self, *args, **kwargs):
+        logger.error('NullRenderer was called in a view that did not return '
+            'a response.')
+        raise HTTPError(500)
+
+
 class JSONRenderer(Renderer):
     """Renderer for API views. Generates JSON; ignores
     redirects from views and exceptions.
