@@ -375,7 +375,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         return (
             self.is_contributor(user)
             or is_api_node
-            or user == self.creator
         )
 
     def can_view(self, auth):
