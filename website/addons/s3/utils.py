@@ -8,7 +8,7 @@ from boto.exception import BotoServerError
 
 from website.util import rubeus
 
-from api import S3Key, get_bucket_list
+from api import get_bucket_list
 import settings as s3_settings
 
 
@@ -107,26 +107,31 @@ def serialize_bucket(s3wrapper):
 
 
 def create_osf_user(access_key, secret_key, name):
+
     connection = IAMConnection(access_key, secret_key)
+
+    user_name = u'osf-{0}-{1}'.format(name, ObjectId())
+
     try:
-        connection.get_user(s3_settings.OSF_USER.format(name))
+        connection.get_user(user_name)
     except BotoServerError:
-        connection.create_user(s3_settings.OSF_USER.format(name))
+        connection.create_user(user_name)
 
     try:
         connection.get_user_policy(
-            s3_settings.OSF_USER.format(name),
+            user_name,
             s3_settings.OSF_USER_POLICY
         )
     except BotoServerError:
         connection.put_user_policy(
-            s3_settings.OSF_USER.format(name),
+            user_name,
             s3_settings.OSF_USER_POLICY_NAME,
             s3_settings.OSF_USER_POLICY
         )
 
-    access_key = connection.create_access_key(s3_settings.OSF_USER.format(name))
-    return access_key['create_access_key_response']['create_access_key_result']['access_key']
+    response = connection.create_access_key(user_name)
+    access_key = response['create_access_key_response']['create_access_key_result']['access_key']
+    return user_name, access_key
 
 
 def remove_osf_user(user_settings):
@@ -137,10 +142,10 @@ def remove_osf_user(user_settings):
         s3_settings.OSF_USER.format(name)
     )
     connection.delete_user_policy(
-        s3_settings.OSF_USER.format(name),
+        user_settings.s3_osf_user,
         s3_settings.OSF_USER_POLICY_NAME
     )
-    return connection.delete_user(s3_settings.OSF_USER.format(name))
+    return connection.delete_user(user_settings.s3_osf_user)
 
 
 def build_urls(node, file_name, url=None, etag=None, vid=None):

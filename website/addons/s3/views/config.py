@@ -21,10 +21,13 @@ def add_s3_auth(access_key, secret_key, user_settings):
     if not has_access(access_key, secret_key):
         return {'message': 'Incorrect credentials'}, http.BAD_REQUEST
 
-    keys = create_osf_user(access_key, secret_key, user_settings.owner.family_name)
+    user_name, access_key = create_osf_user(
+        access_key, secret_key, user_settings.owner.family_name
+    )
 
-    user_settings.access_key = keys['access_key_id']
-    user_settings.secret_key = keys['secret_access_key']
+    user_settings.s3_osf_user = user_name
+    user_settings.access_key = access_key['access_key_id']
+    user_settings.secret_key = access_key['secret_access_key']
 
     user_settings.save()
 
@@ -57,7 +60,7 @@ def s3_authorize_node(**kwargs):
 
     s3_access_key = request.json.get('access_key')
     s3_secret_key = request.json.get('secret_key')
-    if s3_access_key is None or s3_secret_key is None:
+    if not s3_access_key or not s3_secret_key:
         raise HTTPError(http.BAD_REQUEST)
 
     user_settings = user.get_addon('s3')
@@ -128,6 +131,7 @@ def s3_remove_user_settings(**kwargs):
         else:
             raise HTTPError(http.BAD_REQUEST)
 
+    user_settings.s3_osf_user = None
     user_settings.access_key = None
     user_settings.secret_key = None
     user_settings.save()

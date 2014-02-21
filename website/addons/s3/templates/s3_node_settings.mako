@@ -70,7 +70,8 @@
         <span id="bucketlabel" data-bind="label">${bucket if bucket else 'Select a bucket'}</span> <span class="caret"></span>
       </button>
     </div>
-    <button class="btn btn-danger pull-right"><i class="glyphicon glyphicon-remove"></i> Remove ${owner}'s access</button>
+    <br /><br />
+    <button class="btn btn-danger">Deauthorize</button>
 
 % else:
 
