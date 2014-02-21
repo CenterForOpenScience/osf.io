@@ -228,6 +228,9 @@ def _search_contributor(query):
     for doc in docs:
         # TODO: use utils.serialize_user
         user = User.load(doc['id'])
+        if user is None:
+            logger.error('Could not load user {0}'.format(doc['id']))
+            continue
         if user.is_active():  # exclude merged, unregistered, etc.
             users.append({
                 'fullname': doc['user'],
