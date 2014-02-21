@@ -670,6 +670,26 @@ class TestAuthViews(DbTestCase):
             to_addr='fred@queen.com'
         ))
 
+    def test_resend_confirmation_get(self):
+        res = self.app.get('/resend/')
+        assert_equal(res.status_code, 200)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_resend_confirmation_post_sends_confirm_email(self, send_mail):
+        # Make sure user has a confirmation token for their primary email
+        self.user.add_email_verification(self.user.username)
+        self.user.save()
+        res = self.app.post('/resend/', {'email': self.user.username})
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr=self.user.username
+        ))
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_resend_confirmation_post_if_user_not_in_database(self, send_mail):
+        res = self.app.post('/resend/', {'email': 'norecord@norecord.no'})
+        assert_false(send_mail.called)
+
     def test_confirmation_link_registers_user(self):
         user = User.create_unconfirmed('brian@queen.com', 'bicycle123', 'Brian May')
         assert_false(user.is_registered)  # sanity check
@@ -708,6 +728,7 @@ class TestAuthViews(DbTestCase):
         assert_equal(self.user.given_name, 'Lyndon')
         assert_equal(self.user.middle_names, 'Baines')
         assert_equal(self.user.family_name, 'Johnson')
+
 
 if __name__ == '__main__':
     unittest.main()

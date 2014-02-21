@@ -11,7 +11,8 @@ from framework import status
 import framework.forms as forms
 from framework import auth
 from framework.auth import login, logout, DuplicateEmailError, get_user, get_current_user
-from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm, MergeAccountForm
+from framework.auth.forms import (RegistrationForm, SignInForm,
+    ForgotPasswordForm, ResetPasswordForm, MergeAccountForm, ResendConfirmationForm)
 
 import website.settings
 from website import security, mails, language
@@ -131,7 +132,6 @@ def auth_logout():
     return rv
 
 
-
 def confirm_email_get(**kwargs):
     """View for email confirmation links.
     Authenticates and redirects to user settings page if confirmation is
@@ -192,6 +192,21 @@ def auth_register_post():
     else:
         forms.push_errors_to_status(form.errors)
         return auth_login(registration_form=form)
+
+def resend_confirmation():
+    """View for resending an email confirmation email.
+    """
+    form = ResendConfirmationForm(framework.request.form)
+    if request.method == 'POST':
+        if form.validate():
+            clean_email = form.email.data.lower().strip()
+            user = get_user(username=clean_email)
+            if user:
+                status.push_status_message('Resent email to <em>{0}</em>'.format(clean_email),
+                    'success')
+                send_confirm_email(user, clean_email)
+    # Don't go anywhere
+    return forms.utils.jsonify(form)
 
 
 def merge_user_get(**kwargs):

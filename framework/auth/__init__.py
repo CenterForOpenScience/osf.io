@@ -102,7 +102,6 @@ def get_user(id=None, username=None, password=None, verification_key=None):
             logging.error(err)
             user = None
         if user and not user.check_password(password):
-            logging.debug("Incorrect password attempt.")
             return False
         return user
     if verification_key:
@@ -113,7 +112,7 @@ def get_user(id=None, username=None, password=None, verification_key=None):
             query = query & query_part
         user = User.find_one(query)
         return user
-    except Exception as err:  # TODO: Should catch a specific type of exception
+    except Exception as err:
         logging.error(err)
         return None
 
