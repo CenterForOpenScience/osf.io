@@ -1,9 +1,8 @@
 import os
 import urllib
+import logging
 import datetime
 import httplib as http
-
-from hurry.filesize import size, alternative
 
 from framework import request, redirect, make_response, Q
 from framework.flask import secure_filename
@@ -16,6 +15,7 @@ from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
 from website.addons.base.views import check_file_guid
+from website.util import rubeus
 
 from ..api import GitHub, ref_to_params, _build_github_urls
 from ..model import GithubGuidFile
@@ -23,18 +23,23 @@ from .. import settings as github_settings
 from .util import MESSAGES, get_path
 
 
+logger = logging.getLevelName(__name__)
+
+
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
 def github_download_file(**kwargs):
 
-    github = kwargs['node_addon']
+    node_settings = kwargs['node_addon']
 
     path = get_path(kwargs)
 
     ref = request.args.get('sha')
-    connection = GitHub.from_settings(github.user_settings)
+    connection = GitHub.from_settings(node_settings.user_settings)
 
-    name, data, _ = connection.file(github.user, github.repo, path, ref=ref)
+    name, data, _ = connection.file(
+        node_settings.user, node_settings.repo, path, ref=ref
+    )
     if data is None:
         raise HTTPError(http.NOT_FOUND)
 
@@ -170,7 +175,7 @@ def github_upload_file(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
     user = auth.user
-    github = kwargs['node_addon']
+    node_settings = kwargs['node_addon']
     now = datetime.datetime.utcnow()
 
     path = get_path(kwargs, required=False) or ''
@@ -181,15 +186,24 @@ def github_upload_file(**kwargs):
     if branch is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    connection = GitHub.from_settings(github.user_settings)
+    connection = GitHub.from_settings(node_settings.user_settings)
 
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
     content = upload.read()
 
+    # Check max file size
+    upload.seek(0, os.SEEK_END)
+    size = upload.tell()
+
+    # Hack: Avoid circular import
+    from website.addons import github
+    if size > github.MAX_FILE_SIZE * 1024 * 1024:
+        raise HTTPError(http.BAD_REQUEST)
+
     # Get SHA of existing file if present; requires an additional call to the
     # GitHub API
-    tree = connection.tree(github.user, github.repo, sha=sha or branch)
+    tree = connection.tree(node_settings.user, node_settings.repo, sha=sha or branch)
     existing = [
         thing
         for thing in tree.tree
@@ -204,12 +218,12 @@ def github_upload_file(**kwargs):
 
     if existing:
         data = connection.update_file(
-            github.user, github.repo, os.path.join(path, filename),
+            node_settings.user, node_settings.repo, os.path.join(path, filename),
             MESSAGES['update'], content, sha=sha, branch=branch, author=author
         )
     else:
         data = connection.create_file(
-            github.user, github.repo, os.path.join(path, filename),
+            node_settings.user, node_settings.repo, os.path.join(path, filename),
             MESSAGES['update'], content, branch=branch, author=author
         )
 
@@ -240,8 +254,8 @@ def github_upload_file(**kwargs):
                     'download': download_url,
                 },
                 'github': {
-                    'user': github.user,
-                    'repo': github.repo,
+                    'user': node_settings.user,
+                    'repo': node_settings.repo,
                     'sha': data['commit'].sha,
                 },
             },
@@ -249,12 +263,22 @@ def github_upload_file(**kwargs):
             log_date=now,
         )
 
+        # Fail if file size is not provided; this happens when the file was
+        # too large to upload to GitHub
+        if data['content'].size is None:
+            logger.error(
+                'Could not upload file {0} to GitHub: No size provided'.format(
+                    filename
+                )
+            )
+            raise HTTPError(http.BAD_REQUEST)
+
         info = {
             'addon': 'github',
             'name': filename,
             'size': [
                 data['content'].size,
-                size(data['content'].size, system=alternative)
+                rubeus.format_filesize(data['content'].size),
             ],
             'kind': 'file',
             'urls': _build_github_urls(
@@ -277,7 +301,7 @@ def github_delete_file(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
-    github = kwargs['node_addon']
+    node_settings = kwargs['node_addon']
 
     now = datetime.datetime.utcnow()
 
@@ -294,10 +318,10 @@ def github_delete_file(**kwargs):
         'email': '{0}@osf.io'.format(auth.user._id),
     }
 
-    connection = GitHub.from_settings(github.user_settings)
+    connection = GitHub.from_settings(node_settings.user_settings)
 
     data = connection.delete_file(
-        github.user, github.repo, path, MESSAGES['delete'],
+        node_settings.user, node_settings.repo, path, MESSAGES['delete'],
         sha=sha, branch=branch, author=author,
     )
 
@@ -311,8 +335,8 @@ def github_delete_file(**kwargs):
             'node': node._primary_key,
             'path': path,
             'github': {
-                'user': github.user,
-                'repo': github.repo,
+                'user': node_settings.user,
+                'repo': node_settings.repo,
             },
         },
         auth=auth,
@@ -327,12 +351,14 @@ def github_delete_file(**kwargs):
 @must_have_addon('github', 'node')
 def github_download_starball(**kwargs):
 
-    github = kwargs['node_addon']
+    node_settings = kwargs['node_addon']
     archive = kwargs.get('archive', 'tar')
     ref = request.args.get('ref')
 
-    connection = GitHub.from_settings(github.user_settings)
-    headers, data = connection.starball(github.user, github.repo, archive, ref)
+    connection = GitHub.from_settings(node_settings.user_settings)
+    headers, data = connection.starball(
+        node_settings.user, node_settings.repo, archive, ref
+    )
 
     resp = make_response(data)
     for key, value in headers.iteritems():

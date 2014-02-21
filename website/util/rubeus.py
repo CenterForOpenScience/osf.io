@@ -4,6 +4,7 @@ formated hgrid list/folders.
 """
 import json
 import itertools
+import hurry
 
 #TODO Fix me, circular import. Still works for some reason....
 from website.project.views.node import _view_project
@@ -18,6 +19,10 @@ DEFAULT_PERMISSIONS = {
     'view': True,
     'edit': False
 }
+
+
+def format_filesize(size):
+    return hurry.filesize.size(size, system=hurry.filesize.alternative)
 
 
 def default_urls(node_api, short_name):

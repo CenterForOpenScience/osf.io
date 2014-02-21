@@ -8,7 +8,6 @@ import time
 from cStringIO import StringIO
 import httplib as http
 import logging
-import hurry
 
 
 from framework import request, redirect, send_file, Q
@@ -45,11 +44,6 @@ def osffiles_dummy_folder(node_settings, auth, parent=None, **kwargs):
         'fetch': os.path.join(node.api_url, 'osffiles', 'hgrid') + '/',
     }
     return rubeus.build_addon_root(node_settings, '', permissions=auth, urls=urls)
-
-
-# TODO: move to rubeus.py?
-def format_filesize(size):
-    return hurry.filesize.size(size, system=hurry.filesize.alternative)
 
 
 @must_be_contributor_or_public
@@ -91,7 +85,7 @@ def get_osffiles(**kwargs):
                 'downloads': total or 0,
                 'size': [
                     float(fobj.size),
-                    format_filesize(fobj.size),
+                    rubeus.format_filesize(fobj.size),
                 ],
                 'dates': {
                     'modified': [
