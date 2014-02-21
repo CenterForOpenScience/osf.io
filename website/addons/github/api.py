@@ -19,12 +19,12 @@ class GitHub(object):
 
     def __init__(self, access_token=None, token_type=None):
 
+        self.access_token = access_token
         if access_token and token_type:
             self.gh3 = github3.login(token=access_token)
             self.gh3.set_client_id(
                 github_settings.CLIENT_ID, github_settings.CLIENT_SECRET
             )
-            self.access_token = access_token
         else:
             self.gh3 = github3.GitHub()
 

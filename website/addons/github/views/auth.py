@@ -87,24 +87,9 @@ def github_oauth_delete_user(**kwargs):
             'credentials may no longer be valid.'
         )
 
-    # Revoke access token
-    connection = GitHub.from_settings(user_settings)
-    try:
-        connection.revoke_token()
-    except GitHubError as error:
-        if error.code == 401:
-            push_status_message(
-                'Your GitHub credentials were removed from the OSF, but we '
-                'were unable to revoke your access token from GitHub. Your '
-                'GitHub credentials may no longer be valid.'
-            )
-        else:
-            raise
-
-
-    user_settings.oauth_access_token = None
-    user_settings.oauth_token_type = None
-    user_settings.save()
+    message = user_settings.clear_auth()
+    if message:
+        push_status_message(message)
 
     return {}
 

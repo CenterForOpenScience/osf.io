@@ -179,13 +179,15 @@ class AddonSettingsBase(StoredObject):
         'abstract': True,
     }
 
-    def delete(self):
+    def delete(self, save=True):
         self.deleted = True
-        self.save()
+        if save:
+            self.save()
 
-    def undelete(self):
+    def undelete(self, save=True):
         self.deleted = False
-        self.save()
+        if save:
+            self.save()
 
     def to_json(self, user):
         return {

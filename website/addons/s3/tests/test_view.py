@@ -50,10 +50,13 @@ class TestS3ViewsConfig(DbTestCase):
     @mock.patch('website.addons.s3.views.config.create_osf_user')
     def test_user_settings(self, mock_user, mock_access):
         mock_access.return_value = True
-        mock_user.return_value = {
-            'access_key_id': 'scout',
-            'secret_access_key': 'ssshhhhhhhhh'
-        }
+        mock_user.return_value = (
+            'osf-user-12345',
+            {
+                'access_key_id': 'scout',
+                'secret_access_key': 'ssshhhhhhhhh'
+            }
+        )
         url = '/api/v1/settings/s3/'
         self.app.post_json(
             url,
@@ -129,10 +132,13 @@ class TestS3ViewsConfig(DbTestCase):
         url = self.node_url + 's3/authorize/'
 
         mock_access.return_value = True
-        mock_user.return_value = {
-            'access_key_id': 'scout',
-            'secret_access_key': 'ssshhhhhhhhh'
-        }
+        mock_user.return_value = (
+            'osf-user-12345',
+            {
+                'access_key_id': 'scout',
+                'secret_access_key': 'ssshhhhhhhhh'
+            }
+        )
         self.app.post_json(url, {'access_key': 'scout', 'secret_key': 'ssshhhhhhhhh'}, auth=self.user.auth)
 
         self.user_settings.reload()

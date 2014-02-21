@@ -139,7 +139,7 @@ def remove_osf_user(user_settings):
     connection = IAMConnection(user_settings.access_key, user_settings.secret_key)
     connection.delete_access_key(
         user_settings.access_key,
-        s3_settings.OSF_USER.format(name)
+        user_settings.s3_osf_user
     )
     connection.delete_user_policy(
         user_settings.s3_osf_user,
