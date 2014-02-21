@@ -6,6 +6,8 @@ import os
 import json
 import urlparse
 
+from github3 import GitHubError
+
 from framework import fields
 
 from website import settings
@@ -38,6 +40,37 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
             'show_submit': False,
         })
         return rv
+
+    def revoke_token(self):
+
+        connection = GitHub.from_settings(self)
+        try:
+            connection.revoke_token()
+        except GitHubError as error:
+            if error.code == 401:
+                return (
+                    'Your GitHub credentials were removed from the OSF, but we '
+                    'were unable to revoke your access token from GitHub. Your '
+                    'GitHub credentials may no longer be valid.'
+                )
+            else:
+                raise
+
+    def clear_auth(self):
+
+        self.revoke_token()
+
+        self.oauth_access_token = None
+        self.oauth_token_type = None
+        self.save()
+
+    def delete(self, save=True):
+        super(AddonGitHubUserSettings, self).delete()
+        self.clear_auth()
+        for node_settings in self.addongithubnodesettings__authorized:
+            node_settings.delete(save=False)
+            node_settings.user_settings = None
+            node_settings.save()
 
 class GithubGuidFile(GuidFile):
 
@@ -84,7 +117,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         rv = super(AddonGitHubNodeSettings, self).to_json(user)
         user_settings = user.get_addon('github')
         github_config = {
-            'hasAuth': user_settings.has_auth,
+            'hasAuth': user_settings and user_settings.has_auth,
         }
         if self.user_settings and self.user_settings.has_auth:
             github_config['repo'] = {
