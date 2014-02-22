@@ -64,7 +64,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #: Verification key used for resetting password
     verification_key = fields.StringField()
     emails = fields.StringField(list=True)
-    email_verifications = fields.DictionaryField()  # TODO: Unused. Remove me?
+    email_verifications = fields.DictionaryField()
     aka = fields.StringField(list=True)
     date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow)
     # Watched nodes are stored via a list of WatchConfigs
