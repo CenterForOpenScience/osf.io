@@ -85,8 +85,8 @@ def send_mail(to_addr, mail, mimetype='plain', **context):
     """
     subject = mail.subject
     message = mail.text(**context) if mimetype == 'plain' else mail.html(**context)
-    # Don't use ttls and login in DEV_MODE
-    ttls = login = not settings.DEV_MODE
+    # Don't use ttls and login in DEBUG_MODE
+    ttls = login = not settings.DEBUG_MODE
     logger.debug('Sending email...')
     logger.debug('To: {to_addr}\nSubject: {subject}\nMessage: {message}'.format(**locals()))
     return framework_send_email.delay(

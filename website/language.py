@@ -19,7 +19,7 @@ page.
 '''
 
 REGISTRATION_SUCCESS = '''
-Registration successful. Please check {email} to confirm your email address.'
+Registration successful. Please check {email} to confirm your email address.
 '''
 
 # Shown if registration is turned off in website.settings
