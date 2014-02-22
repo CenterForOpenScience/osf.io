@@ -31,6 +31,20 @@ class TestRubeus(DbTestCase):
         self.node_settings.user_settings = self.user_settings
         self.node_settings.save()
 
+    def test_cant_view_or_edit_private_dummy_folders(self):
+        user = UserFactory()
+        auth = Auth(user=user)
+        public = ProjectFactory.build(is_public=True)
+        public.add_contributor(user)
+        public.save()
+        private = ProjectFactory(project=public, is_public=False)
+        collector = rubeus.NodeFileCollector(node=public, auth=auth)
+
+        private_dummy = collector._create_dummy(private)
+        assert_false(private_dummy['permissions']['edit'])
+        assert_false(private_dummy['permissions']['view'])
+        assert_equal(len(private_dummy['children']), 0)
+
     def test_hgrid_dummy_correct(self):
         node_settings = self. node_settings
         node = self.project
