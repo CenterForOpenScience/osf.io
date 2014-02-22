@@ -30,7 +30,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     };
 
     HGrid.Col.Name.showExpander = function(row) {
-        return row.permissions.view;
+        return row.kind === HGrid.FOLDER && row.permissions.view;
     };
 
     HGrid.Col.Name.itemView = function(item) {
