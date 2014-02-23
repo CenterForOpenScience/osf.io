@@ -12,20 +12,22 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     HGrid.Html.folderIconPrivate = '<img class="hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
     // Override Name column folder view to allow for extra widgets, e.g. github branch picker
     HGrid.Col.Name.folderView = function(item) {
-        var html = '';
-        var cssClass;
+        var icon, opening, cssClass;
         if (item.iconUrl) {
-            html += '<img class="hg-addon-icon" src="' + item.iconUrl + '">';
-        }
-        else
+            // use item's icon based on filetype
+            icon = '<img class="hg-addon-icon" src="' + item.iconUrl + '">';
+            cssClass = '';
+        } else
             if (!item.permissions.view) {
-                html += HGrid.Html.folderIconPrivate;
-                cssClass = 'text-muted';
+                icon = HGrid.Html.folderIconPrivate;
+                cssClass = 'hg-folder-private';
             } else {
-                cssClass = '';
-                html += HGrid.Html.folderIcon;
+                icon = HGrid.Html.folderIcon;
+                cssClass = 'hg-folder-public';
             }
-        html += '<span class="hg-folder-text ' + cssClass + '">' + item.name + '</span>';
+        opening = '<span class="hg-folder-text ' + cssClass + '">';
+        var closing = '</span>';
+        html = [icon, opening, item.name, closing].join('');
         if(item.extra) {
             html += '<span class="hg-extras">' + item.extra + '</span>';
         }
@@ -369,6 +371,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             var self = this;
             this._registerListeners()
                 ._initGrid();
+            // Show alert if user tries to leave page before upload is finished.
             $(window).on('beforeunload', function() {
                 if (self.grid.dropzone && self.grid.dropzone.getUploadingFiles().length) {
                     return 'Uploads(s) still in progress. Are you sure you want to leave this page?';
