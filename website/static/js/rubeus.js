@@ -154,7 +154,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     // Listener callbacks //
     ////////////////////////
 
-    function onConfirmDelete(evt, row, grid) {
+    function onConfirmDelete(row, grid) {
         if (row) {
             var rowCopy = $.extend({}, row);
             // Show "Deleting..." message in parent folder's status column
@@ -225,11 +225,17 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             return row.urls.delete;
         },
         onClickDelete: function(evt, row) {
+            var self = this;
             var $elem = $(evt.target);
-            // Show inline confirm
-            // TODO: Make inline confirmation more reuseable
-            $elem.closest('[data-hg-action="delete"]')
-                .html('Are you sure? <a class="unconfirm" data-target="">No</a> / <a class="confirm" data-target="">Yes</a>');
+            bootbox.confirm({
+                message: '<strong>NOTE</strong>: This action is irreversible.',
+                title: 'Delete <em>' + row.name + '</em>?',
+                callback: function(result) {
+                    if (result) {
+                        onConfirmDelete(row, self);
+                    }
+                }
+            });
             return this;
         },
         deleteMethod: 'delete',
@@ -307,19 +313,6 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
                 on: 'click',
                 selector: '.' + HGrid.Html.nameClass,
                 callback: onClickName
-            }, {
-                on: 'click',
-                selector: '.confirm',
-                callback: onConfirmDelete
-            }, {
-                on: 'click',
-                selector: '.unconfirm',
-                callback: function(evt, row, grid) {
-                    if (row) {
-                        // restore row html
-                        grid.updateItem(row);
-                    }
-                }
             }
         ],
         init: function() {
