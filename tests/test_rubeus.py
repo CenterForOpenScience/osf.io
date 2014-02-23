@@ -33,7 +33,7 @@ class TestRubeus(DbTestCase):
         self.node_settings.save()
 
     def test_hgrid_dummy(self):
-        node_settings = self. node_settings
+        node_settings = self.node_settings
         node = self.project
         user = Auth(self.project.creator)
         rv = {

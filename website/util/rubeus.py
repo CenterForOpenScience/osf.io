@@ -32,16 +32,15 @@ def default_urls(node_api, short_name):
     }
 
 
-def to_hgrid(node, auth, mode, **data):
+def to_hgrid(node, auth, **data):
     """Converts a node into a rubeus grid format
 
     :param node Node: the node to be parsed
-    :param auth Auth: the user authorization to be unused
-    :param mode String: page, widget, other
-    :return dict: rebeus formatted dict
+    :param auth Auth: the user authorization object
+    :returns: rubeus-formatted dict
 
     """
-    return NodeFileCollector(node, auth, **data)(mode)
+    return NodeFileCollector(node, auth, **data).to_hgrid()
 
 
 def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS,
@@ -123,44 +122,23 @@ class NodeFileCollector(object):
         self.can_view = node.can_view(auth)
         self.can_edit = node.can_edit(auth) if self.can_view else False
 
-    def __call__(self, mode):
-        """calls the to_hgrid method"""
-        return self.to_hgrid(mode)
-
-    def to_hgrid(self, mode):
-        if mode == 'page':
-            return self.to_hgrid_page()
-        elif mode == 'widget':
-            return self.to_hgrid_widget()
-        else:
-            return self.to_hgrid_other()
-
-    def to_hgrid_page(self):
-        rv = _view_project(self.node, self.auth, **self.extra)
-        rv.update({
-            'grid_data': self._get_grid_data(),
-            'tree_js': self._collect_static_js(),
-            'tree_css': self._collect_static_css()
-        })
-        return rv
-
-    def to_hgrid_widget(self):
-        return {'grid_data': self._get_grid_data()}
-
-    def to_hgrid_other(self):
+    def to_hgrid(self):
+        """Return the Rubeus.JS representation of the node's file data, including
+        addons and components
+        """
         return self._get_grid_data()
 
     def _collect_components(self, node):
         rv = []
         for child in node.nodes:
             if not child.is_deleted and node.can_view(self.auth):
-                rv.append(self._create_dummy(child))
+                rv.append(self._serialize_node(child))
         return rv
 
     def _get_grid_data(self):
-        return json.dumps(self._collect_addons(self.node) + self._collect_components(self.node))
+        return self._collect_addons(self.node) + self._collect_components(self.node)
 
-    def _create_dummy(self, node):
+    def _serialize_node(self, node):
         can_edit = node.can_edit(auth=self.auth)
         can_view = node.can_view(auth=self.auth)
         if can_view:
@@ -191,24 +169,39 @@ class NodeFileCollector(object):
                     rv.append(temp)
         return rv
 
-    def _collect_static_js(self):
-        """Collect JavaScript includes for all add-ons implementing HGrid views.
 
-        :return list: List of JavaScript include paths
+def collect_addon_assets(node):
+    """Return a dictionary containing lists of JS and CSS assets for a node's
+    addons.
 
-        """
-        return itertools.chain.from_iterable(
-            addon.config.include_js.get('files', [])
-            for addon in self.node.get_addons()
-        )
+    :rtype: {'tree_js': <list of JS scripts>, 'tree_css': <list of CSS files>}
+    """
+    # TODO: bundle and minify these
+    return {
+        'tree_js': collect_addon_js(node),
+        'tree_css': collect_addon_css(node)
+    }
 
-    def _collect_static_css(self):
-        """Collect CSS includes for all addons-ons implementing Hgrid views.
 
-        :return list: List of CSS include paths
+def collect_addon_js(node):
+    """Collect JavaScript includes for all add-ons implementing HGrid views.
 
-        """
-        return itertools.chain.from_iterable(
-            addon.config.include_css.get('files', [])
-            for addon in self.node.get_addons()
-        )
+    :return list: List of JavaScript include paths
+
+    """
+    return itertools.chain.from_iterable(
+        addon.config.include_js.get('files', [])
+        for addon in node.get_addons()
+    )
+
+
+def collect_addon_css(node):
+    """Collect CSS includes for all addons-ons implementing Hgrid views.
+
+    :return list: List of CSS include paths
+
+    """
+    return itertools.chain.from_iterable(
+        addon.config.include_css.get('files', [])
+        for addon in node.get_addons()
+    )

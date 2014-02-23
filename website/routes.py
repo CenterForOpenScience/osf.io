@@ -402,6 +402,7 @@ def make_url_map(app):
             endpoint_suffix='__page', view_kwargs={'mode': 'page'},
         ),
 
+
     ])
 
     # API
@@ -657,6 +658,16 @@ def make_url_map(app):
             'get',
             project_views.file.collect_file_trees,
             json_renderer,
+        ),
+
+        # Endpoint to fetch Rubeus.JS/Hgrid-formatted data
+        Rule(
+            ['/project/<pid>/files/grid/',
+            '/project/<pid>/node/<nid>/files/grid/'
+            ],
+            'get',
+            project_views.file.grid_data,
+            json_renderer
         ),
 
         # Invite Users
