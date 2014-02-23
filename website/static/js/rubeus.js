@@ -13,16 +13,19 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     // Override Name column folder view to allow for extra widgets, e.g. github branch picker
     HGrid.Col.Name.folderView = function(item) {
         var html = '';
+        var cssClass;
         if (item.iconUrl) {
             html += '<img class="hg-addon-icon" src="' + item.iconUrl + '">';
         }
         else
             if (!item.permissions.view) {
                 html += HGrid.Html.folderIconPrivate;
+                cssClass = 'text-muted';
             } else {
+                cssClass = '';
                 html += HGrid.Html.folderIcon;
             }
-        html += '<span class="hg-folder-text">' + item.name + '</span>';
+        html += '<span class="hg-folder-text ' + cssClass + '">' + item.name + '</span>';
         if(item.extra) {
             html += '<span class="hg-extras">' + item.extra + '</span>';
         }
@@ -237,6 +240,9 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
                 }
             });
             return this;
+        },
+        canUpload: function(folder) {
+            return folder.permissions.edit;
         },
         deleteMethod: 'delete',
         uploads: true,
