@@ -126,7 +126,7 @@ class NodeFileCollector(object):
         """Return the Rubeus.JS representation of the node's file data, including
         addons and components
         """
-        return self._get_grid_data()
+        return self._collect_addons(self.node) + self._collect_components(self.node)
 
     def _collect_components(self, node):
         rv = []
@@ -135,10 +135,9 @@ class NodeFileCollector(object):
                 rv.append(self._serialize_node(child))
         return rv
 
-    def _get_grid_data(self):
-        return self._collect_addons(self.node) + self._collect_components(self.node)
-
     def _serialize_node(self, node):
+        """Returns the rubeus representation of a node folder.
+        """
         can_edit = node.can_edit(auth=self.auth)
         can_view = node.can_view(auth=self.auth)
         if can_view:
@@ -169,7 +168,7 @@ class NodeFileCollector(object):
                     rv.append(temp)
         return rv
 
-
+# TODO: these might belong in addons module
 def collect_addon_assets(node):
     """Return a dictionary containing lists of JS and CSS assets for a node's
     addons.

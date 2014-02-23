@@ -180,7 +180,7 @@ class TestRubeus(DbTestCase):
             rv
         )
 
-    def test_create_dummy_private(self):
+    def test_serialize_private_node(self):
         user = UserFactory()
         auth = Auth(user=user)
         public = ProjectFactory.build(is_public=True)
@@ -190,7 +190,7 @@ class TestRubeus(DbTestCase):
         NodeFactory(project=private)
         collector = rubeus.NodeFileCollector(node=public, auth=auth)
 
-        private_dummy = collector._create_dummy(private)
+        private_dummy = collector._serialize_node(private)
         assert_false(private_dummy['permissions']['edit'])
         assert_false(private_dummy['permissions']['view'])
         assert_equal(private_dummy['name'], 'Private Component')
