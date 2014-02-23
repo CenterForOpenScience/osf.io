@@ -29,13 +29,14 @@ def collect_file_trees(**kwargs):
 
 @must_be_contributor_or_public
 def grid_data(**kwargs):
+    """View that returns the formatted data for rubeus.js/hgrid
+    """
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
     data = request.args.to_dict()
-    return rubeus.to_hgrid(node, auth, **data)
+    return {'data': rubeus.to_hgrid(node, auth, **data)}
 
 # File rendering
-
 def get_cache_path(node_settings):
     return os.path.join(
         settings.MFR_CACHE_PATH,
