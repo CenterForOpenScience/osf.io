@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+import mock
 from nose.tools import *
 
 from tests.base import DbTestCase
-from tests.factories import UserFactory, ProjectFactory, NodeFactory
+from tests.factories import (UserFactory, ProjectFactory, NodeFactory,
+    AuthFactory)
 
 from framework.auth.decorators import Auth
 from website.util import rubeus
@@ -204,3 +207,44 @@ class TestRubeus(DbTestCase):
         )
         nodes = collector._collect_components(self.project)
         assert_equal(len(nodes), 0)
+
+# TODO: Make this more reusable across test modules
+mock_addon = mock.Mock()
+serialized = {
+    'addon': 'mockaddon',
+    'name': 'Mock Addon',
+    'isAddonRoot': True,
+    'extra': '',
+    'permissions': {'view': True, 'edit': True},
+    'urls': {
+        'fetch': '/fetch',
+        'delete': '/delete'
+    }
+}
+mock_addon.config.get_hgrid_data.return_value = serialized
+
+class TestSerializingNodeWithAddon(DbTestCase):
+    def setUp(self):
+        self.auth = AuthFactory()
+        self.project = ProjectFactory(creator=self.auth.user)
+        self.project.get_addons = mock.Mock()
+        self.project.get_addons.return_value = [mock_addon]
+        self.serializer = rubeus.NodeFileCollector(node=self.project, auth=self.auth)
+
+    def test_collect_addons(self):
+        ret = self.serializer._collect_addons(self.project)
+        assert_equal(ret, [serialized])
+
+    def test_serialize_node(self):
+        ret = self.serializer._serialize_node(self.project)
+        assert_equal(len(ret['children']),
+            len(self.project.get_addons.return_value) + len(self.project.nodes))
+        assert_equal(ret['kind'], rubeus.FOLDER)
+        assert_equal(ret['name'], 'Component: {0}'.format(self.project.title))
+        assert_equal(ret['permissions'], {
+            'view': True,
+            'edit': True
+        })
+        assert_equal(ret['urls'], {
+            'upload': None, 'fetch': None
+        }, 'project root data has no upload or fetch urls')

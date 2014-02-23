@@ -6,8 +6,6 @@ import json
 import itertools
 import hurry
 
-#TODO Fix me, circular import. Still works for some reason....
-from website.project.views.node import _view_project
 from framework.auth.decorators import Auth
 
 FOLDER = 'folder'
@@ -175,7 +173,6 @@ def collect_addon_assets(node):
 
     :rtype: {'tree_js': <list of JS scripts>, 'tree_css': <list of CSS files>}
     """
-    # TODO: bundle and minify these
     return {
         'tree_js': collect_addon_js(node),
         'tree_css': collect_addon_css(node)

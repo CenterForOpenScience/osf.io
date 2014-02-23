@@ -216,6 +216,7 @@ class ProjectWithAddonFactory(ProjectFactory):
 
     """
 
+    # TODO: Should use mock addon objects
     @classmethod
     def _build(cls, target_class, addon='s3', *args, **kwargs):
         '''Build an object without saving it.'''
