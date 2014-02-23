@@ -162,7 +162,7 @@
 <%include file="modal_show_links.mako"/>
 ## TODO: Find a better place to put this initialization code
 <script>
-
+// TODO: pollution! namespace me
     var userId = '${user_id}';
     var nodeId = '${node['id']}';
     var userApiUrl = '${user_api_url}';
