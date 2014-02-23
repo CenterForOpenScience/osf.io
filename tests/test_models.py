@@ -29,7 +29,8 @@ from tests.base import DbTestCase, test_app, Guid
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
-    NodeWikiFactory, UnregUserFactory, RegistrationFactory, UnregUserFactory
+    NodeWikiFactory, UnregUserFactory, RegistrationFactory, UnregUserFactory,
+    ProjectWithAddonFactory
 )
 
 
@@ -1781,6 +1782,13 @@ class TestUnregisteredUser(DbTestCase):
         user = UnregUserFactory(email='fred@queen.com')
         assert_equal(user.password, None)  # sanity check
         user.register(username='brian@queen.com', password='killerqueen')
+
+class TestProjectWithAddons(DbTestCase):
+
+    def test_factory(self):
+        p = ProjectWithAddonFactory(addon='s3')
+        assert_true(p.get_addon('s3'))
+        assert_true(p.creator.get_addon('s3'))
 
 if __name__ == '__main__':
     unittest.main()

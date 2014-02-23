@@ -181,7 +181,7 @@ class NodeWikiFactory(ModularOdmFactory):
 
 class UnregUserFactory(ModularOdmFactory):
     """Factory for an unregistered user. Uses User.create_unregistered()
-    to crete an instance.
+    to create an instance.
 
     """
     FACTORY_FOR = User
@@ -198,3 +198,38 @@ class UnregUserFactory(ModularOdmFactory):
         instance = target_class.create_unregistered(*args, **kwargs)
         instance.save()
         return instance
+
+
+class AuthFactory(base.Factory):
+    FACTORY_FOR = Auth
+    user = SubFactory(UserFactory)
+    api_key = SubFactory(ApiKeyFactory)
+
+
+class ProjectWithAddonFactory(ProjectFactory):
+    """Factory for a project that has an addon. The addon will be added to
+    both the Node and the creator records. ::
+
+        p = ProjectWithAddonFactory(addon='github')
+        p.get_addon('github') # => github node settings object
+        p.creator.get_addon('github') # => github user settings object
+
+    """
+
+    @classmethod
+    def _build(cls, target_class, addon='s3', *args, **kwargs):
+        '''Build an object without saving it.'''
+        instance = ProjectFactory._build(target_class, *args, **kwargs)
+        instance.add_addon(addon)
+        instance.creator.add_addon(addon)
+        return instance
+
+    @classmethod
+    def _create(cls, target_class, addon='s3', *args, **kwargs):
+        instance = ProjectFactory._create(target_class, *args, **kwargs)
+        instance.add_addon(addon)
+        instance.creator.add_addon(addon)
+        instance.save()
+        return instance
+
+
