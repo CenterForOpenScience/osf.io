@@ -126,7 +126,6 @@ def auth_logout():
 
     """
     logout()
-    status.push_status_message(language.LOGOUT, 'info')
     rv = framework.redirect('/goodbye/')
     rv.delete_cookie(website.settings.COOKIE_NAME)
     return rv

@@ -9,7 +9,7 @@ from framework import (Rule, process_rules,
                        render_mako_string)
 from framework.auth import views as auth_views
 
-from website import settings
+from website import settings, language
 from website import views as website_routes
 from website.addons.base import views as addon_views
 from website.search import views as search_views
@@ -59,7 +59,7 @@ def favicon():
 
 
 def goodbye(**kwargs):
-    status.push_status_message('You have successfully logged out.')
+    status.push_status_message(language.LOGOUT, 'info')
     return {}
 
 
@@ -224,7 +224,7 @@ def make_url_map(app):
         Rule('/login/', 'post', auth_views.auth_login, OsfWebRenderer('public/login.mako'), endpoint_suffix='__post'),
         Rule('/login/first/', 'get', auth_views.auth_login, OsfWebRenderer('public/login.mako'), endpoint_suffix='__first', view_kwargs={'first': True}),
 
-        Rule('/logout/', 'get', auth_views.auth_logout, OsfWebRenderer('', render_mako_string)),
+        Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
 
         Rule('/forgotpassword/', 'post', auth_views.forgot_password, OsfWebRenderer('public/login.mako')),
 
