@@ -185,9 +185,10 @@ def collect_addon_js(node):
     :return list: List of JavaScript include paths
 
     """
-    return itertools.chain.from_iterable(
+    # NOTE: must coerce to list so it is JSON-serializable
+    return list(itertools.chain.from_iterable(
         addon.config.include_js.get('files', [])
-        for addon in node.get_addons()
+        for addon in node.get_addons())
     )
 
 
@@ -197,7 +198,7 @@ def collect_addon_css(node):
     :return list: List of CSS include paths
 
     """
-    return itertools.chain.from_iterable(
+    return list(itertools.chain.from_iterable(
         addon.config.include_css.get('files', [])
-        for addon in node.get_addons()
+        for addon in node.get_addons())
     )
