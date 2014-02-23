@@ -20,6 +20,10 @@ from framework.auth.decorators import Auth
 from website.project.views.contributor import _add_contributor_json
 from webtest.app import AppError
 from website import settings
+from website.util import rubeus
+from website.project.views.node import _view_project
+
+
 from tests.base import DbTestCase
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
@@ -729,6 +733,31 @@ class TestAuthViews(DbTestCase):
         assert_equal(self.user.middle_names, 'Baines')
         assert_equal(self.user.family_name, 'Johnson')
 
+class TestFileViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory.build(creator=self.user, is_public=True)
+        self.project.add_contributor(self.user)
+        self.project.save()
+
+    def test_files_get(self):
+        url = '/api/v1/{0}/files/'.format(self.project._primary_key)
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        assert_equal(res.status_code, 200)
+        expected = _view_project(self.project, auth=Auth(user=self.user))
+        assert_equal(res.json['node'], expected['node'])
+        assert_in('tree_js', res.json)
+        assert_in('tree_css', res.json)
+
+    def test_grid_data(self):
+        url = '/api/v1/{0}/files/grid/'.format(self.project._primary_key)
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        assert_equal(res.status_code, 200)
+        expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))
+        data = res.json['data']
+        assert_equal(len(data), len(expected))
 
 if __name__ == '__main__':
     unittest.main()
