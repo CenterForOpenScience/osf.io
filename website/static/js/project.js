@@ -17,6 +17,7 @@ var Messages = {
 
 /* Utility functions */
 
+// TODO: Shouldn't pollute window. At the very least put them on the '$' namespace
 window.block = function() {
     $.blockUI({
         css: {
