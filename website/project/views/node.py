@@ -378,15 +378,13 @@ def view_project(**kwargs):
     rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
     return rv
 
-@must_have_session_auth # returns user or api_node
+
 @must_be_valid_project # returns project
 @must_be_contributor
 def remove_private_link(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     link = request.json['private_link']
     node_to_use.remove_private_link(link)
-
-
 
 
 # TODO: Split into separate functions

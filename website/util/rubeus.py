@@ -138,7 +138,7 @@ class NodeFileCollector(object):
         """Returns the rubeus representation of a node folder.
         """
         can_edit = node.can_edit(auth=self.auth)
-        can_view = node.can_view(auth=self.auth, self.link)
+        can_view = node.can_view(auth=self.auth, link=self.link)
         if can_view:
             children = self._collect_addons(node) + self._collect_components(node)
         else:
