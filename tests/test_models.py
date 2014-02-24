@@ -1023,8 +1023,8 @@ class TestProject(DbTestCase):
         assert_in(user2, self.project.contributors)
         assert_equal(self.project.logs[-1].action, 'contributor_added')
 
-    def test_add_nonregistered_contributor(self):
-        self.project.add_nonregistered_contributor(
+    def test_add_unregistered_contributor(self):
+        self.project.add_unregistered_contributor(
             email='foo@bar.com',
             name='Weezy F. Baby',
             auth=self.consolidate_auth
@@ -1041,6 +1041,11 @@ class TestProject(DbTestCase):
                         {'id': latest_contributor._primary_key})
         # A log event was added
         assert_equal(self.project.logs[-1].action, 'contributor_added')
+        assert_in(self.project._primary_key, latest_contributor.unclaimed_records,
+            'unclaimed record was added')
+        unclaimed_data = latest_contributor.get_unclaimed_record(self.project._primary_key)
+        assert_equal(unclaimed_data['referrer_id'],
+            self.consolidate_auth.user._primary_key)
 
     def test_remove_contributor(self):
         # A user is added as a contributor
@@ -1782,8 +1787,16 @@ class TestUnregisteredUser(DbTestCase):
     def test_verify_claim_token(self):
         self.add_unclaimed_record()
         valid = self.user.get_unclaimed_record(self.project._primary_key)['token']
-        assert_true(self.user.verify_claim_token(valid, node=self.project))
-        assert_false(self.user.verify_claim_token('invalidtoken', node=self.project))
+        assert_true(self.user.verify_claim_token(valid, project_id=self.project._primary_key))
+        assert_false(self.user.verify_claim_token('invalidtoken', project_id=self.project._primary_key))
+
+    def test_claim_contributor(self):
+        self.add_unclaimed_record()
+        # sanity cheque
+        assert_false(self.user.is_registered)
+        assert_true(self.project)
+
+
 
 class TestProjectWithAddons(DbTestCase):
 

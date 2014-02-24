@@ -1564,7 +1564,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         if save:
             self.save()
 
-    def add_nonregistered_contributor(self, name, email, auth, save=False):
+    def add_unregistered_contributor(self, name, email, auth, save=False):
         """Add a non-registered contributor to the project.
 
         :param name: A string, the full name of the person.
@@ -1572,7 +1572,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param Auth auth: Auth object for the user adding the contributor.
 
         """
+        # Create a new user record
         contributor = User.create_unregistered(fullname=name, email=email)
+        contributor.add_unclaimed_record(node=self, referrer=auth.user, given_name=name)
         contributor.save()
         return self.add_contributor(contributor, auth=auth, log=True, save=save)
 
