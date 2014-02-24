@@ -89,7 +89,8 @@ def send_mail(to_addr, mail, mimetype='plain', **context):
     ttls = login = not settings.DEBUG_MODE
     logger.debug('Sending email...')
     logger.debug('To: {to_addr}\nSubject: {subject}\nMessage: {message}'.format(**locals()))
-    return framework_send_email.delay(
+    send_function = framework_send_email.delay if settings.USE_CELERY else framework_send_email
+    return send_function(
         from_addr=settings.FROM_EMAIL,
         to_addr=to_addr,
         subject=mail.subject,
