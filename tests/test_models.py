@@ -439,7 +439,7 @@ class TestNodeFile(DbTestCase):
         assert_equal(self.node_file.clean_filename, 'foo_py')
 
     def test_latest_version_number(self):
-        assert_equal(self.node_file.latest_version_number, 1)
+        assert_equal(self.node_file.latest_version_number(self.node), 1)
 
     def test_download_url(self):
         assert_equal(
