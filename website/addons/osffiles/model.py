@@ -53,9 +53,8 @@ class NodeFile(GuidStoredObject):
     def clean_filename(self):
         return self.filename.replace('.', '_')
 
-    @property
-    def latest_version_number(self):
-        return len(self.node.files_versions[self.clean_filename])
+    def latest_version_number(self, node):
+        return len(node.files_versions[self.clean_filename])
 
     # TODO: Test me
     def download_count(self, node):
@@ -83,8 +82,8 @@ class NodeFile(GuidStoredObject):
 
     def download_url(self, node):
         return '{}osffiles/{}/version/{}/download/'.format(
-            node.url, self.filename, self.latest_version_number)
+            node.url, self.filename, self.latest_version_number(node))
 
     def render_url(self, node):
         return '{}osffiles/{}/version/{}/render/'.format(
-            node.api_url, self.filename, self.latest_version_number)
+            node.api_url, self.filename, self.latest_version_number(node))
