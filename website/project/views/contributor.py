@@ -228,7 +228,7 @@ def email_invite(to_addr, new_user, referrer, node):
     """
     # Add querystring with email, so that set password form can prepopulate the
     # email field
-    claim_url = new_user.get_claim_url(node._primary_key) + '?email={0}'.format(to_addr)
+    claim_url = new_user.get_claim_url(node._primary_key, external=True) + '?email={0}'.format(to_addr)
     return mails.send_mail(to_addr, mails.INVITE,
         user=new_user,
         referrer=referrer,
