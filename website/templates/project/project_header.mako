@@ -55,11 +55,8 @@
                     </div><!-- end btn-group -->
 
                     <div class="btn-group">
-<<<<<<< HEAD
-                        % if user['is_contributor'] or node['is_public']:
-=======
-                        % if user_name and not node['is_registration']:
->>>>>>> 360043dd990348ebccc4b791a80f6d78ca1da72f
+
+                        % if (user['is_contributor'] or node['is_public']) and not node['is_registration']:
                             <a rel="tooltip" title="Watch" class="btn btn-default" href="#" data-bind="click: toggleWatch">
                         % else:
                             <a rel="tooltip" title="Watch" class="btn btn-default disabled" href="#">
@@ -71,13 +68,9 @@
 
                         <a
                             rel="tooltip"
-<<<<<<< HEAD
-                            title="Number of times this node has been forked (copied)"
-                            % if node["category"] == 'project' and (user['is_contributor'] or node['is_public']):
-=======
                             title="Number of times this ${node['category']} has been forked (copied)"
-                            % if node["category"] == 'project' and not node['is_registration'] and user_name:
->>>>>>> 360043dd990348ebccc4b791a80f6d78ca1da72f
+                            % if node["category"] == 'project' and not node['is_registration'] and (user['is_contributor'] or node['is_public']):
+
                                 href="#"
                                 class="btn btn-default node-fork-btn"
                                 onclick="NodeActions.forkNode();"
@@ -142,18 +135,9 @@
         <nav id="projectSubnav" class="navbar navbar-default ">
             <ul class="nav navbar-nav">
 
-<<<<<<< HEAD
 
-                <li><a href="${node['url']}">Dashboard</a></li>
-                % if node['is_public'] or user['can_edit']:
-                    <li><a href="${node['url']}statistics/">Statistics</a></li>
-                % endif
-                % if has_files:
-                    <li><a href="${node['url']}files/">Files</a></li>
-                % endif
-=======
                 <li><a href="${node['url']}files/">Files</a></li>
->>>>>>> 360043dd990348ebccc4b791a80f6d78ca1da72f
+
                 <!-- Add-on tabs -->
                 % for addon in addons_enabled:
                     % if addons[addon]['has_page']:
@@ -192,13 +176,10 @@
 
     $(document).ready(function(){
 
-<<<<<<< HEAD
+
         $logScope = $("#logScope");
         $linkScope= $("#linkScope");
 
-=======
-        $logScope = $('#logScope');
->>>>>>> 360043dd990348ebccc4b791a80f6d78ca1da72f
         if ($logScope.length > 0) {
             progressBar = $('#logProgressBar')
             progressBar.show();

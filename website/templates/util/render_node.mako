@@ -10,14 +10,11 @@
 
         <h4 class="list-group-item-heading">
             <span class="overflow" style="display:inline-block;">
-<<<<<<< HEAD
-                <a href="${summary['url']}">${summary['title']}</a>
-=======
             % if not summary['primary']:
                 <i class="icon-hand-right"></i>
             % endif
             <a href="${summary['url']}">${summary['title']}</a>
->>>>>>> 360043dd990348ebccc4b791a80f6d78ca1da72f
+
             % if summary['is_registration']:
                 | Registered: ${summary['registered_date']}
             % endif
