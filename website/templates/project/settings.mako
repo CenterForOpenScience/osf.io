@@ -95,9 +95,7 @@
                             </button>
                         % endif
 
-<<<<<<< HEAD
-                    </form>
-=======
+
                     % endfor
 
                     <br />
@@ -110,7 +108,7 @@
                     % endif
 
                 </form>
->>>>>>> 360043dd990348ebccc4b791a80f6d78ca1da72f
+
 
                 </div>
             </div>
