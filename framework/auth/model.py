@@ -30,8 +30,12 @@ name_formatters = {
 
 logger = logging.getLogger(__name__)
 
-
+# Hide implementation of token generation
 def generate_confirm_token():
+    return security.random_string(30)
+
+
+def generate_claim_token():
     return security.random_string(30)
 
 
@@ -122,25 +126,6 @@ class User(GuidStoredObject, AddonModelMixin):
         user.add_email_verification(username)
         user.is_registered = False
         return user
-
-    @classmethod
-    def parse_claim_signature(cls, signature):
-        """Parses a verification code for claiming a user account.
-
-        :param str signature: The signature (verification key) to parse
-        :raises: itsdangerous.BadSignature if signature is invalid (bad secret)
-        :returns: A dictionary with 'name', 'referrer_id', and 'project_id'
-        """
-        data = hmac.load(signature)
-        pk, project_id, referrer_id, given_name = data.split(':')
-        return {
-            '_id': pk,
-            'name': given_name,
-            'referrer_id': referrer_id,
-            'project_id': project_id
-        }
-
-
     def register(self, username, password=None):
         """Registers the user.
         """
@@ -166,11 +151,10 @@ class User(GuidStoredObject, AddonModelMixin):
                 'to project {0}'.format(node._primary_key))
         project_id = node._primary_key
         referrer_id = referrer._primary_key
-        data_to_sign = '{self._primary_key}:{project_id}:{referrer_id}:{given_name}'.format(**locals())
         record = {
             'name': given_name,
             'referrer_id': referrer_id,
-            'verification': hmac.sign(data_to_sign)
+            'verification': generate_confirm_token()
         }
         self.unclaimed_records[project_id] = record
         return record
@@ -184,6 +168,17 @@ class User(GuidStoredObject, AddonModelMixin):
                 not self.is_merged and
                 self.is_confirmed())
 
+    def get_unclaimed_record(self, project_id):
+        """Get an unclaimed record for a given project_id.
+
+        :raises: ValueError if there is no record for the given project.
+        """
+        try:
+            return self.unclaimed_records[project_id]
+        except KeyError:  # reraise as ValueError
+            raise ValueError('No unclaimed record for {self._id} on node {project_id}'
+                                .format(**locals()))
+
     def get_claim_url(self, project_id, external=False):
         """Return the URL that an unclaimed user should use to claim their
         account. Return ``None`` if there is no unclaimed_record for the given
@@ -196,13 +191,9 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         uid = self._primary_key
         base_url = settings.DOMAIN if external else '/'
-        unclaimed_record = self.unclaimed_records.get(project_id, None)
-        if unclaimed_record:
-            verification = unclaimed_record['verification']
-        else:
-            raise ValueError('No unclaimed record for {uid} on node {project_id}'
-                                .format(**locals()))
-        return '{base_url}user/{uid}/{project_id}/claim/{verification}/'\
+        unclaimed_record = self.get_unclaimed_record(project_id)
+        token = unclaimed_record['verification']
+        return '{base_url}user/{uid}/{project_id}/claim/{token}/'\
                     .format(**locals())
 
     def set_password(self, raw_password):

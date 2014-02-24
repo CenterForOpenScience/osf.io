@@ -1738,15 +1738,14 @@ class TestUnregisteredUser(DbTestCase):
         assert_true(u1.password is None)
         assert_true(u1.fullname)
 
-    def test_add_unclaimed_record(self):
+    @mock.patch('framework.auth.model.security.random_string')
+    def test_add_unclaimed_record(self, mock_random_string):
+        mock_random_string.return_value = '12345'
         data = self.add_unclaimed_record()
         assert_equal(data, {
             'name': 'Fredd Merkury',
             'referrer_id': self.referrer._primary_key,
-            'verification': hmac.sign('{}:{}:{}:{}'.format(
-                self.user._primary_key,
-                self.project._primary_key,
-                self.referrer._primary_key, 'Fredd Merkury'))
+            'verification': mock_random_string.return_value
         })
 
     def test_get_claim_url(self):
@@ -1757,16 +1756,6 @@ class TestUnregisteredUser(DbTestCase):
         domain = settings.DOMAIN
         assert_equal(self.user.get_claim_url(pid, external=True),
             '{domain}user/{uid}/{pid}/claim/{token}/'.format(**locals()))
-
-    def test_parse_claim_signature(self):
-        data = self.add_unclaimed_record()
-        parsed = User.parse_claim_signature(data['verification'])
-        assert_equal(parsed, {
-            '_id': self.user._primary_key,
-            'name': 'Fredd Merkury',
-            'referrer_id': self.referrer._primary_key,
-            'project_id': self.project._primary_key
-        })
 
     def test_get_claim_url_raises_value_error_if_not_valid_pid(self):
         with assert_raises(ValueError):
