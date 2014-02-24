@@ -15,8 +15,9 @@ from framework.guid.model import GuidStoredObject
 from framework.search import solr
 from framework.addons import AddonModelMixin
 from framework.auth import utils
-from website import settings, filters, security, hmac
+from website import settings, filters, security
 from framework.exceptions import PermissionsError
+from framework.auth.exceptions import DuplicateEmailError
 
 
 name_formatters = {
@@ -99,15 +100,21 @@ class User(GuidStoredObject, AddonModelMixin):
     _meta = {'optimistic' : True}
 
     @classmethod
-    def create_unregistered(cls, email, fullname):
+    def create_unregistered(cls, fullname, email=None):
+        clean_email = email.lower().strip()
+        # Make sure user isn't already in database
+        if email and cls.find_by_email(email):
+            msg = 'User already exists with email {clean_email}'.format(**locals())
+            raise DuplicateEmailError(msg)
         parsed = utils.parse_name(fullname)
         user = cls(
             username=email,
             fullname=fullname,
-            emails=[email],
             **parsed
         )
-        user.add_email_verification(email)
+        if email:
+            user.emails.append(clean_email)
+            user.add_email_verification(clean_email)
         user.is_registered = False
         return user
 

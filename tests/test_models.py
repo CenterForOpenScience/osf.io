@@ -14,7 +14,7 @@ from modularodm.exceptions import ValidationError
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
-from framework.auth import User
+from framework.auth import User, DuplicateEmailError
 from framework.auth.utils import parse_name
 from framework.auth.decorators import Auth
 from framework import utils
@@ -25,7 +25,7 @@ from website.profile.utils import serialize_user
 from website.project.model import Pointer, ApiKey, NodeLog, ensure_schemas
 from website.addons.osffiles.model import NodeFile
 
-from tests.base import DbTestCase, test_app, Guid
+from tests.base import DbTestCase, test_app, Guid, fake
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
@@ -59,6 +59,11 @@ class TestUser(DbTestCase):
         assert_true('foo@bar.com' in u.emails)
         assert_equal(len(u.email_verifications.keys()), 1,
             'email verification code was added')
+
+    def test_create_unregistered_raises_error_if_already_in_db(self):
+        u = UnregUserFactory()
+        with assert_raises(DuplicateEmailError):
+            User.create_unregistered(fullname=fake.name(), email=u.username)
 
     def test_user_with_no_password_is_not_active(self):
         u = User(username='fred@queen.com',
