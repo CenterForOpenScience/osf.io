@@ -1512,7 +1512,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         if contrib_to_add._primary_key not in self.contributors:
             self.contributors.append(contrib_to_add)
             self.contributor_list.append({'id': contrib_to_add._primary_key})
-
+            logger.debug('added contributor-----')
+            logger.debug(contrib_to_add)
             # Add contributor to recently added list for user
             if auth is not None:
                 user = auth.user
@@ -1564,21 +1565,23 @@ class Node(GuidStoredObject, AddonModelMixin):
         if save:
             self.save()
 
-    def add_unregistered_contributor(self, name, email, auth, save=False):
+    def add_unregistered_contributor(self, fullname, email, auth, save=False):
         """Add a non-registered contributor to the project.
 
-        :param str name: The full name of the person.
+        :param str fullname: The full name of the person.
         :param str email: The email address of the person.
         :param Auth auth: Auth object for the user adding the contributor.
+        :returns: The added contributor
 
         :raises: DuplicateEmailError if user with given email is already in the database.
 
         """
         # Create a new user record
-        contributor = User.create_unregistered(fullname=name, email=email)
-        contributor.add_unclaimed_record(node=self, referrer=auth.user, given_name=name)
+        contributor = User.create_unregistered(fullname=fullname, email=email)
+        contributor.add_unclaimed_record(node=self, referrer=auth.user, given_name=fullname)
         contributor.save()
-        return self.add_contributor(contributor, auth=auth, log=True, save=save)
+        self.add_contributor(contributor, auth=auth, log=True, save=save)
+        return contributor
 
     def set_permissions(self, permissions, auth=None):
         """Set the permissions for this node.
