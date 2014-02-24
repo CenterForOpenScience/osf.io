@@ -99,6 +99,17 @@ class User(GuidStoredObject, AddonModelMixin):
 
     _meta = {'optimistic' : True}
 
+
+    @classmethod
+    def verify_unique_email(cls, email):
+        """Check that an email is not already in the database. If it is, raise
+        a DuplicateEmailError.
+        """
+        if cls.find_by_email(email):
+            msg = 'User already exists with email {email}'.format(**locals())
+            raise DuplicateEmailError(msg)
+        return email
+
     @classmethod
     def create_unregistered(cls, fullname, email=None):
         """Creates a new unregistered user.
@@ -108,9 +119,8 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         clean_email = email.lower().strip()
         # Make sure user isn't already in database
-        if email and cls.find_by_email(email):
-            msg = 'User already exists with email {clean_email}'.format(**locals())
-            raise DuplicateEmailError(msg)
+        if email:
+            cls.verify_unique_email(clean_email)
         parsed = utils.parse_name(fullname)
         user = cls(
             username=email,
