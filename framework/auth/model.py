@@ -126,6 +126,7 @@ class User(GuidStoredObject, AddonModelMixin):
         user.add_email_verification(username)
         user.is_registered = False
         return user
+
     def register(self, username, password=None):
         """Registers the user.
         """
@@ -176,7 +177,7 @@ class User(GuidStoredObject, AddonModelMixin):
         try:
             return self.unclaimed_records[project_id]
         except KeyError:  # reraise as ValueError
-            raise ValueError('No unclaimed record for {self._id} on node {project_id}'
+            raise ValueError('No unclaimed record for user {self._id} on node {project_id}'
                                 .format(**locals()))
 
     def get_claim_url(self, project_id, external=False):
@@ -236,6 +237,15 @@ class User(GuidStoredObject, AddonModelMixin):
         """Return whether or not a confirmation token is valid for this user.
         """
         return token in self.email_verifications.keys()
+
+    def verify_claim_token(self, token, node):
+        """Return whether or not a claim token is valid for this user for
+        a given node which they were added as a unregistered contributor for.
+
+        :raises: ValueError if there is no unclaimed record for the given node
+        """
+        record = self.get_unclaimed_record(node._primary_key)
+        return record['verification'] == token
 
     def confirm_email(self, token):
         if self.verify_confirmation_token(token):

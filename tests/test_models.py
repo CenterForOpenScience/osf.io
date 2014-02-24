@@ -1738,21 +1738,15 @@ class TestUnregisteredUser(DbTestCase):
         assert_true(u1.password is None)
         assert_true(u1.fullname)
 
-    @mock.patch('framework.auth.model.security.random_string')
-    def test_add_unclaimed_record(self, mock_random_string):
-        mock_random_string.return_value = '12345'
+    def test_add_unclaimed_record(self):
         data = self.add_unclaimed_record()
-        assert_equal(data, {
-            'name': 'Fredd Merkury',
-            'referrer_id': self.referrer._primary_key,
-            'verification': mock_random_string.return_value
-        })
+        assert_equal(data, self.user.get_unclaimed_record(self.project._primary_key))
 
     def test_get_claim_url(self):
         self.add_unclaimed_record()
         uid = self.user._primary_key
         pid = self.project._primary_key
-        token = self.user.unclaimed_records[pid]['verification']
+        token = self.user.get_unclaimed_record(pid)['verification']
         domain = settings.DOMAIN
         assert_equal(self.user.get_claim_url(pid, external=True),
             '{domain}user/{uid}/{pid}/claim/{token}/'.format(**locals()))
@@ -1781,6 +1775,12 @@ class TestUnregisteredUser(DbTestCase):
         user = UnregUserFactory(email='fred@queen.com')
         assert_equal(user.password, None)  # sanity check
         user.register(username='brian@queen.com', password='killerqueen')
+
+    def test_verify_claim_token(self):
+        self.add_unclaimed_record()
+        valid = self.user.get_unclaimed_record(self.project._primary_key)['verification']
+        assert_true(self.user.verify_claim_token(valid, node=self.project))
+        assert_false(self.user.verify_claim_token('invalidtoken', node=self.project))
 
 class TestProjectWithAddons(DbTestCase):
 
