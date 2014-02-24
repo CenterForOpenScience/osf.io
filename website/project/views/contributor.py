@@ -11,6 +11,7 @@ from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor
 from framework import forms
 from framework.auth.forms import SetEmailAndPasswordForm
+from framework.auth.exceptions import DuplicateEmailError
 
 from website import settings, mails
 from website.filters import gravatar
@@ -292,18 +293,12 @@ def invite_contributor_post(**kwargs):
     fullname, email = request.json.get('fullname'), request.json.get('email')
     if not fullname:
         return {'status': 400, 'message': 'Must provide fullname'}, 400
-    new_user = framework.auth.get_user(username=email)
-    if not new_user:
-        new_user = User.create_unregistered(fullname=fullname, email=email)
-        new_user.save()  # Need to save so that user has an ID
-    else:
+    try:
+        new_user = node.add_unregistered_contributor(email=email, fullname=fullname,
+            auth=auth)
+        node.save()
+    except DuplicateEmailError:
         return {'status': 400, 'message': 'User is already in database'}, 400
-    if node._primary_key not in new_user.unclaimed_records:
-        new_user.add_unclaimed_record(node=node,
-            given_name=fullname, referrer=auth.user)
-        new_user.save()
-    else:
-        return {'status': 400, 'message': 'User is already a contributor to this project.'}, 400
     if email:
         email_invite(email, new_user, referrer=auth.user, node=node)
     return {'status': 'success', 'contributor': _add_contributor_json(new_user)}
