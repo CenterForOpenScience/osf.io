@@ -274,7 +274,7 @@ def view_file(**kwargs):
     # Get or create rendered file
     cache_file = get_cache_file(
         file_object.filename,
-        file_object.latest_version_number
+        file_object.latest_version_number(node)
     )
     rendered = get_cache_content(
         node_settings, cache_file, start_render=True, file_path=file_path,

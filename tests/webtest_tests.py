@@ -569,7 +569,7 @@ class TestShortUrls(DbTestCase):
     def _mock_rendered_file(self, component, fobj):
         node_settings = component.get_addon('osffiles')
         cache_dir = get_cache_path(node_settings)
-        cache_file = get_cache_file(fobj.filename, fobj.latest_version_number)
+        cache_file = get_cache_file(fobj.filename, fobj.latest_version_number(component))
         cache_file_path = os.path.join(cache_dir, cache_file)
         ensure_path(cache_dir)
         with open(cache_file_path, 'w') as fp:
