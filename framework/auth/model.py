@@ -101,6 +101,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @classmethod
     def create_unregistered(cls, fullname, email=None):
+        """Creates a new unregistered user.
+
+        :raises: DuplicateEmailError if a user with the given email address
+            is already in the database.
+        """
         clean_email = email.lower().strip()
         # Make sure user isn't already in database
         if email and cls.find_by_email(email):

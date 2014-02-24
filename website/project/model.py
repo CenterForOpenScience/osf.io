@@ -1567,9 +1567,11 @@ class Node(GuidStoredObject, AddonModelMixin):
     def add_unregistered_contributor(self, name, email, auth, save=False):
         """Add a non-registered contributor to the project.
 
-        :param name: A string, the full name of the person.
-        :param email: A string, the email address of the person.
+        :param str name: The full name of the person.
+        :param str email: The email address of the person.
         :param Auth auth: Auth object for the user adding the contributor.
+
+        :raises: DuplicateEmailError if user with given email is already in the database.
 
         """
         # Create a new user record

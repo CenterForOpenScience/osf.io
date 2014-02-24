@@ -16,14 +16,12 @@ from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              NodeFactory, NodeWikiFactory, RegistrationFactory,
                              UnregUserFactory)
 from tests.test_features import requires_piwik
-from website import settings
+from website import settings, language
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.model import ensure_schemas
-from framework import app
 from website.project.views.file import get_cache_path
 from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
-from website import settings, language
 from website.app import init_app
 
 app = init_app(set_backends=False, routes=True)
@@ -673,9 +671,8 @@ class TestClaiming(DbTestCase):
         form['password'] = 'killerqueen'
         form['password2'] = 'killerqueen'
         res = form.submit().maybe_follow()
-        assert_true(self.user.is_registered)
-        assert_true(self.user.is_active(), 'user is now active')
-        assert_equal(res.request.path, '/settings/', 'at the settings page')
+        self.user.reload()
+        assert_equal(res.request.path, self.project.url)
 
 
 class TestConfirmingEmail(DbTestCase):

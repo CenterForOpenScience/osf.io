@@ -1052,6 +1052,15 @@ class TestProject(DbTestCase):
         assert_equal(unclaimed_data['referrer_id'],
             self.consolidate_auth.user._primary_key)
 
+    def test_add_unregistered_raises_error_if_user_already_in_db(self):
+        user = UnregUserFactory()
+        with assert_raises(DuplicateEmailError):
+            self.project.add_unregistered_contributor(
+                email=user.username,
+                name=fake.name(),
+                auth=self.consolidate_auth
+            )
+
     def test_remove_contributor(self):
         # A user is added as a contributor
         user2 = UserFactory()
