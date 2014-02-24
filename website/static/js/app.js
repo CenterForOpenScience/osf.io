@@ -570,7 +570,7 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
     self.clear = function() {
         self.nodesToChange([]);
     };
-
+};
 
 var AddPointerViewModel = function(nodeTitle) {
 

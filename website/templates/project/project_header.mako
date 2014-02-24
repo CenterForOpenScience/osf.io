@@ -134,7 +134,7 @@
 
         <nav id="projectSubnav" class="navbar navbar-default ">
             <ul class="nav navbar-nav">
-
+                <li><a href="${node['url']}">Dashboard</a></li>
 
                 <li><a href="${node['url']}files/">Files</a></li>
 
