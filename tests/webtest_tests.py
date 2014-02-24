@@ -667,8 +667,16 @@ class TestClaiming(DbTestCase):
         self.add_unclaimed_record()
         claim_url = self.user.get_claim_url(self.project._primary_key)
         res = self.app.get(claim_url)
-        assert_in('Set password', res)
-        assert 0, 'finish me'
+        assert_in('Set Password', res)
+        form = res.forms['setPasswordForm']
+        form['username'] = self.user.username
+        form['password'] = 'killerqueen'
+        form['password2'] = 'killerqueen'
+        res = form.submit().maybe_follow()
+        assert_true(self.user.is_registered)
+        assert_true(self.user.is_active(), 'user is now active')
+        assert_equal(res.request.path, '/settings/', 'at the settings page')
+
 
 class TestConfirmingEmail(DbTestCase):
     def setUp(self):
