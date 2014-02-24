@@ -338,12 +338,19 @@ def make_url_map(app):
         # TODO: Move to API routes below
         Rule(
             '/api/v1/settings/addons/',
-            'post', profile_views.user_choose_addons, json_renderer,
+            'post',
+            profile_views.user_choose_addons,
+            json_renderer,
         ),
-        Rule([
-            '/api/v1/project/<pid>/settings/addons/',
-            '/api/v1/project/<pid>/node/<nid>/settings/addons/',
-        ], 'post', project_views.node.node_choose_addons, json_renderer),
+        Rule(
+            [
+                '/api/v1/project/<pid>/settings/addons/',
+                '/api/v1/project/<pid>/node/<nid>/settings/addons/',
+            ],
+            'post',
+            project_views.node.node_choose_addons,
+            json_renderer,
+        ),
 
         # Permissions
         Rule([

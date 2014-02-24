@@ -102,7 +102,7 @@ class AbstractNodeFactory(ModularOdmFactory):
 
     title = 'The meaning of life'
     description = 'The meaning of life is 42.'
-    creator = SubFactory(UserFactory)
+    creator = SubFactory(AuthUserFactory)
 
 
 class ProjectFactory(AbstractNodeFactory):

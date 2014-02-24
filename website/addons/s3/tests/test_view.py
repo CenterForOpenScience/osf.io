@@ -44,9 +44,89 @@ class TestS3ViewsConfig(DbTestCase):
     def test_s3_settings_no_bucket(self, mock_cors, mock_does_bucket_exist):
         mock_does_bucket_exist.return_value = False
         mock_cors.return_value = True
-        url = "/api/v1/project/{0}/s3/settings/".format(self.project._id)
+        url = self.project.api_url + 's3/settings/'
         rv = self.app.post_json(url, {}, expect_errors=True, auth=self.user.auth)
         assert_true('trouble' in rv.body)
+
+    @mock.patch('website.addons.s3.views.config.does_bucket_exist')
+    @mock.patch('website.addons.s3.views.config.adjust_cors')
+    def test_s3_set_bucket(self, mock_cors, mock_exist):
+
+        mock_cors.return_value = True
+        mock_exist.return_value = True
+
+        url = self.project.api_url + 's3/settings/'
+        self.app.post_json(
+            url, {'s3_bucket': 'hammertofall'}, auth=self.user.auth,
+        )
+
+        self.project.reload()
+        self.node_settings.reload()
+
+        assert_equal(self.node_settings.bucket, 'hammertofall')
+        assert_equal(self.project.logs[-1].action, 's3_bucket_linked')
+
+    def test_s3_set_bucket_no_settings(self):
+
+        user = AuthUserFactory()
+        self.project.contributors.append(user)
+        self.project.save()
+        url = self.project.api_url + 's3/settings/'
+        res = self.app.post_json(
+            url, {'s3_bucket': 'hammertofall'}, auth=user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+
+    def test_s3_set_bucket_no_auth(self):
+
+        user = AuthUserFactory()
+        user.add_addon('s3')
+        self.project.contributors.append(user)
+        self.project.save()
+        url = self.project.api_url + 's3/settings/'
+        res = self.app.post_json(
+            url, {'s3_bucket': 'hammertofall'}, auth=user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+
+    def test_s3_set_bucket_already_authed(self):
+
+        user = AuthUserFactory()
+        user.add_addon('s3')
+        user_settings = user.get_addon('s3')
+        user_settings.access_key = 'foo'
+        user_settings.secret_key = 'bar'
+        user_settings.save()
+        self.project.contributors.append(user)
+        self.project.save()
+        url = self.project.api_url + 's3/settings/'
+        res = self.app.post_json(
+            url, {'s3_bucket': 'hammertofall'}, auth=user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+
+
+    @mock.patch('website.addons.s3.api.S3Wrapper.get_wrapped_key')
+    @mock.patch('website.addons.s3.api.S3Wrapper.from_addon')
+    def test_s3_set_bucket_registered(self, mock_from_addon, mock_wrapped_key):
+
+        mock_from_addon.return_value = create_mock_wrapper()
+        mock_wrapped_key.return_value = create_mock_key()
+
+        registration = self.project.register_node(
+            None, self.consolidated_auth, '', ''
+        )
+
+        url = registration.api_url + 's3/settings/'
+        res = self.app.post_json(
+            url, {'s3_bucket': 'hammertofall'}, auth=self.user.auth,
+            expect_errors=True,
+        )
+
+        assert_equal(res.status_code, 400)
 
     @mock.patch('website.addons.s3.views.config.has_access')
     @mock.patch('website.addons.s3.views.config.create_osf_user')

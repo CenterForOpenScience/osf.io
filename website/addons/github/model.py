@@ -20,6 +20,16 @@ from .api import GitHub
 
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
+class GithubGuidFile(GuidFile):
+
+    path = fields.StringField(index=True)
+
+    @property
+    def file_url(self):
+        if self.path is None:
+            raise ValueError('Path field must be defined.')
+        return os.path.join('github', 'file', self.path)
+
 class AddonGitHubUserSettings(AddonUserSettingsBase):
 
     github_user = fields.StringField()
@@ -71,16 +81,6 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
             node_settings.delete(save=False)
             node_settings.user_settings = None
             node_settings.save()
-
-class GithubGuidFile(GuidFile):
-
-    path = fields.StringField(index=True)
-
-    @property
-    def file_url(self):
-        if self.path is None:
-            raise ValueError('Path field must be defined.')
-        return os.path.join('github', 'file', self.path)
 
 class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 

@@ -6,6 +6,7 @@ from framework.status import push_status_message
 from framework.auth.decorators import must_be_logged_in
 
 from website.project.decorators import must_be_contributor
+from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
 from website.addons.s3.api import S3Wrapper
@@ -75,19 +76,32 @@ def s3_authorize_node(**kwargs):
 
 
 @must_be_contributor
+@must_not_be_registration
 @must_have_addon('s3', 'node')
 def s3_node_settings(**kwargs):
 
-    user = kwargs['auth'].user
+    auth = kwargs['auth']
+    user = auth.user
     node_settings = kwargs['node_addon']
+    node = node_settings.owner
+
     user_settings = user.get_addon('s3')
+
+    # Fail if no user settings
+    if user_settings is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    # Fail if user settings not authorized
+    if None in [user_settings.access_key, user_settings.secret_key]:
+        raise HTTPError(http.BAD_REQUEST)
+
+    # If authorized, only owner can change settings
+    if node_settings.user_settings and node_settings.user_settings.owner != user:
+        raise HTTPError(http.BAD_REQUEST)
 
     # Claiming the node settings
     if not node_settings.user_settings:
         node_settings.user_settings = user_settings
-    # If authorized, only owner can change settings
-    if user_settings and user_settings.owner != user:
-        raise HTTPError(http.BAD_REQUEST)
 
     bucket = request.json.get('s3_bucket', '')
 
@@ -102,16 +116,42 @@ def s3_node_settings(**kwargs):
         node_settings.bucket = bucket
         node_settings.save()
 
+        node.add_log(
+            action='s3_bucket_linked',
+            params={
+                'project': node.parent_id,
+                'node': node._id,
+                'bucket': node_settings.bucket,
+            },
+            auth=auth,
+        )
+
         adjust_cors(S3Wrapper.from_addon(node_settings))
 
 
 @must_be_contributor
 @must_have_addon('s3', 'node')
 def s3_remove_node_settings(**kwargs):
+
+    auth = kwargs['auth']
     node_settings = kwargs['node_addon']
+    node = node_settings.owner
+
+    bucket = node_settings.bucket
     node_settings.user_settings = None
     node_settings.bucket = None
     node_settings.save()
+
+    if bucket:
+        node.add_log(
+            action='s3_bucket_unlinked',
+            params={
+                'project': node.parent_id,
+                'node': node._id,
+                'bucket': bucket,
+            },
+            auth=auth,
+        )
 
 
 @must_be_logged_in
