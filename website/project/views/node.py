@@ -418,7 +418,7 @@ def _view_project(node, auth, link='', primary=False):
     user = auth.user
 
     parent = node.parent
-    recent_logs = _get_logs(node, 10, auth)
+    recent_logs = _get_logs(node, 10, auth, link)
     widgets, configs, js, css = _render_addon(node)
     # Before page load callback; skip if not primary call
     if primary:
@@ -486,7 +486,7 @@ def _view_project(node, auth, link='', primary=False):
             'is_contributor': node.is_contributor(user),
             'can_edit': (node.can_edit(auth)
                                 and not node.is_registration),
-            'can_view': node.can_view(user, link, api_key),
+            'can_view': node.can_view(auth, link),
             'is_watching': user.is_watching(node) if user and not user == None else False,
             'piwik_token': user.piwik_token if user else '',
         },
