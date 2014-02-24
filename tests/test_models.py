@@ -30,7 +30,7 @@ from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
     NodeWikiFactory, UnregUserFactory, RegistrationFactory, UnregUserFactory,
-    ProjectWithAddonFactory
+    ProjectWithAddonFactory, UnconfirmedUserFactory
 )
 
 
@@ -51,14 +51,13 @@ class TestUser(DbTestCase):
         assert_false(u.is_active())
 
     def test_create_unregistered(self):
-        u = User.create_unregistered(email='foo@bar.com',
-            fullname='Foo Bar')
+        name, email = fake.name(), fake.email()
+        u = User.create_unregistered(email=email,
+            fullname=name)
         u.save()
-        assert_equal(u.username, 'foo@bar.com')
+        assert_equal(u.username, email)
         assert_false(u.is_registered)
-        assert_true('foo@bar.com' in u.emails)
-        assert_equal(len(u.email_verifications.keys()), 1,
-            'email verification code was added')
+        assert_true(email in u.emails)
 
     def test_create_unregistered_raises_error_if_already_in_db(self):
         u = UnregUserFactory()
@@ -1031,7 +1030,7 @@ class TestProject(DbTestCase):
     def test_add_unregistered_contributor(self):
         self.project.add_unregistered_contributor(
             email='foo@bar.com',
-            name='Weezy F. Baby',
+            fullname='Weezy F. Baby',
             auth=self.consolidate_auth
         )
         self.project.save()
@@ -1051,13 +1050,14 @@ class TestProject(DbTestCase):
         unclaimed_data = latest_contributor.get_unclaimed_record(self.project._primary_key)
         assert_equal(unclaimed_data['referrer_id'],
             self.consolidate_auth.user._primary_key)
+        assert_true(self.project.is_contributor(latest_contributor))
 
     def test_add_unregistered_raises_error_if_user_already_in_db(self):
         user = UnregUserFactory()
         with assert_raises(DuplicateEmailError):
             self.project.add_unregistered_contributor(
                 email=user.username,
-                name=fake.name(),
+                fullname=fake.name(),
                 auth=self.consolidate_auth
             )
 
@@ -1751,11 +1751,19 @@ class TestUnregisteredUser(DbTestCase):
         data = self.user.unclaimed_records[self.project._primary_key]
         return data
 
-    def test_factory(self):
+    def test_unregistered_factory(self):
         u1 = UnregUserFactory()
         assert_false(u1.is_registered)
         assert_true(u1.password is None)
         assert_true(u1.fullname)
+
+    def test_unconfirmed_factory(self):
+        u = UnconfirmedUserFactory()
+        assert_false(u.is_registered)
+        assert_true(u.username)
+        assert_true(u.fullname)
+        assert_true(u.password)
+        assert_equal(len(u.email_verifications.keys()), 1)
 
     def test_add_unclaimed_record(self):
         data = self.add_unclaimed_record()

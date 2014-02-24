@@ -10,11 +10,11 @@ from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
 from framework.auth.decorators import Auth
-from tests.base import DbTestCase
+from tests.base import DbTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, NodeLogFactory, ApiKeyFactory,
                              NodeFactory, NodeWikiFactory, RegistrationFactory,
-                             UnregUserFactory)
+                             UnregUserFactory, UnconfirmedUserFactory)
 from tests.test_features import requires_piwik
 from website import settings, language
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -651,34 +651,32 @@ class TestClaiming(DbTestCase):
         self.app = TestApp(app)
         self.referrer = UserFactory()
         self.project = ProjectFactory(creator=self.referrer)
-        self.user = UnregUserFactory()
-
-    def add_unclaimed_record(self):
-        given_name = 'Fredd Merkury'
-        self.user.add_unclaimed_record(node=self.project,
-            given_name=given_name, referrer=self.referrer)
-        self.user.save()
-        data = self.user.unclaimed_records[self.project._primary_key]
-        return data
 
     def test_user_can_set_password_on_claim_page(self):
-        self.add_unclaimed_record()
-        claim_url = self.user.get_claim_url(self.project._primary_key)
+        name, email = fake.name(), fake.email()
+        new_user = self.project.add_unregistered_contributor(
+            email=email,
+            fullname=name,
+            auth=Auth(self.referrer)
+        )
+        self.project.save()
+        claim_url = new_user.get_claim_url(self.project._primary_key)
         res = self.app.get(claim_url)
+        self.project.reload()
         assert_in('Set Password', res)
         form = res.forms['setPasswordForm']
-        form['username'] = self.user.username
+        form['username'] = new_user.username
         form['password'] = 'killerqueen'
         form['password2'] = 'killerqueen'
         res = form.submit().maybe_follow()
-        self.user.reload()
+        new_user.reload()
         assert_equal(res.request.path, self.project.url)
 
 
 class TestConfirmingEmail(DbTestCase):
     def setUp(self):
         self.app = TestApp(app)
-        self.user = UnregUserFactory()
+        self.user = UnconfirmedUserFactory()
         self.confirmation_url = self.user.get_confirmation_url(self.user.username,
             external=False)
         self.confirmation_token = self.user.get_confirmation_token(self.user.username)
