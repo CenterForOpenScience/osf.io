@@ -26,8 +26,9 @@ class TestHGridViews(DbTestCase):
     def setUp(self):
         self.github = github_mock
         self.user = AuthUserFactory()
+        self.consolidated_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
-        self.project.add_addon('github')
+        self.project.add_addon('github', auth=self.consolidated_auth)
         self.project.creator.add_addon('github')
         self.node_settings = self.project.get_addon('github')
         self.node_settings.user_settings = self.project.creator.get_addon('github')
@@ -66,6 +67,7 @@ class TestGithubViews(DbTestCase):
 
         self.app = TestApp(app)
         self.user = AuthUserFactory()
+        self.consolidated_auth = Auth(user=self.user)
 
         self.project = ProjectFactory.build(creator=self.user)
         self.non_authenticator = UserFactory()
@@ -74,7 +76,7 @@ class TestGithubViews(DbTestCase):
             auth=Auth(self.project.creator),
         )
         self.project.save()
-        self.project.add_addon('github')
+        self.project.add_addon('github', auth=self.consolidated_auth)
         self.project.creator.add_addon('github')
 
         self.github = github_mock
@@ -368,8 +370,9 @@ class TestRegistrationsWithGithub(DbTestCase):
         super(TestRegistrationsWithGithub, self).setUp()
         self.project = ProjectFactory.build()
         self.project.save()
+        self.consolidated_auth = Auth(user=self.project.creator)
 
-        self.project.add_addon('github')
+        self.project.add_addon('github', auth=self.consolidated_auth)
         self.project.creator.add_addon('github')
         self.node_settings = self.project.get_addon('github')
         self.user_settings = self.project.creator.get_addon('github')

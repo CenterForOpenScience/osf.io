@@ -15,12 +15,13 @@ from website.project import decorators
 def disable_addon(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
 
     addon_name = kwargs.get('addon')
     if addon_name is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    deleted = node.delete_addon(kwargs['addon'])
+    deleted = node.delete_addon(addon_name, auth)
 
     return {'deleted': deleted}
 

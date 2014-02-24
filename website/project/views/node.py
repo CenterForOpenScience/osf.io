@@ -200,7 +200,8 @@ def node_setting(**kwargs):
 @must_not_be_registration
 def node_choose_addons(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    node.config_addons(request.json)
+    auth = kwargs['auth']
+    node.config_addons(request.json, auth)
 
 
 ##############################################################################

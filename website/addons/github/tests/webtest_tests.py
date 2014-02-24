@@ -2,6 +2,8 @@ import mock
 from nose.tools import *  # PEP8 asserts
 from tests.base import DbTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
+
+from framework.auth.decorators import Auth
 from website.addons.github.tests.utils import create_mock_github
 
 from github3.repos import Repository
@@ -17,9 +19,10 @@ class TestGitHubFileView(DbTestCase):
 
     def setUp(self):
         self.user = AuthUserFactory()
+        self.consolidated_auth = Auth(user=self.user)
         self.app = TestApp(app)
         self.project = ProjectFactory(creator=self.user)
-        self.project.add_addon('github')
+        self.project.add_addon('github', auth=self.consolidated_auth)
         self.project.creator.add_addon('github')
 
         self.github = create_mock_github(user='fred', private=False)

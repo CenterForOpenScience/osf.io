@@ -2,6 +2,7 @@ import mock
 from nose.tools import *
 from webtest_plus import TestApp
 
+from framework.auth.decorators import Auth
 import website.app
 from tests.base import DbTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
@@ -19,10 +20,11 @@ class TestS3ViewsConfig(DbTestCase):
     def setUp(self):
         self.app = TestApp(app)
         self.user = AuthUserFactory()
+        self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
         self.project = ProjectFactory(creator=self.user)
 
-        self.project.add_addon('s3')
+        self.project.add_addon('s3', auth=self.consolidated_auth)
         self.project.creator.add_addon('s3')
 
         self.user_settings = self.user.get_addon('s3')
@@ -164,10 +166,11 @@ class TestS3ViewsCRUD(DbTestCase):
     def setUp(self):
         self.app = TestApp(app)
         self.user = AuthUserFactory()
+        self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
         self.project = ProjectFactory(creator=self.user)
 
-        self.project.add_addon('s3')
+        self.project.add_addon('s3', auth=self.consolidated_auth)
         self.project.creator.add_addon('s3')
 
         self.user_settings = self.user.get_addon('s3')
@@ -209,10 +212,11 @@ class TestS3ViewsHgrid(DbTestCase):
     def setUp(self):
         self.app = TestApp(app)
         self.user = AuthUserFactory()
+        self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
         self.project = ProjectFactory(creator=self.user)
 
-        self.project.add_addon('s3')
+        self.project.add_addon('s3', auth=self.consolidated_auth)
         self.project.creator.add_addon('s3')
 
         self.user_settings = self.user.get_addon('s3')

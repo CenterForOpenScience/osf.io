@@ -158,11 +158,15 @@ class NodeLog(StoredObject):
     FILE_REMOVED = 'file_removed'
     FILE_UPDATED = 'file_updated'
     NODE_FORKED = 'node_forked'
+    ADDON_ADDED = 'addon_added'
+    ADDON_REMOVED = 'addon_removed'
 
     @property
     def node(self):
-        return Node.load(self.params.get('node')) or \
+        return (
+            Node.load(self.params.get('node')) or
             Node.load(self.params.get('project'))
+        )
 
     @property
     def tz_date(self):
@@ -392,7 +396,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             #
             for addon in settings.ADDONS_AVAILABLE:
                 if 'node' in addon.added_default:
-                    self.add_addon(addon.short_name)
+                    self.add_addon(addon.short_name, auth=None, log=False)
 
             #
             if getattr(self, 'project', None):
@@ -1403,6 +1407,51 @@ class Node(GuidStoredObject, AddonModelMixin):
             auth=auth,
         )
         return True
+
+    def add_addon(self, addon_name, auth, log=True):
+        """Add an add-on to the node.
+
+        :param str addon_name: Name of add-on
+        :param Auth auth: Consolidated authorization object
+        :param bool log: Add a log after adding the add-on
+        :return bool: Add-on was added
+
+        """
+        rv = super(Node, self).add_addon(addon_name, auth)
+        if rv and log:
+            config = settings.ADDONS_AVAILABLE_DICT[addon_name]
+            self.add_log(
+                action=NodeLog.ADDON_ADDED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'addon': config.full_name,
+                },
+                auth=auth,
+            )
+        return rv
+
+    def delete_addon(self, addon_name, auth):
+        """Delete an add-on from the node.
+
+        :param str addon_name: Name of add-on
+        :param Auth auth: Consolidated authorization object
+        :return bool: Add-on was deleted
+
+        """
+        rv = super(Node, self).delete_addon(addon_name, auth)
+        if rv:
+            config = settings.ADDONS_AVAILABLE_DICT[addon_name]
+            self.add_log(
+                action=NodeLog.ADDON_REMOVED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'addon': config.full_name,
+                },
+                auth=auth,
+            )
+        return rv
 
     def callback(self, callback, recursive=False, *args, **kwargs):
         """Invoke callbacks of attached add-ons and collect messages.

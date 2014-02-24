@@ -221,16 +221,16 @@ class ProjectWithAddonFactory(ProjectFactory):
     def _build(cls, target_class, addon='s3', *args, **kwargs):
         '''Build an object without saving it.'''
         instance = ProjectFactory._build(target_class, *args, **kwargs)
-        instance.add_addon(addon)
+        auth = Auth(user=instance.creator)
+        instance.add_addon(addon, auth)
         instance.creator.add_addon(addon)
         return instance
 
     @classmethod
     def _create(cls, target_class, addon='s3', *args, **kwargs):
         instance = ProjectFactory._create(target_class, *args, **kwargs)
-        instance.add_addon(addon)
+        auth = Auth(user=instance.creator)
+        instance.add_addon(addon, auth)
         instance.creator.add_addon(addon)
         instance.save()
         return instance
-
-
