@@ -246,7 +246,11 @@ def claim_user_form(**kwargs):
     # There shouldn't be a user logged in
     if framework.auth.get_current_user():
         # TODO: display more useful info to the user instead of an error page
-        raise HTTPError(400)
+        logout_url = framework.url_for('OsfWebRenderer__auth_logout')
+        error_data = {'message_short': 'You are already logged in.',
+            'message_long': ('To claim this account, you must first '
+                '<a href={0}>log out.</a>'.format(logout_url))}
+        raise HTTPError(400, data=error_data)
     user = framework.auth.get_user(id=uid)
     # user ID is invalid. Unregistered user is not in database
     if not user:
