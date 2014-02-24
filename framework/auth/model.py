@@ -184,7 +184,7 @@ class User(GuidStoredObject, AddonModelMixin):
                 not self.is_merged and
                 self.is_confirmed())
 
-    def get_claim_url(self, project_id):
+    def get_claim_url(self, project_id, external=False):
         """Return the URL that an unclaimed user should use to claim their
         account. Return ``None`` if there is no unclaimed_record for the given
         project ID.
@@ -194,13 +194,16 @@ class User(GuidStoredObject, AddonModelMixin):
         :rtype: dict
         :returns: The unclaimed record for the project
         """
+        uid = self._primary_key
+        base_url = settings.DOMAIN if external else '/'
         unclaimed_record = self.unclaimed_records.get(project_id, None)
         if unclaimed_record:
             verification = unclaimed_record['verification']
         else:
-            raise ValueError('No unclaimed for ')
-        return '{domain}user/claim/{verification}/'.format(domain=settings.DOMAIN,
-            verification=verification)
+            raise ValueError('No unclaimed record for {uid} on node {project_id}'
+                                .format(**locals()))
+        return '{base_url}user/{uid}/{project_id}/claim/{verification}/'\
+                    .format(**locals())
 
     def set_password(self, raw_password):
         '''Set the password for this user to the hash of ``raw_password``.'''
@@ -212,7 +215,6 @@ class User(GuidStoredObject, AddonModelMixin):
         if not self.password or not raw_password:
             return False
         return check_password_hash(self.password, raw_password)
-
 
     def add_email_verification(self, email):
         """Add an email verification token for a given email."""

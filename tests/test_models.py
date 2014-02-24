@@ -1751,9 +1751,12 @@ class TestUnregisteredUser(DbTestCase):
 
     def test_get_claim_url(self):
         self.add_unclaimed_record()
-        pk = self.project._primary_key
-        assert_equal(self.user.get_claim_url(pk),
-            settings.DOMAIN + 'user/claim/' + self.user.unclaimed_records[pk]['verification'] + '/')
+        uid = self.user._primary_key
+        pid = self.project._primary_key
+        token = self.user.unclaimed_records[pid]['verification']
+        domain = settings.DOMAIN
+        assert_equal(self.user.get_claim_url(pid, external=True),
+            '{domain}user/{uid}/{pid}/claim/{token}/'.format(**locals()))
 
     def test_parse_claim_signature(self):
         data = self.add_unclaimed_record()
