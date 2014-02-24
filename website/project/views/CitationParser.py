@@ -54,6 +54,5 @@ def to_machine_readable(utilname, csl_input):
     return finalForm
 
 #print (to_citation(sample,os.path.join(CSL_PATH, 'harvard1.csl'), formatter.plain))
-#print (to_citation(sample,os.path.join(CSL_PATH, 'zootaxa.csl'), formatter.plain))
 
 #print(to_machine_readable('xml2bib', sample))

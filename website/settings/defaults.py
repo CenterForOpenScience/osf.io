@@ -139,6 +139,3 @@ ADDON_CATEGORIES = [
 PIWIK_HOST = None
 PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
-
-#make dictionary of CSL style names/filenames here
-#CSL_STYLES = []

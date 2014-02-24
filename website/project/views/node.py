@@ -428,15 +428,6 @@ def _view_project(node, auth, primary=False):
             'api_url': node.api_url,
             'absolute_url': node.absolute_url,
             'display_absolute_url': node.display_absolute_url,
-            'citations': {
-                'apa': node.citation_apa,
-                'mla': node.citation_mla,
-                'chicago': node.citation_chicago,
-                'CSLTEST1': CitationParser.to_citation(node.to_csl(), os.path.join(CSL_PATH, 'harvard1.csl'), formatter.plain), #figure this out
-                'CSLTEST2': CitationParser.to_citation(node.to_csl(), os.path.join(CSL_PATH, 'apa.csl'), formatter.plain),
-                'BIBTEX': CitationParser.to_machine_readable('xml2bib', node.to_csl()),
-                'RIS': CitationParser.to_machine_readable('xml2ris', node.to_csl()),
-            },
             'is_public': node.is_public,
             'date_created': node.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
             'date_modified': node.logs[-1].date.strftime('%m/%d/%Y %I:%M %p UTC') if node.logs else '',
@@ -563,13 +554,11 @@ def human_format_citation(*args, **kwargs):
     if style is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    csl = node.to_csl()
     output = CitationParser.to_citation(
-        csl,
+        node.to_csl(),
         os.path.join(CSL_PATH, style),
         formatter.plain
     )
-
     return {'output': output}
 
 @must_be_valid_project
@@ -580,13 +569,10 @@ def machine_format_citation(*args, **kwargs):
     if utilname is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    csl = node.to_csl()
     output = CitationParser.to_machine_readable(
         utilname,
-        csl
+        node.to_csl()
     )
-    ##if utilname == 'xml2bib':
-    ##    return {'output': output}
 
     bibutilsMap = {
         'xml2bib':{'extension':'bibtex', 'mime':'application/x-bibtex'},
@@ -595,13 +581,12 @@ def machine_format_citation(*args, **kwargs):
         'xml2wordbib':{'extension':'xml', 'mime':'application/x-xml'},
         'xml2isi':{'extension':'isi', 'mime':''},
     }
-
     strIO = StringIO.StringIO()
     strIO.write('' + output)
     strIO.seek(0)
     return send_file(strIO,
                      mimetype = bibutilsMap[utilname]['mime'],
-                     attachment_filename="citation." + bibutilsMap[utilname]['extension'],
+                     attachment_filename=node.title.replace(" ", "")+"." +bibutilsMap[utilname]['extension'],
                      as_attachment=True)
 
 

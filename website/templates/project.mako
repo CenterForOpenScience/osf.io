@@ -56,12 +56,11 @@
             <!-- Citations -->
             <div class="citations">
 
-
                 <span class="citation-label">Citation:</span>
                 <span>${node['display_absolute_url']}</span>
                 <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
                 <div class="citation-list">
-                <div style="padding-top: 10px;"><b>Human Readable Citation</b></div>
+                <div style="padding-top: 10px;"><b>Human Readable Formats</b></div>
                 <form id="citationFormHuman" action="#">
                         <select name="styles">
                             <option value="apa.csl">APA</option>
@@ -70,11 +69,13 @@
                             <option value="harvard1.csl">Harvard</option>
                             <option value="modern-language-association-with-url.csl">MLA</option>
                             <option value="turabian-fullnote-bibliography.csl">Turabian</option>
+                            <option value="vancouver-author-date.csl">Vancouver</option>
+
                         </select>
                         <input type="submit" value="Submit">
                     </form>
 
-                <div style="padding-top: 5px;"><b>Machine Readable Citation</b></div>
+                <div style="padding-top: 5px;"><b>Machine Readable Formats</b></div>
                 <form id="citationFormMachine" action="#">
                         <select name="styles">
                             <option value="xml2bib">BibTeX</option>
@@ -197,44 +198,6 @@
 <script>
 
     $(document).ready(function() {
-
-        $("#citationFormHuman").on('submit', function(){
-            $.ajax({
-                type: "GET",
-                url: nodeApiUrl + 'citation/human/' + $('#citationFormHuman select').val() ,
-                success: function(response){
-                    $(".rendered-citation").text(response.output);
-                    return false;
-                }
-            })
-            return false;
-        })
-
-
-        var $citationFormMachine = $('#citationFormMachine');
-        $citationFormSelect = $citationFormMachine.find('select');
-         $citationFormMachine.on('submit', function(){
-              window.location.href =nodeApiUrl + 'citation/machine/' + $citationFormSelect.val() ;
-
-        console.log("nodeApiURL: " + nodeApiUrl);
-##            $.ajax({
-##                type: "GET",
-##                url: nodeApiUrl + 'citation/machine/' + $citationFormSelect.val() ,
-##                success: function(response){
-##                    window.location.href = this.url;
-##
-####                    $(".rendered-citation").text(response.output);
-####                    if ($citationFormSelect.val()==='xml2bib'){
-####                      $(".rendered-citation").text(response.output);
-####                    } else{
-####                        window.location.href = this.url;
-####                    }
-##                    return false;
-##                }
-##            })
-            return false;
-        })
-##move JS to another file
 
 // Show capabilities modal on addon widget help
         $('.addon-capabilities').on('click', function() {
