@@ -16,7 +16,6 @@ import website
 from website import security
 from model import User
 
-import datetime
 
 logger = logging.getLogger(__name__)
 

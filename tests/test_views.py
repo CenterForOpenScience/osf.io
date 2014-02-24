@@ -375,9 +375,8 @@ class TestUserInviteViews(DbTestCase):
     def test_cannot_invite_unreg_contributor_if_they_already_exist(self, send_email):
         user = UserFactory()
         res = self.app.post_json(self.invite_url,
-            {'fullname': 'Fred Mercury', 'email': user.username}, auth=self.user.auth)
-        assert_in('User already exists', res.json['message'])
-        assert_in('contributor', res.json)
+            {'fullname': 'Fred Mercury', 'email': user.username}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
 @unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
 class TestClaimViews(DbTestCase):

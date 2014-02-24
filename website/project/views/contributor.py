@@ -16,7 +16,7 @@ from framework.email.tasks import send_email
 from framework import forms
 from framework.auth.forms import SetEmailAndPasswordForm
 
-from website import settings
+from website import settings, mails
 from website.filters import gravatar
 from website.models import Node
 from website.profile import utils
@@ -221,45 +221,19 @@ def project_addcontributors_post(**kwargs):
         node.save()
     return {'status': 'success'}, 201
 
-# TODO: finish me
-INVITE_EMAIL_SUBJECT = 'You have been added as a contributor to an OSF project.'
-INVITE_EMAIL = Template(u'''
-Hello ${new_user.fullname},
-
-You have been added by ${referrer.fullname} as a contributor to project
-"${node.title}" on the Open Science Framework. To set a password for your account,
-visit:
-
-${claim_url}
-
-Once you have set a password you will be able to make contributions to
-${node.title}.
-
-If you have
-
-Sincerely,
-
-The OSF Team
-''')
-
 def email_invite(to_addr, new_user, referrer, node):
+    """Send an invite mail to an unclaimed user.
+
+    :param str to_addr: The email address to send to.
+    :param User new_user: The User record for the unclaimed user.
+    :param User referrer: The User record for the referring user.
+    :param Node node: The project or component that the new user was added to.
+    """
     # Add querystring with email, so that set password form can prepopulate the
     # email field
     claim_url = new_user.get_claim_url(node._primary_key) + '?email={0}'.format(to_addr)
-    message = INVITE_EMAIL.render(new_user=new_user, referrer=referrer, node=node,
+    return mails.send_mail(to_addr, mails.INVITE, user=new_user, referrer=referrer,
         claim_url=claim_url)
-    logger.debug('Sending invite email:')
-    logger.debug(message)
-    # Don't use ttls and auth if in dev mode
-    ttls = login = not settings.DEV_MODE
-    return send_email.delay(
-        settings.FROM_EMAIL,
-        to_addr=to_addr,
-        subject=INVITE_EMAIL_SUBJECT,
-        message=message,
-        mimetype='plain',
-        ttls=ttls, login=login
-    )
 
 
 def claim_user_form(**kwargs):
@@ -278,6 +252,7 @@ def claim_user_form(**kwargs):
     try:
         referral_data = User.parse_claim_signature(signature)
     except BadSignature:
+
         raise HTTPError(http.NOT_FOUND)
     user = framework.auth.get_user(id=referral_data['_id'])
     # user ID is invalid. Unregistered user is not in database
@@ -314,11 +289,13 @@ def invite_contributor_post(**kwargs):
     auth = kwargs['auth']
     fullname, email = request.json.get('fullname'), request.json.get('email')
     if not fullname:
-        return {'status': 400, 'message': 'Must provide fullname and email'}, 400
+        return {'status': 400, 'message': 'Must provide fullname'}, 400
     new_user = framework.auth.get_user(username=email)
     if not new_user:
         new_user = User.create_unregistered(fullname=fullname, email=email)
         new_user.save()  # Need to save so that user has an ID
+    else:
+        return {'status': 400, 'message': 'User is already in database'}, 400
     if node._primary_key not in new_user.unclaimed_records:
         new_user.add_unclaimed_record(node=node,
             given_name=fullname, referrer=auth.user)
