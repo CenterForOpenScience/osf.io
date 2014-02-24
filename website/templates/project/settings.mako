@@ -89,14 +89,6 @@
 
                         <br />
 
-                        % if not node['is_registration']:
-                            <button id="settings-submit" class="btn btn-success">
-                                Submit
-                            </button>
-                        % endif
-
-                    <br />
-
                     % if not node['is_registration']:
                         <button id="settings-submit" class="btn btn-success">
                             Submit
