@@ -242,15 +242,11 @@ def claim_user_form(**kwargs):
 
     Renders the set password form, validates it, and sets the user's password.
     """
-    uid = kwargs['uid']
-    pid = kwargs['pid']
-    token = kwargs['token']
+    uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
     # There shouldn't be a user logged in
     if framework.auth.get_current_user():
         # TODO: display more useful info to the user instead of an error page
         raise HTTPError(400)
-    email = request.args.get('email', '')
-    form = SetEmailAndPasswordForm(request.form)
     user = framework.auth.get_user(id=uid)
     # user ID is invalid. Unregistered user is not in database
     if not user:
@@ -261,9 +257,10 @@ def claim_user_form(**kwargs):
         raise HTTPError(400)
 
     parsed_name = parse_name(user.fullname)
-
+    email = request.args.get('email', '')
+    form = SetEmailAndPasswordForm(request.form)
     if form.validate():
-        username = form.username.data.strip()
+        username = form.username.data.lower().strip()
         password = form.password.data.strip()
         user.register(username=username, password=password)
         user.save()

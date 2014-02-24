@@ -366,6 +366,7 @@ class TestUserInviteViews(DbTestCase):
         res = self.app.post_json(self.invite_url,
             {'fullname': name, 'email': email}, auth=self.user.auth)
         latest_user = User.find()[len(User.find()) - 1]
+        self.project.reload()
         assert_true(self.project.is_contributor(latest_user))
 
     def test_invite_contributor_with_no_email(self):
@@ -379,6 +380,9 @@ class TestUserInviteViews(DbTestCase):
 
     def test_cannot_invite_unreg_contributor_if_they_already_exist(self):
         user = UserFactory()
+        self.project.add_unregistered_contributor(
+            email=user.username, fullname=fake.name(),
+            auth=Auth(self.project.creator))
         res = self.app.post_json(self.invite_url,
             {'fullname': fake.name(), 'email': user.username},
             auth=self.user.auth, expect_errors=True)
@@ -395,7 +399,7 @@ class TestClaimViews(DbTestCase):
         self.given_name = fake.name()
         self.given_email = fake.email()
         self.project.add_unregistered_contributor(
-            name=self.given_name,
+            fullname=self.given_name,
             email=self.given_email,
             auth=Auth(user=self.referrer)
         )
