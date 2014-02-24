@@ -19,7 +19,7 @@
             % endif
             </span>
             <div class="pull-right">
-                % if not summary['primary'] and summary['can_edit']:
+                % if not summary['primary'] and user['can_edit']:
                     <i class="icon-remove remove-pointer" data-id="${summary['id']}"></i>
                     <i class="icon-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');"></i>
                 % endif

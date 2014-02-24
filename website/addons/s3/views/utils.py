@@ -1,15 +1,16 @@
-from framework import request
-
-from website.project.decorators import must_have_addon
-from website.project.decorators import must_be_contributor_or_public
-
-from website.addons.s3.api import create_bucket
-
 import time
 import base64
 import urllib
 import hmac
 import sha
+import httplib as http
+
+from framework.flask import request
+from framework.exceptions import HTTPError
+
+from website.project.decorators import must_have_addon
+from website.project.decorators import must_be_contributor_or_public
+from website.addons.s3.api import create_bucket
 
 
 def generate_signed_url(mime, file_name, s3):
@@ -37,9 +38,8 @@ def create_new_bucket(*args, **kwargs):
     user_settings = user.get_addon('s3')
     if create_bucket(user_settings, request.json.get('bucket_name')):
         return {}, 200
-    else:
-        return {}, 400
+    raise HTTPError(http.BAD_REQUEST)
 
 
 def get_cache_file_name(key_name, etag):
-    return '{0}_{1}.html'.format(key_name.replace('/', ''), etag)
+    return u'{0}_{1}.html'.format(key_name.replace('/', ''), etag)

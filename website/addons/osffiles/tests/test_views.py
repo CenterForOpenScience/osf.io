@@ -21,8 +21,9 @@ class TestFilesViews(DbTestCase):
         self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.auth = ('test', self.user.api_keys[0]._primary_key)
+        self.consolidated_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
-        self.project.add_addon('osffiles')
+        self.project.add_addon('osffiles', auth=self.consolidated_auth)
         self.node_settings = self.project.get_addon('osffiles')
         self._upload_file('firstfile', 'firstcontent')
 
@@ -38,10 +39,6 @@ class TestFilesViews(DbTestCase):
         self.project.reload()
         return res
 
-    def _get_hgrid_files(self):
-        url = self.project.api_url + 'osffiles/hgrid/'
-        return self.app.get(url, auth=self.auth).maybe_follow()
-
     def test_download_file(self):
         url = self.project.uploads[0].download_url(self.project)
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
@@ -49,8 +46,7 @@ class TestFilesViews(DbTestCase):
 
     def test_upload_file(self):
 
-        post_res = self._upload_file('newfile', 'newcontent')
-        get_res = self._get_hgrid_files()
+        res = self._upload_file('newfile', 'newcontent')
 
         self.project.reload()
         assert_equal(
@@ -58,21 +54,19 @@ class TestFilesViews(DbTestCase):
             'file_added'
         )
 
-        assert_equal(post_res.status_code, 201)
-        assert_true(isinstance(post_res.json, dict), 'return value is a dict')
-        assert_equal(post_res.json['name'], 'newfile')
+        assert_equal(res.status_code, 201)
+        assert_true(isinstance(res.json, dict), 'return value is a dict')
+        assert_equal(res.json['name'], 'newfile')
 
-        assert_equal(len(get_res.json), 2)
-        assert_equal(get_res.json[1]['name'], 'newfile')
+        assert_in('newfile', self.project.files_current)
 
     def test_delete_file(self):
 
         url = self.project.api_url + 'osffiles/firstfile/'
-        post_res = self.app.delete(url, auth=self.auth).maybe_follow()
-        get_res = self._get_hgrid_files()
-
-        assert_equal(post_res.status_code, 200)
-        assert_equal(len(get_res.json), 0)
+        res = self.app.delete(url, auth=self.auth).maybe_follow()
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        assert_not_in('firstfile', self.project.files_current)
 
     def test_file_urls(self):
 

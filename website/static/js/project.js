@@ -17,6 +17,7 @@ var Messages = {
 
 /* Utility functions */
 
+// TODO: Shouldn't pollute window. At the very least put them on the '$' namespace
 window.block = function() {
     $.blockUI({
         css: {
@@ -367,16 +368,11 @@ $(document).ready(function() {
             Messages[msgKey],
             function(result) {
                 if (result) {
-                    $.ajax({
-                        url: url,
-                        type: 'POST',
-                        data: {permissions: permissions},
-                        contentType: 'application/json',
-                        dataType: 'json',
-                        success: function(data){
-                            window.location.href = data['redirect_url'];
+                    $.postJSON(url, {permissions: permissions},
+                        function(data){
+                            window.location.href = data.redirect_url;
                         }
-                    });
+                    );
                 }
             }
         );

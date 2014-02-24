@@ -23,3 +23,17 @@ bucket
 <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
+
+<script type="text/html" id="s3_bucket_linked">
+selected bucket
+<span data-bind="text: params.bucket"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="s3_bucket_unlinked">
+un-selected bucket
+<span data-bind="text: params.bucket"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>

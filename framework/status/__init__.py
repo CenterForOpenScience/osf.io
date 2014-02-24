@@ -1,10 +1,24 @@
 from framework import session
+from collections import namedtuple
 
-def push_status_message(message, level=0):
+Status = namedtuple('Status', ['message', 'css_class'])
+
+#: Status_type => bootstrap css class
+TYPE_MAP = {
+    'warning': 'warning',
+    'warn': 'warning',
+    'success': 'success',
+    'info': 'info',
+    'error': 'danger',
+    'danger': 'danger',
+}
+
+def push_status_message(message, kind='warning'):
     statuses = session.data.get('status')
     if not statuses:
         statuses = []
-    statuses.append(message)
+    css_class = TYPE_MAP.get(kind, 'warning')
+    statuses.append(Status(message=message, css_class=css_class))
     session.data['status'] = statuses
 
 def pop_status_messages(level=0):

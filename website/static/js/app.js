@@ -2,6 +2,8 @@
  * app.js
  * Knockout models, ViewModels, and custom binders.
  */
+// TODO: Currently, these all pollute global namespace. Either use some module
+// system, e.g. requirejs, or use namespaces, e.g. "OSFViewModels.LogsViewModel"
 
 ////////////
 // Models //
@@ -290,14 +292,15 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
     self.pageTitle = ko.computed(function() {
         return {
             whom: 'Add contributors',
-            which: 'Select components'
+            which: 'Select components',
+            invite: 'Add An Unregistered User'
         }[self.page()];
     });
-
     self.query = ko.observable();
     self.results = ko.observableArray();
     self.selection = ko.observableArray();
     self.errorMsg = ko.observable('');
+    self.inviteError = ko.observable('');
 
     self.nodes = ko.observableArray([]);
     self.nodesToChange = ko.observableArray();
@@ -312,12 +315,21 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         }
     );
 
+    self.inviteName = ko.observable();
+    self.inviteEmail = ko.observable();
+
     self.selectWhom = function() {
         self.page('whom');
     };
     self.selectWhich = function() {
         self.page('which');
     };
+
+    self.gotoInvite = function() {
+        self.inviteName(self.query());
+        self.inviteEmail('');
+        self.page('invite');
+    }
 
     self.search = function() {
         self.errorMsg('');
@@ -334,7 +346,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
             )
         } else {
             self.results([]);
-        };
+        }
     };
 
     self.importFromParent = function() {
@@ -372,6 +384,39 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         });
     };
 
+    function postInviteRequest(fullname, email, options) {
+        var ajaxOpts = $.extend({
+            url: nodeApiUrl + 'invite_contributor/',
+            type: 'POST',
+            data: JSON.stringify({'fullname': fullname, 'email': email}),
+            dataType: 'json', contentType: 'application/json'
+        }, options);
+        return $.ajax(ajaxOpts);
+    };
+
+    function inviteSuccess(result) {
+        self.page('whom');
+        self.add(result.contributor);
+    }
+
+    function inviteError(xhr, status, error) {
+        // TODO
+        console.log('An error occurred on sending invite');
+        console.log(error);
+        console.log(JSON.parse(xhr.responseText))
+        var response = JSON.parse(xhr.responseText);
+        // Update error message
+        self.inviteError(response.message);
+    }
+
+    self.sendInvite = function() {
+        return postInviteRequest(self.inviteName(), self.inviteEmail(),
+            {
+                success: inviteSuccess,
+                error: inviteError
+            }
+        );
+    };
 
     self.add = function(data) {
         self.selection.push(data);

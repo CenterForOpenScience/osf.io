@@ -1,12 +1,13 @@
-import httplib as http
-
+import urllib
 import datetime
+import httplib as http
 
 from framework import request, redirect, Q
 from framework.exceptions import HTTPError
 
 from website.project.decorators import must_be_contributor
 from website.project.decorators import must_be_contributor_or_public
+from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
@@ -22,8 +23,6 @@ from ..utils import create_version_list, build_urls
 
 from website import models
 
-from urllib import unquote, quote_plus
-
 from website.addons.s3.settings import MAX_RENDER_SIZE
 
 
@@ -32,7 +31,7 @@ from website.addons.s3.settings import MAX_RENDER_SIZE
 def s3_download(**kwargs):
 
     node_settings = kwargs['node_addon']
-    key_name = unquote(kwargs['path'])
+    key_name = urllib.unquote(kwargs['path'])
     vid = request.args.get('vid')
 
     if key_name is None:
@@ -44,12 +43,13 @@ def s3_download(**kwargs):
 
 
 @must_be_contributor
+@must_not_be_registration
 @must_have_addon('s3', 'node')
 def s3_delete(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
-    dfile = unquote(kwargs['path'])
+    dfile = urllib.unquote(kwargs['path'])
 
     connect = S3Wrapper.from_addon(node_settings)
     connect.delete_file(dfile)
@@ -58,9 +58,9 @@ def s3_delete(**kwargs):
         action='s3_' + models.NodeLog.FILE_REMOVED,
         params={
             'project': node.parent_id,
-            'node': node._primary_key,
+            'node': node._id,
             'bucket': node_settings.bucket,
-            'path': dfile
+            'path': dfile,
         },
         auth=kwargs['auth'],
         log_date=datetime.datetime.utcnow(),
@@ -85,7 +85,7 @@ def s3_view(**kwargs):
     node = kwargs['node'] or kwargs['project']
 
     wrapper = S3Wrapper.from_addon(node_settings)
-    key = wrapper.get_wrapped_key(unquote(path), vid=vid)
+    key = wrapper.get_wrapped_key(urllib.unquote(path), vid=vid)
 
     if key is None:
         raise HTTPError(http.NOT_FOUND)
@@ -122,7 +122,7 @@ def s3_view(**kwargs):
                 file_path=path,
             )
 
-    versions = create_version_list(wrapper, unquote(path), node)
+    versions = create_version_list(wrapper, urllib.unquote(path), node)
 
     rv = {
         'file_name': key.name,
@@ -150,13 +150,17 @@ def ping_render(**kwargs):
 
 
 @must_be_contributor
+@must_not_be_registration
 @must_have_addon('s3', 'node')
 def s3_upload(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
     s3 = kwargs['node_addon']
 
-    file_name = quote_plus(request.json.get('name'))
+    file_name = request.json.get('name')
+    if file_name is None:
+        raise HTTPError(http.BAD_REQUEST)
+    file_name = urllib.quote_plus(file_name.encode('utf-8'))
     mime = request.json.get('type') or 'application/octet-stream'
 
     update = S3Wrapper.from_addon(s3).does_key_exist(file_name)

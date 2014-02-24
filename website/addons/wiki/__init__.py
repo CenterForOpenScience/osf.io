@@ -11,9 +11,8 @@ FULL_NAME = 'Wiki'
 
 OWNERS = ['node']
 
-ADDED_TO = {
-    'node': True,
-}
+ADDED_DEFAULT = ['node']
+ADDED_MANDATORY = []
 
 VIEWS = ['widget', 'page']
 CONFIGS = []

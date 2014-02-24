@@ -8,7 +8,6 @@ import time
 from cStringIO import StringIO
 import httplib as http
 import logging
-import hurry
 
 
 from framework import request, redirect, send_file, Q
@@ -29,19 +28,6 @@ from .model import NodeFile, OsfGuidFile
 logger = logging.getLogger(__name__)
 
 
-@must_be_contributor_or_public
-@must_have_addon('osffiles', 'node')
-def osffiles_widget(**kwargs):
-    node = kwargs['node'] or kwargs['project']
-    osffiles = node.get_addon('osffiles')
-    rv = {
-        'complete': True,
-    }
-    rv.update(osffiles.config.to_json())
-    return rv
-
-###
-
 def _clean_file_name(name):
     " HTML-escape file name and encode to UTF-8. "
     escaped = cgi.escape(name)
@@ -49,29 +35,9 @@ def _clean_file_name(name):
     return encoded
 
 
-
-def osffiles_dummy_folder(node_settings, auth, parent=None, **kwargs):
+def get_osffiles(node_settings, auth, **kwargs):
 
     node = node_settings.owner
-    urls = {
-        'upload': os.path.join(node.api_url, 'osffiles') + '/',
-        'fetch': os.path.join(node.api_url, 'osffiles', 'hgrid') + '/',
-    }
-    return rubeus.build_addon_root(node_settings, '', permissions=auth, urls=urls)
-
-
-# TODO: move to rubeus.py?
-def format_filesize(size):
-    return hurry.filesize.size(size, system=hurry.filesize.alternative)
-
-
-@must_be_contributor_or_public
-@must_have_addon('osffiles', 'node')
-def get_osffiles(**kwargs):
-
-    node_settings = kwargs['node_addon']
-    node = node_settings.owner
-    auth = kwargs['auth']
 
     can_edit = node.can_edit(auth) and not node.is_registration
     can_view = node.can_view(auth)
@@ -104,7 +70,7 @@ def get_osffiles(**kwargs):
                 'downloads': total or 0,
                 'size': [
                     float(fobj.size),
-                    format_filesize(fobj.size),
+                    rubeus.format_filesize(fobj.size),
                 ],
                 'dates': {
                     'modified': [
@@ -116,6 +82,15 @@ def get_osffiles(**kwargs):
             info.append(item)
 
     return info
+
+
+@must_be_contributor_or_public
+@must_have_addon('osffiles', 'node')
+def get_osffiles_public(**kwargs):
+
+    node_settings = kwargs['node_addon']
+    auth = kwargs['auth']
+    return get_osffiles(node_settings, auth)
 
 
 @must_be_valid_project # returns project
@@ -171,7 +146,7 @@ def upload_file_public(**kwargs):
         'name': name,
         'size': [
             float(size),
-            format_filesize(size),
+            rubeus.format_filesize(size),
         ],
 
         # URLs
@@ -286,7 +261,7 @@ def view_file(**kwargs):
     # Get or create rendered file
     cache_file = get_cache_file(
         file_object.filename,
-        file_object.latest_version_number
+        file_object.latest_version_number(node)
     )
     rendered = get_cache_content(
         node_settings, cache_file, start_render=True, file_path=file_path,

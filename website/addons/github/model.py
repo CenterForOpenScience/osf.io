@@ -3,10 +3,12 @@
 """
 
 import os
+import json
 import urlparse
 
+from github3 import GitHubError
+
 from framework import fields
-from framework.guid.model import GuidStoredObject
 
 from website import settings
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
@@ -17,6 +19,16 @@ from . import settings as github_settings
 from .api import GitHub
 
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
+
+class GithubGuidFile(GuidFile):
+
+    path = fields.StringField(index=True)
+
+    @property
+    def file_url(self):
+        if self.path is None:
+            raise ValueError('Path field must be defined.')
+        return os.path.join('github', 'file', self.path)
 
 class AddonGitHubUserSettings(AddonUserSettingsBase):
 
@@ -39,15 +51,36 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         })
         return rv
 
-class GithubGuidFile(GuidFile):
+    def revoke_token(self):
 
-    path = fields.StringField(index=True)
+        connection = GitHub.from_settings(self)
+        try:
+            connection.revoke_token()
+        except GitHubError as error:
+            if error.code == 401:
+                return (
+                    'Your GitHub credentials were removed from the OSF, but we '
+                    'were unable to revoke your access token from GitHub. Your '
+                    'GitHub credentials may no longer be valid.'
+                )
+            else:
+                raise
 
-    @property
-    def file_url(self):
-        if self.path is None:
-            raise ValueError('Path field must be defined.')
-        return os.path.join('github', 'file', self.path)
+    def clear_auth(self):
+
+        self.revoke_token()
+
+        self.oauth_access_token = None
+        self.oauth_token_type = None
+        self.save()
+
+    def delete(self, save=True):
+        super(AddonGitHubUserSettings, self).delete()
+        self.clear_auth()
+        for node_settings in self.addongithubnodesettings__authorized:
+            node_settings.delete(save=False)
+            node_settings.user_settings = None
+            node_settings.save()
 
 class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
@@ -73,27 +106,33 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if self.user and self.repo:
             return '/'.join([self.user, self.repo])
 
+    @property
+    def complete(self):
+        return (
+            self.user and self.repo and
+            self.user_settings and self.user_settings.has_auth
+        )
+
     def to_json(self, user):
-        github_user = user.get_addon('github')
         rv = super(AddonGitHubNodeSettings, self).to_json(user)
-        rv.update({
-            'github_user': self.user or '',
-            'github_repo': self.repo or '',
-            'github_url': self.repo_url if self.repo_url else '',
-            'user_has_authorization': github_user and github_user.has_auth,
-            'show_submit': True,
-        })
+        user_settings = user.get_addon('github')
+        github_config = {
+            'hasAuth': user_settings and user_settings.has_auth,
+        }
         if self.user_settings and self.user_settings.has_auth:
-            rv.update({
-                'authorized_user_name': self.user_settings.owner.fullname,
-                'authorized_user_id': self.user_settings.owner._id,
-                'authorized_github_user': self.user_settings.github_user,
-                'disabled': self.user_settings.owner != user,
-                'show_submit': (
-                    self.user_settings.owner is None or
-                    self.user_settings.owner == user
-                ),
-            })
+            github_config['repo'] = {
+                'user': self.user,
+                'repo': self.repo,
+            }
+            github_config['user'] = {
+                'osfUser': self.user_settings.owner.fullname,
+                'osfUrl': self.user_settings.owner.url,
+                'osfId': self.user_settings.owner._id,
+                'githubUser': self.user_settings.github_user,
+                'githubUrl': 'https://github.com/{0}'.format(self.user_settings.github_user),
+                'owner': self.user_settings.owner == user,
+            }
+        rv['github_config'] = json.dumps(github_config)
         return rv
 
     #############
@@ -108,14 +147,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         :return str: Alert message
 
         """
-        messages = [
-            'The GitHub add-on page has been combined with the pre-existing '
-            'Files page, which also now includes files from your other add-ons. '
-            'To work with the files in your GitHub add-on, browse to the '
-            '<a href="{0}">Files</a> page.'.format(
-                node.url + 'files/'
-            )
-        ]
+        messages = []
 
         # Quit if not contributor
         if not node.is_contributor(user):
@@ -392,8 +424,8 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
         """
         if self.user_settings and self.hook_id:
-            connect = GitHub.from_settings(self.user_settings)
-            response = connect.delete_hook(self.user, self.repo, self.hook_id)
+            connection = GitHub.from_settings(self.user_settings)
+            response = connection.delete_hook(self.user, self.repo, self.hook_id)
             if response:
                 self.hook_id = None
                 if save:

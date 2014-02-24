@@ -13,29 +13,9 @@ settings_routes = {
     'prefix': '/api/v1',
 }
 
-widget_routes = {
-    'rules': [
-        Rule([
-            '/project/<pid>/osffiles/widget/',
-            '/project/<pid>/node/<nid>/osffiles/widget/',
-        ], 'get', views.osffiles_widget, json_renderer),
-    ],
-    'prefix': '/api/v1',
-}
-
 web_routes = {
 
     'rules': [
-
-        Rule(
-            [
-                '/project/<pid>/osffiles/',
-                '/project/<pid>/node/<nid>/osffiles/',
-            ],
-            'get',
-            views.get_osffiles,
-            OsfWebRenderer('../addons/osffiles/templates/osffiles_tree.mako'),
-        ),
 
         Rule(
             [
@@ -103,7 +83,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/osffiles/hgrid/<path:path>/',
             ],
             'get',
-            views.get_osffiles,
+            views.get_osffiles_public,
             json_renderer,
         ),
 
