@@ -209,7 +209,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         width: '100%',
         height: 500,
         fetchUrl: function(row) {
-            return row.urls.fetch;
+            return row.urls.fetch || null;
         },
         fetchSuccess: function(data, row) {
             this.changeStatus(row, statusType.FETCH_SUCCESS);

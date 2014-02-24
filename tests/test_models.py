@@ -635,11 +635,11 @@ class TestNode(DbTestCase):
             set([
                 addon_config.short_name
                 for addon_config in settings.ADDONS_AVAILABLE
-                if addon_config.added_to['node']
+                if 'node' in addon_config.added_default
             ])
         )
         for addon_config in settings.ADDONS_AVAILABLE:
-            if addon_config.added_to['node']:
+            if 'node' in addon_config.added_default:
                 assert_in(
                     addon_config.short_name,
                     node.get_addon_names()
@@ -689,6 +689,13 @@ class TestNode(DbTestCase):
             len(self.node.get_addon_names()),
             addon_count - 1
         )
+
+    @mock.patch('website.addons.github.model.AddonGitHubNodeSettings.config')
+    def test_delete_mandatory_addon(self, mock_config):
+        mock_config.added_mandatory = ['node']
+        self.node.add_addon('github')
+        with assert_raises(ValueError):
+            self.node.delete_addon('github')
 
     def test_delete_nonexistent_addon(self):
         addon_count = len(self.node.get_addon_names())
@@ -1202,23 +1209,6 @@ class TestProject(DbTestCase):
         self.project.logs.append(NodeLogFactory())
         assert_equal(self.project.date_modified, self.project.logs[-1].date)
         assert_not_equal(self.project.date_modified, self.project.date_created)
-
-    def test_has_files(self):
-        assert_true(self.project.has_files)
-
-    def test_has_files_false(self):
-        self.project.delete_addon('osffiles')
-        assert_false(self.project.has_files)
-
-    def test_has_files_recursive(self):
-        child = NodeFactory(
-            category='hypothesis',
-            creator=self.user,
-            project=self.project,
-        )
-        self.project.delete_addon('files')
-        assert_true(child.has_files)
-        assert_true(self.project.has_files)
 
 
 class TestForkNode(DbTestCase):

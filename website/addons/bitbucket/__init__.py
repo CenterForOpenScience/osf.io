@@ -12,10 +12,8 @@ FULL_NAME = 'Bitbucket'
 
 OWNERS = ['user', 'node']
 
-ADDED_TO = {
-    'user': False,
-    'node': False,
-}
+ADDED_DEFAULT = []
+ADDED_MANDATORY = []
 
 VIEWS = ['widget', 'page']
 CONFIGS = ['user', 'node']

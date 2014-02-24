@@ -35,24 +35,9 @@ def _clean_file_name(name):
     return encoded
 
 
-
-def osffiles_dummy_folder(node_settings, auth, parent=None, **kwargs):
+def get_osffiles(node_settings, auth, **kwargs):
 
     node = node_settings.owner
-    urls = {
-        'upload': os.path.join(node.api_url, 'osffiles') + '/',
-        'fetch': os.path.join(node.api_url, 'osffiles', 'hgrid') + '/',
-    }
-    return rubeus.build_addon_root(node_settings, '', permissions=auth, urls=urls)
-
-
-@must_be_contributor_or_public
-@must_have_addon('osffiles', 'node')
-def get_osffiles(**kwargs):
-
-    node_settings = kwargs['node_addon']
-    node = node_settings.owner
-    auth = kwargs['auth']
 
     can_edit = node.can_edit(auth) and not node.is_registration
     can_view = node.can_view(auth)
@@ -97,6 +82,15 @@ def get_osffiles(**kwargs):
             info.append(item)
 
     return info
+
+
+@must_be_contributor_or_public
+@must_have_addon('osffiles', 'node')
+def get_osffiles_public(**kwargs):
+
+    node_settings = kwargs['node_addon']
+    auth = kwargs['auth']
+    return get_osffiles(node_settings, auth)
 
 
 @must_be_valid_project # returns project

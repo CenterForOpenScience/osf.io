@@ -187,6 +187,7 @@ def node_setting(**kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
+            and 'node' not in addon.added_mandatory
     ]
     rv['addons_enabled'] = addons_enabled
     rv['addon_enabled_settings'] = addon_enabled_settings
@@ -385,9 +386,8 @@ def _render_addon(node):
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
 
-        if node.has_files:
-            js.extend(addon.config.include_js.get('files', []))
-            css.extend(addon.config.include_css.get('files', []))
+        js.extend(addon.config.include_js.get('files', []))
+        css.extend(addon.config.include_css.get('files', []))
 
     return widgets, configs, js, css
 
@@ -470,7 +470,6 @@ def _view_project(node, auth, primary=False):
             'piwik_token': user.piwik_token if user else '',
         },
         # TODO: Namespace with nested dicts
-        'has_files': node.has_files,
         'addons_enabled': node.get_addon_names(),
         'addons': configs,
         'addon_widgets': widgets,

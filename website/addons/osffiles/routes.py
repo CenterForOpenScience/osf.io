@@ -19,16 +19,6 @@ web_routes = {
 
         Rule(
             [
-                '/project/<pid>/osffiles/',
-                '/project/<pid>/node/<nid>/osffiles/',
-            ],
-            'get',
-            views.get_osffiles,
-            OsfWebRenderer('../addons/osffiles/templates/osffiles_tree.mako'),
-        ),
-
-        Rule(
-            [
                 '/project/<pid>/osffiles/<fid>/',
                 '/project/<pid>/node/<nid>/osffiles/<fid>/',
             ],
@@ -93,7 +83,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/osffiles/hgrid/<path:path>/',
             ],
             'get',
-            views.get_osffiles,
+            views.get_osffiles_public,
             json_renderer,
         ),
 

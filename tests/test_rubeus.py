@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import mock
 from nose.tools import *
 
@@ -221,7 +222,7 @@ serialized = {
         'delete': '/delete'
     }
 }
-mock_addon.config.get_hgrid_data.return_value = serialized
+mock_addon.config.get_hgrid_data.return_value = [serialized]
 
 class TestSerializingNodeWithAddon(DbTestCase):
     def setUp(self):
@@ -237,14 +238,21 @@ class TestSerializingNodeWithAddon(DbTestCase):
 
     def test_serialize_node(self):
         ret = self.serializer._serialize_node(self.project)
-        assert_equal(len(ret['children']),
-            len(self.project.get_addons.return_value) + len(self.project.nodes))
+        assert_equal(
+            len(ret['children']),
+            len(self.project.get_addons.return_value) + len(self.project.nodes)
+        )
         assert_equal(ret['kind'], rubeus.FOLDER)
-        assert_equal(ret['name'], 'Component: {0}'.format(self.project.title))
+        assert_equal(ret['name'], 'Project: {0}'.format(self.project.title))
         assert_equal(ret['permissions'], {
             'view': True,
             'edit': True
         })
-        assert_equal(ret['urls'], {
-            'upload': None, 'fetch': None
-        }, 'project root data has no upload or fetch urls')
+        assert_equal(
+            ret['urls'],
+            {
+                'upload': os.path.join(self.project.api_url, 'osffiles') + '/',
+                'fetch': None
+            },
+            'project root data has no upload or fetch urls'
+        )

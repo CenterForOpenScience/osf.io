@@ -128,9 +128,7 @@
             <ul class="nav navbar-nav">
                 <li><a href="${node['url']}">Dashboard</a></li>
 
-                % if has_files:
-                    <li><a href="${node['url']}files/">Files</a></li>
-                % endif
+                <li><a href="${node['url']}files/">Files</a></li>
                 <!-- Add-on tabs -->
                 % for addon in addons_enabled:
                     % if addons[addon]['has_page']:

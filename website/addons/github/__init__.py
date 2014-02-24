@@ -15,10 +15,8 @@ FULL_NAME = 'GitHub'
 
 OWNERS = ['user', 'node']
 
-ADDED_TO = {
-    'user': False,
-    'node': False,
-}
+ADDED_DEFAULT = []
+ADDED_MANDATORY = []
 
 VIEWS = []
 CONFIGS = ['user', 'node']

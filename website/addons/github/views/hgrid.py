@@ -104,7 +104,7 @@ def github_branch_widget(branches, owner, repo, branch, sha):
     return rendered
 
 
-def github_hgrid_data(node_settings, auth, contents=False, *args, **kwargs):
+def github_hgrid_data(node_settings, auth, **kwargs):
 
     # Quit if no repo linked
     if not node_settings.complete:
@@ -155,13 +155,13 @@ def github_hgrid_data(node_settings, auth, contents=False, *args, **kwargs):
         'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
         'branch': node_settings.owner.api_url + 'github/hgrid/root/',
     }
-    return rubeus.build_addon_root(
+    return [rubeus.build_addon_root(
         node_settings,
         name_tpl,
         urls=urls,
         permissions=permissions,
         extra=name_append
-    )
+    )]
 
 
 @must_be_contributor_or_public
@@ -175,20 +175,8 @@ def github_root_folder_public(*args, **kwargs):
     node_settings = kwargs['node_addon']
     auth = kwargs['auth']
     data = request.args.to_dict()
-    parent = data.pop('parent', 'null')
 
-    return github_hgrid_data(node_settings, auth=auth, parent=parent, contents=False, **data)
-
-
-# TODO I'm never used, can I go home?
-def _get_tree(node_settings, sha, connection=None):
-
-    connection = connection or GitHub.from_settings(node_settings.user_settings)
-    tree = connection.tree(
-        node_settings.user, node_settings.repo, sha, recursive=True,
-    )
-    if tree:
-        return tree['tree']
+    return github_hgrid_data(node_settings, auth=auth, **data)
 
 
 @must_be_contributor_or_public

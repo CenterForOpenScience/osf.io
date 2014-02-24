@@ -2,7 +2,7 @@
 """Contanins Helper functions for generating correctly
 formated hgrid list/folders.
 """
-import json
+import os
 import itertools
 import hurry
 
@@ -112,10 +112,9 @@ class NodeFileCollector(object):
 
     """A utility class for creating rubeus formatted node data"""
 
-    def __init__(self, node, auth, parent=None, **kwargs):
+    def __init__(self, node, auth, **kwargs):
         self.node = node
         self.auth = auth
-        self.parent = parent
         self.extra = kwargs
         self.can_view = node.can_view(auth)
         self.can_edit = node.can_edit(auth) if self.can_view else False
@@ -124,7 +123,8 @@ class NodeFileCollector(object):
         """Return the Rubeus.JS representation of the node's file data, including
         addons and components
         """
-        return self._collect_addons(self.node) + self._collect_components(self.node)
+        root = self._serialize_node(self.node)
+        return [root]
 
     def _collect_components(self, node):
         rv = []
@@ -143,15 +143,17 @@ class NodeFileCollector(object):
         else:
             children = []
         return {
-            'name': u'Component: {0}'.format(node.title) if can_view else u'Private Component',
+            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), node.title)
+                if can_view
+                else u'Private Component',
             'kind': FOLDER,
             'permissions': {
                 'edit': can_edit,
                 'view': can_view
             },
             'urls': {
-                'upload': None,
-                'fetch': None
+                'upload': os.path.join(node.api_url, 'osffiles') + '/',
+                'fetch': None,
             },
             'children': children
         }
@@ -161,9 +163,7 @@ class NodeFileCollector(object):
         for addon in node.get_addons():
             if addon.config.has_hgrid_files:
                 temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
-                if temp:
-                    temp['iconUrl'] = addon.config.icon_url
-                    rv.append(temp)
+                rv.extend(temp or [])
         return rv
 
 # TODO: these might belong in addons module

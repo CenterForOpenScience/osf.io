@@ -26,7 +26,7 @@
 global.ondragover = function(e) { e.preventDefault(); };
 global.ondrop = function(e) { e.preventDefault(); };
 
-var filebrowser = new Rubeus('#myGrid', {
+filebrowser = new Rubeus('#myGrid', {
     data: nodeApiUrl + 'files/grid/'
 });
 

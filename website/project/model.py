@@ -380,23 +380,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     def can_view(self, auth):
         return self.is_public or self.can_edit(auth)
 
-    @property
-    def has_files(self):
-        """Check whether the node has any add-ons or components that define
-        the files interface. Overrides AddonModelMixin::has_files to include
-        recursion over child nodes.
-
-        :return bool: Has files add-ons
-
-        """
-        rv = super(Node, self).has_files
-        if rv:
-            return rv
-        for child in self.nodes:
-            if not child.is_deleted and child.has_files:
-                return True
-        return False
-
     def save(self, *args, **kwargs):
 
         first_save = not self._is_loaded
@@ -408,7 +391,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             #
             for addon in settings.ADDONS_AVAILABLE:
-                if addon.added_to['node']:
+                if 'node' in addon.added_default:
                     self.add_addon(addon.short_name)
 
             #

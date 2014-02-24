@@ -12,7 +12,7 @@ from website.project import decorators
 
 @decorators.must_be_valid_project
 @decorators.must_be_contributor
-def disable_addon(*args, **kwargs):
+def disable_addon(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
 
@@ -27,7 +27,7 @@ def disable_addon(*args, **kwargs):
 
 @decorators.must_be_valid_project
 @decorators.must_be_contributor_or_public
-def get_addon_config(*args, **kwargs):
+def get_addon_config(**kwargs):
 
     user = kwargs['auth'].user
     node = kwargs['node'] or kwargs['project']
@@ -44,7 +44,7 @@ def get_addon_config(*args, **kwargs):
 
 
 @must_be_logged_in
-def get_addon_user_config(*args, **kwargs):
+def get_addon_user_config(**kwargs):
 
     user = kwargs['auth'].user
 
