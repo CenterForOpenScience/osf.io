@@ -3,7 +3,6 @@ import logging
 
 from mako.template import Template
 from framework import session, create_session
-from framework.exceptions import FrameworkError
 from framework import goback
 from framework import status
 from framework.auth.utils import parse_name
@@ -11,6 +10,8 @@ import framework.flask as web
 import framework.bcrypt as bcrypt
 from framework.email.tasks import send_email
 from modularodm.query.querydialect import DefaultQueryDialect as Q
+from framework.auth.exceptions import (DuplicateEmailError, LoginNotAllowedError,
+                                        PasswordIncorrectError)
 
 import website
 from website import security
@@ -18,31 +19,6 @@ from model import User
 
 
 logger = logging.getLogger(__name__)
-
-
-class AuthError(FrameworkError):
-    """Base class for auth-related errors."""
-    pass
-
-
-class DuplicateEmailError(AuthError):
-    """Raised if a user tries to register an email that is already in the
-    database.
-    """
-    pass
-
-
-class LoginNotAllowedError(AuthError):
-    """Raised if user login is called for a user that is not registered or
-    is not claimed, etc.
-    """
-    pass
-
-class PasswordIncorrectError(AuthError):
-    """Raised if login is called with an incorrect password attempt.
-    """
-    pass
-
 
 def get_current_username():
     return session.data.get('auth_user_username')
