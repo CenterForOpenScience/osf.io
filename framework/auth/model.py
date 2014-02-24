@@ -57,7 +57,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #   <project_id>: {
     #       'name': <name that referrer provided>,
     #       'referrer_id': <user ID of referrer>,
-    #       'verification': <token used for verification urls>
+    #       'token': <token used for verification urls>
     #   }
     #   ...
     # }
@@ -155,7 +155,7 @@ class User(GuidStoredObject, AddonModelMixin):
         record = {
             'name': given_name,
             'referrer_id': referrer_id,
-            'verification': generate_confirm_token()
+            'token': generate_confirm_token()
         }
         self.unclaimed_records[project_id] = record
         return record
@@ -193,7 +193,7 @@ class User(GuidStoredObject, AddonModelMixin):
         uid = self._primary_key
         base_url = settings.DOMAIN if external else '/'
         unclaimed_record = self.get_unclaimed_record(project_id)
-        token = unclaimed_record['verification']
+        token = unclaimed_record['token']
         return '{base_url}user/{uid}/{project_id}/claim/{token}/'\
                     .format(**locals())
 
@@ -245,7 +245,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :raises: ValueError if there is no unclaimed record for the given node
         """
         record = self.get_unclaimed_record(node._primary_key)
-        return record['verification'] == token
+        return record['token'] == token
 
     def confirm_email(self, token):
         if self.verify_confirmation_token(token):
