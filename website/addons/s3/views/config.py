@@ -129,31 +129,6 @@ def s3_node_settings(**kwargs):
         adjust_cors(S3Wrapper.from_addon(node_settings))
 
 
-@must_be_contributor
-@must_have_addon('s3', 'node')
-def s3_remove_node_settings(**kwargs):
-
-    auth = kwargs['auth']
-    node_settings = kwargs['node_addon']
-    node = node_settings.owner
-
-    bucket = node_settings.bucket
-    node_settings.user_settings = None
-    node_settings.bucket = None
-    node_settings.save()
-
-    if bucket:
-        node.add_log(
-            action='s3_bucket_unlinked',
-            params={
-                'project': node.parent_id,
-                'node': node._id,
-                'bucket': bucket,
-            },
-            auth=auth,
-        )
-
-
 @must_be_logged_in
 @must_have_addon('s3', 'user')
 def s3_remove_user_settings(**kwargs):

@@ -35,27 +35,27 @@
                     type: 'DELETE',
                     url: '/api/v1/settings/s3/',
                     contentType: 'application/json',
-                    dataType: 'json'
-                }).done(function() {
-                    $('#access_key').val('');
-                    $('#secret_key').val('');
-                    msgElm.text('Keys removed')
-                        .removeClass('text-danger').addClass('text-success')
-                        .fadeOut(100).fadeIn();
-                    location.reload();
-                }).fail(function(xhr) {
-                    var response = JSON.parse(xhr.responseText);
-                    if (response && response.message) {
-                        if(response.message === 'reload')
-                            window.location.reload();
-                        else
-                            message = response.message;
-                    } else {
-                        message = 'Error: Keys not removed';
+                    dataType: 'json',
+                    success: function(response) {
+                        msgElm.text('Keys removed')
+                            .removeClass('text-danger').addClass('text-success')
+                            .fadeOut(100).fadeIn();
+                        window.location.reload();
+                    },
+                    error: function(xhr) {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response && response.message) {
+                            if(response.message === 'reload')
+                                window.location.reload();
+                            else
+                                message = response.message;
+                        } else {
+                            message = 'Error: Keys not removed';
+                        }
+                        msgElm.text(message)
+                            .removeClass('text-success').addClass('text-danger')
+                            .fadeOut(100).fadeIn();
                     }
-                    msgElm.text(message)
-                        .removeClass('text-success').addClass('text-danger')
-                        .fadeOut(100).fadeIn();
                 });
                 return false;
             });
@@ -65,4 +65,3 @@
         ${parent.on_submit()}
     %endif
 </%def>
-

@@ -36,15 +36,6 @@ settings_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/s3/settings/',
-                '/project/<pid>/node/<nid>/s3/settings/',
-            ],
-            'delete',
-            views.config.s3_remove_node_settings,
-            json_renderer,
-        ),
-        Rule(
-            [
                 '/project/<pid>/s3/authorize/',
                 '/project/<pid>/node/<nid>/s3/authorize/',
             ],

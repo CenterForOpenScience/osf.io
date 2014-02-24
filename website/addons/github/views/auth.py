@@ -96,6 +96,7 @@ def github_oauth_delete_user(**kwargs):
     return {}
 
 
+# TODO: Move into remove addon
 @must_be_contributor
 @must_have_addon('github', 'node')
 def github_oauth_delete_node(**kwargs):

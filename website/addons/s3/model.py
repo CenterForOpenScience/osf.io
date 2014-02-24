@@ -61,12 +61,14 @@ class AddonS3UserSettings(AddonUserSettingsBase):
 
     def revoke_auth(self):
 
+        rv = self.remove_iam_user()
+
         self.s3_osf_user = None
         self.access_key = None
         self.secret_key = None
         self.save()
 
-        return self.remove_iam_user()
+        return rv
 
     def delete(self, save=True):
 
