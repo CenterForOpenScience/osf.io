@@ -22,8 +22,8 @@ def collect_file_trees(**kwargs):
     link = kwargs['link']
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
-    data = request.args.to_dict()
-    serialized = _view_project(node, auth, link, **data)
+
+    serialized = _view_project(node, auth, link)
     # Add addon static assets
     serialized.update(rubeus.collect_addon_assets(node))
     return serialized

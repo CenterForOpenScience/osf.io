@@ -36,14 +36,13 @@ def prepare_private_key():
         key = None
 
     # Update URL and redirect
-    if key:
-        if not session:
-            parsed_path = urlparse.urlparse(request.path)
-            args = request.args.to_dict()
-            args['key'] = key
-            new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
-            new_path = urlparse.urlunparse(new_parsed_path)
-            return redirect(new_path, code=307)
+    if key and not session:
+        parsed_path = urlparse.urlparse(request.path)
+        args = request.args.to_dict()
+        args['key'] = key
+        new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
+        new_path = urlparse.urlunparse(new_parsed_path)
+        return redirect(new_path, code=307)
 
 logger = logging.getLogger(__name__)
 
