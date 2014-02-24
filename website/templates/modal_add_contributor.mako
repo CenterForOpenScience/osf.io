@@ -147,29 +147,28 @@
                 </div><!-- end component selection page -->
 
                 <!-- Invite user page -->
-## TODO: uncomment to enable user claiming
-##                <div data-bind='if:page()=="invite"'>
-##                    <form class='form' data-bind='submit:sendInvite'>
-##                        <div class="form-group">
-##                            <label for="inviteUserName">Full Name</label>
-##                            <input type="text" class='form-control' id="inviteName"
-##                                placeholder="Full name" data-bind='value: inviteName' required/>
-##                        </div>
-##                        <div class="form-group">
-##                            <label for="inviteUserEmail">Email</label>
-##                            <input type="email" class='form-control' id="inviteUserEmail"
-##                                    placeholder="Email" data-bind='value: inviteEmail' />
-##                        </div>
-##                        <button class='btn btn-success'
-##                         data-bind='enable: inviteEmail && inviteName'
-##                         type="submit">Invite and add</button>
-##                         <div class="help-block">
-##                            <p>We will notify the user that they have been added to your project.
-##                            </p>
-##                            <p class='text-danger' data-bind='text: inviteError'></p>
-##                        </div>
-##                    </form>
-##                </div><!-- end invite user page -->
+                <div data-bind='if:page()=="invite"'>
+                    <form class='form' data-bind='submit:sendInvite'>
+                        <div class="form-group">
+                            <label for="inviteUserName">Full Name</label>
+                            <input type="text" class='form-control' id="inviteName"
+                                placeholder="Full name" data-bind='value: inviteName' required/>
+                        </div>
+                        <div class="form-group">
+                            <label for="inviteUserEmail">Email</label>
+                            <input type="email" class='form-control' id="inviteUserEmail"
+                                    placeholder="Email" data-bind='value: inviteEmail' />
+                        </div>
+                        <button class='btn btn-success'
+                         data-bind='enable: inviteEmail && inviteName'
+                         type="submit">Invite and add</button>
+                         <div class="help-block">
+                            <p>We will notify the user that they have been added to your project.
+                            </p>
+                            <p class='text-danger' data-bind='text: inviteError'></p>
+                        </div>
+                    </form>
+                </div><!-- end invite user page -->
 
             </div><!-- end modal-body -->
 
