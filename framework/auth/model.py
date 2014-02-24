@@ -137,6 +137,7 @@ class User(GuidStoredObject, AddonModelMixin):
             self.emails.append(username)
         self.is_registered = True
         self.is_claimed = True
+        self.date_confirmed = dt.datetime.utcnow()
         return self
 
     def add_unclaimed_record(self, node, referrer, given_name):
@@ -238,13 +239,14 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         return token in self.email_verifications.keys()
 
-    def verify_claim_token(self, token, node):
+    def verify_claim_token(self, token, project_id):
         """Return whether or not a claim token is valid for this user for
         a given node which they were added as a unregistered contributor for.
-
-        :raises: ValueError if there is no unclaimed record for the given node
         """
-        record = self.get_unclaimed_record(node._primary_key)
+        try:
+            record = self.get_unclaimed_record(project_id)
+        except ValueError:  # No unclaimed record for given pid
+            return False
         return record['token'] == token
 
     def confirm_email(self, token):
