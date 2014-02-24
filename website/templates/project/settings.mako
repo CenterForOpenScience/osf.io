@@ -95,9 +95,6 @@
                             </button>
                         % endif
 
-
-                    % endfor
-
                     <br />
 
                     % if not node['is_registration']:
