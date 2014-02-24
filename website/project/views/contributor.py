@@ -2,9 +2,6 @@
 import httplib as http
 import logging
 
-from mako.template import Template
-from itsdangerous import BadSignature
-
 import framework
 from framework import request, User
 from framework.auth.decorators import collect_auth
@@ -12,7 +9,6 @@ from framework.auth.utils import parse_name
 from framework.exceptions import HTTPError
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor
-from framework.email.tasks import send_email
 from framework import forms
 from framework.auth.forms import SetEmailAndPasswordForm
 
@@ -221,6 +217,7 @@ def project_addcontributors_post(**kwargs):
         node.save()
     return {'status': 'success'}, 201
 
+
 def email_invite(to_addr, new_user, referrer, node):
     """Send an invite mail to an unclaimed user.
 
@@ -232,7 +229,10 @@ def email_invite(to_addr, new_user, referrer, node):
     # Add querystring with email, so that set password form can prepopulate the
     # email field
     claim_url = new_user.get_claim_url(node._primary_key) + '?email={0}'.format(to_addr)
-    return mails.send_mail(to_addr, mails.INVITE, user=new_user, referrer=referrer,
+    return mails.send_mail(to_addr, mails.INVITE,
+        user=new_user,
+        referrer=referrer,
+        node=node,
         claim_url=claim_url)
 
 
@@ -241,39 +241,41 @@ def claim_user_form(**kwargs):
 
     Renders the set password form, validates it, and sets the user's password.
     """
+    uid = kwargs['uid']
+    pid = kwargs['pid']
+    token = kwargs['token']
     # There shouldn't be a user logged in
     if framework.auth.get_current_user():
-        # TODO: should display more useful info to the user instead of an error page
+        # TODO: display more useful info to the user instead of an error page
         raise HTTPError(400)
-    signature = kwargs['signature']
     email = request.args.get('email', '')
     form = SetEmailAndPasswordForm(request.form)
-    # Parse the signature; if invalid, raise 404
-    try:
-        referral_data = User.parse_claim_signature(signature)
-    except BadSignature:
-
-        raise HTTPError(http.NOT_FOUND)
-    user = framework.auth.get_user(id=referral_data['_id'])
+    user = framework.auth.get_user(id=uid)
     # user ID is invalid. Unregistered user is not in database
     if not user:
         raise HTTPError(400)
-    parsed_name = parse_name(referral_data['name'])
-    if request.method == 'POST':
-        if form.validate():
-            username = form.username.data.strip()
-            password = form.password.data.strip()
-            user.register(username=username, password=password)
-            user.save()
-            project_id = referral_data['project_id']
-            # Go to project page
-            return framework.redirect('/{project_id}/'.format(project_id=project_id))
-        else:
-            forms.push_errors_to_status(form.errors)
+    # if token is invalid, throw an error
+    if not user.verify_claim_token(token=token, project_id=pid):
+        # TODO: display a more useful message and reroute to login page?
+        raise HTTPError(400)
+
+    parsed_name = parse_name(user.fullname)
+
+    if form.validate():
+        username = form.username.data.strip()
+        password = form.password.data.strip()
+        user.register(username=username, password=password)
+        user.save()
+        # Authenticate user and redirect to project page
+        response = framework.redirect('/{pid}/'.format(pid=pid))
+        return framework.auth.authenticate(user, response)
+    else:
+        forms.push_errors_to_status(form.errors)
+
     return {
         'firstname': parsed_name['given_name'],
         'email': email,
-        'fullname': referral_data['name']
+        'fullname': user.fullname
     }
 
 @must_be_valid_project
