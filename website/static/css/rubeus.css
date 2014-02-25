@@ -96,3 +96,7 @@
 .highlight-denied .hg-folder-text {
   color: white;
 }
+
+.btn-delete:hover {
+  color: #b94a48;
+}

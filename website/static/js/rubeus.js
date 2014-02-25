@@ -72,7 +72,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         var buttonDefs = [{
               text: '<i class="icon-download-alt icon-white"' + downloadTip + '></i>',
               action: 'download',
-              cssClass: 'btn btn-primary btn-mini'
+              cssClass: 'btn btn-success btn-mini'
         }];
         if (item.permissions && item.permissions.edit) {
             var deleteTip = genTooltipMarkup('Delete ' + item.name);
