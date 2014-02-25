@@ -40,8 +40,10 @@ class TestRubeus(DbTestCase):
         node_settings = self.node_settings
         node = self.project
         user = Auth(self.project.creator)
+        # FIXME: These tests are very brittle.
         rv = {
             'addon': 's3',
+            'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
             'name': 'Amazon Simple Storage Service: {0}'.format(
                 node_settings.bucket
@@ -79,6 +81,7 @@ class TestRubeus(DbTestCase):
         user = Auth(self.project.creator)
         rv = {
             'addon': 's3',
+            'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
             'name': 'Amazon Simple Storage Service: {0}'.format(
                 node_settings.bucket
@@ -112,6 +115,7 @@ class TestRubeus(DbTestCase):
         user = Auth(self.project.creator)
         rv = {
             'addon': 's3',
+            'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
             'name': 'Amazon Simple Storage Service: {0}'.format(
                 node_settings.bucket
@@ -153,6 +157,7 @@ class TestRubeus(DbTestCase):
 
         rv = {
             'addon': 's3',
+            'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
             'name': 'Amazon Simple Storage Service: {0}'.format(
                 node_settings.bucket
