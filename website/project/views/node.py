@@ -109,7 +109,7 @@ def project_before_fork(**kwargs):
     pointers = node.get_pointers()
     if pointers:
         prompts.append(
-            language.before_fork_has_pointers.format(
+            language.BEFORE_FORK_HAS_POINTERS.format(
                 category=node.project_or_component
             )
         )

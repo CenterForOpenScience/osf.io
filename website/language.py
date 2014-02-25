@@ -63,21 +63,21 @@ LINK_EXPIRED ='This confirmation link has expired. Please <a href="/login/">log 
 
 # Node Actions
 
-before_register_has_pointers = (
+BEFORE_REGISTER_HAS_POINTERS = (
     'This {category} contains links to other projects. Links will be copied '
     'into your registration, but the projects that they link to will not be '
     'registered. If you wish to register the linked projects, they need to be '
     'registered from the original project in order to be part of this project.'
 )
 
-before_fork_has_pointers = (
+BEFORE_FORK_HAS_POINTERS = (
     'This {category} contains links to other projects. Links will be copied '
     'into your fork, but the projects that they link to will not be forked. '
     'If you wish to fork the linked projects, they need to be forked from the '
     'original project in order to be part of this project.'
 )
 
-registration_info = '''
+REGISTRATION_INFO = '''
 <p>You can register your project by selecting a registration form, then enter
 information about your project, and then confirming. Registration creates a
 frozen version of the project that can never be edited or deleted. You will be
@@ -98,7 +98,7 @@ will always be linked to the project.</p>
 </ul>
 '''
 
-before_registration_info = '''
+BEFORE_REGISTRATION_INFO = '''
 Registration cannot be undone, and the archived content and files cannot be
 deleted after registration. Please be sure the project is complete and
 comprehensive for what you wish to register.
