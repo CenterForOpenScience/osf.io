@@ -8,7 +8,6 @@ from tests.base import DbTestCase
 from tests.factories import UserFactory, ProjectFactory
 
 from framework.auth.decorators import Auth
-from website.addons.base import AddonError
 from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import NotFoundError
 
