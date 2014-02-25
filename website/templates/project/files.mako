@@ -4,7 +4,7 @@
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 <div class='help-block'>
-    <p>To Upload: Drag files from your desktop and drop into folder below or click an upload button.</p>
+    <p>To Upload: Drag files from your desktop and drop into folder below or click an upload (<button class="btn btn-default btn-mini" disabled><i class="icon-upload"></i></button>) button.</p>
 </div>
 
 <div id="myGrid" class="filebrowser hgrid"></div>
