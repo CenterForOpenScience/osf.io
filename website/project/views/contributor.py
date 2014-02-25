@@ -310,4 +310,7 @@ def invite_contributor_post(**kwargs):
             return {'status': 400, 'message': msg}, 400
     if email:
         email_invite(email, new_user, referrer=auth.user, node=node)
-    return {'status': 'success', 'contributor': _add_contributor_json(new_user)}
+    serialized = _add_contributor_json(new_user)
+    # display correct name
+    serialized['fullname'] = fullname
+    return {'status': 'success', 'contributor': serialized}
