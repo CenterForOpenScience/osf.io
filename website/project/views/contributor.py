@@ -305,7 +305,7 @@ def invite_contributor_post(**kwargs):
         # User is in database. If they are active, raise an error. If not,
         # go ahead and send the email invite
         new_user = framework.auth.get_user(username=email)
-        if new_user.is_active():
+        if new_user.is_registered:
             msg = 'User is already in database. Please go back and try your search again.'
             return {'status': 400, 'message': msg}, 400
     if email:

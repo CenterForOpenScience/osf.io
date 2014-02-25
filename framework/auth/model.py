@@ -99,13 +99,15 @@ class User(GuidStoredObject, AddonModelMixin):
 
     _meta = {'optimistic' : True}
 
+    def __repr__(self):
+        return '<User {0!r}>'.format(self.username)
 
     @classmethod
     def verify_unique_email(cls, email):
         """Check that an email is not already in the database. If it is, raise
         a DuplicateEmailError.
         """
-        if cls.find_by_email(email):
+        if cls.find_by_email(email.lower().strip()):
             msg = 'User already exists with email {email}'.format(**locals())
             raise DuplicateEmailError(msg)
         return email
@@ -117,17 +119,16 @@ class User(GuidStoredObject, AddonModelMixin):
         :raises: DuplicateEmailError if a user with the given email address
             is already in the database.
         """
-        clean_email = email.lower().strip()
-        # Make sure user isn't already in database
-        if email:
-            cls.verify_unique_email(clean_email)
         parsed = utils.parse_name(fullname)
         user = cls(
             username=email,
             fullname=fullname,
             **parsed
         )
+        # Make sure user isn't already in database
         if email:
+            clean_email = email.lower().strip()
+            cls.verify_unique_email(clean_email)
             user.emails.append(clean_email)
             user.add_email_verification(clean_email)
         user.is_registered = False
