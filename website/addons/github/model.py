@@ -94,6 +94,15 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     registration_data = fields.DictionaryField()
 
+    def delete(self, save=True):
+        super(AddonGitHubNodeSettings, self).delete(save=False)
+        self.delete_hook(save=False)
+        self.user = None
+        self.repo = None
+        self.user_settings = None
+        if save:
+            self.save()
+
     @property
     def repo_url(self):
         if self.user and self.repo:
