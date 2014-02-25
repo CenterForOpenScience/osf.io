@@ -5,7 +5,7 @@
 from framework import fields
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.dataverse.dvn.connection import DvnConnection
-from website.addons.dataverse.config import TEST_CERT, TEST_HOST
+from website.addons.dataverse.config import TEST_CERT, HOST
 
 
 class AddonDataverseUserSettings(AddonUserSettingsBase):
@@ -13,7 +13,7 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
     dataverse_username = fields.StringField()
     dataverse_password = fields.StringField()
 
-    def connect(self, username, password, host=TEST_HOST):
+    def connect(self, username, password, host=HOST):
         connection = DvnConnection(
             username=username,
             password=password,

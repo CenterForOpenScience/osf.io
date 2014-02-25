@@ -1,14 +1,14 @@
 import os
 import datetime
-import requests
+
 from framework import request, make_response
 from framework.flask import secure_filename, redirect
 from framework.exceptions import HTTPError
 
-from website import models
 from website.project.decorators import must_be_contributor_or_public, must_have_addon, must_not_be_registration
 from website.project.views.node import _view_project
 from website.util import rubeus
+from website.addons.dataverse.config import HOST
 
 import httplib as http
 
@@ -21,7 +21,7 @@ def dataverse_download_file(**kwargs):
     if file_id is None:
         raise HTTPError(http.NOT_FOUND)
 
-    return redirect('http://dvn-4.hmdc.harvard.edu/dvn/FileDownload/?fileId=' + file_id)
+    return redirect('http://' + HOST + '/dvn/FileDownload/?fileId=' + file_id)
 
 # TODO: Remove unnecessary API calls
 @must_be_contributor_or_public
@@ -132,7 +132,7 @@ def dataverse_upload_file(**kwargs):
             'urls': {
                     'view': node_settings.owner.api_url + 'dataverse/file/' + file_id + '/',
                     'download': node_settings.owner.api_url + 'dataverse/file/' + file_id + '/download/',
-                    'delete': node_settings.owner.api_url + 'dataverse/file/' + file_id+ '/',
+                    'delete': node_settings.owner.api_url + 'dataverse/file/' + file_id + '/',
             },
             'permissions': {
                 'view': True,
