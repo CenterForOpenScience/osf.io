@@ -714,6 +714,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 #'public': self.is_public,
                 '{}_contributors'.format(self._id): [
                     x.fullname for x in self.contributors
+                    if x is not None
                 ],
                 '{}_contributors_url'.format(self._id): [
                     x.profile_url for x in self.contributors
@@ -875,6 +876,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         :data: Form data
 
         """
+        if not self.can_edit(auth):
+            return
+
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
         template = urllib.unquote_plus(template)
         template = to_mongo(template)
@@ -919,48 +923,12 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         registered.nodes = []
 
-        # todo: should be recursive; see Node.fork_node()
-        for original_node_contained in original.nodes:
-
-            if not original_node_contained.can_edit(auth):
-                # todo: inform user that node can't be registered
-                continue
-
-            node_contained = original_node_contained.clone()
-            node_contained.save()
-
-            folder_old = os.path.join(settings.UPLOADS_PATH, original_node_contained._primary_key)
-
-            if os.path.exists(folder_old):
-                folder_new = os.path.join(settings.UPLOADS_PATH, node_contained._primary_key)
-                Repo(folder_old).clone(folder_new)
-
-            node_contained.is_registration = True
-            node_contained.registered_date = when
-            node_contained.registered_user = auth.user
-            node_contained.registered_schema = schema
-            node_contained.registered_from = original_node_contained
-            if not node_contained.registered_meta:
-                node_contained.registered_meta = {}
-            node_contained.registered_meta[template] = data
-
-            node_contained.contributors = original_node_contained.contributors
-            node_contained.forked_from = original_node_contained.forked_from
-            node_contained.creator = original_node_contained.creator
-            node_contained.logs = original_node_contained.logs
-            node_contained.tags = original_node_contained.tags
-
-            node_contained.save()
-
-            # After register callback
-            for addon in original_node_contained.get_addons():
-                _, message = addon.after_register(
-                    original_node_contained, node_contained, auth.user
-                )
-                if message:
-                    status.push_status_message(message)
-
-            registered.nodes.append(node_contained)
+        for node_contained in original.nodes:
+            registered_node = node_contained.register_node(
+                schema, auth, template, data
+            )
+            if registered_node is not None:
+                registered.nodes.append(registered_node)
 
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
@@ -976,6 +944,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         original.save()
 
         registered.save()
+
         return registered
 
     def remove_tag(self, tag, auth, save=True):
@@ -1479,6 +1448,12 @@ class Node(GuidStoredObject, AddonModelMixin):
                     )
 
         return messages
+
+    def get_pointers(self):
+        pointers = self.nodes_pointer
+        for node in self.nodes:
+            pointers.extend(node.get_pointers())
+        return pointers
 
     def remove_contributor(self, contributor, auth, log=True):
         """Remove a contributor from this node.

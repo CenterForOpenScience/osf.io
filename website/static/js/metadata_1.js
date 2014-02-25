@@ -540,7 +540,7 @@ var MetaData = (function() {
 
         self.continueText = ko.observable('');
         self.continueFlag = ko.computed(function() {
-            return self.continueText().toLowerCase() === 'continue';
+            return self.continueText().toLowerCase() === 'register';
         });
 
         var ids = {};

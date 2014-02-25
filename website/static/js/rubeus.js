@@ -17,7 +17,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             // use item's icon based on filetype
             icon = '<img class="hg-addon-icon" src="' + item.iconUrl + '">';
             cssClass = '';
-        } else
+        } else {
             if (!item.permissions.view) {
                 icon = HGrid.Html.folderIconPrivate;
                 cssClass = 'hg-folder-private';
@@ -25,6 +25,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
                 icon = HGrid.Html.folderIcon;
                 cssClass = 'hg-folder-public';
             }
+        }
         opening = '<span class="hg-folder-text ' + cssClass + '">';
         var closing = '</span>';
         html = [icon, opening, item.name, closing].join('');
@@ -40,37 +41,68 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
 
     HGrid.Col.Name.itemView = function(item) {
         var ext = item.name.split('.').pop().toLowerCase();
-        return HGrid.Extensions.indexOf(ext) === -1 ?
-            HGrid.Html.fileIcon + item.name:
-            HGrid.ExtensionSkeleton.replace('{{ext}}', ext) + item.name;
+        var tooltipMarkup = genTooltipMarkup('View file');
+
+        var nameElement = ['<span ' + tooltipMarkup + ' >', item.name, '</span>'].join('');
+
+        var icon = Rubeus.Extensions.indexOf(ext) === -1 ?
+                        HGrid.Html.fileIcon :
+                        Rubeus.ExtensionSkeleton.replace('{{ext}}', ext);
+        return [icon, nameElement].join('');
     };
 
+    /**
+     * Generate the markup necessary for adding a tooltip to an element.
+     */
+    function genTooltipMarkup(title, maxLength) {
+        var max = maxLength || 25;
+        // Truncate title if necessary
+        var cleanTitle;
+        if (title.length >= max) {
+            cleanTitle = title.slice(0, max) + '...';
+        } else {
+            cleanTitle = title;
+        }
+        return ' title="' + cleanTitle + '" data-placement="right" ' +
+                                'data-toggle="tooltip" ';
+    }
+
     HGrid.Col.ActionButtons.itemView = function(item) {
+
 	var buttonDefs = [];
-	if(item.permisssions.download !== false){
-	    buttonDefs.push{
-		text: '<i class="icon-download-alt icon-white"></i>',
+	if(item.permissions.download !== false){
+            var downloadTip = genTooltipMarkup('Download ' + item.name);
+	    var buttonDefs.push({
+		text: '<i class="icon-download-alt icon-white"' + downloadTip + '></i>',
 		action: 'download',
 		cssClass: 'btn btn-primary btn-mini'
-	    };
-	}
-	if (item.permissions && item.permissions.edit) {
-	    buttonDefs.push({
-		text: '&nbsp;<i class="icon-remove"></i>',
-		action: 'delete',
-		cssClass: 'btn btn-link btn-mini btn-delete'
 	    });
 	}
-	return HGrid.Fmt.buttons(buttonDefs);
+        if (item.permissions && item.permissions.edit) {
+            var deleteTip = genTooltipMarkup('Delete ' + item.name, 20);
+            buttonDefs.push({
+              text: '&nbsp;<i class="icon-remove"' + deleteTip + '></i>',
+              action: 'delete',
+              cssClass: 'btn btn-link btn-mini btn-delete'
+            });
+      }
+      return HGrid.Fmt.buttons(buttonDefs);
+
     };
+
+    /** Remove the 'Project: ' text from the beginning of a folder name. */
+    function trimFolderName(name) {
+        return name.slice(name.indexOf(':') + 1).trim();
+    }
 
     HGrid.Col.ActionButtons.width = 15;
     HGrid.Col.ActionButtons.folderView = function(row) {
         var buttonDefs = [];
+        var tooltipMarkup = genTooltipMarkup('Upload to ' + trimFolderName(row.name));
         if (this.options.uploads && row.urls.upload &&
                 (row.permissions && row.permissions.edit)) {
             buttonDefs.push({
-                text: '<i class="icon-upload"></i>',
+                text: '<i class="icon-upload" ' + tooltipMarkup +  '></i>',
                 action: 'upload',
                 cssClass: 'btn btn-default btn-mini'
             });
@@ -215,6 +247,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             return row.urls.fetch || null;
         },
         fetchSuccess: function(data, row) {
+            updateTooltips();
             this.changeStatus(row, statusType.FETCH_SUCCESS);
         },
         fetchError: function(error, row) {
@@ -332,8 +365,13 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             this.getData().forEach(function(item) {
                 self.expandItem(item);
             });
+            updateTooltips();
         }
     };
+
+    function updateTooltips() {
+        $('[data-toggle="tooltip"]').tooltip({animation: false});
+    }
 
     ///////////////////////
     // Rubeus Public API //
@@ -399,6 +437,20 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             return this;
         }
     };
+
+    ///////////////////
+    // Icon "Plugin" //
+    ///////////////////
+
+    Rubeus.Extensions = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
+        'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
+        'eml', 'eps', 'exe', 'fla', 'flv', 'gif', 'gz', 'hqx', 'htm', 'html', 'ifo', 'indd', 'iso', 'jar',
+        'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
+        'mpeg', 'mpg', 'msi', 'mswmm', 'ogg', 'pdf', 'png', 'pps', 'ps', 'psd', 'pst', 'ptb', 'pub', 'qbb',
+        'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
+        'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip'];
+
+    Rubeus.ExtensionSkeleton = '<img class="hg-icon" src="/static\/img\/hgrid\/fatcowicons\/file_extension_{{ext}}.png">';
 
     return Rubeus;
 
