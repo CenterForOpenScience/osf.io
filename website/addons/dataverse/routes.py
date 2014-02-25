@@ -109,8 +109,8 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/dataverse/file/download/<path:path>/',
-                '/project/<pid>/node/<nid>/dataverse/file/download/<path:path>',
+                '/project/<pid>/dataverse/file/<path:path>/download/',
+                '/project/<pid>/node/<nid>/dataverse/file/<path:path>/download/',
             ],
             'get',
             views.crud.dataverse_download_file,

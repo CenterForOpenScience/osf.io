@@ -1,8 +1,8 @@
 import os
 import datetime
-
+import requests
 from framework import request, make_response
-from framework.flask import secure_filename
+from framework.flask import secure_filename, redirect
 from framework.exceptions import HTTPError
 
 from website import models
@@ -17,39 +17,11 @@ import httplib as http
 @must_have_addon('dataverse', 'node')
 def dataverse_download_file(**kwargs):
 
-    node_settings = kwargs['node_addon']
-
     file_id = kwargs.get('path')
-    if file_id is "None":
+    if file_id is None:
         raise HTTPError(http.NOT_FOUND)
 
-    connection = node_settings.user_settings.connect(
-        node_settings.dataverse_username,
-        node_settings.dataverse_password
-    )
-
-    study = connection.get_dataverses()[int(node_settings.dataverse_number)].get_study_by_hdl(node_settings.study_hdl)
-    file = study.get_file_by_id(file_id)
-    name = file.name
-
-    # Todo: Download the file!
-    data = None
-
-    if data is None:
-        raise HTTPError(http.NOT_FOUND)
-
-    # Build response
-    resp = make_response(data)
-    resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(
-        name
-    )
-
-    # Add binary MIME type if extension missing
-    _, ext = os.path.splitext(name)
-    if not ext:
-        resp.headers['Content-Type'] = 'application/octet-stream'
-
-    return resp
+    return redirect('http://dvn-4.hmdc.harvard.edu/dvn/FileDownload/?fileId=' + file_id)
 
 # TODO: Remove unnecessary API calls
 @must_be_contributor_or_public
