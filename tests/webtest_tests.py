@@ -288,8 +288,9 @@ class TestRegistrations(DbTestCase):
         ).maybe_follow()
 
         # Find registration options
-        options = res.html.find('select', id='select-registration-template')\
-            .find_all('option')
+        options = res.html.find(
+            'select', id='select-registration-template'
+        ).find_all('option')
 
         # Should see number of options equal to number of registration
         # templates, plus one for 'Select...'

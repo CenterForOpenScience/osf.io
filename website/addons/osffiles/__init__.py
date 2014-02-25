@@ -14,7 +14,7 @@ ROUTES = [
 ]
 
 SHORT_NAME = 'osffiles'
-FULL_NAME = 'OSF Files'
+FULL_NAME = 'OSF Storage'
 
 OWNERS = ['node']
 

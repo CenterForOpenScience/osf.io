@@ -1436,7 +1436,6 @@ class TestRegisterNode(DbTestCase):
         assert_in(self.user, registration1.contributors)
         assert_equal(registration1.registered_user, self.user)
         assert_equal(len(registration1.registered_meta), 1)
-        assert_true(registration1.registered_schema)
 
         # Create a registration from a project
         user2 = UserFactory()
@@ -1695,6 +1694,15 @@ class TestPointer(DbTestCase):
     def test_register(self):
         registered = self.pointer.fork_node()
         self._assert_clone(self.pointer, registered)
+
+    def test_register_with_pointer_to_registration(self):
+        "Check for regression"
+        pointee = RegistrationFactory()
+        project = ProjectFactory()
+        auth = Auth(user=project.creator)
+        project.add_pointer(pointee, auth=auth)
+        registration = project.register_node(None, auth, '', '')
+        assert_equal(registration.nodes[0].node, pointee)
 
 
 class TestWatchConfig(DbTestCase):

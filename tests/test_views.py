@@ -27,7 +27,8 @@ from website.project.views.node import _view_project
 from tests.base import DbTestCase
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
-    NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory
+    NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
+    RegistrationFactory
 )
 
 
@@ -624,6 +625,54 @@ class TestPointerViews(DbTestCase):
                 {'pointerId': pointer._id},
                 auth=self.user.auth
             )
+
+    def test_before_register_with_pointer(self):
+        "Assert that link warning appears in before register callback."
+        node = NodeFactory()
+        self.project.add_pointer(node, auth=self.consolidate_auth)
+        url = self.project.api_url + 'fork/before/'
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        prompts = [
+            prompt
+            for prompt in res.json['prompts']
+            if 'Links will be copied into your fork' in prompt
+        ]
+        assert_equal(len(prompts), 1)
+
+    def test_before_fork_with_pointer(self):
+        "Assert that link warning appears in before fork callback."
+        node = NodeFactory()
+        self.project.add_pointer(node, auth=self.consolidate_auth)
+        url = self.project.api_url + 'beforeregister/'
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        prompts = [
+            prompt
+            for prompt in res.json['prompts']
+            if 'Links will be copied into your registration' in prompt
+        ]
+        assert_equal(len(prompts), 1)
+
+    def test_before_register_no_pointer(self):
+        "Assert that link warning does not appear in before register callback."
+        url = self.project.api_url + 'fork/before/'
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        prompts = [
+            prompt
+            for prompt in res.json['prompts']
+            if 'Links will be copied into your fork' in prompt
+        ]
+        assert_equal(len(prompts), 0)
+
+    def test_before_fork_no_pointer(self):
+        "Assert that link warning does not appear in before fork callback."
+        url = self.project.api_url + 'beforeregister/'
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        prompts = [
+            prompt
+            for prompt in res.json['prompts']
+            if 'Links will be copied into your registration' in prompt
+        ]
+        assert_equal(len(prompts), 0)
 
 
 class TestPublicViews(DbTestCase):
