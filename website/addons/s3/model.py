@@ -164,7 +164,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         :return str: Alert message
 
         """
-        if user.get_addon('s3').has_auth:
+        if self.user_settings and self.user_settings.has_auth:
             return (
                 'Registering {cat} "{title}" will copy the authentication for its '
                 'Amazon Simple Storage add-on to the registered {cat}. '
