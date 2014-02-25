@@ -165,6 +165,7 @@ def figshare_view_file(*args, **kwargs):
     if not f:
         raise HTTPError(http.NOT_FOUND)
     
+    download_url = node.api_url+'download/article/{aid}/file/{fid}'.format(aid=article_id,fid=file_id)
     render_url = node.api_url+'figshare/render/article/{aid}/file/{fid}'.format(aid=article_id,fid=file_id)
 
     cache_file = get_cache_file(
@@ -177,7 +178,7 @@ def figshare_view_file(*args, **kwargs):
         #TODO limit filesize
         rendered = get_cache_content(
             node_settings, cache_file, start_render=True,
-            file_path=filename, file_content=filedata, download_path=found.get('download_url'))
+            file_path=filename, file_content=filedata, download_path=download_url)
 
     rv = {
         'file_name': filename,

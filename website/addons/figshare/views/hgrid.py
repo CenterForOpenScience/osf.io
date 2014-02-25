@@ -41,14 +41,14 @@ def figshare_hgrid_data_contents(*args, **kwargs):
                                        fs_id, 
                                        fs_type, 
                                        contents)
-
+    
     return hgrid_tree
 
 
 def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
     if not node_settings.figshare_id:
         return
-    return rubeus.build_addon_root(node_settings, node_settings.figshare_id, permissions=auth)
+    return [rubeus.build_addon_root(node_settings, node_settings.figshare_id, permissions=auth)]
 
 
 @must_be_contributor_or_public
