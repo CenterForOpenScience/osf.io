@@ -55,7 +55,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
      * Generate the markup necessary for adding a tooltip to an element.
      */
     function genTooltipMarkup(title, maxLength) {
-        var max = maxLength || 25;
+        var max = maxLength || 30;
         // Truncate title if necessary
         var cleanTitle;
         if (title.length >= max) {
@@ -75,7 +75,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
               cssClass: 'btn btn-primary btn-mini'
         }];
         if (item.permissions && item.permissions.edit) {
-            var deleteTip = genTooltipMarkup('Delete ' + item.name, 20);
+            var deleteTip = genTooltipMarkup('Delete ' + item.name);
             buttonDefs.push({
               text: '&nbsp;<i class="icon-remove"' + deleteTip + '></i>',
               action: 'delete',
