@@ -85,10 +85,14 @@ api_routes = {
         Rule([
             '/project/<pid>/figshare/hgrid/',
             '/project/<pid>/node/<nid>/figshare/hgrid/',
-            '/project/<pid>/figshare/hgrid/<path:path>',
-            '/project/<pid>/node/<nid>/figshare/hgrid/<path:path>',
+            '/project/<pid>/figshare/hgrid/<type>/<id>',
+            '/project/<pid>/node/<nid>/figshare/hgrid/<type>/<id>',
 
         ], 'get', views.hgrid.figshare_hgrid_data_contents, json_renderer),
+        Rule([
+            '/project/<pid>/figshare/render/article/<aid>/file/<fid>',
+            '/project/<pid>/node/<nid>/figshare/render/article/<aid>/file/<fid>'
+                ], 'get', views.crud.figshare_get_rendered_file, json_renderer,),
      ],
     'prefix': '/api/v1',
 }
@@ -96,8 +100,9 @@ api_routes = {
 page_routes = {
     'rules': [
         Rule([
-            '/project/<pid>/figshare/article/<aid>/file/<fid>',
-            '/project/<pid>/node/<nid>/figshare/article/<aid>/file/<fid>',
-        ], 'get', views.crud.figshare_view_file, OsfWebRenderer('../addons/figshare/templates/figshare_page.mako')),
+            '/project/<pid>/figshare/article/<aid>/file/<fid>/',
+            '/project/<pid>/node/<nid>/figshare/article/<aid>/file/<fid>/',
+        ], 'get', views.crud.figshare_view_file, OsfWebRenderer('../addons/figshare/templates/figshare_view_file.mako')),
     ],
+    'prefix': '/api/v1'
 }

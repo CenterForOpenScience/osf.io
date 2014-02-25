@@ -35,6 +35,7 @@ def _build_rendered_html(file_name, file_content, cache_dir, cache_file_name,
     :param str download_path:
 
     """
+
     # Open file pointer if no content provided
     if file_content is None:
         file_pointer = codecs.open(file_name)

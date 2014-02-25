@@ -156,15 +156,40 @@ def figshare_view_file(*args, **kwargs):
     connect = Figshare.from_settings(node_settings.user_settings)
     
     article = connect.article(node_settings, article_id)
-    file_exists = False
+    found = False    
     for f in article['items'][0]['files']:
-        if f['id'] == file_id:
-            file_exists = True
+        if f['id'] == int(file_id):
+            found = f
+            break
 
-    if not file_exists:
+    if not f:
         raise HTTPError(http.NOT_FOUND)
     
+    render_url = node.api_url+'figshare/render/article/{aid}/file/{fid}'.format(aid=article_id,fid=file_id)
 
+    cache_file = get_cache_file(
+        article_id, file_id
+    )
+    rendered = get_cache_content(node_settings, cache_file)
+    filename = found['name']
+    if rendered is None:
+        filename, size, filedata = connect.get_file(node_settings, found)
+        #TODO limit filesize
+        rendered = get_cache_content(
+            node_settings, cache_file, start_render=True,
+            file_path=filename, file_content=filedata, download_path=found.get('download_url'))
+
+    rv = {
+        'file_name': filename,
+        'render_url': render_url,
+        'rendered': rendered,
+        'download_url': found.get('download_url'),
+    }
+    rv.update(_view_project(node, auth, primary=True))
+    return rv
+
+def get_cache_file(article_id, file_id):
+    return '{1}_{0}.html'.format(article_id, file_id)
 
 # FILES: D
 @decorators.must_be_contributor_or_public
@@ -189,6 +214,6 @@ def figshare_delete_file(*args, **kwargs):
 @must_have_addon('figshare', 'node')
 def figshare_get_rendered_file(*args, **kwargs):
     node_settings = kwargs['node_addon']
-    pass
+
 
 

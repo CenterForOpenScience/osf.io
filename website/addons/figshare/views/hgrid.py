@@ -24,11 +24,24 @@ def figshare_hgrid_data_contents(*args, **kwargs):
 
     connect = Figshare.from_settings(figshare_settings.user_settings)
 
+    fs_type = kwargs.get('type')
+    fs_id = kwargs.get('id')
+
+    contents = False
+    if fs_type and fs_id:
+        contents = True
+
+    if not fs_type:
+        fs_type = figshare_settings.figshare_type
+    if not fs_id:
+        fs_id = figshare_settings.figshare_id
+
     hgrid_tree = connect.tree_to_hgrid(node, 
                                        node_settings, 
-                                       figshare_settings.figshare_id, 
-                                       figshare_settings.figshare_type)
-    
+                                       fs_id, 
+                                       fs_type, 
+                                       contents)
+
     return hgrid_tree
 
 
