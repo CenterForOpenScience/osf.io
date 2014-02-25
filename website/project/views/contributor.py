@@ -3,7 +3,7 @@ import httplib as http
 import logging
 
 import framework
-from framework import request, User
+from framework import request, User, status
 from framework.auth.decorators import collect_auth
 from framework.auth.utils import parse_name
 from framework.exceptions import HTTPError
@@ -13,7 +13,7 @@ from framework import forms
 from framework.auth.forms import SetEmailAndPasswordForm
 from framework.auth.exceptions import DuplicateEmailError
 
-from website import settings, mails
+from website import settings, mails, language
 from website.filters import gravatar
 from website.models import Node
 from website.profile import utils
@@ -263,17 +263,20 @@ def claim_user_form(**kwargs):
     parsed_name = parse_name(user.fullname)
     email = request.args.get('email', '')
     form = SetEmailAndPasswordForm(request.form)
-    if form.validate():
-        username = form.username.data.lower().strip()
-        password = form.password.data.strip()
-        user.register(username=username, password=password)
-        user.save()
-        # Authenticate user and redirect to project page
-        response = framework.redirect('/{pid}/'.format(pid=pid))
-        return framework.auth.authenticate(user, response)
-    else:
-        forms.push_errors_to_status(form.errors)
-
+    if request.method == 'POST':
+        if form.validate():
+            username = form.username.data.lower().strip()
+            password = form.password.data.strip()
+            user.register(username=username, password=password)
+            user.save()
+            # Authenticate user and redirect to project page
+            response = framework.redirect('/{pid}/'.format(pid=pid))
+            node = Node.load(pid)
+            status.push_status_message(language.CLAIMED_CONTRIBUTOR.format(node=node),
+                'success')
+            return framework.auth.authenticate(user, response)
+        else:
+            forms.push_errors_to_status(form.errors)
     return {
         'firstname': parsed_name['given_name'],
         'email': email,
@@ -299,7 +302,12 @@ def invite_contributor_post(**kwargs):
             auth=auth)
         node.save()
     except DuplicateEmailError:
-        return {'status': 400, 'message': 'User is already in database'}, 400
+        # User is in database. If they are active, raise an error. If not,
+        # go ahead and send the email invite
+        new_user = framework.auth.get_user(username=email)
+        if new_user.is_active():
+            msg = 'User is already in database. Please go back and try your search again.'
+            return {'status': 400, 'message': msg}, 400
     if email:
         email_invite(email, new_user, referrer=auth.user, node=node)
     return {'status': 'success', 'contributor': _add_contributor_json(new_user)}

@@ -61,11 +61,11 @@
                                     </tr>
                                 </tbody>
                             </table>
-## TODO: uncomment to enable claiming users
-##                                <a style="cursor:pointer"
-##                                data-bind='visible: query, click:gotoInvite'>Add
-##                                <em data-bind='text: query'></em>
-##                                as a non-registered contributor</a>
+                                <!-- Link to add non-registered contributor -->
+                                <a style="cursor:pointer"
+                                data-bind='visible: query, click:gotoInvite'>Add
+                                <em data-bind='text: query'></em>
+                                as a non-registered contributor</a>
                         </div><!-- ./col-md -->
 
                         <div class="col-md-6">

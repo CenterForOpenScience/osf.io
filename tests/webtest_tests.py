@@ -671,6 +671,21 @@ class TestClaiming(DbTestCase):
         res = form.submit().maybe_follow()
         new_user.reload()
         assert_equal(res.request.path, self.project.url)
+        assert_in('Welcome to the OSF', res)
+
+    def test_sees_error_message_at_claim_page_if_user_already_logged_in(self):
+        name, email = fake.name(), fake.email()
+        new_user = self.project.add_unregistered_contributor(
+            email=email,
+            fullname=name,
+            auth=Auth(self.referrer)
+        )
+        self.project.save()
+        existing = AuthUserFactory()
+        claim_url = new_user.get_claim_url(self.project._primary_key)
+        # a user is already logged in
+        res = self.app.get(claim_url, auth=existing.auth, expect_errors=True)
+        assert_in('already logged in', res)
 
 
 class TestConfirmingEmail(DbTestCase):
