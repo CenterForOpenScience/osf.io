@@ -7,7 +7,7 @@ $(document).ready(function() {
             columns: [HGrid.Col.Name],
             uploads: false,
             width: "100%",
-            height: 400
+            height: 600
     });
 });
 </script>

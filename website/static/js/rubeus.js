@@ -246,7 +246,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             HGrid.Col.ActionButtons
         ],
         width: '100%',
-        height: 500,
+        height: 900,
         fetchUrl: function(row) {
             return row.urls.fetch || null;
         },
