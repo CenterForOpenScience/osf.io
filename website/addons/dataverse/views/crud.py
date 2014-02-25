@@ -189,3 +189,15 @@ def dataverse_delete_file(**kwargs):
     # )
 
     return {}
+
+
+@must_be_contributor_or_public
+@must_have_addon('github', 'node')
+def dataverse_get_rendered_file(**kwargs):
+    """
+
+    """
+    node_settings = kwargs['node_addon']
+    path = kwargs['path']
+
+    return 'Render me!'

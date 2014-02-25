@@ -79,10 +79,11 @@ page_routes = {
                 '/project/<pid>/node/<nid>/dataverse/file/<path:path>/download/',
             ],
             'get',
-            views.crud.dataverse_view_file, # TODO: Why does dataverse_download_file cause crashing?
+            views.crud.dataverse_download_file,
             json_renderer,
         ),
     ],
+    'prefix': '/api/v1'
 }
 
 api_routes = {
@@ -109,11 +110,11 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/dataverse/file/<path:path>/download/',
-                '/project/<pid>/node/<nid>/dataverse/file/<path:path>/download/',
+                '/project/<pid>/dataverse/file/<path:path>/render/',
+                '/project/<pid>/node/<nid>/dataverse/file/<path:path>/render/',
             ],
             'get',
-            views.crud.dataverse_download_file,
+            views.crud.dataverse_get_rendered_file,
             json_renderer,
         ),
 
