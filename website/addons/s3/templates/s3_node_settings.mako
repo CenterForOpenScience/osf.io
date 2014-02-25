@@ -1,40 +1,42 @@
 <%inherit file="project/addon/node_settings.mako" />
 
-% if bucket_list:
+<script src="/addons/static/s3/s3-node-settings.js"></script>
 
-    % if user_has_auth and is_owner:
-        <script src="/addons/static/s3/s3-node-settings.js"></script>
+% if bucket_list is not None:
+
+    % if node_has_auth:
+        <div class="well well-sm">
+            Authorized by <a href="${owner_url}">${owner}</a>
+            <a id="s3RemoveToken" class="text-danger pull-right" style="cursor: pointer">Deauthorize</a>
+        </div>
     % endif
-
-    <div class="well well-sm">Authorized by <a href="${owner_url}">${owner}</a></div>
 
     <div class="form-group">
 
-    <input type="hidden" id="s3_bucket" value="${bucket}" name="s3_bucket" />
+        <div class="row">
 
-    <div class="row">
+            <div class="col-md-6">
 
-        <div class="col-md-6">
+                <select class="form-control" id="s3_bucket" name="s3_bucket" ${'' if user_has_auth and (owner is None or is_owner) else 'disabled'}>
+                    <option value="">-----</option>
+                    % for bucket_name in bucket_list or []:
+                        <option value="${bucket_name}" ${'selected' if bucket_name == bucket else ''}>${bucket_name}</option>
+                    % endfor
+                </select>
 
-            <select class="form-control" name="s3_bucket" ${'' if user_has_auth and is_owner else 'disabled'}>
-                % for bucket_name in bucket_list:
-                    <option value="${bucket_name}" ${'selected' if bucket_name == bucket else ''}>${bucket_name}</option>
-                % endfor
-            </select>
+            </div>
+
+            % if user_has_auth and (owner is None or is_owner):
+                <div class="col-md-6">
+                    <a class="btn btn-default" id="newBucket">Create Bucket</a>
+                </div>
+            % endif
 
         </div>
 
-        % if user_has_auth and is_owner:
-            <div class="col-md-6">
-                <a class="btn btn-default" id="newBucket">Create Bucket</a>
-            </div>
-        % endif
-
-    </div>
-
     </div> <!-- End form group -->
 
-% elif user_has_auth:
+% elif user_has_auth and bucket_list is None:
 
     <div class="well well-sm">
         S3 access keys loading. Please wait a moment and refresh the page.
@@ -55,7 +57,7 @@
 
 <%def name="on_submit()">
 
-    % if not bucket_list and not user_has_auth:
+    % if not user_has_auth:
 
         <script type="text/javascript">
 

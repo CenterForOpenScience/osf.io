@@ -116,23 +116,29 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     def to_json(self, user):
         rv = super(AddonGitHubNodeSettings, self).to_json(user)
         user_settings = user.get_addon('github')
-        github_config = {
-            'hasAuth': user_settings and user_settings.has_auth,
-        }
+        rv.update({
+            'user_has_auth': user_settings and user_settings.has_auth,
+        })
         if self.user_settings and self.user_settings.has_auth:
-            github_config['repo'] = {
-                'user': self.user,
-                'repo': self.repo,
-            }
-            github_config['user'] = {
-                'osfUser': self.user_settings.owner.fullname,
-                'osfUrl': self.user_settings.owner.url,
-                'osfId': self.user_settings.owner._id,
-                'githubUser': self.user_settings.github_user,
-                'githubUrl': 'https://github.com/{0}'.format(self.user_settings.github_user),
-                'owner': self.user_settings.owner == user,
-            }
-        rv['github_config'] = json.dumps(github_config)
+            owner = self.user_settings.owner
+            connection = GitHub.from_settings(user_settings)
+            repo_names = [
+                '{0} / {1}'.format(repo.owner.login, repo.name)
+                for repo in connection.repos()
+            ]
+            rv.update({
+                'node_has_auth': True,
+                'github_user': self.user or '',
+                'github_repo': self.repo or '',
+                'github_repo_full_name': '{0} / {1}'.format(self.user, self.repo),
+                'repo_names': repo_names,
+                'auth_osf_name': owner.fullname,
+                'auth_osf_url': owner.url,
+                'auth_osf_id': owner._id,
+                'github_user_name': self.user_settings.github_user,
+                'github_user_url': 'https://githubcom/{0}'.format(self.user_settings.github_user),
+                'is_owner': owner == user,
+            })
         return rv
 
     #############

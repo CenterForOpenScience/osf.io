@@ -108,6 +108,15 @@ settings_routes = {
             views.auth.github_add_user_auth,
             json_renderer,
         ),
+        Rule(
+            [
+                '/project/<pid>/github/oauth/',
+                '/project/<pid>/node/<nid>/github/oauth/',
+            ],
+            'delete',
+            views.auth.github_oauth_delete_node,
+            json_renderer,
+        ),
 
         # OAuth: General
         Rule(
@@ -125,13 +134,6 @@ settings_routes = {
 
 api_routes = {
     'rules': [
-
-        Rule(
-            '/github/user/repos/',
-            'get',
-            views.repos.github_list_repos,
-            json_renderer,
-        ),
 
         Rule(
             '/github/repo/create/',

@@ -1,61 +1,16 @@
 var GithubConfigHelper = (function() {
 
-    var GithubRepoModel = function(user, repo) {
-        this.user = user;
-        this.repo = repo;
+    var updateHidden = function(val) {
+        var repoParts = val.split('/');
+        $('#githubUser').val($.trim(repoParts[0]));
+        $('#githubRepo').val($.trim(repoParts[1]));
     };
 
-    GithubRepoModel.prototype.format = function() {
-        return this.user + ' / ' + this.repo;
-    };
+    var createRepo = function() {
 
-    var GithubSettingsModel = function(config) {
-        var self = this;
-        self.config = config;
-        self.repoModels = ko.observableArray();
-        self.repoModel = ko.observable();
-        self.user = ko.computed(function() {
-            return self.repoModel() ? self.repoModel().user : '';
-        });
-        self.repo = ko.computed(function() {
-            return self.repoModel() ? self.repoModel().repo : '';
-        });
-        self.getRepos();
-    };
+        var $elm = $('#addonSettingsGithub');
+        var $select = $elm.find('select');
 
-    GithubSettingsModel.prototype.findRepo = function(user, repo) {
-        var self = this;
-        var repos = self.repoModels().filter(function(item) {
-            return item.user == user && item.repo == repo;
-        });
-        if (repos.length) {
-            return repos[0];
-        }
-    };
-
-    GithubSettingsModel.prototype.getRepos = function() {
-        var self = this;
-        if (self.config.user) {
-            $.ajax({
-                type: 'GET',
-                url: '/api/v1/github/user/repos/',
-                success: function(response) {
-                    self.repoModels([]);
-                    for (var i=0; i<response.length; i++) {
-                        var item = response[i];
-                        var repoModel = new GithubRepoModel(item.owner.login, item.name);
-                        self.repoModels.push(repoModel);
-                        if (self.config.repo && self.config.repo.user === item.owner.login && self.config.repo.repo === item.name) {
-                            self.repoModel(repoModel);
-                        }
-                    }
-                }
-            });
-        }
-    };
-
-    GithubSettingsModel.prototype.newRepo = function() {
-        var self = this;
         bootbox.prompt('Name your new repo', function(repoName) {
             $.ajax({
                 type: 'POST',
@@ -64,10 +19,10 @@ var GithubConfigHelper = (function() {
                 dataType: 'json',
                 data: JSON.stringify({name: repoName}),
                 success: function(response) {
-                    var repoModel = new GithubRepoModel(response.user, response.repo);
-                    self.repoModels.push(repoModel);
-                    self.repoModel(repoModel);
-
+                    var repoName = response.user + ' / ' + response.repo;
+                    $select.append('<option value="' + repoName + '">' + repoName + '</option>');
+                    $select.val(repoName);
+                    updateHidden(repoName);
                 },
                 error: function() {
                     $('#addonSettingsGithub').find('.addon-settings-message')
@@ -79,25 +34,20 @@ var GithubConfigHelper = (function() {
         });
     };
 
-    GithubSettingsModel.prototype.deauthorize = function() {
-        var self = this;
-        bootbox.confirm('Are you sure you want to remove your GitHub authorization?', function(prompt) {
-            if (prompt) {
-                $.ajax({
-                    type: 'DELETE',
-                    url: nodeApiUrl + 'github/oauth/',
-                    success: function(response) {
-                        window.location.reload();
-                    }
-                });
+    $(document).ready(function() {
+
+        $('#githubSelectRepo').on('change', function() {
+            var value = $(this).val();
+            if (value) {
+                updateHidden(value);
             }
         });
-    };
 
-    GithubSettingsModel.prototype.addAuth = function() {
+        $('#githubCreateRepo').on('click', function() {
+            createRepo();
+        });
 
-        var self = this;
-        if (self.config.authUser) {
+        $('#githubImportToken').on('click', function() {
             $.ajax({
                 type: 'POST',
                 url: nodeApiUrl + 'github/user_auth/',
@@ -107,13 +57,32 @@ var GithubConfigHelper = (function() {
                     window.location.reload();
                 }
             });
-        } else {
-            window.location.href = nodeApiUrl + 'github/oauth/';
-        }
-    };
+        });
 
-    return {
-        GithubSettingsModel: GithubSettingsModel
-    }
+        $('#githubCreateToken').on('click', function() {
+            window.location.href = nodeApiUrl + 'github/oauth/';
+        });
+
+        $('#githubRemoveToken').on('click', function() {
+            bootbox.confirm('Are you sure you want to remove this GitHub authorization?', function(confirm) {
+                if (confirm) {
+                    $.ajax({
+                        type: 'DELETE',
+                        url: nodeApiUrl + 'github/oauth/',
+                        success: function(response) {
+                            window.location.reload();
+                        }
+                    });
+                }
+            });
+        });
+
+        $('#addonSettingsGithub .addon-settings-submit').on('click', function() {
+            if (!$('#githubRepo').val()) {
+                return false;
+            }
+        });
+
+    });
 
 })();

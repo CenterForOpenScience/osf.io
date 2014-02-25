@@ -32,10 +32,43 @@
 
     }
 
+    var removeNodeAuth = function() {
+        $.ajax({
+            type: 'DELETE',
+            url: nodeApiUrl + 's3/settings/',
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function(response) {
+                window.location.reload();
+            },
+            error: function(xhr) {
+                //TODO Do something here
+            }
+        });
+    };
+
     $(document).ready(function() {
+
         $('#newBucket').on('click', function() {
             newBucket();
         });
+
+        $('#s3RemoveToken').on('click', function() {
+            bootbox.confirm(
+                'Are you sure you want to remove this S3 authorization?', function(confirm) {
+                    if (confirm) {
+                        removeNodeAuth();
+                    }
+                }
+            );
+        });
+
+        $('#addonSettingsS3 .addon-settings-submit').on('click', function() {
+            if (!$('#s3_bucket').val()) {
+                return false;
+            }
+        });
+
     });
 
 })();

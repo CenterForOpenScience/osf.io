@@ -100,12 +100,13 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             ),
             'user_has_auth': False,
             'owner': None,  # needed?
-            'bucket_list': None
+            'bucket_list': None,
         })
 
         user_settings = user.get_addon('s3')
 
-        if self.user_settings:
+        if self.user_settings and self.user_settings.has_auth:
+            rv['node_has_auth'] = True
             rv['owner'] = self.user_settings.owner.fullname
             rv['owner_url'] = self.user_settings.owner.url
             self.save()
@@ -113,8 +114,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
                 rv['bucket_list'] = get_bucket_drop_down(self.user_settings)
                 rv['user_has_auth'] = True
 
-        elif user_settings:
-            if user.get_addon('s3').has_auth:
+        elif user_settings and user_settings.has_auth:
                 rv['bucket_list'] = get_bucket_drop_down(user.get_addon('s3'))
                 rv['user_has_auth'] = user_settings.has_auth
 

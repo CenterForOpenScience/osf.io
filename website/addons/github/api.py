@@ -218,7 +218,9 @@ class GitHub(object):
         """
         # Note: Must set `output` to `None`; no JSON response from this
         # endpoint
-        return self.gh3.repository(user, repo).hook(_id).delete()
+        repo = self.gh3.repository(user, repo)
+        if repo:
+            return repo.hook(_id).delete()
 
     ########
     # CRUD #
