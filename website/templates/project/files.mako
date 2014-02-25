@@ -4,7 +4,7 @@
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 <div class='help-block'>
-    <p>To Upload: Drag files from your desktop and drop into folder below or click an upload (<button class="btn btn-default btn-mini" disabled><i class="icon-upload"></i></button>) button.</p>
+    <p>To Upload: Drag files from your desktop into a folder below OR click an upload (<button class="btn btn-default btn-mini" disabled><i class="icon-upload"></i></button>) button.</p>
 </div>
 
 <div id="myGrid" class="filebrowser hgrid"></div>
@@ -28,7 +28,7 @@
 global.ondragover = function(e) { e.preventDefault(); };
 global.ondrop = function(e) { e.preventDefault(); };
 
-filebrowser = new Rubeus('#myGrid', {
+var filebrowser = new Rubeus('#myGrid', {
     data: nodeApiUrl + 'files/grid/'
 });
 
