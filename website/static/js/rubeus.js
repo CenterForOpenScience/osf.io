@@ -361,6 +361,19 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
                 self.expandItem(item);
             });
             updateTooltips();
+        },
+        // Add a red highlight when user drags over a folder they don't have
+        // permission to upload to.
+        onDragover: function(evt, row) {
+            if (row && !row.permissions.view) {
+                this.addHighlight(row, 'highlight-denied');
+            }
+        },
+        onDragleave: function(evt, row) {
+            this.removeHighlight('highlight-denied');
+        },
+        uploadDenied: function(evt, row) {
+            this.removeHighlight('highlight-denied');
         }
     };
 
