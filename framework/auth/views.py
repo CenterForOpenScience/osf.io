@@ -153,6 +153,11 @@ def confirm_email_get(**kwargs):
 
 
 def send_confirm_email(user, email):
+    """Sends a confirmation email to `user` to a given email.
+
+    :raises: KeyError if user does not have a confirmation token for the given
+        email.
+    """
     confirmation_url = user.get_confirmation_url(email, external=True)
     mails.send_mail(email, mails.CONFIRM_EMAIL, 'plain',
         user=user,
@@ -204,9 +209,15 @@ def resend_confirmation():
             # be added to form validation
             user = get_user(username=clean_email)
             if user:
-                status.push_status_message('Resent email to <em>{0}</em>'.format(clean_email),
-                    'success')
-                send_confirm_email(user, clean_email)
+                try:
+                    send_confirm_email(user, clean_email)
+                except KeyError:  # already confirmed, redirect to dashboard
+                    status_message, type_ = 'Email has already been confirmed.'
+                    type_ = 'warning'
+                else:
+                    status_message = 'Resent email to <em>{0}</em>'.format(clean_email)
+                    type_ = 'success'
+                status.push_status_message(status_message, type_)
             else:
                 msg = language.EMAIL_NOT_FOUND.format(email=clean_email)
                 status.push_status_message(msg, 'error')
