@@ -1195,11 +1195,21 @@ class TestProject(DbTestCase):
         assert_false(self.project.is_contributor(other_guy))
         assert_false(self.project.is_contributor(None))
 
+    def test_is_contributor_unregistered(self):
+        unreg = UnregUserFactory()
+        self.project.add_unregistered_contributor(
+            fullname=fake.name(),
+            email=unreg.username,
+            auth=self.consolidate_auth
+        )
+        self.project.save()
+        assert_true(self.project.is_contributor(unreg))
+
     def test_creator_is_contributor(self):
         assert_true(self.project.is_contributor(self.user))
         assert_in(self.user, self.project.contributors)
 
-    def test_cant_add_creator_as_contributor(self):
+    def test_cant_add_creator_as_contributor_twice(self):
         self.project.add_contributor(contributor=self.user)
         self.project.save()
         assert_equal(len(self.project.contributors), 1)

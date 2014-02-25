@@ -380,8 +380,8 @@ class TestUserInviteViews(DbTestCase):
             expect_errors=True)
         assert_equal(res.status_code, 400)
 
-    def test_cannot_invite_unreg_contributor_if_they_already_exist(self):
-        user = UserFactory()
+    def test_cannot_invite_unreg_contributor_if_they_are_already_contributor(self):
+        user = UnregUserFactory()
         self.project.add_unregistered_contributor(
             email=user.username, fullname=fake.name(),
             auth=Auth(self.project.creator))

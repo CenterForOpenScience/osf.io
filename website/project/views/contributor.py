@@ -309,6 +309,9 @@ def invite_contributor_post(**kwargs):
         if new_user.is_registered:
             msg = 'User is already in database. Please go back and try your search again.'
             return {'status': 400, 'message': msg}, 400
+        if node.is_contributor(new_user):
+            msg = 'User with this email address is already a contributor to this project.'
+            return {'status': 400, 'message': msg}, 400
     if email:
         email_invite(email, new_user, referrer=auth.user, node=node)
     serialized = _add_contributor_json(new_user)
