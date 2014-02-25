@@ -175,8 +175,8 @@ class Study(object):
             self._refresh(deposit_receipt=depositReceipt)
 
         if deleteAfterUpload:
-            os.remove(filepath)    
-    
+            os.remove(filepath)
+
     def update_metadata(self):
         #todo: consumer has to use the methods on self.entry (from sword2.atom_objects) to update the
         # metadata before calling this method. that's a little cumbersome...

@@ -25,7 +25,7 @@ def dataverse_download_file(**kwargs):
         node_settings.dataverse_password
     )
 
-    study = connection.get_dataverses()[node_settings.dataverse_number].get_study_by_hdl(node_settings.study_hdl)
+    study = connection.get_dataverses()[int(node_settings.dataverse_number)].get_study_by_hdl(node_settings.study_hdl)
     file = study.get_file_by_id(file_id)
     name = file.name
 
@@ -66,7 +66,7 @@ def dataverse_view_file(**kwargs):
         node_settings.dataverse_password
     )
 
-    study = connection.get_dataverses()[node_settings.dataverse_number].get_study_by_hdl(node_settings.study_hdl)
+    study = connection.get_dataverses()[int(node_settings.dataverse_number)].get_study_by_hdl(node_settings.study_hdl)
     file = study.get_file_by_id(file_id)
 
     # Get file URL
@@ -95,9 +95,9 @@ def dataverse_view_file(**kwargs):
 
     rv = {
         'file_name': file.name,
-        'render_url': url + '/render/' + file_id,
+        'render_url': url + '/render/',
         'rendered': rendered,
-        'download_url': url,
+        'download_url': url + '/download/',
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv
@@ -109,11 +109,7 @@ def dataverse_view_file(**kwargs):
 @must_have_addon('dataverse', 'node')
 def dataverse_upload_file(**kwargs):
 
-    node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
-    user = auth.user
     node_settings = kwargs['node_addon']
-    now = datetime.datetime.utcnow()
 
     path = kwargs.get('path', '')
 
@@ -121,14 +117,13 @@ def dataverse_upload_file(**kwargs):
         node_settings.dataverse_username,
         node_settings.dataverse_password
     )
-    study = connection.get_dataverses()[node_settings.dataverse_number].get_study_by_hdl(node_settings.study_hdl)
-
+    study = connection.get_dataverses()[int(node_settings.dataverse_number)].get_study_by_hdl(node_settings.study_hdl)
 
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
     content = upload.read()
 
-    study.add_file(filename)
+    study.add_file(os.path.join(path, filename))
 
     # TODO: Check for success (see below)
 
@@ -190,7 +185,7 @@ def dataverse_delete_file(**kwargs):
         node_settings.dataverse_username,
         node_settings.dataverse_password
     )
-    study = connection.get_dataverses()[node_settings.dataverse_number].get_study_by_hdl(node_settings.study_hdl)
+    study = connection.get_dataverses()[int(node_settings.dataverse_number)].get_study_by_hdl(node_settings.study_hdl)
 
     study.delete_file(study.get_file_by_id(file_id))
 
