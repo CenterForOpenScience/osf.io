@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
-import logging
 import os
+import logging
+import httplib as http
 from mako.template import Template
 
 from framework import request
+from framework.exceptions import HTTPError
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
-
-from ..api import GitHub, _build_github_urls, ref_to_params
-from .util import _get_refs, _check_permissions
 from website.util import rubeus
+
+from website.addons.github.exceptions import ApiError
+from website.addons.github.api import GitHub, build_github_urls, ref_to_params
+from website.addons.github.views.util import _get_refs, _check_permissions
+from website.addons.github.exceptions import NotFoundError, EmptyRepoError
 
 
 logger = logging.getLogger(__name__)
@@ -32,7 +36,7 @@ def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
         if data[datum].type in ['file', 'blob']:
             item = {
                 rubeus.KIND: rubeus.FILE,
-                'urls': _build_github_urls(
+                'urls': build_github_urls(
                     data[datum], node_url, node_api_url, branch, sha
                 )
             }
@@ -50,7 +54,7 @@ def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
                 'view': True,
                 'edit': can_edit,
             },
-            'urls': _build_github_urls(
+            'urls': build_github_urls(
                 data[datum], node_url, node_api_url, branch, sha
             ),
             'accept': {
@@ -125,12 +129,17 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         if repo.private:
             return
 
-    branch, sha, branches = _get_refs(
-        node_settings,
-        branch=kwargs.get('branch'),
-        sha=kwargs.get('sha'),
-        connection=connection,
-    )
+    try:
+        branch, sha, branches = _get_refs(
+            node_settings,
+            branch=kwargs.get('branch'),
+            sha=kwargs.get('sha'),
+            connection=connection,
+        )
+    except NotFoundError:
+        # TODO: Show an alert or change GitHub configuration?
+        logger.error('GitHub repo  not found')
+        return
 
     if branch is not None:
         ref = ref_to_params(branch, sha)
@@ -201,10 +210,13 @@ def github_hgrid_data_contents(**kwargs):
         node_addon, req_branch, req_sha, connection=connection
     )
     # Get file tree
-    contents = connection.contents(
-        user=node_addon.user, repo=node_addon.repo, path=path,
-        ref=sha or branch,
-    )
+    try:
+        contents = connection.contents(
+            user=node_addon.user, repo=node_addon.repo, path=path,
+            ref=sha or branch,
+        )
+    except ApiError:
+        raise HTTPError(http.NOT_FOUND)
 
     can_edit = _check_permissions(node_addon, auth, connection, branch, sha)
 
