@@ -89,4 +89,10 @@
   display: inline;
 }
 
+.highlight-denied {
+  background-color: #ff6666;
+}
 
+.highlight-denied .hg-folder-text {
+  color: white;
+}

@@ -177,7 +177,7 @@ def test():
     """
     test_osf()
 
-
+# TODO: user bower once hgrid is released
 @task
 def get_hgrid():
     """Get the latest development version of hgrid and put it in the static

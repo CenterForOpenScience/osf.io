@@ -3,7 +3,9 @@
 <%def name="content()">
 <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
-<h4>Drag and drop files below to upload.</h4>
+<div class='help-block'>
+    <p>To Upload: Drag files from your desktop and drop into folder below or click an upload button.</p>
+</div>
 
 <div id="myGrid" class="filebrowser hgrid"></div>
 
