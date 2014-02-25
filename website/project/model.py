@@ -10,6 +10,7 @@ import unicodedata
 import urllib
 import urlparse
 import logging
+from HTMLParser import HTMLParser
 
 import pytz
 from dulwich.repo import Repo
@@ -32,6 +33,8 @@ from framework.addons import AddonModelMixin
 
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
+
+html_parser = HTMLParser()
 
 logger = logging.getLogger(__name__)
 
@@ -1698,9 +1701,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             'id': str(self._primary_key),
             'category': self.project_or_component,
             'url': self.url,
-            'title': self.title,
+            # TODO: Titles shouldn't contain escaped HTML in the first place
+            'title': html_parser.unescape(self.title),
             'api_url': self.api_url,
-            'is_public': self.is_public
+            'is_public': self.is_public,
         }
 
 
