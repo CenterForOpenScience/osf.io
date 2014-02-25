@@ -90,10 +90,11 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         return name.slice(name.indexOf(':') + 1).trim();
     }
 
+    HGrid.Col.ActionButtons.name = 'Upload / Download / Delete';
     HGrid.Col.ActionButtons.width = 15;
     HGrid.Col.ActionButtons.folderView = function(row) {
         var buttonDefs = [];
-        var tooltipMarkup = genTooltipMarkup('Upload to ' + trimFolderName(row.name));
+        var tooltipMarkup = genTooltipMarkup('Upload');
         if (this.options.uploads && row.urls.upload &&
                 (row.permissions && row.permissions.edit)) {
             buttonDefs.push({
