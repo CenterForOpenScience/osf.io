@@ -17,7 +17,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             // use item's icon based on filetype
             icon = '<img class="hg-addon-icon" src="' + item.iconUrl + '">';
             cssClass = '';
-        } else
+        } else {
             if (!item.permissions.view) {
                 icon = HGrid.Html.folderIconPrivate;
                 cssClass = 'hg-folder-private';
@@ -25,6 +25,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
                 icon = HGrid.Html.folderIcon;
                 cssClass = 'hg-folder-public';
             }
+        }
         opening = '<span class="hg-folder-text ' + cssClass + '">';
         var closing = '</span>';
         html = [icon, opening, item.name, closing].join('');
@@ -45,9 +46,26 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             HGrid.ExtensionSkeleton.replace('{{ext}}', ext) + item.name;
     };
 
+    /**
+     * Generate the markup necessary for adding a tooltip to an element.
+     */
+    function genTooltipMarkup(title, maxLength) {
+        var max = maxLength || 25;
+        // Truncate title if necessary
+        var cleanTitle;
+        if (title.length >= max) {
+            cleanTitle = title.slice(0, max) + '...';
+        } else {
+            cleanTitle = title;
+        };
+        return ' title="' + cleanTitle + '" data-placement="right" ' +
+                                'data-toggle="tooltip" ';
+    }
+
     HGrid.Col.ActionButtons.itemView = function(item) {
+      var tooltipMarkup = genTooltipMarkup('Download ' + item.name);
       var buttonDefs = [{
-          text: '<i class="icon-download-alt icon-white"></i>',
+          text: '<i class="icon-download-alt icon-white"' + tooltipMarkup + '></i>',
           action: 'download',
           cssClass: 'btn btn-primary btn-mini'
       }];
@@ -61,13 +79,19 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
       return HGrid.Fmt.buttons(buttonDefs);
     };
 
+    /** Remove the 'Project: ' text from the beginning of a folder name. */
+    function trimFolderName(name) {
+        return name.slice(name.indexOf(':') + 1).trim();
+    }
+
     HGrid.Col.ActionButtons.width = 15;
     HGrid.Col.ActionButtons.folderView = function(row) {
         var buttonDefs = [];
+        var tooltipMarkup = genTooltipMarkup('Upload to ' + trimFolderName(row.name));
         if (this.options.uploads && row.urls.upload &&
                 (row.permissions && row.permissions.edit)) {
             buttonDefs.push({
-                text: '<i class="icon-upload"></i>',
+                text: '<i class="icon-upload" ' + tooltipMarkup +  '></i>',
                 action: 'upload',
                 cssClass: 'btn btn-default btn-mini'
             });
@@ -212,6 +236,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             return row.urls.fetch || null;
         },
         fetchSuccess: function(data, row) {
+            updateTooltips();
             this.changeStatus(row, statusType.FETCH_SUCCESS);
         },
         fetchError: function(error, row) {
@@ -329,8 +354,13 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             this.getData().forEach(function(item) {
                 self.expandItem(item);
             });
+            updateTooltips();
         }
     };
+
+    function updateTooltips() {
+        $('[data-toggle="tooltip"]').tooltip({animation: false});
+    }
 
     ///////////////////////
     // Rubeus Public API //
