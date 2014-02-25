@@ -1,9 +1,13 @@
+import re
 import time
 from urllib2 import HTTPError
 import logging
 
 from framework import request, status
 from website.search.solr_search import search_solr
+from website import settings
+from website.filters import gravatar
+from website.models import User
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('search.routes')
@@ -195,11 +199,6 @@ def create_result(highlights, results):
             result_search.append(container)
     return result_search, tags
 
-import re
-
-from website import settings
-from website.filters import gravatar
-from website.models import User
 
 def _search_contributor(query):
     """Search for contributors to add to a project using Solr. Request must
@@ -227,15 +226,23 @@ def _search_contributor(query):
 
     users = []
     for doc in docs:
-        users.append({
-            'fullname': doc['user'],
-            'id': doc['id'],
-            'gravatar': gravatar(
-                User.load(doc['id']),
-                use_ssl=True,
-                size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,
-            )
-        })
+        # TODO: use utils.serialize_user
+        user = User.load(doc['id'])
+        if user is None:
+            logger.error('Could not load user {0}'.format(doc['id']))
+            continue
+        if user.is_active():  # exclude merged, unregistered, etc.
+            users.append({
+                'fullname': doc['user'],
+                'id': doc['id'],
+                'gravatar': gravatar(
+                    user,
+                    use_ssl=True,
+                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,
+                ),
+                'registered': user.is_registered,
+                'active': user.is_active()
+            })
 
     return {'users': users}
 

@@ -2,14 +2,12 @@
 """Contanins Helper functions for generating correctly
 formated hgrid list/folders.
 """
-import json
+import os
 import itertools
+import hurry
 
-#TODO Fix me, circular import. Still works for some reason....
-from website.project.views.node import _view_project
 from framework.auth.decorators import Auth
 
-# Rubeus defined Constants
 FOLDER = 'folder'
 FILE = 'item'
 KIND = 'kind'
@@ -21,23 +19,26 @@ DEFAULT_PERMISSIONS = {
 }
 
 
+def format_filesize(size):
+    return hurry.filesize.size(size, system=hurry.filesize.alternative)
+
+
 def default_urls(node_api, short_name):
     return {
-        'fetch': '{node_api}{addonshort}/hgrid/'.format(node_api=node_api, addonshort=short_name),
-        'upload': '{node_api}{addonshort}/upload/'.format(node_api=node_api, addonshort=short_name)
+        'fetch': u'{node_api}{addonshort}/hgrid/'.format(node_api=node_api, addonshort=short_name),
+        'upload': u'{node_api}{addonshort}/'.format(node_api=node_api, addonshort=short_name),
     }
 
 
-def to_hgrid(node, auth, mode, **data):
+def to_hgrid(node, auth, **data):
     """Converts a node into a rubeus grid format
 
     :param node Node: the node to be parsed
-    :param auth Auth: the user authorization to be unused
-    :param mode String: page, widget, other
-    :return dict: rebeus formatted dict
+    :param auth Auth: the user authorization object
+    :returns: rubeus-formatted dict
 
     """
-    return NodeFileCollector(node, auth, **data)(mode)
+    return NodeFileCollector(node, auth, **data).to_hgrid()
 
 
 def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS,
@@ -55,8 +56,10 @@ def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS,
     :return dict: Hgrid formatted dictionary for the addon root folder
 
     """
-    name = node_settings.config.full_name + ': ' + \
-        name if name else node_settings.config.full_name
+    if name:
+        name = u'{0}: {1}'.format(node_settings.config.full_name, name)
+    else:
+        name = node_settings.config.full_name
     if hasattr(node_settings.config, 'urls') and node_settings.config.urls:
         urls = node_settings.config.urls
     if urls is None:
@@ -109,64 +112,50 @@ class NodeFileCollector(object):
 
     """A utility class for creating rubeus formatted node data"""
 
-    def __init__(self, node, auth, parent=None, **kwargs):
+    def __init__(self, node, auth, **kwargs):
         self.node = node
         self.auth = auth
-        self.parent = parent
         self.extra = kwargs
         self.can_view = node.can_view(auth)
         self.can_edit = node.can_edit(auth) if self.can_view else False
 
-    def __call__(self, mode):
-        """calls the to_hgrid method"""
-        return self.to_hgrid(mode)
-
-    def to_hgrid(self, mode):
-        if mode == 'page':
-            return self.to_hgrid_page()
-        elif mode == 'widget':
-            return self.to_hgrid_widget()
-        else:
-            return self.to_hgrid_other()
-
-    def to_hgrid_page(self):
-        rv = _view_project(self.node, self.auth, **self.extra)
-        rv.update({
-            'grid_data': self._get_grid_data(),
-            'tree_js': self._collect_static_js(),
-            'tree_css': self._collect_static_css()
-        })
-        return rv
-
-    def to_hgrid_widget(self):
-        return {'grid_data': self._get_grid_data()}
-
-    def to_hgrid_other(self):
-        return self._get_grid_data()
+    def to_hgrid(self):
+        """Return the Rubeus.JS representation of the node's file data, including
+        addons and components
+        """
+        root = self._serialize_node(self.node)
+        return [root]
 
     def _collect_components(self, node):
         rv = []
         for child in node.nodes:
-            if not child.is_deleted:
-                rv.append(self._create_dummy(child))
+            if not child.is_deleted and node.can_view(self.auth):
+                rv.append(self._serialize_node(child))
         return rv
 
-    def _get_grid_data(self):
-        return json.dumps(self._collect_addons(self.node) + self._collect_components(self.node))
-
-    def _create_dummy(self, node):
+    def _serialize_node(self, node):
+        """Returns the rubeus representation of a node folder.
+        """
+        can_edit = node.can_edit(auth=self.auth)
+        can_view = node.can_view(auth=self.auth)
+        if can_view:
+            children = self._collect_addons(node) + self._collect_components(node)
+        else:
+            children = []
         return {
-            'name': 'Component: {0}'.format(node.title) if self.can_view else 'Private Component',
+            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), node.title)
+                if can_view
+                else u'Private Component',
             'kind': FOLDER,
             'permissions': {
-                'edit': self.can_edit,
-                'view': self.can_view
+                'edit': can_edit,
+                'view': can_view
             },
             'urls': {
-                'upload': None,
-                'fetch': None
+                'upload': os.path.join(node.api_url, 'osffiles') + '/',
+                'fetch': None,
             },
-            'children': self._collect_addons(node) + self._collect_components(node)
+            'children': children
         }
 
     def _collect_addons(self, node):
@@ -174,29 +163,42 @@ class NodeFileCollector(object):
         for addon in node.get_addons():
             if addon.config.has_hgrid_files:
                 temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
-                if temp:
-                    temp['iconUrl'] = addon.config.icon_url
-                    rv.append(temp)
+                rv.extend(temp or [])
         return rv
 
-    def _collect_static_js(self):
-        """Collect JavaScript includes for all add-ons implementing HGrid views.
+# TODO: these might belong in addons module
+def collect_addon_assets(node):
+    """Return a dictionary containing lists of JS and CSS assets for a node's
+    addons.
 
-        :return list: List of JavaScript include paths
+    :rtype: {'tree_js': <list of JS scripts>, 'tree_css': <list of CSS files>}
+    """
+    return {
+        'tree_js': collect_addon_js(node),
+        'tree_css': collect_addon_css(node)
+    }
 
-        """
-        return itertools.chain.from_iterable(
-            addon.config.include_js.get('files', [])
-            for addon in self.node.get_addons()
-        )
 
-    def _collect_static_css(self):
-        """Collect CSS includes for all addons-ons implementing Hgrid views.
+def collect_addon_js(node):
+    """Collect JavaScript includes for all add-ons implementing HGrid views.
 
-        :return list: List of CSS include paths
+    :return list: List of JavaScript include paths
 
-        """
-        return itertools.chain.from_iterable(
-            addon.config.include_css.get('files', [])
-            for addon in self.node.get_addons()
-        )
+    """
+    # NOTE: must coerce to list so it is JSON-serializable
+    return list(itertools.chain.from_iterable(
+        addon.config.include_js.get('files', [])
+        for addon in node.get_addons())
+    )
+
+
+def collect_addon_css(node):
+    """Collect CSS includes for all addons-ons implementing Hgrid views.
+
+    :return list: List of CSS include paths
+
+    """
+    return list(itertools.chain.from_iterable(
+        addon.config.include_css.get('files', [])
+        for addon in node.get_addons())
+    )

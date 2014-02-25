@@ -69,5 +69,5 @@ def _build_rendered_html(file_name, file_content, cache_dir, cache_file_name,
 
 # Expose render function
 build_rendered_html = _build_rendered_html
-if settings.MFR_USE_QUEUE:
+if settings.USE_CELERY:
     build_rendered_html = build_rendered_html.delay

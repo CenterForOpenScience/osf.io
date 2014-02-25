@@ -6,15 +6,16 @@ from framework import (
     must_be_logged_in,
     request,
     redirect,
+    status
 )
 from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
-from framework.auth import get_current_user
+from framework.auth import get_current_user, authenticate
 from framework.auth.utils import parse_name
 
 from website.models import ApiKey, User
 from website.views import _render_nodes
-from website import settings, filters
+from website import settings
 from website.profile import utils
 
 
@@ -103,19 +104,16 @@ profile_schema = {
                     'type': 'textfield',
                     'label': 'Full/display name',
                     'required': True,
-                    'helpText': 'The field below is your full name and the name that will be '
-                                'displayed in your profile. We are also '
-                                'generating common citation formats for your '
-                                'work using the Citation Style Language '
-                                'definition. You can use the "Guess fields below" button '
-                                'or edit them directly in order to accurately generate '
+                    'helpText': 'The field above is your full name and the name that will be '
+                                'displayed in your profile. You can use the "Guess fields" button '
+                                'or edit the fields below in order to accurately generate '
                                 'citations.',
                 },
                 {
                     'id': 'impute',
                     'type': 'htmlfield',
                     'label': '',
-                    'content': '<button id="profile-impute" class="btn btn-default">Guess fields below</button>',
+                    'content': '<button id="profile-impute" class="btn btn-default">Guess fields</button>',
                 },
                 {
                     'id': 'given_name',
@@ -199,8 +197,8 @@ def profile_addons(**kwargs):
 
 @must_be_logged_in
 def user_choose_addons(**kwargs):
-    user = kwargs['auth'].user
-    user.config_addons(request.json)
+    auth = kwargs['auth']
+    auth['user'].config_addons(request.json, auth)
 
 
 @must_be_logged_in

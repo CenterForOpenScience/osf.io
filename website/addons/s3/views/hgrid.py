@@ -4,20 +4,26 @@ from website.addons.s3.utils import wrapped_key_to_json
 from framework import request
 from urllib import unquote
 from website.util import rubeus
+from framework.exceptions import HTTPError
+import httplib as http
 
 
-def s3_hgrid_data(node_settings, auth, parent=None, **kwargs):
+def s3_hgrid_data(node_settings, auth, **kwargs):
 
     # Quit if no bucket
     if not node_settings.bucket or not node_settings.user_settings or not node_settings.user_settings.has_auth:
         return
 
-    return rubeus.build_addon_root(node_settings, node_settings.bucket, permissions=auth)
+    return [
+        rubeus.build_addon_root(
+            node_settings, node_settings.bucket, permissions=auth
+        )
+    ]
 
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
-def s3_hgrid_data_contents(*args, **kwargs):
+def s3_hgrid_data_contents(**kwargs):
 
     node_settings = kwargs['node_addon']
     node = node_settings.owner
@@ -30,6 +36,9 @@ def s3_hgrid_data_contents(*args, **kwargs):
 
     s3wrapper = S3Wrapper.from_addon(s3_node_settings)
 
+    if s3wrapper is None:
+        raise HTTPError(http.BAD_REQUEST)
+
     files = []
 
     key_list = s3wrapper.get_wrapped_keys_in_dir(path)
@@ -37,7 +46,7 @@ def s3_hgrid_data_contents(*args, **kwargs):
 
     for key in key_list:
         temp_file = wrapped_key_to_json(
-            key, node.api_url, node.url)
+            key, node)
         temp_file['addon'] = 's3'
         temp_file['permissions'] = {
             'edit': can_edit,
@@ -50,11 +59,8 @@ def s3_hgrid_data_contents(*args, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
-def s3_dummy_folder(*args, **kwargs):
+def s3_dummy_folder(**kwargs):
     node_settings = kwargs['node_addon']
-    user = kwargs['auth'].user
+    auth = kwargs['auth']
     data = request.args.to_dict()
-
-    parent = data.pop('parent', 'null')
-
-    return s3_hgrid_data(node_settings, user, parent, contents=False, **data)
+    return s3_hgrid_data(node_settings, auth, **data)

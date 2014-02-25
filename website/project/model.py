@@ -19,6 +19,7 @@ from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
+from framework.auth import utils as auth_utils
 from framework.auth.decorators import Auth
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
@@ -157,11 +158,15 @@ class NodeLog(StoredObject):
     FILE_REMOVED = 'file_removed'
     FILE_UPDATED = 'file_updated'
     NODE_FORKED = 'node_forked'
+    ADDON_ADDED = 'addon_added'
+    ADDON_REMOVED = 'addon_removed'
 
     @property
     def node(self):
-        return Node.load(self.params.get('node')) or \
+        return (
+            Node.load(self.params.get('node')) or
             Node.load(self.params.get('project'))
+        )
 
     @property
     def tz_date(self):
@@ -354,39 +359,30 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributors.append(self.creator)
             self.contributor_list.append({'id': self.creator._primary_key})
 
-    def can_edit(self, auth):
+    def can_edit(self, auth=None, user=None):
+        """Return if a user is authorized to edit this node.
+        Must specify one of (`auth`, `user`).
 
-        if auth is None:
-            return False
-
-        user = auth.user
-        api_node = auth.api_node
-
+        :param Auth auth: Auth object to check
+        :param User user: User object to check
+        :returns: Whether user has permission to edit this node.
+        """
+        if not auth and not user:
+            raise ValueError('Must pass either `auth` or `user`')
+        if auth and user:
+            raise ValueError('Cannot pass both `auth` and `user`')
+        user = user or auth.user
+        if auth:
+            is_api_node = auth.api_node == self
+        else:
+            is_api_node = False
         return (
             self.is_contributor(user)
-            or api_node == self
-            or user == self.creator
+            or is_api_node
         )
 
     def can_view(self, auth):
         return self.is_public or self.can_edit(auth)
-
-    @property
-    def has_files(self):
-        """Check whether the node has any add-ons or components that define
-        the files interface. Overrides AddonModelMixin::has_files to include
-        recursion over child nodes.
-
-        :return bool: Has files add-ons
-
-        """
-        rv = super(Node, self).has_files
-        if rv:
-            return rv
-        for child in self.nodes:
-            if not child.is_deleted and child.has_files:
-                return True
-        return False
 
     def save(self, *args, **kwargs):
 
@@ -399,8 +395,8 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             #
             for addon in settings.ADDONS_AVAILABLE:
-                if addon.added_to['node']:
-                    self.add_addon(addon.short_name)
+                if 'node' in addon.added_default:
+                    self.add_addon(addon.short_name, auth=None, log=False)
 
             #
             if getattr(self, 'project', None):
@@ -435,11 +431,11 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # Only update Solr if at least one stored field has changed, and if
         # public or privacy setting has changed
-        update_solr = bool(self.SOLR_UPDATE_FIELDS.intersection(saved_fields))
+        need_update = bool(self.SOLR_UPDATE_FIELDS.intersection(saved_fields))
         if not self.is_public:
             if first_save or 'is_public' not in saved_fields:
-                update_solr = False
-        if update_solr:
+                need_update = False
+        if need_update:
             self.update_solr()
 
         # This method checks what has changed.
@@ -1242,7 +1238,11 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'project': self.parent_id,
                 'node': self._primary_key,
                 'path': node_file.path,
-                'version': len(self.files_versions)
+                'version': len(self.files_versions),
+                'urls': {
+                    'view': node_file.url(self),
+                    'download': node_file.download_url(self),
+                },
             },
             auth=auth,
             log_date=node_file.date_uploaded
@@ -1314,6 +1314,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         author_names = [
             author.biblio_name
             for author in self.contributors
+            if author
         ]
         if len(author_names) < 2:
             return ' {0} '.format(and_delim).join(author_names)
@@ -1383,7 +1384,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             user is not None
             and (
                 user in self.contributors
-                or user == self.creator
             )
         )
 
@@ -1407,6 +1407,51 @@ class Node(GuidStoredObject, AddonModelMixin):
             auth=auth,
         )
         return True
+
+    def add_addon(self, addon_name, auth, log=True):
+        """Add an add-on to the node.
+
+        :param str addon_name: Name of add-on
+        :param Auth auth: Consolidated authorization object
+        :param bool log: Add a log after adding the add-on
+        :return bool: Add-on was added
+
+        """
+        rv = super(Node, self).add_addon(addon_name, auth)
+        if rv and log:
+            config = settings.ADDONS_AVAILABLE_DICT[addon_name]
+            self.add_log(
+                action=NodeLog.ADDON_ADDED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'addon': config.full_name,
+                },
+                auth=auth,
+            )
+        return rv
+
+    def delete_addon(self, addon_name, auth):
+        """Delete an add-on from the node.
+
+        :param str addon_name: Name of add-on
+        :param Auth auth: Consolidated authorization object
+        :return bool: Add-on was deleted
+
+        """
+        rv = super(Node, self).delete_addon(addon_name, auth)
+        if rv:
+            config = settings.ADDONS_AVAILABLE_DICT[addon_name]
+            self.add_log(
+                action=NodeLog.ADDON_REMOVED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'addon': config.full_name,
+                },
+                auth=auth,
+            )
+        return rv
 
     def callback(self, callback, recursive=False, *args, **kwargs):
         """Invoke callbacks of attached add-ons and collect messages.
@@ -1475,7 +1520,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param User auth: All the auth informtion including user, API key.
         :param NodeLog log: Add log to self
         :param bool save: Save after adding contributor
-        :return bool: Whether contributor was added
+        :returns: Whether contributor was added
 
         """
         MAX_RECENT_LENGTH = 15
@@ -1542,21 +1587,12 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param name: A string, the full name of the person.
         :param email: A string, the email address of the person.
-        :param auth: All the auth informtion including user, API key.
+        :param Auth auth: Auth object for the user adding the contributor.
 
         """
-        self.contributor_list.append({'nr_name': name, 'nr_email': email})
-        self.add_log(
-            action=NodeLog.CONTRIB_ADDED,
-            params={
-                'project': self.parent_id,
-                'node': self._primary_key,
-                'contributors': [{"nr_name": name, "nr_email": email}],
-            },
-            auth=auth,
-        )
-        if save:
-            self.save()
+        contributor = User.create_unregistered(fullname=name, email=email)
+        contributor.save()
+        return self.add_contributor(contributor, auth=auth, log=True, save=save)
 
     def set_permissions(self, permissions, auth=None):
         """Set the permissions for this node.

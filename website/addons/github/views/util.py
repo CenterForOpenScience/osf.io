@@ -1,7 +1,9 @@
+import urllib
 import httplib as http
+from github3.repos.branch import Branch
+
 from framework.exceptions import HTTPError
 from ..api import GitHub
-
 
 MESSAGE_BASE = 'via the Open Science Framework'
 MESSAGES = {
@@ -9,6 +11,14 @@ MESSAGES = {
     'update': 'Updated {0}'.format(MESSAGE_BASE),
     'delete': 'Deleted {0}'.format(MESSAGE_BASE),
 }
+
+
+def get_path(kwargs, required=True):
+    path = kwargs.get('path')
+    if path:
+        return urllib.unquote_plus(path)
+    elif required:
+        raise HTTPError(http.BAD_REQUEST)
 
 
 def _get_refs(addon, branch=None, sha=None, connection=None):
@@ -33,18 +43,17 @@ def _get_refs(addon, branch=None, sha=None, connection=None):
         if repo is None:
             return None, None, None
         branch = repo.default_branch
-
     # Get registered branches if provided
     registered_branches = (
-        addon.registration_data.get('branches', [])
+        [Branch.from_json(b) for b in addon.registration_data.get('branches', [])]
         if addon.owner.is_registration
         else []
     )
+
     registered_branch_names = [
         each.name
         for each in registered_branches
     ]
-
     # Fail if registered and branch not in registration data
     if registered_branches and branch not in registered_branch_names:
         raise HTTPError(http.BAD_REQUEST)

@@ -11,10 +11,8 @@ FULL_NAME = 'FigShare'
 
 OWNERS = ['user', 'node']
 
-ADDED_TO = {
-    'user': False,
-    'node': False,
-}
+ADDED_DEFAULT = []
+ADDED_MANDATORY = []
 
 VIEWS = ['widget']
 CONFIGS = ['user', 'node']

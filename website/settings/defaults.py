@@ -18,9 +18,10 @@ TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 DOMAIN = 'http://localhost:5000/'
 
 # User management & registration
-CONFIRM_REGISTRATIONS_BY_EMAIL = False # Not fully implemented
+CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
+ALLOW_CLAIMING = False
 
 USE_SOLR = False
 SOLR_URI = 'http://localhost:8983/solr/'
@@ -50,7 +51,7 @@ UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
 MFR_CACHE_PATH = os.path.join(BASE_PATH, 'mfrcache')
 
 # Use Celery for file rendering
-MFR_USE_QUEUE = True
+USE_CELERY = True
 
 # File rendering timeout (in ms)
 MFR_TIMEOUT = 30000
