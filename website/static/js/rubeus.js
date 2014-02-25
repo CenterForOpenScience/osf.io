@@ -41,9 +41,14 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
 
     HGrid.Col.Name.itemView = function(item) {
         var ext = item.name.split('.').pop().toLowerCase();
-        return Rubeus.Extensions.indexOf(ext) === -1 ?
-            HGrid.Html.fileIcon + item.name:
-            Rubeus.ExtensionSkeleton.replace('{{ext}}', ext) + item.name;
+        var tooltipMarkup = genTooltipMarkup('View file');
+
+        var nameElement = ['<span ' + tooltipMarkup + ' >', item.name, '</span>'].join('');
+
+        var icon = Rubeus.Extensions.indexOf(ext) === -1 ?
+                        HGrid.Html.fileIcon :
+                        Rubeus.ExtensionSkeleton.replace('{{ext}}', ext);
+        return [icon, nameElement].join('');
     };
 
     /**
@@ -57,24 +62,25 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             cleanTitle = title.slice(0, max) + '...';
         } else {
             cleanTitle = title;
-        };
+        }
         return ' title="' + cleanTitle + '" data-placement="right" ' +
                                 'data-toggle="tooltip" ';
     }
 
     HGrid.Col.ActionButtons.itemView = function(item) {
-      var tooltipMarkup = genTooltipMarkup('Download ' + item.name);
-      var buttonDefs = [{
-          text: '<i class="icon-download-alt icon-white"' + tooltipMarkup + '></i>',
-          action: 'download',
-          cssClass: 'btn btn-primary btn-mini'
-      }];
-      if (item.permissions && item.permissions.edit) {
-          buttonDefs.push({
-              text: '&nbsp;<i class="icon-remove"></i>',
+        var downloadTip = genTooltipMarkup('Download ' + item.name);
+        var buttonDefs = [{
+              text: '<i class="icon-download-alt icon-white"' + downloadTip + '></i>',
+              action: 'download',
+              cssClass: 'btn btn-primary btn-mini'
+        }];
+        if (item.permissions && item.permissions.edit) {
+            var deleteTip = genTooltipMarkup('Delete ' + item.name, 20);
+            buttonDefs.push({
+              text: '&nbsp;<i class="icon-remove"' + deleteTip + '></i>',
               action: 'delete',
               cssClass: 'btn btn-link btn-mini btn-delete'
-          });
+            });
       }
       return HGrid.Fmt.buttons(buttonDefs);
     };
