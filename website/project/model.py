@@ -1515,8 +1515,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         if contrib_to_add._primary_key not in self.contributors:
             self.contributors.append(contrib_to_add)
             self.contributor_list.append({'id': contrib_to_add._primary_key})
-            logger.debug('added contributor-----')
-            logger.debug(contrib_to_add)
             # Add contributor to recently added list for user
             if auth is not None:
                 user = auth.user

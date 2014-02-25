@@ -132,21 +132,6 @@ class TestProjectViews(DbTestCase):
         # A log event was added
         assert_equal(self.project.logs[-1].action, "contributor_removed")
 
-    @unittest.skip('Removing non-registered contributors is on hold until '
-                   'invitations and account merging are done.')
-    def test_project_remove_non_registered_contributor(self):
-        # A non-registered user is added to the project
-        self.project.add_nonregistered_contributor(
-            name="Vanilla Ice",
-            email="iceice@baby.ice",
-            auth=self.consolidate_auth1
-        )
-        self.project.save()
-        url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
-        # the contributor is removed via the API
-        assert False, 'finish me'
-
-
     def test_edit_node_title(self):
         url = "/api/v1/project/{0}/edit/".format(self.project._id)
         # The title is changed though posting form data
@@ -325,6 +310,23 @@ class TestProjectViews(DbTestCase):
         assert_in('url', res.json)
         assert_equal(res.json['url'], self.project.url)
 
+
+    def test_get_recently_added_contributors(self):
+        project = ProjectFactory(creator=self.consolidate_auth1.user)
+        contrib1 = UserFactory()
+        contrib2 = UserFactory()
+        project.add_contributor(contrib1, auth=self.consolidate_auth1)
+        project.add_contributor(contrib2, auth=self.consolidate_auth1)
+        # has one unregistered contributor
+        project.add_unregistered_contributor(fullname=fake.name(),
+            email=fake.email(), auth=self.consolidate_auth1)
+        project.save()
+        url = '{0}get_recently_added_contributors/'.format(self.project.api_url)
+        res = self.app.get(url, auth=self.auth)
+        project.reload()
+        recent = [c for c in self.user1.recently_added if c.is_active()]
+        assert_equal(len(res.json['contributors']), len(recent))
+
 @unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
 class TestUserInviteViews(DbTestCase):
 
@@ -430,6 +432,7 @@ class TestClaimViews(DbTestCase):
         self.user.reload()
         assert_true(self.user.is_registered)
         assert_true(self.user.is_active())
+
 
 
 class TestWatchViews(DbTestCase):
