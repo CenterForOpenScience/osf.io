@@ -70,7 +70,7 @@ def get_node_contributors_abbrev(**kwargs):
         'others_suffix': others_suffix,
     }
 
-
+# TODO: Almost identical to utils.serialize_user. Remove duplication.
 def _add_contributor_json(user):
 
     return {
@@ -85,18 +85,18 @@ def _add_contributor_json(user):
     }
 
 
-def _jsonify_contribs(contribs):
+def serialized_contributors(node):
 
     data = []
-    for contrib in contribs:
-        if 'id' in contrib:
-            user = User.load(contrib['id'])
-            if user is None:
-                logger.error('User {} not found'.format(contrib['id']))
-                continue
-            data.append(utils.serialize_user(user))
+    for contrib in node.contributors:
+        serialized = utils.serialize_user(contrib)
+        unclaimed_data = contrib.unclaimed_records.get(node._primary_key, None)
+        if unclaimed_data:
+            display_name = unclaimed_data['name']
         else:
-            data.append(utils.serialize_unreg_user(contrib))
+            display_name = contrib.fullname
+        serialized['fullname'] = display_name
+        data.append(serialized)
     return data
 
 
@@ -105,12 +105,12 @@ def _jsonify_contribs(contribs):
 def get_contributors(**kwargs):
 
     auth = kwargs.get('auth')
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
 
-    if not node_to_use.can_view(auth):
+    if not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
-    contribs = _jsonify_contribs(node_to_use.contributor_list)
+    contribs = serialized_contributors(node)
     return {'contributors': contribs}
 
 

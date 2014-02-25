@@ -332,9 +332,6 @@ class TestComponents(DbTestCase):
         self.consolidate_auth = Auth(user=self.user, api_key = api_key)
         self.project = ProjectFactory(creator=self.user)
         self.project.add_contributor(contributor=self.user, auth=self.consolidate_auth)
-        # project has a non-registered contributor
-        self.nr_user = {'nr_name': 'Foo Bar', 'nr_email': 'foo@example.com'}
-        self.project.contributor_list.append(self.nr_user)
         # A non-project componenet
         self.component = NodeFactory(
             category='hypothesis',
@@ -359,13 +356,6 @@ class TestComponents(DbTestCase):
         parent_title = res.html.find_all('h1', class_='node-parent-title')
         assert_equal(len(parent_title), 1)
         assert_in(self.project.title, parent_title[0].text)
-
-    def test_sees_non_registered_contributor(self):
-        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
-        # Sees unregeisterd user's name
-        assert_in(self.nr_user['nr_name'], res)
-        # Sees registred user's name
-        assert_in(self.user.fullname, res)
 
 
 class TestMergingAccounts(DbTestCase):
@@ -649,7 +639,7 @@ class TestClaiming(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.referrer = UserFactory()
+        self.referrer = AuthUserFactory()
         self.project = ProjectFactory(creator=self.referrer)
 
     def test_user_can_set_password_on_claim_page(self):
@@ -686,6 +676,31 @@ class TestClaiming(DbTestCase):
         # a user is already logged in
         res = self.app.get(claim_url, auth=existing.auth, expect_errors=True)
         assert_in('already logged in', res)
+
+    def test_unregistered_users_names_are_project_specific(self):
+        name1, name2, email = fake.name(), fake.name(), fake.email()
+        project2 = ProjectFactory(creator=self.referrer)
+        # different projects use different names for the same unreg contributor
+        self.project.add_unregistered_contributor(
+            email=email,
+            fullname=name1,
+            auth=Auth(self.referrer)
+        )
+        self.project.save()
+        project2.add_unregistered_contributor(
+            email=email,
+            fullname=name2,
+            auth=Auth(self.referrer)
+        )
+        project2.save()
+        self.app.authenticate(*self.referrer.auth)
+        # Each project displays a different name in the contributor list
+        res = self.app.get(self.project.url)
+        assert_in(name1, res)
+
+        res2 = self.app.get(project2.url)
+        assert_in(name2, res2)
+
 
 
 class TestConfirmingEmail(DbTestCase):

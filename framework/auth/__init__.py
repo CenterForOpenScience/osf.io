@@ -73,7 +73,7 @@ def get_user(id=None, username=None, password=None, verification_key=None):
             for query_part in query_list[1:]:
                 query = query & query_part
             user = User.find_one(query)
-        except Exception as err:  # TODO: catch ModularODMError
+        except Exception as err:
             logging.error(err)
             user = None
         if user and not user.check_password(password):
