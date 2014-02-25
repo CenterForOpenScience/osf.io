@@ -460,7 +460,6 @@ class TestMergingAccounts(DbTestCase):
         self.user.merge_user(self.dupe)
         self.user.save()
         # Now only the master user is shown at the project page
-        print 'debug', self.user._id, self.dupe._id, project.contributor_list
         res = self.app.get(project.url).maybe_follow()
         assert_in(self.user.fullname, res)
         assert_true(self.dupe.is_merged)
