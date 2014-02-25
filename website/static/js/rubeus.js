@@ -77,7 +77,6 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
 		cssClass: 'btn btn-primary btn-mini'
 	    });
 	}
-	}
         if (item.permissions && item.permissions.edit) {
             var deleteTip = genTooltipMarkup('Delete ' + item.name, 20);
             buttonDefs.push({
