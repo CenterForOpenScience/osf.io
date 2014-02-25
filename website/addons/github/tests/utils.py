@@ -162,6 +162,7 @@ def create_mock_github(user='octo-cat', private=False):
           }
         })
       }
+
     github_mock.tree.return_value = github3.git.Tree.from_json({
         'url': u'https://api.github.com/repos/{user}/mock-repo/git/trees/dev'.format(user=user),
         'sha': 'dev',
@@ -186,4 +187,13 @@ def create_mock_github(user='octo-cat', private=False):
           u'url': u'https://api.github.com/repos/{user}/mock-repo/git/blobs/86e1fef2834cc2682e753f3ed26ab3c2e100478c'.format(user=user)}
           ]
     })
+    github_mock.commits.return_value = [
+        {
+            'sha': '12345',
+            'name': 'authname',
+            'email': 'authmail',
+            'date': 'yesterday',
+        }
+    ]
+
     return github_mock

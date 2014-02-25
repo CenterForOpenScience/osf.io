@@ -1,59 +1,65 @@
+import urllib
+import datetime
 import httplib as http
 
-import datetime
-
-from framework import request, redirect
+from framework import request, redirect, Q
 from framework.exceptions import HTTPError
 
 from website.project.decorators import must_be_contributor
 from website.project.decorators import must_be_contributor_or_public
+from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
 
-from website.addons.s3.api import S3Wrapper
+from ..model import S3GuidFile
+from website.addons.base.views import check_file_guid
 
+from ..api import S3Wrapper
+
+# TODO: Rename at least one utils module; could be confusing later on
 from .utils import get_cache_file_name, generate_signed_url
-from website.addons.s3.utils import create_version_list
+from ..utils import create_version_list, build_urls
 
 from website import models
-
-from urllib import unquote, quote_plus
 
 from website.addons.s3.settings import MAX_RENDER_SIZE
 
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
-def s3_download(*args, **kwargs):
+def s3_download(**kwargs):
 
-    node = kwargs['node'] or kwargs['project']
-    s3 = node.get_addon('s3')
-    keyName = unquote(kwargs['path'])
+    node_settings = kwargs['node_addon']
+    key_name = urllib.unquote(kwargs['path'])
     vid = request.args.get('vid')
 
-    if keyName is None:
+    if key_name is None:
         raise HTTPError(http.NOT_FOUND)
-    connect = S3Wrapper.from_addon(s3)
-    return redirect(connect.download_file_URL(keyName, vid))
+    connect = S3Wrapper.from_addon(node_settings)
+    if not connect.does_key_exist(key_name):
+        raise HTTPError(http.NOT_FOUND)
+    return redirect(connect.download_file_URL(key_name, vid))
 
 
 @must_be_contributor
+@must_not_be_registration
 @must_have_addon('s3', 'node')
-def s3_delete(*args, **kwargs):
-    node = kwargs['node'] or kwargs['project']
-    s3 = node.get_addon('s3')
-    dfile = unquote(kwargs['path'])
+def s3_delete(**kwargs):
 
-    connect = S3Wrapper.from_addon(s3)
+    node = kwargs['node'] or kwargs['project']
+    node_settings = kwargs['node_addon']
+    dfile = urllib.unquote(kwargs['path'])
+
+    connect = S3Wrapper.from_addon(node_settings)
     connect.delete_file(dfile)
 
     node.add_log(
         action='s3_' + models.NodeLog.FILE_REMOVED,
         params={
             'project': node.parent_id,
-            'node': node._primary_key,
-            'bucket': s3.bucket,
+            'node': node._id,
+            'bucket': node_settings.bucket,
             'path': dfile,
         },
         auth=kwargs['auth'],
@@ -64,7 +70,7 @@ def s3_delete(*args, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
-def s3_view(*args, **kwargs):
+def s3_view(**kwargs):
 
     path = kwargs.get('path')
     vid = request.args.get('vid')
@@ -79,14 +85,29 @@ def s3_view(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
 
     wrapper = S3Wrapper.from_addon(node_settings)
-    key = wrapper.get_wrapped_key(unquote(path), vid=vid)
+    key = wrapper.get_wrapped_key(urllib.unquote(path), vid=vid)
 
     if key is None:
         raise HTTPError(http.NOT_FOUND)
 
+    try:
+        guid = S3GuidFile.find_one(
+            Q('node', 'eq', node) &
+            Q('path', 'eq', path)
+        )
+    except:
+        guid = S3GuidFile(
+            node=node,
+            path=path,
+        )
+        guid.save()
+
+    redirect_url = check_file_guid(guid)
+    if redirect_url:
+        return redirect(redirect_url)
+
     cache_name = get_cache_file_name(path, key.etag)
-    download_url = node.api_url + 's3/download/' + path + '/'
-    render_url = node.api_url + 's3/render/' + path + '/?etag=' + key.etag
+    urls = build_urls(node, path, etag=key.etag)
 
     if key.s3Key.size > MAX_RENDER_SIZE:
         render = 'File too large to render; download file to view it'
@@ -95,16 +116,19 @@ def s3_view(*args, **kwargs):
         render = get_cache_content(node_settings, cache_name)
         if render is None:
             file_contents = key.s3Key.get_contents_as_string()
-            render = get_cache_content(node_settings, cache_name, start_render=True,
-                                       file_content=file_contents, download_path=download_url, file_path=path)
+            render = get_cache_content(
+                node_settings, cache_name, start_render=True,
+                file_content=file_contents, download_path=urls['download'],
+                file_path=path,
+            )
 
-    versions = create_version_list(wrapper, unquote(path), node.api_url)
+    versions = create_version_list(wrapper, urllib.unquote(path), node)
 
     rv = {
         'file_name': key.name,
         'rendered': render,
-        'download_url': download_url,
-        'render_url': render_url,
+        'download_url': urls['download'],
+        'render_url': urls['render'],
         'versions': versions,
         'current': key.version_id,
     }
@@ -115,7 +139,7 @@ def s3_view(*args, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
-def ping_render(*args, **kwargs):
+def ping_render(**kwargs):
     node_settings = kwargs['node_addon']
     path = kwargs.get('path')
     etag = request.args.get('etag')
@@ -126,23 +150,28 @@ def ping_render(*args, **kwargs):
 
 
 @must_be_contributor
+@must_not_be_registration
 @must_have_addon('s3', 'node')
-def s3_upload(*args, ** kwargs):
+def s3_upload(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    s3 = node.get_addon('s3')
+    s3 = kwargs['node_addon']
 
-    file_name = quote_plus(request.json.get('name'))
+    file_name = request.json.get('name')
+    if file_name is None:
+        raise HTTPError(http.BAD_REQUEST)
+    file_name = urllib.quote_plus(file_name.encode('utf-8'))
     mime = request.json.get('type') or 'application/octet-stream'
 
     update = S3Wrapper.from_addon(s3).does_key_exist(file_name)
     node.add_log(
-        action='s3_' + models.NodeLog.FILE_UPDATED if update else models.NodeLog.FILE_ADDED,
+        action='s3_' + (models.NodeLog.FILE_UPDATED if update else models.NodeLog.FILE_ADDED),
         params={
             'project': node.parent_id,
             'node': node._primary_key,
             'bucket': s3.bucket,
             'path': file_name,
+            'urls': build_urls(node, file_name),
         },
         auth=kwargs['auth'],
         log_date=datetime.datetime.utcnow(),

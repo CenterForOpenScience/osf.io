@@ -2,6 +2,7 @@ import functools
 from framework.flask import request, redirect
 from . import get_current_user, get_api_key, get_current_node
 
+
 # TODO: This belongs in auth.__init__ or auth.model
 class Auth(object):
 

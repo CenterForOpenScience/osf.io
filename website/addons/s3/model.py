@@ -7,33 +7,79 @@ Created on Jan 7, 2014
 
 """
 
+import os
+
+from boto.exception import BotoServerError
+
 from framework import fields
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from .utils import get_bucket_drop_down, serialize_bucket, remove_osf_user
+from .api import S3Wrapper
 
-from utils import get_bucket_drop_down, serialize_bucket
 
-from api import S3Wrapper
+class S3GuidFile(GuidFile):
+
+    path = fields.StringField(index=True)
+
+    @property
+    def file_url(self):
+        if self.path is None:
+            raise ValueError('Path field must be defined.')
+        return os.path.join('s3', self.path)
 
 
 class AddonS3UserSettings(AddonUserSettingsBase):
 
+    s3_osf_user = fields.StringField()
     access_key = fields.StringField()
     secret_key = fields.StringField()
 
     def to_json(self, user):
         rv = super(AddonS3UserSettings, self).to_json(user)
-        rv.update({
-            'access_key': self.access_key or '',
-            'secret_key': self.secret_key or '',
-            'has_auth': True if self.access_key and self.secret_key else False,
-        })
+        rv['has_auth'] = self.has_auth
         return rv
 
     @property
     def has_auth(self):
-        return True if self.access_key and self.secret_key else False
+        return bool(self.access_key and self.secret_key)
 
+    def remove_iam_user(self):
+        """Remove IAM user from Amazon.
+
+        :return: True if successful, False if failed with expected error;
+            else uncaught exception is raised
+
+        """
+        try:
+            remove_osf_user(self)
+            return True
+        except BotoServerError as error:
+            if error.code in ['InvalidClientTokenId', 'ValidationError']:
+                return False
+            raise
+
+    def revoke_auth(self):
+
+        rv = self.remove_iam_user()
+
+        self.s3_osf_user = None
+        self.access_key = None
+        self.secret_key = None
+        self.save()
+
+        return rv
+
+    def delete(self, save=True):
+
+        super(AddonS3UserSettings, self).delete()
+
+        self.revoke_auth()
+
+        for node_settings in self.addons3nodesettings__authorized:
+            node_settings.delete(save=False)
+            node_settings.user_settings = None
+            node_settings.save()
 
 class AddonS3NodeSettings(AddonNodeSettingsBase):
 
@@ -46,27 +92,31 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     def to_json(self, user):
         rv = super(AddonS3NodeSettings, self).to_json(user)
 
-        if not self.user_settings and user.get_addon('s3'):
-            self.user_settings = user.get_addon('s3')
+        rv.update({
+            'bucket': self.bucket or '',
+            'has_bucket': self.bucket is not None,
+            'is_owner': (
+                self.user_settings and self.user_settings.owner == user
+            ),
+            'user_has_auth': False,
+            'owner': None,  # needed?
+            'bucket_list': None,
+        })
 
-        if self.user_settings:
-            rv['access_key'] = self.user_settings.access_key or ''
-            rv['secret_key'] = self.user_settings.secret_key or ''
+        user_settings = user.get_addon('s3')
+
+        if self.user_settings and self.user_settings.has_auth:
+            rv['node_has_auth'] = True
             rv['owner'] = self.user_settings.owner.fullname
             rv['owner_url'] = self.user_settings.owner.url
             self.save()
             if self.user_settings.has_auth:
                 rv['bucket_list'] = get_bucket_drop_down(self.user_settings)
+                rv['user_has_auth'] = True
 
-        rv.update({
-            'bucket': self.bucket or '',
-            'has_bucket': self.bucket is not None,
-            'user_has_auth': True if self.user_settings and self.user_settings.has_auth else False,
-            'is_owner': (
-                self.user_settings is None and self.owner.is_contributor(user)
-                or self.user_settings and self.user_settings.owner == user
-            ),
-        })
+        elif user_settings and user_settings.has_auth:
+                rv['bucket_list'] = get_bucket_drop_down(user.get_addon('s3'))
+                rv['user_has_auth'] = user_settings.has_auth
 
         return rv
 

@@ -17,6 +17,7 @@ var Messages = {
 
 /* Utility functions */
 
+// TODO: Shouldn't pollute window. At the very least put them on the '$' namespace
 window.block = function() {
     $.blockUI({
         css: {
@@ -68,7 +69,7 @@ function beforeForkNode(url, done) {
         )
     });
 
-};
+}
 
 NodeActions.forkNode = function() {
 
@@ -118,6 +119,13 @@ NodeActions.forkPointer = function(pointerId, nodeId) {
     });
 
 };
+
+
+NodeActions.addonFileRedirect = function(item) {
+    window.location.href = item.params.urls.view;
+    return false;
+};
+
 
 // todo: discuss; this code not used
 NodeActions.addNodeToProject = function(node, project) {
@@ -271,10 +279,10 @@ window.FileRenderer = {
     getCachedFromServer: function() {
         var self = this;
         $.get( self.url, function(data) {
-            if(data){
+            if (data) {
                 self.element.html(data);
                 clearInterval(self.refreshContent);
-            }else{
+            } else {
                 self.tries += 1;
                 if(self.tries > 10){
                     clearInterval(self.refreshContent);
@@ -360,16 +368,11 @@ $(document).ready(function() {
             Messages[msgKey],
             function(result) {
                 if (result) {
-                    $.ajax({
-                        url: url,
-                        type: 'POST',
-                        data: {permissions: permissions},
-                        contentType: 'application/json',
-                        dataType: 'json',
-                        success: function(data){
-                            window.location.href = data['redirect_url'];
+                    $.postJSON(url, {permissions: permissions},
+                        function(data){
+                            window.location.href = data.redirect_url;
                         }
-                    });
+                    );
                 }
             }
         );

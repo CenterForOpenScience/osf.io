@@ -1,18 +1,17 @@
 import os
-
-from boto.iam import *
-from boto.exception import *
-from boto.s3.connection import *
-from boto.s3.cors import CORSConfiguration
-
 from dateutil.parser import parse
+
+from boto.s3.connection import S3Connection, Key
+from boto.s3.connection import OrdinaryCallingFormat
+from boto.s3.cors import CORSConfiguration
+from boto.exception import S3ResponseError
 
 from hurry.filesize import size, alternative
 
 
 #Note: (from boto docs) this function is in beta
-def enable_versioning(settings):
-    wrapper = S3Wrapper.from_addon(settings)
+def enable_versioning(user_settings):
+    wrapper = S3Wrapper.from_addon(user_settings)
     wrapper.bucket.configure_versioning(True)
 
 
@@ -51,10 +50,12 @@ class S3Wrapper(object):
 
     @classmethod
     def from_addon(cls, s3):
+        if s3 is None or s3.user_settings is None:
+            return None
         if not s3.is_registration:
             return cls(S3Connection(s3.user_settings.access_key, s3.user_settings.secret_key), s3.bucket)
         else:
-            return registration_wrapper(s3)
+            return RegistrationWrapper(s3)
 
     @classmethod
     def bucket_exist(cls, s3, bucketName):
@@ -63,23 +64,14 @@ class S3Wrapper(object):
 
     "S3 Bucket management"
 
-    def __init__(self, connect, bucketName):
-        self.connection = connect
-        self.bucket = self.connection.get_bucket(bucketName, validate=False)
+    def __init__(self, connection, bucket_name):
+        self.connection = connection
+        if bucket_name != bucket_name.lower():
+            self.connection.calling_format = OrdinaryCallingFormat()
+        self.bucket = self.connection.get_bucket(bucket_name, validate=False)
 
     def create_key(self, key):
         self.bucket.new_key(key)
-
-    def post_string(self, title, contentspathToFolder=""):
-        k = self.bucket.new_key(pathToFolder + title)
-        return k.set_contents_from_string(contents)
-
-    def get_string(self, title):
-        return self.bucket.get_key(title).get_contents_as_string()
-
-    def set_metadata(self, bucket, key, metadataName, metadata):
-        k = self.connection.get_bucket(bucket).get_key(key)
-        return k.set_metadata(metadataName, metadata)
 
     def get_file_list(self, prefix=None):
         if not prefix:
@@ -102,11 +94,20 @@ class S3Wrapper(object):
     def get_wrapped_keys(self, prefix=None):
         return [S3Key(x) for x in self.get_file_list()]
 
-    def get_wrapped_key(self, keyName, vid=None):
-        key = self.bucket.get_key(keyName, version_id=vid)
-        if key:
-            return S3Key(key)
-        else:
+    def get_wrapped_key(self, key_name, vid=None):
+        """Get S3 key.
+
+        :param str key_name: Name of S3 key
+        :param str version_id: Optional file version
+        :return: Wrapped S3 key if found, else None
+
+        """
+        try:
+            key = self.bucket.get_key(key_name, version_id=vid)
+            if key is not None:
+                return S3Key(key)
+            return None
+        except S3ResponseError:
             return None
 
     def get_wrapped_keys_in_dir(self, directory=None):
@@ -146,12 +147,17 @@ class S3Wrapper(object):
 
 
 # TODO Add null checks etc
-class registration_wrapper(S3Wrapper):
+class RegistrationWrapper(S3Wrapper):
 
     def __init__(self, node_settings):
-        connection = S3Connection(
-            node_settings.node_access_key, node_settings.node_secret_key)
-        super(S3Wrapper, self).__init__(self, connection, node_settings.bucket)
+        if node_settings.user_settings:
+            connection = S3Connection(
+                node_settings.user_settings.access_key,
+                node_settings.user_settings.secret_key,
+            )
+        else:
+            connection = S3Connection()
+        super(RegistrationWrapper, self).__init__(connection, node_settings.bucket)
         self.registration_data = node_settings.registration_data
 
     def get_wrapped_keys_in_dir(self, directory=None):
@@ -193,11 +199,11 @@ class S3Key(object):
         if self.type == 'file':
             self.versions = ['current']
         else:
-            self.version = None
+            self.versions = None
 
     @property
     def name(self):
-        d = self._nameAsStr().split('/')
+        d = self.s3Key.key.split('/')
         if len(d) > 1 and self.type == 'file':
             return d[-1]
         elif self.type == 'folder':
@@ -205,23 +211,16 @@ class S3Key(object):
         else:
             return d[0]
 
-    def _nameAsStr(self):
-        return str(self.s3Key.key)
-
     @property
     def type(self):
-        if not str(self.s3Key.key).endswith('/'):
+        if not self.s3Key.key.endswith('/'):
             return 'file'
         else:
             return 'folder'
 
     @property
-    def fullPath(self):
-        return self._nameAsStr()
-
-    @property
     def parentFolder(self):
-        d = self._nameAsStr().split('/')
+        d = self.s3Key.key.split('/')
 
         if len(d) > 1 and self.type == 'file':
             return d[len(d) - 2]
@@ -232,7 +231,7 @@ class S3Key(object):
 
     @property
     def pathTo(self):
-        return self._nameAsStr()[:self._nameAsStr().rfind('/')] + '/'
+        return self.s3Key.key[:self.s3Key.key.rfind('/')] + '/'
 
     @property
     def size(self):
@@ -255,10 +254,10 @@ class S3Key(object):
     @property
     def extension(self):
         if self.type != 'folder':
-            if os.path.splitext(self._nameAsStr())[1] is None:
+            if os.path.splitext(self.s3Key.key)[1] is None:
                 return None
             else:
-                return os.path.splitext(self._nameAsStr())[1][1:]
+                return os.path.splitext(self.s3Key.key)[1][1:]
         else:
             return None
 
@@ -272,7 +271,7 @@ class S3Key(object):
 
     def updateVersions(self, manager):
         if self.type != 'folder':
-            self.versions.extend(manager.get_file_versions(self._nameAsStr()))
+            self.versions.extend(manager.get_file_versions(self.s3Key.key))
 
     @property
     def etag(self):

@@ -2,7 +2,7 @@ from . import model
 from . import routes
 from . import views
 
-MODELS = [model.AddonS3UserSettings, model.AddonS3NodeSettings]
+MODELS = [model.AddonS3UserSettings, model.AddonS3NodeSettings, model.S3GuidFile]
 USER_SETTINGS_MODEL = model.AddonS3UserSettings
 NODE_SETTINGS_MODEL = model.AddonS3NodeSettings
 
@@ -14,10 +14,8 @@ FULL_NAME = 'Amazon Simple Storage Service'
 
 OWNERS = ['user', 'node']
 
-ADDED_TO = {
-    'user': False,
-    'node': False,
-}
+ADDED_DEFAULT = []
+ADDED_MANDATORY = []
 
 VIEWS = []
 CONFIGS = ['user', 'node']

@@ -55,6 +55,9 @@ def github_hook_callback(**kwargs):
     """Add logs for commits from outside OSF.
 
     """
+    if request.json is None:
+        return {}
+
     # Request must come from GitHub hooks IP
     if not request.json.get('test'):
         if HOOKS_IP not in request.remote_addr:

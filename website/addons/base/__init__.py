@@ -11,6 +11,7 @@ from mako.lookup import TemplateLookup
 
 from framework import StoredObject, fields
 from framework.routing import process_rules
+from framework.guid.model import GuidStoredObject
 
 from website import settings
 
@@ -30,7 +31,8 @@ def _is_image(filename):
 
 class AddonConfig(object):
 
-    def __init__(self, short_name, full_name, owners, added_to, categories,
+    def __init__(self, short_name, full_name, owners, categories,
+                 added_default=None, added_mandatory=None,
                  node_settings_model=None, user_settings_model=None, include_js=None, include_css=None,
                  widget_help=None, views=None, configs=None, models=None,
                  has_hgrid_files=False, get_hgrid_data=None, max_file_size=None,
@@ -51,8 +53,12 @@ class AddonConfig(object):
         self.short_name = short_name
         self.full_name = full_name
         self.owners = owners
-        self.added_to = added_to
         self.categories = categories
+
+        self.added_default = added_default or []
+        self.added_mandatory = added_mandatory or []
+        if set(self.added_mandatory).difference(self.added_default):
+            raise ValueError('All mandatory targets must also be defaults.')
 
         self.include_js = self._include_to_static(include_js or {})
         self.include_css = self._include_to_static(include_css or {})
@@ -144,6 +150,31 @@ class AddonConfig(object):
         }
 
 
+class GuidFile(GuidStoredObject):
+
+    redirect_mode = 'proxy'
+
+    _id = fields.StringField(primary=True)
+    node = fields.ForeignField('node', index=True)
+
+    _meta = {
+        'abstract': True,
+    }
+
+    @property
+    def file_url(self):
+        raise NotImplementedError
+
+    @property
+    def deep_url(self):
+        if self.node is None:
+            raise ValueError('Node field must be defined.')
+        return os.path.join(
+            self.node.deep_url, self.file_url,
+        )
+
+
+
 class AddonSettingsBase(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
@@ -153,13 +184,15 @@ class AddonSettingsBase(StoredObject):
         'abstract': True,
     }
 
-    def delete(self):
+    def delete(self, save=True):
         self.deleted = True
-        self.save()
+        if save:
+            self.save()
 
-    def undelete(self):
+    def undelete(self, save=True):
         self.deleted = False
-        self.save()
+        if save:
+            self.save()
 
     def to_json(self, user):
         return {

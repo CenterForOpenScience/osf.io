@@ -8,7 +8,7 @@
 
     <div class="row">
 
-        <div class="col-md-6" id="containment">
+        <div class="col-md-6">
 
             % if addons:
 
@@ -36,18 +36,16 @@
 
             % endif
 
-            % if has_files:
-                <div class="addon-widget-container">
-                    <h3 class="addon-widget-header"><a href="${node['url']}/files/">Files</a></h3>
-                    <div mod-meta='{
-                            "tpl": "util/render_file_tree.mako",
-                            "uri": "${node['api_url']}files/",
-                            "view_kwargs": {
-                                "mode": "widget"
-                            }
-                        }'></div>
-                </div>
-            % endif
+            <div class="addon-widget-container">
+                <h3 class="addon-widget-header"><a href="${node['url']}files/">Files</a></h3>
+                <div mod-meta='{
+                        "tpl": "util/render_file_tree.mako",
+                        "uri": "${node['api_url']}files/",
+                        "view_kwargs": {
+                            "mode": "widget"
+                        }
+                    }'></div>
+            </div>
 
         </div>
 
@@ -137,12 +135,14 @@
 </div>
 
 % if node['children']:
-    <div mod-meta='{
-            "tpl": "util/render_nodes.mako",
-            "uri": "${node["api_url"]}get_children/",
-            "replace": true,
-            "kwargs": {"sortable" : true}
-        }'></div>
+    <div id="containment">
+        <div mod-meta='{
+                "tpl": "util/render_nodes.mako",
+                "uri": "${node["api_url"]}get_children/",
+                "replace": true,
+                "kwargs": {"sortable" : true}
+            }'></div>
+    </div>
 % else:
     <p>No components have been added to this project.</p>
 % endif

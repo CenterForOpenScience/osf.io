@@ -1,26 +1,41 @@
 /**
- * Module to render the consolidated files view. Reads addon configurrations and
+ * Module to render the consolidated files view. Reads addon configurations and
  * initializes an HGrid.
  */
-this.Rubeus = (function($, HGrid, bootbox) {
+this.Rubeus = (function($, HGrid, bootbox, window) {
 
     /////////////////////////
     // HGrid configuration //
     /////////////////////////
 
-    var tpl = HGrid.Fmt.tpl;
-
+    // Custom folder icon indicating private component
+    HGrid.Html.folderIconPrivate = '<img class="hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
     // Override Name column folder view to allow for extra widgets, e.g. github branch picker
     HGrid.Col.Name.folderView = function(item) {
-        var html = '';
-        if (item.iconUrl)
-            html += '<img class="hg-addon-icon" src="' + item.iconUrl + '">';
-        else
-            html += HGrid.Html.folderIcon;
-        html += '<span class="hg-folder-text">' + item.name + '</span>';
-        if(item.extra)
+        var icon, opening, cssClass;
+        if (item.iconUrl) {
+            // use item's icon based on filetype
+            icon = '<img class="hg-addon-icon" src="' + item.iconUrl + '">';
+            cssClass = '';
+        } else
+            if (!item.permissions.view) {
+                icon = HGrid.Html.folderIconPrivate;
+                cssClass = 'hg-folder-private';
+            } else {
+                icon = HGrid.Html.folderIcon;
+                cssClass = 'hg-folder-public';
+            }
+        opening = '<span class="hg-folder-text ' + cssClass + '">';
+        var closing = '</span>';
+        html = [icon, opening, item.name, closing].join('');
+        if(item.extra) {
             html += '<span class="hg-extras">' + item.extra + '</span>';
+        }
         return html;
+    };
+
+    HGrid.Col.Name.showExpander = function(row) {
+        return row.kind === HGrid.FOLDER && row.permissions.view;
     };
 
     HGrid.Col.Name.itemView = function(item) {
@@ -53,7 +68,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
     HGrid.Col.ActionButtons.folderView = function(row) {
         var buttonDefs = [];
         if (this.options.uploads && row.urls.upload &&
-            (row.permissions && row.permissions.edit)) {
+                (row.permissions && row.permissions.edit)) {
             buttonDefs.push({
                 text: '<i class="icon-upload"></i>',
                 action: 'upload',
@@ -65,6 +80,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
         }
         return '';
     };
+
 
     // Custom status column
     HGrid.Col.Status = {
@@ -79,19 +95,19 @@ this.Rubeus = (function($, HGrid, bootbox) {
      * Get the status message from the addon, if any.
      */
      function getStatusCfg(addon, whichStatus, extra) {
-        if(addon && Rubeus.cfg[addon] && Rubeus.cfg[addon][whichStatus]) {
-            if (typeof(Rubeus.cfg[addon][whichStatus]) === 'function')
+        if (addon && Rubeus.cfg[addon] && Rubeus.cfg[addon][whichStatus]) {
+            if (typeof(Rubeus.cfg[addon][whichStatus]) === 'function') {
                 return Rubeus.cfg[addon][whichStatus](extra);
-            else
-                return Rubeus.cfg[addon][whichStatus];
+            }
+            return Rubeus.cfg[addon][whichStatus];
         }
-        if (typeof(default_status[whichStatus]) === 'function')
+        if (typeof(default_status[whichStatus]) === 'function') {
             return default_status[whichStatus](extra);
-        else
-            return default_status[whichStatus];
-     };
+        }
+        return default_status[whichStatus];
+     }
 
-    /**
+/**
      * Changes the html in the status column.
      */
     HGrid.prototype.changeStatus = function(row, html, extra, fadeAfter) {
@@ -141,13 +157,12 @@ this.Rubeus = (function($, HGrid, bootbox) {
         UPLOAD_PROGRESS: 'UPLOAD_PROGRESS'
     };
 
-    Rubeus.Status = status;
-
+    Rubeus.Status = statusType
     ////////////////////////
     // Listener callbacks //
     ////////////////////////
 
-    function onConfirmDelete(evt, row, grid) {
+    function onConfirmDelete(row, grid) {
         if (row) {
             var rowCopy = $.extend({}, row);
             // Show "Deleting..." message in parent folder's status column
@@ -197,7 +212,7 @@ this.Rubeus = (function($, HGrid, bootbox) {
         width: '100%',
         height: 500,
         fetchUrl: function(row) {
-            return row.urls.fetch;
+            return row.urls.fetch || null;
         },
         fetchSuccess: function(data, row) {
             this.changeStatus(row, statusType.FETCH_SUCCESS);
@@ -218,12 +233,21 @@ this.Rubeus = (function($, HGrid, bootbox) {
             return row.urls.delete;
         },
         onClickDelete: function(evt, row) {
+            var self = this;
             var $elem = $(evt.target);
-            // Show inline confirm
-            // TODO: Make inline confirmation more reuseable
-            $elem.closest('[data-hg-action="delete"]')
-                .html('Are you sure? <a class="unconfirm" data-target="">No</a> / <a class="confirm" data-target="">Yes</a>');
+            bootbox.confirm({
+                message: '<strong>NOTE</strong>: This action is irreversible.',
+                title: 'Delete <em>' + row.name + '</em>?',
+                callback: function(result) {
+                    if (result) {
+                        onConfirmDelete(row, self);
+                    }
+                }
+            });
             return this;
+        },
+        canUpload: function(folder) {
+            return folder.permissions.edit;
         },
         deleteMethod: 'delete',
         uploads: true,
@@ -300,19 +324,6 @@ this.Rubeus = (function($, HGrid, bootbox) {
                 on: 'click',
                 selector: '.' + HGrid.Html.nameClass,
                 callback: onClickName
-            }, {
-                on: 'click',
-                selector: '.confirm',
-                callback: onConfirmDelete
-            }, {
-                on: 'click',
-                selector: '.unconfirm',
-                callback: function(evt, row, grid) {
-                    if (row) {
-                        // restore row html
-                        grid.updateItem(row);
-                    }
-                }
             }
         ],
         init: function() {
@@ -360,8 +371,15 @@ this.Rubeus = (function($, HGrid, bootbox) {
     Rubeus.prototype = {
         constructor: Rubeus,
         init: function() {
+            var self = this;
             this._registerListeners()
                 ._initGrid();
+            // Show alert if user tries to leave page before upload is finished.
+            $(window).on('beforeunload', function() {
+                if (self.grid.dropzone && self.grid.dropzone.getUploadingFiles().length) {
+                    return 'Uploads(s) still in progress. Are you sure you want to leave this page?';
+                }
+            });
         },
         _registerListeners: function() {
             for (var addon in Rubeus.cfg) {
@@ -384,4 +402,4 @@ this.Rubeus = (function($, HGrid, bootbox) {
 
     return Rubeus;
 
-})(jQuery, HGrid, bootbox);
+})(jQuery, HGrid, bootbox, window);

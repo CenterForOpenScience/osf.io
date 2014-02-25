@@ -11,6 +11,8 @@ from framework.auth.decorators import Auth
 from website.addons.base import AddonError
 from website.addons.github import settings as github_settings
 
+from .utils import create_mock_github
+mock_github = create_mock_github()
 
 class TestCallbacks(DbTestCase):
 
@@ -19,14 +21,15 @@ class TestCallbacks(DbTestCase):
         super(TestCallbacks, self).setUp()
 
         self.project = ProjectFactory.build()
+        self.consolidated_auth = Auth(self.project.creator)
         self.non_authenticator = UserFactory()
         self.project.add_contributor(
             contributor=self.non_authenticator,
-            auth=Auth(self.project.creator),
+            auth=self.consolidated_auth,
         )
         self.project.save()
 
-        self.project.add_addon('github')
+        self.project.add_addon('github', auth=self.consolidated_auth)
         self.project.creator.add_addon('github')
         self.node_settings = self.project.get_addon('github')
         self.user_settings = self.project.creator.get_addon('github')
@@ -81,14 +84,11 @@ class TestCallbacks(DbTestCase):
 
     def test_before_page_load_not_contributor(self):
         message = self.node_settings.before_page_load(self.project, UserFactory())
-        # Handle temporary combined files warning; revert later
-        assert_equal(len(message), 1)
-        #assert_false(message)
+        assert_false(message)
 
     def test_before_page_load_not_logged_in(self):
         message = self.node_settings.before_page_load(self.project, None)
-        # Handle temporary combined files warning; revert later
-        assert_equal(len(message), 1)
+        assert_false(message)
 
     def test_before_remove_contributor_authenticator(self):
         message = self.node_settings.before_remove_contributor(
@@ -193,16 +193,7 @@ class TestCallbacks(DbTestCase):
 
     @mock.patch('website.addons.github.api.GitHub.branches')
     def test_after_register(self, mock_branches):
-        rv = [
-            {
-                'name': 'master',
-                'commit': {
-                    'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-                    'url': 'https://api.github.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc',
-                }
-            }
-        ]
-        mock_branches.return_value = rv
+        mock_branches.return_value = mock_github.branches.return_value
         registration = ProjectFactory()
         clone, message = self.node_settings.after_register(
             self.project, registration, self.project.creator,
@@ -221,7 +212,10 @@ class TestCallbacks(DbTestCase):
         )
         assert_equal(
             clone.registration_data,
-            {'branches': rv},
+            {'branches': [
+                branch.to_json()
+                for branch in mock_github.branches.return_value
+            ]},
         )
         assert_equal(
             clone.user_settings,
@@ -230,7 +224,7 @@ class TestCallbacks(DbTestCase):
 
     @mock.patch('website.addons.github.api.GitHub.branches')
     def test_after_register_api_fail(self, mock_branches):
-        mock_branches.return_value = None
+        mock_branches.return_value = []
         registration = ProjectFactory()
         with assert_raises(AddonError):
             self.node_settings.after_register(

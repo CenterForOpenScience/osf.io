@@ -47,10 +47,8 @@
                 function(result) {
                     if (result) {
                         $.ajax({
-                            url: '/api/v1/settings/github/oauth/delete/',
-                            type: 'POST',
-                            contentType: 'application/json',
-                            dataType: 'json',
+                            url: '/api/v1/settings/github/oauth/',
+                            type: 'DELETE',
                             success: function() {
                                 window.location.reload();
                             }

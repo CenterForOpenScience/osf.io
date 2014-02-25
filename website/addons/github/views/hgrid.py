@@ -104,13 +104,23 @@ def github_branch_widget(branches, owner, repo, branch, sha):
     return rendered
 
 
-def github_hgrid_data(node_settings, auth, contents=False, *args, **kwargs):
+def github_hgrid_data(node_settings, auth, **kwargs):
 
     # Quit if no repo linked
-    if not node_settings.user or not node_settings.repo:
+    if not node_settings.complete:
         return
 
     connection = GitHub.from_settings(node_settings.user_settings)
+
+    # Initialize repo here in the event that it is set in the privacy check
+    # below. This potentially saves an API call in _check_permissions, below.
+    repo = None
+
+    # Quit if privacy mismatch and not contributor
+    if node_settings.owner.is_public:
+        repo = connection.repo(node_settings.user, node_settings.repo)
+        if repo.private:
+            return
 
     branch, sha, branches = _get_refs(
         node_settings,
@@ -122,7 +132,7 @@ def github_hgrid_data(node_settings, auth, contents=False, *args, **kwargs):
     if branch is not None:
         ref = ref_to_params(branch, sha)
         can_edit = _check_permissions(
-            node_settings, auth, connection, branch, sha
+            node_settings, auth, connection, branch, sha, repo=repo,
         )
         name_append = github_branch_widget(branches, owner=node_settings.user,
             repo=node_settings.repo, branch=branch, sha=sha)
@@ -132,9 +142,10 @@ def github_hgrid_data(node_settings, auth, contents=False, *args, **kwargs):
         can_edit = False
         name_append = None
 
-    name_tpl = ('GitHub: '
-                '{user}/{repo}').format(user=node_settings.user,
-                                                    repo=node_settings.repo)
+    name_tpl = '{user}/{repo}'.format(
+        user=node_settings.user, repo=node_settings.repo
+    )
+
     permissions = {
         'edit': can_edit,
         'view': True
@@ -144,16 +155,13 @@ def github_hgrid_data(node_settings, auth, contents=False, *args, **kwargs):
         'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
         'branch': node_settings.owner.api_url + 'github/hgrid/root/',
     }
-    return rubeus.build_addon_root(
+    return [rubeus.build_addon_root(
         node_settings,
-        '{user}/{repo}'.format(
-            user=node_settings.user,
-            repo=node_settings.repo
-        ),
+        name_tpl,
         urls=urls,
         permissions=permissions,
         extra=name_append
-    )
+    )]
 
 
 @must_be_contributor_or_public
@@ -167,19 +175,9 @@ def github_root_folder_public(*args, **kwargs):
     node_settings = kwargs['node_addon']
     auth = kwargs['auth']
     data = request.args.to_dict()
-    parent = data.pop('parent', 'null')
 
-    return github_hgrid_data(node_settings, auth=auth, parent=parent, contents=False, **data)
+    return github_hgrid_data(node_settings, auth=auth, **data)
 
-# TODO I'm never used, can I go home?
-def _get_tree(node_settings, sha, connection=None):
-
-    connection = connection or GitHub.from_settings(node_settings.user_settings)
-    tree = connection.tree(
-        node_settings.user, node_settings.repo, sha, recursive=True,
-    )
-    if tree:
-        return tree['tree']
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')

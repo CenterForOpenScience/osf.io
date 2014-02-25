@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 import logging
 import httplib as http
-from framework import (
-    request,
-    push_errors_to_status, Q,
-    analytics
-)
+
+from framework.flask import request
+from framework import push_errors_to_status, Q
 
 from framework import StoredObject
-from framework.analytics import update_counters
 from framework.auth.decorators import must_be_logged_in, collect_auth
 import framework.status as status
 from framework.exceptions import HTTPError
@@ -70,7 +67,7 @@ def project_new_post(**kwargs):
                 category=project.project_or_component,
             )
         )
-        return {}, 201, None, project.url + 'settings/'
+        return {}, 201, None, project.url
     else:
         push_errors_to_status(form.errors)
     return {}, http.BAD_REQUEST
@@ -102,7 +99,7 @@ def project_new_node(**kwargs):
         )
         return {
             'status': 'success',
-        }, 201, None, node.url + 'settings/'
+        }, 201, None, node.url
     else:
         push_errors_to_status(form.errors)
     raise HTTPError(http.BAD_REQUEST, redirect_url=project.url)
@@ -190,6 +187,7 @@ def node_setting(**kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
+            and 'node' not in addon.added_mandatory
     ]
     rv['addons_enabled'] = addons_enabled
     rv['addon_enabled_settings'] = addon_enabled_settings
@@ -202,7 +200,8 @@ def node_setting(**kwargs):
 @must_not_be_registration
 def node_choose_addons(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    node.config_addons(request.json)
+    auth = kwargs['auth']
+    node.config_addons(request.json, auth)
 
 
 ##############################################################################
@@ -355,11 +354,11 @@ def component_remove(**kwargs):
         else:
             redirect_url = '/dashboard/'
         return {
-            'status': 'success',
-            'message': message,
-        }, None, None, redirect_url
-    else:
-        raise HTTPError(http.BAD_REQUEST, message='Could not delete component')
+            'url': redirect_url,
+        }
+    raise HTTPError(
+        http.BAD_REQUEST, message='Could not delete component'
+    )
 
 
 @must_be_valid_project
@@ -388,9 +387,8 @@ def _render_addon(node):
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
 
-        if node.has_files:
-            js.extend(addon.config.include_js.get('files', []))
-            css.extend(addon.config.include_css.get('files', []))
+        js.extend(addon.config.include_js.get('files', []))
+        css.extend(addon.config.include_css.get('files', []))
 
     return widgets, configs, js, css
 
@@ -473,7 +471,6 @@ def _view_project(node, auth, primary=False):
             'piwik_token': user.piwik_token if user else '',
         },
         # TODO: Namespace with nested dicts
-        'has_files': node.has_files,
         'addons_enabled': node.get_addon_names(),
         'addons': configs,
         'addon_widgets': widgets,
@@ -640,9 +637,12 @@ def _serialize_node_search(node):
     :return: Dictionary of node data
 
     """
+    title = node.title
+    if node.is_registration:
+        title += ' (registration)'
     return {
         'id': node._id,
-        'title': node.title,
+        'title': title,
         'firstAuthor': node.contributors[0].family_name,
         'etal': len(node.contributors) > 1,
     }
@@ -663,10 +663,11 @@ def search_node(**kwargs):
 
     # Build ODM query
     title_query = Q('title', 'icontains', query)
+    not_deleted_query = Q('is_deleted', 'eq', False)
     visibility_query = Q('contributors', 'eq', auth.user)
     if include_public:
         visibility_query = visibility_query | Q('is_public', 'eq', True)
-    odm_query = title_query & visibility_query
+    odm_query = title_query & not_deleted_query & visibility_query
 
     # Exclude current node from query if provided
     if node:
@@ -683,6 +684,7 @@ def search_node(**kwargs):
         'nodes': [
             _serialize_node_search(each)
             for each in cursor
+            if each.contributors
         ]
     }
 
@@ -704,6 +706,7 @@ def _add_pointers(node, pointers, auth):
 
 
 @must_be_contributor
+@must_not_be_registration
 def add_pointers(**kwargs):
     """Add pointers to a node.
 
@@ -726,6 +729,7 @@ def add_pointers(**kwargs):
 
 
 @must_be_contributor
+@must_not_be_registration
 def remove_pointer(**kwargs):
     """Remove a pointer from a node, raising a 400 if the pointer is not
     in `node.nodes`.
@@ -733,7 +737,8 @@ def remove_pointer(**kwargs):
     """
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-
+    # TODO: since these a delete request, shouldn't use request body. put pointer
+    # id in the URL instead
     pointer_id = request.json.get('pointerId')
     if pointer_id is None:
         raise HTTPError(http.BAD_REQUEST)
