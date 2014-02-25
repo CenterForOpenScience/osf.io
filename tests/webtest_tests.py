@@ -724,6 +724,19 @@ class TestConfirmingEmail(DbTestCase):
         assert_in(language.EMAIL_NOT_FOUND.format(email="nowheretobefound@foo.com"),
             res, 'flashes error msg')
 
+    def test_resend_form_shows_alert_if_email_already_confirmed(self):
+        user = UnregUserFactory()
+        url = user.get_confirmation_url(user.username, external=False)
+        # User confirms their email address
+        self.app.get(url).maybe_follow()
+        # tries to resend confirmation
+        res = self.app.get('/resend/')
+        form = res.forms['resendForm']
+        form['email'] = user.username
+        res = form.submit()
+        # Sees alert message
+        assert_in('already been confirmed', res)
+
 
 if __name__ == '__main__':
     unittest.main()

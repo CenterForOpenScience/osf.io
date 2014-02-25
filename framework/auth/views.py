@@ -212,7 +212,7 @@ def resend_confirmation():
                 try:
                     send_confirm_email(user, clean_email)
                 except KeyError:  # already confirmed, redirect to dashboard
-                    status_message, type_ = 'Email has already been confirmed.'
+                    status_message = 'Email has already been confirmed.'
                     type_ = 'warning'
                 else:
                     status_message = 'Resent email to <em>{0}</em>'.format(clean_email)
