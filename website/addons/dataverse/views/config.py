@@ -85,10 +85,11 @@ def dataverse_widget(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
     dataverse = node.get_addon('dataverse')
+    node_settings = kwargs['node_addon']
 
     rv = {
         'complete': True,
-        'dataverse_url': dataverse.dataverse_url,
+        'study': node_settings.study,
     }
     rv.update(dataverse.config.to_json())
     return rv
@@ -99,7 +100,7 @@ def dataverse_page(**kwargs):
 
     user = kwargs['auth'].user
     node = kwargs['node'] or kwargs['project']
-    dataverse= node.get_addon('dataverse')
+    dataverse = node.get_addon('dataverse')
 
     data = _view_project(node, user)
 

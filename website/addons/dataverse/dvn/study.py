@@ -177,6 +177,17 @@ class Study(object):
         if deleteAfterUpload:
             os.remove(filepath)
 
+    def add_file_obj(self, filename, content):
+        depositReceipt = self.hostDataverse.connection.swordConnection.add_file_to_resource(
+            edit_media_iri=self.editMediaUri,
+            payload=content,
+            mimetype='application/zip',
+            filename=filename,
+            packaging='http://purl.org/net/sword/package/SimpleZip'
+        )
+
+        self._refresh(deposit_receipt=depositReceipt)
+
     def update_metadata(self):
         #todo: consumer has to use the methods on self.entry (from sword2.atom_objects) to update the
         # metadata before calling this method. that's a little cumbersome...
