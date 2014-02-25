@@ -82,7 +82,8 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
               cssClass: 'btn btn-link btn-mini btn-delete'
             });
       }
-      return HGrid.Fmt.buttons(buttonDefs);
+      return ['<span class="rubeus-buttons">', HGrid.Fmt.buttons(buttonDefs),
+                '</span><span data-status></span>'].join('');
     };
 
     /** Remove the 'Project: ' text from the beginning of a folder name. */
@@ -91,7 +92,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     }
 
     HGrid.Col.ActionButtons.name = 'Upload / Download / Delete';
-    HGrid.Col.ActionButtons.width = 15;
+    HGrid.Col.ActionButtons.width = 70;
     HGrid.Col.ActionButtons.folderView = function(row) {
         var buttonDefs = [];
         var tooltipMarkup = genTooltipMarkup('Upload');
@@ -104,20 +105,11 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             });
         }
         if (buttonDefs) {
-            return HGrid.Fmt.buttons(buttonDefs);
+            return ['<span class="' + Rubeus.buttonContainer + '">', HGrid.Fmt.buttons(buttonDefs),
+                '</span><span data-status></span>'].join('');
         }
         return '';
     };
-
-
-    // Custom status column
-    HGrid.Col.Status = {
-        text: 'Status',
-        folderView: '<span data-status></span>',
-        itemView: '<span data-status></span>',
-        width: 50
-    };
-    HGrid.Html.statusSelector = '[data-status]';
 
     /**
      * Get the status message from the addon, if any.
@@ -135,16 +127,31 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         return default_status[whichStatus];
      }
 
-/**
+     HGrid.prototype.showButtons = function(row) {
+        var $rowElem = $(this.getRowElement(row.id));
+        var $buttons = $rowElem.find('.' + Rubeus.buttonContainer);
+        $buttons.show();
+        return this;
+     };
+
+     HGrid.prototype.hideButtons = function(row) {
+        var $rowElem = $(this.getRowElement(row.id));
+        var $buttons = $rowElem.find('.rubeus-buttons');
+        $buttons.hide();
+        return this;
+     };
+
+    /**
      * Changes the html in the status column.
      */
-    HGrid.prototype.changeStatus = function(row, html, extra, fadeAfter) {
-        var rowElem = this.getRowElement(row.id);
-        var $status = $(rowElem).find(HGrid.Html.statusSelector);
+    HGrid.prototype.changeStatus = function(row, html, extra, fadeAfter, callback) {
+        var $rowElem = $(this.getRowElement(row.id));
+        var $status = $rowElem.find(Rubeus.statusSelector);
+        this.hideButtons(row);
         $status.html(getStatusCfg(row.addon, html, extra));
         if (fadeAfter) {
             setTimeout(function() {
-                $status.fadeOut('slow');
+                $status.fadeOut('slow', function() {callback(row);});
             }, fadeAfter);
         }
         return $status;
@@ -185,7 +192,9 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         UPLOAD_PROGRESS: 'UPLOAD_PROGRESS'
     };
 
-    Rubeus.Status = statusType
+    Rubeus.Status = statusType;
+    Rubeus.buttonContainer = 'rubeus-buttons';
+    Rubeus.statusSelector = '[data-status]';
     ////////////////////////
     // Listener callbacks //
     ////////////////////////
@@ -234,8 +243,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         /*jshint unused: false */
         columns: [
             HGrid.Col.Name,
-            HGrid.Col.ActionButtons,
-            HGrid.Col.Status
+            HGrid.Col.ActionButtons
         ],
         width: '100%',
         height: 500,
@@ -245,6 +253,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         fetchSuccess: function(data, row) {
             updateTooltips();
             this.changeStatus(row, statusType.FETCH_SUCCESS);
+            this.showButtons(row);
         },
         fetchError: function(error, row) {
             this.changeStatus(row, statusType.FETCH_ERROR);
@@ -253,7 +262,12 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             this.changeStatus(row, statusType.FETCH_START);
         },
         uploadProgress: function(file, progress, bytesSent, row) {
-            this.changeStatus(row, statusType.UPLOAD_PROGRESS, progress);
+            if (progress === 100) {
+                var sendingTo = row.addonFullname || 'external service...';
+                this.changeStatus(row, ['Sending to ', sendingTo, '. Please wait...'].join(''));
+            } else{
+                this.changeStatus(row, statusType.UPLOAD_PROGRESS, progress);
+            }
         },
         downloadUrl: function(row) {
             return row.urls.download;
@@ -338,7 +352,10 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
                 // This is necessary for the download and delete button to work.
                 $.extend(row, data);
                 this.updateItem(row);
-                this.changeStatus(row, statusType.UPLOAD_SUCCESS, null, 2000);
+                this.changeStatus(row, statusType.UPLOAD_SUCCESS, null, 2000,
+                    function(row) {
+                        self.showButtons(row);
+                    });
             }
             var cfgOption = resolveCfgOption.call(this, row, 'uploadSuccess', [file, row, data]);
             return cfgOption || null;

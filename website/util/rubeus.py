@@ -72,6 +72,7 @@ def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS,
         }
     rv = {
         'addon': node_settings.config.short_name,
+        'addonFullname': node_settings.config.full_name,
         'name': name,
         'iconUrl': node_settings.config.icon_url,
         KIND: FOLDER,
