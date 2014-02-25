@@ -718,6 +718,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 ],
                 '{}_contributors_url'.format(self._id): [
                     x.profile_url for x in self.contributors
+                    if x is not None
                 ],
                 '{}_title'.format(self._id): self.title,
                 '{}_category'.format(self._id): self.category,

@@ -782,6 +782,48 @@ class TestAuthViews(DbTestCase):
         assert_equal(self.user.middle_names, 'Baines')
         assert_equal(self.user.family_name, 'Johnson')
 
+
+# TODO: Use mock add-on
+class TestAddonUserViews(DbTestCase):
+
+    def setUp(self):
+        self.user = AuthUserFactory()
+        self.app = TestApp(app)
+
+    def test_choose_addons_add(self):
+        """Add add-ons; assert that add-ons are attached to project.
+
+        """
+        url = '/api/v1/settings/addons/'
+        self.app.post_json(
+            url,
+            {'github': True},
+            auth=self.user.auth,
+        ).maybe_follow()
+        self.user.reload()
+        assert_true(self.user.get_addon('github'))
+
+    def test_choose_addons_remove(self):
+        """Add, then delete, add-ons; assert that add-ons are not attached to
+        project.
+
+        """
+        url = '/api/v1/settings/addons/'
+        self.app.post_json(
+            url,
+            {'github': True},
+            auth=self.user.auth,
+        ).maybe_follow()
+        self.app.post_json(
+            url,
+            {'github': False},
+            auth=self.user.auth
+        ).maybe_follow()
+        self.user.reload()
+        assert_false(self.user.get_addon('github'))
+
+
+# TODO: Move to OSF Storage
 class TestFileViews(DbTestCase):
 
     def setUp(self):

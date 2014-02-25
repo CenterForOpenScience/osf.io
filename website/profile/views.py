@@ -198,7 +198,7 @@ def profile_addons(**kwargs):
 @must_be_logged_in
 def user_choose_addons(**kwargs):
     auth = kwargs['auth']
-    auth['user'].config_addons(request.json, auth)
+    auth.user.config_addons(request.json, auth)
 
 
 @must_be_logged_in
