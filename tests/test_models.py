@@ -1052,12 +1052,26 @@ class TestProject(DbTestCase):
             self.consolidate_auth.user._primary_key)
         assert_true(self.project.is_contributor(latest_contributor))
 
-    def test_add_unregistered_raises_error_if_user_already_in_db(self):
+    def test_add_unregistered_adds_new_unclaimed_record_if_user_already_in_db(self):
         user = UnregUserFactory()
+        given_name = fake.name()
+        new_user = self.project.add_unregistered_contributor(
+            email=user.username,
+            fullname=given_name,
+            auth=self.consolidate_auth
+        )
+        self.project.save()
+        # new unclaimed record was added
+        assert_in(self.project._primary_key, new_user.unclaimed_records)
+        unclaimed_data = new_user.get_unclaimed_record(self.project._primary_key)
+        assert_equal(unclaimed_data['name'], given_name)
+
+    def test_add_unregistered_raises_error_if_user_is_registered(self):
+        user = UserFactory(is_registered=True)  # A registered user
         with assert_raises(DuplicateEmailError):
             self.project.add_unregistered_contributor(
                 email=user.username,
-                fullname=fake.name(),
+                fullname=user.fullname,
                 auth=self.consolidate_auth
             )
 

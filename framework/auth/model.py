@@ -7,6 +7,7 @@ import datetime as dt
 
 import pytz
 import bson
+from modularodm.exceptions import MultipleResultsFound
 
 from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
@@ -107,8 +108,8 @@ class User(GuidStoredObject, AddonModelMixin):
         """Check that an email is not already in the database. If it is, raise
         a DuplicateEmailError.
         """
-        if cls.find_by_email(email.lower().strip()):
-            msg = 'User already exists with email {email}'.format(**locals())
+        if cls.find(Q('username', 'eq', email.lower().strip())):
+            msg = 'User exists with email {0!r}'.format(email)
             raise DuplicateEmailError(msg)
         return email
 
@@ -119,18 +120,18 @@ class User(GuidStoredObject, AddonModelMixin):
         :raises: DuplicateEmailError if a user with the given email address
             is already in the database.
         """
+        if email:
+            clean_email = email.lower().strip()
+            cls.verify_unique_email(clean_email)
         parsed = utils.parse_name(fullname)
         user = cls(
-            username=email,
+            username=clean_email,
             fullname=fullname,
             **parsed
         )
         # Make sure user isn't already in database
         if email:
-            clean_email = email.lower().strip()
-            cls.verify_unique_email(clean_email)
             user.emails.append(clean_email)
-            user.add_email_verification(clean_email)
         user.is_registered = False
         return user
 

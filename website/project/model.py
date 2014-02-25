@@ -20,6 +20,7 @@ from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
+from framework.auth.exceptions import DuplicateEmailError
 from framework.auth.decorators import Auth
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
@@ -1579,7 +1580,15 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         # Create a new user record
-        contributor = User.create_unregistered(fullname=fullname, email=email)
+        try:
+            contributor = User.create_unregistered(fullname=fullname, email=email)
+        except DuplicateEmailError as error:
+            contributor = get_user(username=email)
+            # Unregistered users may have multiple unclaimed records, so
+            # only raise error if user is registered.
+            if contributor.is_registered or self.is_contributor(contributor):
+                raise error
+
         contributor.add_unclaimed_record(node=self, referrer=auth.user, given_name=fullname)
         contributor.save()
         self.add_contributor(contributor, auth=auth, log=True, save=save)
