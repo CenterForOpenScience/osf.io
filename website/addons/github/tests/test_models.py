@@ -10,6 +10,7 @@ from tests.factories import UserFactory, ProjectFactory
 from framework.auth.decorators import Auth
 from website.addons.base import AddonError
 from website.addons.github import settings as github_settings
+from website.addons.github.exceptions import NotFoundError
 
 from .utils import create_mock_github
 mock_github = create_mock_github()
@@ -223,14 +224,10 @@ class TestCallbacks(DbTestCase):
         )
 
     @mock.patch('website.addons.github.api.GitHub.branches')
-    def test_after_register_api_fail(self, mock_branches):
-        mock_branches.return_value = []
+    def test_after_register_not_found(self, mock_branches):
+        mock_branches.side_effect = NotFoundError
         registration = ProjectFactory()
-        with assert_raises(AddonError):
-            self.node_settings.after_register(
-                self.project, registration, self.project.creator,
-            )
-        mock_branches.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
+        clone, message = self.node_settings.after_register(
+            self.project, registration, self.project.creator,
         )
+        assert_false(clone.registration_data)

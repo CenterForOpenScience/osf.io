@@ -13,7 +13,6 @@
                 <hr />
 
                 <p class="help-block">${language.BEFORE_REGISTRATION_INFO}</p>
-                </p>
 
                 <div class="form-group">
                     <label>
