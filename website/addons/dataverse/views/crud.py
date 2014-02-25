@@ -99,7 +99,7 @@ def dataverse_view_file(**kwargs):
         'rendered': rendered,
         'download_url': url + '/download/',
     }
-    rv.update(_view_project(node, auth, primary=True))
+    rv.update(_view_project(node, auth))
     return rv
 
 

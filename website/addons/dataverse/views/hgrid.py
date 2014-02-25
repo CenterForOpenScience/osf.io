@@ -23,6 +23,12 @@ def dataverse_hgrid_data(node_settings, user, contents=False, **kwargs):
     # TODO: Add upload / fetch URLs
     # TODO: Expose get contents view function and route
 
+    name = 'Dataverse: {0}/{1}/{2}'.format(
+            node_settings.dataverse_username,
+            node_settings.dataverse,
+            node_settings.study,
+    )
+
     permissions = {
         'edit': can_edit,
         'view': True
@@ -34,17 +40,13 @@ def dataverse_hgrid_data(node_settings, user, contents=False, **kwargs):
         'branch': node_settings.owner.api_url + 'dataverse/hgrid/root/',
     }
 
-    return rubeus.build_addon_root(
+    return [rubeus.build_addon_root(
         node_settings,
-        'Dataverse: {0}/{1}/{2}'.format(
-            node_settings.dataverse_username,
-            node_settings.dataverse,
-            node_settings.study,
-        ),
+        name,
         urls=urls,
         permissions=permissions,
         extra=None,
-    )
+    )]
 
 
 # TODO: Can this be combined with dataverse_hgrid_data?
