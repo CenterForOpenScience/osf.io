@@ -149,6 +149,7 @@ def get_recently_added_contributors(**kwargs):
     contribs = [
         _add_contributor_json(contrib)
         for contrib in auth.user.recently_added
+        if contrib.is_active()
         if contrib not in node_to_use.contributors
     ]
 
