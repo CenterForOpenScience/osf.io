@@ -32,19 +32,21 @@ this.Rubeus = (function($, HGrid, bootbox) {
 
     HGrid.Col.ActionButtons.itemView = function(item) {
 	var buttonDefs = [];
-	if(item.permissions.download !== false){
-	    buttonDefs.push({
-		text: '<i class="icon-download-alt icon-white"></i>',
-		action: 'download',
-		cssClass: 'btn btn-primary btn-mini'
-	    });
-	}
-	if (item.permissions && item.permissions.edit) {
-	    buttonDefs.push({
-		text: '&nbsp;<i class="icon-remove"></i>',
-		action: 'delete',
-		cssClass: 'btn btn-link btn-mini btn-delete'
-	    });
+	if(item.permissions){
+	    if(item.permissions.download !== false){
+		buttonDefs.push({
+		    text: '<i class="icon-download-alt icon-white"></i>',
+		    action: 'download',
+		    cssClass: 'btn btn-primary btn-mini'
+		});
+	    }
+	    if (item.permissions.edit) {
+		buttonDefs.push({
+		    text: '&nbsp;<i class="icon-remove"></i>',
+		    action: 'delete',
+		    cssClass: 'btn btn-link btn-mini btn-delete'
+		});
+	    }
 	}
 	return HGrid.Fmt.buttons(buttonDefs);
     };
