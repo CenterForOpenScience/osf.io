@@ -99,7 +99,7 @@ def project_new_node(**kwargs):
         )
         return {
             'status': 'success',
-        }, 201, None, node.url + 'settings/'
+        }, 201, None, node.url
     else:
         push_errors_to_status(form.errors)
     raise HTTPError(http.BAD_REQUEST, redirect_url=project.url)
