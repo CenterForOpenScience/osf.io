@@ -20,10 +20,9 @@ def dataverse_hgrid_data(node_settings, user, contents=False, **kwargs):
 
     can_edit = True # TODO: Validate user
 
-    # TODO: Add upload / fetch URLs
     # TODO: Expose get contents view function and route
 
-    name = 'Dataverse: {0}/{1}/{2}'.format(
+    name = '{0}/{1}/{2}'.format(
             node_settings.dataverse_username,
             node_settings.dataverse,
             node_settings.study,

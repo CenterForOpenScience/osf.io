@@ -4,8 +4,11 @@ import datetime
 from framework import request, make_response
 from framework.flask import secure_filename
 from framework.exceptions import HTTPError
+
+from website import models
 from website.project.decorators import must_be_contributor_or_public, must_have_addon, must_not_be_registration
 from website.project.views.node import _view_project
+from website.util import rubeus
 
 import httplib as http
 
@@ -109,7 +112,10 @@ def dataverse_view_file(**kwargs):
 @must_have_addon('dataverse', 'node')
 def dataverse_upload_file(**kwargs):
 
+    node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
     node_settings = kwargs['node_addon']
+    now = datetime.datetime.utcnow()
 
     path = kwargs.get('path', '')
 
@@ -123,47 +129,48 @@ def dataverse_upload_file(**kwargs):
     filename = secure_filename(upload.filename)
     content = upload.read()
 
-    study.add_file(os.path.join(path, filename))
+    study.add_file_obj(filename, content, zip=True)
+    file_id = study.get_file(filename).fileId
 
-    # TODO: Check for success (see below)
+    if file_id is not None:
+        # TODO: Log for dataverse
+        # node.add_log(
+        #     action=(
+        #         'dataverse_' + (
+        #             models.NodeLog.FILE_ADDED
+        #         )
+        #     ),
+        #     params={
+        #         'project': node.parent_id,
+        #         'node': node._primary_key,
+        #         'path': os.path.join(path, filename),
+        #     },
+        #     auth=auth,
+        #     log_date=now,
+        # )
 
-    # if data is not None:
-    #
-    #     node.add_log(
-    #         action=(
-    #             'dataverse_' + (
-    #                 models.NodeLog.FILE_ADDED
-    #             )
-    #         ),
-    #         params={
-    #             'project': node.parent_id,
-    #             'node': node._primary_key,
-    #             'path': os.path.join(path, filename),
-    #         },
-    #         auth=auth,
-    #         log_date=now,
-    #     )
-    #
-    #     info = {
-    #         'addon': 'dataverse',
-    #         'name': filename,
-    #         'size': [
-    #             data['content'].size,
-    #             size(data['content'].size, system=alternative)
-    #         ],
-    #         'kind': 'file',
-    #         'urls': {
-    #
-    #         },
-    #         'permissions': {
-    #             'view': True,
-    #             'edit': True,
-    #         },
-    #     }
-    #
-    #     return info, 201
-    #
-    # raise HTTPError(http.BAD_REQUEST)
+        info = {
+            'addon': 'dataverse',
+            'name': filename,
+            'size': [
+                len(content),
+                rubeus.format_filesize(len(content))
+            ],
+            'kind': 'file',
+            'urls': {
+                    'view': node_settings.owner.api_url + 'dataverse/file/' + file_id + '/',
+                    'download': node_settings.owner.api_url + 'dataverse/file/' + file_id + '/download/',
+                    'delete': node_settings.owner.api_url + 'dataverse/file/' + file_id+ '/',
+            },
+            'permissions': {
+                'view': True,
+                'edit': True,
+            },
+        }
+
+        return info, 201
+
+    raise HTTPError(http.BAD_REQUEST)
 
 
 @must_be_contributor_or_public

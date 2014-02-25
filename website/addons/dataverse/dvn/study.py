@@ -8,6 +8,7 @@ __date__ ="$Jul 30, 2013 12:21:28 PM$"
 import mimetypes
 import os
 import pprint
+import StringIO
 from zipfile import ZipFile
 
 # downloaded modules
@@ -163,21 +164,20 @@ class Study(object):
 
         filename = os.path.basename(filepath)
 
-        with open(filepath, "rb") as pkg:
-            depositReceipt = self.hostDataverse.connection.swordConnection.add_file_to_resource(
-                edit_media_iri=self.editMediaUri,
-                payload=pkg,
-                mimetype='application/zip',
-                filename=filename,
-                packaging='http://purl.org/net/sword/package/SimpleZip',
-            )
-
-            self._refresh(deposit_receipt=depositReceipt)
+        with open(filepath, "rb") as content:
+            self.add_file_obj(filename, content)
 
         if deleteAfterUpload:
             os.remove(filepath)
 
-    def add_file_obj(self, filename, content):
+    def add_file_obj(self, filename, content, zip=False):
+        if zip:
+            s = StringIO.StringIO()
+            zipFile = ZipFile(s, 'w')
+            zipFile.writestr(filename, content)
+            zipFile.close()
+            content = s.getvalue()
+
         depositReceipt = self.hostDataverse.connection.swordConnection.add_file_to_resource(
             edit_media_iri=self.editMediaUri,
             payload=content,
