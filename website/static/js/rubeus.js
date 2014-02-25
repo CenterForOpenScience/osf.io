@@ -91,7 +91,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         return name.slice(name.indexOf(':') + 1).trim();
     }
 
-    HGrid.Col.ActionButtons.name = 'Upload / Download / Delete';
+    HGrid.Col.ActionButtons.name = 'Actions';
     HGrid.Col.ActionButtons.width = 70;
     HGrid.Col.ActionButtons.folderView = function(row) {
         var buttonDefs = [];
