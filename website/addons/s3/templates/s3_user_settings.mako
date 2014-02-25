@@ -3,11 +3,11 @@
 % if not has_auth:
     <div class="form-group">
         <label for="s3Addon">Access Key</label>
-        <input class="form-control" id="access_key" name="access_key" value="${access_key}" ${'disabled' if disabled else ''} />
+        <input class="form-control" id="access_key" name="access_key" ${'disabled' if disabled else ''} />
     </div>
     <div class="form-group">
         <label for="s3Addon">Secret Key</label>
-        <input type="password" class="form-control" id="secret_key" name="secret_key" value="${secret_key}" ${'disabled' if disabled else ''} />
+        <input type="password" class="form-control" id="secret_key" name="secret_key" ${'disabled' if disabled else ''} />
     </div>
 % endif
 
@@ -35,19 +35,27 @@
                     type: 'DELETE',
                     url: '/api/v1/settings/s3/',
                     contentType: 'application/json',
-                    dataType: 'json'
-                }).done(function() {
-                    $('#access_key').val('');
-                    $('#secret_key').val('');
-                    msgElm.text('Keys removed')
-                        .removeClass('text-danger').addClass('text-success')
-                        .fadeOut(100).fadeIn();
-                    location.reload();
-                }).fail(function(xhr) {
-                    var message = 'Error: Keys not removed';
-                    msgElm.text(message)
-                        .removeClass('text-success').addClass('text-danger')
-                        .fadeOut(100).fadeIn();
+                    dataType: 'json',
+                    success: function(response) {
+                        msgElm.text('Keys removed')
+                            .removeClass('text-danger').addClass('text-success')
+                            .fadeOut(100).fadeIn();
+                        window.location.reload();
+                    },
+                    error: function(xhr) {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response && response.message) {
+                            if(response.message === 'reload')
+                                window.location.reload();
+                            else
+                                message = response.message;
+                        } else {
+                            message = 'Error: Keys not removed';
+                        }
+                        msgElm.text(message)
+                            .removeClass('text-success').addClass('text-danger')
+                            .fadeOut(100).fadeIn();
+                    }
                 });
                 return false;
             });
@@ -57,4 +65,3 @@
         ${parent.on_submit()}
     %endif
 </%def>
-

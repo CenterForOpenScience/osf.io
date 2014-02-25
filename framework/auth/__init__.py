@@ -3,6 +3,7 @@ import logging
 
 from mako.template import Template
 from framework import session, create_session
+from framework.exceptions import FrameworkError
 from framework import goback
 from framework import status
 from framework.auth.utils import parse_name
@@ -10,11 +11,38 @@ import framework.flask as web
 import framework.bcrypt as bcrypt
 from framework.email.tasks import send_email
 from modularodm.query.querydialect import DefaultQueryDialect as Q
-import helper
+
 import website
+from website import security
 from model import User
 
 import datetime
+
+logger = logging.getLogger(__name__)
+
+
+class AuthError(FrameworkError):
+    """Base class for auth-related errors."""
+    pass
+
+
+class DuplicateEmailError(AuthError):
+    """Raised if a user tries to register an email that is already in the
+    database.
+    """
+    pass
+
+
+class LoginNotAllowedError(AuthError):
+    """Raised if user login is called for a user that is not registered or
+    is not claimed, etc.
+    """
+    pass
+
+class PasswordIncorrectError(AuthError):
+    """Raised if login is called with an incorrect password attempt.
+    """
+    pass
 
 
 def get_current_username():
@@ -70,11 +98,10 @@ def get_user(id=None, username=None, password=None, verification_key=None):
             for query_part in query_list[1:]:
                 query = query & query_part
             user = User.find_one(query)
-        except Exception as err:
+        except Exception as err:  # TODO: catch ModularODMError
             logging.error(err)
             user = None
         if user and not user.check_password(password):
-            logging.debug("Incorrect password attempt.")
             return False
         return user
     if verification_key:
@@ -85,52 +112,46 @@ def get_user(id=None, username=None, password=None, verification_key=None):
             query = query & query_part
         user = User.find_one(query)
         return user
-    except Exception as err:  # TODO: Should catch a specific type of exception
+    except Exception as err:
         logging.error(err)
         return None
 
 
+def authenticate(user, response):
+    data = session.data if session._get_current_object() else {}
+    data.update({
+        'auth_user_username': user.username,
+        'auth_user_id': user._primary_key,
+        'auth_user_fullname': user.fullname,
+    })
+    response = create_session(response, data=data)
+    return response
+
+
 def login(username, password):
+    """View helper function for logging in a user. Either authenticates a user
+    and returns a ``Response`` or raises an ``AuthError``.
+
+    :raises: AuthError on a bad login
+    :returns: Redirect response to settings page on successful login.
+    """
     username = username.strip().lower()
     password = password.strip()
-    logging.info("Attempting to log in {0}".format(username))
-
     if username and password:
         user = get_user(
             username=username,
             password=password
         )
+        # TODO: Too much nesting here. Rethink
         if user:
             if not user.is_registered:
-                logging.debug("User is not registered")
-                return 2
+                raise LoginNotAllowedError('User is not registered.')
             elif not user.is_claimed:
-                logging.debug("User is not claimed")
-                return False
+                raise LoginNotAllowedError('User is not claimed.')
             else:
-                is_first_login = user.date_last_login is None
-                user.date_last_login = datetime.datetime.utcnow()
-                user.save()
-                if not is_first_login:
-                    response = goback()
-                else:
-                    # Direct user to settings page if first login; need to
-                    # verify imputed names
-                    status.push_status_message('Welcome to the OSF! Please update the '
-                                        'following settings. If you need assistance '
-                                        'in getting started, please visit the '
-                                        '<a href="/getting-started/">Getting Started</a> '
-                                        'page.')
-                    response = web.redirect('/settings/')
-                data = session.data if session._get_current_object() else {}
-                data.update({
-                    'auth_user_username': user.username,
-                    'auth_user_id': user._primary_key,
-                    'auth_user_fullname': user.fullname,
-                })
-                response = create_session(response, data=data)
-                return response
-    return False
+                return authenticate(user, response=goback())
+    raise PasswordIncorrectError('Incorrect password attempt.')
+
 
 def logout():
     for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname']:
@@ -160,10 +181,7 @@ def add_unclaimed_user(email, fullname):
         return newUser
 
 
-class DuplicateEmailError(BaseException):
-    pass
-
-
+# TODO: Use mails.py interface
 WELCOME_EMAIL_SUBJECT = 'Welcome to the Open Science Framework'
 WELCOME_EMAIL_TEMPLATE = Template('''
 Hello ${fullname},
@@ -178,6 +196,7 @@ Like us on Facebook [ https://www.facebook.com/OpenScienceFramework ]
 From the Open Science Framework Robot
 ''')
 
+
 def send_welcome_email(user):
     send_email.delay(
         from_addr=website.settings.FROM_EMAIL,
@@ -189,6 +208,20 @@ def send_welcome_email(user):
         mimetype='plain',
     )
 
+def add_unconfirmed_user(username, password, fullname):
+    username_clean = username.strip().lower()
+    password_clean = password.strip()
+    fullname_clean = fullname.strip()
+
+    if not get_user(username=username):
+        user = User.create_unconfirmed(username=username_clean,
+            password=password_clean,
+            fullname=fullname_clean)
+        user.save()
+        return user
+    else:
+        raise DuplicateEmailError('User {0!r} already exists'.format(username_clean))
+
 
 def register(username, password, fullname, send_welcome=True):
     username = username.strip().lower()
@@ -197,13 +230,13 @@ def register(username, password, fullname, send_welcome=True):
     # TODO: This validation should occur at the database level, not the view
     if not get_user(username=username):
         parsed = parse_name(fullname)
+        # TODO: add User.create_registered() class method
         user = User(
             username=username,
             fullname=fullname,
             is_registered=True,
             is_claimed=True,
-            verification_key=helper.random_string(15),
-            date_registered=datetime.datetime.utcnow(),
+            verification_key=security.random_string(15),
             **parsed
         )
         # Set the password

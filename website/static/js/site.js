@@ -1,6 +1,6 @@
-//////////////////
-// Site-wide JS //
-//////////////////
+////////////////////////////
+// Site-wide JS utilities //
+////////////////////////////
 (function($) {
 
 /**
@@ -36,44 +36,8 @@ $.urlParam = function(name) {
     return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 };
 
-var setStatus = function(status){
-    $('#alert-container').append(status);//'<div class=\'alert-message warning fade in\' data-alert=\'alert\'><a class=\'close\' href=\'#\'>&times;</a><p>'+ status +'</p></div>');
-};
 
-/**
- * Display a modal confirmation window before relocating to an url.
- * @param  <String> message
- * @param  <String> url
- */
-var modalConfirm = function(message, url){
-    bootbox.confirm(message,
-        function(result) {
-            if (result) {
-                window.location.href = url;
-            }
-        }
-    );
-};
-
-var urlDecode = function(str) {
-    return decodeURIComponent((str+'').replace(/\+/g, '%20'));
-}
-
-
-/**
- * Display a modal confirmation window before relocating to an url.
- * @param  <String> message
- * @param  <String> url
- */
-var modalConfirm = function(message, url){
-    bootbox.confirm(message,
-        function(result) {
-            if (result) {
-                window.location.href = url;
-            }
-        }
-    )
-};
+// TODO: this should be in project.js
 $(document).ready(function(){
     //block the create new project button when the form is submitted
     $('#projectForm').on('submit',function(){

@@ -11,20 +11,27 @@ from httpcache import CachingHTTPAdapter
 
 from website.addons.github import settings as github_settings
 
+# Initialize caches
+http_cache = CachingHTTPAdapter()
+https_cache = CachingHTTPAdapter()
 
 class GitHub(object):
 
     def __init__(self, access_token=None, token_type=None):
 
+        self.access_token = access_token
         if access_token and token_type:
             self.gh3 = github3.login(token=access_token)
+            self.gh3.set_client_id(
+                github_settings.CLIENT_ID, github_settings.CLIENT_SECRET
+            )
         else:
             self.gh3 = github3.GitHub()
 
-        #Caching libary
+        # Caching libary
         if github_settings.CACHE:
-            self.gh3._session.mount('http://', CachingHTTPAdapter())
-            self.gh3._session.mount('https://', CachingHTTPAdapter())
+            self.gh3._session.mount('http://', http_cache)
+            self.gh3._session.mount('https://', https_cache)
 
     @classmethod
     def from_settings(cls, settings):
@@ -55,6 +62,15 @@ class GitHub(object):
 
         """
         return self.gh3.repository(user, repo)
+
+    def repos(self):
+        return self.gh3.iter_repos(type='all', sort='full_name')
+
+    def user_repos(self, user):
+        return self.gh3.iter_user_repos(user, type='all', sort='full_name')
+
+    def create_repo(self, repo, **kwargs):
+        return self.gh3.create_repo(repo, **kwargs)
 
     def branches(self, user, repo, branch=None):
         """List a repo's branches or get a single branch.
@@ -202,7 +218,9 @@ class GitHub(object):
         """
         # Note: Must set `output` to `None`; no JSON response from this
         # endpoint
-        return self.gh3.repository(user, repo).hook(_id).delete()
+        repo = self.gh3.repository(user, repo)
+        if repo:
+            return repo.hook(_id).delete()
 
     ########
     # CRUD #
@@ -231,10 +249,8 @@ class GitHub(object):
 
     def revoke_token(self):
 
-        if self.access_token is None:
-            return
-        return self.gh3.authorization().delete()
-
+        if self.access_token:
+            return self.gh3.revoke_authorization(self.access_token)
 
 def ref_to_params(branch=None, sha=None):
 
@@ -249,6 +265,7 @@ def ref_to_params(branch=None, sha=None):
     if params:
         return '?' + params
     return ''
+
 
 def _build_github_urls(item, node_url, node_api_url, branch, sha):
 

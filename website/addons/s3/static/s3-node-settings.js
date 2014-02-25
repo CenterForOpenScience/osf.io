@@ -1,49 +1,74 @@
-//TODO Fix me up use id's maybe...
-function setDropDownListener() {
-    $( document.body ).on( 'click', '.dropdown-menu li', function( event ) {
+(function() {
 
-       var $target = $( event.currentTarget );
+    function newBucket() {
 
-       $target.closest( '.btn-group' )
-          .find( '[data-bind="label"]' ).text( $target.text() )
-             .end()
-          .children( '.dropdown-toggle' ).dropdown( 'toggle' );
-          $('#s3_bucket').attr('value', $target.text());
-        //Submit Form here
-        if ($target.text().indexOf('Create a new bucket') != -1) {
-            newBucket();
-        } else if ($target.text().indexOf('Deauthorize') != -1) {
-            return true;
-        } else {
-            $('#addonSettingsS3').submit();
-        }
+        var $elm = $('#addonSettingsS3');
+        var $select = $elm.find('select');
 
-        return false;
+        bootbox.prompt('Name your new bucket', function(bucketName) {
 
-    });
-}
+            if (!bucketName) {
+              return;
+            }
+            bucketName = bucketName.toLowerCase();
+            $.ajax({
+                type: 'POST',
+                url: nodeApiUrl +  's3/newbucket/',
+                contentType: 'application/json',
+                dataType: 'json',
+                data: JSON.stringify({bucket_name: bucketName})
+            }).done(function() {
+                $select.append('<option value="' + bucketName + '">' + bucketName + '</option>');
+                $select.val(bucketName);
+            }).fail(function(xhr) {
+                bootbox.confirm('Looks like that name is taken. Try another name?', function(result) {
+                    if (result) {
+                        newBucket();
+                    }
+                })
+            });
 
-function newBucket() {
-    bootbox.prompt('Name your new bucket', function(bucketName) {
-      if (!bucketName)
-        return;
-        bucketName = bucketName.toLowerCase();
+        });
+
+    }
+
+    var removeNodeAuth = function() {
         $.ajax({
-            url: nodeApiUrl +  addonShortname + '/newbucket/',
-            type: 'POST',
+            type: 'DELETE',
+            url: nodeApiUrl + 's3/settings/',
             contentType: 'application/json',
             dataType: 'json',
-            data: JSON.stringify({bucket_name: bucketName})
-        }).done(function() {
-            $('#bucketlabel').text(bucketName);
-            $('#s3_bucket').val(bucketName);
-            $('#addonSettingsS3').submit();
-        }).fail(function(xhr) {
-            bootbox.confirm('Looks like that name is taken. Try another name?', function(result) {
-                if (result)
-                    newBucket();
-            })
+            success: function(response) {
+                window.location.reload();
+            },
+            error: function(xhr) {
+                //TODO Do something here
+            }
+        });
+    };
+
+    $(document).ready(function() {
+
+        $('#newBucket').on('click', function() {
+            newBucket();
+        });
+
+        $('#s3RemoveToken').on('click', function() {
+            bootbox.confirm(
+                'Are you sure you want to remove this S3 authorization?', function(confirm) {
+                    if (confirm) {
+                        removeNodeAuth();
+                    }
+                }
+            );
+        });
+
+        $('#addonSettingsS3 .addon-settings-submit').on('click', function() {
+            if (!$('#s3_bucket').val()) {
+                return false;
+            }
         });
 
     });
-};
+
+})();

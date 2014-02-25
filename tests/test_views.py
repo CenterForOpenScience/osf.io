@@ -5,19 +5,29 @@ from __future__ import absolute_import
 import json
 import unittest
 import datetime as dt
+import mock
 
+import mock
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
+from framework import Q
+from framework.auth.model import User
 
 import website.app
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
+from website.project.views.contributor import _add_contributor_json
 from webtest.app import AppError
+from website import settings
+from website.util import rubeus
+from website.project.views.node import _view_project
+
+
 from tests.base import DbTestCase
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
-    NodeFactory, NodeLogFactory, AuthUserFactory
+    NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory
 )
 
 
@@ -314,6 +324,93 @@ class TestProjectViews(DbTestCase):
         assert_in('url', res.json)
         assert_equal(res.json['url'], self.project.url)
 
+@unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
+class TestUserInviteViews(DbTestCase):
+
+    def setUp(self):
+        ensure_schemas()
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.invite_url = '/api/v1/project/{0}/invite_contributor/'.format(self.project._primary_key)
+
+    @mock.patch('website.project.views.contributor.send_email.delay')
+    def test_invite_contributor_api_endpoint_sends_an_email(self, send_email_delay):
+        self.app.post_json(self.invite_url,
+            {'fullname': 'Brian May', 'email': 'brian@queen.com'}, auth=self.user.auth)
+        assert_true(send_email_delay.called)
+
+    @mock.patch('website.project.views.contributor.send_email')
+    def test_invite_contributor_api_endpoint_adds_a_non_registered_contributor(self, send_email):
+        res = self.app.post_json(self.invite_url,
+            {'fullname': 'Brian May', 'email': 'brian@queen.com'}, auth=self.user.auth)
+
+        latest_user = User.find_one(Q('username', 'eq', 'brian@queen.com'))
+        assert_equal(latest_user.fullname, 'Brian May')
+        assert_equal(latest_user.username, 'brian@queen.com')
+        assert_false(latest_user.is_registered)
+        assert_equal(res.json['contributor'], _add_contributor_json(latest_user))
+
+    def test_invite_contributor_adds_unclaimed_data(self):
+        res = self.app.post_json(self.invite_url,
+            {'fullname': 'Briann May', 'email': 'brian2@queen.com'}, auth=self.user.auth)
+        latest_user = User.find()[len(User.find()) - 1]
+        data = latest_user.unclaimed_records[self.project._primary_key]
+        assert_equal(data['name'], 'Briann May')
+        assert_equal(data['referrer_id'], self.user._primary_key)
+        assert_true(data['verification'])
+
+    @mock.patch('website.project.views.contributor.send_email')
+    def test_invite_contributor_with_no_email(self, send_email):
+        assert 0, 'finish me'
+
+    def test_invite_contributor_requires_fullname(self):
+        res = self.app.post_json(self.invite_url,
+            {'email': 'brian@queen.com', 'fullname': ''}, auth=self.user.auth,
+            expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    @mock.patch('website.project.views.contributor.send_email')
+    def test_cannot_invite_unreg_contributor_if_they_already_exist(self, send_email):
+        user = UserFactory()
+        res = self.app.post_json(self.invite_url,
+            {'fullname': 'Fred Mercury', 'email': user.username}, auth=self.user.auth)
+        assert_in('User already exists', res.json['message'])
+        assert_in('contributor', res.json)
+
+@unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
+class TestClaimViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.referrer = UserFactory()
+        self.user = UnregUserFactory()
+        self.project = ProjectFactory(creator=self.referrer)
+
+    def add_unclaimed_record(self):
+        given_name = 'Fredd Merkury'
+        self.user.add_unclaimed_record(node=self.project,
+            given_name=given_name, referrer=self.referrer)
+        self.user.save()
+        data = self.user.unclaimed_records[self.project._primary_key]
+        return data
+
+    def test_valid_claim_url(self):
+        self.add_unclaimed_record()
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(url).maybe_follow()
+        assert_equal(res.status_code, 200)
+
+    def test_invalid_claim_url_responds_with_404(self):
+        res = self.app.get('/claim/badsignature/', expect_errors=True).maybe_follow()
+        assert_equal(res.status_code, 404)
+
+    def test_posting_to_claim_url_with_valid_data(self):
+        url = self.user.get_claim_url(self.project._primary_key)
+        # res = self.app.post(url, )
+        assert 0, 'finish me'
+
+
 class TestWatchViews(DbTestCase):
 
     def setUp(self):
@@ -562,6 +659,62 @@ class TestAuthViews(DbTestCase):
         dupe.reload()
         assert_true(dupe.is_merged)
 
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_register_sends_confirm_email(self, send_mail):
+        url = '/register/'
+        self.app.post(url, {
+            'register-fullname': 'Freddie Mercury',
+            'register-username': 'fred@queen.com',
+            'register-password': 'killerqueen',
+            'register-username2': 'fred@queen.com',
+            'register-password2': 'killerqueen',
+        })
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr='fred@queen.com'
+        ))
+
+    def test_resend_confirmation_get(self):
+        res = self.app.get('/resend/')
+        assert_equal(res.status_code, 200)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_resend_confirmation_post_sends_confirm_email(self, send_mail):
+        # Make sure user has a confirmation token for their primary email
+        self.user.add_email_verification(self.user.username)
+        self.user.save()
+        res = self.app.post('/resend/', {'email': self.user.username})
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr=self.user.username
+        ))
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_resend_confirmation_post_if_user_not_in_database(self, send_mail):
+        res = self.app.post('/resend/', {'email': 'norecord@norecord.no'})
+        assert_false(send_mail.called)
+
+    def test_confirmation_link_registers_user(self):
+        user = User.create_unconfirmed('brian@queen.com', 'bicycle123', 'Brian May')
+        assert_false(user.is_registered)  # sanity check
+        user.save()
+        confirmation_url = user.get_confirmation_url('brian@queen.com', external=False)
+        res = self.app.get(confirmation_url)
+        assert_equal(res.status_code, 302, 'redirects to settings page')
+        res = res.follow()
+        user.reload()
+        assert_true(user.is_registered)
+
+    def test_expired_link_returns_400(self):
+        user = User.create_unconfirmed('brian1@queen.com', 'bicycle123', 'Brian May')
+        user.save()
+        token = user.get_confirmation_token('brian1@queen.com')
+        url = user.get_confirmation_url('brian1@queen.com', external=False)
+        user.confirm_email(token)
+        user.save()
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
     def test_change_names(self):
         self.app.post(
             '/api/v1/settings/names/',
@@ -579,6 +732,32 @@ class TestAuthViews(DbTestCase):
         assert_equal(self.user.given_name, 'Lyndon')
         assert_equal(self.user.middle_names, 'Baines')
         assert_equal(self.user.family_name, 'Johnson')
+
+class TestFileViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory.build(creator=self.user, is_public=True)
+        self.project.add_contributor(self.user)
+        self.project.save()
+
+    def test_files_get(self):
+        url = '/api/v1/{0}/files/'.format(self.project._primary_key)
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        assert_equal(res.status_code, 200)
+        expected = _view_project(self.project, auth=Auth(user=self.user))
+        assert_equal(res.json['node'], expected['node'])
+        assert_in('tree_js', res.json)
+        assert_in('tree_css', res.json)
+
+    def test_grid_data(self):
+        url = '/api/v1/{0}/files/grid/'.format(self.project._primary_key)
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        assert_equal(res.status_code, 200)
+        expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))
+        data = res.json['data']
+        assert_equal(len(data), len(expected))
 
 if __name__ == '__main__':
     unittest.main()

@@ -21,14 +21,15 @@ class TestCallbacks(DbTestCase):
         super(TestCallbacks, self).setUp()
 
         self.project = ProjectFactory.build()
+        self.consolidated_auth = Auth(self.project.creator)
         self.non_authenticator = UserFactory()
         self.project.add_contributor(
             contributor=self.non_authenticator,
-            auth=Auth(self.project.creator),
+            auth=self.consolidated_auth,
         )
         self.project.save()
 
-        self.project.add_addon('github')
+        self.project.add_addon('github', auth=self.consolidated_auth)
         self.project.creator.add_addon('github')
         self.node_settings = self.project.get_addon('github')
         self.user_settings = self.project.creator.get_addon('github')
@@ -83,14 +84,11 @@ class TestCallbacks(DbTestCase):
 
     def test_before_page_load_not_contributor(self):
         message = self.node_settings.before_page_load(self.project, UserFactory())
-        # Handle temporary combined files warning; revert later
-        assert_equal(len(message), 1)
-        #assert_false(message)
+        assert_false(message)
 
     def test_before_page_load_not_logged_in(self):
         message = self.node_settings.before_page_load(self.project, None)
-        # Handle temporary combined files warning; revert later
-        assert_equal(len(message), 1)
+        assert_false(message)
 
     def test_before_remove_contributor_authenticator(self):
         message = self.node_settings.before_remove_contributor(

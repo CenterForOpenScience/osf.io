@@ -21,22 +21,18 @@
 
 <%def name="file_contents()">
 
-    <div id="file-container" class="row">
-
-        <section>
-            <div class="page-header overflow">
-                <h1>${file_name}</h1>
-            </div>
-        </section>
-
-        <div id="fileRendered" class="mfr mfr-file">
-            % if rendered is not None:
-                ${rendered}
-            % else:
-                <img src="/static/img/loading.gif">
-            % endif
+    <section>
+        <div class="page-header overflow">
+            <h1>${file_name}</h1>
         </div>
+    </section>
 
+    <div id="fileRendered" class="mfr mfr-file">
+        % if rendered is not None:
+            ${rendered}
+        % else:
+            <img src="/static/img/loading.gif">
+        % endif
     </div>
 
 </%def>

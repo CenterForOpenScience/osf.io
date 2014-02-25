@@ -12,11 +12,13 @@
                 <div data-bind="if:page()=='whom'">
 
                     <!-- Find contributors -->
-                    <form>
+                    <form class='form'>
                         <div class="row">
                             <div class="col-md-6">
-                                <input style="margin-bottom: 8px;" data-bind="value:query" />
-                                <div><button class="btn btn-default" data-bind="click:search">Search</button></div>
+                                <div class="form-group">
+                                    <input class='form-control' style="margin-bottom: 8px;" data-bind="value:query" placeholder='Search users'/>
+                                </div>
+                                <div><button type='submit' class="btn btn-default" data-bind="click:search">Search</button></div>
                             </div>
                             <div class="col-md-6" data-bind="if:parentId">
                                 <a data-bind="click:importFromParent, text:'Import contributors from ' + parentTitle"></a>
@@ -39,7 +41,7 @@
                             </div>
                             <div class="error" data-bind="if:errorMsg, text:errorMsg"></div>
                             <table>
-                                <tbody data-bind="foreach:{data:results, afterRender:addTips}">
+                                <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
                                     <tr data-bind="if:!($root.selected($data))">
                                         <td style="padding-right: 10px;">
                                             <a
@@ -50,21 +52,33 @@
                                                 >+</a>
                                         </td>
                                         <td>
-                                            <img data-bind="attr:{src:gravatar}" />
+                                            <img data-bind="attr:{src:contributor.gravatar}" />
                                         </td>
-                                        <td data-bind="text:fullname"></td>
+                                        <td><span data-bind="text: contributor.fullname"></span>
+                                        <span class='text-muted'
+                                                data-bind="visible: !contributor.registered">(unregistered)
+                                        </span></td>
                                     </tr>
                                 </tbody>
                             </table>
-                        </div>
+## TODO: uncomment to enable claiming users
+##                                <a style="cursor:pointer"
+##                                data-bind='visible: query, click:gotoInvite'>Add
+##                                <em data-bind='text: query'></em>
+##                                as a non-registered contributor</a>
+                        </div><!-- ./col-md -->
 
                         <div class="col-md-6">
                             <div>
                                 <span class="modal-subheader">Adding</span>
                                 <a data-bind="click:removeAll">Remove all</a>
                             </div>
+
+                            <!-- TODO: Duplication here: Put this in a KO template -->
                             <table>
-                                <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
+                                <tbody data-bind="foreach:{data:selection,
+                                as: 'contributor',
+                                afterRender:addTips}">
                                     <tr>
                                         <td style="padding-right: 10px;">
                                             <a
@@ -75,9 +89,12 @@
                                                 >-</a>
                                         </td>
                                         <td>
-                                            <img data-bind="attr:{src:gravatar}" />
+                                            <img data-bind="attr:{src:contributor.gravatar}" />
                                         </td>
-                                        <td data-bind="text:fullname"></td>
+                                        <td><span data-bind="text: contributor.fullname"></span>
+                                        <span class='text-muted'
+                                                data-bind="visible: !contributor.registered">(unregistered)
+                                        </span></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -86,7 +103,7 @@
                     </div>
 
                 </div>
-
+                <!-- Component selection page -->
                 <div data-bind="if:page()=='which'">
 
                     <div>
@@ -127,7 +144,32 @@
 
                     </div>
 
-                </div>
+                </div><!-- end component selection page -->
+
+                <!-- Invite user page -->
+## TODO: uncomment to enable user claiming
+##                <div data-bind='if:page()=="invite"'>
+##                    <form class='form' data-bind='submit:sendInvite'>
+##                        <div class="form-group">
+##                            <label for="inviteUserName">Full Name</label>
+##                            <input type="text" class='form-control' id="inviteName"
+##                                placeholder="Full name" data-bind='value: inviteName' required/>
+##                        </div>
+##                        <div class="form-group">
+##                            <label for="inviteUserEmail">Email</label>
+##                            <input type="email" class='form-control' id="inviteUserEmail"
+##                                    placeholder="Email" data-bind='value: inviteEmail' />
+##                        </div>
+##                        <button class='btn btn-success'
+##                         data-bind='enable: inviteEmail && inviteName'
+##                         type="submit">Invite and add</button>
+##                         <div class="help-block">
+##                            <p>We will notify the user that they have been added to your project.
+##                            </p>
+##                            <p class='text-danger' data-bind='text: inviteError'></p>
+##                        </div>
+##                    </form>
+##                </div><!-- end invite user page -->
 
             </div><!-- end modal-body -->
 
@@ -143,6 +185,10 @@
                 <span data-bind="if:page() == 'which'">
                     <a class="btn btn-primary" data-bind="click:selectWhom">Back</a>
                     <a class="btn btn-success" data-bind="click:submit">Submit</a>
+                </span>
+
+                <span data-bind='if:page() == "invite"'>
+                    <a class="btn btn-primary" data-bind='click:selectWhom'>Back</a>
                 </span>
 
             </div><!-- end modal-footer -->

@@ -15,10 +15,8 @@ FULL_NAME = 'GitHub'
 
 OWNERS = ['user', 'node']
 
-ADDED_TO = {
-    'user': False,
-    'node': False,
-}
+ADDED_DEFAULT = []
+ADDED_MANDATORY = []
 
 VIEWS = []
 CONFIGS = ['user', 'node']
@@ -46,4 +44,6 @@ WIDGET_HELP = 'GitHub Add-on Alpha'
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.hgrid.github_hgrid_data
 
-MAX_FILE_SIZE = 10  # MB
+# Note: Even though GitHub supports file sizes over 1 MB, uploads and
+# downloads through their API are capped at 1 MB.
+MAX_FILE_SIZE = 1

@@ -1,3 +1,5 @@
+<% import json %>
+
 % if node['is_registration']:
     <div class="alert alert-info">This ${node['category']} is a registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node["category"]}</a>; the content of the ${node["category"]} has been frozen and cannot be edited.
     </div>
@@ -47,7 +49,7 @@
                     </div><!-- end btn-group -->
 
                     <div class="btn-group">
-                        % if user_name:
+                        % if user_name and not node['is_registration']:
                             <a rel="tooltip" title="Watch" class="btn btn-default" href="#" data-bind="click: toggleWatch">
                         % else:
                             <a rel="tooltip" title="Watch" class="btn btn-default disabled" href="#">
@@ -60,7 +62,7 @@
                         <a
                             rel="tooltip"
                             title="Number of times this ${node['category']} has been forked (copied)"
-                            % if node["category"] == 'project' and user_name:
+                            % if node["category"] == 'project' and not node['is_registration'] and user_name:
                                 href="#"
                                 class="btn btn-default node-fork-btn"
                                 onclick="NodeActions.forkNode();"
@@ -126,9 +128,7 @@
             <ul class="nav navbar-nav">
                 <li><a href="${node['url']}">Dashboard</a></li>
 
-                % if has_files:
-                    <li><a href="${node['url']}files/">Files</a></li>
-                % endif
+                <li><a href="${node['url']}files/">Files</a></li>
                 <!-- Add-on tabs -->
                 % for addon in addons_enabled:
                     % if addons[addon]['has_page']:
@@ -160,7 +160,7 @@
 <%include file="modal_show_links.mako"/>
 ## TODO: Find a better place to put this initialization code
 <script>
-
+// TODO: pollution! namespace me
     var userId = '${user_id}';
     var nodeId = '${node['id']}';
     var userApiUrl = '${user_api_url}';
@@ -213,7 +213,7 @@
     });
 
     var $addPointer = $('#addPointer');
-    var addPointerVM = new AddPointerViewModel('${node['title']}');
+    var addPointerVM = new AddPointerViewModel(${json.dumps(node['title'])});
     ko.applyBindings(addPointerVM, $addPointer[0]);
     $addPointer.on('hidden.bs.modal', function() {
         addPointerVM.clear();

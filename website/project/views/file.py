@@ -1,7 +1,6 @@
 """
-
+Files views.
 """
-
 import os
 import codecs
 from website.util import rubeus
@@ -11,25 +10,33 @@ from framework.flask import request, secure_filename
 from framework.render.tasks import build_rendered_html
 from website.project.decorators import must_be_contributor_or_public
 from website import settings
+from website.project.views.node import _view_project
 
 
 @must_be_contributor_or_public
 def collect_file_trees(**kwargs):
     """Collect file trees for all add-ons implementing HGrid views, then
     format data as appropriate.
-
     """
-
     node = kwargs['node'] or kwargs['project']
-    mode = kwargs.get('mode')
     auth = kwargs['auth']
     data = request.args.to_dict()
+    serialized = _view_project(node, auth, **data)
+    # Add addon static assets
+    serialized.update(rubeus.collect_addon_assets(node))
+    return serialized
 
-    return rubeus.to_hgrid(node, auth, mode, **data)
 
+@must_be_contributor_or_public
+def grid_data(**kwargs):
+    """View that returns the formatted data for rubeus.js/hgrid
+    """
+    node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
+    data = request.args.to_dict()
+    return {'data': rubeus.to_hgrid(node, auth, **data)}
 
 # File rendering
-
 def get_cache_path(node_settings):
     return os.path.join(
         settings.MFR_CACHE_PATH,

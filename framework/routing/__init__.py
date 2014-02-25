@@ -195,11 +195,13 @@ def render_mako_string(tpldir, tplname, data):
         mako_cache[tplname] = tpl
     return tpl.render(**data)
 
+
 renderer_extension_map = {
     '.stache': render_mustache_string,
     '.jinja': render_jinja_string,
     '.mako': render_mako_string,
 }
+
 
 def unpack(data, n=4):
     """Unpack data to tuple of length n.
@@ -300,6 +302,7 @@ class Renderer(object):
         return make_response(rendered, status_code, headers)
 
 
+
 class JSONRenderer(Renderer):
     """Renderer for API views. Generates JSON; ignores
     redirects from views and exceptions.
@@ -335,8 +338,8 @@ class WebRenderer(Renderer):
     CONTENT_TYPE = 'text/html'
     error_template = 'error.mako'
 
+    # TODO: Should be a function, not a method
     def detect_renderer(self, renderer, filename):
-
         if renderer:
             return renderer
 
@@ -370,7 +373,6 @@ class WebRenderer(Renderer):
         self.data = data or {}
         self.detect_render_nested = detect_render_nested
         self.template_dir = template_dir
-
         self.renderer = self.detect_renderer(renderer, template_name)
         self.error_renderer = self.detect_renderer(
             error_renderer,
