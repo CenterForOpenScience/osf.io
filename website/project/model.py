@@ -1469,7 +1469,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth informtion including user, API key.
         """
         if not auth.user._primary_key == contributor._id:
-
+            # remove unclaimed record if necessary
+            if self._primary_key in contributor.unclaimed_records:
+                del contributor.unclaimed_records[self._primary_key]
             self.contributors.remove(contributor._id)
             self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != contributor._id]
             self.save()

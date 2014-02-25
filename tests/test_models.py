@@ -1078,6 +1078,19 @@ class TestProject(DbTestCase):
         )
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
 
+    def test_remove_unregistered_conributor_removes_unclaimed_record(self):
+        new_user = self.project.add_unregistered_contributor(fullname=fake.name(),
+            email=fake.email(), auth=Auth(self.project.creator))
+        self.project.save()
+        assert_true(self.project.is_contributor(new_user))  # sanity check
+        assert_in(self.project._primary_key, new_user.unclaimed_records)
+        self.project.remove_contributor(
+            auth=self.consolidate_auth,
+            contributor=new_user
+        )
+        self.project.save()
+        assert_not_in(self.project._primary_key, new_user.unclaimed_records)
+
     def test_set_title(self):
         proj = ProjectFactory(title='That Was Then', creator=self.user)
         proj.set_title('This is now', auth=self.consolidate_auth)
