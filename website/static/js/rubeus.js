@@ -9,7 +9,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     /////////////////////////
 
     // Custom folder icon indicating private component
-    HGrid.Html.folderIconPrivate = '<img class="hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
+    HGrid.Html.folderIconPrivate = '<img class="hg-icon hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
     // Override Name column folder view to allow for extra widgets, e.g. github branch picker
     HGrid.Col.Name.folderView = function(item) {
         var icon, opening, cssClass;

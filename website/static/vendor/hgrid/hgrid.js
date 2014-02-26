@@ -1821,12 +1821,13 @@ this.HGrid = (function($) {
     var url = self.options.fetchUrl(item);
     if (url !== null) {
       self.options.fetchStart.call(self, item);
+      item._node._loaded = true; // Add flag to make sure data are only fetched once.
       return self.getFromServer(url, function(newData, error) {
         if (!error) {
           self.addData(newData, item.id);
-          item._node._loaded = true; // Add flag to make sure data are only fetched once.
           self.options.fetchSuccess.call(self, newData, item);
         } else {
+          item._node._loaded = false;
           self.options.fetchError.call(self, error, item);
           throw new HGrid.Error('Could not fetch data from url: "' + url + '". Error: ' + error);
         }
