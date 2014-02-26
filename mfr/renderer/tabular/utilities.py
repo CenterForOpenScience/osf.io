@@ -5,7 +5,7 @@ class TooBigError(Exception):
 def _ensure_unicode(value):
 
     if not isinstance(value, basestring):
-        return value
+        return unicode(value)
 
     try:
         return value.encode('utf-8')

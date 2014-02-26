@@ -42,7 +42,8 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     };
 
     HGrid.Col.Name.showExpander = function(row) {
-        return row.kind === HGrid.FOLDER && row.permissions.view;
+        var isTopLevel = row.parentID === HGrid.ROOT_ID;
+        return row.kind === HGrid.FOLDER && row.permissions.view && !isTopLevel;
     };
 
     HGrid.Col.Name.itemView = function(item) {
