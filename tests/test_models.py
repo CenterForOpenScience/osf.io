@@ -322,6 +322,20 @@ class TestUser(DbTestCase):
 
         assert_equal(len(self.user.recently_added), 15)
 
+    def test_display_full_name_registered(self):
+        u = UserFactory()
+        assert_equal(u.display_full_name(), u.fullname)
+
+    def test_display_full_name_unregistered(self):
+        name = fake.name()
+        u = UnregUserFactory()
+        project =ProjectFactory()
+        project.add_unregistered_contributor(fullname=name, email=u.username,
+            auth=Auth(project.creator))
+        project.save()
+        assert_equal(u.display_full_name(node=project), name)
+
+
 
 
 

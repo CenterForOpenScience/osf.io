@@ -90,12 +90,7 @@ def serialized_contributors(node):
     data = []
     for contrib in node.contributors:
         serialized = utils.serialize_user(contrib)
-        unclaimed_data = contrib.unclaimed_records.get(node._primary_key, None)
-        if unclaimed_data:
-            display_name = unclaimed_data['name']
-        else:
-            display_name = contrib.fullname
-        serialized['fullname'] = display_name
+        serialized['fullname'] = contrib.display_full_name(node=node)
         data.append(serialized)
     return data
 

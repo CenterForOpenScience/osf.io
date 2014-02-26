@@ -185,6 +185,18 @@ class User(GuidStoredObject, AddonModelMixin):
         self.unclaimed_records[project_id] = record
         return record
 
+    def display_full_name(self, node=None):
+        """Return the full name , as it would display in a contributor list for a
+        given node.
+
+        NOTE: Unclaimed users may have a different name for different nodes.
+        """
+        if node:
+            unclaimed_data = self.unclaimed_records.get(node._primary_key, None)
+            if unclaimed_data:
+                return unclaimed_data['name']
+        return self.fullname
+
     def is_active(self):
         """Returns True if the user is active. The user must have activated
         their account, must not be deleted, suspended, etc.
