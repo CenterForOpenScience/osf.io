@@ -3,6 +3,7 @@ import base64
 import urllib
 import hmac
 import sha
+import re
 
 from framework.flask import request
 
@@ -34,11 +35,14 @@ def generate_signed_url(mime, file_name, s3):
 def create_new_bucket(*args, **kwargs):
     user = kwargs['auth'].user
     user_settings = user.get_addon('s3')
+    validateName = re.compile('^(?!.*(\.\.|-\.))[^.][\w\d.-]{2,61}[^.]$')
+    if not validateName.match(request.json.get('bucket_name')):
+        return {'message': 'That bucket name is not valid.'}, 406
     message = create_bucket(user_settings, request.json.get('bucket_name'))
     if message is True:
-        return {}, 200
+        return {}
     else:
-        return {'message': message}, 500
+        return {'message': message}, 406
 
 
 def get_cache_file_name(key_name, etag):
