@@ -80,17 +80,17 @@
                         >
                             <i class="icon-code-fork"></i>&nbsp;${node['fork_count']}
                         </a>
-                        <a
-                                rel="tooltip"
-                                % if node['points']:
-                                    href="#showLinks"
-                                    data-toggle="modal"
-                                % endif
-                                class="btn btn-default ${'disabled' if node['points'] == 0 else ''}"
-                                title="Number times this ${node['category']} has been linked"
-                            >
-                            <i id="linkCount" class="icon-hand-right">&nbsp;${node['points']}</i>
-                        </a>
+##                        <a
+##                                rel="tooltip"
+##                                % if node['points']:
+##                                    href="#showLinks"
+##                                    data-toggle="modal"
+##                                % endif
+##                                class="btn btn-default ${'disabled' if node['points'] == 0 else ''}"
+##                                title="Number times this ${node['category']} has been linked"
+##                            >
+##                            <i id="linkCount" class="icon-hand-right">&nbsp;${node['points']}</i>
+##                        </a>
 
                     </div><!-- end btn-grp -->
                 </div><!-- end btn-toolbar -->

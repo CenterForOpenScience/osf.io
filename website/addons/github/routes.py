@@ -21,34 +21,48 @@ settings_routes = {
             json_renderer,
         ),
 
-        # Widget routes
-        Rule([
-            '/project/<pid>/github/widget/',
-            '/project/<pid>/node/<nid>/github/widget/',
-        ], 'get', views.widget.github_widget, json_renderer),
-        Rule([
-            '/project/<pid>/github/',
-            '/project/<pid>/node/<nid>/github/',
-        ], 'get', views.widget.github_get_repo, json_renderer),
-
-        Rule([
-            '/project/<pid>/github/file/',
-            '/project/<pid>/github/file/<path:path>',
-            '/project/<pid>/node/<nid>/github/file/',
-            '/project/<pid>/node/<nid>/github/file/<path:path>',
-        ], 'post', views.crud.github_upload_file, json_renderer),
-        Rule([
-            '/project/<pid>/github/file/<path:path>',
-            '/project/<pid>/node/<nid>/github/file/<path:path>',
-        ], 'delete', views.crud.github_delete_file, json_renderer),
-        Rule([
-            '/project/<pid>/github/tarball/',
-            '/project/<pid>/node/<nid>/github/tarball/',
-        ], 'get', views.crud.github_download_starball, json_renderer, {'archive': 'tar'}, endpoint_suffix='__tar'),
-        Rule([
-            '/project/<pid>/github/zipball/',
-            '/project/<pid>/node/<nid>/github/zipball/',
-        ], 'get', views.crud.github_download_starball, json_renderer, {'archive': 'zip'}, endpoint_suffix='__zip'),
+        Rule(
+            [
+                '/project/<pid>/github/file/',
+                '/project/<pid>/github/file/<path:path>',
+                '/project/<pid>/node/<nid>/github/file/',
+                '/project/<pid>/node/<nid>/github/file/<path:path>',
+            ],
+            'post',
+            views.crud.github_upload_file,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/github/file/<path:path>',
+                '/project/<pid>/node/<nid>/github/file/<path:path>',
+            ],
+            'delete',
+            views.crud.github_delete_file,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/github/tarball/',
+                '/project/<pid>/node/<nid>/github/tarball/',
+            ],
+            'get',
+            views.crud.github_download_starball,
+            json_renderer,
+            {'archive': 'tar'},
+            endpoint_suffix='__tar',
+        ),
+        Rule(
+            [
+                '/project/<pid>/github/zipball/',
+                '/project/<pid>/node/<nid>/github/zipball/',
+            ],
+            'get',
+            views.crud.github_download_starball,
+            json_renderer,
+            {'archive': 'zip'},
+            endpoint_suffix='__zip',
+        ),
 
         Rule(
             [
@@ -120,13 +134,6 @@ settings_routes = {
 
 api_routes = {
     'rules': [
-
-        Rule(
-            '/github/user/repos/',
-            'get',
-            views.repos.github_list_repos,
-            json_renderer,
-        ),
 
         Rule(
             '/github/repo/create/',

@@ -85,7 +85,7 @@ $(document).ready(function(){
       color: {start: '#cde', end: '#f52'}
     };
 
-    $(function () {
+    $(function () {  // TODO: remove?
       $('#whatever a').tagcloud();
     });
 

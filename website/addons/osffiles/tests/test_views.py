@@ -21,8 +21,9 @@ class TestFilesViews(DbTestCase):
         self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.auth = ('test', self.user.api_keys[0]._primary_key)
+        self.consolidated_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
-        self.project.add_addon('osffiles')
+        self.project.add_addon('osffiles', auth=self.consolidated_auth)
         self.node_settings = self.project.get_addon('osffiles')
         self._upload_file('firstfile', 'firstcontent')
 

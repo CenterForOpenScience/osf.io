@@ -1,170 +1,111 @@
 <%inherit file="project/addon/node_settings.mako" />
 
-% if user_has_auth and is_owner and bucket_list:
+<script src="/addons/static/s3/s3-node-settings.js"></script>
 
-    <div class="form-group">
-        <div class="well well-sm">Authorized by <a href="${owner_url}">${owner}</a></div>
+% if bucket_list is not None:
 
-        <input type="hidden" id="s3_bucket" value="${bucket}" name="s3_bucket" />
-
-        <div class="btn-group">
-          <button type="button" class="btn btn-default">
-            <span id="bucketlabel" data-bind="label">${bucket if bucket else 'Select a bucket'}</span>
-          </button>
-          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-            <span class="caret"></span>
-          </button>
-
-          <ul class="dropdown-menu pull-right" role="menu" id="s3-dropdown">
-            <li role="presentation" class="dropdown-header">Your buckets</li>
-            ${bucket_list}
-            <li role="presentation" class="divider"></li>
-            <li role="presentation"><a href="#"><i class="glyphicon glyphicon-plus"></i> Create a new bucket</a></li>
-            <li role="presentation"><a href="#"><i class="glyphicon glyphicon-remove"></i> Deauthorize</a></li>
-          </ul>
-
+    % if node_has_auth:
+        <div class="well well-sm">
+            Authorized by <a href="${owner_url}">${owner}</a>
+            <a id="s3RemoveToken" class="text-danger pull-right" style="cursor: pointer">Deauthorize</a>
         </div>
-
-    </div>
-
-% elif user_has_auth and bucket_list and not owner:
+    % endif
 
     <div class="form-group">
 
-        <input type="hidden" id="s3_bucket" value="${bucket}" name="s3_bucket" />
+        <div class="row">
 
-        <div class="btn-group">
-          <button type="button" class="btn btn-default">
-            <span id="bucketlabel" data-bind="label">${bucket if bucket else 'Select a bucket'}</span>
-          </button>
-          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-            <span class="caret"></span>
-          </button>
+            <div class="col-md-6">
 
-          <ul class="dropdown-menu pull-right" role="menu" id="s3-dropdown">
-            <li role="presentation" class="dropdown-header">Your buckets</li>
-            ${bucket_list}
-            <li role="presentation" class="divider"></li>
-            <li role="presentation"><a href="#"><i class="glyphicon glyphicon-plus"></i> Create a new bucket</a></li>
-            <li role="presentation"><a href="#"><i class="glyphicon glyphicon-remove"></i> Deauthorize</a></li>
-          </ul>
+                <select class="form-control" id="s3_bucket" name="s3_bucket" ${'' if user_has_auth and (owner is None or is_owner) else 'disabled'}>
+                    <option value="">-----</option>
+                    % for bucket_name in bucket_list or []:
+                        <option value="${bucket_name}" ${'selected' if bucket_name == bucket else ''}>${bucket_name}</option>
+                    % endfor
+                </select>
+
+            </div>
+
+            % if user_has_auth and (owner is None or is_owner):
+                <div class="col-md-6">
+                    <a class="btn btn-default" id="newBucket">Create Bucket</a>
+                </div>
+            % endif
 
         </div>
 
+    </div> <!-- End form group -->
+
+% elif user_has_auth and bucket_list is None:
+
+    <div class="well well-sm">
+        S3 access keys loading. Please wait a moment and refresh the page.
     </div>
-
-% elif user_has_auth and is_owner and not bucket_list:
-
-    <div class="well well-sm">Your access keys are not currently working. You can change them in <a href="/settings/">settings</a>.</div>
-
-% elif user_has_auth and not is_owner and not bucket_list:
-
-    <div class="well well-sm"><a href="${owner_url}">${owner}'s</a> access keys are not currently working.</div>
-
-% elif user_has_auth:
-
-    <div class="well well-sm">Authorized by <a href="${owner_url}">${owner}</a></div>
-    <div class="btn-group btn-input">
-      <button type="button" class="btn btn-default dropdown-toggle form-control" data-toggle="dropdown" disabled>
-        <span id="bucketlabel" data-bind="label">${bucket if bucket else 'Select a bucket'}</span> <span class="caret"></span>
-      </button>
-    </div>
-    <br /><br />
-    <button class="btn btn-danger">Deauthorize</button>
 
 % else:
 
     <div class="form-group">
-      <label for="s3Addon">Access Key</label>
+        <label for="s3Addon">Access Key</label>
         <input class="form-control" id="access_key" name="access_key"/>
-      </div>
-      <div class="form-group">
+    </div>
+    <div class="form-group">
         <label for="s3Addon">Secret Key</label>
         <input type="password" class="form-control" id="secret_key" name="secret_key"/>
     </div>
 
 % endif
 
-%if user_has_auth and (is_owner or not owner):
-    <script src="/addons/static/s3/s3-node-settings.js"></script>
-    <script type="text/javascript">
-        var addonShortname = '${addon_short_name}';
-        setDropDownListener();
-    </script>
-%endif
-
-<%def name="submit_btn()">
-
-  %if not user_has_auth and (is_owner or not owner):
-    <button class="btn btn-success addon-settings-submit">
-        Submit
-    </button>
-  %endif
-
-</%def>
-
 <%def name="on_submit()">
 
-  %if not user_has_auth and (is_owner or not owner):
-    <script type="text/javascript">
-      $(document).ready(function() {
-         $('#addonSettings${addon_short_name.capitalize()}').on('submit', function() {
+    % if not user_has_auth:
 
-        var $this = $(this);
-        var addon = $this.attr('data-addon');
-        var msgElm = $this.find('.addon-settings-message');
+        <script type="text/javascript">
 
-        var url = nodeApiUrl + addon + '/authorize/';
+          $(document).ready(function() {
+            $('#addonSettings${addon_short_name.capitalize()}').on('submit', function() {
 
-        $.ajax({
-            url: url,
-            data: JSON.stringify(AddonHelper.formToObj($this)),
-            type: 'POST',
-            contentType: 'application/json',
-            dataType: 'json'
-        }).done(function() {
-            msgElm.text('Settings updated')
-                .removeClass('text-danger').addClass('text-success')
-                .fadeOut(100).fadeIn();
-        }).fail(function(xhr) {
-            var message = 'Error: ';
-            var response = JSON.parse(xhr.responseText);
-            if (response && response.message) {
-                message += response.message;
-            } else {
-                message += 'Settings not updated.'
-            }
-            msgElm.text(message)
-                .removeClass('text-success').addClass('text-danger')
-                .fadeOut(100).fadeIn();
-        });
+            var $this = $(this);
+            var addon = $this.attr('data-addon');
+            var msgElm = $this.find('.addon-settings-message');
 
-        return false;
-      });
+            var url = nodeApiUrl + addon + '/authorize/';
 
-    });
-    </script>
-  %elif owner and not is_owner:
-    <script type="text/javascript">
-    $(document).ready(function() {
-         $('#addonSettings${addon_short_name.capitalize()}').on('submit', function() {
             $.ajax({
-                url: nodeApiUrl + '${addon_short_name}' + '/settings/',
-                type: 'DELETE',
+                url: url,
+                data: JSON.stringify(AddonHelper.formToObj($this)),
+                type: 'POST',
                 contentType: 'application/json',
                 dataType: 'json'
             }).done(function() {
-                location.reload();
+                msgElm.text('Settings updated')
+                    .removeClass('text-danger').addClass('text-success')
+                    .fadeOut(100).fadeIn();
+                window.location.reload();
             }).fail(function(xhr) {
-                //TODO Do something here
+                var message = 'Error: ';
+                var response = JSON.parse(xhr.responseText);
+                if (response && response.message) {
+                    message += response.message;
+                } else {
+                    message += 'Settings not updated.'
+                }
+                msgElm.text(message)
+                    .removeClass('text-success').addClass('text-danger')
+                    .fadeOut(100).fadeIn();
             });
+
             return false;
+
           });
-       });
-    </script>
-  %else:
-    ${parent.on_submit()}
-  %endif
+
+        });
+
+        </script>
+
+    % else:
+
+        ${parent.on_submit()}
+
+    % endif
 
 </%def>
-

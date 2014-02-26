@@ -10,22 +10,22 @@ from framework.auth.decorators import must_be_logged_in
 from website.project import decorators
 
 
-@decorators.must_be_valid_project
 @decorators.must_be_contributor
+@decorators.must_not_be_registration
 def disable_addon(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
 
     addon_name = kwargs.get('addon')
     if addon_name is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    deleted = node.delete_addon(kwargs['addon'])
+    deleted = node.delete_addon(addon_name, auth)
 
     return {'deleted': deleted}
 
 
-@decorators.must_be_valid_project
 @decorators.must_be_contributor_or_public
 def get_addon_config(**kwargs):
 

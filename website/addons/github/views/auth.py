@@ -15,6 +15,8 @@ from website.project.decorators import must_have_addon
 
 from ..api import GitHub
 from ..auth import oauth_start_url, oauth_get_token
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -117,6 +119,54 @@ def github_oauth_delete_node(**kwargs):
 
     # Save changes
     node_settings.save()
+
+    return {}
+
+
+# TODO: Move into remove addon
+@must_be_contributor
+@must_have_addon('github', 'node')
+def github_oauth_delete_node(**kwargs):
+
+    auth = kwargs['auth']
+    node_settings = kwargs['node_addon']
+    node = node_settings.owner
+
+    # Remove webhook
+    try:
+        node_settings.delete_hook()
+    except GitHubError:
+        logger.error(
+            'Could not remove webhook from {0} in node {1}'.format(
+                node_settings.repo, node._id
+            )
+        )
+
+    github_user = node_settings.user
+    github_repo = node_settings.repo
+
+    # Remove user settings
+    node_settings.user_settings = None
+    node_settings.user = None
+    node_settings.repo = None
+
+    # Save changes
+    node_settings.save()
+
+    # Log repo un-select if repo was specified before
+    if github_user and github_repo:
+        node.add_log(
+            action='github_repo_unlinked',
+            params={
+                'project': node.parent_id,
+                'node': node._id,
+                'github': {
+                    'user': github_user,
+                    'repo': github_repo,
+                },
+            },
+            auth=auth,
+        )
 
     return {}
 

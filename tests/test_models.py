@@ -656,8 +656,9 @@ class TestNode(DbTestCase):
     def test_add_addon(self):
         addon_count = len(self.node.get_addon_names())
         addon_record_count = len(self.node.addons)
-        added = self.node.add_addon('github')
+        added = self.node.add_addon('github', self.consolidate_auth)
         assert_true(added)
+        self.node.reload()
         assert_equal(
             len(self.node.get_addon_names()),
             addon_count + 1
@@ -666,11 +667,15 @@ class TestNode(DbTestCase):
             len(self.node.addons),
             addon_record_count + 1
         )
+        assert_equal(
+            self.node.logs[-1].action,
+            NodeLog.ADDON_ADDED
+        )
 
     def test_add_existing_addon(self):
         addon_count = len(self.node.get_addon_names())
         addon_record_count = len(self.node.addons)
-        added = self.node.add_addon('files')
+        added = self.node.add_addon('osffiles', self.consolidate_auth)
         assert_false(added)
         assert_equal(
             len(self.node.get_addon_names()),
@@ -683,23 +688,27 @@ class TestNode(DbTestCase):
 
     def test_delete_addon(self):
         addon_count = len(self.node.get_addon_names())
-        deleted = self.node.delete_addon('wiki')
+        deleted = self.node.delete_addon('wiki', self.consolidate_auth)
         assert_true(deleted)
         assert_equal(
             len(self.node.get_addon_names()),
             addon_count - 1
         )
+        assert_equal(
+            self.node.logs[-1].action,
+            NodeLog.ADDON_REMOVED
+        )
 
     @mock.patch('website.addons.github.model.AddonGitHubNodeSettings.config')
     def test_delete_mandatory_addon(self, mock_config):
         mock_config.added_mandatory = ['node']
-        self.node.add_addon('github')
+        self.node.add_addon('github', self.consolidate_auth)
         with assert_raises(ValueError):
-            self.node.delete_addon('github')
+            self.node.delete_addon('github', self.consolidate_auth)
 
     def test_delete_nonexistent_addon(self):
         addon_count = len(self.node.get_addon_names())
-        deleted = self.node.delete_addon('github')
+        deleted = self.node.delete_addon('github', self.consolidate_auth)
         assert_false(deleted)
         assert_equal(
             len(self.node.get_addon_names()),
@@ -1333,9 +1342,9 @@ class TestForkNode(DbTestCase):
         self.subproject.add_pointer(pointee, auth=self.consolidate_auth)
 
         # Add add-on to test copying
-        self.project.add_addon('github')
-        self.component.add_addon('github')
-        self.subproject.add_addon('github')
+        self.project.add_addon('github', self.consolidate_auth)
+        self.component.add_addon('github', self.consolidate_auth)
+        self.subproject.add_addon('github', self.consolidate_auth)
 
         # Log time
         fork_date = datetime.datetime.utcnow()
@@ -1445,8 +1454,8 @@ class TestRegisterNode(DbTestCase):
         assert_in(self.user, registration1.contributors)
         assert_equal(registration1.registered_user, self.user)
         assert_equal(len(registration1.registered_meta), 1)
-        assert_true(registration1.registered_schema)
         assert_equal(len(registration1.private_links), 0)
+
 
         # Create a registration from a project
         user2 = UserFactory()
@@ -1710,6 +1719,15 @@ class TestPointer(DbTestCase):
     def test_register(self):
         registered = self.pointer.fork_node()
         self._assert_clone(self.pointer, registered)
+
+    def test_register_with_pointer_to_registration(self):
+        "Check for regression"
+        pointee = RegistrationFactory()
+        project = ProjectFactory()
+        auth = Auth(user=project.creator)
+        project.add_pointer(pointee, auth=auth)
+        registration = project.register_node(None, auth, '', '')
+        assert_equal(registration.nodes[0].node, pointee)
 
 
 class TestWatchConfig(DbTestCase):

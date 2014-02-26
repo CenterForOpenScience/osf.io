@@ -242,20 +242,27 @@ NodeActions.removeUser = function(userid, name) {
     return false;
 };
 
-NodeActions._openCloseNode = function(node_id) {
+NodeActions._openCloseNode = function(nodeId) {
 
-    var icon = $("#icon-" + node_id),
-        body = $("#body-" + node_id);
+    var icon = $('#icon-' + nodeId);
+    var body = $('#body-' + nodeId);
 
     body.toggleClass('hide');
 
     if ( body.hasClass('hide') ) {
         icon.removeClass('icon-minus');
         icon.addClass('icon-plus');
-    }else{
+        icon.attr('title', 'More');
+    } else {
         icon.removeClass('icon-plus');
         icon.addClass('icon-minus');
+        icon.attr('title', 'Less');
     }
+
+    // Refresh tooltip text
+    icon.tooltip('destroy');
+    icon.tooltip();
+
 };
 
 
@@ -317,27 +324,27 @@ window.FileRenderer = {
 /*
 Display recent logs for for a node on the project view page.
 */
-NodeActions.openCloseNode = function(node_id){
-    var $logs = $('#logs-' + node_id);
-    if (!$logs.hasClass("active")) {
-        if (!$logs.hasClass("served")) {
+NodeActions.openCloseNode = function(nodeId){
+    var $logs = $('#logs-' + nodeId);
+    if (!$logs.hasClass('active')) {
+        if (!$logs.hasClass('served')) {
             $.getJSON(
                 $logs.attr('data-uri'),
                 {count: 3},
                 function(response) {
-                    var logModelObjects = createLogs(response["logs"]);
+                    var logModelObjects = createLogs(response.logs);
                     var logsVM = new LogsViewModel(logModelObjects);
                     ko.applyBindings(logsVM, $logs[0]);
-                    $logs.addClass("served")
+                    $logs.addClass('served');
                 }
             );
         }
-        $logs.addClass("active");
+        $logs.addClass('active');
     } else {
-        $logs.removeClass("active");
+        $logs.removeClass('active');
     }
     // Hide/show the html
-    NodeActions._openCloseNode(node_id);
+    NodeActions._openCloseNode(nodeId);
 };
 
 
@@ -350,8 +357,8 @@ $(document).ready(function() {
     $('.remove-pointer').on('click', function() {
         var $this = $(this);
         bootbox.confirm(
-            'Are you sure you want to remove this pointer? This will not ' +
-            'remove the project this pointer is linked to.',
+            'Are you sure you want to remove this link? This will not ' +
+            'remove the project this link refers to.',
             function(result) {
                 if (result) {
                     var pointerId = $this.attr('data-id');
@@ -385,9 +392,10 @@ $(document).ready(function() {
         var msgKey = permissions == 'public' ?
             'makePublicWarning' :
             'makePrivateWarning';
-        bootbox.confirm(
-            Messages[msgKey],
-            function(result) {
+        bootbox.confirm({
+            title: "Warning",
+            message: Messages[msgKey],
+            callback: function(result) {
                 if (result) {
                     $.postJSON(url, {permissions: permissions},
                         function(data){
@@ -396,7 +404,7 @@ $(document).ready(function() {
                     );
                 }
             }
-        );
+        });
     }
 
     /* Modal Click handlers for project page */

@@ -291,8 +291,9 @@ class TestRegistrations(DbTestCase):
         ).maybe_follow()
 
         # Find registration options
-        options = res.html.find('select', id='select-registration-template')\
-            .find_all('option')
+        options = res.html.find(
+            'select', id='select-registration-template'
+        ).find_all('option')
 
         # Should see number of options equal to number of registration
         # templates, plus one for 'Select...'
@@ -462,7 +463,6 @@ class TestMergingAccounts(DbTestCase):
         self.user.merge_user(self.dupe)
         self.user.save()
         # Now only the master user is shown at the project page
-        print 'debug', self.user._id, self.dupe._id, project.contributor_list
         res = self.app.get(project.url).maybe_follow()
         assert_in(self.user.fullname, res)
         assert_true(self.dupe.is_merged)
@@ -726,6 +726,19 @@ class TestConfirmingEmail(DbTestCase):
         res = form.submit()
         assert_in(language.EMAIL_NOT_FOUND.format(email="nowheretobefound@foo.com"),
             res, 'flashes error msg')
+
+    def test_resend_form_shows_alert_if_email_already_confirmed(self):
+        user = UnregUserFactory()
+        url = user.get_confirmation_url(user.username, external=False)
+        # User confirms their email address
+        self.app.get(url).maybe_follow()
+        # tries to resend confirmation
+        res = self.app.get('/resend/')
+        form = res.forms['resendForm']
+        form['email'] = user.username
+        res = form.submit()
+        # Sees alert message
+        assert_in('already been confirmed', res)
 
 
 if __name__ == '__main__':

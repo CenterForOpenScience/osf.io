@@ -8,6 +8,7 @@ import hashlib
 import logging
 import urlparse
 import httplib as http
+from nameparser import HumanName
 from mako.template import Template
 
 from framework import Q
@@ -41,15 +42,13 @@ CREATED_PROJECT_SUBJECT = 'Project created on Open Science Framework'
 MESSAGE_TEMPLATE = Template('''
 Hello, ${fullname},
 
-Congratulations! You have successfully added your SPSP 2014 ${poster_or_talk} to the Open Science Framework (OSF). If the conference is still going, come by SPSP booth 14 to claim your free Center for Open Science T-shirt (while supplies last)!
+Congratulations! You have successfully added your SPSP 2014 ${poster_or_talk} to the Open Science Framework (OSF).
 
 % if user_created:
-Your account on the Open Science Framework has been created. To claim your account, please create a password by clicking here: [ ${set_password_url} ].
+Your account on the Open Science Framework has been created. To claim your account, please create a password by clicking here: [ ${set_password_url} ]. Please verify your profile information at [ ${profile_url} ].
 
 % endif
-You now have a permanent, citable URL, that you can share and more details about your research: [ ${node_url} ].
-
-Your SPSP 2014 poster has been added to the Open Science Framework. To view the persistent link to your ${poster_or_talk}, click here: [ ${file_url} ].
+Your SPSP 2014 poster has been added to the Open Science Framework. You now have a permanent, citable URL, that you can share and more details about your research: [ ${node_url} ].
 
 Get more from the OSF by enhancing your page with the following:
 
@@ -70,7 +69,7 @@ The OSF Robot
 
 def request_to_data():
     return {
-        'headers': request.headers.to_dict(),
+        'headers': dict(request.headers),
         'form': request.form.to_dict(),
         'args': request.args.to_dict(),
     }
@@ -90,6 +89,9 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
             mimetype='plain',
         )
         return
+
+    # Use address as name if name missing
+    fullname = fullname or address.split('@')[0]
 
     created = []
 
@@ -138,17 +140,19 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
     )
 
     # Add tags
-    tags = tags or []
     if 'talk' in recipient:
         poster_or_talk = 'talk'
     else:
         poster_or_talk = 'poster'
+
+    tags = tags or []
     tags.append(poster_or_talk)
     for tag in tags:
         node.add_tag(tag, auth=auth)
 
     # Add system tags
     system_tags = system_tags or []
+    system_tags.append(poster_or_talk)
     system_tags.append('emailed')
     if is_spam:
         system_tags.append('spam')
@@ -174,8 +178,8 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
 
     # Add mail record
     mail_record = MailRecord(
-        data=request_to_data(request),
-        created=created,
+        data=request_to_data(),
+        records=created,
     )
     mail_record.save()
 
@@ -184,6 +188,7 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
         fullname=fullname,
         user_created=user_created,
         set_password_url=set_password_url,
+        profile_url=user.url,
         node_url=urlparse.urljoin(settings.DOMAIN, node.url),
         file_url=urlparse.urljoin(settings.DOMAIN, files[0].download_url(node)),
         poster_or_talk=poster_or_talk,
@@ -207,9 +212,16 @@ def get_mailgun_subject():
     return subject
 
 def get_mailgun_from():
-    sender = request.form['from']
-    sender = re.sub(r'<.*?>', '', sender).strip()
-    return sender
+    """Get name and email address of sender. Note: this uses the `from` field
+    instead of the `sender` field, meaning that envelope headers are ignored.
+
+    """
+    name = re.sub(r'<.*?>', '', request.form['from']).strip()
+    name = name.replace('"', '')
+    name = str(HumanName(name))
+    match = re.search(r'<(.*?)>', request.form['from'])
+    address = match.groups()[0] if match else ''
+    return name, address
 
 def get_mailgun_attachments():
     attachment_count = request.form.get('attachment-count', 0)
@@ -261,14 +273,15 @@ def spsp_poster_hook():
 
     # Fail if not from Mailgun
     check_mailgun_headers()
+    name, address = get_mailgun_from()
 
     # Add poster
     add_poster_by_email(
         recipient=request.form['recipient'],
-        address=request.form['sender'],
-        fullname=get_mailgun_from(),
+        address=address,
+        fullname=name,
         subject=get_mailgun_subject(),
-        message=request.form['stripped-html'],
+        message=request.form['stripped-text'],
         attachments=get_mailgun_attachments(),
         tags=['spsp2014'],
         system_tags=['spsp2014'],
@@ -295,18 +308,9 @@ def _render_spsp_node(node, idx):
         'nodeUrl': node.url,
         'author': node.creator.family_name if node.creator else '',
         'authorUrl': node.creator.url if node.creator else '',
-        'tags': [
-            {
-                'label': each._id,
-                'url': each.url,
-            }
-            for each in node.tags
-            if each._id != 'spsp2014'
-        ],
-        'download': {
-            'url': download_url,
-            'count': download_count,
-        },
+        'category': 'talk' if 'talk' in node.system_tags else 'poster',
+        'download': download_count,
+        'downloadUrl': download_url,
     }
 
 def spsp_results():

@@ -3,11 +3,15 @@
 """
 
 import os
+import logging
 import datetime
 
 from framework import GuidStoredObject, fields
 from framework.analytics import get_basic_counters
 from website.addons.base import AddonNodeSettingsBase, GuidFile
+
+
+logger = logging.getLogger(__name__)
 
 
 class AddonFilesNodeSettings(AddonNodeSettingsBase):
@@ -81,9 +85,17 @@ class NodeFile(GuidStoredObject):
         return '{0}osffiles/{1}/'.format(node.api_url, self.filename)
 
     def download_url(self, node):
-        return '{}osffiles/{}/version/{}/download/'.format(
-            node.url, self.filename, self.latest_version_number(node))
+        # Catch KeyError if file is in `files_current` but not in
+        # `files_versions`
+        try:
+            return '{}osffiles/{}/version/{}/download/'.format(
+                node.url, self.filename, self.latest_version_number(node)
+            )
+        except KeyError:
+            logger.error('File not found in `files_versions`')
+            return self.url(node)
 
     def render_url(self, node):
         return '{}osffiles/{}/version/{}/render/'.format(
-            node.api_url, self.filename, self.latest_version_number(node))
+            node.api_url, self.filename, self.latest_version_number(node)
+        )

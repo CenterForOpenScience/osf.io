@@ -3,7 +3,6 @@
 """
 
 import os
-import json
 import urlparse
 
 from github3 import GitHubError
@@ -15,10 +14,21 @@ from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import GuidFile
 from website.addons.base import AddonError
 
-from . import settings as github_settings
-from .api import GitHub
+from website.addons.github import settings as github_settings
+from website.addons.github.exceptions import ApiError
+from website.addons.github.api import GitHub
 
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
+
+class GithubGuidFile(GuidFile):
+
+    path = fields.StringField(index=True)
+
+    @property
+    def file_url(self):
+        if self.path is None:
+            raise ValueError('Path field must be defined.')
+        return os.path.join('github', 'file', self.path)
 
 class AddonGitHubUserSettings(AddonUserSettingsBase):
 
@@ -72,16 +82,6 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
             node_settings.user_settings = None
             node_settings.save()
 
-class GithubGuidFile(GuidFile):
-
-    path = fields.StringField(index=True)
-
-    @property
-    def file_url(self):
-        if self.path is None:
-            raise ValueError('Path field must be defined.')
-        return os.path.join('github', 'file', self.path)
-
 class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     user = fields.StringField()
@@ -93,6 +93,15 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     )
 
     registration_data = fields.DictionaryField()
+
+    def delete(self, save=True):
+        super(AddonGitHubNodeSettings, self).delete(save=False)
+        self.delete_hook(save=False)
+        self.user = None
+        self.repo = None
+        self.user_settings = None
+        if save:
+            self.save()
 
     @property
     def repo_url(self):
@@ -116,23 +125,29 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     def to_json(self, user):
         rv = super(AddonGitHubNodeSettings, self).to_json(user)
         user_settings = user.get_addon('github')
-        github_config = {
-            'hasAuth': user_settings and user_settings.has_auth,
-        }
+        rv.update({
+            'user_has_auth': user_settings and user_settings.has_auth,
+        })
         if self.user_settings and self.user_settings.has_auth:
-            github_config['repo'] = {
-                'user': self.user,
-                'repo': self.repo,
-            }
-            github_config['user'] = {
-                'osfUser': self.user_settings.owner.fullname,
-                'osfUrl': self.user_settings.owner.url,
-                'osfId': self.user_settings.owner._id,
-                'githubUser': self.user_settings.github_user,
-                'githubUrl': 'https://github.com/{0}'.format(self.user_settings.github_user),
-                'owner': self.user_settings.owner == user,
-            }
-        rv['github_config'] = json.dumps(github_config)
+            owner = self.user_settings.owner
+            connection = GitHub.from_settings(user_settings)
+            repo_names = [
+                '{0} / {1}'.format(repo.owner.login, repo.name)
+                for repo in connection.repos()
+            ]
+            rv.update({
+                'node_has_auth': True,
+                'github_user': self.user or '',
+                'github_repo': self.repo or '',
+                'github_repo_full_name': '{0} / {1}'.format(self.user, self.repo),
+                'repo_names': repo_names,
+                'auth_osf_name': owner.fullname,
+                'auth_osf_url': owner.url,
+                'auth_osf_id': owner._id,
+                'github_user_name': self.user_settings.github_user,
+                'github_user_url': 'https://githubcom/{0}'.format(self.user_settings.github_user),
+                'is_owner': owner == user,
+            })
         return rv
 
     #############
@@ -162,10 +177,10 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             return messages
 
         connect = GitHub.from_settings(self.user_settings)
-        repo = connect.repo(self.user, self.repo)
 
-        # Quit if request failed
-        if repo is None:
+        try:
+            repo = connect.repo(self.user, self.repo)
+        except ApiError:
             return
 
         node_permissions = 'public' if node.is_public else 'private'
@@ -352,7 +367,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         :return str: Alert message
 
         """
-        if self.user_settings:
+        if self.user_settings and self.user_settings.has_auth:
             return (
                 'Registering {cat} "{title}" will copy the authentication for its '
                 'GitHub add-on to the registered {cat}.'
@@ -381,10 +396,14 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         # Store current branch data
         if self.user and self.repo:
             connect = GitHub.from_settings(self.user_settings)
-            branches = [branch.to_json() for branch in connect.branches(self.user, self.repo)]
-            if not branches:
-                raise AddonError('Could not fetch repo branches.')
-            clone.registration_data['branches'] = branches
+            try:
+                branches = [
+                    branch.to_json()
+                    for branch in connect.branches(self.user, self.repo)
+                ]
+                clone.registration_data['branches'] = branches
+            except ApiError:
+                pass
 
         if save:
             clone.save()
@@ -394,6 +413,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     #########
     # Hooks #
     #########
+
     # TODO Should Events be added here?
     def add_hook(self, save=True):
 
