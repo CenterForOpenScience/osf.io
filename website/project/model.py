@@ -20,7 +20,6 @@ from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
-from framework.auth import utils as auth_utils
 from framework.auth.decorators import Auth
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
@@ -236,6 +235,7 @@ class Pointer(StoredObject):
     link is cloned, but its contained Node is not.
 
     """
+    #: Whether this is a pointer or not
     primary = False
 
     _id = fields.StringField()
@@ -257,6 +257,8 @@ class Pointer(StoredObject):
         return self._clone()
 
     def __getattr__(self, item):
+        """Delegate attribute access to the node being pointed to.
+        """
         # Prevent backref lookups from being overriden by proxied node
         try:
             return super(Pointer, self).__getattr__(item)
@@ -274,6 +276,7 @@ class Pointer(StoredObject):
 class Node(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
+    #: Whether this is a pointer or not
     primary = True
 
     # Node fields that trigger an update to Solr on save
