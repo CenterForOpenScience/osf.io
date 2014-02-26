@@ -1796,8 +1796,10 @@ class TestUnregisteredUser(DbTestCase):
 
     def add_unclaimed_record(self):
         given_name = 'Fredd Merkury'
+        email = 'unclaimed@example.com'
         self.user.add_unclaimed_record(node=self.project,
-            given_name=given_name, referrer=self.referrer)
+            given_name=given_name, referrer=self.referrer,
+            email=email)
         self.user.save()
         data = self.user.unclaimed_records[self.project._primary_key]
         return data
@@ -1821,6 +1823,7 @@ class TestUnregisteredUser(DbTestCase):
         assert_equal(data['name'], 'Fredd Merkury')
         assert_equal(data['referrer_id'], self.referrer._primary_key)
         assert_in('token', data)
+        assert_equal(data['email'], 'unclaimed@example.com')
         assert_equal(data, self.user.get_unclaimed_record(self.project._primary_key))
 
     def test_get_claim_url(self):

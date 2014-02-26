@@ -59,7 +59,8 @@ class User(GuidStoredObject, AddonModelMixin):
     #   <project_id>: {
     #       'name': <name that referrer provided>,
     #       'referrer_id': <user ID of referrer>,
-    #       'token': <token used for verification urls>
+    #       'token': <token used for verification urls>,
+    #       'email': <email the referrer provided or None>
     #   }
     #   ...
     # }
@@ -164,12 +165,13 @@ class User(GuidStoredObject, AddonModelMixin):
         self.date_confirmed = dt.datetime.utcnow()
         return self
 
-    def add_unclaimed_record(self, node, referrer, given_name):
+    def add_unclaimed_record(self, node, referrer, given_name, email=None):
         """Add a new project entry in the unclaimed records dictionary.
 
         :param Node node: Node this unclaimed user was added to.
         :param User referrer: User who referred this user.
         :param str given_name: The full name that the referrer gave for this user.
+        :param str email: The given email address.
         :returns: The added record
         """
         if not node.can_edit(user=referrer):
@@ -177,10 +179,15 @@ class User(GuidStoredObject, AddonModelMixin):
                 'to project {0}'.format(node._primary_key))
         project_id = node._primary_key
         referrer_id = referrer._primary_key
+        if email:
+            clean_email = email.lower().strip()
+        else:
+            clean_email = None
         record = {
             'name': given_name,
             'referrer_id': referrer_id,
-            'token': generate_confirm_token()
+            'token': generate_confirm_token(),
+            'email': clean_email
         }
         self.unclaimed_records[project_id] = record
         return record
