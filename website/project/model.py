@@ -1587,7 +1587,8 @@ class Node(GuidStoredObject, AddonModelMixin):
             if contributor.is_registered or self.is_contributor(contributor):
                 raise error
 
-        contributor.add_unclaimed_record(node=self, referrer=auth.user, given_name=fullname)
+        contributor.add_unclaimed_record(node=self, referrer=auth.user,
+            given_name=fullname, email=email)
         contributor.save()
         self.add_contributor(contributor, auth=auth, log=True, save=save)
         return contributor

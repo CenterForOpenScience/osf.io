@@ -1065,6 +1065,7 @@ class TestProject(DbTestCase):
         assert_equal(unclaimed_data['referrer_id'],
             self.consolidate_auth.user._primary_key)
         assert_true(self.project.is_contributor(latest_contributor))
+        assert_equal(unclaimed_data['email'], 'foo@bar.com')
 
     def test_add_unregistered_adds_new_unclaimed_record_if_user_already_in_db(self):
         user = UnregUserFactory()
