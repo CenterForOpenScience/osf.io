@@ -159,6 +159,7 @@
 <%include file="modal_add_pointer.mako"/>
 <%include file="modal_show_links.mako"/>
 ## TODO: Find a better place to put this initialization code
+<script src="/static/js/accountClaimer.js"></script>
 <script>
 // TODO: pollution! namespace me
     var userId = '${user_id}';
@@ -222,6 +223,11 @@
     var linksModal = $('#showLinks')[0];
     var linksVM = new LinksViewModel(linksModal);
     ko.applyBindings(linksVM, linksModal);
+
+    // Make unregistered contributors claimable
+    if (!userId) { // If no user logged in, allow user claiming
+        var accountClaimer = new OSFAccountClaimer('.contributor-unregistered');
+    }
 
 
 </script>
