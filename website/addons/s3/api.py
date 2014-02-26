@@ -4,7 +4,7 @@ from dateutil.parser import parse
 from boto.s3.connection import S3Connection, Key
 from boto.s3.connection import OrdinaryCallingFormat
 from boto.s3.cors import CORSConfiguration
-from boto.exception import S3ResponseError, BotoClientError
+from boto.exception import S3ResponseError
 
 from hurry.filesize import size, alternative
 
@@ -29,14 +29,9 @@ def get_bucket_list(user_settings):
 
 
 def create_bucket(user_settings, bucket_name):
-    try:
-        connect = S3Connection(
-            user_settings.access_key, user_settings.secret_key)
-        return connect.create_bucket(bucket_name)
-    except BotoClientError as e:
-        return e.message
-    except S3ResponseError as a:
-        return a.message
+    connect = S3Connection(
+        user_settings.access_key, user_settings.secret_key)
+    return connect.create_bucket(bucket_name)
 
 
 def does_bucket_exist(accessKey, secretKey, bucketName):

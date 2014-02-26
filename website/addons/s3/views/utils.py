@@ -5,6 +5,8 @@ import hmac
 import sha
 import re
 
+from boto.exception import S3ResponseError, BotoClientError
+
 from framework.flask import request
 
 from website.project.decorators import must_have_addon
@@ -35,15 +37,23 @@ def generate_signed_url(mime, file_name, s3):
 def create_new_bucket(*args, **kwargs):
     user = kwargs['auth'].user
     user_settings = user.get_addon('s3')
-    validateName = re.compile('^(?!.*(\.\.|-\.))[^.][\w\d.-]{2,61}[^.]$')
-    if not validateName.match(request.json.get('bucket_name')):
+    bucket_name = request.json.get('bucket_name')
+
+    if not validate_bucket_name(bucket_name):
         return {'message': 'That bucket name is not valid.'}, 406
-    message = create_bucket(user_settings, request.json.get('bucket_name'))
-    if message is True:
+    try:
+        create_bucket(user_settings, request.json.get('bucket_name'))
         return {}
-    else:
-        return {'message': message}, 406
+    except BotoClientError as e:
+        return {'message': e.message}, 406
+    except S3ResponseError as e:
+        return {'message': e.message}, 406
 
 
 def get_cache_file_name(key_name, etag):
     return u'{0}_{1}.html'.format(key_name.replace('/', ''), etag)
+
+
+def validate_bucket_name(name):
+    validate_name = re.compile('^(?!.*(\.\.|-\.))[^.][\w\d.-]{2,61}[^.]$')
+    return bool(validate_name.match(name))
