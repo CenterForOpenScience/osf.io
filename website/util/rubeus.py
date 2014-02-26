@@ -12,7 +12,8 @@ FOLDER = 'folder'
 FILE = 'item'
 KIND = 'kind'
 
-# TODO Review me.
+# TODO: Validate the JSON schema, esp. for addons
+
 DEFAULT_PERMISSIONS = {
     'view': True,
     'edit': False
@@ -41,7 +42,7 @@ def to_hgrid(node, auth, **data):
     return NodeFileCollector(node, auth, **data).to_hgrid()
 
 
-def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS,
+def build_addon_root(node_settings, name, permissions=None,
                      urls=None, extra=None, **kwargs):
     """Builds the root or "dummy" folder for an addon.
 
@@ -56,6 +57,7 @@ def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS,
     :return dict: Hgrid formatted dictionary for the addon root folder
 
     """
+    permissions = permissions or DEFAULT_PERMISSIONS
     if name:
         name = u'{0}: {1}'.format(node_settings.config.full_name, name)
     else:
@@ -72,6 +74,7 @@ def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS,
         }
     rv = {
         'addon': node_settings.config.short_name,
+        'addonFullname': node_settings.config.full_name,
         'name': name,
         'iconUrl': node_settings.config.icon_url,
         KIND: FOLDER,
@@ -82,7 +85,8 @@ def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS,
             'maxSize': node_settings.config.max_file_size,
             'acceptedFiles': node_settings.config.accept_extensions
         },
-        'urls': urls
+        'urls': urls,
+        'isPointer': False,
     }
     rv.update(kwargs)
     return rv
@@ -155,7 +159,8 @@ class NodeFileCollector(object):
                 'upload': os.path.join(node.api_url, 'osffiles') + '/',
                 'fetch': None,
             },
-            'children': children
+            'children': children,
+            'isPointer': not node.primary,
         }
 
     def _collect_addons(self, node):

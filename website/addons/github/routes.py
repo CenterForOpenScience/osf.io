@@ -136,13 +136,6 @@ api_routes = {
     'rules': [
 
         Rule(
-            '/github/user/repos/',
-            'get',
-            views.repos.github_list_repos,
-            json_renderer,
-        ),
-
-        Rule(
             '/github/repo/create/',
             'post',
             views.repos.github_create_repo,

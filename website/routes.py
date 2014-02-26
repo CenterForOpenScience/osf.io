@@ -37,6 +37,7 @@ def get_globals():
         'js_all': assets_env['js'].urls(),
         'css_all': assets_env['css'].urls(),
         'domain': settings.DOMAIN,
+        'language': language,
     }
 
 

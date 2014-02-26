@@ -230,16 +230,16 @@ class TestS3ViewsConfig(DbTestCase):
         self.node_settings.user_settings.access_key = None
         self.node_settings.user_settings = None
         self.node_settings.save()
-        url = '/' + self.project._id + '/settings/'
+        url = self.project.url + 'settings/'
         rv = self.app.get(url, auth=self.user.auth)
         assert_true('<label for="s3Addon">Access Key</label>' in rv.body)
 
     @mock.patch('website.addons.s3.model.get_bucket_drop_down')
-    def test_node_settings_user_settings_ui(self, dropdown):
-        dropdown.return_value = 'test'
-        url = '/' + self.project._id + '/settings/'
+    def test_node_settings_user_settings_ui(self, mock_dropdown):
+        mock_dropdown.return_value = ['mybucket']
+        url = self.project.url + 'settings/'
         rv = self.app.get(url, auth=self.user.auth)
-        assert_true('Your buckets' in rv.body)
+        assert_true('mybucket' in rv.body)
 
 
 class TestS3ViewsCRUD(DbTestCase):

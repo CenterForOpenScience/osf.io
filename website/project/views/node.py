@@ -12,6 +12,7 @@ from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 
+from website import language
 from website.project import new_node, clean_template_name
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
@@ -70,11 +71,6 @@ def project_new_post(**kwargs):
         project = new_node(
             'project', form.title.data, user, form.description.data
         )
-        status.push_status_message(
-            'Welcome to your new {category}! Please select and configure your add-ons below.'.format(
-                category=project.project_or_component,
-            )
-        )
         return {}, 201, None, project.url
     else:
         push_errors_to_status(form.errors)
@@ -100,14 +96,9 @@ def project_new_node(**kwargs):
             category=form.category.data,
             project=project,
         )
-        status.push_status_message(
-            'Welcome to your new {category}! Please select and configure your add-ons below.'.format(
-                category=node.project_or_component,
-            )
-        )
         return {
             'status': 'success',
-        }, 201, None, node.url + 'settings/'
+        }, 201, None, node.url
     else:
         push_errors_to_status(form.errors)
     raise HTTPError(http.BAD_REQUEST, redirect_url=project.url)
@@ -122,6 +113,15 @@ def project_before_fork(**kwargs):
     user = kwargs['auth'].user
 
     prompts = node.callback('before_fork', user=user)
+
+    pointers = node.get_pointers()
+    if pointers:
+        prompts.append(
+            language.BEFORE_FORK_HAS_POINTERS.format(
+                category=node.project_or_component
+            )
+        )
+
     return {'prompts': prompts}
 
 
@@ -610,6 +610,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
             'primary': primary,
             'api_url': node.api_url,
             'title': node.title,
+            'category': node.project_or_component,
             'is_registration': node.is_registration,
             'registered_date': node.registered_date.strftime('%m/%d/%y %I:%M %p')
                 if node.is_registration

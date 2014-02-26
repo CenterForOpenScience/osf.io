@@ -10,13 +10,13 @@
 
             <div class="modal-body">
 
-                <form>
-                    <input style="margin-bottom: 8px;" data-bind="value:query" />
+                <form role='form'>
+                    <div class="form-group">
+                        <input class="form-control" placeholder="Search projects" style="margin-bottom: 8px;" data-bind="value:query" />
+                    </div>
                     <div>
-                        <div class="btn-group">
-                            <button class="btn btn-default" data-bind="click:function(){search(true)}">Search all projects</button>
-                            <button class="btn btn-default" data-bind="click:function(){search(false)}">Search my projects</button>
-                        </div>
+                        <button class="btn btn-default" data-bind="click:function(){search(true)}">Search all projects</button>
+                        <button class="btn btn-default" data-bind="click:function(){search(false)}">Search my projects</button>
                     </div>
                 </form>
 

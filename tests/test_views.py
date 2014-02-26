@@ -27,7 +27,8 @@ from website.project.views.node import _view_project
 from tests.base import DbTestCase
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
-    NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory
+    NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
+    RegistrationFactory
 )
 
 
@@ -625,6 +626,54 @@ class TestPointerViews(DbTestCase):
                 auth=self.user.auth
             )
 
+    def test_before_register_with_pointer(self):
+        "Assert that link warning appears in before register callback."
+        node = NodeFactory()
+        self.project.add_pointer(node, auth=self.consolidate_auth)
+        url = self.project.api_url + 'fork/before/'
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        prompts = [
+            prompt
+            for prompt in res.json['prompts']
+            if 'Links will be copied into your fork' in prompt
+        ]
+        assert_equal(len(prompts), 1)
+
+    def test_before_fork_with_pointer(self):
+        "Assert that link warning appears in before fork callback."
+        node = NodeFactory()
+        self.project.add_pointer(node, auth=self.consolidate_auth)
+        url = self.project.api_url + 'beforeregister/'
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        prompts = [
+            prompt
+            for prompt in res.json['prompts']
+            if 'Links will be copied into your registration' in prompt
+        ]
+        assert_equal(len(prompts), 1)
+
+    def test_before_register_no_pointer(self):
+        "Assert that link warning does not appear in before register callback."
+        url = self.project.api_url + 'fork/before/'
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        prompts = [
+            prompt
+            for prompt in res.json['prompts']
+            if 'Links will be copied into your fork' in prompt
+        ]
+        assert_equal(len(prompts), 0)
+
+    def test_before_fork_no_pointer(self):
+        "Assert that link warning does not appear in before fork callback."
+        url = self.project.api_url + 'beforeregister/'
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        prompts = [
+            prompt
+            for prompt in res.json['prompts']
+            if 'Links will be copied into your registration' in prompt
+        ]
+        assert_equal(len(prompts), 0)
+
 
 class TestPublicViews(DbTestCase):
 
@@ -733,6 +782,48 @@ class TestAuthViews(DbTestCase):
         assert_equal(self.user.middle_names, 'Baines')
         assert_equal(self.user.family_name, 'Johnson')
 
+
+# TODO: Use mock add-on
+class TestAddonUserViews(DbTestCase):
+
+    def setUp(self):
+        self.user = AuthUserFactory()
+        self.app = TestApp(app)
+
+    def test_choose_addons_add(self):
+        """Add add-ons; assert that add-ons are attached to project.
+
+        """
+        url = '/api/v1/settings/addons/'
+        self.app.post_json(
+            url,
+            {'github': True},
+            auth=self.user.auth,
+        ).maybe_follow()
+        self.user.reload()
+        assert_true(self.user.get_addon('github'))
+
+    def test_choose_addons_remove(self):
+        """Add, then delete, add-ons; assert that add-ons are not attached to
+        project.
+
+        """
+        url = '/api/v1/settings/addons/'
+        self.app.post_json(
+            url,
+            {'github': True},
+            auth=self.user.auth,
+        ).maybe_follow()
+        self.app.post_json(
+            url,
+            {'github': False},
+            auth=self.user.auth
+        ).maybe_follow()
+        self.user.reload()
+        assert_false(self.user.get_addon('github'))
+
+
+# TODO: Move to OSF Storage
 class TestFileViews(DbTestCase):
 
     def setUp(self):

@@ -100,6 +100,34 @@ def github_oauth_delete_user(**kwargs):
 @must_have_addon('github', 'node')
 def github_oauth_delete_node(**kwargs):
 
+    node_settings = kwargs['node_addon']
+
+    # Remove webhook
+    try:
+        node_settings.delete_hook()
+    except GitHubError:
+        logger.error(
+            'Could not remove webhook from {0} in node {1}'.format(
+                node_settings.repo, node_settings.owner._id
+            )
+        )
+
+    # Remove user settings
+    node_settings.user_settings = None
+    node_settings.user = None
+    node_settings.repo = None
+
+    # Save changes
+    node_settings.save()
+
+    return {}
+
+
+# TODO: Move into remove addon
+@must_be_contributor
+@must_have_addon('github', 'node')
+def github_oauth_delete_node(**kwargs):
+
     auth = kwargs['auth']
     node_settings = kwargs['node_addon']
     node = node_settings.owner

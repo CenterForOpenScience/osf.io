@@ -12,16 +12,11 @@
 
                 <hr />
 
-                <p class="help-block">
-                    Registration cannot be undone, and the archived content and
-                    files cannot be deleted after registration. Please be sure the
-                    project is complete and comprehensive for what you wish to
-                    register.
-                </p>
+                <p class="help-block">${language.BEFORE_REGISTRATION_INFO}</p>
 
                 <div class="form-group">
                     <label>
-                        Type "continue" if you are sure you want to continue
+                        Type "register" if you are sure you want to continue
                     </label>
                     <div class="controls">
                         <input class="form-control" data-bind="value:$root.continueText, valueUpdate: 'afterkeydown'" />
@@ -34,7 +29,7 @@
 
         % if not registered:
             <button id="register-submit" class="btn btn-success" data-bind="visible:$root.continueFlag, focus:$root.continueFlag">
-                Register
+                Register Now
             </button>
         % endif
 

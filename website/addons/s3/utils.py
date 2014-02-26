@@ -66,11 +66,10 @@ def wrapped_key_to_json(wrapped_key, node):
 
 def get_bucket_drop_down(user_settings):
     try:
-        dropdown_list = ''
-        for bucket in get_bucket_list(user_settings):
-                dropdown_list += '<li role="presentation"><a href="#">' + \
-                    bucket.name + '</a></li>'
-        return dropdown_list
+        return [
+            bucket.name
+            for bucket in get_bucket_list(user_settings)
+        ]
     except BotoServerError:
         return False
 
