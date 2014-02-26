@@ -385,6 +385,7 @@ class TestUserInviteViews(DbTestCase):
         self.project.add_unregistered_contributor(
             email=user.username, fullname=fake.name(),
             auth=Auth(self.project.creator))
+        self.project.save()
         res = self.app.post_json(self.invite_url,
             {'fullname': fake.name(), 'email': user.username},
             auth=self.user.auth, expect_errors=True)

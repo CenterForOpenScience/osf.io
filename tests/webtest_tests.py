@@ -758,7 +758,7 @@ class TestConfirmingEmail(DbTestCase):
             res, 'flashes error msg')
 
     def test_resend_form_shows_alert_if_email_already_confirmed(self):
-        user = UnregUserFactory()
+        user = UnconfirmedUserFactory()
         url = user.get_confirmation_url(user.username, external=False)
         # User confirms their email address
         self.app.get(url).maybe_follow()
