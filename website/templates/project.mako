@@ -45,6 +45,7 @@
                     </div>
                 </div>
 
+                <input role="search" class="form-control" placeholder="Search files..." type="text" id="fileSearch" autofocus>
                 <div id="myGrid" class="filebrowser hgrid"></div>
             </div>
 
@@ -219,7 +220,8 @@
                 uploads: false,
                 width: "100%",
                 height: 600,
-                progBar: '#filetreeProgressBar'
+                progBar: '#filetreeProgressBar',
+                searchInput: '#fileSearch'
         });
 
     });
