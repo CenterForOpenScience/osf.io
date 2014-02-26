@@ -1,7 +1,7 @@
 (function() {
 
     function newBucket() {
-        var isValidBucket = /^(?!.*(\.\.|-\.))[^.][\w\d.-]{2,61}[^.]$/;
+        var isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$/;
         var $elm = $('#addonSettingsS3');
         var $select = $elm.find('select');
 

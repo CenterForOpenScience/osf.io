@@ -55,5 +55,5 @@ def get_cache_file_name(key_name, etag):
 
 
 def validate_bucket_name(name):
-    validate_name = re.compile('^(?!.*(\.\.|-\.))[^.][\w\d.-]{2,61}[^.]$')
+    validate_name = re.compile('^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$')
     return bool(validate_name.match(name))
