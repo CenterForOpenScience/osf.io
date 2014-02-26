@@ -1286,24 +1286,6 @@ class Node(GuidStoredObject, AddonModelMixin):
                 )
         logging.error("Node {0} has a parent that is not a project".format(self._id))
 
-    def author_list(self, and_delim='&'):
-        author_names = [
-            author.biblio_name
-            for author in self.contributors
-            if author
-        ]
-        if len(author_names) < 2:
-            return ' {0} '.format(and_delim).join(author_names)
-        if len(author_names) > 7:
-            author_names = author_names[:7]
-            author_names.append('et al.')
-            return ', '.join(author_names)
-        return u'{0}, {1} {2}'.format(
-            ', '.join(author_names[:-1]),
-            and_delim,
-            author_names[-1]
-        )
-
     def to_csl(self): #formats node information into CSL format for citation parsing
         return {
             "id": "ITEM-1",
@@ -1319,34 +1301,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             "type": "Article",
             "URL": self.display_absolute_url,
         }
-
-    @property
-    def citation_apa(self):
-        return u'{authors}, ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{url}</a>'.format(
-            authors=self.author_list(and_delim='&'),
-            year=self.logs[-1].date.year if self.logs else '?',
-            title=self.title,
-            url=self.display_absolute_url,
-        )
-
-    @property
-    def citation_mla(self):
-        return u'{authors}. "{title}". Open Science Framework, {year}. <a href="{url}">{url}</a>'.format(
-            authors=self.author_list(and_delim='and'),
-            year=self.logs[-1].date.year if self.logs else '?',
-            title=self.title,
-            url=self.display_absolute_url,
-        )
-
-    @property
-    def citation_chicago(self):
-        return u'{authors}. "{title}". Open Science Framework ({year}). <a href="{url}">{url}</a>'.format(
-            authors=self.author_list(and_delim='and'),
-            year=self.logs[-1].date.year if self.logs else '?',
-            title=self.title,
-            url=self.display_absolute_url,
-        )
-
 
     @property
     def parent(self):
