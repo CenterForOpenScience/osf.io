@@ -29,7 +29,10 @@
                     $select.append('<option value="' + bucketName + '">' + bucketName + '</option>');
                     $select.val(bucketName);
                 }).fail(function(xhr) {
-                    bootbox.confirm('Looks like that name is taken. Try another name?', function(result) {
+                    var message = JSON.parse(xhr.responseText).message;
+                    if(!message)
+                        message = 'Looks like that name is taken. Try another name?';
+                    bootbox.confirm(message, function(result) {
                         if (result) {
                             newBucket();
                         }
