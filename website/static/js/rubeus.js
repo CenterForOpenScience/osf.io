@@ -379,6 +379,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
                 self.expandItem(item);
             });
             updateTooltips();
+            $('#filebrowserProgressBar').hide();
         },
         // Add a red highlight when user drags over a folder they don't have
         // permission to upload to.

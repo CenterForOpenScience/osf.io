@@ -14,6 +14,12 @@
     <input role="search" class="form-control" placeholder="Search files..." type="text" id="fileSearch" autofocus>
 </div>
 </div><!--end row -->
+
+<div id="filebrowserProgressBar" class="progress progress-striped active">
+    <div class="progress-bar"  role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+        <span class="sr-only">Loading</span>
+    </div>
+</div>
 <div id="myGrid" class="filebrowser hgrid"></div>
 
 </%def>
