@@ -26,7 +26,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
                 cssClass = 'hg-folder-public';
             }
         }
-        opening = '<span class="hg-folder-text ' + cssClass + '">';
+        opening = '<span class="hg-folder-text ' + cssClass + '">&nbsp;';
         var closing = '</span>';
         html = [icon, opening, item.name, closing].join('');
         if(item.extra) {
@@ -43,7 +43,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         var ext = item.name.split('.').pop().toLowerCase();
         var tooltipMarkup = genTooltipMarkup('View file');
 
-        var nameElement = ['<span ' + tooltipMarkup + ' >', item.name, '</span>'].join('');
+        var nameElement = ['<span ' + tooltipMarkup + ' >&nbsp;', item.name, '</span>'].join('');
 
         var icon = Rubeus.Extensions.indexOf(ext) === -1 ?
                         HGrid.Html.fileIcon :
