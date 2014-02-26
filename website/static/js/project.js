@@ -17,6 +17,7 @@ var Messages = {
 
 /* Utility functions */
 
+// TODO: Shouldn't pollute window. At the very least put them on the '$' namespace
 window.block = function() {
     $.blockUI({
         css: {
@@ -47,46 +48,84 @@ window.joinPrompts = function(prompts, base) {
         prompt += '</ul>';
     }
     return prompt;
-}
+};
 
 window.NodeActions = {};  // Namespace for NodeActions
 // TODO: move me to the ProjectViewModel
 
-NodeActions.beforeForkNode = function() {
+function beforeForkNode(url, done) {
 
     $.ajax({
-        url: nodeApiUrl + 'beforefork/',
+        url: url,
         contentType: 'application/json'
     }).success(function(response) {
         bootbox.confirm(
             joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
             function(result) {
                 if (result) {
-                    NodeActions.forkNode();
+                    done && done();
                 }
             }
         )
     });
 
-};
+}
 
 NodeActions.forkNode = function() {
 
-    // Block page
-    block();
+    beforeForkNode(nodeApiUrl + 'fork/before/', function() {
 
-    // Fork node
-    $.ajax({
-        url: nodeApiUrl + 'fork/',
-        type: 'POST'
-    }).done(function(response) {
-        window.location = response;
-    }).fail(function() {
-        unblock();
-        bootbox.alert('Forking failed');
+        // Block page
+        block();
+
+        // Fork node
+        $.ajax({
+            url: nodeApiUrl + 'fork/',
+            type: 'POST'
+        }).success(function(response) {
+            window.location = response;
+        }).error(function() {
+            unblock();
+            bootbox.alert('Forking failed');
+        });
+
     });
 
 };
+
+NodeActions.forkPointer = function(pointerId, nodeId) {
+
+    beforeForkNode('/api/v1/' + nodeId + '/fork/before/', function() {
+
+        // Block page
+        block();
+
+        // Fork pointer
+        $.ajax({
+            type: 'post',
+            url: nodeApiUrl + 'pointer/fork/',
+            data: JSON.stringify({'pointerId': pointerId}),
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function(response) {
+                window.location.reload();
+            },
+            error: function() {
+                unblock();
+                bootbox.alert('Could not fork link.');
+            }
+        });
+
+    });
+
+};
+
+
+NodeActions.addonFileRedirect = function(item) {
+    window.location.href = item.params.urls.view;
+    return false;
+};
+
 
 // todo: discuss; this code not used
 NodeActions.addNodeToProject = function(node, project) {
@@ -182,20 +221,54 @@ NodeActions.removeUser = function(userid, name) {
     return false;
 };
 
-NodeActions._openCloseNode = function(node_id) {
+NodeActions._openCloseNode = function(nodeId) {
 
-    var icon = $("#icon-" + node_id),
-        body = $("#body-" + node_id);
+    var icon = $('#icon-' + nodeId);
+    var body = $('#body-' + nodeId);
 
     body.toggleClass('hide');
 
     if ( body.hasClass('hide') ) {
         icon.removeClass('icon-minus');
         icon.addClass('icon-plus');
-    }else{
+        icon.attr('title', 'More');
+    } else {
         icon.removeClass('icon-plus');
         icon.addClass('icon-minus');
+        icon.attr('title', 'Less');
     }
+
+    // Refresh tooltip text
+    icon.tooltip('destroy');
+    icon.tooltip();
+
+};
+
+
+NodeActions.reorderChildren = function(idList, elm) {
+    $.ajax({
+        type: 'POST',
+        url: nodeApiUrl + 'reorder_components/',
+        data: JSON.stringify({'new_list': idList}),
+        contentType: 'application/json',
+        dataType: 'json',
+        fail: function() {
+            $(elm).sortable('cancel');
+        }
+    });
+};
+
+NodeActions.removePointer = function(pointerId, pointerElm) {
+    $.ajax({
+        type: 'DELETE',
+        url: nodeApiUrl + 'pointer/',
+        data: JSON.stringify({pointerId: pointerId}),
+        contentType: 'application/json',
+        dataType: 'json',
+        success: function(response) {
+            pointerElm.remove();
+        }
+    })
 };
 
 /*
@@ -213,10 +286,10 @@ window.FileRenderer = {
     getCachedFromServer: function() {
         var self = this;
         $.get( self.url, function(data) {
-            if(data){
+            if (data) {
                 self.element.html(data);
                 clearInterval(self.refreshContent);
-            }else{
+            } else {
                 self.tries += 1;
                 if(self.tries > 10){
                     clearInterval(self.refreshContent);
@@ -230,27 +303,27 @@ window.FileRenderer = {
 /*
 Display recent logs for for a node on the project view page.
 */
-NodeActions.openCloseNode = function(node_id){
-    var $logs = $('#logs-' + node_id);
-    if (!$logs.hasClass("active")) {
-        if (!$logs.hasClass("served")) {
+NodeActions.openCloseNode = function(nodeId){
+    var $logs = $('#logs-' + nodeId);
+    if (!$logs.hasClass('active')) {
+        if (!$logs.hasClass('served')) {
             $.getJSON(
                 $logs.attr('data-uri'),
                 {count: 3},
                 function(response) {
-                    var logModelObjects = createLogs(response["logs"]);
+                    var logModelObjects = createLogs(response.logs);
                     var logsVM = new LogsViewModel(logModelObjects);
                     ko.applyBindings(logsVM, $logs[0]);
-                    $logs.addClass("served")
+                    $logs.addClass('served');
                 }
             );
         }
-        $logs.addClass("active");
+        $logs.addClass('active');
     } else {
-        $logs.removeClass("active");
+        $logs.removeClass('active');
     }
     // Hide/show the html
-    NodeActions._openCloseNode(node_id);
+    NodeActions._openCloseNode(nodeId);
 };
 
 
@@ -259,6 +332,21 @@ $(document).ready(function() {
     ////////////////////
     // Event Handlers //
     ////////////////////
+
+    $('.remove-pointer').on('click', function() {
+        var $this = $(this);
+        bootbox.confirm(
+            'Are you sure you want to remove this link? This will not ' +
+            'remove the project this link refers to.',
+            function(result) {
+                if (result) {
+                    var pointerId = $this.attr('data-id');
+                    var pointerElm = $this.closest('.list-group-item');
+                    NodeActions.removePointer(pointerId, pointerElm);
+                }
+            }
+        )
+    });
 
     $('.citation-toggle').on('click', function() {
         $(this).closest('.citations').find('.citation-list').slideToggle();
@@ -287,16 +375,11 @@ $(document).ready(function() {
             Messages[msgKey],
             function(result) {
                 if (result) {
-                    $.ajax({
-                        url: url,
-                        type: 'POST',
-                        data: {permissions: permissions},
-                        contentType: 'application/json',
-                        dataType: 'json',
-                        success: function(data){
-                            window.location.href = data['redirect_url'];
+                    $.postJSON(url, {permissions: permissions},
+                        function(data){
+                            window.location.href = data.redirect_url;
                         }
-                    });
+                    );
                 }
             }
         );

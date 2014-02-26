@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 import logging
+import datetime
 
+from modularodm.exceptions import NoResultsFound
 import framework
-from framework import goback, set_previous_url, request, redirect, session
+from framework import set_previous_url, request
 from framework.email.tasks import send_email
 from framework import status
 import framework.forms as forms
-from modularodm.exceptions import NoResultsFound
+from framework import auth
+from framework.auth import login, logout, DuplicateEmailError, get_user, get_current_user
+from framework.auth.forms import (RegistrationForm, SignInForm,
+    ForgotPasswordForm, ResetPasswordForm, MergeAccountForm, ResendConfirmationForm)
 
+import website.settings
+from website import security, mails, language
 
-import website.settings  # TODO: Use framework settings module instead
-import settings
-
-import helper
-
-from framework.auth import register, login, logout, DuplicateEmailError, get_user, get_current_user
-from framework.auth.forms import RegistrationForm, SignInForm, ForgotPasswordForm, ResetPasswordForm, MergeAccountForm
 
 Q = framework.Q
 User = framework.auth.model.User
@@ -53,9 +53,9 @@ def forgot_password():
     if form.validate():
         user_obj = get_user(username=form.email.data)
         if user_obj:
-            user_obj.verification_key = helper.random_string(20)
+            user_obj.verification_key = security.random_string(20)
             user_obj.save()
-            # TODO: This is OSF-specific
+            # TODO: Use mails.py interface
             success = send_email(
                 from_addr=website.settings.FROM_EMAIL,
                 to_addr=form.email.data,
@@ -90,22 +90,17 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
 
     """
     direct_call = registration_form or forgot_password_form
-
     if framework.request.method == 'POST' and not direct_call:
         form = SignInForm(framework.request.form)
         if form.validate():
-            response = login(form.username.data, form.password.data)
-            if response:
-                if response == 2:
-                    status.push_status_message('''Please check your email (and spam
-                        folder) and click the verification link before logging
-                        in.''')
-                    return goback()
-                return response
-            else:
-                status.push_status_message('''Log-in failed. Please try again or
-                    reset your password''')
-
+            try:
+                return login(form.username.data, form.password.data)
+            except auth.LoginNotAllowedError:
+                status.push_status_message(language.UNCONFIRMED, 'warning')
+                # Don't go anywhere
+                return {'next': ''}
+            except auth.PasswordIncorrectError:
+                status.push_status_message(language.LOGIN_FAILED)
         forms.push_errors_to_status(form.errors)
 
     if kwargs.get('first', False):
@@ -120,53 +115,79 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
         )
     )
     if next_url:
-        status.push_status_message('You must log in to access this resource')
+        status.push_status_message(language.MUST_LOGIN)
     return {
         'next': next_url,
     }
+
 
 def auth_logout():
     """Log out and delete cookie.
 
     """
     logout()
-    status.push_status_message('You have successfully logged out.')
     rv = framework.redirect('/goodbye/')
     rv.delete_cookie(website.settings.COOKIE_NAME)
     return rv
 
+
+def confirm_email_get(**kwargs):
+    """View for email confirmation links.
+    Authenticates and redirects to user settings page if confirmation is
+    successful, otherwise shows an "Expired Link" error.
+
+    methods: GET
+    """
+    user = get_user(id=kwargs['uid'])
+    token = kwargs['token']
+    if user:
+        if user.confirm_email(token):  # Confirm and register the usre
+            user.date_last_login = datetime.datetime.utcnow()
+            user.save()
+            # Go to settings page
+            status.push_status_message(language.WELCOME_MESSAGE, 'success')
+            response = framework.redirect('/settings/')
+            return auth.authenticate(user, response=response)
+    # Return data for the error template
+    return {'code': 400, 'message_short': 'Link Expired', 'message_long': language.LINK_EXPIRED}, 400
+
+
+def send_confirm_email(user, email):
+    """Sends a confirmation email to `user` to a given email.
+
+    :raises: KeyError if user does not have a confirmation token for the given
+        email.
+    """
+    confirmation_url = user.get_confirmation_url(email, external=True)
+    mails.send_mail(email, mails.CONFIRM_EMAIL, 'plain',
+        user=user,
+        confirmation_url=confirmation_url)
+
+
 def auth_register_post():
     if not website.settings.ALLOW_REGISTRATION:
-        status.push_status_message('Registration currently unavailable.')
+        status.push_status_message(language.REGISTRATION_UNAVAILABLE)
         return framework.redirect('/')
 
     form = RegistrationForm(framework.request.form, prefix='register')
-
-    if not settings.registrationEnabled:
-        status.push_status_message('Registration is currently disabled')
-        return framework.redirect(framework.url_for('OsfWebRenderer__auth_login'))
-
     set_previous_url()
 
     # Process form
     if form.validate():
         try:
-            u = register(form.username.data, form.password.data, form.fullname.data)
+            u = auth.add_unconfirmed_user(
+                form.username.data,
+                form.password.data,
+                form.fullname.data)
         except DuplicateEmailError:
-            status.push_status_message('The email <em>%s</em> has already been registered.' % form.username.data)
+            status.push_status_message(language.ALREADY_REGISTERED.format(email=form.username.data))
             return auth_login(registration_form=form)
         if u:
             if website.settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
-                # TODO: The sendRegistration method does not exist, this block
-                #   will fail if email confirmation is on.
-                raise NotImplementedError(
-                    'Registration confirmation by email has not been fully'
-                    'implemented.'
-                )
-                sendRegistration(u)
-                status.push_status_message('Registration successful. Please \
-                    check %s to confirm your email address, %s.' %
-                    (str(u.username), str(u.fullname)))
+                send_confirm_email(u, email=u.username)
+                message = language.REGISTRATION_SUCCESS.format(email=u.username)
+                status.push_status_message(message, 'success')
+                return auth_login(registration_form=form)
             else:
                 return framework.redirect('/login/first/')
                 #status.push_status_message('You may now log in')
@@ -174,8 +195,36 @@ def auth_register_post():
 
     else:
         forms.push_errors_to_status(form.errors)
-
         return auth_login(registration_form=form)
+
+def resend_confirmation():
+    """View for resending an email confirmation email.
+    """
+    form = ResendConfirmationForm(framework.request.form)
+    if request.method == 'POST':
+        if form.validate():
+            clean_email = form.email.data.lower().strip()
+            # TODO: This pattern (validate form then get user, then validate user) is
+            # repeated many times. This logic (checking that a user exists) should
+            # be added to form validation
+            user = get_user(username=clean_email)
+            if user:
+                try:
+                    send_confirm_email(user, clean_email)
+                except KeyError:  # already confirmed, redirect to dashboard
+                    status_message = 'Email has already been confirmed.'
+                    type_ = 'warning'
+                else:
+                    status_message = 'Resent email to <em>{0}</em>'.format(clean_email)
+                    type_ = 'success'
+                status.push_status_message(status_message, type_)
+            else:
+                msg = language.EMAIL_NOT_FOUND.format(email=clean_email)
+                status.push_status_message(msg, 'error')
+        else:
+            forms.push_errors_to_status(form.errors)
+    # Don't go anywhere
+    return forms.utils.jsonify(form)
 
 
 def merge_user_get(**kwargs):

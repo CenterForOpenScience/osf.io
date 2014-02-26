@@ -2,17 +2,29 @@
 
 """
 
+import os
 import datetime
 
 from framework import GuidStoredObject, fields
 from framework.analytics import get_basic_counters
-from website.addons.base import AddonNodeSettingsBase
+from website.addons.base import AddonNodeSettingsBase, GuidFile
 
 
 class AddonFilesNodeSettings(AddonNodeSettingsBase):
 
     def to_json(self, user):
         return{}
+
+
+class OsfGuidFile(GuidFile):
+
+    name = fields.StringField(index=True)
+
+    @property
+    def file_url(self):
+        if self.name is None:
+            raise ValueError('Name field must be defined.')
+        return os.path.join('osffiles', self.name)
 
 
 class NodeFile(GuidStoredObject):
@@ -41,9 +53,8 @@ class NodeFile(GuidStoredObject):
     def clean_filename(self):
         return self.filename.replace('.', '_')
 
-    @property
-    def latest_version_number(self):
-        return len(self.node.files_versions[self.clean_filename])
+    def latest_version_number(self, node):
+        return len(node.files_versions[self.clean_filename])
 
     # TODO: Test me
     def download_count(self, node):
@@ -70,5 +81,9 @@ class NodeFile(GuidStoredObject):
         return '{0}osffiles/{1}/'.format(node.api_url, self.filename)
 
     def download_url(self, node):
-        return '{}osffiles/{}/version/{}/'.format(
-            node.url, self.filename, self.latest_version_number)
+        return '{}osffiles/{}/version/{}/download/'.format(
+            node.url, self.filename, self.latest_version_number(node))
+
+    def render_url(self, node):
+        return '{}osffiles/{}/version/{}/render/'.format(
+            node.api_url, self.filename, self.latest_version_number(node))

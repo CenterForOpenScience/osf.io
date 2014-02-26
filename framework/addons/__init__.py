@@ -50,10 +50,11 @@ class AddonModelMixin(StoredObject):
                 return addons[0]
 
 
-    def add_addon(self, addon_name):
+    def add_addon(self, addon_name, auth=None):
         """Add an add-on to the node.
 
         :param str addon_name: Name of add-on
+        :param Auth auth: Consolidated authorization object
         :return bool: Add-on was added
 
         """
@@ -76,20 +77,23 @@ class AddonModelMixin(StoredObject):
 
         return True
 
-    def delete_addon(self, addon_name):
+    def delete_addon(self, addon_name, auth=None):
         """Delete an add-on from the node.
 
         :param str addon_name: Name of add-on
+        :param Auth auth: Consolidated authorization object
         :return bool: Add-on was deleted
 
         """
         addon = self.get_addon(addon_name)
         if addon:
+            if self._name in addon.config.added_mandatory:
+                raise ValueError('Cannot delete mandatory add-on.')
             addon.delete()
             return True
         return False
 
-    def config_addons(self, config, save=True):
+    def config_addons(self, config, auth=None, save=True):
         """Enable or disable a set of add-ons.
 
         :param dict config: Mapping between add-on names and enabled / disabled
@@ -98,15 +102,8 @@ class AddonModelMixin(StoredObject):
         """
         for addon_name, enabled in config.iteritems():
             if enabled:
-                self.add_addon(addon_name)
+                self.add_addon(addon_name, auth)
             else:
-                self.delete_addon(addon_name)
+                self.delete_addon(addon_name, auth)
         if save:
             self.save()
-
-    @property
-    def has_files(self):
-        for addon in self.get_addons():
-            if addon.config.has_hgrid_files:
-                return True
-        return False

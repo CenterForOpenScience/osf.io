@@ -15,12 +15,11 @@ from framework import Q
 from framework.forms.utils import sanitize
 from framework.exceptions import HTTPError
 from framework.flask import request
-from framework.auth import helper
 from framework.auth import register
 from framework.auth.decorators import Auth
 from framework.email.tasks import send_email
 
-from website import settings
+from website import settings, security
 from website.models import User, Node, MailRecord
 from website.project import new_node
 from website.project.views.file import prepare_file
@@ -104,7 +103,7 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
     if user is None:
         password = str(uuid.uuid4())
         user = register(address, password, fullname, send_welcome=False)
-        user.verification_key = helper.random_string(20)
+        user.verification_key = security.random_string(20)
         set_password_url = urlparse.urljoin(
             settings.DOMAIN, 'resetpassword/{0}/'.format(
                 user.verification_key

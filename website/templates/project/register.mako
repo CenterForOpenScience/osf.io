@@ -13,16 +13,14 @@
 
     <form role="form">
 
+        <div class="help-block">${language.REGISTRATION_INFO}</div>
+
         <select class="form-control" id="select-registration-template">
-            <option>Please select</option>
+            <option>Please select a registration form to initiate registration</option>
             % for option in options:
                 <option value="${option['template_name']}">${option['template_name_clean']}</option>
             % endfor
         </select>
-        <span class="help-block">Registration will create a frozen version of the project as it exists
-        right now.  You will still be able to make revisions to the project,
-        but the frozen version will be read-only, have a unique url, and will
-        always be associated with the project.</span>
     </form>
 
 

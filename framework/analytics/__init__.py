@@ -9,12 +9,20 @@ collection = db['pagecounters']
 def increment_user_activity_counters(user_id, action, date):
     collection = db['useractivitycounters']
     date = date.strftime('%Y/%m/%d') # todo remove slashes
-    d = {'$inc': {}}
-    d['$inc']['total'] = 1
-    d['$inc']['date.{0}.total'.format(date)] = 1
-    d['$inc']['action.{0}.total'.format(action)] = 1
-    d['$inc']['action.{0}.date.{1}'.format(action, date)] = 1
-    collection.update({'_id': user_id}, d, True, False)
+    query = {
+        '$inc': {
+            'total': 1,
+            'date.{0}.total'.format(date): 1,
+            'action.{0}.total'.format(action): 1,
+            'action.{0}.date.{1}'.format(action, date): 1,
+        }
+    }
+    collection.update(
+        {'_id': user_id},
+        query,
+        upsert=True,
+        manipulate=False,
+    )
     return True
 
 
@@ -85,43 +93,3 @@ def get_basic_counters(page):
         return (unique, total)
     else:
         return (None, None)
-
-
-def get_days_counters(page):
-    result = collection.find_one(
-        {'_id': page}, {'date': 1}
-    )
-    dates = []
-    unique = []
-    total = []
-    if 'date' in result:
-        for k, v in result['date'].items():
-            dates.append(k)
-            u = 0
-            t = 0
-            if 'unique' in v:
-                u = v['unique']
-            if 'total' in v:
-                t = v['total']
-
-            unique.append(u)
-            total.append(t)
-    else:
-        return None
-    return {'dates': dates, 'unique': unique, 'total': total}
-
-
-def get_day_total_list(page):
-    result = collection.find_one(
-        {'_id': page}, {'date': 1}
-    )
-    dates = {}
-
-    if result and 'date' in result:
-        for k, v in result['date'].items():
-            dates[k] = 0
-            if 'total' in v:
-                dates[k] = v['total']
-        sorted_dates = sorted(dates.keys())
-        return zip(sorted_dates, map(dates.get, sorted_dates))
-    return []

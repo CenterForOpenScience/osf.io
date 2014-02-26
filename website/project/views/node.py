@@ -1,24 +1,23 @@
 # -*- coding: utf-8 -*-
-import json
 import logging
 import httplib as http
-from framework import (
-    request,
-    push_errors_to_status, Q,
-    analytics
-)
-from framework.analytics import update_counters
+
+from framework.flask import request
+from framework import push_errors_to_status, Q
+
+from framework import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
 import framework.status as status
 from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 
+from website import language
 from website.project import new_node, clean_template_name
 from website.project.decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from website.project.forms import NewProjectForm, NewNodeForm
-from website.models import WatchConfig
+from website.models import WatchConfig, Node, Pointer
 from website import settings
 from website.views import _render_nodes
 
@@ -64,12 +63,7 @@ def project_new_post(**kwargs):
         project = new_node(
             'project', form.title.data, user, form.description.data
         )
-        status.push_status_message(
-            'Welcome to your new {category}! Please select and configure your add-ons below.'.format(
-                category=project.project_or_component,
-            )
-        )
-        return {}, 201, None, project.url + 'settings/'
+        return {}, 201, None, project.url
     else:
         push_errors_to_status(form.errors)
     return {}, http.BAD_REQUEST
@@ -94,14 +88,9 @@ def project_new_node(**kwargs):
             category=form.category.data,
             project=project,
         )
-        status.push_status_message(
-            'Welcome to your new {category}! Please select and configure your add-ons below.'.format(
-                category=node.project_or_component,
-            )
-        )
         return {
             'status': 'success',
-        }, 201, None, node.url + 'settings/'
+        }, 201, None, node.url
     else:
         push_errors_to_status(form.errors)
     raise HTTPError(http.BAD_REQUEST, redirect_url=project.url)
@@ -116,6 +105,15 @@ def project_before_fork(**kwargs):
     user = kwargs['auth'].user
 
     prompts = node.callback('before_fork', user=user)
+
+    pointers = node.get_pointers()
+    if pointers:
+        prompts.append(
+            language.BEFORE_FORK_HAS_POINTERS.format(
+                category=node.project_or_component
+            )
+        )
+
     return {'prompts': prompts}
 
 
@@ -147,8 +145,6 @@ def node_fork_page(**kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
-@update_counters('node:{pid}')
-@update_counters('node:{nid}')
 def node_registrations(**kwargs):
     auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
@@ -157,8 +153,6 @@ def node_registrations(**kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
-@update_counters('node:{pid}')
-@update_counters('node:{nid}')
 def node_forks(**kwargs):
     project = kwargs['project']
     node = kwargs['node']
@@ -193,6 +187,7 @@ def node_setting(**kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
+            and 'node' not in addon.added_mandatory
     ]
     rv['addons_enabled'] = addons_enabled
     rv['addon_enabled_settings'] = addon_enabled_settings
@@ -205,7 +200,8 @@ def node_setting(**kwargs):
 @must_not_be_registration
 def node_choose_addons(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    node.config_addons(request.json)
+    auth = kwargs['auth']
+    node.config_addons(request.json, auth)
 
 
 ##############################################################################
@@ -217,18 +213,24 @@ def node_choose_addons(**kwargs):
 @must_not_be_registration
 @must_be_contributor # returns user, project
 def project_reorder_components(**kwargs):
+
     project = kwargs['project']
 
-    node_to_use = project
-    old_list = [i._id for i in node_to_use.nodes if not i.is_deleted]
-    new_list = json.loads(request.form['new_list'])
+    new_list = [
+        tuple(node.split(':'))
+        for node in request.json.get('new_list', [])
+    ]
+    nodes_new = [
+        StoredObject.get_collection(schema).load(key)
+        for key, schema in new_list
+    ]
+    if len(project.nodes) == len(nodes_new) and set(project.nodes) == set(nodes_new):
+        project.nodes = nodes_new
+        project.save()
+        return {}
 
-    if len(old_list) == len(new_list) and set(new_list) == set(old_list):
-        node_to_use.nodes = new_list
-        if node_to_use.save():
-            return {'status': 'success'}
     # todo log impossibility
-    return {'status': 'failure'}
+    raise HTTPError(http.BAD_REQUEST)
 
 
 ##############################################################################
@@ -237,23 +239,9 @@ def project_reorder_components(**kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
 def project_statistics(**kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
     auth = kwargs['auth']
-
-    # todo not used
-    node_to_use = node or project
-
-    counters = analytics.get_day_total_list(
-        'node:{}'.format(node_to_use._primary_key)
-    )
-    csv = '\\n'.join(['date,price'] + ['{},{}'.format(counter[0], counter[1]) for counter in counters])
-
-    rv = {
-        'csv' : csv,
-    }
-    rv.update(_view_project(node_to_use, auth, primary=True))
-    return rv
+    node = kwargs['node'] or kwargs['project']
+    return _view_project(node, auth, primary=True)
 
 
 ###############################################################################
@@ -366,11 +354,11 @@ def component_remove(**kwargs):
         else:
             redirect_url = '/dashboard/'
         return {
-            'status': 'success',
-            'message': message,
-        }, None, None, redirect_url
-    else:
-        raise HTTPError(http.BAD_REQUEST, message='Could not delete component')
+            'url': redirect_url,
+        }
+    raise HTTPError(
+        http.BAD_REQUEST, message='Could not delete component'
+    )
 
 
 @must_be_valid_project
@@ -399,21 +387,8 @@ def _render_addon(node):
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
 
-        if node.has_files:
-            js.extend(addon.config.include_js.get('files', []))
-            css.extend(addon.config.include_css.get('files', []))
-
-    if node.has_files:
-        js.extend([
-            '/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js',
-            '/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js',
-            '/static/vendor/dropzone/dropzone.js',
-            '/static/js/slickgrid.custom.min.js',
-            '/static/js/hgrid.js',
-        ])
-        css.extend([
-            '/static/css/hgrid-base.css',
-        ])
+        js.extend(addon.config.include_js.get('files', []))
+        css.extend(addon.config.include_css.get('files', []))
 
     return widgets, configs, js, css
 
@@ -474,9 +449,9 @@ def _view_project(node, auth, primary=False):
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': node.forked_date.strftime('%Y/%m/%d %I:%M %p') if node.is_fork else '',
             'fork_count': len(node.fork_list),
-
             'watched_count': len(node.watchconfig__watched),
             'logs': recent_logs,
+            'points': node.points,
             'piwik_site_id': node.piwik_site_id,
         },
         'parent': {
@@ -496,7 +471,6 @@ def _view_project(node, auth, primary=False):
             'piwik_token': user.piwik_token if user else '',
         },
         # TODO: Namespace with nested dicts
-        'has_files': node.has_files,
         'addons_enabled': node.get_addon_names(),
         'addons': configs,
         'addon_widgets': widgets,
@@ -510,8 +484,8 @@ def _get_children(node, auth, indent=0):
 
     children = []
 
-    for child in node.nodes:
-        if not child.is_deleted and node.can_view(auth):
+    for child in node.nodes_primary:
+        if not child.is_deleted and child.can_edit(auth):
             children.append({
                 'id': child._primary_key,
                 'title': child.title,
@@ -566,51 +540,70 @@ def _get_user_activity(node, auth, rescale_ratio):
 
     return ua_count, ua, non_ua
 
+
 @must_be_valid_project
 def get_recent_logs(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     logs = list(reversed(node_to_use.logs._to_primary_keys()))[:3]
     return {'logs': logs}
 
-@collect_auth
-@must_be_valid_project
-def get_summary(**kwargs):
 
-    auth = kwargs['auth']
-    rescale_ratio = kwargs.get('rescale_ratio')
-    node_to_use = kwargs['node'] or kwargs['project']
+def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
 
-    if node_to_use.can_view(auth):
-        summary = {
+    summary = {}
+
+    if node.can_view(auth):
+        summary.update({
             'can_view': True,
-            'id': node_to_use._primary_key,
-            'url': node_to_use.url,
-            'api_url': node_to_use.api_url,
-            'title': node_to_use.title,
-            'is_registration': node_to_use.is_registration,
-            'registered_date': node_to_use.registered_date.strftime('%m/%d/%y %I:%M %p') if node_to_use.is_registration else None,
+            'can_edit': node.can_edit(auth),
+            'id': link_id if link_id else node._id,
+            'primary_id': node._id,
+            'url': node.url,
+            'primary': primary,
+            'api_url': node.api_url,
+            'title': node.title,
+            'category': node.project_or_component,
+            'is_registration': node.is_registration,
+            'registered_date': node.registered_date.strftime('%m/%d/%y %I:%M %p')
+                if node.is_registration
+                else None,
             'nlogs': None,
             'ua_count': None,
             'ua': None,
             'non_ua': None,
-            'addons_enabled': node_to_use.get_addon_names(),
-        }
+            'addons_enabled': node.get_addon_names(),
+        })
         if rescale_ratio:
-            ua_count, ua, non_ua = _get_user_activity(node_to_use, auth, rescale_ratio)
+            ua_count, ua, non_ua = _get_user_activity(node, auth, rescale_ratio)
             summary.update({
-                'nlogs': len(node_to_use.logs),
+                'nlogs': len(node.logs),
                 'ua_count': ua_count,
                 'ua': ua,
                 'non_ua': non_ua,
             })
     else:
-        summary = {
-            'can_view': False,
-        }
+        summary['can_view'] = False
+
     # TODO: Make output format consistent with _view_project
     return {
         'summary': summary,
     }
+
+
+@collect_auth
+@must_be_valid_project
+def get_summary(**kwargs):
+
+    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
+    rescale_ratio = kwargs.get('rescale_ratio')
+    primary = kwargs.get('primary')
+    link_id = kwargs.get('link_id')
+
+    return _get_summary(
+        node, auth, rescale_ratio, primary=primary, link_id=link_id
+    )
+
 
 @must_be_contributor_or_public
 def get_children(**kwargs):
@@ -621,6 +614,7 @@ def get_children(**kwargs):
         if not node.is_deleted
     ])
 
+
 @must_be_contributor_or_public
 def get_forks(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
@@ -629,8 +623,174 @@ def get_forks(**kwargs):
     )
     return _render_nodes(forks)
 
+
 @must_be_contributor_or_public
 def get_registrations(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     registrations = node_to_use.node__registrations
     return _render_nodes(registrations)
+
+
+def _serialize_node_search(node):
+    """Serialize a node for use in pointer search.
+
+    :param Node node: Node to serialize
+    :return: Dictionary of node data
+
+    """
+    title = node.title
+    if node.is_registration:
+        title += ' (registration)'
+    return {
+        'id': node._id,
+        'title': title,
+        'firstAuthor': node.contributors[0].family_name,
+        'etal': len(node.contributors) > 1,
+    }
+
+
+@must_be_logged_in
+def search_node(**kwargs):
+    """
+
+    """
+    # Get arguments
+    auth = kwargs['auth']
+    node = Node.load(request.json.get('nodeId'))
+    include_public = request.json.get('includePublic')
+    query = request.json.get('query', '').strip()
+    if not query:
+        return {'nodes': []}
+
+    # Build ODM query
+    title_query = Q('title', 'icontains', query)
+    not_deleted_query = Q('is_deleted', 'eq', False)
+    visibility_query = Q('contributors', 'eq', auth.user)
+    if include_public:
+        visibility_query = visibility_query | Q('is_public', 'eq', True)
+    odm_query = title_query & not_deleted_query & visibility_query
+
+    # Exclude current node from query if provided
+    if node:
+        nin = [node._id] + node.node_ids
+        odm_query = (
+            odm_query &
+            Q('_id', 'nin', nin)
+        )
+
+    # TODO: Parameterize limit; expose pagination
+    cursor = Node.find(odm_query).limit(20)
+
+    return {
+        'nodes': [
+            _serialize_node_search(each)
+            for each in cursor
+            if each.contributors
+        ]
+    }
+
+
+def _add_pointers(node, pointers, auth):
+    """
+
+    :param Node node: Node to which pointers will be added
+    :param list pointers: Nodes to add as pointers
+
+    """
+    added = False
+    for pointer in pointers:
+        node.add_pointer(pointer, auth, save=False)
+        added = True
+
+    if added:
+        node.save()
+
+
+@must_be_contributor
+@must_not_be_registration
+def add_pointers(**kwargs):
+    """Add pointers to a node.
+
+    """
+    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
+    node_ids = request.json.get('nodeIds')
+
+    if not node_ids:
+        raise HTTPError(http.BAD_REQUEST)
+
+    nodes = [
+        Node.load(node_id)
+        for node_id in node_ids
+    ]
+
+    _add_pointers(node, nodes, auth)
+
+    return {}
+
+
+@must_be_contributor
+@must_not_be_registration
+def remove_pointer(**kwargs):
+    """Remove a pointer from a node, raising a 400 if the pointer is not
+    in `node.nodes`.
+
+    """
+    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
+    # TODO: since these a delete request, shouldn't use request body. put pointer
+    # id in the URL instead
+    pointer_id = request.json.get('pointerId')
+    if pointer_id is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    pointer = Pointer.load(pointer_id)
+    if pointer is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    try:
+        node.rm_pointer(pointer, auth=auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
+
+    node.save()
+
+
+@must_be_contributor
+@must_not_be_registration
+def fork_pointer(**kwargs):
+    """Fork a pointer. Raises BAD_REQUEST if pointer not provided, not found,
+    or not present in `nodes`.
+
+    """
+    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
+    pointer_id = request.json.get('pointerId')
+    pointer = Pointer.load(pointer_id)
+
+    if pointer is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    try:
+        node.fork_pointer(pointer, auth=auth, save=True)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
+
+def abbrev_authors(node):
+    rv = node.contributors[0].family_name
+    if len(node.contributors) > 1:
+        rv += ' et al.'
+    return rv
+
+@must_be_contributor_or_public
+def get_pointed(**kwargs):
+
+    node = kwargs['node'] or kwargs['project']
+    return {'pointed': [
+        {
+            'url': each.url,
+            'title': each.title,
+            'authorShort': abbrev_authors(node),
+        }
+        for each in node.pointed
+    ]}

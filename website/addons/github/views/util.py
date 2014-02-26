@@ -1,7 +1,9 @@
+import urllib
 import httplib as http
+from github3.repos.branch import Branch
+
 from framework.exceptions import HTTPError
 from ..api import GitHub
-
 
 MESSAGE_BASE = 'via the Open Science Framework'
 MESSAGES = {
@@ -9,6 +11,14 @@ MESSAGES = {
     'update': 'Updated {0}'.format(MESSAGE_BASE),
     'delete': 'Deleted {0}'.format(MESSAGE_BASE),
 }
+
+
+def get_path(kwargs, required=True):
+    path = kwargs.get('path')
+    if path:
+        return urllib.unquote_plus(path)
+    elif required:
+        raise HTTPError(http.BAD_REQUEST)
 
 
 def _get_refs(addon, branch=None, sha=None, connection=None):
@@ -32,19 +42,18 @@ def _get_refs(addon, branch=None, sha=None, connection=None):
         repo = connection.repo(addon.user, addon.repo)
         if repo is None:
             return None, None, None
-        branch = repo['default_branch']
-
+        branch = repo.default_branch
     # Get registered branches if provided
     registered_branches = (
-        addon.registration_data.get('branches', [])
+        [Branch.from_json(b) for b in addon.registration_data.get('branches', [])]
         if addon.owner.is_registration
         else []
     )
+
     registered_branch_names = [
-        each['name']
+        each.name
         for each in registered_branches
     ]
-
     # Fail if registered and branch not in registration data
     if registered_branches and branch not in registered_branch_names:
         raise HTTPError(http.BAD_REQUEST)
@@ -53,10 +62,10 @@ def _get_refs(addon, branch=None, sha=None, connection=None):
     branches = registered_branches or connection.branches(addon.user, addon.repo)
 
     # Use registered SHA if provided
-    for each in registered_branches:
-        if branch == each['name']:
-            sha = each['commit']['sha']
-
+    for each in branches:
+        if branch == each.name:
+            sha = each.commit.sha
+            break
     return branch, sha, branches
 
 
@@ -70,10 +79,11 @@ def _check_permissions(node_settings, auth, connection, branch, sha=None, repo=N
         repo = repo or connection.repo(
             node_settings.user, node_settings.repo
         )
+
         has_access = (
             repo is not None and (
-                'permissions' not in repo or
-                repo['permissions']['push']
+                'permissions' not in repo.to_json() or
+                repo.to_json()['permissions']['push']
             )
         )
 
@@ -81,7 +91,8 @@ def _check_permissions(node_settings, auth, connection, branch, sha=None, repo=N
         branches = connection.branches(
             node_settings.user, node_settings.repo, branch
         )
-        is_head = sha == branches['commit']['sha']
+        # TODO Will I ever return false?
+        is_head = next((True for branch in branches if sha == branch.commit.sha), None)
     else:
         is_head = True
 

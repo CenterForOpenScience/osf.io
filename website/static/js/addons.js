@@ -33,22 +33,24 @@ var AddonHelper = (function() {
             data: JSON.stringify(formToObj($this)),
             type: 'POST',
             contentType: 'application/json',
-            dataType: 'json'
-        }).success(function() {
+            dataType: 'json',
+            success: function(response) {
             msgElm.text('Settings updated')
                 .removeClass('text-danger').addClass('text-success')
                 .fadeOut(100).fadeIn();
-        }).fail(function(xhr) {
-            var message = 'Error: ';
-            var response = JSON.parse(xhr.responseText);
-            if (response && response.message) {
-                message += response.message;
-            } else {
-                message += 'Settings not updated.'
+            },
+            error: function(xhr) {
+                var message = 'Error: ';
+                var response = JSON.parse(xhr.responseText);
+                if (response && response.message) {
+                    message += response.message;
+                } else {
+                    message += 'Settings not updated.'
+                }
+                msgElm.text(message)
+                    .removeClass('text-success').addClass('text-danger')
+                    .fadeOut(100).fadeIn();
             }
-            msgElm.text(message)
-                .removeClass('text-success').addClass('text-danger')
-                .fadeOut(100).fadeIn();
         });
 
         return false;
