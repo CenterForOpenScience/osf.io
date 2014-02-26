@@ -40,15 +40,9 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     };
 
     HGrid.Col.Name.itemView = function(item) {
-        var ext = item.name.split('.').pop().toLowerCase();
         var tooltipMarkup = genTooltipMarkup('View file');
-
-        var nameElement = ['<span ' + tooltipMarkup + ' >', item.name, '</span>'].join('');
-
-        var icon = Rubeus.Extensions.indexOf(ext) === -1 ?
-                        HGrid.Html.fileIcon :
-                        Rubeus.ExtensionSkeleton.replace('{{ext}}', ext);
-        return [icon, nameElement].join('');
+        icon = Rubeus.getIcon(item);
+        return [icon, '<span ' + tooltipMarkup + ' >&nbsp;', item.name, '</span>'].join('');
     };
 
     /**
@@ -372,13 +366,15 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
                 callback: onClickName
             }
         ],
+        progBar: '#filebrowserProgressBar',
         init: function() {
             var self = this;
             // Expand all first level items
-            this.getData().forEach(function(item) {
+            self.getData().forEach(function(item) {
                 self.expandItem(item);
             });
             updateTooltips();
+            $(this.options.progBar).hide();
         },
         // Add a red highlight when user drags over a folder they don't have
         // permission to upload to.
@@ -392,7 +388,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         },
         uploadDenied: function(evt, row) {
             this.removeHighlight('highlight-denied');
-        }
+        },
     };
 
     function updateTooltips() {
@@ -474,9 +470,20 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
         'mpeg', 'mpg', 'msi', 'mswmm', 'ogg', 'pdf', 'png', 'pps', 'ps', 'psd', 'pst', 'ptb', 'pub', 'qbb',
         'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
-        'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip'];
+        'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip',
+        'xlsx', 'py'];
 
+    // Uses fatcow icons
+    // License: Creative Commons (Attribution 3.0 United States)
+    // https://creativecommons.org/licenses/by/3.0/us/
     Rubeus.ExtensionSkeleton = '<img class="hg-icon" src="/static\/img\/hgrid\/fatcowicons\/file_extension_{{ext}}.png">';
+
+    Rubeus.getIcon = function(item) {
+        var ext = item.name.split('.').pop().toLowerCase();
+        return Rubeus.Extensions.indexOf(ext) === -1 ?
+                    HGrid.Html.fileIcon :
+                    Rubeus.ExtensionSkeleton.replace('{{ext}}', ext);
+    };
 
     return Rubeus;
 
