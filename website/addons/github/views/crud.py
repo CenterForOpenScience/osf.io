@@ -128,7 +128,9 @@ def github_view_file(**kwargs):
 
     # Get file URL
     download_url = '/' + guid._id + '/download/' + ref_to_params(branch, current_sha)
-    render_url = '/api/v1/' + guid._id + '/render/' + ref_to_params(branch, current_sha)
+    render_url = os.path.join(
+        node.api_url, 'github', 'file', path, 'render'
+    ) + '/' + ref_to_params(branch, current_sha)
 
     for commit in commits:
         commit['download'] = (
