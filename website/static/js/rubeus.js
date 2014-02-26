@@ -370,7 +370,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         init: function() {
             var self = this;
             // Expand all first level items
-            this.getData().forEach(function(item) {
+            self.getData().forEach(function(item) {
                 self.expandItem(item);
             });
             updateTooltips();
@@ -440,7 +440,6 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
                     return 'Uploads(s) still in progress. Are you sure you want to leave this page?';
                 }
             });
-            this.options.init();
         },
         _registerListeners: function() {
             for (var addon in Rubeus.cfg) {
