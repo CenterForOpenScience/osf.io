@@ -111,7 +111,7 @@ def github_branch_widget(branches, owner, repo, branch, sha):
     return rendered
 
 
-def github_hgrid_data(node_settings, auth, link='', **kwargs):
+def github_hgrid_data(node_settings, auth, **kwargs):
 
     # Quit if no repo linked
     if not node_settings.complete:
