@@ -51,7 +51,7 @@ UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
 MFR_CACHE_PATH = os.path.join(BASE_PATH, 'mfrcache')
 
 # Use Celery for file rendering
-USE_CELERY = False
+USE_CELERY = True
 
 # File rendering timeout (in ms)
 MFR_TIMEOUT = 30000
