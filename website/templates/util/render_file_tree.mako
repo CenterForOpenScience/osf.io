@@ -14,9 +14,7 @@ $(document).ready(function() {
             uploads: false,
             width: "100%",
             height: 600,
-            init: function() {
-                $('#filetreeProgressBar').hide();
-            }
+            progBar: '#filetreeProgressBar'
     });
 });
 </script>
