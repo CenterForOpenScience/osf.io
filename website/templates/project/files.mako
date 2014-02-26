@@ -11,7 +11,7 @@
 </div><!-- end col-md-->
 
 <div class="col-md-4">
-    <input class="form-control" placeholder="Search files..." type="text" id="fileSearch">
+    <input role="search" class="form-control" placeholder="Search files..." type="text" id="fileSearch" autofocus>
 </div>
 </div><!--end row -->
 <div id="myGrid" class="filebrowser hgrid"></div>
