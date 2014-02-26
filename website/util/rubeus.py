@@ -85,7 +85,8 @@ def build_addon_root(node_settings, name, permissions=None,
             'maxSize': node_settings.config.max_file_size,
             'acceptedFiles': node_settings.config.accept_extensions
         },
-        'urls': urls
+        'urls': urls,
+        'isPointer': False,
     }
     rv.update(kwargs)
     return rv
@@ -158,7 +159,8 @@ class NodeFileCollector(object):
                 'upload': os.path.join(node.api_url, 'osffiles') + '/',
                 'fetch': None,
             },
-            'children': children
+            'children': children,
+            'isPointer': not node.primary,
         }
 
     def _collect_addons(self, node):

@@ -5,7 +5,7 @@ from nose.tools import *
 
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, ProjectFactory, NodeFactory,
-    AuthFactory)
+    AuthFactory, PointerFactory)
 
 from framework.auth.decorators import Auth
 from website.util import rubeus
@@ -42,6 +42,7 @@ class TestRubeus(DbTestCase):
         user = Auth(self.project.creator)
         # FIXME: These tests are very brittle.
         rv = {
+            'isPointer': False,
             'addon': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
@@ -62,7 +63,7 @@ class TestRubeus(DbTestCase):
                 'acceptedFiles': node_settings.config.accept_extensions
             },
             'isAddonRoot': True,
-            'extra': None
+            'extra': None,
         }
         permissions = {
             'view': node.can_view(user),
@@ -80,6 +81,7 @@ class TestRubeus(DbTestCase):
         node = self.project
         user = Auth(self.project.creator)
         rv = {
+            'isPointer': False,
             'addon': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
@@ -114,6 +116,7 @@ class TestRubeus(DbTestCase):
         node = self.project
         user = Auth(self.project.creator)
         rv = {
+            'isPointer': False,
             'addon': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
@@ -156,6 +159,7 @@ class TestRubeus(DbTestCase):
         }
 
         rv = {
+            'isPointer': False,
             'addon': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
@@ -213,6 +217,13 @@ class TestRubeus(DbTestCase):
         )
         nodes = collector._collect_components(self.project)
         assert_equal(len(nodes), 0)
+
+    def test_serialized_pointer_has_flag_indicating_its_a_pointer(self):
+        pointer = PointerFactory()
+        serializer = rubeus.NodeFileCollector(node=pointer, auth=self.consolidated_auth)
+        ret = serializer._serialize_node(pointer)
+        assert_true(ret['isPointer'])
+
 
 # TODO: Make this more reusable across test modules
 mock_addon = mock.Mock()
