@@ -10,6 +10,9 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
 
     // Custom folder icon indicating private component
     HGrid.Html.folderIconPrivate = '<img class="hg-icon hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
+    // Folder icon for pointers/links
+    HGrid.Html.folderIconPointer = '<i class="icon-hand-right"></i>';
+
     // Override Name column folder view to allow for extra widgets, e.g. github branch picker
     HGrid.Col.Name.folderView = function(item) {
         var icon, opening, cssClass;
@@ -21,6 +24,9 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             if (!item.permissions.view) {
                 icon = HGrid.Html.folderIconPrivate;
                 cssClass = 'hg-folder-private';
+            } else if (item.isPointer) {
+                icon = HGrid.Html.folderIconPointer;
+                cssClass = 'hg-folder-pointer';
             } else {
                 icon = HGrid.Html.folderIcon;
                 cssClass = 'hg-folder-public';
@@ -28,7 +34,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         }
         opening = '<span class="hg-folder-text ' + cssClass + '">';
         var closing = '</span>';
-        html = [icon, opening, item.name, closing].join('');
+        html = [icon, opening, '&nbsp;', item.name, closing].join('');
         if(item.extra) {
             html += '<span class="hg-extras">' + item.extra + '</span>';
         }
