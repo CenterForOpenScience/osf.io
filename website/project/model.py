@@ -1305,7 +1305,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def citation_apa(self):
         return u'{authors}, ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{url}</a>'.format(
             authors=self.author_list(and_delim='&'),
-            year=self.logs[-1].date.year,
+            year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
             url=self.display_absolute_url,
         )
@@ -1314,7 +1314,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def citation_mla(self):
         return u'{authors}. "{title}". Open Science Framework, {year}. <a href="{url}">{url}</a>'.format(
             authors=self.author_list(and_delim='and'),
-            year=self.logs[-1].date.year,
+            year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
             url=self.display_absolute_url,
         )
@@ -1323,7 +1323,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def citation_chicago(self):
         return u'{authors}. "{title}". Open Science Framework ({year}). <a href="{url}">{url}</a>'.format(
             authors=self.author_list(and_delim='and'),
-            year=self.logs[-1].date.year,
+            year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
             url=self.display_absolute_url,
         )
