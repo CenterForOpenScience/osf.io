@@ -1,27 +1,12 @@
 <%inherit file="base.mako"/>
-<%def name="title()">FAQ</%def>
+<%def name="title()">SPSP 2014</%def>
 <%def name="content()">
 
 <h2 style="padding-bottom: 30px;">SPSP 2014 Posters & Talks</h2>
 
-<div class="row">
-
-    <div class="col-md-7">
-
-        <div style="padding-bottom: 30px;">Search results by title: <input id="gridSearch" /></div>
-        <div id="grid" style="width:600px; height:400px;"></div>
-
-    </div>
-
-    <div class="col-md-3 col-md-offset-2">
-
-        <img src="/static/img/spsp2014/anna.jpg" class="img-responsive" style="padding-bottom: 15px" />
-        <img src="/static/img/spsp2014/chris.jpg" class="img-responsive" style="padding-bottom: 15px" />
-        <img src="/static/img/spsp2014/frank.jpg" class="img-responsive" style="padding-bottom: 15px" />
-
-    </div>
-
-</div>
+<div><a href="http://cos.io/spsp/">Add your poster or talk</a></div>
+<div style="padding-bottom: 30px;">Search results by title or author: <input id="gridSearch" /></div>
+<div id="grid" style="width: 100%;"></div>
 
 <script type="text/javascript">
 
@@ -42,41 +27,38 @@
         return '';
     }
 
-    function tagsFormatter(row, cell, value, columnDef, dataContext) {
-        return value.map(function(item) {
-            return '<a target="_blank" href="' + item.url + '">' +
-                item.label +
-            '</a>';
-        }).join(', ');
-    }
-
     function downloadFormatter(row, cell, value, columnDef, dataContext) {
-        if (value.url) {
-            return '<a href="' + value.url + '">' +
-                '<button class="btn btn-success btn-mini">' +
+        if (dataContext.downloadUrl) {
+            return '<a href="' + dataContext.downloadUrl + '">' +
+                '<button class="btn btn-success btn-mini" style="margin-right: 10px;">' +
                     '<i class="icon-download-alt icon-white"></i>' +
                 '</button>' +
-            '</a>&nbsp;' + value.count;
+            '</a>&nbsp;' + value;
         } else {
             return '';
         }
     }
 
     function searchFilter(item, args) {
-        if (args.searchString != "" && item.title.toLowerCase().indexOf(args.searchString) == -1) {
-            return false;
+        if (args.searchString == '') {
+            return true;
         }
-        return true;
+        if (item.title.toLowerCase().indexOf(args.searchString) != -1 ||
+                item.author.toLowerCase().indexOf(args.searchString) != -1) {
+            return true;
+        }
+        return false;
     }
 
     var columns = [
-        {id: 'title', field: 'title', name: 'Title', sortable: true, formatter: titleFormatter},
-        {id: 'author', field: 'author', name: 'Author', formatter: authorFormatter, sortable: true},
-        {id: 'tags', field: 'tags', name: 'Tags', formatter: tagsFormatter},
-        {id: 'download', field: 'download', name: 'Download', formatter: downloadFormatter}
+        {id: 'title', field: 'title', name: 'Title', width: 400, sortable: true, formatter: titleFormatter},
+        {id: 'author', field: 'author', name: 'Author', width: 100, formatter: authorFormatter, sortable: true},
+        {id: 'category', field: 'category', name: 'Category', width: 100, sortable: true},
+        {id: 'download', field: 'download', name: 'Downloads', width: 100, sortable: true, formatter: downloadFormatter}
     ];
 
     var options = {
+        autoHeight: true,
         forceFitColumns: true
     };
 
@@ -84,15 +66,18 @@
     var grid = new Slick.Grid('#grid', dataView, columns, options);
     var searchString = '';
 
-    grid.onSort.subscribe(function(e, args) {
-        var field = args.sortCol.field;
+    function sortView(field, sortAsc) {
         function comparator(a, b) {
             return a[field] > b[field] ? 1 :
                    a[field] < b[field] ? -1 :
                    0;
         }
-        dataView.sort(comparator, args.sortAsc);
+        dataView.sort(comparator, sortAsc);
         dataView.refresh();
+    }
+
+    grid.onSort.subscribe(function(e, args) {
+        sortView(args.sortCol.field, args.sortAsc)
     });
 
     dataView.onRowCountChanged.subscribe(function (e, args) {
@@ -113,6 +98,7 @@
             grid.setOptions({enableAddRow: enableAddRow});
         }
     });
+
     $("#gridSearch").keyup(function (e) {
         // clear on Esc
         if (e.which == 27) {
@@ -136,6 +122,9 @@
     });
     dataView.setFilter(searchFilter);
     dataView.endUpdate();
+
+    // Sort by title by default
+    sortView('title', true);
 
 </script>
 

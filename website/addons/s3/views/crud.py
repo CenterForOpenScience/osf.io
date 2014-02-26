@@ -7,6 +7,7 @@ from framework.exceptions import HTTPError
 
 from website.project.decorators import must_be_contributor
 from website.project.decorators import must_be_contributor_or_public
+from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
@@ -42,6 +43,7 @@ def s3_download(**kwargs):
 
 
 @must_be_contributor
+@must_not_be_registration
 @must_have_addon('s3', 'node')
 def s3_delete(**kwargs):
 
@@ -56,9 +58,9 @@ def s3_delete(**kwargs):
         action='s3_' + models.NodeLog.FILE_REMOVED,
         params={
             'project': node.parent_id,
-            'node': node._primary_key,
+            'node': node._id,
             'bucket': node_settings.bucket,
-            'path': dfile
+            'path': dfile,
         },
         auth=kwargs['auth'],
         log_date=datetime.datetime.utcnow(),
@@ -148,6 +150,7 @@ def ping_render(**kwargs):
 
 
 @must_be_contributor
+@must_not_be_registration
 @must_have_addon('s3', 'node')
 def s3_upload(**kwargs):
 

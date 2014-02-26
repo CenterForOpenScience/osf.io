@@ -10,6 +10,7 @@ import unicodedata
 import urllib
 import urlparse
 import logging
+from HTMLParser import HTMLParser
 
 import pytz
 from dulwich.repo import Repo
@@ -19,7 +20,6 @@ from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
-from framework.auth import utils as auth_utils
 from framework.auth.decorators import Auth
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
@@ -32,6 +32,8 @@ from framework.addons import AddonModelMixin
 
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
+
+html_parser = HTMLParser()
 
 logger = logging.getLogger(__name__)
 
@@ -158,11 +160,15 @@ class NodeLog(StoredObject):
     FILE_REMOVED = 'file_removed'
     FILE_UPDATED = 'file_updated'
     NODE_FORKED = 'node_forked'
+    ADDON_ADDED = 'addon_added'
+    ADDON_REMOVED = 'addon_removed'
 
     @property
     def node(self):
-        return Node.load(self.params.get('node')) or \
+        return (
+            Node.load(self.params.get('node')) or
             Node.load(self.params.get('project'))
+        )
 
     @property
     def tz_date(self):
@@ -229,6 +235,7 @@ class Pointer(StoredObject):
     link is cloned, but its contained Node is not.
 
     """
+    #: Whether this is a pointer or not
     primary = False
 
     _id = fields.StringField()
@@ -250,6 +257,8 @@ class Pointer(StoredObject):
         return self._clone()
 
     def __getattr__(self, item):
+        """Delegate attribute access to the node being pointed to.
+        """
         # Prevent backref lookups from being overriden by proxied node
         try:
             return super(Pointer, self).__getattr__(item)
@@ -267,6 +276,7 @@ class Pointer(StoredObject):
 class Node(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
+    #: Whether this is a pointer or not
     primary = True
 
     # Node fields that trigger an update to Solr on save
@@ -392,7 +402,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             #
             for addon in settings.ADDONS_AVAILABLE:
                 if 'node' in addon.added_default:
-                    self.add_addon(addon.short_name)
+                    self.add_addon(addon.short_name, auth=None, log=False)
 
             #
             if getattr(self, 'project', None):
@@ -710,9 +720,11 @@ class Node(GuidStoredObject, AddonModelMixin):
                 #'public': self.is_public,
                 '{}_contributors'.format(self._id): [
                     x.fullname for x in self.contributors
+                    if x is not None
                 ],
                 '{}_contributors_url'.format(self._id): [
                     x.profile_url for x in self.contributors
+                    if x is not None
                 ],
                 '{}_title'.format(self._id): self.title,
                 '{}_category'.format(self._id): self.category,
@@ -871,6 +883,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         :data: Form data
 
         """
+        if not self.can_edit(auth):
+            return
+
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
         template = urllib.unquote_plus(template)
         template = to_mongo(template)
@@ -915,48 +930,12 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         registered.nodes = []
 
-        # todo: should be recursive; see Node.fork_node()
-        for original_node_contained in original.nodes:
-
-            if not original_node_contained.can_edit(auth):
-                # todo: inform user that node can't be registered
-                continue
-
-            node_contained = original_node_contained.clone()
-            node_contained.save()
-
-            folder_old = os.path.join(settings.UPLOADS_PATH, original_node_contained._primary_key)
-
-            if os.path.exists(folder_old):
-                folder_new = os.path.join(settings.UPLOADS_PATH, node_contained._primary_key)
-                Repo(folder_old).clone(folder_new)
-
-            node_contained.is_registration = True
-            node_contained.registered_date = when
-            node_contained.registered_user = auth.user
-            node_contained.registered_schema = schema
-            node_contained.registered_from = original_node_contained
-            if not node_contained.registered_meta:
-                node_contained.registered_meta = {}
-            node_contained.registered_meta[template] = data
-
-            node_contained.contributors = original_node_contained.contributors
-            node_contained.forked_from = original_node_contained.forked_from
-            node_contained.creator = original_node_contained.creator
-            node_contained.logs = original_node_contained.logs
-            node_contained.tags = original_node_contained.tags
-
-            node_contained.save()
-
-            # After register callback
-            for addon in original_node_contained.get_addons():
-                _, message = addon.after_register(
-                    original_node_contained, node_contained, auth.user
-                )
-                if message:
-                    status.push_status_message(message)
-
-            registered.nodes.append(node_contained)
+        for node_contained in original.nodes:
+            registered_node = node_contained.register_node(
+                schema, auth, template, data
+            )
+            if registered_node is not None:
+                registered.nodes.append(registered_node)
 
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
@@ -972,6 +951,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         original.save()
 
         registered.save()
+
         return registered
 
     def remove_tag(self, tag, auth, save=True):
@@ -1328,7 +1308,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def citation_apa(self):
         return u'{authors}, ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{url}</a>'.format(
             authors=self.author_list(and_delim='&'),
-            year=self.logs[-1].date.year,
+            year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
             url=self.display_absolute_url,
         )
@@ -1337,7 +1317,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def citation_mla(self):
         return u'{authors}. "{title}". Open Science Framework, {year}. <a href="{url}">{url}</a>'.format(
             authors=self.author_list(and_delim='and'),
-            year=self.logs[-1].date.year,
+            year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
             url=self.display_absolute_url,
         )
@@ -1346,7 +1326,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def citation_chicago(self):
         return u'{authors}. "{title}". Open Science Framework ({year}). <a href="{url}">{url}</a>'.format(
             authors=self.author_list(and_delim='and'),
-            year=self.logs[-1].date.year,
+            year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
             url=self.display_absolute_url,
         )
@@ -1404,6 +1384,51 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
         return True
 
+    def add_addon(self, addon_name, auth, log=True):
+        """Add an add-on to the node.
+
+        :param str addon_name: Name of add-on
+        :param Auth auth: Consolidated authorization object
+        :param bool log: Add a log after adding the add-on
+        :return bool: Add-on was added
+
+        """
+        rv = super(Node, self).add_addon(addon_name, auth)
+        if rv and log:
+            config = settings.ADDONS_AVAILABLE_DICT[addon_name]
+            self.add_log(
+                action=NodeLog.ADDON_ADDED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'addon': config.full_name,
+                },
+                auth=auth,
+            )
+        return rv
+
+    def delete_addon(self, addon_name, auth):
+        """Delete an add-on from the node.
+
+        :param str addon_name: Name of add-on
+        :param Auth auth: Consolidated authorization object
+        :return bool: Add-on was deleted
+
+        """
+        rv = super(Node, self).delete_addon(addon_name, auth)
+        if rv:
+            config = settings.ADDONS_AVAILABLE_DICT[addon_name]
+            self.add_log(
+                action=NodeLog.ADDON_REMOVED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'addon': config.full_name,
+                },
+                auth=auth,
+            )
+        return rv
+
     def callback(self, callback, recursive=False, *args, **kwargs):
         """Invoke callbacks of attached add-ons and collect messages.
 
@@ -1430,6 +1455,12 @@ class Node(GuidStoredObject, AddonModelMixin):
                     )
 
         return messages
+
+    def get_pointers(self):
+        pointers = self.nodes_pointer
+        for node in self.nodes:
+            pointers.extend(node.get_pointers())
+        return pointers
 
     def remove_contributor(self, contributor, auth, log=True):
         """Remove a contributor from this node.
@@ -1673,9 +1704,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             'id': str(self._primary_key),
             'category': self.project_or_component,
             'url': self.url,
-            'title': self.title,
+            # TODO: Titles shouldn't contain escaped HTML in the first place
+            'title': html_parser.unescape(self.title),
             'api_url': self.api_url,
-            'is_public': self.is_public
+            'is_public': self.is_public,
         }
 
 

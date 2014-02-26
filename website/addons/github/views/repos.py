@@ -12,18 +12,6 @@ from ..api import GitHub
 
 @must_be_logged_in
 @must_have_addon('github', 'user')
-def github_list_repos(**kwargs):
-
-    user_settings = kwargs['user_addon']
-    if not user_settings.has_auth:
-        raise HTTPError(http.BAD_REQUEST)
-
-    connection = GitHub.from_settings(user_settings)
-    return list(connection.repos())
-
-
-@must_be_logged_in
-@must_have_addon('github', 'user')
 def github_create_repo(**kwargs):
 
     repo_name = request.json.get('name')

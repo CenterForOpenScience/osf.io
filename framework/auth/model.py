@@ -64,6 +64,11 @@ class User(GuidStoredObject, AddonModelMixin):
     #: Verification key used for resetting password
     verification_key = fields.StringField()
     emails = fields.StringField(list=True)
+    # Email verification tokens
+    # Format: {
+    #   <token> : {'email': <email address}
+    # }
+    # TODO: add timestamp to allow for timed expiration?
     email_verifications = fields.DictionaryField()
     aka = fields.StringField(list=True)
     date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow)

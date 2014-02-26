@@ -16,6 +16,7 @@ class TestCallbacks(DbTestCase):
         super(TestCallbacks, self).setUp()
 
         self.project = ProjectFactory.build()
+        self.consolidated_auth = Auth(user=self.project.creator)
         self.non_authenticator = UserFactory()
         self.project.add_contributor(
             contributor=self.non_authenticator,
@@ -23,7 +24,7 @@ class TestCallbacks(DbTestCase):
         )
         self.project.save()
 
-        self.project.add_addon('s3')
+        self.project.add_addon('s3', auth=self.consolidated_auth)
         self.project.creator.add_addon('s3')
         self.node_settings = self.project.get_addon('s3')
         self.user_settings = self.project.creator.get_addon('s3')
@@ -80,10 +81,10 @@ class TestCallbacks(DbTestCase):
     @mock.patch('website.addons.s3.utils.get_bucket_list')
     def test_drop_down_disabled(self, mock_drop):
         bucket = mock.create_autospec(Bucket)
-        bucket.name = 'Aticus'
+        bucket.name = 'Atticus'
         mock_drop.return_value = [bucket]
         drop_list = self.node_settings.to_json(self.project.creator)['bucket_list']
-        assert_true('Aticus' in drop_list)
+        assert_true('Atticus' in drop_list)
 
     @mock.patch('website.addons.s3.model.serialize_bucket')
     @mock.patch('website.addons.s3.model.S3Wrapper.from_addon')
@@ -112,3 +113,17 @@ class TestCallbacks(DbTestCase):
             self.project, fork, self.project.creator,
         )
         assert_true(clone.user_settings)
+
+    def test_before_register_no_settings(self):
+        self.node_settings.user_settings = None
+        message = self.node_settings.before_register(self.project, self.project.creator)
+        assert_false(message)
+
+    def test_before_register_no_auth(self):
+        self.node_settings.user_settings.access_key = None
+        message = self.node_settings.before_register(self.project, self.project.creator)
+        assert_false(message)
+
+    def test_before_register_settings_and_auth(self):
+        message = self.node_settings.before_register(self.project, self.project.creator)
+        assert_true(message)

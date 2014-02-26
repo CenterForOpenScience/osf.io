@@ -146,9 +146,9 @@ def create_result(highlights, results):
                         if value[0] != 'None':
                             lit = value
                     # build our contributor list and our contributor url list
-                    for contributor in result[split_id+'_contributors']:
+                    for contributor in result.get(split_id+'_contributors', []):
                         contributors.append(contributor)
-                    for url in result[split_id+'_contributors_url']:
+                    for url in result.get(split_id+'_contributors_url', []):
                         contributors_url.append(url)
                     if result[split_id+'_public']:
                         nest[split_id] = {

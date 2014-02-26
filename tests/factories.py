@@ -102,7 +102,7 @@ class AbstractNodeFactory(ModularOdmFactory):
 
     title = 'The meaning of life'
     description = 'The meaning of life is 42.'
-    creator = SubFactory(UserFactory)
+    creator = SubFactory(AuthUserFactory)
 
 
 class ProjectFactory(AbstractNodeFactory):
@@ -134,9 +134,10 @@ class RegistrationFactory(AbstractNodeFactory):
         project.save()
 
         # Default registration parameters
-        schema = schema or MetaSchema.find_one(
-            Q('name', 'eq', 'Open-Ended_Registration')
-        )
+        #schema = schema or MetaSchema.find_one(
+        #    Q('name', 'eq', 'Open-Ended_Registration')
+        #)
+        schema = None
         user = user or project.creator
         template = template or "Template1"
         data = data or "Some words"
@@ -221,16 +222,16 @@ class ProjectWithAddonFactory(ProjectFactory):
     def _build(cls, target_class, addon='s3', *args, **kwargs):
         '''Build an object without saving it.'''
         instance = ProjectFactory._build(target_class, *args, **kwargs)
-        instance.add_addon(addon)
+        auth = Auth(user=instance.creator)
+        instance.add_addon(addon, auth)
         instance.creator.add_addon(addon)
         return instance
 
     @classmethod
     def _create(cls, target_class, addon='s3', *args, **kwargs):
         instance = ProjectFactory._create(target_class, *args, **kwargs)
-        instance.add_addon(addon)
+        auth = Auth(user=instance.creator)
+        instance.add_addon(addon, auth)
         instance.creator.add_addon(addon)
         instance.save()
         return instance
-
-

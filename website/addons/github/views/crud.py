@@ -17,10 +17,11 @@ from website.project.views.file import get_cache_content
 from website.addons.base.views import check_file_guid
 from website.util import rubeus
 
-from ..api import GitHub, ref_to_params, _build_github_urls
-from ..model import GithubGuidFile
-from .. import settings as github_settings
-from .util import MESSAGES, get_path
+from website.addons.github import settings as github_settings
+from website.addons.github.exceptions import NotFoundError, EmptyRepoError
+from website.addons.github.api import GitHub, ref_to_params, build_github_urls
+from website.addons.github.model import GithubGuidFile
+from website.addons.github.views.util import MESSAGES, get_path
 
 
 logger = logging.getLevelName(__name__)
@@ -127,7 +128,9 @@ def github_view_file(**kwargs):
 
     # Get file URL
     download_url = '/' + guid._id + '/download/' + ref_to_params(branch, current_sha)
-    render_url = '/api/v1/' + guid._id + '/render/' + ref_to_params(branch, current_sha)
+    render_url = os.path.join(
+        node.api_url, 'github', 'file', path, 'render'
+    ) + '/' + ref_to_params(branch, current_sha)
 
     for commit in commits:
         commit['download'] = (
@@ -203,10 +206,17 @@ def github_upload_file(**kwargs):
 
     # Get SHA of existing file if present; requires an additional call to the
     # GitHub API
-    tree = connection.tree(node_settings.user, node_settings.repo, sha=sha or branch)
+    try:
+        tree = connection.tree(
+            node_settings.user, node_settings.repo, sha=sha or branch
+        ).tree
+    except EmptyRepoError:
+        tree = []
+    except NotFoundError:
+        raise HTTPError(http.BAD_REQUEST)
     existing = [
         thing
-        for thing in tree.tree
+        for thing in tree
         if thing.path == os.path.join(path, filename)
     ]
     sha = existing[0].sha if existing else None
@@ -281,7 +291,7 @@ def github_upload_file(**kwargs):
                 rubeus.format_filesize(data['content'].size),
             ],
             'kind': 'file',
-            'urls': _build_github_urls(
+            'urls': build_github_urls(
                 data['content'], node.url, node.api_url, branch, sha,
             ),
             'permissions': {
