@@ -2,6 +2,8 @@ import mock
 from nose.tools import *
 from webtest_plus import TestApp
 
+from boto.exception import S3ResponseError
+
 from framework.auth.decorators import Auth
 import website.app
 from tests.base import DbTestCase
@@ -376,20 +378,24 @@ class TestCreateBucket(DbTestCase):
         assert_true(validate_bucket_name('can-have-dashes'))
         assert_true(validate_bucket_name('kinda.name.spaced'))
 
-    @mock.patch('website.addons.s3.api.create_bucket')
-    def create_bucket_pass(self, mock_make):
+    @mock.patch('website.addons.s3.views.utils.create_bucket')
+    def test_create_bucket_pass(self, mock_make):
         mock_make.return_value = True
-        rv = create_bucket('legitname')
-        assert_equals(rv, {})
+        url = "/api/v1/project/{0}/s3/newbucket/".format(self.project._id)
+        rv = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
-    @mock.patch('website.addons.s3.api.create_bucket')
-    def create_bucket_fail(self, mock_make):
-        error = S3ResponseError()
+        assert_equals(rv.status_int, 200)
+
+    @mock.patch('website.addons.s3.views.utils.create_bucket')
+    def test_create_bucket_fail(self, mock_make):
+        error = S3ResponseError(418, 'because Im a test')
         error.message = 'This should work'
-        mock_make.return_value = error
+        mock_make.side_effect = error
 
-        rv = create_bucket('legitname')
-        assert_equals(rv['message'], 'This shoudl work')
+        url = "/api/v1/project/{0}/s3/newbucket/".format(self.project._id)
+        rv = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
+
+        assert_equals(rv.body, '{"message": "This should work"}')
 #TODO
 #removed access key
 #
