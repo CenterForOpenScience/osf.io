@@ -939,49 +939,12 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         registered.nodes = []
 
-        # todo: should be recursive; see Node.fork_node()
-        for original_node_contained in original.nodes:
-
-            if not original_node_contained.can_edit(auth):
-                # todo: inform user that node can't be registered
-                continue
-
-            node_contained = original_node_contained.clone()
-            node_contained.save()
-
-            folder_old = os.path.join(settings.UPLOADS_PATH, original_node_contained._primary_key)
-
-            if os.path.exists(folder_old):
-                folder_new = os.path.join(settings.UPLOADS_PATH, node_contained._primary_key)
-                Repo(folder_old).clone(folder_new)
-
-            node_contained.is_registration = True
-            node_contained.registered_date = when
-            node_contained.registered_user = auth.user
-            node_contained.registered_schema = schema
-            node_contained.registered_from = original_node_contained
-            if not node_contained.registered_meta:
-                node_contained.registered_meta = {}
-            node_contained.registered_meta[template] = data
-
-            node_contained.contributors = original_node_contained.contributors
-            node_contained.forked_from = original_node_contained.forked_from
-            node_contained.creator = original_node_contained.creator
-            node_contained.logs = original_node_contained.logs
-            node_contained.tags = original_node_contained.tags
-            node_contained.private_links = []
-
-            node_contained.save()
-
-            # After register callback
-            for addon in original_node_contained.get_addons():
-                _, message = addon.after_register(
-                    original_node_contained, node_contained, auth.user
-                )
-                if message:
-                    status.push_status_message(message)
-
-            registered.nodes.append(node_contained)
+        for node_contained in original.nodes:
+            registered_node = node_contained.register_node(
+                 schema, auth, template, data
+            )
+            if registered_node is not None:
+                registered.nodes.append(registered_node)
 
 
         original.add_log(
