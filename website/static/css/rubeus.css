@@ -72,12 +72,14 @@
     margin-bottom: 3px;
     padding-right: 3px;
     margin-left: 5px;
+    -webkit-user-drag: none;
 }
 
 .hg-addon-icon {
     height: 16px;
     width: 16px;
     margin-right: 3px;
+    -webkit-user-drag: none;
 }
 
 .hgrid .slick-row.hg-upload-processing {
