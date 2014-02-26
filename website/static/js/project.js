@@ -371,9 +371,10 @@ $(document).ready(function() {
         var msgKey = permissions == 'public' ?
             'makePublicWarning' :
             'makePrivateWarning';
-        bootbox.confirm(
-            Messages[msgKey],
-            function(result) {
+        bootbox.confirm({
+            title: "Warning",
+            message: Messages[msgKey],
+            callback: function(result) {
                 if (result) {
                     $.postJSON(url, {permissions: permissions},
                         function(data){
@@ -382,7 +383,7 @@ $(document).ready(function() {
                     );
                 }
             }
-        );
+        });
     }
 
     /* Modal Click handlers for project page */
