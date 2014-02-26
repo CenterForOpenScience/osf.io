@@ -19,11 +19,10 @@ def collect_file_trees(**kwargs):
     """Collect file trees for all add-ons implementing HGrid views, then
     format data as appropriate.
     """
-    link = kwargs['link']
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
 
-    serialized = _view_project(node, auth, link)
+    serialized = _view_project(node, auth)
     # Add addon static assets
     serialized.update(rubeus.collect_addon_assets(node))
     return serialized
@@ -34,9 +33,8 @@ def grid_data(**kwargs):
     """
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
-    link = kwargs['link']
     data = request.args.to_dict()
-    return {'data': rubeus.to_hgrid(node, auth, link, **data)}
+    return {'data': rubeus.to_hgrid(node, auth, **data)}
 
 # File rendering
 def get_cache_path(node_settings):

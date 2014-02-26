@@ -31,7 +31,7 @@ def default_urls(node_api, short_name):
     }
 
 
-def to_hgrid(node, auth, link, **data):
+def to_hgrid(node, auth, **data):
     """Converts a node into a rubeus grid format
 
     :param node Node: the node to be parsed
@@ -39,7 +39,7 @@ def to_hgrid(node, auth, link, **data):
     :returns: rubeus-formatted dict
 
     """
-    return NodeFileCollector(node, auth, link, **data).to_hgrid()
+    return NodeFileCollector(node, auth, **data).to_hgrid()
 
 
 def build_addon_root(node_settings, name, permissions=None,
@@ -116,12 +116,11 @@ class NodeFileCollector(object):
 
     """A utility class for creating rubeus formatted node data"""
 
-    def __init__(self, node, auth, link, **kwargs):
+    def __init__(self, node, auth, **kwargs):
         self.node = node
         self.auth = auth
-        self.link = link
         self.extra = kwargs
-        self.can_view = node.can_view(auth, link)
+        self.can_view = node.can_view(auth)
         self.can_edit = node.can_edit(auth) if self.can_view else False
 
     def to_hgrid(self):
@@ -134,7 +133,7 @@ class NodeFileCollector(object):
     def _collect_components(self, node):
         rv = []
         for child in node.nodes:
-            if not child.is_deleted and node.can_view(self.auth, self.link):
+            if not child.is_deleted and node.can_view(self.auth):
                 rv.append(self._serialize_node(child))
         return rv
 
@@ -142,7 +141,7 @@ class NodeFileCollector(object):
         """Returns the rubeus representation of a node folder.
         """
         can_edit = node.can_edit(auth=self.auth)
-        can_view = node.can_view(auth=self.auth, link=self.link)
+        can_view = node.can_view(auth=self.auth)
         if can_view:
             children = self._collect_addons(node) + self._collect_components(node)
         else:
@@ -168,7 +167,7 @@ class NodeFileCollector(object):
         rv = []
         for addon in node.get_addons():
             if addon.config.has_hgrid_files:
-                temp = addon.config.get_hgrid_data(addon, self.auth, self.link, **self.extra)
+                temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
                 rv.extend(temp or [])
         return rv
 

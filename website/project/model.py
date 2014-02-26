@@ -388,14 +388,14 @@ class Node(GuidStoredObject, AddonModelMixin):
             or is_api_node
         )
 
-    def can_view(self, auth, link=''):
+    def can_view(self, auth):
         if session:
-            key_ring = set(session.data['link'])
+            key_ring = set(session.data['key'])
             return self.is_public or self.can_edit(auth) \
                 or not key_ring.isdisjoint(self.private_links)
         else:
             return self.is_public or self.can_edit(auth) \
-                or link in self.private_links
+                or auth.private_key in self.private_links
 
     def save(self, *args, **kwargs):
 

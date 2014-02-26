@@ -31,7 +31,6 @@ def get_node_contributors_abbrev(**kwargs):
 
     auth = kwargs.get('auth')
     node_to_use = kwargs['node'] or kwargs['project']
-    link = request.args.get('key', '').strip('/')
 
     max_count = kwargs.get('max_count', 3)
     if 'user_ids' in kwargs:
@@ -42,7 +41,7 @@ def get_node_contributors_abbrev(**kwargs):
     else:
         users = node_to_use.contributors
 
-    if not node_to_use.can_view(auth, link):
+    if not node_to_use.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
     contributors = []
@@ -110,9 +109,8 @@ def get_contributors(**kwargs):
 
     auth = kwargs.get('auth')
     node_to_use = kwargs['node'] or kwargs['project']
-    link = request.args.get('key', '').strip('/')
 
-    if not node_to_use.can_view(auth, link):
+    if not node_to_use.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = _jsonify_contribs(node_to_use.contributor_list)

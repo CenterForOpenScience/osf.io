@@ -18,7 +18,6 @@ def get_log(log_id):
 
     log = NodeLog.load(log_id)
     node_to_use = log.node
-    link = request.args.get('key', '').strip('/')
 
     auth = Auth(
         user=get_current_user(),
@@ -26,13 +25,13 @@ def get_log(log_id):
         api_node=get_current_node(),
     )
 
-    if not node_to_use.can_view(auth, link):
+    if not node_to_use.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
     return {'log': log.serialize()}
 
 
-def _get_logs(node, count, auth, link):
+def _get_logs(node, count, auth):
     """
 
     :param Node node:
@@ -44,7 +43,7 @@ def _get_logs(node, count, auth, link):
     logs = []
 
     for log in reversed(node.logs):
-        if log and log.node__logged[0].can_view(auth, link):
+        if log and log.node__logged[0].can_view(auth):
             logs.append(log.serialize())
         if len(logs) >= count:
             break
@@ -59,9 +58,8 @@ def get_logs(**kwargs):
     """
     auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
-    link = request.args.get('key', '').strip('/')
 
-    if not node_to_use.can_view(auth, link):
+    if not node_to_use.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
     if 'count' in request.args:
@@ -75,6 +73,6 @@ def get_logs(**kwargs):
 
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
-    logs = _get_logs(node_to_use, count, auth, link)
+    logs = _get_logs(node_to_use, count, auth)
     return {'logs': logs}
 

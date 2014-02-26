@@ -147,10 +147,9 @@ def node_fork_page(**kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
 def node_registrations(**kwargs):
-    link = kwargs['link']
     auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
-    return _view_project(node_to_use, auth, link, primary=True)
+    return _view_project(node_to_use, auth, primary=True)
 
 
 
@@ -159,10 +158,9 @@ def node_registrations(**kwargs):
 def node_forks(**kwargs):
     project = kwargs['project']
     node = kwargs['node']
-    link = kwargs['link']
     auth = kwargs['auth']
     node_to_use = node or project
-    return _view_project(node_to_use, auth, link, primary=True)
+    return _view_project(node_to_use, auth, primary=True)
 
 
 
@@ -373,9 +371,8 @@ def component_remove(**kwargs):
 def view_project(**kwargs):
     auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
-    link = kwargs['link']
     primary = '/api/v1' not in request.path
-    rv = _view_project(node_to_use, auth, link, primary=primary)
+    rv = _view_project(node_to_use, auth, primary=primary)
     rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
     return rv
 
@@ -409,7 +406,7 @@ def _render_addon(node):
     return widgets, configs, js, css
 
 
-def _view_project(node, auth, link='', primary=False):
+def _view_project(node, auth, primary=False):
     """Build a JSON object containing everything needed to render
 
     project.view.mako.
@@ -419,7 +416,7 @@ def _view_project(node, auth, link='', primary=False):
     user = auth.user
 
     parent = node.parent
-    recent_logs = _get_logs(node, 10, auth, link)
+    recent_logs = _get_logs(node, 10, auth)
     widgets, configs, js, css = _render_addon(node)
     # Before page load callback; skip if not primary call
     if primary:
@@ -468,7 +465,7 @@ def _view_project(node, auth, link='', primary=False):
             'fork_count': len(node.fork_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': node.private_links,
-            'link': link,
+            'link': auth.private_key,
             'logs': recent_logs,
             'points': node.points,
             'piwik_site_id': node.piwik_site_id,
@@ -481,13 +478,13 @@ def _view_project(node, auth, link='', primary=False):
             'absolute_url':  parent.absolute_url if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
-            'can_be_viewed': (link in parent.private_links) if parent else False
+            'can_be_viewed': (auth.private_key in parent.private_links) if parent else False
         },
         'user': {
             'is_contributor': node.is_contributor(user),
             'can_edit': (node.can_edit(auth)
                                 and not node.is_registration),
-            'can_view': node.can_view(auth, link),
+            'can_view': node.can_view(auth),
             'is_watching': user.is_watching(node) if user and not user == None else False,
             'piwik_token': user.piwik_token if user else '',
         },
@@ -569,11 +566,11 @@ def get_recent_logs(**kwargs):
     return {'logs': logs}
 
 
-def _get_summary(node, auth, link, rescale_ratio, primary=True, link_id=None):
+def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
 
     summary = {}
 
-    if node.can_view(auth,link):
+    if node.can_view(auth):
         summary.update({
             'can_view': True,
             'can_edit': node.can_edit(auth),
@@ -620,10 +617,9 @@ def get_summary(**kwargs):
     rescale_ratio = kwargs.get('rescale_ratio')
     primary = kwargs.get('primary')
     link_id = kwargs.get('link_id')
-    link = request.args.get('key', '').strip('/')
 
     return _get_summary(
-        node, auth, link, rescale_ratio, primary=primary, link_id=link_id
+        node, auth, rescale_ratio, primary=primary, link_id=link_id
     )
 
 

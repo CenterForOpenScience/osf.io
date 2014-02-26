@@ -157,7 +157,6 @@ def project_wiki_version(*args, **kwargs):
 def project_wiki_page(*args, **kwargs):
 
     wid = kwargs['wid']
-    link = kwargs['link']
     auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
 
@@ -180,11 +179,11 @@ def project_wiki_page(*args, **kwargs):
             'title': child.title,
             'category': child.category,
             'pages': child.wiki_pages_current.keys() if child.wiki_pages_current else [],
-            'link': link
+            'link': auth.private_key
         }
         for child in node_to_use.nodes
         if not child.is_deleted
-            and child.can_view(auth, link)
+            and child.can_view(auth)
     ]
 
     rv = {
@@ -204,7 +203,7 @@ def project_wiki_page(*args, **kwargs):
         'category': node_to_use.category
     }
 
-    rv.update(_view_project(node_to_use, auth, link, primary=True))
+    rv.update(_view_project(node_to_use, auth, primary=True))
     return rv
 
 

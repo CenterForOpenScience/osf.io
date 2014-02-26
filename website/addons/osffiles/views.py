@@ -44,12 +44,12 @@ def _clean_file_name(name):
     return encoded
 
 
-def get_osffiles(node_settings, auth, link, **kwargs):
+def get_osffiles(node_settings, auth, **kwargs):
 
     node = node_settings.owner
 
     can_edit = node.can_edit(auth) and not node.is_registration
-    can_view = node.can_view(auth, link)
+    can_view = node.can_view(auth)
 
     info = []
 
@@ -68,8 +68,8 @@ def get_osffiles(node_settings, auth, link, **kwargs):
                 rubeus.KIND: rubeus.FILE,
                 'name': _clean_file_name(fobj.path),
                 'urls': {
-                    'view': url_builder(fobj.url(node), link),
-                    'download': url_builder(fobj.download_url(node), link),
+                    'view': url_builder(fobj.url(node), auth.private_key),
+                    'download': url_builder(fobj.download_url(node), auth.private_key),
                     'delete': fobj.api_url(node),
                 },
                 'permissions': {
@@ -99,9 +99,8 @@ def get_osffiles_public(**kwargs):
 
     node_settings = kwargs['node_addon']
     auth = kwargs['auth']
-    link = kwargs['link']
 
-    return get_osffiles(node_settings, auth, link)
+    return get_osffiles(node_settings, auth)
 
 
 @must_be_valid_project # returns project
@@ -196,7 +195,6 @@ def view_file(**kwargs):
 
     auth = kwargs['auth']
     node_settings = kwargs['node_addon']
-    link = kwargs['link']
     node = kwargs['node'] or kwargs['project']
 
 
@@ -288,7 +286,7 @@ def view_file(**kwargs):
         'versions': versions,
     }
 
-    rv.update(_view_project(node, auth, link))
+    rv.update(_view_project(node, auth))
     return rv
 
 
@@ -298,7 +296,7 @@ def download_file(**kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
-    link = kwargs['link']
+    link = kwargs['auth'].private_key
     vid = len(node_to_use.files_versions[filename.replace('.', '_')])
 
     redirect_url = '{url}osffiles/{fid}/version/{vid}/'.format(
