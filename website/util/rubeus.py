@@ -12,7 +12,8 @@ FOLDER = 'folder'
 FILE = 'item'
 KIND = 'kind'
 
-# TODO Review me.
+# TODO: Validate the JSON schema, esp. for addons
+
 DEFAULT_PERMISSIONS = {
     'view': True,
     'edit': False
@@ -41,7 +42,7 @@ def to_hgrid(node, auth, **data):
     return NodeFileCollector(node, auth, **data).to_hgrid()
 
 
-def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS,
+def build_addon_root(node_settings, name, permissions=None,
                      urls=None, extra=None, **kwargs):
     """Builds the root or "dummy" folder for an addon.
 
@@ -56,6 +57,7 @@ def build_addon_root(node_settings, name, permissions=DEFAULT_PERMISSIONS,
     :return dict: Hgrid formatted dictionary for the addon root folder
 
     """
+    permissions = permissions or DEFAULT_PERMISSIONS
     if name:
         name = u'{0}: {1}'.format(node_settings.config.full_name, name)
     else:
