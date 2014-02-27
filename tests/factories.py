@@ -134,9 +134,10 @@ class RegistrationFactory(AbstractNodeFactory):
         project.save()
 
         # Default registration parameters
-        schema = schema or MetaSchema.find_one(
-            Q('name', 'eq', 'Open-Ended_Registration')
-        )
+        #schema = schema or MetaSchema.find_one(
+        #    Q('name', 'eq', 'Open-Ended_Registration')
+        #)
+        schema = None
         user = user or project.creator
         template = template or "Template1"
         data = data or "Some words"

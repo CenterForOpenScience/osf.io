@@ -64,7 +64,8 @@
         });
 
         $('#addonSettingsS3 .addon-settings-submit').on('click', function() {
-            if (!$('#s3_bucket').val()) {
+            var $bucket = $('#s3_bucket');
+            if ($bucket.length && !$bucket.val()) {
                 return false;
             }
         });
