@@ -722,6 +722,33 @@ class TestClaiming(DbTestCase):
         # registered successfully
         assert_in(language.REGISTRATION_SUCCESS.format(email=email), res)
 
+    def test_cannot_go_to_claim_url_after_setting_password(self):
+        name, email = fake.name(), fake.email()
+        new_user = self.project.add_unregistered_contributor(
+            email=email,
+            fullname=name,
+            auth=Auth(self.referrer)
+        )
+        self.project.save()
+        # Goes to claim url and successfully claims account
+        claim_url = new_user.get_claim_url(self.project._primary_key)
+        res = self.app.get(claim_url)
+        self.project.reload()
+        assert_in('Set Password', res)
+        form = res.forms['setPasswordForm']
+        form['username'] = new_user.username
+        form['password'] = 'killerqueen'
+        form['password2'] = 'killerqueen'
+        res = form.submit().maybe_follow()
+
+        # logs out
+        res = self.app.get('/logout/').maybe_follow()
+        # tries to go to claim url again
+        res = self.app.get(claim_url, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('already been claimed', res)
+
+
 
 class TestConfirmingEmail(DbTestCase):
     def setUp(self):

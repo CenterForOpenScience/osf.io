@@ -263,8 +263,14 @@ def claim_user_form(**kwargs):
         raise HTTPError(400)
     # if token is invalid, throw an error
     if not user.verify_claim_token(token=token, project_id=pid):
-        error_data = {'message_short': 'Invalid URL.',
-            'message_long': 'The URL you entered is invalid.'}
+        if user.is_registered:
+            error_data = {
+                'message_short': 'User has already been claimed.',
+                'message_long': 'Please <a href="/login/">log in</a> to continue.'}
+        else:
+            error_data = {
+                'message_short': 'Invalid claim URL.',
+                'message_long': 'The URL you entered is invalid.'}
         raise HTTPError(400, data=error_data)
 
     parsed_name = parse_name(user.fullname)
