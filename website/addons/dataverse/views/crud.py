@@ -1,5 +1,8 @@
 import os
 import datetime
+import logging
+import requests
+from bs4 import BeautifulSoup
 
 from framework import request, make_response
 from framework.flask import secure_filename, redirect
@@ -7,11 +10,13 @@ from framework.exceptions import HTTPError
 
 from website.project.decorators import must_be_contributor_or_public, must_have_addon, must_not_be_registration
 from website.project.views.node import _view_project
+from website.project.views.file import get_cache_content
 from website.util import rubeus
 from website.addons.dataverse.config import HOST
 
 import httplib as http
 
+logger = logging.getLogger(__name__)
 
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
@@ -22,6 +27,30 @@ def dataverse_download_file(**kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     return redirect('http://' + HOST + '/dvn/FileDownload/?fileId=' + file_id)
+
+session = requests.Session()
+
+def scrape_dataverse(file_id):
+
+    # Go to file url
+    response = session.get('http://{}/dvn/FileDownload/?fileId={}'.format(HOST, file_id))
+
+    # Agree to terms if necessary
+    if '<title>Account Terms of Use -' in response.content:
+
+        parsed = BeautifulSoup(response.content)
+        view_state = parsed.find(id='javax.faces.ViewState').attrs.get('value')
+        data = {
+            'form1':'form1',
+            'javax.faces.ViewState': view_state,
+            'form1:termsAccepted':'on',
+            'form1:termsButton':'Continue',
+        }
+        session.post('http://{}/dvn/faces/study/TermsOfUsePage.xhtml'.format(HOST), data=data)
+        response = session.get('http://{}/dvn/FileDownload/?fileId={}'.format(HOST, file_id))
+
+    # return file
+    return response.content
 
 # TODO: Remove unnecessary API calls
 @must_be_contributor_or_public
@@ -49,24 +78,16 @@ def dataverse_view_file(**kwargs):
 
     # TODO: Render file
 
-    # # Get or create rendered file
-    # cache_file = get_cache_file(
-    #     file_id, current_sha,
-    # )
-    # rendered = get_cache_content(node_settings, cache_file)
-    # if rendered is None:
-    #     _, data, size = connection.file(
-    #         node_settings.user, node_settings.repo, file_id, ref=sha,
-    #     )
-    #     # Skip if too large to be rendered.
-    #     if dataverse_settings.MAX_RENDER_SIZE is not None and size > dataverse_settings.MAX_RENDER_SIZE:
-    #         rendered = 'File too large to render; download file to view it'
-    #     else:
-    #         rendered = get_cache_content(
-    #             node_settings, cache_file, start_render=True,
-    #             file_path=file_name, file_content=data, download_path=url,
-    #         )
-    rendered = 'File rendering not yet implemented.'
+    # Get or create rendered file
+    cache_file = '{0}.html'.format(file_id)
+    rendered = get_cache_content(node_settings, cache_file)
+
+    if rendered is None:
+        data = scrape_dataverse(file_id)
+        rendered = get_cache_content(
+            node_settings, cache_file, start_render=True,
+            file_path=file_id, file_content=data, download_path='{}/download/'.format(url),
+        )
 
     rv = {
         'file_name': file.name,
@@ -146,6 +167,7 @@ def dataverse_upload_file(**kwargs):
 
 
 @must_be_contributor_or_public
+@must_be_contributor_or_public
 @must_not_be_registration
 @must_have_addon('dataverse', 'node')
 def dataverse_delete_file(**kwargs):
@@ -192,12 +214,13 @@ def dataverse_delete_file(**kwargs):
 
 
 @must_be_contributor_or_public
-@must_have_addon('github', 'node')
+@must_have_addon('dataverse', 'node')
 def dataverse_get_rendered_file(**kwargs):
     """
 
     """
     node_settings = kwargs['node_addon']
-    path = kwargs['path']
+    file_id = kwargs['path']
 
-    return 'Render me!'
+    cache_file = '{0}.html'.format(file_id)
+    return get_cache_content(node_settings, cache_file)
