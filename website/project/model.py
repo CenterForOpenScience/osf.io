@@ -10,6 +10,7 @@ import unicodedata
 import urllib
 import urlparse
 import logging
+from HTMLParser import HTMLParser
 
 import pytz
 from dulwich.repo import Repo
@@ -19,7 +20,6 @@ from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
-from framework.auth import utils as auth_utils
 from framework.auth.decorators import Auth
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
@@ -32,6 +32,8 @@ from framework.addons import AddonModelMixin
 
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
+
+html_parser = HTMLParser()
 
 logger = logging.getLogger(__name__)
 
@@ -233,6 +235,7 @@ class Pointer(StoredObject):
     link is cloned, but its contained Node is not.
 
     """
+    #: Whether this is a pointer or not
     primary = False
 
     _id = fields.StringField()
@@ -254,6 +257,8 @@ class Pointer(StoredObject):
         return self._clone()
 
     def __getattr__(self, item):
+        """Delegate attribute access to the node being pointed to.
+        """
         # Prevent backref lookups from being overriden by proxied node
         try:
             return super(Pointer, self).__getattr__(item)
@@ -271,6 +276,7 @@ class Pointer(StoredObject):
 class Node(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
+    #: Whether this is a pointer or not
     primary = True
 
     # Node fields that trigger an update to Solr on save
@@ -718,6 +724,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 ],
                 '{}_contributors_url'.format(self._id): [
                     x.profile_url for x in self.contributors
+                    if x is not None
                 ],
                 '{}_title'.format(self._id): self.title,
                 '{}_category'.format(self._id): self.category,
@@ -1301,7 +1308,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def citation_apa(self):
         return u'{authors}, ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{url}</a>'.format(
             authors=self.author_list(and_delim='&'),
-            year=self.logs[-1].date.year,
+            year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
             url=self.display_absolute_url,
         )
@@ -1310,7 +1317,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def citation_mla(self):
         return u'{authors}. "{title}". Open Science Framework, {year}. <a href="{url}">{url}</a>'.format(
             authors=self.author_list(and_delim='and'),
-            year=self.logs[-1].date.year,
+            year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
             url=self.display_absolute_url,
         )
@@ -1319,7 +1326,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def citation_chicago(self):
         return u'{authors}. "{title}". Open Science Framework ({year}). <a href="{url}">{url}</a>'.format(
             authors=self.author_list(and_delim='and'),
-            year=self.logs[-1].date.year,
+            year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
             url=self.display_absolute_url,
         )
@@ -1697,9 +1704,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             'id': str(self._primary_key),
             'category': self.project_or_component,
             'url': self.url,
-            'title': self.title,
+            # TODO: Titles shouldn't contain escaped HTML in the first place
+            'title': html_parser.unescape(self.title),
             'api_url': self.api_url,
-            'is_public': self.is_public
+            'is_public': self.is_public,
         }
 
 

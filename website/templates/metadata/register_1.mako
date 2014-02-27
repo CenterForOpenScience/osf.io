@@ -12,8 +12,7 @@
 
                 <hr />
 
-                <p class="help-block">${language.before_registration_info}</p>
-                </p>
+                <p class="help-block">${language.BEFORE_REGISTRATION_INFO}</p>
 
                 <div class="form-group">
                     <label>

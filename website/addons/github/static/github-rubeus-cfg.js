@@ -14,7 +14,7 @@
             url: url,
             success: function(data) {
                 // Update the item with the new branch data
-                $.extend(item, data);
+                $.extend(item, data[0]);
                 grid.reloadFolder(item);
             }
         });

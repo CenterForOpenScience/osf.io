@@ -52,7 +52,7 @@ class TestHGridViews(DbTestCase):
         assert_equal(res[0]['kind'], expected_kind)
         assert_equal(res[0]['accept']['maxSize'], 10)
         assert_equal(res[0]['accept']['acceptedFiles'], None)
-        assert_equal(res[0]['urls'], api._build_github_urls(contents['octokit'],
+        assert_equal(res[0]['urls'], api.build_github_urls(contents['octokit'],
             self.project.url, self.project.api_url, branch=None, sha=None))
         # Files should not have lazy-load or upload URLs
         assert_not_in('lazyLoad', res[0])
@@ -152,7 +152,9 @@ class TestGithubViews(DbTestCase):
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(len(res.json['prompts']), 1)
 
-    def test_before_register(self):
+    @mock.patch('website.addons.github.model.AddonGitHubUserSettings.has_auth')
+    def test_before_register(self, mock_has_auth):
+        mock_has_auth.return_value = True
         url = self.project.api_url + 'beforeregister/'
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(len(res.json['prompts']), 1)

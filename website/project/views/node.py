@@ -109,7 +109,7 @@ def project_before_fork(**kwargs):
     pointers = node.get_pointers()
     if pointers:
         prompts.append(
-            language.before_fork_has_pointers.format(
+            language.BEFORE_FORK_HAS_POINTERS.format(
                 category=node.project_or_component
             )
         )
@@ -562,6 +562,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
             'primary': primary,
             'api_url': node.api_url,
             'title': node.title,
+            'category': node.project_or_component,
             'is_registration': node.is_registration,
             'registered_date': node.registered_date.strftime('%m/%d/%y %I:%M %p')
                 if node.is_registration

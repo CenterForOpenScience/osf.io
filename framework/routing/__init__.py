@@ -4,6 +4,7 @@ import logging
 import copy
 import json
 import pystache
+import functools
 import httplib as http
 
 import lxml.html
@@ -84,6 +85,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
     :return: Wrapped view function
 
     """
+    @functools.wraps(fn)
     def wrapped(*args, **kwargs):
         session_error_code = session.data.get('auth_error_code')
         if session_error_code:
@@ -95,8 +97,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
         except HTTPError as error:
             data = error
         except Exception as error:
-            logger.debug('Exception raised in wrap_with_renderer')
-            logger.error(error)
+            logger.exception(error)
             if debug_mode:
                 raise
             data = HTTPError(
