@@ -38,7 +38,6 @@ page_routes = {
             'post', views.twitter_oauth_delete_node , json_renderer),
         Rule([
             '/project/<pid>/twitter/widget/',
-            '/project/<pid>/node/<nid>/twitter/widget/',
         ],
             'get', views.twitter_widget, OsfWebRenderer('../addons/twitter/templates/myname.mako')),
 ],

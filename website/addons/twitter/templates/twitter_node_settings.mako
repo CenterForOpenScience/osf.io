@@ -56,10 +56,6 @@
 
 <br />
 
-
-
-
-
 <script type="text/javascript">
 
     $(document).ready(function() {
@@ -95,8 +91,6 @@
 
             }
         });
-
-
 
 
         $('#twitterDelKey').on('click', function() {

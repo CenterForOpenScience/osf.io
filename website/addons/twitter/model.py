@@ -3,9 +3,13 @@
 
 import os
 import urlparse
+import Tkinter
+import tkMessageBox
 
 from framework import fields
 import tweepy
+import ctypes
+
 
 from website import settings
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
@@ -29,43 +33,51 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
         'addontwitterusersettings', backref='authorized'
     )
 
+#All log events
     POSSIBLE_ACTIONS =['project_created',
      'node_created',
-   'node_removed',
     'wiki_updated',
     'contributor_added',
-    'contributor_removed',
-    'made_public',
-     'made_private',
     'tag_added',
-    'tag_removed',
     'edit_title',
     'edit_description',
      'project_registered',
      'file_added',
-    'file_removed',
     'file_updated',
    'node_forked']
 
-    DEFAULT_MESSAGES = {'project_created':'i created a project!',
+#Default tweet messages for log events
+    DEFAULT_MESSAGES = {'project_created':'Created project: ',
                         'node_created': 'Created a project node',
-                        'node_removed': 'Removed a project node',
-                        'edit_title': 'title edited'
+                        'wiki_updated': 'Updated the wiki with: ',
+                        'contributor_added': ' Added a project contributor!',
+                        'tag_added': 'Added tag $tag_name to our project',
+                        'edit_title': 'Changed project title from $old_title to $new_title ',
+                        'edit_description': 'Changed project description to $new_desc',
+                        'project_registered': 'Just registered a new project!',
+                        'file_added':' Just added $file_name to my project',
+                        'file_updated': 'Just updated a file',
+                        'node_forked': 'Just forked a node',
+
                         }
 
-
-
+    #project_created : $project_title
+    #node_created: $node_name
+    #contributed_added: $contributor_name
+    #tag_added: $tag_name
+    #edit_title: $new_title, $old_title
+    #edit_description: $new_description
+    #project_registered: $project_name
+    #file_added/updated: $file_name/$path
+    #node_forked: $node_name, $contributor/$project
     #
-    #registration_data = fields.DictionaryField()
+    #
 
-    #@property
-    #def short_url(self):
-    #    if self.user and self.repo:
-    #        return '/'.join([self.user, self.repo])
+
+    CONSUMER_KEY = 'rohTTQSPWzgIXWw0g5dw'
+    CONSUMER_SECRET = '7pmpjEtvoGjnSNCN2GlULrV104uVQQhg60Da7MEEy0'
 
     def to_json(self, *args, **kwargs):
-        #twitter_user = user.get_addon('twitter')
-
         rv = super(AddonTwitterNodeSettings, self).to_json(*args, **kwargs)
         rv.update({
             'twitter_oauth_key': self.oauth_key or '',
@@ -76,27 +88,43 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
             'log_messages': self.log_messages,
             'POSSIBLE_ACTIONS': self.POSSIBLE_ACTIONS or '',
             'DEFAULT_MESSAGES': self.DEFAULT_MESSAGES or '',
-
+            'CONSUMER_KEY': self.CONSUMER_KEY or '',
+            'CONSUMER_SECRET': self.CONSUMER_SECRET or '',
         })
-
         return rv
+    #
+    def parse_message(self, log):
+        message = self.log_messages.get(log.action+'_message')
+        if (log.action == 'edit_title'):
+           message = message.replace('$new_title', log.params['title_new'])
+           message = message.replace('$old_title', log.params['title_original'])
+        if (log.action == 'edit_description'):
+           message = message.replace('new_desc', log.params['description_new'])
+        if (log.action == 'file_created'):
+           message = message.replace('$filename', log.params['path'])
+        if (log.action == 'tag_added'):
+           message = message.replace('$tag_name', log.params['tag'])
+
+        print message
+
+      #   self.tweet(message)
+        return {}
+
 
     def before_add_log(self, node, log):
-
-
         config = node.get_addon('twitter')
         if log.action in self.log_actions:
-            self.tweet(self.log_messages.get(log.action+'_message'))
-        #for i in self.log_actions :
-       # if log.action in self.log_actions:
-        #if log.action in self.log_messages:
-                #action = self.log_actions.
-           #     self.tweet(log.action)
-        #if log.action in self.log_actions:
-        #    api.update_status(log.action)
+            self.parse_message(log)
+        return{}
 
 
-        return
+    def register(oauth_key, oauth_secret):
+        consumer_key = 'rohTTQSPWzgIXWw0g5dw'
+        consumer_secret = '7pmpjEtvoGjnSNCN2GlULrV104uVQQhg60Da7MEEy0'
+        auth = tweepy.OAuthHandler(consumer_key, consumer_secret, secure=True)
+        auth.set_access_token(oauth_key, oauth_secret)
+
+
 
     def tweet(self, message):
         """Tweets message through connected account
@@ -105,19 +133,15 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
 
         :return: None
         """
+#Build OAuthHandler Object
         consumer_key = 'rohTTQSPWzgIXWw0g5dw'
         consumer_secret = '7pmpjEtvoGjnSNCN2GlULrV104uVQQhg60Da7MEEy0'
         auth = tweepy.OAuthHandler(consumer_key, consumer_secret, secure=True)
+
+#Recreate access token and call update_status() with the correct message
         auth.set_access_token(self.oauth_key, self.oauth_secret)
         api = tweepy.API(auth)
         api.update_status(message)
-
-
-
-
-
-
-
 
 #class AddonTwitterUserSettings(AddonUserSettingsBase):
 #
