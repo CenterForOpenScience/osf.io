@@ -20,6 +20,7 @@ from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
+from framework.auth.exceptions import DuplicateEmailError
 from framework.auth.decorators import Auth
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
@@ -1495,7 +1496,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth informtion including user, API key.
         """
         if not auth.user._primary_key == contributor._id:
-
+            # remove unclaimed record if necessary
+            if self._primary_key in contributor.unclaimed_records:
+                del contributor.unclaimed_records[self._primary_key]
             self.contributors.remove(contributor._id)
             self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != contributor._id]
             self.save()
@@ -1538,7 +1541,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         if contrib_to_add._primary_key not in self.contributors:
             self.contributors.append(contrib_to_add)
             self.contributor_list.append({'id': contrib_to_add._primary_key})
-
             # Add contributor to recently added list for user
             if auth is not None:
                 user = auth.user
@@ -1590,17 +1592,32 @@ class Node(GuidStoredObject, AddonModelMixin):
         if save:
             self.save()
 
-    def add_nonregistered_contributor(self, name, email, auth, save=False):
+    def add_unregistered_contributor(self, fullname, email, auth, save=False):
         """Add a non-registered contributor to the project.
 
-        :param name: A string, the full name of the person.
-        :param email: A string, the email address of the person.
+        :param str fullname: The full name of the person.
+        :param str email: The email address of the person.
         :param Auth auth: Auth object for the user adding the contributor.
+        :returns: The added contributor
+
+        :raises: DuplicateEmailError if user with given email is already in the database.
 
         """
-        contributor = User.create_unregistered(fullname=name, email=email)
+        # Create a new user record
+        try:
+            contributor = User.create_unregistered(fullname=fullname, email=email)
+        except DuplicateEmailError as error:
+            contributor = get_user(username=email)
+            # Unregistered users may have multiple unclaimed records, so
+            # only raise error if user is registered.
+            if contributor.is_registered or self.is_contributor(contributor):
+                raise error
+
+        contributor.add_unclaimed_record(node=self, referrer=auth.user,
+            given_name=fullname, email=email)
         contributor.save()
-        return self.add_contributor(contributor, auth=auth, log=True, save=save)
+        self.add_contributor(contributor, auth=auth, log=True, save=save)
+        return contributor
 
     def set_permissions(self, permissions, auth=None):
         """Set the permissions for this node.
