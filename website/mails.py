@@ -83,7 +83,7 @@ def send_mail(to_addr, mail, mimetype='plain', **context):
          Requires celery worker.
 
     """
-    subject = mail.subject
+    subject = mail.subject.format(**context)
     message = mail.text(**context) if mimetype in ('plain', 'txt') else mail.html(**context)
     # Don't use ttls and login in DEBUG_MODE
     ttls = login = not settings.DEBUG_MODE
@@ -104,3 +104,4 @@ def send_mail(to_addr, mail, mimetype='plain', **context):
 TEST = Mail('test', subject='A test email')
 CONFIRM_EMAIL = Mail('confirm', subject='Confirm your email address')
 INVITE = Mail('invite', subject='You have been added as a contributor to an OSF project.')
+FORWARD_INVITE = Mail('forward_invite', subject='Please forward to {fullname}')

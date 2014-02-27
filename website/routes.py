@@ -274,6 +274,8 @@ def make_url_map(app):
 
         Rule('/profile/<user_id>/summary/', 'get', profile_views.get_profile_summary, json_renderer),
 
+        Rule('/user/<uid>/<pid>/claim/verify/', 'post', project_views.contributor.claim_user_post, json_renderer),
+
     ], prefix='/api/v1',)
 
     ### Search ###

@@ -8,7 +8,7 @@ from framework.auth.decorators import collect_auth
 from framework.auth.utils import parse_name
 from framework.exceptions import HTTPError
 from ..decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor
+    must_be_contributor, must_be_contributor_or_public
 from framework import forms
 from framework.auth.forms import SetEmailAndPasswordForm
 from framework.auth.exceptions import DuplicateEmailError
@@ -232,6 +232,30 @@ def email_invite(to_addr, new_user, referrer, node):
         node=node,
         claim_url=claim_url)
 
+def send_claim_email(email, user, node):
+    unclaimed_record = user.get_unclaimed_record(node._primary_key)
+    referrer = User.load(unclaimed_record['referrer_id'])
+    claim_url = user.get_claim_url(node._primary_key, external=True) + '?email={0}'.format(email)
+    # If given email is the same provided by user, just send to that email
+    if unclaimed_record.get('email', None) == email.lower().strip():
+        return mails.send_mail(email, mails.INVITE,
+            user=user,
+            referrer=referrer,
+            node=node,
+            claim_url=claim_url,
+            fullname=unclaimed_record['name']
+            )
+    else:  # Otherwise have the referrer forward the email to the user
+        # TODO: write referral email
+        return mails.send_mail(referrer.username, mails.FORWARD_INVITE,
+            user=user,
+            referrer=referrer,
+            node=node,
+            claim_url=claim_url,
+            email=email,
+            fullname=unclaimed_record['name']
+        )
+
 
 def claim_user_form(**kwargs):
     """View for rendering the set password page for a claimed user.
@@ -313,3 +337,14 @@ def invite_contributor_post(**kwargs):
     # display correct name
     serialized['fullname'] = fullname
     return {'status': 'success', 'contributor': serialized}
+
+
+@must_be_contributor_or_public
+def claim_user_post(**kwargs):
+    reqdata = request.json
+    user = User.load(reqdata['pk'])
+    email = reqdata['value']
+    node = kwargs['node'] or kwargs['project']
+    send_claim_email(email, user, node)
+    unclaimed_data = user.get_unclaimed_record(node._primary_key)
+    return {'status': 'success', 'fullname': unclaimed_data['name']}

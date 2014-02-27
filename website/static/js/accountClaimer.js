@@ -19,11 +19,31 @@ this.OSFAccountClaimer = (function($, global, undefined) {
         this.init();
     }
 
+    function getClaimUrl() {
+        var uid = $(this).data('pk');
+        // FIXME: Hack; don't get project id from global
+        var pid = global.nodeId;
+        return  '/api/v1/user/' + uid + '/' + pid +  '/claim/verify/';
+    }
+
     AccountClaimer.prototype = {
         constructor: AccountClaimer,
         init: function() {
             this.element.editable({
                 type: 'text',
+                ajaxOptions: {
+                    type: 'post',
+                    contentType: 'application/json',
+                    dataType: 'json'  // Expect JSON response
+                },
+                success: function(response) {
+                    // NOTE: workaround for X-editable to make value not change
+                    return {newValue: response.fullname};
+                },
+                // Send JSON payload
+                params: function(params) {
+                    return JSON.stringify(params);
+                },
                 title: 'Claim Account',
                 placement: 'bottom',
                 value: '',
@@ -33,7 +53,9 @@ this.OSFAccountClaimer = (function($, global, undefined) {
                     if (!validateEmail(trimmed)) {
                         return 'Not a valid email.';
                     }
-                }
+                },
+                url: getClaimUrl.call(this),
+                setValue: function(){}
             });
         }
     };

@@ -17,9 +17,9 @@ import website.app
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
-from website.project.views.contributor import _add_contributor_json
+from website.project.views.contributor import _add_contributor_json, send_claim_email
 from webtest.app import AppError
-from website import settings
+from website import settings, mails
 from website.util import rubeus
 from website.project.views.node import _view_project
 
@@ -390,6 +390,39 @@ class TestUserInviteViews(DbTestCase):
             {'fullname': fake.name(), 'email': user.username},
             auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_send_claim_email_to_given_email(self, send_mail):
+        project = ProjectFactory()
+        given_email = fake.email()
+        unreg_user = project.add_unregistered_contributor(fullname=fake.name(),
+            email=given_email, auth=Auth(project.creator))
+        project.save()
+        send_claim_email(email=given_email, user=unreg_user, node=project)
+
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr=given_email,
+            mail=mails.INVITE
+        ))
+
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_send_claim_email_to_referrer(self, send_mail):
+        project = ProjectFactory()
+        referrer = project.creator
+        given_email, real_email = fake.email(), fake.email()
+        unreg_user = project.add_unregistered_contributor(fullname=fake.name(),
+            email=given_email, auth=Auth(referrer)
+        )
+        project.save()
+        send_claim_email(email=real_email, user=unreg_user, node=project)
+
+        assert_true(send_mail.called)
+        # email was sent to referrer
+        assert_true(send_mail.called_with(
+            to_addr=referrer.username,
+            mail=mails.FORWARD_INVITE
+        ))
 
 
 @unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')

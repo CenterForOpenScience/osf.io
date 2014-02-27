@@ -73,7 +73,7 @@ class User(GuidStoredObject, AddonModelMixin):
     emails = fields.StringField(list=True)
     # Email verification tokens
     # Format: {
-    #   <token> : {'email': <email address}
+    #   <token> : {'email': <email address>}
     # }
     # TODO: add timestamp to allow for timed expiration?
     email_verifications = fields.DictionaryField()
