@@ -448,7 +448,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             try:
                 response = connection.delete_hook(self.user, self.repo, self.hook_id)
             except NotFoundError:
-                pass
+                return False
             if response:
                 self.hook_id = None
                 if save:
