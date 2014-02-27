@@ -1,22 +1,11 @@
-<div>
+<form role="form" id="addonSettings${addon_short_name.capitalize()}" class="addon-settings" method="POST" data-addon="${addon_short_name}">
 
-    <form role="form" class="addon-settings" method="POST" data-addon="${addon_short_name}">
+    <!-- Title -->
+    <h4>${addon_full_name}</h4>
 
-        <!-- Title -->
-        <h4>${addon_full_name}</h4>
+    ${next.body()}
 
-        ${self.body()}
+    <!-- Form feedback -->
+    <div class="addon-settings-message" style="display: none; padding-top: 10px;"></div>
 
-        <!-- Submit button -->
-        % if node and not node['is_registration'] and not disabled:
-            <button id="addon-settings-submit" class="btn btn-success">
-                Submit
-            </button>
-        % endif
-
-        <!-- Form feedback -->
-        <span class="addon-settings-message" style="display: none; padding-left: 10px;"></span>
-
-    </form>
-
-</div>
+</form>

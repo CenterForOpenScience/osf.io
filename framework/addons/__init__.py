@@ -29,7 +29,7 @@ class AddonModelMixin(StoredObject):
     def _backref_key(self, addon_config):
 
         return '{0}__addons'.format(
-            addon_config.models[self._name]._name,
+            addon_config.settings_models[self._name]._name,
         )
 
     def get_addon(self, addon_name, deleted=False):
@@ -40,7 +40,7 @@ class AddonModelMixin(StoredObject):
 
         """
         addon_config = settings.ADDONS_AVAILABLE_DICT.get(addon_name)
-        if not addon_config or not addon_config.models.get(self._name):
+        if not addon_config or not addon_config.settings_models.get(self._name):
             return False
 
         backref_key = self._backref_key(addon_config)
@@ -50,10 +50,11 @@ class AddonModelMixin(StoredObject):
                 return addons[0]
 
 
-    def add_addon(self, addon_name):
+    def add_addon(self, addon_name, auth=None):
         """Add an add-on to the node.
 
         :param str addon_name: Name of add-on
+        :param Auth auth: Consolidated authorization object
         :return bool: Add-on was added
 
         """
@@ -67,29 +68,32 @@ class AddonModelMixin(StoredObject):
 
         # Get add-on settings model
         addon_config = settings.ADDONS_AVAILABLE_DICT.get(addon_name)
-        if not addon_config or not addon_config.models[self._name]:
+        if not addon_config or not addon_config.settings_models[self._name]:
             return False
 
         # Instantiate model
-        model = addon_config.models[self._name](owner=self)
+        model = addon_config.settings_models[self._name](owner=self)
         model.save()
 
         return True
 
-    def delete_addon(self, addon_name):
+    def delete_addon(self, addon_name, auth=None):
         """Delete an add-on from the node.
 
         :param str addon_name: Name of add-on
+        :param Auth auth: Consolidated authorization object
         :return bool: Add-on was deleted
 
         """
         addon = self.get_addon(addon_name)
         if addon:
+            if self._name in addon.config.added_mandatory:
+                raise ValueError('Cannot delete mandatory add-on.')
             addon.delete()
             return True
         return False
 
-    def config_addons(self, config, save=True):
+    def config_addons(self, config, auth=None, save=True):
         """Enable or disable a set of add-ons.
 
         :param dict config: Mapping between add-on names and enabled / disabled
@@ -98,8 +102,8 @@ class AddonModelMixin(StoredObject):
         """
         for addon_name, enabled in config.iteritems():
             if enabled:
-                self.add_addon(addon_name)
+                self.add_addon(addon_name, auth)
             else:
-                self.delete_addon(addon_name)
+                self.delete_addon(addon_name, auth)
         if save:
             self.save()

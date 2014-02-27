@@ -60,9 +60,7 @@ def delete_solr_doc(args=None):
     try:
         db = solr.query(id=args['doc_id']).execute()[0]
         for key in db.keys():
-            print key
             if key[:len(args['_id'])] == args['_id']:
-                print 'deleting'
                 del db[key]
 
         solr.add(db)

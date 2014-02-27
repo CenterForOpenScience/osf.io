@@ -9,7 +9,7 @@ from framework import (Rule, process_rules,
                        render_mako_string)
 from framework.auth import views as auth_views
 
-from website import settings
+from website import settings, language
 from website import views as website_routes
 from website.addons.base import views as addon_views
 from website.search import views as search_views
@@ -35,7 +35,9 @@ def get_globals():
         'allow_login': settings.ALLOW_LOGIN,
         'status': framework.status.pop_status_messages(),
         'js_all': assets_env['js'].urls(),
-        'css_all': assets_env['css'].urls()
+        'css_all': assets_env['css'].urls(),
+        'domain': settings.DOMAIN,
+        'language': language,
     }
 
 
@@ -44,6 +46,9 @@ class OsfWebRenderer(WebRenderer):
     def __init__(self, *args, **kwargs):
         kwargs['data'] = get_globals
         super(OsfWebRenderer, self).__init__(*args, **kwargs)
+
+#: Use if a view only redirects or raises error
+notemplate = OsfWebRenderer('', render_mako_string)
 
 
 def favicon():
@@ -55,7 +60,7 @@ def favicon():
 
 
 def goodbye(**kwargs):
-    status.push_status_message('You have successfully logged out.')
+    status.push_status_message(language.LOGOUT, 'info')
     return {}
 
 
@@ -75,10 +80,27 @@ def make_url_map(app):
 
     ### GUID ###
     process_rules(app, [
-        Rule([
-            '/<guid>/',
-            '/<guid>/<path:suffix>',
-        ], ['get', 'post'], website_routes.resolve_guid, OsfWebRenderer('', render_mako_string)),
+
+        Rule(
+            [
+                '/<guid>/',
+                '/<guid>/<path:suffix>',
+            ],
+            ['get', 'post', 'put', 'patch', 'delete'],
+            website_routes.resolve_guid,
+            OsfWebRenderer('', render_mako_string),
+        ),
+
+        Rule(
+            [
+                '/api/v1/<guid>/',
+                '/api/v1/<guid>/<path:suffix>',
+            ],
+            ['get', 'post', 'put', 'patch', 'delete'],
+            website_routes.resolve_guid,
+            json_renderer,
+        ),
+
     ])
 
     process_rules(app, [
@@ -98,6 +120,15 @@ def make_url_map(app):
         Rule('/getting-started/', 'get', {}, OsfWebRenderer('public/pages/getting_started.mako')),
         Rule('/explore/', 'get', {}, OsfWebRenderer('public/explore.mako')),
         Rule(['/messages/', '/help/'], 'get', {}, OsfWebRenderer('public/comingsoon.mako')),
+
+        Rule(
+            '/view/spsp2014/', 'get', project_views.email.spsp_results,
+            OsfWebRenderer('public/pages/spsp2014.mako')
+        ),
+        Rule(
+            '/view/spsp2014/plain/', 'get', project_views.email.spsp_results,
+            OsfWebRenderer('public/pages/spsp2014_plain.mako'), endpoint_suffix='__plain',
+        ),
 
     ])
 
@@ -159,7 +190,8 @@ def make_url_map(app):
         Rule('/forms/signin/', 'get', website_routes.signin_form, json_renderer),
         Rule('/forms/forgot_password/', 'get', website_routes.forgot_password_form, json_renderer),
         Rule('/forms/reset_password/', 'get', website_routes.reset_password_form, json_renderer),
-        Rule('/forms/new_project/', 'get', website_routes.new_project_form, json_renderer)
+        Rule('/forms/new_project/', 'get', website_routes.new_project_form, json_renderer),
+        Rule('/forms/set_email_and_password/', 'get', website_routes.set_email_and_password_form, json_renderer),
 
     ], prefix='/api/v1')
 
@@ -178,6 +210,21 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule(
+            '/confirm/<uid>/<token>/',
+            'get',
+            auth_views.confirm_email_get,
+            # View will either redirect or display error message
+            OsfWebRenderer('error.mako', render_mako_string)
+        ),
+
+        Rule(
+            '/resend/',
+            ['get', 'post'],
+            auth_views.resend_confirmation,
+            OsfWebRenderer('resend.mako', render_mako_string)
+        ),
+
+        Rule(
             '/resetpassword/<verification_key>/',
             ['get', 'post'],
             auth_views.reset_password,
@@ -190,7 +237,7 @@ def make_url_map(app):
         Rule('/login/', 'post', auth_views.auth_login, OsfWebRenderer('public/login.mako'), endpoint_suffix='__post'),
         Rule('/login/first/', 'get', auth_views.auth_login, OsfWebRenderer('public/login.mako'), endpoint_suffix='__first', view_kwargs={'first': True}),
 
-        Rule('/logout/', 'get', auth_views.auth_logout, OsfWebRenderer('', render_mako_string)),
+        Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
 
         Rule('/forgotpassword/', 'post', auth_views.forgot_password, OsfWebRenderer('public/login.mako')),
 
@@ -212,8 +259,9 @@ def make_url_map(app):
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, OsfWebRenderer('profile/key_history.mako')),
         Rule('/addons/', 'get', profile_views.profile_addons, OsfWebRenderer('profile/addons.mako')),
         Rule(["/user/merge/"], 'get', auth_views.merge_user_get, OsfWebRenderer("merge_accounts.mako")),
-        Rule(["/user/merge/"], 'post', auth_views.merge_user_post, OsfWebRenderer("merge_accounts.mako"))
-
+        Rule(["/user/merge/"], 'post', auth_views.merge_user_post, OsfWebRenderer("merge_accounts.mako")),
+        # TODO: uncomment to enable user claiming
+        # Rule(['/user/claim/<signature>/'], ['get', 'post'], project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
     ])
 
     # API
@@ -250,6 +298,13 @@ def make_url_map(app):
         Rule('/search/', 'get', search_views.search_search, OsfWebRenderer('search.mako')),
 
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
+
+        Rule(
+            '/api/v1/search/node/',
+            'post',
+            project_views.node.search_node,
+            json_renderer,
+        ),
 
     ])
 
@@ -296,18 +351,19 @@ def make_url_map(app):
         # TODO: Move to API routes below
         Rule(
             '/api/v1/settings/addons/',
-            'post', profile_views.user_choose_addons, json_renderer,
+            'post',
+            profile_views.user_choose_addons,
+            json_renderer,
         ),
-        Rule([
-            '/api/v1/project/<pid>/settings/addons/',
-            '/api/v1/project/<pid>/node/<nid>/settings/addons/',
-        ], 'post', project_views.node.node_choose_addons, json_renderer),
-
-        # Remove
-        Rule([
-            '/project/<pid>/remove/',
-            '/project/<pid>/node/<nid>/remove/',
-        ], 'get', project_views.node.component_remove, WebRenderer('', render_mako_string)),
+        Rule(
+            [
+                '/api/v1/project/<pid>/settings/addons/',
+                '/api/v1/project/<pid>/node/<nid>/settings/addons/',
+            ],
+            'post',
+            project_views.node.node_choose_addons,
+            json_renderer,
+        ),
 
         # Permissions
         Rule([
@@ -322,19 +378,6 @@ def make_url_map(app):
             '/project/<pid>/log/',
             '/project/<pid>/node/<nid>/log/',
         ], 'get', project_views.log.get_logs, OsfWebRenderer('util/render_logs.mako')),
-
-
-        ### Files ###
-
-        Rule([
-            '/project/<pid>/files/',
-            '/project/<pid>/node/<nid>/files/',
-        ], 'get', project_views.file.get_files, OsfWebRenderer('project/files.mako')),
-
-        Rule([
-            '/project/<pid>/files/<fid>/',
-            '/project/<pid>/node/<nid>/files/<fid>/',
-        ], 'get', project_views.file.view_file, OsfWebRenderer('project/file.mako')),
 
         # View forks
         Rule([
@@ -364,47 +407,34 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/statistics/',
         ], 'get', project_views.node.project_statistics, OsfWebRenderer('project/statistics.mako')),
 
-        ### Wiki ###
-        Rule([
-            '/project/<pid>/wiki/',
-            '/project/<pid>/node/<nid>/wiki/',
-        ], 'get', project_views.wiki.project_wiki_home, OsfWebRenderer('project/wiki.mako')),
+        ### Files ###
 
-        # View
-        Rule([
-            '/project/<pid>/wiki/<wid>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/',
-        ], 'get', project_views.wiki.project_wiki_page, OsfWebRenderer('project/wiki.mako')),
+        # Note: Web endpoint for files view must pass `mode` = `page` to
+        # include project view data and JS includes
+        Rule(
+            [
+                '/project/<pid>/files/',
+                '/project/<pid>/node/<nid>/files/',
+            ],
+            'get',
+            project_views.file.collect_file_trees,
+            OsfWebRenderer('project/files.mako'),
+            endpoint_suffix='__page', view_kwargs={'mode': 'page'},
+        ),
 
-        # Edit | GET
-        Rule([
-            '/project/<pid>/wiki/<wid>/edit/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
-        ], 'get', project_views.wiki.project_wiki_edit, OsfWebRenderer('project/wiki/edit.mako')),
-
-        # Edit | POST
-        Rule([
-            '/project/<pid>/wiki/<wid>/edit/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
-        ], 'post', project_views.wiki.project_wiki_edit_post, OsfWebRenderer('project/wiki/edit.mako')),
-
-        # Compare
-        Rule([
-            '/project/<pid>/wiki/<wid>/compare/<compare_id>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/compare/<compare_id>/',
-        ], 'get', project_views.wiki.project_wiki_compare, OsfWebRenderer('project/wiki/compare.mako')),
-
-        # Versions
-        Rule([
-            '/project/<pid>/wiki/<wid>/version/<vid>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/',
-        ], 'get', project_views.wiki.project_wiki_version, OsfWebRenderer('project/wiki/compare.mako')),
 
     ])
 
     # API
 
     process_rules(app, [
+
+        Rule(
+            '/email/spsp2014/',
+            'post',
+            project_views.email.spsp_poster_hook,
+            json_renderer,
+        ),
 
         Rule([
             '/project/<pid>/contributors_abbrev/',
@@ -417,6 +447,34 @@ def make_url_map(app):
             '/project/<pid>/',
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, json_renderer),
+
+        Rule(
+            [
+                '/project/<pid>/pointer/',
+                '/project/<pid>/node/<nid>/pointer/',
+            ],
+            'get',
+            project_views.node.get_pointed,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/pointer/',
+                '/project/<pid>/node/<nid>/pointer/',
+            ],
+            'post',
+            project_views.node.add_pointers,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/pointer/',
+                '/project/<pid>/node/<nid>pointer/',
+            ],
+            'delete',
+            project_views.node.remove_pointer,
+            json_renderer,
+        ),
 
         Rule([
             '/project/<pid>/get_summary/',
@@ -463,16 +521,26 @@ def make_url_map(app):
         ], 'get', project_views.node.get_editable_children, json_renderer),
 
         # Create
-        Rule([
-            '/project/new/',
-            '/project/<pid>/newnode/',
-        ], 'post', project_views.node.project_new_node, json_renderer),
+        Rule(
+            [
+                '/project/new/',
+                '/project/<pid>/newnode/',
+            ],
+            'post',
+            project_views.node.project_new_node,
+            json_renderer,
+        ),
 
         # Remove
-        Rule([
-            '/project/<pid>/remove/',
-            '/project/<pid>/node/<nid>/remove/',
-        ], 'post', project_views.node.component_remove, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/remove/',
+                '/project/<pid>/node/<nid>/remove/',
+            ],
+            'delete',
+            project_views.node.component_remove,
+            json_renderer,
+        ),
 
         # API keys
         Rule([
@@ -507,42 +575,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/removetag/<tag>/',
         ], 'post', project_views.tag.project_removetag, json_renderer),
 
-        ### Files ###
-        Rule([
-            '/project/<pid>/files/',
-            '/project/<pid>/node/<nid>/files/',
-        ], 'get', project_views.file.get_files, json_renderer),
-
-        Rule([
-            '/project/<pid>/file_paths/',
-            '/project/<pid>/node/<nid>/file_paths/',
-        ], 'get', project_views.file.list_file_paths, json_renderer),
-
-        # Download file
-        Rule([
-            '/project/<pid>/files/download/<fid>/',
-            '/project/<pid>/node/<nid>/files/download/<fid>/',
-        ], 'get', project_views.file.download_file, json_renderer),
-
-        # Download file by version
-        Rule([
-            '/project/<pid>/files/download/<fid>/version/<vid>/',
-            '/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
-        ], 'get', project_views.file.download_file_by_version, json_renderer),
-
-        Rule([
-            '/project/<pid>/files/upload/',
-            '/project/<pid>/node/<nid>/files/upload/',
-        ], 'get', project_views.file.upload_file_get, json_renderer),
-        Rule([
-            '/project/<pid>/files/upload/',
-            '/project/<pid>/node/<nid>/files/upload/',
-        ], 'post', project_views.file.upload_file_public, json_renderer),
-        Rule([
-            '/project/<pid>/files/delete/<fid>/',
-            '/project/<pid>/node/<nid>/files/delete/<fid>/',
-        ], 'post', project_views.file.delete_file, json_renderer),
-
         # Add / remove contributors
         Rule([
             '/project/<pid>/addcontributors/',
@@ -558,14 +590,24 @@ def make_url_map(app):
         ], 'post', project_views.contributor.project_removecontributor, json_renderer),
 
         # Forks
-        Rule([
-            '/project/<pid>/beforefork/',
-            '/project/<pid>/node/<nid>/beforefork',
-        ], 'get', project_views.node.project_before_fork, json_renderer),
-        Rule([
-            '/project/<pid>/fork/',
-            '/project/<pid>/node/<nid>/fork/',
-        ], 'post', project_views.node.node_fork_page, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/fork/before/',
+                '/project/<pid>/node/<nid>/fork/before/',
+            ], 'get', project_views.node.project_before_fork, json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/fork/',
+                '/project/<pid>/node/<nid>/fork/',
+            ], 'post', project_views.node.node_fork_page, json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/pointer/fork/',
+                '/project/<pid>/node/<nid>/pointer/fork/',
+            ], 'post', project_views.node.fork_pointer, json_renderer,
+        ),
 
         # View forks
         Rule([
@@ -603,30 +645,6 @@ def make_url_map(app):
 
         ### Wiki ###
 
-        # View
-        Rule([
-            '/project/<pid>/wiki/<wid>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/',
-        ], 'get', project_views.wiki.project_wiki_page, json_renderer),
-
-        # Edit | POST
-        Rule([
-            '/project/<pid>/wiki/<wid>/edit/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
-        ], 'post', project_views.wiki.project_wiki_edit_post, json_renderer),
-
-        # Compare
-        Rule([
-            '/project/<pid>/wiki/<wid>/compare/<compare_id>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/compare/<compare_id>/',
-        ], 'get', project_views.wiki.project_wiki_compare, json_renderer),
-
-        # Versions
-        Rule([
-            '/project/<pid>/wiki/<wid>/version/<vid>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/',
-        ], 'get', project_views.wiki.project_wiki_version, json_renderer),
-
         ### Watching ###
         Rule([
             '/project/<pid>/watch/',
@@ -651,4 +669,35 @@ def make_url_map(app):
             '/user/merge/'
         ], 'post', auth_views.merge_user_post, json_renderer),
 
+        # Combined files
+        Rule(
+            [
+                '/project/<pid>/files/',
+                '/project/<pid>/node/<nid>/files/'
+            ],
+            'get',
+            project_views.file.collect_file_trees,
+            json_renderer,
+        ),
+
+        # Endpoint to fetch Rubeus.JS/Hgrid-formatted data
+        Rule(
+            ['/project/<pid>/files/grid/',
+            '/project/<pid>/node/<nid>/files/grid/'
+            ],
+            'get',
+            project_views.file.grid_data,
+            json_renderer
+        ),
+
+        # Invite Users
+        Rule(
+            [
+                '/project/<pid>/invite_contributor/',
+                '/project/<pid>/node/<nid>/invite_contributor/'
+            ],
+            'post',
+            project_views.contributor.invite_contributor_post,
+            json_renderer
+        ),
     ], prefix='/api/v1')

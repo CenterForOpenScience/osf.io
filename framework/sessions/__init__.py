@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+import logging
 
 import bson.objectid
 import itsdangerous
@@ -9,6 +10,7 @@ from website import settings
 from framework.flask import app, request, redirect
 from .model import Session
 
+logger = logging.getLogger(__name__)
 
 # todo 2-back page view queue
 # todo actively_editing date

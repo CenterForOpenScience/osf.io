@@ -1,3 +1,5 @@
+<% import json %>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,8 +22,6 @@
     % endfor
     ${self.stylesheets()}
 
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/knockout/3.0.0/knockout-min.js"></script>
     % for url in js_all:
     <script src="${url}"></script>
     % endfor
@@ -44,18 +44,18 @@
     <div id='devmode'><strong>WARNING</strong>: This site is running in development mode.</div>
     % endif
 
-    <div mod-meta='{"tpl": "nav.mako", "replace": true}'></div>
+    <%include file="nav.mako"/>
      ## TODO: shouldn't always have the watermark class
     <div class="watermarked">
         <div class="container">
             % if status:
-                <div mod-meta='{"tpl": "alert.mako", "replace": true}'></div>
+                <%include file="alert.mako"/>
             % endif
             ${self.content()}
         </div><!-- end container -->
     </div><!-- end watermarked -->
 
-    <div mod-meta='{"tpl": "footer.mako", "replace": true}'></div>
+    <%include file="footer.mako"/>
 
         %if use_cdn:
             <div id="fb-root"></div>
@@ -100,17 +100,20 @@
 
                 $(function() {
                     var cvars = [];
-                    %if user_id:
+                    % if user_id:
                         cvars.push([1, "User ID", "${ user_id }", "visit"])
                         cvars.push([2, "User Name", "${ user_full_name }", "visit"])
-                    %endif
-                    %if node:
+                    % endif
+                    % if node:
                         <% parent_project = parent.get('id') or node.get('id') %>
                         cvars.push([2, "Project ID", "${ parent_project }", "page"]);
                         cvars.push([3, "Node ID", "${ node.get('id') }", "page"]);
-                        cvars.push([4, "Tags", "${ ','.join(node.get('tags')) }", "page"]);
-                    %endif
-                    var foo = trackPiwik("${ piwik_host }", ${ piwik_site_id }, cvars);
+                        cvars.push([4, "Tags", ${ json.dumps(','.join(node.get('tags', []))) }, "page"]);
+                    % endif
+                    // Note: Use cookies for global site ID; only one cookie
+                    // will be used, so this won't overflow uwsgi header
+                    // buffer.
+                    trackPiwik("${ piwik_host }", ${ piwik_site_id }, cvars, true);
                 });
             </script>
         % endif
@@ -144,4 +147,3 @@
 <%def name="javascript_bottom()">
     ### Javascript loaded at the bottom of the page ###
 </%def>
-

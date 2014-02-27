@@ -1,27 +1,41 @@
 # -*- coding: utf-8 -*-
 '''Base TestCase class for OSF unittests. Uses a temporary MongoDB database.'''
 import unittest
+import logging
 
 from pymongo import MongoClient
+from faker import Factory
 
 from framework import storage, set_up_storage
 from framework.auth.model import User
 from framework.sessions.model import Session
 from framework.guid.model import Guid
-from website.project.model import (ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
+from website.project.model import (ApiKey, Node, NodeLog,
                                    Tag, WatchConfig, MetaData)
 from website import settings
 
+from website.addons.osffiles.model import NodeFile
+from website.addons.wiki.model import NodeWikiPage
+import website.models
+from website.app import init_app
+
+# Just a simple app without routing set up or backends
+test_app = init_app(
+    settings_module='website.settings', routes=False, set_backends=False
+)
+
+# Silence some 3rd-party logging
+SILENT_LOGGERS = ['factory.generate', 'factory.containers']
+for logger_name in SILENT_LOGGERS:
+    logging.getLogger(logger_name).setLevel(logging.WARNING)
+
+# Fake factory
+fake = Factory.create()
 
 # All Models
 MODELS = (User, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
           Tag, WatchConfig, Session, MetaData, Guid)
 
-import website.models
-from website.app import init_app
-
-# Just a simple app without routing set up or backends
-test_app = init_app(settings_module="website.settings", routes=False, set_backends=False)
 
 class DbTestCase(unittest.TestCase):
     '''Base TestCase for tests that require a temporary MongoDB database.

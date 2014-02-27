@@ -4,17 +4,77 @@
 commands, run ``$ invoke --list``.
 '''
 import os
-from invoke import task, run, ctask
+import sys
+import code
+
+from invoke import task, run
 
 from website import settings
 
 SOLR_DEV_PATH = os.path.join("scripts", "solr-dev")  # Path to example solr app
+SHELL_BANNER = """
+{version}
 
+Welcome to the OSF Python Shell. Happy hacking!
+
+Available variables:
+
+{context}
+"""
 
 @task
 def server():
     run("python main.py")
 
+def make_shell_context():
+    from framework import Q
+    from framework.auth.model import User
+    from framework import db
+    from website.app import init_app
+    from website.project.model import Node
+    from website import models  # all models
+    app = init_app()
+    context = {'app': app, 'db': db, 'User': User, 'Node': Node, 'Q': Q,
+            'models': models}
+    try: # Add a fake factory for generating fake names, emails, etc.
+        from faker import Factory
+        fake = Factory.create()
+        context['fake'] = fake
+    except ImportError:
+        pass
+    return context
+
+
+def format_context(context):
+    lines = []
+    for name, obj in context.items():
+        line = "{name}: {obj!r}".format(**locals())
+        lines.append(line)
+    return '\n'.join(lines)
+
+# Shell command adapted from Flask-Script. See NOTICE for license info.
+@task
+def shell():
+    context = make_shell_context()
+    banner = SHELL_BANNER.format(version=sys.version,
+        context=format_context(context)
+    )
+    try:
+        try:
+            # 0.10.x
+            from IPython.Shell import IPShellEmbed
+            ipshell = IPShellEmbed(banner=banner)
+            ipshell(global_ns={}, local_ns=context)
+        except ImportError:
+            # 0.12+
+            from IPython import embed
+            embed(banner1=banner, user_ns=context)
+        return
+    except ImportError:
+        pass
+    # fallback to basic python shell
+    code.interact(banner, local=context)
+    return
 
 @task
 def mongo(daemon=False):
@@ -38,7 +98,7 @@ def mongoshell():
 @task
 def celery_worker(level="debug"):
     '''Run the Celery process.'''
-    run("celery worker -A framework -l {0}".format(level))
+    run("celery worker -A framework.tasks -l {0}".format(level))
 
 
 @task
@@ -72,24 +132,90 @@ def mailserver(port=1025):
 
 
 @task
-def requirements():
+def requirements(all=False, addons=False):
     '''Install dependencies.'''
-    run("pip install --upgrade -r dev-requirements.txt", pty=True)
+    if all:
+        run("pip install --upgrade -r dev-requirements.txt", pty=True)
+        addon_requirements()
+    elif addons:
+        addon_requirements()
+    else:
+        run("pip install --upgrade -r dev-requirements.txt", pty=True)
 
 
-@ctask(help={
-    'module': "Just runs tests/STRING.py.",
-})
-def test(ctx, module=None, coverage=False, browse=False):
+@task
+def test_module(module=None, coverage=False, browse=False):
     """
-    Run the test suite.
+    Helper for running tests.
     """
     # Allow selecting specific submodule
-    specific_module = " --tests=tests/%s.py" % module
-    args = (specific_module if module else " tests/")
+    args = " -s --tests=%s" % module
     if coverage:
         args += " --with-coverage --cover-html"
     # Use pty so the process buffers "correctly"
-    ctx.run("nosetests" + args, pty=True)
+    run("nosetests" + args, pty=True)
     if coverage and browse:
-        ctx.run("open cover/index.html")
+        run("open cover/index.html")
+
+
+@task
+def test_osf():
+    """Run the OSF test suite."""
+    test_module(module="tests/")
+
+
+@task
+def test_addons():
+    """Run all the tests in the addons directory.
+    """
+    test_module(module="website/addons/")
+
+
+@task
+def test():
+    """Alias of `invoke test_osf`.
+    """
+    test_osf()
+
+# TODO: user bower once hgrid is released
+@task
+def get_hgrid():
+    """Get the latest development version of hgrid and put it in the static
+    directory.
+    """
+    target = 'website/static/vendor/hgrid'
+    run('git clone https://github.com/CenterForOpenScience/hgrid.git')
+    print('Removing old version')
+    run('rm -rf {0}'.format(target))
+    print('Replacing with fresh version')
+    run('mkdir {0}'.format(target))
+    run('mv hgrid/dist/hgrid.js {0}'.format(target))
+    run('mv hgrid/dist/hgrid.css {0}'.format(target))
+    run('mv hgrid/dist/images {0}'.format(target))
+    run('rm -rf hgrid/')
+    print('Finished')
+
+
+@task
+def addon_requirements():
+    """Install all addon requirements."""
+    addon_root = 'website/addons'
+    for directory in os.listdir(addon_root):
+        path = os.path.join(addon_root, directory)
+        if os.path.isdir(path):
+            try:
+                open(os.path.join(path, 'requirements.txt'))
+                print 'Installing requirements for {0}'.format(directory)
+                run('pip install --upgrade -r {0}/{1}/requirements.txt'.format(addon_root, directory), pty=True)
+            except IOError:
+                pass
+    mfr_requirements()
+    print('Finished')
+
+
+@task
+def mfr_requirements():
+    """Install modular file renderer requirements"""
+    mfr = 'mfr'
+    print 'Installing mfr requirements'
+    run('pip install --upgrade -r {0}/requirements.txt'.format(mfr), pty=True)

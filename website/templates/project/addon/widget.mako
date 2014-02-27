@@ -1,12 +1,16 @@
-<div class="addon-widget">
+<div class="addon-widget" name="${short_name}">
 
     <h3 class="addon-widget-header">
-        % if help:
-            <span class="pull-right" data-toggle="tooltip" title="${help}">
+        % if capabilities:
+            <span class="pull-right addon-capabilities">
                 <i class="icon-question-sign"></i>
             </span>
         % endif
-        <span>${title}</span>
+        % if has_page:
+            <a href="${node['url']}${short_name}/">${full_name}</a>
+        % else:
+            <span>${full_name}</span>
+        % endif
     </h3>
 
     % if complete:
@@ -15,9 +19,9 @@
             ${self.body()}
         </div>
 
-        % if page and more:
+        % if has_page and more:
             <div>
-                <a href="${node['url']}${name}/">More</a>
+                <a href="${node['url']}${short_name}/">More</a>
             </div>
         % endif
 

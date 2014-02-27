@@ -22,7 +22,10 @@
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href='#userProfile'>Profile Information</a></li>
-                <li><a href='#userAddons'>Add-ons</a></li>
+                <li><a href="#selectAddons">Select Add-ons to Configure</a></li>
+                % if addon_enabled_settings:
+                    <li><a href="#configureAddons">Configure Add-ons</a></li>
+                % endif
             </ul>
         </div><!-- end sidebar -->
     </div>
@@ -72,11 +75,11 @@
             </div>
         </div>
 
-        <div id="userAddons" class="panel panel-default">
-            <div class="panel-heading"><h3 class="panel-title">Add-ons</h3></div>
+        <div id="selectAddons" class="panel panel-default">
+            <div class="panel-heading"><h3 class="panel-title">Select Add-ons</h3></div>
             <div class="panel-body">
 
-                <form id="chooseAddonsForm">
+                <form id="selectAddonsForm">
 
                     % for category in addon_categories:
 
@@ -112,9 +115,14 @@
 
                 </form>
 
-                % if addon_enabled_settings:
+            </div>
+        </div>
 
-                    <hr />
+        % if addon_enabled_settings:
+
+            <div id="configureAddons" class="panel panel-default">
+                <div class="panel-heading"><h3 class="panel-title">Configure Add-ons</h3></div>
+                <div class="panel-body">
 
                     % for name in addon_enabled_settings:
 
@@ -129,10 +137,10 @@
 
                     % endfor
 
-                % endif
-
+                </div>
             </div>
-        </div>
+
+        % endif
 
     </div>
 
@@ -150,6 +158,51 @@
 <script type="text/javascript" src="/static/js/metadata_1.js"></script>
 
 <script type="text/javascript">
+
+
+    function formToObj(form) {
+        var rv = {};
+        $.each($(form).serializeArray(), function(_, value) {
+            rv[value.name] = value.value;
+        });
+        return rv;
+    }
+
+    function on_submit_settings() {
+        var $this = $(this),
+            addon = $this.attr('data-addon'),
+            owner = $this.find('span[data-owner]').attr('data-owner'),
+            msgElm = $this.find('.addon-settings-message');
+
+        var url = owner == 'user'
+            ? '/api/v1/settings/' + addon + '/'
+            : nodeApiUrl + addon + '/settings/';
+
+        $.ajax({
+            url: url,
+            data: JSON.stringify(formToObj($this)),
+            type: 'POST',
+            contentType: 'application/json',
+            dataType: 'json'
+        }).success(function() {
+            msgElm.text('Settings updated')
+                .removeClass('text-danger').addClass('text-success')
+                .fadeOut(100).fadeIn();
+        }).fail(function(xhr) {
+            var message = 'Error: ';
+            var response = JSON.parse(xhr.responseText);
+            if (response && response.message) {
+                message += response.message;
+            } else {
+                message += 'Settings not updated.'
+            }
+            msgElm.text(message)
+                .removeClass('text-success').addClass('text-danger')
+                .fadeOut(100).fadeIn();
+        });
+
+        return false;
+    }
 
     function getInitials(names) {
         return names
@@ -236,10 +289,10 @@
                 contentType: 'application/json',
                 dataType: 'json',
                 success: function(response) {
-                    modelData['given_name'].value(response['given_name']);
-                    modelData['middle_names'].value(response['middle_names']);
-                    modelData['family_name'].value(response['family_name']);
-                    modelData['suffix'].value(response['suffix']);
+                    modelData.given_name.value(response.given_name);
+                    modelData.middle_names.value(response.middle_names);
+                    modelData.family_name.value(response.family_name);
+                    modelData.suffix.value(response.suffix);
                 }
             });
 
@@ -285,10 +338,10 @@
     });
 
     // Set up submission for addon selection form
-    $('#chooseAddonsForm').on('submit', function() {
+    $('#selectAddonsForm').on('submit', function() {
 
         var formData = {};
-        $('#chooseAddonsForm').find('input').each(function(idx, elm) {
+        $('#selectAddonsForm').find('input').each(function(idx, elm) {
             var $elm = $(elm);
             formData[$elm.attr('name')] = $elm.is(':checked');
         });

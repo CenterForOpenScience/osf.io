@@ -4,6 +4,7 @@ import logging
 import copy
 import json
 import pystache
+import functools
 import httplib as http
 
 import lxml.html
@@ -21,7 +22,10 @@ logger = logging.getLogger(__name__)
 
 TEMPLATE_DIR = settings.TEMPLATES_PATH
 _tpl_lookup = TemplateLookup(
-    directories=[TEMPLATE_DIR],
+    directories=[
+        TEMPLATE_DIR,
+        os.path.join(settings.BASE_PATH, 'addons/'),
+    ],
     module_directory='/tmp/mako_modules'
 )
 REDIRECT_CODES = [
@@ -81,6 +85,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
     :return: Wrapped view function
 
     """
+    @functools.wraps(fn)
     def wrapped(*args, **kwargs):
         session_error_code = session.data.get('auth_error_code')
         if session_error_code:
@@ -92,8 +97,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
         except HTTPError as error:
             data = error
         except Exception as error:
-            logger.debug('Exception raised in wrap_with_renderer')
-            logger.error(error)
+            logger.exception(error)
             if debug_mode:
                 raise
             data = HTTPError(
@@ -192,11 +196,13 @@ def render_mako_string(tpldir, tplname, data):
         mako_cache[tplname] = tpl
     return tpl.render(**data)
 
+
 renderer_extension_map = {
     '.stache': render_mustache_string,
     '.jinja': render_jinja_string,
     '.mako': render_mako_string,
 }
+
 
 def unpack(data, n=4):
     """Unpack data to tuple of length n.
@@ -297,6 +303,7 @@ class Renderer(object):
         return make_response(rendered, status_code, headers)
 
 
+
 class JSONRenderer(Renderer):
     """Renderer for API views. Generates JSON; ignores
     redirects from views and exceptions.
@@ -332,8 +339,8 @@ class WebRenderer(Renderer):
     CONTENT_TYPE = 'text/html'
     error_template = 'error.mako'
 
+    # TODO: Should be a function, not a method
     def detect_renderer(self, renderer, filename):
-
         if renderer:
             return renderer
 
@@ -367,7 +374,6 @@ class WebRenderer(Renderer):
         self.data = data or {}
         self.detect_render_nested = detect_render_nested
         self.template_dir = template_dir
-
         self.renderer = self.detect_renderer(renderer, template_name)
         self.error_renderer = self.detect_renderer(
             error_renderer,

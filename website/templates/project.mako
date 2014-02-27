@@ -8,31 +8,16 @@
 
     <div class="row">
 
-        <div class="col-md-7" id="containment">
+        <div class="col-md-6">
 
-            <%
-                extra_addon_widgets = [
-                    addon_name
-                    for addon_name, addon_config in addons.iteritems()
-                    if addon_name not in ['wiki', 'files']
-                        and addon_config['has_widget']
-                ]
-            %>
-
-            % if extra_addon_widgets:
+            % if addons:
 
                 <!-- Show widgets in left column if present -->
                 % for addon in addons_enabled:
                     % if addons[addon]['has_widget']:
                         <div class="addon-widget-container" mod-meta='{
                                 "tpl": "../addons/${addon}/templates/${addon}_widget.mako",
-                                "uri": "${node['api_url']}${addon}/widget/",
-                                "kwargs": {
-                                    "name": "${addons[addon]['short_name']}",
-                                    "title": "${addons[addon]['full_name']}",
-                                    "page": "${addons[addon]['has_page']}",
-                                    "help": "${addons[addon]['help']}"
-                                }
+                                "uri": "${node['api_url']}${addon}/widget/"
                             }'></div>
                     % endif
                 % endfor
@@ -42,37 +27,31 @@
                 % if 'wiki' in addons and addons['wiki']['has_widget']:
                     <div class="addon-widget-container" mod-meta='{
                             "tpl": "../addons/wiki/templates/wiki_widget.mako",
-                            "uri": "${node['api_url']}wiki/widget/",
-                            "kwargs": {
-                                "name": "${addons['wiki']['short_name']}",
-                                "title": "${addons['wiki']['full_name']}",
-                                "page": "${addons['wiki']['has_page']}",
-                                "help": "${addons['wiki']['help']}"
-                            }
+                            "uri": "${node['api_url']}wiki/widget/"
                         }'></div>
                 % endif
 
                 <!-- If no widgets, show components -->
                 ${children()}
 
-                % if 'files' in addons and addons['files']['has_widget']:
-                    <div class="addon-widget-container" mod-meta='{
-                            "tpl": "../addons/files/templates/files_widget.mako",
-                            "uri": "${node['api_url']}files/widget/",
-                            "kwargs": {
-                                "name": "${addons['files']['short_name']}",
-                                "title": "${addons['files']['full_name']}",
-                                "page": "${addons['files']['has_page']}",
-                                "help": "${addons['files']['help']}"
-                            }
-                        }'></div>
-                % endif
-
             % endif
+
+            <div class="addon-widget-container">
+                <h3 class="addon-widget-header"><a href="${node['url']}files/">Files</a></h3>
+                <div id="filetreeProgressBar" class="progress progress-striped active">
+                    <div class="progress-bar"  role="progressbar" aria-valuenow="100"
+                        aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+                        <span class="sr-only">Loading</span>
+                    </div>
+                </div>
+
+                <input role="search" class="form-control" placeholder="Search files..." type="text" id="fileSearch" autofocus>
+                <div id="myGrid" class="filebrowser hgrid"></div>
+            </div>
 
         </div>
 
-        <div class="col-md-5">
+        <div class="col-md-6">
 
             <!-- Citations -->
             <div class="citations">
@@ -92,7 +71,7 @@
             <hr />
 
             <!-- Show child on right if widgets -->
-            % if extra_addon_widgets:
+            % if addons:
                 ${children()}
             % endif
 
@@ -143,14 +122,14 @@
 
 <div class="page-header">
     % if node['category'] == 'project':
-        <div class="pull-right">
+        <div class="pull-right btn-group">
             % if user['can_edit']:
-                <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">
+                <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
+                <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
             % else:
-                <a class="btn btn-default disabled">
+                <a class="btn btn-default disabled">Add Component</a>
+                <a class="btn btn-default disabled">Add Link</a>
             % endif
-                Add Component
-        </a>
         </div>
         <%include file="modal_add_component.mako"/>
     % endif
@@ -158,15 +137,21 @@
 </div>
 
 % if node['children']:
-    <div mod-meta='{
-            "tpl": "util/render_nodes.mako",
-            "uri": "${node["api_url"]}get_children/",
-            "replace": true,
-            "kwargs": {"sortable" : true}
-        }'></div>
+    <div id="containment">
+        <div mod-meta='{
+                "tpl": "util/render_nodes.mako",
+                "uri": "${node["api_url"]}get_children/",
+                "replace": true,
+                "kwargs": {"sortable" : true}
+            }'></div>
+    </div>
 % else:
     <p>No components have been added to this project.</p>
 % endif
+
+% for name, capabilities in addon_capabilities.iteritems():
+    <script id="capabilities-${name}" type="text/html">${capabilities}</script>
+% endfor
 
 </%def>
 
@@ -188,6 +173,15 @@
 
     $(document).ready(function() {
 
+        // Show capabilities modal on addon widget help
+        $('.addon-capabilities').on('click', function() {
+            var $this = $(this),
+                $widget = $this.closest('.addon-widget'),
+                name = $widget.attr('name'),
+                conditions = $('#capabilities-' + name);
+            bootbox.alert(conditions.html());
+        });
+
         // Tooltips
         $('[data-toggle="tooltip"]').tooltip();
 
@@ -195,17 +189,17 @@
         $('#node-tags').tagsInput({
             width: "100%",
             interactive:${'true' if user["can_edit"] else 'false'},
-            onAddTag:function(tag){
+            onAddTag: function(tag){
                 $.ajax({
-                    url:"${node['api_url']}" + "addtag/" + tag + "/",
-                    type:"POST",
+                    url: "${node['api_url']}" + "addtag/" + tag + "/",
+                    type: "POST",
                     contentType: "application/json"
                 });
             },
-            onRemoveTag:function(tag){
+            onRemoveTag: function(tag){
                 $.ajax({
-                    url:"${node['api_url']}" + "removetag/" + tag + "/",
-                    type:"POST",
+                    url: "${node['api_url']}" + "removetag/" + tag + "/",
+                    type: "POST",
                     contentType: "application/json"
                 });
             }
@@ -218,6 +212,17 @@
                 $(elm).text($(elm).text().replace(/\s*$/, ''))
             });
         % endif
+
+        // Initialize filebrowser
+        var filebrowser = new Rubeus('#myGrid', {
+                data: nodeApiUrl + 'files/grid/',
+                columns: [HGrid.Col.Name],
+                uploads: false,
+                width: "100%",
+                height: 600,
+                progBar: '#filetreeProgressBar',
+                searchInput: '#fileSearch'
+        });
 
     });
 

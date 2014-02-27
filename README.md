@@ -1,6 +1,10 @@
 [This repository has moved; click here.](http://github.com/CenterForOpenScience/openscienceframework/)
 ===========================
 
+## Help
+
+Solutions to many common issues may be found in the [Troubleshooting Guide](docs/troubleshooting.rst).
+
 ## Quickstart
 
 These instructions should work on Mac OSX >= 10.7
@@ -48,6 +52,14 @@ $ invoke mongo
 $ invoke server
 ```
 
+## Running the shell
+
+To open the interactive Python shell, run:
+
+```bash
+$ invoke shell
+```
+
 ## Running Tests
 
 To run all tests:
@@ -60,6 +72,14 @@ To run a certain test method
 
 ```bash
 $ nosetests tests/test_module.py:TestClass.test_method
+```
+
+### Testing Addons
+
+Addons tests are not run by default. To execute addons tests, run
+
+```bash
+$ invoke test_addons
 ```
 
 ### Testing Email
@@ -116,15 +136,7 @@ invoke celery_worker
 
 ## Using Solr
 
-### Installing Solr
-
 - Make sure [Java is installed](https://www.java.com/en/download/help/index_installing.xml)
-- Install solr. On MacOSX with Homebrew:
-
-```bash
-$ brew update
-$ brew install solr
-```
 
 - Start the Solr server and migrate the models.
 

@@ -1,4 +1,4 @@
-<%inherit file="../../base.mako"/>
+<%inherit file="../../base.mako" />
 
 <%def name="content()">
 
@@ -7,6 +7,15 @@
         "replace": true
     }'></div>
     <span></span>
+
+<h4>
+    ${full_name} Add-on
+    % if capabilities:
+        <span class="addon-capabilities">
+            <i class="icon-question-sign"></i>
+        </span>
+    % endif
+</h4>
 
 % if complete:
 
@@ -25,6 +34,8 @@
         }'></div>
 
 % endif
+
+<script id="capabilities" type="text/html">${addon_capabilities}</script>
 
 </%def>
 
@@ -45,5 +56,12 @@
     % for script in addon_page_js or []:
         <script type="text/javascript" src="${script}"></script>
     % endfor
+
+    <script type="text/javascript">
+        // Show capabilities modal on addon widget help
+        $('.addon-capabilities').on('click', function() {
+            bootbox.alert($('#capabilities').html());
+        });
+    </script>
 
 </%def>

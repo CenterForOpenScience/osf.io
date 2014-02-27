@@ -5,7 +5,9 @@ from framework.forms import (
     TextField,
     validators,
     BootstrapTextInput,
-    BootstrapPasswordInput
+    BootstrapPasswordInput,
+    stripped,
+    lowerstripped
 )
 
 
@@ -16,6 +18,7 @@ name_field = TextField(
         validators.Required(message=u'Full name is required'),
         NoHtmlCharacters(),
     ],
+    filters=[stripped],
     widget=BootstrapTextInput(),
 )
 
@@ -27,6 +30,7 @@ email_field = TextField('Email Address',
         validators.Email(message=u'Email address is invalid'),
         NoHtmlCharacters(),
     ],
+    filters=[lowerstripped],
     widget=BootstrapTextInput())
 
 confirm_email_field = TextField(
@@ -36,6 +40,7 @@ confirm_email_field = TextField(
             'username',
             message='Email addresses must match'),
     ],
+    filters=[lowerstripped],
     widget=BootstrapTextInput(),
 )
 
@@ -45,6 +50,7 @@ password_field = PasswordField('Password',
         validators.Length(min=6, message=u'Password is too short. Password should be at least 6 characters.'),
         validators.Length(max=35, message=u'Password is too long. Password should be at most 35 characters.'),
     ],
+    filters=[stripped],
     widget=BootstrapPasswordInput()
 )
 
@@ -53,6 +59,7 @@ confirm_password_field = PasswordField(
     [
         validators.EqualTo('password', message='Passwords must match')
     ],
+    filters=[stripped],
     widget=BootstrapPasswordInput()
 )
 
@@ -62,12 +69,20 @@ class ResetPasswordForm(Form):
     password2 = confirm_password_field
 
 
+class SetEmailAndPasswordForm(ResetPasswordForm):
+    username = email_field
+
+
 class RegistrationForm(Form):
     fullname = name_field
     username = email_field
     username2 = confirm_email_field
     password = password_field
     password2 = confirm_password_field
+
+
+class ResendConfirmationForm(Form):
+    email = email_field
 
 
 class SignInForm(Form):
@@ -88,10 +103,13 @@ class MergeAccountForm(Form):
         validators.Email(message=u'Email address is invalid'),
         NoHtmlCharacters(),
     ],
+    filters=[lowerstripped],
     widget=BootstrapTextInput())
     merged_password = PasswordField("Duplicate User's Password",
                                     [validators.Required(message=u"Please enter the user's password")],
+                                    filters=[stripped],
                                     widget=BootstrapPasswordInput())
     user_password = PasswordField("This Account's Password",
                                     [validators.Required(message=u"Please enter the password for this account")],
+                                    filters=[stripped],
                                     widget=BootstrapPasswordInput())

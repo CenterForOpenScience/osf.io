@@ -1,6 +1,7 @@
 from .model import AddonZoteroNodeSettings
 from .routes import settings_routes, page_routes, widget_routes
 
+MODELS = [AddonZoteroNodeSettings]
 NODE_SETTINGS_MODEL = AddonZoteroNodeSettings
 
 ROUTES = [settings_routes, page_routes, widget_routes]
@@ -10,9 +11,8 @@ FULL_NAME = 'Zotero'
 
 OWNERS = ['node']
 
-ADDED_TO = {
-    'node': False,
-}
+ADDED_DEFAULT = []
+ADDED_MANDATORY = []
 
 VIEWS = ['widget', 'page']
 CONFIGS = ['node']

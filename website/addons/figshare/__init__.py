@@ -1,6 +1,7 @@
 from .model import AddonFigShareNodeSettings
 from .routes import settings_routes
 
+MODELS = [AddonFigShareNodeSettings]
 NODE_SETTINGS_MODEL = AddonFigShareNodeSettings
 
 ROUTES = [settings_routes]
@@ -10,9 +11,8 @@ FULL_NAME = 'FigShare'
 
 OWNERS = ['node']
 
-ADDED_TO = {
-    'node': False,
-}
+ADDED_DEFAULT = []
+ADDED_MANDATORY = []
 
 VIEWS = ['widget']
 CONFIGS = ['node']

@@ -5,21 +5,36 @@ from __future__ import absolute_import
 import json
 import unittest
 import datetime as dt
+import mock
 
+import mock
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
+from framework import Q
+from framework.auth.model import User
 
 import website.app
-from website.models import Node, NodeLog
+from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
+from framework.auth.decorators import Auth
+from website.project.views.contributor import _add_contributor_json
+from webtest.app import AppError
+from website import settings
+from website.util import rubeus
+from website.project.views.node import _view_project
+
 
 from tests.base import DbTestCase
-from tests.factories import (UserFactory, ApiKeyFactory, ProjectFactory,
-                            WatchConfigFactory, NodeFactory, NodeLogFactory)
+from tests.factories import (
+    UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
+    NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
+    RegistrationFactory
+)
 
 
-app = website.app.init_app(routes=True, set_backends=False,
-                            settings_module="website.settings")
+app = website.app.init_app(
+    routes=True, set_backends=False, settings_module='website.settings',
+)
 
 
 class TestProjectViews(DbTestCase):
@@ -32,12 +47,15 @@ class TestProjectViews(DbTestCase):
         api_key = ApiKeyFactory()
         self.user1.api_keys.append(api_key)
         self.user1.save()
+        self.consolidate_auth1 = Auth(user=self.user1, api_key=api_key)
         self.auth = ('test', api_key._primary_key)
         self.user2 = UserFactory()
         # A project has 2 contributors
-        self.project = ProjectFactory(title="Ham",
-                                        description='Honey-baked',
-                                        creator=self.user1)
+        self.project = ProjectFactory(
+            title="Ham",
+            description='Honey-baked',
+            creator=self.user1
+        )
         self.project.add_contributor(self.user1)
         self.project.add_contributor(self.user2)
         self.project.api_keys.append(api_key)
@@ -118,9 +136,11 @@ class TestProjectViews(DbTestCase):
                    'invitations and account merging are done.')
     def test_project_remove_non_registered_contributor(self):
         # A non-registered user is added to the project
-        self.project.add_nonregistered_contributor(name="Vanilla Ice",
-                                                    email="iceice@baby.ice",
-                                                    user=self.user1)
+        self.project.add_nonregistered_contributor(
+            name="Vanilla Ice",
+            email="iceice@baby.ice",
+            auth=self.consolidate_auth1
+        )
         self.project.save()
         url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
         # the contributor is removed via the API
@@ -164,7 +184,7 @@ class TestProjectViews(DbTestCase):
         assert_in("footag", self.project.tags)
 
     def test_remove_tag(self):
-        self.project.add_tag("footag", user=self.user1, api_key=None, save=True)
+        self.project.add_tag("footag", auth=self.consolidate_auth1, save=True)
         assert_in("footag", self.project.tags)
         url = "/api/v1/project/{0}/removetag/{tag}/".format(self.project._primary_key,
                                                         tag="footag")
@@ -187,49 +207,209 @@ class TestProjectViews(DbTestCase):
     def test_get_logs(self):
         # Add some logs
         for _ in range(5):
-            self.project.logs.append(NodeLogFactory(user=self.user1,
-                                                action="file_added",
-                                                params={"project": self.project._id}))
+            self.project.logs.append(
+                NodeLogFactory(
+                    user=self.user1,
+                    action='file_added',
+                    params={'project': self.project._id}
+                )
+            )
         self.project.save()
-        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
+        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
         self.project.reload()
         data = res.json
         assert_equal(len(data['logs']), len(self.project.logs))
         most_recent = data['logs'][0]
-        assert_equal(most_recent['action'], "file_added")
+        assert_equal(most_recent['action'], 'file_added')
 
     def test_get_logs_with_count_param(self):
         # Add some logs
         for _ in range(5):
-            self.project.logs.append(NodeLogFactory(user=self.user1,
-                                                    action="file_added",
-                                                    params={"project": self.project._id}))
+            self.project.logs.append(
+                NodeLogFactory(
+                    user=self.user1,
+                    action='file_added',
+                    params={'project': self.project._id}
+                )
+            )
         self.project.save()
-        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
-        res = self.app.get(url, {"count": 3}, auth=self.auth)
+        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        res = self.app.get(url, {'count': 3}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
 
     def test_get_logs_defaults_to_ten(self):
         # Add some logs
         for _ in range(12):
-            self.project.logs.append(NodeLogFactory(user=self.user1,
-                                                    action="file_added",
-                                                    params={"project": self.project._id}))
+            self.project.logs.append(
+                NodeLogFactory(
+                    user=self.user1,
+                    action='file_added',
+                    params={'project': self.project._id}
+                )
+            )
         self.project.save()
-        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
+        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), 10)
+
+    def test_logs_private(self):
+        """Add logs to a public project, then to its private component. Get
+        the ten most recent logs; assert that ten logs are returned and that
+        all belong to the project and not its component.
+
+        """
+        # Add some logs
+        for _ in range(15):
+            self.project.add_log(
+                auth=self.consolidate_auth1,
+                action='file_added',
+                params={'project': self.project._id}
+            )
+        self.project.is_public = True
+        self.project.save()
+        child = NodeFactory(project=self.project)
+        for _ in range(5):
+            child.add_log(
+                auth=self.consolidate_auth1,
+                action='file_added',
+                params={'project': child._id}
+            )
+        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        res = self.app.get(url).maybe_follow()
+        assert_equal(len(res.json['logs']), 10)
+        assert_equal(
+            [self.project._id] * 10,
+            [
+                log['params']['project']
+                for log in res.json['logs']
+            ]
+        )
 
     def test_logs_from_api_url(self):
         # Add some logs
         for _ in range(12):
-            self.project.logs.append(NodeLogFactory(user=self.user1, action="file_added",
-                                                    params={"project": self.project._id}))
+            self.project.logs.append(
+                NodeLogFactory(
+                    user=self.user1,
+                    action="file_added",
+                    params={"project": self.project._id}
+                )
+            )
         self.project.save()
         url = "/api/v1/project/{0}/".format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['node']['logs']), 10)
+
+    def test_remove_project(self):
+        url = self.project.api_url + 'remove/'
+        res = self.app.delete_json(url, {}, auth=self.auth).maybe_follow()
+        self.project.reload()
+        assert_equal(self.project.is_deleted, True)
+        assert_in('url', res.json)
+        assert_equal(res.json['url'], '/dashboard/')
+
+    def test_remove_project_with_component(self):
+        node = NodeFactory(project=self.project, creator=self.user1)
+        url = self.project.api_url + 'remove/'
+        self.app.delete_json(url, {}, auth=self.auth).maybe_follow()
+        node.reload()
+        assert_equal(node.is_deleted, True)
+
+    def test_remove_component(self):
+        node = NodeFactory(project=self.project, creator=self.user1)
+        url = node.api_url + 'remove/'
+        res = self.app.delete_json(url, {}, auth=self.auth).maybe_follow()
+        node.reload()
+        assert_equal(node.is_deleted, True)
+        assert_in('url', res.json)
+        assert_equal(res.json['url'], self.project.url)
+
+@unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
+class TestUserInviteViews(DbTestCase):
+
+    def setUp(self):
+        ensure_schemas()
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.invite_url = '/api/v1/project/{0}/invite_contributor/'.format(self.project._primary_key)
+
+    @mock.patch('website.project.views.contributor.send_email.delay')
+    def test_invite_contributor_api_endpoint_sends_an_email(self, send_email_delay):
+        self.app.post_json(self.invite_url,
+            {'fullname': 'Brian May', 'email': 'brian@queen.com'}, auth=self.user.auth)
+        assert_true(send_email_delay.called)
+
+    @mock.patch('website.project.views.contributor.send_email')
+    def test_invite_contributor_api_endpoint_adds_a_non_registered_contributor(self, send_email):
+        res = self.app.post_json(self.invite_url,
+            {'fullname': 'Brian May', 'email': 'brian@queen.com'}, auth=self.user.auth)
+
+        latest_user = User.find_one(Q('username', 'eq', 'brian@queen.com'))
+        assert_equal(latest_user.fullname, 'Brian May')
+        assert_equal(latest_user.username, 'brian@queen.com')
+        assert_false(latest_user.is_registered)
+        assert_equal(res.json['contributor'], _add_contributor_json(latest_user))
+
+    def test_invite_contributor_adds_unclaimed_data(self):
+        res = self.app.post_json(self.invite_url,
+            {'fullname': 'Briann May', 'email': 'brian2@queen.com'}, auth=self.user.auth)
+        latest_user = User.find()[len(User.find()) - 1]
+        data = latest_user.unclaimed_records[self.project._primary_key]
+        assert_equal(data['name'], 'Briann May')
+        assert_equal(data['referrer_id'], self.user._primary_key)
+        assert_true(data['verification'])
+
+    @mock.patch('website.project.views.contributor.send_email')
+    def test_invite_contributor_with_no_email(self, send_email):
+        assert 0, 'finish me'
+
+    def test_invite_contributor_requires_fullname(self):
+        res = self.app.post_json(self.invite_url,
+            {'email': 'brian@queen.com', 'fullname': ''}, auth=self.user.auth,
+            expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    @mock.patch('website.project.views.contributor.send_email')
+    def test_cannot_invite_unreg_contributor_if_they_already_exist(self, send_email):
+        user = UserFactory()
+        res = self.app.post_json(self.invite_url,
+            {'fullname': 'Fred Mercury', 'email': user.username}, auth=self.user.auth)
+        assert_in('User already exists', res.json['message'])
+        assert_in('contributor', res.json)
+
+@unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
+class TestClaimViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.referrer = UserFactory()
+        self.user = UnregUserFactory()
+        self.project = ProjectFactory(creator=self.referrer)
+
+    def add_unclaimed_record(self):
+        given_name = 'Fredd Merkury'
+        self.user.add_unclaimed_record(node=self.project,
+            given_name=given_name, referrer=self.referrer)
+        self.user.save()
+        data = self.user.unclaimed_records[self.project._primary_key]
+        return data
+
+    def test_valid_claim_url(self):
+        self.add_unclaimed_record()
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(url).maybe_follow()
+        assert_equal(res.status_code, 200)
+
+    def test_invalid_claim_url_responds_with_404(self):
+        res = self.app.get('/claim/badsignature/', expect_errors=True).maybe_follow()
+        assert_equal(res.status_code, 404)
+
+    def test_posting_to_claim_url_with_valid_data(self):
+        url = self.user.get_claim_url(self.project._primary_key)
+        # res = self.app.post(url, )
+        assert 0, 'finish me'
 
 
 class TestWatchViews(DbTestCase):
@@ -240,6 +420,7 @@ class TestWatchViews(DbTestCase):
         api_key = ApiKeyFactory()
         self.user.api_keys.append(api_key)
         self.user.save()
+        self.consolidate_auth = Auth(user=self.user, api_key=api_key)
         self.auth = ('test', self.user.api_keys[0]._id)  # used for requests auth
         # A public project
         self.project = ProjectFactory(is_public=True)
@@ -250,8 +431,7 @@ class TestWatchViews(DbTestCase):
         # A log added now
         self.last_log = self.project.add_log(
             NodeLog.TAG_ADDED, params={'project': self.project._primary_key},
-            user=self.user, log_date=dt.datetime.utcnow(),
-            api_key=self.auth[1],
+            auth=self.consolidate_auth, log_date=dt.datetime.utcnow(),
             save=True,
         )
         # Clear watched list
@@ -338,6 +518,163 @@ class TestWatchViews(DbTestCase):
         assert_equal(len(res.json['logs']), len(project.logs))
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
+
+class TestPointerViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = ProjectFactory(creator=self.user)
+
+    def test_add_pointers(self):
+
+        url = self.project.api_url + 'pointer/'
+        node_ids = [
+            NodeFactory()._id
+            for _ in range(5)
+        ]
+        self.app.post_json(
+            url,
+            {'nodeIds': node_ids},
+            auth=self.user.auth,
+        ).maybe_follow()
+
+        self.project.reload()
+        assert_equal(
+            len(self.project.nodes),
+            5
+        )
+
+    def test_add_pointers_not_provided(self):
+        url = self.project.api_url + 'pointer/'
+        with assert_raises(AppError):
+            self.app.post_json(url, {}, auth=self.user.auth)
+
+    def test_remove_pointer(self):
+        url = self.project.api_url + 'pointer/'
+        node = NodeFactory()
+        pointer = self.project.add_pointer(node, auth=self.consolidate_auth)
+        self.app.delete_json(
+            url,
+            {'pointerId': pointer._id},
+            auth=self.user.auth,
+        )
+        self.project.reload()
+        assert_equal(
+            len(self.project.nodes),
+            0
+        )
+
+    def test_remove_pointer_not_provided(self):
+        url = self.project.api_url + 'pointer/'
+        with assert_raises(AppError):
+            self.app.delete_json(url, {}, auth=self.user.auth)
+
+    def test_remove_pointer_not_found(self):
+        url = self.project.api_url + 'pointer/'
+        with assert_raises(AppError):
+            self.app.delete_json(
+                url,
+                {'pointerId': None},
+                auth=self.user.auth
+            )
+
+    def test_remove_pointer_not_in_nodes(self):
+        url = self.project.api_url + 'pointer/'
+        node = NodeFactory()
+        pointer = Pointer(node=node)
+        with assert_raises(AppError):
+            self.app.delete_json(
+                url,
+                {'pointerId': pointer._id},
+                auth=self.user.auth,
+            )
+
+    def test_fork_pointer(self):
+        url = self.project.api_url + 'pointer/fork/'
+        node = NodeFactory(creator=self.user)
+        pointer = self.project.add_pointer(node, auth=self.consolidate_auth)
+        self.app.post_json(
+            url,
+            {'pointerId': pointer._id},
+            auth=self.user.auth
+        )
+
+    def test_fork_pointer_not_provided(self):
+        url = self.project.api_url + 'pointer/fork/'
+        with assert_raises(AppError):
+            self.app.post_json(url, {}, auth=self.user.auth)
+
+    def test_fork_pointer_not_found(self):
+        url = self.project.api_url + 'pointer/fork/'
+        with assert_raises(AppError):
+            self.app.post_json(
+                url,
+                {'pointerId': None},
+                auth=self.user.auth
+            )
+
+    def test_fork_pointer_not_in_nodes(self):
+        url = self.project.api_url + 'pointer/fork/'
+        node = NodeFactory()
+        pointer = Pointer(node=node)
+        with assert_raises(AppError):
+            self.app.post_json(
+                url,
+                {'pointerId': pointer._id},
+                auth=self.user.auth
+            )
+
+    def test_before_register_with_pointer(self):
+        "Assert that link warning appears in before register callback."
+        node = NodeFactory()
+        self.project.add_pointer(node, auth=self.consolidate_auth)
+        url = self.project.api_url + 'fork/before/'
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        prompts = [
+            prompt
+            for prompt in res.json['prompts']
+            if 'Links will be copied into your fork' in prompt
+        ]
+        assert_equal(len(prompts), 1)
+
+    def test_before_fork_with_pointer(self):
+        "Assert that link warning appears in before fork callback."
+        node = NodeFactory()
+        self.project.add_pointer(node, auth=self.consolidate_auth)
+        url = self.project.api_url + 'beforeregister/'
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        prompts = [
+            prompt
+            for prompt in res.json['prompts']
+            if 'Links will be copied into your registration' in prompt
+        ]
+        assert_equal(len(prompts), 1)
+
+    def test_before_register_no_pointer(self):
+        "Assert that link warning does not appear in before register callback."
+        url = self.project.api_url + 'fork/before/'
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        prompts = [
+            prompt
+            for prompt in res.json['prompts']
+            if 'Links will be copied into your fork' in prompt
+        ]
+        assert_equal(len(prompts), 0)
+
+    def test_before_fork_no_pointer(self):
+        "Assert that link warning does not appear in before fork callback."
+        url = self.project.api_url + 'beforeregister/'
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        prompts = [
+            prompt
+            for prompt in res.json['prompts']
+            if 'Links will be copied into your registration' in prompt
+        ]
+        assert_equal(len(prompts), 0)
+
+
 class TestPublicViews(DbTestCase):
 
     def setUp(self):
@@ -346,6 +683,7 @@ class TestPublicViews(DbTestCase):
     def test_explore(self):
         res = self.app.get("/explore/").maybe_follow()
         assert_equal(res.status_code, 200)
+
 
 class TestAuthViews(DbTestCase):
 
@@ -370,6 +708,62 @@ class TestAuthViews(DbTestCase):
         dupe.reload()
         assert_true(dupe.is_merged)
 
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_register_sends_confirm_email(self, send_mail):
+        url = '/register/'
+        self.app.post(url, {
+            'register-fullname': 'Freddie Mercury',
+            'register-username': 'fred@queen.com',
+            'register-password': 'killerqueen',
+            'register-username2': 'fred@queen.com',
+            'register-password2': 'killerqueen',
+        })
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr='fred@queen.com'
+        ))
+
+    def test_resend_confirmation_get(self):
+        res = self.app.get('/resend/')
+        assert_equal(res.status_code, 200)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_resend_confirmation_post_sends_confirm_email(self, send_mail):
+        # Make sure user has a confirmation token for their primary email
+        self.user.add_email_verification(self.user.username)
+        self.user.save()
+        res = self.app.post('/resend/', {'email': self.user.username})
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr=self.user.username
+        ))
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_resend_confirmation_post_if_user_not_in_database(self, send_mail):
+        res = self.app.post('/resend/', {'email': 'norecord@norecord.no'})
+        assert_false(send_mail.called)
+
+    def test_confirmation_link_registers_user(self):
+        user = User.create_unconfirmed('brian@queen.com', 'bicycle123', 'Brian May')
+        assert_false(user.is_registered)  # sanity check
+        user.save()
+        confirmation_url = user.get_confirmation_url('brian@queen.com', external=False)
+        res = self.app.get(confirmation_url)
+        assert_equal(res.status_code, 302, 'redirects to settings page')
+        res = res.follow()
+        user.reload()
+        assert_true(user.is_registered)
+
+    def test_expired_link_returns_400(self):
+        user = User.create_unconfirmed('brian1@queen.com', 'bicycle123', 'Brian May')
+        user.save()
+        token = user.get_confirmation_token('brian1@queen.com')
+        url = user.get_confirmation_url('brian1@queen.com', external=False)
+        user.confirm_email(token)
+        user.save()
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
     def test_change_names(self):
         self.app.post(
             '/api/v1/settings/names/',
@@ -387,6 +781,74 @@ class TestAuthViews(DbTestCase):
         assert_equal(self.user.given_name, 'Lyndon')
         assert_equal(self.user.middle_names, 'Baines')
         assert_equal(self.user.family_name, 'Johnson')
+
+
+# TODO: Use mock add-on
+class TestAddonUserViews(DbTestCase):
+
+    def setUp(self):
+        self.user = AuthUserFactory()
+        self.app = TestApp(app)
+
+    def test_choose_addons_add(self):
+        """Add add-ons; assert that add-ons are attached to project.
+
+        """
+        url = '/api/v1/settings/addons/'
+        self.app.post_json(
+            url,
+            {'github': True},
+            auth=self.user.auth,
+        ).maybe_follow()
+        self.user.reload()
+        assert_true(self.user.get_addon('github'))
+
+    def test_choose_addons_remove(self):
+        """Add, then delete, add-ons; assert that add-ons are not attached to
+        project.
+
+        """
+        url = '/api/v1/settings/addons/'
+        self.app.post_json(
+            url,
+            {'github': True},
+            auth=self.user.auth,
+        ).maybe_follow()
+        self.app.post_json(
+            url,
+            {'github': False},
+            auth=self.user.auth
+        ).maybe_follow()
+        self.user.reload()
+        assert_false(self.user.get_addon('github'))
+
+
+# TODO: Move to OSF Storage
+class TestFileViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory.build(creator=self.user, is_public=True)
+        self.project.add_contributor(self.user)
+        self.project.save()
+
+    def test_files_get(self):
+        url = '/api/v1/{0}/files/'.format(self.project._primary_key)
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        assert_equal(res.status_code, 200)
+        expected = _view_project(self.project, auth=Auth(user=self.user))
+        assert_equal(res.json['node'], expected['node'])
+        assert_in('tree_js', res.json)
+        assert_in('tree_css', res.json)
+
+    def test_grid_data(self):
+        url = '/api/v1/{0}/files/grid/'.format(self.project._primary_key)
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        assert_equal(res.status_code, 200)
+        expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))
+        data = res.json['data']
+        assert_equal(len(data), len(expected))
 
 if __name__ == '__main__':
     unittest.main()

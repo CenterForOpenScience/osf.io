@@ -15,14 +15,15 @@ BASE_PATH = parent_dir(HERE)  # website/ directory
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
-DOMAIN = 'https://openscienceframework.org/'
+DOMAIN = 'http://localhost:5000/'
 
 # User management & registration
-CONFIRM_REGISTRATIONS_BY_EMAIL = False # Not fully implemented
+CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
+ALLOW_CLAIMING = False
 
-USE_SOLR = True
+USE_SOLR = False
 SOLR_URI = 'http://localhost:8983/solr/'
 
 # Sessions
@@ -37,14 +38,23 @@ DEBUG_MODE = False
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
 
-FROM_EMAIL = 'openscienceframework-noreply@openscienceframework.org'
+FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
+# TODO: Override in local.py
+MAILGUN_API_KEY = None
+
 # TODO: Override in local.py in production
-CACHE_PATH = os.path.join(BASE_PATH, 'cache')
 UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
+MFR_CACHE_PATH = os.path.join(BASE_PATH, 'mfrcache')
+
+# Use Celery for file rendering
+USE_CELERY = True
+
+# File rendering timeout (in ms)
+MFR_TIMEOUT = 30000
 
 # TODO: Override in local.py in production
 DB_PORT = 20771
@@ -67,16 +77,6 @@ SHORT_DOMAIN = 'osf.io'
 # Gravatar options
 GRAVATAR_SIZE_PROFILE = 120
 GRAVATAR_SIZE_ADD_CONTRIBUTOR = 80
-
-# File upload options
-MAX_UPLOAD_SIZE = 1024*1024*250     # In bytes
-
-# File render options
-MAX_RENDER_SIZE = 1024*1024*2.5     # In bytes
-IMG_FMTS = ['jpe?g', 'tiff?', 'png', 'gif', 'bmp', 'svg', 'ico']
-RENDER_ZIP = True
-RENDER_TAR = True
-ARCHIVE_DEPTH = 2               # Set to None for unlimited depth
 
 # User activity style
 USER_ACTIVITY_MAX_WIDTH = 325
@@ -117,19 +117,22 @@ CELERY_RESULT_BACKEND = 'amqp://'
 # Modules to import when celery launches
 CELERY_IMPORTS = (
     'framework.email.tasks',
-    'framework.tasks'
+    'framework.tasks',
+    'framework.render.tasks'
 )
 
 # Add-ons
 
 ADDONS_REQUESTED = [
-    'wiki', 'files',
-    'github',
-    'bitbucket', 'figshare',
-    'zotero',
+    'wiki', 'osffiles',
+    'github', 's3'
+    #'bitbucket', 'figshare', 's3',
+    #'zotero',
 ]
 
-ADDON_CATEGORIES = ['documentation', 'storage', 'bibliography']
+ADDON_CATEGORIES = [
+    'documentation', 'storage', 'bibliography', 'other',
+]
 
 # Piwik
 

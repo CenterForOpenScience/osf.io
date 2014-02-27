@@ -2,27 +2,31 @@
 # -*- coding: utf-8 -*-
 '''Functional tests using WebTest.'''
 import unittest
+import os
 import re
-import datetime as dt
+import mock
+
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
-from webtest import AppError
 
+from framework.auth.decorators import Auth
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, NodeLogFactory, ApiKeyFactory,
-                             NodeFactory, NodeWikiFactory, RegistrationFactory)
+                             NodeFactory, NodeWikiFactory, RegistrationFactory,
+                             UnregUserFactory)
 from tests.test_features import requires_piwik
-
 from website import settings
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.model import ensure_schemas
 from framework import app
+from website.project.views.file import get_cache_path
+from website.addons.osffiles.views import get_cache_file
+from framework.render.tasks import ensure_path
+from website import settings, language
+from website.app import init_app
 
-
-# Only uncomment if running these tests in isolation
-#from website.app import init_app
-#app = init_app(set_backends=False, routes=True)
+app = init_app(set_backends=False, routes=True)
 
 
 class TestAnUnregisteredUser(DbTestCase):
@@ -43,15 +47,10 @@ class TestAnUnregisteredUser(DbTestCase):
         form['register-password'] = 'example'
         form['register-password2'] = 'example'
         # Submits
-        res = form.submit().follow()
-        # There's a flash message
-        assert_in('You may now log in', res)
-        # User logs in
-        form = res.forms['signinForm']
-        form['username'] = 'nickcage@example.com'
-        form['password'] = 'example'
-        # Submits
         res = form.submit().maybe_follow()
+        # There's a flash messageset
+        assert_in('Registration successful. Please check nickcage@example.com '
+            'to confirm your email address.', res)
 
     def test_sees_error_if_email_is_already_registered(self):
         # A user is already registered
@@ -119,20 +118,6 @@ class TestAUser(DbTestCase):
         res = self.app.get('/').maybe_follow()  # Redirects
         assert_equal(res.status_code, 200)
 
-    def test_can_log_in_first_time(self):
-        # Goes to home page
-        res = self.app.get('/').maybe_follow()
-        # Clicks sign in button
-        res = res.click('Create an Account or Sign-In').maybe_follow()
-        # Fills out login info
-        form = res.forms['signinForm']  # Get the form from its ID
-        form['username'] = self.user.username
-        form['password'] = 'science'
-        # submits
-        res = form.submit().maybe_follow()
-        # Sees dashboard with projects and watched projects
-        assert_in('Account Settings', res)
-
     def test_can_log_in(self):
         # Log in and out
         self._login(self.user.username, 'science')
@@ -186,8 +171,9 @@ class TestAUser(DbTestCase):
         u2.save()
         project = ProjectFactory(creator=u2, is_public=True)
         project.add_contributor(u2)
+        auth = Auth(user=u2, api_key=key)
         # A file was added to the project
-        project.add_file(user=u2, api_key=key, file_name='test.html',
+        project.add_file(auth=auth, file_name='test.html',
                         content='123', size=2, content_type='text/html')
         project.save()
         # User watches the project
@@ -238,7 +224,7 @@ class TestAUser(DbTestCase):
         project.save()
         # User goes to the project page
         res = self.app.get(project.url, auth=self.auth).maybe_follow()
-        assert_in('Make public', res)
+        assert_in('Make Public', res)
 
     def test_sees_logs_on_a_project(self):
         project = ProjectFactory(is_public=True)
@@ -302,8 +288,9 @@ class TestRegistrations(DbTestCase):
         ).maybe_follow()
 
         # Find registration options
-        options = res.html.find('select', id='select-registration-template')\
-            .find_all('option')
+        options = res.html.find(
+            'select', id='select-registration-template'
+        ).find_all('option')
 
         # Should see number of options equal to number of registration
         # templates, plus one for 'Select...'
@@ -333,18 +320,20 @@ class TestRegistrations(DbTestCase):
         subnav = res.html.select('#projectSubnav')[0]
         assert_not_in('Registrations', subnav.text)
 
+
 class TestComponents(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.user = UserFactory(username='test@test.com')
+        self.user = UserFactory()
         # Add an API key for quicker authentication
         api_key = ApiKeyFactory()
         self.user.api_keys.append(api_key)
         self.user.save()
         self.auth = ('test', api_key._primary_key)
+        self.consolidate_auth = Auth(user=self.user, api_key = api_key)
         self.project = ProjectFactory(creator=self.user)
-        self.project.add_contributor(contributor=self.user)
+        self.project.add_contributor(contributor=self.user, auth=self.consolidate_auth)
         # project has a non-registered contributor
         self.nr_user = {'nr_name': 'Foo Bar', 'nr_email': 'foo@example.com'}
         self.project.contributor_list.append(self.nr_user)
@@ -355,8 +344,8 @@ class TestComponents(DbTestCase):
             project=self.project,
         )
         self.component.save()
-        self.component.set_permissions('public', self.user)
-        self.component.set_permissions('private', self.user)
+        self.component.set_permissions('public', self.consolidate_auth)
+        self.component.set_permissions('private', self.consolidate_auth)
         self.project.save()
 
     def test_can_create_component_from_a_project(self):
@@ -473,6 +462,7 @@ class TestMergingAccounts(DbTestCase):
         # Now only the master user is shown at the project page
         res = self.app.get(project.url).maybe_follow()
         assert_in(self.user.fullname, res)
+        assert_true(self.dupe.is_merged)
         assert_not_in(self.dupe.fullname, res)
 
     def test_merged_user_has_alert_message_on_profile(self):
@@ -538,6 +528,7 @@ class TestShortUrls(DbTestCase):
         self.user.api_keys.append(api_key)
         self.user.save()
         self.auth = ('test', api_key._primary_key)
+        self.consolidate_auth=Auth(user=self.user, api_key=api_key)
         self.project = ProjectFactory(creator=self.user)
         # A non-project componenet
         self.component = NodeFactory(category='hypothesis', creator=self.user)
@@ -545,18 +536,19 @@ class TestShortUrls(DbTestCase):
         self.component.save()
         # Hack: Add some logs to component; should be unnecessary pending
         # improvements to factories from @rliebz
-        self.component.set_permissions('public', user=self.user)
-        self.component.set_permissions('private', user=self.user)
-        self.project.save()
+        self.component.set_permissions('public', auth=self.consolidate_auth)
+        self.component.set_permissions('private', auth=self.consolidate_auth)
         self.wiki = NodeWikiFactory(user=self.user, node=self.component)
 
     def _url_to_body(self, url):
         return self.app.get(url, auth=self.auth).maybe_follow().normal_body
 
     def test_profile_url(self):
+        res1 = self.app.get('/{}/'.format(self.user._primary_key)).maybe_follow()
+        res2 = self.app.get('/profile/{}/'.format(self.user._primary_key)).maybe_follow()
         assert_equal(
-            self.app.get('/{}/'.format(self.user._primary_key)).maybe_follow().normal_body,
-            self.app.get('/profile/{}/'.format(self.user._primary_key)).maybe_follow().normal_body
+            res1.normal_body,
+            res2.normal_body
         )
 
     def test_project_url(self):
@@ -571,12 +563,26 @@ class TestShortUrls(DbTestCase):
             self._url_to_body(self.component.url),
         )
 
+    def _mock_rendered_file(self, component, fobj):
+        node_settings = component.get_addon('osffiles')
+        cache_dir = get_cache_path(node_settings)
+        cache_file = get_cache_file(fobj.filename, fobj.latest_version_number(component))
+        cache_file_path = os.path.join(cache_dir, cache_file)
+        ensure_path(cache_dir)
+        with open(cache_file_path, 'w') as fp:
+            fp.write('test content')
+
     def test_file_url(self):
-        node_file = self.component.add_file(self.user, None, 'test.txt',
-                                         'test content', 4, 'text/plain')
+        node_file = self.component.add_file(
+            self.consolidate_auth, 'test.txt',
+            'test content', 4, 'text/plain'
+        )
+        self._mock_rendered_file(self.component, node_file)
+        # Warm up to account for file rendering
+        _ = self._url_to_body(node_file.url(self.component))
         assert_equal(
-            self._url_to_body(node_file.deep_url),
-            self._url_to_body(node_file.url),
+            self._url_to_body(node_file.deep_url(self.component)),
+            self._url_to_body(node_file.url(self.component)),
         )
 
     def test_wiki_url(self):
@@ -594,6 +600,7 @@ class TestPiwik(DbTestCase):
             AuthUserFactory()
             for _ in range(3)
         ]
+        self.consolidate_auth = Auth(user=self.users[0])
         self.project = ProjectFactory(creator=self.users[0], is_public=True)
         self.project.add_contributor(contributor=self.users[1])
         self.project.save()
@@ -628,7 +635,7 @@ class TestPiwik(DbTestCase):
         assert_in('token_auth=anonymous', res)
 
     def test_private_alert(self):
-        self.project.set_permissions('private', user=self.users[0])
+        self.project.set_permissions('private', auth=self.consolidate_auth)
         self.project.save()
         res = self.app.get(
             '/{0}/statistics/'.format(self.project._primary_key),
@@ -638,6 +645,98 @@ class TestPiwik(DbTestCase):
             'Usage statistics are collected only for public resources.',
             res
         )
+
+@unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
+class TestClaiming(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.referrer = UserFactory()
+        self.project = ProjectFactory(creator=self.referrer)
+        self.user = UnregUserFactory()
+
+    def add_unclaimed_record(self):
+        given_name = 'Fredd Merkury'
+        self.user.add_unclaimed_record(node=self.project,
+            given_name=given_name, referrer=self.referrer)
+        self.user.save()
+        data = self.user.unclaimed_records[self.project._primary_key]
+        return data
+
+    def test_user_can_set_password_on_claim_page(self):
+        self.add_unclaimed_record()
+        claim_url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(claim_url)
+        assert_in('Set password', res)
+        assert 0, 'finish me'
+
+class TestConfirmingEmail(DbTestCase):
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = UnregUserFactory()
+        self.confirmation_url = self.user.get_confirmation_url(self.user.username,
+            external=False)
+        self.confirmation_token = self.user.get_confirmation_token(self.user.username)
+
+    def test_redirects_to_settings(self):
+        res = self.app.get(self.confirmation_url).follow()
+        assert_equal(res.request.path, '/settings/', 'redirected to settings page')
+        assert_in('Welcome to the OSF!', res, 'shows flash message')
+        assert_in('Please update the following settings.', res)
+
+    def test_error_page_if_confirm_link_is_expired(self):
+        self.user.confirm_email(self.confirmation_token)
+        self.user.save()
+        res = self.app.get(self.confirmation_url, expect_errors=True)
+        assert_in('Link Expired', res)
+
+    def test_sees_flash_message_if_email_unconfirmed(self):
+        # set a password for user
+        self.user.set_password('bicycle')
+        self.user.save()
+        # Goes to log in page
+        res = self.app.get('/account/').maybe_follow()
+        # Fills the form with incorrect password
+        form  = res.forms['signinForm']
+        form['username'] = self.user.username
+        form['password'] = 'bicycle'
+        res = form.submit().maybe_follow()
+        assert_in(language.UNCONFIRMED, res, 'shows flash message')
+        # clicks on resend link in flash message
+        res = res.click('Click here')
+        assert_equal(res.request.path, '/resend/', 'at resend page')
+
+
+    @mock.patch('framework.auth.views.send_confirm_email')
+    def test_resend_form(self, send_confirm_email):
+        res = self.app.get('/resend/')
+        form = res.forms['resendForm']
+        form['email'] = self.user.username
+        res = form.submit()
+        assert_true(send_confirm_email.called)
+        assert_in('Resent email to', res)
+
+    def test_resend_form_shows_error_message_if_email_not_in_db(self):
+        res = self.app.get('/resend/')
+        form = res.forms['resendForm']
+        form['email'] = 'nowheretobefound@foo.com'
+        res = form.submit()
+        assert_in(language.EMAIL_NOT_FOUND.format(email="nowheretobefound@foo.com"),
+            res, 'flashes error msg')
+
+    def test_resend_form_shows_alert_if_email_already_confirmed(self):
+        user = UnregUserFactory()
+        url = user.get_confirmation_url(user.username, external=False)
+        # User confirms their email address
+        self.app.get(url).maybe_follow()
+        # tries to resend confirmation
+        res = self.app.get('/resend/')
+        form = res.forms['resendForm']
+        form['email'] = user.username
+        res = form.submit()
+        # Sees alert message
+        assert_in('already been confirmed', res)
+
 
 if __name__ == '__main__':
     unittest.main()

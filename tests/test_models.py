@@ -6,34 +6,142 @@ import unittest
 from nose.tools import *  # PEP8 asserts
 
 import pytz
-import hashlib
 import datetime
 import urlparse
 from dateutil import parser
 
+from modularodm.exceptions import ValidationError
+
 from framework.analytics import get_total_activity_count
+from framework.exceptions import PermissionsError
 from framework.auth import User
 from framework.auth.utils import parse_name
+from framework.auth.decorators import Auth
 from framework import utils
 from framework.bcrypt import check_password_hash
 from framework.git.exceptions import FileNotModified
-from website import settings, filters
+from website import settings, filters, hmac
 from website.profile.utils import serialize_user
-from website.project.model import ApiKey, NodeFile, NodeLog, ensure_schemas
+from website.project.model import Pointer, ApiKey, NodeLog, ensure_schemas
+from website.addons.osffiles.model import NodeFile
 
 from tests.base import DbTestCase, test_app, Guid
-from tests.factories import (UserFactory, ApiKeyFactory, NodeFactory,
+from tests.factories import (
+    UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
-    NodeWikiFactory, UnregUserFactory, RegistrationFactory)
+    NodeWikiFactory, UnregUserFactory, RegistrationFactory, UnregUserFactory,
+    ProjectWithAddonFactory
+)
 
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory, MetaDataFactory
-
 
 class TestUser(DbTestCase):
 
     def setUp(self):
         self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+
+    def test_non_registered_user_is_not_active(self):
+        u = User(username='fred@queen.com',
+            fullname='Freddie Mercury',
+            is_registered=False)
+        u.set_password('killerqueen')
+        u.save()
+        assert_false(u.is_active())
+
+    def test_create_unregistered(self):
+        u = User.create_unregistered(email='foo@bar.com',
+            fullname='Foo Bar')
+        u.save()
+        assert_equal(u.username, 'foo@bar.com')
+        assert_false(u.is_registered)
+        assert_true('foo@bar.com' in u.emails)
+        assert_equal(len(u.email_verifications.keys()), 1,
+            'email verification code was added')
+
+    def test_user_with_no_password_is_not_active(self):
+        u = User(username='fred@queen.com',
+            fullname='Freddie Mercury', is_registered=True)
+        u.save()
+        assert_false(u.is_active())
+
+    def test_merged_user_is_not_active(self):
+        master = UserFactory()
+        dupe = UserFactory(merged_by=master)
+        assert_false(dupe.is_active())
+
+    def test_cant_create_user_without_username(self):
+        u = User()  # No username given
+        with assert_raises(ValidationError):
+            u.save()
+
+    def test_date_registered_upon_saving(self):
+        u = User(username='foo@bar.com', fullname='Foo bar')
+        u.save()
+        assert_true(u.date_registered)
+
+    def test_create_unconfirmed(self):
+        u = User.create_unconfirmed(username='bar@baz.com', password='foobar',
+            fullname='Bar Baz')
+        u.save()
+        assert_false(u.is_registered)
+        assert_true(u.check_password('foobar'))
+        assert_true(u._id)
+        assert_equal(len(u.email_verifications.keys()), 1)
+        assert_equal(len(u.emails), 0, 'primary email has not been added to emails list')
+
+    def test_cant_create_user_without_full_name(self):
+        u = User(username='fred@queen.com')
+        with assert_raises(ValidationError):
+            u.save()
+
+    @mock.patch('website.security.random_string')
+    def test_add_email_verification(self, random_string):
+        random_string.return_value = '12345'
+        u = UserFactory()
+        assert_equal(len(u.email_verifications.keys()), 0)
+        u.add_email_verification('foo@bar.com')
+        assert_equal(len(u.email_verifications.keys()), 1)
+        assert_equal(u.email_verifications['12345']['email'], 'foo@bar.com')
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_token(self, random_string):
+        random_string.return_value = '12345'
+        u = UserFactory()
+        u.add_email_verification('foo@bar.com')
+        assert_equal(u.get_confirmation_token('foo@bar.com'), '12345')
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_url(self, random_string):
+        random_string.return_value = 'abcde'
+        u = UserFactory()
+        u.add_email_verification('foo@bar.com')
+        assert_equal(u.get_confirmation_url('foo@bar.com'),
+                '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._primary_key, 'abcde'))
+
+    def test_confirm_primary_email(self):
+        u = UserFactory.build(username='foo@bar.com')
+        u.is_registered = False
+        u.is_claimed = False
+        u.add_email_verification('foo@bar.com')
+        u.save()
+        token = u.get_confirmation_token('foo@bar.com')
+        confirmed = u.confirm_email(token)
+        u.save()
+        assert_true(confirmed)
+        assert_equal(len(u.email_verifications.keys()), 0)
+        assert_in('foo@bar.com', u.emails)
+        assert_true(u.is_registered)
+        assert_true(u.is_claimed)
+
+    def test_verify_confirmation_token(self):
+        u = UserFactory.build()
+        u.add_email_verification('foo@bar.com')
+        u.save()
+        assert_false(u.verify_confirmation_token('badtoken'))
+        valid_token = u.get_confirmation_token('foo@bar.com')
+        assert_true(u.verify_confirmation_token(valid_token))
 
     def test_factory(self):
         # Clear users
@@ -128,6 +236,7 @@ class TestUser(DbTestCase):
         assert_equal(d['registered'], user.is_registered)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
+        assert_equal(d['active'], user.is_active())
 
     def test_serialize_user_full(self):
         master = UserFactory()
@@ -162,12 +271,12 @@ class TestUser(DbTestCase):
         project = ProjectFactory()
 
         assert_true(hasattr(self.user, 'recently_added'))
-        
+
         # Two users added as contributors
         user2 = UserFactory()
         user3 = UserFactory()
-        project.add_contributor(contributor=user2, user=self.user)
-        project.add_contributor(contributor=user3, user=self.user)
+        project.add_contributor(contributor=user2, auth=self.consolidate_auth)
+        project.add_contributor(contributor=user3, auth=self.consolidate_auth)
         assert_equal(user3, self.user.recently_added[0])
         assert_equal(user2, self.user.recently_added[1])
         assert_equal(len(self.user.recently_added), 2)
@@ -183,12 +292,12 @@ class TestUser(DbTestCase):
         project2 = ProjectFactory()
 
         # Users 2 and 3 are added to original project
-        project.add_contributor(contributor=user2, user=self.user)
-        project.add_contributor(contributor=user3, user=self.user)
+        project.add_contributor(contributor=user2, auth=self.consolidate_auth)
+        project.add_contributor(contributor=user3, auth=self.consolidate_auth)
 
         # Users 2 and 3 are added to original project
-        project2.add_contributor(contributor=user2, user=self.user)
-        project2.add_contributor(contributor=user4, user=self.user)
+        project2.add_contributor(contributor=user2, auth=self.consolidate_auth)
+        project2.add_contributor(contributor=user4, auth=self.consolidate_auth)
 
         assert_equal(user4, self.user.recently_added[0])
         assert_equal(user2, self.user.recently_added[1])
@@ -202,9 +311,13 @@ class TestUser(DbTestCase):
         assert_equal(len(self.user.recently_added), 0)
         # Add 17 users
         for _ in range(17):
-            project.add_contributor(contributor=UserFactory(), user=self.user)
+            project.add_contributor(
+                contributor=UserFactory(),
+                auth=self.consolidate_auth
+            )
 
         assert_equal(len(self.user.recently_added), 15)
+
 
 
 
@@ -318,19 +431,21 @@ class TestNodeFile(DbTestCase):
 
     def test_url(self):
         assert_equal(
-            self.node_file.api_url,
-            '{0}files/{1}/'.format(self.node.api_url, self.node_file.filename),
+            self.node_file.api_url(self.node),
+            '{0}osffiles/{1}/'.format(self.node.api_url, self.node_file.filename),
         )
 
     def test_clean(self):
         assert_equal(self.node_file.clean_filename, 'foo_py')
 
     def test_latest_version_number(self):
-        assert_equal(self.node_file.latest_version_number, 1)
+        assert_equal(self.node_file.latest_version_number(self.node), 1)
 
     def test_download_url(self):
-        assert_equal(self.node_file.download_url,
-            self.node.api_url + 'files/download/{0}/version/1/'.format(self.node_file.filename))
+        assert_equal(
+            self.node_file.download_url(self.node),
+            self.node.url + 'osffiles/{0}/version/1/download/'.format(self.node_file.filename)
+        )
 
 
 class TestAddFile(DbTestCase):
@@ -338,12 +453,15 @@ class TestAddFile(DbTestCase):
     def setUp(self):
         # Create a project
         self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.user2 = UserFactory()
+        self.consolidate_auth2 = Auth(user=self.user2)
         self.project = ProjectFactory(creator=self.user)
         # Add a file
         self.file_name = 'foo.py'
         self.file_key = self.file_name.replace('.', '_')
         self.node_file = self.project.add_file(
-            self.user, None, self.file_name, 'Content', 128, 'Type'
+            self.consolidate_auth, self.file_name, 'Content', 128, 'Type'
         )
         self.project.save()
 
@@ -354,7 +472,7 @@ class TestAddFile(DbTestCase):
         # Add exact copy of parent project's file to component
         component = NodeFactory(project=self.project, creator=self.user)
         component_file = component.add_file(
-            self.user, None, self.file_name, 'Content', 128, 'Type'
+            self.consolidate_auth, self.file_name, 'Content', 128, 'Type'
         )
         # File is correctly assigned to component
         assert_equal(component_file.node, component)
@@ -366,9 +484,9 @@ class TestAddFile(DbTestCase):
 
     def test_revise_content(self):
         user2 = UserFactory()
+        consolidate_auth2 = Auth(user=user2)
         updated_file = self.project.add_file(
-            user2,
-            None,
+            consolidate_auth2,
             self.file_name,
             'Content 2',
             129,
@@ -388,9 +506,9 @@ class TestAddFile(DbTestCase):
 
     @raises(FileNotModified)
     def test_not_modified(self):
-        user2 = UserFactory()
+
         # Modify user, size, and type, but not content
-        self.project.add_file(user2, None, self.file_name, 'Content', 256,
+        self.project.add_file(self.consolidate_auth2, self.file_name, 'Content', 256,
                               'Type 2')
 
 
@@ -431,10 +549,11 @@ class TestUpdateNodeWiki(DbTestCase):
     def setUp(self):
         # Create project with component
         self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory()
         self.node = NodeFactory(creator=self.user, project=self.project)
         # user updates the wiki
-        self.project.update_node_wiki('home', 'Hello world', self.user)
+        self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
         self.versions = self.project.wiki_pages_versions
 
     def test_default_wiki(self):
@@ -444,15 +563,15 @@ class TestUpdateNodeWiki(DbTestCase):
 
     def test_default_is_current(self):
         assert_true(self.project.get_wiki_page('home').is_current)
-        self.project.update_node_wiki('home', 'Hello world 2', self.user)
+        self.project.update_node_wiki('home', 'Hello world 2', self.consolidate_auth)
         assert_true(self.project.get_wiki_page('home').is_current)
-        self.project.update_node_wiki('home', 'Hello world 3', self.user)
+        self.project.update_node_wiki('home', 'Hello world 3', self.consolidate_auth)
 
     def test_wiki_content(self):
         # Wiki has correct content
         assert_equal(self.project.get_wiki_page('home').content, 'Hello world')
         # user updates the wiki a second time
-        self.project.update_node_wiki('home', 'Hola mundo', self.user)
+        self.project.update_node_wiki('home', 'Hola mundo', self.consolidate_auth)
         # Both versions have the expected content
         assert_equal(self.project.get_wiki_page('home', 2).content, 'Hola mundo')
         assert_equal(self.project.get_wiki_page('home', 1).content, 'Hello world')
@@ -461,7 +580,7 @@ class TestUpdateNodeWiki(DbTestCase):
         # Wiki is current
         assert_true(self.project.get_wiki_page('home', 1).is_current)
         # user updates the wiki a second time
-        self.project.update_node_wiki('home', 'Hola mundo', self.user)
+        self.project.update_node_wiki('home', 'Hola mundo', self.consolidate_auth)
         # New version is current, old version is not
         assert_true(self.project.get_wiki_page('home', 2).is_current)
         assert_false(self.project.get_wiki_page('home', 1).is_current)
@@ -470,7 +589,7 @@ class TestUpdateNodeWiki(DbTestCase):
         # Updates are logged
         assert_equal(self.project.logs[-1].action, 'wiki_updated')
         # user updates the wiki a second time
-        self.project.update_node_wiki('home', 'Hola mundo', self.user)
+        self.project.update_node_wiki('home', 'Hola mundo', self.consolidate_auth)
         # There are two update logs
         assert_equal([log.action for log in self.project.logs].count('wiki_updated'), 2)
 
@@ -478,7 +597,7 @@ class TestUpdateNodeWiki(DbTestCase):
         # Number of versions is correct
         assert_equal(len(self.versions['home']), 1)
         # Update wiki
-        self.project.update_node_wiki('home', 'Hello world', self.user)
+        self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
         # Number of versions is correct
         assert_equal(len(self.versions['home']), 2)
         # Versions are different
@@ -486,7 +605,7 @@ class TestUpdateNodeWiki(DbTestCase):
 
     def test_update_two_node_wikis(self):
         # user updates a second wiki for the same node
-        self.project.update_node_wiki('second', 'Hola mundo', self.user)
+        self.project.update_node_wiki('second', 'Hola mundo', self.consolidate_auth)
         # each wiki only has one version
         assert_equal(len(self.versions['home']), 1)
         assert_equal(len(self.versions['second']), 1)
@@ -502,6 +621,7 @@ class TestNode(DbTestCase):
     def setUp(self):
         # Create project with component
         self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
         self.parent = ProjectFactory()
         self.node = NodeFactory(creator=self.user, project=self.parent)
 
@@ -515,11 +635,11 @@ class TestNode(DbTestCase):
             set([
                 addon_config.short_name
                 for addon_config in settings.ADDONS_AVAILABLE
-                if addon_config.added_to['node']
+                if 'node' in addon_config.added_default
             ])
         )
         for addon_config in settings.ADDONS_AVAILABLE:
-            if addon_config.added_to['node']:
+            if 'node' in addon_config.added_default:
                 assert_in(
                     addon_config.short_name,
                     node.get_addon_names()
@@ -536,8 +656,9 @@ class TestNode(DbTestCase):
     def test_add_addon(self):
         addon_count = len(self.node.get_addon_names())
         addon_record_count = len(self.node.addons)
-        added = self.node.add_addon('github')
+        added = self.node.add_addon('github', self.consolidate_auth)
         assert_true(added)
+        self.node.reload()
         assert_equal(
             len(self.node.get_addon_names()),
             addon_count + 1
@@ -546,11 +667,15 @@ class TestNode(DbTestCase):
             len(self.node.addons),
             addon_record_count + 1
         )
+        assert_equal(
+            self.node.logs[-1].action,
+            NodeLog.ADDON_ADDED
+        )
 
     def test_add_existing_addon(self):
         addon_count = len(self.node.get_addon_names())
         addon_record_count = len(self.node.addons)
-        added = self.node.add_addon('files')
+        added = self.node.add_addon('osffiles', self.consolidate_auth)
         assert_false(added)
         assert_equal(
             len(self.node.get_addon_names()),
@@ -563,16 +688,27 @@ class TestNode(DbTestCase):
 
     def test_delete_addon(self):
         addon_count = len(self.node.get_addon_names())
-        deleted = self.node.delete_addon('files')
+        deleted = self.node.delete_addon('wiki', self.consolidate_auth)
         assert_true(deleted)
         assert_equal(
             len(self.node.get_addon_names()),
             addon_count - 1
         )
+        assert_equal(
+            self.node.logs[-1].action,
+            NodeLog.ADDON_REMOVED
+        )
+
+    @mock.patch('website.addons.github.model.AddonGitHubNodeSettings.config')
+    def test_delete_mandatory_addon(self, mock_config):
+        mock_config.added_mandatory = ['node']
+        self.node.add_addon('github', self.consolidate_auth)
+        with assert_raises(ValueError):
+            self.node.delete_addon('github', self.consolidate_auth)
 
     def test_delete_nonexistent_addon(self):
         addon_count = len(self.node.get_addon_names())
-        deleted = self.node.delete_addon('github')
+        deleted = self.node.delete_addon('github', self.consolidate_auth)
         assert_false(deleted)
         assert_equal(
             len(self.node.get_addon_names()),
@@ -588,7 +724,7 @@ class TestNode(DbTestCase):
         subproject = ProjectFactory(creator=self.user, project=self.parent)
         subsubproject = ProjectFactory(creator=self.user, project=subproject)
         component = NodeFactory(creator=self.user, project=subproject)
-        subproject.remove_node(self.user)
+        subproject.remove_node(self.consolidate_auth)
         # The correct nodes were deleted
         assert_true(component.is_deleted)
         assert_true(subproject.is_deleted)
@@ -627,6 +763,100 @@ class TestNode(DbTestCase):
         })
         assert_equal(latest_log.user, self.user)
 
+    def test_add_pointer(self):
+        node2 = NodeFactory(creator=self.user)
+        pointer = self.node.add_pointer(node2, auth=self.consolidate_auth)
+        assert_equal(pointer, self.node.nodes[0])
+        assert_equal(len(self.node.nodes), 1)
+        assert_false(self.node.nodes[0].primary)
+        assert_equal(self.node.nodes[0].node, node2)
+        assert_equal(node2.points, 1)
+        assert_equal(
+            self.node.logs[-1].action, NodeLog.POINTER_CREATED
+        )
+        assert_equal(
+            self.node.logs[-1].params, {
+                'project': self.node.parent_id,
+                'node': self.node._primary_key,
+                'pointer': {
+                    'id': pointer.node._id,
+                    'url': pointer.node.url,
+                    'title': pointer.node.title,
+                    'category': pointer.node.category,
+                },
+            }
+        )
+
+    def test_add_pointer_already_present(self):
+        node2 = NodeFactory(creator=self.user)
+        self.node.add_pointer(node2, auth=self.consolidate_auth)
+        with assert_raises(ValueError):
+            self.node.add_pointer(node2, auth=self.consolidate_auth)
+
+    def test_rm_pointer(self):
+        node2 = NodeFactory(creator=self.user)
+        pointer = self.node.add_pointer(node2, auth=self.consolidate_auth)
+        self.node.rm_pointer(pointer, auth=self.consolidate_auth)
+        assert_equal(len(self.node.nodes), 0)
+        assert_equal(node2.points, 0)
+        assert_equal(
+            self.node.logs[-1].action, NodeLog.POINTER_REMOVED
+        )
+        assert_equal(
+            self.node.logs[-1].params, {
+                'project': self.node.parent_id,
+                'node': self.node._primary_key,
+                'pointer': {
+                    'id': pointer.node._id,
+                    'url': pointer.node.url,
+                    'title': pointer.node.title,
+                    'category': pointer.node.category,
+                },
+            }
+        )
+
+    def test_rm_pointer_not_present(self):
+        node2 = NodeFactory(creator=self.user)
+        pointer = Pointer(node=node2)
+        with assert_raises(ValueError):
+            self.node.rm_pointer(pointer, auth=self.consolidate_auth)
+
+    def test_fork_pointer_not_present(self):
+        pointer = PointerFactory()
+        with assert_raises(ValueError):
+            self.node.fork_pointer(pointer, auth=self.consolidate_auth)
+
+    def _fork_pointer(self, content):
+        pointer = self.node.add_pointer(content, auth=self.consolidate_auth)
+        forked = self.node.fork_pointer(pointer, auth=self.consolidate_auth)
+        assert_true(forked.is_fork)
+        assert_equal(forked.forked_from, content)
+        assert_true(self.node.nodes[-1].primary)
+        assert_equal(self.node.nodes[-1], forked)
+        assert_equal(
+            self.node.logs[-1].action, NodeLog.POINTER_FORKED
+        )
+        assert_equal(
+            self.node.logs[-1].params, {
+                'project': self.node.parent_id,
+                'node': self.node._primary_key,
+                'pointer': {
+                    'id': pointer.node._id,
+                    'url': pointer.node.url,
+                    'title': pointer.node.title,
+                    'category': pointer.node.category,
+                },
+            }
+        )
+
+    def test_fork_pointer_project(self):
+        project = ProjectFactory(creator=self.user)
+        self._fork_pointer(project)
+
+    def test_fork_pointer_component(self):
+        component = NodeFactory(creator=self.user)
+        self._fork_pointer(component)
+
     def test_add_file(self):
         #todo Add file series of tests
         pass
@@ -648,6 +878,7 @@ class TestAddonCallbacks(DbTestCase):
 
         # Create project with component
         self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
         self.parent = ProjectFactory()
         self.node = NodeFactory(creator=self.user, project=self.parent)
 
@@ -663,48 +894,44 @@ class TestAddonCallbacks(DbTestCase):
                     getattr(mock_settings, callback)
                 )
 
-    @mock.patch('framework.status.push_status_message')
-    def test_remove_contributor_callback(self, status):
+    def test_remove_contributor_callback(self):
 
         user2 = UserFactory()
-        self.node.add_contributor(contributor=user2, user=self.user)
-        self.node.remove_contributor(contributor=user2, user=self.user)
+        self.node.add_contributor(contributor=user2, auth=self.consolidate_auth)
+        self.node.remove_contributor(contributor=user2, auth=self.consolidate_auth)
         for addon in self.node.addons:
             callback = addon.after_remove_contributor
             callback.assert_called_once_with(
                 self.node, user2
             )
 
-    @mock.patch('framework.status.push_status_message')
-    def test_set_permissions_callback(self, status):
+    def test_set_permissions_callback(self):
 
-        self.node.set_permissions('public', self.user)
+        self.node.set_permissions('public', self.consolidate_auth)
         for addon in self.node.addons:
             callback = addon.after_set_permissions
             callback.assert_called_with(
-                self.node, 'public'
+                self.node, 'public',
             )
 
-        self.node.set_permissions('private', self.user)
+        self.node.set_permissions('private', self.consolidate_auth)
         for addon in self.node.addons:
             callback = addon.after_set_permissions
             callback.assert_called_with(
                 self.node, 'private'
             )
 
-    @mock.patch('framework.status.push_status_message')
-    def test_fork_callback(self, status):
-        fork = self.node.fork_node(user=self.user)
+    def test_fork_callback(self):
+        fork = self.node.fork_node(auth=self.consolidate_auth)
         for addon in self.node.addons:
             callback = addon.after_fork
             callback.assert_called_once_with(
                 self.node, fork, self.user
             )
 
-    @mock.patch('framework.status.push_status_message')
-    def test_register_callback(self, status):
+    def test_register_callback(self):
         registration = self.node.register_node(
-            None, self.user, '', '',
+            None, self.consolidate_auth, '', '',
         )
         for addon in self.node.addons:
             callback = addon.after_register
@@ -712,11 +939,13 @@ class TestAddonCallbacks(DbTestCase):
                 self.node, registration, self.user
             )
 
+
 class TestProject(DbTestCase):
 
     def setUp(self):
         # Create project
         self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user, description='foobar')
 
     def test_project_factory(self):
@@ -770,7 +999,10 @@ class TestProject(DbTestCase):
 
     def test_watch_url(self):
         watch_url = self.project.watch_url
-        assert_equal(watch_url, '/api/v1/project/{0}/watch/'.format(self.project._primary_key))
+        assert_equal(
+            watch_url,
+            '/api/v1/project/{0}/watch/'.format(self.project._primary_key)
+        )
 
     def test_parent_id(self):
         assert_false(self.project.parent_id)
@@ -786,55 +1018,50 @@ class TestProject(DbTestCase):
     def test_add_contributor(self):
         # A user is added as a contributor
         user2 = UserFactory()
-        self.project.add_contributor(contributor=user2, user=self.user)
+        self.project.add_contributor(contributor=user2, auth=self.consolidate_auth)
         self.project.save()
         assert_in(user2, self.project.contributors)
         assert_equal(self.project.logs[-1].action, 'contributor_added')
 
     def test_add_nonregistered_contributor(self):
-        self.project.add_nonregistered_contributor(email='foo@bar.com', name='Weezy F. Baby', user=self.user)
+        self.project.add_nonregistered_contributor(
+            email='foo@bar.com',
+            name='Weezy F. Baby',
+            auth=self.consolidate_auth
+        )
         self.project.save()
-        # Contributor list include nonregistered contributor
-        latest_contributor = self.project.contributor_list[-1]
-        assert_dict_equal(latest_contributor,
-                        {'nr_name': 'Weezy F. Baby', 'nr_email': 'foo@bar.com'})
+        latest_contributor = self.project.contributors[-1]
+        assert_true(isinstance(latest_contributor, User))
+        assert_equal(latest_contributor.username, 'foo@bar.com')
+        assert_equal(latest_contributor.fullname, 'Weezy F. Baby')
+        assert_false(latest_contributor.is_registered)
+        # Contributor list includes nonregistered contributor
+        latest_contributor_dict = self.project.contributor_list[-1]
+        assert_dict_equal(latest_contributor_dict,
+                        {'id': latest_contributor._primary_key})
         # A log event was added
         assert_equal(self.project.logs[-1].action, 'contributor_added')
 
     def test_remove_contributor(self):
         # A user is added as a contributor
         user2 = UserFactory()
-        self.project.add_contributor(contributor=user2, user=self.user)
+        self.project.add_contributor(contributor=user2, auth=self.consolidate_auth)
         self.project.save()
         # The user is removed
-        self.project.remove_contributor(user=self.user, contributor=user2, api_key=None)
+        self.project.remove_contributor(
+            auth=self.consolidate_auth,
+            contributor=user2
+        )
         assert_not_in(user2, self.project.contributors)
-        assert_not_in(user2._id, [contrib.get('id') for contrib in self.project.contributor_list])
+        assert_not_in(
+            user2._id,
+            [contrib.get('id') for contrib in self.project.contributor_list]
+        )
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
 
-    def test_remove_nonregistered_contributor(self):
-        nr_user = {
-            'email': 'foo@bar.com',
-            'name': 'Weezy F. Baby',
-        }
-        self.project.add_nonregistered_contributor(user=self.user, **nr_user)
-        self.project.save()
-        # The user is removed
-        hash_id = hashlib.md5(nr_user['email']).hexdigest()
-        self.project.remove_nonregistered_contributor(
-            user=self.user, 
-            api_key=None, 
-            name=nr_user['name'], 
-            hash_id=hash_id,
-        )
-        # List does not contain nonregistered contributor
-        assert_not_in(nr_user, self.project.contributors)
-        assert_equal(self.project.logs[-1].action, 'contributor_removed')
-        assert_not_in('Weezy F. Baby', [contrib.get('nr_name') for contrib in self.project.contributor_list])
-        
     def test_set_title(self):
         proj = ProjectFactory(title='That Was Then', creator=self.user)
-        proj.set_title('This is now', user=self.user)
+        proj.set_title('This is now', auth=self.consolidate_auth)
         proj.save()
         # Title was changed
         assert_equal(proj.title, 'This is now')
@@ -845,51 +1072,78 @@ class TestProject(DbTestCase):
 
     def test_contributor_can_edit(self):
         contributor = UserFactory()
+        contributor_auth = Auth(user=contributor)
         other_guy = UserFactory()
-        self.project.add_contributor(contributor=contributor, user=self.user)
+        other_guy_auth = Auth(user=other_guy)
+        self.project.add_contributor(
+            contributor=contributor, auth=self.consolidate_auth)
         self.project.save()
-        assert_true(self.project.can_edit(contributor))
-        assert_false(self.project.can_edit(other_guy))
+        assert_true(self.project.can_edit(contributor_auth))
+        assert_false(self.project.can_edit(other_guy_auth))
+
+    def test_can_edit_can_be_passed_a_user(self):
+        assert_true(self.project.can_edit(user=self.user))
 
     def test_creator_can_edit(self):
-        assert_true(self.project.can_edit(self.user))
+        assert_true(self.project.can_edit(self.consolidate_auth))
 
     def test_noncontributor_cant_edit_public(self):
         user1 = UserFactory()
+        user1_auth = Auth(user=user1)
         # Change project to public
         self.project.set_permissions('public')
         self.project.save()
         # Noncontributor can't edit
-        assert_false(self.project.can_edit(user1))
+        assert_false(self.project.can_edit(user1_auth))
 
     def test_can_view_private(self):
         # Create contributor and noncontributor
         contributor = UserFactory()
+        contributor_auth = Auth(user=contributor)
         other_guy = UserFactory()
-        self.project.add_contributor(contributor=contributor, user=self.user)
+        other_guy_auth = Auth(user=other_guy)
+        self.project.add_contributor(
+            contributor=contributor, auth=self.consolidate_auth)
         self.project.save()
         # Only creator and contributor can view
-        assert_true(self.project.can_view(self.user))
-        assert_true(self.project.can_view(contributor))
-        assert_false(self.project.can_view(other_guy))
+        assert_true(self.project.can_view(self.consolidate_auth))
+        assert_true(self.project.can_view(contributor_auth))
+        assert_false(self.project.can_view(other_guy_auth))
+
+    def test_creator_cannot_edit_project_if_they_are_removed(self):
+        creator = UserFactory()
+        project = ProjectFactory(creator=creator)
+        contrib = UserFactory()
+        project.add_contributor(contrib, auth=Auth(user=creator))
+        project.save()
+        assert_in(creator, project.contributors)
+        # Creator is removed from project
+        project.remove_contributor(creator, auth=Auth(user=contrib))
+        assert_false(project.can_view(Auth(user=creator)))
+        assert_false(project.can_edit(Auth(user=creator)))
+        assert_false(project.is_contributor(Auth(user=creator)))
 
     def test_can_view_public(self):
         # Create contributor and noncontributor
         contributor = UserFactory()
+        contributor_auth = Auth(user=contributor)
         other_guy = UserFactory()
-        self.project.add_contributor(contributor=contributor, user=self.user)
+        other_guy_auth = Auth(user=other_guy)
+        self.project.add_contributor(
+            contributor=contributor, auth=self.consolidate_auth)
         # Change project to public
         self.project.set_permissions('public')
         self.project.save()
         # Creator, contributor, and noncontributor can view
-        assert_true(self.project.can_view(self.user))
-        assert_true(self.project.can_view(contributor))
-        assert_true(self.project.can_view(other_guy))
+        assert_true(self.project.can_view(self.consolidate_auth))
+        assert_true(self.project.can_view(contributor_auth))
+        assert_true(self.project.can_view(other_guy_auth))
 
     def test_is_contributor(self):
         contributor = UserFactory()
         other_guy = UserFactory()
-        self.project.add_contributor(contributor=contributor, user=self.user)
+        self.project.add_contributor(
+            contributor=contributor, auth=self.consolidate_auth)
         self.project.save()
         assert_true(self.project.is_contributor(contributor))
         assert_false(self.project.is_contributor(other_guy))
@@ -915,7 +1169,7 @@ class TestProject(DbTestCase):
     def test_add_contributors(self):
         user1 = UserFactory()
         user2 = UserFactory()
-        self.project.add_contributors([user1, user2], user=self.user)
+        self.project.add_contributors([user1, user2], auth=self.consolidate_auth)
         self.project.save()
         assert_equal(len(self.project.contributors), 3)
         assert_equal(len(self.project.contributor_list), 3)
@@ -923,18 +1177,19 @@ class TestProject(DbTestCase):
                         [user1._id, user2._id])
 
     def test_set_permissions(self):
-        self.project.set_permissions('public', user=self.user)
+        self.project.set_permissions('public', auth=self.consolidate_auth)
         self.project.save()
         assert_true(self.project.is_public)
         assert_equal(self.project.logs[-1].action, 'made_public')
-        self.project.set_permissions('private', user=self.user)
+        self.project.set_permissions('private', auth=self.consolidate_auth)
         self.project.save()
         assert_false(self.project.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.MADE_PRIVATE)
 
     def test_set_description(self):
         old_desc = self.project.description
-        self.project.set_description('new description', user=self.user)
+        self.project.set_description(
+            'new description', auth=self.consolidate_auth)
         self.project.save()
         assert_equal(self.project.description, 'new description')
         latest_log = self.project.logs[-1]
@@ -969,6 +1224,7 @@ class TestForkNode(DbTestCase):
 
     def setUp(self):
         self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
 
     def _cmp_fork_original(self, fork_user, fork_date, fork, original,
@@ -1023,6 +1279,12 @@ class TestForkNode(DbTestCase):
                 data_fork = fork.get_file(file_fork.path, vidx)
                 assert_equal(data_original, data_fork)
 
+        # Test that pointers were copied correctly
+        assert_equal(
+            [pointer.node for pointer in original.nodes_pointer],
+            [pointer.node for pointer in fork.nodes_pointer],
+        )
+
         # Test that add-ons were copied correctly
         assert_equal(
             original.get_addon_names(),
@@ -1033,9 +1295,10 @@ class TestForkNode(DbTestCase):
             [addon.config.short_name for addon in fork.get_addons()]
         )
 
+        fork_user_auth = Auth(user=fork_user)
         # Recursively compare children
         for idx, child in enumerate(original.nodes):
-            if child.can_view(fork_user):
+            if child.can_view(fork_user_auth):
                 self._cmp_fork_original(fork_user, fork_date, fork.nodes[idx],
                                         child, title_prepend='')
 
@@ -1050,25 +1313,31 @@ class TestForkNode(DbTestCase):
 
         # Add files to test copying
         self.project.add_file(
-            self.user, None, 'test.txt', 'test content', 4, 'text/plain'
+            self.consolidate_auth, 'test.txt', 'test content', 4, 'text/plain'
         )
         self.component.add_file(
-            self.user, None, 'test2.txt', 'test content2', 4, 'text/plain'
+            self.consolidate_auth, 'test2.txt', 'test content2', 4, 'text/plain'
         )
         self.subproject.add_file(
-            self.user, None, 'test3.txt', 'test content3', 4, 'text/plain'
+            self.consolidate_auth, 'test3.txt', 'test content3', 4, 'text/plain'
         )
 
+        # Add pointers to test copying
+        pointee = ProjectFactory()
+        self.project.add_pointer(pointee, auth=self.consolidate_auth)
+        self.component.add_pointer(pointee, auth=self.consolidate_auth)
+        self.subproject.add_pointer(pointee, auth=self.consolidate_auth)
+
         # Add add-on to test copying
-        self.project.add_addon('github')
-        self.component.add_addon('github')
-        self.subproject.add_addon('github')
+        self.project.add_addon('github', self.consolidate_auth)
+        self.component.add_addon('github', self.consolidate_auth)
+        self.subproject.add_addon('github', self.consolidate_auth)
 
         # Log time
         fork_date = datetime.datetime.utcnow()
 
         # Fork node
-        fork = self.project.fork_node(user=self.user)
+        fork = self.project.fork_node(auth=self.consolidate_auth)
 
         # Compare fork to original
         self._cmp_fork_original(self.user, fork_date, fork, self.project)
@@ -1112,9 +1381,10 @@ class TestForkNode(DbTestCase):
             project=self.private_subproject,
             title='Forked',
         )
-
+        user2 = UserFactory()
+        user2_auth = Auth(user=user2)
         # New user forks the project
-        fork = self.project.fork_node(user=UserFactory())
+        fork = self.project.fork_node(user2_auth)
 
         # fork correct children
         assert_equal(len(fork.nodes), 2)
@@ -1122,24 +1392,27 @@ class TestForkNode(DbTestCase):
 
     def test_fork_not_public(self):
         self.project.set_permissions('public')
-        fork = self.project.fork_node(self.user)
+        fork = self.project.fork_node(self.consolidate_auth)
         assert_false(fork.is_public)
 
     def test_cannot_fork_private_node(self):
         user2 = UserFactory()
-        fork = self.project.fork_node(user2)
+        user2_auth = Auth(user=user2)
+        fork = self.project.fork_node(user2_auth)
         assert_false(fork)
 
     def test_can_fork_public_node(self):
         self.project.set_permissions('public')
         user2 = UserFactory()
-        fork = self.project.fork_node(user2)
+        user2_auth = Auth(user=user2)
+        fork = self.project.fork_node(user2_auth)
         assert_true(fork)
 
     def test_contributor_can_fork(self):
         user2 = UserFactory()
         self.project.add_contributor(user2)
-        fork = self.project.fork_node(user2)
+        user2_auth = Auth(user=user2)
+        fork = self.project.fork_node(user2_auth)
         assert_true(fork)
 
 
@@ -1148,6 +1421,7 @@ class TestRegisterNode(DbTestCase):
     def setUp(self):
         ensure_schemas()
         self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
         self.registration = RegistrationFactory(project=self.project)
 
@@ -1162,7 +1436,6 @@ class TestRegisterNode(DbTestCase):
         assert_in(self.user, registration1.contributors)
         assert_equal(registration1.registered_user, self.user)
         assert_equal(len(registration1.registered_meta), 1)
-        assert_true(registration1.registered_schema)
 
         # Create a registration from a project
         user2 = UserFactory()
@@ -1209,7 +1482,7 @@ class TestRegisterNode(DbTestCase):
         # A a node that is not a fork
         assert_equal(self.registration.forked_from, None)
         # A node that is a fork
-        fork = self.project.fork_node(self.user)
+        fork = self.project.fork_node(self.consolidate_auth)
         registration = RegistrationFactory(project=fork)
         assert_equal(registration.forked_from, self.project)
 
@@ -1250,6 +1523,9 @@ class TestRegisterNode(DbTestCase):
 
         # Make a registration
         registration = RegistrationFactory(project=self.project)
+
+        # Reload the registration; else test won't catch failures to save
+        registration.reload()
 
         # Registration has the nodes
         assert_equal(len(registration.nodes), 2)
@@ -1375,6 +1651,60 @@ class TestNodeLog(DbTestCase):
         assert_equal(parsed, self.log.tz_date)
 
 
+class TestPointer(DbTestCase):
+
+    def setUp(self):
+        self.pointer = PointerFactory()
+
+    def test_title(self):
+        assert_equal(
+            self.pointer.title,
+            self.pointer.node.title
+        )
+
+    def test_contributors(self):
+        assert_equal(
+            self.pointer.contributors,
+            self.pointer.node.contributors
+        )
+
+    def _assert_clone(self, pointer, cloned):
+        assert_not_equal(
+            pointer._id,
+            cloned._id
+        )
+        assert_equal(
+            pointer.node,
+            cloned.node
+        )
+
+    def test_clone(self):
+        cloned = self.pointer._clone()
+        self._assert_clone(self.pointer, cloned)
+
+    def test_clone_no_node(self):
+        pointer = Pointer()
+        cloned = pointer._clone()
+        assert_equal(cloned, None)
+
+    def test_fork(self):
+        forked = self.pointer.fork_node()
+        self._assert_clone(self.pointer, forked)
+
+    def test_register(self):
+        registered = self.pointer.fork_node()
+        self._assert_clone(self.pointer, registered)
+
+    def test_register_with_pointer_to_registration(self):
+        "Check for regression"
+        pointee = RegistrationFactory()
+        project = ProjectFactory()
+        auth = Auth(user=project.creator)
+        project.add_pointer(pointee, auth=auth)
+        registration = project.register_node(None, auth, '', '')
+        assert_equal(registration.nodes[0].node, pointee)
+
+
 class TestWatchConfig(DbTestCase):
 
     def tearDown(self):
@@ -1387,13 +1717,85 @@ class TestWatchConfig(DbTestCase):
         assert_true(config.node._id)
 
 
-class TestUnregisteredUser(unittest.TestCase):
+class TestUnregisteredUser(DbTestCase):
+
+    def setUp(self):
+        self.referrer = UserFactory()
+        self.project = ProjectFactory(creator=self.referrer)
+        self.user = UnregUserFactory()
+
+    def add_unclaimed_record(self):
+        given_name = 'Fredd Merkury'
+        self.user.add_unclaimed_record(node=self.project,
+            given_name=given_name, referrer=self.referrer)
+        self.user.save()
+        data = self.user.unclaimed_records[self.project._primary_key]
+        return data
+
     def test_factory(self):
         u1 = UnregUserFactory()
-        assert_true(u1['nr_name'])
-        assert_true(u1['nr_email'])
-        u2 = UnregUserFactory()
-        assert_not_equal(u1['nr_name'], u2['nr_name'])
+        assert_false(u1.is_registered)
+        assert_true(u1.password is None)
+        assert_true(u1.fullname)
+
+    def test_add_unclaimed_record(self):
+        data = self.add_unclaimed_record()
+        assert_equal(data, {
+            'name': 'Fredd Merkury',
+            'referrer_id': self.referrer._primary_key,
+            'verification': hmac.sign('{}:{}:{}:{}'.format(
+                self.user._primary_key,
+                self.project._primary_key,
+                self.referrer._primary_key, 'Fredd Merkury'))
+        })
+
+    def test_get_claim_url(self):
+        self.add_unclaimed_record()
+        pk = self.project._primary_key
+        assert_equal(self.user.get_claim_url(pk),
+            settings.DOMAIN + 'user/claim/' + self.user.unclaimed_records[pk]['verification'] + '/')
+
+    def test_parse_claim_signature(self):
+        data = self.add_unclaimed_record()
+        parsed = User.parse_claim_signature(data['verification'])
+        assert_equal(parsed, {
+            '_id': self.user._primary_key,
+            'name': 'Fredd Merkury',
+            'referrer_id': self.referrer._primary_key,
+            'project_id': self.project._primary_key
+        })
+
+    def test_get_claim_url_raises_value_error_if_not_valid_pid(self):
+        with assert_raises(ValueError):
+            self.user.get_claim_url('invalidinput')
+
+    def test_cant_add_unclaimed_record_if_referrer_isnt_contributor(self):
+        project = ProjectFactory()  # referrer isn't a contributor to this project
+        with assert_raises(PermissionsError):
+            self.user.add_unclaimed_record(node=project,
+                given_name='fred m', referrer=self.referrer)
+
+    def test_register(self):
+        assert_false(self.user.is_registered)  # sanity check
+        assert_false(self.user.is_claimed)
+        self.user.register(username='foo@bar.com', password='killerqueen')
+        self.user.save()
+        assert_true(self.user.is_claimed)
+        assert_true(self.user.is_registered)
+        assert_true(self.user.check_password('killerqueen'))
+        assert_equal(self.user.username, 'foo@bar.com')
+
+    def test_registering_with_a_different_email_adds_to_emails_list(self):
+        user = UnregUserFactory(email='fred@queen.com')
+        assert_equal(user.password, None)  # sanity check
+        user.register(username='brian@queen.com', password='killerqueen')
+
+class TestProjectWithAddons(DbTestCase):
+
+    def test_factory(self):
+        p = ProjectWithAddonFactory(addon='s3')
+        assert_true(p.get_addon('s3'))
+        assert_true(p.creator.get_addon('s3'))
 
 if __name__ == '__main__':
     unittest.main()

@@ -4,6 +4,7 @@ import logging
 
 from framework import storage, db, app
 from framework.mongo import set_up_storage
+from framework.addons.utils import render_addon_capabilities
 import website.models
 from website.routes import make_url_map
 from website.addons.base import init_addon
@@ -27,6 +28,8 @@ def init_addons(settings, routes=True):
         for addon in settings.ADDONS_AVAILABLE
     }
 
+    settings.ADDON_CAPABILITIES = render_addon_capabilities(settings.ADDONS_AVAILABLE)
+
 
 def init_app(settings_module='website.settings', set_backends=True, routes=True):
     """Initializes the OSF. A sort of pseudo-app factory that allows you to
@@ -39,8 +42,10 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
     """
     # The settings module
     settings = importlib.import_module(settings_module)
-
-    init_addons(settings, routes)
+    try:
+        init_addons(settings, routes)
+    except AssertionError as error:  # Addon Route map has already been created
+        logger.error(error)
 
     app.debug = settings.DEBUG_MODE
     if set_backends:
@@ -50,5 +55,8 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
             addons=settings.ADDONS_AVAILABLE, db=db
         )
     if routes:
-        make_url_map(app)
+        try:
+            make_url_map(app)
+        except AssertionError:  # Route map has already been created
+            pass
     return app

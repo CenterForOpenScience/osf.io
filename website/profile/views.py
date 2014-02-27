@@ -2,20 +2,20 @@ import json
 import httplib as http
 
 from framework import (
-    get_current_user,
     get_user,
     must_be_logged_in,
     request,
     redirect,
+    status
 )
-from framework.auth import must_have_session_auth
 from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
+from framework.auth import get_current_user, authenticate
 from framework.auth.utils import parse_name
 
 from website.models import ApiKey, User
 from website.views import _render_nodes
-from website import settings, filters
+from website import settings
 from website.profile import utils
 
 
@@ -74,7 +74,8 @@ def profile_view_id(uid):
 
 @must_be_logged_in
 def edit_profile(**kwargs):
-    user = kwargs['user']
+
+    user = kwargs['auth'].user
 
     form = request.form
 
@@ -103,19 +104,16 @@ profile_schema = {
                     'type': 'textfield',
                     'label': 'Full/display name',
                     'required': True,
-                    'helpText': 'The field below is your full name and the name that will be '
-                                'displayed in your profile. We are also '
-                                'generating common citation formats for your '
-                                'work using the Citation Style Language '
-                                'definition. You can use the "Guess fields below" button '
-                                'or edit them directly in order to accurately generate '
+                    'helpText': 'The field above is your full name and the name that will be '
+                                'displayed in your profile. You can use the "Guess fields" button '
+                                'or edit the fields below in order to accurately generate '
                                 'citations.',
                 },
                 {
                     'id': 'impute',
                     'type': 'htmlfield',
                     'label': '',
-                    'content': '<button id="profile-impute" class="btn btn-default">Guess fields below</button>',
+                    'content': '<button id="profile-impute" class="btn btn-default">Guess fields</button>',
                 },
                 {
                     'id': 'given_name',
@@ -152,7 +150,7 @@ profile_schema = {
 @must_be_logged_in
 def profile_settings(**kwargs):
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
 
     rv = {
         'user_id': user._primary_key,
@@ -191,7 +189,7 @@ def profile_settings(**kwargs):
 
 @must_be_logged_in
 def profile_addons(**kwargs):
-    user = kwargs['user']
+    user = kwargs['auth'].user
     return {
         'user_id': user._primary_key,
     }
@@ -199,13 +197,13 @@ def profile_addons(**kwargs):
 
 @must_be_logged_in
 def user_choose_addons(**kwargs):
-    user = kwargs['user']
-    user.config_addons(request.json)
+    auth = kwargs['auth']
+    auth.user.config_addons(request.json, auth)
 
 
 @must_be_logged_in
 def get_keys(**kwargs):
-    user = kwargs['user']
+    user = kwargs['auth'].user
     return {
         'keys': [
             {
@@ -225,7 +223,7 @@ def create_user_key(**kwargs):
     api_key.save()
 
     # Append to user
-    user = get_current_user()
+    user = kwargs['auth'].user
     user.api_keys.append(api_key)
     user.save()
 
@@ -242,7 +240,7 @@ def revoke_user_key(**kwargs):
     api_key = ApiKey.load(request.form['key'])
 
     # Remove from user
-    user = get_current_user()
+    user = kwargs['auth'].user
     user.api_keys.remove(api_key)
     user.save()
 
@@ -269,17 +267,15 @@ def user_key_history(**kwargs):
     }
 
 
-@must_have_session_auth
 @must_be_logged_in
 def parse_names(**kwargs):
     name = request.json.get('fullname', '')
     return parse_name(name)
 
 
-@must_have_session_auth
 @must_be_logged_in
 def post_names(**kwargs):
-    user = kwargs['user']
+    user = kwargs['auth'].user
     user.fullname = request.json['fullname']
     user.given_name = request.json['given_name']
     user.middle_names = request.json['middle_names']

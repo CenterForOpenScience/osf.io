@@ -13,15 +13,18 @@ Example usage: ::
 Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
-import datetime as dt
-
+import datetime
 from factory import base, Sequence, SubFactory, post_generation
 
 from framework import StoredObject
 from framework.auth import User, Q
+from framework.auth.decorators import Auth
 from framework.auth.utils import parse_name
-from website.project.model import (ApiKey, Node, NodeLog, WatchConfig,
-                                   MetaData, Tag, NodeWikiPage, MetaSchema)
+from website.project.model import (
+    ApiKey, Node, NodeLog, WatchConfig, MetaData, Tag, MetaSchema, Pointer,
+)
+
+from website.addons.wiki.model import NodeWikiPage
 
 
 # TODO: This is a hack. Check whether FactoryBoy can do this better
@@ -63,12 +66,7 @@ class UserFactory(ModularOdmFactory):
     is_registered = True
     is_claimed = True
     api_keys = []
-
-    @post_generation
-    def set_date_registered(self, create, extracted):
-        self.date_registered = dt.datetime.utcnow()
-        if create:
-            self.save()
+    date_confirmed = datetime.datetime(2014, 2, 21)
 
     @post_generation
     def set_names(self, create, extracted):
@@ -80,6 +78,7 @@ class UserFactory(ModularOdmFactory):
 
 
 class AuthUserFactory(UserFactory):
+
     @post_generation
     def add_api_key(self, create, extracted):
         key = ApiKeyFactory()
@@ -103,7 +102,7 @@ class AbstractNodeFactory(ModularOdmFactory):
 
     title = 'The meaning of life'
     description = 'The meaning of life is 42.'
-    creator = SubFactory(UserFactory)
+    creator = SubFactory(AuthUserFactory)
 
 
 class ProjectFactory(AbstractNodeFactory):
@@ -135,19 +134,25 @@ class RegistrationFactory(AbstractNodeFactory):
         project.save()
 
         # Default registration parameters
-        schema = schema or MetaSchema.find_one(
-            Q('name', 'eq', 'Open-Ended_Registration')
-        )
+        #schema = schema or MetaSchema.find_one(
+        #    Q('name', 'eq', 'Open-Ended_Registration')
+        #)
+        schema = None
         user = user or project.creator
         template = template or "Template1"
         data = data or "Some words"
-
+        auth = Auth(user=user)
         return project.register_node(
             schema=schema,
-            user=user,
+            auth=auth,
             template=template,
             data=data,
         )
+
+
+class PointerFactory(ModularOdmFactory):
+    FACTORY_FOR = Pointer
+    node = SubFactory(NodeFactory)
 
 
 class NodeLogFactory(ModularOdmFactory):
@@ -175,34 +180,58 @@ class NodeWikiFactory(ModularOdmFactory):
     node = SubFactory(NodeFactory)
 
 
-class UnregUser(object):
-    '''A dummy "model" for an unregistered user.'''
-    def __init__(self, nr_name, nr_email):
-        self.nr_name = nr_name
-        self.nr_email = nr_email
+class UnregUserFactory(ModularOdmFactory):
+    """Factory for an unregistered user. Uses User.create_unregistered()
+    to create an instance.
 
-    def to_dict(self):
-        return {"nr_name": self.nr_name, "nr_email": self.nr_email}
-
-
-class UnregUserFactory(base.Factory):
-    """Generates a dictonary represenation of an unregistered user, in the
-    format expected by the OSF.
-    ::
-
-        >>> from tests.factories import UnregUserFactory
-        >>> UnregUserFactory()
-        {'nr_name': 'Tom Jones0', 'nr_email': 'tom0@example.com'}
-        >>> UnregUserFactory()
-        {'nr_name': 'Tom Jones1', 'nr_email': 'tom1@example.com'}
     """
-    FACTORY_FOR = UnregUser
+    FACTORY_FOR = User
+    email = Sequence(lambda n: "brian{0}@queen.com".format(n))
+    fullname = Sequence(lambda n: "Brian May{0}".format(n))
 
-    nr_name = Sequence(lambda n: "Tom Jones{0}".format(n))
-    nr_email = Sequence(lambda n: "tom{0}@example.com".format(n))
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        '''Build an object without saving it.'''
+        return target_class.create_unregistered(*args, **kwargs)
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
-        return target_class(*args, **kwargs).to_dict()
+        instance = target_class.create_unregistered(*args, **kwargs)
+        instance.save()
+        return instance
 
-    _build = _create
+
+class AuthFactory(base.Factory):
+    FACTORY_FOR = Auth
+    user = SubFactory(UserFactory)
+    api_key = SubFactory(ApiKeyFactory)
+
+
+class ProjectWithAddonFactory(ProjectFactory):
+    """Factory for a project that has an addon. The addon will be added to
+    both the Node and the creator records. ::
+
+        p = ProjectWithAddonFactory(addon='github')
+        p.get_addon('github') # => github node settings object
+        p.creator.get_addon('github') # => github user settings object
+
+    """
+
+    # TODO: Should use mock addon objects
+    @classmethod
+    def _build(cls, target_class, addon='s3', *args, **kwargs):
+        '''Build an object without saving it.'''
+        instance = ProjectFactory._build(target_class, *args, **kwargs)
+        auth = Auth(user=instance.creator)
+        instance.add_addon(addon, auth)
+        instance.creator.add_addon(addon)
+        return instance
+
+    @classmethod
+    def _create(cls, target_class, addon='s3', *args, **kwargs):
+        instance = ProjectFactory._create(target_class, *args, **kwargs)
+        auth = Auth(user=instance.creator)
+        instance.add_addon(addon, auth)
+        instance.creator.add_addon(addon)
+        instance.save()
+        return instance
