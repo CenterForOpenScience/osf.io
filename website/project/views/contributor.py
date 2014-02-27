@@ -215,23 +215,6 @@ def project_addcontributors_post(**kwargs):
     return {'status': 'success'}, 201
 
 
-def email_invite(to_addr, new_user, referrer, node):
-    """Send an invite mail to an unclaimed user.
-
-    :param str to_addr: The email address to send to.
-    :param User new_user: The User record for the unclaimed user.
-    :param User referrer: The User record for the referring user.
-    :param Node node: The project or component that the new user was added to.
-    """
-    # Add querystring with email, so that set password form can prepopulate the
-    # email field
-    claim_url = new_user.get_claim_url(node._primary_key, external=True) + '?email={0}'.format(to_addr)
-    return mails.send_mail(to_addr, mails.INVITE,
-        user=new_user,
-        referrer=referrer,
-        node=node,
-        claim_url=claim_url)
-
 def send_claim_email(email, user, node):
     unclaimed_record = user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
@@ -246,7 +229,7 @@ def send_claim_email(email, user, node):
             fullname=unclaimed_record['name']
             )
     else:  # Otherwise have the referrer forward the email to the user
-        # TODO: write referral email
+        # TODO: Repetition here.
         return mails.send_mail(referrer.username, mails.FORWARD_INVITE,
             user=user,
             referrer=referrer,
@@ -332,7 +315,7 @@ def invite_contributor_post(**kwargs):
             msg = 'User with this email address is already a contributor to this project.'
             return {'status': 400, 'message': msg}, 400
     if email:
-        email_invite(email, new_user, referrer=auth.user, node=node)
+        send_claim_email(email, new_user, node)
     serialized = _add_contributor_json(new_user)
     # display correct name
     serialized['fullname'] = fullname
