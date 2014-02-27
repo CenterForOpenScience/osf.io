@@ -26,17 +26,19 @@ def to_citation(project_data, citation_style, formatter_Style):
     """Format an OSF project as a citation.
 
     :param project_data: JSON-style dictionary of project information
-    :param citation_style: File name of citation xml document
+    :param citation_style: File name of citation xml document, including directory name (hence OS.path.join when you call the function)
     :param formatter: Citeproc formatter (e.g. formatter.plain, formatter.html)
     """
 
-    bibliography = CitationStylesBibliography(CitationStylesStyle(citation_style),
+    bibliography = CitationStylesBibliography(CitationStylesStyle(os.path.join(CSL_PATH, citation_style)),
                                               CiteProcJSON([project_data]),
                                               formatter_Style)
 
+        #os.path.join('styles', style),
+
+
     citation1 = Citation([CitationItem(project_data['id'])])
     bibliography.register(citation1)
-
     return bibliography.bibliography()
 
 
@@ -44,7 +46,7 @@ def to_machine_readable(utilname, csl_input):
     """following conversion from JSON to CSLformat (bibtex in this case), this method converts that to XMLintermediary
     and then to final user specified format"""
 
-    texText = to_citation(csl_input, os.path.join(CSL_PATH, 'bibtex.csl'), formatter.plain)
+    texText = to_citation(csl_input, 'bibtex.csl', formatter.plain)
 
     bibtexTerminal = subprocess.Popen(["echo", texText], stdout = subprocess.PIPE)
     xmlTerminal = subprocess.Popen(["bib2xml"], stdin = bibtexTerminal.stdout, stdout = subprocess.PIPE)

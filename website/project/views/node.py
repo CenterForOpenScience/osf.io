@@ -23,9 +23,7 @@ from website.views import _render_nodes
 
 #azeem's imports
 import CitationParser
-import os
 from citeproc import formatter
-CSL_PATH = 'styles'
 from flask import Flask, send_file
 import StringIO
 
@@ -555,7 +553,7 @@ def human_format_citation(*args, **kwargs):
 
     output = CitationParser.to_citation(
         node.to_csl(),
-        os.path.join(CSL_PATH, style),
+        style,
         formatter.plain
     )
     return {'output': output}
