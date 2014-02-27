@@ -10,11 +10,11 @@
             if (!bucketName) {
                 return;
             } else if (isValidBucket.exec(bucketName) == null) {
-                bootbox.confirm('Sorry thats not a valid bucket name. Try another name?', function(result) {
+                bootbox.confirm("Sorry, that's not a valid bucket name. Try another name?", function(result) {
                     if (result) {
                         newBucket();
                     }
-                })
+                });
             } else {
                 bucketName = bucketName.toLowerCase();
                 $.ajax({
@@ -36,7 +36,7 @@
                         if (result) {
                             newBucket();
                         }
-                    })
+                    });
                 });
             }
         });
