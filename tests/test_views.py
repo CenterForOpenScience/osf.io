@@ -430,7 +430,7 @@ class TestClaimViews(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.referrer = UserFactory()
+        self.referrer = AuthUserFactory()
         self.project = ProjectFactory(creator=self.referrer)
         self.given_name = fake.name()
         self.given_email = fake.email()
@@ -443,19 +443,19 @@ class TestClaimViews(DbTestCase):
         #: The latest user is the unregistered contributor
         self.user = self.project.contributors[-1]
 
-    def test_get_valid_claim_url(self):
+    def test_get_valid_form(self):
         url = self.user.get_claim_url(self.project._primary_key)
         res = self.app.get(url).maybe_follow()
         assert_equal(res.status_code, 200)
 
-    def test_invalid_claim_url_responds_with_400(self):
+    def test_invalid_claim_form_responds_with_400(self):
         uid = self.user._primary_key
         pid = self.project._primary_key
         url = '/user/{uid}/{pid}/claim/badtoken/'.format(**locals())
         res = self.app.get(url, expect_errors=True).maybe_follow()
         assert_equal(res.status_code, 400)
 
-    def test_posting_to_claim_url_with_valid_data(self):
+    def test_posting_to_claim_form_with_valid_data(self):
         url = self.user.get_claim_url(self.project._primary_key)
         res = self.app.post(url, {
             'username': self.user.username,
@@ -466,8 +466,18 @@ class TestClaimViews(DbTestCase):
         self.user.reload()
         assert_true(self.user.is_registered)
         assert_true(self.user.is_active())
+        assert_not_in(self.project._primary_key, self.user.unclaimed_records)
 
-
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_claim_user_post_returns_fullname(self, send_mail):
+        url = '/api/v1/user/{0}/{1}/claim/verify/'.format(self.user._primary_key,
+            self.project._primary_key)
+        res = self.app.post_json(url,
+            {'value': self.given_email, 'pk': self.user._primary_key},
+            auth=self.referrer.auth)
+        assert_equal(res.json['fullname'], self.given_name)
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(to_addr=self.given_email))
 
 class TestWatchViews(DbTestCase):
 

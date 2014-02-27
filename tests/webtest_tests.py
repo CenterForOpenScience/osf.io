@@ -701,6 +701,9 @@ class TestClaiming(DbTestCase):
         res2 = self.app.get(project2.url)
         assert_in(name2, res2)
 
+    def test_unregistered_user_can_create_an_account(self):
+        assert 0, 'finish me'
+
 
 
 class TestConfirmingEmail(DbTestCase):

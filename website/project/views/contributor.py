@@ -248,7 +248,6 @@ def claim_user_form(**kwargs):
     uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
     # There shouldn't be a user logged in
     if framework.auth.get_current_user():
-        # TODO: display more useful info to the user instead of an error page
         logout_url = framework.url_for('OsfWebRenderer__auth_logout')
         error_data = {'message_short': 'You are already logged in.',
             'message_long': ('To claim this account, you must first '
@@ -260,8 +259,9 @@ def claim_user_form(**kwargs):
         raise HTTPError(400)
     # if token is invalid, throw an error
     if not user.verify_claim_token(token=token, project_id=pid):
-        # TODO: display a more useful message and reroute to login page?
-        raise HTTPError(400)
+        error_data = {'message_short': 'Invalid URL.',
+            'message_long': 'The URL you entered is invalid.'}
+        raise HTTPError(400, data=error_data)
 
     parsed_name = parse_name(user.fullname)
     email = request.args.get('email', '')
@@ -271,6 +271,7 @@ def claim_user_form(**kwargs):
             username = form.username.data.lower().strip()
             password = form.password.data.strip()
             user.register(username=username, password=password)
+            del user.unclaimed_records[pid]
             user.save()
             # Authenticate user and redirect to project page
             response = framework.redirect('/{pid}/'.format(pid=pid))
@@ -324,6 +325,8 @@ def invite_contributor_post(**kwargs):
 
 @must_be_contributor_or_public
 def claim_user_post(**kwargs):
+    """View for claiming a user from the X-editable form on a project page.
+    """
     reqdata = request.json
     user = User.load(reqdata['pk'])
     email = reqdata['value']
