@@ -7,8 +7,6 @@ import os
 # We'll use json.loads for parsing the JSON data.
 import json
 
-
-#os.chdir('/home/azeem/.virtualenvs/proctest/citeproc-py')
 import citeproc
 
 from citeproc.py2compat import *
@@ -31,10 +29,10 @@ def to_citation(project_data, citation_style, formatter_Style):
     :param citation_style: File name of citation xml document
     :param formatter: Citeproc formatter (e.g. formatter.plain, formatter.html)
     """
-    bib_source = CiteProcJSON([project_data])
-    bib_style = CitationStylesStyle(citation_style)
 
-    bibliography = CitationStylesBibliography(bib_style, bib_source, formatter_Style)
+    bibliography = CitationStylesBibliography(CitationStylesStyle(citation_style),
+                                              CiteProcJSON([project_data]),
+                                              formatter_Style)
 
     citation1 = Citation([CitationItem(project_data['id'])])
     bibliography.register(citation1)
