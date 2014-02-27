@@ -118,6 +118,11 @@ def dataverse_upload_file(**kwargs):
 
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
+
+    # Todo: Allow renaming
+    if study.get_file(filename) is not None:
+        raise HTTPError(http.FORBIDDEN)
+
     content = upload.read()
 
     study.add_file_obj(filename, content)

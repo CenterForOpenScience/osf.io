@@ -44,7 +44,9 @@
 
         <div>
             % if study_hdl:
-                This node is linked to the Dataverse study ${study} on ${dataverse}.
+                This node is linked to
+                <a href=${study_url}>${study}</a> on
+                <a href=${dataverse_url}>${dataverse}.</a>
             % elif len(dataverses) != 0:
                 This node has not yet been linked to a study.
             % endif

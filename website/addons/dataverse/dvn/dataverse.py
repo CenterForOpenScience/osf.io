@@ -21,7 +21,7 @@ class Dataverse(object):
         return pprint.saferepr(self.__dict__)
 
     # Note: is_released is a Dataverse concept--not from SWORD
-    # todo: make property
+    @property
     def is_released(self):
         # Get entry resource for collection
         collectionInfo = self.connection.swordConnection.get_resource(self.collection.href).content
@@ -32,6 +32,10 @@ class Dataverse(object):
             numberOfElements=1,
         ).text
         return bool(status)
+
+    @property
+    def alias(self):
+        return self.collection.href.split('/')[-1]
 
     def add_study(self, study):
         # this creates the study AND generates a deposit receipt
@@ -100,4 +104,3 @@ class Dataverse(object):
             if string in s.entry.pretty_print():
                 return s
         return None
-    

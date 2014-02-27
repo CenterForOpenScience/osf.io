@@ -91,6 +91,11 @@ class Study(object):
                    editMediaUri=edit_media_link,
                    hostDataverse=hostDataverse)  # edit-media iri
 
+    @property
+    def doi(self):
+        urlPieces = self.editMediaUri.rsplit("/")
+        return '/'.join([urlPieces[-3], urlPieces[-2], urlPieces[-1]])
+
     def get_title(self):
         return get_elements(self.get_statement(), tag='title', numberOfElements=1).text
 
@@ -225,7 +230,7 @@ class Study(object):
     def get_id(self):
         urlPieces = self.editMediaUri.rsplit("/")
         return '/'.join([urlPieces[-2], urlPieces[-1]])
-    
+
     def _zip_files(self, filesToZip, pathToStoreZip=None):
         zipFilePath = os.path.join(os.getenv("TEMP", "/tmp"),  "temp_dvn_upload.zip") \
             if not pathToStoreZip else pathToStoreZip

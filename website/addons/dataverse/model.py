@@ -2,6 +2,8 @@
 
 """
 
+import os
+
 from framework import fields
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.dataverse.dvn.connection import DvnConnection
@@ -70,9 +72,8 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
             # Get list of dataverses and studies
             dataverses = connection.get_dataverses() or []
-            studies = dataverses[int(self.dataverse_number)].get_studies() if dataverses else []
-            #study = dataverse.get_study_by_hdl(self.study_hdl) if dataverse and self.study_hdl else None
-            #files = study.get_files() if study else []
+            dataverse = dataverses[int(self.dataverse_number)]
+            studies = dataverse.get_studies() if dataverse else []
 
             rv.update({
                 'connected': True,
@@ -84,7 +85,10 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                 'study_names': [s.get_title() for s in studies],
                 'study': self.study,
                 'study_hdl': self.study_hdl,
-                # 'files': [f.name for f in files],
+                'dataverse_url': os.path.join('http://', HOST, 'dvn', 'dv', dataverse.alias),
+                'study_url': os.path.join('http://', HOST, 'dvn', 'dv', dataverse.alias,
+                                          'faces', 'study', 'StudyPage.xhtml?globalId=' +
+                                          dataverse.get_study_by_hdl(self.study_hdl).doi),
                 'show_submit': False #'hdl' in self.study_hdl
             })
         return rv
