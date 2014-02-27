@@ -26,14 +26,14 @@ def dataverse_download_file(**kwargs):
     if file_id is None:
         raise HTTPError(http.NOT_FOUND)
 
-    return redirect('http://' + HOST + '/dvn/FileDownload/?fileId=' + file_id)
+    return redirect('http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id))
 
 session = requests.Session()
 
 def scrape_dataverse(file_id):
 
     # Go to file url
-    response = session.get('http://{}/dvn/FileDownload/?fileId={}'.format(HOST, file_id))
+    response = session.get('http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id))
 
     # Agree to terms if necessary
     if '<title>Account Terms of Use -' in response.content:
@@ -46,8 +46,8 @@ def scrape_dataverse(file_id):
             'form1:termsAccepted':'on',
             'form1:termsButton':'Continue',
         }
-        session.post('http://{}/dvn/faces/study/TermsOfUsePage.xhtml'.format(HOST), data=data)
-        response = session.get('http://{}/dvn/FileDownload/?fileId={}'.format(HOST, file_id))
+        session.post('http://{0}/dvn/faces/study/TermsOfUsePage.xhtml'.format(HOST), data=data)
+        response = session.get('http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id))
 
     # return file
     return response.content
@@ -74,9 +74,7 @@ def dataverse_view_file(**kwargs):
     file = study.get_file_by_id(file_id)
 
     # Get file URL
-    url = os.path.join(node.api_url, 'dataverse', 'file', file_id)
-
-    # TODO: Render file
+    url = os.path.join(node.api_url, 'dataverse', 'file', file_id) + '/'
 
     # Get or create rendered file
     cache_file = '{0}.html'.format(file_id)
@@ -91,9 +89,9 @@ def dataverse_view_file(**kwargs):
 
     rv = {
         'file_name': file.name,
-        'render_url': url + '/render/',
+        'render_url': '{0}render/'.format(url),
         'rendered': rendered,
-        'download_url': url + '/download/',
+        'download_url': '{0}download/'.format(url),
     }
     rv.update(_view_project(node, auth))
     return rv
@@ -122,7 +120,7 @@ def dataverse_upload_file(**kwargs):
     filename = secure_filename(upload.filename)
     content = upload.read()
 
-    study.add_file_obj(filename, content, zip=True)
+    study.add_file_obj(filename, content)
     file_id = study.get_file(filename).fileId
 
     if file_id is not None:
@@ -142,6 +140,8 @@ def dataverse_upload_file(**kwargs):
         #     log_date=now,
         # )
 
+        url = os.path.join(node_settings.owner.api_url, 'dataverse', 'file', file_id) + '/'
+
         info = {
             'addon': 'dataverse',
             'name': filename,
@@ -151,9 +151,9 @@ def dataverse_upload_file(**kwargs):
             ],
             'kind': 'file',
             'urls': {
-                    'view': node_settings.owner.api_url + 'dataverse/file/' + file_id + '/',
-                    'download': node_settings.owner.api_url + 'dataverse/file/' + file_id + '/download/',
-                    'delete': node_settings.owner.api_url + 'dataverse/file/' + file_id + '/',
+                    'view': url,
+                    'download': '{0}download/'.format(url),
+                    'delete': url,
             },
             'permissions': {
                 'view': True,

@@ -5,7 +5,7 @@
 from framework.routing import Rule, json_renderer
 from website.routes import OsfWebRenderer
 
-from . import views #todo
+from . import views
 
 settings_routes = {
     'rules': [

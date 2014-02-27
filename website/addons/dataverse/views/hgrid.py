@@ -1,4 +1,5 @@
 import time
+import os
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
@@ -75,13 +76,15 @@ def dataverse_hgrid_data_contents(**kwargs):
 
     for f in study.get_files():
 
+        url = os.path.join(node_settings.owner.api_url, 'dataverse', 'file', f.fileId) + '/'
+
         item = {
             rubeus.KIND: rubeus.FILE,
             'name': f.name,
-            'urls': { # TODO: Get some real URLs
-                'view': node_settings.owner.api_url + 'dataverse/file/' + f.fileId + '/',
-                'download': node_settings.owner.api_url + 'dataverse/file/' + f.fileId + '/download/',
-                'delete': node_settings.owner.api_url + 'dataverse/file/' + f.fileId + '/',
+            'urls': {
+                'view': url,
+                'download': '{0}download/'.format(url),
+                'delete': url,
             },
             'permissions': {
                 'view': True,

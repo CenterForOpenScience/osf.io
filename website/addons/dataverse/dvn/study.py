@@ -165,12 +165,12 @@ class Study(object):
         filename = os.path.basename(filepath)
 
         with open(filepath, "rb") as content:
-            self.add_file_obj(filename, content)
+            self.add_file_obj(filename, content, zip=False)
 
         if deleteAfterUpload:
             os.remove(filepath)
 
-    def add_file_obj(self, filename, content, zip=False):
+    def add_file_obj(self, filename, content, zip=True):
         if zip:
             s = StringIO.StringIO()
             zipFile = ZipFile(s, 'w')
