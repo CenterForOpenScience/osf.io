@@ -216,28 +216,31 @@ def project_addcontributors_post(**kwargs):
 
 
 def send_claim_email(email, user, node):
+    """Send an email for claiming a user account. Either sends to the given email
+    or the referrer's email, depending on the email address provided.
+
+    :param str email: The address given in the claim user form
+    :param User user: The User record to claim.
+    :param Node node: The node where the user claimed their account.
+    """
     unclaimed_record = user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
     claim_url = user.get_claim_url(node._primary_key, external=True) + '?email={0}'.format(email)
     # If given email is the same provided by user, just send to that email
     if unclaimed_record.get('email', None) == email.lower().strip():
-        return mails.send_mail(email, mails.INVITE,
-            user=user,
-            referrer=referrer,
-            node=node,
-            claim_url=claim_url,
-            fullname=unclaimed_record['name']
-            )
+        mail_tpl = mails.INVITE
+        to_addr = email
     else:  # Otherwise have the referrer forward the email to the user
-        # TODO: Repetition here.
-        return mails.send_mail(referrer.username, mails.FORWARD_INVITE,
-            user=user,
-            referrer=referrer,
-            node=node,
-            claim_url=claim_url,
-            email=email,
-            fullname=unclaimed_record['name']
-        )
+        mail_tpl = mails.FORWARD_INVITE
+        to_addr = referrer.username
+    return mails.send_mail(to_addr, mail_tpl,
+        user=user,
+        referrer=referrer,
+        node=node,
+        claim_url=claim_url,
+        email=email,
+        fullname=unclaimed_record['name']
+    )
 
 
 def claim_user_form(**kwargs):
