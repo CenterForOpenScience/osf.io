@@ -198,6 +198,7 @@ def add_unconfirmed_user(username, password, fullname):
         raise DuplicateEmailError('User {0!r} already exists'.format(username_clean))
 
 
+# TODO: This is unused. Use add_confirmed_user instead
 def register(username, password, fullname, send_welcome=True):
     username = username.strip().lower()
     fullname = fullname.strip()

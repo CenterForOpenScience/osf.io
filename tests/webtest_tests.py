@@ -702,8 +702,25 @@ class TestClaiming(DbTestCase):
         assert_in(name2, res2)
 
     def test_unregistered_user_can_create_an_account(self):
-        assert 0, 'finish me'
-
+        # User is added as an unregistered contributor to a project
+        email, name = fake.email(), fake.name()
+        self.project.add_unregistered_contributor(
+            email=email,
+            fullname=name,
+            auth=Auth(self.referrer)
+        )
+        self.project.save()
+        # Goes to registration page (instead of claiming their email)
+        res = self.app.get('/account/')
+        form = res.forms['registerForm']
+        form['register-fullname'] = name
+        form['register-username'] = email
+        form['register-username2'] = email
+        form['register-password'] = 'example'
+        form['register-password2'] = 'example'
+        res = form.submit()
+        # registered successfully
+        assert_in(language.REGISTRATION_SUCCESS.format(email=email), res)
 
 
 class TestConfirmingEmail(DbTestCase):

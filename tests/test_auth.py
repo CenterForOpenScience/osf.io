@@ -20,7 +20,8 @@ from framework.auth.decorators import must_be_logged_in, Auth
 
 class TestAuthUtils(DbTestCase):
 
-    def test_register(self):
+    @mock.patch('framework.auth.send_welcome_email')
+    def test_register(self, send_welcome_email):
         auth.register('rosie@franklin.com', 'gattaca', fullname="Rosie Franklin")
         user = User.find_one(Q('username', 'eq', 'rosie@franklin.com'))
         # The password should be set
@@ -28,6 +29,18 @@ class TestAuthUtils(DbTestCase):
         assert_equal(user.fullname, "Rosie Franklin")
         assert_equal(user.username, 'rosie@franklin.com')
         assert_in("rosie@franklin.com", user.emails)
+        assert_true(send_welcome_email.called)
+        assert_true(send_welcome_email.called_with(user=user))
+
+    def test_unreg_user_can_register(self):
+        user = UnregUserFactory()
+
+        auth.register(username=user.username,
+            password='gattaca', fullname='Rosie', send_welcome=False)
+
+        assert_true(user.is_registered)
+        assert_true(user.is_active())
+
 
     def test_get_user_by_id(self):
         user = UserFactory()
