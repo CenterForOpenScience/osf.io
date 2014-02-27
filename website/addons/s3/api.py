@@ -29,12 +29,9 @@ def get_bucket_list(user_settings):
 
 
 def create_bucket(user_settings, bucket_name):
-    try:
-        connect = S3Connection(
-            user_settings.access_key, user_settings.secret_key)
-        return connect.create_bucket(bucket_name)
-    except Exception:
-        return False
+    connect = S3Connection(
+        user_settings.access_key, user_settings.secret_key)
+    return connect.create_bucket(bucket_name)
 
 
 def does_bucket_exist(accessKey, secretKey, bucketName):

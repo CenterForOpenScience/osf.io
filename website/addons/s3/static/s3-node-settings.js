@@ -1,35 +1,45 @@
 (function() {
 
     function newBucket() {
-
+        var isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$/;
         var $elm = $('#addonSettingsS3');
         var $select = $elm.find('select');
 
         bootbox.prompt('Name your new bucket', function(bucketName) {
 
             if (!bucketName) {
-              return;
-            }
-            bucketName = bucketName.toLowerCase();
-            $.ajax({
-                type: 'POST',
-                url: nodeApiUrl +  's3/newbucket/',
-                contentType: 'application/json',
-                dataType: 'json',
-                data: JSON.stringify({bucket_name: bucketName})
-            }).done(function() {
-                $select.append('<option value="' + bucketName + '">' + bucketName + '</option>');
-                $select.val(bucketName);
-            }).fail(function(xhr) {
-                bootbox.confirm('Looks like that name is taken. Try another name?', function(result) {
+                return;
+            } else if (isValidBucket.exec(bucketName) == null) {
+                bootbox.confirm("Sorry, that's not a valid bucket name. Try another name?", function(result) {
                     if (result) {
                         newBucket();
                     }
-                })
-            });
-
+                });
+            } else {
+                bucketName = bucketName.toLowerCase();
+                $.ajax({
+                    type: 'POST',
+                    url: nodeApiUrl + 's3/newbucket/',
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    data: JSON.stringify({
+                        bucket_name: bucketName
+                    })
+                }).done(function() {
+                    $select.append('<option value="' + bucketName + '">' + bucketName + '</option>');
+                    $select.val(bucketName);
+                }).fail(function(xhr) {
+                    var message = JSON.parse(xhr.responseText).message;
+                    if(!message)
+                        message = 'Looks like that name is taken. Try another name?';
+                    bootbox.confirm(message, function(result) {
+                        if (result) {
+                            newBucket();
+                        }
+                    });
+                });
+            }
         });
-
     }
 
     var removeNodeAuth = function() {
