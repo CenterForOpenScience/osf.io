@@ -36,6 +36,7 @@ def get_globals():
         'status': framework.status.pop_status_messages(),
         'js_all': assets_env['js'].urls(),
         'css_all': assets_env['css'].urls(),
+        'js_bottom': assets_env['js_bottom'].urls(),
         'domain': settings.DOMAIN,
         'language': language,
     }

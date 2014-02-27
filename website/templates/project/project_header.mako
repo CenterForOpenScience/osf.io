@@ -166,7 +166,7 @@
     var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
 
-    $(document).ready(function(){
+    $script(['/static/js/app.js'], function() { // Wait until app.js is loaded
 
         $logScope = $('#logScope');
         if ($logScope.length > 0) {
@@ -210,18 +210,18 @@
                 }
             }
         });
-    });
 
-    var $addPointer = $('#addPointer');
-    var addPointerVM = new AddPointerViewModel(${json.dumps(node['title'])});
-    ko.applyBindings(addPointerVM, $addPointer[0]);
-    $addPointer.on('hidden.bs.modal', function() {
-        addPointerVM.clear();
-    });
+        var $addPointer = $('#addPointer');
+        var addPointerVM = new AddPointerViewModel(${json.dumps(node['title'])});
+        ko.applyBindings(addPointerVM, $addPointer[0]);
+        $addPointer.on('hidden.bs.modal', function() {
+            addPointerVM.clear();
+        });
 
-    var linksModal = $('#showLinks')[0];
-    var linksVM = new LinksViewModel(linksModal);
-    ko.applyBindings(linksVM, linksModal);
+        var linksModal = $('#showLinks')[0];
+        var linksVM = new LinksViewModel(linksModal);
+        ko.applyBindings(linksVM, linksModal);
+    });
 
 
 </script>
