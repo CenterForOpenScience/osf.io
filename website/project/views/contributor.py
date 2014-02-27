@@ -223,13 +223,14 @@ def send_claim_email(email, user, node):
     :param User user: The User record to claim.
     :param Node node: The node where the user claimed their account.
     """
+    clean_email = email.lower().strip()
     unclaimed_record = user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
-    claim_url = user.get_claim_url(node._primary_key, external=True) + '?email={0}'.format(email)
+    claim_url = user.get_claim_url(node._primary_key, external=True) + '?email={0}'.format(clean_email)
     # If given email is the same provided by user, just send to that email
-    if unclaimed_record.get('email', None) == email.lower().strip():
+    if unclaimed_record.get('email', None) == clean_email:
         mail_tpl = mails.INVITE
-        to_addr = email
+        to_addr = clean_email
     else:  # Otherwise have the referrer forward the email to the user
         mail_tpl = mails.FORWARD_INVITE
         to_addr = referrer.username
@@ -238,7 +239,7 @@ def send_claim_email(email, user, node):
         referrer=referrer,
         node=node,
         claim_url=claim_url,
-        email=email,
+        email=clean_email,
         fullname=unclaimed_record['name']
     )
 
