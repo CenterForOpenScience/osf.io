@@ -125,6 +125,10 @@ def make_url_map(app):
             '/view/spsp2014/', 'get', project_views.email.spsp_results,
             OsfWebRenderer('public/pages/spsp2014.mako')
         ),
+        Rule(
+            '/view/spsp2014/plain/', 'get', project_views.email.spsp_results,
+            OsfWebRenderer('public/pages/spsp2014_plain.mako'), endpoint_suffix='__plain',
+        ),
 
     ])
 
