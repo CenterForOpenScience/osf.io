@@ -10,8 +10,6 @@ from framework import request, User
 from framework.auth.decorators import collect_auth
 from framework.auth.utils import parse_name
 from framework.exceptions import HTTPError
-from ..decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor
 from framework.email.tasks import send_email
 from framework import forms
 from framework.auth.forms import SetEmailAndPasswordForm
@@ -20,6 +18,11 @@ from website import settings
 from website.filters import gravatar
 from website.models import Node
 from website.profile import utils
+
+from website.project.decorators import (
+    must_not_be_registration, must_be_valid_project, must_be_contributor,
+    must_have_permission,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -159,7 +162,7 @@ def get_recently_added_contributors(**kwargs):
 
 
 @must_be_valid_project  # returns project
-@must_be_contributor  # returns user, project
+@must_have_permission('admin')
 @must_not_be_registration
 def project_before_remove_contributor(**kwargs):
 
@@ -174,7 +177,7 @@ def project_before_remove_contributor(**kwargs):
 
 
 @must_be_valid_project  # returns project
-@must_be_contributor  # returns user, project
+@must_have_permission('admin')
 @must_not_be_registration
 def project_removecontributor(**kwargs):
 
@@ -199,26 +202,43 @@ def project_removecontributor(**kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 
-@must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+def expand_permissions(permission):
+    index = settings.PERMISSIONS.index(permission) + 1
+    return settings.PERMISSIONS[:index]
+
+
+@must_be_valid_project
+@must_have_permission('admin')
 @must_not_be_registration
 def project_addcontributors_post(**kwargs):
     """ Add contributors to a node. """
 
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
-    user_ids = request.json.get('user_ids', [])
-    node_ids = request.json.get('node_ids', [])
-    users = [
-        User.load(user_id)
-        for user_id in user_ids
+    users = request.json.get('users')
+    node_ids = request.json.get('node_ids')
+
+    if users is None or node_ids is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    # Prepare input data for `Node::add_contributors`
+    loaded_users = [
+        {
+            'user': User.load(user['id']),
+            'permissions': expand_permissions(user['permission']),
+        }
+        for user in users
     ]
-    node_to_use.add_contributors(contributors=users, auth=auth)
-    node_to_use.save()
-    for node_id in node_ids:
-        node = Node.load(node_id)
-        node.add_contributors(contributors=users, auth=auth)
-        node.save()
+    print 'lu', loaded_users
+
+    node.add_contributors(contributors=loaded_users, auth=auth)
+    node.save()
+
+    for each_id in node_ids:
+        each = Node.load(each_id)
+        each.add_contributors(contributors=loaded_users, auth=auth)
+        each.save()
+
     return {'status': 'success'}, 201
 
 # TODO: finish me
@@ -302,7 +322,7 @@ def claim_user_form(**kwargs):
     }
 
 @must_be_valid_project
-@must_be_contributor
+@must_have_permission('admin')
 @must_not_be_registration
 def invite_contributor_post(**kwargs):
     """API view for inviting an unregistered user.

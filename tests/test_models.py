@@ -1052,11 +1052,15 @@ class TestProject(DbTestCase):
             auth=self.consolidate_auth,
             contributor=user2
         )
+
+        self.project.reload()
+
         assert_not_in(user2, self.project.contributors)
         assert_not_in(
             user2._id,
             [contrib.get('id') for contrib in self.project.contributor_list]
         )
+        assert_not_in(user2._id, self.project.permissions)
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
 
     def test_set_title(self):
@@ -1649,6 +1653,56 @@ class TestNodeLog(DbTestCase):
         # Reparse the date
         parsed = parser.parse(iso_formatted)
         assert_equal(parsed, self.log.tz_date)
+
+
+class TestPermissions(DbTestCase):
+
+    def setUp(self):
+        self.project = ProjectFactory()
+
+    def test_default_creator_permissions(self):
+        assert_equal(
+            set(settings.CREATOR_PERMISSIONS),
+            set(self.project.permissions[self.project.creator._id])
+        )
+
+    def test_default_contributor_permissions(self):
+        user = UserFactory()
+        self.project.add_contributor(user, auth=Auth(user=self.project.creator))
+        assert_equal(
+            set(settings.CONTRIBUTOR_PERMISSIONS),
+            set(self.project.permissions[user._id])
+        )
+
+    def test_add_permission(self):
+        self.project.add_permission(self.project.creator, 'dance')
+        assert_in(self.project.creator._id, self.project.permissions)
+        assert_in('dance', self.project.permissions[self.project.creator._id])
+
+    def test_add_permission_already_granted(self):
+        self.project.add_permission(self.project.creator, 'dance')
+        with assert_raises(ValueError):
+            self.project.add_permission(self.project.creator, 'dance')
+
+    def test_remove_permission(self):
+        self.project.add_permission(self.project.creator, 'dance')
+        self.project.remove_permission(self.project.creator, 'dance')
+        assert_not_in('dance', self.project.permissions[self.project.creator._id])
+
+    def test_remove_permission_not_granted(self):
+        with assert_raises(ValueError):
+            self.project.remove_permission(self.project.creator, 'dance')
+
+    def test_has_permission_true(self):
+        self.project.add_permission(self.project.creator, 'dance')
+        assert_true(self.project.has_permission(self.project.creator, 'dance'))
+
+    def test_has_permission_false(self):
+        self.project.add_permission(self.project.creator, 'dance')
+        assert_false(self.project.has_permission(self.project.creator, 'sing'))
+
+    def test_has_permission_not_in_dict(self):
+        assert_false(self.project.has_permission(self.project.creator, 'dance'))
 
 
 class TestPointer(DbTestCase):

@@ -45,7 +45,7 @@
                                     <tr data-bind="if:!($root.selected($data))">
                                         <td style="padding-right: 10px;">
                                             <a
-                                                    class="btn btn-default contrib-button"
+                                                    class="btn btn-default contrib-button btn-mini"
                                                     data-bind="click:$root.add"
                                                     rel="tooltip"
                                                     title="Add contributor"
@@ -54,10 +54,12 @@
                                         <td>
                                             <img data-bind="attr:{src:contributor.gravatar}" />
                                         </td>
-                                        <td><span data-bind="text: contributor.fullname"></span>
-                                        <span class='text-muted'
-                                                data-bind="visible: !contributor.registered">(unregistered)
-                                        </span></td>
+                                        <td>
+                                            <span data-bind="text: contributor.fullname"></span>
+                                            <span
+                                                    class='text-muted'
+                                                    data-bind="visible: !contributor.registered">(unregistered)</span>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -76,9 +78,7 @@
 
                             <!-- TODO: Duplication here: Put this in a KO template -->
                             <table>
-                                <tbody data-bind="foreach:{data:selection,
-                                as: 'contributor',
-                                afterRender:addTips}">
+                                <tbody data-bind="foreach: {data: selection, as: 'contributor', afterRender: addTips, afterAdd: setupEditable}">
                                     <tr>
                                         <td style="padding-right: 10px;">
                                             <a
@@ -91,10 +91,15 @@
                                         <td>
                                             <img data-bind="attr:{src:contributor.gravatar}" />
                                         </td>
-                                        <td><span data-bind="text: contributor.fullname"></span>
-                                        <span class='text-muted'
-                                                data-bind="visible: !contributor.registered">(unregistered)
-                                        </span></td>
+                                        <td>
+                                            <span data-bind="text: contributor.fullname"></span>
+                                            <span
+                                                    class='text-muted'
+                                                    data-bind="visible: !contributor.registered">(unregistered)</span>
+                                        </td>
+                                        <td>
+                                            <a href="#" class="permission-editable" data-type="select"></a>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>

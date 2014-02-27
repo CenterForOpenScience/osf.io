@@ -76,7 +76,7 @@ SHORT_DOMAIN = 'osf.io'
 
 # Gravatar options
 GRAVATAR_SIZE_PROFILE = 120
-GRAVATAR_SIZE_ADD_CONTRIBUTOR = 80
+GRAVATAR_SIZE_ADD_CONTRIBUTOR = 60
 
 # User activity style
 USER_ACTIVITY_MAX_WIDTH = 325
@@ -106,6 +106,10 @@ WIKI_WHITELIST = {
     ]
 }
 
+# Permissions
+PERMISSIONS = ['read', 'write', 'admin']
+CREATOR_PERMISSIONS = ['read', 'write', 'admin']
+CONTRIBUTOR_PERMISSIONS = ['read', 'write']
 
 ##### Celery #####
 ## Default RabbitMQ broker

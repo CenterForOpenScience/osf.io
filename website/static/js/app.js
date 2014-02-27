@@ -288,6 +288,8 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
     self.parentId = parentId;
     self.parentTitle = parentTitle;
 
+    self.permissions = ['read', 'write', 'admin'];
+
     self.page = ko.observable('whom');
     self.pageTitle = ko.computed(function() {
         return {
@@ -329,7 +331,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         self.inviteName(self.query());
         self.inviteEmail('');
         self.page('invite');
-    }
+    };
 
     self.search = function() {
         self.errorMsg('');
@@ -377,10 +379,25 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         )
     };
 
-
     self.addTips = function(elements) {
         elements.forEach(function(element) {
             $(element).find('.contrib-button').tooltip();
+        });
+    };
+
+    self.setupEditable = function(elm, idx, data) {
+        var $elm = $(elm);
+        var $editable = $elm.find('.permission-editable');
+        $editable.editable({
+            value: 'write',
+            source: [
+                {value: 'read', text: 'Read'},
+                {value: 'write', text: 'Write'},
+                {value: 'admin', text: 'Admin'}
+            ],
+            success: function(response, value) {
+                data.permission(value);
+            }
         });
     };
 
@@ -392,7 +409,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
             dataType: 'json', contentType: 'application/json'
         }, options);
         return $.ajax(ajaxOpts);
-    };
+    }
 
     function inviteSuccess(result) {
         self.page('whom');
@@ -419,6 +436,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
     };
 
     self.add = function(data) {
+        data.permission = ko.observable('write');
         self.selection.push(data);
         // Hack: Hide and refresh tooltips
         $('.tooltip').hide();
@@ -486,7 +504,12 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
             {
                 type: 'post',
                 data: JSON.stringify({
-                    user_ids: user_ids,
+                    users: self.selection().map(function(user) {
+                        return {
+                            id: user.id,
+                            permission: user.permission()
+                        };
+                    }),
                     node_ids: self.nodesToChange()
                 }),
                 contentType: 'application/json',

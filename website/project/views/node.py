@@ -467,6 +467,7 @@ def _view_project(node, auth, primary=False):
             'is_contributor': node.is_contributor(user),
             'can_edit': (node.can_edit(auth)
                                 and not node.is_registration),
+            'permissions': node.get_permissions(user),
             'is_watching': user.is_watching(node) if user else False,
             'piwik_token': user.piwik_token if user else '',
         },

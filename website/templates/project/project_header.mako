@@ -187,7 +187,7 @@
                 if (data.user.can_edit) {
                     // Initiate AddContributorViewModel
                     var $addContributors = $('#addContributors');
-                    var addContribVM = new AddContributorViewModel(
+                    addContribVM = new AddContributorViewModel(
                         data.node.title,
                         data.parent.id,
                         data.parent.title

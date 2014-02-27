@@ -299,6 +299,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     # Permissions
     is_public = fields.BooleanField(default=False)
+    permissions = fields.DictionaryField()
 
     is_deleted = fields.BooleanField(default=False)
     deleted_date = fields.DateTimeField()
@@ -365,6 +366,11 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributors.append(self.creator)
             self.contributor_list.append({'id': self.creator._primary_key})
 
+            # Add default creator permissions
+            for permission in settings.CREATOR_PERMISSIONS:
+                self.add_permission(self.creator, permission, save=False)
+
+
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).
@@ -372,6 +378,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param Auth auth: Auth object to check
         :param User user: User object to check
         :returns: Whether user has permission to edit this node.
+
         """
         if not auth and not user:
             raise ValueError('Must pass either `auth` or `user`')
@@ -389,6 +396,66 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def can_view(self, auth):
         return self.is_public or self.can_edit(auth)
+
+    def add_permission(self, user, permission, save=False):
+        """Grant permission to a user.
+
+        :param User user: User to grant permission to
+        :param str permission: Permission to grant
+        :param bool save: Save changes
+        :raises: ValueError if user already has permission
+
+        """
+        if user._id not in self.permissions:
+            self.permissions[user._id] = [permission]
+        else:
+            if permission in self.permissions[user._id]:
+                raise ValueError('User already has permission {0}'.format(permission))
+            self.permissions[user._id].append(permission)
+        if save:
+            self.save()
+
+    def remove_permission(self, user, permission, save=False):
+        """Revoke permission from a user.
+
+        :param User user: User to revoke permission from
+        :param str permission: Permission to revoke
+        :param bool save: Save changes
+        :raises: ValueError if user does not have permission
+
+        """
+        try:
+            self.permissions[user._id].remove(permission)
+        except (KeyError, ValueError):
+            raise ValueError('User does not have permission {0}'.format(permission))
+        if save:
+            self.save()
+
+    def has_permission(self, user, permission):
+        """Check whether user has permission.
+
+        :param User user: User to test
+        :param str permission: Required permission
+        :returns: User has required permission
+
+        """
+        try:
+            return permission in self.permissions[user._id]
+        except KeyError:
+            return False
+
+    def get_permissions(self, user):
+        """Get list of permissions for user.
+
+        :param User user: User to check
+        :returns: List of permissions
+        :raises: ValueError if user not found in permissions
+
+        """
+        try:
+            return self.permissions[user._id]
+        except KeyError:
+            raise ValueError('User not in permissions table')
 
     def save(self, *args, **kwargs):
 
@@ -1472,6 +1539,10 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             self.contributors.remove(contributor._id)
             self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != contributor._id]
+
+            # Clear permissions for removed user
+            self.permissions.pop(contributor._id, None)
+
             self.save()
             removed_user = get_user(contributor._id)
 
@@ -1495,10 +1566,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         else:
             return False
 
-    def add_contributor(self, contributor, auth=None, log=True, save=False):
+    def add_contributor(self, contributor, permissions=None, auth=None,
+                        log=True, save=False):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
+        :param list permissions: Permissions to grant to the contributor
         :param User auth: All the auth informtion including user, API key.
         :param NodeLog log: Add log to self
         :param bool save: Save after adding contributor
@@ -1512,6 +1585,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         if contrib_to_add._primary_key not in self.contributors:
             self.contributors.append(contrib_to_add)
             self.contributor_list.append({'id': contrib_to_add._primary_key})
+
+            # Add default contributor permissions
+            permissions = permissions or settings.CONTRIBUTOR_PERMISSIONS
+            for permission in permissions:
+                self.add_permission(contrib_to_add, permission, save=False)
 
             # Add contributor to recently added list for user
             if auth is not None:
@@ -1549,14 +1627,20 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         for contrib in contributors:
-            self.add_contributor(contributor=contrib, auth=auth, log=False, save=False)
+            self.add_contributor(
+                contributor=contrib['user'], permissions=contrib['permissions'],
+                auth=auth, log=False, save=False,
+            )
         if log:
             self.add_log(
                 action=NodeLog.CONTRIB_ADDED,
                 params={
                     'project': self.parent_id,
                     'node': self._primary_key,
-                    'contributors': [c._id for c in contributors],
+                    'contributors': [
+                        contrib['user']._id
+                        for contrib in contributors
+                    ],
                 },
                 auth=auth,
                 save=save,
