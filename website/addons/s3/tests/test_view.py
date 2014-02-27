@@ -2,11 +2,15 @@ import mock
 from nose.tools import *
 from webtest_plus import TestApp
 
+from boto.exception import S3ResponseError
+
 from framework.auth.decorators import Auth
 import website.app
 from tests.base import DbTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
 from website.addons.s3.model import AddonS3NodeSettings, S3GuidFile
+
+from website.addons.s3.views.utils import create_bucket, validate_bucket_name
 
 from utils import create_mock_wrapper, create_mock_key
 
@@ -336,6 +340,62 @@ class TestS3ViewsHgrid(DbTestCase):
         rv = self.app.get(url, auth=self.user.auth)
         assert_equals(rv.body, 'null')
 
+
+class TestCreateBucket(DbTestCase):
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.consolidated_auth = Auth(user=self.user)
+        self.auth = ('test', self.user.api_keys[0]._primary_key)
+        self.project = ProjectFactory(creator=self.user)
+
+        self.project.add_addon('s3', auth=self.consolidated_auth)
+        self.project.creator.add_addon('s3')
+
+        self.user_settings = self.user.get_addon('s3')
+        self.user_settings.access_key = 'We-Will-Rock-You'
+        self.user_settings.secret_key = 'Idontknowanyqueensongs'
+        self.user_settings.save()
+
+        self.node_settings = self.project.get_addon('s3')
+        self.node_settings.bucket = 'Sheer-Heart-Attack'
+        self.node_settings.user_settings = self.project.creator.get_addon('s3')
+
+        self.node_settings.save()
+
+    def test_bad_names(self):
+        assert_false(validate_bucket_name('bogus naMe'))
+        assert_false(validate_bucket_name(''))
+        assert_false(validate_bucket_name('no'))
+        assert_false(validate_bucket_name('.cantstartwithp'))
+        assert_false(validate_bucket_name('or.endwith.'))
+        assert_false(validate_bucket_name('..nodoubles'))
+        assert_false(validate_bucket_name('no_unders_in'))
+
+    def test_names(self):
+        assert_true(validate_bucket_name('imagoodname'))
+        assert_true(validate_bucket_name('still.passing'))
+        assert_true(validate_bucket_name('can-have-dashes'))
+        assert_true(validate_bucket_name('kinda.name.spaced'))
+
+    @mock.patch('website.addons.s3.views.utils.create_bucket')
+    def test_create_bucket_pass(self, mock_make):
+        mock_make.return_value = True
+        url = "/api/v1/project/{0}/s3/newbucket/".format(self.project._id)
+        rv = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
+
+        assert_equals(rv.status_int, 200)
+
+    @mock.patch('website.addons.s3.views.utils.create_bucket')
+    def test_create_bucket_fail(self, mock_make):
+        error = S3ResponseError(418, 'because Im a test')
+        error.message = 'This should work'
+        mock_make.side_effect = error
+
+        url = "/api/v1/project/{0}/s3/newbucket/".format(self.project._id)
+        rv = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
+
+        assert_equals(rv.body, '{"message": "This should work"}')
 #TODO
 #removed access key
 #

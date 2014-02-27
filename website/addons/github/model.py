@@ -15,7 +15,7 @@ from website.addons.base import GuidFile
 from website.addons.base import AddonError
 
 from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import ApiError
+from website.addons.github.exceptions import ApiError, NotFoundError
 from website.addons.github.api import GitHub
 
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
@@ -445,7 +445,10 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         """
         if self.user_settings and self.hook_id:
             connection = GitHub.from_settings(self.user_settings)
-            response = connection.delete_hook(self.user, self.repo, self.hook_id)
+            try:
+                response = connection.delete_hook(self.user, self.repo, self.hook_id)
+            except NotFoundError:
+                return False
             if response:
                 self.hook_id = None
                 if save:

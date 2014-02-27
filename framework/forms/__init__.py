@@ -74,3 +74,20 @@ class NoHtmlCharacters(object):
     def __call__(self, form, field):
         if not field.data == sanitize(field.data):
             raise ValidationError(self.message)
+
+# Filters
+
+def lowered(s):
+    if s:
+        return s.lower()
+    return s
+
+def lowerstripped(s):
+    if s:
+        return s.lower().strip()
+    return s
+
+def stripped(s):
+    if s:
+        return s.strip()
+    return s
