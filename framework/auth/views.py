@@ -175,7 +175,7 @@ def auth_register_post():
     # Process form
     if form.validate():
         try:
-            u = auth.add_unconfirmed_user(
+            u = auth.register_unconfirmed(
                 form.username.data,
                 form.password.data,
                 form.fullname.data)

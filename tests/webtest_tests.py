@@ -711,7 +711,7 @@ class TestClaiming(DbTestCase):
         )
         self.project.save()
         # Goes to registration page (instead of claiming their email)
-        res = self.app.get('/account/')
+        res = self.app.get('/account/').maybe_follow()
         form = res.forms['registerForm']
         form['register-fullname'] = name
         form['register-username'] = email

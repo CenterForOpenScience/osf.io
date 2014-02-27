@@ -134,6 +134,7 @@ def logout():
         del session.data[key]
     return True
 
+# TODO: verify that this is unused and remove
 def add_unclaimed_user(email, fullname):
     email = email.strip().lower()
     fullname = fullname.strip()
@@ -183,19 +184,20 @@ def send_welcome_email(user):
         mimetype='plain',
     )
 
-def add_unconfirmed_user(username, password, fullname):
-    username_clean = username.strip().lower()
-    password_clean = password.strip()
-    fullname_clean = fullname.strip()
-
-    if not get_user(username=username):
-        user = User.create_unconfirmed(username=username_clean,
-            password=password_clean,
-            fullname=fullname_clean)
+def register_unconfirmed(username, password, fullname):
+    user = get_user(username=username)
+    if not user:
+        user = User.create_unconfirmed(username=username,
+            password=password,
+            fullname=fullname)
+        user.save()
+        return user
+    elif not user.is_registered: # User is in db but not registered
+        user.add_email_verification(username)
         user.save()
         return user
     else:
-        raise DuplicateEmailError('User {0!r} already exists'.format(username_clean))
+        raise DuplicateEmailError('User {0!r} already exists'.format(username))
 
 
 # TODO: This is unused. Use add_confirmed_user instead
