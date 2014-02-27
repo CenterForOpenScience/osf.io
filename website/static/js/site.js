@@ -3,6 +3,7 @@
 ////////////////////////////
 (function($) {
 
+// TODO: should probably add namespace to these, e.g. $.osf.postJSON
 /**
  * Posts JSON data.
  *

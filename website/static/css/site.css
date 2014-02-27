@@ -1099,3 +1099,7 @@ div#logScope a.moreLogs{
   height: auto;
 }
 
+.contributor.editable {
+  cursor: pointer;
+}
+

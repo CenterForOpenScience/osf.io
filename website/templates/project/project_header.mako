@@ -159,6 +159,7 @@
 <%include file="modal_add_pointer.mako"/>
 <%include file="modal_show_links.mako"/>
 ## TODO: Find a better place to put this initialization code
+<script src="/static/js/accountClaimer.js"></script>
 <script>
 // TODO: pollution! namespace me
     var userId = '${user_id}';
@@ -166,7 +167,7 @@
     var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
 
-    $(document).ready(function(){
+    $script(['/static/js/app.js'], function() { // Wait until app.js is loaded
 
         $logScope = $('#logScope');
         if ($logScope.length > 0) {
@@ -214,18 +215,23 @@
                 }
             }
         });
+
+        var $addPointer = $('#addPointer');
+        var addPointerVM = new AddPointerViewModel(${json.dumps(node['title'])});
+        ko.applyBindings(addPointerVM, $addPointer[0]);
+        $addPointer.on('hidden.bs.modal', function() {
+            addPointerVM.clear();
+        });
+
+        var linksModal = $('#showLinks')[0];
+        var linksVM = new LinksViewModel(linksModal);
+        ko.applyBindings(linksVM, linksModal);
     });
 
-    var $addPointer = $('#addPointer');
-    var addPointerVM = new AddPointerViewModel(${json.dumps(node['title'])});
-    ko.applyBindings(addPointerVM, $addPointer[0]);
-    $addPointer.on('hidden.bs.modal', function() {
-        addPointerVM.clear();
-    });
-
-    var linksModal = $('#showLinks')[0];
-    var linksVM = new LinksViewModel(linksModal);
-    ko.applyBindings(linksVM, linksModal);
+    // Make unregistered contributors claimable
+    if (!userId) { // If no user logged in, allow user claiming
+        var accountClaimer = new OSFAccountClaimer('.contributor-unregistered');
+    }
 
 
 </script>

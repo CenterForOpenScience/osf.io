@@ -35,6 +35,8 @@
 <%def name="javascript_bottom()">
 <script>
     // Initialize the LogsViewModel
-    initializeLogs("#logScope", "/api/v1/");
+    $script('/static/js/app.js', function() {
+        initializeLogs("#logScope", "/api/v1/");
+    });
 </script>
 </%def>
