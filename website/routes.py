@@ -85,12 +85,20 @@ def make_url_map(app):
             [
                 '/<guid>/',
                 '/<guid>/<path:suffix>',
+            ],
+            ['get', 'post', 'put', 'patch', 'delete'],
+            website_routes.resolve_guid,
+            OsfWebRenderer('', render_mako_string),
+        ),
+
+        Rule(
+            [
                 '/api/v1/<guid>/',
                 '/api/v1/<guid>/<path:suffix>',
             ],
             ['get', 'post', 'put', 'patch', 'delete'],
             website_routes.resolve_guid,
-            OsfWebRenderer('', render_mako_string),
+            json_renderer,
         ),
 
     ])
@@ -116,6 +124,10 @@ def make_url_map(app):
         Rule(
             '/view/spsp2014/', 'get', project_views.email.spsp_results,
             OsfWebRenderer('public/pages/spsp2014.mako')
+        ),
+        Rule(
+            '/view/spsp2014/plain/', 'get', project_views.email.spsp_results,
+            OsfWebRenderer('public/pages/spsp2014_plain.mako'), endpoint_suffix='__plain',
         ),
 
     ])

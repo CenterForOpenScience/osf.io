@@ -78,10 +78,16 @@ class NoHtmlCharacters(object):
 # Filters
 
 def lowered(s):
-    return s.lower()
+    if s:
+        return s.lower()
+    return s
 
 def lowerstripped(s):
-    return s.lower().strip()
+    if s:
+        return s.lower().strip()
+    return s
 
 def stripped(s):
-    return s.strip()
+    if s:
+        return s.strip()
+    return s
