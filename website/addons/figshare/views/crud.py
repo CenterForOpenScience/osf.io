@@ -116,7 +116,8 @@ def figshare_delete_article(*args, **kwargs):
 def figshare_upload_file_to_article(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
+    auth = kwargs['auth']
+    user = auth.user
     figshare = node.get_addon('figshare')
     
     path = kwargs.get('path', '')
@@ -156,15 +157,17 @@ def figshare_view_file(*args, **kwargs):
     connect = Figshare.from_settings(node_settings.user_settings)
     
     article = connect.article(node_settings, article_id)
+
     found = False    
     for f in article['items'][0]['files']:
         if f['id'] == int(file_id):
             found = f
             break
-
     if not f:
         raise HTTPError(http.NOT_FOUND)
-    
+    private = not(article['items'][0]['status'] == 'Public')
+
+
     download_url = node.api_url+'download/article/{aid}/file/{fid}'.format(aid=article_id,fid=file_id)
     render_url = node.api_url+'figshare/render/article/{aid}/file/{fid}'.format(aid=article_id,fid=file_id)
 
@@ -173,12 +176,18 @@ def figshare_view_file(*args, **kwargs):
     )
     rendered = get_cache_content(node_settings, cache_file)
     filename = found['name']
-    if rendered is None:
+    
+
+    if private:
+        rendered = "Since this FigShare file is unpublished we cannot render it. In order to access this content you will need to log into the <a href='{url}'>FigShare page</a> and view it there.".format(url='http://figshare.com/')
+    elif rendered is None:
         filename, size, filedata = connect.get_file(node_settings, found)
-        #TODO limit filesize
-        rendered = get_cache_content(
-            node_settings, cache_file, start_render=True,
-            file_path=filename, file_content=filedata, download_path=download_url)
+        if figshare_settings.MAX_RENDER_SIZE is not None and size > figshare_settings.MAX_RENDER_SIZE:
+            rendered = "File too large to render; <a href='{url}'>download file</a> to view it".format(url=found.get('download_url'))            
+        else:
+            rendered = get_cache_content(
+                node_settings, cache_file, start_render=True,
+                file_path=filename, file_content=filedata, download_path=download_url)
 
     rv = {
         'file_name': filename,

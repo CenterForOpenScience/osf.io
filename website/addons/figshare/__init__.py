@@ -14,7 +14,7 @@ OWNERS = ['user', 'node']
 ADDED_DEFAULT = []
 ADDED_MANDATORY = []
 
-VIEWS = ['widget']
+VIEWS = []
 CONFIGS = ['user', 'node']
 
 CATEGORIES = ['storage']
@@ -34,4 +34,4 @@ WIDGET_HELP = 'FigShare Add-on Alpha'
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.hgrid.figshare_hgrid_data
 
-MAX_FILE_SIZE = 1024*1024
+MAX_RENDER_SIZE = 1
