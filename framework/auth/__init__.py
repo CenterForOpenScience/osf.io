@@ -57,7 +57,7 @@ def get_api_key():
 # check_password(actual_pw_hash, given_password) -> Boolean
 check_password = bcrypt.check_password_hash
 
-
+# TODO: This should be a class method of User
 def get_user(id=None, username=None, password=None, verification_key=None):
     # tag: database
     query_list = []
