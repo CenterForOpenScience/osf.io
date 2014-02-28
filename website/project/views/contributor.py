@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 import logging
+import hashlib
 
 from mako.template import Template
 from itsdangerous import BadSignature
@@ -18,6 +19,7 @@ from website import settings
 from website.filters import gravatar
 from website.models import Node
 from website.profile import utils
+from website.util.permissions import expand_permissions
 
 from website.project.decorators import (
     must_not_be_registration, must_be_valid_project, must_be_contributor,
@@ -91,32 +93,17 @@ def _add_contributor_json(user):
     }
 
 
-def _jsonify_contribs(contribs):
-
-    data = []
-    for contrib in contribs:
-        if 'id' in contrib:
-            user = User.load(contrib['id'])
-            if user is None:
-                logger.error('User {} not found'.format(contrib['id']))
-                continue
-            data.append(utils.serialize_user(user))
-        else:
-            data.append(utils.serialize_unreg_user(contrib))
-    return data
-
-
 @collect_auth
 @must_be_valid_project
 def get_contributors(**kwargs):
 
     auth = kwargs.get('auth')
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
 
-    if not node_to_use.can_view(auth):
+    if not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
-    contribs = _jsonify_contribs(node_to_use.contributor_list)
+    contribs = utils.serialize_contributors(node.contributor_list, node)
     return {'contributors': contribs}
 
 
@@ -202,11 +189,6 @@ def project_removecontributor(**kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 
-def expand_permissions(permission):
-    index = settings.PERMISSIONS.index(permission) + 1
-    return settings.PERMISSIONS[:index]
-
-
 @must_be_valid_project
 @must_have_permission('admin')
 @must_not_be_registration
@@ -240,6 +222,61 @@ def project_addcontributors_post(**kwargs):
         each.save()
 
     return {'status': 'success'}, 201
+
+
+def find_contributor_by_id(node, _id):
+    for contributor in node.contributor_list:
+        if 'nr_email' in contributor and hashlib.md5(contributor['nr_email']).hexdigest() == _id:
+            return contributor
+
+
+@must_be_valid_project # returns project
+@must_be_contributor
+@must_not_be_registration
+def project_manage_contributors(**kwargs):
+
+    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
+
+    contributors = request.json.get('contributors')
+    if not contributors:
+        raise HTTPError(http.BAD_REQUEST)
+
+    # Remove contributors
+    ids = [
+        contributor['id']
+        for contributor in contributors
+    ]
+    to_remove = []
+    for contributor in node.contributor_list:
+        try:
+            email = contributor['nr_email']
+            hash = hashlib.md5(email).hexdigest()
+            if hash not in ids:
+                to_remove.append(contributor)
+        except KeyError:
+            user = User.load(contributor['id'])
+            if user._id not in ids:
+                to_remove.append(user)
+
+    if to_remove:
+        node.remove_contributors(to_remove, auth=auth)
+
+    # Update permissions and order
+    contributor_list = []
+    for contributor in contributors:
+        if contributor['registered']:
+            user = User.load(contributor['id'])
+            permissions = expand_permissions(contributor['permission'])
+            if set(permissions) != set(node.get_permissions(user)):
+                node.set_permissions(user, permissions)
+            contributor_list.append({'id': user._id})
+        else:
+            contributor_list.append(find_contributor_by_id(node, contributor['id']))
+
+    node.contributor_list = contributor_list
+    node.save()
+
 
 # TODO: finish me
 INVITE_EMAIL_SUBJECT = 'You have been added as a contributor to an OSF project.'
@@ -348,3 +385,4 @@ def invite_contributor_post(**kwargs):
     if email:
         email_invite(email, new_user, referrer=auth.user, node=node)
     return {'status': 'success', 'contributor': _add_contributor_json(new_user)}
+

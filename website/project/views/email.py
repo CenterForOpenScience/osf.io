@@ -124,7 +124,7 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
 
     # Make public if confident that this is not spam
     if True:#not is_spam:
-        node.set_permissions('public', auth=auth)
+        node.set_privacy('public', auth=auth)
     else:
         logger.warn(
             'Possible spam detected in email modification of user {} / node {}'.format(

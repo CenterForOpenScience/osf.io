@@ -7,7 +7,7 @@ import unittest
 import datetime as dt
 import mock
 
-import mock
+import hashlib
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 from framework import Q
@@ -22,6 +22,7 @@ from webtest.app import AppError
 from website import settings
 from website.util import rubeus
 from website.project.views.node import _view_project
+from website.profile.utils import serialize_unreg_user
 
 
 from tests.base import DbTestCase
@@ -97,15 +98,84 @@ class TestProjectViews(DbTestCase):
         user2 = UserFactory()
         user3 = UserFactory()
         url = "/api/v1/project/{0}/addcontributors/".format(project._id)
-        res = self.app.post(url, json.dumps({"user_ids": [user2._id, user3._id]}),
-                            content_type="application/json",
-                            auth=self.auth).maybe_follow()
+        self.app.post_json(
+            url,
+            {
+                'users': [
+                    {'id': user2._id, 'permission': 'admin'},
+                    {'id': user3._id, 'permission': 'write'},
+                ],
+                'node_ids': [project._id],
+            },
+            content_type="application/json",
+            auth=self.auth,
+        ).maybe_follow()
         project.reload()
         assert_in(user2._id, project.contributors)
         # A log event was added
         assert_equal(project.logs[-1].action, "contributor_added")
         assert_equal(len(project.contributors), 3)
         assert_equal(len(project.contributor_list), 3)
+        assert_in(user2._id, project.permissions)
+        assert_in(user3._id, project.permissions)
+        assert_equal(project.permissions[user2._id], ['read', 'write', 'admin'])
+        assert_equal(project.permissions[user3._id], ['read', 'write'])
+
+    def test_manage_permissions(self):
+
+        url = self.project.api_url + 'contributors/manage/'
+        self.app.post_json(
+            url,
+            {
+                'contributors': [
+                    {'id': self.project.creator._id, 'permission': 'admin', 'registered': True},
+                    {'id': self.user1._id, 'permission': 'read', 'registered': True},
+                    {'id': self.user2._id, 'permission': 'admin', 'registered': True},
+                ]
+            },
+            auth=self.auth,
+        )
+
+        self.project.reload()
+
+        assert_equal(self.project.get_permissions(self.user1), ['read'])
+        assert_equal(self.project.get_permissions(self.user2), ['read', 'write', 'admin'])
+
+    def test_contributor_manage_reorder(self):
+
+        # Two users are added as a contributor via a POST request
+        project = ProjectFactory(creator=self.user1, is_public=True)
+        reg_user1, reg_user2 = UserFactory(), UserFactory()
+        project.add_contributors([
+            {'user': reg_user1, 'permissions': ['read', 'write', 'admin']},
+            {'user': reg_user2, 'permissions': ['read', 'write', 'admin']},
+        ])
+        # Add a non-registered user
+        unregistered_user = {'nr_name': 'Foo Bar', 'nr_email': 'foo@example.com'}
+        project.contributor_list.append(unregistered_user)
+        project.save()
+
+        url = self.project.api_url + 'contributors/manage/'
+        self.app.post_json(
+            url,
+            {
+                'contributors': [
+                    {'id': project.creator._id, 'permission': 'admin', 'registered': True},
+                    {'id': reg_user1._id, 'permission': 'admin', 'registered': True},
+                    {'id': hashlib.md5(unregistered_user['nr_email']).hexdigest(), 'registered': False},
+                    {'id': reg_user2._id, 'permission': 'admin', 'registered': True},
+                ]
+            },
+            auth=self.auth,
+        )
+
+        project.reload()
+
+        assert_equal(project.contributor_list[0]['id'], project.creator._id)
+        assert_equal(project.contributor_list[1]['id'], reg_user1._id)
+        assert_equal(project.contributor_list[2]['nr_email'], unregistered_user['nr_email'])
+        assert_equal(project.contributor_list[3]['id'], reg_user2._id)
+        assert_equal(len(project.contributor_list), 4)
 
     @unittest.skip('Adding non-registered contributors is on hold until '
                    'invitations and account merging are done.')

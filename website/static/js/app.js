@@ -275,6 +275,25 @@ function attrMap(list, attr) {
     });
 }
 
+ko.bindingHandlers.sortableList = {
+    init: function(element, valueAccessor) {
+        var list = valueAccessor();
+        $(element).sortable({
+            update: function(event, ui) {
+                //retrieve our actual data item
+                var item = ui.item.tmplItem().data;
+                //figure out its new position
+                var position = ko.utils.arrayIndexOf(ui.item.parent().children(), ui.item[0]);
+                //remove the item and add it back in the right spot
+                if (position >= 0) {
+                    list.remove(item);
+                    list.splice(position, 0, item);
+                }
+            }
+        });
+    }
+};
+
 NODE_OFFSET = 25;
 
 /**
@@ -379,16 +398,17 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         )
     };
 
-    self.addTips = function(elements) {
-        elements.forEach(function(element) {
+    self.addTips = function(elm) {
+        elm.forEach(function(element) {
             $(element).find('.contrib-button').tooltip();
         });
     };
 
-    self.setupEditable = function(elm, idx, data) {
+    self.setupEditable = function(elm, data) {
         var $elm = $(elm);
         var $editable = $elm.find('.permission-editable');
         $editable.editable({
+            showbuttons: false,
             value: 'write',
             source: [
                 {value: 'read', text: 'Read'},
@@ -399,6 +419,11 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
                 data.permission(value);
             }
         });
+    };
+
+    self.afterRender = function(elm, data) {
+        self.addTips(elm, data);
+        self.setupEditable(elm, data);
     };
 
     function postInviteRequest(fullname, email, options) {
@@ -442,7 +467,6 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
     };
-
 
     self.remove = function(data) {
         self.selection.splice(

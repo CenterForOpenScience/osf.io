@@ -46,6 +46,7 @@ js = Bundle(
                 "vendor/moment/moment.min.js",
                 "vendor/jquery-blockui/jquery.blockui.js",
                 "vendor/dropzone/dropzone.js",
+                "vendor/knockout-sortable/knockout-sortable.js",
                 'vendor/hgrid/hgrid.js'),
         # Site-specific JS
         Bundle("js/site.js",

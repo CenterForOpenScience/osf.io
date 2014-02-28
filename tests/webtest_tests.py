@@ -279,6 +279,13 @@ class TestRegistrations(DbTestCase):
         subnav = res.html.select('#projectSubnav')[0]
         assert_not_in('Settings', subnav.text)
 
+    def test_cant_see_contributor(self):
+        # Goes to project's page
+        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
+        # Settings is not in the project navigation bar
+        subnav = res.html.select('#projectSubnav')[0]
+        assert_not_in('Contributors', subnav.text)
+
     def test_sees_registration_templates(self):
 
         # Browse to original project
@@ -344,8 +351,8 @@ class TestComponents(DbTestCase):
             project=self.project,
         )
         self.component.save()
-        self.component.set_permissions('public', self.consolidate_auth)
-        self.component.set_permissions('private', self.consolidate_auth)
+        self.component.set_privacy('public', self.consolidate_auth)
+        self.component.set_privacy('private', self.consolidate_auth)
         self.project.save()
 
     def test_can_create_component_from_a_project(self):
@@ -536,8 +543,8 @@ class TestShortUrls(DbTestCase):
         self.component.save()
         # Hack: Add some logs to component; should be unnecessary pending
         # improvements to factories from @rliebz
-        self.component.set_permissions('public', auth=self.consolidate_auth)
-        self.component.set_permissions('private', auth=self.consolidate_auth)
+        self.component.set_privacy('public', auth=self.consolidate_auth)
+        self.component.set_privacy('private', auth=self.consolidate_auth)
         self.wiki = NodeWikiFactory(user=self.user, node=self.component)
 
     def _url_to_body(self, url):
@@ -635,7 +642,7 @@ class TestPiwik(DbTestCase):
         assert_in('token_auth=anonymous', res)
 
     def test_private_alert(self):
-        self.project.set_permissions('private', auth=self.consolidate_auth)
+        self.project.set_privacy('private', auth=self.consolidate_auth)
         self.project.save()
         res = self.app.get(
             '/{0}/statistics/'.format(self.project._primary_key),

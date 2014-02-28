@@ -142,6 +142,7 @@ NodeActions.addNodeToProject = function(node, project) {
 };
 
 $(function(){
+
     $('#newComponent form').on('submit', function(e) {
 
           $("#add-component-submit")
@@ -326,7 +327,6 @@ NodeActions.openCloseNode = function(nodeId){
     NodeActions._openCloseNode(nodeId);
 };
 
-
 $(document).ready(function() {
 
     ////////////////////
@@ -351,21 +351,6 @@ $(document).ready(function() {
     $('.citation-toggle').on('click', function() {
         $(this).closest('.citations').find('.citation-list').slideToggle();
     });
-
-    $('.user-quickedit').hover(
-        function(){
-            var me = $(this);
-            var el = $('<i class="icon-remove"></i>');
-            el.click(function(){
-                NodeActions.removeUser(me.attr('data-userid'), me.attr('data-fullname'));
-                return false;
-            });
-            $(this).append(el);
-        },
-        function(){
-            $(this).find('i').remove();
-        }
-    );
 
     function setPermissions(url, permissions) {
         var msgKey = permissions == 'public' ?

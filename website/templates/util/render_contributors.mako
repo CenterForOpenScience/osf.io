@@ -18,4 +18,5 @@
 
 % if 'admin' in user['permissions']:
     | <a href="#addContributors" data-toggle="modal">add</a>
+##    | <a href="${node['url']}contributors/">manage</a>
 % endif

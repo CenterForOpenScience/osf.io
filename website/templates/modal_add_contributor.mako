@@ -52,7 +52,7 @@
                                                 >+</a>
                                         </td>
                                         <td>
-                                            <img data-bind="attr:{src:contributor.gravatar}" />
+                                            <img data-bind="attr: {src: contributor.gravatar_url}" />
                                         </td>
                                         <td>
                                             <span data-bind="text: contributor.fullname"></span>
@@ -78,18 +78,18 @@
 
                             <!-- TODO: Duplication here: Put this in a KO template -->
                             <table>
-                                <tbody data-bind="foreach: {data: selection, as: 'contributor', afterRender: addTips, afterAdd: setupEditable}">
+                                <tbody data-bind="sortable: {data: selection, as: 'contributor', afterRender: afterRender, options: {containment: 'parent'}}">
                                     <tr>
                                         <td style="padding-right: 10px;">
                                             <a
-                                                    class="btn btn-default contrib-button"
+                                                    class="btn btn-default contrib-button btn-mini"
                                                     data-bind="click:$root.remove"
                                                     rel="tooltip"
                                                     title="Remove contributor"
                                                 >-</a>
                                         </td>
                                         <td>
-                                            <img data-bind="attr:{src:contributor.gravatar}" />
+                                            <img data-bind="attr:{src:contributor.gravatar_url}" />
                                         </td>
                                         <td>
                                             <span data-bind="text: contributor.fullname"></span>

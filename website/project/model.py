@@ -16,6 +16,8 @@ import pytz
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 
+from modularodm.exceptions import ValidationError
+
 from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
@@ -297,8 +299,10 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
 
-    # Permissions
+    # Privacy
     is_public = fields.BooleanField(default=False)
+
+    # Permissions
     permissions = fields.DictionaryField()
 
     is_deleted = fields.BooleanField(default=False)
@@ -431,6 +435,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         if save:
             self.save()
 
+    def set_permissions(self, user, permissions, save=False):
+        self.permissions[user._id] = permissions
+        if save:
+            self.save()
+
     def has_permission(self, user, permission):
         """Check whether user has permission.
 
@@ -452,12 +461,16 @@ class Node(GuidStoredObject, AddonModelMixin):
         :raises: ValueError if user not found in permissions
 
         """
-        try:
-            return self.permissions[user._id]
-        except KeyError:
-            raise ValueError('User not in permissions table')
+        return self.permissions.get(user._id)
+
+    def _validate_permissions(self):
+        for key in self.permissions.keys():
+            if key not in self.contributors:
+                raise ValidationError('User {0} not in contributors list'.format(key))
 
     def save(self, *args, **kwargs):
+
+        self._validate_permissions()
 
         first_save = not self._is_loaded
         is_original = not self.is_registration and not self.is_fork
@@ -906,9 +919,14 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.is_fork = True
         forked.forked_date = when
         forked.forked_from = original
-        forked.is_public = False
         forked.creator = user
         forked.contributor_list = []
+
+        # Forks default to private status
+        forked.is_public = False
+
+        # Clear permissions before adding users
+        forked.permissions = {}
 
         forked.add_contributor(contributor=user, log=False, save=False)
 
@@ -1430,7 +1448,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
         )
 
-    def remove_nonregistered_contributor(self, auth, name, hash_id):
+    def remove_nonregistered_contributor(self, auth, name, hash_id, log=True, save=True):
         deleted = False
         for idx, contrib in enumerate(self.contributor_list):
             if contrib.get('nr_name') == name and hashlib.md5(contrib.get('nr_email')).hexdigest() == hash_id:
@@ -1439,16 +1457,18 @@ class Node(GuidStoredObject, AddonModelMixin):
                 break
         if not deleted:
             return False
-        self.save()
-        self.add_log(
-            action=NodeLog.CONTRIB_REMOVED,
-            params={
-                'project': self.parent_id,
-                'node': self._primary_key,
-                'contributor': contrib,
-            },
-            auth=auth,
-        )
+        if save:
+            self.save()
+        if log:
+            self.add_log(
+                action=NodeLog.CONTRIB_REMOVED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'contributor': contrib,
+                },
+                auth=auth,
+            )
         return True
 
     def add_addon(self, addon_name, auth, log=True):
@@ -1529,26 +1549,29 @@ class Node(GuidStoredObject, AddonModelMixin):
             pointers.extend(node.get_pointers())
         return pointers
 
-    def remove_contributor(self, contributor, auth, log=True):
+    def remove_contributor(self, contributor, auth, log=True, save=False):
         """Remove a contributor from this node.
 
         :param contributor: User object, the contributor to be removed
         :param auth: All the auth informtion including user, API key.
         """
-        if not auth.user._primary_key == contributor._id:
+        if not auth.user._id == contributor._id:
 
             self.contributors.remove(contributor._id)
-            self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != contributor._id]
+            self.contributor_list = [
+                each
+                for each in self.contributor_list
+                if each['id'] != contributor._id
+            ]
 
             # Clear permissions for removed user
             self.permissions.pop(contributor._id, None)
 
             self.save()
-            removed_user = get_user(contributor._id)
 
             # After remove callback
             for addon in self.get_addons():
-                message = addon.after_remove_contributor(self, removed_user)
+                message = addon.after_remove_contributor(self, contributor)
                 if message:
                     status.push_status_message(message)
 
@@ -1558,13 +1581,57 @@ class Node(GuidStoredObject, AddonModelMixin):
                     params={
                         'project': self.parent_id,
                         'node': self._primary_key,
-                        'contributor': removed_user._primary_key,
+                        'contributor': contributor._id,
                     },
                     auth=auth,
                 )
             return True
-        else:
+
+        return False
+
+    def remove_contributors(self, contributors, auth=None, log=True, save=False):
+
+        results = []
+        removed = []
+
+        for contrib in contributors:
+            if isinstance(contrib, User):
+                outcome = self.remove_contributor(
+                    contributor=contrib, auth=auth, log=False, save=False
+                )
+                results.append(outcome)
+                removed.append(contrib._id)
+            else:
+                outcome = self.remove_nonregistered_contributor(
+                    auth,
+                    contrib['nr_name'],
+                    hashlib.md5(contrib['nr_email']).hexdigest(),
+                    log=False,
+                    save=False,
+                )
+                results.append(outcome)
+                removed.append(contrib)
+
+        if log:
+            self.add_log(
+                action=NodeLog.CONTRIB_REMOVED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'contributors': removed,
+                },
+                auth=auth,
+                save=save,
+            )
+
+        if save:
+            self.save()
+
+        if False in results:
             return False
+
+        return True
+
 
     def add_contributor(self, contributor, permissions=None, auth=None,
                         log=True, save=False):
@@ -1660,11 +1727,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         contributor.save()
         return self.add_contributor(contributor, auth=auth, log=True, save=save)
 
-    def set_permissions(self, permissions, auth=None):
+    def set_privacy(self, permissions, auth=None):
         """Set the permissions for this node.
 
         :param permissions: A string, either 'public' or 'private'
         :param auth: All the auth informtion including user, API key.
+
         """
         if permissions == 'public' and not self.is_public:
             self.is_public = True
@@ -1678,7 +1746,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # After set permissions callback
         for addon in self.get_addons():
-            message = addon.after_set_permissions(self, permissions)
+            message = addon.after_set_privacy(self, permissions)
             if message:
                 status.push_status_message(message)
 

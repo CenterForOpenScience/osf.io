@@ -869,7 +869,7 @@ class TestAddonCallbacks(DbTestCase):
     """
     callbacks = {
         'after_remove_contributor': None,
-        'after_set_permissions': None,
+        'after_set_privacy': None,
         'after_fork': (None, None),
         'after_register': (None, None),
     }
@@ -905,18 +905,18 @@ class TestAddonCallbacks(DbTestCase):
                 self.node, user2
             )
 
-    def test_set_permissions_callback(self):
+    def test_set_privacy_callback(self):
 
-        self.node.set_permissions('public', self.consolidate_auth)
+        self.node.set_privacy('public', self.consolidate_auth)
         for addon in self.node.addons:
-            callback = addon.after_set_permissions
+            callback = addon.after_set_privacy
             callback.assert_called_with(
                 self.node, 'public',
             )
 
-        self.node.set_permissions('private', self.consolidate_auth)
+        self.node.set_privacy('private', self.consolidate_auth)
         for addon in self.node.addons:
-            callback = addon.after_set_permissions
+            callback = addon.after_set_privacy
             callback.assert_called_with(
                 self.node, 'private'
             )
@@ -1095,7 +1095,7 @@ class TestProject(DbTestCase):
         user1 = UserFactory()
         user1_auth = Auth(user=user1)
         # Change project to public
-        self.project.set_permissions('public')
+        self.project.set_privacy('public')
         self.project.save()
         # Noncontributor can't edit
         assert_false(self.project.can_edit(user1_auth))
@@ -1136,7 +1136,7 @@ class TestProject(DbTestCase):
         self.project.add_contributor(
             contributor=contributor, auth=self.consolidate_auth)
         # Change project to public
-        self.project.set_permissions('public')
+        self.project.set_privacy('public')
         self.project.save()
         # Creator, contributor, and noncontributor can view
         assert_true(self.project.can_view(self.consolidate_auth))
@@ -1173,19 +1173,31 @@ class TestProject(DbTestCase):
     def test_add_contributors(self):
         user1 = UserFactory()
         user2 = UserFactory()
-        self.project.add_contributors([user1, user2], auth=self.consolidate_auth)
+        self.project.add_contributors(
+            [
+                {'user': user1, 'permissions': ['read', 'write', 'admin']},
+                {'user': user2, 'permissions': ['read', 'write']}
+            ],
+            auth=self.consolidate_auth
+        )
         self.project.save()
         assert_equal(len(self.project.contributors), 3)
         assert_equal(len(self.project.contributor_list), 3)
-        assert_equal(self.project.logs[-1].params['contributors'],
-                        [user1._id, user2._id])
+        assert_equal(
+            self.project.logs[-1].params['contributors'],
+            [user1._id, user2._id]
+        )
+        assert_in(user1._id, self.project.permissions)
+        assert_in(user2._id, self.project.permissions)
+        assert_equal(self.project.permissions[user1._id], ['read', 'write', 'admin'])
+        assert_equal(self.project.permissions[user2._id], ['read', 'write'])
 
-    def test_set_permissions(self):
-        self.project.set_permissions('public', auth=self.consolidate_auth)
+    def test_set_privacy(self):
+        self.project.set_privacy('public', auth=self.consolidate_auth)
         self.project.save()
         assert_true(self.project.is_public)
         assert_equal(self.project.logs[-1].action, 'made_public')
-        self.project.set_permissions('private', auth=self.consolidate_auth)
+        self.project.set_privacy('private', auth=self.consolidate_auth)
         self.project.save()
         assert_false(self.project.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.MADE_PRIVATE)
@@ -1351,7 +1363,7 @@ class TestForkNode(DbTestCase):
 
         """
         # Make project public
-        self.project.set_permissions('public')
+        self.project.set_privacy('public')
         # Make some children
         self.public_component = NodeFactory(
             creator=self.user,
@@ -1395,7 +1407,7 @@ class TestForkNode(DbTestCase):
         assert_not_in('Not Forked', [node.title for node in fork.nodes])
 
     def test_fork_not_public(self):
-        self.project.set_permissions('public')
+        self.project.set_privacy('public')
         fork = self.project.fork_node(self.consolidate_auth)
         assert_false(fork.is_public)
 
@@ -1406,7 +1418,7 @@ class TestForkNode(DbTestCase):
         assert_false(fork)
 
     def test_can_fork_public_node(self):
-        self.project.set_permissions('public')
+        self.project.set_privacy('public')
         user2 = UserFactory()
         user2_auth = Auth(user=user2)
         fork = self.project.fork_node(user2_auth)
@@ -1469,7 +1481,7 @@ class TestRegisterNode(DbTestCase):
 
     def test_permissions(self):
         assert_false(self.registration.is_public)
-        self.project.set_permissions('public')
+        self.project.set_privacy('public')
         registration = RegistrationFactory(project=self.project)
         assert_true(registration.is_public)
 
@@ -1673,6 +1685,11 @@ class TestPermissions(DbTestCase):
             set(settings.CONTRIBUTOR_PERMISSIONS),
             set(self.project.permissions[user._id])
         )
+
+    def test_validate_permissions(self):
+        self.project.permissions[42] = ['dance']
+        with assert_raises(ValidationError):
+            self.project.save()
 
     def test_add_permission(self):
         self.project.add_permission(self.project.creator, 'dance')
