@@ -9,9 +9,6 @@ import framework
 from framework import request, User, status
 from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
-from framework.email.tasks import send_email
-from ..decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public
 from framework import forms
 from framework.auth.forms import SetEmailAndPasswordForm, SignInForm, PasswordForm
 
@@ -25,7 +22,7 @@ from website.util.permissions import expand_permissions
 
 from website.project.decorators import (
     must_not_be_registration, must_be_valid_project, must_be_contributor,
-    must_have_permission,
+    must_be_contributor_or_public, must_have_permission,
 )
 
 
@@ -89,7 +86,7 @@ def _add_contributor_json(user):
         'id': user._primary_key,
         'registered': user.is_registered,
         'active': user.is_active(),
-        'gravatar': gravatar(
+        'gravatar_url': gravatar(
             user, use_ssl=True,
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
         ),
@@ -303,7 +300,7 @@ def find_contributor_by_id(node, _id):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor
+@must_have_permission('admin')
 @must_not_be_registration
 def project_manage_contributors(**kwargs):
 
@@ -311,40 +308,25 @@ def project_manage_contributors(**kwargs):
     node = kwargs['node'] or kwargs['project']
 
     contributors = request.json.get('contributors')
-    if not contributors:
-        raise HTTPError(http.BAD_REQUEST)
 
     # Update permissions and order
-    contributors_updated = []
-    for contributor in contributors:
-        user = User.load(contributor['id'])
-        permissions = expand_permissions(contributor['permission'])
-        if set(permissions) != set(node.get_permissions(user)):
-            node.set_permissions(user, permissions)
-        contributors_updated.append(user)
-
-    node.contributors = contributors_updated
-
-    to_remove = [
-        contributor
-        for contributor in node.contributors
-        if contributor not in contributors_updated
-    ]
-
-    if to_remove:
-        node.remove_contributors(to_remove, auth=auth)
-
-    node.save()
-
+    try:
+        node.manage_contributors(contributors, auth=auth, save=True)
+    except ValueError as error:
+        raise HTTPError(http.BAD_REQUEST, data={'message_long': error.message})
 
 def get_timestamp():
     return int(time.time())
 
-
+# TODO: Use throttle
 def send_claim_registered_email(claimer, unreg_user, node, throttle=0):
     unclaimed_record = unreg_user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
-    claim_url = unreg_user.get_claim_url(node._primary_key, external=True)
+    claim_url = web_url_for('claim_user_registered',
+            uid=unreg_user._primary_key,
+            pid=node._primary_key,
+            token=unclaimed_record['token'],
+            _external=True)
     # Send mail to referrer, telling them to forward verification link to claimer
     mails.send_mail(referrer.username, mails.FORWARD_INVITE_REGiSTERED,
         user=unreg_user,
@@ -425,8 +407,9 @@ def verify_claim_token(user, token, pid):
     return True
 
 def claim_user_registered_login(**kwargs):
-    framework.auth.logout()
-    ref = request.referrer
+    if framework.auth.get_current_user():
+        framework.auth.logout()
+    ref = request.referrer or request.args.get('next')
     return framework.redirect('/account/?next={0}'.format(ref))
 
 @must_be_valid_project
@@ -455,6 +438,8 @@ def claim_user_registered(**kwargs):
     current_user = framework.auth.get_current_user()
     uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
     unreg_user = User.load(uid)
+    if not verify_claim_token(unreg_user, token, pid=node._primary_key):
+        raise HTTPError(http.BAD_REQUEST)
     if current_user:
         form = PasswordForm(request.form)
         if request.method == 'POST':
@@ -478,7 +463,10 @@ def claim_user_registered(**kwargs):
                 uid=uid, pid=pid)
         }
     else:
-        return framework.redirect('/account/')
+        next_url = web_url_for('claim_user_registered', pid=pid, uid=uid, token=token, _external=True)
+        response = framework.redirect(web_url_for('claim_user_registered_login',
+                        uid=uid, pid=pid , next=next_url))
+        return response
 
 
 def claim_user_form(**kwargs):
@@ -549,7 +537,7 @@ def serialize_unregistered(fullname, email):
         }
     else:
         serialized = _add_contributor_json(user)
-        serialized['fullname']
+        serialized['fullname'] = fullname
         serialized['email'] = email
     return serialized
 

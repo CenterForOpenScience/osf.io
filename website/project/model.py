@@ -15,12 +15,9 @@ from HTMLParser import HTMLParser
 import pytz
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
-from modularodm.exceptions import ValidationValueError
 import blinker
 
 from modularodm.exceptions import ValidationValueError, ValidationTypeError
-
-from modularodm.exceptions import ValidationError
 
 from framework import status
 from framework.mongo import ObjectId
@@ -36,6 +33,7 @@ from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 
+from website.util.permissions import expand_permissions
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
 
@@ -251,6 +249,8 @@ class NodeLog(StoredObject):
     WIKI_UPDATED = 'wiki_updated'
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
+    CONTRIB_REORDERED = 'contributors_reordered'
+    PERMISSIONS_UPDATED = 'permissions_updated'
     MADE_PUBLIC = 'made_public'
     MADE_PRIVATE = 'made_private'
     TAG_ADDED = 'tag_added'
@@ -1644,6 +1644,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         for i, contrib in enumerate(self.contributors):
             if contrib._primary_key == old._primary_key:
                 self.contributors[i] = new
+                # Remove unclaimed record for the project
+                if self._primary_key in old.unclaimed_records:
+                    del old.unclaimed_records[self._primary_key]
+                    old.save()
+                for permission in self.get_permissions(old):
+                    self.add_permission(new, permission)
+                self.permissions.pop(old._id)
                 return True
         return False
 
@@ -1715,6 +1722,78 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return True
 
+    def manage_contributors(self, user_dicts, auth, save=False):
+        """Reorder and remove contributors.
+
+        :param list user_dicts: Ordered list of contributors
+        :param Auth auth: Consolidated authentication information
+        :param bool save: Save changes
+        :raises: ValueError if any users in `users` not in contributors or if
+            no admin contributors remaining
+
+        """
+        users = []
+        permissions_changed = {}
+        for user_dict in user_dicts:
+            user = User.load(user_dict['id'])
+            if user is None:
+                raise ValueError('User not found')
+            if user not in self.contributors:
+                raise ValueError(
+                    'User {0} not in contributors'.format(user.fullname)
+                )
+            permissions = expand_permissions(user_dict['permission'])
+            if set(permissions) != set(self.get_permissions(user)):
+                self.set_permissions(user, permissions, save=False)
+                permissions_changed[user._id] = permissions
+            users.append(user)
+
+        self.contributors = users
+
+        admins = [
+            user for user in users
+            if self.has_permission(user, 'admin')
+        ]
+        if users is None or not admins:
+            raise ValueError('Must have at least one admin contributor')
+
+        to_remove = [
+            user
+            for user in self.contributors
+            if user not in users
+        ]
+
+        self.add_log(
+            action=NodeLog.CONTRIB_REORDERED,
+            params={
+                'project': self.parent_id,
+                'node': self._id,
+                'contributors': [
+                    user._id
+                    for user in users
+                ],
+            },
+            auth=auth,
+            save=save,
+        )
+
+        if to_remove:
+            self.remove_contributors(to_remove, auth=auth, save=False)
+
+        if permissions_changed:
+            self.add_log(
+                action=NodeLog.PERMISSIONS_UPDATED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._id,
+                    'contributors': permissions_changed,
+                },
+                auth=auth,
+                save=save,
+            )
+
+        if save:
+            self.save()
 
     def add_contributor(self, contributor, permissions=None, auth=None,
                         log=True, save=False):

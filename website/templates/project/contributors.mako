@@ -1,22 +1,17 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">Contributors</%def>
 
-##<%def name="content()">
-
-##<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
-
 <% import json %>
 
-<div id="manageContributors" class="col-md-8">
+<div id="manageContributors" class="col-md-8" style="display: none;">
 
     % if len(contributors) > 5:
         ${buttonGroup()}
     % endif
 
-    <table class="table" id="manageContributors">
+    <table class="table">
         <thead>
             <th></th>
-            <th>Gravatar</th>
             <th>Name</th>
             <th>Permissions</th>
         </thead>
@@ -32,8 +27,6 @@
                 </td>
                 <td>
                     <img data-bind="attr: {src: contributor.gravatar_url}" />
-                </td>
-                <td>
                     <span data-bind="text: contributor.fullname"></span>
                 </td>
 ##                <td>
@@ -54,8 +47,6 @@
     var contributors = ${json.dumps(contributors)};
 </script>
 
-##</%def>
-
 <%def name="javascript()">
 </%def>
 
@@ -68,8 +59,10 @@
             Sort by Surname
             <i data-bind="css: sortClass"></i>
         </a>
-        <a class="btn btn-danger contrib-button" data-bind="click: cancel">Discard Changes</a>
-        <a class="btn btn-success contrib-button" data-bind="click: submit">Save Changes</a>
+        <a class="btn btn-danger contrib-button" data-bind="click: cancel, visible: changed">Discard Changes</a>
+        <a class="btn btn-success contrib-button" data-bind="click: submit, visible: canSubmit">Save Changes</a>
+        <br /><br />
+        <div data-bind="text: messageText, css: messageClass"></div>
     % endif
 </%def>
 
@@ -78,9 +71,10 @@
     <script src="/static/js/manage.js"></script>
     <script type="text/javascript">
 ##        (function($) {
-            var manageElm = $('#manageContributors')[0];
+            var $manageElm = $('#manageContributors');
             var contributorsViewModel = new Manage.ViewModel(contributors);
-            ko.applyBindings(contributorsViewModel, manageElm);
+            ko.applyBindings(contributorsViewModel, $manageElm[0]);
+            $manageElm.show();
 ##        })($);
     </script>
 </%def>

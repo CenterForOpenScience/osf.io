@@ -114,7 +114,7 @@ KNOWN_EXTENSIONS = [
 class CodeRenderer(FileRenderer):
     def _detect(self, file_pointer):
         _, ext = os.path.splitext(file_pointer.name)
-        return ext in KNOWN_EXTENSIONS
+        return ext.lower() in KNOWN_EXTENSIONS
 
     def _render(self, file_pointer, url):
         formatter = pygments.formatters.HtmlFormatter()
