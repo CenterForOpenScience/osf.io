@@ -260,3 +260,37 @@ class ProjectWithAddonFactory(ProjectFactory):
         instance.creator.add_addon(addon)
         instance.save()
         return instance
+
+# Deprecated unregistered user factory, used mainly for testing migration
+
+class DeprecatedUnregUser(object):
+    '''A dummy "model" for an unregistered user.'''
+    def __init__(self, nr_name, nr_email):
+        self.nr_name = nr_name
+        self.nr_email = nr_email
+
+    def to_dict(self):
+        return {"nr_name": self.nr_name, "nr_email": self.nr_email}
+
+
+class DeprecatedUnregUserFactory(base.Factory):
+    """Generates a dictonary represenation of an unregistered user, in the
+    format expected by the OSF.
+    ::
+
+        >>> from tests.factories import UnregUserFactory
+        >>> UnregUserFactory()
+        {'nr_name': 'Tom Jones0', 'nr_email': 'tom0@example.com'}
+        >>> UnregUserFactory()
+        {'nr_name': 'Tom Jones1', 'nr_email': 'tom1@example.com'}
+    """
+    FACTORY_FOR = DeprecatedUnregUser
+
+    nr_name = Sequence(lambda n: "Tom Jones{0}".format(n))
+    nr_email = Sequence(lambda n: "tom{0}@example.com".format(n))
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        return target_class(*args, **kwargs).to_dict()
+
+    _build = _create
