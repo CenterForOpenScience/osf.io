@@ -49,13 +49,14 @@ class HTTPError(FrameworkError):
     def to_data(self):
 
         data = copy.deepcopy(self.data)
-
         if self.code in self.error_msgs:
-            data['message_short'] = self.error_msgs[self.code]['message_short']
-            data['message_long'] = self.error_msgs[self.code]['message_long']
+            data = {
+                'message_short': self.error_msgs[self.code]['message_short'],
+                'message_long': self.error_msgs[self.code]['message_long']
+            }
         else:
             data['message_short'] = data['message_long'] = 'Unknown error.'
-
+        data.update(self.data)
         data['code'] = self.code
         data['referrer'] = self.referrer
 
