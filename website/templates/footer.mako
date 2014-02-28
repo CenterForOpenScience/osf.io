@@ -1,7 +1,7 @@
 <footer class="footer">
     <div class="container">
         <div class="row">
-             <div class="col-md-2 col-md-offset-1">
+             <div class="col-md-2">
                 <h4>OSF</h4>
                 <ul>
                     <li><a href="/4znZP/wiki/home">About</a></li>
