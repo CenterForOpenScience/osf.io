@@ -200,6 +200,31 @@ class UnregUserFactory(ModularOdmFactory):
         instance.save()
         return instance
 
+class UnconfirmedUserFactory(ModularOdmFactory):
+    """Factory for a user that has not yet confirmed their primary email
+    address (username).
+    """
+
+    FACTORY_FOR = User
+    username = Sequence(lambda n: 'roger{0}@queen.com'.format(n))
+    fullname = Sequence(lambda n: 'Roger Taylor{0}'.format(n))
+    password = 'killerqueen'
+
+    @classmethod
+    def _build(cls, target_class, username, password, fullname):
+        '''Build an object without saving it.'''
+        return target_class.create_unconfirmed(
+            username=username, password=password, fullname=fullname
+        )
+
+    @classmethod
+    def _create(cls, target_class, username, password, fullname):
+        instance = target_class.create_unconfirmed(
+            username=username, password=password, fullname=fullname
+        )
+        instance.save()
+        return instance
+
 
 class AuthFactory(base.Factory):
     FACTORY_FOR = Auth
