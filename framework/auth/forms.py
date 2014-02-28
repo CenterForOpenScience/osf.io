@@ -21,18 +21,22 @@ from website import language
 
 class UniqueEmail(object):
     """Ensure that an email is not already in the database."""
-    def __init__(self, message=None):
+    def __init__(self, message=None, allow_unregistered=True):
         self.message = message
+        self.allow_unregistered = allow_unregistered
 
     def __call__(self, form, field):
-        if auth.get_user(username=field.data):
+        user = auth.get_user(username=field.data)
+        if user:
+            if self.allow_unregistered and not user.is_registered:
+                return True
             msg = self.message or language.ALREADY_REGISTERED.format(email=field.data)
             raise ValidationError(msg)
         return True
 
+
 class EmailExists(object):
     """Ensure that an email is in the database."""
-
     def __init__(self, message=None):
         self.message = message
 

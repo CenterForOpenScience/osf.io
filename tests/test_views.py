@@ -7,7 +7,6 @@ import unittest
 import datetime as dt
 import mock
 
-import mock
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 from framework import Q
@@ -372,7 +371,13 @@ class TestUserInviteViews(DbTestCase):
         assert_true(self.project.is_contributor(latest_user))
 
     def test_invite_contributor_with_no_email(self):
-        assert 0, 'finish me'
+        res = self.app.post_json(self.invite_url,
+            {'fullname': name, 'email': None}, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        latest_user = User.find()[len(User.find()) - 1]
+        self.project.reload()
+        assert_true(self.project.is_contributor(latest_user))
+        assert_false(latest_user.is_registered)
 
     def test_invite_contributor_requires_fullname(self):
         res = self.app.post_json(self.invite_url,

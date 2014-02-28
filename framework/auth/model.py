@@ -7,7 +7,6 @@ import datetime as dt
 
 import pytz
 import bson
-from modularodm.exceptions import MultipleResultsFound
 
 from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash

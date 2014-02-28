@@ -5,7 +5,7 @@ from wtforms import Form, Field
 from framework.auth import forms
 
 from tests.base import DbTestCase
-from tests.factories import UserFactory
+from tests.factories import UserFactory, UnregUserFactory
 
 
 def test_registration_form_processing():
@@ -39,6 +39,13 @@ class TestValidation(DbTestCase):
         f = MockForm(username=u.username)
         f.validate()
         assert_in('username', f.errors)
+
+    def test_unique_email_validator_with_unreg_user(self):
+        class MockForm(Form):
+            username = Field('Username', [forms.UniqueEmail(allow_unregistered=True)])
+        u = UnregUserFactory()
+        f = MockForm(username=u.username)
+        assert_true(f.validate())
 
     def test_email_exists_validator(self):
         class MockForm(Form):
