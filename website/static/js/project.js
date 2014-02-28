@@ -42,6 +42,7 @@ NodeActions.addonFileRedirect = function(item) {
 };
 
 $(function(){
+
     $('#newComponent form').on('submit', function(e) {
 
           $("#add-component-submit")
@@ -199,7 +200,6 @@ NodeActions.openCloseNode = function(nodeId){
     // Hide/show the html
     NodeActions._openCloseNode(nodeId);
 };
-
 
 $(document).ready(function() {
 

@@ -437,6 +437,7 @@ class WebRenderer(Renderer):
             except NotFound:
                 return '<div>URI {} not found</div>'.format(uri), is_replace
             except Exception as error:
+                logging.exception(error)
                 if error_msg:
                     return '<div>{}</div>'.format(error_msg), is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(
@@ -450,6 +451,7 @@ class WebRenderer(Renderer):
                 element_meta['tpl'],
             )
         except Exception as error:
+            logger.exception(error)
             return '<div>Error rendering template {}: {}'.format(
                 element_meta['tpl'],
                 repr(error)

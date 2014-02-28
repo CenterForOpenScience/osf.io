@@ -13,6 +13,8 @@ this.ContribAdder = (function($, global, undefined) {
 
         var self = this;
 
+        self.permissions = ['read', 'write', 'admin'];
+
         self.title = title;
         self.parentId = parentId;
         self.parentTitle = parentTitle;
@@ -50,7 +52,7 @@ this.ContribAdder = (function($, global, undefined) {
 
         self.noResults = ko.computed(function() {
             return self.query() && !self.results().length
-        })
+        });
 
         self.inviteName = ko.observable();
         self.inviteEmail = ko.observable();
@@ -80,7 +82,6 @@ this.ContribAdder = (function($, global, undefined) {
                     '/api/v1/user/search/',
                     {query: self.query()},
                     function(result) {
-
                         self.results(result['users']);
                     }
                 )
@@ -122,6 +123,28 @@ this.ContribAdder = (function($, global, undefined) {
             elements.forEach(function(element) {
                 $(element).find('.contrib-button').tooltip();
             });
+        };
+
+        self.setupEditable = function(elm, data) {
+            var $elm = $(elm);
+            var $editable = $elm.find('.permission-editable');
+            $editable.editable({
+                showbuttons: false,
+                value: 'write',
+                source: [
+                    {value: 'read', text: 'Read'},
+                    {value: 'write', text: 'Write'},
+                    {value: 'admin', text: 'Admin'}
+                ],
+                success: function(response, value) {
+                    data.permission(value);
+                }
+            });
+        };
+
+        self.afterRender = function(elm, data) {
+            self.addTips(elm, data);
+            self.setupEditable(elm, data);
         };
 
         function postInviteRequest(fullname, email, options) {
@@ -184,6 +207,7 @@ this.ContribAdder = (function($, global, undefined) {
         };
 
         self.add = function(data) {
+            data.permission = ko.observable('write');
             self.selection.push(data);
             // Hack: Hide and refresh tooltips
             $('.tooltip').hide();
@@ -245,9 +269,12 @@ this.ContribAdder = (function($, global, undefined) {
         });
 
         self.submit = function() {
-            $.osf.postJSON(nodeApiUrl + 'contributors/',
+            $.osf.postJSON(
+                nodeApiUrl + 'contributors/',
                 {
-                    users: self.selection(),
+                    users: self.selection().map(function(user) {
+                        return ko.toJS(user);
+                    }),
                     node_ids: self.nodesToChange()
                 },
                 function(response) {
