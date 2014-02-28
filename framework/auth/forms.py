@@ -140,7 +140,7 @@ class RegistrationForm(Form):
 
 
 class ResendConfirmationForm(Form):
-    email = email_field
+    email = email_exists_field
 
 
 class SignInForm(Form):
