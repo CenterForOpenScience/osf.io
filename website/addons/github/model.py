@@ -4,6 +4,7 @@
 
 import os
 import urlparse
+import itertools
 
 from github3 import GitHubError
 
@@ -131,9 +132,14 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.has_auth:
             owner = self.user_settings.owner
             connection = GitHub.from_settings(user_settings)
+            # TODO: Fetch repo list client-side
+            # Since /user/repos excludes organization repos to which the
+            # current user has push access, we have to make extra requests to
+            # find them
+            repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
             repo_names = [
                 '{0} / {1}'.format(repo.owner.login, repo.name)
-                for repo in connection.repos()
+                for repo in repos
             ]
             rv.update({
                 'node_has_auth': True,

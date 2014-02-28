@@ -4,6 +4,7 @@
 
 import os
 import urllib
+import itertools
 
 import github3
 from dateutil.parser import parse
@@ -72,6 +73,14 @@ class GitHub(object):
 
     def user_repos(self, user):
         return self.gh3.iter_user_repos(user, type='all', sort='full_name')
+
+    def my_org_repos(self, permissions=None):
+        permissions = permissions or ['push']
+        return itertools.chain.from_iterable(
+            team.iter_repos()
+            for team in self.gh3.iter_user_teams()
+            if team.permission in permissions
+        )
 
     def create_repo(self, repo, **kwargs):
         return self.gh3.create_repo(repo, **kwargs)
