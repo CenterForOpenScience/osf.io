@@ -13,7 +13,7 @@ from tests.factories import DeprecatedUnregUserFactory, ProjectFactory, UserFact
 
 
 logging.getLogger('factory.generate:BaseFactory').setLevel(logging.WARNING)
-
+logger = logging.getLogger(__name__)
 
 def main():
     app.init_app()
@@ -45,6 +45,7 @@ def migrate_user(user_dict, node):
         referrer = node.contributors[0]
         user.add_unclaimed_record(node=node, referrer=referrer,
             given_name=user_dict['nr_name'], email=user_dict['nr_email'])
+        logger.info('Migrated unregistered user {0}'.format(user.username))
     user.save()
     return user
 
@@ -53,6 +54,8 @@ def migrate_contributors(node):
     node.contributors = [
         migrate_user(user_dict, node) for user_dict in node.contributor_list
     ]
+    logger.info('Finished migrating unregistered '
+        'contributors for node {0}'.format(node._primary_key))
     return node.save()
 
 # To run tests: pytest scripts/migrate_unregistered.py
