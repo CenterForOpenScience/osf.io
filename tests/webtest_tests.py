@@ -748,6 +748,28 @@ class TestClaiming(DbTestCase):
         assert_equal(res.status_code, 400)
         assert_in('already been claimed', res)
 
+    def test_cannot_set_email_to_a_user_that_already_exists(self):
+        reg_user = UserFactory()
+        name, email = fake.name(), fake.email()
+        new_user = self.project.add_unregistered_contributor(
+            email=email,
+            fullname=name,
+            auth=Auth(self.referrer)
+        )
+        self.project.save()
+        # Goes to claim url and successfully claims account
+        claim_url = new_user.get_claim_url(self.project._primary_key)
+        res = self.app.get(claim_url)
+        self.project.reload()
+        assert_in('Set Password', res)
+        form = res.forms['setPasswordForm']
+        # Fills out an email that is the username of another user
+        form['username'] = reg_user.username
+        form['password'] = 'killerqueen'
+        form['password2'] = 'killerqueen'
+        res = form.submit().maybe_follow(expect_errors=True)
+        assert_in('already exists', res)
+
 
 
 class TestConfirmingEmail(DbTestCase):

@@ -48,7 +48,8 @@ class User(GuidStoredObject, AddonModelMixin):
     _id = fields.StringField(primary=True)
 
     # NOTE: In the OSF, username is an email
-    username = fields.StringField(required=True)
+    # May be None for unregistered contributors
+    username = fields.StringField(required=False)
     password = fields.StringField()
     fullname = fields.StringField(required=True)
     is_registered = fields.BooleanField()
@@ -124,6 +125,8 @@ class User(GuidStoredObject, AddonModelMixin):
         if email:
             clean_email = email.lower().strip()
             cls.verify_unique_email(clean_email)
+        else:
+            clean_email = None
         parsed = utils.parse_name(fullname)
         user = cls(
             username=clean_email,

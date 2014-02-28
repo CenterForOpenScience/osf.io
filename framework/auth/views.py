@@ -203,7 +203,7 @@ def resend_confirmation():
     form = ResendConfirmationForm(framework.request.form)
     if request.method == 'POST':
         if form.validate():
-            clean_email = form.email.data.lower().strip()
+            clean_email = form.email.data
             # TODO: This pattern (validate form then get user, then validate user) is
             # repeated many times. This logic (checking that a user exists) should
             # be added to form validation
