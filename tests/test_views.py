@@ -371,11 +371,13 @@ class TestUserInviteViews(DbTestCase):
         assert_true(self.project.is_contributor(latest_user))
 
     def test_invite_contributor_with_no_email(self):
+        name = fake.name()
         res = self.app.post_json(self.invite_url,
             {'fullname': name, 'email': None}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        latest_user = User.find()[len(User.find()) - 1]
         self.project.reload()
+        latest_user = self.project.contributors[len(self.project.contributors) - 1]
+        latest_user.reload()
         assert_true(self.project.is_contributor(latest_user))
         assert_false(latest_user.is_registered)
 

@@ -768,7 +768,7 @@ class TestClaiming(DbTestCase):
         form['password'] = 'killerqueen'
         form['password2'] = 'killerqueen'
         res = form.submit().maybe_follow(expect_errors=True)
-        assert_in('already exists', res)
+        assert_in(language.ALREADY_REGISTERED.format(email=reg_user.username), res)
 
 
 
