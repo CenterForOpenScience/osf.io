@@ -848,6 +848,10 @@ form.form-horizontal.form-horizontal-narrow .control-group {
     border-spacing: 5px;
 }
 
+table#manageContributors td {
+    vertical-align: middle;
+}
+
 #addContributors .error {
     color: red;
 }
@@ -1098,6 +1102,49 @@ h1.unavailable {
 
 .private-link{
     padding: 6px;
+}
+
+/* COntributor page */
+li.contributor-list-item a.remove-contributor{
+    margin-top:23px;
+    margin-right:20px;
+    float:right;
+}
+
+li.contributor-list-item img{
+    margin-left:25px;
+}
+
+li.contributor-list-item a.name{
+    margin-left:30px;
+}
+
+.add-contributor{
+    padding: 6px 18px;
+}
+
+.contributorTitle{
+    font-size:150%;
+}
+
+.selectControl{
+    font-size:95%;
+}
+
+.break{
+    margin-bottom:20px;
+}
+
+button.sort{
+    margin-left: 6%;
+}
+
+button.cancel{
+    margin-left: 5%;
+}
+
+button.save{
+    padding: 6px 17px;
 }
 
 /* Modular File Renderer */

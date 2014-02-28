@@ -190,3 +190,45 @@ def must_have_addon(addon_name, model):
         return wrapped
 
     return wrapper
+
+
+def must_have_permission(permission):
+    """Decorator factory for checking permissions. Checks that user is logged
+    in and has necessary permissions for node. Node must be passed in keyword
+    arguments to view function.
+
+    :param list permissions: List of accepted permissions
+    :returns: Decorator function for checking permissions
+    :raises: HTTPError(http.UNAUTHORIZED) if not logged in
+    :raises: HTTPError(http.FORBIDDEN) if missing permissions
+
+    """
+    def wrapper(func):
+
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+
+            # Keywords must include `node`
+            node = kwargs['node'] or kwargs['project']
+            if node is None:
+                raise HTTPError(http.BAD_REQUEST)
+
+            kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
+            user = kwargs['auth'].user
+
+            # User must be logged in
+            if user is None:
+                raise HTTPError(http.UNAUTHORIZED)
+
+            # User must have permissions
+            if not node.has_permission(user, permission):
+                raise HTTPError(http.FORBIDDEN)
+
+            # Call view function
+            return func(*args, **kwargs)
+
+        # Return decorated function
+        return wrapped
+
+    # Return decorator
+    return wrapper

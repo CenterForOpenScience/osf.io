@@ -40,7 +40,6 @@ function attrMap(list, attr) {
 }
 
 
-
 var PrivateLinkViewModel = function(title, parentId, parentTitle) {
 
     var self = this;

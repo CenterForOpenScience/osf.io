@@ -16,7 +16,9 @@
     <div class="col-md-3">
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
-                <li><a href="#configureNode">Configure ${node['category'].capitalize()}</a></li>
+                % if 'admin' in user['permissions']:
+                    <li><a href="#configureNode">Configure ${node['category'].capitalize()}</a></li>
+                % endif
                 <li><a href="#configureCommenting">Configure Commenting</a></li>
                 <li><a href="#selectAddons">Select Add-ons</a></li>
                 % if addon_enabled_settings:
@@ -31,6 +33,7 @@
         % if not node['is_registration']:
             <div id="configureNode" class="panel panel-default">
 
+<<<<<<< HEAD
                 <div class="panel-heading">
                     <h3 class="panel-title">Configure ${node['category'].capitalize()}</h3>
                 </div>
@@ -40,11 +43,30 @@
                     <!-- Delete node -->
                     <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
 
+=======
+        % if 'admin' in user['permissions']:
+
+            <div id="configureNode" class="panel panel-default">
+
+                <div class="panel-heading">
+                    <h3 class="panel-title">Configure ${node['category'].capitalize()}</h3>
+                </div>
+
+                <div class="panel-body">
+
+                    <!-- Delete node -->
+                    <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
+
+>>>>>>> bdc338d7dd597811a407bdc5a47b7aa57d40c95d
                 </div>
 
             </div>
 
+<<<<<<< HEAD
             <div id="selectAddons" class="panel panel-default">
+=======
+        % endif
+>>>>>>> bdc338d7dd597811a407bdc5a47b7aa57d40c95d
 
         <div id="configureCommenting" class="panel panel-default">
 
@@ -266,7 +288,7 @@ ${parent.javascript_bottom()}
                     if (result === key) {
                         $.ajax({
                             type: 'DELETE',
-                            url: nodeApiUrl + 'remove/',
+                            url: nodeApiUrl,
                             success: function(response) {
                                 window.location.href = response.url;
                             }

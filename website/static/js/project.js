@@ -221,7 +221,6 @@ NodeActions.openCloseNode = function(nodeId){
     NodeActions._openCloseNode(nodeId);
 };
 
-
 $(document).ready(function() {
 
     ko.punches.enableAll();

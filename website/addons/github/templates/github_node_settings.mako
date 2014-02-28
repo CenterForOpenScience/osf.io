@@ -18,18 +18,20 @@
 
     <div class="row">
 
-        % if is_owner:
+
             <div class="col-md-6">
-                <select id="githubSelectRepo" class="form-control">
+                <select id="githubSelectRepo" class="form-control" ${'disabled' if not is_owner else ''}>
                     <option>-----</option>
-                    % for repo_name in repo_names:
-                        <option value="${repo_name}" ${'selected' if repo_name == github_repo_full_name else ''}>${repo_name}</option>
-                    % endfor
+                        % if is_owner:
+                            % for repo_name in repo_names:
+                                <option value="${repo_name}" ${'selected' if repo_name == github_repo_full_name else ''}>${repo_name}</option>
+                            % endfor
+                        % else:
+                            <option selected>${github_repo_full_name}</option>
+                        % endif
                 </select>
             </div>
-        % else:
-            <div>${github_repo_full_name}</div>
-        % endif
+
 
         % if is_owner:
             <div class="col-md-6">

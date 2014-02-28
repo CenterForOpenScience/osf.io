@@ -15,12 +15,15 @@ from framework.mongo.utils import from_mongo
 from website import language
 
 from website.project import new_node, clean_template_name
-from website.project.decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public
+from website.project.decorators import (
+    must_not_be_registration, must_be_valid_project, must_be_contributor,
+    must_be_contributor_or_public, must_have_permission,
+)
 from website.project.forms import NewProjectForm, NewNodeForm
 from website.models import WatchConfig, Node, Pointer
 from website import settings
 from website.views import _render_nodes
+from website.profile import utils
 
 from .log import _get_logs
 
@@ -212,6 +215,18 @@ def node_choose_addons(**kwargs):
     node.config_addons(request.json, auth)
 
 
+@must_be_valid_project
+@must_be_contributor # returns user, project
+def node_contributors(**kwargs):
+
+    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
+
+    rv = _view_project(node, auth)
+    rv['contributors'] = utils.serialize_contributors(node.contributors, node)
+    return rv
+
+
 @must_be_contributor
 def configure_comments(**kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -274,14 +289,14 @@ def project_statistics(**kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor
-def project_set_permissions(**kwargs):
+@must_have_permission('admin')
+def project_set_privacy(**kwargs):
 
     auth = kwargs['auth']
     permissions = kwargs['permissions']
     node_to_use = kwargs['node'] or kwargs['project']
 
-    node_to_use.set_permissions(permissions, auth)
+    node_to_use.set_privacy(permissions, auth)
 
     return {
         'status': 'success',
@@ -358,7 +373,7 @@ def togglewatch_post(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+@must_have_permission('admin')
 @must_not_be_registration
 def component_remove(**kwargs):
     """Remove component, and recursively remove its children. If node has a
@@ -509,8 +524,9 @@ def _view_project(node, auth, primary=False):
             'is_contributor': node.is_contributor(user),
             'can_edit': (node.can_edit(auth)
                                 and not node.is_registration),
-            'can_view': node.can_view(auth),
-            'is_watching': user.is_watching(node) if user and not user == None else False,
+            'permissions': node.get_permissions(user) if user else [],
+            'is_watching': user.is_watching(node) if user else False,
+            'id': user._id if user else '',
             'piwik_token': user.piwik_token if user else '',
             'id': user._primary_key if user else None,
         },
@@ -520,6 +536,7 @@ def _view_project(node, auth, primary=False):
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
+
     }
     return data
 
@@ -836,11 +853,13 @@ def fork_pointer(**kwargs):
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 
+
 def abbrev_authors(node):
     rv = node.contributors[0].family_name
     if len(node.contributors) > 1:
         rv += ' et al.'
     return rv
+
 
 @must_be_contributor_or_public
 def get_pointed(**kwargs):
