@@ -36,7 +36,7 @@
 % endfor
 <script src="/static/js/dropzone-patch.js"></script>
 <script>
-(function(global) {
+$(function(global) {
 // Don't show dropped content if user drags outside grid
 global.ondragover = function(e) { e.preventDefault(); };
 global.ondrop = function(e) { e.preventDefault(); };
