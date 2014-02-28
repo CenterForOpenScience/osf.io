@@ -1,12 +1,9 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Reset Password</%def>
 <%def name="content()">
-<div class="page-header">
-    <h1>Reset Password</h1>
-</div>
+<h1 class="page-header text-center">Reset Password</h1>
 <div class="row">
-    <div class="col-md-1">&nbsp;</div>
-    <div class="col-md-6">
+    <div class="col-md-6 col-md-offset-3">
         <div mod-meta='{
                 "tpl": "util/render_form.mako",
                 "uri": "/api/v1/forms/reset_password/",
@@ -22,6 +19,5 @@
         </div>
     </div>
     <div class="col-md-4">&nbsp;</div>
-    <div class="col-md-1">&nbsp;</div>
 </div>
 </%def>
