@@ -151,7 +151,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 'auth_osf_url': owner.url,
                 'auth_osf_id': owner._id,
                 'github_user_name': self.user_settings.github_user,
-                'github_user_url': 'https://githubcom/{0}'.format(self.user_settings.github_user),
+                'github_user_url': 'https://github.com/{0}'.format(self.user_settings.github_user),
                 'is_owner': owner == user,
             })
         return rv
