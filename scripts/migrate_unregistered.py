@@ -32,6 +32,7 @@ def make_user(user_dict):
             user.save()
         except auth.exceptions.DuplicateEmailError:
             user = auth.get_user(username=email)
+            assert user is not None
     return user
 
 
