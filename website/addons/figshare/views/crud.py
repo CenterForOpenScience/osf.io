@@ -26,12 +26,15 @@ from re import search
 
 # Helpers
 
+<<<<<<< HEAD
 def figshare_get_context(**kwargs):
     node = kwargs['node'] or kwargs['project']
     figshare = node.get_addon('figshare')
 
     return node, figshare
 
+=======
+>>>>>>> ab8c648efbdb50dc9a1d429b3ca6f48dad8db628
 def figshare_log_file_added(node, auth, path):
       node.add_log(
             action='figshare_file_added',
@@ -73,7 +76,9 @@ def figshare_get_project(*args, **kwargs):
 @decorators.must_be_contributor
 @decorators.must_have_addon('figshare', 'node')
 def figshare_add_article_to_project(*args, **kwargs):
-    node, figshare = figshare_get_context(kwargs)
+    node = kwargs['node'] or kwargs['project']
+    figshare = node.get_addon('figshare')
+
 
     project_id = kwargs.get('project_id') or None
     if project_id is None:
@@ -92,7 +97,9 @@ def figshare_add_article_to_project(*args, **kwargs):
 @decorators.must_be_contributor
 @decorators.must_have_addon('figshare', 'node')
 def figshare_remove_article_from_project(*args, **kwargs):
-    node, figshare = figshare_get_context(kwargs)
+    node = kwargs['node'] or kwargs['project']
+    figshare = node.get_addon('figshare')
+
 
     project_id = kwargs.get('project_id') or None
     article_id = kwargs.get('aid') or None
@@ -116,8 +123,8 @@ def file_as_article(figshare):
     article = connect.create_article(figshare, article)
 
 def figshare_upload_file_as_article(*args, **kwargs):
-    import pdb; pdb.set_trace()
-    node, figshare = figshare_get_context(kwargs)
+    node = kwargs['node'] or kwargs['project']
+    figshare = node.get_addon('figshare')
 
     project_id = kwargs.get('project_id') or None
     if project_id is None:

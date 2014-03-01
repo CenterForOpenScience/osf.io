@@ -265,7 +265,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         :return tuple: Tuple of cloned settings and alert message
 
         """
-        clone, message = super(AddonGitHubNodeSettings, self).after_register(
+        clone, message = super(AddonFigShareNodeSettings, self).after_register(
             node, registration, user, save=False
             )
 
