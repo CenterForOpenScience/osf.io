@@ -111,7 +111,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             messages.append(message)
             return messages
 
-        connect = Figshare.from_settings(self.user_settings)
+        connect = Figshare.from_settings(self.user_settings)        
         article_is_public = connect.article_is_public(self.figshare_id)
 
         article_permissions = 'public' if article_is_public else 'private'

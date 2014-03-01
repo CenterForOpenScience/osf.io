@@ -135,8 +135,8 @@ def figshare_publish_article(*args, **kwargs):
       if article_id is None:
             raise HTTPError(http.BAD_REQUEST)
       
-      import pdb; pdb.set_trace()
-      cat = request.args.get('category')
+
+      cat = request.json.get('category', '')
       if not cat:
             raise HTTPError(http.BAD_REQUEST)
 
