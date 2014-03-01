@@ -20,25 +20,26 @@ from ..api import Figshare
 
 # Helpers
 
+
 def figshare_log_file_added(node, auth, path):
-      node.add_log(
-            action='figshare_file_added',
-            params={
-                'project': node.parent_id,
-                'node': node._primary_key,
-                'path': os.path.join(path, filename),
-                'urls': {
-                    'view': view_url,
-                    'download': download_url,
-                },
-                'github': {
-                    'id': '',
-                    'type': ''
-                },
+    node.add_log(
+        action='figshare_file_added',
+        params={
+            'project': node.parent_id,
+            'node': node._primary_key,
+            'path': os.path.join(path, filename),
+            'urls': {
+                'view': view_url,
+                'download': download_url,
             },
-            auth=auth,
-            log_date=now,
-      )
+            'github': {
+                'id': '',
+                'type': ''
+            },
+        },
+        auth=auth,
+        log_date=now,
+    )
 
 
 # ----------------- PROJECTS ---------------
@@ -50,6 +51,8 @@ def figshare_create_project(*args, **kwargs):
     pass
 
 # PROJECTS: R
+
+
 @decorators.must_be_contributor
 @decorators.must_have_addon('figshare', 'node')
 def figshare_get_project(*args, **kwargs):
@@ -58,12 +61,13 @@ def figshare_get_project(*args, **kwargs):
     pass
 
 # PROJECTS: U
+
+
 @decorators.must_be_contributor
 @decorators.must_have_addon('figshare', 'node')
 def figshare_add_article_to_project(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     figshare = node.get_addon('figshare')
-
 
     project_id = kwargs.get('project_id') or None
     if project_id is None:
@@ -79,12 +83,13 @@ def figshare_add_article_to_project(*args, **kwargs):
     connect.add_article_to_project(figshare, article['article_id'], project_id)
 
 # PROJECTS: D
+
+
 @decorators.must_be_contributor
 @decorators.must_have_addon('figshare', 'node')
 def figshare_remove_article_from_project(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     figshare = node.get_addon('figshare')
-
 
     project_id = kwargs.get('project_id') or None
     article_id = kwargs.get('aid') or None
@@ -97,6 +102,8 @@ def figshare_remove_article_from_project(*args, **kwargs):
 
 # ---------------- ARTICLES -------------------
 # ARTICLES: C
+
+
 def file_as_article(upload):
     filename = secure_filename(upload.filename)
     article = {
@@ -104,6 +111,7 @@ def file_as_article(upload):
         'files': [upload]
     }
     return article
+
 
 @decorators.must_be_contributor_or_public
 @decorators.must_have_addon('figshare', 'node')
@@ -122,12 +130,16 @@ def figshare_upload_file_as_article(*args, **kwargs):
     return connect.upload_file(node, figshare, article['items'][0], upload)
 
 # ARTICLES: D
+
+
 def figshare_delete_article(*args, **kwargs):
     # TODO implement me?
     pass
 
 # ----------------- FILES --------------------
 # FILES: C
+
+
 @decorators.must_be_contributor_or_public
 @decorators.must_have_addon('figshare', 'node')
 def figshare_upload_file_to_article(*args, **kwargs):
@@ -157,6 +169,7 @@ def figshare_upload_file_to_article(*args, **kwargs):
 
 # FILES: R
 
+
 @must_be_contributor_or_public
 @must_have_addon('figshare', 'node')
 def figshare_view_file(*args, **kwargs):
@@ -184,10 +197,13 @@ def figshare_view_file(*args, **kwargs):
         raise HTTPError(http.NOT_FOUND)
     private = not(article['items'][0]['status'] == 'Public')
 
-    version_url = "http://figshare.com/articles/{filename}/{file_id}".format(filename=article['items'][0]['title'], file_id=article['items'][0]['article_id'])
+    version_url = "http://figshare.com/articles/{filename}/{file_id}".format(
+        filename=article['items'][0]['title'], file_id=article['items'][0]['article_id'])
 
-    download_url = node.api_url+'download/article/{aid}/file/{fid}'.format(aid=article_id,fid=file_id)
-    render_url = node.api_url+'figshare/render/article/{aid}/file/{fid}'.format(aid=article_id,fid=file_id)
+    download_url = node.api_url + \
+        'download/article/{aid}/file/{fid}'.format(aid=article_id, fid=file_id)
+    render_url = node.api_url + \
+        'figshare/render/article/{aid}/file/{fid}'.format(aid=article_id, fid=file_id)
 
     cache_file = get_cache_file(
         article_id, file_id
@@ -196,11 +212,13 @@ def figshare_view_file(*args, **kwargs):
     filename = found['name']
 
     if private:
-        rendered = "Since this FigShare file is unpublished we cannot render it. In order to access this content you will need to log into the <a href='{url}'>FigShare page</a> and view it there.".format(url='http://figshare.com/')
+        rendered = "Since this FigShare file is unpublished we cannot render it. In order to access this content you will need to log into the <a href='{url}'>FigShare page</a> and view it there.".format(
+            url='http://figshare.com/')
     elif rendered is None:
         filename, size, filedata = connect.get_file(node_settings, found)
         if figshare_settings.MAX_RENDER_SIZE is not None and size > figshare_settings.MAX_RENDER_SIZE:
-            rendered = "File too large to render; <a href='{url}'>download file</a> to view it".format(url=found.get('download_url'))
+            rendered = "File too large to render; <a href='{url}'>download file</a> to view it".format(
+                url=found.get('download_url'))
         else:
             rendered = get_cache_content(
                 node_settings, cache_file, start_render=True,
@@ -218,10 +236,13 @@ def figshare_view_file(*args, **kwargs):
     rv.update(_view_project(node, auth, primary=True))
     return rv
 
+
 def get_cache_file(article_id, file_id):
     return '{1}_{0}.html'.format(article_id, file_id)
 
 # FILES: D
+
+
 @decorators.must_be_contributor_or_public
 @decorators.must_have_addon('figshare', 'node')
 def figshare_delete_file(*args, **kwargs):
@@ -240,10 +261,8 @@ def figshare_delete_file(*args, **kwargs):
 
     return connect.delete_file(node, figshare, article_id, file_id)
 
+
 @must_be_contributor_or_public
 @must_have_addon('figshare', 'node')
 def figshare_get_rendered_file(*args, **kwargs):
     node_settings = kwargs['node_addon']
-
-
-

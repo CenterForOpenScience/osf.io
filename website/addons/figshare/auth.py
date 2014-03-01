@@ -32,7 +32,7 @@ def oauth_start_url(user, node=None):
     session = OAuth1Session(
         figshare_settings.CLIENT_ID,
         client_secret=figshare_settings.CLIENT_SECRET,
-       
+
     )
     '''
     session = OAuth1Session(
@@ -46,7 +46,7 @@ def oauth_start_url(user, node=None):
     resource_owner_secret = request_key.get('oauth_token_secret')
 
     authorization_url = session.authorization_url(OAUTH_AUTHORIZE_URL)
-    
+
     return resource_owner_key, resource_owner_secret, authorization_url
 
 
