@@ -458,7 +458,7 @@ class TestClaimViews(DbTestCase):
     def test_invalid_claim_form_responds_with_400(self):
         uid = self.user._primary_key
         pid = self.project._primary_key
-        url = '/user/{uid}/{pid}/claim/badtoken/'.format(**locals())
+        url = '/user/{uid}/{pid}/claim/?token=badtoken'.format(**locals())
         res = self.app.get(url, expect_errors=True).maybe_follow()
         assert_equal(res.status_code, 400)
 

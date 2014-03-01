@@ -1834,7 +1834,7 @@ class TestUnregisteredUser(DbTestCase):
         token = self.user.get_unclaimed_record(pid)['token']
         domain = settings.DOMAIN
         assert_equal(self.user.get_claim_url(pid, external=True),
-            '{domain}user/{uid}/{pid}/claim/{token}/'.format(**locals()))
+            '{domain}user/{uid}/{pid}/claim/?token={token}'.format(**locals()))
 
     def test_get_claim_url_raises_value_error_if_not_valid_pid(self):
         with assert_raises(ValueError):
