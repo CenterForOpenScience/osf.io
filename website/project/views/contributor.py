@@ -215,7 +215,7 @@ def project_addcontributors_post(**kwargs):
     return {'status': 'success'}, 201
 
 
-def send_claim_email(email, user, node):
+def send_claim_email(email, user, node, notify=False):
     """Send an email for claiming a user account. Either sends to the given email
     or the referrer's email, depending on the email address provided.
 
@@ -223,25 +223,33 @@ def send_claim_email(email, user, node):
     :param User user: The User record to claim.
     :param Node node: The node where the user claimed their account.
     """
-    clean_email = email.lower().strip()
+    invited_email = email.lower().strip()
     unclaimed_record = user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
     claim_url = user.get_claim_url(node._primary_key, external=True)
     # If given email is the same provided by user, just send to that email
-    if unclaimed_record.get('email', None) == clean_email:
+    if unclaimed_record.get('email', None) == invited_email:
         mail_tpl = mails.INVITE
-        to_addr = clean_email
+        to_addr = invited_email
     else:  # Otherwise have the referrer forward the email to the user
         mail_tpl = mails.FORWARD_INVITE
         to_addr = referrer.username
-    return mails.send_mail(to_addr, mail_tpl,
+        if notify:
+            mails.send_mail(invited_email, mails.PENDING_VERIFICATION,
+                user=user,
+                referrer=referrer,
+                fullname=unclaimed_record['name'],
+                node=node
+            )
+    mails.send_mail(to_addr, mail_tpl,
         user=user,
         referrer=referrer,
         node=node,
         claim_url=claim_url,
-        email=clean_email,
+        email=invited_email,
         fullname=unclaimed_record['name']
     )
+    return to_addr
 
 
 def verify_claim_token(user, token, pid):
@@ -339,7 +347,7 @@ def invite_contributor_post(**kwargs):
             msg = 'User with this email address is already a contributor to this project.'
             return {'status': 400, 'message': msg}, 400
     if email:
-        send_claim_email(email, new_user, node)
+        send_claim_email(email, new_user, node, notify=False)
     serialized = _add_contributor_json(new_user)
     # display correct name
     serialized['fullname'] = fullname
@@ -354,6 +362,6 @@ def claim_user_post(**kwargs):
     user = User.load(reqdata['pk'])
     email = reqdata['value']
     node = kwargs['node'] or kwargs['project']
-    send_claim_email(email, user, node)
+    send_claim_email(email, user, node, notify=True)
     unclaimed_data = user.get_unclaimed_record(node._primary_key)
-    return {'status': 'success', 'fullname': unclaimed_data['name']}
+    return {'status': 'success', 'fullname': unclaimed_data['name'], 'email': email}

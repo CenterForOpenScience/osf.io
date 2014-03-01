@@ -4,7 +4,7 @@
  *
  * Sends HTTP requests to the claim_user_post endpoint.
  */
-this.OSFAccountClaimer = (function($, global) {
+this.OSFAccountClaimer = (function($, global, bootbox) {
 
     /** Validates that the input is an email address.
     * https://stackoverflow.com/questions/46155/validate-email-address-in-javascript
@@ -14,10 +14,9 @@ this.OSFAccountClaimer = (function($, global) {
         return re.test(email);
     }
 
-    function AccountClaimer (selector, options) {
+    function AccountClaimer (selector) {
         this.selector = selector;
         this.element = $(selector);
-        this.options = $.extend({}, defaults, options);
         this.init();
     }
 
@@ -39,6 +38,12 @@ this.OSFAccountClaimer = (function($, global) {
                     contentType: 'application/json',
                     dataType: 'json'  // Expect JSON response
                 },
+                success: function(data) {
+                    bootbox.alert({
+                        title: 'Email sent',
+                        message: ['Please check <em>', data.email, '</em>'].join('')
+                    });
+                },
                 display: function(value, sourceData){
                     if (sourceData && sourceData.fullname) {
                         $(this).text(sourceData.fullname);
@@ -50,6 +55,7 @@ this.OSFAccountClaimer = (function($, global) {
                 },
                 title: 'Claim Account',
                 placement: 'bottom',
+                value: '',
                 placeholder: 'Enter email...',
                 validate: function(value) {
                     var trimmed = $.trim(value);
@@ -64,4 +70,4 @@ this.OSFAccountClaimer = (function($, global) {
 
     return AccountClaimer;
 
-})(jQuery, window);
+})(jQuery, window, bootbox);

@@ -438,7 +438,7 @@ class TestClaimViews(DbTestCase):
     def setUp(self):
         self.app = TestApp(app)
         self.referrer = AuthUserFactory()
-        self.project = ProjectFactory(creator=self.referrer)
+        self.project = ProjectFactory(creator=self.referrer, is_public=True)
         self.given_name = fake.name()
         self.given_email = fake.email()
         self.project.add_unregistered_contributor(
@@ -485,6 +485,25 @@ class TestClaimViews(DbTestCase):
         assert_equal(res.json['fullname'], self.given_name)
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(to_addr=self.given_email))
+
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_claim_user_post_if_email_is_different_from_given_email(self, send_mail):
+        email = fake.email()  # email that is different from the one the referrer gave
+        url = '/api/v1/user/{0}/{1}/claim/verify/'.format(self.user._primary_key,
+            self.project._primary_key)
+        res = self.app.post_json(url,
+            {'value': email, 'pk': self.user._primary_key}
+        )
+        assert_true(send_mail.called)
+        assert_equal(send_mail.call_count, 2)
+        call_to_invited = send_mail.mock_calls[0]
+        assert_true(call_to_invited.called_with(
+            to_addr=email
+        ))
+        call_to_referrer = send_mail.mock_calls[1]
+        assert_true(call_to_referrer.called_with(
+            to_addr=self.given_email
+        ))
 
 class TestWatchViews(DbTestCase):
 
