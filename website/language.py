@@ -55,7 +55,7 @@ EMAIL_NOT_FOUND = '''
 '''
 
 # Shown after an unregistered user claims an account and is redirected to the
-# project they were added to
+# settings page
 CLAIMED_CONTRIBUTOR = '''
 <strong>Welcome to the OSF!</strong> Please check your
 <a href="/dashboard/">dashboard</a> to see what projects you have been added to.
