@@ -2,15 +2,29 @@
 <%def name="title()">${file_name}</%def>
 
 <%def name="file_versions()">
-<h3>Status: <span class="label label-${'success' if file_status == 'Public' else 'warning'}"> ${file_status}</span></h3>
+<h3>Status: <span class="label label-${'success' if file_status == 'Public' else 'warning'}"> ${file_status}</span>
 % if file_status != 'Public' and parent_type == 'singlefile':
-<a id="figshare_publish_article" class="btn btn-error">Publish</a>
+<a id="figsharePublishArticle" class="btn btn-danger">Publish</a><h3>
+<script type="text/javascript">
+$('#figsharePublishArticle').on('click', function(){
+    bootbox.confirm("Publishing this article is an irreversible operation. Once a FigShare article is published it can never be deleted. Proceed with caution. <br /> Also, FigShare requires some additional info before this article can be published: <br /> <h3><label>Category:</label></h3><select id='figshareCategory'>${figshare_categories}</select>", function(result){
+        if (result){
+	    var data = {category: $('#figshareCategory').val()};
+	    $.ajax({url: nodeApiUrl+'figshare/publish/article/'+${parent_id}+'/',	    
+	            type: 'POST', 
+                    data: data,
+		    dataType: 'json',
+		    contentType: 'application/json',
+                    success:function(res){
+	                console.log(res);
+	    	    }							 
+	});
+    }});
+});
+</script>
 % endif  
 <h3>Versions: ${file_version} </h3>
 <a href="${version_url}">version history</a><br />
 <a href="${download_url}">download</a>
-<script type="text/javascript">
-
-</script>
 </%def>
 
