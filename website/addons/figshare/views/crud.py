@@ -3,17 +3,13 @@ import json
 import datetime
 import httplib as http
 
-from framework.flask import url_for
+from framework.flask import secure_filename
 
-from framework import request, redirect, make_response
+from framework import request
 from framework.exceptions import HTTPError
-from framework.auth.decorators import get_current_user, must_be_logged_in
 
-from website import models
 from website.project import decorators
-from website.project.decorators import must_be_contributor
 from website.project.decorators import must_be_contributor_or_public
-from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
@@ -22,19 +18,8 @@ from website.addons.figshare import settings as figshare_settings
 
 from ..api import Figshare
 
-from re import search
-
 # Helpers
 
-<<<<<<< HEAD
-def figshare_get_context(**kwargs):
-    node = kwargs['node'] or kwargs['project']
-    figshare = node.get_addon('figshare')
-
-    return node, figshare
-
-=======
->>>>>>> ab8c648efbdb50dc9a1d429b3ca6f48dad8db628
 def figshare_log_file_added(node, auth, path):
       node.add_log(
             action='figshare_file_added',
@@ -112,28 +97,29 @@ def figshare_remove_article_from_project(*args, **kwargs):
 
 # ---------------- ARTICLES -------------------
 # ARTICLES: C
-def file_as_article(figshare):
-    upload = request.files['file']
-    filename = secure_filename(upload)
+def file_as_article(upload):
+    filename = secure_filename(upload.filename)
     article = {
         'title': filename,
         'files': [upload]
     }
+    return article
 
-    article = connect.create_article(figshare, article)
-
+@decorators.must_be_contributor_or_public
+@decorators.must_have_addon('figshare', 'node')
 def figshare_upload_file_as_article(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     figshare = node.get_addon('figshare')
+    upload = request.files['file']
 
     project_id = kwargs.get('project_id') or None
     if project_id is None:
         raise HTTPError(http.BAD_REQUEST)
 
     connect = Figshare.from_settings(figshare.user_settings)
-    article = file_as_article(figshare)
+    article = connect.create_article(figshare, file_as_article(upload))
 
-    connect.upload_file(node, figshare, article['id'], upload)
+    return connect.upload_file(node, figshare, article['items'][0], upload)
 
 # ARTICLES: D
 def figshare_delete_article(*args, **kwargs):

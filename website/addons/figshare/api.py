@@ -196,9 +196,9 @@ class Figshare(object):
 
     def create_article(self, node_settings, article):
         body = json.dumps(
-            {'title': article['title'], 'description': article['description']})
-        article = self._send_with_data(
-            os.path.join(node_settings.api_url, 'articles'), method='post', data=body)
+            {'title': article['title'], 'description': article.get('description') or '','defined_type': 'paper'})
+        article.update(self._send_with_data(
+            os.path.join(node_settings.api_url, 'articles'), method='post', data=body))
         if article['files']:
             for f in article['files']:
                 filename, filestream = create_temp_file(f)
@@ -211,18 +211,19 @@ class Figshare(object):
         return self.article(node_settings, article['article_id'])
 
     def upload_file(self, node, node_settings, article, upload):
-        article_data = self.article(node_settings, article)['items'][0]
+        #article_data = self.article(node_settings, article)['items'][0]
         filename, filestream = self.create_temp_file(upload)
         filedata = {
             'filedata': (filename, filestream)
         }
+
         response = self._send_with_data(
-            os.path.join(node_settings.api_url, 'articles', article, 'files'), method='put', output='json',
-            mapper=lambda response: self.article_to_hgrid(
-                node, node_settings, article_data),
-            files=filedata)
+            os.path.join(node_settings.api_url, 'articles', str(article['article_id']), 'files'), method='put', output='json', files=filedata)
+
+
         filestream.close()
-        return response
+        self.add_article_to_project(node_settings, node_settings.figshare_id, str(article['article_id']))
+        return self.file_to_hgrid(node, node_settings, article, response)
 
     def delete_article(self, node_settings, article):
         return self._send(os.path.join(node_settings.api_url, 'articles', article), method='delete')
@@ -299,7 +300,8 @@ class Figshare(object):
 
         return article
 
-    def file_to_hgrid(self, node, node_settings, article, item, public):
+    def file_to_hgrid(self, node, node_settings, article, item):
+
         urls = {
             'upload': '',
             'delete': '',
@@ -310,7 +312,7 @@ class Figshare(object):
         permissions = {
             'edit': False,
             'view': True,
-            'download': True if public else False
+            'download': article['status'] == 'Public'
         }
 
         gridfile = {
