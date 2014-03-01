@@ -1,8 +1,8 @@
-You added ${fullname} to "${node.title}" but did not provide their correct email address. ${user.fullname} wants to claim their account. To complete the invitation process, forward the message below to the email address they registered with us:
+You recently added ${fullname} to "${node.title}". ${fullname} wants to claim their account, but the email address they provided is different from the one you provided.
 
-${email}
+IMPORTANT: To ensure that the correct person is added to your project please forward the message below to ${fullname}.
 
-Once they confirm their email address, they will be able to contribute to the project.
+After ${fullname} confirms their account, they will be able to contribute to the project.
 
 ----------------------
 
