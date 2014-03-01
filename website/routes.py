@@ -170,18 +170,42 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule([
-            '/metadata/node/comment/',
-            '/metadata/comment/comment/',
-        ], 'get', website_routes.node_comment_schema, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/comments/',
+                '/project/<pid>/node/<nid>/comments/',
+            ],
+            'get',
+            project_views.comment.list_comments,
+            json_renderer,
+        ),
 
-        # Get comments
-        Rule('/guid/<guid>/comments/', 'get', website_routes.get_comments_guid, json_renderer),
-
-        # Add comment
-        Rule('/guid/<guid>/comment/', 'post', website_routes.add_comment_guid, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/comment/',
+                '/project/<pid>/node/<nid>/comment/',
+            ],
+            'post',
+            project_views.comment.add_comment,
+            json_renderer,
+        ),
 
     ], prefix='/api/v1')
+
+    # process_rules(app, [
+    #
+    #     Rule([
+    #         '/metadata/node/comment/',
+    #         '/metadata/comment/comment/',
+    #     ], 'get', website_routes.node_comment_schema, json_renderer),
+    #
+    #     # Get comments
+    #     Rule('/guid/<guid>/comments/', 'get', website_routes.get_comments_guid, json_renderer),
+    #
+    #     # Add comment
+    #     Rule('/guid/<guid>/comment/', 'post', website_routes.add_comment_guid, json_renderer),
+    #
+    # ], prefix='/api/v1')
 
     ### Forms ###
 

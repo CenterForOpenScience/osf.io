@@ -84,27 +84,18 @@ def ensure_schemas(clear=True):
             schema_obj.save()
 
 
-class MetaData(GuidStoredObject):
+class Comment(GuidStoredObject):
 
-    _id = fields.StringField()
-    target = fields.AbstractForeignField(backref='annotated')
+    _id = fields.StringField(primary=True)
 
-    # Annotation category: Comment, review, registration, etc.
-    category = fields.StringField()
-
-    # Annotation data
-    schema = fields.ForeignField('MetaSchema')
-    payload = fields.DictionaryField()
-
-    # Annotation provenance
-    user = fields.ForeignField('User', backref='annotated')
+    target = fields.AbstractForeignField(backref='commented')
+    user = fields.ForeignField('user', backref='commented')
     date = fields.DateTimeField(auto_now_add=True)
 
-    def __init__(self, *args, **kwargs):
-        super(MetaData, self).__init__(*args, **kwargs)
-        if self.category and not self.schema:
-            if self.category in OSF_META_SCHEMAS:
-                self.schema = self.category
+    is_public = fields.BooleanField()
+    content = fields.StringField()
+
+    reports = fields.DictionaryField()
 
 
 class ApiKey(StoredObject):
@@ -320,6 +311,8 @@ class Node(GuidStoredObject, AddonModelMixin):
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
 
+    comment_level = fields.StringField()
+
     # TODO: move these to NodeFile
     files_current = fields.DictionaryField()
     files_versions = fields.DictionaryField()
@@ -390,6 +383,13 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def can_view(self, auth):
         return self.is_public or self.can_edit(auth)
+
+    def can_comment(self, auth):
+        if self.comment_level == 'public':
+            return self.can_view(auth)
+        if self.comment_level == 'private':
+            return self.can_edit(auth)
+        return False
 
     def save(self, *args, **kwargs):
 

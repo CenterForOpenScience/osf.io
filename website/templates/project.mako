@@ -91,30 +91,20 @@
 
         </div>
 
-      </div>
+    </div>
 
+    <div id="comments"></div>
 
-##<!-- Include Knockout and view model -->
-##<div mod-meta='{
-##        "tpl": "metadata/knockout.mako",
-##        "replace": true
-##    }'></div>
-##
-##<!-- Render comments -->
-##<div mod-meta='{
-##        "tpl": "metadata/comment_group.mako",
-##        "kwargs": {
-##            "guid": "${node['id']}",
-##            "top": true
-##        },
-##        "replace": true
-##    }'></div>
-##
-##<!-- Boilerplate comment JS -->
-##<div mod-meta='{
-##        "tpl": "metadata/comment_js.mako",
-##        "replace": true
-##    }'></div>
+    ## TODO: Move me
+    <script type="text/html" id="commentTemplate">
+        <div>
+            <div>{{content}}</div>
+            <div>
+                Posted by {{fullname}} at {{date}}
+            </div>
+            <ul data-bind="template: {name: 'commentTemplate', foreach: comments}"></ul>
+        </div>
+    </script>
 
 </%def>
 

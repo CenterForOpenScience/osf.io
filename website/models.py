@@ -8,15 +8,15 @@ from framework.sessions.model import Session
 
 from website.project.model import (
     ApiKey, Node, NodeLog,
-    Tag, WatchConfig, MetaData, MetaSchema, Pointer,
-    MailRecord,
+    Tag, WatchConfig, MetaSchema, Pointer,
+    MailRecord, Comment,
 )
 
 # All models
 MODELS = (
     User, ApiKey, Node, NodeLog,
-    Tag, WatchConfig, Session, Guid, MetaData, MetaSchema, Pointer,
-    MailRecord,
+    Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
+    MailRecord, Comment,
 )
 
-GUID_MODELS = (User, Node, MetaData)
+GUID_MODELS = (User, Node, Comment)

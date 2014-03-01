@@ -14,7 +14,7 @@ from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm,
                                   SetEmailAndPasswordForm)
 
-from website.models import Guid, Node, MetaData
+from website.models import Guid, Node
 from website.project.forms import NewProjectForm
 from website.project import model
 from website import settings
@@ -210,34 +210,34 @@ def resolve_guid(guid, suffix=None):
 def node_comment_schema():
     return {'schema': Node.comment_schema['schema']}
 
-# todo: check whether user can view comments
-def get_comments_guid(guid, collection=None):
-    guid_obj = Guid.load(guid)
-    annotations = guid_obj.referent.annotations
-    return {'comments': [
-        {
-            'payload': annotation.payload,
-            'user_fullname': annotation.user.fullname,
-            'date': annotation.date.strftime('%Y/%m/%d %I:%M %p'),
-            'comment_id': annotation._primary_key,
-        }
-        for annotation in annotations
-        if annotation.category == 'comment'
-    ]}
-
-# todo: check whether user can post comments
-def add_comment_guid(guid, collection=None):
-    guid_obj = Guid.load(guid)
-    user = get_current_user()
-    comment = MetaData(
-        target=guid_obj.referent,
-        category='comment',
-        schema='osf_comment',
-        payload={
-            'comment': request.form.get('comment'),
-            'rating': request.form.get('rating'),
-        },
-        user=user,
-        date=datetime.datetime.utcnow(),
-    )
-    comment.save()
+# # todo: check whether user can view comments
+# def get_comments_guid(guid, collection=None):
+#     guid_obj = Guid.load(guid)
+#     annotations = guid_obj.referent.annotations
+#     return {'comments': [
+#         {
+#             'payload': annotation.payload,
+#             'user_fullname': annotation.user.fullname,
+#             'date': annotation.date.strftime('%Y/%m/%d %I:%M %p'),
+#             'comment_id': annotation._primary_key,
+#         }
+#         for annotation in annotations
+#         if annotation.category == 'comment'
+#     ]}
+#
+# # todo: check whether user can post comments
+# def add_comment_guid(guid, collection=None):
+#     guid_obj = Guid.load(guid)
+#     user = get_current_user()
+#     comment = MetaData(
+#         target=guid_obj.referent,
+#         category='comment',
+#         schema='osf_comment',
+#         payload={
+#             'comment': request.form.get('comment'),
+#             'rating': request.form.get('rating'),
+#         },
+#         user=user,
+#         date=datetime.datetime.utcnow(),
+#     )
+#     comment.save()
