@@ -54,6 +54,13 @@ EMAIL_NOT_FOUND = '''
 <strong>{email}</strong> was not found in our records.
 '''
 
+# Shown after an unregistered user claims an account and is redirected to the
+# project they were added to
+CLAIMED_CONTRIBUTOR = '''
+<strong>Welcome to the OSF!</strong> You are now a contributor to
+<em>{node.title}</em>.
+'''
+
 
 # Error Pages
 # ###########

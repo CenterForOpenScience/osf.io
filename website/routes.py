@@ -36,6 +36,7 @@ def get_globals():
         'status': framework.status.pop_status_messages(),
         'js_all': assets_env['js'].urls(),
         'css_all': assets_env['css'].urls(),
+        'js_bottom': assets_env['js_bottom'].urls(),
         'domain': settings.DOMAIN,
         'language': language,
     }
@@ -261,7 +262,7 @@ def make_url_map(app):
         Rule(["/user/merge/"], 'get', auth_views.merge_user_get, OsfWebRenderer("merge_accounts.mako")),
         Rule(["/user/merge/"], 'post', auth_views.merge_user_post, OsfWebRenderer("merge_accounts.mako")),
         # TODO: uncomment to enable user claiming
-        # Rule(['/user/claim/<signature>/'], ['get', 'post'], project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
+        # Rule(['/user/<uid>/<pid>/claim/<token>/'], ['get', 'post'], project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
     ])
 
     # API
@@ -286,6 +287,9 @@ def make_url_map(app):
         Rule('/settings/names/', 'post', profile_views.post_names, json_renderer),
 
         Rule('/profile/<user_id>/summary/', 'get', profile_views.get_profile_summary, json_renderer),
+
+        # TODO: uncomment to enable user claiming
+        # Rule('/user/<uid>/<pid>/claim/verify/', 'post', project_views.contributor.claim_user_post, json_renderer),
 
     ], prefix='/api/v1',)
 
@@ -691,13 +695,14 @@ def make_url_map(app):
         ),
 
         # Invite Users
-        Rule(
-            [
-                '/project/<pid>/invite_contributor/',
-                '/project/<pid>/node/<nid>/invite_contributor/'
-            ],
-            'post',
-            project_views.contributor.invite_contributor_post,
-            json_renderer
-        ),
+        # TODO: uncomment to enbable claiming
+        # Rule(
+        #     [
+        #         '/project/<pid>/invite_contributor/',
+        #         '/project/<pid>/node/<nid>/invite_contributor/'
+        #     ],
+        #     'post',
+        #     project_views.contributor.invite_contributor_post,
+        #     json_renderer
+        # ),
     ], prefix='/api/v1')

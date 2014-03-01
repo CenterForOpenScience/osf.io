@@ -47,7 +47,7 @@ def adjust_cors(s3wrapper, clobber=False):
 
 def wrapped_key_to_json(wrapped_key, node):
     urls = build_urls(node, quote(wrapped_key.s3Key.key.encode('utf-8')))
-    return {
+    rv = {
         rubeus.KIND: _key_type_to_rubeus(wrapped_key.type),
         'name': wrapped_key.name,
         'size': (wrapped_key.size, wrapped_key.size) if wrapped_key.size is not None else '--',
@@ -62,6 +62,12 @@ def wrapped_key_to_json(wrapped_key, node):
             'upload': urls['upload'],
         }
     }
+    if wrapped_key.type == 'folder':
+        rv.update({
+            'nodeUrl': node.url,
+            'nodeApiUrl': node.api_url,
+        })
+    return rv
 
 
 def get_bucket_drop_down(user_settings):
@@ -160,4 +166,3 @@ def build_urls(node, file_name, url=None, etag=None, vid=None):
         return rv
     else:
         return rv[url]
-

@@ -7,7 +7,7 @@ from modularodm.exceptions import NoResultsFound
 import framework
 from framework import set_previous_url, request
 from framework.email.tasks import send_email
-from framework import status
+from framework import status, exceptions
 import framework.forms as forms
 from framework import auth
 from framework.auth import login, logout, DuplicateEmailError, get_user, get_current_user
@@ -22,6 +22,7 @@ Q = framework.Q
 User = framework.auth.model.User
 logger = logging.getLogger(__name__)
 
+
 def reset_password(*args, **kwargs):
 
     verification_key = kwargs['verification_key']
@@ -29,12 +30,12 @@ def reset_password(*args, **kwargs):
 
     user_obj = get_user(verification_key=verification_key)
     if not user_obj:
-        status.push_status_message('Invalid verification key')
-        return {
-            'verification_key': verification_key
-        }
+        error_data = {'message_short': 'Invalid url.',
+            'message_long': 'The verification key in the URL is invalid or '
+            'has expired.'}
+        raise exceptions.HTTPError(400, data=error_data)
 
-    if form.validate():
+    if request.method == 'POST' and form.validate():
         user_obj.verification_key = None
         user_obj.set_password(form.password.data)
         user_obj.save()
@@ -51,30 +52,26 @@ def forgot_password():
     form = ForgotPasswordForm(framework.request.form, prefix='forgot_password')
 
     if form.validate():
-        user_obj = get_user(username=form.email.data)
+        email = form.email.data
+        user_obj = get_user(username=email)
         if user_obj:
             user_obj.verification_key = security.random_string(20)
             user_obj.save()
-            # TODO: Use mails.py interface
-            success = send_email(
-                from_addr=website.settings.FROM_EMAIL,
-                to_addr=form.email.data,
-                subject="Reset Password",
-                message="http://%s%s" % (
-                    framework.request.host,
-                    framework.url_for(
-                        'OsfWebRenderer__reset_password',
-                        verification_key=user_obj.verification_key
-                    )
+            reset_link = "http://{0}{1}".format(
+                framework.request.host,
+                framework.url_for(
+                    'OsfWebRenderer__reset_password',
+                    verification_key=user_obj.verification_key
                 )
             )
-            if success:
-                status.push_status_message('Reset email sent')
-            else:
-                status.push_status_message("Could not send email. Please try again later.")
-            return framework.redirect('/')
+            mails.send_mail(
+                to_addr=email,
+                mail=mails.FORGOT_PASSWORD,
+                reset_link=reset_link
+            )
+            status.push_status_message('Reset email sent to {0}'.format(email))
         else:
-            status.push_status_message('Email {email} not found'.format(email=form.email.data))
+            status.push_status_message('Email {email} not found'.format(email=email))
 
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
@@ -175,7 +172,7 @@ def auth_register_post():
     # Process form
     if form.validate():
         try:
-            u = auth.add_unconfirmed_user(
+            u = auth.register_unconfirmed(
                 form.username.data,
                 form.password.data,
                 form.fullname.data)
@@ -203,24 +200,17 @@ def resend_confirmation():
     form = ResendConfirmationForm(framework.request.form)
     if request.method == 'POST':
         if form.validate():
-            clean_email = form.email.data.lower().strip()
-            # TODO: This pattern (validate form then get user, then validate user) is
-            # repeated many times. This logic (checking that a user exists) should
-            # be added to form validation
-            user = get_user(username=clean_email)
-            if user:
-                try:
-                    send_confirm_email(user, clean_email)
-                except KeyError:  # already confirmed, redirect to dashboard
-                    status_message = 'Email has already been confirmed.'
-                    type_ = 'warning'
-                else:
-                    status_message = 'Resent email to <em>{0}</em>'.format(clean_email)
-                    type_ = 'success'
-                status.push_status_message(status_message, type_)
+            clean_email = form.email.data
+            try:
+                user = get_user(username=clean_email)
+                send_confirm_email(user, clean_email)
+            except KeyError:  # already confirmed, redirect to dashboard
+                status_message = 'Email has already been confirmed.'
+                type_ = 'warning'
             else:
-                msg = language.EMAIL_NOT_FOUND.format(email=clean_email)
-                status.push_status_message(msg, 'error')
+                status_message = 'Resent email to <em>{0}</em>'.format(clean_email)
+                type_ = 'success'
+            status.push_status_message(status_message, type_)
         else:
             forms.push_errors_to_status(form.errors)
     # Don't go anywhere
@@ -233,6 +223,7 @@ def merge_user_get(**kwargs):
     return forms.utils.jsonify(MergeAccountForm())
 
 
+# TODO: shrink me
 def merge_user_post(**kwargs):
     '''View for merging an account. Takes either JSON or form data.
 
