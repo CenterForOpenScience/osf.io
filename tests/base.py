@@ -16,6 +16,7 @@ from website import settings
 
 from website.addons.osffiles.model import NodeFile
 from website.addons.wiki.model import NodeWikiPage
+
 import website.models
 from website.app import init_app
 

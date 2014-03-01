@@ -12,6 +12,7 @@
                 "tpl": "util/render_form.mako",
                 "uri": "/api/v1/forms/set_email_and_password/",
                 "kwargs": {
+                    "id": "setPasswordForm",
                     "name": "resetpassword",
                     "method_string": "POST",
                     "action_string": "#",
