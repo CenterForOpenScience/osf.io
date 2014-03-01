@@ -214,7 +214,7 @@ def resend_confirmation():
         else:
             forms.push_errors_to_status(form.errors)
     # Don't go anywhere
-    return forms.utils.jsonify(form)
+    return {'form': form}
 
 
 def merge_user_get(**kwargs):
