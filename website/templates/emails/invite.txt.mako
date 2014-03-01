@@ -7,9 +7,15 @@ visit:
 ${claim_url}
 
 Once you have set a password you will be able to make contributions to
-${node.title}.
+${node.title} and create your own projects.
 
 
 Sincerely,
 
 The OSF Team
+
+
+
+More information? Visit http://osf.io/ and http://cos.io/ for information about the Open Science Framework and its supporting organization the Center for Open Science.
+
+Questions? Email contact@osf.io
