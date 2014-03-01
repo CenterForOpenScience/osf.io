@@ -1,4 +1,6 @@
-You recently added ${fullname} to "${node.title}". ${fullname} wants to claim their account, but the email address they provided is different from the one you provided.
+Hello $[referrer.fullname},
+
+You recently added ${fullname} to "${node.title}". ${fullname} wants to claim their account, but the email address they provided is different from the one you provided.  To maintain security of your project, we are sending the account confirmation to you first.
 
 IMPORTANT: To ensure that the correct person is added to your project please forward the message below to ${fullname}.
 
@@ -20,3 +22,8 @@ ${node.title}.
 Sincerely,
 
 The OSF Team
+
+
+More information? Visit http://osf.io/ and http://cos.io/ for information about the Open Science Framework and its supporting organization the Center for Open Science.
+
+Questions? Email contact@osf.io
