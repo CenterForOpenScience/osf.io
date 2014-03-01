@@ -1,5 +1,4 @@
 import os
-import json
 import datetime
 import httplib as http
 
@@ -19,27 +18,6 @@ from website.addons.figshare import settings as figshare_settings
 from ..api import Figshare
 
 # Helpers
-
-
-def figshare_log_file_added(node, auth, path):
-    node.add_log(
-        action='figshare_file_added',
-        params={
-            'project': node.parent_id,
-            'node': node._primary_key,
-            'path': os.path.join(path, filename),
-            'urls': {
-                'view': view_url,
-                'download': download_url,
-            },
-            'github': {
-                'id': '',
-                'type': ''
-            },
-        },
-        auth=auth,
-        log_date=now,
-    )
 
 
 # ----------------- PROJECTS ---------------
@@ -102,8 +80,8 @@ def figshare_remove_article_from_project(*args, **kwargs):
 
 # ---------------- ARTICLES -------------------
 # ARTICLES: C
-@decorators.must_be_contributor_or_public
-@decorators.must_have_addon('figshare', 'node')
+
+
 def file_as_article(figshare):
     upload = request.files['file']
     filename = secure_filename(upload.filename)
@@ -114,7 +92,7 @@ def file_as_article(figshare):
     return article
 
 
-@decorators.must_be_contributor
+@decorators.must_be_contributor_or_public
 @decorators.must_have_addon('figshare', 'node')
 def figshare_upload_file_as_article(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -126,10 +104,32 @@ def figshare_upload_file_as_article(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     connect = Figshare.from_settings(figshare.user_settings)
+
     article = connect.create_article(figshare, file_as_article(upload))
 
-    return connect.upload_file(node, figshare, article['items'][0], upload)
-
+    rv = connect.upload_file(node, figshare, article['items'][0], upload)
+    if rv:
+        node.add_log(
+            action='figshare_file_added',
+            params={
+                'project': node.parent_id,
+                'node': node._primary_key,
+                'path': upload.filename,  # TODO Path?
+                'urls': {
+                    'view': rv['urls']['view'],
+                    'download': rv['urls']['download'],
+                },
+                'figshare': {
+                    'id': figshare.figshare_id,
+                    'type': figshare.figshare_type
+                }
+            },
+            auth=kwargs['auth'],
+            log_date=datetime.datetime.utcnow(),
+        )
+        return rv
+    else:
+        raise HTTPError(http.INTERNAL_SERVER_ERROR)  #TODO better error?
 # ARTICLES: D
 
 
@@ -147,7 +147,7 @@ def figshare_upload_file_to_article(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
-    user = auth.user
+
     figshare = node.get_addon('figshare')
 
     path = kwargs.get('path', '')
@@ -161,13 +161,33 @@ def figshare_upload_file_to_article(*args, **kwargs):
 
     upload = request.files['file']
 
-    return connect.upload_file(
+    rv = connect.upload_file(
         node,
         figshare,
         article,
         upload
     )
 
+    node.add_log(
+        action='figshare_file_added',
+        params={
+            'project': node.parent_id,
+            'node': node._primary_key,
+            'path': upload.filename,  # TODO Path?
+            'urls': {
+                'view': rv['urls']['view'],
+                'download': rv['urls']['download'],
+            },
+            'figshare': {
+                'id': figshare.figshare_id,
+                'type': figshare.figshare_type
+            }
+        },
+        auth=kwargs['auth'],
+        log_date=datetime.datetime.utcnow(),
+    )
+
+    return rv
 # FILES: R
 
 
@@ -233,7 +253,7 @@ def figshare_view_file(*args, **kwargs):
         'file_status': article['items'][0]['status'],
         'file_version': article['items'][0]['version'],
         'version_url': version_url,
-        'parent_type': 'fileset' if article['defined_type'] == 'fileset' else 'singlefile'
+        'parent_type': 'fileset' if article['defined_type'] == 'fileset' else 'singlefile' #TODO Fix me
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv
