@@ -167,7 +167,7 @@
     var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
 
-    $script(['/static/js/app.js'], function() { // Wait until app.js is loaded
+    $script(['/static/vendor/moment/moment.min.js', '/static/js/app.js'], function() { // Wait until app.js is loaded
 
         $logScope = $('#logScope');
         if ($logScope.length > 0) {
