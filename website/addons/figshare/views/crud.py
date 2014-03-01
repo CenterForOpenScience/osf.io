@@ -216,7 +216,8 @@ def figshare_view_file(*args, **kwargs):
         'download_url': found.get('download_url'),
         'file_status': article['items'][0]['status'],
         'file_version': article['items'][0]['version'],
-        'version_url': version_url
+        'version_url': version_url,
+        'parent_type': 'fileset' if article['defined_type'] == 'fileset' else 'singlefile' 
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv
