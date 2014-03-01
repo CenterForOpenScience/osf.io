@@ -226,7 +226,7 @@
 
     // TODO: This is a redundant load.
     // Shouldn't need deferred loading after project_base.template is used
-    $script(['/vendor/bootstrap3-editable/js/bootstrap-editable.min.js'], function(){
+    $script(['/static/vendor/bootstrap3-editable/js/bootstrap-editable.min.js'], function(){
         if (!userId) { // If no user logged in, allow user claiming
             // Make unregistered contributors claimable
             var accountClaimer = new OSFAccountClaimer('.contributor-unregistered');

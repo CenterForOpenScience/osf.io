@@ -10,7 +10,7 @@
         confirmation link.
         </p>
 
-        <form method='POST' class='form form-inline' role='form'>
+        <form id='resendForm' method='POST' class='form form-inline' role='form'>
             <div class='form-group'>
                 ${form.email(placeholder='Email address', autofocus=True)}
             </div>
