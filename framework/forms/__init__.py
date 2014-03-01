@@ -24,7 +24,7 @@ class BootstrapTextInput(TextInput):
 class BootstrapPasswordInput(PasswordInput):
     '''Custom PasswordInput that sets a field's class to 'form-control'.'''
 
-    def __call__(self, field, placeholder=None, **kwargs):
+    def __call__(self, field, **kwargs):
         kwargs.setdefault('class', 'form-control')
         kwargs.setdefault('class_', 'form-control')
         html = super(BootstrapPasswordInput, self).__call__(field, **kwargs)
@@ -33,7 +33,7 @@ class BootstrapPasswordInput(PasswordInput):
 class BootstrapTextArea(TextArea):
     '''Custom TextArea that sets a field's class to 'form-control'.'''
 
-    def __call__(self, field, placeholder=None, **kwargs):
+    def __call__(self, field, **kwargs):
         kwargs.setdefault('class', 'form-control')
         kwargs.setdefault('class_', 'form-control')
         html = super(BootstrapTextArea, self).__call__(field, **kwargs)
@@ -46,7 +46,7 @@ validators = validators
 
 def push_errors_to_status(errors):
     if errors:
-        for field, throwaway in errors.items():
+        for field, _ in errors.items():
             for error in errors[field]:
                 status.push_status_message(error)
 
