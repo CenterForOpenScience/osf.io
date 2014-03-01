@@ -44,7 +44,6 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
 class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     figshare_id = fields.StringField()
     figshare_type = fields.StringField()
-    api_url = fields.StringField()
 
     user_settings = fields.ForeignField(
         'addonfigshareusersettings', backref='authorized'
@@ -58,6 +57,13 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             fid=self.figshare_id,
         )
 
+    @property
+    def api_url(self):
+        if self.user_settings is None:
+            return figshare_settings.API_URL
+        else:
+            return figshare_settings.API_OAUTH_URL
+
     def to_json(self, user):
         figshare_user = user.get_addon('figshare')
         rv = super(AddonFigShareNodeSettings, self).to_json(user)
@@ -68,8 +74,12 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             'figshare_options': []
         })
         figshare_options = []
-        settings = self.user_settings
-        if settings and settings.has_auth:
+
+        if not self.user_settings and figshare_user:
+            self.user_settings = figshare_user
+            self.save()
+
+        if self.user_settings and self.user_settings.has_auth:
             connect = Figshare.from_settings(self.user_settings)
             figshare_options = connect.get_options()
             rv.update({
@@ -90,14 +100,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         :return str: Alert message
 
         """
-
+        if not self.figshare_id:
+            return []
         figshare = node.get_addon('figshare')
         # Quit if no user authorization
-        if self.user_settings is None:
-            figshare.api_url = figshare_settings.API_URL
-        else:
-            figshare.api_url = figshare_settings.API_OAUTH_URL
-        figshare.save()
 
         node_permissions = 'public' if node.is_public else 'private'
 
@@ -229,6 +235,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 cat=fork.project_or_component,
                 url=fork.url + 'settings/'
                 )
+            return AddonFigShareNodeSettings(), message
 
         if save:
             clone.save()
