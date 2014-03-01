@@ -1,12 +1,26 @@
 """
 
 """
-
+import os
 from framework import fields
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
+from website.addons.base import GuidFile
 
 from .api import Figshare
 from . import settings as figshare_settings
+
+
+class FigShareGuidFile(GuidFile):
+
+    article_id = fields.StringField(index=True)
+    file_id = fields.StringField(index=True)
+
+    @property
+    def file_url(self):
+        if self.article_id is None or self.file_id is None:
+            raise ValueError('Path field must be defined.')
+        return os.path.join('figshare', 'article', self.article_id, 'file', self.file_id)
+
 
 class AddonFigShareUserSettings(AddonUserSettingsBase):
 

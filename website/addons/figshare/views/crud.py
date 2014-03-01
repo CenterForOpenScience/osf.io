@@ -6,6 +6,8 @@ from framework.flask import secure_filename
 
 from framework import request
 from framework.exceptions import HTTPError
+from framework import redirect, Q
+from website.addons.base.views import check_file_guid
 
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public
@@ -14,6 +16,7 @@ from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
 
 from website.addons.figshare import settings as figshare_settings
+from website.addons.figshare.model import FigShareGuidFile
 
 from ..api import Figshare
 
@@ -35,7 +38,6 @@ def figshare_create_project(*args, **kwargs):
 @decorators.must_have_addon('figshare', 'node')
 def figshare_get_project(*args, **kwargs):
     # TODO implement me
-    node, figshare = figshare_get_context(**kwargs)
     pass
 
 # PROJECTS: U
@@ -195,14 +197,13 @@ def figshare_upload_file_to_article(*args, **kwargs):
 @must_have_addon('figshare', 'node')
 def figshare_view_file(*args, **kwargs):
     auth = kwargs['auth']
-    user = auth.user
     node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
 
     article_id = kwargs.get('aid') or None
     file_id = kwargs.get('fid') or None
 
-    if article_id is None or file_id is None:
+    if not article_id or not file_id:
         raise HTTPError(http.NOT_FOUND)
 
     connect = Figshare.from_settings(node_settings.user_settings)
@@ -216,6 +217,24 @@ def figshare_view_file(*args, **kwargs):
             break
     if not f:
         raise HTTPError(http.NOT_FOUND)
+
+    try:
+        # If GUID has already been created, we won't redirect, and can check
+        # whether the file exists below
+        guid = FigShareGuidFile.find_one(
+            Q('node', 'eq', node) &
+            Q('article_id', 'eq', article_id) &
+            Q('file_id', 'eq', file_id)
+        )
+    except:
+        guid = FigShareGuidFile(node=node, article_id=article_id, file_id=file_id)
+        guid.save()
+
+    redirect_url = check_file_guid(guid)
+
+    if redirect_url:
+        return redirect(redirect_url)
+
     private = not(article['items'][0]['status'] == 'Public')
 
     version_url = "http://figshare.com/articles/{filename}/{file_id}".format(
@@ -253,7 +272,7 @@ def figshare_view_file(*args, **kwargs):
         'file_status': article['items'][0]['status'],
         'file_version': article['items'][0]['version'],
         'version_url': version_url,
-        'parent_type': 'fileset' if article['defined_type'] == 'fileset' else 'singlefile' #TODO Fix me
+        'parent_type': 'fileset' if article['items'][0]['defined_type'] == 'fileset' else 'singlefile' #TODO Fix me
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv

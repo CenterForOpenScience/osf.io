@@ -196,7 +196,7 @@ class Figshare(object):
 
     def create_article(self, node_settings, article):
         body = json.dumps(
-            {'title': article['title'], 'description': article.get('description') or '','defined_type': 'paper'})
+            {'title': article['title'], 'description': article.get('description') or '', 'defined_type': 'paper'})
         article.update(self._send_with_data(
             os.path.join(node_settings.api_url, 'articles'), method='post', data=body))
         if article['files']:
@@ -220,9 +220,9 @@ class Figshare(object):
         response = self._send_with_data(
             os.path.join(node_settings.api_url, 'articles', str(article['article_id']), 'files'), method='put', output='json', files=filedata)
 
-
         filestream.close()
-        self.add_article_to_project(node_settings, node_settings.figshare_id, str(article['article_id']))
+        self.add_article_to_project(
+            node_settings, node_settings.figshare_id, str(article['article_id']))
         return self.file_to_hgrid(node, node_settings, article, response)
 
     def delete_article(self, node_settings, article):
@@ -274,9 +274,8 @@ class Figshare(object):
 
         if not a_fileset:
             urls['download'] = article['files'][0].get('download_url')
-            urls[
-                'view'] = '{base}figshare/article/{aid}/file/{fid}'.format(base=node.api_url,
-                                                                           aid=article['article_id'], fid=article['files'][0].get('id'))
+            urls['view'] = '/{base}/figshare/article/{aid}/file/{fid}'.format(base=node._id,
+                                                                            aid=article['article_id'], fid=article['files'][0].get('id'))
 
         name = article['title'] if not article[
             'title'] == '' else '<em>untitled article</em>'
@@ -371,7 +370,7 @@ class Figshare(object):
         f.seek(0)
         return filename, f
 
-    #TODO Fix ME
+    # TODO Fix ME
     def has_crud(figshare_id, figshare_type):
         res = self._send(
             "http://api.figshare.com/v1/my_data/{0}s/{1}".format(figshare_type, figshare_id))

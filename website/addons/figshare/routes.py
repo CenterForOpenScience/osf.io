@@ -104,5 +104,4 @@ page_routes = {
             '/project/<pid>/node/<nid>/figshare/article/<aid>/file/<fid>/',
         ], 'get', views.crud.figshare_view_file, OsfWebRenderer('../addons/figshare/templates/figshare_view_file.mako')),
     ],
-    'prefix': '/api/v1'
 }
