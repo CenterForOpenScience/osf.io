@@ -1,10 +1,7 @@
-<%inherit file="base.mako"/>
+<%inherit file="project/project_base.mako"/>
 
 <%def name="title()">Project</%def>
 
-<%def name="content()">
-
-    <div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
     <div class="row">
 
@@ -93,33 +90,7 @@
 
       </div>
 
-
-##<!-- Include Knockout and view model -->
-##<div mod-meta='{
-##        "tpl": "metadata/knockout.mako",
-##        "replace": true
-##    }'></div>
-##
-##<!-- Render comments -->
-##<div mod-meta='{
-##        "tpl": "metadata/comment_group.mako",
-##        "kwargs": {
-##            "guid": "${node['id']}",
-##            "top": true
-##        },
-##        "replace": true
-##    }'></div>
-##
-##<!-- Boilerplate comment JS -->
-##<div mod-meta='{
-##        "tpl": "metadata/comment_js.mako",
-##        "replace": true
-##    }'></div>
-
-</%def>
-
 <%def name="children()">
-
 <div class="page-header">
     % if node['category'] == 'project':
         <div class="pull-right btn-group">
@@ -131,7 +102,7 @@
                 <a class="btn btn-default disabled">Add Link</a>
             % endif
         </div>
-        <%include file="modal_add_component.mako"/>
+
     % endif
     <h2>Components</h2>
 </div>
@@ -163,6 +134,7 @@
 </%def>
 
 <%def name="javascript_bottom()">
+${parent.javascript_bottom()}
 
 % for script in addon_widget_js:
     <script type="text/javascript" src="${script}"></script>
