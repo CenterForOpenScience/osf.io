@@ -14,7 +14,7 @@ from modularodm.exceptions import ValidationError
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
-from framework.auth import User
+from framework.auth import User, DuplicateEmailError
 from framework.auth.utils import parse_name
 from framework.auth.decorators import Auth
 from framework import utils
@@ -25,12 +25,12 @@ from website.profile.utils import serialize_user
 from website.project.model import Pointer, ApiKey, NodeLog, ensure_schemas
 from website.addons.osffiles.model import NodeFile
 
-from tests.base import DbTestCase, test_app, Guid
+from tests.base import DbTestCase, test_app, Guid, fake
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
     NodeWikiFactory, UnregUserFactory, RegistrationFactory, UnregUserFactory,
-    ProjectWithAddonFactory
+    ProjectWithAddonFactory, UnconfirmedUserFactory
 )
 
 
@@ -51,14 +51,18 @@ class TestUser(DbTestCase):
         assert_false(u.is_active())
 
     def test_create_unregistered(self):
-        u = User.create_unregistered(email='foo@bar.com',
-            fullname='Foo Bar')
+        name, email = fake.name(), fake.email()
+        u = User.create_unregistered(email=email,
+            fullname=name)
         u.save()
-        assert_equal(u.username, 'foo@bar.com')
+        assert_equal(u.username, email)
         assert_false(u.is_registered)
-        assert_true('foo@bar.com' in u.emails)
-        assert_equal(len(u.email_verifications.keys()), 1,
-            'email verification code was added')
+        assert_true(email in u.emails)
+
+    def test_create_unregistered_raises_error_if_already_in_db(self):
+        u = UnregUserFactory()
+        with assert_raises(DuplicateEmailError):
+            User.create_unregistered(fullname=fake.name(), email=u.username)
 
     def test_user_with_no_password_is_not_active(self):
         u = User(username='fred@queen.com',
@@ -317,6 +321,20 @@ class TestUser(DbTestCase):
             )
 
         assert_equal(len(self.user.recently_added), 15)
+
+    def test_display_full_name_registered(self):
+        u = UserFactory()
+        assert_equal(u.display_full_name(), u.fullname)
+
+    def test_display_full_name_unregistered(self):
+        name = fake.name()
+        u = UnregUserFactory()
+        project =ProjectFactory()
+        project.add_unregistered_contributor(fullname=name, email=u.username,
+            auth=Auth(project.creator))
+        project.save()
+        assert_equal(u.display_full_name(node=project), name)
+
 
 
 
@@ -1023,10 +1041,10 @@ class TestProject(DbTestCase):
         assert_in(user2, self.project.contributors)
         assert_equal(self.project.logs[-1].action, 'contributor_added')
 
-    def test_add_nonregistered_contributor(self):
-        self.project.add_nonregistered_contributor(
+    def test_add_unregistered_contributor(self):
+        self.project.add_unregistered_contributor(
             email='foo@bar.com',
-            name='Weezy F. Baby',
+            fullname='Weezy F. Baby',
             auth=self.consolidate_auth
         )
         self.project.save()
@@ -1041,6 +1059,36 @@ class TestProject(DbTestCase):
                         {'id': latest_contributor._primary_key})
         # A log event was added
         assert_equal(self.project.logs[-1].action, 'contributor_added')
+        assert_in(self.project._primary_key, latest_contributor.unclaimed_records,
+            'unclaimed record was added')
+        unclaimed_data = latest_contributor.get_unclaimed_record(self.project._primary_key)
+        assert_equal(unclaimed_data['referrer_id'],
+            self.consolidate_auth.user._primary_key)
+        assert_true(self.project.is_contributor(latest_contributor))
+        assert_equal(unclaimed_data['email'], 'foo@bar.com')
+
+    def test_add_unregistered_adds_new_unclaimed_record_if_user_already_in_db(self):
+        user = UnregUserFactory()
+        given_name = fake.name()
+        new_user = self.project.add_unregistered_contributor(
+            email=user.username,
+            fullname=given_name,
+            auth=self.consolidate_auth
+        )
+        self.project.save()
+        # new unclaimed record was added
+        assert_in(self.project._primary_key, new_user.unclaimed_records)
+        unclaimed_data = new_user.get_unclaimed_record(self.project._primary_key)
+        assert_equal(unclaimed_data['name'], given_name)
+
+    def test_add_unregistered_raises_error_if_user_is_registered(self):
+        user = UserFactory(is_registered=True)  # A registered user
+        with assert_raises(DuplicateEmailError):
+            self.project.add_unregistered_contributor(
+                email=user.username,
+                fullname=user.fullname,
+                auth=self.consolidate_auth
+            )
 
     def test_remove_contributor(self):
         # A user is added as a contributor
@@ -1058,6 +1106,19 @@ class TestProject(DbTestCase):
             [contrib.get('id') for contrib in self.project.contributor_list]
         )
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
+
+    def test_remove_unregistered_conributor_removes_unclaimed_record(self):
+        new_user = self.project.add_unregistered_contributor(fullname=fake.name(),
+            email=fake.email(), auth=Auth(self.project.creator))
+        self.project.save()
+        assert_true(self.project.is_contributor(new_user))  # sanity check
+        assert_in(self.project._primary_key, new_user.unclaimed_records)
+        self.project.remove_contributor(
+            auth=self.consolidate_auth,
+            contributor=new_user
+        )
+        self.project.save()
+        assert_not_in(self.project._primary_key, new_user.unclaimed_records)
 
     def test_set_title(self):
         proj = ProjectFactory(title='That Was Then', creator=self.user)
@@ -1149,11 +1210,21 @@ class TestProject(DbTestCase):
         assert_false(self.project.is_contributor(other_guy))
         assert_false(self.project.is_contributor(None))
 
+    def test_is_contributor_unregistered(self):
+        unreg = UnregUserFactory()
+        self.project.add_unregistered_contributor(
+            fullname=fake.name(),
+            email=unreg.username,
+            auth=self.consolidate_auth
+        )
+        self.project.save()
+        assert_true(self.project.is_contributor(unreg))
+
     def test_creator_is_contributor(self):
         assert_true(self.project.is_contributor(self.user))
         assert_in(self.user, self.project.contributors)
 
-    def test_cant_add_creator_as_contributor(self):
+    def test_cant_add_creator_as_contributor_twice(self):
         self.project.add_contributor(contributor=self.user)
         self.project.save()
         assert_equal(len(self.project.contributors), 1)
@@ -1726,44 +1797,44 @@ class TestUnregisteredUser(DbTestCase):
 
     def add_unclaimed_record(self):
         given_name = 'Fredd Merkury'
+        email = 'unclaimed@example.com'
         self.user.add_unclaimed_record(node=self.project,
-            given_name=given_name, referrer=self.referrer)
+            given_name=given_name, referrer=self.referrer,
+            email=email)
         self.user.save()
         data = self.user.unclaimed_records[self.project._primary_key]
         return data
 
-    def test_factory(self):
+    def test_unregistered_factory(self):
         u1 = UnregUserFactory()
         assert_false(u1.is_registered)
         assert_true(u1.password is None)
         assert_true(u1.fullname)
 
+    def test_unconfirmed_factory(self):
+        u = UnconfirmedUserFactory()
+        assert_false(u.is_registered)
+        assert_true(u.username)
+        assert_true(u.fullname)
+        assert_true(u.password)
+        assert_equal(len(u.email_verifications.keys()), 1)
+
     def test_add_unclaimed_record(self):
         data = self.add_unclaimed_record()
-        assert_equal(data, {
-            'name': 'Fredd Merkury',
-            'referrer_id': self.referrer._primary_key,
-            'verification': hmac.sign('{}:{}:{}:{}'.format(
-                self.user._primary_key,
-                self.project._primary_key,
-                self.referrer._primary_key, 'Fredd Merkury'))
-        })
+        assert_equal(data['name'], 'Fredd Merkury')
+        assert_equal(data['referrer_id'], self.referrer._primary_key)
+        assert_in('token', data)
+        assert_equal(data['email'], 'unclaimed@example.com')
+        assert_equal(data, self.user.get_unclaimed_record(self.project._primary_key))
 
     def test_get_claim_url(self):
         self.add_unclaimed_record()
-        pk = self.project._primary_key
-        assert_equal(self.user.get_claim_url(pk),
-            settings.DOMAIN + 'user/claim/' + self.user.unclaimed_records[pk]['verification'] + '/')
-
-    def test_parse_claim_signature(self):
-        data = self.add_unclaimed_record()
-        parsed = User.parse_claim_signature(data['verification'])
-        assert_equal(parsed, {
-            '_id': self.user._primary_key,
-            'name': 'Fredd Merkury',
-            'referrer_id': self.referrer._primary_key,
-            'project_id': self.project._primary_key
-        })
+        uid = self.user._primary_key
+        pid = self.project._primary_key
+        token = self.user.get_unclaimed_record(pid)['token']
+        domain = settings.DOMAIN
+        assert_equal(self.user.get_claim_url(pid, external=True),
+            '{domain}user/{uid}/{pid}/claim/{token}/'.format(**locals()))
 
     def test_get_claim_url_raises_value_error_if_not_valid_pid(self):
         with assert_raises(ValueError):
@@ -1789,6 +1860,20 @@ class TestUnregisteredUser(DbTestCase):
         user = UnregUserFactory(email='fred@queen.com')
         assert_equal(user.password, None)  # sanity check
         user.register(username='brian@queen.com', password='killerqueen')
+
+    def test_verify_claim_token(self):
+        self.add_unclaimed_record()
+        valid = self.user.get_unclaimed_record(self.project._primary_key)['token']
+        assert_true(self.user.verify_claim_token(valid, project_id=self.project._primary_key))
+        assert_false(self.user.verify_claim_token('invalidtoken', project_id=self.project._primary_key))
+
+    def test_claim_contributor(self):
+        self.add_unclaimed_record()
+        # sanity cheque
+        assert_false(self.user.is_registered)
+        assert_true(self.project)
+
+
 
 class TestProjectWithAddons(DbTestCase):
 

@@ -1093,3 +1093,8 @@ h1.unavailable {
   max-width: 100%;
   height: auto;
 }
+
+
+.contributor.editable {
+  cursor: pointer;
+}
