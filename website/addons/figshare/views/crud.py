@@ -97,7 +97,6 @@ def figshare_remove_article_from_project(*args, **kwargs):
 
 # ---------------- ARTICLES -------------------
 # ARTICLES: C
-<<<<<<< HEAD
 @decorators.must_be_contributor_or_public
 @decorators.must_have_addon('figshare', 'node')
 def file_as_article(figshare):
