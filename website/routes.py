@@ -186,14 +186,11 @@ def make_url_map(app):
     ### Forms ###
 
     process_rules(app, [
-
         Rule('/forms/registration/', 'get', website_routes.registration_form, json_renderer),
         Rule('/forms/signin/', 'get', website_routes.signin_form, json_renderer),
         Rule('/forms/forgot_password/', 'get', website_routes.forgot_password_form, json_renderer),
         Rule('/forms/reset_password/', 'get', website_routes.reset_password_form, json_renderer),
         Rule('/forms/new_project/', 'get', website_routes.new_project_form, json_renderer),
-        Rule('/forms/set_email_and_password/', 'get', website_routes.set_email_and_password_form, json_renderer),
-
     ], prefix='/api/v1')
 
     ### Discovery ###
