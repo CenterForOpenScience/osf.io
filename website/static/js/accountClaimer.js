@@ -50,7 +50,6 @@ this.OSFAccountClaimer = (function($, global) {
                 },
                 title: 'Claim Account',
                 placement: 'bottom',
-                value: '',
                 placeholder: 'Enter email...',
                 validate: function(value) {
                     var trimmed = $.trim(value);
