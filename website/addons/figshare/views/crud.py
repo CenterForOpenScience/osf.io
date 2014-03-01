@@ -103,6 +103,8 @@ def figshare_remove_article_from_project(*args, **kwargs):
 
 # ---------------- ARTICLES -------------------
 # ARTICLES: C
+@decorators.must_be_contributor_or_public
+@decorators.must_have_addon('figshare', 'node')
 def file_as_article(figshare):
     upload = request.files['file']
     filename = secure_filename(upload)
@@ -113,6 +115,8 @@ def file_as_article(figshare):
         
     article = connect.create_article(figshare, article)
 
+@decorators.must_be_contributor
+@decorators.must_have_addon('figshare', 'node')
 def figshare_upload_file_as_article(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     figshare = node.get_addon('figshare')
