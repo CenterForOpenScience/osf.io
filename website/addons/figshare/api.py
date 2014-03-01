@@ -246,7 +246,7 @@ class Figshare(object):
         if a_fileset:
             for item in article.get('files') or []:
                 children.append(
-                    self.file_to_hgrid(node, node_settings, article, item, (article['status'] == 'Public')))
+                    self.file_to_hgrid(node, node_settings, article, item))
 
         # special case for hgrid lazyLoad
         if contents:

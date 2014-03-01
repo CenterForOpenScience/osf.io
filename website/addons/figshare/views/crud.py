@@ -102,9 +102,10 @@ def figshare_remove_article_from_project(*args, **kwargs):
 
 # ---------------- ARTICLES -------------------
 # ARTICLES: C
-
-
-def file_as_article(upload):
+@decorators.must_be_contributor_or_public
+@decorators.must_have_addon('figshare', 'node')
+def file_as_article(figshare):
+    upload = request.files['file']
     filename = secure_filename(upload.filename)
     article = {
         'title': filename,
@@ -113,7 +114,7 @@ def file_as_article(upload):
     return article
 
 
-@decorators.must_be_contributor_or_public
+@decorators.must_be_contributor
 @decorators.must_have_addon('figshare', 'node')
 def figshare_upload_file_as_article(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -231,7 +232,8 @@ def figshare_view_file(*args, **kwargs):
         'download_url': found.get('download_url'),
         'file_status': article['items'][0]['status'],
         'file_version': article['items'][0]['version'],
-        'version_url': version_url
+        'version_url': version_url,
+        'parent_type': 'fileset' if article['defined_type'] == 'fileset' else 'singlefile'
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv
