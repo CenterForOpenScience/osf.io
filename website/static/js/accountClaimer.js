@@ -1,8 +1,10 @@
-this.OSFAccountClaimer = (function($, global, undefined) {
-
-    var defaults = {
-
-    };
+/**
+ * Module that enables account claiming on the project page. Makes unclaimed
+ * usernames show popovers when clicked, where they can input their email.
+ *
+ * Sends HTTP requests to the claim_user_post endpoint.
+ */
+this.OSFAccountClaimer = (function($, global) {
 
     /** Validates that the input is an email address.
     * https://stackoverflow.com/questions/46155/validate-email-address-in-javascript
@@ -31,14 +33,16 @@ this.OSFAccountClaimer = (function($, global, undefined) {
         init: function() {
             this.element.editable({
                 type: 'text',
+                value: '',
                 ajaxOptions: {
                     type: 'post',
                     contentType: 'application/json',
                     dataType: 'json'  // Expect JSON response
                 },
-                success: function(response) {
-                    // NOTE: workaround for X-editable to make value not change
-                    return {newValue: response.fullname};
+                display: function(value, sourceData){
+                    if (sourceData && sourceData.fullname) {
+                        $(this).text(sourceData.fullname);
+                    }
                 },
                 // Send JSON payload
                 params: function(params) {
@@ -55,7 +59,6 @@ this.OSFAccountClaimer = (function($, global, undefined) {
                     }
                 },
                 url: getClaimUrl.call(this),
-                setValue: function(){}
             });
         }
     };
