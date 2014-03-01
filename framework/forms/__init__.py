@@ -13,15 +13,6 @@ from wtfrecaptcha.fields import RecaptchaField
 from framework.forms.utils import sanitize
 
 
-class MyTextInput(TextInput):
-    def __init__(self, error_class=u'has_errors'):
-        super(MyTextInput, self).__init__()
-
-    def __call__(self, field, **kwargs):
-        kwargs.setdefault('class', 'span12')
-        return super(MyTextInput, self).__call__(field, **kwargs)
-
-# TODO(sloria): Allow for placeholder text
 class BootstrapTextInput(TextInput):
     '''Custom TextInput that sets a field's class to 'form-control'.'''
     def __call__(self, field, **kwargs):
