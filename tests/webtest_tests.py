@@ -661,7 +661,8 @@ class TestClaiming(DbTestCase):
         form['password2'] = 'killerqueen'
         res = form.submit().maybe_follow()
         new_user.reload()
-        assert_equal(res.request.path, self.project.url)
+        # at settings page
+        assert_equal(res.request.path, '/settings/')
         assert_in('Welcome to the OSF', res)
 
     def test_sees_error_message_at_claim_page_if_user_already_logged_in(self):
