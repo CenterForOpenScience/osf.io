@@ -1,4 +1,4 @@
-Hello $[referrer.fullname},
+Hello ${referrer.fullname},
 
 You recently added ${fullname} to "${node.title}". ${fullname} wants to claim their account, but the email address they provided is different from the one you provided.  To maintain security of your project, we are sending the account confirmation to you first.
 

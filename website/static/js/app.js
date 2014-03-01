@@ -5,8 +5,6 @@
 // TODO: Currently, these all pollute global namespace. Either use some module
 // system, e.g. requirejs, or use namespaces, e.g. "OSFViewModels.LogsViewModel"
 
-
-
 ////////////////
 // ViewModels //
 ////////////////
