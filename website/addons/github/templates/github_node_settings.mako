@@ -28,7 +28,7 @@
                 </select>
             </div>
         % else:
-            ${github_repo_full_name}
+            <div>${github_repo_full_name}</div>
         % endif
 
         % if is_owner:

@@ -3,10 +3,11 @@ import base64
 import urllib
 import hmac
 import sha
-import httplib as http
+import re
+
+from boto.exception import S3ResponseError, BotoClientError
 
 from framework.flask import request
-from framework.exceptions import HTTPError
 
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_be_contributor_or_public
@@ -36,10 +37,23 @@ def generate_signed_url(mime, file_name, s3):
 def create_new_bucket(*args, **kwargs):
     user = kwargs['auth'].user
     user_settings = user.get_addon('s3')
-    if create_bucket(user_settings, request.json.get('bucket_name')):
-        return {}, 200
-    raise HTTPError(http.BAD_REQUEST)
+    bucket_name = request.json.get('bucket_name')
+
+    if not validate_bucket_name(bucket_name):
+        return {'message': 'That bucket name is not valid.'}, 406
+    try:
+        create_bucket(user_settings, request.json.get('bucket_name'))
+        return {}
+    except BotoClientError as e:
+        return {'message': e.message}, 406
+    except S3ResponseError as e:
+        return {'message': e.message}, 406
 
 
 def get_cache_file_name(key_name, etag):
     return u'{0}_{1}.html'.format(key_name.replace('/', ''), etag)
+
+
+def validate_bucket_name(name):
+    validate_name = re.compile('^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$')
+    return bool(validate_name.match(name))

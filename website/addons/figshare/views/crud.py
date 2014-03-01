@@ -18,6 +18,8 @@ from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
 
+from website.addons.figshare import settings as figshare_settings
+
 from ..api import Figshare
 
 from re import search
@@ -29,6 +31,27 @@ def figshare_get_context(**kwargs):
     figshare = node.get_addon('figshare')
     
     return node, figshare
+
+def figshare_log_file_added(node, auth, path):
+      node.add_log(
+            action='figshare_file_added',
+            params={
+                'project': node.parent_id,
+                'node': node._primary_key,
+                'path': os.path.join(path, filename),
+                'urls': {
+                    'view': view_url,
+                    'download': download_url,
+                },
+                'github': {
+                    'id': '',
+                    'type': ''
+                },
+            },
+            auth=auth,
+            log_date=now,
+      )
+      
 
 # ----------------- PROJECTS ---------------
 # PROJECTS: C
@@ -167,6 +190,7 @@ def figshare_view_file(*args, **kwargs):
         raise HTTPError(http.NOT_FOUND)
     private = not(article['items'][0]['status'] == 'Public')
 
+    version_url = "http://figshare.com/articles/{filename}/{file_id}".format(filename=article['items'][0]['title'], file_id=article['items'][0]['article_id'])
 
     download_url = node.api_url+'download/article/{aid}/file/{fid}'.format(aid=article_id,fid=file_id)
     render_url = node.api_url+'figshare/render/article/{aid}/file/{fid}'.format(aid=article_id,fid=file_id)
@@ -176,10 +200,9 @@ def figshare_view_file(*args, **kwargs):
     )
     rendered = get_cache_content(node_settings, cache_file)
     filename = found['name']
-    
 
     if private:
-        rendered = "Since this FigShare file is unpublished we cannot render it. In order to access this content you will need to log into the <a href='{url}'>FigShare page</a> and view it there.".format(url='http://figshare.com/')
+        rendered = "Since this FigShare file is unpublished we cannot render it. In order to access this content you will need to log into the <a href='{url}'>FigShare page</a> and view it there.".format(url='http://figshare.com/')        
     elif rendered is None:
         filename, size, filedata = connect.get_file(node_settings, found)
         if figshare_settings.MAX_RENDER_SIZE is not None and size > figshare_settings.MAX_RENDER_SIZE:
@@ -194,6 +217,9 @@ def figshare_view_file(*args, **kwargs):
         'render_url': render_url,
         'rendered': rendered,
         'download_url': found.get('download_url'),
+        'file_status': article['items'][0]['status'],
+        'file_version': article['items'][0]['version'],
+        'version_url': version_url
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv

@@ -2,15 +2,21 @@
  *  HGrid - v0.1.0-pre
  *  A Javascript-based hierarchical grid that can be used to manage and organize files and folders
  */
+(function (global, factory) {
+  if (typeof define === 'function' && define.amd) {  // AMD/RequireJS
+    define(['jquery'], factory);
+  } else if (typeof module === 'object') {  // CommonJS/Node
+    module.exports = factory(jQuery);
+  } else {  // No module system
+    global.HGrid = factory(jQuery);
+  }
+}(this, function(jQuery) {
+
 /**
  * Provides the main HGrid class and HGrid.Error.
  * @module HGrid
  */
-; // jshint ignore: line
-if (typeof jQuery === 'undefined') {
-  throw new Error('HGrid requires jQuery to be loaded');
-}
-this.HGrid = (function($, window, document, undefined) {
+this.HGrid = (function($) {
   'use strict';
 
   var DEFAULT_INDENT = 20;
@@ -681,7 +687,6 @@ this.HGrid = (function($, window, document, undefined) {
     toggleClass: 'hg-toggle'
   };
 
-
   ///////////
   // HGrid //
   ///////////
@@ -933,7 +938,7 @@ this.HGrid = (function($, window, document, undefined) {
      * @param {Object} item The placeholder item that was added to the grid for the file.
      */
     /*jshint unused: false */
-    uploadError: function(file, message, item) {
+    uploadError: function(file, message, item, folder) {
       // The row element for the added file is stored on the file object
       var $rowElem = $(file.gridElement);
       var msg;
@@ -1283,9 +1288,9 @@ this.HGrid = (function($, window, document, undefined) {
     return self;
   };
 
-  HGrid.prototype.removeHighlight = function() {
-    this.element.find('.' + this.options.highlightClass)
-      .removeClass(this.options.highlightClass);
+  HGrid.prototype.removeHighlight = function(highlightClass) {
+    var cssClass = highlightClass || this.options.highlightClass;
+    this.element.find('.' + cssClass).removeClass(cssClass);
     return this;
   };
 
@@ -1297,11 +1302,11 @@ this.HGrid = (function($, window, document, undefined) {
     if (typeof id === 'object') {
       id = id.id;
     }
-    var cellNode = this.grid.getCellNode(this.getDataView().getRowById(id), 0);
-    return cellNode ? cellNode.parentNode : null;
+    return this.grid.getCellNode(this.getDataView().getRowById(id), 0).parentNode;
   };
 
-  HGrid.prototype.addHighlight = function(item) {
+  HGrid.prototype.addHighlight = function(item, highlightClass) {
+    var cssClass = highlightClass || this.options.highlightClass;
     this.removeHighlight();
     var $rowElement;
     if (item && item.kind === FOLDER) {
@@ -1310,7 +1315,7 @@ this.HGrid = (function($, window, document, undefined) {
       $rowElement = $(this.getRowElement(item.parentID));
     }
     if ($rowElement) {
-      $rowElement.addClass(this.options.highlightClass);
+      $rowElement.addClass(cssClass);
     }
     return this;
   };
@@ -1530,7 +1535,8 @@ this.HGrid = (function($, window, document, undefined) {
         file.gridElement = rowElem;
         $rowElem.addClass('hg-upload-started');
       }
-      return this.options.uploadAdded.call(this, file, file.gridItem, currentTarget);
+      this.options.uploadAdded.call(this, file, file.gridItem, currentTarget);
+      return addedItem;
     },
     thumbnail: noop,
     // Just delegate error function to options.uploadError
@@ -1538,8 +1544,9 @@ this.HGrid = (function($, window, document, undefined) {
       var $rowElem = $(file.gridElement);
       $rowElem.addClass('hg-upload-error').removeClass('hg-upload-processing');
       // Remove the added row
+      var item = $.extend({}, file.gridItem);
       this.removeItem(file.gridItem.id);
-      return this.options.uploadError.call(this, file, message);
+      return this.options.uploadError.call(this, file, message, item, this.currentTarget);
     },
     processing: function(file) {
       $(file.gridElement).addClass('hg-upload-processing');
@@ -1814,12 +1821,13 @@ this.HGrid = (function($, window, document, undefined) {
     var url = self.options.fetchUrl(item);
     if (url !== null) {
       self.options.fetchStart.call(self, item);
+      item._node._loaded = true; // Add flag to make sure data are only fetched once.
       return self.getFromServer(url, function(newData, error) {
         if (!error) {
           self.addData(newData, item.id);
-          item._node._loaded = true; // Add flag to make sure data are only fetched once.
           self.options.fetchSuccess.call(self, newData, item);
         } else {
+          item._node._loaded = false;
           self.options.fetchError.call(self, error, item);
           throw new HGrid.Error('Could not fetch data from url: "' + url + '". Error: ' + error);
         }
@@ -2057,8 +2065,7 @@ this.HGrid = (function($, window, document, undefined) {
   };
 
   return HGrid;
-
-})(jQuery, window, document);
+}).call(this, jQuery);
 
 /*!
  * jquery.event.drag - v 2.2
@@ -7588,3 +7595,6 @@ if (typeof Slick === "undefined") {
     init();
   }
 }(jQuery));
+
+    return HGrid;
+}));

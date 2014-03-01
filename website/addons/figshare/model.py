@@ -49,13 +49,18 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         rv.update({
             'figshare_id': self.figshare_id or '',
             'figshare_type': self.figshare_type or '',
-            'has_user_authorization': figshare_user and figshare_user.has_auth
+            'has_user_authorization': figshare_user and figshare_user.has_auth,
+            'figshare_options': []
         })
+        figshare_options = []
         settings = self.user_settings
-        if settings and settings.has_auth:
+        if settings and settings.has_auth:            
+            connect = Figshare.from_settings(self.user_settings)
+            figshare_options = connect.get_options()
             rv.update({
                 'authorized_user': self.user_settings.owner.fullname,
-                'disabled': user != self.user_settings.owner
+                'disabled': user != self.user_settings.owner,
+                'figshare_options': figshare_options
             })    
         return rv
     

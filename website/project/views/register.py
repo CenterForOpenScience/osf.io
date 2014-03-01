@@ -95,7 +95,7 @@ def project_before_register(**kwargs):
     pointers = node.get_pointers()
     if pointers:
         prompts.append(
-            language.before_register_has_pointers.format(
+            language.BEFORE_REGISTER_HAS_POINTERS.format(
                 category=node.project_or_component
             )
         )

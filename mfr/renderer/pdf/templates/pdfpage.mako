@@ -50,8 +50,13 @@
     function renderPage(num) {
         // Using promise to fetch the page
 
+        // TODO: Think of better approach for max size
         pdfDoc.getPage(num).then(function(page) {
             var viewport = page.getViewport(scale);
+            if (viewport.width > 800) {
+                adjScale = 800 / viewport.width;
+                viewport = page.getViewport(adjScale);
+            }
             canvas.height = viewport.height;
             canvas.width = viewport.width;
 

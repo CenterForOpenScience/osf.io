@@ -9,7 +9,10 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     /////////////////////////
 
     // Custom folder icon indicating private component
-    HGrid.Html.folderIconPrivate = '<img class="hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
+    HGrid.Html.folderIconPrivate = '<img class="hg-icon hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
+    // Folder icon for pointers/links
+    HGrid.Html.folderIconPointer = '<i class="icon-hand-right"></i>';
+
     // Override Name column folder view to allow for extra widgets, e.g. github branch picker
     HGrid.Col.Name.folderView = function(item) {
         var icon, opening, cssClass;
@@ -21,6 +24,9 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             if (!item.permissions.view) {
                 icon = HGrid.Html.folderIconPrivate;
                 cssClass = 'hg-folder-private';
+            } else if (item.isPointer) {
+                icon = HGrid.Html.folderIconPointer;
+                cssClass = 'hg-folder-pointer';
             } else {
                 icon = HGrid.Html.folderIcon;
                 cssClass = 'hg-folder-public';
@@ -28,7 +34,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         }
         opening = '<span class="hg-folder-text ' + cssClass + '">';
         var closing = '</span>';
-        html = [icon, opening, item.name, closing].join('');
+        html = [icon, opening, '&nbsp;', item.name, closing].join('');
         if(item.extra) {
             html += '<span class="hg-extras">' + item.extra + '</span>';
         }
@@ -36,26 +42,21 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     };
 
     HGrid.Col.Name.showExpander = function(row) {
-        return row.kind === HGrid.FOLDER && row.permissions.view;
+        var isTopLevel = row.parentID === HGrid.ROOT_ID;
+        return row.kind === HGrid.FOLDER && row.permissions.view && !isTopLevel;
     };
 
     HGrid.Col.Name.itemView = function(item) {
-        var ext = item.name.split('.').pop().toLowerCase();
         var tooltipMarkup = genTooltipMarkup('View file');
-
-        var nameElement = ['<span ' + tooltipMarkup + ' >', item.name, '</span>'].join('');
-
-        var icon = Rubeus.Extensions.indexOf(ext) === -1 ?
-                        HGrid.Html.fileIcon :
-                        Rubeus.ExtensionSkeleton.replace('{{ext}}', ext);
-        return [icon, nameElement].join('');
+        icon = Rubeus.getIcon(item);
+        return [icon, '<span ' + tooltipMarkup + ' >&nbsp;', item.name, '</span>'].join('');
     };
 
     /**
      * Generate the markup necessary for adding a tooltip to an element.
      */
     function genTooltipMarkup(title, maxLength) {
-        var max = maxLength || 25;
+        var max = maxLength || 30;
         // Truncate title if necessary
         var cleanTitle;
         if (title.length >= max) {
@@ -68,7 +69,6 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     }
 
     HGrid.Col.ActionButtons.itemView = function(item) {
-
 	var buttonDefs = [];
 	if(item.permissions){
 	    if(item.permissions.download !== false){
@@ -84,9 +84,18 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
 		    action: 'delete',
 		    cssClass: 'btn btn-link btn-mini btn-delete'
 		});
+	    }	    
+            if (item.permissions.edit) {
+		var deleteTip = genTooltipMarkup('Delete ' + item.name);
+		buttonDefs.push({
+		    text: '&nbsp;<i class="icon-remove"' + deleteTip + '></i>',
+		    action: 'delete',
+		    cssClass: 'btn btn-link btn-mini btn-delete'
+		});
 	    }
 	}
-	return HGrid.Fmt.buttons(buttonDefs);
+	return ['<span class="rubeus-buttons">', HGrid.Fmt.buttons(buttonDefs),
+                '</span><span data-status></span>'].join('');
     };
 
     /** Remove the 'Project: ' text from the beginning of a folder name. */
@@ -94,10 +103,11 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         return name.slice(name.indexOf(':') + 1).trim();
     }
 
-    HGrid.Col.ActionButtons.width = 15;
+    HGrid.Col.ActionButtons.name = 'Actions';
+    HGrid.Col.ActionButtons.width = 70;
     HGrid.Col.ActionButtons.folderView = function(row) {
         var buttonDefs = [];
-        var tooltipMarkup = genTooltipMarkup('Upload to ' + trimFolderName(row.name));
+        var tooltipMarkup = genTooltipMarkup('Upload');
         if (this.options.uploads && row.urls.upload &&
                 (row.permissions && row.permissions.edit)) {
             buttonDefs.push({
@@ -107,20 +117,11 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             });
         }
         if (buttonDefs) {
-            return HGrid.Fmt.buttons(buttonDefs);
+            return ['<span class="' + Rubeus.buttonContainer + '">', HGrid.Fmt.buttons(buttonDefs),
+                '</span><span data-status></span>'].join('');
         }
         return '';
     };
-
-
-    // Custom status column
-    HGrid.Col.Status = {
-        text: 'Status',
-        folderView: '<span data-status></span>',
-        itemView: '<span data-status></span>',
-        width: 50
-    };
-    HGrid.Html.statusSelector = '[data-status]';
 
     /**
      * Get the status message from the addon, if any.
@@ -138,16 +139,31 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         return default_status[whichStatus];
      }
 
-/**
+     HGrid.prototype.showButtons = function(row) {
+        var $rowElem = $(this.getRowElement(row.id));
+        var $buttons = $rowElem.find('.' + Rubeus.buttonContainer);
+        $buttons.show();
+        return this;
+     };
+
+     HGrid.prototype.hideButtons = function(row) {
+        var $rowElem = $(this.getRowElement(row.id));
+        var $buttons = $rowElem.find('.rubeus-buttons');
+        $buttons.hide();
+        return this;
+     };
+
+    /**
      * Changes the html in the status column.
      */
-    HGrid.prototype.changeStatus = function(row, html, extra, fadeAfter) {
-        var rowElem = this.getRowElement(row.id);
-        var $status = $(rowElem).find(HGrid.Html.statusSelector);
+    HGrid.prototype.changeStatus = function(row, html, extra, fadeAfter, callback) {
+        var $rowElem = $(this.getRowElement(row.id));
+        var $status = $rowElem.find(Rubeus.statusSelector);
+        this.hideButtons(row);
         $status.html(getStatusCfg(row.addon, html, extra));
         if (fadeAfter) {
             setTimeout(function() {
-                $status.fadeOut('slow');
+                $status.fadeOut('slow', function() {callback(row);});
             }, fadeAfter);
         }
         return $status;
@@ -188,7 +204,9 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         UPLOAD_PROGRESS: 'UPLOAD_PROGRESS'
     };
 
-    Rubeus.Status = statusType
+    Rubeus.Status = statusType;
+    Rubeus.buttonContainer = 'rubeus-buttons';
+    Rubeus.statusSelector = '[data-status]';
     ////////////////////////
     // Listener callbacks //
     ////////////////////////
@@ -237,17 +255,17 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         /*jshint unused: false */
         columns: [
             HGrid.Col.Name,
-            HGrid.Col.ActionButtons,
-            HGrid.Col.Status
+            HGrid.Col.ActionButtons
         ],
         width: '100%',
-        height: 500,
+        height: 900,
         fetchUrl: function(row) {
             return row.urls.fetch || null;
         },
         fetchSuccess: function(data, row) {
             updateTooltips();
             this.changeStatus(row, statusType.FETCH_SUCCESS);
+            this.showButtons(row);
         },
         fetchError: function(error, row) {
             this.changeStatus(row, statusType.FETCH_ERROR);
@@ -256,7 +274,12 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             this.changeStatus(row, statusType.FETCH_START);
         },
         uploadProgress: function(file, progress, bytesSent, row) {
-            this.changeStatus(row, statusType.UPLOAD_PROGRESS, progress);
+            if (progress === 100) {
+                var sendingTo = row.addonFullname || 'external service...';
+                this.changeStatus(row, ['Sending to ', sendingTo, '. Please wait...'].join(''));
+            } else{
+                this.changeStatus(row, statusType.UPLOAD_PROGRESS, progress);
+            }
         },
         downloadUrl: function(row) {
             return row.urls.download;
@@ -341,7 +364,10 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
                 // This is necessary for the download and delete button to work.
                 $.extend(row, data);
                 this.updateItem(row);
-                this.changeStatus(row, statusType.UPLOAD_SUCCESS, null, 2000);
+                this.changeStatus(row, statusType.UPLOAD_SUCCESS, null, 2000,
+                    function(row) {
+                        self.showButtons(row);
+                    });
             }
             var cfgOption = resolveCfgOption.call(this, row, 'uploadSuccess', [file, row, data]);
             return cfgOption || null;
@@ -358,14 +384,29 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
                 callback: onClickName
             }
         ],
+        progBar: '#filebrowserProgressBar',
         init: function() {
             var self = this;
             // Expand all first level items
-            this.getData().forEach(function(item) {
+            self.getData().forEach(function(item) {
                 self.expandItem(item);
             });
             updateTooltips();
-        }
+            $(this.options.progBar).hide();
+        },
+        // Add a red highlight when user drags over a folder they don't have
+        // permission to upload to.
+        onDragover: function(evt, row) {
+            if (row && !row.permissions.view) {
+                this.addHighlight(row, 'highlight-denied');
+            }
+        },
+        onDragleave: function(evt, row) {
+            this.removeHighlight('highlight-denied');
+        },
+        uploadDenied: function(evt, row) {
+            this.removeHighlight('highlight-denied');
+        },
     };
 
     function updateTooltips() {
@@ -447,9 +488,20 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
         'mpeg', 'mpg', 'msi', 'mswmm', 'ogg', 'pdf', 'png', 'pps', 'ps', 'psd', 'pst', 'ptb', 'pub', 'qbb',
         'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
-        'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip'];
+        'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip',
+        'xlsx', 'py'];
 
+    // Uses fatcow icons
+    // License: Creative Commons (Attribution 3.0 United States)
+    // https://creativecommons.org/licenses/by/3.0/us/
     Rubeus.ExtensionSkeleton = '<img class="hg-icon" src="/static\/img\/hgrid\/fatcowicons\/file_extension_{{ext}}.png">';
+
+    Rubeus.getIcon = function(item) {
+        var ext = item.name.split('.').pop().toLowerCase();
+        return Rubeus.Extensions.indexOf(ext) === -1 ?
+                    HGrid.Html.fileIcon :
+                    Rubeus.ExtensionSkeleton.replace('{{ext}}', ext);
+    };
 
     return Rubeus;
 

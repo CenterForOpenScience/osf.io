@@ -34,4 +34,4 @@ WIDGET_HELP = 'FigShare Add-on Alpha'
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.hgrid.figshare_hgrid_data
 
-MAX_RENDER_SIZE = 1
+

@@ -13,7 +13,7 @@
 
     <form role="form">
 
-        <div class="help-block">${language.registration_info}</div>
+        <div class="help-block">${language.REGISTRATION_INFO}</div>
 
         <select class="form-control" id="select-registration-template">
             <option>Please select a registration form to initiate registration</option>

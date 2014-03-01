@@ -10,6 +10,7 @@ from dateutil.parser import parse
 from httpcache import CachingHTTPAdapter
 
 from website.addons.github import settings as github_settings
+from website.addons.github.exceptions import NotFoundError, EmptyRepoError, GitHubError
 
 # Initialize caches
 http_cache = CachingHTTPAdapter()
@@ -61,7 +62,10 @@ class GitHub(object):
             See http://developer.github.com/v3/repos/#get
 
         """
-        return self.gh3.repository(user, repo)
+        rv = self.gh3.repository(user, repo)
+        if rv:
+            return rv
+        raise NotFoundError
 
     def repos(self):
         return self.gh3.iter_repos(type='all', sort='full_name')
@@ -82,7 +86,7 @@ class GitHub(object):
             http://developer.github.com/v3/repos/#list-branches
 
         """
-        return self.gh3.repository(user, repo).iter_branches() or []
+        return self.repo(user, repo).iter_branches() or []
 
     def commits(self, user, repo, path=None, sha=None):
         """Get commits for a repo or file.
@@ -95,7 +99,7 @@ class GitHub(object):
             http://developer.github.com/v3/repos/commits/
 
         """
-        return self.gh3.repository(user, repo).iter_commits(sha=sha, path=path)
+        return self.repo(user, repo).iter_commits(sha=sha, path=path)
 
     def history(self, user, repo, path, sha=None):
         """Get commit history for a file.
@@ -132,11 +136,15 @@ class GitHub(object):
             http://developer.github.com/v3/git/trees/
 
         """
-        tree = self.gh3.repository(user, repo).tree(sha)
-
-        if recursive:
-            return tree.recurse()
-        return tree
+        try:
+            tree = self.repo(user, repo).tree(sha)
+            if recursive:
+                return tree.recurse()
+            return tree
+        except GitHubError as error:
+            if error.code == 409:
+                raise EmptyRepoError
+            raise
 
     def file(self, user, repo, path, ref=None):
         """Get a file within a repo and its contents.
@@ -154,7 +162,7 @@ class GitHub(object):
         http://developer.github.com/v3/repos/contents/#get-contents
 
         """
-        return self.gh3.repository(user, repo).contents(path, ref)
+        return self.repo(user, repo).contents(path, ref)
 
     # TODO
     def starball(self, user, repo, archive='tar', ref=None):
@@ -168,7 +176,7 @@ class GitHub(object):
 
         """
 
-        return self.gh3.repository(user, repo).archive(archive + 'ball', ref=None)
+        return self.repo(user, repo).archive(archive + 'ball', ref=None)
 
     def set_privacy(self, user, repo, private):
         """Set privacy of GitHub repo.
@@ -179,7 +187,7 @@ class GitHub(object):
             http://developer.github.com/v3/repos/#edit
 
         """
-        return self.gh3.repository(user, repo).edit(repo, private=private)
+        return self.repo(user, repo).edit(repo, private=private)
 
     #########
     # Hooks #
@@ -194,7 +202,7 @@ class GitHub(object):
             http://developer.github.com/v3/repos/hooks/#json-http
 
         """
-        return self.gh3.repository(user, repo).iter_hooks()
+        return self.repo(user, repo).iter_hooks()
 
     def add_hook(self, user, repo, name, config, events=None, active=True):
         """Create a webhook.
@@ -206,42 +214,43 @@ class GitHub(object):
 
         """
 
-        return self.gh3.repository(user, repo).create_hook(name, config, events, active)
+        return self.repo(user, repo).create_hook(name, config, events, active)
 
     def delete_hook(self, user, repo, _id):
         """Delete a webhook.
 
         :param str user: GitHub user name
         :param str repo: GitHub repo name
-        :return bool: True if successfull False otherwise
+        :return bool: True if successful, False otherwise
+        :raises: NotFoundError if repo or hook cannot be located
 
         """
-        # Note: Must set `output` to `None`; no JSON response from this
-        # endpoint
-        repo = self.gh3.repository(user, repo)
-        if repo:
-            return repo.hook(_id).delete()
+        repo = self.repo(user, repo)
+        hook = repo.hook(_id)
+        if hook is None:
+            raise NotFoundError
+        return repo.hook(_id).delete()
 
     ########
     # CRUD #
     ########
 
     def create_file(self, user, repo, path, message, content, branch=None, committer=None, author=None):
-        return self.gh3.repository(
+        return self.repo(
             user, repo
         ).create_file(
             path, message, content, branch, author, committer
         )
 
     def update_file(self, user, repo, path, message, content, sha=None, branch=None, committer=None, author=None):
-        return self.gh3.repository(
+        return self.repo(
             user, repo
         ).update_file(
             path, message, content, sha, branch, author, committer
         )
 
     def delete_file(self, user, repo, path, message, sha, branch=None, committer=None, author=None):
-        return self.gh3.repository(user, repo).delete_file(path, message, sha, branch, committer, author)
+        return self.repo(user, repo).delete_file(path, message, sha, branch, committer, author)
 
     ########
     # Auth #
@@ -267,7 +276,7 @@ def ref_to_params(branch=None, sha=None):
     return ''
 
 
-def _build_github_urls(item, node_url, node_api_url, branch, sha):
+def build_github_urls(item, node_url, node_api_url, branch, sha):
 
     quote_path = urllib.quote_plus(item.path)
     params = ref_to_params(branch, sha)

@@ -47,11 +47,26 @@ def figshare_oauth_start(*args, **kwargs):
 @must_have_addon('figshare', 'node')
 def figshare_oauth_delete_node(*args, **kwargs):
     
+    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    figshare_node = node.get_addon('figshare')
+    node_settings = node.get_addon('figshare')
 
-    figshare_node.user_settings = None
-    figshare_node.save()
+    node_settings.user_settings = None
+    node_settings.save()
+
+    node.add_log(
+            action='figshare_content_unlinked',
+            params={
+                'project': node.parent_id,
+                'node': node._id,
+                'figshare': {
+                    'type': node_settings.figshare_type,
+                    'id': node_settings.figshare_id
+                 }
+            },
+            auth=auth,
+        )
+
 
     return {}
 

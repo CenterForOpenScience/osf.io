@@ -29,13 +29,15 @@
 <br />
 
 <div class="form-group">    
-    % if figshare_id != '':
-      <label for="figshareId">FigShare ${figshare_type.capitalize()}:</label><br />
-      <a id="figshareRemoveLinked" class="btn btn-warning">${"Remove {0} {1}".format(figshare_type.capitalize(), figshare_id)}</a>
-    % else:
-      <label for="figshareId">FigShare Article ${"or Project " if authorized_user else ""} URL</label>	
-      <input class="form-control" id="figshareId" name="figshare_id" value="" />
-    % endif
+        % if figshare_id != '':
+    	  <label for="figshareId">FigShare ${figshare_type.capitalize()}:</label><br />
+	  <input  class="form-control" id="figshareId" name="figshare_id" value="" />
+	  <a  id="figshareRemoveLinked" class="btn btn-warning">${"Remove {0} {1}".format(figshare_type.capitalize(), figshare_id)}</a>
+	% else:
+              <label for="figshareId">FigShare Article ${"or Project " if authorized_user else ""} URL</label><br />	
+   	      <input class="form-control" id="figshareId" name="figshare_id" value="" />
+	      <a  id="figshareRemoveLinked" class="btn btn-warning" ></a> 
+        % endif
 </div>
 
 <br />
@@ -43,6 +45,31 @@
 <script type="text/javascript">
 
     $(document).ready(function() {    				 				 
+
+    
+        $('#figshareId').autocomplete({source: ${figshare_options}, 
+			               select: function(e, ui){
+				           var val = ui.item.value.split('_');
+				           $(this).hide();
+					   $('#figshareRemoveLinked').show();
+					   $('#figshareRemoveLinked').addClass('btn-default');
+					   $('#figshareRemoveLinked').removeClass('btn-warning');
+					   $('#figshareRemoveLinked').attr('data-confirmed', false);
+					   $('#figshareRemoveLinked').html(["Remove ", 
+					   			           val[0].charAt(0).toUpperCase()+val[0].slice(1), 
+									   " ",
+                                                                           val[1]].join(''));
+				       }
+	});
+	
+	% if figshare_id == '':
+	$('#figshareRemoveLinked').hide();	
+		% if authorized_user:
+		$('#figshareId').attr('placeholder', 'type to autocomplete');
+		% endif
+	% else:
+	$('#figshareId').hide();
+	% endif
 
         $('#figshareAddKey').on('click', function() {
             % if authorized_user:
@@ -83,23 +110,31 @@
         });
 	
 	$('#figshareRemoveLinked').on('click', function(){
-	    bootbox.confirm(
-		'Are you sure you want to remove the linked Figshare ${figshare_type}?',
-		function(result){
-		  if(result){
-			$.ajax({
-			    url: nodeApiUrl + 'figshare/unlink/',
-			    type: 'POST',
-			    contentType: 'application/json',
-                            dataType: 'json',
-                            success: function() {
-                                window.location.reload();
-                            }
-			});
-		  }
-		}
-	    );				    
-	});
+	    if($(this).attr('data-confirmed') === 'false'){
+	       $(this).hide();
+	       $('#figshareId').val('');
+	       $('#figshareId').show();	       
+	    }
+	    else{
+	       bootbox.confirm(
+		    'Are you sure you want to remove the linked Figshare ${figshare_type}?',
+		    function(result){
+		      if(result){
+			    $.ajax({
+				url: nodeApiUrl + 'figshare/unlink/',
+				type: 'POST',
+				contentType: 'application/json',
+				dataType: 'json',
+				success: function() {
+				   $('#figshareRemoveLinked').hide();
+				   $('#figshareId').show();			    			
+				}
+			    });
+			}
+		    }
+		);	
+	    }
+	  });
 
     });
 
