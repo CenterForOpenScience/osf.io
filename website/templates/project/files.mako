@@ -46,6 +46,6 @@ var filebrowser = new Rubeus('#myGrid', {
     searchInput: '#fileSearch'
 });
 
-})(window);
+});
 </script>
 </%def>
