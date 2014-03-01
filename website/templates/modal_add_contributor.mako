@@ -9,7 +9,7 @@
 
                 <!-- Whom to add -->
 
-                <div data-bind="if:page()=='whom'">
+                <div data-bind="if: page() == 'whom'">
 
                     <!-- Find contributors -->
                     <form class='form'>
@@ -39,7 +39,7 @@
                                 <span class="modal-subheader">Results</span>
                                 <a data-bind="click:addAll">Add all</a>
                             </div>
-                            <div class="error" data-bind="if:errorMsg, text:errorMsg"></div>
+                            <div class="error" data-bind="text:errorMsg"></div>
                             <table>
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
                                     <tr data-bind="if:!($root.selected($data))">
@@ -182,12 +182,12 @@
                     <a class="btn btn-primary" data-bind="visible:nodes().length, click:selectWhich">Next</a>
                 </span>
 
-                <span data-bind="if:page() == 'which'">
+                <span data-bind="if: page() == 'which'">
                     <a class="btn btn-primary" data-bind="click:selectWhom">Back</a>
                     <a class="btn btn-success" data-bind="click:submit">Submit</a>
                 </span>
 
-                <span data-bind='if:page() == "invite"'>
+                <span data-bind='if: page() == "invite"'>
                     <a class="btn btn-primary" data-bind='click:selectWhom'>Back</a>
                 </span>
 

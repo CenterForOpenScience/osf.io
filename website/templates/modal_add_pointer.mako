@@ -30,7 +30,7 @@
                             <span class="modal-subheader">Results</span>
                             <a data-bind="click:addAll">Add all</a>
                         </div>
-                        <div class="error" data-bind="if:errorMsg, text:errorMsg"></div>
+                        <div class="error" data-bind="text:errorMsg"></div>
                         <table class="table table-striped">
                             <tbody data-bind="foreach:{data:results, afterRender:addTips}">
                                 <tr data-bind="if:!($root.selected($data))">
