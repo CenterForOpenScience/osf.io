@@ -40,6 +40,7 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
         })
         return rv
 
+
 class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     figshare_id = fields.StringField()
     figshare_type = fields.StringField()
@@ -90,23 +91,6 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
         """
 
-        messages = [
-            'The FigShare add-on page has been combined with the pre-existing '
-            'Files page, which also now includes files from your other add-ons. '
-            'To work with the files in your FigShare add-on, browse to the '
-            '<a href="{0}">Files</a> page.'.format(
-                node.url + 'files/'
-            )
-        ]
-
-        # Quit if not contributor
-        if not node.is_contributor(user):
-            return messages
-
-        # Quit if not configured
-        if self.figshare_id is None:
-            return messages
-
         figshare = node.get_addon('figshare')
         # Quit if no user authorization
         if self.user_settings is None:
@@ -121,9 +105,8 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             message = (
                 'Warnings: This OSF {category} is private but FigShare project {project} may contain some public files or filesets'.format(category=node.project_or_component,
                              project=figshare.figshare_id)
-                                                                                                                                    )
-            messages.append(message)
-            return messages
+            )
+            return [message]
 
         connect = Figshare.from_settings(self.user_settings)
         article_is_public = connect.article_is_public(self.figshare_id)
@@ -146,8 +129,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                     'Users can view the contents of this private FigShare '
                     'article through this public project.'
                 )
-            messages.append(message)
-            return messages
+            return [message]
 
     def before_remove_contributor(self, node, removed):
         """
