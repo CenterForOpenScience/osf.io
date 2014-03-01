@@ -29,7 +29,7 @@ from re import search
 def figshare_get_context(**kwargs):
     node = kwargs['node'] or kwargs['project']
     figshare = node.get_addon('figshare')
-    
+
     return node, figshare
 
 def figshare_log_file_added(node, auth, path):
@@ -51,7 +51,7 @@ def figshare_log_file_added(node, auth, path):
             auth=auth,
             log_date=now,
       )
-      
+
 
 # ----------------- PROJECTS ---------------
 # PROJECTS: C
@@ -78,16 +78,16 @@ def figshare_add_article_to_project(*args, **kwargs):
     project_id = kwargs.get('project_id') or None
     if project_id is None:
         raise HTTPError(http.BAD_REQUEST)
-    
+
     article_id = kwargs.get('aid') or None
-    
+
     article = None
     connect = Figshare.from_settings(figshare.user_settings)
     if not article_id:
         article = file_as_article(figshare)
 
     connect.add_article_to_project(figshare, article['article_id'], project_id)
-        
+
 # PROJECTS: D
 @decorators.must_be_contributor
 @decorators.must_have_addon('figshare', 'node')
@@ -99,9 +99,9 @@ def figshare_remove_article_from_project(*args, **kwargs):
 
     if project_id is None or article_id is None:
         raise HTTPError(http.BAD_REQUEST)
-    
+
     connect = Figshare.from_settings(figshare.user_settings)
-    connect.remove_article_from_project(figshare, article_id, project_id)    
+    connect.remove_article_from_project(figshare, article_id, project_id)
 
 # ---------------- ARTICLES -------------------
 # ARTICLES: C
@@ -112,18 +112,19 @@ def file_as_article(figshare):
         'title': filename,
         'files': [upload]
     }
-        
+
     article = connect.create_article(figshare, article)
 
 def figshare_upload_file_as_article(*args, **kwargs):
+    import pdb; pdb.set_trace()
     node, figshare = figshare_get_context(kwargs)
 
     project_id = kwargs.get('project_id') or None
     if project_id is None:
         raise HTTPError(http.BAD_REQUEST)
-    
+
     connect = Figshare.from_settings(figshare.user_settings)
-    article = file_as_article(figshare) 
+    article = file_as_article(figshare)
 
     connect.upload_file(node, figshare, article['id'], upload)
 
@@ -142,26 +143,26 @@ def figshare_upload_file_to_article(*args, **kwargs):
     auth = kwargs['auth']
     user = auth.user
     figshare = node.get_addon('figshare')
-    
+
     path = kwargs.get('path', '')
 
     article = kwargs.get('aid') or None
-    
+
     connect = Figshare.from_settings(figshare.user_settings)
 
     if not article:
         article = connect.create_article()
-  
+
     upload = request.files['file']
-    
+
     return connect.upload_file(
         node,
         figshare,
-        article,        
+        article,
         upload
     )
 
-# FILES: R 
+# FILES: R
 
 @must_be_contributor_or_public
 @must_have_addon('figshare', 'node')
@@ -176,12 +177,12 @@ def figshare_view_file(*args, **kwargs):
 
     if article_id is None or file_id is None:
         raise HTTPError(http.NOT_FOUND)
-    
+
     connect = Figshare.from_settings(node_settings.user_settings)
-    
+
     article = connect.article(node_settings, article_id)
 
-    found = False    
+    found = False
     for f in article['items'][0]['files']:
         if f['id'] == int(file_id):
             found = f
@@ -202,11 +203,11 @@ def figshare_view_file(*args, **kwargs):
     filename = found['name']
 
     if private:
-        rendered = "Since this FigShare file is unpublished we cannot render it. In order to access this content you will need to log into the <a href='{url}'>FigShare page</a> and view it there.".format(url='http://figshare.com/')        
+        rendered = "Since this FigShare file is unpublished we cannot render it. In order to access this content you will need to log into the <a href='{url}'>FigShare page</a> and view it there.".format(url='http://figshare.com/')
     elif rendered is None:
         filename, size, filedata = connect.get_file(node_settings, found)
         if figshare_settings.MAX_RENDER_SIZE is not None and size > figshare_settings.MAX_RENDER_SIZE:
-            rendered = "File too large to render; <a href='{url}'>download file</a> to view it".format(url=found.get('download_url'))            
+            rendered = "File too large to render; <a href='{url}'>download file</a> to view it".format(url=found.get('download_url'))
         else:
             rendered = get_cache_content(
                 node_settings, cache_file, start_render=True,
@@ -231,20 +232,20 @@ def get_cache_file(article_id, file_id):
 @decorators.must_be_contributor_or_public
 @decorators.must_have_addon('figshare', 'node')
 def figshare_delete_file(*args, **kwargs):
-    
+
     node = kwargs['node'] or kwargs['project']
     user = kwargs['user']
     figshare = node.get_addon('figshare')
-    
+
     file_id = kwargs.get('fid', '')
     article_id = kwargs.get('aid', '')
-    
+
     if file_id is None or article_id is None:
         raise HTTPError(http.BAD_REQUEST)
 
     connect = Figshare.from_settings(figshare.user_settings)
 
-    return connect.delete_file(node, figshare, article_id, file_id)    
+    return connect.delete_file(node, figshare, article_id, file_id)
 
 @must_be_contributor_or_public
 @must_have_addon('figshare', 'node')

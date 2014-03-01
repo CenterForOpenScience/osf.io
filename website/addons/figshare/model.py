@@ -13,7 +13,7 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
     oauth_request_token = fields.StringField()
     oauth_request_token_secret = fields.StringField()
     oauth_access_token = fields.StringField()
-    oauth_access_token_secret = fields.StringField()    
+    oauth_access_token_secret = fields.StringField()
 
     @property
     def has_auth(self):
@@ -31,10 +31,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     figshare_type = fields.StringField()
     api_url = fields.StringField()
 
-    user_settings = fields.ForeignField(       
+    user_settings = fields.ForeignField(
         'addonfigshareusersettings', backref='authorized'
     )
-    
+
     registration_data = fields.DictionaryField()
 
     @property
@@ -54,16 +54,16 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         })
         figshare_options = []
         settings = self.user_settings
-        if settings and settings.has_auth:            
+        if settings and settings.has_auth:
             connect = Figshare.from_settings(self.user_settings)
             figshare_options = connect.get_options()
             rv.update({
                 'authorized_user': self.user_settings.owner.fullname,
                 'disabled': user != self.user_settings.owner,
                 'figshare_options': figshare_options
-            })    
+            })
         return rv
-    
+
     #############
     # Callbacks #
     #############
@@ -99,7 +99,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             figshare.api_url = figshare_settings.API_URL
         else:
             figshare.api_url = figshare_settings.API_OAUTH_URL
-        figshare.save()    
+        figshare.save()
 
         node_permissions = 'public' if node.is_public else 'private'
 
@@ -110,10 +110,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                                                                                                                                     )
             messages.append(message)
             return messages
-            
+
         connect = Figshare.from_settings(self.user_settings)
-        article_is_public = connect.article_is_public(self.figshare_id)        
-        
+        article_is_public = connect.article_is_public(self.figshare_id)
+
         article_permissions = 'public' if article_is_public else 'private'
 
         if article_permissions != node_permissions:
@@ -122,7 +122,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 '{node} {article} is {article_perm}. '.format(
                     category=node.project_or_component,
                     node_perm=node_permissions,
-                    article_perm=article_permissions,                   
+                    article_perm=article_permissions,
                     article=self.figshare_id,
                     node=self.figshare_type
                 )
@@ -137,11 +137,11 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
     def before_remove_contributor(self, node, removed):
         """
-        
+
         :param Node node:
         :param User removed:
         :return str: Alert message
-        
+
         """
         if self.user_settings and self.user_settings.owner == removed:
             return (
@@ -150,24 +150,24 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 'to the article unless another contributor re-authenticates. '
                 ).format(
                 category=node.project_or_component,
-                user=removed.fullname,                
+                user=removed.fullname,
                 )
-            
+
     def after_remove_contributor(self, node, removed):
         """
-            
+
         :param Node node:
         :param User removed:
         :return str: Alert message
-        
+
         """
         if self.user_settings and self.user_settings.owner == removed:
-            
+
             # Delete OAuth tokens
             self.user_settings = None
-            self.api_url = figshare_settings.API_URL 
+            self.api_url = figshare_settings.API_URL
             self.save()
-            
+
             return (
                 'Because the FigShare add-on for this project was authenticated '
                 'by {user}, authentication information has been deleted. You '
@@ -177,14 +177,14 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                     url=node.url,
                     )
                 )
-        
+
     def before_fork(self, node, user):
         """
-        
+
         :param Node node:
         :param User user:
         :return str: Alert message
-        
+
         """
         if self.user_settings and self.user_settings.owner == user:
             return (
@@ -201,21 +201,21 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             ).format(
             cat=node.project_or_component,
             )
-    
+
     def after_fork(self, node, fork, user, save=True):
         """
-        
+
         :param Node node: Original node
         :param Node fork: Forked node
         :param User user: User creating fork
         :param bool save: Save settings after callback
         :return tuple: Tuple of cloned settings and alert message
-        
+
         """
         clone, _ = super(AddonFigShareNodeSettings, self).after_fork(
             node, fork, user, save=False
             )
-        
+
         # Copy authentication if authenticated by forking user
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
@@ -233,19 +233,19 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 cat=fork.project_or_component,
                 url=fork.url + 'settings/'
                 )
-                
+
         if save:
             clone.save()
-                            
+
         return clone, message
 
     def before_register(self, node, user):
         """
-        
+
         :param Node node:
         :param User user:
         :return str: Alert message
-        
+
         """
         if self.user_settings:
             return (
@@ -254,26 +254,26 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 ).format(
                 cat=node.project_or_component,
                 )
-        
+
     def after_register(self, node, registration, user, save=True):
         """
-        
+
         :param Node node: Original node
         :param Node registration: Registered node
         :param User user: User creating registration
-        
+
         :return tuple: Tuple of cloned settings and alert message
-        
+
         """
         clone, message = super(AddonGitHubNodeSettings, self).after_register(
             node, registration, user, save=False
             )
-                
+
         # Copy foreign fields from current add-on
         clone.user_settings = self.user_settings
-                
+
         # TODO handle registration
-                
+
 
 
         if save:
@@ -281,4 +281,4 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
         return clone, message
 
-                
+
