@@ -22,6 +22,7 @@ from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
+from framework.auth.exceptions import DuplicateEmailError
 from framework.auth.decorators import Auth
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
@@ -461,7 +462,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         :raises: ValueError if user not found in permissions
 
         """
-        return self.permissions.get(user._id)
+        return self.permissions.get(user._id, [])
 
     def _validate_permissions(self):
         for key in self.permissions.keys():
@@ -1448,29 +1449,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
         )
 
-    def remove_nonregistered_contributor(self, auth, name, hash_id, log=True, save=True):
-        deleted = False
-        for idx, contrib in enumerate(self.contributor_list):
-            if contrib.get('nr_name') == name and hashlib.md5(contrib.get('nr_email')).hexdigest() == hash_id:
-                del self.contributor_list[idx]
-                deleted = True
-                break
-        if not deleted:
-            return False
-        if save:
-            self.save()
-        if log:
-            self.add_log(
-                action=NodeLog.CONTRIB_REMOVED,
-                params={
-                    'project': self.parent_id,
-                    'node': self._primary_key,
-                    'contributor': contrib,
-                },
-                auth=auth,
-            )
-        return True
-
     def add_addon(self, addon_name, auth, log=True):
         """Add an add-on to the node.
 
@@ -1556,7 +1534,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth informtion including user, API key.
         """
         if not auth.user._id == contributor._id:
-
+            # remove unclaimed record if necessary
+            if self._primary_key in contributor.unclaimed_records:
+                del contributor.unclaimed_records[self._primary_key]
             self.contributors.remove(contributor._id)
             self.contributor_list = [
                 each
@@ -1595,23 +1575,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         removed = []
 
         for contrib in contributors:
-            if isinstance(contrib, User):
-                outcome = self.remove_contributor(
-                    contributor=contrib, auth=auth, log=False, save=False
-                )
-                results.append(outcome)
-                removed.append(contrib._id)
-            else:
-                outcome = self.remove_nonregistered_contributor(
-                    auth,
-                    contrib['nr_name'],
-                    hashlib.md5(contrib['nr_email']).hexdigest(),
-                    log=False,
-                    save=False,
-                )
-                results.append(outcome)
-                removed.append(contrib)
-
+            outcome = self.remove_contributor(
+                contributor=contrib, auth=auth, log=False, save=False,
+            )
+            results.append(outcome)
+            removed.append(contrib._id)
         if log:
             self.add_log(
                 action=NodeLog.CONTRIB_REMOVED,
@@ -1715,17 +1683,32 @@ class Node(GuidStoredObject, AddonModelMixin):
         if save:
             self.save()
 
-    def add_nonregistered_contributor(self, name, email, auth, save=False):
+    def add_unregistered_contributor(self, fullname, email, auth, save=False):
         """Add a non-registered contributor to the project.
 
-        :param name: A string, the full name of the person.
-        :param email: A string, the email address of the person.
+        :param str fullname: The full name of the person.
+        :param str email: The email address of the person.
         :param Auth auth: Auth object for the user adding the contributor.
+        :returns: The added contributor
+
+        :raises: DuplicateEmailError if user with given email is already in the database.
 
         """
-        contributor = User.create_unregistered(fullname=name, email=email)
+        # Create a new user record
+        try:
+            contributor = User.create_unregistered(fullname=fullname, email=email)
+        except DuplicateEmailError as error:
+            contributor = get_user(username=email)
+            # Unregistered users may have multiple unclaimed records, so
+            # only raise error if user is registered.
+            if contributor.is_registered or self.is_contributor(contributor):
+                raise error
+
+        contributor.add_unclaimed_record(node=self, referrer=auth.user,
+            given_name=fullname, email=email)
         contributor.save()
-        return self.add_contributor(contributor, auth=auth, log=True, save=save)
+        self.add_contributor(contributor, auth=auth, log=True, save=save)
+        return contributor
 
     def set_privacy(self, permissions, auth=None):
         """Set the permissions for this node.

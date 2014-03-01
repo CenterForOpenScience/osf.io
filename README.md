@@ -95,7 +95,9 @@ MAIL_SERVER = "localhost:1025"
 ...
 ```
 
-Then fire up a pseudo-mailserver with:
+Sent emails will show up in your server logs.
+
+*Optional*: fire up a pseudo-mailserver with:
 
 ```bash
 $ invoke mailserver -p 1025

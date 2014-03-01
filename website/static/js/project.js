@@ -204,18 +204,22 @@ NodeActions.removeUser = function(userid, name) {
         dataType: 'json',
         data: data
     }).success(function(response) {
-        var prompt = joinPrompts(response.prompts, 'Remove ' + name + ' from contributor list?');
-        bootbox.confirm(prompt, function(result) {
-            if (result) {
-                $.ajax({
-                    type: 'POST',
-                    url: nodeApiUrl + 'removecontributors/',
-                    contentType: 'application/json',
-                    dataType: 'json',
-                    data: data
-                }).done(function(response) {
-                    window.location.reload();
-                });
+        var prompt = joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
+        bootbox.confirm({
+            title: 'Delete Contributor?',
+            message: prompt,
+            callback: function(result) {
+                if (result) {
+                    $.ajax({
+                        type: 'POST',
+                        url: nodeApiUrl + 'removecontributors/',
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        data: data
+                    }).done(function(response) {
+                        window.location.reload();
+                    });
+                }
             }
         });
     });

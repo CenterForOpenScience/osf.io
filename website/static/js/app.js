@@ -348,6 +348,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
 
     self.gotoInvite = function() {
         self.inviteName(self.query());
+        self.inviteError('');
         self.inviteEmail('');
         self.page('invite');
     };
@@ -436,26 +437,23 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         return $.ajax(ajaxOpts);
     }
 
-    function inviteSuccess(result) {
+    function onInviteSuccess(result) {
         self.page('whom');
         self.add(result.contributor);
     }
 
-    function inviteError(xhr, status, error) {
-        // TODO
-        console.log('An error occurred on sending invite');
-        console.log(error);
-        console.log(JSON.parse(xhr.responseText))
+    function onInviteError(xhr, status, error) {
         var response = JSON.parse(xhr.responseText);
         // Update error message
         self.inviteError(response.message);
     }
 
     self.sendInvite = function() {
+        self.inviteError('');
         return postInviteRequest(self.inviteName(), self.inviteEmail(),
             {
-                success: inviteSuccess,
-                error: inviteError
+                success: onInviteSuccess,
+                error: onInviteError
             }
         );
     };

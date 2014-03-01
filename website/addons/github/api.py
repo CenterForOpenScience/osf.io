@@ -4,6 +4,7 @@
 
 import os
 import urllib
+import itertools
 
 import github3
 from dateutil.parser import parse
@@ -72,6 +73,14 @@ class GitHub(object):
 
     def user_repos(self, user):
         return self.gh3.iter_user_repos(user, type='all', sort='full_name')
+
+    def my_org_repos(self, permissions=None):
+        permissions = permissions or ['push']
+        return itertools.chain.from_iterable(
+            team.iter_repos()
+            for team in self.gh3.iter_user_teams()
+            if team.permission in permissions
+        )
 
     def create_repo(self, repo, **kwargs):
         return self.gh3.create_repo(repo, **kwargs)
@@ -222,13 +231,14 @@ class GitHub(object):
         :param str user: GitHub user name
         :param str repo: GitHub repo name
         :return bool: True if successful, False otherwise
+        :raises: NotFoundError if repo or hook cannot be located
 
         """
-        try:
-            repo = self.repo(user, repo)
-            return repo.hook(_id).delete()
-        except NotFoundError:
-            pass
+        repo = self.repo(user, repo)
+        hook = repo.hook(_id)
+        if hook is None:
+            raise NotFoundError
+        return repo.hook(_id).delete()
 
     ########
     # CRUD #

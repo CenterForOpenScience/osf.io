@@ -10,20 +10,18 @@ from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
 from framework.auth.decorators import Auth
-from tests.base import DbTestCase
+from tests.base import DbTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, NodeLogFactory, ApiKeyFactory,
                              NodeFactory, NodeWikiFactory, RegistrationFactory,
-                             UnregUserFactory)
+                             UnregUserFactory, UnconfirmedUserFactory)
 from tests.test_features import requires_piwik
-from website import settings
+from website import settings, language
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.model import ensure_schemas
-from framework import app
 from website.project.views.file import get_cache_path
 from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
-from website import settings, language
 from website.app import init_app
 
 app = init_app(set_backends=False, routes=True)
@@ -341,9 +339,6 @@ class TestComponents(DbTestCase):
         self.consolidate_auth = Auth(user=self.user, api_key = api_key)
         self.project = ProjectFactory(creator=self.user)
         self.project.add_contributor(contributor=self.user, auth=self.consolidate_auth)
-        # project has a non-registered contributor
-        self.nr_user = {'nr_name': 'Foo Bar', 'nr_email': 'foo@example.com'}
-        self.project.contributor_list.append(self.nr_user)
         # A non-project componenet
         self.component = NodeFactory(
             category='hypothesis',
@@ -368,13 +363,6 @@ class TestComponents(DbTestCase):
         parent_title = res.html.find_all('h1', class_='node-parent-title')
         assert_equal(len(parent_title), 1)
         assert_in(self.project.title, parent_title[0].text)
-
-    def test_sees_non_registered_contributor(self):
-        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
-        # Sees unregeisterd user's name
-        assert_in(self.nr_user['nr_name'], res)
-        # Sees registred user's name
-        assert_in(self.user.fullname, res)
 
 
 class TestMergingAccounts(DbTestCase):
@@ -658,29 +646,143 @@ class TestClaiming(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.referrer = UserFactory()
+        self.referrer = AuthUserFactory()
         self.project = ProjectFactory(creator=self.referrer)
-        self.user = UnregUserFactory()
-
-    def add_unclaimed_record(self):
-        given_name = 'Fredd Merkury'
-        self.user.add_unclaimed_record(node=self.project,
-            given_name=given_name, referrer=self.referrer)
-        self.user.save()
-        data = self.user.unclaimed_records[self.project._primary_key]
-        return data
 
     def test_user_can_set_password_on_claim_page(self):
-        self.add_unclaimed_record()
-        claim_url = self.user.get_claim_url(self.project._primary_key)
+        name, email = fake.name(), fake.email()
+        new_user = self.project.add_unregistered_contributor(
+            email=email,
+            fullname=name,
+            auth=Auth(self.referrer)
+        )
+        self.project.save()
+        claim_url = new_user.get_claim_url(self.project._primary_key)
         res = self.app.get(claim_url)
-        assert_in('Set password', res)
-        assert 0, 'finish me'
+        self.project.reload()
+        assert_in('Set Password', res)
+        form = res.forms['setPasswordForm']
+        form['username'] = new_user.username
+        form['password'] = 'killerqueen'
+        form['password2'] = 'killerqueen'
+        res = form.submit().maybe_follow()
+        new_user.reload()
+        assert_equal(res.request.path, self.project.url)
+        assert_in('Welcome to the OSF', res)
+
+    def test_sees_error_message_at_claim_page_if_user_already_logged_in(self):
+        name, email = fake.name(), fake.email()
+        new_user = self.project.add_unregistered_contributor(
+            email=email,
+            fullname=name,
+            auth=Auth(self.referrer)
+        )
+        self.project.save()
+        existing = AuthUserFactory()
+        claim_url = new_user.get_claim_url(self.project._primary_key)
+        # a user is already logged in
+        res = self.app.get(claim_url, auth=existing.auth, expect_errors=True)
+        assert_in('already logged in', res)
+
+    def test_unregistered_users_names_are_project_specific(self):
+        name1, name2, email = fake.name(), fake.name(), fake.email()
+        project2 = ProjectFactory(creator=self.referrer)
+        # different projects use different names for the same unreg contributor
+        self.project.add_unregistered_contributor(
+            email=email,
+            fullname=name1,
+            auth=Auth(self.referrer)
+        )
+        self.project.save()
+        project2.add_unregistered_contributor(
+            email=email,
+            fullname=name2,
+            auth=Auth(self.referrer)
+        )
+        project2.save()
+        self.app.authenticate(*self.referrer.auth)
+        # Each project displays a different name in the contributor list
+        res = self.app.get(self.project.url)
+        assert_in(name1, res)
+
+        res2 = self.app.get(project2.url)
+        assert_in(name2, res2)
+
+    def test_unregistered_user_can_create_an_account(self):
+        # User is added as an unregistered contributor to a project
+        email, name = fake.email(), fake.name()
+        self.project.add_unregistered_contributor(
+            email=email,
+            fullname=name,
+            auth=Auth(self.referrer)
+        )
+        self.project.save()
+        # Goes to registration page (instead of claiming their email)
+        res = self.app.get('/account/').maybe_follow()
+        form = res.forms['registerForm']
+        form['register-fullname'] = name
+        form['register-username'] = email
+        form['register-username2'] = email
+        form['register-password'] = 'example'
+        form['register-password2'] = 'example'
+        res = form.submit()
+        # registered successfully
+        assert_in(language.REGISTRATION_SUCCESS.format(email=email), res)
+
+    def test_cannot_go_to_claim_url_after_setting_password(self):
+        name, email = fake.name(), fake.email()
+        new_user = self.project.add_unregistered_contributor(
+            email=email,
+            fullname=name,
+            auth=Auth(self.referrer)
+        )
+        self.project.save()
+        # Goes to claim url and successfully claims account
+        claim_url = new_user.get_claim_url(self.project._primary_key)
+        res = self.app.get(claim_url)
+        self.project.reload()
+        assert_in('Set Password', res)
+        form = res.forms['setPasswordForm']
+        form['username'] = new_user.username
+        form['password'] = 'killerqueen'
+        form['password2'] = 'killerqueen'
+        res = form.submit().maybe_follow()
+
+        # logs out
+        res = self.app.get('/logout/').maybe_follow()
+        # tries to go to claim url again
+        res = self.app.get(claim_url, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('already been claimed', res)
+
+    def test_cannot_set_email_to_a_user_that_already_exists(self):
+        reg_user = UserFactory()
+        name, email = fake.name(), fake.email()
+        new_user = self.project.add_unregistered_contributor(
+            email=email,
+            fullname=name,
+            auth=Auth(self.referrer)
+        )
+        self.project.save()
+        # Goes to claim url and successfully claims account
+        claim_url = new_user.get_claim_url(self.project._primary_key)
+        res = self.app.get(claim_url)
+        self.project.reload()
+        assert_in('Set Password', res)
+        form = res.forms['setPasswordForm']
+        # Fills out an email that is the username of another user
+        form['username'] = reg_user.username
+        form['password'] = 'killerqueen'
+        form['password2'] = 'killerqueen'
+        res = form.submit().maybe_follow(expect_errors=True)
+        assert_in(language.ALREADY_REGISTERED.format(email=reg_user.username), res)
+
+
 
 class TestConfirmingEmail(DbTestCase):
     def setUp(self):
         self.app = TestApp(app)
-        self.user = UnregUserFactory()
+        self.user = UnconfirmedUserFactory()
         self.confirmation_url = self.user.get_confirmation_url(self.user.username,
             external=False)
         self.confirmation_token = self.user.get_confirmation_token(self.user.username)
@@ -732,7 +834,7 @@ class TestConfirmingEmail(DbTestCase):
             res, 'flashes error msg')
 
     def test_resend_form_shows_alert_if_email_already_confirmed(self):
-        user = UnregUserFactory()
+        user = UnconfirmedUserFactory()
         url = user.get_confirmation_url(user.username, external=False)
         # User confirms their email address
         self.app.get(url).maybe_follow()

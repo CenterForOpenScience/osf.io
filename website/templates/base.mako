@@ -25,6 +25,7 @@
     % for url in js_all:
     <script src="${url}"></script>
     % endfor
+
     ${self.javascript()}
 
 </head>
@@ -117,6 +118,9 @@
                 });
             </script>
         % endif
+        % for url in js_bottom:
+        <script src="${url}"></script>
+        % endfor
         ${self.javascript_bottom()}
     </body>
 </html>

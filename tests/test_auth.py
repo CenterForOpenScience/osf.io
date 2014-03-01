@@ -24,7 +24,9 @@ from website.project.decorators import must_have_permission
 
 class TestAuthUtils(DbTestCase):
 
-    def test_register(self):
+    #TODO: out of date; test_auth.register_unconfirmed
+    @mock.patch('framework.auth.send_welcome_email')
+    def test_register(self, send_welcome_email):
         auth.register('rosie@franklin.com', 'gattaca', fullname="Rosie Franklin")
         user = User.find_one(Q('username', 'eq', 'rosie@franklin.com'))
         # The password should be set
@@ -32,6 +34,16 @@ class TestAuthUtils(DbTestCase):
         assert_equal(user.fullname, "Rosie Franklin")
         assert_equal(user.username, 'rosie@franklin.com')
         assert_in("rosie@franklin.com", user.emails)
+        assert_true(send_welcome_email.called)
+        assert_true(send_welcome_email.called_with(user=user))
+
+    def test_unreg_user_can_register(self):
+        user = UnregUserFactory()
+
+        auth.register_unconfirmed(username=user.username,
+            password='gattaca', fullname='Rosie')
+
+        assert_true(user.get_confirmation_token(user.username))
 
     def test_get_user_by_id(self):
         user = UserFactory()
