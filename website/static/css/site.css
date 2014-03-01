@@ -3,12 +3,15 @@
 
 /*CSS Johanna added for front page*/
 
+.hpLink:hover{
+    text-decoration: none;
+}
 
 .hp-banner {
     z-index: -10;
     background: url("/static/img/stripes.png");
     opacity: .7;
-    height: 500px;
+    height: 550px;
     width: 100vw;
     position: absolute;
     left: 0;
@@ -18,7 +21,15 @@
     height: 520px;
 }
 #hpContainerTwo {
-    height: 1000px;
+    height: 500px;
+margin-top: 25px;
+    margin-bottom: 25px;
+
+}
+#hpContainerThree {
+    height: 500px;
+    margin-top: 25px;
+    margin-bottom: 25px;
 }
 #containerOneHeader {
     float: left;
@@ -32,11 +43,16 @@
     font-family: 'Carrois Gothic', sans-serif;
     letter-spacing:1px;
     font-size: 36px;
+    color: black;
 }
 .subHeadOne {
     font-family: 'Inika', serif;
     font-size: 24px;
     letter-spacing: 1px;
+}
+.subHeadTwo {
+    font-size: 28px;
+    color: #4089C7;
 }
 .sign-up {
     height: 400px;
@@ -55,12 +71,12 @@
     text-align: center;
     font-family: 'Patua One', cursive;
     padding-bottom: 20px;
+    padding-top: 70px;
 }
 
 .featureDescriptions {
     padding-top: 50px;
     font-size: 22px;
-    text-align: center;
     font-family: 'Carrois Gothic', sans-serif;
 }
 
