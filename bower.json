@@ -1,0 +1,6 @@
+{
+  "name": "OSF",
+  "dependencies": {
+    "jQuery": ">=2.1.0"
+  }
+}
