@@ -284,7 +284,7 @@ def claim_user_form(**kwargs):
             del user.unclaimed_records[pid]
             user.save()
             # Authenticate user and redirect to project page
-            response = framework.redirect('/{pid}/'.format(pid=pid))
+            response = framework.redirect('/settings/')
             node = Node.load(pid)
             status.push_status_message(language.CLAIMED_CONTRIBUTOR.format(node=node),
                 'success')
