@@ -226,7 +226,7 @@ def send_claim_email(email, user, node):
     clean_email = email.lower().strip()
     unclaimed_record = user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
-    claim_url = user.get_claim_url(node._primary_key, external=True) + '?email={0}'.format(clean_email)
+    claim_url = user.get_claim_url(node._primary_key, external=True)
     # If given email is the same provided by user, just send to that email
     if unclaimed_record.get('email', None) == clean_email:
         mail_tpl = mails.INVITE
@@ -244,23 +244,10 @@ def send_claim_email(email, user, node):
     )
 
 
-def claim_user_form(**kwargs):
-    """View for rendering the set password page for a claimed user.
-
-    Renders the set password form, validates it, and sets the user's password.
+def verify_claim_token(user, token, pid):
+    """View helper that checks that a claim token for a given user and node ID
+    is valid. If not valid, throws an error with custom error messages.
     """
-    uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
-    # There shouldn't be a user logged in
-    if framework.auth.get_current_user():
-        logout_url = framework.url_for('OsfWebRenderer__auth_logout')
-        error_data = {'message_short': 'You are already logged in.',
-            'message_long': ('To claim this account, you must first '
-                '<a href={0}>log out.</a>'.format(logout_url))}
-        raise HTTPError(400, data=error_data)
-    user = framework.auth.get_user(id=uid)
-    # user ID is invalid. Unregistered user is not in database
-    if not user:
-        raise HTTPError(400)
     # if token is invalid, throw an error
     if not user.verify_claim_token(token=token, project_id=pid):
         if user.is_registered:
@@ -272,14 +259,37 @@ def claim_user_form(**kwargs):
                 'message_short': 'Invalid claim URL.',
                 'message_long': 'The URL you entered is invalid.'}
         raise HTTPError(400, data=error_data)
+    return True
 
-    parsed_name = parse_name(user.fullname)
-    email = request.args.get('email', '')
-    form = SetEmailAndPasswordForm(request.form)
+
+def claim_user_form(**kwargs):
+    """View for rendering the set password page for a claimed user.
+
+    Must have ``token`` as a querystring argument.
+
+    Renders the set password form, validates it, and sets the user's password.
+    """
+    uid, pid = kwargs['uid'], kwargs['pid']
+    token = request.form.get('token') or request.args.get('token')
+    # There shouldn't be a user logged in
+    if framework.auth.get_current_user():
+        logout_url = framework.url_for('OsfWebRenderer__auth_logout')
+        error_data = {'message_short': 'You are already logged in.',
+            'message_long': ('To claim this account, you must first '
+                '<a href={0}>log out.</a>'.format(logout_url))}
+        raise HTTPError(400, data=error_data)
+    user = framework.auth.get_user(id=uid)
+    # user ID is invalid. Unregistered user is not in database
+    if not user:
+        raise HTTPError(400)
+    verify_claim_token(user, token, pid)
+    unclaimed_record = user.unclaimed_records[pid]
+    email = unclaimed_record['email']
+    form = SetEmailAndPasswordForm(request.form, token=token)
     if request.method == 'POST':
         if form.validate():
-            username = form.username.data.lower().strip()
-            password = form.password.data.strip()
+            username = form.username.data
+            password = form.password.data
             user.register(username=username, password=password)
             del user.unclaimed_records[pid]
             user.save()
@@ -291,10 +301,13 @@ def claim_user_form(**kwargs):
             return framework.auth.authenticate(user, response)
         else:
             forms.push_errors_to_status(form.errors)
+    parsed_name = parse_name(user.fullname)
+    is_json_request = request.content_type == 'application/json'
     return {
         'firstname': parsed_name['given_name'],
         'email': email,
-        'fullname': user.fullname
+        'fullname': user.fullname,
+        'form': forms.utils.jsonify(form) if is_json_request else form,
     }
 
 @must_be_valid_project
