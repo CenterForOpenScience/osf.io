@@ -1712,6 +1712,24 @@ class TestNodeLog(DbTestCase):
         assert_equal(d['params'], log.params)
         assert_equal(d['node']['title'], log.node.title)
 
+    def test_render_log_contributor_unregistered(self):
+        node = NodeFactory()
+        name, email = fake.name(), fake.email()
+        unreg = node.add_unregistered_contributor(fullname=name, email=email,
+            auth=Auth(node.creator))
+        node.save()
+
+        log = NodeLogFactory(params={'node': node._primary_key})
+        ret = log._render_log_contributor(unreg._primary_key)
+
+        assert_false(ret['registered'])
+        record = unreg.get_unclaimed_record(node._primary_key)
+        assert_equal(ret['fullname'], record['name'])
+
+    def test_render_log_contributor_none(self):
+        log = NodeLogFactory()
+        assert_equal(log._render_log_contributor(None), None)
+
     def test_tz_date(self):
         assert_equal(self.log.tz_date.tzinfo, pytz.UTC)
 
