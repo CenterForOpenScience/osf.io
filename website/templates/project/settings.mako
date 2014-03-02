@@ -135,6 +135,7 @@
 
 
 <%def name="javascript_bottom()">
+${parent.javascript_bottom()}
 
 <script type="text/javascript" src="/static/js/metadata_1.js"></script>
 
