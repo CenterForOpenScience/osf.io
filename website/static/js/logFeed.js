@@ -6,7 +6,7 @@
  *         var logFeed = new LogFeed('#logFeed', {data: '/api/v1/watched/logs/'})
  *     });
  */
-this.LogFeed = (function(ko, $, global) {
+this.LogFeed = (function(ko, $, global, moment) {
 
     /**
      * Log model.
@@ -67,13 +67,14 @@ this.LogFeed = (function(ko, $, global) {
      * View model for a log list.
      * @param {Log[]} logs An array of Log model objects to render.
      */
-    var ViewModel = function(logs) {
+    var LogViewModel = function(logs) {
         var self = this;
         self.logs = ko.observableArray(logs);
         self.tzname = ko.computed(function() {
             var logs = self.logs();
             if (logs.length) {
-                return moment(logs[0].date).format('ZZ');
+                var tz =  moment(logs[0].date).format('ZZ');
+                return tz;
             }
             return '';
         });
@@ -140,9 +141,10 @@ this.LogFeed = (function(ko, $, global) {
     LogFeed.prototype.init = function() {
         var self = this;
         self.$progBar.hide();
-        ko.applyBindings(new ViewModel(self.logs), self.$element[0]);
+        ko.cleanNode(self.$element[0]);
+        ko.applyBindings(new LogViewModel(self.logs), self.$element[0]);
     };
 
     return LogFeed;
 
-})(ko, jQuery, window);
+})(ko, jQuery, window, moment);

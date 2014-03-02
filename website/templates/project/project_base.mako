@@ -37,11 +37,13 @@ ${next.body()}
             cache: false,
             success: function(data){
                 // Initialize ProjectViewModel with returned data
-                ko.applyBindings(new ProjectViewModel(data), $('#projectScope')[0]);
+                $script(['/static/js/nodeControl.js'], function() {
+                    var nodeControl = new NodeControl('#projectScope', data)
+                });
 
                 if (data.user.can_edit) {
                     // Initiate AddContributorViewModel
-                    var $addContributors = $('#addContributors');
+                    var $addContributors = $('#addContributorsScope');
                     var addContribVM = new AddContributorViewModel(
                         data.node.title,
                         data.parent_node.id,
