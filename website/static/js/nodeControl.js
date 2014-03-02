@@ -1,6 +1,25 @@
 this.NodeControl = (function(ko, $, global) {
     'use strict';
 
+    var MESSAGES = {
+        makePublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
+                            'access to the data it contains can be complete prevented. Users ' +
+                            'should assume that once a project is made public, it will always ' +
+                            'be public. Are you absolutely sure you would like to continue?',
+
+        makePrivateWarning: 'Making a project private will prevent users from viewing it on this site, ' +
+                            'but will have no impact on external sites, including Google\'s cache. ' +
+                            'Would you like to continue?'
+    };
+
+    var URLS = {
+        makePublic: global.nodeApiUrl + 'permissions/public/',
+        makePrivate: global.nodeApiUrl + 'permissions/private/'
+    };
+
+    var PUBLIC = 'public';
+    var PRIVATE = 'private';
+
     function beforeForkNode(url, done) {
         $.ajax({
             url: url,
@@ -14,6 +33,26 @@ this.NodeControl = (function(ko, $, global) {
                     }
                 }
             )
+        });
+    }
+
+
+    function setPermissions(permissions) {
+        var msgKey = permissions === PUBLIC ? 'makePublicWarning' : 'makePrivateWarning';
+        var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
+        bootbox.confirm({
+            title: "Warning",
+            message: MESSAGES[msgKey],
+            callback: function(result) {
+                if (result) {
+                    console.log(URLS[urlKey]);
+                    $.osf.postJSON(URLS[urlKey], {permissions: permissions},
+                        function(data){
+                            window.location.href = data.redirect_url;
+                        }
+                    );
+                }
+            }
         });
     }
 
@@ -111,7 +150,14 @@ this.NodeControl = (function(ko, $, global) {
                     bootbox.alert('Forking failed');
                 });
             });
+        };
 
+        self.makePublic = function() {
+            return setPermissions(PUBLIC);
+        };
+
+        self.makePrivate = function() {
+            return setPermissions(PRIVATE);
         };
     };
 

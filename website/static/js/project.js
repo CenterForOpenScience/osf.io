@@ -3,18 +3,6 @@
 /////////////////////
 (function($){
 
-// Messages, e.g. for confirmation dialogs, alerts, etc.
-var Messages = {
-    makePublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
-                        'access to the data it contains can be complete prevented. Users ' +
-                        'should assume that once a project is made public, it will always ' +
-                        'be public. Are you absolutely sure you would like to continue?',
-
-    makePrivateWarning: 'Making a project private will prevent users from viewing it on this site, ' +
-                        'but will have no impact on external sites, including Google\'s cache. ' +
-                        'Would you like to continue?'
-};
-
 /* Utility functions */
 
 
@@ -26,7 +14,7 @@ NodeActions.forkPointer = function(pointerId, nodeId) {
     beforeForkNode('/api/v1/' + nodeId + '/fork/before/', function() {
 
         // Block page
-        block();
+        $.osf.block();
 
         // Fork pointer
         $.ajax({
@@ -298,39 +286,6 @@ $(document).ready(function() {
             $(this).find('i').remove();
         }
     );
-
-    function setPermissions(url, permissions) {
-        var msgKey = permissions == 'public' ?
-            'makePublicWarning' :
-            'makePrivateWarning';
-        bootbox.confirm({
-            title: "Warning",
-            message: Messages[msgKey],
-            callback: function(result) {
-                if (result) {
-                    $.postJSON(url, {permissions: permissions},
-                        function(data){
-                            window.location.href = data.redirect_url;
-                        }
-                    );
-                }
-            }
-        });
-    }
-
-    /* Modal Click handlers for project page */
-    // TODO(sloria): Move these to the ProjectViewModel
-    // Private Button confirm dlg
-    $('#privateButton').on('click', function() {
-        var url = $(this).data("target");
-        setPermissions(url, 'private');
-    });
-
-    // Public Button confirm dlg
-    $('#publicButton').on('click', function() {
-        var url = $(this).data("target");
-        setPermissions(url, 'public');
-    });
 
     // Widgets
 
