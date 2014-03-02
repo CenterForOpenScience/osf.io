@@ -28,6 +28,11 @@ ${next.body()}
 
         $logScope = $('#logScope');
 
+        // Import modules
+        $script(['/static/js/nodeControl.js'], 'nodeControl');
+        $script(['/static/js/logFeed.js'], 'logFeed');
+
+
         // Get project data from the server and initiate KO modules
         $.ajax({
             type: 'get',
@@ -36,11 +41,18 @@ ${next.body()}
             dataType: 'json',
             cache: false,
             success: function(data){
-                // Initialize ProjectViewModel with returned data
-                $script(['/static/js/nodeControl.js'], function() {
-                    var nodeControl = new NodeControl('#projectScope', data)
-                });
+               // Initialize nodeControl and logFeed on success
+               $script
+                .ready('nodeControl', function() {
+                    var nodeControl = new NodeControl('#projectScope', data);
+                })
+                .ready('logFeed', function() {
+                    if ($logScope.length) { // Render log feed if necessary
+                        var logFeed = new LogFeed('#logScope', data.node.logs);
+                    }
+                })
 
+                // TODO: move AddContributorViewModel to its own module
                 if (data.user.can_edit) {
                     // Initiate AddContributorViewModel
                     var $addContributors = $('#addContributorsScope');
@@ -54,12 +66,6 @@ ${next.body()}
                     // or cancel button.
                     $addContributors.on('hidden.bs.modal', function() {
                         addContribVM.clear();
-                    });
-                }
-
-                if ($logScope.length) { // Render log feed if necessary
-                    $script(['/static/js/logFeed.js'], function() {
-                        var logFeed = new LogFeed('#logScope', data.node.logs);
                     });
                 }
             }
