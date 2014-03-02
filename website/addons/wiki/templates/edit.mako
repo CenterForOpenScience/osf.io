@@ -1,7 +1,5 @@
-<%inherit file="base.mako"/>
-<%def name="title()">Edit Wiki</%def>
-<%def name="content()">
-<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
+<%inherit file="project/project_base.mako"/>
+<%def name="title()">${node['title']} Wiki (Edit)</%def>
 
 <div class="wiki">
     <div class="row">
@@ -24,7 +22,6 @@
         </div>
     </div><!-- end row -->
 </div><!-- end wiki -->
-</%def>
 
 <%def name="javascript_bottom()">
     <script>
