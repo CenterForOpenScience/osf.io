@@ -16,7 +16,7 @@
 
             % for child in toc:
                 <li class="nav-header">
-                    <a href="/${node['id']}/node/${child['id']}/wiki/home">
+                    <a href="${child['url']}">
                         ${child['title']}
                         % if child['category']:
                             (${child['category']})

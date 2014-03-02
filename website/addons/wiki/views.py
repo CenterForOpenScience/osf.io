@@ -7,7 +7,7 @@ import difflib
 
 from bs4 import BeautifulSoup
 
-from framework import request, status
+from framework import request, status, url_for
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from framework.exceptions import HTTPError
@@ -23,6 +23,17 @@ from website.project.decorators import (
 from .model import NodeWikiPage
 
 logger = logging.getLogger(__name__)
+
+HOME = 'home'
+
+
+def get_wiki_url(node, page=HOME):
+    """Get the URL for the wiki page for a node or pointer."""
+    if not node.primary:
+        pid = node.node._primary_key
+    else:
+        pid = node._primary_key
+    return url_for('OsfWebRenderer__project_wiki_page', pid=pid, wid=page)
 
 
 @must_be_contributor_or_public
@@ -124,7 +135,6 @@ def project_wiki_version(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
     auth = kwargs['auth']
-    user = auth.user
     wid = kwargs['wid']
     vid = kwargs['vid']
 
@@ -175,6 +185,7 @@ def project_wiki_page(*args, **kwargs):
             'title': child.title,
             'category': child.category,
             'pages': child.wiki_pages_current.keys() if child.wiki_pages_current else [],
+            'url': get_wiki_url(child, page=HOME),
         }
         for child in node_to_use.nodes
         if not child.is_deleted
