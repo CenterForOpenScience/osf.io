@@ -11,7 +11,9 @@ ${next.body()}
 <%include file="modal_add_contributor.mako"/>
 <%include file="modal_add_pointer.mako"/>
 <%include file="modal_show_links.mako"/>
-<%include file="modal_add_component.mako"/>
+% if node['category'] == 'project':
+    <%include file="modal_add_component.mako"/>
+% endif
 </%def>
 
 

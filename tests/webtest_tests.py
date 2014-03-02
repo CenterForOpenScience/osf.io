@@ -349,6 +349,7 @@ class TestComponents(DbTestCase):
 
     def test_cannot_create_component_from_a_component(self):
         res = self.app.get(self.component.url, auth=self.auth).maybe_follow()
+        res.showbrowser()
         assert_not_in('Add Component', res)
 
     def test_sees_parent(self):
