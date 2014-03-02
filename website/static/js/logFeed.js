@@ -112,7 +112,6 @@ this.LogFeed = (function(ko, $, global, moment) {
 
     var defaults = {
         /** Selector for the progress bar. */
-        // TODO: Append progress bar in constructor; no markup necessary
         progBar: '#logProgressBar'
     };
 

@@ -53,7 +53,7 @@
                             <a rel="tooltip" title="Watch" class="btn btn-default disabled" href="#">
                         % endif
                         <i class="icon-eye-open"></i>
-                        <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
+                        <span id="watchCount">{{ watchButtonDisplay }}</span>
 
                         </a>
                         <button
@@ -93,8 +93,7 @@
                 }'></div>
             % if node['is_fork']:
                 <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
-                <span data-bind="text: dateForked.local,
-                                tooltip: {title: dateForked.utc}"></span>
+                <span data-bind="tooltip: {title: dateForked.utc}">{{dateForked.local}}</span>
             % endif
             % if node['is_registration'] and node['registered_meta']:
                 <br />Registration Supplement:
@@ -103,13 +102,11 @@
                 % endfor
             % endif
             <br />Date Created:
-                <span data-bind="text: dateCreated.local,
-                                tooltip: {title: dateCreated.utc}"
-                     class="date node-date-created"></span>
+                <span data-bind="tooltip: {title: dateCreated.utc}"
+                     class="date node-date-created">{{ dateCreated.local }}</span>
             | Last Updated:
-            <span data-bind="text: dateModified.local,
-                            tooltip: {title: dateModified.utc}"
-                   class="date node-last-modified-date"></span>
+            <span data-bind="tooltip: {title: dateModified.utc}"
+                   class="date node-last-modified-date">{{ dateModified.local }}</span>
             % if parent_node['id']:
                 <br />Category: <span class="node-category">${node['category']}</span>
             % else:

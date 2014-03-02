@@ -126,6 +126,10 @@
         % for url in js_bottom:
         <script src="${url}"></script>
         % endfor
+        ## Enable knockout punches
+        <script>
+            ko.punches.enableAll();
+        </script>
         ${self.javascript_bottom()}
     </body>
 </html>
