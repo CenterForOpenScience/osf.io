@@ -1,7 +1,7 @@
 /////////////////////
 // Project JS      //
 /////////////////////
-(function(){
+(function($){
 
 // Messages, e.g. for confirmation dialogs, alerts, etc.
 var Messages = {
@@ -17,82 +17,10 @@ var Messages = {
 
 /* Utility functions */
 
-// TODO: Shouldn't pollute window. At the very least put them on the '$' namespace
-window.block = function() {
-    $.blockUI({
-        css: {
-            border: 'none',
-            padding: '15px',
-            backgroundColor: '#000',
-            '-webkit-border-radius': '10px',
-            '-moz-border-radius': '10px',
-            opacity: .5,
-            color: '#fff'
-        },
-        message: 'Please wait'
-    });
-};
-
-window.unblock = function() {
-    $.unblockUI();
-};
-
-window.joinPrompts = function(prompts, base) {
-    var prompt = base || '';
-    if (prompts) {
-        prompt += '<hr />';
-        prompt += '<ul>';
-        for (var i=0; i<prompts.length; i++) {
-            prompt += '<li>' + prompts[i] + '</li>';
-        }
-        prompt += '</ul>';
-    }
-    return prompt;
-};
 
 window.NodeActions = {};  // Namespace for NodeActions
+
 // TODO: move me to the ProjectViewModel
-
-function beforeForkNode(url, done) {
-
-    $.ajax({
-        url: url,
-        contentType: 'application/json'
-    }).success(function(response) {
-        bootbox.confirm(
-            joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
-            function(result) {
-                if (result) {
-                    done && done();
-                }
-            }
-        )
-    });
-
-}
-
-NodeActions.forkNode = function() {
-
-    beforeForkNode(nodeApiUrl + 'fork/before/', function() {
-
-        // Block page
-        block();
-
-        // Fork node
-        $.ajax({
-            url: nodeApiUrl + 'fork/',
-            type: 'POST'
-        }).success(function(response) {
-            window.location = response;
-        }).error(function() {
-            unblock();
-            bootbox.alert('Forking failed');
-        });
-
-    });
-
-};
-
 NodeActions.forkPointer = function(pointerId, nodeId) {
 
     beforeForkNode('/api/v1/' + nodeId + '/fork/before/', function() {
@@ -426,4 +354,4 @@ $(document).ready(function() {
 
 });
 
-}).call(this);
+}).call(this, jQuery);

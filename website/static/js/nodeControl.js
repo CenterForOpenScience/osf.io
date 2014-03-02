@@ -1,5 +1,21 @@
 this.NodeControl = (function(ko, $, global) {
 
+    function beforeForkNode(url, done) {
+        $.ajax({
+            url: url,
+            contentType: 'application/json'
+        }).success(function(response) {
+            bootbox.confirm(
+                global.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
+                function(result) {
+                    if (result) {
+                        done && done();
+                    }
+                }
+            )
+        });
+    }
+
     /**
      * The ProjectViewModel, scoped to the project header.
      * @param {Object} params The parsed project data returned from the project's API url.
@@ -16,6 +32,9 @@ this.NodeControl = (function(ko, $, global) {
         self.userCanEdit = params.user.can_edit;
         self.description = params.node.description;
         self.title = params.node.title;
+        self.category = params.node.category;
+        self.isRegistration = params.node.is_registration;
+        self.user = params.user;
         // The button text to display (e.g. "Watch" if not watching)
         self.watchButtonDisplay = ko.computed(function() {
             var text = self.userIsWatching() ? "Unwatch" : "Watch"
@@ -88,6 +107,24 @@ this.NodeControl = (function(ko, $, global) {
                 }
             });
         };
+
+        self.forkNode = function() {
+            beforeForkNode(nodeApiUrl + 'fork/before/', function() {
+                // Block page
+                $.osf.block();
+                // Fork node
+                $.ajax({
+                    url: nodeApiUrl + 'fork/',
+                    type: 'POST'
+                }).success(function(response) {
+                    window.location = response;
+                }).error(function() {
+                    $.osf.unblock();
+                    bootbox.alert('Forking failed');
+                });
+            });
+
+};
     };
 
     ////////////////

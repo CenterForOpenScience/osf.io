@@ -3,6 +3,9 @@
 ////////////////////////////
 (function($, global) {
 
+// Namespace to put utility functions on
+$.osf = {};
+
 // TODO: should probably add namespace to these, e.g. $.osf.postJSON
 /**
  * Posts JSON data.
@@ -15,7 +18,8 @@
  * @param  {Function} done Success callback. Takes returned data as its first argument
  * @return {jQuery xhr}
  */
-$.postJSON = function(url, data, done) {
+// TODO: backwards compatible with un-namespaced function. eventually remove
+$.postJSON = $.osf.postJSON = function(url, data, done) {
     var ajaxOpts = {
         url: url, type: 'post',
         data: JSON.stringify(data),
@@ -30,11 +34,45 @@ $.postJSON = function(url, data, done) {
  *
  * https://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
  */
-$.urlParam = function(name) {
+// TODO: backwards compatible with un-namespaced function. eventually remove
+$.urlParam = $.osf.urlParam = function(name) {
     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
         results = regex.exec(location.search);
     return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+};
+
+// TODO: attaches to global for backwards-compatibility. Eventually remove.
+global.block = $.osf.block = function() {
+    $.blockUI({
+        css: {
+            border: 'none',
+            padding: '15px',
+            backgroundColor: '#000',
+            '-webkit-border-radius': '10px',
+            '-moz-border-radius': '10px',
+            opacity: .5,
+            color: '#fff'
+        },
+        message: 'Please wait'
+    });
+};
+
+global.unblock = $.osf.unblock = function() {
+    $.unblockUI();
+};
+
+global.joinPrompts = function(prompts, base) {
+    var prompt = base || '';
+    if (prompts) {
+        prompt += '<hr />';
+        prompt += '<ul>';
+        for (var i=0; i<prompts.length; i++) {
+            prompt += '<li>' + prompts[i] + '</li>';
+        }
+        prompt += '</ul>';
+    }
+    return prompt;
 };
 
 
@@ -53,7 +91,7 @@ global.FormattableDate = function(date) {
 }
 
 
-// TODO: this should be in project.js
+// TODO: move me to appropriate page-specific module
 $(document).ready(function(){
     //block the create new project button when the form is submitted
     $('#projectForm').on('submit',function(){
@@ -101,8 +139,8 @@ $(document).ready(function(){
       color: {start: '#cde', end: '#f52'}
     };
 
-    $(function () {  // TODO: remove?
-      $('#whatever a').tagcloud();
+    $(function () {
+      $('#tagCloud a').tagcloud();
     });
 
 

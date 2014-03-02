@@ -56,20 +56,15 @@
                         <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
 
                         </a>
-
-                        <a
+                        <button
+                            class='btn btn-default node-fork-btn'
+                            data-bind="enable: !isRegistration && category === 'project' && user.id,
+                                        click: forkNode"
                             rel="tooltip"
                             title="Number of times this ${node['category']} has been forked (copied)"
-                            % if node["category"] == 'project' and not node['is_registration'] and user_name:
-                                href="#"
-                                class="btn btn-default node-fork-btn"
-                                onclick="NodeActions.forkNode();"
-                            % else:
-                                class="btn btn-default disabled node-fork-btn"
-                            % endif
                         >
                             <i class="icon-code-fork"></i>&nbsp;${node['fork_count']}
-                        </a>
+                        </button>
 ##                        <a
 ##                                rel="tooltip"
 ##                                % if node['points']:
