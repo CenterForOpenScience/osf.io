@@ -1,11 +1,28 @@
 """
 
 """
+import logging
+import httplib as http
+import difflib
 
 from bs4 import BeautifulSoup
 
-from website.project.decorators import must_be_contributor_or_public
-from website.project.decorators import must_have_addon
+from framework import request, status
+from framework.forms.utils import sanitize
+from framework.mongo.utils import from_mongo
+from framework.exceptions import HTTPError
+from website.project.views.node import _view_project
+from website.project import show_diff
+from website.project.decorators import (
+    must_be_contributor_or_public,
+    must_have_addon, must_not_be_registration,
+    must_be_valid_project,
+    must_be_contributor
+)
+
+from .model import NodeWikiPage
+
+logger = logging.getLogger(__name__)
 
 
 @must_be_contributor_or_public
@@ -34,27 +51,6 @@ def wiki_widget(*args, **kwargs):
     }
     rv.update(wiki.config.to_json())
     return rv
-
-# Moved from website/project/views/wiki.py
-
-import logging
-import httplib as http
-import difflib
-
-from framework import request, status
-from framework.forms.utils import sanitize
-from framework.mongo.utils import from_mongo
-from framework.exceptions import HTTPError
-
-from website.project.views.node import _view_project
-from website.project import show_diff
-from website.project.decorators import must_not_be_registration
-from website.project.decorators import must_be_valid_project
-from website.project.decorators import must_be_contributor
-
-from .model import NodeWikiPage
-
-logger = logging.getLogger(__name__)
 
 
 @must_be_valid_project
