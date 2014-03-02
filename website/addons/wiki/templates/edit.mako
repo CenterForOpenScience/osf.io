@@ -9,7 +9,7 @@
             <form action="${node['url']}wiki/${pageName}/edit/" method="POST">
                 <div class="form-group wmd-panel">
                     <div id="wmd-button-bar"></div>
-                    <textarea class="form-control wmd-input" rows="12" id="wmd-input" name="content">${wiki_content}</textarea>
+                    <textarea class="form-control wmd-input" rows="25" id="wmd-input" name="content">${wiki_content}</textarea>
                 </div>
                 <input type="submit" class="btn btn-primary pull-right" value="Save">
                 <p class="help-block">Preview</p>

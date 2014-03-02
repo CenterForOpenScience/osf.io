@@ -52,7 +52,7 @@ ${next.body()}
                     if ($logScope.length) { // Render log feed if necessary
                         var logFeed = new LogFeed('#logScope', data.node.logs);
                     }
-                })
+                });
 
                 // TODO: move AddContributorViewModel to its own module
                 if (data.user.can_edit) {
