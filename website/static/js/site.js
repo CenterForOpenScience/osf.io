@@ -1,7 +1,7 @@
 ////////////////////////////
 // Site-wide JS utilities //
 ////////////////////////////
-(function($) {
+(function($, global) {
 
 // TODO: should probably add namespace to these, e.g. $.osf.postJSON
 /**
@@ -36,6 +36,21 @@ $.urlParam = function(name) {
         results = regex.exec(location.search);
     return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 };
+
+
+LOCAL_DATEFORMAT = "l h:mm A";
+UTC_DATEFORMAT = "l H:mm UTC";
+
+/**
+ * A date object with two formats: local time or UTC time.
+ * @param {String} date The original date as a string. Should be an standard
+ *                      format such as RFC or ISO.
+ */
+global.FormattableDate = function(date) {
+    this.date = date;
+    this.local = moment(date).format(LOCAL_DATEFORMAT);
+    this.utc = moment.utc(date).format(UTC_DATEFORMAT);
+}
 
 
 // TODO: this should be in project.js
@@ -93,4 +108,4 @@ $(document).ready(function(){
 
 });
 
-}).call(this, jQuery);
+}).call(this, jQuery, window);

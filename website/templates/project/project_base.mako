@@ -17,9 +17,8 @@ ${next.body()}
 
 <%def name="javascript_bottom()">
 <% import json %>
-<script src="/static/js/accountClaimer.js"></script>
 <script>
-// TODO: pollution! namespace me
+    // TODO: pollution! namespace me
     var userId = '${user_id}';
     var nodeId = '${node['id']}';
     var userApiUrl = '${user_api_url}';
@@ -28,10 +27,7 @@ ${next.body()}
     $(function() {
 
         $logScope = $('#logScope');
-        if ($logScope.length > 0) {
-            progressBar = $('#logProgressBar')
-            progressBar.show();
-        }
+
         // Get project data from the server and initiate the ProjectViewModel
         $.ajax({
             type: 'get',
@@ -59,13 +55,11 @@ ${next.body()}
                     });
                 }
 
-                // Initialize LogsViewModel when appropriate
-                if ($logScope.length > 0) {
-                    progressBar.hide();
-                    var logs = data['node']['logs'];
-                    // Create an array of Log model objects from the returned log data
-                    var logModelObjects = createLogs(logs);
-                    ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
+                if ($logScope.length) { // Render log feed if necessary
+                    $script(['/static/js/logFeed.js'], function() {
+                        var logFeed = new LogFeed('#logScope',
+                            {data: data.node.logs});
+                    });
                 }
             }
         });
@@ -84,7 +78,9 @@ ${next.body()}
 
     // Make unregistered contributors claimable
     if (!userId) { // If no user logged in, allow user claiming
-        var accountClaimer = new OSFAccountClaimer('.contributor-unregistered');
+        $script(['/static/js/accountClaimer.js'], function() {
+            var accountClaimer = new OSFAccountClaimer('.contributor-unregistered');
+        });
     }
 
 </script>
