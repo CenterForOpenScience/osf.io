@@ -44,10 +44,9 @@ this.NodeControl = (function(ko, $, global) {
 
         // Editable Title and Description
         if (self.userCanEdit) {
-            $('#nodeTitleEditable').editable({
+            var editableOptions = {
                 type:  'text',
                 pk:    self._id,
-                name:  'title',
                 url:   self.apiUrl + 'edit/',
                 ajaxOptions: {
                     'type': 'POST',
@@ -62,31 +61,22 @@ this.NodeControl = (function(ko, $, global) {
                 placement: 'bottom',
                 success: function(data){
                     document.location.reload(true);
-                }
-            });
+                },
+                emptyclass: 'text-muted',
+                placement: 'bottom'
+            };
+
+            $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
+                name:  'title',
+                title: 'Edit Title',
+            }));
             // TODO(sloria): Repetition here. Rethink.
-            $('#nodeDescriptionEditable').editable({
-                type:  'text',
-                pk:    self._id,
+            $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
                 name:  'description',
-                url:   self.apiUrl + 'edit/',
-                ajaxOptions: {
-                    'type': 'POST',
-                    "dataType": "json",
-                    "contentType": "application/json"
-                },
-                params: function(params){
-                    // Send JSON data
-                    return JSON.stringify(params);
-                },
                 title: 'Edit Description',
-                placement: 'bottom',
-                success: function(data){
-                    document.location.reload(true);
-                },
                 emptytext: "No description",
                 emptyclass: "text-muted"
-            });
+            }));
         }
 
         /**
