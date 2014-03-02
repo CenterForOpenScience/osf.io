@@ -1,6 +1,11 @@
+/**
+ * Controls the actions in the project header (make public/private, watch button,
+ * forking, etc.)
+ */
 this.NodeControl = (function(ko, $, global) {
     'use strict';
 
+    // Modal language
     var MESSAGES = {
         makePublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
                             'access to the data it contains can be complete prevented. Users ' +
@@ -16,7 +21,6 @@ this.NodeControl = (function(ko, $, global) {
         makePublic: global.nodeApiUrl + 'permissions/public/',
         makePrivate: global.nodeApiUrl + 'permissions/private/'
     };
-
     var PUBLIC = 'public';
     var PRIVATE = 'private';
 
@@ -36,7 +40,6 @@ this.NodeControl = (function(ko, $, global) {
         });
     }
 
-
     function setPermissions(permissions) {
         var msgKey = permissions === PUBLIC ? 'makePublicWarning' : 'makePrivateWarning';
         var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
@@ -55,6 +58,28 @@ this.NodeControl = (function(ko, $, global) {
             }
         });
     }
+
+    function removeUser(userid, name) {
+        var payload = {
+            id: userid,
+            name: name
+        };
+        $.osf.postJSON(nodeApiUrl + 'beforeremovecontributors/', {}, function(response) {
+            var prompt = joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
+            bootbox.confirm({
+                title: 'Delete Contributor?',
+                message: prompt,
+                callback: function(result) {
+                    if (result) {
+                        $.osf.postJSON(nodeApiUrl + 'removecontributors/', payload, function() {
+                            window.location.reload();
+                        });
+                    }
+                }
+            });
+        });
+        return false;
+    };
 
     /**
      * The ProjectViewModel, scoped to the project header.
@@ -165,19 +190,45 @@ this.NodeControl = (function(ko, $, global) {
     // Public API //
     ////////////////
 
+    var defaults = {
+        removeCss: '.user-quickedit'
+    };
+
 
     function NodeControl (selector, data, options) {
         var self = this;
         self.selector = selector;
         self.$element = $(self.selector);
         self.data = data;
+        self.viewModel = new ProjectViewModel(self.data);
+        self.options = $.extend({}, defaults, options);
         self.init();
     }
 
     NodeControl.prototype.init = function() {
         var self = this;
-        ko.applyBindings(new ProjectViewModel(self.data), self.$element[0]);
+        ko.applyBindings(self.viewModel, self.$element[0]);
+        self._initRemoveLinks();
     };
+
+    NodeControl.prototype._initRemoveLinks = function () {
+        var self = this;
+        $(self.options.removeCss).hover(
+            function(){
+                var me = $(this);
+                var el = $('<span class="btn-remove-contrib"><i class="icon-remove"></i></span>');
+                el.click(function(){
+                    // TODO: remove hardcoded attributes
+                    removeUser(me.attr('data-userid'), me.attr('data-fullname'));
+                    return false;
+                });
+                $(this).append(el);
+            },
+            function(){
+                $(this).find('i').remove();
+            }
+        );
+    }
 
     return NodeControl;
 

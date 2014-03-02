@@ -3,12 +3,11 @@
 /////////////////////
 (function($){
 
-/* Utility functions */
 
 
 window.NodeActions = {};  // Namespace for NodeActions
 
-// TODO: move me to the ProjectViewModel
+// TODO: move me to the NodeControl or separate
 NodeActions.forkPointer = function(pointerId, nodeId) {
 
     beforeForkNode('/api/v1/' + nodeId + '/fork/before/', function() {
@@ -40,21 +39,6 @@ NodeActions.forkPointer = function(pointerId, nodeId) {
 NodeActions.addonFileRedirect = function(item) {
     window.location.href = item.params.urls.view;
     return false;
-};
-
-
-// todo: discuss; this code not used
-NodeActions.addNodeToProject = function(node, project) {
-    $.ajax({
-        url: '/' + project + '/addnode/' + node,
-        type: 'POST',
-        data: 'node=' + node + '&project=' + project
-    }).done(function(msg) {
-        var $node = $('#node' + node);
-        $node.removeClass('primary').addClass('success');
-        $node.onclick = function(){};
-        $node.html('Added');
-    });
 };
 
 $(function(){
@@ -107,39 +91,7 @@ $(function(){
      });
 });
 
-NodeActions.removeUser = function(userid, name) {
-    var data = JSON.stringify({
-        id: userid,
-        name: name
-    });
-    $.ajax({
-        type: 'POST',
-        url: nodeApiUrl + 'beforeremovecontributors/',
-        contentType: 'application/json',
-        dataType: 'json',
-        data: data
-    }).success(function(response) {
-        var prompt = joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
-        bootbox.confirm({
-            title: 'Delete Contributor?',
-            message: prompt,
-            callback: function(result) {
-                if (result) {
-                    $.ajax({
-                        type: 'POST',
-                        url: nodeApiUrl + 'removecontributors/',
-                        contentType: 'application/json',
-                        dataType: 'json',
-                        data: data
-                    }).done(function(response) {
-                        window.location.reload();
-                    });
-                }
-            }
-        });
-    });
-    return false;
-};
+
 
 NodeActions._openCloseNode = function(nodeId) {
 
@@ -190,6 +142,8 @@ NodeActions.removePointer = function(pointerId, pointerElm) {
         }
     })
 };
+
+
 
 /*
 refresh rendered file through mfr
@@ -271,21 +225,6 @@ $(document).ready(function() {
     $('.citation-toggle').on('click', function() {
         $(this).closest('.citations').find('.citation-list').slideToggle();
     });
-
-    $('.user-quickedit').hover(
-        function(){
-            var me = $(this);
-            var el = $('<i class="icon-remove"></i>');
-            el.click(function(){
-                NodeActions.removeUser(me.attr('data-userid'), me.attr('data-fullname'));
-                return false;
-            });
-            $(this).append(el);
-        },
-        function(){
-            $(this).find('i').remove();
-        }
-    );
 
     // Widgets
 
