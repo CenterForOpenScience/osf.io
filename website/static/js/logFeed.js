@@ -7,7 +7,7 @@
  *     });
  */
 this.LogFeed = (function(ko, $, global, moment) {
-
+    'use strict';
     /**
      * Log model.
      */

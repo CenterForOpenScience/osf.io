@@ -1,4 +1,5 @@
 this.NodeControl = (function(ko, $, global) {
+    'use strict';
 
     function beforeForkNode(url, done) {
         $.ajax({
@@ -57,12 +58,9 @@ this.NodeControl = (function(ko, $, global) {
                     // Send JSON data
                     return JSON.stringify(params);
                 },
-                title: 'Edit Title',
-                placement: 'bottom',
                 success: function(data){
                     document.location.reload(true);
                 },
-                emptyclass: 'text-muted',
                 placement: 'bottom'
             };
 
@@ -114,7 +112,7 @@ this.NodeControl = (function(ko, $, global) {
                 });
             });
 
-};
+        };
     };
 
     ////////////////
