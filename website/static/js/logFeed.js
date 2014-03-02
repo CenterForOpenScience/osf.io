@@ -111,27 +111,29 @@ this.LogFeed = (function(ko, $, global, moment) {
     ////////////////
 
     var defaults = {
-        /** Either a list of logs returned from the server, or a URL to fetch
-        the logs from.
-        */
-        data: null,
         /** Selector for the progress bar. */
         // TODO: Append progress bar in constructor; no markup necessary
         progBar: '#logProgressBar'
     };
 
-    function LogFeed(selector, options) {
+    /**
+     * A log list feed.
+     * @param {string} selector
+     * @param {string or Array} data
+     * @param {object} options
+     */
+    function LogFeed(selector, data, options) {
         var self = this;
         self.selector = selector;
         self.$element = $(selector);
         self.options = $.extend({}, defaults, options);
         self.$progBar = $(self.options.progBar);
-        if (Array.isArray(options.data)) { // data is an array of log object from server
-            self.logs = createLogs(options.data);
+        if (Array.isArray(data)) { // data is an array of log object from server
+            self.logs = createLogs(data);
             self.init();
         } else { // data is a URL
-            $.getJSON(options.data, function(data) {
-                var logs = data.logs;
+            $.getJSON(data, function(response) {
+                var logs = response.logs;
                 self.logs = createLogs(logs);
                 self.init();
             });

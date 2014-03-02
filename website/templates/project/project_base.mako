@@ -28,7 +28,7 @@ ${next.body()}
 
         $logScope = $('#logScope');
 
-        // Get project data from the server and initiate the ProjectViewModel
+        // Get project data from the server and initiate KO modules
         $.ajax({
             type: 'get',
             url: nodeApiUrl,
@@ -59,8 +59,7 @@ ${next.body()}
 
                 if ($logScope.length) { // Render log feed if necessary
                     $script(['/static/js/logFeed.js'], function() {
-                        var logFeed = new LogFeed('#logScope',
-                            {data: data.node.logs});
+                        var logFeed = new LogFeed('#logScope', data.node.logs);
                     });
                 }
             }

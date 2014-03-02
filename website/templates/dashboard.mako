@@ -35,9 +35,7 @@
 <script>
     // Initialize the LogFeed
     $script(['/static/js/logFeed.js'], function() {
-        var logFeed = new LogFeed("#logScope", {
-            data: "/api/v1/watched/logs/"
-        });
+        var logFeed = new LogFeed("#logScope", "/api/v1/watched/logs/");
     });
 </script>
 </%def>
