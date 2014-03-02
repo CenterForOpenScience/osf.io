@@ -36,11 +36,11 @@
                     %if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
                         % if user["is_contributor"]:
-                            <a class="btn btn-default" id="publicButton" data-target="${node['api_url']}permissions/public/">Make Public</a>
+                            <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
                         % endif
                     %else:
                         % if user["is_contributor"]:
-                            <a class="btn btn-default" id="privateButton" data-target="${node['api_url']}permissions/private/">Make Private</a>
+                            <a class="btn btn-default" data-bind="click: makePrivate">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
                     %endif
@@ -53,7 +53,7 @@
                             <a rel="tooltip" title="Watch" class="btn btn-default disabled" href="#">
                         % endif
                         <i class="icon-eye-open"></i>
-                        <span id="watchCount">{{ watchButtonDisplay }}</span>
+                        <span id="watchCount" data-bind="text: watchButtonDisplay"></span>
 
                         </a>
                         <button
@@ -93,7 +93,7 @@
                 }'></div>
             % if node['is_fork']:
                 <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
-                <span data-bind="tooltip: {title: dateForked.utc}">{{dateForked.local}}</span>
+                <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
             % endif
             % if node['is_registration'] and node['registered_meta']:
                 <br />Registration Supplement:
@@ -102,8 +102,8 @@
                 % endfor
             % endif
             <br />Date Created:
-                <span data-bind="tooltip: {title: dateCreated.utc}"
-                     class="date node-date-created">{{ dateCreated.local }}</span>
+                <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"
+                     class="date node-date-created"></span>
             | Last Updated:
             <span data-bind="tooltip: {title: dateModified.utc}"
                    class="date node-last-modified-date">{{ dateModified.local }}</span>
