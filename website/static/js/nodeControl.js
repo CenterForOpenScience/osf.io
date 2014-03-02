@@ -6,7 +6,7 @@ this.NodeControl = (function(ko, $, global) {
             contentType: 'application/json'
         }).success(function(response) {
             bootbox.confirm(
-                global.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
+                $.osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
                 function(result) {
                     if (result) {
                         done && done();
@@ -18,23 +18,23 @@ this.NodeControl = (function(ko, $, global) {
 
     /**
      * The ProjectViewModel, scoped to the project header.
-     * @param {Object} params The parsed project data returned from the project's API url.
+     * @param {Object} data The parsed project data returned from the project's API url.
      */
-    var ProjectViewModel = function(params) {
+    var ProjectViewModel = function(data) {
         var self = this;
-        self._id = params.node.id;
-        self.apiUrl = params.node.api_url;
-        self.dateCreated = new FormattableDate(params.node.date_created);
-        self.dateModified = new FormattableDate(params.node.date_modified);
-        self.dateForked = new FormattableDate(params.node.forked_date);
-        self.watchedCount = ko.observable(params.node.watched_count);
-        self.userIsWatching = ko.observable(params.user.is_watching);
-        self.userCanEdit = params.user.can_edit;
-        self.description = params.node.description;
-        self.title = params.node.title;
-        self.category = params.node.category;
-        self.isRegistration = params.node.is_registration;
-        self.user = params.user;
+        self._id = data.node.id;
+        self.apiUrl = data.node.api_url;
+        self.dateCreated = new FormattableDate(data.node.date_created);
+        self.dateModified = new FormattableDate(data.node.date_modified);
+        self.dateForked = new FormattableDate(data.node.forked_date);
+        self.watchedCount = ko.observable(data.node.watched_count);
+        self.userIsWatching = ko.observable(data.user.is_watching);
+        self.userCanEdit = data.user.can_edit;
+        self.description = data.node.description;
+        self.title = data.node.title;
+        self.category = data.node.category;
+        self.isRegistration = data.node.is_registration;
+        self.user = data.user;
         // The button text to display (e.g. "Watch" if not watching)
         self.watchButtonDisplay = ko.computed(function() {
             var text = self.userIsWatching() ? "Unwatch" : "Watch"
@@ -66,11 +66,11 @@ this.NodeControl = (function(ko, $, global) {
                 placement: 'bottom'
             };
 
+            // TODO: Remove hardcoded selectors.
             $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
                 name:  'title',
                 title: 'Edit Title',
             }));
-            // TODO(sloria): Repetition here. Rethink.
             $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
                 name:  'description',
                 title: 'Edit Description',

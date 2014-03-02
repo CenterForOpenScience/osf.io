@@ -62,7 +62,7 @@ global.unblock = $.osf.unblock = function() {
     $.unblockUI();
 };
 
-global.joinPrompts = function(prompts, base) {
+global.joinPrompts = $.osf.joinPrompts = function(prompts, base) {
     var prompt = base || '';
     if (prompts) {
         prompt += '<hr />';
