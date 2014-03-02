@@ -2,25 +2,26 @@
 from nose.tools import *  # PEP8 asserts
 
 import framework
+from framework.auth.decorators import Auth
 from website.app import init_app
 from webtest_plus import TestApp
 from tests.base import DbTestCase
 from tests.factories import NodeFactory, PointerFactory, ProjectFactory
 
-from website.addons.wiki.views import get_wiki_url
+from website.addons.wiki.views import get_wiki_url, serialize_wiki_toc
 
 app = init_app(routes=True)
 
 
-class TestWiki(DbTestCase):
+class TestWikiViews(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
         self.project = ProjectFactory(is_public=True)
 
-    def test_get_wiki_url(self):
+    def test_get_wiki_url_for_project(self):
         with app.test_request_context():
-            node = NodeFactory()
+            node = ProjectFactory()
             expected = framework.url_for(
                 'OsfWebRenderer__project_wiki_page',
                 pid=node._primary_key,
@@ -39,3 +40,24 @@ class TestWiki(DbTestCase):
             url = get_wiki_url(pointer)
             res = self.app.get(url)
             assert_equal(res.status_code, 200)
+
+    def test_wiki_url_for_component_returns_200(self):
+        with app.test_request_context():
+            component = NodeFactory(project=self.project)
+            url = get_wiki_url(component)
+            res = self.app.get(url).follow()
+            assert_equal(res.status_code, 200)
+
+
+    def test_serialize_wiki_toc(self):
+        project = ProjectFactory()
+        auth = Auth(project.creator)
+        has_wiki = NodeFactory(project=project, creator=project.creator)
+        no_wiki = NodeFactory(project=project, creator=project.creator)
+        project.save()
+        with app.test_request_context():
+            serialized = serialize_wiki_toc(project, auth=auth)
+            assert_equal(len(serialized), 2)
+            no_wiki.delete_addon('wiki', auth=auth)
+            serialized = serialize_wiki_toc(project, auth=auth)
+            assert_equal(len(serialized), 1)
