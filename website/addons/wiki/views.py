@@ -186,6 +186,7 @@ def project_wiki_page(*args, **kwargs):
             'category': child.category,
             'pages': child.wiki_pages_current.keys() if child.wiki_pages_current else [],
             'url': get_wiki_url(child, page=HOME),
+            'is_pointer': not child.primary
         }
         for child in node_to_use.nodes
         if not child.is_deleted

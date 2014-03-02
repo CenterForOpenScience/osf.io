@@ -17,6 +17,9 @@
             % for child in toc:
                 <li class="nav-header">
                     <a href="${child['url']}">
+                        % if child['is_pointer']:
+                            <i class="icon-hand-right"></i>
+                        % endif
                         ${child['title']}
                         % if child['category']:
                             (${child['category']})
@@ -33,7 +36,6 @@
                     </ul>
                 </li>
             % endfor
-
         % endif
 
     </ul>
