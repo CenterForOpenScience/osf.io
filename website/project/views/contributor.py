@@ -211,6 +211,7 @@ def add_contributors_from_dicts(node, user_dicts, auth, email_unregistered=True)
                 user = framework.auth.get_user(username=contrib_dict['email'])
             user.add_unclaimed_record(node=node,
                 referrer=auth.user,
+                email=email,
                 given_name=fullname)
             user.save()
             if email and email_unregistered:
