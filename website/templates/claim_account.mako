@@ -14,12 +14,10 @@
                 ${form.username(value=email)}
             </div>
             <div class='form-group'>
-                ${form.password.label}
-                ${form.password(placeholder='Password', autofocus=True)}
+                ${form.password(placeholder='New password', autofocus=True)}
             </div>
             <div class='form-group'>
-                ${form.password2.label}
-                ${form.password2(placeholder='Password again')}
+                ${form.password2(placeholder='New password again')}
             </div>
             ${form.token}
             %if next_url:

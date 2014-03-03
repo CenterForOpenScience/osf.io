@@ -1097,3 +1097,7 @@ h1.unavailable {
 .editable {
   cursor: pointer;
 }
+
+a {
+  cursor: pointer;
+}
