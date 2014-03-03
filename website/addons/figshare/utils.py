@@ -39,7 +39,7 @@ def file_to_hgrid(node, article, item):
         'upload': '',
         'delete': '',
         'download': item.get('download_url'),
-        'view': '{base}figshare/article/{aid}/file/{fid}'.format(base=node.api_url, aid=article['article_id'], fid=item.get('id'))
+        'view': '/{base}/figshare/article/{aid}/file/{fid}'.format(base=node._id, aid=article['article_id'], fid=item.get('id'))
     }
     permissions = {
         'edit': False,
