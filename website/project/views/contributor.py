@@ -352,7 +352,8 @@ def invite_contributor_post(**kwargs):
     Expects JSON arguments with 'fullname' (required) and email (not required).
     """
     node = kwargs['node'] or kwargs['project']
-    fullname, email = request.json.get('fullname'), request.json.get('email')
+    fullname = request.json.get('fullname').strip()
+    email = request.json.get('email').lower().strip()
     if not fullname:
         return {'status': 400, 'message': 'Must provide fullname'}, 400
     # Check if email is in the database
@@ -374,7 +375,8 @@ def invite_contributor_post(**kwargs):
             'id': None,
             'registered': False,
             'active': False,
-            'gravatar': None,
+            'gravatar': gravatar(email, use_ssl=True,
+                size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR),
             'email': email
         }
     return {'status': 'success', 'contributor': serialized}
@@ -386,8 +388,9 @@ def claim_user_post(**kwargs):
     """
     reqdata = request.json
     user = User.load(reqdata['pk'])
-    email = reqdata['value']
+    email = reqdata['value'].lower().strip()
     node = kwargs['node'] or kwargs['project']
     send_claim_email(email, user, node, notify=True)
     unclaimed_data = user.get_unclaimed_record(node._primary_key)
-    return {'status': 'success', 'fullname': unclaimed_data['name'], 'email': email}
+    return {'status': 'success', 'fullname': unclaimed_data['name'], 'email': email
+    }

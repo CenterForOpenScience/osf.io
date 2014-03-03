@@ -52,7 +52,7 @@
                                                 >+</a>
                                         </td>
                                         <td>
-                                            <img data-bind="attr:{src:contributor.gravatar}" />
+                                            <img data-bind="attr:{src: contributor.gravatar}" />
                                         </td>
                                         <td><span data-bind="text: contributor.fullname"></span>
                                         <span class='text-muted'
