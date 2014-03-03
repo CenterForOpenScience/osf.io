@@ -1,7 +1,5 @@
-<%inherit file="base.mako"/>
+<%inherit file="project/project_base.mako"/>
 <%def name="title()">Files</%def>
-<%def name="content()">
-<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 <div class="row">
 <div class="col-md-8">
@@ -22,15 +20,16 @@
 </div>
 <div id="myGrid" class="filebrowser hgrid"></div>
 
-</%def>
 
 <%def name="stylesheets()">
+${parent.stylesheets()}
 % for stylesheet in tree_css:
 <link rel='stylesheet' href='${stylesheet}' type='text/css' />
 % endfor
 </%def>
 
 <%def name="javascript_bottom()">
+${parent.javascript_bottom()}
 % for script in tree_js:
 <script type="text/javascript" src="${script}"></script>
 % endfor
@@ -46,6 +45,6 @@ var filebrowser = new Rubeus('#myGrid', {
     searchInput: '#fileSearch'
 });
 
-})(window);
+});
 </script>
 </%def>

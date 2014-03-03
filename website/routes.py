@@ -356,7 +356,7 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/',
             '/project/<pid>/node/<nid>/',
-        ], 'get', project_views.node.view_project, OsfWebRenderer('project.mako')),
+        ], 'get', project_views.node.view_project, OsfWebRenderer('project/project.mako')),
 
         # Create
         Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('', render_mako_string)),
@@ -397,7 +397,7 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/permissions/<permissions>/',
             '/project/<pid>/node/<nid>/permissions/<permissions>/',
-        ], 'post', project_views.node.project_set_permissions, OsfWebRenderer('project.mako')),
+        ], 'post', project_views.node.project_set_permissions, OsfWebRenderer('project/project.mako')),
 
         ### Logs ###
 

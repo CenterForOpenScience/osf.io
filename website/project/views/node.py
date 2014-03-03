@@ -454,7 +454,7 @@ def _view_project(node, auth, primary=False):
             'points': node.points,
             'piwik_site_id': node.piwik_site_id,
         },
-        'parent': {
+        'parent_node': {
             'id': parent._primary_key if parent else '',
             'title': parent.title if parent else '',
             'url': parent.url if parent else '',

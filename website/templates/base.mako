@@ -22,10 +22,15 @@
     % endfor
     ${self.stylesheets()}
 
+    <script src="//ajax.aspnetcdn.com/ajax/jquery/jquery-2.1.0.min.js"></script>
+    <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
+    <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
+    <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
+    <!-- <script src="//ajax.aspnetcdn.com/ajax/knockout/knockout-3.0.0.js"></script> -->
+    <script>window.ko || document.write('<script src="/static/vendor/knockout/knockout-3.0.0.min.js">\x3C/script>')</script>
     % for url in js_all:
     <script src="${url}"></script>
     % endfor
-
     ${self.javascript()}
 
 </head>
