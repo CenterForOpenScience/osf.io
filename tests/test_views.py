@@ -16,7 +16,9 @@ import website.app
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
-from website.project.views.contributor import _add_contributor_json, send_claim_email
+from website.project.views.contributor import (
+    _add_contributor_json, send_claim_email
+)
 from webtest.app import AppError
 from website import settings, mails
 from website.util import rubeus

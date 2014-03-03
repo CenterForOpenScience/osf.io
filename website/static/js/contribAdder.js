@@ -207,24 +207,15 @@ this.ContribAdder = (function($, global, undefined) {
         });
 
         self.submit = function() {
-            var user_ids = $.osf.mapByProperty(self.selection(), 'id');
-            $.ajax(
-                nodeApiUrl + 'addcontributors/',
+            $.osf.postJSON(nodeApiUrl + 'addcontributors/',
                 {
-                    type: 'post',
-                    data: JSON.stringify({
-                        user_ids: user_ids,
-                        node_ids: self.nodesToChange()
-                    }),
-                    contentType: 'application/json',
-                    dataType: 'json',
-                    success: function(response) {
-                        if (response.status === 'success') {
-                            window.location.reload();
-                        }
-                    }
+                    users: self.selection(),
+                    node_ids: self.nodesToChange()
+                },
+                function(response) {
+                    window.location.reload();
                 }
-            )
+            );
         };
 
         self.clear = function() {
