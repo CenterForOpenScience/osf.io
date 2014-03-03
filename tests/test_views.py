@@ -402,7 +402,10 @@ class TestUserInviteViews(DbTestCase):
         project2.save()
         res = self.app.post_json(self.invite_url,
             {'fullname': name, 'email': email}, auth=self.user.auth)
-        assert_equal(res.json['contributor'], _add_contributor_json(unreg_user))
+        expected = _add_contributor_json(unreg_user)
+        expected['fullname'] = name
+        expected['email'] = email
+        assert_equal(res.json['contributor'], expected)
 
     def test_invite_contributor_post_if_emaiL_already_registered(self):
         reg_user = UserFactory()

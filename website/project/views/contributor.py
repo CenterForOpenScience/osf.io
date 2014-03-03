@@ -14,7 +14,6 @@ from framework import forms
 from framework.auth.forms import SetEmailAndPasswordForm
 
 from website import settings, mails, language
-from website.util import groupby
 from website.filters import gravatar
 from website.models import Node
 from website.profile import utils
@@ -82,7 +81,7 @@ def _add_contributor_json(user):
         'gravatar': gravatar(
             user, use_ssl=True,
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
-        )
+        ),
     }
 
 
@@ -194,11 +193,12 @@ def project_removecontributor(**kwargs):
 
 # TODO: Make this a Node method? But it depends on the request data format,
 # so maybe not
+# TODO: TEST ME
 def add_contributors_from_dicts(node, user_dicts, auth, email_unregistered=True):
     # Add the registered contributors
     contribs = []
     for contrib_dict in user_dicts:
-        if contrib_dict['registered']:
+        if contrib_dict['id']:
             user = User.load(contrib_dict['id'])
         else:
             email = contrib_dict['email']
@@ -209,13 +209,15 @@ def add_contributors_from_dicts(node, user_dicts, auth, email_unregistered=True)
                     email=email)
             except DuplicateEmailError:
                 user = framework.auth.get_user(username=contrib_dict['email'])
+
+        if not user.is_registered:
             user.add_unclaimed_record(node=node,
                 referrer=auth.user,
-                email=email,
-                given_name=fullname)
+                email=contrib_dict['email'],
+                given_name=contrib_dict['fullname'])
             user.save()
-            if email and email_unregistered:
-                send_claim_email(email, user, node, notify=True)
+            if contrib_dict['email'] and email_unregistered:
+                send_claim_email(contrib_dict['email'], user, node, notify=True)
         contribs.append(user)
     node.add_contributors(contributors=contribs, auth=auth)
 
@@ -353,7 +355,9 @@ def invite_contributor_post(**kwargs):
     """
     node = kwargs['node'] or kwargs['project']
     fullname = request.json.get('fullname').strip()
-    email = request.json.get('email').lower().strip()
+    email = request.json.get('email')
+    if email:
+        email = email.lower().strip()
     if not fullname:
         return {'status': 400, 'message': 'Must provide fullname'}, 400
     # Check if email is in the database
@@ -369,6 +373,7 @@ def invite_contributor_post(**kwargs):
             serialized = _add_contributor_json(user)
             # use correct display name
             serialized['fullname'] = fullname
+            serialized['email'] = email
     else:
         # Create a placeholder
         serialized = {'fullname': fullname,
