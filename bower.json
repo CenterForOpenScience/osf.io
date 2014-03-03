@@ -1,0 +1,8 @@
+{
+  "name": "OSF",
+  "dependencies": {
+    "jQuery": ">=2.1.0",
+    "jquery-ui": "~1.10.4",
+    "momentjs": "~2.5.1"
+  }
+}

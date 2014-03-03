@@ -1,7 +1,5 @@
-<%inherit file="base.mako"/>
-<%def name="title()">Edit Wiki</%def>
-<%def name="content()">
-<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
+<%inherit file="project/project_base.mako"/>
+<%def name="title()">${node['title']} Wiki (Edit)</%def>
 
 <div class="wiki">
     <div class="row">
@@ -9,7 +7,7 @@
             <form action="${node['url']}wiki/${pageName}/edit/" method="POST">
                 <div class="form-group wmd-panel">
                     <div id="wmd-button-bar"></div>
-                    <textarea class="form-control wmd-input" rows="12" id="wmd-input" name="content">${wiki_content}</textarea>
+                    <textarea class="form-control wmd-input" rows="25" id="wmd-input" name="content">${wiki_content}</textarea>
                 </div>
                 <input type="submit" class="btn btn-primary pull-right" value="Save">
                 <p class="help-block">Preview</p>
@@ -24,17 +22,18 @@
         </div>
     </div><!-- end row -->
 </div><!-- end wiki -->
-</%def>
 
 <%def name="javascript_bottom()">
-    <script type="text/javascript" src="/static/vendor/pagedown/Markdown.Converter.js"></script>
-    <script type="text/javascript" src="/static/vendor/pagedown/Markdown.Sanitizer.js"></script>
-    <script type="text/javascript" src="/static/vendor/pagedown/Markdown.Editor.js"></script>
-    <script type="text/javascript">
-        (function () {
+    <script>
+        $script(['/static/vendor/pagedown/Markdown.Converter.js',
+            '/static/vendor/pagedown/Markdown.Sanitizer.js',
+            '/static/vendor/pagedown/Markdown.Editor.js'
+        ], 'markdown');
+
+        $script(['markdown'], function () {
             var converter1 = Markdown.getSanitizingConverter();
             var editor1 = new Markdown.Editor(converter1);
             editor1.run();
-        })();
+        });
     </script>
 </%def>

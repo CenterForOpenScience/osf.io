@@ -1,7 +1,10 @@
 ////////////////////////////
 // Site-wide JS utilities //
 ////////////////////////////
-(function($) {
+(function($, global) {
+
+// Namespace to put utility functions on
+$.osf = {};
 
 // TODO: should probably add namespace to these, e.g. $.osf.postJSON
 /**
@@ -15,7 +18,8 @@
  * @param  {Function} done Success callback. Takes returned data as its first argument
  * @return {jQuery xhr}
  */
-$.postJSON = function(url, data, done) {
+// TODO: backwards compatible with un-namespaced function. eventually remove
+$.postJSON = $.osf.postJSON = function(url, data, done) {
     var ajaxOpts = {
         url: url, type: 'post',
         data: JSON.stringify(data),
@@ -30,15 +34,64 @@ $.postJSON = function(url, data, done) {
  *
  * https://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
  */
-$.urlParam = function(name) {
+// TODO: backwards compatible with un-namespaced function. eventually remove
+$.urlParam = $.osf.urlParam = function(name) {
     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
         results = regex.exec(location.search);
     return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 };
 
+// TODO: attaches to global for backwards-compatibility. Eventually remove.
+global.block = $.osf.block = function() {
+    $.blockUI({
+        css: {
+            border: 'none',
+            padding: '15px',
+            backgroundColor: '#000',
+            '-webkit-border-radius': '10px',
+            '-moz-border-radius': '10px',
+            opacity: .5,
+            color: '#fff'
+        },
+        message: 'Please wait'
+    });
+};
 
-// TODO: this should be in project.js
+global.unblock = $.osf.unblock = function() {
+    $.unblockUI();
+};
+
+global.joinPrompts = $.osf.joinPrompts = function(prompts, base) {
+    var prompt = base || '';
+    if (prompts) {
+        prompt += '<hr />';
+        prompt += '<ul>';
+        for (var i=0; i<prompts.length; i++) {
+            prompt += '<li>' + prompts[i] + '</li>';
+        }
+        prompt += '</ul>';
+    }
+    return prompt;
+};
+
+
+LOCAL_DATEFORMAT = "l h:mm A";
+UTC_DATEFORMAT = "l H:mm UTC";
+
+/**
+ * A date object with two formats: local time or UTC time.
+ * @param {String} date The original date as a string. Should be an standard
+ *                      format such as RFC or ISO.
+ */
+global.FormattableDate = function(date) {
+    this.date = date;
+    this.local = moment(date).format(LOCAL_DATEFORMAT);
+    this.utc = moment.utc(date).format(UTC_DATEFORMAT);
+}
+
+
+// TODO: move me to appropriate page-specific module
 $(document).ready(function(){
     //block the create new project button when the form is submitted
     $('#projectForm').on('submit',function(){
@@ -86,11 +139,11 @@ $(document).ready(function(){
       color: {start: '#cde', end: '#f52'}
     };
 
-    $(function () {  // TODO: remove?
-      $('#whatever a').tagcloud();
+    $(function () {
+      $('#tagCloud a').tagcloud();
     });
 
 
 });
 
-}).call(this, jQuery);
+}).call(this, jQuery, window);
