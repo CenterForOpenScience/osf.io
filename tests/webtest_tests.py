@@ -182,7 +182,6 @@ class TestAUser(DbTestCase):
         res = self.app.get('/dashboard/', auth=self.auth, auto_follow=True)
         # Sees logs for the watched project
         assert_in('Watched Projects', res)  # Watched Projects header
-        # res.showbrowser()
         # The log action is in the feed
         assert_in('added file test.html', res)
         assert_in(project.title, res)
@@ -349,7 +348,6 @@ class TestComponents(DbTestCase):
 
     def test_cannot_create_component_from_a_component(self):
         res = self.app.get(self.component.url, auth=self.auth).maybe_follow()
-        res.showbrowser()
         assert_not_in('Add Component', res)
 
     def test_sees_parent(self):
