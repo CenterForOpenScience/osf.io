@@ -5,6 +5,7 @@
 
 .hpLink:hover{
     text-decoration: none;
+    color: red;
 }
 
 .hp-banner {
@@ -29,7 +30,7 @@ margin-top: 25px;
 #hpContainerThree {
     height: 500px;
     margin-top: 25px;
-    margin-bottom: 25px;
+    margin-bottom: 100px;
 }
 #containerOneHeader {
     float: left;
@@ -40,26 +41,38 @@ margin-top: 25px;
     padding: 20px 20px 20px 20px;
 }
 .headOne {
-    font-family: 'Carrois Gothic', sans-serif;
+    font-family: 'Carrois Gothic', Helvetica;
     letter-spacing:1px;
     font-size: 36px;
     color: black;
 }
 .subHeadOne {
-    font-family: 'Inika', serif;
+    font-family: 'Inika', Helvetica;
     font-size: 24px;
     letter-spacing: 1px;
 }
 .subHeadTwo {
     font-size: 28px;
     color: #4089C7;
+    font-family: 'Patua One', Helvetica;
 }
 .sign-up {
-    height: 400px;
+    height: 350px;
     width: 400px;
     margin-top: 50px;
-    background: #000;
+    background: url("/static/img/signinbox.png");
     float: right;
+    padding: 30px 30px 30px 30px;
+}
+.sign-up .form-control {
+    margin-top: 20px;
+    height: 40px;
+}
+.sign-up .btn {
+    font-family: 'Inika', Helvetica;
+    font-size: 28px;
+    letter-spacing: 1pt;
+    margin-top: 40px
 }
 
 .right {
@@ -88,9 +101,31 @@ margin-top: 25px;
     font-family: 'Inika', serif;
     font-size: 16px;
     text-align: left;
+    display: none;
+}
+.featureDescriptions .img {
+    display: block;
+    margin: auto;
+}
+#connect {
+    display: block;
+    text-align: center;
+    padding-top:23px;
+}
+.steps {
+    padding-bottom: 20px;
+    padding-top: 20px;
 }
 
+.stepsText {
+    font-family: 'Inika', serif;
+    font-size: 16px;
+}
 
+.padded {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
 
 .verticalline {
 border-left:  thin solid #D9E8F4;
