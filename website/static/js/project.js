@@ -333,13 +333,10 @@ NodeActions.openCloseNode = function(nodeId){
 
 $(document).ready(function() {
 
-    $.getJSON(
-        nodeApiUrl + 'comments/',
-        function(response) {
-            console.log(response);
-            $('#comments').text(JSON.stringify(response.comments));
-        }
-    );
+    ko.punches.enableAll();
+
+    commentsViewModel = new CommentsViewModel();
+    ko.applyBindings(commentsViewModel, $('#comments')[0]);
 
     ////////////////////
     // Event Handlers //

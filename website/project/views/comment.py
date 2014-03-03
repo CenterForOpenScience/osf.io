@@ -2,10 +2,9 @@
 import httplib as http
 import logging
 
-from framework import request, User, status
-from framework.auth.decorators import collect_auth
-from framework.auth.utils import parse_name
+from framework import request
 from framework.exceptions import HTTPError
+from framework.auth.decorators import must_be_logged_in
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def resolve_target(node, guid):
 
-    if guid is None:
+    if not guid:
         return node
     target = Guid.load(guid)
     if target is None:
@@ -28,15 +27,21 @@ def resolve_target(node, guid):
 def serialize_comment(comment, node, auth):
 
     return {
+        'id': comment._id,
         'author': {
             'id': comment.user._id,
             'name': comment.user.fullname,
         },
-        'date': comment.date.strftime('%c'),
+        'dateCreated': comment.date_created.strftime('%c'),
+        'dateModified': comment.date_modified.strftime('%c'),
         'content': comment.content,
         'isPublic': comment.is_public,
+        'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user,
         'canDelete': node.can_edit(auth),
+        'modified': comment.modified,
+        'isSpam': auth.user and
+            comment.reports.get(auth.user._id) == {'type': 'spam'},
     }
 
 
@@ -52,11 +57,13 @@ def serialize_comments(record, node, auth):
 
     return [
         serialize_comment(comment, node, auth)
-        for comment in record.commented
+        for comment in getattr(record, 'commented', [])
         if can_view_comment(comment, node, auth)
+            and not comment.is_deleted
     ]
 
 
+@must_be_logged_in
 @must_be_contributor_or_public
 def add_comment(**kwargs):
 
@@ -87,8 +94,8 @@ def add_comment(**kwargs):
     comment.save()
 
     return {
-        'content': content,
-    }, http.CREATED
+        'comment': serialize_comment(comment, node, auth)
+   }, http.CREATED
 
 
 @must_be_contributor_or_public
@@ -107,14 +114,74 @@ def list_comments(**kwargs):
         'comments': serialize_comments(target, node, auth),
     }
 
+
+@must_be_logged_in
 @must_be_contributor_or_public
 def edit_comment(**kwargs):
-    pass
 
+    auth = kwargs['auth']
+
+    comment = Comment.load(request.json.get('cid'))
+    if comment is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    if auth.user != comment.user:
+        raise HTTPError(http.FORBIDDEN)
+
+    content = request.json.get('content')
+    if content is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    is_public = request.json.get('isPublic')
+    if is_public is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    comment.content = sanitize(content)
+    comment.is_public = is_public
+    comment.modified = True
+
+    comment.save()
+
+    return {
+        'content': content,
+    }
+
+
+@must_be_logged_in
 @must_be_contributor_or_public
 def delete_comment(**kwargs):
-    pass
 
+    auth = kwargs['auth']
+
+    comment = Comment.load(kwargs.get('cid'))
+    if comment is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    if auth.user != comment.user:
+        raise HTTPError(http.FORBIDDEN)
+
+    comment.delete(save=True)
+
+
+@must_be_logged_in
 @must_be_contributor_or_public
-def report_comment(**kwargs):
-    pass
+def report_spam(**kwargs):
+
+    auth = kwargs['auth']
+    user = auth.user
+
+    comment = Comment.load(kwargs.get('cid'))
+    if comment is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    is_spam = request.json.get('isSpam')
+    if is_spam is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    if is_spam:
+        comment.report_spam(user, save=True)
+    else:
+        try:
+            comment.unreport_spam(user, save=True)
+        except ValueError:
+            raise HTTPError(http.BAD_REQUEST)

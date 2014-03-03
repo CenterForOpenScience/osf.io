@@ -190,6 +190,36 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        Rule(
+            [
+                '/project/<pid>/comment/<cid>/',
+                '/project/<pid>/node/<nid>/comment/<cid>/',
+            ],
+            'post',
+            project_views.comment.edit_comment,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/comment/<cid>/',
+                '/project/<pid>/node/<nid>/comment/<cid>/',
+            ],
+            'delete',
+            project_views.comment.delete_comment,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/comment/<cid>/report/spam/',
+                '/project/<pid>/node/<nid>/comment/<cid>/report/spam/',
+            ],
+            'post',
+            project_views.comment.report_spam,
+            json_renderer,
+        ),
+
     ], prefix='/api/v1')
 
     # process_rules(app, [

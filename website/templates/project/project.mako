@@ -89,16 +89,55 @@
 
     </div>
 
-    <div id="comments"></div>
+    <div id="comments">
+        <div>Comments</div>
+        <div data-bind="template: {name: 'commentTemplate', foreach: displayComments}"></div>
+        <div>
+            <div>
+                <a data-bind="click: showReply">Reply</a>
+            </div>
+            <div data-bind="if: replyVisible">
+                <textarea data-bind="value: replyContent"></textarea>
+                <select data-bind="options: PRIVACY_OPTIONS, optionsText: privacyLabel, value: replyPublic"></select>
+                <a data-bind="click: cancelReply">Cancel</a>
+                <a data-bind="click: submitReply">Submit</a>
+            </div>
+        </div>
+    </div>
 
     ## TODO: Move me
     <script type="text/html" id="commentTemplate">
         <div>
-            <div>{{content}}</div>
-            <div>
-                Posted by {{fullname}} at {{date}}
+            <div data-bind="ifnot: editing">
+                <div>{{content}}</div>
+                <div data-bind="if: canEdit">
+                    <a data-bind="click: edit">Edit</a>
+                </div>
             </div>
-            <ul data-bind="template: {name: 'commentTemplate', foreach: comments}"></ul>
+            <div data-bind="if: editing">
+                <textarea data-bind="value: content"></textarea>
+                <select data-bind="options: PRIVACY_OPTIONS, optionsText: privacyLabel, value: isPublic"></select>
+                <a data-bind="click: cancelEdit">Cancel</a>
+                <a data-bind="click: submitEdit">Submit</a>
+            </div>
+            <div>
+                <i data-bind="css: publicIcon"></i> {{editVerb}} by {{author.fullname}} at {{dateModified}}
+            </div>
+            <div>
+                <a data-bind="click: showReply">Reply</a>
+                <a data-bind="if: hasChildren, click: toggle">Toggle</a>
+                <a data-bind="click: reportSpam">Report</a>
+                <a data-bind="if: canDelete, click: remove">Delete</a>
+            </div>
+            <div data-bind="if: replyVisible">
+                <textarea data-bind="value: replyContent"></textarea>
+                <select data-bind="options: PRIVACY_OPTIONS, optionsText: privacyLabel, value: replyPublic"></select>
+                <a data-bind="click: cancelReply">Cancel</a>
+                <a data-bind="click: submitReply">Submit</a>
+            </div>
+            <div data-bind="if: showChildren">
+                <ul data-bind="template: {name: 'commentTemplate', foreach: displayComments}"></ul>
+            </div>
         </div>
     </script>
 

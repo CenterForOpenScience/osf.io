@@ -84,18 +84,49 @@ def ensure_schemas(clear=True):
             schema_obj.save()
 
 
+def validate_comment_reports(value):
+    pass
+
+
 class Comment(GuidStoredObject):
 
     _id = fields.StringField(primary=True)
 
     target = fields.AbstractForeignField(backref='commented')
     user = fields.ForeignField('user', backref='commented')
-    date = fields.DateTimeField(auto_now_add=True)
+    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
+    modified = fields.BooleanField()
 
     is_public = fields.BooleanField()
+    is_deleted = fields.BooleanField()
     content = fields.StringField()
 
-    reports = fields.DictionaryField()
+    # TODO: Document me
+    reports = fields.DictionaryField(validate=validate_comment_reports)
+
+    def report_spam(self, user, save=False):
+        self.reports[user._id] = {'type': 'spam'}
+        if save:
+            self.save()
+
+    def unreport_spam(self, user, save=False):
+        if self.reports.get(user._id) == {'type': 'spam'}:
+            self.reports.pop(user._id)
+        else:
+            raise ValueError('User has not reported this comment as spam')
+        if save:
+            self.save()
+
+    def delete(self, save=False):
+        self.is_deleted = True
+        if save:
+            self.save()
+
+    def undelete(self, save=False):
+        self.is_deleted = False
+        if save:
+            self.save()
 
 
 class ApiKey(StoredObject):
@@ -311,6 +342,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
 
+    # One of 'public', 'private', or None
     comment_level = fields.StringField()
 
     # TODO: move these to NodeFile
