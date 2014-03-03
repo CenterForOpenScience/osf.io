@@ -3,11 +3,6 @@
  */
 this.ContribAdder = (function($, global, undefined) {
 
-    function attrMap(list, attr) {
-        return $.map(list, function(item) {
-            return item[attr];
-        });
-    }
 
     NODE_OFFSET = 25;
 
@@ -189,7 +184,7 @@ this.ContribAdder = (function($, global, undefined) {
         };
 
         self.selectNodes = function() {
-            self.nodesToChange(attrMap(self.nodes(), 'id'));
+            self.nodesToChange($.osf.mapByProperty(self.nodes(), 'id'));
         };
         self.deselectNodes = function() {
             self.nodesToChange([]);
@@ -212,7 +207,7 @@ this.ContribAdder = (function($, global, undefined) {
         });
 
         self.submit = function() {
-            var user_ids = attrMap(self.selection(), 'id');
+            var user_ids = $.osf.mapByProperty(self.selection(), 'id');
             $.ajax(
                 nodeApiUrl + 'addcontributors/',
                 {

@@ -60,6 +60,11 @@ $.osf.joinPrompts = function(prompts, base) {
     return prompt;
 };
 
+$.osf.mapByProperty = function(list, attr) {
+    return $.map(list, function(item) {
+        return item[attr];
+    });
+};
 
 LOCAL_DATEFORMAT = "l h:mm A";
 UTC_DATEFORMAT = "l H:mm UTC";
