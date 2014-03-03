@@ -39,6 +39,10 @@ settings_routes = {
             '/project/<pid>/figshare/project/<project_id>/create/article/',
             '/project/<pid>/node/<nid>/figshare/project/<project_id>/create/article/'
             ],'post', views.crud.figshare_upload_file_as_article, json_renderer),
+        Rule([
+            '/project/<pid>/figshare/publish/article/<aid>/',
+            '/project/<pid>/node/<nid>/figshare/publish/article/<aid>/'],
+             'post', views.crud.figshare_publish_article, json_renderer),
         # CRUD: Files
         Rule([
             '/project/<pid>/figshare/create/article/<aid>/',

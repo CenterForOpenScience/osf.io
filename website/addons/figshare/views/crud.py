@@ -112,32 +112,59 @@ def figshare_upload_file_as_article(*args, **kwargs):
     rv = connect.upload_file(node, figshare, article['items'][0], upload)
     if rv:
         node.add_log(
-            action='figshare_file_added',
-            params={
-                'project': node.parent_id,
-                'node': node._primary_key,
-                'path': upload.filename,  # TODO Path?
-                'urls': {
-                    'view': rv['urls']['view'],
-                    'download': rv['urls']['download'],
-                },
-                'figshare': {
-                    'id': figshare.figshare_id,
-                    'type': figshare.figshare_type
-                }
-            },
-            auth=kwargs['auth'],
-            log_date=datetime.datetime.utcnow(),
-        )
+                     action='figshare_file_added',
+                     params={
+                         'project': node.parent_id,
+                         'node': node._primary_key,
+                         'path': upload.filename,  # TODO Path?
+                         'urls': {
+                             'view': rv['urls']['view'],
+                             'download': rv['urls']['download'],
+                         },
+                         'figshare': {
+                             'id': figshare.figshare_id,
+                             'type': figshare.figshare_type
+                         }
+                     },
+                     auth=kwargs['auth'],
+                     log_date=datetime.datetime.utcnow(),
+                     )
         return rv
     else:
-        raise HTTPError(http.INTERNAL_SERVER_ERROR)  #TODO better error?
+        raise HTTPError(http.INTERNAL_SERVER_ERROR)  # TODO better error?
+
+
+@decorators.must_be_contributor
+@decorators.must_have_addon('figshare', 'node')
+def figshare_publish_article(*args, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
+    user = auth.user
+    figshare = node.get_addon('figshare')
+
+    article_id = kwargs.get('aid')
+
+    if article_id is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    cat = request.json.get('category', '')
+    if not cat:
+        raise HTTPError(http.BAD_REQUEST)
+
+    connect = Figshare.from_settings(figshare.user_settings)
+
+    connect.update_article(figshare, article_id, {'category_id': cat})
+
+    connect.publish_article(figshare, article_id)
+    return {"published": True}
+
 # ARTICLES: D
 
 
 def figshare_delete_article(*args, **kwargs):
     # TODO implement me?
     pass
+
 
 # ----------------- FILES --------------------
 # FILES: C
@@ -264,6 +291,10 @@ def figshare_view_file(*args, **kwargs):
                 node_settings, cache_file, start_render=True,
                 file_path=filename, file_content=filedata, download_path=download_url)
 
+    categories = connect.categories()['items']
+    categories = ''.join(
+        ["<option value='{val}'>{label}</option>".format(val=i['id'], label=i['name']) for i in categories])
+
     rv = {
         'file_name': filename,
         'render_url': render_url,
@@ -272,7 +303,9 @@ def figshare_view_file(*args, **kwargs):
         'file_status': article['items'][0]['status'],
         'file_version': article['items'][0]['version'],
         'version_url': version_url,
-        'parent_type': 'fileset' if article['items'][0]['defined_type'] == 'fileset' else 'singlefile' #TODO Fix me
+        'parent_type': 'fileset' if article['items'][0]['defined_type'] == 'fileset' else 'singlefile',
+        'parent_id': article['items'][0]['article_id'],
+        'figshare_categories': categories
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv

@@ -210,6 +210,9 @@ class Figshare(object):
                 filestream.close()
         return self.article(node_settings, article['article_id'])
 
+    def update_article(self, node_settings, article, params):
+        return self._send(os.path.join(node_settings.api_url, 'articles', article, 'categories'), method='PUT', data=json.dumps(params), headers={'content-type':'application/json'})
+
     def upload_file(self, node, node_settings, article, upload):
         #article_data = self.article(node_settings, article)['items'][0]
         filename, filestream = self.create_temp_file(upload)
@@ -228,8 +231,9 @@ class Figshare(object):
     def delete_article(self, node_settings, article):
         return self._send(os.path.join(node_settings.api_url, 'articles', article), method='delete')
 
-    def make_article_public(self, node_settings, article):
-        return self._send(os.path.join(node_settings.api_url, 'articles', article, 'action', 'make_public'), method='post')
+    def publish_article(self, node_settings, article):
+        res = self._send(os.path.join(node_settings.api_url, 'articles', article, 'action', 'make_public'), method='post')
+        return res
 
     # FILE LEVEL API
     def delete_file(self, node, node_settings, article_id, file_id):
@@ -377,6 +381,9 @@ class Figshare(object):
         if not res:
             return False
         return True
+
+    def categories(self):
+        return self._send("http://api.figshare.com/v1/categories")
 
     def handle_error(self, request):
         # TODO handle errors nicely
