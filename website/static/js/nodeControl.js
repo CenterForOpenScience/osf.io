@@ -48,7 +48,6 @@ this.NodeControl = (function(ko, $, global) {
             message: MESSAGES[msgKey],
             callback: function(result) {
                 if (result) {
-                    console.log(URLS[urlKey]);
                     $.osf.postJSON(URLS[urlKey], {permissions: permissions},
                         function(data){
                             window.location.href = data.redirect_url;
@@ -65,7 +64,7 @@ this.NodeControl = (function(ko, $, global) {
             name: name
         };
         $.osf.postJSON(nodeApiUrl + 'beforeremovecontributors/', {}, function(response) {
-            var prompt = joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
+            var prompt = $.osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
             bootbox.confirm({
                 title: 'Delete Contributor?',
                 message: prompt,

@@ -2,8 +2,8 @@
  * app.js
  * Knockout models, ViewModels, and custom binders.
  */
-// TODO: Currently, these all pollute global namespace. Either use some module
-// system, e.g. requirejs, or use namespaces, e.g. "OSFViewModels.LogsViewModel"
+// TODO: Currently, these all pollute global namespace. Move these to their
+// own module.
 
 ////////////////
 // ViewModels //

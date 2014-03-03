@@ -11,15 +11,14 @@ $.osf = {};
  * Posts JSON data.
  *
  * Example:
- *     $.postJSON('/foo', {'email': 'bar@baz.com'}, function(data) {...})
+ *     $.osf.postJSON('/foo', {'email': 'bar@baz.com'}, function(data) {...})
  *
  * @param  {String} url  The url to post to
  * @param  {Object} data JSON data to send to the endpoint
  * @param  {Function} done Success callback. Takes returned data as its first argument
  * @return {jQuery xhr}
  */
-// TODO: backwards compatible with un-namespaced function. eventually remove
-$.postJSON = $.osf.postJSON = function(url, data, done) {
+$.osf.postJSON = function(url, data, done) {
     var ajaxOpts = {
         url: url, type: 'post',
         data: JSON.stringify(data),
@@ -29,21 +28,7 @@ $.postJSON = $.osf.postJSON = function(url, data, done) {
     return $.ajax(ajaxOpts);
 };
 
-/**
- * Get a URL parameter by name.
- *
- * https://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
- */
-// TODO: backwards compatible with un-namespaced function. eventually remove
-$.urlParam = $.osf.urlParam = function(name) {
-    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-        results = regex.exec(location.search);
-    return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-};
-
-// TODO: attaches to global for backwards-compatibility. Eventually remove.
-global.block = $.osf.block = function() {
+$.osf.block = function() {
     $.blockUI({
         css: {
             border: 'none',
@@ -58,11 +43,11 @@ global.block = $.osf.block = function() {
     });
 };
 
-global.unblock = $.osf.unblock = function() {
+$.osf.unblock = function() {
     $.unblockUI();
 };
 
-global.joinPrompts = $.osf.joinPrompts = function(prompts, base) {
+$.osf.joinPrompts = function(prompts, base) {
     var prompt = base || '';
     if (prompts) {
         prompt += '<hr />';
@@ -94,6 +79,7 @@ global.FormattableDate = function(date) {
 // TODO: move me to appropriate page-specific module
 $(document).ready(function(){
     //block the create new project button when the form is submitted
+    // TODO: make this a reuseable function.
     $('#projectForm').on('submit',function(){
         $('button[type="submit"]', this)
             .attr('disabled', 'disabled')
