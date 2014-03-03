@@ -110,14 +110,6 @@ class Comment(GuidStoredObject):
         if save:
             self.save()
 
-    def unreport_spam(self, user, save=False):
-        if self.reports.get(user._id) == {'type': 'spam'}:
-            self.reports.pop(user._id)
-        else:
-            raise ValueError('User has not reported this comment as spam')
-        if save:
-            self.save()
-
     def delete(self, save=False):
         self.is_deleted = True
         if save:

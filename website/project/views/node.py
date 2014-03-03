@@ -211,7 +211,7 @@ def node_choose_addons(**kwargs):
 @must_be_contributor
 def configure_comments(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    comment_level = request.form.get('commentLevel')
+    comment_level = request.json.get('commentLevel')
     if not comment_level:
         node.comment_level = None
     elif comment_level in ['public', 'private']:
@@ -470,6 +470,10 @@ def _view_project(node, auth, primary=False):
             'logs': recent_logs,
             'points': node.points,
             'piwik_site_id': node.piwik_site_id,
+
+            'comment_level': node.comment_level,
+            'can_comment': node.can_comment(auth),
+
         },
         'parent_node': {
             'id': parent._primary_key if parent else '',

@@ -21,7 +21,7 @@ from framework.auth import User, Q
 from framework.auth.decorators import Auth
 from framework.auth.utils import parse_name
 from website.project.model import (
-    ApiKey, Node, NodeLog, WatchConfig, MetaData, Tag, MetaSchema, Pointer,
+    ApiKey, Node, NodeLog, WatchConfig, Tag, MetaSchema, Pointer,
 )
 
 from website.addons.wiki.model import NodeWikiPage
@@ -164,10 +164,6 @@ class NodeLogFactory(ModularOdmFactory):
 class WatchConfigFactory(ModularOdmFactory):
     FACTORY_FOR = WatchConfig
     node = SubFactory(NodeFactory)
-
-
-class MetaDataFactory(ModularOdmFactory):
-    FACTORY_FOR = MetaData
 
 
 class NodeWikiFactory(ModularOdmFactory):

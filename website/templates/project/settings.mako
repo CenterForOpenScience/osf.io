@@ -175,8 +175,6 @@
 <%def name="javascript_bottom()">
 ${parent.javascript_bottom()}
 
-${parent.javascript_bottom()}
-
 <script type="text/javascript" src="/static/js/metadata_1.js"></script>
 
 ## TODO: Move to project.js
@@ -203,7 +201,10 @@ ${parent.javascript_bottom()}
 
             $.postJSON(
                 nodeApiUrl + 'settings/comments/',
-                {commentLevel: commentLevel}
+                {commentLevel: commentLevel},
+                function() {
+                    window.location.reload();
+                }
             ).fail(function() {
                 bootbox.alert('Could not set commenting configuration. Please try again.');
             });

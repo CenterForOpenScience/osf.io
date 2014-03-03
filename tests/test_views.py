@@ -6,6 +6,7 @@ import json
 import unittest
 import datetime as dt
 import mock
+import httplib as http
 
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
@@ -21,6 +22,7 @@ from webtest.app import AppError
 from website import settings, mails
 from website.util import rubeus
 from website.project.views.node import _view_project
+from website.project.views.comment import serialize_comment
 
 
 from tests.base import DbTestCase, fake
@@ -923,6 +925,130 @@ class TestFileViews(DbTestCase):
         expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))
         data = res.json['data']
         assert_equal(len(data), len(expected))
+
+class TestComments(DbTestCase):
+
+    def setUp(self):
+        self.project = ProjectFactory(is_public=True)
+        self.consolidated_auth = Auth(user=self.project.creator)
+        self.non_contributor = AuthUserFactory()
+        self.app = TestApp(app)
+
+    def _add_comment(self, project, comment_level, **kwargs):
+
+        project.comment_level = comment_level
+        project.save()
+
+        url = project.api_url + 'comment/'
+        return self.app.post_json(
+            url,
+            {
+                'content': 'hammer to fall',
+                'isPublic': True,
+            },
+            **kwargs
+        )
+
+    def test_add_comment_public_contributor(self):
+
+        res = self._add_comment(
+            self.project, 'public',
+            auth=self.project.creator.auth,
+        )
+
+        self.project.reload()
+
+        assert_equal(len(self.project.commented), 1)
+        assert_equal(
+            res.json['comment'],
+            serialize_comment(
+                self.project.commented[0], self.project,
+                self.consolidated_auth
+            )
+        )
+
+    def test_add_comment_public_non_contributor(self):
+
+        res = self._add_comment(
+            self.project, 'public',
+            auth=self.non_contributor.auth,
+        )
+
+        self.project.reload()
+
+        assert_equal(len(self.project.commented), 1)
+        assert_equal(
+            res.json['comment'],
+            serialize_comment(
+                self.project.commented[0], self.project,
+                Auth(user=self.non_contributor)
+            )
+        )
+
+    def test_add_comment_private_contributor(self):
+
+        res = self._add_comment(
+            self.project, 'private',
+            auth=self.project.creator.auth,
+        )
+
+        self.project.reload()
+
+        assert_equal(len(self.project.commented), 1)
+        assert_equal(
+            res.json['comment'],
+            serialize_comment(
+                self.project.commented[0], self.project,
+                self.consolidated_auth
+            )
+        )
+
+    def test_add_comment_private_non_contributor(self):
+
+        res = self._add_comment(
+            self.project, 'private',
+            auth=self.non_contributor.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+    def test_add_comment_logged_out(self):
+
+        res = self._add_comment(
+            self.project, 'public',
+        )
+
+        assert_equal(res.status_code, 302)
+        assert_in('next=', res.headers.get('location'))
+
+    def test_add_comment_off(self):
+
+        res = self._add_comment(
+            self.project, None,
+            auth=self.project.creator.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 400)
+
+    def test_edit_comment(self):
+        pass
+
+    def test_edit_comment_non_author(self):
+        pass
+
+    def test_delete_comment_author(self):
+        pass
+
+    def test_delete_comment_admin(self):
+        pass
+
+    def test_delete_comment_non_author(self):
+        pass
+
+    def test_report_spam(self):
+        pass
 
 if __name__ == '__main__':
     unittest.main()

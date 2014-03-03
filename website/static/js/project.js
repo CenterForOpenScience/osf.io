@@ -205,9 +205,6 @@ $(document).ready(function() {
 
     ko.punches.enableAll();
 
-    commentsViewModel = new CommentsViewModel();
-    ko.applyBindings(commentsViewModel, $('#comments')[0]);
-
     ////////////////////
     // Event Handlers //
     ////////////////////

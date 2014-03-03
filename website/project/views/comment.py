@@ -5,8 +5,7 @@ import logging
 from framework import request
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
-from ..decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public
+from ..decorators import must_be_contributor_or_public
 
 from framework.forms.utils import sanitize
 from website.models import Guid, Comment
@@ -70,8 +69,11 @@ def add_comment(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
-    if not node.can_comment(auth):
+    if not node.comment_level:
         raise HTTPError(http.BAD_REQUEST)
+
+    if not node.can_comment(auth):
+        raise HTTPError(http.FORBIDDEN)
 
     guid = request.json.get('target')
     target = resolve_target(node, guid)
@@ -105,7 +107,7 @@ def list_comments(**kwargs):
     node = kwargs['node'] or kwargs['project']
 
     if not node.can_comment(auth):
-        return
+        return {'comments': []}
 
     guid = request.args.get('target')
     target = resolve_target(node, guid)
@@ -162,6 +164,8 @@ def delete_comment(**kwargs):
 
     comment.delete(save=True)
 
+    return {}
+
 
 @must_be_logged_in
 @must_be_contributor_or_public
@@ -174,14 +178,6 @@ def report_spam(**kwargs):
     if comment is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    is_spam = request.json.get('isSpam')
-    if is_spam is None:
-        raise HTTPError(http.BAD_REQUEST)
+    comment.report_spam(user, save=True)
 
-    if is_spam:
-        comment.report_spam(user, save=True)
-    else:
-        try:
-            comment.unreport_spam(user, save=True)
-        except ValueError:
-            raise HTTPError(http.BAD_REQUEST)
+    return {}
