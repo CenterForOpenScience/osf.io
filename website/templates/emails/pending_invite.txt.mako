@@ -1,10 +1,10 @@
 Hello ${fullname},
 
-We received your request to claim an OSF account and become a contributor for "${node.title}". Please wait for your referrer:
+We received your request to claim an OSF account and become a contributor for "${node.title}". You used a different email address than the one provided by ${referrer.fullname}.
 
-${referrer.fullname}
+To confirm your identity, ${referrer.fullname} has been sent an email to forward to you with your confirmation link.
 
-to email you your confirmation link. This link will allow you to complete your registration.
+This link will allow you to complete your registration.
 
 Thank you for your patience.
 

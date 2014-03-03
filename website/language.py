@@ -57,10 +57,9 @@ EMAIL_NOT_FOUND = '''
 # Shown after an unregistered user claims an account and is redirected to the
 # settings page
 CLAIMED_CONTRIBUTOR = '''
-<strong>Welcome to the OSF!</strong> Please check your
-<a href="/dashboard/">dashboard</a> to see what projects you have been added to.
+<strong>Welcome to the OSF!</strong> Edit your display name below and then check your
+<a href="/dashboard/">dashboard</a> to see projects to which you have been added as a contributor by someone else.
 '''
-
 
 # Error Pages
 # ###########
