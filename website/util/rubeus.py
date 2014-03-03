@@ -3,7 +3,6 @@
 formated hgrid list/folders.
 """
 import os
-import itertools
 import hurry
 
 from framework.auth.decorators import Auth

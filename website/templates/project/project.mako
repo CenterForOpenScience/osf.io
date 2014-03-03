@@ -196,15 +196,6 @@ ${parent.javascript_bottom()}
 
     $(document).ready(function() {
 
-        // Show capabilities modal on addon widget help
-        $('.addon-capabilities').on('click', function() {
-            var $this = $(this),
-                $widget = $this.closest('.addon-widget'),
-                name = $widget.attr('name'),
-                conditions = $('#capabilities-' + name);
-            bootbox.alert(conditions.html());
-        });
-
         // Tooltips
         $('[data-toggle="tooltip"]').tooltip();
 

@@ -31,6 +31,9 @@
     % for url in js_all:
     <script src="${url}"></script>
     % endfor
+    <script>
+        ko.punches.enableAll();
+    </script>
     ${self.javascript()}
 
 </head>

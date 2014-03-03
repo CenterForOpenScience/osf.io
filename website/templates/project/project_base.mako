@@ -11,15 +11,16 @@ ${next.body()}
 <%include file="modal_add_contributor.mako"/>
 <%include file="modal_add_pointer.mako"/>
 <%include file="modal_show_links.mako"/>
-<%include file="modal_add_component.mako"/>
+% if node['category'] == 'project':
+    <%include file="modal_add_component.mako"/>
+% endif
 </%def>
 
 
 <%def name="javascript_bottom()">
 <% import json %>
-<script src="/static/js/accountClaimer.js"></script>
 <script>
-// TODO: pollution! namespace me
+    // TODO: pollution! namespace me
     var userId = '${user_id}';
     var nodeId = '${node['id']}';
     var userApiUrl = '${user_api_url}';
@@ -28,11 +29,13 @@ ${next.body()}
     $(function() {
 
         $logScope = $('#logScope');
-        if ($logScope.length > 0) {
-            progressBar = $('#logProgressBar')
-            progressBar.show();
-        }
-        // Get project data from the server and initiate the ProjectViewModel
+
+        // Import modules
+        $script(['/static/js/nodeControl.js'], 'nodeControl');
+        $script(['/static/js/logFeed.js'], 'logFeed');
+
+
+        // Get project data from the server and initiate KO modules
         $.ajax({
             type: 'get',
             url: nodeApiUrl,
@@ -40,12 +43,21 @@ ${next.body()}
             dataType: 'json',
             cache: false,
             success: function(data){
-                // Initialize ProjectViewModel with returned data
-                ko.applyBindings(new ProjectViewModel(data), $('#projectScope')[0]);
+               // Initialize nodeControl and logFeed on success
+               $script
+                .ready('nodeControl', function() {
+                    var nodeControl = new NodeControl('#projectScope', data);
+                })
+                .ready('logFeed', function() {
+                    if ($logScope.length) { // Render log feed if necessary
+                        var logFeed = new LogFeed('#logScope', data.node.logs);
+                    }
+                });
 
+                // TODO: move AddContributorViewModel to its own module
                 if (data.user.can_edit) {
                     // Initiate AddContributorViewModel
-                    var $addContributors = $('#addContributors');
+                    var $addContributors = $('#addContributorsScope');
                     var addContribVM = new AddContributorViewModel(
                         data.node.title,
                         data.parent_node.id,
@@ -57,15 +69,6 @@ ${next.body()}
                     $addContributors.on('hidden.bs.modal', function() {
                         addContribVM.clear();
                     });
-                }
-
-                // Initialize LogsViewModel when appropriate
-                if ($logScope.length > 0) {
-                    progressBar.hide();
-                    var logs = data['node']['logs'];
-                    // Create an array of Log model objects from the returned log data
-                    var logModelObjects = createLogs(logs);
-                    ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
                 }
             }
         });
@@ -84,7 +87,9 @@ ${next.body()}
 
     // Make unregistered contributors claimable
     if (!userId) { // If no user logged in, allow user claiming
-        var accountClaimer = new OSFAccountClaimer('.contributor-unregistered');
+        $script(['/static/js/accountClaimer.js'], function() {
+            var accountClaimer = new OSFAccountClaimer('.contributor-unregistered');
+        });
     }
 
 </script>

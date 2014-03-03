@@ -45,7 +45,7 @@
         <h3> Improve Your Search:</h3>
             % for key, value in tags.iteritems():
                 % if not (u' tags:"{s}"'.format(s=key) in components or u' tags:"{s}" '.format(s=key) in components):
-                    <span id="whatever">
+                    <span id="tagCloud">
                     <a href="/search/?q=${query|h} AND tags:&quot;${key}&quot;" rel=${value}> ${key} </a>
                     </span>
                 % endif

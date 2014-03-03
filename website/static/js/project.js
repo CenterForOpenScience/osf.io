@@ -1,104 +1,19 @@
 /////////////////////
 // Project JS      //
 /////////////////////
-(function(){
+(function($){
 
-// Messages, e.g. for confirmation dialogs, alerts, etc.
-var Messages = {
-    makePublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
-                        'access to the data it contains can be complete prevented. Users ' +
-                        'should assume that once a project is made public, it will always ' +
-                        'be public. Are you absolutely sure you would like to continue?',
 
-    makePrivateWarning: 'Making a project private will prevent users from viewing it on this site, ' +
-                        'but will have no impact on external sites, including Google\'s cache. ' +
-                        'Would you like to continue?'
-};
-
-/* Utility functions */
-
-// TODO: Shouldn't pollute window. At the very least put them on the '$' namespace
-window.block = function() {
-    $.blockUI({
-        css: {
-            border: 'none',
-            padding: '15px',
-            backgroundColor: '#000',
-            '-webkit-border-radius': '10px',
-            '-moz-border-radius': '10px',
-            opacity: .5,
-            color: '#fff'
-        },
-        message: 'Please wait'
-    });
-};
-
-window.unblock = function() {
-    $.unblockUI();
-};
-
-window.joinPrompts = function(prompts, base) {
-    var prompt = base || '';
-    if (prompts) {
-        prompt += '<hr />';
-        prompt += '<ul>';
-        for (var i=0; i<prompts.length; i++) {
-            prompt += '<li>' + prompts[i] + '</li>';
-        }
-        prompt += '</ul>';
-    }
-    return prompt;
-};
 
 window.NodeActions = {};  // Namespace for NodeActions
-// TODO: move me to the ProjectViewModel
 
-function beforeForkNode(url, done) {
-
-    $.ajax({
-        url: url,
-        contentType: 'application/json'
-    }).success(function(response) {
-        bootbox.confirm(
-            joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
-            function(result) {
-                if (result) {
-                    done && done();
-                }
-            }
-        )
-    });
-
-}
-
-NodeActions.forkNode = function() {
-
-    beforeForkNode(nodeApiUrl + 'fork/before/', function() {
-
-        // Block page
-        block();
-
-        // Fork node
-        $.ajax({
-            url: nodeApiUrl + 'fork/',
-            type: 'POST'
-        }).success(function(response) {
-            window.location = response;
-        }).error(function() {
-            unblock();
-            bootbox.alert('Forking failed');
-        });
-
-    });
-
-};
-
+// TODO: move me to the NodeControl or separate
 NodeActions.forkPointer = function(pointerId, nodeId) {
 
     beforeForkNode('/api/v1/' + nodeId + '/fork/before/', function() {
 
         // Block page
-        block();
+        $.osf.block();
 
         // Fork pointer
         $.ajax({
@@ -124,21 +39,6 @@ NodeActions.forkPointer = function(pointerId, nodeId) {
 NodeActions.addonFileRedirect = function(item) {
     window.location.href = item.params.urls.view;
     return false;
-};
-
-
-// todo: discuss; this code not used
-NodeActions.addNodeToProject = function(node, project) {
-    $.ajax({
-        url: '/' + project + '/addnode/' + node,
-        type: 'POST',
-        data: 'node=' + node + '&project=' + project
-    }).done(function(msg) {
-        var $node = $('#node' + node);
-        $node.removeClass('primary').addClass('success');
-        $node.onclick = function(){};
-        $node.html('Added');
-    });
 };
 
 $(function(){
@@ -191,39 +91,7 @@ $(function(){
      });
 });
 
-NodeActions.removeUser = function(userid, name) {
-    var data = JSON.stringify({
-        id: userid,
-        name: name
-    });
-    $.ajax({
-        type: 'POST',
-        url: nodeApiUrl + 'beforeremovecontributors/',
-        contentType: 'application/json',
-        dataType: 'json',
-        data: data
-    }).success(function(response) {
-        var prompt = joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
-        bootbox.confirm({
-            title: 'Delete Contributor?',
-            message: prompt,
-            callback: function(result) {
-                if (result) {
-                    $.ajax({
-                        type: 'POST',
-                        url: nodeApiUrl + 'removecontributors/',
-                        contentType: 'application/json',
-                        dataType: 'json',
-                        data: data
-                    }).done(function(response) {
-                        window.location.reload();
-                    });
-                }
-            }
-        });
-    });
-    return false;
-};
+
 
 NodeActions._openCloseNode = function(nodeId) {
 
@@ -274,6 +142,8 @@ NodeActions.removePointer = function(pointerId, pointerElm) {
         }
     })
 };
+
+
 
 /*
 refresh rendered file through mfr
@@ -361,54 +231,6 @@ $(document).ready(function() {
         $(this).closest('.citations').find('.citation-list').slideToggle();
     });
 
-    $('.user-quickedit').hover(
-        function(){
-            var me = $(this);
-            var el = $('<i class="icon-remove"></i>');
-            el.click(function(){
-                NodeActions.removeUser(me.attr('data-userid'), me.attr('data-fullname'));
-                return false;
-            });
-            $(this).append(el);
-        },
-        function(){
-            $(this).find('i').remove();
-        }
-    );
-
-    function setPermissions(url, permissions) {
-        var msgKey = permissions == 'public' ?
-            'makePublicWarning' :
-            'makePrivateWarning';
-        bootbox.confirm({
-            title: "Warning",
-            message: Messages[msgKey],
-            callback: function(result) {
-                if (result) {
-                    $.postJSON(url, {permissions: permissions},
-                        function(data){
-                            window.location.href = data.redirect_url;
-                        }
-                    );
-                }
-            }
-        });
-    }
-
-    /* Modal Click handlers for project page */
-    // TODO(sloria): Move these to the ProjectViewModel
-    // Private Button confirm dlg
-    $('#privateButton').on('click', function() {
-        var url = $(this).data("target");
-        setPermissions(url, 'private');
-    });
-
-    // Public Button confirm dlg
-    $('#publicButton').on('click', function() {
-        var url = $(this).data("target");
-        setPermissions(url, 'public');
-    });
-
     // Widgets
 
     $('.widget-disable').on('click', function() {
@@ -431,4 +253,4 @@ $(document).ready(function() {
 
 });
 
-}).call(this);
+}).call(this, jQuery);

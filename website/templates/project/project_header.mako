@@ -36,11 +36,11 @@
                     %if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
                         % if user["is_contributor"]:
-                            <a class="btn btn-default" id="publicButton" data-target="${node['api_url']}permissions/public/">Make Public</a>
+                            <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
                         % endif
                     %else:
                         % if user["is_contributor"]:
-                            <a class="btn btn-default" id="privateButton" data-target="${node['api_url']}permissions/private/">Make Private</a>
+                            <a class="btn btn-default" data-bind="click: makePrivate">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
                     %endif
@@ -53,23 +53,18 @@
                             <a rel="tooltip" title="Watch" class="btn btn-default disabled" href="#">
                         % endif
                         <i class="icon-eye-open"></i>
-                        <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
+                        <span id="watchCount" data-bind="text: watchButtonDisplay"></span>
 
                         </a>
-
-                        <a
+                        <button
+                            class='btn btn-default node-fork-btn'
+                            data-bind="enable: !isRegistration && category === 'project' && user.id,
+                                        click: forkNode"
                             rel="tooltip"
                             title="Number of times this ${node['category']} has been forked (copied)"
-                            % if node["category"] == 'project' and not node['is_registration'] and user_name:
-                                href="#"
-                                class="btn btn-default node-fork-btn"
-                                onclick="NodeActions.forkNode();"
-                            % else:
-                                class="btn btn-default disabled node-fork-btn"
-                            % endif
                         >
                             <i class="icon-code-fork"></i>&nbsp;${node['fork_count']}
-                        </a>
+                        </button>
 ##                        <a
 ##                                rel="tooltip"
 ##                                % if node['points']:
@@ -98,8 +93,7 @@
                 }'></div>
             % if node['is_fork']:
                 <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
-                <span data-bind="text: dateForked.local,
-                                tooltip: {title: dateForked.utc}"></span>
+                <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
             % endif
             % if node['is_registration'] and node['registered_meta']:
                 <br />Registration Supplement:
@@ -108,12 +102,10 @@
                 % endfor
             % endif
             <br />Date Created:
-                <span data-bind="text: dateCreated.local,
-                                tooltip: {title: dateCreated.utc}"
+                <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"
                      class="date node-date-created"></span>
             | Last Updated:
-            <span data-bind="text: dateModified.local,
-                            tooltip: {title: dateModified.utc}"
+            <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}"
                    class="date node-last-modified-date"></span>
             % if parent_node['id']:
                 <br />Category: <span class="node-category">${node['category']}</span>

@@ -173,6 +173,7 @@
 
 
 <%def name="javascript_bottom()">
+${parent.javascript_bottom()}
 
 ${parent.javascript_bottom()}
 

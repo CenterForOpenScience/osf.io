@@ -33,9 +33,9 @@
 
 <%def name="javascript_bottom()">
 <script>
-    // Initialize the LogsViewModel
-    $script('/static/vendor/bower_components/momentjs/min/moment.min.js', '/static/js/app.js', function() {
-        initializeLogs("#logScope", "/api/v1/watched/logs/");
+    // Initialize the LogFeed
+    $script(['/static/js/logFeed.js'], function() {
+        var logFeed = new LogFeed("#logScope", "/api/v1/watched/logs/");
     });
 </script>
 </%def>

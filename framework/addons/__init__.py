@@ -48,7 +48,10 @@ class AddonModelMixin(StoredObject):
         if addons:
             if deleted or not addons[0].deleted:
                 return addons[0]
+        return False
 
+    def has_addon(self, addon_name, deleted=False):
+        return bool(self.get_addon(addon_name, deleted=deleted))
 
     def add_addon(self, addon_name, auth=None):
         """Add an add-on to the node.
