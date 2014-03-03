@@ -143,6 +143,7 @@ class User(GuidStoredObject, AddonModelMixin):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
         """
+        cls.verify_unique_email(username)
         parsed = utils.parse_name(fullname)
         user = cls(
             username=username,
