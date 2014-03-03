@@ -7,6 +7,7 @@ from framework import request, User, status
 from framework.auth.decorators import collect_auth
 from framework.auth.utils import parse_name
 from framework.exceptions import HTTPError
+from framework.auth.exceptions import DuplicateEmailError
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from framework import forms
@@ -194,28 +195,32 @@ def project_removecontributor(**kwargs):
 # TODO: Make this a Node method? But it depends on the request data format,
 # so maybe not
 def add_contributors_from_dicts(node, user_dicts, auth, email_unregistered=True):
-    # Group by registered, i.e.
-    #   {True: [{'id': '123abc', 'registered': True, 'fullname': ...},
-    #           {'id': 'abc123', 'registered': True, 'fullname': ..}],
-    #    False: [{'id': None, 'registered': False 'fullname': ...},
-    #            {'id': None, 'registered': False, 'fullname': ...}]
-    #    }
-    grouped = groupby(user_dicts, key=lambda d: d['registered'])
-    registered_users = [User.load(each['id']) for each in grouped[True]]
-    unregistered_dicts = grouped[False]
     # Add the registered contributors
-    node.add_contributors(contributors=registered_users, auth=auth)
-    # Add the unregistred conibutors
-    for unreg in unregistered_dicts:
-        email = unreg['email']
-        user = node.add_unregistered_contributor(fullname=unreg['fullname'],
-            email=email, auth=auth, save=False)
-        if email and email_unregistered:
-            send_claim_email(email, user, node, notify=True)
+    contribs = []
+    for contrib_dict in user_dicts:
+        if contrib_dict['registered']:
+            user = User.load(contrib_dict['id'])
+        else:
+            email = contrib_dict['email']
+            fullname = contrib_dict['fullname']
+            try:
+                user = User.create_unregistered(
+                    fullname=fullname,
+                    email=email)
+            except DuplicateEmailError:
+                user = framework.auth.get_user(username=contrib_dict['email'])
+            user.add_unclaimed_record(node=node,
+                referrer=auth.user,
+                given_name=fullname)
+            user.save()
+            if email and email_unregistered:
+                send_claim_email(email, user, node, notify=True)
+        contribs.append(user)
+    node.add_contributors(contributors=contribs, auth=auth)
 
 
 @must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+@must_be_contributor  # returns user, project
 @must_not_be_registration
 def project_addcontributors_post(**kwargs):
     """ Add contributors to a node. """
@@ -343,38 +348,35 @@ def claim_user_form(**kwargs):
 @must_not_be_registration
 def invite_contributor_post(**kwargs):
     """API view for inviting an unregistered user.
-    Expects JSON arguments with 'fullname' (required) and email (not required)
-    Creates a new unregistered user in the database.
-    If email is provided, emails the invited user.
+    Expects JSON arguments with 'fullname' (required) and email (not required).
     """
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
     fullname, email = request.json.get('fullname'), request.json.get('email')
     if not fullname:
         return {'status': 400, 'message': 'Must provide fullname'}, 400
     # Check if email is in the database
     user = framework.auth.get_user(username=email)
     if user:
-        # User is in database. If they are active, raise an error. If not,
-        # go ahead and send the email invite
         if user.is_registered:
             msg = 'User is already in database. Please go back and try your search again.'
             return {'status': 400, 'message': msg}, 400
-        if node.is_contributor(user):
+        elif node.is_contributor(user):
             msg = 'User with this email address is already a contributor to this project.'
             return {'status': 400, 'message': msg}, 400
-
-    pseudo_user = {'fullname': fullname,
-        'id': None,
-        'registered': False,
-        'active': False,
-        'gravatar': None,
-        'email': email
-    }
-
-    # if email:
-    #     send_claim_email(email, new_user, node, notify=False)
-    return {'status': 'success', 'contributor': pseudo_user}
+        else:
+            serialized = _add_contributor_json(user)
+            # use correct display name
+            serialized['fullname'] = fullname
+    else:
+        # Create a placeholder
+        serialized = {'fullname': fullname,
+            'id': None,
+            'registered': False,
+            'active': False,
+            'gravatar': None,
+            'email': email
+        }
+    return {'status': 'success', 'contributor': serialized}
 
 
 @must_be_contributor_or_public

@@ -9,4 +9,4 @@ def groupby(iterable, key):
     for each in iterable:
         group = key(each)
         res[group].append(each)
-    return dict(res)
+    return res

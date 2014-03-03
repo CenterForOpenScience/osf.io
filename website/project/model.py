@@ -1554,7 +1554,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         for contrib in contributors:
             self.add_contributor(contributor=contrib, auth=auth, log=False, save=False)
-        if log:
+        if log and contributors:
             self.add_log(
                 action=NodeLog.CONTRIB_ADDED,
                 params={
