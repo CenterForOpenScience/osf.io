@@ -59,35 +59,41 @@
             <p>To delete a component or project, visit its page and go to "Settings" in the grey navigation bar under the component's title. This will also delete that component's wiki.</p>
             <div class="video"><iframe width="550" height="309" src="//www.youtube-nocookie.com/embed/0-0W3fknETQ?rel=0" frameborder="0" allowfullscreen></iframe></div>
             <h4>Privacy</h4>
-            <p>You can choose to keep your project's contents visible only to contributors of the project, or to make them available for anyone to view. </p>
-            <p>Components you have added can have their own privacy settings. So, making the project public does not make all of its components public.  For example, you can make your project idea public, but leave the data in a private component.</p>
-
-            <p>Once you make a project public, you can gain more feedback about the impact of your work by tracking how many people that are visiting your projects and downloading or forking your research materials.</p>
+            <p>All projects are private by default. However, you can choose to make your project's contents available for anyone to view. </p>
+            <p>Components you have added can have their own privacy settings. So, making the project public does not make all of its components public. For example, you can make your methodology component public, but leave the data in a private component.</p>
+            <p>Once you make a project public, you can gain more feedback about the impact of your work by tracking how many people that are visiting your projects and downloading or forking your research materials. You can also create a watchlist on other projects that interest you. </p>
         </div>
     </div>
     <div class="row">
         <div class="col-md-8 col-md-offset-2">
             <h3>Files</h3>
-            <p>To upload a file, go to the component in which the file belongs. Click on "Files" in the grey navigation bar under the Project/Component's title. Here you can select a file to upload; hit start to begin the process. Or you can just drag the file from your desktop on to the screen and upload.</p>
+            <p>Each project and component can have its own set of files. This allows you to organize your files into meaningful groups like datasets or background research.</p>
+            <p>To upload a file, click on "Files" in the grey navigation bar under the Project/Component's title. Here you can drag the file from your desktop on to the screen to upload, or click on the upload button in the actions column.</p>
+            <p>To download a file from a project, click the download button in the actions column.</p>
+            <p>You can delete files by clicking  the ‘X’ that appears when you hover over the file.</p>
+            <p>Only contributors of that component can add or delete a file. If a component is set to be private, then no one will be able to see the enclosed files, but public components and projects allow anyone to download their materials.</p>
 
-            <p>You can delete files by clicking on the red button. Only contributors to that component can add or delete a file. If a component is set to be private, then no one will be able to see the enclosed files.</p>
-
-            <p>If you change a file and upload it again, OSF will automatically create a version history of the file.  You can retrieve any previous version just by clicking on it.  That version will download with the date it was originally added to OSF appended to the filename.</p>
             <div class="video"><iframe width="550" height="309" src="//www.youtube-nocookie.com/embed/5qUAhUF1JL8?rel=0" frameborder="0" allowfullscreen></iframe></div>
         </div>
     </div>
     <div class="row" id="github">
         <div class="col-md-8 col-md-offset-2">
             <h3>GitHub Add-on</h3>
-            <p>To link a GitHub repository to a project/component, click into the project/component you want to associate the repository with. Visit "Settings" on the grey navigation bar. Check "GitHub" under "Select Add-ons" to enable the add-on. Then, authenticate with GitHub by clicking the "Authorize" button. Finally, enter the user and repository names to indicate which repository you want to link to.</p>
-            <p>An easy way to find the user and repository names is to visit the repository's page on GitHub and look a the URL:</p>
-            <code>https://github.com/USER/REPO-NAME</code>
-            <div class="video"><iframe width="550" height="309" src="//www.youtube-nocookie.com/embed/C-2j20aiTI0?rel=0" frameborder="0" allowfullscreen></iframe></div>
-            <p>Repository files are viewable just like a regular file. In adding the repository to your OSF project, you are syncing the two. Both will update as you make changes to one. For example, when you add or delete a file on the OSF, your GitHub account will also reflect these changes and vice-versa.</p>
-            <div class="video"><iframe width="550" height="309" src="//www.youtube-nocookie.com/embed/0go22j5UoIU?rel=0" frameborder="0" allowfullscreen></iframe></div>
+            <p>To link a GitHub repository to a project/component, visit your profile settings by clicking the gear in the top right of the page. Check "GitHub" under "Select Add-ons" to enable the add-on.</p>
+            <p>Then, authenticate with GitHub by clicking the "Create Access Token" button and following the instructions on the GitHub page. Once you have created the access token in your user profile, you will not need to follow those first few steps again. </p>
+            <p>After creating the access token for your user profile, visit the project you want to add a GitHub repository to. Click on the project name then go to "Settings" in the grey navigation bar. Select the Github add-on by clicking “OK” on the pop-up, then submitting. </p>
+            <p>Authorize the Github repository by clicking the blue button. Once you have authorized GitHub then you need to either select a repository or create a new one.</p>
         </div>
     </div>
-
+    <div class="row" id="s3">
+        <div class="col-md-8 col-md-offset-2">
+            <h3>Amazon Simple Storage Service Add-on</h3>
+            <p>To link Amazon Simple Storage Service bucket to a project/component, visit your profile settings by clicking the gear in the top right of the page. Check "Amazon Simple Storage Service" under "Select Add-on.”</p>
+            <p>Next, authenticate Amazon Simple Storage Service by entering the access key and secret key. Then, click “Submit.”</p>
+            <p>Once you have enabled Amazon Simple Storage Service in your user settings, you won’t need to do those previous steps again. To associate a bucket with a project, visit the project you want to add a Amazon Simple Storage Service bucket to. Go to "Settings" in the grey navigation bar. Select the Amazon Simple Storage Service add-on under “Select Add-ons” and click“OK” on the pop-up. Then, submit your new settings.</p>
+            <p>Once you have authorized Amazon Simple Storage then you need to either select a buckets from the dropdown or create one.</p>
+        </div>
+    </div>
     <div class="row">
          <div class="col-md-8 col-md-offset-2">
             <h3>Contributors</h3>
