@@ -33,21 +33,31 @@ def make_user(user_dict):
             user.save()
         except ValidationValueError:
             user = auth.get_user(username=email)
-            assert user is not None
+            if user is None:
+                logger.error('Could not load user {0}'.format(user_dict))
     return user
 
 
 def migrate_user(user_dict, node):
     user = make_user(user_dict)
+    if user is None:
+        logger.error('Could not load user {0}'.format(user_dict))
+        return
     # Add unclaimed_record to unregistered users for a given node
     if not user.is_registered:
         # First contributor (usually the creator) will be recorded as the referrer
         # of unregistered users
+        if not node.contributors:
+            if node.creator:
+                node.contributors.append(node.creator)
+                node.save()
+            else:
+                return user
         referrer = node.contributors[0]
         user.add_unclaimed_record(node=node, referrer=referrer,
             given_name=user_dict['nr_name'], email=user_dict['nr_email'])
         logger.info('Migrated unregistered user {0}'.format(user.username))
-    user.save()
+        user.save()
     return user
 
 
