@@ -18,7 +18,7 @@ from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
 from website.project.views.contributor import (
     _add_contributor_json, send_claim_email,
-    serialize_unregistered, add_contributors_from_dicts
+    serialize_unregistered, deserialize_contributors
 )
 from webtest.app import AppError
 from website import settings, mails
@@ -336,25 +336,28 @@ class TestAddingContributorViews(DbTestCase):
         assert_true(res['gravatar'])
         assert_false(res['active'])
 
-    def test_add_contributors_from_dicts(self):
+
+    def test_deserialize_contributors(self):
         contrib = UserFactory()
         unreg = UnregUserFactory()
         name, email = fake.name(), fake.email()
         unreg_no_record = serialize_unregistered(name, email)
-        n_contributors_pre = len(self.project.contributors)
         contrib_data = [
             _add_contributor_json(contrib),
             serialize_unregistered(fake.name(), unreg.username),
             unreg_no_record
         ]
-        add_contributors_from_dicts(
+        res = deserialize_contributors(
             self.project,
             contrib_data,
             auth=Auth(self.creator),
             email_unregistered=True)
-        assert_equal(
-            len(self.project.contributors), n_contributors_pre + len(contrib_data)
-        )
+        assert_equal(len(res), len(contrib_data))
+        assert_true(res[0].is_registered)
+        assert_false(res[1].is_registered)
+        assert_true(res[1]._primary_key)
+        assert_false(res[2].is_registered)
+        assert_true(res[2]._primary_key)
 
     def test_serialize_unregistered_with_record(self):
         name, email = fake.name(), fake.email()
