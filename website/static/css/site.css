@@ -1056,6 +1056,10 @@ h1.unavailable {
     width:100%;
 }
 
+div#logScope a.moreLogs{
+    margin-left:50px;
+}
+
 /* Modular File Renderer */
 .mfr-slickgrid {
     width: 750px;
@@ -1087,12 +1091,14 @@ h1.unavailable {
     /*background: white;*/
     visibility:hidden;
 }
+
 .mfr-ipynb-body {
   vertical-align: middle;
   display: block;
   max-width: 100%;
   height: auto;
 }
+
 
 .editable {
   cursor: pointer;
@@ -1101,3 +1107,4 @@ h1.unavailable {
 a {
   cursor: pointer;
 }
+

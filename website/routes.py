@@ -373,6 +373,7 @@ def make_url_map(app):
         ### Logs ###
 
         Rule('/log/<log_id>/', 'get', project_views.log.get_log, OsfWebRenderer('util/render_log.mako')),
+
         Rule([
             '/project/<pid>/log/',
             '/project/<pid>/node/<nid>/log/',
@@ -494,6 +495,7 @@ def make_url_map(app):
         ], 'get', project_views.node.get_registrations, json_renderer),
 
         Rule('/log/<log_id>/', 'get', project_views.log.get_log, json_renderer),
+
         Rule([
             '/project/<pid>/log/',
             '/project/<pid>/node/<nid>/log/',
