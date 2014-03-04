@@ -35,7 +35,8 @@ def figshare_set_config(*args, **kwargs):
         figshare_type = 'article'
         figshare_id = split(r'[\_/]', figshare_url)[-1]
 
-    if not figshare_id:
+    #Limit to projects only
+    if not figshare_id or figshare_type != 'project':
         raise HTTPError(http.BAD_REQUEST)
 
     changed = (
@@ -61,7 +62,6 @@ def figshare_set_config(*args, **kwargs):
             },
             auth=auth,
         )
-
     return {}
 
 
@@ -70,11 +70,10 @@ def figshare_set_config(*args, **kwargs):
 def figshare_unlink(*args, **kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    figshare_user = auth.user.get_addon('figshare')
     figshare_node = kwargs['node_addon']
 
     # If authorized, only owner can change settings
-    if figshare_user and figshare_user.owner != auth.user:
+    if figshare_node.user_settings and figshare_node.user_settings.owner != auth.user:
         raise HTTPError(http.BAD_REQUEST)
     node.add_log(
         action='figshare_content_unlinked',
@@ -88,7 +87,6 @@ def figshare_unlink(*args, **kwargs):
         },
         auth=auth,
     )
-
     figshare_node.figshare_id = None
     figshare_node.figshare_type = None
     figshare_node.save()
