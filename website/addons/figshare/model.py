@@ -167,7 +167,6 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
             # Delete OAuth tokens
             self.user_settings = None
-            self.api_url = figshare_settings.API_URL
             self.save()
 
             return (

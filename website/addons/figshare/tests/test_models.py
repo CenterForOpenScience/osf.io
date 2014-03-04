@@ -1,90 +1,102 @@
 import mock
 import unittest
 from nose.tools import *
+from webtest_plus import TestApp
 
+import website.app
 from tests.base import DbTestCase
-from tests.factories import UserFactory, ProjectFactory
+from tests.factories import ProjectFactory, AuthUserFactory, UserFactory
 
 from website.addons.base import AddonError
+from framework.auth.decorators import Auth
 from website.addons.figshare import settings as figshare_settings
+
+app = website.app.init_app(
+    routes=True, set_backends=False, settings_module='website.settings'
+)
+
 
 class TestCallbacks(DbTestCase):
 
     def setUp(self):
 
         super(TestCallbacks, self).setUp()
-        
-        self.project = ProjectFactory.build()
-        self.non_authenticator = UserFactory()
+
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.consolidated_auth = Auth(user=self.user)
+        self.auth = ('test', self.user.api_keys[0]._primary_key)
+        self.project = ProjectFactory(creator=self.user)
+
+        self.non_authenticator = AuthUserFactory()
         self.project.add_contributor(
             contributor=self.non_authenticator,
-            user=self.project.creator,
+            auth=Auth(self.project.creator),
         )
-        self.project.save()
 
-        self.project.add_addon('figshare')
+        self.project.add_addon('figshare', auth=self.consolidated_auth)
         self.project.creator.add_addon('figshare')
         self.node_settings = self.project.get_addon('figshare')
         self.user_settings = self.project.creator.get_addon('figshare')
         self.node_settings.user_settings = self.user_settings
         self.node_settings.figshare_id = '123456'
+        self.node_settings.figshare_type = 'singlefile'
         self.node_settings.save()
 
-    def test_before_page_load_osf_public_fs_public(self):
-        self.project.is_public = True
-        self.project.save()        
-        message = self.node_settings.before_page_load(self.project, self.project.creator)
-        
-        assert_false(message)
-    
-    @mock.patch('website.addons.figshare.api.Figshare.article_is_public')
-    def test_before_page_load_osf_public_fs_private(self, mock_article_is_public):
-        self.project.is_public = True
-        self.project.save()        
-        mock_article_is_public.return_value = False
-        message = self.node_settings.before_page_load(self.project, self.project.creator)
-        mock_article_is_public.assert_called_with(
-            self.node_settings.figshare_id
-        )
-        
-        assert_true(message)
-    
-    @mock.patch('website.addons.figshare.api.Figshare.article_is_public')
-    def test_before_page_load_osf_private_fs_public(self, mock_article_is_public):
-        self.project.is_public = False
-        self.project.save()        
-        mock_article_is_public.return_value = True
-        message = self.node_settings.before_page_load(self.project, self.project.creator)
-        mock_article_is_public.assert_called_with(
-            self.node_settings.figshare_id
-        )
-        
-        assert_true(message)
+    def test_node_settings_article(self):
+        url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
+        rv = self.app.post_json(url, {'figshare_id': 'article_9001'}, expect_errors=True, auth=self.user.auth)
+        self.node_settings.reload()
+        assert_equal(rv.status_int, 400)
+        assert_equal(self.node_settings.figshare_id, '123456')
 
-    @mock.patch('website.addons.figshare.api.Figshare.article_is_public')    
-    def test_before_page_load_osf_private_fs_private(self, mock_article_is_public):
-        self.project.is_public = False
-        self.project.save()        
-        mock_article_is_public.return_value = False
-        message = self.node_settings.before_page_load(self.project, self.project.creator)
-        mock_article_is_public.assert_called_with(
-            self.node_settings.figshare_id
-        )
-        
-        assert_false(message)
-        
-    def test_before_page_load_not_contributor(self):
-        message = self.node_settings.before_page_load(self.project, UserFactory())
-        assert_false(message)
+    def test_node_settings_none(self):
+        url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
+        rv = self.app.post_json(url, {'figshare_id': ''}, expect_errors=True, auth=self.user.auth)
+        self.node_settings.reload()
+        assert_equal(rv.status_int, 400)
+        assert_equal(self.node_settings.figshare_id, '123456')
 
-    def test_before_page_load_not_logged_in(self):
-        message = self.node_settings.before_page_load(self.project, None)
-        assert_false(message)
+    def test_node_settings_bad(self):
+        url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
+        rv = self.app.post_json(url, {'figshare_id': 'iamnothing'}, expect_errors=True, auth=self.user.auth)
+        self.node_settings.reload()
+        assert_equal(rv.status_int, 400)
+        assert_equal(self.node_settings.figshare_id, '123456')
+
+    def test_unlink_as_other(self):
+        url = '/api/v1/project/{0}/figshare/unlink/'.format(self.project._id)
+        rv = self.app.post(url, expect_errors=True, auth=self.non_authenticator.auth)
+        self.node_settings.reload()
+        assert_equal(rv.status_int, 400)
+        assert_true(self.node_settings.figshare_id != None)
+
+    def test_unlink(self):
+        url = '/api/v1/project/{0}/figshare/unlink/'.format(self.project._id)
+        rv = self.app.post(url, auth=self.user.auth)
+        self.node_settings.reload()
+        assert_equal(rv.status_int, 200)
+        assert_true(self.node_settings.figshare_id == None)
+
+    def test_node_settings_project(self):
+        url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
+        rv = self.app.post_json(url, {'figshare_id': 'project_9001'}, auth=self.user.auth)
+        self.node_settings.reload()
+        assert_equal(rv.status_int, 200)
+        assert_equal(self.node_settings.figshare_id, '9001')
+
+    def test_api_url_no_user(self):
+        self.node_settings.user_settings = None
+        self.node_settings.save()
+        assert_equal(self.node_settings.api_url, figshare_settings.API_URL)
+
+    def test_api_url(self):
+        assert_equal(self.node_settings.api_url, figshare_settings.API_OAUTH_URL)
 
     def test_before_remove_contributor_authenticator(self):
         message = self.node_settings.before_remove_contributor(
             self.project, self.project.creator
-        )        
+        )
         assert_true(message)
 
     def test_before_remove_contributor_not_authenticator(self):
@@ -101,7 +113,6 @@ class TestCallbacks(DbTestCase):
             self.node_settings.user_settings,
             None
         )
-
 
     def test_after_fork_authenticator(self):
         fork = ProjectFactory()
