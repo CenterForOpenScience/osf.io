@@ -7,32 +7,32 @@
             <div style="padding-bottom: 10px">
 
                 % if len(dataverses) != 0:
-
-                <select id="dataverseDropDown" >
-                    % for i, dv in enumerate(dataverses):
-                        % if i == int(dataverse_number):
-                            <option value=${i} selected>${dv}</option>
-                        % else:
-                            <option value=${i}>${dv}</option>
-                        % endif
-                    % endfor
-                </select>
-
-                <select id="studyDropDown">
-
-                    <option value="None">---</option>
-
-                    % if len(dataverses) > 0:
-                        % for i, hdl in enumerate(studies):
-                            % if hdl == study_hdl:
-                                <option value=${hdl} selected>${study_names[i]}</option>
+                    Dataverse:
+                    <select id="dataverseDropDown" class="form-control">
+                        % for i, dv in enumerate(dataverses):
+                            % if i == int(dataverse_number):
+                                <option value=${i} selected>${dv}</option>
                             % else:
-                                <option value=${hdl}>${study_names[i]}</option>
+                                <option value=${i}>${dv}</option>
                             % endif
                         % endfor
-                    % endif
+                    </select>
 
-                </select>
+                    <br>
+
+                    Study:
+                    <select id="studyDropDown" class="form-control">
+                        <option value="None">---</option>
+                        % if len(dataverses) > 0:
+                            % for i, hdl in enumerate(studies):
+                                % if hdl == study_hdl:
+                                    <option value=${hdl} selected>${study_names[i]}</option>
+                                % else:
+                                    <option value=${hdl}>${study_names[i]}</option>
+                                % endif
+                            % endfor
+                        % endif
+                    </select>
 
                 % else:
                     This Dataverse account does not yet have a Dataverse.
