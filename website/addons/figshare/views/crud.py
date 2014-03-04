@@ -270,17 +270,18 @@ def figshare_view_file(*args, **kwargs):
     render_url = node.api_url + \
         'figshare/render/article/{aid}/file/{fid}'.format(aid=article_id, fid=file_id)
 
-    cache_file = get_cache_file(
-        article_id, file_id
-    )
-    rendered = get_cache_content(node_settings, cache_file)
     filename = found['name']
 
     if private:
         rendered = "Since this FigShare file is unpublished we cannot render it. In order to access this content you will need to log into the <a href='{url}'>FigShare page</a> and view it there.".format(
             url='http://figshare.com/')
     elif rendered is None:
+        cache_file = get_cache_file(
+            article_id, file_id
+        )
+        rendered = get_cache_content(node_settings, cache_file)
         filename, size, filedata = connect.get_file(node_settings, found)
+
         if figshare_settings.MAX_RENDER_SIZE is not None and size > figshare_settings.MAX_RENDER_SIZE:
             rendered = "File too large to render; <a href='{url}'>download file</a> to view it".format(
                 url=found.get('download_url'))
@@ -289,7 +290,7 @@ def figshare_view_file(*args, **kwargs):
                 node_settings, cache_file, start_render=True,
                 file_path=filename, file_content=filedata, download_path=download_url)
 
-    categories = connect.categories()['items']
+    categories = connect.categories()['items']  # TODO Cache this
     categories = ''.join(
         ["<option value='{val}'>{label}</option>".format(val=i['id'], label=i['name']) for i in categories])
     rv = {

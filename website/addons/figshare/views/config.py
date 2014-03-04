@@ -35,7 +35,8 @@ def figshare_set_config(*args, **kwargs):
         figshare_type = 'article'
         figshare_id = split(r'[\_/]', figshare_url)[-1]
 
-    if not figshare_id:
+    #Limit to projects only
+    if not figshare_id or figshare_type != 'project':
         raise HTTPError(http.BAD_REQUEST)
 
     changed = (
