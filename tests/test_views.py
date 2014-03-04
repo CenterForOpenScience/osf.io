@@ -490,7 +490,7 @@ class TestWatchViews(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.user = UserFactory.build(username='tesla@electric.com')
+        self.user = UserFactory.build()
         api_key = ApiKeyFactory()
         self.user.api_keys.append(api_key)
         self.user.save()

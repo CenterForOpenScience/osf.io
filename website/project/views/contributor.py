@@ -315,7 +315,7 @@ def invite_contributor_post(**kwargs):
         new_user = node.add_unregistered_contributor(email=email, fullname=fullname,
             auth=auth)
         node.save()
-    except DuplicateEmailError:
+    except ValueError:
         # User is in database. If they are active, raise an error. If not,
         # go ahead and send the email invite
         new_user = framework.auth.get_user(username=email)

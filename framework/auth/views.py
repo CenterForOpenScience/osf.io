@@ -3,10 +3,9 @@ import httplib as http
 import logging
 import datetime
 
-from modularodm.exceptions import NoResultsFound
+from modularodm.exceptions import NoResultsFound, ValidationValueError
 import framework
 from framework import set_previous_url, request
-from framework.email.tasks import send_email
 from framework import status, exceptions
 import framework.forms as forms
 from framework import auth
@@ -176,7 +175,7 @@ def auth_register_post():
                 form.username.data,
                 form.password.data,
                 form.fullname.data)
-        except DuplicateEmailError:
+        except (ValidationValueError, DuplicateEmailError):
             status.push_status_message(language.ALREADY_REGISTERED.format(email=form.username.data))
             return auth_login(registration_form=form)
         if u:

@@ -1578,18 +1578,22 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         # Create a new user record
+        contributor = User.create_unregistered(fullname=fullname, email=email)
+
+        contributor.add_unclaimed_record(node=self, referrer=auth.user,
+            given_name=fullname, email=email)
         try:
-            contributor = User.create_unregistered(fullname=fullname, email=email)
-        except DuplicateEmailError as error:
+            contributor.save()
+        except ValueError:
             contributor = get_user(username=email)
             # Unregistered users may have multiple unclaimed records, so
             # only raise error if user is registered.
             if contributor.is_registered or self.is_contributor(contributor):
-                raise error
+                raise
+            contributor.add_unclaimed_record(node=self, referrer=auth.user,
+                given_name=fullname, email=email)
+            contributor.save()
 
-        contributor.add_unclaimed_record(node=self, referrer=auth.user,
-            given_name=fullname, email=email)
-        contributor.save()
         self.add_contributor(contributor, auth=auth, log=True, save=save)
         return contributor
 

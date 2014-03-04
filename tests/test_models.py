@@ -10,11 +10,11 @@ import datetime
 import urlparse
 from dateutil import parser
 
-from modularodm.exceptions import ValidationError
+from modularodm.exceptions import ValidationError, ValidationValueError
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
-from framework.auth import User, DuplicateEmailError
+from framework.auth import User
 from framework.auth.utils import parse_name
 from framework.auth.decorators import Auth
 from framework import utils
@@ -61,8 +61,9 @@ class TestUser(DbTestCase):
 
     def test_create_unregistered_raises_error_if_already_in_db(self):
         u = UnregUserFactory()
-        with assert_raises(DuplicateEmailError):
-            User.create_unregistered(fullname=fake.name(), email=u.username)
+        dupe = User.create_unregistered(fullname=fake.name(), email=u.username)
+        with assert_raises(ValidationValueError):
+            dupe.save()
 
     def test_user_with_no_password_is_not_active(self):
         u = User(username='fred@queen.com',
@@ -355,12 +356,10 @@ class TestUserParse(unittest.TestCase):
 class TestMergingUsers(DbTestCase):
 
     def setUp(self):
-        self.master = UserFactory(username='joe@example.com',
-                            fullname='Joe Shmo',
+        self.master = UserFactory(fullname='Joe Shmo',
                             is_registered=True,
                             emails=['joe@example.com'])
-        self.dupe = UserFactory(username='joseph123@hotmail.com',
-                            fullname='Joseph Shmo',
+        self.dupe = UserFactory(fullname='Joseph Shmo',
                             emails=['joseph123@hotmail.com'])
 
     def _merge_dupe(self):
@@ -1083,7 +1082,7 @@ class TestProject(DbTestCase):
 
     def test_add_unregistered_raises_error_if_user_is_registered(self):
         user = UserFactory(is_registered=True)  # A registered user
-        with assert_raises(DuplicateEmailError):
+        with assert_raises(ValueError):
             self.project.add_unregistered_contributor(
                 email=user.username,
                 fullname=user.fullname,

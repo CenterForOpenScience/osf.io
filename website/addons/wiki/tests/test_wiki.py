@@ -10,7 +10,7 @@ from tests.factories import NodeFactory, PointerFactory, ProjectFactory
 
 from website.addons.wiki.views import get_wiki_url, serialize_wiki_toc
 
-app = init_app(routes=True)
+app = init_app(routes=True, set_backends=False)
 
 
 class TestWikiViews(DbTestCase):
