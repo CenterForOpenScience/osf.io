@@ -1093,3 +1093,11 @@ h1.unavailable {
   max-width: 100%;
   height: auto;
 }
+
+.editable {
+  cursor: pointer;
+}
+
+a {
+  cursor: pointer;
+}

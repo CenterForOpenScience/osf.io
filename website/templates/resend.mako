@@ -9,20 +9,14 @@
         <p class='help'>Enter your email address and we'll resend your
         confirmation link.
         </p>
-        <div mod-meta='{
-                "tpl": "util/render_form.mako",
-                "uri": "/resend/",
-                "kwargs": {
-                    "id": "resendForm",
-                    "name": "resend_confirmation",
-                    "method_string": "POST",
-                    "action_string": "#",
-                    "form_class": "form",
-                    "submit_string": "Submit"
-                },
-                "replace": true
-            }'>
-        </div>
+
+        <form id='resendForm' method='POST' class='form form-inline' role='form'>
+            <div class='form-group'>
+                ${form.email(placeholder='Email address', autofocus=True)}
+            </div>
+
+            <button type='submit' class='btn btn-primary'>Submit</button>
+        </form>
     </div>
 </div>
 </%def>

@@ -29,6 +29,14 @@ class TestAuthUtils(DbTestCase):
         assert_equal(user.username, 'rosie@franklin.com')
         assert_in("rosie@franklin.com", user.emails)
 
+    def test_unreg_user_can_register(self):
+        user = UnregUserFactory()
+
+        auth.register_unconfirmed(username=user.username,
+            password='gattaca', fullname='Rosie')
+
+        assert_true(user.get_confirmation_token(user.username))
+
     def test_get_user_by_id(self):
         user = UserFactory()
         assert_equal(auth.get_user(id=user._id), user)

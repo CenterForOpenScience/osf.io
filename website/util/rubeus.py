@@ -3,7 +3,6 @@
 formated hgrid list/folders.
 """
 import os
-import itertools
 import hurry
 
 from framework.auth.decorators import Auth
@@ -179,8 +178,8 @@ def collect_addon_assets(node):
     :rtype: {'tree_js': <list of JS scripts>, 'tree_css': <list of CSS files>}
     """
     return {
-        'tree_js': collect_addon_js(node),
-        'tree_css': collect_addon_css(node)
+        'tree_js': list(collect_addon_js(node)),
+        'tree_css': list(collect_addon_css(node)),
     }
 
 
@@ -191,10 +190,12 @@ def collect_addon_js(node):
 
     """
     # NOTE: must coerce to list so it is JSON-serializable
-    return list(itertools.chain.from_iterable(
-        addon.config.include_js.get('files', [])
-        for addon in node.get_addons())
-    )
+    js = set()
+    for addon in node.get_addons():
+        js = js.union(addon.config.include_js.get('files', []))
+    for each in node.nodes:
+        js = js.union(collect_addon_js(each))
+    return js
 
 
 def collect_addon_css(node):
@@ -203,7 +204,9 @@ def collect_addon_css(node):
     :return list: List of CSS include paths
 
     """
-    return list(itertools.chain.from_iterable(
-        addon.config.include_css.get('files', [])
-        for addon in node.get_addons())
-    )
+    css = set()
+    for addon in node.get_addons():
+        css = css.union(addon.config.include_css.get('files', []))
+    for each in node.nodes:
+        css = css.union(collect_addon_css(each))
+    return css

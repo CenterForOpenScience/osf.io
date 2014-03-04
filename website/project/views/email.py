@@ -102,7 +102,7 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
     set_password_url = None
     if user is None:
         password = str(uuid.uuid4())
-        user = register(address, password, fullname, send_welcome=False)
+        user = register(address, password, fullname)
         user.verification_key = security.random_string(20)
         set_password_url = urlparse.urljoin(
             settings.DOMAIN, 'resetpassword/{0}/'.format(

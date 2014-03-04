@@ -20,6 +20,7 @@ from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
+from framework.auth.exceptions import DuplicateEmailError
 from framework.auth.decorators import Auth
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
@@ -189,15 +190,17 @@ class NodeLog(StoredObject):
             return self.tz_date.isoformat()
 
     def _render_log_contributor(self, contributor):
-        if isinstance(contributor, dict):
-            rv = contributor.copy()
-            rv.update({'registered': False})
-            return rv
         user = User.load(contributor)
+        if not user:
+            return None
+        if self.node:
+            fullname = user.display_full_name(node=self.node)
+        else:
+            fullname = user.fullname
         return {
             'id': user._primary_key,
-            'fullname': user.fullname,
-            'registered': True,
+            'fullname': fullname,
+            'registered': user.is_registered,
         }
 
     # TODO: Move to separate utility function
@@ -209,7 +212,7 @@ class NodeLog(StoredObject):
                     if isinstance(self.user, User)
                     else {'fullname': self.foreign_user},
             'contributors': [self._render_log_contributor(c) for c in self.params.get("contributors", [])],
-            'contributor': self._render_log_contributor(self.params.get("contributor", {})),
+            'contributor': self._render_log_contributor(self.params.get("contributor")),
             'api_key': self.api_key.label if self.api_key else '',
             'action': self.action,
             'params': self.params,
@@ -1469,7 +1472,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth informtion including user, API key.
         """
         if not auth.user._primary_key == contributor._id:
-
+            # remove unclaimed record if necessary
+            if self._primary_key in contributor.unclaimed_records:
+                del contributor.unclaimed_records[self._primary_key]
             self.contributors.remove(contributor._id)
             self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != contributor._id]
             self.save()
@@ -1512,7 +1517,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         if contrib_to_add._primary_key not in self.contributors:
             self.contributors.append(contrib_to_add)
             self.contributor_list.append({'id': contrib_to_add._primary_key})
-
             # Add contributor to recently added list for user
             if auth is not None:
                 user = auth.user
@@ -1550,7 +1554,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         for contrib in contributors:
             self.add_contributor(contributor=contrib, auth=auth, log=False, save=False)
-        if log:
+        if log and contributors:
             self.add_log(
                 action=NodeLog.CONTRIB_ADDED,
                 params={
@@ -1564,17 +1568,36 @@ class Node(GuidStoredObject, AddonModelMixin):
         if save:
             self.save()
 
-    def add_nonregistered_contributor(self, name, email, auth, save=False):
+    def add_unregistered_contributor(self, fullname, email, auth, save=False):
         """Add a non-registered contributor to the project.
 
-        :param name: A string, the full name of the person.
-        :param email: A string, the email address of the person.
+        :param str fullname: The full name of the person.
+        :param str email: The email address of the person.
         :param Auth auth: Auth object for the user adding the contributor.
+        :returns: The added contributor
+
+        :raises: DuplicateEmailError if user with given email is already in the database.
 
         """
-        contributor = User.create_unregistered(fullname=name, email=email)
-        contributor.save()
-        return self.add_contributor(contributor, auth=auth, log=True, save=save)
+        # Create a new user record
+        contributor = User.create_unregistered(fullname=fullname, email=email)
+
+        contributor.add_unclaimed_record(node=self, referrer=auth.user,
+            given_name=fullname, email=email)
+        try:
+            contributor.save()
+        except ValueError:
+            contributor = get_user(username=email)
+            # Unregistered users may have multiple unclaimed records, so
+            # only raise error if user is registered.
+            if contributor.is_registered or self.is_contributor(contributor):
+                raise
+            contributor.add_unclaimed_record(node=self, referrer=auth.user,
+                given_name=fullname, email=email)
+            contributor.save()
+
+        self.add_contributor(contributor, auth=auth, log=True, save=save)
+        return contributor
 
     def set_permissions(self, permissions, auth=None):
         """Set the permissions for this node.
