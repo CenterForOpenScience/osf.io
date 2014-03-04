@@ -10,23 +10,23 @@ from website.addons.dataverse.dvn.connection import DvnConnection
 from website.addons.dataverse.config import TEST_CERT, HOST
 
 
+def connect(username, password, host=HOST):
+    connection = DvnConnection(
+        username=username,
+        password=password,
+        host=host,
+        cert=TEST_CERT,
+    )
+    try:
+        connection.get_dataverses()
+        return connection
+    except:
+        return None
+
 class AddonDataverseUserSettings(AddonUserSettingsBase):
 
     dataverse_username = fields.StringField()
     dataverse_password = fields.StringField()
-
-    def connect(self, username, password, host=HOST):
-        connection = DvnConnection(
-            username=username,
-            password=password,
-            host=host,
-            cert=TEST_CERT,
-        )
-        try:
-            connection.get_dataverses()
-            return connection
-        except:
-            return None
 
     def to_json(self, user):
         rv = super(AddonDataverseUserSettings, self).to_json(user)
@@ -64,7 +64,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                 'authorized_user_id': self.user._id if self.user else '',
         })
 
-        connection = dataverse_user.connect(
+        connection = connect(
             self.dataverse_username,
             self.dataverse_password,
         )
@@ -78,11 +78,6 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             dataverses = connection.get_dataverses() or []
             dataverse = dataverses[int(self.dataverse_number)]
             studies = dataverse.get_studies() if dataverse else []
-
-            #TODO: Delete this
-            # self.study_hdl = None #studies[0].get_id()
-            # #self.study = dataverse.get_study_by_hdl(self.study_hdl).get_title()
-            # self.save()
 
             rv.update({
                 'connected': True,

@@ -13,6 +13,7 @@ from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
 from website.util import rubeus
 from website.addons.dataverse.config import HOST
+from website.addons.dataverse.model import connect
 
 import httplib as http
 
@@ -65,7 +66,7 @@ def dataverse_view_file(**kwargs):
     if file_id is None:
         raise HTTPError(http.NOT_FOUND)
 
-    connection = node_settings.user_settings.connect(
+    connection = connect(
         node_settings.dataverse_username,
         node_settings.dataverse_password
     )
@@ -110,7 +111,7 @@ def dataverse_upload_file(**kwargs):
 
     path = kwargs.get('path', '')
 
-    connection = node_settings.user_settings.connect(
+    connection = connect(
         node_settings.dataverse_username,
         node_settings.dataverse_password
     )
@@ -187,7 +188,7 @@ def dataverse_delete_file(**kwargs):
     if file_id is None:
         raise HTTPError(http.NOT_FOUND)
 
-    connection = node_settings.user_settings.connect(
+    connection = connect(
         node_settings.dataverse_username,
         node_settings.dataverse_password
     )

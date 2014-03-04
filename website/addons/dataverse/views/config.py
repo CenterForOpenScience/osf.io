@@ -8,6 +8,7 @@ from framework import request
 from framework.exceptions import HTTPError
 from website.project import decorators
 from website.project.views.node import _view_project
+from website.addons.dataverse.model import connect
 
 
 @decorators.must_have_addon('dataverse', 'user')
@@ -18,7 +19,7 @@ def dataverse_set_user_config(*args, **kwargs):
     # Log in with DATAVERSE
     username = request.json.get('dataverse_username')
     password = request.json.get('dataverse_password')
-    connection = user_settings.connect(username, password)
+    connection = connect(username, password)
 
     if connection is not None:
         user_settings.dataverse_username = username
@@ -45,7 +46,7 @@ def dataverse_set_user_config(*args, **kwargs):
 #         raise HTTPError(http.BAD_REQUEST)
 #
 #     # Verify connection
-#     connection = node_settings.user_settings.connect(
+#     connection = connect(
 #         node_settings.dataverse_username,
 #         node_settings.dataverse_password,
 #     )
@@ -65,7 +66,7 @@ def set_dataverse(*args, **kwargs):
     dataverse_user = node_settings.user_settings
 
     # Make a connection
-    connection = dataverse_user.connect(
+    connection = connect(
         node_settings.dataverse_username,
         node_settings.dataverse_password,
     )

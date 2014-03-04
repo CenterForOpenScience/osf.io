@@ -3,6 +3,7 @@ import httplib as http
 
 from framework.exceptions import HTTPError
 from website.project import decorators
+from website.addons.dataverse.model import connect
 
 
 @decorators.must_be_contributor
@@ -20,7 +21,7 @@ def authorize(**kwargs):
     username = user.get_addon('dataverse').dataverse_username
     password = user.get_addon('dataverse').dataverse_password
 
-    connection = node_settings.user_settings.connect(
+    connection = connect(
         username, password
     )
 

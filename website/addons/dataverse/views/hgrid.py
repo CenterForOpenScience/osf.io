@@ -3,6 +3,7 @@ import os
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
+from website.addons.dataverse.model import connect
 from website.util import rubeus
 
 import hurry
@@ -11,7 +12,7 @@ import hurry
 def dataverse_hgrid_data(node_settings, user, contents=False, **kwargs):
 
     # Quit if no study linked
-    connection = node_settings.user_settings.connect(
+    connection = connect(
         node_settings.dataverse_username,
         node_settings.dataverse_password
     )
@@ -65,7 +66,7 @@ def dataverse_hgrid_data_contents(**kwargs):
 
     node_settings = kwargs['node_addon']
 
-    connection = node_settings.user_settings.connect(
+    connection = connect(
         node_settings.dataverse_username,
         node_settings.dataverse_password
     )
