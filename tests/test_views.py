@@ -566,14 +566,12 @@ class TestClaimViews(DbTestCase):
         self.project = ProjectFactory(creator=self.referrer, is_public=True)
         self.given_name = fake.name()
         self.given_email = fake.email()
-        self.project.add_unregistered_contributor(
+        self.user = self.project.add_unregistered_contributor(
             fullname=self.given_name,
             email=self.given_email,
             auth=Auth(user=self.referrer)
         )
         self.project.save()
-        #: The latest user is the unregistered contributor
-        self.user = self.project.contributors[-1]
 
     def test_get_valid_form(self):
         url = self.user.get_claim_url(self.project._primary_key)
@@ -599,6 +597,22 @@ class TestClaimViews(DbTestCase):
         assert_true(self.user.is_registered)
         assert_true(self.user.is_active())
         assert_not_in(self.project._primary_key, self.user.unclaimed_records)
+
+    def test_posting_to_claim_form_removes_all_unclaimed_data(self):
+        # user has multiple unclaimed records
+        p2 = ProjectFactory(creator=self.referrer)
+        self.user.add_unclaimed_record(node=p2, referrer=self.referrer,
+            given_name=fake.name())
+        self.user.save()
+        assert_true(len(self.user.unclaimed_records.keys()) > 1)  # sanity check
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.post(url, {
+            'username': self.given_email,
+            'password': 'bohemianrhap',
+            'password2': 'bohemianrhap'
+        })
+        self.user.reload()
+        assert_equal(self.user.unclaimed_records, {})
 
     def test_posting_to_claim_form_sets_fullname_to_given_name(self):
         # User is created with a full name

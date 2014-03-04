@@ -75,6 +75,7 @@ def _add_contributor_json(user):
 
     return {
         'fullname': user.fullname,
+        'email': user.username,
         'id': user._primary_key,
         'registered': user.is_registered,
         'active': user.is_active(),
@@ -355,7 +356,8 @@ def claim_user_form(**kwargs):
             username = form.username.data
             password = form.password.data
             user.register(username=username, password=password)
-            del user.unclaimed_records[pid]
+            # Clear unclaimed records
+            user.unclaimed_records = {}
             user.save()
             # Authenticate user and redirect to project page
             response = framework.redirect('/settings/')
