@@ -191,8 +191,6 @@ def project_removecontributor(**kwargs):
         return {'status': 'success'}
     raise HTTPError(http.BAD_REQUEST)
 
-# TODO: Make this a Node method? But it depends on the request data format,
-# so maybe not
 # TODO: TEST ME
 def deserialize_contributors(node, user_dicts, auth, email_unregistered=True):
     """View helper that adds contributors from a list of serialized users. The

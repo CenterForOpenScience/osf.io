@@ -259,8 +259,7 @@ def make_url_map(app):
         Rule(["/user/merge/"], 'get', auth_views.merge_user_get, OsfWebRenderer("merge_accounts.mako")),
         Rule(["/user/merge/"], 'post', auth_views.merge_user_post, OsfWebRenderer("merge_accounts.mako")),
         # Route for claiming and setting email and password. Verification token must be querystring argument
-        # TODO: Uncomment to enable claiming
-        # Rule(['/user/<uid>/<pid>/claim/'], ['get', 'post'], project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
+        Rule(['/user/<uid>/<pid>/claim/'], ['get', 'post'], project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
     ])
 
     # API
@@ -285,8 +284,7 @@ def make_url_map(app):
         Rule('/settings/names/', 'post', profile_views.post_names, json_renderer),
 
         Rule('/profile/<user_id>/summary/', 'get', profile_views.get_profile_summary, json_renderer),
-        # TODO: Uncomment to enable claiming
-        # Rule('/user/<uid>/<pid>/claim/verify/', 'post', project_views.contributor.claim_user_post, json_renderer),
+        Rule('/user/<uid>/<pid>/claim/verify/', 'post', project_views.contributor.claim_user_post, json_renderer),
 
     ], prefix='/api/v1',)
 
@@ -692,14 +690,13 @@ def make_url_map(app):
         ),
 
         # Invite Users
-        # TODO: Uncomment to enable claiming
-        # Rule(
-        #     [
-        #         '/project/<pid>/invite_contributor/',
-        #         '/project/<pid>/node/<nid>/invite_contributor/'
-        #     ],
-        #     'post',
-        #     project_views.contributor.invite_contributor_post,
-        #     json_renderer
-        # ),
+        Rule(
+            [
+                '/project/<pid>/invite_contributor/',
+                '/project/<pid>/node/<nid>/invite_contributor/'
+            ],
+            'post',
+            project_views.contributor.invite_contributor_post,
+            json_renderer
+        ),
     ], prefix='/api/v1')
