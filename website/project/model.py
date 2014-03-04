@@ -16,6 +16,7 @@ import pytz
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 from modularodm.exceptions import ValidationValueError
+import blinker
 
 from framework import status
 from framework.mongo import ObjectId
@@ -47,6 +48,11 @@ def utc_datetime_to_timestamp(dt):
 def normalize_unicode(ustr):
     return unicodedata.normalize('NFKD', ustr)\
         .encode('ascii', 'ignore')
+
+
+signals = blinker.Namespace()
+contributor_added = signals.signal('contributor-added')
+unreg_contributor_added = signals.signal('unreg-contributor-added')
 
 
 class MetaSchema(StoredObject):
@@ -1504,6 +1510,8 @@ class Node(GuidStoredObject, AddonModelMixin):
                     given_name=contributor.fullname,
                     email=contributor.username)
                 contributor.save()
+                unreg_contributor_added.send(self, contributor=contributor,
+                    auth=auth)
 
             if log:
                 self.add_log(
@@ -1518,6 +1526,8 @@ class Node(GuidStoredObject, AddonModelMixin):
                 )
             if save:
                 self.save()
+
+            contributor_added.send(self, contributor=contributor, auth=auth)
             return True
         else:
             return False

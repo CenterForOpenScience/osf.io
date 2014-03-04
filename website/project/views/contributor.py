@@ -6,7 +6,6 @@ from modularodm.exceptions import ValidationValueError
 import framework
 from framework import request, User, status
 from framework.auth.decorators import collect_auth
-from framework.auth.utils import parse_name
 from framework.exceptions import HTTPError
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
@@ -14,6 +13,7 @@ from framework import forms
 from framework.auth.forms import SetEmailAndPasswordForm
 
 from website import settings, mails, language
+from website.project.model import unreg_contributor_added
 from website.filters import gravatar
 from website.models import Node
 from website.profile import utils
@@ -200,6 +200,9 @@ def deserialize_contributors(node, user_dicts, auth, email_unregistered=True):
             {'id': None, 'registered': False, 'fullname'...},
             {'id': '123ab', 'registered': False, 'fullname': ...}]
 
+    If a dict represents an unregistered user without an ID, creates a new
+    unregistered User record.
+
     :param Node node: The node to add contributors to
     :param list(dict) user_dicts: List of serialized users in the format above.
     :param Auth auth:
@@ -222,18 +225,16 @@ def deserialize_contributors(node, user_dicts, auth, email_unregistered=True):
                 user.save()
             except ValidationValueError:
                 user = framework.auth.get_user(username=contrib_dict['email'])
-
-        if not user.is_registered:
-            user.add_unclaimed_record(node=node,
-                referrer=auth.user,
-                email=contrib_dict['email'],
-                given_name=contrib_dict['fullname'])
-            user.save()
-            # TODO: Emailing doesn't belong here
-            if contrib_dict['email'] and email_unregistered:
-                send_claim_email(contrib_dict['email'], user, node, notify=True)
         contribs.append(user)
     return contribs
+
+
+@unreg_contributor_added.connect
+def finalize_invitation(node, contributor, auth):
+    record = contributor.get_unclaimed_record(node._primary_key)
+    if record['email']:
+        send_claim_email(record['email'], contributor, node, notify=True)
+
 
 @must_be_valid_project # returns project
 @must_be_contributor  # returns user, project
@@ -335,6 +336,8 @@ def claim_user_form(**kwargs):
         raise HTTPError(400)
     verify_claim_token(user, token, pid)
     unclaimed_record = user.unclaimed_records[pid]
+    user.fullname = unclaimed_record['name']
+    user.update_guessed_names()
     email = unclaimed_record['email']
     form = SetEmailAndPasswordForm(request.form, token=token)
     if request.method == 'POST':
@@ -342,8 +345,6 @@ def claim_user_form(**kwargs):
             username = form.username.data
             password = form.password.data
             user.register(username=username, password=password)
-            user.fullname = unclaimed_record['name']
-            user.update_guessed_names()
             del user.unclaimed_records[pid]
             user.save()
             # Authenticate user and redirect to project page
