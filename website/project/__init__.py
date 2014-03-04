@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from .model import Node, NodeLog
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
@@ -23,7 +24,7 @@ seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
             raise RuntimeError("unexpected opcode")
     return ''.join(output)
 
-
+# TODO: This should be a class method of Node
 def new_node(category, title, user, description=None, project=None):
     """Create a new project or component.
 
