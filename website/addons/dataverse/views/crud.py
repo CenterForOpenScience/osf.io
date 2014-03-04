@@ -173,7 +173,6 @@ def dataverse_upload_file(**kwargs):
 
 
 @must_be_contributor_or_public
-@must_be_contributor_or_public
 @must_not_be_registration
 @must_have_addon('dataverse', 'node')
 def dataverse_delete_file(**kwargs):

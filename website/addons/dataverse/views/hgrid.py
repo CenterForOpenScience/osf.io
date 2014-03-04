@@ -18,7 +18,7 @@ def dataverse_hgrid_data(node_settings, user, contents=False, **kwargs):
     )
 
     if node_settings.study_hdl is None or connection is None:
-        return
+        return []
 
     can_edit = True # TODO: Validate user
 
