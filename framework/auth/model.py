@@ -48,7 +48,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # NOTE: In the OSF, username is an email
     # May be None for unregistered contributors
-    username = fields.StringField(required=False)
+    username = fields.StringField(required=False, unique=True, index=True)
     password = fields.StringField()
     fullname = fields.StringField(required=True)
     is_registered = fields.BooleanField()
@@ -105,36 +105,21 @@ class User(GuidStoredObject, AddonModelMixin):
         return '<User {0!r}>'.format(self.username)
 
     @classmethod
-    def verify_unique_email(cls, email):
-        """Check that an email is not already in the database. If it is, raise
-        a DuplicateEmailError.
-        """
-        if cls.find(Q('username', 'eq', email.lower().strip())):
-            msg = 'User exists with email {0!r}'.format(email)
-            raise DuplicateEmailError(msg)
-        return email
-
-    @classmethod
     def create_unregistered(cls, fullname, email=None):
         """Creates a new unregistered user.
 
         :raises: DuplicateEmailError if a user with the given email address
             is already in the database.
         """
-        if email:
-            clean_email = email.lower().strip()
-            cls.verify_unique_email(clean_email)
-        else:
-            clean_email = None
         parsed = utils.parse_name(fullname)
         user = cls(
-            username=clean_email,
+            username=email,
             fullname=fullname,
             **parsed
         )
         # Make sure user isn't already in database
         if email:
-            user.emails.append(clean_email)
+            user.emails.append(email)
         user.is_registered = False
         return user
 
@@ -240,7 +225,7 @@ class User(GuidStoredObject, AddonModelMixin):
         base_url = settings.DOMAIN if external else '/'
         unclaimed_record = self.get_unclaimed_record(project_id)
         token = unclaimed_record['token']
-        return '{base_url}user/{uid}/{project_id}/claim/{token}/'\
+        return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\
                     .format(**locals())
 
     def set_password(self, raw_password):
@@ -394,6 +379,7 @@ class User(GuidStoredObject, AddonModelMixin):
         }
 
     def save(self, *args, **kwargs):
+        self.username = self.username.lower().strip() if self.username else None
         rv = super(User, self).save(*args, **kwargs)
         self.update_solr()
         if settings.PIWIK_HOST and not self.piwik_token:

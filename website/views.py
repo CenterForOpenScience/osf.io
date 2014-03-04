@@ -139,10 +139,6 @@ def reset_password_form():
     return utils.jsonify(ResetPasswordForm())
 
 
-def set_email_and_password_form():
-    return utils.jsonify(SetEmailAndPasswordForm())
-
-
 def new_project_form():
     return utils.jsonify(NewProjectForm())
 

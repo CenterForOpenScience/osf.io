@@ -27,7 +27,6 @@ class AddonModelMixin(StoredObject):
         ]
 
     def _backref_key(self, addon_config):
-
         return '{0}__addons'.format(
             addon_config.settings_models[self._name]._name,
         )
@@ -48,7 +47,7 @@ class AddonModelMixin(StoredObject):
         if addons:
             if deleted or not addons[0].deleted:
                 return addons[0]
-        return False
+        return None
 
     def has_addon(self, addon_name, deleted=False):
         return bool(self.get_addon(addon_name, deleted=deleted))

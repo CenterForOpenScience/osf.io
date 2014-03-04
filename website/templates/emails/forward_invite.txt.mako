@@ -1,8 +1,10 @@
-You added ${fullname} to "${node.title}" but did not provide their correct email address. ${user.fullname} wants to claim their account. To complete the invitation process, forward the message below to the email address they registered with us:
+Hello ${referrer.fullname},
 
-${email}
+You recently added ${fullname} to "${node.title}". ${fullname} wants to claim their account, but the email address they provided is different from the one you provided.  To maintain security of your project, we are sending the account confirmation to you first.
 
-Once they confirm their email address, they will be able to contribute to the project.
+IMPORTANT: To ensure that the correct person is added to your project please forward the message below to ${fullname}.
+
+After ${fullname} confirms their account, they will be able to contribute to the project.
 
 ----------------------
 
@@ -20,3 +22,8 @@ ${node.title}.
 Sincerely,
 
 The OSF Team
+
+
+Want more information? Visit http://osf.io/ and http://cos.io/ for information about the Open Science Framework and its supporting organization the Center for Open Science.
+
+Questions? Email contact@osf.io

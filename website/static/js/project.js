@@ -26,7 +26,7 @@ NodeActions.forkPointer = function(pointerId, nodeId) {
                 window.location.reload();
             },
             error: function() {
-                unblock();
+                $.osf.unblock();
                 bootbox.alert('Could not fork link.');
             }
         });

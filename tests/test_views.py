@@ -17,7 +17,10 @@ import website.app
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
-from website.project.views.contributor import _add_contributor_json, send_claim_email
+from website.project.views.contributor import (
+    _add_contributor_json, send_claim_email,
+    serialize_unregistered, add_contributors_from_dicts
+)
 from webtest.app import AppError
 from website import settings, mails
 from website.util import rubeus
@@ -98,8 +101,9 @@ class TestProjectViews(DbTestCase):
         user2 = UserFactory()
         user3 = UserFactory()
         url = "/api/v1/project/{0}/addcontributors/".format(project._id)
-        res = self.app.post(url, json.dumps({"user_ids": [user2._id, user3._id]}),
-                            content_type="application/json",
+        payload =  {"users": [_add_contributor_json(user2),
+            _add_contributor_json(user3)]}
+        res = self.app.post_json(url, payload,
                             auth=self.auth).maybe_follow()
         project.reload()
         assert_in(user2._id, project.contributors)
@@ -107,20 +111,6 @@ class TestProjectViews(DbTestCase):
         assert_equal(project.logs[-1].action, "contributor_added")
         assert_equal(len(project.contributors), 3)
         assert_equal(len(project.contributor_list), 3)
-
-    @unittest.skip('Adding non-registered contributors is on hold until '
-                   'invitations and account merging are done.')
-    def test_add_non_registered_contributor(self):
-        url = "/api/v1/project/{0}/addcontributor/".format(self.project._id)
-        # A non-registered user is added
-        res = self.app.post(url, json.dumps({"email": "joe@example.com", "fullname": "Joe Dirt"}),
-                            content_type="application/json",
-                            auth=self.auth).maybe_follow()
-        self.project.reload()
-        # The contributor list should have length 3 (2 registered, 1 unregistered)
-        assert_equal(len(self.project.contributor_list), 3)
-        # A log event was added
-        assert_equal(self.project.logs[-1].action, "contributor_added")
 
     def test_project_remove_contributor(self):
         url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
@@ -328,6 +318,111 @@ class TestProjectViews(DbTestCase):
         recent = [c for c in self.user1.recently_added if c.is_active()]
         assert_equal(len(res.json['contributors']), len(recent))
 
+class TestAddingContributorViews(DbTestCase):
+
+    def setUp(self):
+        ensure_schemas()
+        self.app = TestApp(app)
+        self.creator = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.creator)
+        # Authenticate all requests
+        self.app.authenticate(*self.creator.auth)
+
+    def test_serialize_unregistered_without_record(self):
+        name, email = fake.name(), fake.email()
+        res = serialize_unregistered(fullname=name, email=email)
+        assert_equal(res['fullname'], name)
+        assert_equal(res['email'], email)
+        assert_equal(res['id'], None)
+        assert_false(res['registered'])
+        assert_true(res['gravatar'])
+        assert_false(res['active'])
+
+    def test_add_contributors_from_dicts(self):
+        contrib = UserFactory()
+        unreg = UnregUserFactory()
+        name, email = fake.name(), fake.email()
+        unreg_no_record = serialize_unregistered(name, email)
+        n_contributors_pre = len(self.project.contributors)
+        contrib_data = [
+            _add_contributor_json(contrib),
+            serialize_unregistered(fake.name(), unreg.username),
+            unreg_no_record
+        ]
+        add_contributors_from_dicts(
+            self.project,
+            contrib_data,
+            auth=Auth(self.creator),
+            email_unregistered=True)
+        assert_equal(
+            len(self.project.contributors), n_contributors_pre + len(contrib_data)
+        )
+
+    def test_serialize_unregistered_with_record(self):
+        name, email = fake.name(), fake.email()
+        user = self.project.add_unregistered_contributor(fullname=name,
+            email=email, auth=Auth(self.project.creator))
+        self.project.save()
+        res = serialize_unregistered(
+            fullname=name,
+            email=email
+        )
+        assert_false(res['active'])
+        assert_false(res['registered'])
+        assert_equal(res['id'], user._primary_key)
+        assert_true(res['gravatar'])
+        assert_equal(res['fullname'], name)
+        assert_equal(res['email'], email)
+
+    def test_add_contributor_with_unreg_contribs_and_reg_contribs(self):
+        n_contributors_pre = len(self.project.contributors)
+        reg_user = UserFactory()
+        name, email = fake.name(), fake.email()
+        pseudouser = {'id': None, 'registered': False, 'fullname': name,
+                        'email': fake.email()}
+        payload = {
+            'users': [_add_contributor_json(reg_user), pseudouser],
+            'node_ids': []
+        }
+        url = "/api/v1/project/{0}/addcontributors/".format(self.project._id)
+        res = self.app.post_json(url, payload).maybe_follow()
+        self.project.reload()
+        assert_equal(len(self.project.contributors),
+            n_contributors_pre + len(payload['users']))
+
+    def test_add_multiple_contributors_only_adds_one_log(self):
+        n_logs_pre = len(self.project.logs)
+        reg_user = UserFactory()
+        name, email = fake.name(), fake.email()
+        pseudouser = {'id': None, 'registered': False, 'fullname': name,
+                        'email': fake.email()}
+        payload = {
+            'users': [_add_contributor_json(reg_user), pseudouser],
+            'node_ids': []
+        }
+        url = "/api/v1/project/{0}/addcontributors/".format(self.project._id)
+        res = self.app.post_json(url, payload).maybe_follow()
+        self.project.reload()
+        assert_equal(len(self.project.logs), n_logs_pre + 1)
+
+    def test_add_contribs_to_multiple_nodes(self):
+        child = NodeFactory(project=self.project, creator=self.creator)
+        n_contributors_pre = len(child.contributors)
+        reg_user = UserFactory()
+        name, email = fake.name(), fake.email()
+        pseudouser = {'id': None, 'registered': False, 'fullname': name,
+                        'email': email}
+        payload = {
+            'users': [_add_contributor_json(reg_user), pseudouser],
+            'node_ids': [self.project._primary_key, child._primary_key]
+        }
+        url = "/api/v1/project/{0}/addcontributors/".format(self.project._id)
+        res = self.app.post_json(url, payload).maybe_follow()
+        child.reload()
+        assert_equal(len(child.contributors),
+            n_contributors_pre + len(payload['users']))
+
+
 @unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
 class TestUserInviteViews(DbTestCase):
 
@@ -338,66 +433,64 @@ class TestUserInviteViews(DbTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.invite_url = '/api/v1/project/{0}/invite_contributor/'.format(self.project._primary_key)
 
-    @mock.patch('website.project.views.contributor.mails.send_mail')
-    def test_invite_contributor_api_endpoint_sends_an_email(self, send_mail):
-        self.app.post_json(self.invite_url,
-            {'fullname': fake.name(), 'email': fake.email()}, auth=self.user.auth)
-        assert_true(send_mail.called)
-
-    def test_invite_contributor_api_endpoint_adds_a_non_registered_contributor(self):
-        res = self.app.post_json(self.invite_url,
-            {'fullname': 'Brian May', 'email': 'brian@queen.com'}, auth=self.user.auth)
-
-        latest_user = User.find_one(Q('username', 'eq', 'brian@queen.com'))
-        assert_equal(latest_user.fullname, 'Brian May')
-        assert_equal(latest_user.username, 'brian@queen.com')
-        assert_false(latest_user.is_registered)
-        assert_equal(res.json['contributor'], _add_contributor_json(latest_user))
-
-    def test_invite_contributor_adds_unclaimed_data(self):
+    def test_invite_contributor_post_if_not_in_db(self):
         name, email = fake.name(), fake.email()
         res = self.app.post_json(self.invite_url,
             {'fullname': name, 'email': email}, auth=self.user.auth)
-        latest_user = User.find()[len(User.find()) - 1]
-        data = latest_user.unclaimed_records[self.project._primary_key]
-        assert_equal(data['name'], name)
-        assert_equal(data['referrer_id'], self.user._primary_key)
-        assert_true(data['token'])
+        contrib = res.json['contributor']
+        assert_true(contrib['id'] is None)
+        assert_equal(contrib['fullname'], name)
+        assert_equal(contrib['email'], email)
 
-    def test_invite_contributor_adds_contributor(self):
+    def test_invite_contributor_post_if_unreg_already_in_db(self):
+        # A n unreg user is added to a different project
         name, email = fake.name(), fake.email()
+        project2 = ProjectFactory()
+        unreg_user = project2.add_unregistered_contributor(fullname=name, email=email,
+            auth=Auth(project2.creator))
+        project2.save()
         res = self.app.post_json(self.invite_url,
             {'fullname': name, 'email': email}, auth=self.user.auth)
-        latest_user = User.find()[len(User.find()) - 1]
-        self.project.reload()
-        assert_true(self.project.is_contributor(latest_user))
+        expected = _add_contributor_json(unreg_user)
+        expected['fullname'] = name
+        expected['email'] = email
+        assert_equal(res.json['contributor'], expected)
+
+    def test_invite_contributor_post_if_emaiL_already_registered(self):
+        reg_user = UserFactory()
+        # Tries to invite user that is already regiestered
+        res = self.app.post_json(self.invite_url,
+            {'fullname': fake.name(), 'email': reg_user.username},
+            auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_invite_contributor_post_if_user_is_already_contributor(self):
+        unreg_user = self.project.add_unregistered_contributor(
+            fullname=fake.name(), email=fake.email(),
+            auth=Auth(self.project.creator)
+        )
+        self.project.save()
+        # Tries to invite unreg user that is already a contributor
+        res = self.app.post_json(self.invite_url,
+            {'fullname': fake.name(), 'email': unreg_user.username},
+            auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
     def test_invite_contributor_with_no_email(self):
         name = fake.name()
         res = self.app.post_json(self.invite_url,
             {'fullname': name, 'email': None}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        self.project.reload()
-        latest_user = self.project.contributors[len(self.project.contributors) - 1]
-        latest_user.reload()
-        assert_true(self.project.is_contributor(latest_user))
-        assert_false(latest_user.is_registered)
+        data =res.json
+        assert_equal(data['status'], 'success')
+        assert_equal(data['contributor']['fullname'], name)
+        assert_true(data['contributor']['email'] is None)
+        assert_false(data['contributor']['registered'])
 
     def test_invite_contributor_requires_fullname(self):
         res = self.app.post_json(self.invite_url,
             {'email': 'brian@queen.com', 'fullname': ''}, auth=self.user.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 400)
-
-    def test_cannot_invite_unreg_contributor_if_they_are_already_contributor(self):
-        user = UnregUserFactory()
-        self.project.add_unregistered_contributor(
-            email=user.username, fullname=fake.name(),
-            auth=Auth(self.project.creator))
-        self.project.save()
-        res = self.app.post_json(self.invite_url,
-            {'fullname': fake.name(), 'email': user.username},
-            auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
@@ -440,7 +533,7 @@ class TestClaimViews(DbTestCase):
     def setUp(self):
         self.app = TestApp(app)
         self.referrer = AuthUserFactory()
-        self.project = ProjectFactory(creator=self.referrer)
+        self.project = ProjectFactory(creator=self.referrer, is_public=True)
         self.given_name = fake.name()
         self.given_email = fake.email()
         self.project.add_unregistered_contributor(
@@ -460,7 +553,7 @@ class TestClaimViews(DbTestCase):
     def test_invalid_claim_form_responds_with_400(self):
         uid = self.user._primary_key
         pid = self.project._primary_key
-        url = '/user/{uid}/{pid}/claim/badtoken/'.format(**locals())
+        url = '/user/{uid}/{pid}/claim/?token=badtoken'.format(**locals())
         res = self.app.get(url, expect_errors=True).maybe_follow()
         assert_equal(res.status_code, 400)
 
@@ -488,11 +581,30 @@ class TestClaimViews(DbTestCase):
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(to_addr=self.given_email))
 
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_claim_user_post_if_email_is_different_from_given_email(self, send_mail):
+        email = fake.email()  # email that is different from the one the referrer gave
+        url = '/api/v1/user/{0}/{1}/claim/verify/'.format(self.user._primary_key,
+            self.project._primary_key)
+        res = self.app.post_json(url,
+            {'value': email, 'pk': self.user._primary_key}
+        )
+        assert_true(send_mail.called)
+        assert_equal(send_mail.call_count, 2)
+        call_to_invited = send_mail.mock_calls[0]
+        assert_true(call_to_invited.called_with(
+            to_addr=email
+        ))
+        call_to_referrer = send_mail.mock_calls[1]
+        assert_true(call_to_referrer.called_with(
+            to_addr=self.given_email
+        ))
+
 class TestWatchViews(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.user = UserFactory.build(username='tesla@electric.com')
+        self.user = UserFactory.build()
         api_key = ApiKeyFactory()
         self.user.api_keys.append(api_key)
         self.user.save()
