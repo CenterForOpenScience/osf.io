@@ -17,7 +17,8 @@ from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
 from website.project.views.contributor import (
-    _add_contributor_json, send_claim_email
+    _add_contributor_json, send_claim_email,
+    serialize_unregistered, add_contributors_from_dicts
 )
 from webtest.app import AppError
 from website import settings, mails
@@ -324,6 +325,52 @@ class TestAddingContributorViews(DbTestCase):
         self.project = ProjectFactory(creator=self.creator)
         # Authenticate all requests
         self.app.authenticate(*self.creator.auth)
+
+    def test_serialize_unregistered_without_record(self):
+        name, email = fake.name(), fake.email()
+        res = serialize_unregistered(fullname=name, email=email)
+        assert_equal(res['fullname'], name)
+        assert_equal(res['email'], email)
+        assert_equal(res['id'], None)
+        assert_false(res['registered'])
+        assert_true(res['gravatar'])
+        assert_false(res['active'])
+
+    def test_add_contributors_from_dicts(self):
+        contrib = UserFactory()
+        unreg = UnregUserFactory()
+        name, email = fake.name(), fake.email()
+        unreg_no_record = serialize_unregistered(name, email)
+        n_contributors_pre = len(self.project.contributors)
+        contrib_data = [
+            _add_contributor_json(contrib),
+            serialize_unregistered(fake.name(), unreg.username),
+            unreg_no_record
+        ]
+        add_contributors_from_dicts(
+            self.project,
+            contrib_data,
+            auth=Auth(self.creator),
+            email_unregistered=True)
+        assert_equal(
+            len(self.project.contributors), n_contributors_pre + len(contrib_data)
+        )
+
+    def test_serialize_unregistered_with_record(self):
+        name, email = fake.name(), fake.email()
+        user = self.project.add_unregistered_contributor(fullname=name,
+            email=email, auth=Auth(self.project.creator))
+        self.project.save()
+        res = serialize_unregistered(
+            fullname=name,
+            email=email
+        )
+        assert_false(res['active'])
+        assert_false(res['registered'])
+        assert_equal(res['id'], user._primary_key)
+        assert_true(res['gravatar'])
+        assert_equal(res['fullname'], name)
+        assert_equal(res['email'], email)
 
     def test_add_contributor_with_unreg_contribs_and_reg_contribs(self):
         n_contributors_pre = len(self.project.contributors)

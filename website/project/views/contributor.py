@@ -195,6 +195,20 @@ def project_removecontributor(**kwargs):
 # so maybe not
 # TODO: TEST ME
 def add_contributors_from_dicts(node, user_dicts, auth, email_unregistered=True):
+    """View helper that adds contributors from a list of serialized users. The
+    users in the list may be registered or unregistered users.
+
+    e.g. ``[{'id': 'abc123', 'registered': True, 'fullname': ..},
+            {'id': None, 'registered': False, 'fullname'...},
+            {'id': '123ab', 'registered': False, 'fullname': ...}]
+
+    :param Node node: The node to add contributors to
+    :param list(dict) user_dicts: List of serialized users in the format above.
+    :param Auth auth:
+    :param bool email_unregistered: Whether to email the claim email(s)
+        to unregistered users.
+    """
+
     # Add the registered contributors
     contribs = []
     for contrib_dict in user_dicts:
@@ -236,12 +250,12 @@ def project_addcontributors_post(**kwargs):
     for node_id in node_ids:
         child = Node.load(node_id)
         add_contributors_from_dicts(child, user_dicts,
-            auth=auth, email_unregistered=False)
+            auth=auth, email_unregistered=False)  # Only email unreg users once
         child.save()
     return {'status': 'success'}, 201
 
 
-def send_claim_email(email, user, node, notify=False):
+def send_claim_email(email, user, node, notify=True):
     """Send an email for claiming a user account. Either sends to the given email
     or the referrer's email, depending on the email address provided.
 
@@ -346,6 +360,28 @@ def claim_user_form(**kwargs):
         'form': forms.utils.jsonify(form) if is_json_request else form,
     }
 
+
+def serialize_unregistered(fullname, email):
+    """Serializes an unregistered user.
+    """
+    user = framework.auth.get_user(username=email)
+    if user is None:
+        serialized = {
+            'fullname': fullname,
+            'id': None,
+            'registered': False,
+            'active': False,
+            'gravatar': gravatar(email, use_ssl=True,
+                size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR),
+            'email': email
+        }
+    else:
+        serialized = _add_contributor_json(user)
+        serialized['fullname']
+        serialized['email'] = email
+    return serialized
+
+
 @must_be_valid_project
 @must_be_contributor
 @must_not_be_registration
@@ -376,14 +412,7 @@ def invite_contributor_post(**kwargs):
             serialized['email'] = email
     else:
         # Create a placeholder
-        serialized = {'fullname': fullname,
-            'id': None,
-            'registered': False,
-            'active': False,
-            'gravatar': gravatar(email, use_ssl=True,
-                size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR),
-            'email': email
-        }
+        serialized = serialize_unregistered(fullname, email)
     return {'status': 'success', 'contributor': serialized}
 
 

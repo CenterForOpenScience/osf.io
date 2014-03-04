@@ -34,9 +34,6 @@ ${next.body()}
     $(function() {
 
         $logScope = $('#logScope');
-
-
-
         // Get project data from the server and initiate KO modules
         $.ajax({
             type: 'get',
@@ -61,7 +58,8 @@ ${next.body()}
                     $script.ready('contribAdder', function() {
                         var contribAdder = new ContribAdder(
                             '#addContributorsScope',
-                            data.node.title, data.parent_node.id,
+                            data.node.title,
+                            data.parent_node.id,
                             data.parent_node.title
                         );
                     });
