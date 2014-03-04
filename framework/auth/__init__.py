@@ -199,30 +199,14 @@ def register_unconfirmed(username, password, fullname):
     else:
         raise DuplicateEmailError('User {0!r} already exists'.format(username))
 
-
-# TODO: This is unused. Use add_confirmed_user instead
-def register(username, password, fullname, send_welcome=True):
-    username = username.strip().lower()
-    fullname = fullname.strip()
-
-    # TODO: This validation should occur at the database level, not the view
-    if not get_user(username=username):
-        parsed = parse_name(fullname)
-        # TODO: add User.create_registered() class method
-        user = User(
-            username=username,
-            fullname=fullname,
-            is_registered=True,
-            is_claimed=True,
-            verification_key=security.random_string(15),
-            **parsed
+def register(username, password, fullname):
+    user = get_user(username=username)
+    if not user:
+        user = User.create_unconfirmed(
+            username=username, password=password, fullname=fullname
         )
-        # Set the password
-        user.set_password(password.strip())
-        user.emails.append(username.strip())
-        user.save()
-        if send_welcome:
-            send_welcome_email(user)
-        return user
-    else:
-        raise DuplicateEmailError
+    user.registered = True
+    user.date_confirmed = user.date_registered
+    user.emails.append(username)
+    user.save()
+    return user

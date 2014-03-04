@@ -5,9 +5,9 @@
     </div>
 </div>
 
-<p class="help-block" data-bind="if:tzname">
+<p class="help-block" data-bind="if: tzname">
     All times displayed at
-    <span data-bind="text:tzname"></span>
+    <span data-bind="text: tzname"></span>
     <a href="http://en.wikipedia.org/wiki/Coordinated_Universal_Time" target="_blank">UTC</a> offset.
 </p>
 
