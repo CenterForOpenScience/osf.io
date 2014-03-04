@@ -1503,15 +1503,6 @@ class Node(GuidStoredObject, AddonModelMixin):
                 user.recently_added.insert(0, contrib_to_add)
                 while len(user.recently_added) > MAX_RECENT_LENGTH:
                     user.recently_added.pop()
-            # Add unclaimed record if necessary
-            if (not contributor.is_registered
-                and self._primary_key not in contributor.unclaimed_records):
-                contributor.add_unclaimed_record(node=self, referrer=auth.user,
-                    given_name=contributor.fullname,
-                    email=contributor.username)
-                contributor.save()
-                unreg_contributor_added.send(self, contributor=contributor,
-                    auth=auth)
 
             if log:
                 self.add_log(

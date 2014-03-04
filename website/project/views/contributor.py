@@ -213,19 +213,29 @@ def deserialize_contributors(node, user_dicts, auth, email_unregistered=True):
     # Add the registered contributors
     contribs = []
     for contrib_dict in user_dicts:
+        email = contrib_dict['email']
+        fullname = contrib_dict['fullname']
         if contrib_dict['id']:
-            user = User.load(contrib_dict['id'])
+            contributor = User.load(contrib_dict['id'])
         else:
-            email = contrib_dict['email']
-            fullname = contrib_dict['fullname']
             try:
-                user = User.create_unregistered(
+                contributor = User.create_unregistered(
                     fullname=fullname,
                     email=email)
-                user.save()
+                contributor.save()
             except ValidationValueError:
-                user = framework.auth.get_user(username=contrib_dict['email'])
-        contribs.append(user)
+                contributor = framework.auth.get_user(username=email)
+
+        # Add unclaimed record if necessary
+        if (not contributor.is_registered
+                and node._primary_key not in contributor.unclaimed_records):
+            contributor.add_unclaimed_record(node=node, referrer=auth.user,
+                given_name=fullname,
+                email=email)
+            contributor.save()
+            unreg_contributor_added.send(node, contributor=contributor,
+                auth=auth)
+        contribs.append(contributor)
     return contribs
 
 

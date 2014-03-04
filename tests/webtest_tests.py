@@ -639,7 +639,22 @@ class TestClaiming(DbTestCase):
     def setUp(self):
         self.app = TestApp(app)
         self.referrer = AuthUserFactory()
-        self.project = ProjectFactory(creator=self.referrer)
+        self.project = ProjectFactory(creator=self.referrer, is_public=True)
+
+    def test_correct_name_shows_in_contributor_list(self):
+        name1, email = fake.name(), fake.email()
+        UnregUserFactory(fullname=name1, email=email)
+        name2, email = fake.name(), fake.email()
+        # Added with different name
+        self.project.add_unregistered_contributor(fullname=name2,
+            email=email, auth=Auth(self.referrer))
+        self.project.save()
+
+        res = self.app.get(self.project.url, auth=self.referrer.auth)
+        # Correct name is shown
+        assert_in(name2, res)
+        assert_not_in(name1, res)
+
 
     def test_user_can_set_password_on_claim_page(self):
         name, email = fake.name(), fake.email()

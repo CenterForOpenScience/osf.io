@@ -6,7 +6,7 @@
 <div class="row">
     ## Center the form
     <div class="col-md-6 col-md-offset-3">
-    <p>Hello ${firstname}! Welcome to the Open Science Framework. Please set a password to claim your account.</p>
+    <p>Hello ${firstname}! Please set a password to claim your account.</p>
 
         <form method="POST" id='setPasswordForm' role='form'>
             <div class='form-group'>
