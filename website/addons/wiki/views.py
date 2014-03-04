@@ -1,11 +1,45 @@
 """
 
 """
+import logging
+import httplib as http
+import difflib
 
 from bs4 import BeautifulSoup
 
-from website.project.decorators import must_be_contributor_or_public
-from website.project.decorators import must_have_addon
+from framework import request, status, url_for
+from framework.forms.utils import sanitize
+from framework.mongo.utils import from_mongo
+from framework.exceptions import HTTPError
+from website.project.views.node import _view_project
+from website.project import show_diff
+from website.project.decorators import (
+    must_be_contributor_or_public,
+    must_have_addon, must_not_be_registration,
+    must_be_valid_project,
+    must_be_contributor
+)
+
+from .model import NodeWikiPage
+
+logger = logging.getLogger(__name__)
+
+HOME = 'home'
+
+
+def get_wiki_url(node, page=HOME):
+    """Get the URL for the wiki page for a node or pointer."""
+    view_spec = 'OsfWebRenderer__project_wiki_page'
+    if node.category != 'project':
+        pid = node.parent._primary_key
+        nid = node._primary_key
+        return url_for(view_spec, pid=pid, nid=nid, wid=page)
+    else:
+        if not node.primary:
+            pid = node.node._primary_key
+        else:
+            pid = node._primary_key
+        return url_for(view_spec, pid=pid, wid=page)
 
 
 @must_be_contributor_or_public
@@ -34,27 +68,6 @@ def wiki_widget(*args, **kwargs):
     }
     rv.update(wiki.config.to_json())
     return rv
-
-# Moved from website/project/views/wiki.py
-
-import logging
-import httplib as http
-import difflib
-
-from framework import request, status
-from framework.forms.utils import sanitize
-from framework.mongo.utils import from_mongo
-from framework.exceptions import HTTPError
-
-from website.project.views.node import _view_project
-from website.project import show_diff
-from website.project.decorators import must_not_be_registration
-from website.project.decorators import must_be_valid_project
-from website.project.decorators import must_be_contributor
-
-from .model import NodeWikiPage
-
-logger = logging.getLogger(__name__)
 
 
 @must_be_valid_project
@@ -97,13 +110,13 @@ def project_wiki_compare(*args, **kwargs):
 
     node_to_use = node or project
 
-    pw = node_to_use.get_wiki_page(wid)
+    wiki_page = node_to_use.get_wiki_page(wid)
 
-    if pw:
+    if wiki_page:
         compare_id = kwargs['compare_id']
         comparison_page = node_to_use.get_wiki_page(wid, compare_id)
         if comparison_page:
-            current = pw.content
+            current = wiki_page.content
             comparison = comparison_page.content
             sm = difflib.SequenceMatcher(None, comparison, current)
             content = show_diff(sm)
@@ -114,7 +127,7 @@ def project_wiki_compare(*args, **kwargs):
                 'versions': _get_wiki_versions(node_to_use, wid),
                 'is_current': True,
                 'is_edit': True,
-                'version': pw.version,
+                'version': wiki_page.version,
             }
             rv.update(_view_project(node_to_use, auth, primary=True))
             return rv
@@ -128,27 +141,45 @@ def project_wiki_version(*args, **kwargs):
     project = kwargs['project']
     node = kwargs['node']
     auth = kwargs['auth']
-    user = auth.user
     wid = kwargs['wid']
     vid = kwargs['vid']
 
     node_to_use = node or project
 
-    pw = node_to_use.get_wiki_page(wid, version=vid)
+    wiki_page = node_to_use.get_wiki_page(wid, version=vid)
 
-    if pw:
+    if wiki_page:
         rv = {
-            'wiki_id': pw._primary_key if pw else None,
+            'wiki_id': wiki_page._primary_key if wiki_page else None,
             'pageName': wid,
-            'wiki_content': pw.html,
-            'version': pw.version,
-            'is_current': pw.is_current,
+            'wiki_content': wiki_page.html,
+            'version': wiki_page.version,
+            'is_current': wiki_page.is_current,
             'is_edit': False,
         }
         rv.update(_view_project(node_to_use, auth, primary=True))
         return rv
 
     raise HTTPError(http.NOT_FOUND)
+
+
+def serialize_wiki_toc(project, auth):
+    toc = [
+        {
+            'id': child._primary_key,
+            'title': child.title,
+            'category': child.category,
+            'pages': child.wiki_pages_current.keys() if child.wiki_pages_current else [],
+            'url': get_wiki_url(child, page=HOME),
+            'is_pointer': not child.primary,
+            'link': auth.private_key
+        }
+        for child in project.nodes
+        if not child.is_deleted
+        and child.can_view(auth)
+        if child.has_addon('wiki')
+    ]
+    return toc
 
 
 @must_be_valid_project # returns project
@@ -160,36 +191,25 @@ def project_wiki_page(*args, **kwargs):
     auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
 
-    pw = node_to_use.get_wiki_page(wid)
+    wiki_page = node_to_use.get_wiki_page(wid)
 
     # todo breaks on /<script>; why?
 
-    if pw:
-        version = pw.version
-        is_current = pw.is_current
-        content = pw.html
+    if wiki_page:
+        version = wiki_page.version
+        is_current = wiki_page.is_current
+        content = wiki_page.html
     else:
         version = 'NA'
         is_current = False
         content = '<p><em>No wiki content</em></p>'
 
-    toc = [
-        {
-            'id': child._primary_key,
-            'title': child.title,
-            'category': child.category,
-            'pages': child.wiki_pages_current.keys() if child.wiki_pages_current else [],
-            'link': auth.private_key
-        }
-        for child in node_to_use.nodes
-        if not child.is_deleted
-            and child.can_view(auth)
-    ]
+    toc = serialize_wiki_toc(node_to_use, auth=auth)
 
     rv = {
-        'wiki_id': pw._primary_key if pw else None,
+        'wiki_id': wiki_page._primary_key if wiki_page else None,
         'pageName': wid,
-        'page': pw,
+        'page': wiki_page,
         'version': version,
         'wiki_content': content,
         'is_current': is_current,
@@ -219,19 +239,19 @@ def project_wiki_edit(*args, **kwargs):
 
     node_to_use = node or project
 
-    pw = node_to_use.get_wiki_page(wid)
+    wiki_page = node_to_use.get_wiki_page(wid)
 
-    if pw:
-        version = pw.version
-        is_current = pw.is_current
-        content = pw.content
+    if wiki_page:
+        version = wiki_page.version
+        is_current = wiki_page.is_current
+        content = wiki_page.content
     else:
         version = 'NA'
         is_current = False
         content = ''
     rv = {
         'pageName': wid,
-        'page': pw,
+        'page': wiki_page,
         'version': version,
         'versions': _get_wiki_versions(node_to_use, wid),
         'wiki_content': content,
@@ -262,10 +282,10 @@ def project_wiki_edit_post(*args, **kwargs):
         status.push_status_message("This is an invalid wiki page name")
         raise HTTPError(http.BAD_REQUEST, redirect_url='{}wiki/'.format(node_to_use.url))
 
-    pw = node_to_use.get_wiki_page(wid)
+    wiki_page = node_to_use.get_wiki_page(wid)
 
-    if pw:
-        content = pw.content
+    if wiki_page:
+        content = wiki_page.content
     else:
         content = ''
     if request.form['content'] != content:

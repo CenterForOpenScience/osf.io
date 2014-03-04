@@ -10,22 +10,22 @@ import datetime
 import urlparse
 from dateutil import parser
 
-from modularodm.exceptions import ValidationError
+from modularodm.exceptions import ValidationError, ValidationValueError
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
-from framework.auth import User, DuplicateEmailError
+from framework.auth import User
 from framework.auth.utils import parse_name
 from framework.auth.decorators import Auth
 from framework import utils
 from framework.bcrypt import check_password_hash
 from framework.git.exceptions import FileNotModified
-from website import settings, filters, hmac
+from website import settings, filters
 from website.profile.utils import serialize_user
 from website.project.model import Pointer, ApiKey, NodeLog, ensure_schemas
 from website.addons.osffiles.model import NodeFile
 
-from tests.base import DbTestCase, test_app, Guid, fake
+from tests.base import DbTestCase, Guid, fake
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
@@ -43,7 +43,7 @@ class TestUser(DbTestCase):
         self.consolidate_auth = Auth(user=self.user)
 
     def test_non_registered_user_is_not_active(self):
-        u = User(username='fred@queen.com',
+        u = User(username=fake.email(),
             fullname='Freddie Mercury',
             is_registered=False)
         u.set_password('killerqueen')
@@ -61,11 +61,12 @@ class TestUser(DbTestCase):
 
     def test_create_unregistered_raises_error_if_already_in_db(self):
         u = UnregUserFactory()
-        with assert_raises(DuplicateEmailError):
-            User.create_unregistered(fullname=fake.name(), email=u.username)
+        dupe = User.create_unregistered(fullname=fake.name(), email=u.username)
+        with assert_raises(ValidationValueError):
+            dupe.save()
 
     def test_user_with_no_password_is_not_active(self):
-        u = User(username='fred@queen.com',
+        u = User(username=fake.email(),
             fullname='Freddie Mercury', is_registered=True)
         u.save()
         assert_false(u.is_active())
@@ -81,7 +82,7 @@ class TestUser(DbTestCase):
             u.save()
 
     def test_date_registered_upon_saving(self):
-        u = User(username='foo@bar.com', fullname='Foo bar')
+        u = User(username=fake.email(), fullname='Foo bar')
         u.save()
         assert_true(u.date_registered)
 
@@ -96,7 +97,7 @@ class TestUser(DbTestCase):
         assert_equal(len(u.emails), 0, 'primary email has not been added to emails list')
 
     def test_cant_create_user_without_full_name(self):
-        u = User(username='fred@queen.com')
+        u = User(username=fake.email())
         with assert_raises(ValidationError):
             u.save()
 
@@ -355,12 +356,10 @@ class TestUserParse(unittest.TestCase):
 class TestMergingUsers(DbTestCase):
 
     def setUp(self):
-        self.master = UserFactory(username='joe@example.com',
-                            fullname='Joe Shmo',
+        self.master = UserFactory(fullname='Joe Shmo',
                             is_registered=True,
                             emails=['joe@example.com'])
-        self.dupe = UserFactory(username='joseph123@hotmail.com',
-                            fullname='Joseph Shmo',
+        self.dupe = UserFactory(fullname='Joseph Shmo',
                             emails=['joseph123@hotmail.com'])
 
     def _merge_dupe(self):
@@ -1083,7 +1082,7 @@ class TestProject(DbTestCase):
 
     def test_add_unregistered_raises_error_if_user_is_registered(self):
         user = UserFactory(is_registered=True)  # A registered user
-        with assert_raises(DuplicateEmailError):
+        with assert_raises(ValueError):
             self.project.add_unregistered_contributor(
                 email=user.username,
                 fullname=user.fullname,
@@ -1738,6 +1737,24 @@ class TestNodeLog(DbTestCase):
         assert_equal(d['params'], log.params)
         assert_equal(d['node']['title'], log.node.title)
 
+    def test_render_log_contributor_unregistered(self):
+        node = NodeFactory()
+        name, email = fake.name(), fake.email()
+        unreg = node.add_unregistered_contributor(fullname=name, email=email,
+            auth=Auth(node.creator))
+        node.save()
+
+        log = NodeLogFactory(params={'node': node._primary_key})
+        ret = log._render_log_contributor(unreg._primary_key)
+
+        assert_false(ret['registered'])
+        record = unreg.get_unclaimed_record(node._primary_key)
+        assert_equal(ret['fullname'], record['name'])
+
+    def test_render_log_contributor_none(self):
+        log = NodeLogFactory()
+        assert_equal(log._render_log_contributor(None), None)
+
     def test_tz_date(self):
         assert_equal(self.log.tz_date.tzinfo, pytz.UTC)
 
@@ -1823,13 +1840,13 @@ class TestUnregisteredUser(DbTestCase):
 
     def add_unclaimed_record(self):
         given_name = 'Fredd Merkury'
-        email = 'unclaimed@example.com'
+        email = fake.email()
         self.user.add_unclaimed_record(node=self.project,
             given_name=given_name, referrer=self.referrer,
             email=email)
         self.user.save()
         data = self.user.unclaimed_records[self.project._primary_key]
-        return data
+        return email, data
 
     def test_unregistered_factory(self):
         u1 = UnregUserFactory()
@@ -1846,11 +1863,11 @@ class TestUnregisteredUser(DbTestCase):
         assert_equal(len(u.email_verifications.keys()), 1)
 
     def test_add_unclaimed_record(self):
-        data = self.add_unclaimed_record()
+        email, data = self.add_unclaimed_record()
         assert_equal(data['name'], 'Fredd Merkury')
         assert_equal(data['referrer_id'], self.referrer._primary_key)
         assert_in('token', data)
-        assert_equal(data['email'], 'unclaimed@example.com')
+        assert_equal(data['email'], email)
         assert_equal(data, self.user.get_unclaimed_record(self.project._primary_key))
 
     def test_get_claim_url(self):
@@ -1860,7 +1877,7 @@ class TestUnregisteredUser(DbTestCase):
         token = self.user.get_unclaimed_record(pid)['token']
         domain = settings.DOMAIN
         assert_equal(self.user.get_claim_url(pid, external=True),
-            '{domain}user/{uid}/{pid}/claim/{token}/'.format(**locals()))
+            '{domain}user/{uid}/{pid}/claim/?token={token}'.format(**locals()))
 
     def test_get_claim_url_raises_value_error_if_not_valid_pid(self):
         with assert_raises(ValueError):
@@ -1875,17 +1892,18 @@ class TestUnregisteredUser(DbTestCase):
     def test_register(self):
         assert_false(self.user.is_registered)  # sanity check
         assert_false(self.user.is_claimed)
-        self.user.register(username='foo@bar.com', password='killerqueen')
+        email = fake.email()
+        self.user.register(username=email, password='killerqueen')
         self.user.save()
         assert_true(self.user.is_claimed)
         assert_true(self.user.is_registered)
         assert_true(self.user.check_password('killerqueen'))
-        assert_equal(self.user.username, 'foo@bar.com')
+        assert_equal(self.user.username, email)
 
     def test_registering_with_a_different_email_adds_to_emails_list(self):
-        user = UnregUserFactory(email='fred@queen.com')
+        user = UnregUserFactory()
         assert_equal(user.password, None)  # sanity check
-        user.register(username='brian@queen.com', password='killerqueen')
+        user.register(username=fake.email(), password='killerqueen')
 
     def test_verify_claim_token(self):
         self.add_unclaimed_record()

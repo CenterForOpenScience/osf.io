@@ -44,14 +44,14 @@
      * Unblock UI and display error modal
      */
     function registration_failed() {
-        unblock();
+        $.osf.unblock();
         bootbox.alert('Registration failed');
     }
 
     function registerNode(data) {
 
         // Block UI until request completes
-        block();
+        $.osf.block();
 
         // POST data
         $.ajax({
@@ -113,7 +113,7 @@
                 success: function(response) {
                     if (response.prompts && response.prompts.length) {
                         bootbox.confirm(
-                            joinPrompts(response.prompts, 'Are you sure you want to register this project?'),
+                            $.osf.joinPrompts(response.prompts, 'Are you sure you want to register this project?'),
                             function(result) {
                                 if (result) {
                                     registerNode(data)

@@ -190,15 +190,17 @@ class NodeLog(StoredObject):
             return self.tz_date.isoformat()
 
     def _render_log_contributor(self, contributor):
-        if isinstance(contributor, dict):
-            rv = contributor.copy()
-            rv.update({'registered': False})
-            return rv
         user = User.load(contributor)
+        if not user:
+            return None
+        if self.node:
+            fullname = user.display_full_name(node=self.node)
+        else:
+            fullname = user.fullname
         return {
             'id': user._primary_key,
-            'fullname': user.fullname,
-            'registered': True,
+            'fullname': fullname,
+            'registered': user.is_registered,
         }
 
     # TODO: Move to separate utility function
@@ -210,7 +212,7 @@ class NodeLog(StoredObject):
                     if isinstance(self.user, User)
                     else {'fullname': self.foreign_user},
             'contributors': [self._render_log_contributor(c) for c in self.params.get("contributors", [])],
-            'contributor': self._render_log_contributor(self.params.get("contributor", {})),
+            'contributor': self._render_log_contributor(self.params.get("contributor")),
             'api_key': self.api_key.label if self.api_key else '',
             'action': self.action,
             'params': self.params,
@@ -1578,7 +1580,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         for contrib in contributors:
             self.add_contributor(contributor=contrib, auth=auth, log=False, save=False)
-        if log:
+        if log and contributors:
             self.add_log(
                 action=NodeLog.CONTRIB_ADDED,
                 params={
@@ -1604,18 +1606,22 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         # Create a new user record
+        contributor = User.create_unregistered(fullname=fullname, email=email)
+
+        contributor.add_unclaimed_record(node=self, referrer=auth.user,
+            given_name=fullname, email=email)
         try:
-            contributor = User.create_unregistered(fullname=fullname, email=email)
-        except DuplicateEmailError as error:
+            contributor.save()
+        except ValueError:
             contributor = get_user(username=email)
             # Unregistered users may have multiple unclaimed records, so
             # only raise error if user is registered.
             if contributor.is_registered or self.is_contributor(contributor):
-                raise error
+                raise
+            contributor.add_unclaimed_record(node=self, referrer=auth.user,
+                given_name=fullname, email=email)
+            contributor.save()
 
-        contributor.add_unclaimed_record(node=self, referrer=auth.user,
-            given_name=fullname, email=email)
-        contributor.save()
         self.add_contributor(contributor, auth=auth, log=True, save=save)
         return contributor
 

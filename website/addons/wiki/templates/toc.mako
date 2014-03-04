@@ -17,7 +17,11 @@
             % for child in toc:
                 <li class="nav-header">
 
-                    <a href="/${node['id']}/node/${child['id']}/wiki/home">
+                    <a href="${child['url']}">
+                        % if child['is_pointer']:
+                            <i class="icon-hand-right"></i>
+                        % endif
+
                         ${child['title']}
                         % if child['category']:
                             (${child['category']})
@@ -37,7 +41,6 @@
 
                 </li>
             % endfor
-
         % endif
 
     </ul>

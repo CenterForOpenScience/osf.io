@@ -186,14 +186,11 @@ def make_url_map(app):
     ### Forms ###
 
     process_rules(app, [
-
         Rule('/forms/registration/', 'get', website_routes.registration_form, json_renderer),
         Rule('/forms/signin/', 'get', website_routes.signin_form, json_renderer),
         Rule('/forms/forgot_password/', 'get', website_routes.forgot_password_form, json_renderer),
         Rule('/forms/reset_password/', 'get', website_routes.reset_password_form, json_renderer),
         Rule('/forms/new_project/', 'get', website_routes.new_project_form, json_renderer),
-        Rule('/forms/set_email_and_password/', 'get', website_routes.set_email_and_password_form, json_renderer),
-
     ], prefix='/api/v1')
 
     ### Discovery ###
@@ -261,8 +258,8 @@ def make_url_map(app):
         Rule('/addons/', 'get', profile_views.profile_addons, OsfWebRenderer('profile/addons.mako')),
         Rule(["/user/merge/"], 'get', auth_views.merge_user_get, OsfWebRenderer("merge_accounts.mako")),
         Rule(["/user/merge/"], 'post', auth_views.merge_user_post, OsfWebRenderer("merge_accounts.mako")),
-        # TODO: uncomment to enable user claiming
-        # Rule(['/user/<uid>/<pid>/claim/<token>/'], ['get', 'post'], project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
+        # Route for claiming and setting email and password. Verification token must be querystring argument
+        Rule(['/user/<uid>/<pid>/claim/'], ['get', 'post'], project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
     ])
 
     # API
@@ -287,9 +284,7 @@ def make_url_map(app):
         Rule('/settings/names/', 'post', profile_views.post_names, json_renderer),
 
         Rule('/profile/<user_id>/summary/', 'get', profile_views.get_profile_summary, json_renderer),
-
-        # TODO: uncomment to enable user claiming
-        # Rule('/user/<uid>/<pid>/claim/verify/', 'post', project_views.contributor.claim_user_post, json_renderer),
+        Rule('/user/<uid>/<pid>/claim/verify/', 'post', project_views.contributor.claim_user_post, json_renderer),
 
     ], prefix='/api/v1',)
 
@@ -332,7 +327,7 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/',
             '/project/<pid>/node/<nid>/',
-        ], 'get', project_views.node.view_project, OsfWebRenderer('project.mako')),
+        ], 'get', project_views.node.view_project, OsfWebRenderer('project/project.mako')),
 
         # Create
         Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('', render_mako_string)),
@@ -373,7 +368,7 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/permissions/<permissions>/',
             '/project/<pid>/node/<nid>/permissions/<permissions>/',
-        ], 'post', project_views.node.project_set_permissions, OsfWebRenderer('project.mako')),
+        ], 'post', project_views.node.project_set_permissions, OsfWebRenderer('project/project.mako')),
 
         ### Logs ###
 
@@ -707,14 +702,13 @@ def make_url_map(app):
         ),
 
         # Invite Users
-        # TODO: uncomment to enbable claiming
-        # Rule(
-        #     [
-        #         '/project/<pid>/invite_contributor/',
-        #         '/project/<pid>/node/<nid>/invite_contributor/'
-        #     ],
-        #     'post',
-        #     project_views.contributor.invite_contributor_post,
-        #     json_renderer
-        # ),
+        Rule(
+            [
+                '/project/<pid>/invite_contributor/',
+                '/project/<pid>/node/<nid>/invite_contributor/'
+            ],
+            'post',
+            project_views.contributor.invite_contributor_post,
+            json_renderer
+        ),
     ], prefix='/api/v1')
