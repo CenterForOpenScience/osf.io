@@ -91,18 +91,23 @@
 
     % if node['can_comment']:
 
-        <div id="comments">
-            <div>Comments</div>
+        <div id="comments" class="col-md-6">
+            <h2>Comments</h2>
             <div data-bind="template: {name: 'commentTemplate', foreach: displayComments}"></div>
-            <div>
-                <div data-bind="if: canComment">
-                    <a data-bind="click: showReply">Reply</a>
+            <div data-bind="if: canComment">
+                <div>
+                     <i class="icon-comment-alt"></i> Add comment
                 </div>
-                <div data-bind="if: replying">
-                    <textarea data-bind="value: replyContent"></textarea>
+                <div>
                     <select data-bind="options: privacyOptions, optionsText: privacyLabel, value: replyPublic"></select>
-                    <a data-bind="click: cancelReply">Cancel</a>
-                    <a data-bind="click: submitReply">Submit</a>
+                    <span class="comment-author">{{userName}}</span>
+                </div>
+                <div class="form-group">
+                    <textarea class="form-control" data-bind="value: replyContent"></textarea>
+                </div>
+                <div>
+                    <a class="btn btn-default btn-default" data-bind="click: submitReply"><i class="icon-check"></i> Save</a>
+                    <a class="btn btn-default btn-default" data-bind="click: cancelReply"><i class="icon-undo"></i> Cancel</a>
                 </div>
             </div>
         </div>
@@ -111,30 +116,49 @@
 
     <script type="text/html" id="commentTemplate">
 
-        <div>
+        <div class="comment">
+
+            <div>
+                <span data-bind="if: editing">
+                    <select data-bind="options: privacyOptions, optionsText: privacyLabel, value: isPublic"></select>
+                </span>
+                <span data-bind="ifnot: editing">
+                    <i data-bind="visible: showPrivateIcon" class="icon-lock"></i>
+                </span>
+                <span class="comment-author">{{author.name}}</span>
+                <span class="comment-date pull-right">{{dateModified}}</span>
+            </div>
 
             <div data-bind="ifnot: editing">
-                <div>{{content}}</div>
+                <span data-bind="if: hasChildren">
+                    <i data-bind="css: toggleIcon, click: toggle"></i>
+                </span>
+                <span data-bind="text: content, css: {'edit-comment': editHighlight}, event: {mouseover: startHoverContent, mouseleave: stopHoverContent, dblclick: edit}"></span>
             </div>
 
             <div data-bind="if: editing">
-                <textarea data-bind="value: content"></textarea>
-                <select data-bind="options: privacyOptions, optionsText: privacyLabel, value: isPublic"></select>
-                <a data-bind="click: cancelEdit">Cancel</a>
-                <a data-bind="click: submitEdit">Submit</a>
+                <div class="form-group">
+                    <textarea class="form-control" data-bind="value: content"></textarea>
+                </div>
+                <div>
+                    <a class="btn btn-default btn-default" data-bind="click: submitEdit"><i class="icon-check"></i> Save</a>
+                    <a class="btn btn-default btn-default" data-bind="click: cancelEdit"><i class="icon-undo"></i> Cancel</a>
+                </div>
             </div>
 
-            <div>
-                <i data-bind="css: publicIcon"></i> {{editVerb}} by {{author.fullname}} at {{dateModified}}
+            <!-- Action bar -->
+            <div data-bind="ifnot: editing">
+                <span data-bind="if: $root.canComment, click: showReply">
+                    <i class="icon-reply"></i>
+                </span>
+                <span data-bind="click: reportSpam">
+                    <i class="icon-warning-sign"></i>
+                </span>
+                <span data-bind="if: canDelete, click: remove">
+                    <i class="icon-trash"></i>
+                </span>
             </div>
 
-            <div>
-                <a data-bind="if: canStartEdit, click: edit">Edit</a>
-                <a data-bind="if: $root.canComment, click: showReply">Reply</a>
-                <a data-bind="if: hasChildren, click: toggle">Toggle</a>
-                <a data-bind="click: reportSpam">Report</a>
-                <a data-bind="if: canDelete, click: remove">Delete</a>
-            </div>
             <ul>
 
                 <!-- ko if: showChildren -->
@@ -144,10 +168,17 @@
 
                 <!-- ko if: replying -->
                     <div>
-                        <textarea data-bind="value: replyContent"></textarea>
-                        <select data-bind="options: privacyOptions, optionsText: privacyLabel, value: replyPublic"></select>
-                        <a data-bind="click: cancelReply">Cancel</a>
-                        <a data-bind="click: submitReply">Submit</a>
+                        <select data-bind="options: privacyOptions, optionsText: privacyLabel, value: isPublic"></select>
+                        <span class="comment-author">{{userName}}</span>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <textarea class="form-control" data-bind="value: replyContent"></textarea>
+                        </div>
+                        <div>
+                            <a class="btn btn-default btn-default" data-bind="click: submitReply"><i class="icon-check"></i> Save</a>
+                            <a class="btn btn-default btn-default" data-bind="click: cancelReply"><i class="icon-undo"></i> Cancel</a>
+                        </div>
                     </div>
                 <!-- /ko -->
 
@@ -210,14 +241,16 @@ ${parent.javascript_bottom()}
 <script>
 
     var $comments = $('#comments');
+    var userName = '${user_full_name}';
     var canComment = ${'true' if node['can_comment'] else 'false'};
+    var hasChildren = ${'true' if node['has_children'] else 'false'};
 
     if ($comments.length) {
 
         $script(['/static/js/comment.js'], 'comment');
 
         $script.ready('comment', function () {
-            Comment.init('#comments', canComment)
+            Comment.init('#comments', userName, canComment, hasChildren);
         });
 
     }

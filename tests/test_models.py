@@ -10,7 +10,7 @@ import datetime
 import urlparse
 from dateutil import parser
 
-from modularodm.exceptions import ValidationError, ValidationValueError
+from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
@@ -22,19 +22,19 @@ from framework.bcrypt import check_password_hash
 from framework.git.exceptions import FileNotModified
 from website import settings, filters
 from website.profile.utils import serialize_user
-from website.project.model import Pointer, ApiKey, NodeLog, ensure_schemas
+from website.project.model import Pointer, ApiKey, NodeLog, Comment, ensure_schemas
 from website.addons.osffiles.model import NodeFile
 
 from tests.base import DbTestCase, Guid, fake
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
-    ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
+    ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, UnregUserFactory, RegistrationFactory, UnregUserFactory,
-    ProjectWithAddonFactory, UnconfirmedUserFactory
+    ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory
 )
 
 
-GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory, MetaDataFactory
+GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
 class TestUser(DbTestCase):
 
@@ -426,15 +426,6 @@ class TestGUID(DbTestCase):
                 record_guid.referent,
                 record
             )
-
-
-class TestMetaData(DbTestCase):
-
-    def setUp(self):
-        pass
-
-    def test_referent(self):
-        pass
 
 
 class TestNodeFile(DbTestCase):
@@ -1899,6 +1890,69 @@ class TestProjectWithAddons(DbTestCase):
         p = ProjectWithAddonFactory(addon='s3')
         assert_true(p.get_addon('s3'))
         assert_true(p.creator.get_addon('s3'))
+
+
+class TestComments(DbTestCase):
+
+    def setUp(self):
+        self.comment = CommentFactory()
+        self.consolidated_auth = Auth(user=self.comment.user)
+
+    def test_create(self):
+        comment = Comment.create(
+            auth=self.consolidated_auth,
+            user=self.comment.user,
+            node=self.comment.node,
+            target=self.comment.target,
+            is_public=True,
+        )
+        assert_equal(comment.user, self.comment.user)
+        assert_equal(comment.node, self.comment.node)
+        assert_equal(comment.target, self.comment.target)
+        assert_equal(len(comment.node.logs), 2)
+        assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
+
+    def test_edit(self):
+        self.comment.edit(
+            auth=self.consolidated_auth,
+            content='edited', is_public=False
+        )
+        assert_equal(self.comment.content, 'edited')
+        assert_equal(self.comment.is_public, False)
+        assert_true(self.comment.modified)
+        assert_equal(len(self.comment.node.logs), 2)
+        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_UPDATED)
+
+    def test_delete(self):
+        self.comment.delete(auth=self.consolidated_auth)
+        assert_equal(self.comment.is_deleted, True)
+        assert_equal(len(self.comment.node.logs), 2)
+        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_REMOVED)
+
+    def test_undelete(self):
+        self.comment.delete(auth=self.consolidated_auth)
+        self.comment.undelete(auth=self.consolidated_auth)
+        assert_equal(self.comment.is_deleted, False)
+        assert_equal(len(self.comment.node.logs), 3)
+        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
+
+    def test_report_spam(self):
+        self.comment.report_spam(self.comment.user)
+        assert_in(self.comment.user._id, self.comment.reports)
+        assert_equal(
+            self.comment.reports[self.comment.user._id],
+            {'type': 'spam'}
+        )
+
+    def test_validate_reports_bad_key(self):
+        self.comment.reports[None] = {'type': 'spam'}
+        with assert_raises(ValidationValueError):
+            self.comment.save()
+
+    def test_validate_reports_bad_value(self):
+        self.comment.reports[self.comment.user._id] = 'not a dict'
+        with assert_raises(ValidationTypeError):
+            self.comment.save()
 
 if __name__ == '__main__':
     unittest.main()

@@ -3,8 +3,8 @@ this.Comment = (function($, ko, bootbox) {
     'use strict';
 
     var PRIVACY_MAP = {
-        true: 'Public',
-        false: 'Private'
+        'public': 'Public',
+        'private': 'Private'
     };
 
     /*
@@ -14,11 +14,14 @@ this.Comment = (function($, ko, bootbox) {
 
         var self = this;
 
-        self.privacyOptions= Object.keys(PRIVACY_MAP);
+        self.privacyOptions = Object.keys(PRIVACY_MAP);
+
+        self._loaded = false;
+        self.id = ko.observable();
 
         self.replying = ko.observable(false);
         self.replyContent = ko.observable('');
-        self.replyPublic = ko.observable(true);
+        self.replyPublic = ko.observable('public');
 
         self.comments = ko.observableArray();
         self.displayComments = ko.computed(function() {
@@ -41,74 +44,7 @@ this.Comment = (function($, ko, bootbox) {
         this.replying(false);
     };
 
-    BaseComment.prototype.submitReply = function() {
-        var self = this;
-        $.postJSON(
-            nodeApiUrl + 'comment/',
-            {
-                target: self.id,
-                content: self.replyContent(),
-                isPublic: self.replyPublic()
-            },
-            function(response) {
-                self.cancelReply();
-                self.replyContent(null);
-                self.comments.push(new CommentModel(response.comment, self));
-                self.onSubmitSuccess(response);
-            }
-        );
-    };
-
-    BaseComment.prototype.expandToDepth = function(depth) {
-        if (depth > 0) {
-            var commentDeferred = this.fetch();
-            if (this.showChildren) {
-                this.showChildren(true);
-            }
-            commentDeferred.done(function(comments) {
-                for (var i=0; i<comments.length; i++) {
-                    comments[i].expandToDepth(depth - 1);
-                }
-            });
-        } else {
-            this.showChildren(false);
-        }
-    };
-
-    /*
-     *
-     */
-    var CommentModel = function(data, $parent) {
-
-        BaseComment.prototype.constructor.call(this);
-
-        var self = this;
-
-        $.extend(self, data);
-        self.$parent = $parent;
-
-        self.isPublic = ko.observable(self.isPublic);
-        self.isSpam = ko.observable(self.isSpam);
-        self.content = ko.observable(self.content);
-
-        self._loaded = false;
-        self.showChildren = ko.observable(false);
-
-        self.editing = ko.observable(false);
-        self.editVerb = self.modified ? 'edited' : 'posted';
-        self.canStartEdit= ko.computed(function() {
-            return self.canEdit && !self.editing();
-        });
-
-        self.publicIcon = ko.computed(function() {
-            return self.isPublic() ? 'icon-unlock-alt' : 'icon-lock';
-        });
-
-    };
-
-    CommentModel.prototype = new BaseComment();
-
-    CommentModel.prototype.fetch = function() {
+    BaseComment.prototype.fetch = function() {
         var self = this;
         var deferred = $.Deferred();
         if (self._loaded) {
@@ -116,7 +52,7 @@ this.Comment = (function($, ko, bootbox) {
         }
         $.getJSON(
             nodeApiUrl + 'comments/',
-            {target: self.id},
+            {target: self.id()},
             function(response) {
                 self.comments(
                     ko.utils.arrayMap(response.comments, function(comment) {
@@ -130,24 +66,80 @@ this.Comment = (function($, ko, bootbox) {
         return deferred;
     };
 
+    BaseComment.prototype.submitReply = function() {
+        var self = this;
+        $.osf.postJSON(
+            nodeApiUrl + 'comment/',
+            {
+                target: self.id(),
+                content: self.replyContent(),
+                isPublic: self.replyPublic()
+            },
+            function(response) {
+                self.cancelReply();
+                self.replyContent(null);
+                self.comments.push(new CommentModel(response.comment, self));
+                if (!self.hasChildren()) {
+                    self.hasChildren(true);
+                }
+                self.onSubmitSuccess(response);
+            }
+        );
+    };
+
+    /*
+     *
+     */
+    var CommentModel = function(data, $parent) {
+
+        BaseComment.prototype.constructor.call(this);
+
+        var self = this;
+
+        $.extend(self, ko.mapping.fromJS(data));
+        self.$parent = $parent;
+
+        self.showChildren = ko.observable(false);
+
+        self.hoverContent = ko.observable(false);
+        
+        self.editing = ko.observable(false);
+        self.editVerb = self.modified ? 'edited' : 'posted';
+
+        self.showPrivateIcon = ko.computed(function() {
+            return self.isPublic() === 'private';
+        });
+        self.toggleIcon = ko.computed(function() {
+            return self.showChildren() ? 'icon-collapse-alt' : 'icon-expand-alt';
+        });
+        self.editHighlight = ko.computed(function() {
+            return self.canEdit() && self.hoverContent();
+        });
+
+    };
+
+    CommentModel.prototype = new BaseComment();
+
     CommentModel.prototype.edit = function() {
-        this._content = this.content();
-        this._isPublic = this.isPublic();
-        this.editing(true);
+        if (this.canEdit()) {
+            this._content = this.content();
+            this._isPublic = this.isPublic();
+            this.editing(true);
+        }
     };
 
     CommentModel.prototype.cancelEdit = function() {
         this.editing(false);
+        this.hoverContent(false);
         this.content(this._content);
         this.isPublic(this._isPublic);
     };
 
     CommentModel.prototype.submitEdit = function() {
         var self = this;
-        $.postJSON(
-            nodeApiUrl + 'comment/' + this.id + '/',
+        $.osf.postJSON(
+            nodeApiUrl + 'comment/' + self.id() + '/',
             {
-                cid: self.id,
                 content: self.content(),
                 isPublic: self.isPublic()
             },
@@ -162,13 +154,17 @@ this.Comment = (function($, ko, bootbox) {
 
     CommentModel.prototype.reportSpam = function() {
         var self = this;
-        $.postJSON(
-            nodeApiUrl + 'comment/' + this.id + '/report/spam/',
-            {isSpam: !self.isSpam()},
-            function(response) {
-                self.isSpam(!self.isSpam());
+        bootbox.confirm('Are you sure you want to report this comment as spam?', function(response) {
+            if (response) {
+                $.osf.postJSON(
+                    nodeApiUrl + 'comment/' + self.id() + '/report/spam/',
+                    {isSpam: !self.isSpam()},
+                    function(response) {
+                        self.isSpam(!self.isSpam());
+                    }
+                );
             }
-        )
+        });
     };
 
     CommentModel.prototype.remove = function() {
@@ -177,7 +173,7 @@ this.Comment = (function($, ko, bootbox) {
             if (response) {
                 $.ajax({
                     type: 'DELETE',
-                    url: nodeApiUrl + 'comment/' + this.id + '/',
+                    url: nodeApiUrl + 'comment/' + self.id() + '/',
                     success: function(response) {
                         var siblings = self.$parent.comments;
                         siblings.splice(siblings.indexOf(self), 1);
@@ -185,6 +181,14 @@ this.Comment = (function($, ko, bootbox) {
                 });
             }
         });
+    };
+
+    CommentModel.prototype.startHoverContent = function() {
+        this.hoverContent(true);
+    };
+
+    CommentModel.prototype.stopHoverContent = function() {
+        this.hoverContent(false);
     };
 
     CommentModel.prototype.toggle = function () {
@@ -199,35 +203,20 @@ this.Comment = (function($, ko, bootbox) {
     /*
      *
      */
-    var CommentListModel = function(canComment) {
+    var CommentListModel = function(userName, canComment, hasChildren) {
         BaseComment.prototype.constructor.call(this);
-        this.canComment = canComment;
+        this.userName = ko.observable(userName);
+        this.canComment = ko.observable(canComment);
+        this.hasChildren = ko.observable(hasChildren);
         this.fetch();
     };
 
     CommentListModel.prototype = new BaseComment();
 
-    CommentListModel.prototype.fetch = function() {
-        var self = this;
-        var deferred = $.Deferred();
-        $.getJSON(
-            nodeApiUrl + 'comments/',
-            function(response) {
-                self.comments(
-                    ko.utils.arrayMap(response.comments, function(comment) {
-                        return new CommentModel(comment, self);
-                    })
-                );
-                deferred.resolve(self.comments());
-            }
-        );
-        return deferred;
-    };
-
     CommentListModel.prototype.onSubmitSuccess = function() {};
 
-    var init = function(selector, canComment) {
-        var viewModel = new CommentListModel(canComment);
+    var init = function(selector, userName, canComment, hasChildren) {
+        var viewModel = new CommentListModel(userName, canComment, hasChildren);
         var $elm = $(selector);
         if (!$elm.length) {
             throw('No results found for selector');

@@ -473,6 +473,7 @@ def _view_project(node, auth, primary=False):
 
             'comment_level': node.comment_level,
             'can_comment': node.can_comment(auth),
+            'has_children': bool(getattr(node, 'commented', False)),
 
         },
         'parent_node': {

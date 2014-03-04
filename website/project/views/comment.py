@@ -34,7 +34,7 @@ def serialize_comment(comment, node, auth):
         'dateCreated': comment.date_created.strftime('%c'),
         'dateModified': comment.date_modified.strftime('%c'),
         'content': comment.content,
-        'isPublic': comment.is_public,
+        'isPublic': 'public' if comment.is_public else 'private',
         'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user,
         'canDelete': node.can_edit(auth),
@@ -83,11 +83,14 @@ def add_comment(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
     content = sanitize(content)
 
-    is_public = request.json.get('isPublic')
-    if is_public is None:
+    is_public_string = request.json.get('isPublic')
+    if is_public_string not in ['public', 'private']:
         raise HTTPError(http.BAD_REQUEST)
+    is_public = is_public_string == 'public'
 
-    comment = Comment(
+    comment = Comment.create(
+        auth=auth,
+        node=node,
         target=target,
         user=auth.user,
         is_public=is_public,
@@ -122,8 +125,9 @@ def list_comments(**kwargs):
 def edit_comment(**kwargs):
 
     auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
 
-    comment = Comment.load(request.json.get('cid'))
+    comment = Comment.load(kwargs.get('cid'))
     if comment is None:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -134,19 +138,19 @@ def edit_comment(**kwargs):
     if content is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    is_public = request.json.get('isPublic')
-    if is_public is None:
+    is_public_string = request.json.get('isPublic')
+    if is_public_string not in ['public', 'private']:
         raise HTTPError(http.BAD_REQUEST)
+    is_public = is_public_string == 'public'
 
-    comment.content = sanitize(content)
-    comment.is_public = is_public
-    comment.modified = True
+    comment.edit(
+        content=sanitize(content),
+        is_public=is_public,
+        auth=auth,
+        save=True
+    )
 
-    comment.save()
-
-    return {
-        'content': content,
-    }
+    return serialize_comment(comment, node, auth)
 
 
 @must_be_logged_in
@@ -162,7 +166,7 @@ def delete_comment(**kwargs):
     if auth.user != comment.user:
         raise HTTPError(http.FORBIDDEN)
 
-    comment.delete(save=True)
+    comment.delete(auth=auth, save=True)
 
     return {}
 

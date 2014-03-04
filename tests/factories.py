@@ -21,7 +21,7 @@ from framework.auth import User, Q
 from framework.auth.decorators import Auth
 from framework.auth.utils import parse_name
 from website.project.model import (
-    ApiKey, Node, NodeLog, WatchConfig, Tag, MetaSchema, Pointer,
+    ApiKey, Node, NodeLog, WatchConfig, Tag, MetaSchema, Pointer, Comment
 )
 
 from website.addons.wiki.model import NodeWikiPage
@@ -290,3 +290,32 @@ class DeprecatedUnregUserFactory(base.Factory):
         return target_class(*args, **kwargs).to_dict()
 
     _build = _create
+
+class CommentFactory(ModularOdmFactory):
+
+    FACTORY_FOR = Comment
+    content = Sequence(lambda n: 'Comment {0}'.format(n))
+    is_public = True
+
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        node = NodeFactory()
+        instance = target_class(
+            target=node,
+            node=node,
+            user=node.creator,
+            *args, **kwargs
+        )
+        return instance
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        node = NodeFactory()
+        instance = target_class(
+            user=node.creator,
+            node=node,
+            target=node,
+            *args, **kwargs
+        )
+        instance.save()
+        return instance

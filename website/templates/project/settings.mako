@@ -199,7 +199,7 @@ ${parent.javascript_bottom()}
             var $this = $(this);
             var commentLevel = $this.find('input[name="commentLevel"]:checked').val();
 
-            $.postJSON(
+            $.osf.postJSON(
                 nodeApiUrl + 'settings/comments/',
                 {commentLevel: commentLevel},
                 function() {

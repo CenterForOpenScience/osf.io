@@ -16,6 +16,8 @@ import pytz
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 
+from modularodm.exceptions import ValidationValueError, ValidationTypeError
+
 from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
@@ -84,39 +86,105 @@ def ensure_schemas(clear=True):
             schema_obj.save()
 
 
-def validate_comment_reports(value):
-    pass
+def validate_comment_reports(value, *args, **kwargs):
+    for key, val in value.iteritems():
+        if not User.load(key):
+            raise ValidationValueError('Keys must be user IDs')
+        if not isinstance(val, dict):
+            raise ValidationTypeError('Values must be dictionaries')
 
 
 class Comment(GuidStoredObject):
 
     _id = fields.StringField(primary=True)
 
-    target = fields.AbstractForeignField(backref='commented')
-    user = fields.ForeignField('user', backref='commented')
+    user = fields.ForeignField('user', required=True, backref='commented')
+    node = fields.ForeignField('node', required=True, backref='commented_container')
+    target = fields.AbstractForeignField(required=True, backref='commented')
+
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
     modified = fields.BooleanField()
 
-    is_public = fields.BooleanField()
-    is_deleted = fields.BooleanField()
+    is_public = fields.BooleanField(required=True)
+    is_deleted = fields.BooleanField(default=False)
     content = fields.StringField()
 
-    # TODO: Document me
+    # Dictionary field mapping user IDs to dictionaries of report details:
+    # {
+    #   'icpnw': {'type': 'spam'},
+    #   'cdi38': {'type': 'abuse', 'message': 'godwins law'},
+    # }
     reports = fields.DictionaryField(validate=validate_comment_reports)
+
+    @classmethod
+    def create(cls, auth, **kwargs):
+
+        comment = cls(**kwargs)
+        comment.save()
+
+        comment.node.add_log(
+            NodeLog.COMMENT_ADDED,
+            {
+                'project': comment.node.parent_id,
+                'node': comment.node._id,
+                'user': comment.user._id,
+                'comment': comment._id,
+            },
+            auth=auth,
+        )
+
+        return comment
+
+    def edit(self, content, is_public, auth, save=False):
+        self.content = content
+        self.is_public = is_public
+        self.modified = True
+        self.node.add_log(
+            NodeLog.COMMENT_UPDATED,
+            {
+                'project': self.node.parent_id,
+                'node': self.node._id,
+                'user': self.user._id,
+                'comment': self._id,
+            },
+            auth=auth,
+        )
+        if save:
+            self.save()
+
+    def delete(self, auth, save=False):
+        self.is_deleted = True
+        self.node.add_log(
+            NodeLog.COMMENT_REMOVED,
+            {
+                'project': self.node.parent_id,
+                'node': self.node._id,
+                'user': self.user._id,
+                'comment': self._id,
+            },
+            auth=auth,
+        )
+        if save:
+            self.save()
+
+    def undelete(self, auth, save=False):
+        self.is_deleted = False
+        self.node.add_log(
+            NodeLog.COMMENT_ADDED,
+            {
+                'project': self.node.parent_id,
+                'node': self.node._id,
+                'user': self.user._id,
+                'comment': self._id,
+            },
+            auth=auth,
+        )
+        if save:
+            self.save()
 
     def report_spam(self, user, save=False):
         self.reports[user._id] = {'type': 'spam'}
-        if save:
-            self.save()
-
-    def delete(self, save=False):
-        self.is_deleted = True
-        if save:
-            self.save()
-
-    def undelete(self, save=False):
-        self.is_deleted = False
         if save:
             self.save()
 
@@ -177,6 +245,9 @@ class NodeLog(StoredObject):
     NODE_FORKED = 'node_forked'
     ADDON_ADDED = 'addon_added'
     ADDON_REMOVED = 'addon_removed'
+    COMMENT_ADDED = 'comment_added'
+    COMMENT_REMOVED = 'comment_removed'
+    COMMENT_UPDATED = 'comment_updated'
 
     @property
     def node(self):

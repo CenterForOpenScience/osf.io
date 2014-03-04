@@ -105,6 +105,24 @@ font-weight: bold;
     overflow-x: hidden;
 }
 
+.comment {
+    padding: 5px;
+}
+
+.comment-author {
+    color: #999999;
+}
+
+.edit-comment {
+    background-color: #cccccc;
+    cursor: pointer;
+}
+
+.comment i {
+    cursor: pointer;
+    padding-right: 5px;
+}
+
 /* Make embedded iframes responsive */
 .addon-widget-container iframe {
     max-width: 100%;

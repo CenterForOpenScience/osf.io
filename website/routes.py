@@ -222,21 +222,6 @@ def make_url_map(app):
 
     ], prefix='/api/v1')
 
-    # process_rules(app, [
-    #
-    #     Rule([
-    #         '/metadata/node/comment/',
-    #         '/metadata/comment/comment/',
-    #     ], 'get', website_routes.node_comment_schema, json_renderer),
-    #
-    #     # Get comments
-    #     Rule('/guid/<guid>/comments/', 'get', website_routes.get_comments_guid, json_renderer),
-    #
-    #     # Add comment
-    #     Rule('/guid/<guid>/comment/', 'post', website_routes.add_comment_guid, json_renderer),
-    #
-    # ], prefix='/api/v1')
-
     ### Forms ###
 
     process_rules(app, [
@@ -753,8 +738,7 @@ def make_url_map(app):
             'post',
             project_views.node.configure_comments,
             json_renderer,
-        )
-
+        ),
 
         # Invite Users
         Rule(
