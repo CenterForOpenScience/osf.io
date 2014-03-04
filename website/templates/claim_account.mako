@@ -10,8 +10,7 @@
 
         <form method="POST" id='setPasswordForm' role='form'>
             <div class='form-group'>
-                ${form.username.label}
-                ${form.username(value=email)}
+                ${form.username(placeholder='Email', value=email)}
             </div>
             <div class='form-group'>
                 ${form.password(placeholder='New password', autofocus=True)}

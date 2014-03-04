@@ -42,6 +42,19 @@ class TestUser(DbTestCase):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
 
+    def test_update_guessed_names(self):
+        name = fake.name()
+        u = User(fullname=name)
+        u.update_guessed_names()
+        u.save()
+
+        parsed = parse_name(name)
+        assert_equal(u.fullname, name)
+        assert_equal(u.given_name, parsed['given_name'])
+        assert_equal(u.middle_names, parsed['middle_names'])
+        assert_equal(u.family_name, parsed['family_name'])
+        assert_equal(u.suffix, parsed['suffix'])
+
     def test_non_registered_user_is_not_active(self):
         u = User(username=fake.email(),
             fullname='Freddie Mercury',
@@ -58,6 +71,8 @@ class TestUser(DbTestCase):
         assert_equal(u.username, email)
         assert_false(u.is_registered)
         assert_true(email in u.emails)
+        parsed = parse_name(name)
+        assert_equal(u.given_name, parsed['given_name'])
 
     def test_create_unregistered_raises_error_if_already_in_db(self):
         u = UnregUserFactory()
@@ -87,14 +102,16 @@ class TestUser(DbTestCase):
         assert_true(u.date_registered)
 
     def test_create_unconfirmed(self):
-        u = User.create_unconfirmed(username='bar@baz.com', password='foobar',
-            fullname='Bar Baz')
+        name, email = fake.name(), fake.email()
+        u = User.create_unconfirmed(username=email, password='foobar',
+            fullname=name)
         u.save()
         assert_false(u.is_registered)
         assert_true(u.check_password('foobar'))
         assert_true(u._id)
         assert_equal(len(u.email_verifications.keys()), 1)
         assert_equal(len(u.emails), 0, 'primary email has not been added to emails list')
+        assert_equal(u.given_name, parse_name(name)['given_name'])
 
     def test_cant_create_user_without_full_name(self):
         u = User(username=fake.email())

@@ -335,7 +335,6 @@ class TestAddingContributorViews(DbTestCase):
         assert_true(res['gravatar'])
         assert_false(res['active'])
 
-
     def test_deserialize_contributors(self):
         contrib = UserFactory()
         unreg = UnregUserFactory()
@@ -353,8 +352,10 @@ class TestAddingContributorViews(DbTestCase):
             email_unregistered=True)
         assert_equal(len(res), len(contrib_data))
         assert_true(res[0].is_registered)
+
         assert_false(res[1].is_registered)
         assert_true(res[1]._primary_key)
+
         assert_false(res[2].is_registered)
         assert_true(res[2]._primary_key)
 
@@ -393,7 +394,11 @@ class TestAddingContributorViews(DbTestCase):
         new_unreg = auth.get_user(username=email)
         assert_false(new_unreg.is_registered)
         # unclaimed record was added
+        new_unreg.reload()
         assert_in(self.project._primary_key, new_unreg.unclaimed_records)
+        rec = new_unreg.get_unclaimed_record(self.project._primary_key)
+        assert_equal(rec['name'], name)
+        assert_equal(rec['email'], email)
 
     def test_add_multiple_contributors_only_adds_one_log(self):
         n_logs_pre = len(self.project.logs)
@@ -574,6 +579,30 @@ class TestClaimViews(DbTestCase):
         assert_true(self.user.is_registered)
         assert_true(self.user.is_active())
         assert_not_in(self.project._primary_key, self.user.unclaimed_records)
+
+    def test_posting_to_claim_form_sets_fullname_to_given_name(self):
+        # User is created with a full name
+        original_name = fake.name()
+        unreg = UnregUserFactory(fullname=original_name)
+        # User invited with a different name
+        different_name= fake.name()
+        new_user = self.project.add_unregistered_contributor(email=unreg.username,
+            fullname=different_name,
+            auth=Auth(self.referrer))
+        self.project.save()
+        # Goes to claim url
+        claim_url = new_user.get_claim_url(self.project._primary_key)
+        res = self.app.post(claim_url, {
+            'username': unreg.username,
+            'password': 'killerqueen', 'password2': 'killerqueen'
+        })
+        unreg.reload()
+        # Full name was set correctly
+        assert_equal(unreg.fullname, different_name)
+        # CSL names were set correctly
+        parsed_name = auth.utils.parse_name(different_name)
+        assert_equal(unreg.given_name, parsed_name['given_name'])
+        assert_equal(unreg.family_name, parsed_name['family_name'])
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_claim_user_post_returns_fullname(self, send_mail):

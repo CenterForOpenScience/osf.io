@@ -770,6 +770,20 @@ class TestClaiming(DbTestCase):
         res = form.submit().maybe_follow(expect_errors=True)
         assert_in(language.ALREADY_REGISTERED.format(email=reg_user.username), res)
 
+    def test_correct_display_name_is_shown_at_claim_page(self):
+        original_name = fake.name()
+        unreg = UnregUserFactory(fullname=original_name)
+
+        different_name= fake.name()
+        new_user = self.project.add_unregistered_contributor(email=unreg.username,
+            fullname=different_name,
+            auth=Auth(self.referrer))
+        self.project.save()
+        claim_url = new_user.get_claim_url(self.project._primary_key)
+        res = self.app.get(claim_url)
+        # Correct name (different_name) should be on page
+        assert_in(different_name, res)
+
 
 
 class TestConfirmingEmail(DbTestCase):

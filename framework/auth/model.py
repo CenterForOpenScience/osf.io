@@ -110,13 +110,11 @@ class User(GuidStoredObject, AddonModelMixin):
         :raises: DuplicateEmailError if a user with the given email address
             is already in the database.
         """
-        parsed = utils.parse_name(fullname)
         user = cls(
             username=email,
             fullname=fullname,
-            **parsed
         )
-        # Make sure user isn't already in database
+        user.update_guessed_names()
         if email:
             user.emails.append(email)
         user.is_registered = False
@@ -127,16 +125,24 @@ class User(GuidStoredObject, AddonModelMixin):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
         """
-        parsed = utils.parse_name(fullname)
         user = cls(
             username=username,
             fullname=fullname,
-            **parsed
         )
+        user.update_guessed_names()
         user.set_password(password)
         user.add_email_verification(username)
         user.is_registered = False
         return user
+
+    def update_guessed_names(self):
+        """Updates the CSL name fields inferred from the the full name.
+        """
+        parsed = utils.parse_name(self.fullname)
+        self.given_name = parsed['given_name']
+        self.middle_names = parsed['middle_names']
+        self.family_name = parsed['family_name']
+        self.suffix = parsed['suffix']
 
     def register(self, username, password=None):
         """Registers the user.

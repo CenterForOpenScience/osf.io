@@ -224,7 +224,6 @@ def deserialize_contributors(node, user_dicts, auth, email_unregistered=True):
                 user = framework.auth.get_user(username=contrib_dict['email'])
 
         if not user.is_registered:
-            # TODO: adding unclaimed record should be a post-add-contributor hook
             user.add_unclaimed_record(node=node,
                 referrer=auth.user,
                 email=contrib_dict['email'],
@@ -343,6 +342,8 @@ def claim_user_form(**kwargs):
             username = form.username.data
             password = form.password.data
             user.register(username=username, password=password)
+            user.fullname = unclaimed_record['name']
+            user.update_guessed_names()
             del user.unclaimed_records[pid]
             user.save()
             # Authenticate user and redirect to project page
@@ -353,10 +354,9 @@ def claim_user_form(**kwargs):
             return framework.auth.authenticate(user, response)
         else:
             forms.push_errors_to_status(form.errors)
-    parsed_name = parse_name(user.fullname)
     is_json_request = request.content_type == 'application/json'
     return {
-        'firstname': parsed_name['given_name'],
+        'firstname': user.given_name,
         'email': email,
         'fullname': user.fullname,
         'form': forms.utils.jsonify(form) if is_json_request else form,
