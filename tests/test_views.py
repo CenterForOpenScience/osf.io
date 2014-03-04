@@ -9,7 +9,7 @@ import mock
 
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
-from framework import Q, auth
+from framework import Q, auth, url_for
 from framework.auth.model import User
 
 import website.app
@@ -385,7 +385,9 @@ class TestAddingContributorViews(DbTestCase):
             'users': [_add_contributor_json(reg_user), pseudouser],
             'node_ids': []
         }
-        url = "/api/v1/project/{0}/addcontributors/".format(self.project._id)
+        with app.test_request_context():
+            url = url_for('JSONRenderer__project_addcontributors_post',
+                pid=self.project._primary_key)
         self.app.post_json(url, payload).maybe_follow()
         self.project.reload()
         assert_equal(len(self.project.contributors),
@@ -400,6 +402,22 @@ class TestAddingContributorViews(DbTestCase):
         assert_equal(rec['name'], name)
         assert_equal(rec['email'], email)
 
+    @mock.patch('website.project.views.contributor.send_claim_email')
+    def test_email_sent_when_unreg_user_is_added(self, send_mail):
+        name, email = fake.name(), fake.email()
+        pseudouser = {'id': None, 'registered': False, 'fullname': name,
+                        'email': email}
+        payload = {
+            'users': [pseudouser],
+            'node_ids': []
+        }
+        with app.test_request_context():
+            url = url_for('JSONRenderer__project_addcontributors_post',
+                pid=self.project._primary_key)
+        self.app.post_json(url, payload).maybe_follow()
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(email=email))
+
     def test_add_multiple_contributors_only_adds_one_log(self):
         n_logs_pre = len(self.project.logs)
         reg_user = UserFactory()
@@ -410,7 +428,9 @@ class TestAddingContributorViews(DbTestCase):
             'users': [_add_contributor_json(reg_user), pseudouser],
             'node_ids': []
         }
-        url = "/api/v1/project/{0}/addcontributors/".format(self.project._id)
+        with app.test_request_context():
+            url = url_for('JSONRenderer__project_addcontributors_post',
+                pid=self.project._primary_key)
         res = self.app.post_json(url, payload).maybe_follow()
         self.project.reload()
         assert_equal(len(self.project.logs), n_logs_pre + 1)
