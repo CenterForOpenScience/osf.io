@@ -17,7 +17,7 @@ from tests.factories import (UserFactory, ProjectFactory, ApiKeyFactory,
 class TestWatching(DbTestCase):
 
     def setUp(self):
-        self.user = UserFactory(username="tesla@electric.com")
+        self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user)
         # add some log objects
         api_key = ApiKeyFactory()

@@ -30,4 +30,4 @@ from framework.auth.decorators import must_be_logged_in
 from framework.forms import Form, PasswordField, BooleanField, IntegerField, \
     DateField, DateTimeField, FileField, HiddenField, RadioField, SelectField,\
     SelectMultipleField, SubmitField, TextAreaField, TextField, validators, \
-    push_errors_to_status, MyTextInput, FieldList
+    push_errors_to_status, FieldList

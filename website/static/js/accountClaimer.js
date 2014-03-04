@@ -1,8 +1,10 @@
-this.OSFAccountClaimer = (function($, global, undefined) {
-
-    var defaults = {
-
-    };
+/**
+ * Module that enables account claiming on the project page. Makes unclaimed
+ * usernames show popovers when clicked, where they can input their email.
+ *
+ * Sends HTTP requests to the claim_user_post endpoint.
+ */
+this.OSFAccountClaimer = (function($, global, bootbox) {
 
     /** Validates that the input is an email address.
     * https://stackoverflow.com/questions/46155/validate-email-address-in-javascript
@@ -12,10 +14,9 @@ this.OSFAccountClaimer = (function($, global, undefined) {
         return re.test(email);
     }
 
-    function AccountClaimer (selector, options) {
+    function AccountClaimer (selector) {
         this.selector = selector;
         this.element = $(selector);
-        this.options = $.extend({}, defaults, options);
         this.init();
     }
 
@@ -31,14 +32,22 @@ this.OSFAccountClaimer = (function($, global, undefined) {
         init: function() {
             this.element.editable({
                 type: 'text',
+                value: '',
                 ajaxOptions: {
                     type: 'post',
                     contentType: 'application/json',
                     dataType: 'json'  // Expect JSON response
                 },
-                success: function(response) {
-                    // NOTE: workaround for X-editable to make value not change
-                    return {newValue: response.fullname};
+                success: function(data) {
+                    bootbox.alert({
+                        title: 'Email will arrive shortly',
+                        message: ['Please check <em>', data.email, '</em>'].join('')
+                    });
+                },
+                display: function(value, sourceData){
+                    if (sourceData && sourceData.fullname) {
+                        $(this).text(sourceData.fullname);
+                    }
                 },
                 // Send JSON payload
                 params: function(params) {
@@ -55,11 +64,10 @@ this.OSFAccountClaimer = (function($, global, undefined) {
                     }
                 },
                 url: getClaimUrl.call(this),
-                setValue: function(){}
             });
         }
     };
 
     return AccountClaimer;
 
-})(jQuery, window);
+})(jQuery, window, bootbox);

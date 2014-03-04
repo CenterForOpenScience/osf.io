@@ -1,4 +1,4 @@
-<nav class="subnav navbar navbar-default">
+<nav class="navbar navbar-default">
     <ul class="nav navbar-nav">
 
         % if is_edit:

@@ -5,6 +5,7 @@ from framework.forms import (
     NoHtmlCharacters,
     PasswordField,
     TextField,
+    HiddenField,
     validators,
     BootstrapTextInput,
     BootstrapPasswordInput,
@@ -132,6 +133,7 @@ class ResetPasswordForm(Form):
 
 class SetEmailAndPasswordForm(ResetPasswordForm):
     username = unique_email_field
+    token = HiddenField()
 
 # TODO: use unique email field and remove redundant status message and
 # validation in the views
