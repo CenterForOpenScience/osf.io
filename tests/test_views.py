@@ -98,7 +98,7 @@ class TestProjectViews(DbTestCase):
         project = ProjectFactory(creator=self.user1, is_public=True)
         user2 = UserFactory()
         user3 = UserFactory()
-        url = "/api/v1/project/{0}/addcontributors/".format(project._id)
+        url = "/api/v1/project/{0}/contributors/".format(project._id)
         payload =  {"users": [_add_contributor_json(user2),
             _add_contributor_json(user3)]}
         res = self.app.post_json(url, payload,
@@ -386,7 +386,7 @@ class TestAddingContributorViews(DbTestCase):
             'node_ids': []
         }
         with app.test_request_context():
-            url = url_for('JSONRenderer__project_addcontributors_post',
+            url = url_for('JSONRenderer__project_contributors_post',
                 pid=self.project._primary_key)
         self.app.post_json(url, payload).maybe_follow()
         self.project.reload()
@@ -412,7 +412,7 @@ class TestAddingContributorViews(DbTestCase):
             'node_ids': []
         }
         with app.test_request_context():
-            url = url_for('JSONRenderer__project_addcontributors_post',
+            url = url_for('JSONRenderer__project_contributors_post',
                 pid=self.project._primary_key)
         self.app.post_json(url, payload).maybe_follow()
         assert_true(send_mail.called)
@@ -429,7 +429,7 @@ class TestAddingContributorViews(DbTestCase):
             'node_ids': []
         }
         with app.test_request_context():
-            url = url_for('JSONRenderer__project_addcontributors_post',
+            url = url_for('JSONRenderer__project_contributors_post',
                 pid=self.project._primary_key)
         res = self.app.post_json(url, payload).maybe_follow()
         self.project.reload()
@@ -446,7 +446,7 @@ class TestAddingContributorViews(DbTestCase):
             'users': [_add_contributor_json(reg_user), pseudouser],
             'node_ids': [self.project._primary_key, child._primary_key]
         }
-        url = "/api/v1/project/{0}/addcontributors/".format(self.project._id)
+        url = "/api/v1/project/{0}/contributors/".format(self.project._id)
         res = self.app.post_json(url, payload).maybe_follow()
         child.reload()
         assert_equal(len(child.contributors),

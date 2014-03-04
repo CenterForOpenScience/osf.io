@@ -250,7 +250,7 @@ def finalize_invitation(node, contributor, auth):
 @must_be_valid_project # returns project
 @must_be_contributor  # returns user, project
 @must_not_be_registration
-def project_addcontributors_post(**kwargs):
+def project_contributors_post(**kwargs):
     """ Add contributors to a node. """
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']

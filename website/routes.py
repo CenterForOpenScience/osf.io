@@ -576,9 +576,9 @@ def make_url_map(app):
 
         # Add / remove contributors
         Rule([
-            '/project/<pid>/addcontributors/',
-            '/project/<pid>/node/<nid>/addcontributors/',
-        ], 'post', project_views.contributor.project_addcontributors_post, json_renderer),
+            '/project/<pid>/contributors/',
+            '/project/<pid>/node/<nid>/contributors/',
+        ], 'post', project_views.contributor.project_contributors_post, json_renderer),
         Rule([
             '/project/<pid>/beforeremovecontributors/',
             '/project/<pid>/node/<nid>/beforeremovecontributors/',
