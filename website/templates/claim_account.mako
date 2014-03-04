@@ -8,37 +8,29 @@
     <div class="col-md-6 col-md-offset-3">
     <p>Hello ${firstname}! Welcome to the Open Science Framework. Please set a password to claim your account.</p>
 
-        <div mod-meta='{
-                "tpl": "util/render_form.mako",
-                "uri": "/api/v1/forms/set_email_and_password/",
-                "kwargs": {
-                    "id": "setPasswordForm",
-                    "name": "resetpassword",
-                    "method_string": "POST",
-                    "action_string": "#",
-                    "form_class": "form",
-                    "submit_string": "Submit"
-                },
-                "replace": true
-            }'>
-        </div>
-        <div class='help-block'>
+        <form method="POST" id='setPasswordForm' role='form'>
+            <div class='form-group'>
+                ${form.username.label}
+                ${form.username(value=email)}
+            </div>
+            <div class='form-group'>
+                ${form.password(placeholder='New password', autofocus=True)}
+            </div>
+            <div class='form-group'>
+                ${form.password2(placeholder='New password again')}
+            </div>
+            ${form.token}
+            %if next_url:
+                <input type='hidden' name='next_url' value='${next_url}'>
+            %endif
+            <button type='submit' class="btn btn-submit btn-primary pull-right">Submit</button>
+        </form>
 
-            <p>If you are not ${fullname}, please contact <a href="mailto:contact@centerforopenscience.org">contact__AT__centerforopenscience.org</a>
+        <div class='help-block'>
+            <p>If you are not ${fullname}, please contact <a href="mailto:contact@centerforopenscience.org">contact@centerforopenscience.org</a>
             </p>
         </div>
     </div>
 </div>
 </%def>
 
-<%def name="javascript_bottom()">
-<script>
-## Prepopulate email address with the 'email' url param
-(function($) {
-    var emailVal = $.urlParam('email').trim()
-    if (emailVal.length) {
-        $('#username').val(emailVal);
-    }
-})(jQuery);
-</script>
-</%def>

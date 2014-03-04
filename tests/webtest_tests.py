@@ -182,7 +182,6 @@ class TestAUser(DbTestCase):
         res = self.app.get('/dashboard/', auth=self.auth, auto_follow=True)
         # Sees logs for the watched project
         assert_in('Watched Projects', res)  # Watched Projects header
-        # res.showbrowser()
         # The log action is in the feed
         assert_in('added file test.html', res)
         assert_in(project.title, res)
@@ -510,7 +509,7 @@ class TestShortUrls(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.user = UserFactory(username='test@test.com')
+        self.user = UserFactory()
         # Add an API key for quicker authentication
         api_key = ApiKeyFactory()
         self.user.api_keys.append(api_key)
@@ -660,7 +659,8 @@ class TestClaiming(DbTestCase):
         form['password2'] = 'killerqueen'
         res = form.submit().maybe_follow()
         new_user.reload()
-        assert_equal(res.request.path, self.project.url)
+        # at settings page
+        assert_equal(res.request.path, '/settings/')
         assert_in('Welcome to the OSF', res)
 
     def test_sees_error_message_at_claim_page_if_user_already_logged_in(self):

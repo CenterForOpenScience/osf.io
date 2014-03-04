@@ -1,7 +1,5 @@
-<%inherit file="base.mako"/>
+<%inherit file="project/project_base.mako"/>
 <%def name="title()">Project Settings</%def>
-<%def name="content()">
-<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 ##<!-- Show API key settings -->
 ##<div mod-meta='{
@@ -135,9 +133,9 @@
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>
 % endfor
 
-</%def>
 
 <%def name="javascript_bottom()">
+${parent.javascript_bottom()}
 
 <script type="text/javascript" src="/static/js/metadata_1.js"></script>
 

@@ -454,7 +454,7 @@ def _view_project(node, auth, primary=False):
             'points': node.points,
             'piwik_site_id': node.piwik_site_id,
         },
-        'parent': {
+        'parent_node': {
             'id': parent._primary_key if parent else '',
             'title': parent.title if parent else '',
             'url': parent.url if parent else '',
@@ -469,6 +469,7 @@ def _view_project(node, auth, primary=False):
                                 and not node.is_registration),
             'is_watching': user.is_watching(node) if user else False,
             'piwik_token': user.piwik_token if user else '',
+            'id': user._primary_key if user else None,
         },
         # TODO: Namespace with nested dicts
         'addons_enabled': node.get_addon_names(),

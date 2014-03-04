@@ -1,7 +1,6 @@
-<%inherit file="base.mako"/>
+<%inherit file="project/project_base.mako"/>
 <%def name="title()">Registrations</%def>
-<%def name="content()">
-<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
+
 <div class="page-header">
     <div class="pull-right">
     % if user['can_edit'] and node['category'] == 'project':
@@ -25,4 +24,3 @@
     Open Science Framework, click <a href="/explore/activity/">here</a>.
 
 % endif
-</%def>

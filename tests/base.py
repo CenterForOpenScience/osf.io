@@ -56,6 +56,7 @@ class DbTestCase(unittest.TestCase):
             website.models.MODELS, storage.MongoStorage,
             addons=settings.ADDONS_AVAILABLE, db=klass.db,
         )
+        klass._client.drop_database(klass.db)
 
     @classmethod
     def tearDownClass(klass):

@@ -1094,7 +1094,10 @@ h1.unavailable {
   height: auto;
 }
 
+.editable {
+  cursor: pointer;
+}
 
-.contributor.editable {
+a {
   cursor: pointer;
 }
