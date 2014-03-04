@@ -989,7 +989,6 @@ class TestProject(DbTestCase):
         assert_true(hasattr(node, 'registered_schema'))
         assert_true(node.creator)
         assert_true(node.contributors)
-        assert_true(node.contributor_list)
         assert_equal(len(node.logs), 1)
         assert_true(hasattr(node, 'tags'))
         assert_true(hasattr(node, 'nodes'))
@@ -1052,10 +1051,7 @@ class TestProject(DbTestCase):
         assert_equal(latest_contributor.username, 'foo@bar.com')
         assert_equal(latest_contributor.fullname, 'Weezy F. Baby')
         assert_false(latest_contributor.is_registered)
-        # Contributor list includes nonregistered contributor
-        latest_contributor_dict = self.project.contributor_list[-1]
-        assert_dict_equal(latest_contributor_dict,
-                        {'id': latest_contributor._primary_key})
+
         # A log event was added
         assert_equal(self.project.logs[-1].action, 'contributor_added')
         assert_in(self.project._primary_key, latest_contributor.unclaimed_records,
@@ -1074,8 +1070,9 @@ class TestProject(DbTestCase):
 
         # unclaimed record was added
         assert_in(self.project._primary_key, unreg.unclaimed_records)
-        record = unreg.get_unclaimed_record()
+        record = unreg.get_unclaimed_record(self.project._primary_key)
         assert_equal(record['referrer_id'], self.user._primary_key)
+        assert_equal(record['name'], unreg.fullname)
 
     def test_add_unregistered_adds_new_unclaimed_record_if_user_already_in_db(self):
         user = UnregUserFactory()
@@ -1111,10 +1108,6 @@ class TestProject(DbTestCase):
             contributor=user2
         )
         assert_not_in(user2, self.project.contributors)
-        assert_not_in(
-            user2._id,
-            [contrib.get('id') for contrib in self.project.contributor_list]
-        )
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self):
@@ -1253,7 +1246,6 @@ class TestProject(DbTestCase):
         self.project.add_contributors([user1, user2], auth=self.consolidate_auth)
         self.project.save()
         assert_equal(len(self.project.contributors), 3)
-        assert_equal(len(self.project.contributor_list), 3)
         assert_equal(self.project.logs[-1].params['contributors'],
                         [user1._id, user2._id])
 
@@ -1337,11 +1329,6 @@ class TestForkNode(DbTestCase):
         assert_in(fork._id, original.node__forked)
         # Note: Must cast ForeignList to list for comparison
         assert_equal(list(fork.contributors), [fork_user])
-        assert_equal(len(fork.contributor_list), 1)
-        assert_in(
-            fork_user._id,
-            [user.get('id') for user in fork.contributor_list]
-        )
         assert_true((fork_date - fork.date_created) < datetime.timedelta(seconds=30))
         assert_not_equal(fork.forked_date, original.date_created)
 
@@ -1552,12 +1539,6 @@ class TestRegisterNode(DbTestCase):
 
     def test_contributors(self):
         assert_equal(self.registration.contributors, self.project.contributors)
-
-    def test_contributors_list(self):
-        assert_equal(
-            self.registration.contributor_list,
-            self.project.contributor_list,
-        )
 
     def test_forked_from(self):
         # A a node that is not a fork

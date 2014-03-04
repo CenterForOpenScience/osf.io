@@ -330,9 +330,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     creator = fields.ForeignField('user', backref='created')
     contributors = fields.ForeignField('user', list=True, backref='contributed')
-    # Dict list that includes registered AND unregsitered users
-    # Example: [{u'id': u've4nx'}, {u'nr_name': u'Joe Dirt', u'nr_email': u'joe@example.com'}]
-    contributor_list = fields.DictionaryField(list=True)
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
 
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
@@ -366,7 +363,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         if self.creator:
             self.contributors.append(self.creator)
-            self.contributor_list.append({'id': self.creator._primary_key})
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -844,7 +840,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.forked_from = original
         forked.is_public = False
         forked.creator = user
-        forked.contributor_list = []
 
         forked.add_contributor(contributor=user, log=False, save=False)
 
@@ -1366,27 +1361,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
         )
 
-    def remove_nonregistered_contributor(self, auth, name, hash_id):
-        deleted = False
-        for idx, contrib in enumerate(self.contributor_list):
-            if contrib.get('nr_name') == name and hashlib.md5(contrib.get('nr_email')).hexdigest() == hash_id:
-                del self.contributor_list[idx]
-                deleted = True
-                break
-        if not deleted:
-            return False
-        self.save()
-        self.add_log(
-            action=NodeLog.CONTRIB_REMOVED,
-            params={
-                'project': self.parent_id,
-                'node': self._primary_key,
-                'contributor': contrib,
-            },
-            auth=auth,
-        )
-        return True
-
     def add_addon(self, addon_name, auth, log=True):
         """Add an add-on to the node.
 
@@ -1476,7 +1450,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             if self._primary_key in contributor.unclaimed_records:
                 del contributor.unclaimed_records[self._primary_key]
             self.contributors.remove(contributor._id)
-            self.contributor_list[:] = [d for d in self.contributor_list if d.get('id') != contributor._id]
             self.save()
             removed_user = get_user(contributor._id)
 
@@ -1516,7 +1489,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
         if contrib_to_add._primary_key not in self.contributors:
             self.contributors.append(contrib_to_add)
-            self.contributor_list.append({'id': contrib_to_add._primary_key})
             # Add contributor to recently added list for user
             if auth is not None:
                 user = auth.user
@@ -1525,6 +1497,13 @@ class Node(GuidStoredObject, AddonModelMixin):
                 user.recently_added.insert(0, contrib_to_add)
                 while len(user.recently_added) > MAX_RECENT_LENGTH:
                     user.recently_added.pop()
+            # Add unclaimed record if necessary
+            if (not contributor.is_registered
+                and self._primary_key not in contributor.unclaimed_records):
+                contributor.add_unclaimed_record(node=self, referrer=auth.user,
+                    given_name=contributor.fullname,
+                    email=contributor.username)
+                contributor.save()
 
             if log:
                 self.add_log(
@@ -1586,7 +1565,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             given_name=fullname, email=email)
         try:
             contributor.save()
-        except ValidationValueError:
+        except ValidationValueError:  # User with same email already exists
             contributor = get_user(username=email)
             # Unregistered users may have multiple unclaimed records, so
             # only raise error if user is registered.

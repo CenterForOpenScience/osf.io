@@ -9,7 +9,7 @@ import mock
 
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
-from framework import Q
+from framework import Q, auth
 from framework.auth.model import User
 
 import website.app
@@ -108,7 +108,6 @@ class TestProjectViews(DbTestCase):
         # A log event was added
         assert_equal(project.logs[-1].action, "contributor_added")
         assert_equal(len(project.contributors), 3)
-        assert_equal(len(project.contributor_list), 3)
 
     def test_project_remove_contributor(self):
         url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
@@ -380,16 +379,21 @@ class TestAddingContributorViews(DbTestCase):
         reg_user = UserFactory()
         name, email = fake.name(), fake.email()
         pseudouser = {'id': None, 'registered': False, 'fullname': name,
-                        'email': fake.email()}
+                        'email': email}
         payload = {
             'users': [_add_contributor_json(reg_user), pseudouser],
             'node_ids': []
         }
         url = "/api/v1/project/{0}/addcontributors/".format(self.project._id)
-        res = self.app.post_json(url, payload).maybe_follow()
+        self.app.post_json(url, payload).maybe_follow()
         self.project.reload()
         assert_equal(len(self.project.contributors),
             n_contributors_pre + len(payload['users']))
+
+        new_unreg = auth.get_user(username=email)
+        assert_false(new_unreg.is_registered)
+        # unclaimed record was added
+        assert_in(self.project._primary_key, new_unreg.unclaimed_records)
 
     def test_add_multiple_contributors_only_adds_one_log(self):
         n_logs_pre = len(self.project.logs)

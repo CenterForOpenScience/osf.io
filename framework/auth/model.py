@@ -17,7 +17,6 @@ from framework.addons import AddonModelMixin
 from framework.auth import utils
 from website import settings, filters, security
 from framework.exceptions import PermissionsError
-from framework.auth.exceptions import DuplicateEmailError
 
 
 name_formatters = {
