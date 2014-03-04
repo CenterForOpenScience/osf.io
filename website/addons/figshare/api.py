@@ -13,6 +13,7 @@ from tempfile import TemporaryFile
 import requests
 from requests_oauthlib import OAuth1Session
 from . import settings as figshare_settings
+from utils import file_to_hgrid, article_to_hgrid
 
 
 class Figshare(object):
@@ -157,7 +158,7 @@ class Figshare(object):
     def article_version(self, node_settings, article_id, article_version):
         article = self._send(
             os.path.join(node_settings.api_url, 'articles', article_id, 'versions', article_version))
-        return self.article_to_hgrid(article)
+        return article_to_hgrid(node_settings.owner, article)  # TODO Fix me
 
     def create_article(self, node_settings, article):
         body = json.dumps(
@@ -191,7 +192,7 @@ class Figshare(object):
         filestream.close()
         self.add_article_to_project(
             node_settings, node_settings.figshare_id, str(article['article_id']))
-        return self.file_to_hgrid(node, node_settings, article, response)
+        return file_to_hgrid(node, article, response)
 
     def delete_article(self, node_settings, article):
         return self._send(os.path.join(node_settings.api_url, 'articles', article), method='delete')

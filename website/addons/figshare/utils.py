@@ -17,16 +17,16 @@ def article_to_hgrid(node, article, expand=False):
             #'versions': article['version'],
             #'size': str(len(article['files'])),
             'urls':  {
-                'upload': '{base}figshare/create/article/{aid}/'.format(base=node.api_url, aid=article['article_id']),
+                'upload': '{base}figshare/{aid}/'.format(base=node.api_url, aid=article['article_id']),
                 'delete': node.api_url + 'figshare/' + str(article['article_id']) + '/file/{id}/delete/',
                 'download': '',
-                'fetch': '{base}figshare/hgrid/article/{aid}'.format(base=node.api_url, aid=article['article_id']),
+                'fetch': '{base}figshare/hgrid/article/{aid}/'.format(base=node.api_url, aid=article['article_id']),
                 'view': ''
             },
             'permissions': {
-                'edit': True if article['status'] == 'Public' else False,
+                'edit': True,#article['status'] == 'Public',  # This needs to be something else
                 'view': True,
-                'download': True if article['status'] == 'Public' else False
+                'download': article['status'] == 'Public'
             }
         }
     else:

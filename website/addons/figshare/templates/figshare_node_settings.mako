@@ -96,8 +96,8 @@
                 function(result) {
                     if (result) {
                         $.ajax({
-                            url: nodeApiUrl + 'figshare/oauth/delete/',
-                            type: 'POST',
+                            url: nodeApiUrl + 'figshare/oauth/',
+                            type: 'DELETE',
                             contentType: 'application/json',
                             dataType: 'json',
                             success: function() {

@@ -101,7 +101,7 @@ def figshare_upload_file_as_article(*args, **kwargs):
     figshare = node.get_addon('figshare')
     upload = request.files['file']
 
-    project_id = kwargs.get('project_id') or None
+    project_id = kwargs.get('project_id') or figshare.figshare_id
     if project_id is None:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -112,23 +112,23 @@ def figshare_upload_file_as_article(*args, **kwargs):
     rv = connect.upload_file(node, figshare, article['items'][0], upload)
     if rv:
         node.add_log(
-                     action='figshare_file_added',
-                     params={
-                         'project': node.parent_id,
-                         'node': node._primary_key,
-                         'path': upload.filename,  # TODO Path?
-                         'urls': {
-                             'view': rv['urls']['view'],
-                             'download': rv['urls']['download'],
-                         },
-                         'figshare': {
-                             'id': figshare.figshare_id,
-                             'type': figshare.figshare_type
-                         }
-                     },
-                     auth=kwargs['auth'],
-                     log_date=datetime.datetime.utcnow(),
-                     )
+            action='figshare_file_added',
+            params={
+                'project': node.parent_id,
+                'node': node._primary_key,
+                'path': upload.filename,  # TODO Path?
+                'urls': {
+                    'view': rv['urls']['view'],
+                    'download': rv['urls']['download'],
+                },
+                'figshare': {
+                    'id': figshare.figshare_id,
+                    'type': figshare.figshare_type
+                }
+            },
+            auth=kwargs['auth'],
+            log_date=datetime.datetime.utcnow(),
+        )
         return rv
     else:
         raise HTTPError(http.INTERNAL_SERVER_ERROR)  # TODO better error?
@@ -174,11 +174,8 @@ def figshare_delete_article(*args, **kwargs):
 def figshare_upload_file_to_article(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
 
     figshare = node.get_addon('figshare')
-
-    path = kwargs.get('path', '')
 
     article = kwargs.get('aid') or None
 
@@ -186,6 +183,8 @@ def figshare_upload_file_to_article(*args, **kwargs):
 
     if not article:
         article = connect.create_article()
+
+    article = connect.article(figshare, article)['items'][0]
 
     upload = request.files['file']
 

@@ -38,8 +38,8 @@
                 function(result) {
                     if (result) {
                         $.ajax({
-                            url: '/api/v1/settings/figshare/oauth/delete/',
-                            type: 'POST',
+                            url: '/api/v1/settings/figshare/oauth/',
+                            type: 'DELETE',
                             contentType: 'application/json',
                             dataType: 'json',
                             success: function() {
