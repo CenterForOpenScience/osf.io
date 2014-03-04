@@ -386,7 +386,8 @@ class User(GuidStoredObject, AddonModelMixin):
     def save(self, *args, **kwargs):
         self.username = self.username.lower().strip() if self.username else None
         rv = super(User, self).save(*args, **kwargs)
-        self.update_solr()
+        if self.is_active():
+            self.update_solr()
         if settings.PIWIK_HOST and not self.piwik_token:
             try:
                 piwik.create_user(self)

@@ -74,6 +74,17 @@ class TestUser(DbTestCase):
         parsed = parse_name(name)
         assert_equal(u.given_name, parsed['given_name'])
 
+    @mock.patch('framework.auth.model.User.update_solr')
+    def test_solr_not_updated_for_unreg_users(self, update_solr):
+        u = User.create_unregistered(fullname=fake.name(), email=fake.email())
+        u.save()
+        assert_false(update_solr.called)
+
+    @mock.patch('framework.auth.model.User.update_solr')
+    def test_solr_updated_for_registered_users(self, update_solr):
+        u = UserFactory(is_registered=True)
+        assert_true(update_solr.called)
+
     def test_create_unregistered_raises_error_if_already_in_db(self):
         u = UnregUserFactory()
         dupe = User.create_unregistered(fullname=fake.name(), email=u.username)

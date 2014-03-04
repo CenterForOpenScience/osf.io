@@ -785,7 +785,6 @@ class TestClaiming(DbTestCase):
         assert_in(different_name, res)
 
 
-
 class TestConfirmingEmail(DbTestCase):
     def setUp(self):
         self.app = TestApp(app)
