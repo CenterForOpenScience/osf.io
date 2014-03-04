@@ -2,13 +2,10 @@ import httplib as http
 from re import search, split
 
 from framework import request
-from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
 from website.project.decorators import must_be_contributor
 from website.project.decorators import must_have_addon
-
-from ..api import Figshare
 
 
 @must_be_contributor

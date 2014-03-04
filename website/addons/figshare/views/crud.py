@@ -138,8 +138,7 @@ def figshare_upload_file_as_article(*args, **kwargs):
 @decorators.must_have_addon('figshare', 'node')
 def figshare_publish_article(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
-    user = auth.user
+
     figshare = node.get_addon('figshare')
 
     article_id = kwargs.get('aid')
@@ -294,7 +293,6 @@ def figshare_view_file(*args, **kwargs):
     categories = connect.categories()['items']
     categories = ''.join(
         ["<option value='{val}'>{label}</option>".format(val=i['id'], label=i['name']) for i in categories])
-
     rv = {
         'file_name': filename,
         'render_url': render_url,

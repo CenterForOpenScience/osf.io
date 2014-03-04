@@ -49,8 +49,6 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         'addonfigshareusersettings', backref='authorized'
     )
 
-    registration_data = fields.DictionaryField()
-
     @property
     def embed_url(self):
         return 'http://wl.figshare.com/articles/{fid}/embed?show_title=1'.format(
@@ -114,7 +112,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             )
             return [message]
 
-        connect = Figshare.from_settings(self.user_settings)        
+        connect = Figshare.from_settings(self.user_settings)
         article_is_public = connect.article_is_public(self.figshare_id)
 
         article_permissions = 'public' if article_is_public else 'private'
