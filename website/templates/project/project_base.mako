@@ -20,6 +20,11 @@ ${next.body()}
 <%def name="javascript_bottom()">
 <% import json %>
 <script>
+    // Import modules
+    $script(['/static/js/nodeControl.js'], 'nodeControl');
+    $script(['/static/js/logFeed.js'], 'logFeed');
+    $script(['/static/js/contribAdder.js'], 'contribAdder');
+
     // TODO: pollution! namespace me
     var userId = '${user_id}';
     var nodeId = '${node['id']}';
@@ -29,12 +34,6 @@ ${next.body()}
     $(function() {
 
         $logScope = $('#logScope');
-
-        // Import modules
-        $script(['/static/js/nodeControl.js'], 'nodeControl');
-        $script(['/static/js/logFeed.js'], 'logFeed');
-
-
         // Get project data from the server and initiate KO modules
         $.ajax({
             type: 'get',
@@ -53,26 +52,21 @@ ${next.body()}
                         var logFeed = new LogFeed('#logScope', data.node.logs);
                     }
                 });
-
-                // TODO: move AddContributorViewModel to its own module
+                // If user is a contributor, initialize the contributor modal
+                // controller
                 if (data.user.can_edit) {
-                    // Initiate AddContributorViewModel
-                    var $addContributors = $('#addContributorsScope');
-                    var addContribVM = new AddContributorViewModel(
-                        data.node.title,
-                        data.parent_node.id,
-                        data.parent_node.title
-                    );
-                    ko.applyBindings(addContribVM, $addContributors[0]);
-                    // Clear user search modal when dismissed; catches dismiss by escape key
-                    // or cancel button.
-                    $addContributors.on('hidden.bs.modal', function() {
-                        addContribVM.clear();
+                    $script.ready('contribAdder', function() {
+                        var contribAdder = new ContribAdder(
+                            '#addContributorsScope',
+                            data.node.title,
+                            data.parent_node.id,
+                            data.parent_node.title
+                        );
                     });
                 }
             }
         });
-
+        // TODO: move AddPointerViewModel to its own module
         var $addPointer = $('#addPointer');
         var addPointerVM = new AddPointerViewModel(${json.dumps(node['title'])});
         ko.applyBindings(addPointerVM, $addPointer[0]);

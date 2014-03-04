@@ -5,6 +5,7 @@ to actual User records.
 """
 import logging
 
+from modularodm.exceptions import ValidationValueError
 from website import app, models
 from framework import auth
 from framework.auth.decorators import Auth
@@ -30,7 +31,7 @@ def make_user(user_dict):
             user = models.User.create_unregistered(fullname=name,
                 email=email)
             user.save()
-        except auth.exceptions.DuplicateEmailError:
+        except ValidationValueError:
             user = auth.get_user(username=email)
             assert user is not None
     return user

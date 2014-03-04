@@ -225,7 +225,7 @@ class User(GuidStoredObject, AddonModelMixin):
         base_url = settings.DOMAIN if external else '/'
         unclaimed_record = self.get_unclaimed_record(project_id)
         token = unclaimed_record['token']
-        return '{base_url}user/{uid}/{project_id}/claim/{token}/'\
+        return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\
                     .format(**locals())
 
     def set_password(self, raw_password):
