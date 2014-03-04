@@ -19,6 +19,7 @@ from website.addons.figshare import settings as figshare_settings
 from website.addons.figshare.model import FigShareGuidFile
 
 from ..api import Figshare
+from website.addons.figshare import messages
 
 # Helpers
 
@@ -147,6 +148,8 @@ def figshare_publish_article(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     cat = request.json.get('category', '')
+    tags = reqest.json.get('tags', '')
+    
     if not cat:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -265,8 +268,9 @@ def figshare_view_file(*args, **kwargs):
     version_url = "http://figshare.com/articles/{filename}/{file_id}".format(
         filename=article['items'][0]['title'], file_id=article['items'][0]['article_id'])
 
-    download_url = node.api_url + \
-        'download/article/{aid}/file/{fid}'.format(aid=article_id, fid=file_id)
+    #'download/article/{aid}/file/{fid}'.format(aid=article_id, fid=file_id)
+    download_url = found.get('download_url')
+        
     render_url = node.api_url + \
         'figshare/render/article/{aid}/file/{fid}'.format(aid=article_id, fid=file_id)
 
@@ -277,12 +281,12 @@ def figshare_view_file(*args, **kwargs):
     filename = found['name']
 
     if private:
-        rendered = "Since this FigShare file is unpublished we cannot render it. In order to access this content you will need to log into the <a href='{url}'>FigShare page</a> and view it there.".format(
+        rendered = messages.FIGSHARE_VIEW_FILE_PRIVATE.format(    
             url='http://figshare.com/')
     elif rendered is None:
         filename, size, filedata = connect.get_file(node_settings, found)
         if figshare_settings.MAX_RENDER_SIZE is not None and size > figshare_settings.MAX_RENDER_SIZE:
-            rendered = "File too large to render; <a href='{url}'>download file</a> to view it".format(
+            rendered = messages.FIGSHARE_VIEW_FILE_OVERSIZE.format(
                 url=found.get('download_url'))
         else:
             rendered = get_cache_content(
@@ -302,7 +306,9 @@ def figshare_view_file(*args, **kwargs):
         'version_url': version_url,
         'parent_type': 'fileset' if article['items'][0]['defined_type'] == 'fileset' else 'singlefile',
         'parent_id': article['items'][0]['article_id'],
-        'figshare_categories': categories
+        'figshare_categories': categories,
+        'figshare_title': article['items'][0]['title'],
+        'figshare_desc': article['items'][0]['description'],                 
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv
@@ -337,3 +343,12 @@ def figshare_delete_file(*args, **kwargs):
 @must_have_addon('figshare', 'node')
 def figshare_get_rendered_file(*args, **kwargs):
     node_settings = kwargs['node_addon']
+    
+    article_id = kwargs['aid']
+    file_id = kwargs['fid']
+
+    cache_file = get_cache_file(
+        article_id, file_id
+    )
+
+    return get_cache_content(node_settings, cache_file)

@@ -8,7 +8,7 @@ from website.addons.base import GuidFile
 
 from .api import Figshare
 from . import settings as figshare_settings
-
+from . import messages
 
 class FigShareGuidFile(GuidFile):
 
@@ -107,34 +107,27 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
         node_permissions = 'public' if node.is_public else 'private'
 
-        if figshare.figshare_type == 'project' and node_permissions == 'private':
-            message = (
-                'Warnings: This OSF {category} is private but FigShare project {project} may contain some public files or filesets'.format(category=node.project_or_component,
-                             project=figshare.figshare_id)
-            )
-            return [message]
+        if figshare.figshare_type == 'project':
+            if node_permissions == 'private':
+                message = messages.BEFORE_PAGE_LOAD_PRIVATE_NODE_MIXED_FS.format(category=node.project_or_component, project_id=figshare.figshare_id)
+                return [message]
+            else:
+                message = messages.BEFORE_PAGE_LOAD_PUBLIC_NODE_MIXED_FS.format(category=node.project_or_component, project_id=figshare.figshare_id)
 
         connect = Figshare.from_settings(self.user_settings)
         article_is_public = connect.article_is_public(self.figshare_id)
 
-        article_permissions = 'public' if article_is_public else 'private'
+        figshare_permissions = 'public' if article_is_public else 'private'
 
         if article_permissions != node_permissions:
-            message = (
-                'Warnings: This OSF {category} is {node_perm}, but the FigShare '
-                '{node} {article} is {article_perm}. '.format(
+            message = messages.BEFORE_PAGE_LOAD_PERM_MISMATCH.format(
                     category=node.project_or_component,
                     node_perm=node_permissions,
-                    article_perm=article_permissions,
-                    article=self.figshare_id,
-                    node=self.figshare_type
+                    figshare_perm=article_permissions,
+                    figshare_id=self.figshare_id,
                 )
-            )
-            if article_permissions == 'private':
-                message += (
-                    'Users can view the contents of this private FigShare '
-                    'article through this public project.'
-                )
+            if article_permissions == 'private' and node_permissions == 'public':
+                message += messages.BEFORE_PAGE_LOAD_PUBLIC_NODE_PRIVATE_FS
             return [message]
 
     def before_remove_contributor(self, node, removed):
@@ -146,11 +139,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
         """
         if self.user_settings and self.user_settings.owner == removed:
-            return (
-                'The FigShare add-on for this {category} is authenticated '
-                'by {user}. Removing this user will also remove write access '
-                'to the article unless another contributor re-authenticates. '
-                ).format(
+            return messages.BEFORE_REMOVE_CONTRIBUTOR.format(
                 category=node.project_or_component,
                 user=removed.fullname,
                 )
@@ -170,15 +159,11 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             self.api_url = figshare_settings.API_URL
             self.save()
 
-            return (
-                'Because the FigShare add-on for this project was authenticated '
-                'by {user}, authentication information has been deleted. You '
-                'can re-authenticate on the <a href="{url}settings/">'
-                'Settings</a> page.'.format(
+            return messages.AFTER_REMOVE_CONTRIBUTOR.format(
                     user=removed.fullname,
                     url=node.url,
+                    category=self.figshare_id
                     )
-                )
 
     def before_fork(self, node, user):
         """
@@ -189,19 +174,11 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
         """
         if self.user_settings and self.user_settings.owner == user:
-            return (
-                'Because you have authenticated the FigShare add-on for this '
-                '{cat}, forking it will also transfer your authorization to '
-                'the forked {cat}.'
-                ).format(
-                cat=node.project_or_component,
+            return messages.BEFORE_FORK_OWNER.format(
+                category=node.project_or_component,
                 )
-        return (
-            'Because this FigShare add-on has been authenticated by a different '
-            'user, forking it will not transfer authentication to the forked '
-            '{cat}.'
-            ).format(
-            cat=node.project_or_component,
+        return messages.BEFORE_FORK_NOT_OWNER.format(
+            category=node.project_or_component,
             )
 
     def after_fork(self, node, fork, user, save=True):
@@ -221,18 +198,12 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         # Copy authentication if authenticated by forking user
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
-            message = (
-                'FigShare authorization copied to forked {cat}.'
-                ).format(
-                cat=fork.project_or_component,
+            message = messages.AFTER_FORK_OWNER.format(
+                category=fork.project_or_component,
                 )
         else:
-            message = (
-                'FigShare authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <a href={url}>Settings</a> '
-                'page.'
-                ).format(
-                cat=fork.project_or_component,
+            message = messages.AFTER_FORK_NOT_OWNER.format(
+                category=fork.project_or_component,
                 url=fork.url + 'settings/'
                 )
             return AddonFigShareNodeSettings(), message
@@ -251,11 +222,8 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
         """
         if self.user_settings:
-            return (
-                'Registering this {cat} will copy the authentication for its '
-                'FigShare add-on to the registered {cat}.'
-                ).format(
-                cat=node.project_or_component,
+            return messages.BEFORE_REGISTER.format(
+                category=node.project_or_component,
                 )
 
     def after_register(self, node, registration, user, save=True):
@@ -276,12 +244,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         clone.user_settings = self.user_settings
 
         # TODO handle registration
-
-
-
         if save:
             clone.save()
 
         return clone, message
-
-
