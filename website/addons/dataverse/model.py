@@ -57,6 +57,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         rv = super(AddonDataverseNodeSettings, self).to_json(user)
         rv.update({
                 'connected': False,
+                'show_submit': False,
                 'user_dataverse_account': user.get_addon('dataverse').dataverse_username,
                 'authorized_dataverse_user': self.dataverse_username,
                 'authorized_user_name': self.user.fullname if self.user else '',
@@ -70,14 +71,22 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
         if connection is not None:
 
+            # Check authorization
+            authorized = dataverse_user.dataverse_username == self.dataverse_username
+
             # Get list of dataverses and studies
             dataverses = connection.get_dataverses() or []
             dataverse = dataverses[int(self.dataverse_number)]
             studies = dataverse.get_studies() if dataverse else []
 
+            #TODO: Delete this
+            # self.study_hdl = None #studies[0].get_id()
+            # #self.study = dataverse.get_study_by_hdl(self.study_hdl).get_title()
+            # self.save()
+
             rv.update({
                 'connected': True,
-                'authorized': dataverse_user.dataverse_username == self.dataverse_username,
+                'authorized': authorized,
                 'dataverses': [d.collection.title for d in dataverses],
                 'dataverse': self.dataverse or '',
                 'dataverse_number': self.dataverse_number,
@@ -85,10 +94,16 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                 'study_names': [s.get_title() for s in studies],
                 'study': self.study,
                 'study_hdl': self.study_hdl,
-                'dataverse_url': os.path.join('http://', HOST, 'dvn', 'dv', dataverse.alias),
-                'study_url': os.path.join('http://', HOST, 'dvn', 'dv', dataverse.alias,
-                                          'faces', 'study', 'StudyPage.xhtml?globalId=' +
-                                          dataverse.get_study_by_hdl(self.study_hdl).doi),
-                'show_submit': False #'hdl' in self.study_hdl
             })
+
+            if self.study_hdl is not None:
+
+                study = dataverse.get_study_by_hdl(self.study_hdl)
+                rv.update({
+                    'dataverse_url': os.path.join('http://', HOST, 'dvn', 'dv', dataverse.alias),
+                    'study_url': os.path.join('http://', HOST, 'dvn', 'dv', dataverse.alias,
+                                              'faces', 'study', 'StudyPage.xhtml?globalId=' +
+                                              study.doi),
+                })
+
         return rv

@@ -9,11 +9,12 @@ from . import views
 
 settings_routes = {
     'rules': [
+        # TODO: Is this needed?
         # Project Settings
-        Rule([
-            '/project/<pid>/dataverse/settings/',
-            '/project/<pid>/node/<nid>/dataverse/settings/',
-        ], 'post', views.config.dataverse_set_node_config, json_renderer),
+        # Rule([
+        #     '/project/<pid>/dataverse/settings/',
+        #     '/project/<pid>/node/<nid>/dataverse/settings/',
+        # ], 'post', views.config.dataverse_set_node_config, json_renderer),
         Rule([
             '/project/<pid>/dataverse/set/',
             '/project/<pid>/node/<nid>/dataverse/set/',

@@ -14,12 +14,23 @@ def authorize(**kwargs):
     node_settings = kwargs['node_addon']
     dataverse_user = user.get_addon('dataverse')
 
-    node_settings.dataverse_username = user.get_addon('dataverse').dataverse_username
-    node_settings.dataverse_password = user.get_addon('dataverse').dataverse_password
     node_settings.user = user
     node_settings.user_settings = dataverse_user
 
-    node_settings.save()
+    username = user.get_addon('dataverse').dataverse_username
+    password = user.get_addon('dataverse').dataverse_password
+
+    connection = node_settings.user_settings.connect(
+        username, password
+    )
+
+    if connection is not None:
+
+        # Set basic dataverse fields
+        node_settings.dataverse_username = username
+        node_settings.dataverse_password = password
+
+        node_settings.save()
 
     return {}
 
@@ -38,7 +49,9 @@ def unauthorize(*args, **kwargs):
     node_settings.dataverse_username = None
     node_settings.dataverse_password = None
     node_settings.dataverse_number = 0
+    node_settings.dataverse = None
     node_settings.study_hdl = None
+    node_settings.study = None
     node_settings.user = None
 
     node_settings.save()

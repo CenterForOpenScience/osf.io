@@ -28,21 +28,32 @@ def dataverse_set_user_config(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
 
-@decorators.must_be_contributor
-@decorators.must_have_addon('dataverse', 'node')
-def dataverse_set_node_config(*args, **kwargs):
-
-    # TODO: Validate
-
-    user = kwargs['auth'].user
-
-    node_settings = kwargs['node_addon']
-    dataverse_user = node_settings.user_settings
-
-    if dataverse_user and dataverse_user.owner != user:
-        raise HTTPError(http.BAD_REQUEST)
-
-    return {}
+# TODO: Is this needed?
+# @decorators.must_be_contributor
+# @decorators.must_have_addon('dataverse', 'node')
+# def dataverse_set_node_config(*args, **kwargs):
+#
+#     # TODO: Validate
+#
+#     user = kwargs['auth'].user
+#
+#     node_settings = kwargs['node_addon']
+#     dataverse_user = node_settings.user_settings
+#
+#     # If authorized, only owner can change settings
+#     if dataverse_user and dataverse_user.owner != user:
+#         raise HTTPError(http.BAD_REQUEST)
+#
+#     # Verify connection
+#     connection = node_settings.user_settings.connect(
+#         node_settings.dataverse_username,
+#         node_settings.dataverse_password,
+#     )
+#     if connection is None:
+#         return {'message': 'Cannot access Dataverse.'}, \
+#                http.BAD_REQUEST
+#
+#     return {}
 
 
 @decorators.must_be_contributor
@@ -71,7 +82,7 @@ def set_dataverse(*args, **kwargs):
     # Set selected Study
     hdl = request.json.get('study_hdl')
     node_settings.study_hdl = hdl if hdl != 'None' else None
-    node_settings.study = dataverse.get_study_by_hdl(node_settings.study_hdl).get_title() \
+    node_settings.study = dataverse.get_study_by_hdl(hdl).get_title() \
         if dataverse and node_settings.study_hdl else None
 
     node_settings.save()

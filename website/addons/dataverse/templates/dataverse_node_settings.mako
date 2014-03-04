@@ -23,11 +23,11 @@
                     <option value="None">---</option>
 
                     % if len(dataverses) > 0:
-                        % for i, s in enumerate(studies):
-                            % if s == study_hdl:
-                                <option value=${s} selected>${study_names[i]}</option>
+                        % for i, hdl in enumerate(studies):
+                            % if hdl == study_hdl:
+                                <option value=${hdl} selected>${study_names[i]}</option>
                             % else:
-                                <option value=${s}>${study_names[i]}</option>
+                                <option value=${hdl}>${study_names[i]}</option>
                             % endif
                         % endfor
                     % endif
@@ -59,10 +59,6 @@
             </a>
             on behalf of Dataverse user ${authorized_dataverse_user}
         </div>
-
-##        %for file in files:
-##            <div>${file}</div>
-##        %endfor
 
     % else:
         % if user_dataverse_account:
