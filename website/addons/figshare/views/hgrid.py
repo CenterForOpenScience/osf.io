@@ -1,68 +1,52 @@
-from mako.template import Template
-
 from framework import request
-from framework.auth import get_current_user
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
 from website.util import rubeus
 
 from ..api import Figshare
+from ..utils import article_to_hgrid, project_to_hgrid
 
 @must_be_contributor_or_public
 @must_have_addon('figshare', 'node')
 def figshare_hgrid_data_contents(*args, **kwargs):
-    
     node_settings = kwargs.get('node_addon')
     node = node_settings.owner
-    figshare_settings = node.get_addon('figshare')
-    auth = kwargs['auth']
-    path = ''
+    fs_type = kwargs.get('type', node_settings.figshare_type)
+    fs_id = kwargs.get('id', node_settings.figshare_id)
 
-    can_edit = node.can_edit(auth) and not node.is_registration
-    can_view = node.can_view(auth)
+    connect = Figshare.from_settings(node_settings.user_settings)
 
-    connect = Figshare.from_settings(figshare_settings.user_settings)
-
-    fs_type = kwargs.get('type')
-    fs_id = kwargs.get('id')
-
-    contents = False
-    if fs_type and fs_id:
-        contents = True
-
-    if not fs_type:
-        fs_type = figshare_settings.figshare_type
-    if not fs_id:
-        fs_id = figshare_settings.figshare_id
-
-    hgrid_tree = connect.tree_to_hgrid(node, 
-                                       node_settings, 
-                                       fs_id, 
-                                       fs_type, 
-                                       contents)
-    
-    return hgrid_tree
+    if fs_type == 'article':
+        return article_to_hgrid(node, connect.article(node_settings, fs_id)['items'][0], expand=True)
+    elif fs_type == 'project':
+        return project_to_hgrid(node, connect.project(node_settings, fs_id))
+    else:
+        return []
 
 
 def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
     if not node_settings.figshare_id:
         return
-    return [rubeus.build_addon_root(node_settings, node_settings.figshare_id, permissions=auth)]
+    node = node_settings.owner
+    return [
+        rubeus.build_addon_root(
+            node_settings, node_settings.figshare_id, permissions=auth,
+            nodeUrl=node.url, nodeApiUrl=node.api_url,
+        )
+    ]
 
 
 @must_be_contributor_or_public
 @must_have_addon('figshare', 'node')
 def figshare_dummy_folder(node_settings, auth, parent=None, **kwargs):
     if not node_settings.figshare_id:
-       return
+        return
 
     node_settings = kwargs.get('node_addon')
-    user = kwargs.get('auth').user
+    auth = kwargs.get('auth')
     data = request.args.to_dict()
 
     parent = data.pop('parent', 'null')
 
-    return figshare_hgrid_data(node_settings, user, None, contents=False, **data)
-
-
+    return figshare_hgrid_data(node_settings, auth, None, contents=False, **data)

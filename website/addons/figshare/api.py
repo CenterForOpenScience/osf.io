@@ -13,6 +13,7 @@ from tempfile import TemporaryFile
 import requests
 from requests_oauthlib import OAuth1Session
 from . import settings as figshare_settings
+from utils import file_to_hgrid, article_to_hgrid
 
 
 class Figshare(object):
@@ -132,41 +133,6 @@ class Figshare(object):
     def get_project_collaborators(self, node_settings, project):
         return self._send(os.path.join(node_settings.api_url, 'projects', project, 'collaborators'))
 
-    def project_to_hgrid(self, node, node_settings, project, contents=False):
-        urls = {
-            'upload':  node.api_url + 'figshare/project/{pid}/create/article/'.format(pid=project['id']),
-            'delete': node.api_url + 'figshare/{article}/file/{id}/delete/',
-            'fetch': '{base}figshare/hgrid/project/{pid}'.format(base=node.api_url, pid=project['id'])
-        }
-        permissions = {
-            'edit': True,
-            'view': True
-        }
-        # if no OAuth
-        if node_settings.user_settings is None:
-            urls['upload'] = ''
-            urls['delete'] = ''
-            permissions['edit'] = False
-            permissions['view'] = False
-
-        grid = [{
-                'name': project['title'],
-                'description': project['description'],
-                'created': project['created'],
-                'id': project['id'],
-                'kind': 'folder',
-                'children': [],
-                'permissions': permissions,
-                'urls': urls
-                }]
-
-        children = grid[0]['children']
-        for article in project['articles']:
-            children.append(self.article_to_hgrid(node, node_settings, article))
-        if contents:
-            return children
-
-        return grid
 
     # ARTICLE LEVEL API
     def articles(self, node_settings):
@@ -192,11 +158,11 @@ class Figshare(object):
     def article_version(self, node_settings, article_id, article_version):
         article = self._send(
             os.path.join(node_settings.api_url, 'articles', article_id, 'versions', article_version))
-        return self.article_to_hgrid(article)
+        return article_to_hgrid(node_settings.owner, article)  # TODO Fix me
 
     def create_article(self, node_settings, article):
         body = json.dumps(
-            {'title': article['title'], 'description': article.get('description') or '','defined_type': 'paper'})
+            {'title': article['title'], 'description': article.get('description') or '', 'defined_type': 'paper'})
         article.update(self._send_with_data(
             os.path.join(node_settings.api_url, 'articles'), method='post', data=body))
         if article['files']:
@@ -223,10 +189,10 @@ class Figshare(object):
         response = self._send_with_data(
             os.path.join(node_settings.api_url, 'articles', str(article['article_id']), 'files'), method='put', output='json', files=filedata)
 
-
         filestream.close()
-        self.add_article_to_project(node_settings, node_settings.figshare_id, str(article['article_id']))
-        return self.file_to_hgrid(node, node_settings, article, response)
+        self.add_article_to_project(
+            node_settings, node_settings.figshare_id, str(article['article_id']))
+        return file_to_hgrid(node, article, response)
 
     def delete_article(self, node_settings, article):
         return self._send(os.path.join(node_settings.api_url, 'articles', article), method='delete')
@@ -241,111 +207,6 @@ class Figshare(object):
                          article_id, 'files', file_id), method='delete')
         return res
 
-    # HGRID OUTPUT
-    def article_to_hgrid(self, node, node_settings, article, contents=False):
-
-        a_fileset = (article['defined_type'] == 'fileset')
-
-        children = []
-        if a_fileset:
-            for item in article.get('files') or []:
-                children.append(
-                    self.file_to_hgrid(node, node_settings, article, item))
-
-        # special case for hgrid lazyLoad
-        if contents:
-            return [children]
-
-        urls = {
-            'upload': '{base}figshare/create/article/{aid}/'.format(base=node.api_url, aid=article['article_id']),
-            'delete': node.api_url + 'figshare/' + str(article['article_id']) + '/file/{id}/delete/',
-            'download': '',
-            'fetch': '{base}figshare/hgrid/article/{aid}'.format(base=node.api_url, aid=article['article_id']),
-            'view': ''
-        }
-        permissions = {
-            'edit': True if article['status'] == 'Public' else False,
-            'view': True,
-            'download': True if article['status'] == 'Public' else False
-        }
-
-        # if no OAuth
-        if node_settings.user_settings is None:
-            permissions['edit'] = False
-            permissions['view'] = False
-            permissions['download'] = False
-            permissions['upload'] = a_fileset
-
-        if not a_fileset:
-            urls['download'] = article['files'][0].get('download_url')
-            urls[
-                'view'] = '{base}figshare/article/{aid}/file/{fid}'.format(base=node.api_url,
-                                                                           aid=article['article_id'], fid=article['files'][0].get('id'))
-
-        name = article['title'] if not article[
-            'title'] == '' else '<em>untitled article</em>'
-        kind = 'file' if not a_fileset else 'folder'
-
-        article = {
-            'name': name,
-            'kind': kind,
-            'published': article['published_date'],
-            'tags': ', '.join([tag['name'] for tag in article['tags']]),
-            'description': article['description_nohtml'],
-            'authors': ', '.join([author['full_name'] for author in article['authors']]),
-            'status': article['status'],
-            'versions': article['version'],
-            'urls':  urls,
-            'permissions': permissions,
-            'size': str(len(article['files'])),
-            'indent': 0,
-            'children': children
-        }
-
-        return article
-
-    def file_to_hgrid(self, node, node_settings, article, item):
-
-        urls = {
-            'upload': '',
-            'delete': '',
-            # node.api_url+'figshare/'+str(article['article_id'])+'/file/{id}/delete/',
-            'download': item.get('download_url'),
-            'view': '{base}figshare/article/{aid}/file/{fid}'.format(base=node.api_url, aid=article['article_id'], fid=item.get('id'))
-        }
-        permissions = {
-            'edit': False,
-            'view': True,
-            'download': article['status'] == 'Public'
-        }
-
-        gridfile = {
-            'name': item['name'],
-            'kind': 'file',
-            'published': '',
-            'tags': '',
-            'description': '',
-            'authors': '',
-            'status': article['status'],
-            'versions': '',
-            'urls':  urls,
-            'permissions': permissions,
-            'size': item.get('size'),
-            'indent': 1,
-            'thumbnail': item.get('thumb') or '',
-        }
-        return gridfile
-
-    def tree_to_hgrid(self, node, node_settings, target, which, contents=False):
-        if which == 'article':
-            article = self.article(node_settings, target)
-            article = article['items'][0]
-            return [self.article_to_hgrid(node, node_settings, article, contents)]
-        elif which == 'project':
-            project = self.project(node_settings, target)
-            return self.project_to_hgrid(node, node_settings, project, contents)
-        else:
-            return []
 
     # OTHER HELPERS
     def get_options(self):
@@ -375,7 +236,7 @@ class Figshare(object):
         f.seek(0)
         return filename, f
 
-    #TODO Fix ME
+    # TODO Fix ME
     def has_crud(figshare_id, figshare_type):
         res = self._send(
             "http://api.figshare.com/v1/my_data/{0}s/{1}".format(figshare_type, figshare_id))

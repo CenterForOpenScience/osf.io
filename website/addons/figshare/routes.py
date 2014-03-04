@@ -36,35 +36,35 @@ settings_routes = {
         ],  'delete', views.crud.figshare_remove_article_from_project, json_renderer),
         # CRUD: Articles
         Rule([
-            '/project/<pid>/figshare/project/<project_id>/create/article/',
-            '/project/<pid>/node/<nid>/figshare/project/<project_id>/create/article/'
-            ],'post', views.crud.figshare_upload_file_as_article, json_renderer),
-        Rule([
             '/project/<pid>/figshare/publish/article/<aid>/',
             '/project/<pid>/node/<nid>/figshare/publish/article/<aid>/'],
              'post', views.crud.figshare_publish_article, json_renderer),
         # CRUD: Files
         Rule([
-            '/project/<pid>/figshare/create/article/<aid>/',
-            '/project/<pid>/node/<nid>/figshare/create/article/<aid>/',
+            '/project/<pid>/figshare/<aid>/',
+            '/project/<pid>/node/<nid>/figshare/<aid>/',
         ],  'post', views.crud.figshare_upload_file_to_article, json_renderer),
         Rule([
             '/project/<pid>/figshare/article/<aid>/file/<fid>/delete',
             '/project/<pid>/node/<nid>/figshare/article/<aid>/file/<fid>/delete',
         ],  'delete', views.crud.figshare_delete_file, json_renderer),
+        Rule([
+            '/project/<pid>/figshare/',
+            'project/<pid>/node/<nid>/figshare/'
+        ], 'post', views.crud.figshare_upload_file_as_article, json_renderer),
         # OAuth: Node
         Rule([
             '/project/<pid>/figshare/oauth/',
             '/project/<pid>/node/<nid>/figshare/oauth',
         ], 'get', views.auth.figshare_oauth_start, json_renderer),
-          Rule([
+        Rule([
             '/project/<pid>/figshare/user_auth/',
             '/project/<pid>/node/<nid>/figshare/user_auth/',
         ], 'post', views.auth.figshare_add_user_auth, json_renderer),
         Rule([
-            '/project/<pid>/figshare/oauth/delete/',
-            '/project/<pid>/node/<nid>/figshare/oauth/delete/',
-        ], 'post', views.auth.figshare_oauth_delete_node, json_renderer),  # Change to delete
+            '/project/<pid>/figshare/oauth/',
+            '/project/<pid>/node/<nid>/figshare/oauth/',
+        ], 'delete', views.auth.figshare_oauth_delete_node, json_renderer),
         # OAuth: User
         Rule(
             '/settings/figshare/oauth/',
@@ -72,8 +72,8 @@ settings_routes = {
             endpoint_suffix='__user'
         ),
         Rule(
-            '/settings/figshare/oauth/delete', 'post',
-            views.auth.figshare_oauth_delete_user, json_renderer
+            '/settings/figshare/oauth/',
+            'delete', views.auth.figshare_oauth_delete_user, json_renderer
         ),
         # OAuth: General
         Rule([
@@ -96,7 +96,7 @@ api_routes = {
         Rule([
             '/project/<pid>/figshare/render/article/<aid>/file/<fid>',
             '/project/<pid>/node/<nid>/figshare/render/article/<aid>/file/<fid>'
-                ], 'get', views.crud.figshare_get_rendered_file, json_renderer,),
+        ], 'get', views.crud.figshare_get_rendered_file, json_renderer,),
      ],
     'prefix': '/api/v1',
 }
@@ -108,5 +108,4 @@ page_routes = {
             '/project/<pid>/node/<nid>/figshare/article/<aid>/file/<fid>/',
         ], 'get', views.crud.figshare_view_file, OsfWebRenderer('../addons/figshare/templates/figshare_view_file.mako')),
     ],
-    'prefix': '/api/v1'
 }

@@ -1,12 +1,26 @@
 """
 
 """
-
+import os
 from framework import fields
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
+from website.addons.base import GuidFile
 
 from .api import Figshare
 from . import settings as figshare_settings
+
+
+class FigShareGuidFile(GuidFile):
+
+    article_id = fields.StringField(index=True)
+    file_id = fields.StringField(index=True)
+
+    @property
+    def file_url(self):
+        if self.article_id is None or self.file_id is None:
+            raise ValueError('Path field must be defined.')
+        return os.path.join('figshare', 'article', self.article_id, 'file', self.file_id)
+
 
 class AddonFigShareUserSettings(AddonUserSettingsBase):
 
@@ -14,6 +28,7 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
     oauth_request_token_secret = fields.StringField()
     oauth_access_token = fields.StringField()
     oauth_access_token_secret = fields.StringField()
+    figshare_options = fields.DictionaryField()
 
     @property
     def has_auth(self):
@@ -26,22 +41,29 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
         })
         return rv
 
+
 class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     figshare_id = fields.StringField()
     figshare_type = fields.StringField()
-    api_url = fields.StringField()
+    figshare_title = fields.StringField()
+
 
     user_settings = fields.ForeignField(
         'addonfigshareusersettings', backref='authorized'
     )
-
-    registration_data = fields.DictionaryField()
 
     @property
     def embed_url(self):
         return 'http://wl.figshare.com/articles/{fid}/embed?show_title=1'.format(
             fid=self.figshare_id,
         )
+
+    @property
+    def api_url(self):
+        if self.user_settings is None:
+            return figshare_settings.API_URL
+        else:
+            return figshare_settings.API_OAUTH_URL
 
     def to_json(self, user):
         figshare_user = user.get_addon('figshare')
@@ -52,15 +74,18 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             'has_user_authorization': figshare_user and figshare_user.has_auth,
             'figshare_options': []
         })
-        figshare_options = []
-        settings = self.user_settings
-        if settings and settings.has_auth:
-            connect = Figshare.from_settings(self.user_settings)
-            figshare_options = connect.get_options()
+
+        # TODO This may not be need at all
+        if not self.user_settings and figshare_user:
+            self.user_settings = figshare_user
+            self.save()
+
+        if self.user_settings and self.user_settings.has_auth:
             rv.update({
                 'authorized_user': self.user_settings.owner.fullname,
+                'owner_url': self.user_settings.owner.url,
                 'disabled': user != self.user_settings.owner,
-                'figshare_options': figshare_options
+                'figshare_options': self.user_settings.figshare_options
             })
         return rv
 
@@ -75,31 +100,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         :return str: Alert message
 
         """
-
-        messages = [
-            'The FigShare add-on page has been combined with the pre-existing '
-            'Files page, which also now includes files from your other add-ons. '
-            'To work with the files in your FigShare add-on, browse to the '
-            '<a href="{0}">Files</a> page.'.format(
-                node.url + 'files/'
-            )
-        ]
-
-        # Quit if not contributor
-        if not node.is_contributor(user):
-            return messages
-
-        # Quit if not configured
-        if self.figshare_id is None:
-            return messages
-
+        if not self.figshare_id:
+            return []
         figshare = node.get_addon('figshare')
         # Quit if no user authorization
-        if self.user_settings is None:
-            figshare.api_url = figshare_settings.API_URL
-        else:
-            figshare.api_url = figshare_settings.API_OAUTH_URL
-        figshare.save()
 
         node_permissions = 'public' if node.is_public else 'private'
 
@@ -107,11 +111,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             message = (
                 'Warnings: This OSF {category} is private but FigShare project {project} may contain some public files or filesets'.format(category=node.project_or_component,
                              project=figshare.figshare_id)
-                                                                                                                                    )
-            messages.append(message)
-            return messages
+            )
+            return [message]
 
-        connect = Figshare.from_settings(self.user_settings)        
+        connect = Figshare.from_settings(self.user_settings)
         article_is_public = connect.article_is_public(self.figshare_id)
 
         article_permissions = 'public' if article_is_public else 'private'
@@ -132,8 +135,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                     'Users can view the contents of this private FigShare '
                     'article through this public project.'
                 )
-            messages.append(message)
-            return messages
+            return [message]
 
     def before_remove_contributor(self, node, removed):
         """
@@ -233,6 +235,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 cat=fork.project_or_component,
                 url=fork.url + 'settings/'
                 )
+            return AddonFigShareNodeSettings(), message
 
         if save:
             clone.save()

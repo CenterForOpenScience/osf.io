@@ -24,7 +24,7 @@ def figshare_oauth_start(*args, **kwargs):
     node = models.Node.load(nid) if nid else None
 
     if node and not node.is_contributor(user):
-         raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http.FORBIDDEN)
 
     user.add_addon('figshare')
     figshare_user = user.get_addon('figshare')
@@ -33,20 +33,20 @@ def figshare_oauth_start(*args, **kwargs):
         figshare_node = node.get_addon('figshare')
         figshare_node.user_settings = figshare_user
         figshare_node.save()
-    
+
     request_token, request_token_secret, authorization_url = oauth_start_url(user, node)
 
     figshare_user.oauth_request_token = request_token
     figshare_user.oauth_request_token_secret = request_token_secret
     figshare_user.save()
-    
+
     return redirect(authorization_url)
 
 
 @must_be_contributor
 @must_have_addon('figshare', 'node')
 def figshare_oauth_delete_node(*args, **kwargs):
-    
+
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
     node_settings = node.get_addon('figshare')
@@ -55,18 +55,17 @@ def figshare_oauth_delete_node(*args, **kwargs):
     node_settings.save()
 
     node.add_log(
-            action='figshare_content_unlinked',
-            params={
-                'project': node.parent_id,
-                'node': node._id,
-                'figshare': {
-                    'type': node_settings.figshare_type,
-                    'id': node_settings.figshare_id
-                 }
-            },
-            auth=auth,
-        )
-
+        action='figshare_content_unlinked',
+        params={
+            'project': node.parent_id,
+            'node': node._id,
+            'figshare': {
+                'type': node_settings.figshare_type,
+                'id': node_settings.figshare_id
+            }
+        },
+        auth=auth,
+    )
 
     return {}
 
@@ -78,7 +77,7 @@ def figshare_oauth_delete_user(*args, **kwargs):
 
     figshare_user.oauth_access_token = None
     figshare_user.oauth_token_type = None
-    figshare_user.save()    
+    figshare_user.save()
 
     return {}
 
@@ -89,7 +88,7 @@ def figshare_oauth_callback(*args, **kwargs):
 
     nid = kwargs.get('nid') or kwargs.get('pid')
     node = models.Node.load(nid) if nid else None
-    
+
     # Fail if node provided and user not contributor
     if node and not node.is_contributor(user):
         raise HTTPError(http.FORBIDDEN)
@@ -104,7 +103,7 @@ def figshare_oauth_callback(*args, **kwargs):
     verifier = request.args.get('oauth_verifier')
 
     access_token, access_token_secret = oauth_get_token(
-        figshare_user.oauth_request_token, 
+        figshare_user.oauth_request_token,
         figshare_user.oauth_request_token_secret,
         verifier
     )
@@ -113,21 +112,18 @@ def figshare_oauth_callback(*args, **kwargs):
     figshare_user.oauth_request_token_secret = None
     figshare_user.oauth_access_token = access_token
     figshare_user.oauth_access_token_secret = access_token_secret
+    figshare_user.figshare_options = Figshare.from_settings(figshare_user).get_options()
     figshare_user.save()
-     
-    if node: 
-        figshare_node  = node.get_addon('figshare')
-        
+
+    if node:
+        figshare_node = node.get_addon('figshare')
+
         figshare_node.user_settings = figshare_user
-        # ensure api url is correct
-        figshare_node.api_url = API_OAUTH_URL
         figshare_node.save()
-        
+
     if node:
         return redirect(os.path.join(node.url, 'settings'))
     return redirect('/settings/')
-
-
 
 
 @must_be_contributor
@@ -151,6 +147,8 @@ def figshare_add_user_auth(*args, **kwargs):
     return {}
 
 # TODO: Expose this
+
+
 def figshare_oauth_delete_user(*args, **kwargs):
 
     user = get_current_user()

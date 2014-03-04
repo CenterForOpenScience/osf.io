@@ -1,6 +1,9 @@
 <%inherit file="project/addon/node_settings.mako" />
 
 <!-- Authorization -->
+<%doc>
+##Staged for removal
+May need to be moved else where
 <div class="alert alert-danger alert-dismissable">
     <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
         Authorizing this FigShare add-on will grant all contributors on this ${node['category']}
@@ -11,11 +14,15 @@
         If one of your collaborators removes you from this ${node['category']},
         your authorization for FigShare will automatically be revoked.
 </div>
+</%doc>
+
 <div>
-% if authorized_user:
-        <a id="figshareDelKey" class="btn btn-danger">Unauthorize: Delete Access Token</a>
-        <span>Authorized by ${authorized_user}</span>
-% else:
+    % if authorized_user:
+        <div class="well well-sm">
+            <span>Authorized by <a href="${owner_url}">${authorized_user}</a></span>
+            <a id="figshareDelKey" class="text-danger pull-right" style="cursor: pointer">Deauthorize</a>
+        </div>
+    % else:
         <a id="figshareAddKey" class="btn btn-primary">
             % if user_has_authorization:
                Authorize: Import Token from Profile
@@ -23,20 +30,20 @@
                 Authorize: Create Access Token
             % endif
         </a>
-% endif
+    % endif
 </div>
 
 <br />
 
-<div class="form-group">    
+<div class="form-group">
         % if figshare_id != '':
     	  <label for="figshareId">FigShare ${figshare_type.capitalize()}:</label><br />
 	  <input  class="form-control" id="figshareId" name="figshare_id" value="" />
 	  <a  id="figshareRemoveLinked" class="btn btn-warning">${"Remove {0} {1}".format(figshare_type.capitalize(), figshare_id)}</a>
 	% else:
-              <label for="figshareId">FigShare Article ${"or Project " if authorized_user else ""} URL</label><br />	
+              <label for="figshareId">FigShare Article ${"or Project " if authorized_user else ""} URL</label><br />
    	      <input class="form-control" id="figshareId" name="figshare_id" value="" />
-	      <a  id="figshareRemoveLinked" class="btn btn-warning" ></a> 
+	      <a  id="figshareRemoveLinked" class="btn btn-warning" ></a>
         % endif
 </div>
 
@@ -44,26 +51,27 @@
 
 <script type="text/javascript">
 
-    $(document).ready(function() {    				 				 
+    $(document).ready(function() {
 
-    
-        $('#figshareId').autocomplete({source: ${figshare_options}, 
-			               select: function(e, ui){
-				           var val = ui.item.value.split('_');
-				           $(this).hide();
-					   $('#figshareRemoveLinked').show();
-					   $('#figshareRemoveLinked').addClass('btn-default');
-					   $('#figshareRemoveLinked').removeClass('btn-warning');
-					   $('#figshareRemoveLinked').attr('data-confirmed', false);
-					   $('#figshareRemoveLinked').html(["Remove ", 
-					   			           val[0].charAt(0).toUpperCase()+val[0].slice(1), 
-									   " ",
-                                                                           val[1]].join(''));
-				       }
-	});
-	
+
+        $('#figshareId').autocomplete({
+            source: ${figshare_options},
+            select: function(e, ui) {
+				var val = ui.item.value.split('_');
+				$(this).hide();
+               $('#figshareRemoveLinked').show();
+               $('#figshareRemoveLinked').addClass('btn-default');
+               $('#figshareRemoveLinked').removeClass('btn-warning');
+               $('#figshareRemoveLinked').attr('data-confirmed', false);
+               $('#figshareRemoveLinked').html(["Remove ",
+                    val[0].charAt(0).toUpperCase()+val[0].slice(1),
+                    " ",
+                    val[1]].join(''));
+            }
+        });
+
 	% if figshare_id == '':
-	$('#figshareRemoveLinked').hide();	
+	$('#figshareRemoveLinked').hide();
 		% if authorized_user:
 		$('#figshareId').attr('placeholder', 'type to autocomplete');
 		% endif
@@ -96,8 +104,8 @@
                 function(result) {
                     if (result) {
                         $.ajax({
-                            url: nodeApiUrl + 'figshare/oauth/delete/',
-                            type: 'POST',
+                            url: nodeApiUrl + 'figshare/oauth/',
+                            type: 'DELETE',
                             contentType: 'application/json',
                             dataType: 'json',
                             success: function() {
@@ -108,12 +116,12 @@
                 }
             );
         });
-	
+
 	$('#figshareRemoveLinked').on('click', function(){
 	    if($(this).attr('data-confirmed') === 'false'){
 	       $(this).hide();
 	       $('#figshareId').val('');
-	       $('#figshareId').show();	       
+	       $('#figshareId').show();
 	    }
 	    else{
 	       bootbox.confirm(
@@ -127,15 +135,15 @@
 				dataType: 'json',
 				success: function() {
 				   $('#figshareRemoveLinked').hide();
-				   $('#figshareId').show();			    			
+				   $('#figshareId').show();
 				}
 			    });
 			}
 		    }
-		);	
+		);
 	    }
 	  });
 
     });
 
-</script> 
+</script>

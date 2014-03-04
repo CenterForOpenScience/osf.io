@@ -9,22 +9,22 @@
 $('#figsharePublishArticle').on('click', function(){
     bootbox.confirm("Publishing this article is an irreversible operation. Once a FigShare article is published it can never be deleted. Proceed with caution. <br /> Also, FigShare requires some additional info before this article can be published: <br /> <h3><label>Category:</label></h3><select id='figshareCategory'>${figshare_categories}</select>", function(result){
         if (result){
-	    var data = {category: $('#figshareCategory').val()};
-	    $.ajax({url: nodeApiUrl+'figshare/publish/article/'+${parent_id}+'/',	    
-	            type: 'POST', 
-                    data: data,
-		    dataType: 'json',
-		    contentType: 'application/json',
-                    success:function(res){
-	                console.log(res);
-	    	    }							 
-	});
+        var cat = $('#figshareCategory').val();
+        $.ajax({
+            type: 'POST',
+            url: nodeApiUrl+'figshare/publish/article/${parent_id}/',
+            data: JSON.stringify({category:cat}),
+            dataType: 'json',
+            contentType: 'application/json'
+        });
     }});
 });
 </script>
-% endif  
+% endif
 <h3>Versions: ${file_version} </h3>
 <a href="${version_url}">version history</a><br />
-<a href="${download_url}">download</a>
+%if download_url:
+    <a href="${download_url}">download</a>
+%endif
 </%def>
 
