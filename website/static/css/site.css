@@ -22,8 +22,8 @@
     height: 520px;
 }
 #hpContainerTwo {
-    height: 500px;
-margin-top: 25px;
+    height: 700px;
+    margin-top: 25px;
     margin-bottom: 25px;
 
 }
@@ -43,7 +43,7 @@ margin-top: 25px;
 .headOne {
     font-family: 'Carrois Gothic', Helvetica;
     letter-spacing:1px;
-    font-size: 36px;
+    font-size: 50px;
     color: black;
 }
 .subHeadOne {
@@ -52,9 +52,16 @@ margin-top: 25px;
     letter-spacing: 1px;
 }
 .subHeadTwo {
+    font-size: 44px;
+    color: #4089C7;
+    font-family: 'Patua One', Helvetica;
+    letter-spacing: 1px;
+}
+.subHeadThree {
     font-size: 28px;
     color: #4089C7;
     font-family: 'Patua One', Helvetica;
+    letter-spacing: 1px;
 }
 .sign-up {
     height: 350px;
@@ -72,9 +79,12 @@ margin-top: 25px;
     font-family: 'Inika', Helvetica;
     font-size: 28px;
     letter-spacing: 1pt;
-    margin-top: 40px
+    margin-top: 40px;
+    float: right;
 }
-
+.center {
+    text-align: center;
+}
 .right {
     text-align: right;
 }
@@ -88,7 +98,7 @@ margin-top: 25px;
 }
 
 .featureDescriptions {
-    padding-top: 50px;
+    padding-top: 75px;
     font-size: 22px;
     font-family: 'Carrois Gothic', sans-serif;
 }
@@ -100,17 +110,7 @@ margin-top: 25px;
 .featureDescriptions .featureInfo {
     font-family: 'Inika', serif;
     font-size: 16px;
-    text-align: left;
-    display: none;
-}
-.featureDescriptions .img {
-    display: block;
-    margin: auto;
-}
-#connect {
-    display: block;
-    text-align: center;
-    padding-top:23px;
+    /*display: none;*/
 }
 .steps {
     padding-bottom: 20px;
@@ -210,7 +210,7 @@ font-weight: bold;
   border-top: 1px solid #D9E8F4;
 }
 
-------------------------
+
 /*End Johanna's CSS*/
 
 
