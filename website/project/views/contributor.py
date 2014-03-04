@@ -8,7 +8,6 @@ from framework import request, User, status
 from framework.auth.decorators import collect_auth
 from framework.auth.utils import parse_name
 from framework.exceptions import HTTPError
-from framework.auth.exceptions import DuplicateEmailError
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from framework import forms
@@ -195,7 +194,7 @@ def project_removecontributor(**kwargs):
 # TODO: Make this a Node method? But it depends on the request data format,
 # so maybe not
 # TODO: TEST ME
-def add_contributors_from_dicts(node, user_dicts, auth, email_unregistered=True):
+def deserialize_contributors(node, user_dicts, auth, email_unregistered=True):
     """View helper that adds contributors from a list of serialized users. The
     users in the list may be registered or unregistered users.
 
@@ -227,16 +226,17 @@ def add_contributors_from_dicts(node, user_dicts, auth, email_unregistered=True)
                 user = framework.auth.get_user(username=contrib_dict['email'])
 
         if not user.is_registered:
+            # TODO: adding unclaimed record should be a post-add-contributor hook
             user.add_unclaimed_record(node=node,
                 referrer=auth.user,
                 email=contrib_dict['email'],
                 given_name=contrib_dict['fullname'])
             user.save()
+            # TODO: Emailing doesn't belong here
             if contrib_dict['email'] and email_unregistered:
                 send_claim_email(contrib_dict['email'], user, node, notify=True)
         contribs.append(user)
-    node.add_contributors(contributors=contribs, auth=auth)
-
+    return contribs
 
 @must_be_valid_project # returns project
 @must_be_contributor  # returns user, project
@@ -247,12 +247,14 @@ def project_addcontributors_post(**kwargs):
     auth = kwargs['auth']
     user_dicts = request.json.get('users', [])
     node_ids = request.json.get('node_ids', [])
-    add_contributors_from_dicts(node, user_dicts, auth=auth)
+    contribs = deserialize_contributors(node, user_dicts, auth=auth)
+    node.add_contributors(contribs, auth=auth)
     node.save()
     for node_id in node_ids:
         child = Node.load(node_id)
-        add_contributors_from_dicts(child, user_dicts,
+        child_contribs = deserialize_contributors(child, user_dicts,
             auth=auth, email_unregistered=False)  # Only email unreg users once
+        child.add_contributors(child_contribs, auth=auth)
         child.save()
     return {'status': 'success'}, 201
 
