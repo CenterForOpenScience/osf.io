@@ -28,6 +28,7 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
     oauth_request_token_secret = fields.StringField()
     oauth_access_token = fields.StringField()
     oauth_access_token_secret = fields.StringField()
+    figshare_options = fields.DictionaryField()
 
     @property
     def has_auth(self):
@@ -44,6 +45,8 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
 class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     figshare_id = fields.StringField()
     figshare_type = fields.StringField()
+    figshare_title = fields.StringField()
+
 
     user_settings = fields.ForeignField(
         'addonfigshareusersettings', backref='authorized'
@@ -71,19 +74,18 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             'has_user_authorization': figshare_user and figshare_user.has_auth,
             'figshare_options': []
         })
-        figshare_options = []
 
+        # TODO This may not be need at all
         if not self.user_settings and figshare_user:
             self.user_settings = figshare_user
             self.save()
 
         if self.user_settings and self.user_settings.has_auth:
-            connect = Figshare.from_settings(self.user_settings)
-            figshare_options = connect.get_options()
             rv.update({
                 'authorized_user': self.user_settings.owner.fullname,
+                'owner_url': self.user_settings.owner.url,
                 'disabled': user != self.user_settings.owner,
-                'figshare_options': figshare_options
+                'figshare_options': self.user_settings.figshare_options
             })
         return rv
 

@@ -46,6 +46,7 @@ def figshare_set_config(*args, **kwargs):
     if changed:
         node_settings.figshare_id = figshare_id
         node_settings.figshare_type = figshare_type
+        #Add project name here
         node_settings.save()
 
         node.add_log(
@@ -68,7 +69,7 @@ def figshare_set_config(*args, **kwargs):
 @must_have_addon('figshare', 'node')
 def figshare_unlink(*args, **kwargs):
     auth = kwargs['auth']
-    node = kwargs['node']
+    node = kwargs['node'] or kwargs['project']
     figshare_user = auth.user.get_addon('figshare')
     figshare_node = kwargs['node_addon']
 

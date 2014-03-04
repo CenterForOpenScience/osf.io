@@ -23,6 +23,8 @@ $('#figsharePublishArticle').on('click', function(){
 % endif
 <h3>Versions: ${file_version} </h3>
 <a href="${version_url}">version history</a><br />
-<a href="${download_url}">download</a>
+%if download_url:
+    <a href="${download_url}">download</a>
+%endif
 </%def>
 

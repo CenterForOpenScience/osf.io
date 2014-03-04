@@ -1,6 +1,9 @@
 <%inherit file="project/addon/node_settings.mako" />
 
 <!-- Authorization -->
+<%doc>
+##Staged for removal
+May need to be moved else where
 <div class="alert alert-danger alert-dismissable">
     <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
         Authorizing this FigShare add-on will grant all contributors on this ${node['category']}
@@ -11,11 +14,15 @@
         If one of your collaborators removes you from this ${node['category']},
         your authorization for FigShare will automatically be revoked.
 </div>
+</%doc>
+
 <div>
-% if authorized_user:
-        <a id="figshareDelKey" class="btn btn-danger">Unauthorize: Delete Access Token</a>
-        <span>Authorized by ${authorized_user}</span>
-% else:
+    % if authorized_user:
+        <div class="well well-sm">
+            <span>Authorized by <a href="${owner_url}">${authorized_user}</a></span>
+            <a id="figshareDelKey" class="text-danger pull-right" style="cursor: pointer">Deauthorize</a>
+        </div>
+    % else:
         <a id="figshareAddKey" class="btn btn-primary">
             % if user_has_authorization:
                Authorize: Import Token from Profile
@@ -23,7 +30,7 @@
                 Authorize: Create Access Token
             % endif
         </a>
-% endif
+    % endif
 </div>
 
 <br />
@@ -47,20 +54,21 @@
     $(document).ready(function() {
 
 
-        $('#figshareId').autocomplete({source: ${figshare_options},
-			               select: function(e, ui){
-				           var val = ui.item.value.split('_');
-				           $(this).hide();
-					   $('#figshareRemoveLinked').show();
-					   $('#figshareRemoveLinked').addClass('btn-default');
-					   $('#figshareRemoveLinked').removeClass('btn-warning');
-					   $('#figshareRemoveLinked').attr('data-confirmed', false);
-					   $('#figshareRemoveLinked').html(["Remove ",
-					   			           val[0].charAt(0).toUpperCase()+val[0].slice(1),
-									   " ",
-                                                                           val[1]].join(''));
-				       }
-	});
+        $('#figshareId').autocomplete({
+            source: ${figshare_options},
+            select: function(e, ui) {
+				var val = ui.item.value.split('_');
+				$(this).hide();
+               $('#figshareRemoveLinked').show();
+               $('#figshareRemoveLinked').addClass('btn-default');
+               $('#figshareRemoveLinked').removeClass('btn-warning');
+               $('#figshareRemoveLinked').attr('data-confirmed', false);
+               $('#figshareRemoveLinked').html(["Remove ",
+                    val[0].charAt(0).toUpperCase()+val[0].slice(1),
+                    " ",
+                    val[1]].join(''));
+            }
+        });
 
 	% if figshare_id == '':
 	$('#figshareRemoveLinked').hide();
