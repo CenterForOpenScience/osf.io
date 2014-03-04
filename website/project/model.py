@@ -15,6 +15,7 @@ from HTMLParser import HTMLParser
 import pytz
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
+from modularodm.exceptions import ValidationValueError
 
 from framework import status
 from framework.mongo import ObjectId
@@ -1585,7 +1586,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             given_name=fullname, email=email)
         try:
             contributor.save()
-        except ValueError:
+        except ValidationValueError:
             contributor = get_user(username=email)
             # Unregistered users may have multiple unclaimed records, so
             # only raise error if user is registered.

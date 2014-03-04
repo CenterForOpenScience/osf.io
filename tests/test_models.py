@@ -1066,6 +1066,17 @@ class TestProject(DbTestCase):
         assert_true(self.project.is_contributor(latest_contributor))
         assert_equal(unclaimed_data['email'], 'foo@bar.com')
 
+    def test_add_contributor_adds_unclaimed_record_if_user_is_unregistered(self):
+        unreg = UnregUserFactory()
+
+        self.project.add_contributor(unreg, auth=self.consolidate_auth)
+        self.project.save()
+
+        # unclaimed record was added
+        assert_in(self.project._primary_key, unreg.unclaimed_records)
+        record = unreg.get_unclaimed_record()
+        assert_equal(record['referrer_id'], self.user._primary_key)
+
     def test_add_unregistered_adds_new_unclaimed_record_if_user_already_in_db(self):
         user = UnregUserFactory()
         given_name = fake.name()
@@ -1082,7 +1093,7 @@ class TestProject(DbTestCase):
 
     def test_add_unregistered_raises_error_if_user_is_registered(self):
         user = UserFactory(is_registered=True)  # A registered user
-        with assert_raises(ValueError):
+        with assert_raises(ValidationValueError):
             self.project.add_unregistered_contributor(
                 email=user.username,
                 fullname=user.fullname,
