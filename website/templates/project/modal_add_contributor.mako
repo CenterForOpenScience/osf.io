@@ -16,7 +16,9 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <input class='form-control' style="margin-bottom: 8px;" data-bind="value:query" placeholder='Search users' autofocus/>
+                                    <input class='form-control' style="margin-bottom: 8px;"
+                                            data-bind="value:query"
+                                            placeholder='Search by name' autofocus/>
                                 </div>
                                 <div><button type='submit' class="btn btn-default" data-bind="click:search">Search</button></div>
                             </div>
