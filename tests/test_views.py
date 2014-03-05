@@ -23,6 +23,9 @@ from website import settings
 from website.util import rubeus
 from website.project.views.node import _view_project
 
+from website.project.views.node import human_format_citation
+from website.project.views.node import machine_format_citation
+
 
 from tests.base import DbTestCase
 from tests.factories import (
@@ -35,6 +38,43 @@ from tests.factories import (
 app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings',
 )
+
+
+class TestCitationViews(DbTestCase):
+
+    def setUp(self):
+        ensure_schemas()
+        self.app = TestApp(app)
+        self.user1 = UserFactory.build()
+        # Add an API key for quicker authentication
+        api_key = ApiKeyFactory()
+        self.user1.api_keys.append(api_key)
+        self.user1.save()
+        self.consolidate_auth1 = Auth(user=self.user1, api_key=api_key)
+        self.auth = ('test', api_key._primary_key)
+        self.user2 = UserFactory()
+        # A project has 2 contributors
+        self.project = ProjectFactory(
+            title="Ham",
+            description='Honey-baked',
+            creator=self.user1
+        )
+        self.project.category = 'project'
+
+        self.project.add_contributor(self.user1)
+        self.project.add_contributor(self.user2)
+        self.project.api_keys.append(api_key)
+        self.project.save()
+
+    def test_human_APA(self):
+        url = "/api/v1/project/{0}/citation/human/apa.csl/".format(self.project._id)
+        #url_data = self.app.post_json(url)
+        url_data = self.app.get(url)
+        #directCitation = human_format_citation(project = self.project._id, style = 'apa.csl') #doesnt work cause of decorator around method
+        #assert_equal(0, url_data) to get proper output to compare against
+        assert_true("Mercury0, F., & Mercury1, F..  (2014).  Ham. Open Science Framework. Retrieved from localhost:5000/" in url_data.body)
+
+
 
 
 class TestProjectViews(DbTestCase):
