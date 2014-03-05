@@ -37,9 +37,8 @@
             });
         };
 
-        var maxWidth = function(targetWidth) {
-            var bodyWidth = $(document.body).width();
-            return Math.min(targetWidth, bodyWidth * options.maxWidthProp);
+        var getMaxWidth = function() {
+            return $(document.body).width() * options.maxWidthProp;
         };
 
         var toggle = function() {
@@ -58,12 +57,13 @@
 
         var init = function(){
 
+            // Bind drag & drop handlers
             $bar.on('mousedown', function() {
                 makeAllElementsUnselectable();
                 $(document).on('mousemove', function(event) {
                     var bodyWidth = $(document.body).width();
                     var dragWidth = document.body.clientWidth - event.pageX;
-                    var width = maxWidth(dragWidth) + 'px';
+                    var width = Math.min(dragWidth, getMaxWidth()) + 'px';
                     $pane.css('width', width);
                     $('.cp-sidebar').css('width', width);
                 });
@@ -79,12 +79,16 @@
                 })
             });
 
-            $(window).on('resize', function() {
-                var bodyWidth = $(document.body).width();
-
-            });
-
+            // Bind toggle handler
             $handle.on('click', toggle);
+
+            // Prevent comment pane from getting too big on resize
+            $(window).on('resize', function() {
+                var maxWidth = getMaxWidth();
+                if ($pane.width() > maxWidth) {
+                    $toggleElm.width(maxWidth.toString() + 'px');
+                }
+            });
 
         };
 
