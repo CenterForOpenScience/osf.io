@@ -122,7 +122,7 @@
                         <div>
                             <a class="btn btn-default btn-default" data-bind="click: submitReply"><i class="icon-check"></i> Save</a>
                             <a class="btn btn-default btn-default" data-bind="click: cancelReply"><i class="icon-undo"></i> Cancel</a>
-                            <a data-bind="replyErrorMessage" class="comment-error"></a>
+                            <a data-bind="text: replyErrorMessage" class="comment-error"></a>
                         </div>
                     </form>
                 </div>
@@ -213,7 +213,7 @@
                     </form>
                     <div>
                         <div class="form-group">
-                            <textarea class="form-control" data-bind="value: replyContent"></textarea>
+                            <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent"></textarea>
                         </div>
                         <div>
                             <a class="btn btn-default btn-default" data-bind="click: submitReply"><i class="icon-check"></i> Save</a>

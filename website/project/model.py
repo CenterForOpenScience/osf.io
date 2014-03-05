@@ -105,7 +105,7 @@ class Comment(GuidStoredObject):
     _id = fields.StringField(primary=True)
 
     user = fields.ForeignField('user', required=True, backref='commented')
-    node = fields.ForeignField('node', required=True, backref='commented_container')
+    node = fields.ForeignField('node', required=True, backref='comment_owner')
     target = fields.AbstractForeignField(required=True, backref='commented')
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)

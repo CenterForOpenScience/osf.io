@@ -140,6 +140,10 @@ font-weight: bold;
     max-width: 100%;
 }
 
+.comment-error {
+    color: #a94442;
+}
+
 .addon-widget-container:first-of-type h1,
 .addon-widget-container:first-of-type h2,
 .addon-widget-container:first-of-type h3 {
