@@ -93,7 +93,7 @@ def send_mail(to_addr, mail, mimetype='plain', **context):
     return send_function(
         from_addr=settings.FROM_EMAIL,
         to_addr=to_addr,
-        subject=mail.subject,
+        subject=subject,
         message=message,
         mimetype=mimetype,
         ttls=ttls, login=login
@@ -101,7 +101,7 @@ def send_mail(to_addr, mail, mimetype='plain', **context):
 
 # Predefined Emails
 
-TEST = Mail('test', subject='A test email')
+TEST = Mail('test', subject='A test email to {name}')
 CONFIRM_EMAIL = Mail('confirm', subject='Confirm your email address')
 INVITE = Mail('invite', subject='You have been added as a contributor to an OSF project.')
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to {fullname}')

@@ -25,6 +25,6 @@ def test_send_mail(send_email_delay):
         to_addr='foo@bar.com',
         from_addr=settings.FROM_EMAIL,
         mimetype='plain',
-        subject=mails.TEST.subject,
+        subject=mails.TEST.subject.format(name='World'),
         message=mails.TEST.text(name="World")
     ))
