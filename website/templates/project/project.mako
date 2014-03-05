@@ -187,7 +187,7 @@
                             <span data-bind="click: reportSpam">
                                 <i class="icon-warning-sign"></i>
                             </span>
-                            <span data-bind="if: canDelete, click: remove">
+                            <span data-bind="if: canEdit, click: remove">
                                 <i class="icon-trash"></i>
                             </span>
                         </div>

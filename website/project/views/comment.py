@@ -72,7 +72,6 @@ def serialize_comment(comment, node, auth):
         'isPublic': 'public' if comment.is_public else 'private',
         'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user,
-        'canDelete': node.can_edit(auth),
         'modified': comment.modified,
         'isSpam': auth.user and
             comment.reports.get(auth.user._id) == {'type': 'spam'},
