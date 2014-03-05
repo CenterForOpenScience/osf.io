@@ -20,13 +20,13 @@ this.ContribAdder = (function($, global, undefined) {
         self.page = ko.observable('whom');
         self.pageTitle = ko.computed(function() {
             return {
-                whom: 'Add contributors',
-                which: 'Select components',
-                invite: 'Add An Unregistered User'
+                whom: 'Add Contributors',
+                which: 'Select Components',
+                invite: 'Add Unregistered Contributor'
             }[self.page()];
         });
         self.query = ko.observable();
-        self.results = ko.observableArray();
+        self.results = ko.observableArray([]);
         self.selection = ko.observableArray();
         self.errorMsg = ko.observable('');
         self.inviteError = ko.observable('');
@@ -43,6 +43,14 @@ this.ContribAdder = (function($, global, undefined) {
                 self.nodes(result['children']);
             }
         );
+
+        self.foundResults = ko.computed(function() {
+            return self.query() && self.results().length;
+        });
+
+        self.noResults = ko.computed(function() {
+            return self.query() && !self.results().length
+        })
 
         self.inviteName = ko.observable();
         self.inviteEmail = ko.observable();
@@ -68,9 +76,7 @@ this.ContribAdder = (function($, global, undefined) {
                     '/api/v1/user/search/',
                     {query: self.query()},
                     function(result) {
-                        if (!result.users.length) {
-                            self.errorMsg('No results found.');
-                        }
+
                         self.results(result['users']);
                     }
                 )
@@ -122,9 +128,11 @@ this.ContribAdder = (function($, global, undefined) {
                 dataType: 'json', contentType: 'application/json'
             }, options);
             return $.ajax(ajaxOpts);
-        };
+        }
 
         function onInviteSuccess(result) {
+            self.query('');
+            self.results([]);
             self.page('whom');
             self.add(result.contributor);
         }
@@ -135,7 +143,7 @@ this.ContribAdder = (function($, global, undefined) {
             self.inviteError(response.message);
         }
 
-        self.sendInvite = function() {
+        self.postInvite = function() {
             self.inviteError('');
             return postInviteRequest(self.inviteName(), self.inviteEmail(),
                 {

@@ -16,7 +16,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <input class='form-control' style="margin-bottom: 8px;" data-bind="value:query" placeholder='Search users'/>
+                                    <input class='form-control' style="margin-bottom: 8px;" data-bind="value:query" placeholder='Search users' autofocus/>
                                 </div>
                                 <div><button type='submit' class="btn btn-default" data-bind="click:search">Search</button></div>
                             </div>
@@ -39,7 +39,7 @@
                                 <span class="modal-subheader">Results</span>
                                 <a data-bind="click:addAll">Add all</a>
                             </div>
-                            <div class="error" data-bind="text:errorMsg"></div>
+                            <div class="error">{{ errorMsg }}</div>
                             <table>
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
                                     <tr data-bind="if:!($root.selected($data))">
@@ -54,18 +54,24 @@
                                         <td>
                                             <img data-bind="attr:{src: contributor.gravatar}" />
                                         </td>
-                                        <td><span data-bind="text: contributor.fullname"></span>
+                                        <td><span class="contributor-name">{{contributor.fullname}}</span>
                                         <span class='text-muted'
                                                 data-bind="visible: !contributor.registered">(unregistered)
                                         </span></td>
                                     </tr>
                                 </tbody>
                             </table>
-                                <!-- Link to add non-registered contributor -->
-                                <a style="cursor:pointer"
-                                data-bind='visible: query, click:gotoInvite'>Add
-                                <em data-bind='text: query'></em>
-                                as a non-registered contributor</a>
+                            <!-- Link to add non-registered contributor -->
+                            <div class='help-block'>
+                                <div data-bind='if: foundResults'>
+                                    If the person you are looking for is not listed above, try a more specific search or <strong><a style="cursor:pointer"
+                                    data-bind='click:gotoInvite'>add <em>{{query}}</em> as an unregistered contributor</a>.</strong>
+                                </div>
+                                <div data-bind='if: noResults'>
+                                    No results found. Try a more specific search or <strong><a href="#"
+                                    data-bind='click:gotoInvite'>add <em>{{query}}</em> as an unregistered contributor</a>.</strong>
+                                </div>
+                            </div>
                         </div><!-- ./col-md -->
 
                         <div class="col-md-6">
@@ -148,7 +154,7 @@
 
                 <!-- Invite user page -->
                 <div data-bind='if:page()=="invite"'>
-                    <form class='form' data-bind='submit:sendInvite'>
+                    <form class='form' data-bind='submit: postInvite'>
                         <div class="form-group">
                             <label for="inviteUserName">Full Name</label>
                             <input type="text" class='form-control' id="inviteName"
@@ -157,14 +163,13 @@
                         <div class="form-group">
                             <label for="inviteUserEmail">Email</label>
                             <input type="email" class='form-control' id="inviteUserEmail"
-                                    placeholder="Email" data-bind='value: inviteEmail' />
+                                    placeholder="Email" data-bind='value: inviteEmail' autofocus/>
                         </div>
                         <button class='btn btn-success'
                          data-bind='enable: inviteEmail && inviteName'
-                         type="submit">Invite and add</button>
+                         type="submit">Add</button>
                          <div class="help-block">
-                            <p>We will notify the user that they have been added to your project.
-                            </p>
+                            <p>We will notify the user that they have been added to your project.</p>
                             <p class='text-danger' data-bind='text: inviteError'></p>
                         </div>
                     </form>
