@@ -23,6 +23,9 @@ this.Comment = (function(window, $, ko, bootbox) {
         self._loaded = false;
         self.id = ko.observable();
 
+        self.editErrorMessage = ko.observable();
+        self.replyErrorMessage = ko.observable();
+
         self.replying = ko.observable(false);
         self.replyContent = ko.observable('');
         self.replyPublic = ko.observable('public');
@@ -47,6 +50,7 @@ this.Comment = (function(window, $, ko, bootbox) {
     BaseComment.prototype.cancelReply = function() {
         this.replyContent('');
         this.replying(false);
+        this.replyErrorMessage('');
     };
 
     BaseComment.prototype.fetch = function() {
@@ -73,6 +77,10 @@ this.Comment = (function(window, $, ko, bootbox) {
 
     BaseComment.prototype.submitReply = function() {
         var self = this;
+        if (!self.replyContent()) {
+            self.replyErrorMessage('Please enter a comment');
+            return
+        }
         $.osf.postJSON(
             nodeApiUrl + 'comment/',
             {
@@ -87,6 +95,7 @@ this.Comment = (function(window, $, ko, bootbox) {
                 if (!self.hasChildren()) {
                     self.hasChildren(true);
                 }
+                self.replyErrorMessage('');
                 self.onSubmitSuccess(response);
             }
         );
@@ -145,6 +154,7 @@ this.Comment = (function(window, $, ko, bootbox) {
     CommentModel.prototype.cancelEdit = function() {
         this.editing(false);
         this.$root.editors -= 1;
+        this.editErrorMessage('');
         this.hoverContent(false);
         this.content(this._content);
         this.isPublic(this._isPublic);
@@ -152,6 +162,10 @@ this.Comment = (function(window, $, ko, bootbox) {
 
     CommentModel.prototype.submitEdit = function() {
         var self = this;
+        if (!self.content()) {
+            self.editErrorMessage('Please enter a comment');
+            return
+        }
         $.osf.postJSON(
             nodeApiUrl + 'comment/' + self.id() + '/',
             {
@@ -162,6 +176,7 @@ this.Comment = (function(window, $, ko, bootbox) {
                 self.content(response.content);
                 self.dateModified(relativeDate(response.dateModified));
                 self.editing(false);
+                self.editErrorMessage('');
                 self.$root.editors -= 1;
             }
         ).fail(function() {

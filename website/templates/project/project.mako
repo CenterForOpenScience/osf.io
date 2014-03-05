@@ -122,6 +122,7 @@
                         <div>
                             <a class="btn btn-default btn-default" data-bind="click: submitReply"><i class="icon-check"></i> Save</a>
                             <a class="btn btn-default btn-default" data-bind="click: cancelReply"><i class="icon-undo"></i> Cancel</a>
+                            <a data-bind="replyErrorMessage" class="comment-error"></a>
                         </div>
                     </form>
                 </div>
@@ -171,6 +172,7 @@
                             <div>
                                 <a class="btn btn-default btn-default" data-bind="click: submitEdit"><i class="icon-check"></i> Save</a>
                                 <a class="btn btn-default btn-default" data-bind="click: cancelEdit"><i class="icon-undo"></i> Cancel</a>
+                                <span data-bind="text: editErrorMessage" class="comment-error"></span>
                             </div>
                         </div>
 
@@ -216,6 +218,7 @@
                         <div>
                             <a class="btn btn-default btn-default" data-bind="click: submitReply"><i class="icon-check"></i> Save</a>
                             <a class="btn btn-default btn-default" data-bind="click: cancelReply"><i class="icon-undo"></i> Cancel</a>
+                            <span data-bind="text: replyErrorMessage" class="comment-error"></span>
                         </div>
                     </div>
                 <!-- /ko -->
