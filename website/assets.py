@@ -59,7 +59,8 @@ js_bottom = Bundle(
             "js/app.js",
             "js/addons.js",
             'js/dropzone-patch.js',
-            'js/rubeus.js'),
+            'js/rubeus.js',
+            'js/citations.js'),
     filters='jsmin',
     output='public/js/site.js'
 )

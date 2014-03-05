@@ -34,9 +34,6 @@ def to_citation(project_data, citation_style, formatter_Style):
                                               CiteProcJSON([project_data]),
                                               formatter_Style)
 
-        #os.path.join('styles', style),
-
-
     citation1 = Citation([CitationItem(project_data['id'])])
     bibliography.register(citation1)
     return bibliography.bibliography()
