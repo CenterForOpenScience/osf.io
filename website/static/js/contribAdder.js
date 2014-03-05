@@ -224,6 +224,7 @@ this.ContribAdder = (function($, global, undefined) {
             self.results([]);
             self.selection([]);
             self.nodesToChange([]);
+            self.errorMsg('');
         };
 
     };

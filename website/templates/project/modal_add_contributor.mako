@@ -174,7 +174,7 @@
 
             <div class="modal-footer">
 
-                <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
+                <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
 
                 <span data-bind="if:selection().length && page() == 'whom'">
                     <a class="btn btn-success" data-bind="visible:nodes().length==0, click:submit">Submit</a>
