@@ -52,24 +52,21 @@
                                                 >+</a>
                                         </td>
                                         <td>
-                                            <img data-bind="attr:{src: contributor.gravatar}" />
+                                            <img data-bind="attr: {src: contributor.gravatar}" />
                                         </td>
-                                        <td><span class="contributor-name">{{contributor.fullname}}</span>
-                                        <span class='text-muted'
-                                                data-bind="visible: !contributor.registered">(unregistered)
-                                        </span></td>
+                                        <td><span class="contributor-name">{{contributor.fullname}}</span></td>
                                     </tr>
                                 </tbody>
                             </table>
                             <!-- Link to add non-registered contributor -->
                             <div class='help-block'>
                                 <div data-bind='if: foundResults'>
-                                    If the person you are looking for is not listed above, try a more specific search or <strong><a style="cursor:pointer"
-                                    data-bind='click:gotoInvite'>add <em>{{query}}</em> as an unregistered contributor</a>.</strong>
+                                    If the person you are looking for is not listed above, try a more specific search or <strong><a href="#"
+                                    data-bind="click:gotoInvite">add <em>{{query}}</em> as an unregistered contributor</a>.</strong>
                                 </div>
-                                <div data-bind='if: noResults'>
+                                <div data-bind="if: noResults">
                                     No results found. Try a more specific search or <strong><a href="#"
-                                    data-bind='click:gotoInvite'>add <em>{{query}}</em> as an unregistered contributor</a>.</strong>
+                                    data-bind="click:gotoInvite">add <em>{{query}}</em> as an unregistered contributor</a>.</strong>
                                 </div>
                             </div>
                         </div><!-- ./col-md -->
@@ -98,9 +95,11 @@
                                             <img data-bind="attr:{src:contributor.gravatar}" />
                                         </td>
                                         <td><span data-bind="text: contributor.fullname"></span>
-                                        <span class='text-muted'
-                                                data-bind="visible: !contributor.registered">(unregistered)
-                                        </span></td>
+                                        <a href="#" class='text-muted'
+                                                data-bind="
+                                                    visible: !contributor.registered,
+                                                    click: $root.goToPage.bind($data, 'invite')">(unregistered)
+                                        </a></td>
                                     </tr>
                                 </tbody>
                             </table>

@@ -67,7 +67,11 @@ this.ContribAdder = (function($, global, undefined) {
             self.inviteError('');
             self.inviteEmail('');
             self.page('invite');
-        }
+        };
+
+        self.goToPage = function(page) {
+            self.page(page);
+        };
 
         self.search = function() {
             self.errorMsg('');
