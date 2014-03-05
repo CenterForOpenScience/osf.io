@@ -1120,3 +1120,7 @@ h1.unavailable {
 a {
   cursor: pointer;
 }
+
+.btn-remove-contrib {
+  cursor: pointer;
+}

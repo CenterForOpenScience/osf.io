@@ -10,7 +10,8 @@ import httplib as http
 
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
-from framework import Q
+from webtest.app import AppError
+from framework import Q, auth, url_for
 from framework.auth.model import User
 
 import website.app
@@ -19,9 +20,9 @@ from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
 from website.project.views.contributor import (
     _add_contributor_json, send_claim_email,
-    serialize_unregistered, add_contributors_from_dicts
+    serialize_unregistered, deserialize_contributors
 )
-from webtest.app import AppError
+from website.routes import api_url_for, web_url_for
 from website import settings, mails
 from website.util import rubeus
 from website.project.views.node import _view_project
@@ -100,7 +101,7 @@ class TestProjectViews(DbTestCase):
         project = ProjectFactory(creator=self.user1, is_public=True)
         user2 = UserFactory()
         user3 = UserFactory()
-        url = "/api/v1/project/{0}/addcontributors/".format(project._id)
+        url = "/api/v1/project/{0}/contributors/".format(project._id)
         payload =  {"users": [_add_contributor_json(user2),
             _add_contributor_json(user3)]}
         res = self.app.post_json(url, payload,
@@ -110,7 +111,6 @@ class TestProjectViews(DbTestCase):
         # A log event was added
         assert_equal(project.logs[-1].action, "contributor_added")
         assert_equal(len(project.contributors), 3)
-        assert_equal(len(project.contributor_list), 3)
 
     def test_project_remove_contributor(self):
         url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
@@ -338,25 +338,29 @@ class TestAddingContributorViews(DbTestCase):
         assert_true(res['gravatar'])
         assert_false(res['active'])
 
-    def test_add_contributors_from_dicts(self):
+    def test_deserialize_contributors(self):
         contrib = UserFactory()
         unreg = UnregUserFactory()
         name, email = fake.name(), fake.email()
         unreg_no_record = serialize_unregistered(name, email)
-        n_contributors_pre = len(self.project.contributors)
         contrib_data = [
             _add_contributor_json(contrib),
             serialize_unregistered(fake.name(), unreg.username),
             unreg_no_record
         ]
-        add_contributors_from_dicts(
+        res = deserialize_contributors(
             self.project,
             contrib_data,
             auth=Auth(self.creator),
             email_unregistered=True)
-        assert_equal(
-            len(self.project.contributors), n_contributors_pre + len(contrib_data)
-        )
+        assert_equal(len(res), len(contrib_data))
+        assert_true(res[0].is_registered)
+
+        assert_false(res[1].is_registered)
+        assert_true(res[1]._primary_key)
+
+        assert_false(res[2].is_registered)
+        assert_true(res[2]._primary_key)
 
     def test_serialize_unregistered_with_record(self):
         name, email = fake.name(), fake.email()
@@ -379,16 +383,43 @@ class TestAddingContributorViews(DbTestCase):
         reg_user = UserFactory()
         name, email = fake.name(), fake.email()
         pseudouser = {'id': None, 'registered': False, 'fullname': name,
-                        'email': fake.email()}
+                        'email': email}
         payload = {
             'users': [_add_contributor_json(reg_user), pseudouser],
             'node_ids': []
         }
-        url = "/api/v1/project/{0}/addcontributors/".format(self.project._id)
-        res = self.app.post_json(url, payload).maybe_follow()
+        with app.test_request_context():
+            url = api_url_for('project_contributors_post',
+                pid=self.project._primary_key)
+        self.app.post_json(url, payload).maybe_follow()
         self.project.reload()
         assert_equal(len(self.project.contributors),
             n_contributors_pre + len(payload['users']))
+
+        new_unreg = auth.get_user(username=email)
+        assert_false(new_unreg.is_registered)
+        # unclaimed record was added
+        new_unreg.reload()
+        assert_in(self.project._primary_key, new_unreg.unclaimed_records)
+        rec = new_unreg.get_unclaimed_record(self.project._primary_key)
+        assert_equal(rec['name'], name)
+        assert_equal(rec['email'], email)
+
+    @mock.patch('website.project.views.contributor.send_claim_email')
+    def test_email_sent_when_unreg_user_is_added(self, send_mail):
+        name, email = fake.name(), fake.email()
+        pseudouser = {'id': None, 'registered': False, 'fullname': name,
+                        'email': email}
+        payload = {
+            'users': [pseudouser],
+            'node_ids': []
+        }
+        with app.test_request_context():
+            url = api_url_for('project_contributors_post',
+                pid=self.project._primary_key)
+        self.app.post_json(url, payload).maybe_follow()
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(email=email))
 
     def test_add_multiple_contributors_only_adds_one_log(self):
         n_logs_pre = len(self.project.logs)
@@ -400,7 +431,9 @@ class TestAddingContributorViews(DbTestCase):
             'users': [_add_contributor_json(reg_user), pseudouser],
             'node_ids': []
         }
-        url = "/api/v1/project/{0}/addcontributors/".format(self.project._id)
+        with app.test_request_context():
+            url = api_url_for('project_contributors_post',
+                pid=self.project._primary_key)
         res = self.app.post_json(url, payload).maybe_follow()
         self.project.reload()
         assert_equal(len(self.project.logs), n_logs_pre + 1)
@@ -416,7 +449,7 @@ class TestAddingContributorViews(DbTestCase):
             'users': [_add_contributor_json(reg_user), pseudouser],
             'node_ids': [self.project._primary_key, child._primary_key]
         }
-        url = "/api/v1/project/{0}/addcontributors/".format(self.project._id)
+        url = "/api/v1/project/{0}/contributors/".format(self.project._id)
         res = self.app.post_json(url, payload).maybe_follow()
         child.reload()
         assert_equal(len(child.contributors),
@@ -536,14 +569,12 @@ class TestClaimViews(DbTestCase):
         self.project = ProjectFactory(creator=self.referrer, is_public=True)
         self.given_name = fake.name()
         self.given_email = fake.email()
-        self.project.add_unregistered_contributor(
+        self.user = self.project.add_unregistered_contributor(
             fullname=self.given_name,
             email=self.given_email,
             auth=Auth(user=self.referrer)
         )
         self.project.save()
-        #: The latest user is the unregistered contributor
-        self.user = self.project.contributors[-1]
 
     def test_get_valid_form(self):
         url = self.user.get_claim_url(self.project._primary_key)
@@ -569,6 +600,46 @@ class TestClaimViews(DbTestCase):
         assert_true(self.user.is_registered)
         assert_true(self.user.is_active())
         assert_not_in(self.project._primary_key, self.user.unclaimed_records)
+
+    def test_posting_to_claim_form_removes_all_unclaimed_data(self):
+        # user has multiple unclaimed records
+        p2 = ProjectFactory(creator=self.referrer)
+        self.user.add_unclaimed_record(node=p2, referrer=self.referrer,
+            given_name=fake.name())
+        self.user.save()
+        assert_true(len(self.user.unclaimed_records.keys()) > 1)  # sanity check
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.post(url, {
+            'username': self.given_email,
+            'password': 'bohemianrhap',
+            'password2': 'bohemianrhap'
+        })
+        self.user.reload()
+        assert_equal(self.user.unclaimed_records, {})
+
+    def test_posting_to_claim_form_sets_fullname_to_given_name(self):
+        # User is created with a full name
+        original_name = fake.name()
+        unreg = UnregUserFactory(fullname=original_name)
+        # User invited with a different name
+        different_name= fake.name()
+        new_user = self.project.add_unregistered_contributor(email=unreg.username,
+            fullname=different_name,
+            auth=Auth(self.referrer))
+        self.project.save()
+        # Goes to claim url
+        claim_url = new_user.get_claim_url(self.project._primary_key)
+        res = self.app.post(claim_url, {
+            'username': unreg.username,
+            'password': 'killerqueen', 'password2': 'killerqueen'
+        })
+        unreg.reload()
+        # Full name was set correctly
+        assert_equal(unreg.fullname, different_name)
+        # CSL names were set correctly
+        parsed_name = auth.utils.parse_name(different_name)
+        assert_equal(unreg.given_name, parsed_name['given_name'])
+        assert_equal(unreg.family_name, parsed_name['family_name'])
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_claim_user_post_returns_fullname(self, send_mail):
@@ -1038,6 +1109,7 @@ class TestFileViews(DbTestCase):
         data = res.json['data']
         assert_equal(len(data), len(expected))
 
+
 class TestComments(DbTestCase):
 
     def setUp(self):
@@ -1249,6 +1321,30 @@ class TestComments(DbTestCase):
             comment.reports[self.project.creator._id],
             {'type': 'spam'}
         )
+
+
+class TestSearchViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.project = ProjectFactory()
+        self.contrib1 = UserFactory(fullname='Freddie Mercury')
+        self.contrib2 = UserFactory(fullname='Brian May')
+
+    def test_search_contributor(self):
+        with app.test_request_context():
+            url = api_url_for('search_contributor')
+        res = self.app.get(url, {'query': self.contrib1.fullname})
+        assert_equal(res.status_code, 200)
+        result = res.json['users']
+        assert_equal(len(result), 1)
+        freddie = result[0]
+        assert_equal(freddie['fullname'], self.contrib1.fullname)
+        assert_equal(freddie['email'], self.contrib1.username)
+        assert_in('gravatar', freddie)
+        assert_equal(freddie['registered'], self.contrib1.is_registered)
+        assert_equal(freddie['active'], self.contrib1.is_active())
+
 
 if __name__ == '__main__':
     unittest.main()
