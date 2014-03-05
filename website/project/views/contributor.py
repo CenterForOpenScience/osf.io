@@ -329,11 +329,9 @@ def verify_claim_token(user, token, pid):
             error_data = {
                 'message_short': 'User has already been claimed.',
                 'message_long': 'Please <a href="/login/">log in</a> to continue.'}
+            raise HTTPError(400, data=error_data)
         else:
-            error_data = {
-                'message_short': 'Invalid claim URL.',
-                'message_long': 'The URL you entered is invalid.'}
-        raise HTTPError(400, data=error_data)
+            return False
     return True
 
 
@@ -357,7 +355,9 @@ def claim_user_form(**kwargs):
     # user ID is invalid. Unregistered user is not in database
     if not user:
         raise HTTPError(400)
-    verify_claim_token(user, token, pid)
+    # If claim token not valid, redirect to registration page
+    if not verify_claim_token(user, token, pid):
+        return framework.redirect('/account/')
     unclaimed_record = user.unclaimed_records[pid]
     user.fullname = unclaimed_record['name']
     user.update_guessed_names()
