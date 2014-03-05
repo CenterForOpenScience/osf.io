@@ -32,32 +32,7 @@ css = Bundle(
 
 
 js = Bundle(
-<<<<<<< HEAD
-        # Vendorized libraries that are already minified
-        Bundle(
-                "vendor/jquery/jquery.min.js",
-                "vendor/knockout/knockout-min.js",
-                "vendor/bootstrap3/js/bootstrap.min.js",
-                "vendor/bootstrap3-editable/js/bootstrap-editable.min.js",
-                "vendor/bootbox/bootbox.min.js",
-                "vendor/jquery-ui/js/jquery-ui.min.js",
-                "vendor/jquery-tagsinput/js/jquery.tagsinput.min.js",
-                "vendor/jquery-tagcloud/jquery.tagcloud.js",
-                "vendor/jquery-tagit/js/tag-it.js",
-                "vendor/moment/moment.min.js",
-                "vendor/jquery-blockui/jquery.blockui.js",
-                "vendor/dropzone/dropzone.js",
-                'vendor/hgrid/hgrid.js'),
-        # Site-specific JS
-        Bundle("js/site.js",
-                "js/project.js",
-                "js/app.js",
-                "js/addons.js",
-                'js/rubeus.js',
-                'js/citations.js',
-                filters="jsmin"),
-        output="public/js/common.js"
-=======
+
     # Vendorized libraries that are already minified
     Bundle(
         "vendor/bootstrap3/js/bootstrap.min.js",
@@ -87,7 +62,6 @@ js_bottom = Bundle(
             'js/rubeus.js'),
     filters='jsmin',
     output='public/js/site.js'
->>>>>>> 930cdba3a354ab7198a89c05feab0d636af18481
 )
 
 
