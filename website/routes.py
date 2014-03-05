@@ -65,6 +65,14 @@ def goodbye(**kwargs):
     return {}
 
 
+def api_url_for(view_name):
+    return framework.url_for('JSONRenderer__{0}'.format(view_name))
+
+
+def web_url_for(view_name):
+    return framework.url_for('OsfWebRenderer__{0}'.format(view_name))
+
+
 def make_url_map(app):
     '''Set up all the routes for the OSF app.
 
