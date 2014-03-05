@@ -1,0 +1,44 @@
+#commentpane {
+    position: fixed;
+    z-index: 2147483646;
+    width: 0px;
+    top: 0px;
+    /*right: -300px;*/
+    right: 0px;
+    height: 100%;
+}
+.cp-handle {
+    width: 50px;
+    height: 50px;
+    background-color:#3C87C8;
+    margin-left: -50px;
+    text-align:center;
+}
+
+.cp-bar {
+    width: 5px;
+    height: 100%;
+    background-color: gray;
+    position: absolute;
+    margin-top: -50px;
+    cursor:ew-resize;
+}
+
+.cp-sidebar {
+    height: 100%;
+    margin-top: -50px;
+    margin-left: 5px;
+    position: absolute;
+    background-color: red;
+    padding: 5px;
+    overflow-y: auto;
+}
+
+.unselectable {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}

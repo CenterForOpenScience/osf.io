@@ -26,6 +26,7 @@ css = Bundle(
         Bundle(
             "css/site.css",
             'css/rubeus.css',
+            'css/comments.css',
             filters="cssmin"),
         output="public/css/common.css"
 )
@@ -60,7 +61,8 @@ js_bottom = Bundle(
             "js/app.js",
             "js/addons.js",
             'js/dropzone-patch.js',
-            'js/rubeus.js'),
+            'js/rubeus.js',
+            'js/comments.js'),
     filters='jsmin',
     output='public/js/site.js'
 )
