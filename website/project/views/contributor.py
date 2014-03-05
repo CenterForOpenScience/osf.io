@@ -2,21 +2,18 @@
 import httplib as http
 import logging
 
-from mako.template import Template
-from itsdangerous import BadSignature
-
+from modularodm.exceptions import ValidationValueError
 import framework
-from framework import request, User
+from framework import request, User, status
 from framework.auth.decorators import collect_auth
-from framework.auth.utils import parse_name
 from framework.exceptions import HTTPError
 from ..decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor
-from framework.email.tasks import send_email
+    must_be_contributor, must_be_contributor_or_public
 from framework import forms
 from framework.auth.forms import SetEmailAndPasswordForm
 
-from website import settings
+from website import settings, mails, language
+from website.project.model import unreg_contributor_added
 from website.filters import gravatar
 from website.models import Node
 from website.profile import utils
@@ -73,33 +70,29 @@ def get_node_contributors_abbrev(**kwargs):
         'others_suffix': others_suffix,
     }
 
-
+# TODO: Almost identical to utils.serialize_user. Remove duplication.
 def _add_contributor_json(user):
 
     return {
         'fullname': user.fullname,
+        'email': user.username,
         'id': user._primary_key,
         'registered': user.is_registered,
         'active': user.is_active(),
         'gravatar': gravatar(
             user, use_ssl=True,
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
-        )
+        ),
     }
 
 
-def _jsonify_contribs(contribs):
+def serialized_contributors(node):
 
     data = []
-    for contrib in contribs:
-        if 'id' in contrib:
-            user = User.load(contrib['id'])
-            if user is None:
-                logger.error('User {} not found'.format(contrib['id']))
-                continue
-            data.append(utils.serialize_user(user))
-        else:
-            data.append(utils.serialize_unreg_user(contrib))
+    for contrib in node.contributors:
+        serialized = utils.serialize_user(contrib)
+        serialized['fullname'] = contrib.display_full_name(node=node)
+        data.append(serialized)
     return data
 
 
@@ -108,12 +101,12 @@ def _jsonify_contribs(contribs):
 def get_contributors(**kwargs):
 
     auth = kwargs.get('auth')
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
 
-    if not node_to_use.can_view(auth):
+    if not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
-    contribs = _jsonify_contribs(node_to_use.contributor_list)
+    contribs = serialized_contributors(node)
     return {'contributors': contribs}
 
 
@@ -152,6 +145,7 @@ def get_recently_added_contributors(**kwargs):
     contribs = [
         _add_contributor_json(contrib)
         for contrib in auth.user.recently_added
+        if contrib.is_active()
         if contrib not in node_to_use.contributors
     ]
 
@@ -198,133 +192,257 @@ def project_removecontributor(**kwargs):
         return {'status': 'success'}
     raise HTTPError(http.BAD_REQUEST)
 
+# TODO: TEST ME
+def deserialize_contributors(node, user_dicts, auth, email_unregistered=True):
+    """View helper that adds contributors from a list of serialized users. The
+    users in the list may be registered or unregistered users.
+
+    e.g. ``[{'id': 'abc123', 'registered': True, 'fullname': ..},
+            {'id': None, 'registered': False, 'fullname'...},
+            {'id': '123ab', 'registered': False, 'fullname': ...}]
+
+    If a dict represents an unregistered user without an ID, creates a new
+    unregistered User record.
+
+    :param Node node: The node to add contributors to
+    :param list(dict) user_dicts: List of serialized users in the format above.
+    :param Auth auth:
+    :param bool email_unregistered: Whether to email the claim email(s)
+        to unregistered users.
+    """
+
+    # Add the registered contributors
+    contribs = []
+    for contrib_dict in user_dicts:
+        email = contrib_dict['email']
+        fullname = contrib_dict['fullname']
+        if contrib_dict['id']:
+            contributor = User.load(contrib_dict['id'])
+        else:
+            try:
+                contributor = User.create_unregistered(
+                    fullname=fullname,
+                    email=email)
+                contributor.save()
+            except ValidationValueError:
+                contributor = framework.auth.get_user(username=email)
+
+        # Add unclaimed record if necessary
+        if (not contributor.is_registered
+                and node._primary_key not in contributor.unclaimed_records):
+            contributor.add_unclaimed_record(node=node, referrer=auth.user,
+                given_name=fullname,
+                email=email)
+            contributor.save()
+            unreg_contributor_added.send(node, contributor=contributor,
+                auth=auth)
+        contribs.append(contributor)
+    return contribs
+
+
+@unreg_contributor_added.connect
+def finalize_invitation(node, contributor, auth):
+    record = contributor.get_unclaimed_record(node._primary_key)
+    if record['email']:
+        send_claim_email(record['email'], contributor, node, notify=True)
+
 
 @must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+@must_be_contributor  # returns user, project
 @must_not_be_registration
-def project_addcontributors_post(**kwargs):
+def project_contributors_post(**kwargs):
     """ Add contributors to a node. """
-
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
-    user_ids = request.json.get('user_ids', [])
+    user_dicts = request.json.get('users', [])
     node_ids = request.json.get('node_ids', [])
-    users = [
-        User.load(user_id)
-        for user_id in user_ids
-    ]
-    node_to_use.add_contributors(contributors=users, auth=auth)
-    node_to_use.save()
+    contribs = deserialize_contributors(node, user_dicts, auth=auth)
+    node.add_contributors(contribs, auth=auth)
+    node.save()
     for node_id in node_ids:
-        node = Node.load(node_id)
-        node.add_contributors(contributors=users, auth=auth)
-        node.save()
+        child = Node.load(node_id)
+        child_contribs = deserialize_contributors(child, user_dicts,
+            auth=auth, email_unregistered=False)  # Only email unreg users once
+        child.add_contributors(child_contribs, auth=auth)
+        child.save()
     return {'status': 'success'}, 201
 
-# TODO: finish me
-INVITE_EMAIL_SUBJECT = 'You have been added as a contributor to an OSF project.'
-INVITE_EMAIL = Template(u'''
-Hello ${new_user.fullname},
 
-You have been added by ${referrer.fullname} as a contributor to project
-"${node.title}" on the Open Science Framework. To set a password for your account,
-visit:
+def send_claim_email(email, user, node, notify=True):
+    """Send an email for claiming a user account. Either sends to the given email
+    or the referrer's email, depending on the email address provided.
 
-${claim_url}
-
-Once you have set a password you will be able to make contributions to
-${node.title}.
-
-If you have
-
-Sincerely,
-
-The OSF Team
-''')
-
-def email_invite(to_addr, new_user, referrer, node):
-    # Add querystring with email, so that set password form can prepopulate the
-    # email field
-    claim_url = new_user.get_claim_url(node._primary_key) + '?email={0}'.format(to_addr)
-    message = INVITE_EMAIL.render(new_user=new_user, referrer=referrer, node=node,
-        claim_url=claim_url)
-    logger.debug('Sending invite email:')
-    logger.debug(message)
-    # Don't use ttls and auth if in dev mode
-    ttls = login = not settings.DEV_MODE
-    return send_email.delay(
-        settings.FROM_EMAIL,
-        to_addr=to_addr,
-        subject=INVITE_EMAIL_SUBJECT,
-        message=message,
-        mimetype='plain',
-        ttls=ttls, login=login
+    :param str email: The address given in the claim user form
+    :param User user: The User record to claim.
+    :param Node node: The node where the user claimed their account.
+    :param bool notify: If True and an email is sent to the referrer, an email
+        will also be sent to the invited user about their pending verification.
+    """
+    invited_email = email.lower().strip()
+    unclaimed_record = user.get_unclaimed_record(node._primary_key)
+    referrer = User.load(unclaimed_record['referrer_id'])
+    claim_url = user.get_claim_url(node._primary_key, external=True)
+    # If given email is the same provided by user, just send to that email
+    if unclaimed_record.get('email', None) == invited_email:
+        mail_tpl = mails.INVITE
+        to_addr = invited_email
+    else:  # Otherwise have the referrer forward the email to the user
+        mail_tpl = mails.FORWARD_INVITE
+        to_addr = referrer.username
+        if notify:
+            mails.send_mail(invited_email, mails.PENDING_VERIFICATION,
+                user=user,
+                referrer=referrer,
+                fullname=unclaimed_record['name'],
+                node=node
+            )
+    mails.send_mail(to_addr, mail_tpl,
+        user=user,
+        referrer=referrer,
+        node=node,
+        claim_url=claim_url,
+        email=invited_email,
+        fullname=unclaimed_record['name']
     )
+    return to_addr
+
+
+def verify_claim_token(user, token, pid):
+    """View helper that checks that a claim token for a given user and node ID
+    is valid. If not valid, throws an error with custom error messages.
+    """
+    # if token is invalid, throw an error
+    if not user.verify_claim_token(token=token, project_id=pid):
+        if user.is_registered:
+            error_data = {
+                'message_short': 'User has already been claimed.',
+                'message_long': 'Please <a href="/login/">log in</a> to continue.'}
+        else:
+            error_data = {
+                'message_short': 'Invalid claim URL.',
+                'message_long': 'The URL you entered is invalid.'}
+        raise HTTPError(400, data=error_data)
+    return True
 
 
 def claim_user_form(**kwargs):
     """View for rendering the set password page for a claimed user.
 
+    Must have ``token`` as a querystring argument.
+
     Renders the set password form, validates it, and sets the user's password.
     """
+    uid, pid = kwargs['uid'], kwargs['pid']
+    token = request.form.get('token') or request.args.get('token')
     # There shouldn't be a user logged in
     if framework.auth.get_current_user():
-        # TODO: should display more useful info to the user instead of an error page
-        raise HTTPError(400)
-    signature = kwargs['signature']
-    email = request.args.get('email', '')
-    form = SetEmailAndPasswordForm(request.form)
-    # Parse the signature; if invalid, raise 404
-    try:
-        referral_data = User.parse_claim_signature(signature)
-    except BadSignature:
-        raise HTTPError(http.NOT_FOUND)
-    user = framework.auth.get_user(id=referral_data['_id'])
+        logout_url = framework.url_for('OsfWebRenderer__auth_logout')
+        error_data = {'message_short': 'You are already logged in.',
+            'message_long': ('To claim this account, you must first '
+                '<a href={0}>log out.</a>'.format(logout_url))}
+        raise HTTPError(400, data=error_data)
+    user = framework.auth.get_user(id=uid)
     # user ID is invalid. Unregistered user is not in database
     if not user:
         raise HTTPError(400)
-    parsed_name = parse_name(referral_data['name'])
+    verify_claim_token(user, token, pid)
+    unclaimed_record = user.unclaimed_records[pid]
+    user.fullname = unclaimed_record['name']
+    user.update_guessed_names()
+    email = unclaimed_record['email']
+    form = SetEmailAndPasswordForm(request.form, token=token)
     if request.method == 'POST':
         if form.validate():
-            username = form.username.data.strip()
-            password = form.password.data.strip()
+            username = form.username.data
+            password = form.password.data
             user.register(username=username, password=password)
+            # Clear unclaimed records
+            user.unclaimed_records = {}
             user.save()
-            project_id = referral_data['project_id']
-            # Go to project page
-            return framework.redirect('/{project_id}/'.format(project_id=project_id))
+            # Authenticate user and redirect to project page
+            response = framework.redirect('/settings/')
+            node = Node.load(pid)
+            status.push_status_message(language.CLAIMED_CONTRIBUTOR.format(node=node),
+                'success')
+            return framework.auth.authenticate(user, response)
         else:
             forms.push_errors_to_status(form.errors)
+    is_json_request = request.content_type == 'application/json'
     return {
-        'firstname': parsed_name['given_name'],
+        'firstname': user.given_name,
         'email': email,
-        'fullname': referral_data['name']
+        'fullname': user.fullname,
+        'form': forms.utils.jsonify(form) if is_json_request else form,
     }
+
+
+def serialize_unregistered(fullname, email):
+    """Serializes an unregistered user.
+    """
+    user = framework.auth.get_user(username=email)
+    if user is None:
+        serialized = {
+            'fullname': fullname,
+            'id': None,
+            'registered': False,
+            'active': False,
+            'gravatar': gravatar(email, use_ssl=True,
+                size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR),
+            'email': email
+        }
+    else:
+        serialized = _add_contributor_json(user)
+        serialized['fullname']
+        serialized['email'] = email
+    return serialized
+
 
 @must_be_valid_project
 @must_be_contributor
 @must_not_be_registration
 def invite_contributor_post(**kwargs):
     """API view for inviting an unregistered user.
-    Expects JSON arguments with 'fullname' (required) and email (not required)
-    Creates a new unregistered user in the database.
-    If email is provided, emails the invited user.
+    Expects JSON arguments with 'fullname' (required) and email (not required).
     """
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
-    fullname, email = request.json.get('fullname'), request.json.get('email')
-    if not fullname:
-        return {'status': 400, 'message': 'Must provide fullname and email'}, 400
-    new_user = framework.auth.get_user(username=email)
-    if not new_user:
-        new_user = User.create_unregistered(fullname=fullname, email=email)
-        new_user.save()  # Need to save so that user has an ID
-    if node._primary_key not in new_user.unclaimed_records:
-        new_user.add_unclaimed_record(node=node,
-            given_name=fullname, referrer=auth.user)
-        new_user.save()
-    else:
-        return {'status': 400, 'message': 'User is already a contributor to this project.'}, 400
+    fullname = request.json.get('fullname').strip()
+    email = request.json.get('email')
     if email:
-        email_invite(email, new_user, referrer=auth.user, node=node)
-    return {'status': 'success', 'contributor': _add_contributor_json(new_user)}
+        email = email.lower().strip()
+    if not fullname:
+        return {'status': 400, 'message': 'Must provide fullname'}, 400
+    # Check if email is in the database
+    user = framework.auth.get_user(username=email)
+    if user:
+        if user.is_registered:
+            msg = 'User is already in database. Please go back and try your search again.'
+            return {'status': 400, 'message': msg}, 400
+        elif node.is_contributor(user):
+            msg = 'User with this email address is already a contributor to this project.'
+            return {'status': 400, 'message': msg}, 400
+        else:
+            serialized = _add_contributor_json(user)
+            # use correct display name
+            serialized['fullname'] = fullname
+            serialized['email'] = email
+    else:
+        # Create a placeholder
+        serialized = serialize_unregistered(fullname, email)
+    return {'status': 'success', 'contributor': serialized}
+
+
+@must_be_contributor_or_public
+def claim_user_post(**kwargs):
+    """View for claiming a user from the X-editable form on a project page.
+    """
+    reqdata = request.json
+    user = User.load(reqdata['pk'])
+    email = reqdata['value'].lower().strip()
+    node = kwargs['node'] or kwargs['project']
+    send_claim_email(email, user, node, notify=True)
+    unclaimed_data = user.get_unclaimed_record(node._primary_key)
+    return {
+        'status': 'success',
+        'fullname': unclaimed_data['name'],
+        'email': email,
+    }

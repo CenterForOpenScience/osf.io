@@ -16,6 +16,7 @@ from website import settings
 
 from website.addons.osffiles.model import NodeFile
 from website.addons.wiki.model import NodeWikiPage
+
 import website.models
 from website.app import init_app
 
@@ -55,6 +56,7 @@ class DbTestCase(unittest.TestCase):
             website.models.MODELS, storage.MongoStorage,
             addons=settings.ADDONS_AVAILABLE, db=klass.db,
         )
+        klass._client.drop_database(klass.db)
 
     @classmethod
     def tearDownClass(klass):

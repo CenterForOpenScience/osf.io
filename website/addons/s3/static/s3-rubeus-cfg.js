@@ -21,14 +21,15 @@
             xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
             xhr.setRequestHeader('x-amz-acl', 'private');
         },
+
         uploadSuccess: function(file, item, data) {
             // Update the added item's urls and permissions
-            item.urls = {
-                'delete': nodeApiUrl + 's3/' + file.destination + '/',
-                'download': nodeId + 's3/' + file.destination + '/download/',
-                'view': '/' + nodeId + '/s3/' + file.destination + '/'
-            };
             var parent = this.getByID(item.parentID);
+            item.urls = {
+                'delete': parent.nodeApiUrl + 's3/' + file.destination + '/',
+                'download': parent.nodeUrl + 's3/' + file.destination + '/download/',
+                'view': parent.nodeUrl + 's3/' + file.destination + '/'
+            };
             item.permissions = parent.permissions;
             this.updateItem(item);
             this.changeStatus(item, Rubeus.Status.UPLOAD_SUCCESS, 2000);

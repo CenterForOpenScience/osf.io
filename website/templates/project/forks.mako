@@ -1,7 +1,5 @@
-<%inherit file="base.mako"/>
+<%inherit file="project/project_base.mako"/>
 <%def name="title()">Forks</%def>
-<%def name="content()">
-<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 % if node['fork_count']:
     <div mod-meta='{
@@ -10,6 +8,5 @@
             "replace": true
         }'></div>
 % else:
-    <div>There have been no forks of this specific project.</div>
+    <div>There have been no forks of this project.</div>
 % endif
-</%def>

@@ -32,6 +32,7 @@ css = Bundle(
 
 
 js = Bundle(
+<<<<<<< HEAD
         # Vendorized libraries that are already minified
         Bundle(
                 "vendor/jquery/jquery.min.js",
@@ -56,11 +57,43 @@ js = Bundle(
                 'js/citations.js',
                 filters="jsmin"),
         output="public/js/common.js"
+=======
+    # Vendorized libraries that are already minified
+    Bundle(
+        "vendor/bootstrap3/js/bootstrap.min.js",
+        "vendor/bootbox/bootbox.min.js",
+        "vendor/script.min.js",
+        'vendor/knockout-punches/knockout.punches.min.js',
+    ),
+    output="public/js/common.js"
+)
+
+js_bottom = Bundle(
+    # Vendorized libraries loaded at the bottom of the page
+    "vendor/bootstrap3-editable/js/bootstrap-editable.min.js",
+    "vendor/jquery-tagsinput/js/jquery.tagsinput.min.js",
+    "vendor/jquery-tagcloud/jquery.tagcloud.js",
+    "vendor/jquery-tagit/js/tag-it.js",
+    "vendor/bower_components/momentjs/min/moment.min.js",
+    "vendor/jquery-blockui/jquery.blockui.js",
+    'vendor/dropzone/dropzone.js',
+    'vendor/hgrid/hgrid.js',
+    # Site-specific JS
+    Bundle("js/site.js",
+            "js/project.js",
+            "js/app.js",
+            "js/addons.js",
+            'js/dropzone-patch.js',
+            'js/rubeus.js'),
+    filters='jsmin',
+    output='public/js/site.js'
+>>>>>>> 930cdba3a354ab7198a89c05feab0d636af18481
 )
 
 
 logger.debug("Registering asset bundles")
 env.register("js", js)
 env.register("css", css)
+env.register('js_bottom', js_bottom)
 # Don't bundle in debug mode
 env.debug = settings.DEBUG_MODE
