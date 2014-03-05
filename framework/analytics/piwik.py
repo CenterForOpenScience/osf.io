@@ -58,8 +58,10 @@ def update_node(node, updated_fields=None):
         users = _users_with_view_access(node)
 
         # figure out what's changed
-        removed_users = users - set(('osf.' + x._id for x in node.contributors))
-        added_users = set(('osf.' + x._id for x in node.contributors)) - users
+        removed_users = users - set(('osf.' + x._id for x in node.contributors
+                                    if x is not None))
+        added_users = set(('osf.' + x._id for x in node.contributors
+                            if x is not None)) - users
 
         # Deal with changes appropriately
         if removed_users:
