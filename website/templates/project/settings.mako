@@ -146,7 +146,7 @@
 
 <!-- Include metadata templates -->
 <%include file="metadata/metadata_templates_1.html" />
-<%include file="modal_generate_private_link.mako"/>
+
 
 % for name, capabilities in addon_capabilities.iteritems():
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>
