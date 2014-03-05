@@ -207,7 +207,7 @@ this.ContribAdder = (function($, global, undefined) {
         });
 
         self.submit = function() {
-            $.osf.postJSON(nodeApiUrl + 'addcontributors/',
+            $.osf.postJSON(nodeApiUrl + 'contributors/',
                 {
                     users: self.selection(),
                     node_ids: self.nodesToChange()

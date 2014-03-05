@@ -42,6 +42,19 @@ class TestUser(DbTestCase):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
 
+    def test_update_guessed_names(self):
+        name = fake.name()
+        u = User(fullname=name)
+        u.update_guessed_names()
+        u.save()
+
+        parsed = parse_name(name)
+        assert_equal(u.fullname, name)
+        assert_equal(u.given_name, parsed['given_name'])
+        assert_equal(u.middle_names, parsed['middle_names'])
+        assert_equal(u.family_name, parsed['family_name'])
+        assert_equal(u.suffix, parsed['suffix'])
+
     def test_non_registered_user_is_not_active(self):
         u = User(username=fake.email(),
             fullname='Freddie Mercury',
@@ -58,6 +71,19 @@ class TestUser(DbTestCase):
         assert_equal(u.username, email)
         assert_false(u.is_registered)
         assert_true(email in u.emails)
+        parsed = parse_name(name)
+        assert_equal(u.given_name, parsed['given_name'])
+
+    @mock.patch('framework.auth.model.User.update_solr')
+    def test_solr_not_updated_for_unreg_users(self, update_solr):
+        u = User.create_unregistered(fullname=fake.name(), email=fake.email())
+        u.save()
+        assert_false(update_solr.called)
+
+    @mock.patch('framework.auth.model.User.update_solr')
+    def test_solr_updated_for_registered_users(self, update_solr):
+        u = UserFactory(is_registered=True)
+        assert_true(update_solr.called)
 
     def test_create_unregistered_raises_error_if_already_in_db(self):
         u = UnregUserFactory()
@@ -87,14 +113,16 @@ class TestUser(DbTestCase):
         assert_true(u.date_registered)
 
     def test_create_unconfirmed(self):
-        u = User.create_unconfirmed(username='bar@baz.com', password='foobar',
-            fullname='Bar Baz')
+        name, email = fake.name(), fake.email()
+        u = User.create_unconfirmed(username=email, password='foobar',
+            fullname=name)
         u.save()
         assert_false(u.is_registered)
         assert_true(u.check_password('foobar'))
         assert_true(u._id)
         assert_equal(len(u.email_verifications.keys()), 1)
         assert_equal(len(u.emails), 0, 'primary email has not been added to emails list')
+        assert_equal(u.given_name, parse_name(name)['given_name'])
 
     def test_cant_create_user_without_full_name(self):
         u = User(username=fake.email())
@@ -989,7 +1017,6 @@ class TestProject(DbTestCase):
         assert_true(hasattr(node, 'registered_schema'))
         assert_true(node.creator)
         assert_true(node.contributors)
-        assert_true(node.contributor_list)
         assert_equal(len(node.logs), 1)
         assert_true(hasattr(node, 'tags'))
         assert_true(hasattr(node, 'nodes'))
@@ -1052,10 +1079,7 @@ class TestProject(DbTestCase):
         assert_equal(latest_contributor.username, 'foo@bar.com')
         assert_equal(latest_contributor.fullname, 'Weezy F. Baby')
         assert_false(latest_contributor.is_registered)
-        # Contributor list includes nonregistered contributor
-        latest_contributor_dict = self.project.contributor_list[-1]
-        assert_dict_equal(latest_contributor_dict,
-                        {'id': latest_contributor._primary_key})
+
         # A log event was added
         assert_equal(self.project.logs[-1].action, 'contributor_added')
         assert_in(self.project._primary_key, latest_contributor.unclaimed_records,
@@ -1082,7 +1106,7 @@ class TestProject(DbTestCase):
 
     def test_add_unregistered_raises_error_if_user_is_registered(self):
         user = UserFactory(is_registered=True)  # A registered user
-        with assert_raises(ValueError):
+        with assert_raises(ValidationValueError):
             self.project.add_unregistered_contributor(
                 email=user.username,
                 fullname=user.fullname,
@@ -1100,10 +1124,6 @@ class TestProject(DbTestCase):
             contributor=user2
         )
         assert_not_in(user2, self.project.contributors)
-        assert_not_in(
-            user2._id,
-            [contrib.get('id') for contrib in self.project.contributor_list]
-        )
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self):
@@ -1242,7 +1262,6 @@ class TestProject(DbTestCase):
         self.project.add_contributors([user1, user2], auth=self.consolidate_auth)
         self.project.save()
         assert_equal(len(self.project.contributors), 3)
-        assert_equal(len(self.project.contributor_list), 3)
         assert_equal(self.project.logs[-1].params['contributors'],
                         [user1._id, user2._id])
 
@@ -1326,11 +1345,6 @@ class TestForkNode(DbTestCase):
         assert_in(fork._id, original.node__forked)
         # Note: Must cast ForeignList to list for comparison
         assert_equal(list(fork.contributors), [fork_user])
-        assert_equal(len(fork.contributor_list), 1)
-        assert_in(
-            fork_user._id,
-            [user.get('id') for user in fork.contributor_list]
-        )
         assert_true((fork_date - fork.date_created) < datetime.timedelta(seconds=30))
         assert_not_equal(fork.forked_date, original.date_created)
 
@@ -1541,12 +1555,6 @@ class TestRegisterNode(DbTestCase):
 
     def test_contributors(self):
         assert_equal(self.registration.contributors, self.project.contributors)
-
-    def test_contributors_list(self):
-        assert_equal(
-            self.registration.contributor_list,
-            self.project.contributor_list,
-        )
 
     def test_forked_from(self):
         # A a node that is not a fork
