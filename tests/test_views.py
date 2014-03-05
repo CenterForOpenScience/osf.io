@@ -9,6 +9,7 @@ import mock
 
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
+from webtest.app import AppError
 from framework import Q, auth, url_for
 from framework.auth.model import User
 
@@ -20,7 +21,7 @@ from website.project.views.contributor import (
     _add_contributor_json, send_claim_email,
     serialize_unregistered, deserialize_contributors
 )
-from webtest.app import AppError
+from website.routes import api_url_for, web_url_for
 from website import settings, mails
 from website.util import rubeus
 from website.project.views.node import _view_project
@@ -386,7 +387,7 @@ class TestAddingContributorViews(DbTestCase):
             'node_ids': []
         }
         with app.test_request_context():
-            url = url_for('JSONRenderer__project_contributors_post',
+            url = api_url_for('project_contributors_post',
                 pid=self.project._primary_key)
         self.app.post_json(url, payload).maybe_follow()
         self.project.reload()
@@ -412,7 +413,7 @@ class TestAddingContributorViews(DbTestCase):
             'node_ids': []
         }
         with app.test_request_context():
-            url = url_for('JSONRenderer__project_contributors_post',
+            url = api_url_for('project_contributors_post',
                 pid=self.project._primary_key)
         self.app.post_json(url, payload).maybe_follow()
         assert_true(send_mail.called)
@@ -429,7 +430,7 @@ class TestAddingContributorViews(DbTestCase):
             'node_ids': []
         }
         with app.test_request_context():
-            url = url_for('JSONRenderer__project_contributors_post',
+            url = api_url_for('project_contributors_post',
                 pid=self.project._primary_key)
         res = self.app.post_json(url, payload).maybe_follow()
         self.project.reload()
@@ -1105,6 +1106,28 @@ class TestFileViews(DbTestCase):
         expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))
         data = res.json['data']
         assert_equal(len(data), len(expected))
+
+class TestSearchViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.project = ProjectFactory()
+        self.contrib1 = UserFactory(fullname='Freddie Mercury')
+        self.contrib2 = UserFactory(fullname='Brian May')
+
+    def test_search_contributor(self):
+        with app.test_request_context():
+            url = api_url_for('search_contributor')
+        res = self.app.get(url, {'query': self.contrib1.fullname})
+        assert_equal(res.status_code, 200)
+        result = res.json['users']
+        assert_equal(len(result), 1)
+        freddie = result[0]
+        assert_equal(freddie['fullname'], self.contrib1.fullname)
+        assert_equal(freddie['email'], self.contrib1.username)
+        assert_in('gravatar', freddie)
+        assert_equal(freddie['registered'], self.contrib1.is_registered)
+        assert_equal(freddie['active'], self.contrib1.is_active())
 
 if __name__ == '__main__':
     unittest.main()
