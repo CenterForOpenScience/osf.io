@@ -112,7 +112,6 @@ font-weight: bold;
 
 .comment-body {
     padding: 5px;
-    padding-right: 0px; /* Fix right-alignment on comment dates */
     background-color: white;
 }
 
@@ -121,13 +120,19 @@ font-weight: bold;
 }
 
 .edit-comment {
-    background-color: #cccccc;
+    background-color: #F3F3F3;
     cursor: pointer;
 }
 
 .comment-body i {
     cursor: pointer;
     padding-right: 5px;
+}
+
+.comment-handle-icon {
+    color: white;
+    vertical-align: middle;
+    line-height: 50px;
 }
 
 /* Make embedded iframes responsive */

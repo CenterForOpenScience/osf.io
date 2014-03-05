@@ -1,4 +1,4 @@
-this.Comment = (function($, ko, bootbox) {
+this.Comment = (function(window, $, ko, bootbox) {
 
     'use strict';
 
@@ -61,7 +61,7 @@ this.Comment = (function($, ko, bootbox) {
             function(response) {
                 self.comments(
                     ko.utils.arrayMap(response.comments, function(comment) {
-                        return new CommentModel(comment, self);
+                        return new CommentModel(comment, self, self.$root);
                     })
                 );
                 deferred.resolve(self.comments());
@@ -83,7 +83,7 @@ this.Comment = (function($, ko, bootbox) {
             function(response) {
                 self.cancelReply();
                 self.replyContent(null);
-                self.comments.push(new CommentModel(response.comment, self));
+                self.comments.push(new CommentModel(response.comment, self, self.$root));
                 if (!self.hasChildren()) {
                     self.hasChildren(true);
                 }
@@ -95,12 +95,14 @@ this.Comment = (function($, ko, bootbox) {
     /*
      *
      */
-    var CommentModel = function(data, $parent) {
+    var CommentModel = function(data, $parent, $root) {
 
         BaseComment.prototype.constructor.call(this);
 
         var self = this;
+
         self.$parent = $parent;
+        self.$root = $root;
 
         $.extend(self, ko.mapping.fromJS(data));
         self.dateCreated(relativeDate(data.dateCreated));
@@ -132,15 +134,17 @@ this.Comment = (function($, ko, bootbox) {
             this._content = this.content();
             this._isPublic = this.isPublic();
             this.editing(true);
+            this.$root.editors += 1;
         }
     };
 
     CommentModel.prototype.autosizeText = function(elm) {
-        $(elm).find('textarea').autosize();
+        $(elm).find('textarea').autosize().focus();
     };
 
     CommentModel.prototype.cancelEdit = function() {
         this.editing(false);
+        this.$root.editors -= 1;
         this.hoverContent(false);
         this.content(this._content);
         this.isPublic(this._isPublic);
@@ -156,7 +160,9 @@ this.Comment = (function($, ko, bootbox) {
             },
             function(response) {
                 self.content(response.content);
+                self.dateModified(relativeDate(response.dateModified));
                 self.editing(false);
+                self.$root.editors -= 1;
             }
         ).fail(function() {
             self.cancelEdit();
@@ -218,6 +224,10 @@ this.Comment = (function($, ko, bootbox) {
 
         BaseComment.prototype.constructor.call(this);
 
+        this.$root = this;
+
+        this.editors = 0
+
         this.userName = ko.observable(userName);
         this.canComment = ko.observable(canComment);
         this.hasChildren = ko.observable(hasChildren);
@@ -246,17 +256,28 @@ this.Comment = (function($, ko, bootbox) {
         $(elm).tooltip();
     };
 
+    CommentListModel.prototype.initListeners = function() {
+        var self = this;
+        $(window).on('beforeunload', function() {
+            if (self.editors) {
+                return 'Your comments have unsaved changes. Are you sure ' +
+                    'you want to leave this page?';
+            }
+        });
+    };
+
     var init = function(selector, userName, canComment, hasChildren) {
-        window.viewModel = new CommentListModel(userName, canComment, hasChildren);
+        var viewModel = new CommentListModel(userName, canComment, hasChildren);
         var $elm = $(selector);
         if (!$elm.length) {
             throw('No results found for selector');
         }
         ko.applyBindings(viewModel, $elm[0]);
+        viewModel.initListeners();
     };
 
     return {
         init: init
     }
 
-})($, ko, bootbox);
+})(window, $, ko, bootbox);

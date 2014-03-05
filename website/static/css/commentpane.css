@@ -8,15 +8,17 @@
 }
 
 .cp-handle {
+    margin-top: 51px; /* Handle starts under Bootstrap header */
     width: 50px;
     height: 50px;
     background-color:#3C87C8;
     margin-left: -50px;
     text-align: center;
+    border-bottom-left-radius: 15px;
 }
 
 .cp-bar {
-    width: 10px;
+    width: 10px; /* Note: Should be the same as .cp-sidebar:margin-left */
     height: 100%;
     background-color: #aaaaaa;
     position: absolute;
@@ -27,7 +29,7 @@
 .cp-sidebar {
     height: 100%;
     margin-top: -50px;
-    margin-left: 10px;
+    margin-left: 10px; /* Note: Should be the same as .cp-bar:width */
     background-color: #cccccc;
     padding: 10px;
     overflow-y: auto;

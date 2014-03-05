@@ -94,7 +94,7 @@
         <div id="commentPane">
 
             <div class="cp-handle">
-                <i class="icon-comments-alt fa-lg"></i>
+                <i class="icon-comments-alt icon-white icon-2x comment-handle-icon" style=""></i>
             </div>
             <div class="cp-bar"></div>
 
@@ -159,9 +159,8 @@
                             <span data-bind="if: hasChildren">
                                 <i data-bind="css: toggleIcon, click: toggle"></i>
                             </span>
-                            <span data-bind="text: content, css: {'edit-comment': editHighlight}, event: {mouseover: startHoverContent, mouseleave: stopHoverContent, click: edit}"></span>
+                            <span data-bind="text: content, css: {'edit-comment': editHighlight}, event: {mouseenter: startHoverContent, mouseleave: stopHoverContent, click: edit}"></span>
                         </div>
-
 
                         <!-- Hack: Use template binding with if rather than vanilla if
                         binding to get access to afterRender -->
