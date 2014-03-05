@@ -59,7 +59,8 @@ class User(GuidStoredObject, AddonModelMixin):
     #       'name': <name that referrer provided>,
     #       'referrer_id': <user ID of referrer>,
     #       'token': <token used for verification urls>,
-    #       'email': <email the referrer provided or None>
+    #       'email': <email the referrer provided or None>,
+    #       'last_sent': <timestamp of last email sent to referrer or None>
     #   }
     #   ...
     # }
