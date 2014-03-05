@@ -36,7 +36,7 @@
                     <!-- Choose which to add -->
                     <div class="row">
 
-                        <div class="col-md-6"col-md->
+                        <div class="col-md-6">
                             <div>
                                 <span class="modal-subheader">Results</span>
                                 <a data-bind="click:addAll">Add all</a>
@@ -154,21 +154,18 @@
                 </div><!-- end component selection page -->
 
                 <!-- Invite user page -->
-                <div data-bind='if:page()=="invite"'>
-                    <form class='form' data-bind='submit: postInvite'>
+                <div data-bind='if:page() === "invite"'>
+                    <form class='form'>
                         <div class="form-group">
                             <label for="inviteUserName">Full Name</label>
                             <input type="text" class='form-control' id="inviteName"
-                                placeholder="Full name" data-bind='value: inviteName' required/>
+                                placeholder="Full name" data-bind='value: inviteName, valueUpdate: "input"'/>
                         </div>
                         <div class="form-group">
                             <label for="inviteUserEmail">Email</label>
                             <input type="email" class='form-control' id="inviteUserEmail"
                                     placeholder="Email" data-bind='value: inviteEmail' autofocus/>
                         </div>
-                        <button class='btn btn-success'
-                         data-bind='enable: inviteEmail && inviteName'
-                         type="submit">Add</button>
                          <div class="help-block">
                             <p>We will notify the user that they have been added to your project.</p>
                             <p class='text-danger' data-bind='text: inviteError'></p>
@@ -182,6 +179,13 @@
 
                 <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
 
+                <span data-bind="if: page() === 'invite'">
+                    <button class="btn btn-primary" data-bind='click:selectWhom'>Back</button>
+                    <button class='btn btn-success'
+                         data-bind='click: postInvite'
+                                    type="submit">Add</button>
+                </span>
+
                 <span data-bind="if:selection().length && page() == 'whom'">
                     <a class="btn btn-success" data-bind="visible:nodes().length==0, click:submit">Submit</a>
                     <a class="btn btn-primary" data-bind="visible:nodes().length, click:selectWhich">Next</a>
@@ -190,10 +194,6 @@
                 <span data-bind="if: page() == 'which'">
                     <a class="btn btn-primary" data-bind="click:selectWhom">Back</a>
                     <a class="btn btn-success" data-bind="click:submit">Submit</a>
-                </span>
-
-                <span data-bind='if: page() == "invite"'>
-                    <a class="btn btn-primary" data-bind='click:selectWhom'>Back</a>
                 </span>
 
             </div><!-- end modal-footer -->

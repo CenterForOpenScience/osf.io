@@ -151,6 +151,10 @@ this.ContribAdder = (function($, global, undefined) {
         *   true if validation succeeds.
         */
         self.validateInviteForm = function (){
+            // Make sure Full Name is not blank
+            if (!self.inviteName().trim().length) {
+                return 'Full Name is required.';
+            }
             // Make sure that entered email is not already in selection
             for (var i=0, contrib; contrib = self.selection()[i]; ++i){
                 var contribEmail = contrib.email.toLowerCase().trim();
