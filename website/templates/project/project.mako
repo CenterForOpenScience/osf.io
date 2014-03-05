@@ -89,7 +89,7 @@
 
     </div>
 
-    % if node['can_comment']:
+    % if node['can_view_comments']:
 
         <div id="commentPane">
 
@@ -281,7 +281,7 @@ ${parent.javascript_bottom()}
 
     var $comments = $('#comments');
     var userName = '${user_full_name}';
-    var canComment = ${'true' if node['can_comment'] else 'false'};
+    var canComment = ${'true' if node['can_add_comments'] else 'false'};
     var hasChildren = ${'true' if node['has_children'] else 'false'};
 
     if ($comments.length) {

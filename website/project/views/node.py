@@ -472,7 +472,8 @@ def _view_project(node, auth, primary=False):
             'piwik_site_id': node.piwik_site_id,
 
             'comment_level': node.comment_level,
-            'can_comment': node.can_comment(auth),
+            'can_view_comments': node.can_comment(auth),
+            'can_add_comments': node.can_comment(auth, write=True),
             'has_children': bool(getattr(node, 'commented', False)),
 
         },

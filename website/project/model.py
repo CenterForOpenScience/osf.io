@@ -483,7 +483,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     def can_view(self, auth):
         return self.is_public or self.can_edit(auth)
 
-    def can_comment(self, auth):
+    def can_comment(self, auth, write=False):
+        if write and not auth.logged_in:
+            return False
         if self.comment_level == 'public':
             return self.can_view(auth)
         if self.comment_level == 'private':
