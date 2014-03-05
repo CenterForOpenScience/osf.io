@@ -46,7 +46,13 @@ def migrate_user(user_dict, node):
     if not user.is_registered:
         # First contributor (usually the creator) will be recorded as the referrer
         # of unregistered users
-        referrer = node.contributors[0]
+        try:
+            referrer = node.contributors[0]
+        except IndexError:
+            if node.creator:
+                referrer = node.creator
+            else:  # meh
+                return
         user.add_unclaimed_record(node=node, referrer=referrer,
             given_name=user_dict['nr_name'], email=user_dict['nr_email'])
         logger.info(u'Migrated unregistered user {0}'.format(user.username))
