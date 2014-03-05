@@ -6,7 +6,9 @@ from framework.auth.decorators import Auth
 from website.app import init_app
 from webtest_plus import TestApp
 from tests.base import DbTestCase
-from tests.factories import NodeFactory, PointerFactory, ProjectFactory
+from tests.factories import (
+    UserFactory, NodeFactory, PointerFactory, ProjectFactory
+)
 
 from website.addons.wiki.views import get_wiki_url, serialize_wiki_toc
 
@@ -48,7 +50,6 @@ class TestWikiViews(DbTestCase):
             res = self.app.get(url).follow()
             assert_equal(res.status_code, 200)
 
-
     def test_serialize_wiki_toc(self):
         project = ProjectFactory()
         auth = Auth(project.creator)
@@ -61,3 +62,17 @@ class TestWikiViews(DbTestCase):
             no_wiki.delete_addon('wiki', auth=auth)
             serialized = serialize_wiki_toc(project, auth=auth)
             assert_equal(len(serialized), 1)
+
+    def test_get_wiki_url_pointer_component(self):
+        """Regression test for issue
+        https://github.com/CenterForOpenScience/osf/issues/363
+
+        """
+        user = UserFactory()
+        pointed_node = NodeFactory(creator=user)
+        project = ProjectFactory(creator=user)
+        auth = Auth(user=user)
+        project.add_pointer(pointed_node, auth=auth, save=True)
+
+        with app.test_request_context():
+            serialize_wiki_toc(project, auth)

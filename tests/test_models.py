@@ -785,7 +785,7 @@ class TestNode(DbTestCase):
         assert_equal(self.node.parent_id, self.parent._id)
 
     def test_parent(self):
-        assert_equal(self.node.parent, self.parent)
+        assert_equal(self.node.parent_node, self.parent)
 
     def test_in_parent_nodes(self):
         assert_in(self.node, self.parent.nodes)
@@ -1278,7 +1278,7 @@ class TestProject(DbTestCase):
         assert_equal(latest_log.params['description_new'], 'new description')
 
     def test_no_parent(self):
-        assert_equal(self.project.parent, None)
+        assert_equal(self.project.parent_node, None)
 
     def test_get_recent_logs(self):
         # Add some logs
@@ -1327,7 +1327,7 @@ class TestForkNode(DbTestCase):
         assert_true(len(fork.logs) == len(original.logs) + 1)
         assert_equal(fork.logs[-1].action, NodeLog.NODE_FORKED)
         assert_equal(original.tags, fork.tags)
-        assert_equal(original.parent is None, fork.parent is None)
+        assert_equal(original.parent_node is None, fork.parent_node is None)
 
         # Test modified fields
         assert_true(fork.is_fork)
