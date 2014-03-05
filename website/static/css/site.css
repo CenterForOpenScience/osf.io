@@ -105,9 +105,15 @@ font-weight: bold;
     overflow-x: hidden;
 }
 
-.comment {
+.comment-container {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.comment-body {
     padding: 5px;
     padding-right: 0px; /* Fix right-alignment on comment dates */
+    background-color: white;
 }
 
 .comment-author {
@@ -119,7 +125,7 @@ font-weight: bold;
     cursor: pointer;
 }
 
-.comment i {
+.comment-body i {
     cursor: pointer;
     padding-right: 5px;
 }

@@ -1,36 +1,35 @@
-#commentpane {
+#commentPane {
     position: fixed;
     z-index: 2147483646;
-    width: 0px;
-    top: 0px;
-    /*right: -300px;*/
-    right: 0px;
+    width: 0;
+    top: 0;
+    right: 0;
     height: 100%;
 }
+
 .cp-handle {
     width: 50px;
     height: 50px;
     background-color:#3C87C8;
     margin-left: -50px;
-    text-align:center;
+    text-align: center;
 }
 
 .cp-bar {
-    width: 5px;
+    width: 10px;
     height: 100%;
-    background-color: gray;
+    background-color: #aaaaaa;
     position: absolute;
     margin-top: -50px;
-    cursor:ew-resize;
+    cursor: ew-resize;
 }
 
 .cp-sidebar {
     height: 100%;
     margin-top: -50px;
-    margin-left: 5px;
-    position: absolute;
-    background-color: red;
-    padding: 5px;
+    margin-left: 10px;
+    background-color: #cccccc;
+    padding: 10px;
     overflow-y: auto;
 }
 

@@ -26,7 +26,7 @@ css = Bundle(
         Bundle(
             "css/site.css",
             'css/rubeus.css',
-            'css/comments.css',
+            'css/commentpane.css',
             filters="cssmin"),
         output="public/css/common.css"
 )
@@ -55,14 +55,14 @@ js_bottom = Bundle(
     'vendor/dropzone/dropzone.js',
     'vendor/hgrid/hgrid.js',
     "vendor/knockout-punches/knockout.punches.min.js",
+    'vendor/autosize/jquery.autosize.min.js',
     # Site-specific JS
     Bundle("js/site.js",
             "js/project.js",
             "js/app.js",
             "js/addons.js",
             'js/dropzone-patch.js',
-            'js/rubeus.js',
-            'js/comments.js'),
+            'js/rubeus.js'),
     filters='jsmin',
     output='public/js/site.js'
 )

@@ -7,6 +7,9 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 from ..decorators import must_be_contributor_or_public
 
+from website import settings
+from website.filters import gravatar
+
 from framework.forms.utils import sanitize
 from website.models import Guid, Comment
 
@@ -23,16 +26,48 @@ def resolve_target(node, guid):
     return target.referent
 
 
+def collect_discussion(target, users=None):
+
+    users = users or []
+    for comment in getattr(target, 'commented', []):
+        if not comment.is_deleted and comment.user not in users:
+            users.append(comment.user)
+        collect_discussion(comment, users=users)
+    return users
+
+
+@must_be_contributor_or_public
+def comment_discussion(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    users = collect_discussion(node)
+    return {
+        'discussion': [
+            {
+                'url': user.url,
+                'fullname': user.fullname,
+                'isContributor': node.is_contributor(user),
+                'gravatarUrl': gravatar(
+                    user, use_ssl=True,
+                    size=settings.GRAVATAR_SIZE_DISCUSSION,
+                ),
+
+            }
+            for user in users
+        ]
+    }
+
+
 def serialize_comment(comment, node, auth):
 
     return {
         'id': comment._id,
         'author': {
             'id': comment.user._id,
+            'url': comment.user.url,
             'name': comment.user.fullname,
         },
-        'dateCreated': comment.date_created.strftime('%c'),
-        'dateModified': comment.date_modified.strftime('%c'),
+        'dateCreated': comment.date_created.strftime('%x %X'),
+        'dateModified': comment.date_modified.strftime('%x %X'),
         'content': comment.content,
         'isPublic': 'public' if comment.is_public else 'private',
         'hasChildren': bool(getattr(comment, 'commented', [])),

@@ -7,6 +7,10 @@ this.Comment = (function($, ko, bootbox) {
         'private': 'Private'
     };
 
+    var relativeDate = function(datetime) {
+        return moment.utc(datetime, 'MM/DD/YY HH:mm:ss').fromNow();
+    };
+
     /*
      *
      */
@@ -41,6 +45,7 @@ this.Comment = (function($, ko, bootbox) {
     };
 
     BaseComment.prototype.cancelReply = function() {
+        this.replyContent('');
         this.replying(false);
     };
 
@@ -95,9 +100,11 @@ this.Comment = (function($, ko, bootbox) {
         BaseComment.prototype.constructor.call(this);
 
         var self = this;
+        self.$parent = $parent;
 
         $.extend(self, ko.mapping.fromJS(data));
-        self.$parent = $parent;
+        self.dateCreated(relativeDate(data.dateCreated));
+        self.dateModified(relativeDate(data.dateModified));
 
         self.showChildren = ko.observable(false);
 
@@ -120,12 +127,16 @@ this.Comment = (function($, ko, bootbox) {
 
     CommentModel.prototype = new BaseComment();
 
-    CommentModel.prototype.edit = function() {
+    CommentModel.prototype.edit = function(data) {
         if (this.canEdit()) {
             this._content = this.content();
             this._isPublic = this.isPublic();
             this.editing(true);
         }
+    };
+
+    CommentModel.prototype.autosizeText = function(elm) {
+        $(elm).find('textarea').autosize();
     };
 
     CommentModel.prototype.cancelEdit = function() {
@@ -204,19 +215,39 @@ this.Comment = (function($, ko, bootbox) {
      *
      */
     var CommentListModel = function(userName, canComment, hasChildren) {
+
         BaseComment.prototype.constructor.call(this);
+
         this.userName = ko.observable(userName);
         this.canComment = ko.observable(canComment);
         this.hasChildren = ko.observable(hasChildren);
+        this.discussion = ko.observableArray();
+
         this.fetch();
+        this.fetchDiscussion();
+
     };
 
     CommentListModel.prototype = new BaseComment();
 
     CommentListModel.prototype.onSubmitSuccess = function() {};
 
+    CommentListModel.prototype.fetchDiscussion = function() {
+        var self = this;
+        $.getJSON(
+            nodeApiUrl + 'comments/discussion/',
+            function(response) {
+                self.discussion(response.discussion);
+            }
+        )
+    };
+
+    CommentListModel.prototype.discussionToolTips = function(elm) {
+        $(elm).tooltip();
+    };
+
     var init = function(selector, userName, canComment, hasChildren) {
-        var viewModel = new CommentListModel(userName, canComment, hasChildren);
+        window.viewModel = new CommentListModel(userName, canComment, hasChildren);
         var $elm = $(selector);
         if (!$elm.length) {
             throw('No results found for selector');
