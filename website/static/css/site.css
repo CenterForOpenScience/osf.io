@@ -107,6 +107,7 @@ font-weight: bold;
 
 .comment {
     padding: 5px;
+    padding-right: 0px; /* Fix right-alignment on comment dates */
 }
 
 .comment-author {
