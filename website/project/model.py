@@ -681,7 +681,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             action=NodeLog.EDITED_DESCRIPTION,
             params={
-                'project': self.parent,  # None if no parent
+                'project': self.parent_node,  # None if no parent
                 'node': self._primary_key,
                 'description_new': self.description,
                 'description_original': original
@@ -1336,8 +1336,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     @property
-    def parent(self):
-        '''The parent node, if it exists, otherwise ``None``.'''
+    def parent_node(self):
+        """The parent node, if it exists, otherwise ``None``. Note: this
+        property is named `parent_node` rather than `parent` to avoid a
+        conflict with the `parent` back-reference created by the `nodes`
+        field on this schema.
+        
+        """
         try:
             if not self.node__parent[0].is_deleted:
                 return self.node__parent[0]
