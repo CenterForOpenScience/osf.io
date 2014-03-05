@@ -73,10 +73,20 @@ class TestCitationViews(DbTestCase):
         url = "/api/v1/project/{0}/citation/human/apa.csl/".format(self.project._id)
         #url_data = self.app.post_json(url)
         url_data = self.app.get(url)
-        directCitation = human_format_citation(project = self.project._id, style = 'apa.csl') #doesnt work cause of decorator around method
-        assert_equal(0, url_data) #to get proper output to compare against
-        #assert_true("Mercury0, F., & Mercury1, F..  (2014).  Ham. Open Science Framework. Retrieved from localhost:5000/" in url_data.body)
+        print url_data
+        #directCitation = human_format_citation(project = self.project._id, style = 'apa.csl') #doesnt work cause of decorator around method
+        #assert_equal(0, url_data) #to get proper output to compare against
+        assert_true("Mercury0, F., & Mercury1, F..  (2014).  Ham. Open Science Framework. Retrieved from localhost:5000/" in url_data.body)
 
+
+def test_human_APA(self):
+        url = "/api/v1/project/{0}/citation/human/apa.csl/".format(self.project._id)
+        #url_data = self.app.post_json(url)
+        url_data = self.app.get(url)
+        print url_data
+        #directCitation = human_format_citation(project = self.project._id, style = 'apa.csl') #doesnt work cause of decorator around method
+        #assert_equal(0, url_data) #to get proper output to compare against
+        assert_true("Mercury0, F., & Mercury1, F..  (2014).  Ham. Open Science Framework. Retrieved from localhost:5000/" in url_data.body)
 
 
 

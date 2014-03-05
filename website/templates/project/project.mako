@@ -111,36 +111,8 @@
 
         </div>
 
-<<<<<<< HEAD:website/templates/project.mako
-    </div>
 
-
-    ##<!-- Include Knockout and view model -->
-    ##<div mod-meta='{
-    ## "tpl": "metadata/knockout.mako",
-    ## "replace": true
-    ## }'></div>
-    ##
-    ##<!-- Render comments -->
-    ##<div mod-meta='{
-    ## "tpl": "metadata/comment_group.mako",
-    ## "kwargs": {
-    ## "guid": "${node['id']}",
-    ## "top": true
-    ## },
-    ## "replace": true
-    ## }'></div>
-    ##
-    ##<!-- Boilerplate comment JS -->
-    ##<div mod-meta='{
-    ## "tpl": "metadata/comment_js.mako",
-    ## "replace": true
-    ## }'></div>
-
-</%def>
-=======
       </div>
->>>>>>> 930cdba3a354ab7198a89c05feab0d636af18481:website/templates/project/project.mako
 
 <%def name="children()">
 <div class="page-header">
@@ -155,14 +127,8 @@
             % endif
 
         </div>
-<<<<<<< HEAD:website/templates/project.mako
-        <%include file="modal_add_component.mako"/>
-        % endif
-
-=======
-
     % endif
->>>>>>> 930cdba3a354ab7198a89c05feab0d636af18481:website/templates/project/project.mako
+
     <h2>Components</h2>
 </div>
 
@@ -205,20 +171,7 @@ ${parent.javascript_bottom()}
 
     $(document).ready(function() {
 
-<<<<<<< HEAD:website/templates/project.mako
-// Show capabilities modal on addon widget help
-        $('.addon-capabilities').on('click', function() {
-            var $this = $(this),
-                    $widget = $this.closest('.addon-widget'),
-                    name = $widget.attr('name'),
-                    conditions = $('#capabilities-' + name);
-            bootbox.alert(conditions.html());
-        });
-
-// Tooltips
-=======
         // Tooltips
->>>>>>> 930cdba3a354ab7198a89c05feab0d636af18481:website/templates/project/project.mako
         $('[data-toggle="tooltip"]').tooltip();
 
 // Tag input
