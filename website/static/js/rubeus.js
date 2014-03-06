@@ -69,21 +69,32 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     }
 
     HGrid.Col.ActionButtons.itemView = function(item) {
-        var downloadTip = genTooltipMarkup('Download ' + item.name);
-        var buttonDefs = [{
-              text: '<i class="icon-download-alt icon-white"' + downloadTip + '></i>',
-              action: 'download',
-              cssClass: 'btn btn-success btn-mini'
-        }];
-        if (item.permissions && item.permissions.edit) {
-            var deleteTip = genTooltipMarkup('Delete ' + item.name);
-            buttonDefs.push({
-              text: '&nbsp;<i class="icon-remove"' + deleteTip + '></i>',
-              action: 'delete',
-              cssClass: 'btn btn-link btn-mini btn-delete'
-            });
-      }
-      return ['<span class="rubeus-buttons">', HGrid.Fmt.buttons(buttonDefs),
+	var buttonDefs = [];
+	if(item.permissions){
+	    if(item.permissions.download !== false){
+		buttonDefs.push({
+		    text: '<i class="icon-download-alt icon-white"></i>',
+		    action: 'download',
+		    cssClass: 'btn btn-primary btn-mini'
+		});
+	    }
+	    if (item.permissions.edit) {
+		buttonDefs.push({
+		    text: '&nbsp;<i class="icon-remove"></i>',
+		    action: 'delete',
+		    cssClass: 'btn btn-link btn-mini btn-delete'
+		});
+	    }	    
+            if (item.permissions.edit) {
+		var deleteTip = genTooltipMarkup('Delete ' + item.name);
+		buttonDefs.push({
+		    text: '&nbsp;<i class="icon-remove"' + deleteTip + '></i>',
+		    action: 'delete',
+		    cssClass: 'btn btn-link btn-mini btn-delete'
+		});
+	    }
+	}
+	return ['<span class="rubeus-buttons">', HGrid.Fmt.buttons(buttonDefs),
                 '</span><span data-status></span>'].join('');
     };
 
