@@ -212,22 +212,22 @@ this.NodeControl = (function(ko, $, global) {
 
     NodeControl.prototype._initRemoveLinks = function () {
         var self = this;
+        self.$removeElem = $('<span class="btn-remove-contrib"><i class="icon-remove"></i></span>');
         $(self.options.removeCss).hover(
             function(){
                 var me = $(this);
-                var el = $('<span class="btn-remove-contrib"><i class="icon-remove"></i></span>');
-                el.click(function(){
+                self.$removeElem.click(function(){
                     // TODO: remove hardcoded attributes
                     removeUser(me.attr('data-userid'), me.attr('data-fullname'));
                     return false;
                 });
-                $(this).append(el);
+                $(this).append(self.$removeElem);
             },
             function(){
-                $(this).find('i').remove();
+                self.$removeElem.remove();
             }
         );
-    }
+    };
 
     return NodeControl;
 
