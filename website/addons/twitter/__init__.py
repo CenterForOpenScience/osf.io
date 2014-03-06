@@ -4,7 +4,7 @@ from .routes import settings_routes, page_routes
 #
 #USER_SETTINGS_MODEL = AddonGitHubUserSettings
 NODE_SETTINGS_MODEL = AddonTwitterNodeSettings
-
+MODELS = [AddonTwitterNodeSettings, ]
 
 
 #

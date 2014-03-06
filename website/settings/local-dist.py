@@ -31,6 +31,7 @@ CELERY_RESULT_BACKEND = 'amqp://'
 
 USE_CDN_FOR_CLIENT_LIBS = False
 
+
 # Example of extending default settings
 # defaults.IMG_FMTS += ["pdf"]
 

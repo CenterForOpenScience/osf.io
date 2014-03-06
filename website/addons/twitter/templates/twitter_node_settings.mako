@@ -77,6 +77,9 @@
         });
 
 
+        
+
+
 
         $('#twitter_logs :checkbox').click(function(){
             var $this = $(this);

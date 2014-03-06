@@ -47,17 +47,17 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
    'node_forked']
 
 #Default tweet messages for log events
-    DEFAULT_MESSAGES = {'project_created':'Created project: ',
-                        'node_created': 'Created a project node',
-                        'wiki_updated': 'Updated the wiki with: ',
-                        'contributor_added': ' Added a project contributor!',
-                        'tag_added': 'Added tag $tag_name to our project',
-                        'edit_title': 'Changed project title from $old_title to $new_title ',
-                        'edit_description': 'Changed project description to $new_desc',
-                        'project_registered': 'Just registered a new project!',
-                        'file_added':' Just added $file_name to my project',
-                        'file_updated': 'Just updated a file',
-                        'node_forked': 'Just forked a node',
+    DEFAULT_MESSAGES = {'project_created_message':'Created project: ',
+                        'node_created_message': 'Created a project node',
+                        'wiki_updated_message': 'Updated the wiki with: ',
+                        'contributor_added_message': ' Added a project contributor!',
+                        'tag_added_message': 'Added tag $tag_name to our project',
+                        'edit_title_message': 'Changed project title from $old_title to $new_title ',
+                        'edit_description_message': 'Changed project description to $new_desc',
+                        'project_registered_message': 'Just registered a new project!',
+                        'file_added_message':' Just added $file_name to our project',
+                        'file_updated_message': 'Just updated a file',
+                        'node_forked_message': 'Just forked a node',
 
                         }
 
@@ -85,7 +85,7 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
             'authorized_user': self.user_name or '',
             'displayed_tweets': self.displayed_tweets or '',
             'log_actions': self.log_actions or '',
-            'log_messages': self.log_messages,
+            'log_messages': self.log_messages or self.DEFAULT_MESSAGES,
             'POSSIBLE_ACTIONS': self.POSSIBLE_ACTIONS or '',
             'DEFAULT_MESSAGES': self.DEFAULT_MESSAGES or '',
             'CONSUMER_KEY': self.CONSUMER_KEY or '',
@@ -93,13 +93,15 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
         })
         return rv
     #
+
     def parse_message(self, log):
+        ph = '4'
         message = self.log_messages.get(log.action+'_message')
         if (log.action == 'edit_title'):
            message = message.replace('$new_title', log.params['title_new'])
            message = message.replace('$old_title', log.params['title_original'])
         if (log.action == 'edit_description'):
-           message = message.replace('new_desc', log.params['description_new'])
+           message = message.replace('$new_desc', log.params['description_new'])
         if (log.action == 'file_created'):
            message = message.replace('$filename', log.params['path'])
         if (log.action == 'tag_added'):
@@ -107,12 +109,13 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
 
         print message
 
-      #   self.tweet(message)
-        return {}
+        self.tweet(message)
+        return message
 
 
     def before_add_log(self, node, log):
         config = node.get_addon('twitter')
+
         if log.action in self.log_actions:
             self.parse_message(log)
         return{}
@@ -123,6 +126,7 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
         consumer_secret = '7pmpjEtvoGjnSNCN2GlULrV104uVQQhg60Da7MEEy0'
         auth = tweepy.OAuthHandler(consumer_key, consumer_secret, secure=True)
         auth.set_access_token(oauth_key, oauth_secret)
+
 
 
 

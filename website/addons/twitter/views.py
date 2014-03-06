@@ -58,7 +58,12 @@ def username(*args, **kwargs):
     auth.set_request_token(session.data.get('request_token_key'), session.data.get('request_token_secret'))
     verifier = request.args.get('oauth_verifier')
     session.data['verifier'] = request.args.get('oauth_verifier')
-    auth.get_access_token(verifier)
+
+    try:
+        auth.get_access_token(verifier)
+    except tweepy.TweepError as e:
+        print 'Error!  Please try again'
+
 
 #Build access token
     auth.set_access_token(auth.access_token.key, auth.access_token.secret)
@@ -94,8 +99,11 @@ def twitter_widget(*args, **kwargs):
         :return: None
         """
 #Build OAuthHandler
+
+
     node = kwargs.get('node') or kwargs.get('project')
     config = node.get_addon('twitter')
+
     pid = kwargs.get('pid')
     callback_url = 'http://127.0.0.1:5000/api/v1/project/'+pid+'/twitter/user_auth'
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET, callback_url, secure=True)
@@ -107,6 +115,10 @@ def twitter_widget(*args, **kwargs):
 #Storing variables
     twitter = kwargs['node_addon']
     if twitter:
+
+        if (config.displayed_tweets == None):
+            config.displayed_tweets = 0
+
         rv = {
             'complete': True,
             'user_name': api.me().screen_name,
@@ -127,6 +139,7 @@ def twitter_oauth_delete_node(*args, **kwargs):
 
         :return: None
         """
+
 
 #Get add-on object
      twitter = kwargs['node_addon']
@@ -176,9 +189,8 @@ def twitter_set_config(*args, **kwargs):
 @must_be_contributor_or_public
 @must_have_addon('twitter', 'node')
 def twitter_update_status(*args, **kwargs):
-    """Called when settings get updated and saves input data to relevant fields
-       in twitter node add-on object
-
+    """Called when user manually updates status
+    through twitter widget
 
         :param None
 
@@ -200,7 +212,7 @@ def twitter_update_status(*args, **kwargs):
     status = json.loads(request.data).get('status')
     print len(status)
 
-  #  api.update_status(status)
+    api.update_status(status)
 
     return redirect(os.path.join(node.url, 'settings'))
     return redirect('/settings/')
