@@ -23,6 +23,7 @@ def connect(username, password, host=HOST):
     except:
         return None
 
+
 class AddonDataverseUserSettings(AddonUserSettingsBase):
 
     dataverse_username = fields.StringField()
