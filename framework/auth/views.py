@@ -85,6 +85,8 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
     login form passsed; else send forgot password email.
 
     """
+    if get_current_user():
+        return framework.redirect('/dashboard/')
     direct_call = registration_form or forgot_password_form
     if framework.request.method == 'POST' and not direct_call:
         form = SignInForm(framework.request.form)
@@ -200,8 +202,10 @@ def resend_confirmation():
     if request.method == 'POST':
         if form.validate():
             clean_email = form.email.data
+            user = get_user(username=clean_email)
+            if not user:
+                return {'form': form}
             try:
-                user = get_user(username=clean_email)
                 send_confirm_email(user, clean_email)
             except KeyError:  # already confirmed, redirect to dashboard
                 status_message = 'Email has already been confirmed.'

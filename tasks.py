@@ -154,7 +154,7 @@ def test_module(module=None):
     except ImportError:
         test_cmd = 'nosetests'
     # Allow selecting specific submodule
-    args = " %s" % module
+    args = " -s %s" % module
     # Use pty so the process buffers "correctly"
     run(test_cmd + args, pty=True)
 
