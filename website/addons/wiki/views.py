@@ -31,14 +31,14 @@ def get_wiki_url(node, page=HOME):
     """Get the URL for the wiki page for a node or pointer."""
     view_spec = 'OsfWebRenderer__project_wiki_page'
     if node.category != 'project':
-        pid = node.parent._primary_key
-        nid = node._primary_key
+        pid = node.parent_node._id
+        nid = node._id
         return url_for(view_spec, pid=pid, nid=nid, wid=page)
     else:
         if not node.primary:
-            pid = node.node._primary_key
+            pid = node.node._id
         else:
-            pid = node._primary_key
+            pid = node._id
         return url_for(view_spec, pid=pid, wid=page)
 
 

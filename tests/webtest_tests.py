@@ -146,6 +146,11 @@ class TestAUser(DbTestCase):
         # Sees a flash message
         assert_in('Log-in failed', res)
 
+    def test_is_redirected_to_dashboard_already_logged_in_at_login_page(self):
+        res = self._login(self.user.username, 'science')
+        res = self.app.get('/login/').follow()
+        assert_equal(res.request.path, '/dashboard/')
+
     def test_sees_projects_in_her_dashboard(self):
         # the user already has a project
         project = ProjectFactory(creator=self.user)
@@ -642,7 +647,22 @@ class TestClaiming(DbTestCase):
     def setUp(self):
         self.app = TestApp(app)
         self.referrer = AuthUserFactory()
-        self.project = ProjectFactory(creator=self.referrer)
+        self.project = ProjectFactory(creator=self.referrer, is_public=True)
+
+    def test_correct_name_shows_in_contributor_list(self):
+        name1, email = fake.name(), fake.email()
+        UnregUserFactory(fullname=name1, email=email)
+        name2, email = fake.name(), fake.email()
+        # Added with different name
+        self.project.add_unregistered_contributor(fullname=name2,
+            email=email, auth=Auth(self.referrer))
+        self.project.save()
+
+        res = self.app.get(self.project.url, auth=self.referrer.auth)
+        # Correct name is shown
+        assert_in(name2, res)
+        assert_not_in(name1, res)
+
 
     def test_user_can_set_password_on_claim_page(self):
         name, email = fake.name(), fake.email()
@@ -773,6 +793,19 @@ class TestClaiming(DbTestCase):
         res = form.submit().maybe_follow(expect_errors=True)
         assert_in(language.ALREADY_REGISTERED.format(email=reg_user.username), res)
 
+    def test_correct_display_name_is_shown_at_claim_page(self):
+        original_name = fake.name()
+        unreg = UnregUserFactory(fullname=original_name)
+
+        different_name= fake.name()
+        new_user = self.project.add_unregistered_contributor(email=unreg.username,
+            fullname=different_name,
+            auth=Auth(self.referrer))
+        self.project.save()
+        claim_url = new_user.get_claim_url(self.project._primary_key)
+        res = self.app.get(claim_url)
+        # Correct name (different_name) should be on page
+        assert_in(different_name, res)
 
 
 class TestConfirmingEmail(DbTestCase):
@@ -821,13 +854,12 @@ class TestConfirmingEmail(DbTestCase):
         assert_true(send_confirm_email.called)
         assert_in('Resent email to', res)
 
-    def test_resend_form_shows_error_message_if_email_not_in_db(self):
+    def test_resend_form_does_nothing_if_not_in_db(self):
         res = self.app.get('/resend/')
         form = res.forms['resendForm']
         form['email'] = 'nowheretobefound@foo.com'
         res = form.submit()
-        assert_in(language.EMAIL_NOT_FOUND.format(email="nowheretobefound@foo.com"),
-            res, 'flashes error msg')
+        assert_equal(res.request.path, '/resend/')
 
     def test_resend_form_shows_alert_if_email_already_confirmed(self):
         user = UnconfirmedUserFactory()

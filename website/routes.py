@@ -65,6 +65,16 @@ def goodbye(**kwargs):
     return {}
 
 
+def api_url_for(view_name, *args, **kwargs):
+    return framework.url_for('JSONRenderer__{0}'.format(view_name),
+        *args, **kwargs)
+
+
+def web_url_for(view_name, *args, **kwargs):
+    return framework.url_for('OsfWebRenderer__{0}'.format(view_name),
+        *args, **kwargs)
+
+
 def make_url_map(app):
     '''Set up all the routes for the OSF app.
 
@@ -588,9 +598,9 @@ def make_url_map(app):
 
         # Add / remove contributors
         Rule([
-            '/project/<pid>/addcontributors/',
-            '/project/<pid>/node/<nid>/addcontributors/',
-        ], 'post', project_views.contributor.project_addcontributors_post, json_renderer),
+            '/project/<pid>/contributors/',
+            '/project/<pid>/node/<nid>/contributors/',
+        ], 'post', project_views.contributor.project_contributors_post, json_renderer),
         Rule([
             '/project/<pid>/beforeremovecontributors/',
             '/project/<pid>/node/<nid>/beforeremovecontributors/',
