@@ -133,6 +133,7 @@ font-weight: bold;
     color: white;
     vertical-align: middle;
     line-height: 50px;
+    cursor: pointer;
 }
 
 /* Make embedded iframes responsive */

@@ -1395,6 +1395,27 @@ class TestComments(DbTestCase):
 
         assert_equal(len(res.json['discussion']), 1)
 
+    def test_discussion_sort(self):
+
+        self._configure_project(self.project, 'public')
+
+        user1 = UserFactory()
+        user2 = UserFactory()
+
+        CommentFactory(node=self.project)
+        for _ in range(3):
+            CommentFactory(node=self.project, user=user1)
+        for _ in range(2):
+            CommentFactory(node=self.project, user=user2)
+
+        url = self.project.api_url + 'comments/discussion/'
+        res = self.app.get(url)
+
+        assert_equal(len(res.json['discussion']), 3)
+        observed = [user['id'] for user in res.json['discussion']]
+        expected = [user1._id, user2._id, self.project.creator._id]
+        assert_equal(observed, expected)
+
 
 class TestSearchViews(DbTestCase):
 

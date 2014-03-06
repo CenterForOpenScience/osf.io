@@ -118,9 +118,9 @@
                     </form>
                     <form class="form">
                         <div class="form-group">
-                            <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent"></textarea>
+                            <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input'"></textarea>
                         </div>
-                        <div>
+                        <div data-bind="if: replyNotEmpty">
                             <a class="btn btn-default btn-default" data-bind="click: submitReply"><i class="icon-check"></i> Save</a>
                             <a class="btn btn-default btn-default" data-bind="click: cancelReply"><i class="icon-undo"></i> Cancel</a>
                             <a data-bind="text: replyErrorMessage" class="comment-error"></a>
@@ -130,7 +130,6 @@
             </div>
 
         </div>
-
 
     % endif
 
@@ -191,7 +190,7 @@
                             <span data-bind="if: $root.canComment, click: showReply">
                                 <i class="icon-reply"></i>
                             </span>
-                            <span data-bind="click: reportAbuse">
+                            <span data-bind="if: $root.canComment, click: reportAbuse">
                                 <i class="icon-warning-sign"></i>
                             </span>
                             <span data-bind="if: canEdit, click: startDelete">
@@ -228,7 +227,7 @@
 
                 <!-- ko if: replying -->
                     <form class="form-inline">
-                        <select class="form-control" data-bind="options: privacyOptions, optionsText: privacyLabel, value: isPublic"></select>
+                        <select class="form-control" data-bind="options: privacyOptions, optionsText: privacyLabel, value: replyPublic"></select>
                         <span class="comment-author">{{userName}}</span>
                     </form>
                     <div>
@@ -309,7 +308,6 @@ ${parent.javascript_bottom()}
     if ($comments.length) {
 
         $script(['/static/js/commentpane.js', '/static/js/comment.js'], 'comments');
-        $script(['/static/js/comment.js'], 'comment');
 
         $script.ready('comments', function () {
             commentPane = new CommentPane('#commentPane');
