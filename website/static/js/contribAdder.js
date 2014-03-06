@@ -155,6 +155,9 @@ this.ContribAdder = (function($, global, undefined) {
             if (!self.inviteName().trim().length) {
                 return 'Full Name is required.';
             }
+            if (self.inviteEmail() && !$.osf.isEmail(self.inviteEmail())) {
+                return 'Not a valid email address.';
+            }
             // Make sure that entered email is not already in selection
             for (var i=0, contrib; contrib = self.selection()[i]; ++i){
                 var contribEmail = contrib.email.toLowerCase().trim();
