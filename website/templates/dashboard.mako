@@ -23,7 +23,7 @@
                 </div>
                 <div id="logScope">
                     <%include file="log_list.mako"/>
-                    <a class="moreLogs" data-bind="click: logsViewModel.moreLogs">more</a>
+                    <a class="moreLogs" data-bind="click:moreLogs">more</a>
                 </div><!-- end #logScope -->
             </div><!-- end #watchFeed -->
         </div>
