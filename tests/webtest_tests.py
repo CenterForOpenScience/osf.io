@@ -846,13 +846,12 @@ class TestConfirmingEmail(DbTestCase):
         assert_true(send_confirm_email.called)
         assert_in('Resent email to', res)
 
-    def test_resend_form_shows_error_message_if_email_not_in_db(self):
+    def test_resend_form_does_nothing_if_not_in_db(self):
         res = self.app.get('/resend/')
         form = res.forms['resendForm']
         form['email'] = 'nowheretobefound@foo.com'
         res = form.submit()
-        assert_in(language.EMAIL_NOT_FOUND.format(email="nowheretobefound@foo.com"),
-            res, 'flashes error msg')
+        assert_equal(res.request.path, '/resend/')
 
     def test_resend_form_shows_alert_if_email_already_confirmed(self):
         user = UnconfirmedUserFactory()

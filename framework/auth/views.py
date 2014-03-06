@@ -200,8 +200,10 @@ def resend_confirmation():
     if request.method == 'POST':
         if form.validate():
             clean_email = form.email.data
+            user = get_user(username=clean_email)
+            if not user:
+                return {'form': form}
             try:
-                user = get_user(username=clean_email)
                 send_confirm_email(user, clean_email)
             except KeyError:  # already confirmed, redirect to dashboard
                 status_message = 'Email has already been confirmed.'
