@@ -52,6 +52,8 @@ class TestViewsConfig(DbTestCase):
         self.node_settings.figshare_type = 'project'
         self.node_settings.figshare_title = 'OVER9000'
         self.node_settings.save()
+
+        self.figshare = create_mock_figshare('test')
         
     def test_config_no_change(self):
         num = len(self.project.logs)
@@ -176,6 +178,8 @@ class TestViewsCrud(DbTestCase):
         self.node_settings.figshare_type = 'project'
         self.node_settings.save()
         
+        self.figshare = create_mock_figshare('test')
+
     def test_publish_no_category(self):
         url = '/api/v1/project/{0}/figshare/publish/article/9002/'.format(self.project._id)
         rv = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
@@ -197,7 +201,7 @@ class TestViewsCrud(DbTestCase):
         mock_fig.return_value = self.figshare
         url = '/project/{0}/figshare/article/564/file/1348803/'.format(self.project._id)
         rv = self.app.get(url, auth=self.user.auth).maybe_follow()
-        rv.showbrowser()
+        #rv.showbrowser()
         assert_equal(rv.status_int, 200)
         assert_true('file is unpublished we cannot render it.' in rv.body)
     
@@ -228,6 +232,6 @@ class TestViewsAuth(DbTestCase):
         self.node_settings.save()
     
     def test_oauth_start(self):
-        
-        self.figshare = create_mock_figshare('test')
+        pass
+
 
