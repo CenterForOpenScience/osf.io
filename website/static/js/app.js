@@ -186,4 +186,4 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
 
     } catch(err) { return false; }
     return true;
-}
+};

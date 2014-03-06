@@ -10,7 +10,7 @@ import datetime
 import urlparse
 from dateutil import parser
 
-from modularodm.exceptions import ValidationError, ValidationValueError
+from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
@@ -22,25 +22,38 @@ from framework.bcrypt import check_password_hash
 from framework.git.exceptions import FileNotModified
 from website import settings, filters
 from website.profile.utils import serialize_user
-from website.project.model import Pointer, ApiKey, NodeLog, ensure_schemas
+from website.project.model import Pointer, ApiKey, NodeLog, Comment, ensure_schemas
 from website.addons.osffiles.model import NodeFile
 
 from tests.base import DbTestCase, Guid, fake
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
-    ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
+    ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, UnregUserFactory, RegistrationFactory, UnregUserFactory,
-    ProjectWithAddonFactory, UnconfirmedUserFactory
+    ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory
 )
 
 
-GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory, MetaDataFactory
+GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
 class TestUser(DbTestCase):
 
     def setUp(self):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
+
+    def test_update_guessed_names(self):
+        name = fake.name()
+        u = User(fullname=name)
+        u.update_guessed_names()
+        u.save()
+
+        parsed = parse_name(name)
+        assert_equal(u.fullname, name)
+        assert_equal(u.given_name, parsed['given_name'])
+        assert_equal(u.middle_names, parsed['middle_names'])
+        assert_equal(u.family_name, parsed['family_name'])
+        assert_equal(u.suffix, parsed['suffix'])
 
     def test_non_registered_user_is_not_active(self):
         u = User(username=fake.email(),
@@ -58,6 +71,19 @@ class TestUser(DbTestCase):
         assert_equal(u.username, email)
         assert_false(u.is_registered)
         assert_true(email in u.emails)
+        parsed = parse_name(name)
+        assert_equal(u.given_name, parsed['given_name'])
+
+    @mock.patch('framework.auth.model.User.update_solr')
+    def test_solr_not_updated_for_unreg_users(self, update_solr):
+        u = User.create_unregistered(fullname=fake.name(), email=fake.email())
+        u.save()
+        assert_false(update_solr.called)
+
+    @mock.patch('framework.auth.model.User.update_solr')
+    def test_solr_updated_for_registered_users(self, update_solr):
+        u = UserFactory(is_registered=True)
+        assert_true(update_solr.called)
 
     def test_create_unregistered_raises_error_if_already_in_db(self):
         u = UnregUserFactory()
@@ -87,14 +113,16 @@ class TestUser(DbTestCase):
         assert_true(u.date_registered)
 
     def test_create_unconfirmed(self):
-        u = User.create_unconfirmed(username='bar@baz.com', password='foobar',
-            fullname='Bar Baz')
+        name, email = fake.name(), fake.email()
+        u = User.create_unconfirmed(username=email, password='foobar',
+            fullname=name)
         u.save()
         assert_false(u.is_registered)
         assert_true(u.check_password('foobar'))
         assert_true(u._id)
         assert_equal(len(u.email_verifications.keys()), 1)
         assert_equal(len(u.emails), 0, 'primary email has not been added to emails list')
+        assert_equal(u.given_name, parse_name(name)['given_name'])
 
     def test_cant_create_user_without_full_name(self):
         u = User(username=fake.email())
@@ -428,15 +456,6 @@ class TestGUID(DbTestCase):
             )
 
 
-class TestMetaData(DbTestCase):
-
-    def setUp(self):
-        pass
-
-    def test_referent(self):
-        pass
-
-
 class TestNodeFile(DbTestCase):
 
     def setUp(self):
@@ -766,7 +785,7 @@ class TestNode(DbTestCase):
         assert_equal(self.node.parent_id, self.parent._id)
 
     def test_parent(self):
-        assert_equal(self.node.parent, self.parent)
+        assert_equal(self.node.parent_node, self.parent)
 
     def test_in_parent_nodes(self):
         assert_in(self.node, self.parent.nodes)
@@ -989,7 +1008,6 @@ class TestProject(DbTestCase):
         assert_true(hasattr(node, 'registered_schema'))
         assert_true(node.creator)
         assert_true(node.contributors)
-        assert_true(node.contributor_list)
         assert_equal(len(node.logs), 1)
         assert_true(hasattr(node, 'tags'))
         assert_true(hasattr(node, 'nodes'))
@@ -1052,10 +1070,7 @@ class TestProject(DbTestCase):
         assert_equal(latest_contributor.username, 'foo@bar.com')
         assert_equal(latest_contributor.fullname, 'Weezy F. Baby')
         assert_false(latest_contributor.is_registered)
-        # Contributor list includes nonregistered contributor
-        latest_contributor_dict = self.project.contributor_list[-1]
-        assert_dict_equal(latest_contributor_dict,
-                        {'id': latest_contributor._primary_key})
+
         # A log event was added
         assert_equal(self.project.logs[-1].action, 'contributor_added')
         assert_in(self.project._primary_key, latest_contributor.unclaimed_records,
@@ -1082,7 +1097,7 @@ class TestProject(DbTestCase):
 
     def test_add_unregistered_raises_error_if_user_is_registered(self):
         user = UserFactory(is_registered=True)  # A registered user
-        with assert_raises(ValueError):
+        with assert_raises(ValidationValueError):
             self.project.add_unregistered_contributor(
                 email=user.username,
                 fullname=user.fullname,
@@ -1100,10 +1115,6 @@ class TestProject(DbTestCase):
             contributor=user2
         )
         assert_not_in(user2, self.project.contributors)
-        assert_not_in(
-            user2._id,
-            [contrib.get('id') for contrib in self.project.contributor_list]
-        )
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self):
@@ -1242,7 +1253,6 @@ class TestProject(DbTestCase):
         self.project.add_contributors([user1, user2], auth=self.consolidate_auth)
         self.project.save()
         assert_equal(len(self.project.contributors), 3)
-        assert_equal(len(self.project.contributor_list), 3)
         assert_equal(self.project.logs[-1].params['contributors'],
                         [user1._id, user2._id])
 
@@ -1268,7 +1278,7 @@ class TestProject(DbTestCase):
         assert_equal(latest_log.params['description_new'], 'new description')
 
     def test_no_parent(self):
-        assert_equal(self.project.parent, None)
+        assert_equal(self.project.parent_node, None)
 
     def test_get_recent_logs(self):
         # Add some logs
@@ -1317,7 +1327,7 @@ class TestForkNode(DbTestCase):
         assert_true(len(fork.logs) == len(original.logs) + 1)
         assert_equal(fork.logs[-1].action, NodeLog.NODE_FORKED)
         assert_equal(original.tags, fork.tags)
-        assert_equal(original.parent is None, fork.parent is None)
+        assert_equal(original.parent_node is None, fork.parent_node is None)
 
         # Test modified fields
         assert_true(fork.is_fork)
@@ -1326,11 +1336,6 @@ class TestForkNode(DbTestCase):
         assert_in(fork._id, original.node__forked)
         # Note: Must cast ForeignList to list for comparison
         assert_equal(list(fork.contributors), [fork_user])
-        assert_equal(len(fork.contributor_list), 1)
-        assert_in(
-            fork_user._id,
-            [user.get('id') for user in fork.contributor_list]
-        )
         assert_true((fork_date - fork.date_created) < datetime.timedelta(seconds=30))
         assert_not_equal(fork.forked_date, original.date_created)
 
@@ -1541,12 +1546,6 @@ class TestRegisterNode(DbTestCase):
 
     def test_contributors(self):
         assert_equal(self.registration.contributors, self.project.contributors)
-
-    def test_contributors_list(self):
-        assert_equal(
-            self.registration.contributor_list,
-            self.project.contributor_list,
-        )
 
     def test_forked_from(self):
         # A a node that is not a fork
@@ -1899,6 +1898,110 @@ class TestProjectWithAddons(DbTestCase):
         p = ProjectWithAddonFactory(addon='s3')
         assert_true(p.get_addon('s3'))
         assert_true(p.creator.get_addon('s3'))
+
+
+class TestComments(DbTestCase):
+
+    def setUp(self):
+        self.comment = CommentFactory()
+        self.consolidated_auth = Auth(user=self.comment.user)
+
+    def test_create(self):
+        comment = Comment.create(
+            auth=self.consolidated_auth,
+            user=self.comment.user,
+            node=self.comment.node,
+            target=self.comment.target,
+            is_public=True,
+        )
+        assert_equal(comment.user, self.comment.user)
+        assert_equal(comment.node, self.comment.node)
+        assert_equal(comment.target, self.comment.target)
+        assert_equal(len(comment.node.logs), 2)
+        assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
+
+    def test_can_view_public_contributor(self):
+        self.comment.is_public = True
+        assert_true(
+            self.comment.can_view(
+                self.comment.node, self.consolidated_auth
+            )
+        )
+
+    def test_can_view_public_non_contributor(self):
+        self.comment.is_public = True
+        user = UserFactory()
+        assert_true(
+            self.comment.can_view(
+                self.comment.node, Auth(user=user)
+            )
+        )
+
+    def test_can_view_private_contributor(self):
+        self.comment.is_public = False
+        assert_true(
+            self.comment.can_view(
+                self.comment.node, self.consolidated_auth
+            )
+        )
+
+
+    def test_can_view_private_non_contributor(self):
+        self.comment.is_public = False
+        user = UserFactory()
+        assert_false(
+            self.comment.can_view(
+                self.comment.node, Auth(user=user)
+            )
+        )
+
+
+    def test_edit(self):
+        self.comment.edit(
+            auth=self.consolidated_auth,
+            content='edited', is_public=False
+        )
+        assert_equal(self.comment.content, 'edited')
+        assert_equal(self.comment.is_public, False)
+        assert_true(self.comment.modified)
+        assert_equal(len(self.comment.node.logs), 2)
+        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_UPDATED)
+
+    def test_delete(self):
+        self.comment.delete(auth=self.consolidated_auth)
+        assert_equal(self.comment.is_deleted, True)
+        assert_equal(len(self.comment.node.logs), 2)
+        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_REMOVED)
+
+    def test_undelete(self):
+        self.comment.delete(auth=self.consolidated_auth)
+        self.comment.undelete(auth=self.consolidated_auth)
+        assert_equal(self.comment.is_deleted, False)
+        assert_equal(len(self.comment.node.logs), 3)
+        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
+
+    def test_report_abuse(self):
+        self.comment.report_abuse(self.comment.user, category='spam', text='ads')
+        assert_in(self.comment.user._id, self.comment.reports)
+        assert_equal(
+            self.comment.reports[self.comment.user._id],
+            {'category': 'spam', 'text': 'ads'}
+        )
+
+    def test_validate_reports_bad_key(self):
+        self.comment.reports[None] = {'category': 'spam', 'text': 'ads'}
+        with assert_raises(ValidationValueError):
+            self.comment.save()
+
+    def test_validate_reports_bad_type(self):
+        self.comment.reports[self.comment.user._id] = 'not a dict'
+        with assert_raises(ValidationTypeError):
+            self.comment.save()
+
+    def test_validate_reports_bad_value(self):
+        self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
+        with assert_raises(ValidationValueError):
+            self.comment.save()
 
 if __name__ == '__main__':
     unittest.main()
