@@ -35,13 +35,7 @@ ${next.body()}
 
         $logScope = $('#logScope');
         // Get project data from the server and initiate KO modules
-        $.ajax({
-            type: 'get',
-            url: nodeApiUrl,
-            contentType: 'application/json',
-            dataType: 'json',
-            cache: false,
-            success: function(data){
+        $.getJSON(nodeApiUrl, function(data){
                // Initialize nodeControl and logFeed on success
                $script
                 .ready('nodeControl', function() {
@@ -65,7 +59,7 @@ ${next.body()}
                     });
                 }
             }
-        });
+        );
         // TODO: move AddPointerViewModel to its own module
         var $addPointer = $('#addPointer');
         var addPointerVM = new AddPointerViewModel(${json.dumps(node['title'])});

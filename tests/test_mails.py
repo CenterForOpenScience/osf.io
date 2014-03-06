@@ -6,9 +6,10 @@ from website import mails, settings
 
 
 def test_plain_mail():
-    mail = mails.Mail('test', subject='A test email')
+    mail = mails.Mail('test', subject='A test email to ${name}')
     rendered = mail.text(name='World')
     assert_equal(rendered.strip(), 'Hello World')
+    assert_equal(mail.subject(name='World'), 'A test email to World')
 
 
 def test_html_mail():
@@ -25,6 +26,6 @@ def test_send_mail(send_email_delay):
         to_addr='foo@bar.com',
         from_addr=settings.FROM_EMAIL,
         mimetype='plain',
-        subject=mails.TEST.subject,
+        subject='A test email to World',
         message=mails.TEST.text(name="World")
     ))
