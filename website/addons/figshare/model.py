@@ -117,7 +117,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         connect = Figshare.from_settings(self.user_settings)
         article_is_public = connect.article_is_public(self.figshare_id)
 
-        figshare_permissions = 'public' if article_is_public else 'private'
+        article_permissions = 'public' if article_is_public else 'private'
 
         if article_permissions != node_permissions:
             message = messages.BEFORE_PAGE_LOAD_PERM_MISMATCH.format(

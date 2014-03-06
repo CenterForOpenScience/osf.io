@@ -73,7 +73,7 @@ def figshare_unlink(*args, **kwargs):
     figshare_node = kwargs['node_addon']
 
     # If authorized, only owner can change settings
-    if figshare_node.user_settings and figshare_node.user_settings.owner != auth.user:
+    if not figshare_node.user_settings or figshare_node.user_settings.owner != auth.user:
         raise HTTPError(http.BAD_REQUEST)
     node.add_log(
         action='figshare_content_unlinked',

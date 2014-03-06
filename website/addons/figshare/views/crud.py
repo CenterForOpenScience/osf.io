@@ -148,8 +148,8 @@ def figshare_publish_article(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     cat = request.json.get('category', '')
-    tags = reqest.json.get('tags', '')
-    
+    tags = request.json.get('tags', '')
+
     if not cat:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -243,7 +243,7 @@ def figshare_view_file(*args, **kwargs):
         if f['id'] == int(file_id):
             found = f
             break
-    if not f:
+    if not found:
         raise HTTPError(http.NOT_FOUND)
 
     try:
@@ -270,20 +270,20 @@ def figshare_view_file(*args, **kwargs):
 
     #'download/article/{aid}/file/{fid}'.format(aid=article_id, fid=file_id)
     download_url = found.get('download_url')
-        
+
     render_url = node.api_url + \
         'figshare/render/article/{aid}/file/{fid}'.format(aid=article_id, fid=file_id)
 
     filename = found['name']
-
-    if private:
-        rendered = messages.FIGSHARE_VIEW_FILE_PRIVATE.format(    
-            url='http://figshare.com/')
-    elif rendered is None:
-        cache_file = get_cache_file(
+    cache_file = get_cache_file(
             article_id, file_id
         )
-        rendered = get_cache_content(node_settings, cache_file)
+    rendered = get_cache_content(node_settings, cache_file)
+    if private:
+        rendered = messages.FIGSHARE_VIEW_FILE_PRIVATE.format(
+            url='http://figshare.com/')
+    elif rendered is None:
+
         filename, size, filedata = connect.get_file(node_settings, found)
 
         if figshare_settings.MAX_RENDER_SIZE is not None and size > figshare_settings.MAX_RENDER_SIZE:
@@ -309,7 +309,7 @@ def figshare_view_file(*args, **kwargs):
         'parent_id': article['items'][0]['article_id'],
         'figshare_categories': categories,
         'figshare_title': article['items'][0]['title'],
-        'figshare_desc': article['items'][0]['description'],                 
+        'figshare_desc': article['items'][0]['description'],
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv
@@ -344,7 +344,7 @@ def figshare_delete_file(*args, **kwargs):
 @must_have_addon('figshare', 'node')
 def figshare_get_rendered_file(*args, **kwargs):
     node_settings = kwargs['node_addon']
-    
+
     article_id = kwargs['aid']
     file_id = kwargs['fid']
 
