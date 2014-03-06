@@ -7,7 +7,7 @@ from utils import create_mock_figshare
 from website.addons.figshare import api
 from website.addons.figshare import settings as figshare_settings
 
-class TestGithubApi(DbTestCase):
+class TestFigshareApi(DbTestCase):
 
     def setUp(self):
         self.user = UserFactory()
@@ -23,7 +23,22 @@ class TestGithubApi(DbTestCase):
         self.node_settings.figshare_id = '123456'
         self.node_settings.api_url = figshare_settings.API_URL
         self.node_settings.save()
+
+    @mock.patch('website.addons.figshare.api.Figshare.projects')
+    def test_projects(self):
+        projects = self.figshare.projects(self.node_settings)
+
+        assert_equal(len(projects), 1)
+        assert_equal(projects[0]['title'], u'OSF Test')
         
+    @mock.patch('website.addons.figshare.api.Figshare.project')
+    def test_project(self):
+        project = self.figshare.project(self.node_settings, 436)
+        
+        assert_equal(project['id'], 436)
+        assert_equal(project['title'], u'OSF Test')
+
+    
         
     # TODO: Check for completeness
     def test_tree_to_hgrid(self):

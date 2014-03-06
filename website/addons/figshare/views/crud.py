@@ -2,9 +2,11 @@ import os
 import datetime
 import httplib as http
 
+from urllib2 import urlopen
+
 from framework.flask import secure_filename
 
-from framework import request
+from framework import request, make_response
 from framework.exceptions import HTTPError
 from framework import redirect, Q
 from website.addons.base.views import check_file_guid
@@ -268,8 +270,7 @@ def figshare_view_file(*args, **kwargs):
     version_url = "http://figshare.com/articles/{filename}/{file_id}".format(
         filename=article['items'][0]['title'], file_id=article['items'][0]['article_id'])
 
-    #'download/article/{aid}/file/{fid}'.format(aid=article_id, fid=file_id)
-    download_url = found.get('download_url')
+    download_url = node.api_url + 'figshare/download/article/{aid}/file/{fid}'.format(aid=article_id, fid=file_id)
 
     render_url = node.api_url + \
         'figshare/render/article/{aid}/file/{fid}'.format(aid=article_id, fid=file_id)
@@ -280,8 +281,7 @@ def figshare_view_file(*args, **kwargs):
         )
     rendered = get_cache_content(node_settings, cache_file)
     if private:
-        rendered = messages.FIGSHARE_VIEW_FILE_PRIVATE.format(
-            url='http://figshare.com/')
+        rendered = messages.FIGSHARE_VIEW_FILE_PRIVATE.format(url='http://figshare.com/')
     elif rendered is None:
 
         filename, size, filedata = connect.get_file(node_settings, found)
@@ -353,3 +353,34 @@ def figshare_get_rendered_file(*args, **kwargs):
     )
 
     return get_cache_content(node_settings, cache_file)
+
+@must_be_contributor_or_public
+@must_have_addon('figshare', 'node')
+def figshare_download_file(*args, **kwargs):
+    node_settings = kwargs['node_addon']
+
+    article_id = kwargs['aid']
+    file_id = kwargs['fid']
+
+    connect = Figshare.from_settings(node_settings.user_settings)
+
+    article = connect.article(node_settings, article_id)
+    found = None
+    for f in article['items'][0]['files']:
+        if str(f['id']) == file_id:
+            found = f
+    if found:
+        f = urlopen(found['download_url'])
+        name = found['name']
+        filedata = f.read()
+        resp = make_response(filedata)
+        resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(name)
+        
+        # Add binary MIME type if extension missing
+        _, ext = os.path.splitext(name)
+        if not ext:
+            resp.headers['Content-Type'] = 'application/octet-stream'
+            
+        return resp
+
+        

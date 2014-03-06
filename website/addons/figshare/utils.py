@@ -1,5 +1,5 @@
-def project_to_hgrid(node, project):
-    return [article_to_hgrid(node, article) for article in project['articles']]
+def project_to_hgrid(node, project, expand=False):
+    return [article_to_hgrid(node, article, expand) for article in project['articles']]
 
 
 def article_to_hgrid(node, article, expand=False):

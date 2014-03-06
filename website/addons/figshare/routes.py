@@ -97,6 +97,10 @@ api_routes = {
             '/project/<pid>/figshare/render/article/<aid>/file/<fid>',
             '/project/<pid>/node/<nid>/figshare/render/article/<aid>/file/<fid>'
         ], 'get', views.crud.figshare_get_rendered_file, json_renderer,),
+        Rule([
+            '/project/<pid>/figshare/download/article/<aid>/file/<fid>/',
+            '/project/<pid>/node/<nid>/figshare/download/article/<aid>/file/<fid>/'
+        ], 'get', views.crud.figshare_download_file, json_renderer,),
      ],
     'prefix': '/api/v1',
 }
