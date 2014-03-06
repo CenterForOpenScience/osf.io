@@ -48,4 +48,9 @@
             }
         });
 
+        $('#addonSettingsFigshare .addon-settings-submit').on('click', function() {
+            if ($('#figshareId').val() == '-----') {
+                return false;
+            }
+        });
     });
