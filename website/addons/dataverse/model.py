@@ -17,11 +17,7 @@ def connect(username, password, host=HOST):
         host=host,
         cert=TEST_CERT,
     )
-    try:
-        connection.get_dataverses()
-        return connection
-    except:
-        return None
+    return connection if connection.connected else None
 
 
 class AddonDataverseUserSettings(AddonUserSettingsBase):
