@@ -53,6 +53,16 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         'addondataverseusersettings', backref='authorized'
     )
 
+    def unauthorize(self):
+        self.dataverse_username = None
+        self.dataverse_password = None
+        self.dataverse_number = 0
+        self.dataverse = None
+        self.study_hdl = None
+        self.study = None
+        self.user = None
+        self.save()
+
     def to_json(self, user):
         dataverse_user = user.get_addon('dataverse')
         rv = super(AddonDataverseNodeSettings, self).to_json(user)

@@ -37,8 +37,8 @@
                 function(result) {
                     if (result) {
                         $.ajax({
-                            url: '/api/v1/settings/dataverse/delete/',
-                            type: 'POST',
+                            url: '/api/v1/settings/dataverse/',
+                            type: 'DELETE',
                             contentType: 'application/json',
                             dataType: 'json',
                             success: function() {

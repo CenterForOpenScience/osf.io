@@ -47,15 +47,7 @@ def unauthorize(*args, **kwargs):
     if dataverse_user and dataverse_user.owner != user:
         raise HTTPError(http.BAD_REQUEST)
 
-    node_settings.dataverse_username = None
-    node_settings.dataverse_password = None
-    node_settings.dataverse_number = 0
-    node_settings.dataverse = None
-    node_settings.study_hdl = None
-    node_settings.study = None
-    node_settings.user = None
-
-    node_settings.save()
+    node_settings.unauthorize()
 
     return {}
 
@@ -65,9 +57,9 @@ def dataverse_delete_user(*args, **kwargs):
 
     dataverse_user = kwargs['user_addon']
 
-    # # Todo: Remove webhooks
-    # for node_settings in dataverse_user.addondataversenodesettings__authorized:
-    #     node_settings.delete_hook()
+    # Remove authorization for nodes
+    for node_settings in dataverse_user.addondataversenodesettings__authorized:
+        node_settings.unauthorize()
 
     # Revoke access
     dataverse_user.dataverse_username = None

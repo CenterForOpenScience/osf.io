@@ -36,8 +36,8 @@ settings_routes = {
             json_renderer,
         ),
         Rule(
-            '/settings/dataverse/delete',
-            'post',
+            '/settings/dataverse/',
+            'delete',
             views.auth.dataverse_delete_user,
             json_renderer,
         ),

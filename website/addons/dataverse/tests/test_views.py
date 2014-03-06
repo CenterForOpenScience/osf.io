@@ -30,7 +30,7 @@ class TestDataverseViewsAuth(DbTestCase):
         self.user_settings.save()
 
         self.node_settings = self.project.get_addon('dataverse')
-        self.node_settings.user_settings = self.project.creator.get_addon('s3')
+        self.node_settings.user_settings = self.project.creator.get_addon('dataverse')
         self.node_settings.dataverse_username = self.user_settings.dataverse_username
         self.node_settings.dataverse_password = self.user_settings.dataverse_password
         self.node_settings.dataverse_number = 1
@@ -41,10 +41,8 @@ class TestDataverseViewsAuth(DbTestCase):
 
     def test_unauthorize(self):
         url = self.project.api_url + 'dataverse/unauthorize/'
-        res = self.app.post_json(
-            url,
-            auth=self.user.auth
-        )
+        self.app.post_json(url, auth=self.user.auth)
+
         self.node_settings.reload()
         assert_false(self.node_settings.dataverse_username)
         assert_false(self.node_settings.dataverse_password)
@@ -54,6 +52,32 @@ class TestDataverseViewsAuth(DbTestCase):
         assert_false(self.node_settings.study)
         assert_false(self.node_settings.user)
 
+    def test_delete_user(self):
+        url = '/api/v1/settings/dataverse/'
+
+        # Non-authorized user can't delete
+        user2 = AuthUserFactory()
+        self.app.delete_json(url, auth=user2.auth, expect_errors=True)
+        self.user_settings.reload()
+        assert_true(self.user_settings.dataverse_username)
+
+        # Aurthoized user can delete
+        self.app.delete_json(url, auth=self.user.auth)
+
+        # User is no longer authorized
+        self.user_settings.reload()
+        assert_false(self.user_settings.dataverse_username)
+        assert_false(self.user_settings.dataverse_password)
+
+        # User's authorized nodes are now unauthorized
+        self.node_settings.reload()
+        assert_false(self.node_settings.dataverse_username)
+        assert_false(self.node_settings.dataverse_password)
+        assert_equal(self.node_settings.dataverse_number, 0)
+        assert_false(self.node_settings.dataverse)
+        assert_false(self.node_settings.study_hdl)
+        assert_false(self.node_settings.study)
+        assert_false(self.node_settings.user)
 
 
 def test_scrape_dataverse():
