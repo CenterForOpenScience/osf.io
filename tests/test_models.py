@@ -1945,7 +1945,6 @@ class TestComments(DbTestCase):
             )
         )
 
-
     def test_can_view_private_non_contributor(self):
         self.comment.is_public = False
         user = UserFactory()
@@ -1955,6 +1954,16 @@ class TestComments(DbTestCase):
             )
         )
 
+    def test_can_view_private_author_non_contributor(self):
+        user = UserFactory()
+        comment = CommentFactory(
+            node=self.comment.node, user=user, is_public=False
+        )
+        assert_true(
+            self.comment.can_view(
+                self.comment.node, Auth(user=user)
+            )
+        )
 
     def test_edit(self):
         self.comment.edit(

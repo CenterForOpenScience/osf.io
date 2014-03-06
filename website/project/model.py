@@ -149,6 +149,8 @@ class Comment(GuidStoredObject):
     def can_view(self, node, auth):
         if self.is_public:
             return True
+        if auth.user and auth.user == self.user:
+            return True
         return node.can_edit(auth)
 
     def edit(self, content, is_public, auth, save=False):
