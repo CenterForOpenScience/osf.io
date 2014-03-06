@@ -130,7 +130,7 @@ def figshare_oauth_callback(*args, **kwargs):
 @must_have_addon('figshare', 'node')
 def figshare_add_user_auth(*args, **kwargs):
 
-    user = kwargs['user']
+    user = kwargs['auth'].user
     node = kwargs['node'] or kwargs['project']
 
     figshare_node = node.get_addon('figshare')
@@ -141,7 +141,6 @@ def figshare_add_user_auth(*args, **kwargs):
 
     figshare_node.user_settings = figshare_user
     # ensure api url is correct
-    figshare_node.api_url = API_OAUTH_URL
     figshare_node.save()
 
     return {}

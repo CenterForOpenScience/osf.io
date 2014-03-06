@@ -217,7 +217,7 @@ class Figshare(object):
         #articles = self._send('http://api.figshare.com/v1/my_data/articles')
         #articles = map(lambda article: {
                        #'label': article['title'], 'value': 'article_' + str(article['article_id'])}, articles['items'])
-        return json.dumps(projects)
+        return projects
 
     def get_file(self, node_settings, found):
         url = found.get('download_url')

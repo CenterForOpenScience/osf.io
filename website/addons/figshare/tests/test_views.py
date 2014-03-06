@@ -90,8 +90,7 @@ class TestViewsConfig(DbTestCase):
 
 class TestViewsCrud(DbTestCase):
 
-    @mock.patch('website.addons.figshare.api.Figshare.from_settings')
-    def setUp(self, mock_fs):
+    def setUp(self):
 
         super(TestViewsCrud, self).setUp()
 
@@ -139,6 +138,6 @@ class TestViewsCrud(DbTestCase):
         mock_fig.return_value = self.figshare
         url = '/project/{0}/figshare/article/564/file/1348803/'.format(self.project._id)
         rv = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_equal(rv.status_int, 200)
         rv.showbrowser()
+        assert_equal(rv.status_int, 200)
         assert_true('file is unpublished we cannot render it.' in rv.body)
