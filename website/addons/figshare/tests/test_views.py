@@ -42,12 +42,13 @@ class TestViewsConfig(DbTestCase):
         self.node_settings.user_settings = self.user_settings
         self.node_settings.figshare_id = '123456'
         self.node_settings.figshare_type = 'project'
+        self.node_settings.figshare_title = 'OVER9000'
         self.node_settings.save()
 
     def test_config_no_change(self):
         num = len(self.project.logs)
         url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
-        rv = self.app.post_json(url, {'figshare_id': 'project_123456'}, auth=self.user.auth)
+        rv = self.app.post_json(url, {'figshare_value': 'project_123456', 'figshare_title': 'OVER9000'}, auth=self.user.auth)
         self.project.reload()
 
         assert_equal(rv.status_int, 200)
@@ -56,7 +57,7 @@ class TestViewsConfig(DbTestCase):
     def test_config_change(self):
         num = len(self.project.logs)
         url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
-        rv = self.app.post_json(url, {'figshare_id': 'project_9001'}, auth=self.user.auth)
+        rv = self.app.post_json(url, {'figshare_value': 'project_9001', 'figshare_title': 'IchangedbecauseIcan'}, auth=self.user.auth)
         self.project.reload()
         self.node_settings.reload()
 
@@ -128,7 +129,7 @@ class TestViewsCrud(DbTestCase):
     @mock.patch('website.addons.figshare.api.Figshare.from_settings')
     def test_view_missing(self, mock_fig):
         mock_fig.return_value = self.figshare
-        url = '/project/{0}/figshare/article/564/file/134880423/'.format(self.project._id)
+        url = '/project/{0}/figshare/article/564/file/854280423/'.format(self.project._id)
         rv = self.app.get(url, auth=self.user.auth, expect_errors=True).maybe_follow()
         assert_equal(rv.status_int, 404)
 

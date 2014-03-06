@@ -46,7 +46,6 @@ def figshare_set_config(*args, **kwargs):
         node_settings.figshare_title = figshare_title
         node_settings.save()
 
-        #TODO Updated Logs
         node.add_log(
             action='figshare_content_linked',
             params={
