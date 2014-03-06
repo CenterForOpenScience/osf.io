@@ -299,22 +299,26 @@ class CommentFactory(ModularOdmFactory):
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
-        node = NodeFactory()
+        node = kwargs.pop('node', None) or NodeFactory()
+        user = kwargs.pop('user', None) or node.creator
+        target = kwargs.pop('target', None) or node
         instance = target_class(
-            target=node,
             node=node,
-            user=node.creator,
+            user=user,
+            target=target,
             *args, **kwargs
         )
         return instance
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
-        node = NodeFactory()
+        node = kwargs.pop('node', None) or NodeFactory()
+        user = kwargs.pop('user', None) or node.creator
+        target = kwargs.pop('target', None) or node
         instance = target_class(
-            user=node.creator,
             node=node,
-            target=node,
+            user=user,
+            target=target,
             *args, **kwargs
         )
         instance.save()

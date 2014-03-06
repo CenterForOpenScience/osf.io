@@ -33,7 +33,7 @@ from tests.base import DbTestCase, fake
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    RegistrationFactory
+    RegistrationFactory, CommentFactory
 )
 
 
@@ -1136,19 +1136,6 @@ class TestComments(DbTestCase):
             **kwargs
         )
 
-    def _add_comment_database(self, project):
-
-        comment = Comment.create(
-            auth=Auth(user=project.creator),
-            user=project.creator,
-            node=project,
-            target=self.project,
-            is_public=True,
-        )
-        comment.save()
-
-        return comment
-
     def test_add_comment_public_contributor(self):
 
         self._configure_project(self.project, 'public')
@@ -1232,7 +1219,7 @@ class TestComments(DbTestCase):
     def test_edit_comment(self):
 
         self._configure_project(self.project, 'public')
-        comment = self._add_comment_database(self.project)
+        comment = CommentFactory(node=self.project)
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
         res = self.app.post_json(
@@ -1253,9 +1240,29 @@ class TestComments(DbTestCase):
         assert_false(comment.is_public)
 
     def test_edit_comment_non_author(self):
-
+        "Contributors who are not the comment author cannot edit."
         self._configure_project(self.project, 'public')
-        comment = self._add_comment_database(self.project)
+        comment = CommentFactory(node=self.project)
+        non_author = AuthUserFactory()
+        self.project.add_contributor(non_author, auth=self.consolidated_auth)
+
+        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
+        res = self.app.post_json(
+            url,
+            {
+                'content': 'edited',
+                'isPublic': 'private',
+            },
+            auth=non_author.auth,
+            expect_errors=True,
+        )
+
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+    def test_edit_comment_non_contributor(self):
+        "Non-contributors who are not the comment author cannot edit."
+        self._configure_project(self.project, 'public')
+        comment = CommentFactory(node=self.project)
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
         res = self.app.post_json(
@@ -1273,7 +1280,7 @@ class TestComments(DbTestCase):
     def test_delete_comment_author(self):
 
         self._configure_project(self.project, 'public')
-        comment = self._add_comment_database(self.project)
+        comment = CommentFactory(node=self.project)
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
         self.app.delete_json(
@@ -1285,14 +1292,10 @@ class TestComments(DbTestCase):
 
         assert_true(comment.is_deleted)
 
-    @unittest.skip('Write me after merging in permissions branch')
-    def test_delete_comment_admin(self):
-        pass
-
     def test_delete_comment_non_author(self):
 
         self._configure_project(self.project, 'public')
-        comment = self._add_comment_database(self.project)
+        comment = CommentFactory(node=self.project)
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
         res = self.app.delete_json(
@@ -1310,18 +1313,87 @@ class TestComments(DbTestCase):
     def test_report_spam(self):
 
         self._configure_project(self.project, 'public')
-        comment = self._add_comment_database(self.project)
+        comment = CommentFactory(node=self.project)
 
-        url = self.project.api_url + 'comment/{0}/report/spam/'.format(comment._id)
+        url = self.project.api_url + 'comment/{0}/report/'.format(comment._id)
 
-        self.app.post_json(url, auth=self.project.creator.auth)
+        self.app.post_json(
+            url,
+            {
+                'category': 'spam',
+                'text': 'ads',
+            },
+            auth=self.project.creator.auth,
+        )
 
         comment.reload()
         assert_in(self.project.creator._id, comment.reports)
         assert_equal(
             comment.reports[self.project.creator._id],
-            {'type': 'spam'}
+            {'category': 'spam', 'text': 'ads'}
         )
+
+    def test_cannot_view_deleted_comments(self):
+        self._configure_project(self.project, 'public')
+        comment = CommentFactory(node=self.project)
+        deleted_comment = CommentFactory(node=self.project)
+        deleted_comment.delete(auth=self.consolidated_auth, save=True)
+
+        url = self.project.api_url + 'comments/'
+        res = self.app.get(url)
+
+        assert_equal(len(res.json['comments']), 1)
+        assert_equal(res.json['comments'][0]['content'], comment.content)
+
+    def test_can_view_private_comments_if_contributor(self):
+
+        self._configure_project(self.project, 'public')
+        comment = CommentFactory(node=self.project, user=self.project.creator, is_public=False)
+
+        url = self.project.api_url + 'comments/'
+        res = self.app.get(url, auth=self.project.creator.auth)
+
+        assert_equal(len(res.json['comments']), 1)
+
+
+    def test_cannot_view_private_comments_if_not_contributor(self):
+
+        self._configure_project(self.project, 'public')
+        comment = CommentFactory(is_public=False)
+
+        user = AuthUserFactory()
+        url = self.project.api_url + 'comments/'
+        res = self.app.get(url, auth=user.auth)
+
+        assert_equal(len(res.json['comments']), 0)
+
+    def test_discussion_recursive(self):
+
+        self._configure_project(self.project, 'public')
+        comment_l0 = CommentFactory(node=self.project)
+
+        user_l1 = UserFactory()
+        user_l2 = UserFactory()
+        comment_l1 = CommentFactory(node=self.project, target=comment_l0, user=user_l1)
+        comment_l2 = CommentFactory(node=self.project, target=comment_l1, user=user_l2)
+
+        url = self.project.api_url + 'comments/discussion/'
+        res = self.app.get(url)
+
+        assert_equal(len(res.json['discussion']), 3)
+
+    def test_discussion_no_repeats(self):
+
+        self._configure_project(self.project, 'public')
+        comment_l0 = CommentFactory(node=self.project)
+
+        comment_l1 = CommentFactory(node=self.project, target=comment_l0)
+        comment_l2 = CommentFactory(node=self.project, target=comment_l1)
+
+        url = self.project.api_url + 'comments/discussion/'
+        res = self.app.get(url)
+
+        assert_equal(len(res.json['discussion']), 1)
 
 
 class TestSearchViews(DbTestCase):

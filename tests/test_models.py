@@ -1920,6 +1920,42 @@ class TestComments(DbTestCase):
         assert_equal(len(comment.node.logs), 2)
         assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
 
+    def test_can_view_public_contributor(self):
+        self.comment.is_public = True
+        assert_true(
+            self.comment.can_view(
+                self.comment.node, self.consolidated_auth
+            )
+        )
+
+    def test_can_view_public_non_contributor(self):
+        self.comment.is_public = True
+        user = UserFactory()
+        assert_true(
+            self.comment.can_view(
+                self.comment.node, Auth(user=user)
+            )
+        )
+
+    def test_can_view_private_contributor(self):
+        self.comment.is_public = False
+        assert_true(
+            self.comment.can_view(
+                self.comment.node, self.consolidated_auth
+            )
+        )
+
+
+    def test_can_view_private_non_contributor(self):
+        self.comment.is_public = False
+        user = UserFactory()
+        assert_false(
+            self.comment.can_view(
+                self.comment.node, Auth(user=user)
+            )
+        )
+
+
     def test_edit(self):
         self.comment.edit(
             auth=self.consolidated_auth,
@@ -1944,22 +1980,27 @@ class TestComments(DbTestCase):
         assert_equal(len(self.comment.node.logs), 3)
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
 
-    def test_report_spam(self):
-        self.comment.report_spam(self.comment.user)
+    def test_report_abuse(self):
+        self.comment.report_abuse(self.comment.user, category='spam', text='ads')
         assert_in(self.comment.user._id, self.comment.reports)
         assert_equal(
             self.comment.reports[self.comment.user._id],
-            {'type': 'spam'}
+            {'category': 'spam', 'text': 'ads'}
         )
 
     def test_validate_reports_bad_key(self):
-        self.comment.reports[None] = {'type': 'spam'}
+        self.comment.reports[None] = {'category': 'spam', 'text': 'ads'}
         with assert_raises(ValidationValueError):
             self.comment.save()
 
-    def test_validate_reports_bad_value(self):
+    def test_validate_reports_bad_type(self):
         self.comment.reports[self.comment.user._id] = 'not a dict'
         with assert_raises(ValidationTypeError):
+            self.comment.save()
+
+    def test_validate_reports_bad_value(self):
+        self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
+        with assert_raises(ValidationValueError):
             self.comment.save()
 
 if __name__ == '__main__':

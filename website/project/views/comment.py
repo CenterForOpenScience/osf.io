@@ -77,21 +77,12 @@ def serialize_comment(comment, node, auth):
             comment.reports.get(auth.user._id) == {'type': 'spam'},
     }
 
-
-def can_view_comment(comment, node, auth):
-
-    if comment.is_public:
-        return True
-
-    return node.can_edit(auth)
-
-
 def serialize_comments(record, node, auth):
 
     return [
         serialize_comment(comment, node, auth)
         for comment in getattr(record, 'commented', [])
-        if can_view_comment(comment, node, auth)
+        if comment.can_view(node, auth)
             and not comment.is_deleted
     ]
 
