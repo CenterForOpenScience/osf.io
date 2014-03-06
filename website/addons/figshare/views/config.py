@@ -13,20 +13,15 @@ from website.project.decorators import must_have_addon
 def figshare_set_config(*args, **kwargs):
 
     auth = kwargs['auth']
-    user = auth.user
-
     node_settings = kwargs['node_addon']
     node = node_settings.owner
-    user_settings = node_settings.user_settings
 
     # If authorized, only owner can change settings
-    if user_settings and user_settings.owner != user:
+    if not node_settings.user_settings or node_settings.user_settings.owner != auth.user:
         raise HTTPError(http.BAD_REQUEST)
 
-    figshare_id = node_settings.figshare_id
-    figshare_type = node_settings.figshare_type
-
-    figshare_url = request.json.get('figshare_id', '')
+    figshare_title = request.json.get('figshare_title', '')
+    figshare_url = request.json.get('figshare_value', '')
 
     if search('project', figshare_url):
         figshare_type = 'project'
@@ -36,20 +31,22 @@ def figshare_set_config(*args, **kwargs):
         figshare_id = split(r'[\_/]', figshare_url)[-1]
 
     #Limit to projects only
-    if not figshare_id or figshare_type != 'project':
+    if not figshare_id or not figshare_title or figshare_type != 'project':
         raise HTTPError(http.BAD_REQUEST)
 
     changed = (
         figshare_id != node_settings.figshare_id or
-        figshare_type != node_settings.figshare_type
+        figshare_type != node_settings.figshare_type or
+        figshare_title != node_settings.figshare_title
     )
 
     if changed:
         node_settings.figshare_id = figshare_id
         node_settings.figshare_type = figshare_type
-        #Add project name here
+        node_settings.figshare_title = figshare_title
         node_settings.save()
 
+        #TODO Updated Logs
         node.add_log(
             action='figshare_content_linked',
             params={
@@ -57,7 +54,8 @@ def figshare_set_config(*args, **kwargs):
                 'node': node._id,
                 'figshare': {
                     'type': figshare_type,
-                    'id': figshare_id
+                    'id': figshare_id,
+                    'title': figshare_title,
                 }
             },
             auth=auth,
@@ -73,7 +71,7 @@ def figshare_unlink(*args, **kwargs):
     figshare_node = kwargs['node_addon']
 
     # If authorized, only owner can change settings
-    if figshare_node.user_settings and figshare_node.user_settings.owner != auth.user:
+    if not figshare_node.user_settings or figshare_node.user_settings.owner != auth.user:
         raise HTTPError(http.BAD_REQUEST)
     node.add_log(
         action='figshare_content_unlinked',

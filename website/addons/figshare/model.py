@@ -2,6 +2,7 @@
 
 """
 import os
+import json
 from framework import fields
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import GuidFile
@@ -9,6 +10,7 @@ from website.addons.base import GuidFile
 from .api import Figshare
 from . import settings as figshare_settings
 from . import messages
+
 
 class FigShareGuidFile(GuidFile):
 
@@ -66,26 +68,25 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             return figshare_settings.API_OAUTH_URL
 
     def to_json(self, user):
-        figshare_user = user.get_addon('figshare')
         rv = super(AddonFigShareNodeSettings, self).to_json(user)
+
+        figshare_user = user.get_addon('figshare')
+
         rv.update({
             'figshare_id': self.figshare_id or '',
             'figshare_type': self.figshare_type or '',
-            'has_user_authorization': figshare_user and figshare_user.has_auth,
+            'figshare_title': self.figshare_title or '',
+            'node_has_auth': self.user_settings and self.user_settings.has_auth,
+            'user_has_auth': figshare_user and figshare_user.has_auth,
             'figshare_options': []
         })
-
-        # TODO This may not be need at all
-        if not self.user_settings and figshare_user:
-            self.user_settings = figshare_user
-            self.save()
 
         if self.user_settings and self.user_settings.has_auth:
             rv.update({
                 'authorized_user': self.user_settings.owner.fullname,
                 'owner_url': self.user_settings.owner.url,
-                'disabled': user != self.user_settings.owner,
-                'figshare_options': self.user_settings.figshare_options
+                'is_owner': user == self.user_settings.owner,
+                'figshare_options': self.user_settings.figshare_options,
             })
         return rv
 
@@ -117,7 +118,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         connect = Figshare.from_settings(self.user_settings)
         article_is_public = connect.article_is_public(self.figshare_id)
 
-        figshare_permissions = 'public' if article_is_public else 'private'
+        article_permissions = 'public' if article_is_public else 'private'
 
         if article_permissions != node_permissions:
             message = messages.BEFORE_PAGE_LOAD_PERM_MISMATCH.format(
