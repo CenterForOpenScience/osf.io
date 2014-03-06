@@ -16,6 +16,7 @@ from tests.factories import DeprecatedUnregUserFactory, ProjectFactory, UserFact
 logging.getLogger('factory.generate:BaseFactory').setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
+
 def main():
     app.init_app()
     for node in models.Node.find():
@@ -33,29 +34,44 @@ def make_user(user_dict):
             user.save()
         except ValidationValueError:
             user = auth.get_user(username=email)
-            assert user is not None
+            if user is None:
+                logger.error('Could not load user {0}'.format(user_dict))
     return user
 
 
 def migrate_user(user_dict, node):
     user = make_user(user_dict)
+    if user is None:
+        logger.error('Could not load user {0}'.format(user_dict))
+        return
     # Add unclaimed_record to unregistered users for a given node
     if not user.is_registered:
         # First contributor (usually the creator) will be recorded as the referrer
         # of unregistered users
-        referrer = node.contributors[0]
+        try:
+            referrer = node.contributors[0]
+        except IndexError:
+            if node.creator:
+                referrer = node.creator
+            else:  # meh
+                return
         user.add_unclaimed_record(node=node, referrer=referrer,
             given_name=user_dict['nr_name'], email=user_dict['nr_email'])
-        logger.info('Migrated unregistered user {0}'.format(user.username))
-    user.save()
+        logger.info(u'Migrated unregistered user {0}'.format(user.username))
+        try:
+            user.save()
+        except Exception as error:
+            logging.error(user_dict)
+            raise error
     return user
 
 
 def migrate_contributors(node):
     node.contributors = [
         migrate_user(user_dict, node) for user_dict in node.contributor_list
+
     ]
-    logger.info('Finished migrating unregistered '
+    logger.info(u'Finished migrating unregistered '
         'contributors for node {0}'.format(node._primary_key))
     return node.save()
 

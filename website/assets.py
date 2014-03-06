@@ -37,7 +37,6 @@ js = Bundle(
         "vendor/bootstrap3/js/bootstrap.min.js",
         "vendor/bootbox/bootbox.min.js",
         "vendor/script.min.js",
-        'vendor/knockout-punches/knockout.punches.min.js',
     ),
     output="public/js/common.js"
 )
