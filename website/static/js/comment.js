@@ -7,8 +7,34 @@ this.Comment = (function(window, $, ko, bootbox) {
         'private': 'Private'
     };
 
+    var ABUSE_CATEGORIES = {
+        spam: 'Spam or advertising',
+        hate: 'Hate speech',
+        violence: 'Violence or harmful behavior'
+    };
+
     var relativeDate = function(datetime) {
         return moment.utc(datetime, 'MM/DD/YY HH:mm:ss').fromNow();
+    };
+
+    var exclusify = function(subscriber, subscribees) {
+        subscriber.subscribe(function(value) {
+            if (value) {
+                for (var i=0; i<subscribees.length; i++) {
+                    subscribees[i](false);
+                }
+            }
+        });
+    };
+
+    var exclusifyGroup = function() {
+        var observables = Array.prototype.slice.call(arguments);
+        for (var i=0; i<observables.length; i++) {
+            var subscriber = observables[i];
+            var subscribees = observables.slice();
+            subscribees.splice(i, 1);
+            exclusify(subscriber, subscribees);
+        }
     };
 
     /*
@@ -19,6 +45,7 @@ this.Comment = (function(window, $, ko, bootbox) {
         var self = this;
 
         self.privacyOptions = Object.keys(PRIVACY_MAP);
+        self.abuseOptions = Object.keys(ABUSE_CATEGORIES);
 
         self._loaded = false;
         self.id = ko.observable();
@@ -33,7 +60,7 @@ this.Comment = (function(window, $, ko, bootbox) {
         self.comments = ko.observableArray();
         self.displayComments = ko.computed(function() {
             return ko.utils.arrayFilter(self.comments(), function(comment) {
-                return !comment.isSpam();
+                return !comment.isAbuse();
             });
         });
 
@@ -41,6 +68,10 @@ this.Comment = (function(window, $, ko, bootbox) {
 
     BaseComment.prototype.privacyLabel = function(item) {
         return PRIVACY_MAP[item];
+    };
+
+    BaseComment.prototype.abuseLabel = function(item) {
+        return ABUSE_CATEGORIES[item];
     };
 
     BaseComment.prototype.showReply = function() {
@@ -120,9 +151,16 @@ this.Comment = (function(window, $, ko, bootbox) {
         self.showChildren = ko.observable(false);
 
         self.hoverContent = ko.observable(false);
-        
+
+        self.reporting = ko.observable(false);
+        self.deleting = ko.observable(false);
+        self.abuseCategory = ko.observable('spam');
+        self.abuseText = ko.observable();
+
         self.editing = ko.observable(false);
         self.editVerb = self.modified ? 'edited' : 'posted';
+        
+        exclusifyGroup(self.editing, self.replying, self.reporting, self.deleting);
 
         self.showPrivateIcon = ko.computed(function() {
             return self.isPublic() === 'private';
@@ -184,35 +222,52 @@ this.Comment = (function(window, $, ko, bootbox) {
         });
     };
 
-    CommentModel.prototype.reportSpam = function() {
+    CommentModel.prototype.reportAbuse = function() {
+        this.reporting(true);
+    };
+
+    CommentModel.prototype.cancelAbuse = function() {
+        this.abuseCategory(null);
+        this.abuseText(null);
+        this.reporting(false);
+    };
+
+    CommentModel.prototype.submitAbuse = function() {
         var self = this;
-        bootbox.confirm('Are you sure you want to report this comment as spam?', function(response) {
-            if (response) {
-                $.osf.postJSON(
-                    nodeApiUrl + 'comment/' + self.id() + '/report/spam/',
-                    {isSpam: !self.isSpam()},
-                    function(response) {
-                        self.isSpam(!self.isSpam());
-                    }
-                );
+        $.osf.postJSON(
+            nodeApiUrl + 'comment/' + self.id() + '/report/',
+            {
+                category: self.abuseCategory(),
+                text: self.abuseText()
+            },
+            function() {
+                self.isAbuse(true);
+            }
+        )
+    };
+
+    CommentModel.prototype.startDelete = function() {
+        this.deleting(true);
+    };
+
+    CommentModel.prototype.submitDelete = function() {
+        var self = this;
+        $.ajax({
+            type: 'DELETE',
+            url: nodeApiUrl + 'comment/' + self.id() + '/',
+            success: function(response) {
+                var siblings = self.$parent.comments;
+                siblings.splice(siblings.indexOf(self), 1);
+                self.deleting(true);
+            },
+            error: function() {
+                self.deleting(false);
             }
         });
     };
 
-    CommentModel.prototype.remove = function() {
-        var self = this;
-        bootbox.confirm('Are you sure you want to delete this comment?', function(response) {
-            if (response) {
-                $.ajax({
-                    type: 'DELETE',
-                    url: nodeApiUrl + 'comment/' + self.id() + '/',
-                    success: function(response) {
-                        var siblings = self.$parent.comments;
-                        siblings.splice(siblings.indexOf(self), 1);
-                    }
-                });
-            }
-        });
+    CommentModel.prototype.cancelDelete = function() {
+        this.deleting(false);
     };
 
     CommentModel.prototype.startHoverContent = function() {

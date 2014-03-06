@@ -98,6 +98,10 @@ def validate_comment_reports(value, *args, **kwargs):
             raise ValidationValueError('Keys must be user IDs')
         if not isinstance(val, dict):
             raise ValidationTypeError('Values must be dictionaries')
+        if 'category' not in val or 'text' not in val:
+            raise ValidationValueError(
+                'Values must include `category` and `text` keys'
+            )
 
 
 class Comment(GuidStoredObject):
@@ -118,8 +122,8 @@ class Comment(GuidStoredObject):
 
     # Dictionary field mapping user IDs to dictionaries of report details:
     # {
-    #   'icpnw': {'type': 'spam'},
-    #   'cdi38': {'type': 'abuse', 'message': 'godwins law'},
+    #   'icpnw': {'category': 'hate', 'message': 'offensive'},
+    #   'cdi38': {'category': 'spam', 'message': 'godwins law'},
     # }
     reports = fields.DictionaryField(validate=validate_comment_reports)
 
@@ -189,8 +193,8 @@ class Comment(GuidStoredObject):
         if save:
             self.save()
 
-    def report_spam(self, user, save=False):
-        self.reports[user._id] = {'type': 'spam'}
+    def report_abuse(self, user, save=False, **kwargs):
+        self.reports[user._id] = kwargs
         if save:
             self.save()
 

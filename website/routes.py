@@ -232,11 +232,11 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/comment/<cid>/report/spam/',
-                '/project/<pid>/node/<nid>/comment/<cid>/report/spam/',
+                '/project/<pid>/comment/<cid>/report/',
+                '/project/<pid>/node/<nid>/comment/<cid>/report/',
             ],
             'post',
-            project_views.comment.report_spam,
+            project_views.comment.report_abuse,
             json_renderer,
         ),
 

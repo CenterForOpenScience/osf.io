@@ -185,14 +185,28 @@
                             <span data-bind="if: $root.canComment, click: showReply">
                                 <i class="icon-reply"></i>
                             </span>
-                            <span data-bind="click: reportSpam">
+                            <span data-bind="click: reportAbuse">
                                 <i class="icon-warning-sign"></i>
                             </span>
-                            <span data-bind="if: canEdit, click: remove">
+                            <span data-bind="if: canEdit, click: startDelete">
                                 <i class="icon-trash"></i>
                             </span>
                         </div>
 
+                    </div>
+
+                    <div class="comment-report" data-bind="if: reporting">
+                        <form class="form-inline">
+                            <select class="form-control" data-bind="options: abuseOptions, optionsText: abuseLabel, value: abuseCategory"></select>
+                            <input class="form-control" data-bind="value: abuseText" placeholder="Describe abuse" />
+                        </form>
+                        <a class="btn btn-default btn-sm" data-bind="click: submitAbuse"><i class="icon-check"></i> Report</a>
+                        <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse"><i class="icon-undo"></i> Cancel</a>
+                    </div>
+
+                    <div class="comment-delete" data-bind="if: deleting">
+                        <a class="btn btn-default btn-sm" data-bind="click: submitDelete"><i class="icon-check"></i> Delete</a>
+                        <a class="btn btn-default btn-sm" data-bind="click: cancelDelete"><i class="icon-undo"></i> Cancel</a>
                     </div>
 
                 </div>

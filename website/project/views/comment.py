@@ -73,7 +73,7 @@ def serialize_comment(comment, node, auth):
         'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user,
         'modified': comment.modified,
-        'isSpam': auth.user and
+        'isAbuse': auth.user and
             comment.reports.get(auth.user._id) == {'type': 'spam'},
     }
 
@@ -207,7 +207,7 @@ def delete_comment(**kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def report_spam(**kwargs):
+def report_abuse(**kwargs):
 
     auth = kwargs['auth']
     user = auth.user
@@ -216,6 +216,11 @@ def report_spam(**kwargs):
     if comment is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    comment.report_spam(user, save=True)
+    category = request.json.get('category')
+    text = request.json.get('text', '')
+    if not category:
+        raise HTTPError(http.BAD_REQUEST)
+
+    comment.report_abuse(user, save=True, category=category, text=text)
 
     return {}
