@@ -54,7 +54,7 @@
 
         <div style="padding-bottom: 10px">
             Authorized by OSF user
-            <a href="${domain}/${authorized_user_id}" target="_blank">
+            <a href="${domain}${authorized_user_id}" target="_blank">
                 ${authorized_user_name}
             </a>
             on behalf of Dataverse user ${authorized_dataverse_user}
