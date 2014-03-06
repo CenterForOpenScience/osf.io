@@ -146,6 +146,11 @@ class TestAUser(DbTestCase):
         # Sees a flash message
         assert_in('Log-in failed', res)
 
+    def test_is_redirected_to_dashboard_already_logged_in_at_login_page(self):
+        res = self._login(self.user.username, 'science')
+        res = self.app.get('/login/').follow()
+        assert_equal(res.request.path, '/dashboard/')
+
     def test_sees_projects_in_her_dashboard(self):
         # the user already has a project
         project = ProjectFactory(creator=self.user)

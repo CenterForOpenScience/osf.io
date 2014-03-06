@@ -85,6 +85,8 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
     login form passsed; else send forgot password email.
 
     """
+    if get_current_user():
+        return framework.redirect('/dashboard/')
     direct_call = registration_form or forgot_password_form
     if framework.request.method == 'POST' and not direct_call:
         form = SignInForm(framework.request.form)
