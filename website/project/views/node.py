@@ -168,7 +168,7 @@ def node_forks(**kwargs):
 def node_setting(**kwargs):
 
     auth = kwargs['auth']
-    node = kwargs.get('node') or kwargs.get('project')
+    node = kwargs['node'] or kwargs['project']
 
     rv = _view_project(node, auth, primary=True)
 
@@ -193,6 +193,10 @@ def node_setting(**kwargs):
     rv['addon_enabled_settings'] = addon_enabled_settings
     rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
 
+    rv['comments'] = {
+        'level': node.comment_level,
+    }
+
     return rv
 
 
@@ -202,6 +206,19 @@ def node_choose_addons(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
     node.config_addons(request.json, auth)
+
+
+@must_be_contributor
+def configure_comments(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    comment_level = request.json.get('commentLevel')
+    if not comment_level:
+        node.comment_level = None
+    elif comment_level in ['public', 'private']:
+        node.comment_level = comment_level
+    else:
+        raise HTTPError(http.BAD_REQUEST)
+    node.save()
 
 
 ##############################################################################
@@ -401,7 +418,7 @@ def _view_project(node, auth, primary=False):
 
     user = auth.user
 
-    parent = node.parent
+    parent = node.parent_node
     recent_logs = _get_logs(node, 10, auth)
     widgets, configs, js, css = _render_addon(node)
     # Before page load callback; skip if not primary call
@@ -453,6 +470,12 @@ def _view_project(node, auth, primary=False):
             'logs': recent_logs,
             'points': node.points,
             'piwik_site_id': node.piwik_site_id,
+
+            'comment_level': node.comment_level,
+            'can_view_comments': node.can_comment(auth),
+            'can_add_comments': node.can_comment(auth, write=True),
+            'has_children': bool(getattr(node, 'commented', False)),
+
         },
         'parent_node': {
             'id': parent._primary_key if parent else '',

@@ -46,10 +46,3 @@ class TestValidation(DbTestCase):
         u = UnregUserFactory()
         f = MockForm(username=u.username)
         assert_true(f.validate())
-
-    def test_email_exists_validator(self):
-        class MockForm(Form):
-            username = Field('Username', [forms.EmailExists()])
-        f = MockForm(username='doesnotexist@example.com')
-        f.validate()
-        assert_in('username', f.errors)

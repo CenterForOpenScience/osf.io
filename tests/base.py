@@ -11,7 +11,7 @@ from framework.auth.model import User
 from framework.sessions.model import Session
 from framework.guid.model import Guid
 from website.project.model import (ApiKey, Node, NodeLog,
-                                   Tag, WatchConfig, MetaData)
+                                   Tag, WatchConfig)
 from website import settings
 
 from website.addons.osffiles.model import NodeFile
@@ -35,7 +35,7 @@ fake = Factory.create()
 
 # All Models
 MODELS = (User, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
-          Tag, WatchConfig, Session, MetaData, Guid)
+          Tag, WatchConfig, Session, Guid)
 
 
 class DbTestCase(unittest.TestCase):

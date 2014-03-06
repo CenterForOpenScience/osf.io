@@ -35,7 +35,7 @@ def _clean_file_name(name):
     return encoded
 
 
-def get_osffiles(node_settings, auth, **kwargs):
+def get_osffiles_hgrid(node_settings, auth, **kwargs):
 
     node = node_settings.owner
 
@@ -83,6 +83,30 @@ def get_osffiles(node_settings, auth, **kwargs):
 
     return info
 
+@must_be_contributor_or_public
+@must_have_addon('osffiles', 'node')
+def get_osffiles(**kwargs):
+
+    node_settings = kwargs['node_addon']
+    node = node_settings.owner
+    auth = kwargs['auth']
+    can_view = node.can_view(auth)
+
+    info = []
+
+    if can_view:
+        for name, fid in node.files_current.iteritems():
+            fobj = NodeFile.load(fid)
+            item = {
+                'name': _clean_file_name(fobj.path),
+                'download': fobj.download_url(node),
+                'size': rubeus.format_filesize(fobj.size),
+                'date_modified': fobj.date_modified.strftime('%Y/%m/%d %I:%M %p'),
+                'versions': node.files_versions[name]
+            }
+            info.append(item)
+
+    return info
 
 @must_be_contributor_or_public
 @must_have_addon('osffiles', 'node')
@@ -90,7 +114,7 @@ def get_osffiles_public(**kwargs):
 
     node_settings = kwargs['node_addon']
     auth = kwargs['auth']
-    return get_osffiles(node_settings, auth)
+    return get_osffiles_hgrid(node_settings, auth)
 
 
 @must_be_valid_project # returns project
