@@ -17,21 +17,21 @@
 
 
     <div class="row">
-        % if is_owner:
-                <div class="col-md-6">
-                    <select id="figshareSelectProject" class="form-control">
-                        <option>-----</option>
+            <div class="col-md-6">
+                <select id="figshareSelectProject" class="form-control" ${'' if is_owner else 'disabled'}>
+                    <option>-----</option>
+                    %if is_owner:
                         % for project in figshare_options:
                             <option value="${project['value']}" ${'selected' if project['label'] == figshare_title else ''}>${project['label']}</option>
                         % endfor
-                    </select>
-                </div>
-        % else:
-            <div>${figshare_title}</div>
-        % endif
+                    %else:
+                        <option selected>${figshare_title}</option>>
+                    %endif
+                </select>
+            </div>
     </div>
 
-    <br />
+
 
 %else:
     <a id="figshareAddKey" class="btn btn-primary">
@@ -44,7 +44,8 @@
 % endif
 
 <%def name="submit_btn()">
-    % if node_has_auth:
+    % if node_has_auth and is_owner and user_has_auth:
+        <br />
         ${parent.submit_btn()}
     % endif
 </%def>
