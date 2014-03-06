@@ -14,7 +14,6 @@ from ..api import Figshare
 from ..auth import oauth_start_url, oauth_get_token
 from ..settings import API_URL, API_OAUTH_URL
 
-
 @must_be_logged_in
 def figshare_oauth_start(*args, **kwargs):
 

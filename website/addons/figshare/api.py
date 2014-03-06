@@ -111,8 +111,7 @@ class Figshare(object):
             os.path.join(node_settings.api_url, 'projects', "{0}".format(project_id), 'articles'))
 
         if(articles):
-            project['articles'] = [self.article(node_settings, article['id'])['items'][0]
-                                   for article in articles]
+            project['articles'] = [self.article(node_settings, article['id'])['items'][0] for article in articles]
             return project
         return []
 

@@ -28,13 +28,6 @@ def oauth_start_url(user, node=None):
         uri_parts.append(node._id)
     callback_uri = os.path.join(*uri_parts)
 
-    '''
-    session = OAuth1Session(
-        figshare_settings.CLIENT_ID,
-        client_secret=figshare_settings.CLIENT_SECRET,
-
-    )
-    '''
     session = OAuth1Session(
         figshare_settings.CLIENT_ID,
         client_secret=figshare_settings.CLIENT_SECRET,
