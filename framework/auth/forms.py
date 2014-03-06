@@ -71,17 +71,6 @@ email_field = TextField('Email Address',
     filters=[lowerstripped],
     widget=BootstrapTextInput())
 
-email_exists_field = TextField('Email Address',
-    [
-        validators.Required(message=u'Email address is required'),
-        validators.Length(min=6, message=u'Email address is too short'),
-        validators.Length(max=120, message=u'Email address is too long'),
-        validators.Email(message=u'Email address is invalid'),
-        NoHtmlCharacters(),
-        EmailExists(),
-    ],
-    filters=[lowerstripped],
-    widget=BootstrapTextInput())
 
 unique_email_field = TextField('Email Address',
     [
@@ -146,11 +135,11 @@ class RegistrationForm(Form):
 
 
 class ResendConfirmationForm(Form):
-    email = email_exists_field
+    email = email_field
 
 
 class SignInForm(Form):
-    username = email_exists_field
+    username = email_field
     password = password_field
 
 
