@@ -447,9 +447,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     piwik_site_id = fields.StringField()
 
-    ## Meta-data
-    #comment_schema = OSF_META_SCHEMAS['osf_comment']
-
     _meta = {'optimistic': True}
 
     def __init__(self, *args, **kwargs):
