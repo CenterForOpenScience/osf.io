@@ -142,12 +142,15 @@
                         </li>
                     % endif
                 % endfor
+                % if user['can_edit'] or node['is_public'] or not node['link']:
+                    <li><a href="${node['url']}statistics/">Statistics</a></li>
+                % endif
 
                 % if not node['is_registration']:
                     <li><a href="${node['url']}registrations/">Registrations</a></li>
                 % endif
                 <li><a href="${node['url']}forks/">Forks</a></li>
-                % if not node['link'] or user['is_contributor']:
+                % if user['can_edit']:
                         <li><a href="${node['url']}settings/">Settings</a></li>
                 % endif
             </ul>

@@ -171,7 +171,7 @@ def node_setting(**kwargs):
     auth = kwargs['auth']
     node = kwargs.get('node') or kwargs.get('project')
 
-    if not node.is_public and not node.can_edit(auth):
+    if not node.can_edit(auth):
         raise HTTPError(http.FORBIDDEN)
 
     rv = _view_project(node, auth, primary=True)
@@ -245,6 +245,8 @@ def project_reorder_components(**kwargs):
 def project_statistics(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
+    if not (node.can_edit(auth) or node.is_public):
+        raise HTTPError(http.FORBIDDEN)
     return _view_project(node, auth, primary=True)
 
 
@@ -465,7 +467,7 @@ def _view_project(node, auth, primary=False):
             'fork_count': len(node.fork_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': node.private_links,
-            'link': auth.private_key,
+            'link': auth.private_key or request.args.get('key', '').strip('/'),
             'logs': recent_logs,
             'points': node.points,
             'piwik_site_id': node.piwik_site_id,
