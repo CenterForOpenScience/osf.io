@@ -102,7 +102,7 @@
             <div id="comments" class="cp-sidebar">
 
                 <h4>Discussion</h4>
-                <div data-bind="foreach: {data: discussion, afterAdd: discussionToolTips}">
+                <div data-bind="foreach: {data: discussion, afterAdd: setupToolTips}">
                     <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}">
                         <img data-bind="attr: {src: gravatarUrl}"/>
                     </a>
@@ -149,7 +149,12 @@
                             <i data-bind="visible: showPrivateIcon" class="icon-lock"></i>
                         </span>
                         <a class="comment-author" data-bind="text: author.name, attr: {href: author.url}"></a>
-                        <span class="comment-date pull-right">{{dateModified}}</span>
+                        <span class="comment-date pull-right">
+                            <span data-bind="template: {if: modified, afterRender: setupToolTips}">
+                                <a data-toggle="tooltip" data-bind="attr: {title: prettyDateModified()}">*</a>
+                            </span>
+                            <span data-bind="text: prettyDateCreated"></span>
+                        </span>
                     </form>
                 </div>
 

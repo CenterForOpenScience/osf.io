@@ -84,6 +84,17 @@ this.Comment = (function(window, $, ko, bootbox) {
         this.replyErrorMessage('');
     };
 
+    BaseComment.prototype.setupToolTips = function(elm) {
+        $(elm).each(function(idx, item) {
+            var $item = $(item);
+            if ($item.attr('data-toggle') === 'tooltip') {
+                $item.tooltip();
+            } else {
+                $item.find('[data-toggle="tooltip"]').tooltip();
+            }
+        });
+    };
+
     BaseComment.prototype.fetch = function() {
         var self = this;
         var deferred = $.Deferred();
@@ -145,8 +156,15 @@ this.Comment = (function(window, $, ko, bootbox) {
         self.$root = $root;
 
         $.extend(self, ko.mapping.fromJS(data));
-        self.dateCreated(relativeDate(data.dateCreated));
-        self.dateModified(relativeDate(data.dateModified));
+        self.dateCreated(data.dateCreated);
+        self.dateModified(data.dateModified);
+
+        self.prettyDateCreated = ko.computed(function() {
+            return relativeDate(self.dateCreated());
+        });
+        self.prettyDateModified = ko.computed(function() {
+            return 'Modified ' + relativeDate(self.dateModified());
+        });
 
         self.showChildren = ko.observable(false);
 
@@ -198,8 +216,11 @@ this.Comment = (function(window, $, ko, bootbox) {
         this.isPublic(this._isPublic);
     };
 
-    CommentModel.prototype.submitEdit = function() {
+    CommentModel.prototype.submitEdit = function(data, event) {
         var self = this;
+        var $tips = $(event.target)
+            .closest('.comment-container')
+            .find('[data-toggle="tooltip"]');
         if (!self.content()) {
             self.editErrorMessage('Please enter a comment');
             return
@@ -212,10 +233,13 @@ this.Comment = (function(window, $, ko, bootbox) {
             },
             function(response) {
                 self.content(response.content);
-                self.dateModified(relativeDate(response.dateModified));
+                self.dateModified(response.dateModified);
                 self.editing(false);
+                self.modified(true);
                 self.editErrorMessage('');
                 self.$root.editors -= 1;
+                // Refresh tooltip on date modified, if present
+                $tips.tooltip('destroy').tooltip();
             }
         ).fail(function() {
             self.cancelEdit();
@@ -320,10 +344,6 @@ this.Comment = (function(window, $, ko, bootbox) {
                 self.discussion(response.discussion);
             }
         )
-    };
-
-    CommentListModel.prototype.discussionToolTips = function(elm) {
-        $(elm).tooltip();
     };
 
     CommentListModel.prototype.initListeners = function() {
