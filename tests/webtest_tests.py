@@ -792,7 +792,7 @@ class TestClaiming(DbTestCase):
         claim_url = new_user.get_claim_url(self.project._primary_key)
         # a user is already logged in
         res = self.app.get(claim_url, auth=existing.auth, expect_errors=True)
-        assert_in('already logged in', res)
+        assert_equal(res.status_code, 302)
 
     def test_unregistered_users_names_are_project_specific(self):
         name1, name2, email = fake.name(), fake.name(), fake.email()

@@ -1,5 +1,19 @@
 this.Manage = (function($, ko, bootbox) {
 
+    var contribsEqual = function(a, b) {
+        return a.id === b.id && a.permission === b.permission;
+    };
+
+    // Modified from http://stackoverflow.com/questions/7837456/comparing-two-arrays-in-javascript
+    var arraysEqual = function(a, b) {
+        var i = a.length;
+        if (i != b.length) return false;
+        while (i--) {
+            if (!contribsEqual(a[i], b[i])) return false;
+        }
+        return true;
+    };
+
     var sortMap = {
         surname: {
             label: 'Surname',
@@ -33,9 +47,15 @@ this.Manage = (function($, ko, bootbox) {
     var ContributorsViewModel = function(contributors) {
 
         var self = this;
-        self.original = contributors;
+        self.original = ko.observableArray(contributors);
 
         self.contributors = ko.observableArray();
+
+        self.messageText = ko.observable('');
+        self.messageType = ko.observable('');
+        self.messageClass = ko.computed(function() {
+            return self.messageType() === 'success' ? 'text-success' : 'text-danger';
+        });
 
         self.sortKeys = Object.keys(sortMap);
         self.sortKey = ko.observable(self.sortKeys[0]);
@@ -54,8 +74,36 @@ this.Manage = (function($, ko, bootbox) {
             self.sortOrder(0);
         });
 
+        self.changed = ko.computed(function() {
+            var contributorData = ko.utils.arrayMap(self.contributors(), function(item) {
+                return item.serialize();
+            });
+            return !arraysEqual(contributorData, self.original());
+        });
+        self.valid = ko.computed(function() {
+            var admins = ko.utils.arrayFilter(self.contributors(), function(item) {
+                return item.permission() === 'admin';
+            });
+            return !!admins.length;
+        });
+        self.canSubmit = ko.computed(function() {
+            return self.changed() && self.valid();
+        });
+        self.changed.subscribe(function() {
+            self.messageText('');
+        });
+        self.valid.subscribe(function(value) {
+            if (!value) {
+                self.messageText('Must have at least one admin contributor');
+                self.messageType('error');
+            } else {
+                self.messageText('');
+            }
+        });
+
         self.init = function() {
-            self.contributors(self.original.map(function(item) {
+            self.messageText('');
+            self.contributors(self.original().map(function(item) {
                 return new ContributorModel(item);
             }));
         };
@@ -125,15 +173,25 @@ this.Manage = (function($, ko, bootbox) {
         };
 
         self.submit = function() {
+            self.messageText('');
             bootbox.confirm('Are you sure you want to save these changes?', function(result) {
                 if (result) {
                     $.osf.postJSON(
                         nodeApiUrl + 'contributors/manage/',
                         {contributors: self.serialize()},
                         function() {
-                            window.location.reload();
+                            self.original(ko.utils.arrayMap(self.contributors(), function(item) {
+                                return item.serialize();
+                            }));
+                            self.messageText('Submission successful');
+                            self.messageType('success');
                         }
-                    );
+                    ).fail(function(xhr) {
+                        self.init();
+                        var response = JSON.parse(xhr.responseText);
+                        self.messageText('Submission failed: ' + response.message_long);
+                        self.messageType('error');
+                    });
                 }
             });
         };

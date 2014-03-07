@@ -3,7 +3,8 @@ import unittest
 from flask import Flask
 
 from framework.routing import Rule, json_renderer
-from website.routes import api_url_for, web_url_for, process_rules, OsfWebRenderer
+from website.routes import process_rules, OsfWebRenderer
+from website.util import web_url_for, api_url_for
 
 
 class TestUrlForHelpers(unittest.TestCase):

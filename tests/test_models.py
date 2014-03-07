@@ -1134,6 +1134,39 @@ class TestProject(DbTestCase):
         self.project.save()
         assert_not_in(self.project._primary_key, new_user.unclaimed_records)
 
+    def test_manage_contributors_new_contributor(self):
+        user = UserFactory()
+        users = [
+            {'id': self.project.creator._id, 'permission': 'read'},
+            {'id': user._id, 'permission': 'read'},
+        ]
+        with assert_raises(ValueError):
+            self.project.manage_contributors(
+                users, auth=self.consolidate_auth, save=True
+            )
+
+    def test_manage_contributors_no_contributors(self):
+        with assert_raises(ValueError):
+            self.project.manage_contributors(
+                [], auth=self.consolidate_auth, save=True,
+            )
+
+    def test_manage_contributors_no_admins(self):
+        user = UserFactory()
+        self.project.add_contributor(
+            user,
+            permissions=['read', 'write', 'admin'],
+            save=True
+        )
+        users = [
+            {'id': self.project.creator._id, 'permission': 'read'},
+            {'id': user._id, 'permission': 'read'},
+        ]
+        with assert_raises(ValueError):
+            self.project.manage_contributors(
+                users, auth=self.consolidate_auth, save=True,
+            )
+
     def test_set_title(self):
         proj = ProjectFactory(title='That Was Then', creator=self.user)
         proj.set_title('This is now', auth=self.consolidate_auth)
