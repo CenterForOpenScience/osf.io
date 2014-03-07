@@ -35,7 +35,7 @@ this.OSFAccountClaimer = (function($, global, bootbox) {
                     var pk = $(this).data('pk');
                     if (pk !== global.userId) {
                         bootbox.confirm({
-                            title: 'Claim Account',
+                            title: 'Claim as ' + global.contextVars.currentUser.username,
                             message: 'If you claim this account, a contributor of this project ' +
                                     'will be emailed to confirm your identity.',
                             callback: function(confirmed) {
