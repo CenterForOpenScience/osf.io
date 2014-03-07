@@ -2,17 +2,15 @@
 
 
         $('#figshareAddKey').on('click', function() {
-            var self = $(this)[0];
+            if($(this)[0].outerText == 'Authorize: Create Access Token')
+                window.location.href = nodeApiUrl + 'figshare/oauth/';
             $.ajax({
                 type: 'POST',
                 url: nodeApiUrl + 'figshare/user_auth/',
                 contentType: 'application/json',
                 dataType: 'json',
                 success: function(response) {
-                  if(self.outerText == 'Authorize: Create Access Token')
-                      window.location.href = nodeApiUrl + 'figshare/oauth/';
-                  else
-                      window.location.reload();
+                    window.location.reload();
                 }
             });
 
