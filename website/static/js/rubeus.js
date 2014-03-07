@@ -84,7 +84,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
 		    action: 'delete',
 		    cssClass: 'btn btn-link btn-mini btn-delete'
 		});
-	    }	    
+	    }
             if (item.permissions.edit) {
 		var deleteTip = genTooltipMarkup('Delete ' + item.name);
 		buttonDefs.push({
@@ -259,6 +259,9 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         ],
         width: '100%',
         height: 900,
+        ajaxOptions: {
+            cache: false  // Prevent caching in IE
+        },
         fetchUrl: function(row) {
             return row.urls.fetch || null;
         },
