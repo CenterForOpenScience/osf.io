@@ -1464,6 +1464,7 @@ class TestComments(DbTestCase):
 
         self._configure_project(self.project, 'public')
         comment = CommentFactory(node=self.project)
+        reporter = AuthUserFactory()
 
         url = self.project.api_url + 'comment/{0}/report/'.format(comment._id)
 
@@ -1473,13 +1474,13 @@ class TestComments(DbTestCase):
                 'category': 'spam',
                 'text': 'ads',
             },
-            auth=self.project.creator.auth,
+            auth=reporter.auth,
         )
 
         comment.reload()
-        assert_in(self.project.creator._id, comment.reports)
+        assert_in(reporter._id, comment.reports)
         assert_equal(
-            comment.reports[self.project.creator._id],
+            comment.reports[reporter._id],
             {'category': 'spam', 'text': 'ads'}
         )
 
