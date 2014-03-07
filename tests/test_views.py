@@ -754,6 +754,22 @@ class TestClaimViews(DbTestCase):
             'fullname': self.given_name,
         })
 
+    def test_user_can_log_in_with_a_different_account(self):
+
+        # User goes to the claim page, but a different user (lab_user) is logged in
+        lab_user = AuthUserFactory(fullname="Lab Comp")
+
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(url, auth=lab_user)
+
+        assert 0, 'finish me'
+        # Clicks "I am not Lab Comp"
+        # Taken to login/register page
+        # Fills in log in form
+        # submits
+        # taken to dashboard
+        # user is now a contributor to self.project
+
     def test_claim_user_form_redirects_to_password_confirm_page_if_user_is_logged_in(self):
         reg_user = UserFactory()
         url = self.user.get_claim_url(self.project._primary_key)
@@ -763,20 +779,23 @@ class TestClaimViews(DbTestCase):
         assert_in('Claim Account', res.body)
 
     def test_claim_user_registered_with_correct_password(self):
-        reg_user = UserFactory()
+        reg_user = AuthUserFactory()
         reg_user.set_password('killerqueen')
         reg_user.save()
         url = self.user.get_claim_url(self.project._primary_key)
-        res = self.app.get(url, auth=Auth(user=reg_user)) # Follow to password re-enter page
+        # Follow to password re-enter page
+        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
 
         # verify that the "Claim Account" form is returned
-        assert_in('Claim Account', res.body)
+        assert_in('Claim Contributor', res.body)
 
-        form = res.forms['setPasswordForm']
+        form = res.forms['claimContributorForm']
         form['password'] = 'killerqueen'
-        form['password2'] = 'killerqueen'
-        res = form.submit().follow()
+        res = form.submit(auth=reg_user.auth).follow(auth=reg_user.auth)
 
+
+        self.project.reload()
+        self.user.reload()
         # user is now a contributor to the project
         assert_in(reg_user._primary_key, self.project.contributors)
 

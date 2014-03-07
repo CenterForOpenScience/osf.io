@@ -710,27 +710,7 @@ class TestClaiming(DbTestCase):
         self.referrer = AuthUserFactory()
         self.project = ProjectFactory(creator=self.referrer, is_public=True)
 
-    def test_user_must_reenter_their_password_if_they_are_logged_in(self):
-        assert 0, 'finish me'
-        reg_user = AuthUserFactory()
-        # project has an unregistered user
-        # unreg_user = self.project.add_unregistered_contributor...
 
-        # registered user goes to claim url
-        # they are redirected to a page asking them to re-enter their password
-
-    def test_user_can_log_in_with_a_different_account(self):
-        existing_user = AuthUserFactory()
-        # project has an unregistered user
-        # User goes to the claim page, but a different user (lab_user) is logged in
-        lab_user = AuthUserFactory(fullname="Lab Comp")
-        assert 0, 'finish me'
-        # Clicks "I am not Lab Comp"
-        # Taken to login/register page
-        # Fills in log in form
-        # submits
-        # taken to dashboard
-        # user is now a contributor to self.project
 
     def test_user_with_claim_url_registers_new_account(self):
         assert 0, 'finish me'
