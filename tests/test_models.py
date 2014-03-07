@@ -1353,6 +1353,20 @@ class TestProject(DbTestCase):
         assert_not_equal(self.project.date_modified, self.project.date_created)
 
 
+    def test_replace_contributor(self):
+        contrib = UserFactory()
+        self.project.add_contributor(contrib, auth=Auth(self.project.creator))
+        self.project.save()
+        assert_in(contrib, self.project.contributors)  # sanity check
+        replacer = UserFactory()
+        old_length = len(self.project.contributors)
+        self.project.replace_contributor(contrib, replacer)
+        self.project.save()
+        new_length = len(self.project.contributors)
+        assert_not_in(contrib, self.project.contributors)
+        assert_in(replacer, self.project.contributors)
+        assert_equal(old_length, new_length)
+
 class TestForkNode(DbTestCase):
 
     def setUp(self):

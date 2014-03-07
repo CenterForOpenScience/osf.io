@@ -130,7 +130,7 @@ this.ContribAdder = (function($, global, undefined) {
             var $editable = $elm.find('.permission-editable');
             $editable.editable({
                 showbuttons: false,
-                value: 'write',
+                value: 'admin',
                 source: [
                     {value: 'read', text: 'Read'},
                     {value: 'write', text: 'Write'},

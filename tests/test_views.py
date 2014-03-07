@@ -12,18 +12,18 @@ import httplib as http
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 from webtest.app import AppError
-from framework import Q, auth, url_for
+from framework import Q, auth
 from framework.auth.model import User
 
 import website.app
-from website.models import Node, Pointer, NodeLog, Comment
+from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
 from website.project.views.contributor import (
     _add_contributor_json, send_claim_email,
     serialize_unregistered, deserialize_contributors
 )
-from website.routes import api_url_for, web_url_for
+from website.util import api_url_for
 from website import settings, mails
 from website.util import rubeus
 from website.project.views.node import _view_project

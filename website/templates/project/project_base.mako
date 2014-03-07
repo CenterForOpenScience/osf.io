@@ -28,11 +28,17 @@ ${next.body()}
     $script(['/static/js/logFeed.js'], 'logFeed');
     $script(['/static/js/contribAdder.js'], 'contribAdder');
 
-    // TODO: pollution! namespace me
+    // TODO: Put these in the contextVars object below
     var userId = '${user_id}';
     var nodeId = '${node['id']}';
     var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
+    // Mako variables accessible globally
+    window.contextVars = {
+        currentUser: {
+            username: '${user["username"]}'
+        }
+    }
 
     $(function() {
 
@@ -77,11 +83,11 @@ ${next.body()}
     });
 
     // Make unregistered contributors claimable
-    if (!userId) { // If no user logged in, allow user claiming
-        $script(['/static/js/accountClaimer.js'], function() {
-            var accountClaimer = new OSFAccountClaimer('.contributor-unregistered');
-        });
-    }
+    % if not user.get('is_contributor'):
+    $script(['/static/js/accountClaimer.js'], function() {
+        var accountClaimer = new OSFAccountClaimer('.contributor-unregistered');
+    });
+    % endif
 
 </script>
 % if node.get('is_public') and node.get('piwik_site_id'):
