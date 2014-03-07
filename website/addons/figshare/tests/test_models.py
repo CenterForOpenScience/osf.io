@@ -38,9 +38,12 @@ class TestCallbacks(DbTestCase):
         self.project.creator.add_addon('figshare')
         self.node_settings = self.project.get_addon('figshare')
         self.user_settings = self.project.creator.get_addon('figshare')
+        self.user_settings.oauth_access_token = 'legittoken'
+        self.user_settings.oauth_access_token_secret = 'legittoken'
+        self.user_settings.save()
         self.node_settings.user_settings = self.user_settings
         self.node_settings.figshare_id = '123456'
-        self.node_settings.figshare_type = 'singlefile'
+        self.node_settings.figshare_type = 'project'
         self.node_settings.figshare_title = 'singlefile'
         self.node_settings.save()
 
@@ -81,7 +84,7 @@ class TestCallbacks(DbTestCase):
 
     def test_node_settings_project(self):
         url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
-        rv = self.app.post_json(url, {'figshare_value': 'article_9001', 'figshare_title': 'newName'}, auth=self.user.auth)
+        rv = self.app.post_json(url, {'figshare_value': 'project_9001', 'figshare_title': 'newName'}, auth=self.user.auth)
         self.node_settings.reload()
         assert_equal(rv.status_int, 200)
         assert_equal(self.node_settings.figshare_id, '9001')
@@ -135,7 +138,3 @@ class TestCallbacks(DbTestCase):
             None,
         )
 
-    @mock.patch('website.addons.github.api.GitHub.branches')
-    def test_after_register(self, mock_branches):
-        # TODO test registration
-        pass

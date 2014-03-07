@@ -326,7 +326,7 @@ def get_cache_file(article_id, file_id):
 def figshare_delete_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
+
     figshare = node.get_addon('figshare')
 
     file_id = kwargs.get('fid', '')
@@ -375,12 +375,12 @@ def figshare_download_file(*args, **kwargs):
         filedata = f.read()
         resp = make_response(filedata)
         resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(name)
-        
+
         # Add binary MIME type if extension missing
         _, ext = os.path.splitext(name)
         if not ext:
             resp.headers['Content-Type'] = 'application/octet-stream'
-            
+
         return resp
 
-        
+
