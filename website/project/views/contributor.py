@@ -11,13 +11,14 @@ from framework.exceptions import HTTPError
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from framework import forms
-from framework.auth.forms import SetEmailAndPasswordForm
+from framework.auth.forms import SetEmailAndPasswordForm, SignInForm, PasswordForm
 
 from website import settings, mails, language
 from website.project.model import unreg_contributor_added
 from website.filters import gravatar
 from website.models import Node
 from website.profile import utils
+from website.util import web_url_for
 
 
 logger = logging.getLogger(__name__)
@@ -273,6 +274,26 @@ def get_timestamp():
     return int(time.time())
 
 
+def send_claim_registered_email(claimer, unreg_user, node, throttle=0):
+    unclaimed_record = unreg_user.get_unclaimed_record(node._primary_key)
+    referrer = User.load(unclaimed_record['referrer_id'])
+    claim_url = unreg_user.get_claim_url(node._primary_key, external=True)
+    # Send mail to referrer, telling them to forward verification link to claimer
+    mails.send_mail(referrer.username, mails.FORWARD_INVITE_REGiSTERED,
+        user=unreg_user,
+        referrer=referrer,
+        node=node,
+        claim_url=claim_url,
+        fullname=unclaimed_record['name']
+    )
+    # Send mail to claimer, telling them to wait for referrer
+    mails.send_mail(claimer.username, mails.PENDING_VERIFICATION_REGISTERED,
+        fullname=claimer.fullname,
+        referrer=referrer,
+        node=node
+    )
+
+
 def send_claim_email(email, user, node, notify=True, throttle=30 * 60):
     """Send an email for claiming a user account. Either sends to the given email
     or the referrer's email, depending on the email address provided.
@@ -286,6 +307,7 @@ def send_claim_email(email, user, node, notify=True, throttle=30 * 60):
         the referrer will not be emailed again.
     """
     invited_email = email.lower().strip()
+
     unclaimed_record = user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
     claim_url = user.get_claim_url(node._primary_key, external=True)
@@ -295,7 +317,8 @@ def send_claim_email(email, user, node, notify=True, throttle=30 * 60):
         to_addr = invited_email
     else:  # Otherwise have the referrer forward the email to the user
         if notify:
-            mails.send_mail(invited_email, mails.PENDING_VERIFICATION,
+            pending_mail = mails.PENDING_VERIFICATION
+            mails.send_mail(invited_email, pending_mail,
                 user=user,
                 referrer=referrer,
                 fullname=unclaimed_record['name'],
@@ -318,7 +341,6 @@ def send_claim_email(email, user, node, notify=True, throttle=30 * 60):
     )
     return to_addr
 
-
 def verify_claim_token(user, token, pid):
     """View helper that checks that a claim token for a given user and node ID
     is valid. If not valid, throws an error with custom error messages.
@@ -335,6 +357,72 @@ def verify_claim_token(user, token, pid):
     return True
 
 
+def claim_user_registered(**kwargs):
+    token = request.form.get('token') or request.args.get('token')
+    form = SignInForm(request.form, token=token)
+    node = Node.load(kwargs['pid'])
+    unreg_user = User.load(kwargs['uid'])
+    user = User.load(kwargs['claimer_id'])
+    response = None
+    if request.method == 'POST':
+        if form.validate():
+            try:
+                response = framework.auth.login(form.username.data, form.password.data)
+                # Replace the contributor
+                node.replace_contributor(unreg_user, user)
+                node.save()
+                # Revoke unclaimed user token for the unregistered user
+                del unreg_user.unclaimed_records[node._primary_key]
+                return response
+            except framework.auth.LoginNotAllowedError:
+                status.push_status_message(language.UNCONFIRMED, 'warning')
+                # Don't go anywhere
+                return {'next': ''}
+            except framework.auth.PasswordIncorrectError:
+                status.push_status_message(language.LOGIN_FAILED)
+        else:
+            forms.push_errors_to_status(form.errors)
+    return {'form': form, 'email': user.username, 'next_url': node._primary_key}
+
+# TODO(sloria): Move to framework
+def is_json_request():
+    return request.content_type == 'application/json'
+
+
+@must_be_valid_project
+def claim_user_registered(**kwargs):
+    """View that prompts user to enter their password in order to claim
+    contributorship on a project.
+
+    A user must be logged in.
+    """
+    node = kwargs['node'] or kwargs['project']
+    current_user = framework.auth.get_current_user()
+    unreg_user = User.load(kwargs['uid'])
+    if current_user:
+        form = PasswordForm(request.form)
+        if request.method == 'POST':
+            if form.validate():
+                if current_user.check_password(form.password.data):
+                    node.replace_contributor(old=unreg_user, new=current_user)
+                    node.save()
+                    status.push_status_message(
+                        'Success. You are now a contributor to this project.',
+                        'success')
+                    return framework.redirect(node.url)
+                else:
+                    status.push_status_message(language.LOGIN_FAILED, 'warning')
+            else:
+                forms.push_errors_to_status(form.errors)
+        return {
+            'form': forms.utils.jsonify(form) if is_json_request() else form,
+            'user': utils.serialize_user(current_user, full=False)
+                if is_json_request() else current_user
+        }
+    else:
+        return framework.redirect('/account/')
+
+
 def claim_user_form(**kwargs):
     """View for rendering the set password page for a claimed user.
 
@@ -344,14 +432,13 @@ def claim_user_form(**kwargs):
     """
     uid, pid = kwargs['uid'], kwargs['pid']
     token = request.form.get('token') or request.args.get('token')
-    # There shouldn't be a user logged in
+
+    # If user is logged in, redirect to 're-enter password' page
     if framework.auth.get_current_user():
-        logout_url = framework.url_for('OsfWebRenderer__auth_logout')
-        error_data = {'message_short': 'You are already logged in.',
-            'message_long': ('To claim this account, you must first '
-                '<a href={0}>log out.</a>'.format(logout_url))}
-        raise HTTPError(400, data=error_data)
-    user = framework.auth.get_user(id=uid)
+        return framework.redirect(web_url_for('claim_user_registered',
+            uid=uid, pid=pid))
+
+    user = framework.auth.get_user(id=uid)  # The unregistered user
     # user ID is invalid. Unregistered user is not in database
     if not user:
         raise HTTPError(400)
@@ -448,13 +535,27 @@ def claim_user_post(**kwargs):
     """View for claiming a user from the X-editable form on a project page.
     """
     reqdata = request.json
+    # Unreg user
     user = User.load(reqdata['pk'])
-    email = reqdata['value'].lower().strip()
     node = kwargs['node'] or kwargs['project']
-    send_claim_email(email, user, node, notify=True)
     unclaimed_data = user.get_unclaimed_record(node._primary_key)
-    return {
-        'status': 'success',
-        'fullname': unclaimed_data['name'],
-        'email': email,
-    }
+    # Submitted through X-editable
+    if 'value' in reqdata:
+        email = reqdata['value'].lower().strip()
+        send_claim_email(email, user, node, notify=True)
+        return {
+            'status': 'success',
+            'fullname': unclaimed_data['name'],
+            'email': email,
+        }
+    elif 'claimerId' in reqdata:
+        claimer_id = reqdata['claimerId']
+        claimer = User.load(claimer_id)
+        send_claim_registered_email(claimer=claimer, unreg_user=user, node=node)
+        return {
+            'status': 'success',
+            'email': claimer.username,
+            'fullname': unclaimed_data['name']
+        }
+    else:
+        raise HTTPError(http.BAD_REQUEST)

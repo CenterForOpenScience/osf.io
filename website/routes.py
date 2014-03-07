@@ -65,14 +65,6 @@ def goodbye(**kwargs):
     return {}
 
 
-def api_url_for(view_name, *args, **kwargs):
-    return framework.url_for('JSONRenderer__{0}'.format(view_name),
-        *args, **kwargs)
-
-
-def web_url_for(view_name, *args, **kwargs):
-    return framework.url_for('OsfWebRenderer__{0}'.format(view_name),
-        *args, **kwargs)
 
 
 def make_url_map(app):
@@ -318,7 +310,10 @@ def make_url_map(app):
         Rule(["/user/merge/"], 'get', auth_views.merge_user_get, OsfWebRenderer("merge_accounts.mako")),
         Rule(["/user/merge/"], 'post', auth_views.merge_user_post, OsfWebRenderer("merge_accounts.mako")),
         # Route for claiming and setting email and password. Verification token must be querystring argument
-        Rule(['/user/<uid>/<pid>/claim/'], ['get', 'post'], project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
+        Rule(['/user/<uid>/<pid>/claim/'], ['get', 'post'],
+            project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
+        Rule(['/user/<uid>/<pid>/claim/verify/'], ['get', 'post'],
+            project_views.contributor.claim_user_registered, OsfWebRenderer('claim_account_registered.mako')),
     ])
 
     # API
