@@ -336,7 +336,7 @@ def figshare_delete_file(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     connect = Figshare.from_settings(figshare.user_settings)
-
+    connect.remove_article_from_project(figshare, figshare.figshare_id, article_id)
     return connect.delete_file(node, figshare, article_id, file_id)
 
 

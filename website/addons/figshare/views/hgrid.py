@@ -26,10 +26,11 @@ def figshare_hgrid_data_contents(*args, **kwargs):
 
 
 def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
-    if not node_settings.figshare_id or not node_settings.has_auth:
-        return
     node = node_settings.owner
-    node_settings.figshare_title = Figshare.from_settings(node_settings.user_settings).project(node_settings, node_settings.figshare_id)['title']
+    project = Figshare.from_settings(node_settings.user_settings).project(node_settings, node_settings.figshare_id)
+    if not node_settings.figshare_id or not node_settings.has_auth or not project:
+        return
+    node_settings.figshare_title = project['title']
     node_settings.save()
     return [
         rubeus.build_addon_root(

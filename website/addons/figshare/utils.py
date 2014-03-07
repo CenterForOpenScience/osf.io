@@ -25,7 +25,7 @@ def article_to_hgrid(node, article, expand=False):
                 'view': ''
             },
             'permissions': {
-                'edit': False,#article['status'] != 'Public',  # This needs to be something else
+                'edit': article['status'] != 'Public',  # This needs to be something else
                 'view': True,
                 'download': article['status'] == 'Public'
             }
@@ -42,7 +42,7 @@ def file_to_hgrid(node, article, item):
         'view': '/{base}/figshare/article/{aid}/file/{fid}'.format(base=node._id, aid=article['article_id'], fid=item.get('id'))
     }
     permissions = {
-        'edit': False,#article['status'] != 'Public',
+        'edit': article['status'] != 'Public',
         'view': True,
         'download': article['status'] == 'Public'
     }
