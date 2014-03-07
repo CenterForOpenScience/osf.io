@@ -13,6 +13,8 @@ this.ContribAdder = (function($, global, undefined) {
 
         var self = this;
 
+        self.permissions = ['read', 'write', 'admin'];
+
         self.title = title;
         self.parentId = parentId;
         self.parentTitle = parentTitle;
@@ -50,7 +52,7 @@ this.ContribAdder = (function($, global, undefined) {
 
         self.noResults = ko.computed(function() {
             return self.query() && !self.results().length
-        })
+        });
 
         self.inviteName = ko.observable();
         self.inviteEmail = ko.observable();
@@ -80,7 +82,6 @@ this.ContribAdder = (function($, global, undefined) {
                     '/api/v1/user/search/',
                     {query: self.query()},
                     function(result) {
-
                         self.results(result['users']);
                     }
                 )
@@ -124,6 +125,28 @@ this.ContribAdder = (function($, global, undefined) {
             });
         };
 
+        self.setupEditable = function(elm, data) {
+            var $elm = $(elm);
+            var $editable = $elm.find('.permission-editable');
+            $editable.editable({
+                showbuttons: false,
+                value: 'admin',
+                source: [
+                    {value: 'read', text: 'Read'},
+                    {value: 'write', text: 'Write'},
+                    {value: 'admin', text: 'Admin'}
+                ],
+                success: function(response, value) {
+                    data.permission(value);
+                }
+            });
+        };
+
+        self.afterRender = function(elm, data) {
+            self.addTips(elm, data);
+            self.setupEditable(elm, data);
+        };
+
         function postInviteRequest(fullname, email, options) {
             var ajaxOpts = $.extend({
                 url: nodeApiUrl + 'invite_contributor/',
@@ -155,6 +178,9 @@ this.ContribAdder = (function($, global, undefined) {
             if (!self.inviteName().trim().length) {
                 return 'Full Name is required.';
             }
+            if (self.inviteEmail() && !$.osf.isEmail(self.inviteEmail())) {
+                return 'Not a valid email address.';
+            }
             // Make sure that entered email is not already in selection
             for (var i=0, contrib; contrib = self.selection()[i]; ++i){
                 var contribEmail = contrib.email.toLowerCase().trim();
@@ -181,6 +207,7 @@ this.ContribAdder = (function($, global, undefined) {
         };
 
         self.add = function(data) {
+            data.permission = ko.observable('admin');
             self.selection.push(data);
             // Hack: Hide and refresh tooltips
             $('.tooltip').hide();
@@ -242,9 +269,12 @@ this.ContribAdder = (function($, global, undefined) {
         });
 
         self.submit = function() {
-            $.osf.postJSON(nodeApiUrl + 'contributors/',
+            $.osf.postJSON(
+                nodeApiUrl + 'contributors/',
                 {
-                    users: self.selection(),
+                    users: self.selection().map(function(user) {
+                        return ko.toJS(user);
+                    }),
                     node_ids: self.nodesToChange()
                 },
                 function(response) {

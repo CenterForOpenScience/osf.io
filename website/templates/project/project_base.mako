@@ -8,6 +8,9 @@
 ${next.body()}
 
 
+% if node['can_view_comments']:
+    <%include file="../include/comment_template.mako" />
+% endif
 <%include file="modal_add_contributor.mako"/>
 <%include file="modal_add_pointer.mako"/>
 <%include file="modal_show_links.mako"/>
@@ -25,11 +28,17 @@ ${next.body()}
     $script(['/static/js/logFeed.js'], 'logFeed');
     $script(['/static/js/contribAdder.js'], 'contribAdder');
 
-    // TODO: pollution! namespace me
+    // TODO: Put these in the contextVars object below
     var userId = '${user_id}';
     var nodeId = '${node['id']}';
     var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
+    // Mako variables accessible globally
+    window.contextVars = {
+        currentUser: {
+            username: '${user["username"]}'
+        }
+    }
 
     $(function() {
 
@@ -74,11 +83,11 @@ ${next.body()}
     });
 
     // Make unregistered contributors claimable
-    if (!userId) { // If no user logged in, allow user claiming
-        $script(['/static/js/accountClaimer.js'], function() {
-            var accountClaimer = new OSFAccountClaimer('.contributor-unregistered');
-        });
-    }
+    % if not user.get('is_contributor'):
+    $script(['/static/js/accountClaimer.js'], function() {
+        var accountClaimer = new OSFAccountClaimer('.contributor-unregistered');
+    });
+    % endif
 
 </script>
 % if node.get('is_public') and node.get('piwik_site_id'):
@@ -90,4 +99,25 @@ ${next.body()}
     });
 </script>
 % endif
+
+<script>
+
+    var $comments = $('#comments');
+    var userName = '${user_full_name}';
+    var canComment = ${'true' if node['can_add_comments'] else 'false'};
+    var hasChildren = ${'true' if node['has_children'] else 'false'};
+
+    if ($comments.length) {
+
+        $script(['/static/js/commentpane.js', '/static/js/comment.js'], 'comments');
+
+        $script.ready('comments', function () {
+            var commentPane = new CommentPane('#commentPane');
+            Comment.init('#comments', userName, canComment, hasChildren);
+        });
+
+    }
+
+</script>
+
 </%def>
