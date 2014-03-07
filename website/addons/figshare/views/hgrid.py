@@ -26,9 +26,12 @@ def figshare_hgrid_data_contents(*args, **kwargs):
 
 
 def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
-    if not node_settings.figshare_id:
-        return
     node = node_settings.owner
+    project = Figshare.from_settings(node_settings.user_settings).project(node_settings, node_settings.figshare_id)
+    if not node_settings.figshare_id or not node_settings.has_auth or not project:
+        return
+    node_settings.figshare_title = project['title']
+    node_settings.save()
     return [
         rubeus.build_addon_root(
             node_settings, node_settings.figshare_title, permissions=auth,
@@ -40,9 +43,6 @@ def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
 @must_be_contributor_or_public
 @must_have_addon('figshare', 'node')
 def figshare_dummy_folder(node_settings, auth, parent=None, **kwargs):
-    if not node_settings.figshare_id:
-        return
-
     node_settings = kwargs.get('node_addon')
     auth = kwargs.get('auth')
     data = request.args.to_dict()
