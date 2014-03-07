@@ -1,7 +1,5 @@
-<%inherit file="base.mako"/>
+<%inherit file="project/project_base.mako"/>
 <%def name="title()">Project Settings</%def>
-<%def name="content()">
-<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 ##<!-- Show API key settings -->
 ##<div mod-meta='{
@@ -18,6 +16,7 @@
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="#configureNode">Configure ${node['category'].capitalize()}</a></li>
+                <li><a href="#configureCommenting">Configure Commenting</a></li>
                 <li><a href="#selectAddons">Select Add-ons</a></li>
                 % if addon_enabled_settings:
                     <li><a href="#configureAddons">Configure Add-ons</a></li>
@@ -37,6 +36,43 @@
 
                 <!-- Delete node -->
                 <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
+
+            </div>
+
+        </div>
+
+        <div id="configureCommenting" class="panel panel-default">
+
+            <div class="panel-heading">
+                <h3 class="panel-title">Configure Commenting</h3>
+            </div>
+
+            <div class="panel-body">
+
+                <form class="form" id="commentSettings">
+
+                    <div class="radio">
+                        <label>
+                            <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
+                            Public: Anyone who can view this ${node['category']} can comment
+                        </label>
+                    </div>
+                    <div class="radio">
+                        <label>
+                            <input type="radio" name="commentLevel" value="private" ${'checked' if comments['level'] == 'private' else ''}>
+                            Private: Only contributors can comment
+                        </label>
+                    </div>
+                    <div class="radio">
+                        <label>
+                            <input type="radio" name="commentLevel" value="" ${'checked' if not comments['level'] else ''}>
+                            Off: Commenting disabled
+                        </label>
+                    </div>
+
+                    <button class="btn btn-success">Submit</button>
+
+                </form>
 
             </div>
 
@@ -135,9 +171,9 @@
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>
 % endfor
 
-</%def>
 
 <%def name="javascript_bottom()">
+${parent.javascript_bottom()}
 
 <script type="text/javascript" src="/static/js/metadata_1.js"></script>
 
@@ -157,6 +193,25 @@
     }
 
     $(document).ready(function() {
+
+        $('#commentSettings').on('submit', function() {
+
+            var $this = $(this);
+            var commentLevel = $this.find('input[name="commentLevel"]:checked').val();
+
+            $.osf.postJSON(
+                nodeApiUrl + 'settings/comments/',
+                {commentLevel: commentLevel},
+                function() {
+                    window.location.reload();
+                }
+            ).fail(function() {
+                bootbox.alert('Could not set commenting configuration. Please try again.');
+            });
+
+            return false;
+
+        });
 
         // Set up submission for addon selection form
         $('#selectAddonsForm').on('submit', function() {

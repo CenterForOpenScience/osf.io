@@ -3,10 +3,9 @@ import httplib as http
 import logging
 import datetime
 
-from modularodm.exceptions import NoResultsFound
+from modularodm.exceptions import NoResultsFound, ValidationValueError
 import framework
 from framework import set_previous_url, request
-from framework.email.tasks import send_email
 from framework import status, exceptions
 import framework.forms as forms
 from framework import auth
@@ -86,6 +85,8 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
     login form passsed; else send forgot password email.
 
     """
+    if get_current_user():
+        return framework.redirect('/dashboard/')
     direct_call = registration_form or forgot_password_form
     if framework.request.method == 'POST' and not direct_call:
         form = SignInForm(framework.request.form)
@@ -176,7 +177,7 @@ def auth_register_post():
                 form.username.data,
                 form.password.data,
                 form.fullname.data)
-        except DuplicateEmailError:
+        except (ValidationValueError, DuplicateEmailError):
             status.push_status_message(language.ALREADY_REGISTERED.format(email=form.username.data))
             return auth_login(registration_form=form)
         if u:
@@ -201,8 +202,10 @@ def resend_confirmation():
     if request.method == 'POST':
         if form.validate():
             clean_email = form.email.data
+            user = get_user(username=clean_email)
+            if not user:
+                return {'form': form}
             try:
-                user = get_user(username=clean_email)
                 send_confirm_email(user, clean_email)
             except KeyError:  # already confirmed, redirect to dashboard
                 status_message = 'Email has already been confirmed.'
@@ -214,7 +217,7 @@ def resend_confirmation():
         else:
             forms.push_errors_to_status(form.errors)
     # Don't go anywhere
-    return forms.utils.jsonify(form)
+    return {'form': form}
 
 
 def merge_user_get(**kwargs):

@@ -65,6 +65,16 @@ def goodbye(**kwargs):
     return {}
 
 
+def api_url_for(view_name, *args, **kwargs):
+    return framework.url_for('JSONRenderer__{0}'.format(view_name),
+        *args, **kwargs)
+
+
+def web_url_for(view_name, *args, **kwargs):
+    return framework.url_for('OsfWebRenderer__{0}'.format(view_name),
+        *args, **kwargs)
+
+
 def make_url_map(app):
     '''Set up all the routes for the OSF app.
 
@@ -170,30 +180,76 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule([
-            '/metadata/node/comment/',
-            '/metadata/comment/comment/',
-        ], 'get', website_routes.node_comment_schema, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/comments/',
+                '/project/<pid>/node/<nid>/comments/',
+            ],
+            'get',
+            project_views.comment.list_comments,
+            json_renderer,
+        ),
 
-        # Get comments
-        Rule('/guid/<guid>/comments/', 'get', website_routes.get_comments_guid, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/comments/discussion/',
+                '/project/<pid>/node/<nid>/comments/discussion/',
+            ],
+            'get',
+            project_views.comment.comment_discussion,
+            json_renderer,
+        ),
 
-        # Add comment
-        Rule('/guid/<guid>/comment/', 'post', website_routes.add_comment_guid, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/comment/',
+                '/project/<pid>/node/<nid>/comment/',
+            ],
+            'post',
+            project_views.comment.add_comment,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/comment/<cid>/',
+                '/project/<pid>/node/<nid>/comment/<cid>/',
+            ],
+            'post',
+            project_views.comment.edit_comment,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/comment/<cid>/',
+                '/project/<pid>/node/<nid>/comment/<cid>/',
+            ],
+            'delete',
+            project_views.comment.delete_comment,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/comment/<cid>/report/',
+                '/project/<pid>/node/<nid>/comment/<cid>/report/',
+            ],
+            'post',
+            project_views.comment.report_abuse,
+            json_renderer,
+        ),
 
     ], prefix='/api/v1')
 
     ### Forms ###
 
     process_rules(app, [
-
         Rule('/forms/registration/', 'get', website_routes.registration_form, json_renderer),
         Rule('/forms/signin/', 'get', website_routes.signin_form, json_renderer),
         Rule('/forms/forgot_password/', 'get', website_routes.forgot_password_form, json_renderer),
         Rule('/forms/reset_password/', 'get', website_routes.reset_password_form, json_renderer),
         Rule('/forms/new_project/', 'get', website_routes.new_project_form, json_renderer),
-        Rule('/forms/set_email_and_password/', 'get', website_routes.set_email_and_password_form, json_renderer),
-
     ], prefix='/api/v1')
 
     ### Discovery ###
@@ -261,8 +317,8 @@ def make_url_map(app):
         Rule('/addons/', 'get', profile_views.profile_addons, OsfWebRenderer('profile/addons.mako')),
         Rule(["/user/merge/"], 'get', auth_views.merge_user_get, OsfWebRenderer("merge_accounts.mako")),
         Rule(["/user/merge/"], 'post', auth_views.merge_user_post, OsfWebRenderer("merge_accounts.mako")),
-        # TODO: uncomment to enable user claiming
-        # Rule(['/user/<uid>/<pid>/claim/<token>/'], ['get', 'post'], project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
+        # Route for claiming and setting email and password. Verification token must be querystring argument
+        Rule(['/user/<uid>/<pid>/claim/'], ['get', 'post'], project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
     ])
 
     # API
@@ -287,9 +343,7 @@ def make_url_map(app):
         Rule('/settings/names/', 'post', profile_views.post_names, json_renderer),
 
         Rule('/profile/<user_id>/summary/', 'get', profile_views.get_profile_summary, json_renderer),
-
-        # TODO: uncomment to enable user claiming
-        # Rule('/user/<uid>/<pid>/claim/verify/', 'post', project_views.contributor.claim_user_post, json_renderer),
+        Rule('/user/<uid>/<pid>/claim/verify/', 'post', project_views.contributor.claim_user_post, json_renderer),
 
     ], prefix='/api/v1',)
 
@@ -332,7 +386,7 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/',
             '/project/<pid>/node/<nid>/',
-        ], 'get', project_views.node.view_project, OsfWebRenderer('project.mako')),
+        ], 'get', project_views.node.view_project, OsfWebRenderer('project/project.mako')),
 
         # Create
         Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('', render_mako_string)),
@@ -362,28 +416,11 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/settings/',
         ], 'get', project_views.node.node_setting, OsfWebRenderer('project/settings.mako')),
 
-        # TODO: Move to API routes below
-        Rule(
-            '/api/v1/settings/addons/',
-            'post',
-            profile_views.user_choose_addons,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/api/v1/project/<pid>/settings/addons/',
-                '/api/v1/project/<pid>/node/<nid>/settings/addons/',
-            ],
-            'post',
-            project_views.node.node_choose_addons,
-            json_renderer,
-        ),
-
         # Permissions
         Rule([
             '/project/<pid>/permissions/<permissions>/',
             '/project/<pid>/node/<nid>/permissions/<permissions>/',
-        ], 'post', project_views.node.project_set_privacy, OsfWebRenderer('project.mako')),
+        ], 'post', project_views.node.project_set_privacy, OsfWebRenderer('project/project.mako')),
 
         ### Logs ###
 
@@ -602,9 +639,9 @@ def make_url_map(app):
 
         # Add / remove contributors
         Rule([
-            '/project/<pid>/addcontributors/',
-            '/project/<pid>/node/<nid>/addcontributors/',
-        ], 'post', project_views.contributor.project_addcontributors_post, json_renderer),
+            '/project/<pid>/contributors/',
+            '/project/<pid>/node/<nid>/contributors/',
+        ], 'post', project_views.contributor.project_contributors_post, json_renderer),
         Rule([
             '/project/<pid>/beforeremovecontributors/',
             '/project/<pid>/node/<nid>/beforeremovecontributors/',
@@ -715,15 +752,43 @@ def make_url_map(app):
             json_renderer
         ),
 
+        # Settings
+
+        Rule(
+            '/settings/addons/',
+            'post',
+            profile_views.user_choose_addons,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/settings/addons/',
+                '/project/<pid>/node/<nid>/settings/addons/',
+            ],
+            'post',
+            project_views.node.node_choose_addons,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/settings/comments/',
+                '/project/<pid>/node/<nid>/settings/comments/',
+            ],
+            'post',
+            project_views.node.configure_comments,
+            json_renderer,
+        ),
+
         # Invite Users
-        # TODO: uncomment to enbable claiming
-        # Rule(
-        #     [
-        #         '/project/<pid>/invite_contributor/',
-        #         '/project/<pid>/node/<nid>/invite_contributor/'
-        #     ],
-        #     'post',
-        #     project_views.contributor.invite_contributor_post,
-        #     json_renderer
-        # ),
+        Rule(
+            [
+                '/project/<pid>/invite_contributor/',
+                '/project/<pid>/node/<nid>/invite_contributor/'
+            ],
+            'post',
+            project_views.contributor.invite_contributor_post,
+            json_renderer
+        ),
     ], prefix='/api/v1')

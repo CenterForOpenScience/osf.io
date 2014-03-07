@@ -234,8 +234,9 @@ def _search_contributor(query):
         if user.is_active():  # exclude merged, unregistered, etc.
             users.append({
                 'fullname': doc['user'],
+                'email': user.username,
                 'id': doc['id'],
-                'gravatar': gravatar(
+                'gravatar_url': gravatar(
                     user,
                     use_ssl=True,
                     size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,

@@ -127,7 +127,7 @@ this.Manage = (function($, ko, bootbox) {
         self.submit = function() {
             bootbox.confirm('Are you sure you want to save these changes?', function(result) {
                 if (result) {
-                    $.postJSON(
+                    $.osf.postJSON(
                         nodeApiUrl + 'contributors/manage/',
                         {contributors: self.serialize()},
                         function() {

@@ -15,6 +15,10 @@ from HTMLParser import HTMLParser
 import pytz
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
+from modularodm.exceptions import ValidationValueError
+import blinker
+
+from modularodm.exceptions import ValidationValueError, ValidationTypeError
 
 from modularodm.exceptions import ValidationError
 
@@ -22,7 +26,6 @@ from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
-from framework.auth.exceptions import DuplicateEmailError
 from framework.auth.decorators import Auth
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
@@ -49,6 +52,11 @@ def utc_datetime_to_timestamp(dt):
 def normalize_unicode(ustr):
     return unicodedata.normalize('NFKD', ustr)\
         .encode('ascii', 'ignore')
+
+
+signals = blinker.Namespace()
+contributor_added = signals.signal('contributor-added')
+unreg_contributor_added = signals.signal('unreg-contributor-added')
 
 
 class MetaSchema(StoredObject):
@@ -86,27 +94,118 @@ def ensure_schemas(clear=True):
             schema_obj.save()
 
 
-class MetaData(GuidStoredObject):
+def validate_comment_reports(value, *args, **kwargs):
+    for key, val in value.iteritems():
+        if not User.load(key):
+            raise ValidationValueError('Keys must be user IDs')
+        if not isinstance(val, dict):
+            raise ValidationTypeError('Values must be dictionaries')
+        if 'category' not in val or 'text' not in val:
+            raise ValidationValueError(
+                'Values must include `category` and `text` keys'
+            )
 
-    _id = fields.StringField()
-    target = fields.AbstractForeignField(backref='annotated')
 
-    # Annotation category: Comment, review, registration, etc.
-    category = fields.StringField()
+class Comment(GuidStoredObject):
 
-    # Annotation data
-    schema = fields.ForeignField('MetaSchema')
-    payload = fields.DictionaryField()
+    _id = fields.StringField(primary=True)
 
-    # Annotation provenance
-    user = fields.ForeignField('User', backref='annotated')
-    date = fields.DateTimeField(auto_now_add=True)
+    user = fields.ForeignField('user', required=True, backref='commented')
+    node = fields.ForeignField('node', required=True, backref='comment_owner')
+    target = fields.AbstractForeignField(required=True, backref='commented')
 
-    def __init__(self, *args, **kwargs):
-        super(MetaData, self).__init__(*args, **kwargs)
-        if self.category and not self.schema:
-            if self.category in OSF_META_SCHEMAS:
-                self.schema = self.category
+    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
+    modified = fields.BooleanField()
+
+    is_public = fields.BooleanField(required=True)
+    is_deleted = fields.BooleanField(default=False)
+    content = fields.StringField()
+
+    # Dictionary field mapping user IDs to dictionaries of report details:
+    # {
+    #   'icpnw': {'category': 'hate', 'message': 'offensive'},
+    #   'cdi38': {'category': 'spam', 'message': 'godwins law'},
+    # }
+    reports = fields.DictionaryField(validate=validate_comment_reports)
+
+    @classmethod
+    def create(cls, auth, **kwargs):
+
+        comment = cls(**kwargs)
+        comment.save()
+
+        comment.node.add_log(
+            NodeLog.COMMENT_ADDED,
+            {
+                'project': comment.node.parent_id,
+                'node': comment.node._id,
+                'user': comment.user._id,
+                'comment': comment._id,
+            },
+            auth=auth,
+        )
+
+        return comment
+
+    def can_view(self, node, auth):
+        if self.is_public:
+            return True
+        if auth.user and auth.user == self.user:
+            return True
+        return node.can_edit(auth)
+
+    def edit(self, content, is_public, auth, save=False):
+        self.content = content
+        self.is_public = is_public
+        self.modified = True
+        self.node.add_log(
+            NodeLog.COMMENT_UPDATED,
+            {
+                'project': self.node.parent_id,
+                'node': self.node._id,
+                'user': self.user._id,
+                'comment': self._id,
+            },
+            auth=auth,
+        )
+        if save:
+            self.save()
+
+    def delete(self, auth, save=False):
+        self.is_deleted = True
+        self.node.add_log(
+            NodeLog.COMMENT_REMOVED,
+            {
+                'project': self.node.parent_id,
+                'node': self.node._id,
+                'user': self.user._id,
+                'comment': self._id,
+            },
+            auth=auth,
+        )
+        if save:
+            self.save()
+
+    def undelete(self, auth, save=False):
+        self.is_deleted = False
+        self.node.add_log(
+            NodeLog.COMMENT_ADDED,
+            {
+                'project': self.node.parent_id,
+                'node': self.node._id,
+                'user': self.user._id,
+                'comment': self._id,
+            },
+            auth=auth,
+        )
+        if save:
+            self.save()
+
+    def report_abuse(self, user, save=False, **kwargs):
+        self.reports[user._id] = kwargs
+        if save:
+            self.save()
 
 
 class ApiKey(StoredObject):
@@ -165,6 +264,9 @@ class NodeLog(StoredObject):
     NODE_FORKED = 'node_forked'
     ADDON_ADDED = 'addon_added'
     ADDON_REMOVED = 'addon_removed'
+    COMMENT_ADDED = 'comment_added'
+    COMMENT_REMOVED = 'comment_removed'
+    COMMENT_UPDATED = 'comment_updated'
 
     @property
     def node(self):
@@ -192,15 +294,17 @@ class NodeLog(StoredObject):
             return self.tz_date.isoformat()
 
     def _render_log_contributor(self, contributor):
-        if isinstance(contributor, dict):
-            rv = contributor.copy()
-            rv.update({'registered': False})
-            return rv
         user = User.load(contributor)
+        if not user:
+            return None
+        if self.node:
+            fullname = user.display_full_name(node=self.node)
+        else:
+            fullname = user.fullname
         return {
             'id': user._primary_key,
-            'fullname': user.fullname,
-            'registered': True,
+            'fullname': fullname,
+            'registered': user.is_registered,
         }
 
     # TODO: Move to separate utility function
@@ -212,7 +316,7 @@ class NodeLog(StoredObject):
                     if isinstance(self.user, User)
                     else {'fullname': self.foreign_user},
             'contributors': [self._render_log_contributor(c) for c in self.params.get("contributors", [])],
-            'contributor': self._render_log_contributor(self.params.get("contributor", {})),
+            'contributor': self._render_log_contributor(self.params.get("contributor")),
             'api_key': self.api_key.label if self.api_key else '',
             'action': self.action,
             'params': self.params,
@@ -325,6 +429,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
 
+    # One of 'public', 'private', or None
+    comment_level = fields.StringField()
+
     # TODO: move these to NodeFile
     files_current = fields.DictionaryField()
     files_versions = fields.DictionaryField()
@@ -333,9 +440,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     creator = fields.ForeignField('user', backref='created')
     contributors = fields.ForeignField('user', list=True, backref='contributed')
-    # Dict list that includes registered AND unregsitered users
-    # Example: [{u'id': u've4nx'}, {u'nr_name': u'Joe Dirt', u'nr_email': u'joe@example.com'}]
-    contributor_list = fields.DictionaryField(list=True)
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
 
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
@@ -349,9 +453,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
     piwik_site_id = fields.StringField()
-
-    ## Meta-data
-    #comment_schema = OSF_META_SCHEMAS['osf_comment']
 
     _meta = {'optimistic': True}
 
@@ -369,7 +470,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         if self.creator:
             self.contributors.append(self.creator)
-            self.contributor_list.append({'id': self.creator._primary_key})
 
             # Add default creator permissions
             for permission in settings.CREATOR_PERMISSIONS:
@@ -464,14 +564,23 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         return self.permissions.get(user._id, [])
 
-    def _validate_permissions(self):
+    def adjust_permissions(self):
         for key in self.permissions.keys():
             if key not in self.contributors:
-                raise ValidationError('User {0} not in contributors list'.format(key))
+                self.permissions.pop(key)
+
+    def can_comment(self, auth, write=False):
+        if write and not auth.logged_in:
+            return False
+        if self.comment_level == 'public':
+            return self.can_view(auth)
+        if self.comment_level == 'private':
+            return self.can_edit(auth)
+        return False
 
     def save(self, *args, **kwargs):
 
-        self._validate_permissions()
+        self.adjust_permissions()
 
         first_save = not self._is_loaded
         is_original = not self.is_registration and not self.is_fork
@@ -757,7 +866,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             action=NodeLog.EDITED_DESCRIPTION,
             params={
-                'project': self.parent,  # None if no parent
+                'project': self.parent_node,  # None if no parent
                 'node': self._primary_key,
                 'description_new': self.description,
                 'description_original': original
@@ -921,7 +1030,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.forked_date = when
         forked.forked_from = original
         forked.creator = user
-        forked.contributor_list = []
 
         # Forks default to private status
         forked.is_public = False
@@ -1418,8 +1526,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     @property
-    def parent(self):
-        '''The parent node, if it exists, otherwise ``None``.'''
+    def parent_node(self):
+        """The parent node, if it exists, otherwise ``None``. Note: this
+        property is named `parent_node` rather than `parent` to avoid a
+        conflict with the `parent` back-reference created by the `nodes`
+        field on this schema.
+        
+        """
         try:
             if not self.node__parent[0].is_deleted:
                 return self.node__parent[0]
@@ -1527,7 +1640,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             pointers.extend(node.get_pointers())
         return pointers
 
-    def remove_contributor(self, contributor, auth, log=True, save=False):
+    def remove_contributor(self, contributor, auth, log=True):
         """Remove a contributor from this node.
 
         :param contributor: User object, the contributor to be removed
@@ -1538,11 +1651,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             if self._primary_key in contributor.unclaimed_records:
                 del contributor.unclaimed_records[self._primary_key]
             self.contributors.remove(contributor._id)
-            self.contributor_list = [
-                each
-                for each in self.contributor_list
-                if each['id'] != contributor._id
-            ]
 
             # Clear permissions for removed user
             self.permissions.pop(contributor._id, None)
@@ -1576,7 +1684,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         for contrib in contributors:
             outcome = self.remove_contributor(
-                contributor=contrib, auth=auth, log=False, save=False,
+                contributor=contrib, auth=auth, log=False,
             )
             results.append(outcome)
             removed.append(contrib._id)
@@ -1607,8 +1715,8 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param User contributor: The contributor to be added
         :param list permissions: Permissions to grant to the contributor
-        :param User auth: All the auth informtion including user, API key.
-        :param NodeLog log: Add log to self
+        :param Auth auth: All the auth informtion including user, API key.
+        :param bool log: Add log to self
         :param bool save: Save after adding contributor
         :returns: Whether contributor was added
 
@@ -1619,7 +1727,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
         if contrib_to_add._primary_key not in self.contributors:
             self.contributors.append(contrib_to_add)
-            self.contributor_list.append({'id': contrib_to_add._primary_key})
 
             # Add default contributor permissions
             permissions = permissions or settings.CONTRIBUTOR_PERMISSIONS
@@ -1648,6 +1755,8 @@ class Node(GuidStoredObject, AddonModelMixin):
                 )
             if save:
                 self.save()
+
+            contributor_added.send(self, contributor=contributor, auth=auth)
             return True
         else:
             return False
@@ -1666,7 +1775,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 contributor=contrib['user'], permissions=contrib['permissions'],
                 auth=auth, log=False, save=False,
             )
-        if log:
+        if log and contributors:
             self.add_log(
                 action=NodeLog.CONTRIB_ADDED,
                 params={
@@ -1683,7 +1792,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         if save:
             self.save()
 
-    def add_unregistered_contributor(self, fullname, email, auth, save=False):
+    def add_unregistered_contributor(self, fullname, email, auth,
+                                     permissions=None, save=False):
         """Add a non-registered contributor to the project.
 
         :param str fullname: The full name of the person.
@@ -1695,19 +1805,26 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         # Create a new user record
+        contributor = User.create_unregistered(fullname=fullname, email=email)
+
+        contributor.add_unclaimed_record(node=self, referrer=auth.user,
+            given_name=fullname, email=email)
         try:
-            contributor = User.create_unregistered(fullname=fullname, email=email)
-        except DuplicateEmailError as error:
+            contributor.save()
+        except ValidationValueError:  # User with same email already exists
             contributor = get_user(username=email)
             # Unregistered users may have multiple unclaimed records, so
             # only raise error if user is registered.
             if contributor.is_registered or self.is_contributor(contributor):
-                raise error
+                raise
+            contributor.add_unclaimed_record(node=self, referrer=auth.user,
+                given_name=fullname, email=email)
+            contributor.save()
 
-        contributor.add_unclaimed_record(node=self, referrer=auth.user,
-            given_name=fullname, email=email)
-        contributor.save()
-        self.add_contributor(contributor, auth=auth, log=True, save=save)
+        self.add_contributor(
+            contributor, permissions=permissions, auth=auth,
+            log=True, save=save,
+        )
         return contributor
 
     def set_privacy(self, permissions, auth=None):

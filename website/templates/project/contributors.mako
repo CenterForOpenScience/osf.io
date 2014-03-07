@@ -1,8 +1,9 @@
-<%inherit file="base.mako"/>
+<%inherit file="project/project_base.mako"/>
 <%def name="title()">Contributors</%def>
 
-<%def name="content()">
-<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
+##<%def name="content()">
+
+##<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 <% import json %>
 
@@ -53,7 +54,7 @@
     var contributors = ${json.dumps(contributors)};
 </script>
 
-</%def>
+##</%def>
 
 <%def name="javascript()">
 </%def>
@@ -73,6 +74,7 @@
 </%def>
 
 <%def name="javascript_bottom()">
+    ${parent.javascript_bottom()}
     <script src="/static/js/manage.js"></script>
     <script type="text/javascript">
 ##        (function($) {

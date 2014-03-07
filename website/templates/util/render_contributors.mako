@@ -7,17 +7,16 @@
                     class="user-quickedit"
                     data-userid="${contributor['id']}" data-fullname="${contributor['fullname']}"
                 % endif
-                >${contributor['fullname']}</a>
+                >${contributor['fullname']}</a>${', ' if not loop.last else ''}
         % else:
             <span
                 % if 'admin' in user['permissions']:
                     class="user-quickedit"
                     data-userid="${contributor['id']}" data-fullname="${contributor['fullname']}"
                 % endif
-                >${contributor['fullname']}</span>
+                >${contributor['fullname']}</span>${', ' if not loop.last else ''}
         % endif
     </span>
-    ${', ' if not loop.last else ''}
 % endfor
 
 % if 'admin' in user['permissions']:

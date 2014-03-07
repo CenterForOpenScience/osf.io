@@ -21,7 +21,7 @@ Usage: ::
 import os
 import logging
 
-from mako.lookup import TemplateLookup
+from mako.lookup import TemplateLookup, Template
 
 from framework.email.tasks import send_email as framework_send_email
 from website import settings
@@ -47,7 +47,7 @@ class Mail(object):
 
     def __init__(self, tpl_prefix, subject):
         self.tpl_prefix = tpl_prefix
-        self.subject = subject
+        self._subject = subject
 
     def html(self, **context):
         """Render the HTML email message."""
@@ -58,6 +58,9 @@ class Mail(object):
         """Render the plaintext email message"""
         tpl_name = self.tpl_prefix + TXT_EXT
         return render_message(tpl_name, **context)
+
+    def subject(self, **context):
+        return Template(self._subject).render(**context)
 
 
 def render_message(tpl_name, **context):
@@ -83,7 +86,7 @@ def send_mail(to_addr, mail, mimetype='plain', **context):
          Requires celery worker.
 
     """
-    subject = mail.subject.format(**context)
+    subject = mail.subject(**context)
     message = mail.text(**context) if mimetype in ('plain', 'txt') else mail.html(**context)
     # Don't use ttls and login in DEBUG_MODE
     ttls = login = not settings.DEBUG_MODE
@@ -93,7 +96,7 @@ def send_mail(to_addr, mail, mimetype='plain', **context):
     return send_function(
         from_addr=settings.FROM_EMAIL,
         to_addr=to_addr,
-        subject=mail.subject,
+        subject=subject,
         message=message,
         mimetype=mimetype,
         ttls=ttls, login=login
@@ -101,8 +104,9 @@ def send_mail(to_addr, mail, mimetype='plain', **context):
 
 # Predefined Emails
 
-TEST = Mail('test', subject='A test email')
+TEST = Mail('test', subject='A test email to ${name}')
 CONFIRM_EMAIL = Mail('confirm', subject='Confirm your email address')
 INVITE = Mail('invite', subject='You have been added as a contributor to an OSF project.')
-FORWARD_INVITE = Mail('forward_invite', subject='Please forward to {fullname}')
+FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORGOT_PASSWORD = Mail('forgot_password', subject='Reset Password')
+PENDING_VERIFICATION = Mail('pending_invite', subject="Your account is almost ready!")

@@ -26,35 +26,35 @@ css = Bundle(
         Bundle(
             'css/site.css',
             'css/rubeus.css',
-            filters='cssmin'),
-        output='public/css/common.css'
+            'css/commentpane.css',
+            filters="cssmin"),
+        output="public/css/common.css"
 )
 
 
 js = Bundle(
-        # Vendorized libraries that are already minified
-        Bundle(
-            'vendor/jquery/jquery.min.js',
-            'vendor/knockout/knockout-min.js',
-            'vendor/bootstrap3/js/bootstrap.min.js',
-            'vendor/bootbox/bootbox.min.js',
-            'vendor/script.min.js',
-        ),
-        output='public/js/common.js'
+    # Vendorized libraries that are already minified
+    Bundle(
+        "vendor/bootstrap3/js/bootstrap.min.js",
+        "vendor/bootbox/bootbox.min.js",
+        "vendor/script.min.js",
+    ),
+    output="public/js/common.js"
 )
 
 js_bottom = Bundle(
     # Vendorized libraries loaded at the bottom of the page
-    'vendor/bootstrap3-editable/js/bootstrap-editable.min.js',
-    'vendor/jquery-ui/js/jquery-ui.min.js',
+    "vendor/bootstrap3-editable/js/bootstrap-editable.min.js",
+    "vendor/jquery-tagsinput/js/jquery.tagsinput.min.js",
+    "vendor/jquery-tagcloud/jquery.tagcloud.js",
+    "vendor/jquery-tagit/js/tag-it.js",
+    "vendor/bower_components/momentjs/min/moment.min.js",
+    "vendor/jquery-blockui/jquery.blockui.js",
     'vendor/knockout-sortable/knockout-sortable.js',
-    'vendor/jquery-tagsinput/js/jquery.tagsinput.min.js',
-    'vendor/jquery-tagcloud/jquery.tagcloud.js',
-    'vendor/jquery-tagit/js/tag-it.js',
-    'vendor/moment/moment.min.js',
-    'vendor/jquery-blockui/jquery.blockui.js',
     'vendor/dropzone/dropzone.js',
     'vendor/hgrid/hgrid.js',
+    "vendor/knockout-punches/knockout.punches.min.js",
+    'vendor/autosize/jquery.autosize.min.js',
     # Site-specific JS
     Bundle('js/site.js',
             'js/project.js',

@@ -79,29 +79,9 @@ def serialize_user(user, node=None, full=False):
     return rv
 
 
-def serialize_unreg_user(user):
-    '''Return a formatted dictionary representation of a an unregistered user.
-
-    :param dict user: An unregistered user object
-    '''
-    return {
-        'id': hashlib.md5(user['nr_email']).hexdigest(),
-        'fullname': user['nr_name'],
-        'surname': HumanName(user['nr_name']).last,
-        'registered': False,
-    }
-
-
 def serialize_contributors(contribs, node):
 
-    data = []
-    for contrib in contribs:
-        if 'id' in contrib:
-            user = User.load(contrib['id'])
-            if user is None:
-                logger.error('User {} not found'.format(contrib['id']))
-                continue
-            data.append(serialize_user(user, node))
-        else:
-            data.append(serialize_unreg_user(contrib))
-    return data
+    return [
+        serialize_user(contrib, node)
+        for contrib in contribs
+    ]

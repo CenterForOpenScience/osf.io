@@ -21,7 +21,7 @@ DOMAIN = 'http://localhost:5000/'
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
-ALLOW_CLAIMING = False
+ALLOW_CLAIMING = True
 
 USE_SOLR = False
 SOLR_URI = 'http://localhost:8983/solr/'
@@ -76,7 +76,8 @@ SHORT_DOMAIN = 'osf.io'
 
 # Gravatar options
 GRAVATAR_SIZE_PROFILE = 120
-GRAVATAR_SIZE_ADD_CONTRIBUTOR = 60
+GRAVATAR_SIZE_ADD_CONTRIBUTOR = 40
+GRAVATAR_SIZE_DISCUSSION = 20
 
 # User activity style
 USER_ACTIVITY_MAX_WIDTH = 325
@@ -129,9 +130,7 @@ CELERY_IMPORTS = (
 
 ADDONS_REQUESTED = [
     'wiki', 'osffiles',
-    'github', 's3'
-    #'bitbucket', 'figshare', 's3',
-    #'zotero',
+    'github', 's3', 'figshare',
 ]
 
 ADDON_CATEGORIES = [
