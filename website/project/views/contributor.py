@@ -356,33 +356,20 @@ def verify_claim_token(user, token, pid):
             return False
     return True
 
+def claim_user_registered_login(**kwargs):
+    framework.auth.logout()
+    ref = request.referrer
+    return framework.redirect('/account/?next={0}'.format(ref))
 
-def claim_user_registered(**kwargs):
-    token = request.form.get('token') or request.args.get('token')
-    form = SignInForm(request.form, token=token)
-    node = Node.load(kwargs['pid'])
-    unreg_user = User.load(kwargs['uid'])
-    user = User.load(kwargs['claimer_id'])
-    response = None
-    if request.method == 'POST':
-        if form.validate():
-            try:
-                response = framework.auth.login(form.username.data, form.password.data)
-                # Replace the contributor
-                node.replace_contributor(unreg_user, user)
-                node.save()
-                # Revoke unclaimed user token for the unregistered user
-                del unreg_user.unclaimed_records[node._primary_key]
-                return response
-            except framework.auth.LoginNotAllowedError:
-                status.push_status_message(language.UNCONFIRMED, 'warning')
-                # Don't go anywhere
-                return {'next': ''}
-            except framework.auth.PasswordIncorrectError:
-                status.push_status_message(language.LOGIN_FAILED)
-        else:
-            forms.push_errors_to_status(form.errors)
-    return {'form': form, 'email': user.username, 'next_url': node._primary_key}
+@must_be_valid_project
+def replace_contributor(**kwargs):
+    node = kwargs['project'] or kwargs['node']
+    unreg_user = User.load(kwargs['old_uid'])
+    new_user = User.load(kwargs['new_uid'])
+    node.replace_contributor(old=unreg_user, new=new_user)
+    node.save()
+    status.push_status_message('Success. You are now a contributor to this project.', 'warning')
+    return framework.redirect(node.url)
 
 # TODO(sloria): Move to framework
 def is_json_request():
@@ -398,7 +385,8 @@ def claim_user_registered(**kwargs):
     """
     node = kwargs['node'] or kwargs['project']
     current_user = framework.auth.get_current_user()
-    unreg_user = User.load(kwargs['uid'])
+    uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
+    unreg_user = User.load(uid)
     if current_user:
         form = PasswordForm(request.form)
         if request.method == 'POST':
@@ -417,7 +405,9 @@ def claim_user_registered(**kwargs):
         return {
             'form': forms.utils.jsonify(form) if is_json_request() else form,
             'user': utils.serialize_user(current_user, full=False)
-                if is_json_request() else current_user
+                if is_json_request() else current_user,
+            'signoutURL': web_url_for('claim_user_registered_login',
+                uid=uid, pid=pid)
         }
     else:
         return framework.redirect('/account/')
@@ -436,7 +426,7 @@ def claim_user_form(**kwargs):
     # If user is logged in, redirect to 're-enter password' page
     if framework.auth.get_current_user():
         return framework.redirect(web_url_for('claim_user_registered',
-            uid=uid, pid=pid))
+            uid=uid, pid=pid, token=token))
 
     user = framework.auth.get_user(id=uid)  # The unregistered user
     # user ID is invalid. Unregistered user is not in database

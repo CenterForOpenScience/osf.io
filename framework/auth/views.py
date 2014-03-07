@@ -96,7 +96,6 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
         if form.validate():
             try:
                 response = login(form.username.data, form.password.data)
-                framework.flask.g.current_user = get_current_user()
                 return response
             except auth.LoginNotAllowedError:
                 status.push_status_message(language.UNCONFIRMED, 'warning')
