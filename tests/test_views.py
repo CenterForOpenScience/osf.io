@@ -723,6 +723,41 @@ class TestClaimViews(DbTestCase):
         )
         self.project.save()
 
+    def test_claim_user_post_with_registered_user_id(self):
+        reg_user = UserFactory()
+        payload = {
+            # pk of unreg user record
+            'pk': self.user._primary_key,
+            'claimerId': reg_user._primary_key
+        }
+        # post payload...
+        # reg_user is emailed
+        assert 0, 'finish me'
+
+    def test_claim_user_form_redirects_to_password_confirm_page_if_user_is_logged_in(self):
+        url = self.user.get_claim_url(self.project._primary_key)
+        reg_user = AuthUserFactory()
+        # get url
+        # should be a redirect to web_url_for('claim_user_registered'...)
+        assert 0, 'finish me'
+
+    def test_claim_user_registered_with_correct_password(self):
+        reg_user = AuthUserFactory()
+        reg_user.set_password('killerqueen')
+        reg_user.save()
+        url = self.get_claim_url(self.project._primary_key)
+        res = self.app.get(url, auth=reg_user.auth).follow() # Follow to password re-enter page
+        assert 0, 'finish me'
+        # registered claimer re-enters their password correctly
+        # post correct password in form
+        form = ...
+        form['password'] = 'killerqueen'
+        res = form.submit()
+        # user is now a contributor to the project
+        # the unregistered user (self.user) is removed as a contributor, and their
+        # unclaimed record for the project has been deleted
+        assert_not_in(self.project._primary_key, self.user.unclaimed_records)
+
     def test_get_valid_form(self):
         url = self.user.get_claim_url(self.project._primary_key)
         res = self.app.get(url).maybe_follow()
