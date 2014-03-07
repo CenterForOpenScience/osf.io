@@ -207,7 +207,7 @@ this.ContribAdder = (function($, global, undefined) {
         };
 
         self.add = function(data) {
-            data.permission = ko.observable('write');
+            data.permission = ko.observable('admin');
             self.selection.push(data);
             // Hack: Hide and refresh tooltips
             $('.tooltip').hide();

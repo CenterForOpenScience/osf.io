@@ -15,12 +15,9 @@ from HTMLParser import HTMLParser
 import pytz
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
-from modularodm.exceptions import ValidationValueError
 import blinker
 
 from modularodm.exceptions import ValidationValueError, ValidationTypeError
-
-from modularodm.exceptions import ValidationError
 
 from framework import status
 from framework.mongo import ObjectId
@@ -36,6 +33,7 @@ from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 
+from website.util.permissions import expand_permissions
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
 
@@ -1708,6 +1706,50 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return True
 
+    def manage_contributors(self, user_dicts, auth, save=False):
+        """Reorder and remove contributors.
+
+        :param list user_dicts: Ordered list of contributors
+        :param Auth auth: Consolidated authentication information
+        :param bool save: Save changes
+        :raises: ValueError if any users in `users` not in contributors or if
+            no admin contributors remaining
+
+        """
+        users = []
+        for user_dict in user_dicts:
+            user = User.load(user_dict['id'])
+            if user is None:
+                raise ValueError('User not found')
+            if user not in self.contributors:
+                raise ValueError(
+                    'User {0} not in contributors'.format(user.fullname)
+                )
+            permissions = expand_permissions(user_dict['permission'])
+            if set(permissions) != set(self.get_permissions(user)):
+                self.set_permissions(user, permissions, save=False)
+            users.append(user)
+
+        self.contributors = users
+
+        admins = [
+            user for user in users
+            if self.has_permission(user, 'admin')
+        ]
+        if users is None or not admins:
+            raise ValueError('Must have at least one admin contributor')
+
+        to_remove = [
+            user
+            for user in self.contributors
+            if user not in users
+        ]
+
+        if to_remove:
+            self.remove_contributors(to_remove, auth=auth, save=False)
+
+        if save:
+            self.save()
 
     def add_contributor(self, contributor, permissions=None, auth=None,
                         log=True, save=False):

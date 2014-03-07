@@ -9,9 +9,6 @@ import framework
 from framework import request, User, status
 from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
-from framework.email.tasks import send_email
-from ..decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public
 from framework import forms
 from framework.auth.forms import SetEmailAndPasswordForm
 
@@ -24,7 +21,7 @@ from website.util.permissions import expand_permissions
 
 from website.project.decorators import (
     must_not_be_registration, must_be_valid_project, must_be_contributor,
-    must_have_permission,
+    must_be_contributor_or_public, must_have_permission,
 )
 
 
@@ -302,7 +299,7 @@ def find_contributor_by_id(node, _id):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor
+@must_have_permission('admin')
 @must_not_be_registration
 def project_manage_contributors(**kwargs):
 
@@ -310,31 +307,12 @@ def project_manage_contributors(**kwargs):
     node = kwargs['node'] or kwargs['project']
 
     contributors = request.json.get('contributors')
-    if not contributors:
-        raise HTTPError(http.BAD_REQUEST)
 
     # Update permissions and order
-    contributors_updated = []
-    for contributor in contributors:
-        user = User.load(contributor['id'])
-        permissions = expand_permissions(contributor['permission'])
-        if set(permissions) != set(node.get_permissions(user)):
-            node.set_permissions(user, permissions)
-        contributors_updated.append(user)
-
-    node.contributors = contributors_updated
-
-    to_remove = [
-        contributor
-        for contributor in node.contributors
-        if contributor not in contributors_updated
-    ]
-
-    if to_remove:
-        node.remove_contributors(to_remove, auth=auth)
-
-    node.save()
-
+    try:
+        node.manage_contributors(contributors, auth=auth, save=True)
+    except ValueError as error:
+        raise HTTPError(http.BAD_REQUEST, data={'message_long': error.message})
 
 def get_timestamp():
     return int(time.time())
@@ -472,7 +450,7 @@ def serialize_unregistered(fullname, email):
         }
     else:
         serialized = _add_contributor_json(user)
-        serialized['fullname']
+        serialized['fullname'] = fullname
         serialized['email'] = email
     return serialized
 
