@@ -7,6 +7,13 @@
 
 ${next.body()}
 
+
+
+
+
+% if node['can_view_comments']:
+    <%include file="../include/comment_template.mako" />
+% endif
 <%include file="modal_generate_private_link.mako"/>
 <%include file="modal_add_contributor.mako"/>
 <%include file="modal_add_pointer.mako"/>
@@ -105,4 +112,25 @@ ${next.body()}
     });
 </script>
 % endif
+
+<script>
+
+    var $comments = $('#comments');
+    var userName = '${user_full_name}';
+    var canComment = ${'true' if node['can_add_comments'] else 'false'};
+    var hasChildren = ${'true' if node['has_children'] else 'false'};
+
+    if ($comments.length) {
+
+        $script(['/static/js/commentpane.js', '/static/js/comment.js'], 'comments');
+
+        $script.ready('comments', function () {
+            var commentPane = new CommentPane('#commentPane');
+            Comment.init('#comments', userName, canComment, hasChildren);
+        });
+
+    }
+
+</script>
+
 </%def>

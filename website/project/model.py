@@ -18,6 +18,8 @@ from dulwich.object_store import tree_lookup_path
 from modularodm.exceptions import ValidationValueError
 import blinker
 
+from modularodm.exceptions import ValidationValueError, ValidationTypeError
+
 from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
@@ -90,27 +92,118 @@ def ensure_schemas(clear=True):
             schema_obj.save()
 
 
-class MetaData(GuidStoredObject):
+def validate_comment_reports(value, *args, **kwargs):
+    for key, val in value.iteritems():
+        if not User.load(key):
+            raise ValidationValueError('Keys must be user IDs')
+        if not isinstance(val, dict):
+            raise ValidationTypeError('Values must be dictionaries')
+        if 'category' not in val or 'text' not in val:
+            raise ValidationValueError(
+                'Values must include `category` and `text` keys'
+            )
 
-    _id = fields.StringField()
-    target = fields.AbstractForeignField(backref='annotated')
 
-    # Annotation category: Comment, review, registration, etc.
-    category = fields.StringField()
+class Comment(GuidStoredObject):
 
-    # Annotation data
-    schema = fields.ForeignField('MetaSchema')
-    payload = fields.DictionaryField()
+    _id = fields.StringField(primary=True)
 
-    # Annotation provenance
-    user = fields.ForeignField('User', backref='annotated')
-    date = fields.DateTimeField(auto_now_add=True)
+    user = fields.ForeignField('user', required=True, backref='commented')
+    node = fields.ForeignField('node', required=True, backref='comment_owner')
+    target = fields.AbstractForeignField(required=True, backref='commented')
 
-    def __init__(self, *args, **kwargs):
-        super(MetaData, self).__init__(*args, **kwargs)
-        if self.category and not self.schema:
-            if self.category in OSF_META_SCHEMAS:
-                self.schema = self.category
+    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
+    modified = fields.BooleanField()
+
+    is_public = fields.BooleanField(required=True)
+    is_deleted = fields.BooleanField(default=False)
+    content = fields.StringField()
+
+    # Dictionary field mapping user IDs to dictionaries of report details:
+    # {
+    #   'icpnw': {'category': 'hate', 'message': 'offensive'},
+    #   'cdi38': {'category': 'spam', 'message': 'godwins law'},
+    # }
+    reports = fields.DictionaryField(validate=validate_comment_reports)
+
+    @classmethod
+    def create(cls, auth, **kwargs):
+
+        comment = cls(**kwargs)
+        comment.save()
+
+        comment.node.add_log(
+            NodeLog.COMMENT_ADDED,
+            {
+                'project': comment.node.parent_id,
+                'node': comment.node._id,
+                'user': comment.user._id,
+                'comment': comment._id,
+            },
+            auth=auth,
+        )
+
+        return comment
+
+    def can_view(self, node, auth):
+        if self.is_public:
+            return True
+        if auth.user and auth.user == self.user:
+            return True
+        return node.can_edit(auth)
+
+    def edit(self, content, is_public, auth, save=False):
+        self.content = content
+        self.is_public = is_public
+        self.modified = True
+        self.node.add_log(
+            NodeLog.COMMENT_UPDATED,
+            {
+                'project': self.node.parent_id,
+                'node': self.node._id,
+                'user': self.user._id,
+                'comment': self._id,
+            },
+            auth=auth,
+        )
+        if save:
+            self.save()
+
+    def delete(self, auth, save=False):
+        self.is_deleted = True
+        self.node.add_log(
+            NodeLog.COMMENT_REMOVED,
+            {
+                'project': self.node.parent_id,
+                'node': self.node._id,
+                'user': self.user._id,
+                'comment': self._id,
+            },
+            auth=auth,
+        )
+        if save:
+            self.save()
+
+    def undelete(self, auth, save=False):
+        self.is_deleted = False
+        self.node.add_log(
+            NodeLog.COMMENT_ADDED,
+            {
+                'project': self.node.parent_id,
+                'node': self.node._id,
+                'user': self.user._id,
+                'comment': self._id,
+            },
+            auth=auth,
+        )
+        if save:
+            self.save()
+
+    def report_abuse(self, user, save=False, **kwargs):
+        self.reports[user._id] = kwargs
+        if save:
+            self.save()
 
 
 class ApiKey(StoredObject):
@@ -169,6 +262,9 @@ class NodeLog(StoredObject):
     NODE_FORKED = 'node_forked'
     ADDON_ADDED = 'addon_added'
     ADDON_REMOVED = 'addon_removed'
+    COMMENT_ADDED = 'comment_added'
+    COMMENT_REMOVED = 'comment_removed'
+    COMMENT_UPDATED = 'comment_updated'
 
     @property
     def node(self):
@@ -329,6 +425,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     fork_list = fields.StringField(list=True)
     private_links = fields.StringField(list=True)
 
+    # One of 'public', 'private', or None
+    comment_level = fields.StringField()
+
     # TODO: move these to NodeFile
     files_current = fields.DictionaryField()
     files_versions = fields.DictionaryField()
@@ -350,9 +449,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
     piwik_site_id = fields.StringField()
-
-    ## Meta-data
-    #comment_schema = OSF_META_SCHEMAS['osf_comment']
 
     _meta = {'optimistic': True}
 
@@ -401,6 +497,15 @@ class Node(GuidStoredObject, AddonModelMixin):
         else:
             return self.is_public or self.can_edit(auth) \
                 or auth.private_key in self.private_links
+
+    def can_comment(self, auth, write=False):
+        if write and not auth.logged_in:
+            return False
+        if self.comment_level == 'public':
+            return self.can_view(auth)
+        if self.comment_level == 'private':
+            return self.can_edit(auth)
+        return False
 
     def save(self, *args, **kwargs):
 

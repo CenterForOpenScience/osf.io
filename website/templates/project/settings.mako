@@ -13,21 +13,20 @@
 ##    }'></div>
 
 <div class="row">
-    % if not node['is_registration']:
-        <div class="col-md-3">
-            <div class="panel panel-default">
-                <ul class="nav nav-stacked nav-pills">
-                    <li><a href="#configureNode">Configure ${node['category'].capitalize()}</a></li>
-                    <li><a href="#selectAddons">Select Add-ons</a></li>
-                    % if addon_enabled_settings:
-                        <li><a href="#configureAddons">Configure Add-ons</a></li>
-                    % endif
+    <div class="col-md-3">
+        <div class="panel panel-default">
+            <ul class="nav nav-stacked nav-pills">
+                <li><a href="#configureNode">Configure ${node['category'].capitalize()}</a></li>
+                <li><a href="#configureCommenting">Configure Commenting</a></li>
+                <li><a href="#selectAddons">Select Add-ons</a></li>
+                % if addon_enabled_settings:
+                    <li><a href="#configureAddons">Configure Add-ons</a></li>
+                % endif
+                <li><a href="#linkScope">Private Links</a></li>
+            </ul>
+        </div><!-- end sidebar -->
+    </div>
 
-                    <li><a href="#linkScope">Private Links</a></li>
-                </ul>
-            </div><!-- end sidebar -->
-        </div>
-    % endif
     <div class="col-md-6">
         % if not node['is_registration']:
             <div id="configureNode" class="panel panel-default">
@@ -47,9 +46,44 @@
 
             <div id="selectAddons" class="panel panel-default">
 
-                <div class="panel-heading">
-                    <h3 class="panel-title">Select Add-ons</h3>
-                </div>
+        <div id="configureCommenting" class="panel panel-default">
+
+            <div class="panel-heading">
+                <h3 class="panel-title">Configure Commenting</h3>
+            </div>
+
+            <div class="panel-body">
+
+                <form class="form" id="commentSettings">
+
+                    <div class="radio">
+                        <label>
+                            <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
+                            Public: Anyone who can view this ${node['category']} can comment
+                        </label>
+                    </div>
+                    <div class="radio">
+                        <label>
+                            <input type="radio" name="commentLevel" value="private" ${'checked' if comments['level'] == 'private' else ''}>
+                            Private: Only contributors can comment
+                        </label>
+                    </div>
+                    <div class="radio">
+                        <label>
+                            <input type="radio" name="commentLevel" value="" ${'checked' if not comments['level'] else ''}>
+                            Off: Commenting disabled
+                        </label>
+                    </div>
+
+                    <button class="btn btn-success">Submit</button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+        <div id="selectAddons" class="panel panel-default">
 
                 <div class="panel-body">
 
@@ -178,6 +212,25 @@ ${parent.javascript_bottom()}
     }
 
     $(document).ready(function() {
+
+        $('#commentSettings').on('submit', function() {
+
+            var $this = $(this);
+            var commentLevel = $this.find('input[name="commentLevel"]:checked').val();
+
+            $.osf.postJSON(
+                nodeApiUrl + 'settings/comments/',
+                {commentLevel: commentLevel},
+                function() {
+                    window.location.reload();
+                }
+            ).fail(function() {
+                bootbox.alert('Could not set commenting configuration. Please try again.');
+            });
+
+            return false;
+
+        });
 
         // Set up submission for addon selection form
         $('#selectAddonsForm').on('submit', function() {

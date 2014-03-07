@@ -118,7 +118,7 @@
                    class="date node-last-modified-date"></span>
             % if parent_node['id']:
                 <br />Category: <span class="node-category">${node['category']}</span>
-            % else:
+            % elif node['description'] or user['can_edit']:
                  <br />Description: <span id="nodeDescriptionEditable" class="node-description">${node['description']}</span>
             % endif
         </p>
