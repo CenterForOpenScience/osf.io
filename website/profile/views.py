@@ -274,12 +274,16 @@ def parse_names(**kwargs):
     return parse_name(name)
 
 
+NAME_FIELDS = [
+    'fullname', 'given_name', 'middle_names', 'family_name', 'suffix'
+]
+def scrub_html(value):
+    return bleach.clean(value, strip=True, tags=[], attributes=[], styles=[])
+
+
 @must_be_logged_in
 def post_names(**kwargs):
     user = kwargs['auth'].user
-    user.fullname = bleach.clean(request.json['fullname'], strip=True, tags=[], attributes=[], styles=[])
-    user.given_name = bleach.clean(request.json['given_name'], strip=True, tags=[], attributes=[], styles=[])
-    user.middle_names = bleach.clean(request.json['middle_names'], strip=True, tags=[], attributes=[], styles=[])
-    user.family_name = bleach.clean(request.json['family_name'], strip=True, tags=[], attributes=[], styles=[])
-    user.suffix = bleach.clean(request.json['suffix'], strip=True, tags=[], attributes=[], styles=[])
+    for field in NAME_FIELDS:
+        setattr(user, field, scrub_html(request.json[field]))
     user.save()
