@@ -438,6 +438,8 @@ def claim_user_registered(**kwargs):
     current_user = framework.auth.get_current_user()
     uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
     unreg_user = User.load(uid)
+    if not verify_claim_token(unreg_user, token, pid=node._primary_key):
+        raise HTTPError(http.BAD_REQUEST)
     if current_user:
         form = PasswordForm(request.form)
         if request.method == 'POST':
