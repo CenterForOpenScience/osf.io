@@ -181,8 +181,13 @@ def auth_register_post():
                 form.password.data,
                 form.fullname.data)
             matched = re.match(
-                '^.*?/\?next=.*?/user/(.*)/(.*)/claim/verify/(.*)/$', request.referrer)
+                '^.*?/\?next=.*?/user/(.*)/(.*)/claim/verify/(.*)/$',
+                request.referrer if request.referrer else '')
             if matched:
+                # The user wants to claim a contributor using the new account
+                # Parse the "next" query param, and replace the existing
+                # unregistered user on the project with the new
+                # registered (but with email unconfirmed) user
                 uid, pid, token = matched.groups()
                 unreg_user = User.load(uid)
                 if verify_claim_token(unreg_user, token, pid):

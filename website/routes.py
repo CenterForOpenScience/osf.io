@@ -404,6 +404,16 @@ def make_url_map(app):
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
         Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.mako')),
 
+        Rule(
+            [
+                '/project/<pid>/contributors/',
+                '/project/<pid>/node/<nid>/contributors/',
+            ],
+            'get',
+            project_views.node.node_contributors,
+            OsfWebRenderer('project/contributors.mako'),
+        ),
+
         Rule([
             '/project/<pid>/settings/',
             '/project/<pid>/node/<nid>/settings/',
@@ -413,7 +423,7 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/permissions/<permissions>/',
             '/project/<pid>/node/<nid>/permissions/<permissions>/',
-        ], 'post', project_views.node.project_set_permissions, OsfWebRenderer('project/project.mako')),
+        ], 'post', project_views.node.project_set_privacy, OsfWebRenderer('project/project.mako')),
 
         ### Logs ###
 
@@ -554,6 +564,17 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/get_contributors_from_parent/',
         ], 'get', project_views.contributor.get_contributors_from_parent, json_renderer),
 
+        # Reorder contributors
+        Rule(
+            [
+                '/project/<pid>/contributors/manage/',
+                '/project/<pid>/node/<nid>/contributors/manage/',
+            ],
+            'POST',
+            project_views.contributor.project_manage_contributors,
+            json_renderer,
+        ),
+
         Rule([
             '/project/<pid>/get_recently_added_contributors/',
             '/project/<pid>/node/<nid>/get_recently_added_contributors/',
@@ -578,8 +599,8 @@ def make_url_map(app):
         # Remove
         Rule(
             [
-                '/project/<pid>/remove/',
-                '/project/<pid>/node/<nid>/remove/',
+                '/project/<pid>/',
+                '/project/<pid>/node/<nid>/',
             ],
             'delete',
             project_views.node.component_remove,
@@ -685,7 +706,7 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/permissions/<permissions>/',
             '/project/<pid>/node/<nid>/permissions/<permissions>/',
-        ], 'post', project_views.node.project_set_permissions, json_renderer),
+        ], 'post', project_views.node.project_set_privacy, json_renderer),
 
 
         ### Wiki ###

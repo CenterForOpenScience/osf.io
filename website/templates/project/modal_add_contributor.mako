@@ -47,16 +47,21 @@
                                     <tr data-bind="if:!($root.selected($data))">
                                         <td style="padding-right: 10px;">
                                             <a
-                                                    class="btn btn-default contrib-button"
+                                                    class="btn btn-default contrib-button btn-mini"
                                                     data-bind="click:$root.add"
                                                     rel="tooltip"
                                                     title="Add contributor"
                                                 >+</a>
                                         </td>
                                         <td>
-                                            <img data-bind="attr: {src: contributor.gravatar}" />
+                                            <img data-bind="attr: {src: contributor.gravatar_url}" />
                                         </td>
-                                        <td><span class="contributor-name">{{contributor.fullname}}</span></td>
+                                        <td>
+                                            <span data-bind="text: contributor.fullname"></span>
+                                            <span
+                                                    class='text-muted'
+                                                    data-bind="visible: !contributor.registered">(unregistered)</span>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -81,27 +86,29 @@
 
                             <!-- TODO: Duplication here: Put this in a KO template -->
                             <table>
-                                <tbody data-bind="foreach:{data:selection,
-                                as: 'contributor',
-                                afterRender:addTips}">
+                                <tbody data-bind="sortable: {data: selection, as: 'contributor', afterRender: afterRender, options: {containment: 'parent'}}">
                                     <tr>
                                         <td style="padding-right: 10px;">
                                             <a
-                                                    class="btn btn-default contrib-button"
+                                                    class="btn btn-default contrib-button btn-mini"
                                                     data-bind="click:$root.remove"
                                                     rel="tooltip"
                                                     title="Remove contributor"
                                                 >-</a>
                                         </td>
                                         <td>
-                                            <img data-bind="attr:{src:contributor.gravatar}" />
+                                            <img data-bind="attr: {src: contributor.gravatar_url}" />
                                         </td>
                                         <td><span data-bind="text: contributor.fullname"></span>
-                                        <a href="#" class='text-muted'
-                                                data-bind="
-                                                    visible: !contributor.registered,
-                                                    click: $root.goToPage.bind($data, 'invite')">(unregistered)
-                                        </a></td>
+                                            <a href="#" class='text-muted'
+                                                    data-bind="
+                                                        visible: !contributor.registered,
+                                                        click: $root.goToPage.bind($data, 'invite')">(unregistered)
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <a href="#" class="permission-editable" data-type="select"></a>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>

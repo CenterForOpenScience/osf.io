@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 import logging
+import hashlib
 import time
 
 from modularodm.exceptions import ValidationValueError
@@ -8,6 +9,7 @@ import framework
 from framework import request, User, status
 from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
+from framework.email.tasks import send_email
 from ..decorators import must_not_be_registration, must_be_valid_project, \
     must_be_contributor, must_be_contributor_or_public
 from framework import forms
@@ -19,6 +21,12 @@ from website.filters import gravatar
 from website.models import Node
 from website.profile import utils
 from website.util import web_url_for
+from website.util.permissions import expand_permissions
+
+from website.project.decorators import (
+    must_not_be_registration, must_be_valid_project, must_be_contributor,
+    must_have_permission,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -109,6 +117,7 @@ def get_contributors(**kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = serialized_contributors(node)
+
     return {'contributors': contribs}
 
 
@@ -155,7 +164,7 @@ def get_recently_added_contributors(**kwargs):
 
 
 @must_be_valid_project  # returns project
-@must_be_contributor  # returns user, project
+@must_have_permission('admin')
 @must_not_be_registration
 def project_before_remove_contributor(**kwargs):
 
@@ -170,7 +179,7 @@ def project_before_remove_contributor(**kwargs):
 
 
 @must_be_valid_project  # returns project
-@must_be_contributor  # returns user, project
+@must_have_permission('admin')
 @must_not_be_registration
 def project_removecontributor(**kwargs):
 
@@ -238,7 +247,10 @@ def deserialize_contributors(node, user_dicts, auth, email_unregistered=True):
             contributor.save()
             unreg_contributor_added.send(node, contributor=contributor,
                 auth=auth)
-        contribs.append(contributor)
+        contribs.append({
+            'user': contributor,
+            'permissions': expand_permissions(contrib_dict['permission'])
+        })
     return contribs
 
 
@@ -249,25 +261,80 @@ def finalize_invitation(node, contributor, auth):
         send_claim_email(record['email'], contributor, node, notify=True)
 
 
+@must_be_valid_project
+@must_have_permission('admin')
 @must_be_valid_project # returns project
 @must_be_contributor  # returns user, project
 @must_not_be_registration
 def project_contributors_post(**kwargs):
     """ Add contributors to a node. """
+
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
-    user_dicts = request.json.get('users', [])
-    node_ids = request.json.get('node_ids', [])
+    user_dicts = request.json.get('users')
+    node_ids = request.json.get('node_ids')
+
+    if user_dicts is None or node_ids is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    # Prepare input data for `Node::add_contributors`
     contribs = deserialize_contributors(node, user_dicts, auth=auth)
-    node.add_contributors(contribs, auth=auth)
+
+    node.add_contributors(contributors=contribs, auth=auth)
     node.save()
-    for node_id in node_ids:
-        child = Node.load(node_id)
-        child_contribs = deserialize_contributors(child, user_dicts,
-            auth=auth, email_unregistered=False)  # Only email unreg users once
-        child.add_contributors(child_contribs, auth=auth)
+
+    for child_id in node_ids:
+        child = Node.load(child_id)
+        # Only email unreg users once
+        child_contribs = deserialize_contributors(
+            child, user_dicts, auth=auth,
+            email_unregistered=False,
+        )
+        child.add_contributors(contributors=child_contribs, auth=auth)
         child.save()
+
     return {'status': 'success'}, 201
+
+
+def find_contributor_by_id(node, _id):
+    for contributor in node.contributor_list:
+        if 'nr_email' in contributor and hashlib.md5(contributor['nr_email']).hexdigest() == _id:
+            return contributor
+
+
+@must_be_valid_project # returns project
+@must_be_contributor
+@must_not_be_registration
+def project_manage_contributors(**kwargs):
+
+    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
+
+    contributors = request.json.get('contributors')
+    if not contributors:
+        raise HTTPError(http.BAD_REQUEST)
+
+    # Update permissions and order
+    contributors_updated = []
+    for contributor in contributors:
+        user = User.load(contributor['id'])
+        permissions = expand_permissions(contributor['permission'])
+        if set(permissions) != set(node.get_permissions(user)):
+            node.set_permissions(user, permissions)
+        contributors_updated.append(user)
+
+    node.contributors = contributors_updated
+
+    to_remove = [
+        contributor
+        for contributor in node.contributors
+        if contributor not in contributors_updated
+    ]
+
+    if to_remove:
+        node.remove_contributors(to_remove, auth=auth)
+
+    node.save()
 
 
 def get_timestamp():
@@ -305,6 +372,7 @@ def send_claim_email(email, user, node, notify=True, throttle=30 * 60):
         will also be sent to the invited user about their pending verification.
     :param int throttle: Time period after the referrer is emailed during which
         the referrer will not be emailed again.
+
     """
     invited_email = email.lower().strip()
 
@@ -487,7 +555,7 @@ def serialize_unregistered(fullname, email):
 
 
 @must_be_valid_project
-@must_be_contributor
+@must_have_permission('admin')
 @must_not_be_registration
 def invite_contributor_post(**kwargs):
     """API view for inviting an unregistered user.
