@@ -26,7 +26,6 @@ def figshare_hgrid_data_contents(*args, **kwargs):
 
 
 def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
-
     node = node_settings.owner
     project = Figshare.from_settings(node_settings.user_settings).project(node_settings, node_settings.figshare_id)
     if not node_settings.figshare_id or not node_settings.has_auth:
