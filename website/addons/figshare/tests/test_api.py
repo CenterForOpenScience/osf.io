@@ -12,7 +12,7 @@ class TestFigshareApi(DbTestCase):
     def setUp(self):
         self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user)
-        self.project.add_addon('figshare')
+        self.project.add_addon('figshare', auth=self.consolidated_auth)
         self.project.creator.add_addon('figshare')
 
         self.figshare = create_mock_figshare(self.project._id)
@@ -30,22 +30,22 @@ class TestFigshareApi(DbTestCase):
 
         assert_equal(len(projects), 1)
         assert_equal(projects[0]['title'], u'OSF Test')
-        
+
     @mock.patch('website.addons.figshare.api.Figshare.project')
     def test_project(self):
         project = self.figshare.project(self.node_settings, 436)
-        
+
         assert_equal(project['id'], 436)
         assert_equal(project['title'], u'OSF Test')
 
-    
-        
+
+
     # TODO: Check for completeness
     def test_tree_to_hgrid(self):
         article = self.figshare.article(self.node_settings, 902210)
         article = article['items'][0]
-        res = self.figshare.article_to_hgrid(self.project, self.node_settings, article)        
-        
+        res = self.figshare.article_to_hgrid(self.project, self.node_settings, article)
+
         assert_equal(len(res), 7)
         assert_equal(
             res[0]['id'],
@@ -72,10 +72,10 @@ class TestFigshareApi(DbTestCase):
             ''
         )
         assert_equal(
-            res[1]['delete'],                        
+            res[1]['delete'],
             self.project.api_url + 'figshare/article/{0}/file/{1}/delete/'.format(article['article_id'],article['files'][0]['id'])
         )
 
-        # Files should not have lazy-load or upload URLs        
+        # Files should not have lazy-load or upload URLs
         assert_equal(res[1]['uploadUrl'], '')
 

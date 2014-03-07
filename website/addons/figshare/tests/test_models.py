@@ -41,11 +41,12 @@ class TestCallbacks(DbTestCase):
         self.node_settings.user_settings = self.user_settings
         self.node_settings.figshare_id = '123456'
         self.node_settings.figshare_type = 'singlefile'
+        self.node_settings.figshare_title = 'singlefile'
         self.node_settings.save()
 
     def test_node_settings_article(self):
         url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
-        rv = self.app.post_json(url, {'figshare_id': 'article_9001'}, expect_errors=True, auth=self.user.auth)
+        rv = self.app.post_json(url, {'figshare_value': 'article_9001', 'figshare_title': 'newName'}, expect_errors=True, auth=self.user.auth)
         self.node_settings.reload()
         assert_equal(rv.status_int, 400)
         assert_equal(self.node_settings.figshare_id, '123456')
@@ -59,7 +60,7 @@ class TestCallbacks(DbTestCase):
 
     def test_node_settings_bad(self):
         url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
-        rv = self.app.post_json(url, {'figshare_id': 'iamnothing'}, expect_errors=True, auth=self.user.auth)
+        rv = self.app.post_json(url, {'figshare_id': 'iamnothing', 'figshare_title': 'alsonothing'}, expect_errors=True, auth=self.user.auth)
         self.node_settings.reload()
         assert_equal(rv.status_int, 400)
         assert_equal(self.node_settings.figshare_id, '123456')
@@ -80,7 +81,7 @@ class TestCallbacks(DbTestCase):
 
     def test_node_settings_project(self):
         url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
-        rv = self.app.post_json(url, {'figshare_id': 'project_9001'}, auth=self.user.auth)
+        rv = self.app.post_json(url, {'figshare_value': 'article_9001', 'figshare_title': 'newName'}, auth=self.user.auth)
         self.node_settings.reload()
         assert_equal(rv.status_int, 200)
         assert_equal(self.node_settings.figshare_id, '9001')
