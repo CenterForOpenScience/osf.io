@@ -451,7 +451,7 @@ class WebRenderer(Renderer):
                 element_meta['tpl'],
             )
         except Exception as error:
-            logging.exception(error)
+            logger.exception(error)
             return '<div>Error rendering template {}: {}'.format(
                 element_meta['tpl'],
                 repr(error)
