@@ -66,7 +66,7 @@ def comment_discussion(**kwargs):
     }
 
 
-def serialize_comment(comment, node, auth):
+def serialize_comment(comment, auth):
 
     return {
         'id': comment._id,
@@ -82,18 +82,31 @@ def serialize_comment(comment, node, auth):
         'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user,
         'modified': comment.modified,
-        'isAbuse': auth.user and
-            comment.reports.get(auth.user._id) == {'type': 'spam'},
+        'isDeleted': comment.is_deleted,
+        'isAbuse': auth.user and auth.user._id in comment.reports,
     }
 
 def serialize_comments(record, node, auth):
 
     return [
-        serialize_comment(comment, node, auth)
+        serialize_comment(comment, auth)
         for comment in getattr(record, 'commented', [])
         if comment.can_view(node, auth)
-            and not comment.is_deleted
     ]
+
+
+def kwargs_to_comment(kwargs, owner=False):
+
+    comment = Comment.load(kwargs.get('cid'))
+    if comment is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    if owner:
+        auth = kwargs['auth']
+        if auth.user != comment.user:
+            raise HTTPError(http.FORBIDDEN)
+
+    return comment
 
 
 @must_be_logged_in
@@ -133,7 +146,7 @@ def add_comment(**kwargs):
     comment.save()
 
     return {
-        'comment': serialize_comment(comment, node, auth)
+        'comment': serialize_comment(comment, auth)
    }, http.CREATED
 
 
@@ -161,12 +174,7 @@ def edit_comment(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
-    comment = Comment.load(kwargs.get('cid'))
-    if comment is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    if auth.user != comment.user:
-        raise HTTPError(http.FORBIDDEN)
+    comment = kwargs_to_comment(kwargs, owner=True)
 
     content = request.json.get('content')
     if content is None:
@@ -184,7 +192,7 @@ def edit_comment(**kwargs):
         save=True
     )
 
-    return serialize_comment(comment, node, auth)
+    return serialize_comment(comment, auth)
 
 
 @must_be_logged_in
@@ -192,15 +200,19 @@ def edit_comment(**kwargs):
 def delete_comment(**kwargs):
 
     auth = kwargs['auth']
-
-    comment = Comment.load(kwargs.get('cid'))
-    if comment is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    if auth.user != comment.user:
-        raise HTTPError(http.FORBIDDEN)
-
+    comment = kwargs_to_comment(kwargs, owner=True)
     comment.delete(auth=auth, save=True)
+
+    return {}
+
+
+@must_be_logged_in
+@must_be_contributor_or_public
+def undelete_comment(**kwargs):
+
+    auth = kwargs['auth']
+    comment = kwargs_to_comment(kwargs, owner=True)
+    comment.undelete(auth=auth, save=True)
 
     return {}
 
@@ -212,9 +224,7 @@ def report_abuse(**kwargs):
     auth = kwargs['auth']
     user = auth.user
 
-    comment = Comment.load(kwargs.get('cid'))
-    if comment is None:
-        raise HTTPError(http.BAD_REQUEST)
+    comment = kwargs_to_comment(kwargs)
 
     category = request.json.get('category')
     text = request.json.get('text', '')
@@ -223,6 +233,23 @@ def report_abuse(**kwargs):
 
     try:
         comment.report_abuse(user, save=True, category=category, text=text)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
+
+    return {}
+
+
+@must_be_logged_in
+@must_be_contributor_or_public
+def unreport_abuse(**kwargs):
+
+    auth = kwargs['auth']
+    user = auth.user
+
+    comment = kwargs_to_comment(kwargs)
+
+    try:
+        comment.unreport_abuse(user, save=True)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 

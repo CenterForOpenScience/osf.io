@@ -1299,8 +1299,7 @@ class TestComments(DbTestCase):
         assert_equal(
             res.json['comment'],
             serialize_comment(
-                self.project.commented[0], self.project,
-                self.consolidated_auth
+                self.project.commented[0], self.consolidated_auth
             )
         )
 
@@ -1317,8 +1316,7 @@ class TestComments(DbTestCase):
         assert_equal(
             res.json['comment'],
             serialize_comment(
-                self.project.commented[0], self.project,
-                Auth(user=self.non_contributor)
+                self.project.commented[0], Auth(user=self.non_contributor)
             )
         )
 
@@ -1335,8 +1333,7 @@ class TestComments(DbTestCase):
         assert_equal(
             res.json['comment'],
             serialize_comment(
-                self.project.commented[0], self.project,
-                self.consolidated_auth
+                self.project.commented[0], self.consolidated_auth
             )
         )
 
@@ -1372,7 +1369,7 @@ class TestComments(DbTestCase):
         comment = CommentFactory(node=self.project)
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.post_json(
+        res = self.app.put_json(
             url,
             {
                 'content': 'edited',
@@ -1397,7 +1394,7 @@ class TestComments(DbTestCase):
         self.project.add_contributor(non_author, auth=self.consolidated_auth)
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.post_json(
+        res = self.app.put_json(
             url,
             {
                 'content': 'edited',
@@ -1415,7 +1412,7 @@ class TestComments(DbTestCase):
         comment = CommentFactory(node=self.project)
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.post_json(
+        res = self.app.put_json(
             url,
             {
                 'content': 'edited',
@@ -1483,18 +1480,6 @@ class TestComments(DbTestCase):
             comment.reports[reporter._id],
             {'category': 'spam', 'text': 'ads'}
         )
-
-    def test_cannot_view_deleted_comments(self):
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
-        deleted_comment = CommentFactory(node=self.project)
-        deleted_comment.delete(auth=self.consolidated_auth, save=True)
-
-        url = self.project.api_url + 'comments/'
-        res = self.app.get(url)
-
-        assert_equal(len(res.json['comments']), 1)
-        assert_equal(res.json['comments'][0]['content'], comment.content)
 
     def test_can_view_private_comments_if_contributor(self):
 

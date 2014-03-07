@@ -216,6 +216,22 @@ class Comment(GuidStoredObject):
         if save:
             self.save()
 
+    def unreport_abuse(self, user, save=False):
+        """Revoke report of abuse.
+
+        :param User user: User who submitted the report
+        :param bool save: Save changes
+        :raises: ValueError if user has not reported comment as abuse
+
+        """
+        try:
+            self.reports.pop(user._id)
+        except KeyError:
+            raise ValueError('User has not reported comment as abuse')
+
+        if save:
+            self.save()
+
     def _clone(self, node, target):
         """Recursively clone comments to new root and parent.
 
