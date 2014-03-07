@@ -9,6 +9,7 @@ import itertools
 import github3
 from dateutil.parser import parse
 from httpcache import CachingHTTPAdapter
+from requests.adapters import HTTPAdapter
 
 from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import NotFoundError, EmptyRepoError, GitHubError
@@ -16,6 +17,7 @@ from website.addons.github.exceptions import NotFoundError, EmptyRepoError, GitH
 # Initialize caches
 http_cache = CachingHTTPAdapter()
 https_cache = CachingHTTPAdapter()
+default_adapter = HTTPAdapter()
 
 class GitHub(object):
 
@@ -32,7 +34,7 @@ class GitHub(object):
 
         # Caching libary
         if github_settings.CACHE:
-            self.gh3._session.mount('http://', http_cache)
+            self.gh3._session.mount('https://api.github.com/user', default_adapter)
             self.gh3._session.mount('https://', https_cache)
 
     @classmethod
