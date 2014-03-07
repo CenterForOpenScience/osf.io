@@ -1644,6 +1644,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         for i, contrib in enumerate(self.contributors):
             if contrib._primary_key == old._primary_key:
                 self.contributors[i] = new
+                # Remove unclaimed record for the project
+                if self._primary_key in old.unclaimed_records:
+                    del old.unclaimed_records[self._primary_key]
+                    old.save()
                 return True
         return False
 
