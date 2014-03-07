@@ -2,6 +2,7 @@
 import httplib as http
 import logging
 import datetime
+import re
 
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 import framework
@@ -15,6 +16,8 @@ from framework.auth.forms import (RegistrationForm, SignInForm,
 
 import website.settings
 from website import security, mails, language
+from website.project.views.contributor import verify_claim_token
+from website.project.model import Node
 
 
 Q = framework.Q
@@ -92,7 +95,9 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
         form = SignInForm(framework.request.form)
         if form.validate():
             try:
-                return login(form.username.data, form.password.data)
+                response = login(form.username.data, form.password.data)
+                framework.flask.g.current_user = get_current_user()
+                return response
             except auth.LoginNotAllowedError:
                 status.push_status_message(language.UNCONFIRMED, 'warning')
                 # Don't go anywhere
@@ -166,7 +171,6 @@ def auth_register_post():
     if not website.settings.ALLOW_REGISTRATION:
         status.push_status_message(language.REGISTRATION_UNAVAILABLE)
         return framework.redirect('/')
-
     form = RegistrationForm(framework.request.form, prefix='register')
     set_previous_url()
 
@@ -177,8 +181,20 @@ def auth_register_post():
                 form.username.data,
                 form.password.data,
                 form.fullname.data)
+            matched = re.match(
+                '^.*?/\?next=.*?/user/(.*)/(.*)/claim/verify/(.*)/$', request.referrer)
+            if matched:
+                uid, pid, token = matched.groups()
+                unreg_user = User.load(uid)
+                if verify_claim_token(unreg_user, token, pid):
+                    node = Node.load(pid)
+                    node.replace_contributor(old=unreg_user, new=u)
+                    node.save()
+                    status.push_status_message(
+                        'Successfully claimed contributor.', 'success')
         except (ValidationValueError, DuplicateEmailError):
-            status.push_status_message(language.ALREADY_REGISTERED.format(email=form.username.data))
+            status.push_status_message(
+                language.ALREADY_REGISTERED.format(email=form.username.data))
             return auth_login(registration_form=form)
         if u:
             if website.settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
