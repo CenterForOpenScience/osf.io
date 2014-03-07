@@ -51,6 +51,9 @@ def figshare_oauth_delete_node(*args, **kwargs):
     node_settings = node.get_addon('figshare')
 
     node_settings.user_settings = None
+    node_settings.figshare_id = None
+    node_settings.figshare_type = None
+    node_settings.figshare_title = None
     node_settings.save()
 
     node.add_log(

@@ -67,7 +67,7 @@ def figshare_set_config(*args, **kwargs):
 def figshare_unlink(*args, **kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    figshare_node = kwargs['node_addon']
+    figshare_node = node.get_addon('figshare')
 
     # If authorized, only owner can change settings
     if not figshare_node.user_settings or figshare_node.user_settings.owner != auth.user:
@@ -86,4 +86,5 @@ def figshare_unlink(*args, **kwargs):
     )
     figshare_node.figshare_id = None
     figshare_node.figshare_type = None
+    figshare_node.figshare_title = None
     figshare_node.save()
