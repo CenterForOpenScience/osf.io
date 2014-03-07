@@ -201,6 +201,17 @@ class Comment(GuidStoredObject):
             self.save()
 
     def report_abuse(self, user, save=False, **kwargs):
+        """Report that a comment is abuse.
+
+        :param User user: User submitting the report
+        :param bool save: Save changes
+        :param dict kwargs: Report details
+        :raises: ValueError if the user submitting abuse is the same as the
+            user who posted the comment
+
+        """
+        if user == self.user:
+            raise ValueError
         self.reports[user._id] = kwargs
         if save:
             self.save()

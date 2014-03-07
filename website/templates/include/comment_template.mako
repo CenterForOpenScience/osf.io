@@ -95,7 +95,7 @@
                         <span data-bind="if: $root.canComment, click: showReply">
                             <i class="icon-reply"></i>
                         </span>
-                        <span data-bind="if: $root.canComment, click: reportAbuse">
+                        <span data-bind="if: canReport, click: reportAbuse">
                             <i class="icon-warning-sign"></i>
                         </span>
                         <span data-bind="if: canEdit, click: startDelete">

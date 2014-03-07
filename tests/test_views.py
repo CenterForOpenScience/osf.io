@@ -496,7 +496,7 @@ class TestAddingContributorViews(DbTestCase):
         assert_false(res['active'])
         assert_false(res['registered'])
         assert_equal(res['id'], user._primary_key)
-        assert_true(res['gravatar'])
+        assert_true(res['gravatar_url'])
         assert_equal(res['fullname'], name)
         assert_equal(res['email'], email)
 
@@ -1460,7 +1460,7 @@ class TestComments(DbTestCase):
 
         assert_false(comment.is_deleted)
 
-    def test_report_spam(self):
+    def test_report_abuse(self):
 
         self._configure_project(self.project, 'public')
         comment = CommentFactory(node=self.project)

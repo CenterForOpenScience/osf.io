@@ -2109,12 +2109,19 @@ class TestComments(DbTestCase):
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
 
     def test_report_abuse(self):
-        self.comment.report_abuse(self.comment.user, category='spam', text='ads')
-        assert_in(self.comment.user._id, self.comment.reports)
+        user = UserFactory()
+        self.comment.report_abuse(user, category='spam', text='ads', save=True)
+        assert_in(user._id, self.comment.reports)
         assert_equal(
-            self.comment.reports[self.comment.user._id],
+            self.comment.reports[user._id],
             {'category': 'spam', 'text': 'ads'}
         )
+
+    def test_report_abuse_own_comment(self):
+        with assert_raises(ValueError):
+            self.comment.report_abuse(
+                self.comment.user, category='spam', text='ads', save=True
+            )
 
     def test_validate_reports_bad_key(self):
         self.comment.reports[None] = {'category': 'spam', 'text': 'ads'}

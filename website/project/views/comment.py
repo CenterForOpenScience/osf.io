@@ -221,6 +221,9 @@ def report_abuse(**kwargs):
     if not category:
         raise HTTPError(http.BAD_REQUEST)
 
-    comment.report_abuse(user, save=True, category=category, text=text)
+    try:
+        comment.report_abuse(user, save=True, category=category, text=text)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
 
     return {}

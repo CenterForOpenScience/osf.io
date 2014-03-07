@@ -202,6 +202,9 @@ this.Comment = (function(window, $, ko) {
         self.editHighlight = ko.computed(function() {
             return self.canEdit() && self.hoverContent();
         });
+        self.canReport = ko.computed(function() {
+            return self.$root.canComment() && !self.canEdit();
+        });
 
     };
 
