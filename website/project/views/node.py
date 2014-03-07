@@ -14,8 +14,10 @@ from framework.mongo.utils import from_mongo
 
 from website import language
 from website.project import new_node, clean_template_name
-from website.project.decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public
+from website.project.decorators import (
+    must_not_be_registration, must_be_valid_project, must_be_contributor,
+    must_be_contributor_or_public, must_have_permission,
+)
 from website.project.forms import NewProjectForm, NewNodeForm
 from website.models import WatchConfig, Node, Pointer
 from website import settings
@@ -280,7 +282,7 @@ def project_statistics(**kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor
+@must_have_permission('admin')
 def project_set_privacy(**kwargs):
 
     auth = kwargs['auth']
@@ -364,7 +366,7 @@ def togglewatch_post(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+@must_have_permission('admin')
 @must_not_be_registration
 def component_remove(**kwargs):
     """Remove component, and recursively remove its children. If node has a
@@ -816,11 +818,13 @@ def fork_pointer(**kwargs):
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 
+
 def abbrev_authors(node):
     rv = node.contributors[0].family_name
     if len(node.contributors) > 1:
         rv += ' et al.'
     return rv
+
 
 @must_be_contributor_or_public
 def get_pointed(**kwargs):

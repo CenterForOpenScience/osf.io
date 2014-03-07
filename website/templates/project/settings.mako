@@ -15,7 +15,9 @@
     <div class="col-md-3">
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
-                <li><a href="#configureNode">Configure ${node['category'].capitalize()}</a></li>
+                % if 'admin' in user['permissions']:
+                    <li><a href="#configureNode">Configure ${node['category'].capitalize()}</a></li>
+                % endif
                 <li><a href="#configureCommenting">Configure Commenting</a></li>
                 <li><a href="#selectAddons">Select Add-ons</a></li>
                 % if addon_enabled_settings:
@@ -26,20 +28,24 @@
     </div>
     <div class="col-md-6">
 
-        <div id="configureNode" class="panel panel-default">
+        % if 'admin' in user['permissions']:
 
-            <div class="panel-heading">
-                <h3 class="panel-title">Configure ${node['category'].capitalize()}</h3>
+            <div id="configureNode" class="panel panel-default">
+
+                <div class="panel-heading">
+                    <h3 class="panel-title">Configure ${node['category'].capitalize()}</h3>
+                </div>
+
+                <div class="panel-body">
+
+                    <!-- Delete node -->
+                    <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
+
+                </div>
+
             </div>
 
-            <div class="panel-body">
-
-                <!-- Delete node -->
-                <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
-
-            </div>
-
-        </div>
+        % endif
 
         <div id="configureCommenting" class="panel panel-default">
 
@@ -247,7 +253,7 @@ ${parent.javascript_bottom()}
                     if (result === key) {
                         $.ajax({
                             type: 'DELETE',
-                            url: nodeApiUrl + 'remove/',
+                            url: nodeApiUrl,
                             success: function(response) {
                                 window.location.href = response.url;
                             }

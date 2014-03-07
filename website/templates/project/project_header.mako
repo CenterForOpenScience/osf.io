@@ -35,11 +35,11 @@
                     <div class="btn-group">
                     %if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
-                        % if user["is_contributor"]:
+                        % if 'admin' in user['permissions']:
                             <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
                         % endif
                     %else:
-                        % if user["is_contributor"]:
+                        % if 'admin' in user['permissions']:
                             <a class="btn btn-default" data-bind="click: makePrivate">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>

@@ -596,8 +596,8 @@ def make_url_map(app):
         # Remove
         Rule(
             [
-                '/project/<pid>/remove/',
-                '/project/<pid>/node/<nid>/remove/',
+                '/project/<pid>/',
+                '/project/<pid>/node/<nid>/',
             ],
             'delete',
             project_views.node.component_remove,

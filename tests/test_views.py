@@ -225,6 +225,32 @@ class TestProjectViews(DbTestCase):
         assert_false(self.project.is_public)
         assert_equal(res.json['status'], 'success')
 
+    def test_cant_make_public_if_not_admin(self):
+        non_admin = AuthUserFactory()
+        self.project.add_contributor(non_admin, permissions=['read', 'write'])
+        self.project.is_public = False
+        self.project.save()
+        url = "/api/v1/project/{0}/permissions/public/".format(self.project._id)
+        res = self.app.post_json(
+            url, {}, auth=non_admin.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_false(self.project.is_public)
+
+    def test_cant_make_private_if_not_admin(self):
+        non_admin = AuthUserFactory()
+        self.project.add_contributor(non_admin, permissions=['read', 'write'])
+        self.project.is_public = True
+        self.project.save()
+        url = "/api/v1/project/{0}/permissions/private/".format(self.project._id)
+        res = self.app.post_json(
+            url, {}, auth=non_admin.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_true(self.project.is_public)
+
     def test_add_tag(self):
         url = "/api/v1/project/{0}/addtag/{tag}/".format(self.project._primary_key,
                                                         tag="footag")
@@ -351,7 +377,7 @@ class TestProjectViews(DbTestCase):
         assert_equal(len(res.json['node']['logs']), 10)
 
     def test_remove_project(self):
-        url = self.project.api_url + 'remove/'
+        url = self.project.api_url
         res = self.app.delete_json(url, {}, auth=self.auth).maybe_follow()
         self.project.reload()
         assert_equal(self.project.is_deleted, True)
@@ -360,20 +386,37 @@ class TestProjectViews(DbTestCase):
 
     def test_remove_project_with_component(self):
         node = NodeFactory(project=self.project, creator=self.user1)
-        url = self.project.api_url + 'remove/'
+        url = self.project.api_url
         self.app.delete_json(url, {}, auth=self.auth).maybe_follow()
         node.reload()
         assert_equal(node.is_deleted, True)
 
     def test_remove_component(self):
         node = NodeFactory(project=self.project, creator=self.user1)
-        url = node.api_url + 'remove/'
+        url = node.api_url
         res = self.app.delete_json(url, {}, auth=self.auth).maybe_follow()
         node.reload()
         assert_equal(node.is_deleted, True)
         assert_in('url', res.json)
         assert_equal(res.json['url'], self.project.url)
 
+    def test_cant_remove_component_if_not_admin(self):
+        node = NodeFactory(project=self.project, creator=self.user1)
+        non_admin = AuthUserFactory()
+        node.add_contributor(
+            non_admin,
+            permissions=['read', 'write'],
+            save=True,
+        )
+
+        url = node.api_url
+        res = self.app.delete_json(
+            url, {}, auth=non_admin.auth,
+            expect_errors=True,
+        ).maybe_follow()
+
+        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_false(node.is_deleted)
 
     def test_get_recently_added_contributors(self):
         project = ProjectFactory(creator=self.consolidate_auth1.user)
@@ -599,7 +642,7 @@ class TestUserInviteViews(DbTestCase):
         res = self.app.post_json(self.invite_url,
             {'fullname': fake.name(), 'email': reg_user.username},
             auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_invite_contributor_post_if_user_is_already_contributor(self):
         unreg_user = self.project.add_unregistered_contributor(
@@ -611,13 +654,13 @@ class TestUserInviteViews(DbTestCase):
         res = self.app.post_json(self.invite_url,
             {'fullname': fake.name(), 'email': unreg_user.username},
             auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_invite_contributor_with_no_email(self):
         name = fake.name()
         res = self.app.post_json(self.invite_url,
             {'fullname': name, 'email': None}, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, http.OK)
         data =res.json
         assert_equal(data['status'], 'success')
         assert_equal(data['contributor']['fullname'], name)
@@ -1408,7 +1451,7 @@ class TestComments(DbTestCase):
             expect_errors=True,
         )
 
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, http.FORBIDDEN)
 
         comment.reload()
 

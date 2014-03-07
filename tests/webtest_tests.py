@@ -219,14 +219,49 @@ class TestAUser(DbTestCase):
         title = res.html.title.string
         assert_equal('Open Science Framework | Dashboard', title)
 
-    def test_can_see_make_public_button_if_contributor(self):
+    def test_can_see_make_public_button_if_admin(self):
         # User is a contributor on a project
         project = ProjectFactory()
-        project.add_contributor(self.user)
-        project.save()
+        project.add_contributor(
+            self.user,
+            permissions=['read', 'write', 'admin'],
+            save=True)
         # User goes to the project page
         res = self.app.get(project.url, auth=self.auth).maybe_follow()
         assert_in('Make Public', res)
+
+    def test_cant_see_make_public_button_if_not_admin(self):
+        # User is a contributor on a project
+        project = ProjectFactory()
+        project.add_contributor(
+            self.user,
+            permissions=['read', 'write'],
+            save=True)
+        # User goes to the project page
+        res = self.app.get(project.url, auth=self.auth).maybe_follow()
+        assert_not_in('Make Public', res)
+
+    def test_can_see_make_private_button_if_admin(self):
+        # User is a contributor on a project
+        project = ProjectFactory(is_public=True)
+        project.add_contributor(
+            self.user,
+            permissions=['read', 'write', 'admin'],
+            save=True)
+        # User goes to the project page
+        res = self.app.get(project.url, auth=self.auth).maybe_follow()
+        assert_in('Make Private', res)
+
+    def test_cant_see_make_private_button_if_not_admin(self):
+        # User is a contributor on a project
+        project = ProjectFactory(is_public=True)
+        project.add_contributor(
+            self.user,
+            permissions=['read', 'write'],
+            save=True)
+        # User goes to the project page
+        res = self.app.get(project.url, auth=self.auth).maybe_follow()
+        assert_not_in('Make Private', res)
 
     def test_sees_logs_on_a_project(self):
         project = ProjectFactory(is_public=True)
@@ -334,13 +369,8 @@ class TestComponents(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.user = UserFactory()
-        # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.auth = ('test', api_key._primary_key)
-        self.consolidate_auth = Auth(user=self.user, api_key = api_key)
+        self.user = AuthUserFactory()
+        self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
         self.project.add_contributor(contributor=self.user, auth=self.consolidate_auth)
         # A non-project componenet
@@ -355,18 +385,45 @@ class TestComponents(DbTestCase):
         self.project.save()
 
     def test_can_create_component_from_a_project(self):
-        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
+        res = self.app.get(self.project.url, auth=self.user.auth).maybe_follow()
         assert_in('Add Component', res)
 
     def test_cannot_create_component_from_a_component(self):
-        res = self.app.get(self.component.url, auth=self.auth).maybe_follow()
+        res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
         assert_not_in('Add Component', res)
 
     def test_sees_parent(self):
-        res = self.app.get(self.component.url, auth=self.auth).maybe_follow()
+        res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
         parent_title = res.html.find_all('h1', class_='node-parent-title')
         assert_equal(len(parent_title), 1)
         assert_in(self.project.title, parent_title[0].text)
+
+    def test_delete_project(self):
+        res = self.app.get(
+            self.component.url + 'settings/',
+            auth=self.user.auth
+        ).maybe_follow()
+        assert_in(
+            'Delete {0}'.format(self.component.project_or_component),
+            res
+        )
+
+    def test_cant_delete_project_if_not_admin(self):
+        non_admin = AuthUserFactory()
+        self.component.add_contributor(
+            non_admin,
+            permissions=['read', 'write'],
+            auth=self.consolidate_auth,
+            save=True,
+        )
+        res = self.app.get(
+            self.component.url + 'settings/',
+            auth=non_admin.auth
+        ).maybe_follow()
+        assert_not_in(
+            'Delete {0}'.format(self.component.project_or_component),
+            res
+        )
 
 
 class TestMergingAccounts(DbTestCase):

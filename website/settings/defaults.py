@@ -110,7 +110,7 @@ WIKI_WHITELIST = {
 # Permissions
 PERMISSIONS = ['read', 'write', 'admin']
 CREATOR_PERMISSIONS = ['read', 'write', 'admin']
-CONTRIBUTOR_PERMISSIONS = ['read', 'write']
+CONTRIBUTOR_PERMISSIONS = ['read', 'write', 'admin']
 
 ##### Celery #####
 ## Default RabbitMQ broker
