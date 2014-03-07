@@ -318,11 +318,15 @@ def project_manage_contributors(**kwargs):
 def get_timestamp():
     return int(time.time())
 
-
+# TODO: Use throttle
 def send_claim_registered_email(claimer, unreg_user, node, throttle=0):
     unclaimed_record = unreg_user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
-    claim_url = unreg_user.get_claim_url(node._primary_key, external=True)
+    claim_url = web_url_for('claim_user_registered',
+            uid=unreg_user._primary_key,
+            pid=node._primary_key,
+            token=unclaimed_record['token'],
+            _external=True)
     # Send mail to referrer, telling them to forward verification link to claimer
     mails.send_mail(referrer.username, mails.FORWARD_INVITE_REGiSTERED,
         user=unreg_user,
@@ -403,8 +407,9 @@ def verify_claim_token(user, token, pid):
     return True
 
 def claim_user_registered_login(**kwargs):
-    framework.auth.logout()
-    ref = request.referrer
+    if framework.auth.get_current_user():
+        framework.auth.logout()
+    ref = request.referrer or request.args.get('next')
     return framework.redirect('/account/?next={0}'.format(ref))
 
 @must_be_valid_project
@@ -456,7 +461,10 @@ def claim_user_registered(**kwargs):
                 uid=uid, pid=pid)
         }
     else:
-        return framework.redirect('/account/')
+        next_url = web_url_for('claim_user_registered', pid=pid, uid=uid, token=token, _external=True)
+        response = framework.redirect(web_url_for('claim_user_registered_login',
+                        uid=uid, pid=pid , next=next_url))
+        return response
 
 
 def claim_user_form(**kwargs):
