@@ -203,6 +203,8 @@ NodeActions.openCloseNode = function(nodeId){
 
 $(document).ready(function() {
 
+    ko.punches.enableAll();
+
     ////////////////////
     // Event Handlers //
     ////////////////////

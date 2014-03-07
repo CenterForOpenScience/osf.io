@@ -147,8 +147,34 @@ this.ContribAdder = (function($, global, undefined) {
             self.inviteError(response.message);
         }
 
+        /** Validate the invite form. Returns a string error message or
+        *   true if validation succeeds.
+        */
+        self.validateInviteForm = function (){
+            // Make sure Full Name is not blank
+            if (!self.inviteName().trim().length) {
+                return 'Full Name is required.';
+            }
+            if (self.inviteEmail() && !$.osf.isEmail(self.inviteEmail())) {
+                return 'Not a valid email address.';
+            }
+            // Make sure that entered email is not already in selection
+            for (var i=0, contrib; contrib = self.selection()[i]; ++i){
+                var contribEmail = contrib.email.toLowerCase().trim();
+                if (contribEmail === self.inviteEmail().toLowerCase().trim()) {
+                    return self.inviteEmail() + ' is already in queue.';
+                }
+            }
+            return true;
+        };
+
         self.postInvite = function() {
             self.inviteError('');
+            var validated = self.validateInviteForm();
+            if (typeof validated === 'string') {
+                self.inviteError(validated);
+                return false;
+            }
             return postInviteRequest(self.inviteName(), self.inviteEmail(),
                 {
                     success: onInviteSuccess,

@@ -20,7 +20,6 @@ def from_json(fname):
     return json.load(open(os.path.join(here, fname)))
 
 OSF_META_SCHEMAS = [
-    #'osf_comment': ensure_schema_structure(COMMENT_SCHEMA),
     ensure_schema_structure(from_json('osf-open-ended-1.json')),
     ensure_schema_structure(from_json('osf-standard-1.json')),
     ensure_schema_structure(from_json('brandt-prereg-1.json')),

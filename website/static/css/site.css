@@ -105,9 +105,44 @@ font-weight: bold;
     overflow-x: hidden;
 }
 
+.comment-container {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.comment-body {
+    padding: 5px;
+    background-color: white;
+}
+
+.comment-author {
+    color: #999999;
+}
+
+.edit-comment {
+    background-color: #F3F3F3;
+    cursor: pointer;
+}
+
+.comment-body i {
+    cursor: pointer;
+    padding-right: 5px;
+}
+
+.comment-handle-icon {
+    color: white;
+    vertical-align: middle;
+    line-height: 50px;
+    cursor: pointer;
+}
+
 /* Make embedded iframes responsive */
 .addon-widget-container iframe {
     max-width: 100%;
+}
+
+.comment-error {
+    color: #a94442;
 }
 
 .addon-widget-container:first-of-type h1,
