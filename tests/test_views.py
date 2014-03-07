@@ -153,14 +153,17 @@ class TestProjectViews(DbTestCase):
         # Two users are added as a contributor via a POST request
         project = ProjectFactory(creator=self.user1, is_public=True)
         reg_user1, reg_user2 = UserFactory(), UserFactory()
-        project.add_contributors([
-            {'user': reg_user1, 'permissions': ['read', 'write', 'admin']},
-            {'user': reg_user2, 'permissions': ['read', 'write', 'admin']},
-        ])
+        project.add_contributors(
+            [
+                {'user': reg_user1, 'permissions': ['read', 'write', 'admin']},
+                {'user': reg_user2, 'permissions': ['read', 'write', 'admin']},
+            ]
+        )
         # Add a non-registered user
         unregistered_user = project.add_unregistered_contributor(
             fullname=fake.name(), email=fake.email(),
             auth=self.consolidate_auth1,
+            save=True,
         )
 
         url = project.api_url + 'contributors/manage/'

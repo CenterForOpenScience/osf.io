@@ -507,7 +507,6 @@ def _view_project(node, auth, primary=False):
                                 and not node.is_registration),
             'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
-            'id': user._id if user else '',
             'piwik_token': user.piwik_token if user else '',
             'id': user._primary_key if user else None,
             'username': user.username if user else None,
