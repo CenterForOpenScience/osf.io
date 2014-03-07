@@ -111,7 +111,6 @@ def figshare_oauth_callback(*args, **kwargs):
     figshare_user.oauth_request_token_secret = None
     figshare_user.oauth_access_token = access_token
     figshare_user.oauth_access_token_secret = access_token_secret
-    figshare_user.figshare_options = Figshare.from_settings(figshare_user).get_options()
     figshare_user.save()
 
     if node:

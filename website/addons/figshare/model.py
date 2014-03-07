@@ -30,7 +30,6 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
     oauth_request_token_secret = fields.StringField()
     oauth_access_token = fields.StringField()
     oauth_access_token_secret = fields.StringField()
-    figshare_options = fields.DictionaryField()
 
     @property
     def has_auth(self):
@@ -86,7 +85,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 'authorized_user': self.user_settings.owner.fullname,
                 'owner_url': self.user_settings.owner.url,
                 'is_owner': user == self.user_settings.owner,
-                'figshare_options': self.user_settings.figshare_options,
+                'figshare_options': Figshare.from_settings(self.user_settings).get_options(),
             })
         return rv
 
