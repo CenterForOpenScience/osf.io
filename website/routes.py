@@ -180,16 +180,65 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule([
-            '/metadata/node/comment/',
-            '/metadata/comment/comment/',
-        ], 'get', website_routes.node_comment_schema, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/comments/',
+                '/project/<pid>/node/<nid>/comments/',
+            ],
+            'get',
+            project_views.comment.list_comments,
+            json_renderer,
+        ),
 
-        # Get comments
-        Rule('/guid/<guid>/comments/', 'get', website_routes.get_comments_guid, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/comments/discussion/',
+                '/project/<pid>/node/<nid>/comments/discussion/',
+            ],
+            'get',
+            project_views.comment.comment_discussion,
+            json_renderer,
+        ),
 
-        # Add comment
-        Rule('/guid/<guid>/comment/', 'post', website_routes.add_comment_guid, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/comment/',
+                '/project/<pid>/node/<nid>/comment/',
+            ],
+            'post',
+            project_views.comment.add_comment,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/comment/<cid>/',
+                '/project/<pid>/node/<nid>/comment/<cid>/',
+            ],
+            'post',
+            project_views.comment.edit_comment,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/comment/<cid>/',
+                '/project/<pid>/node/<nid>/comment/<cid>/',
+            ],
+            'delete',
+            project_views.comment.delete_comment,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/comment/<cid>/report/',
+                '/project/<pid>/node/<nid>/comment/<cid>/report/',
+            ],
+            'post',
+            project_views.comment.report_abuse,
+            json_renderer,
+        ),
 
     ], prefix='/api/v1')
 
@@ -356,23 +405,6 @@ def make_url_map(app):
             '/project/<pid>/settings/',
             '/project/<pid>/node/<nid>/settings/',
         ], 'get', project_views.node.node_setting, OsfWebRenderer('project/settings.mako')),
-
-        # TODO: Move to API routes below
-        Rule(
-            '/api/v1/settings/addons/',
-            'post',
-            profile_views.user_choose_addons,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/api/v1/project/<pid>/settings/addons/',
-                '/api/v1/project/<pid>/node/<nid>/settings/addons/',
-            ],
-            'post',
-            project_views.node.node_choose_addons,
-            json_renderer,
-        ),
 
         # Permissions
         Rule([
@@ -697,6 +729,35 @@ def make_url_map(app):
             'get',
             project_views.file.grid_data,
             json_renderer
+        ),
+
+        # Settings
+
+        Rule(
+            '/settings/addons/',
+            'post',
+            profile_views.user_choose_addons,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/settings/addons/',
+                '/project/<pid>/node/<nid>/settings/addons/',
+            ],
+            'post',
+            project_views.node.node_choose_addons,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/settings/comments/',
+                '/project/<pid>/node/<nid>/settings/comments/',
+            ],
+            'post',
+            project_views.node.configure_comments,
+            json_renderer,
         ),
 
         # Invite Users

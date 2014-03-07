@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 import logging
+import time
 
 from modularodm.exceptions import ValidationValueError
 import framework
@@ -268,7 +269,11 @@ def project_contributors_post(**kwargs):
     return {'status': 'success'}, 201
 
 
-def send_claim_email(email, user, node, notify=True):
+def get_timestamp():
+    return int(time.time())
+
+
+def send_claim_email(email, user, node, notify=True, throttle=30 * 60):
     """Send an email for claiming a user account. Either sends to the given email
     or the referrer's email, depending on the email address provided.
 
@@ -277,6 +282,8 @@ def send_claim_email(email, user, node, notify=True):
     :param Node node: The node where the user claimed their account.
     :param bool notify: If True and an email is sent to the referrer, an email
         will also be sent to the invited user about their pending verification.
+    :param int throttle: Time period after the referrer is emailed during which
+        the referrer will not be emailed again.
     """
     invited_email = email.lower().strip()
     unclaimed_record = user.get_unclaimed_record(node._primary_key)
@@ -287,15 +294,20 @@ def send_claim_email(email, user, node, notify=True):
         mail_tpl = mails.INVITE
         to_addr = invited_email
     else:  # Otherwise have the referrer forward the email to the user
-        mail_tpl = mails.FORWARD_INVITE
-        to_addr = referrer.username
         if notify:
             mails.send_mail(invited_email, mails.PENDING_VERIFICATION,
                 user=user,
                 referrer=referrer,
                 fullname=unclaimed_record['name'],
-                node=node
-            )
+                node=node)
+        timestamp = unclaimed_record.get('last_sent')
+        if timestamp is None or (get_timestamp() - timestamp) > throttle:
+            unclaimed_record['last_sent'] = get_timestamp()
+            user.save()
+        else:  # Don't send the email to the referrer
+            return
+        mail_tpl = mails.FORWARD_INVITE
+        to_addr = referrer.username
     mails.send_mail(to_addr, mail_tpl,
         user=user,
         referrer=referrer,
@@ -317,11 +329,9 @@ def verify_claim_token(user, token, pid):
             error_data = {
                 'message_short': 'User has already been claimed.',
                 'message_long': 'Please <a href="/login/">log in</a> to continue.'}
+            raise HTTPError(400, data=error_data)
         else:
-            error_data = {
-                'message_short': 'Invalid claim URL.',
-                'message_long': 'The URL you entered is invalid.'}
-        raise HTTPError(400, data=error_data)
+            return False
     return True
 
 
@@ -345,7 +355,9 @@ def claim_user_form(**kwargs):
     # user ID is invalid. Unregistered user is not in database
     if not user:
         raise HTTPError(400)
-    verify_claim_token(user, token, pid)
+    # If claim token not valid, redirect to registration page
+    if not verify_claim_token(user, token, pid):
+        return framework.redirect('/account/')
     unclaimed_record = user.unclaimed_records[pid]
     user.fullname = unclaimed_record['name']
     user.update_guessed_names()

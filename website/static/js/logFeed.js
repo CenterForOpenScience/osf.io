@@ -137,7 +137,7 @@ this.LogFeed = (function(ko, $, global, moment) {
                 self.init();
             });
         }
-    };
+    }
 
     LogFeed.prototype.init = function() {
         var self = this;

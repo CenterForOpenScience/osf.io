@@ -8,6 +8,9 @@
 ${next.body()}
 
 
+% if node['can_view_comments']:
+    <%include file="../include/comment_template.mako" />
+% endif
 <%include file="modal_add_contributor.mako"/>
 <%include file="modal_add_pointer.mako"/>
 <%include file="modal_show_links.mako"/>
@@ -35,13 +38,7 @@ ${next.body()}
 
         $logScope = $('#logScope');
         // Get project data from the server and initiate KO modules
-        $.ajax({
-            type: 'get',
-            url: nodeApiUrl,
-            contentType: 'application/json',
-            dataType: 'json',
-            cache: false,
-            success: function(data){
+        $.getJSON(nodeApiUrl, function(data){
                // Initialize nodeControl and logFeed on success
                $script
                 .ready('nodeControl', function() {
@@ -65,7 +62,7 @@ ${next.body()}
                     });
                 }
             }
-        });
+        );
         // TODO: move AddPointerViewModel to its own module
         var $addPointer = $('#addPointer');
         var addPointerVM = new AddPointerViewModel(${json.dumps(node['title'])});
@@ -96,4 +93,25 @@ ${next.body()}
     });
 </script>
 % endif
+
+<script>
+
+    var $comments = $('#comments');
+    var userName = '${user_full_name}';
+    var canComment = ${'true' if node['can_add_comments'] else 'false'};
+    var hasChildren = ${'true' if node['has_children'] else 'false'};
+
+    if ($comments.length) {
+
+        $script(['/static/js/commentpane.js', '/static/js/comment.js'], 'comments');
+
+        $script.ready('comments', function () {
+            var commentPane = new CommentPane('#commentPane');
+            Comment.init('#comments', userName, canComment, hasChildren);
+        });
+
+    }
+
+</script>
+
 </%def>

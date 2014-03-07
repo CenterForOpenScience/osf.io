@@ -6,6 +6,7 @@ import json
 import unittest
 import datetime as dt
 import mock
+import httplib as http
 
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
@@ -14,7 +15,7 @@ from framework import Q, auth, url_for
 from framework.auth.model import User
 
 import website.app
-from website.models import Node, Pointer, NodeLog
+from website.models import Node, Pointer, NodeLog, Comment
 from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
 from website.project.views.contributor import (
@@ -25,13 +26,14 @@ from website.routes import api_url_for, web_url_for
 from website import settings, mails
 from website.util import rubeus
 from website.project.views.node import _view_project
+from website.project.views.comment import serialize_comment
 
 
 from tests.base import DbTestCase, fake
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    RegistrationFactory
+    RegistrationFactory, CommentFactory
 )
 
 
@@ -579,12 +581,13 @@ class TestClaimViews(DbTestCase):
         res = self.app.get(url).maybe_follow()
         assert_equal(res.status_code, 200)
 
-    def test_invalid_claim_form_responds_with_400(self):
+    def test_invalid_claim_form_redirects_to_register_page(self):
         uid = self.user._primary_key
         pid = self.project._primary_key
         url = '/user/{uid}/{pid}/claim/?token=badtoken'.format(**locals())
         res = self.app.get(url, expect_errors=True).maybe_follow()
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.request.path, '/account/')
 
     def test_posting_to_claim_form_with_valid_data(self):
         url = self.user.get_claim_url(self.project._primary_key)
@@ -1107,6 +1110,313 @@ class TestFileViews(DbTestCase):
         data = res.json['data']
         assert_equal(len(data), len(expected))
 
+
+class TestComments(DbTestCase):
+
+    def setUp(self):
+        self.project = ProjectFactory(is_public=True)
+        self.consolidated_auth = Auth(user=self.project.creator)
+        self.non_contributor = AuthUserFactory()
+        self.app = TestApp(app)
+
+    def _configure_project(self, project, comment_level):
+
+        project.comment_level = comment_level
+        project.save()
+
+    def _add_comment(self, project, **kwargs):
+
+        url = project.api_url + 'comment/'
+        return self.app.post_json(
+            url,
+            {
+                'content': 'hammer to fall',
+                'isPublic': 'public',
+            },
+            **kwargs
+        )
+
+    def test_add_comment_public_contributor(self):
+
+        self._configure_project(self.project, 'public')
+        res = self._add_comment(
+            self.project, auth=self.project.creator.auth,
+        )
+
+        self.project.reload()
+
+        assert_equal(len(self.project.commented), 1)
+        assert_equal(
+            res.json['comment'],
+            serialize_comment(
+                self.project.commented[0], self.project,
+                self.consolidated_auth
+            )
+        )
+
+    def test_add_comment_public_non_contributor(self):
+
+        self._configure_project(self.project, 'public')
+        res = self._add_comment(
+            self.project, auth=self.non_contributor.auth,
+        )
+
+        self.project.reload()
+
+        assert_equal(len(self.project.commented), 1)
+        assert_equal(
+            res.json['comment'],
+            serialize_comment(
+                self.project.commented[0], self.project,
+                Auth(user=self.non_contributor)
+            )
+        )
+
+    def test_add_comment_private_contributor(self):
+
+        self._configure_project(self.project, 'private')
+        res = self._add_comment(
+            self.project, auth=self.project.creator.auth,
+        )
+
+        self.project.reload()
+
+        assert_equal(len(self.project.commented), 1)
+        assert_equal(
+            res.json['comment'],
+            serialize_comment(
+                self.project.commented[0], self.project,
+                self.consolidated_auth
+            )
+        )
+
+    def test_add_comment_private_non_contributor(self):
+
+        self._configure_project(self.project, 'private')
+        res = self._add_comment(
+            self.project, auth=self.non_contributor.auth, expect_errors=True,
+        )
+
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+    def test_add_comment_logged_out(self):
+
+        self._configure_project(self.project, 'public')
+        res = self._add_comment(self.project)
+
+        assert_equal(res.status_code, 302)
+        assert_in('next=', res.headers.get('location'))
+
+    def test_add_comment_off(self):
+
+        self._configure_project(self.project, None)
+        res = self._add_comment(
+            self.project, auth=self.project.creator.auth, expect_errors=True,
+        )
+
+        assert_equal(res.status_code, 400)
+
+    def test_edit_comment(self):
+
+        self._configure_project(self.project, 'public')
+        comment = CommentFactory(node=self.project)
+
+        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
+        res = self.app.post_json(
+            url,
+            {
+                'content': 'edited',
+                'isPublic': 'private',
+            },
+            auth=self.project.creator.auth,
+        )
+
+        comment.reload()
+
+        assert_equal(res.json['content'], 'edited')
+        assert_equal(res.json['isPublic'], 'private')
+
+        assert_equal(comment.content, 'edited')
+        assert_false(comment.is_public)
+
+    def test_edit_comment_non_author(self):
+        "Contributors who are not the comment author cannot edit."
+        self._configure_project(self.project, 'public')
+        comment = CommentFactory(node=self.project)
+        non_author = AuthUserFactory()
+        self.project.add_contributor(non_author, auth=self.consolidated_auth)
+
+        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
+        res = self.app.post_json(
+            url,
+            {
+                'content': 'edited',
+                'isPublic': 'private',
+            },
+            auth=non_author.auth,
+            expect_errors=True,
+        )
+
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+    def test_edit_comment_non_contributor(self):
+        "Non-contributors who are not the comment author cannot edit."
+        self._configure_project(self.project, 'public')
+        comment = CommentFactory(node=self.project)
+
+        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
+        res = self.app.post_json(
+            url,
+            {
+                'content': 'edited',
+                'isPublic': 'private',
+            },
+            auth=self.non_contributor.auth,
+            expect_errors=True,
+        )
+
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+    def test_delete_comment_author(self):
+
+        self._configure_project(self.project, 'public')
+        comment = CommentFactory(node=self.project)
+
+        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
+        self.app.delete_json(
+            url,
+            auth=self.project.creator.auth,
+        )
+
+        comment.reload()
+
+        assert_true(comment.is_deleted)
+
+    def test_delete_comment_non_author(self):
+
+        self._configure_project(self.project, 'public')
+        comment = CommentFactory(node=self.project)
+
+        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
+        res = self.app.delete_json(
+            url,
+            auth=self.non_contributor.auth,
+            expect_errors=True,
+        )
+
+        assert_equal(res.status_code, 403)
+
+        comment.reload()
+
+        assert_false(comment.is_deleted)
+
+    def test_report_spam(self):
+
+        self._configure_project(self.project, 'public')
+        comment = CommentFactory(node=self.project)
+
+        url = self.project.api_url + 'comment/{0}/report/'.format(comment._id)
+
+        self.app.post_json(
+            url,
+            {
+                'category': 'spam',
+                'text': 'ads',
+            },
+            auth=self.project.creator.auth,
+        )
+
+        comment.reload()
+        assert_in(self.project.creator._id, comment.reports)
+        assert_equal(
+            comment.reports[self.project.creator._id],
+            {'category': 'spam', 'text': 'ads'}
+        )
+
+    def test_cannot_view_deleted_comments(self):
+        self._configure_project(self.project, 'public')
+        comment = CommentFactory(node=self.project)
+        deleted_comment = CommentFactory(node=self.project)
+        deleted_comment.delete(auth=self.consolidated_auth, save=True)
+
+        url = self.project.api_url + 'comments/'
+        res = self.app.get(url)
+
+        assert_equal(len(res.json['comments']), 1)
+        assert_equal(res.json['comments'][0]['content'], comment.content)
+
+    def test_can_view_private_comments_if_contributor(self):
+
+        self._configure_project(self.project, 'public')
+        comment = CommentFactory(node=self.project, user=self.project.creator, is_public=False)
+
+        url = self.project.api_url + 'comments/'
+        res = self.app.get(url, auth=self.project.creator.auth)
+
+        assert_equal(len(res.json['comments']), 1)
+
+
+    def test_cannot_view_private_comments_if_not_contributor(self):
+
+        self._configure_project(self.project, 'public')
+        comment = CommentFactory(is_public=False)
+
+        user = AuthUserFactory()
+        url = self.project.api_url + 'comments/'
+        res = self.app.get(url, auth=user.auth)
+
+        assert_equal(len(res.json['comments']), 0)
+
+    def test_discussion_recursive(self):
+
+        self._configure_project(self.project, 'public')
+        comment_l0 = CommentFactory(node=self.project)
+
+        user_l1 = UserFactory()
+        user_l2 = UserFactory()
+        comment_l1 = CommentFactory(node=self.project, target=comment_l0, user=user_l1)
+        comment_l2 = CommentFactory(node=self.project, target=comment_l1, user=user_l2)
+
+        url = self.project.api_url + 'comments/discussion/'
+        res = self.app.get(url)
+
+        assert_equal(len(res.json['discussion']), 3)
+
+    def test_discussion_no_repeats(self):
+
+        self._configure_project(self.project, 'public')
+        comment_l0 = CommentFactory(node=self.project)
+
+        comment_l1 = CommentFactory(node=self.project, target=comment_l0)
+        comment_l2 = CommentFactory(node=self.project, target=comment_l1)
+
+        url = self.project.api_url + 'comments/discussion/'
+        res = self.app.get(url)
+
+        assert_equal(len(res.json['discussion']), 1)
+
+    def test_discussion_sort(self):
+
+        self._configure_project(self.project, 'public')
+
+        user1 = UserFactory()
+        user2 = UserFactory()
+
+        CommentFactory(node=self.project)
+        for _ in range(3):
+            CommentFactory(node=self.project, user=user1)
+        for _ in range(2):
+            CommentFactory(node=self.project, user=user2)
+
+        url = self.project.api_url + 'comments/discussion/'
+        res = self.app.get(url)
+
+        assert_equal(len(res.json['discussion']), 3)
+        observed = [user['id'] for user in res.json['discussion']]
+        expected = [user1._id, user2._id, self.project.creator._id]
+        assert_equal(observed, expected)
+
+
 class TestSearchViews(DbTestCase):
 
     def setUp(self):
@@ -1128,6 +1438,7 @@ class TestSearchViews(DbTestCase):
         assert_in('gravatar', freddie)
         assert_equal(freddie['registered'], self.contrib1.is_registered)
         assert_equal(freddie['active'], self.contrib1.is_active())
+
 
 if __name__ == '__main__':
     unittest.main()
