@@ -60,7 +60,7 @@
             <i data-bind="css: sortClass"></i>
         </a>
         <a class="btn btn-danger contrib-button" data-bind="click: cancel, visible: changed">Discard Changes</a>
-        <a class="btn btn-success contrib-button" data-bind="click: submit, visible: valid">Save Changes</a>
+        <a class="btn btn-success contrib-button" data-bind="click: submit, visible: canSubmit">Save Changes</a>
         <br /><br />
         <div data-bind="text: messageText, css: messageClass"></div>
     % endif

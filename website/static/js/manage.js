@@ -86,6 +86,9 @@ this.Manage = (function($, ko, bootbox) {
             });
             return !!admins.length;
         });
+        self.canSubmit = ko.computed(function() {
+            return self.changed() && self.valid();
+        });
         self.valid.subscribe(function(value) {
             if (!value) {
                 self.messageText('Must have at least one admin contributor');
