@@ -59,7 +59,8 @@ class User(GuidStoredObject, AddonModelMixin):
     #       'name': <name that referrer provided>,
     #       'referrer_id': <user ID of referrer>,
     #       'token': <token used for verification urls>,
-    #       'email': <email the referrer provided or None>
+    #       'email': <email the referrer provided or None>,
+    #       'last_sent': <timestamp of last email sent to referrer or None>
     #   }
     #   ...
     # }
@@ -363,10 +364,10 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def gravatar_url(self):
         return filters.gravatar(
-                    self,
-                    use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
-                )
+            self,
+            use_ssl=True,
+            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+        )
 
     @property
     def activity_points(self):

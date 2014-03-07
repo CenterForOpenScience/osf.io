@@ -42,6 +42,7 @@ NodeActions.addonFileRedirect = function(item) {
 };
 
 $(function(){
+
     $('#newComponent form').on('submit', function(e) {
 
           $("#add-component-submit")
@@ -200,8 +201,9 @@ NodeActions.openCloseNode = function(nodeId){
     NodeActions._openCloseNode(nodeId);
 };
 
-
 $(document).ready(function() {
+
+    ko.punches.enableAll();
 
     ////////////////////
     // Event Handlers //

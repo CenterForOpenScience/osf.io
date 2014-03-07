@@ -14,12 +14,15 @@ from framework.mongo.utils import from_mongo
 
 from website import language
 from website.project import new_node, clean_template_name
-from website.project.decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public
+from website.project.decorators import (
+    must_not_be_registration, must_be_valid_project, must_be_contributor,
+    must_be_contributor_or_public, must_have_permission,
+)
 from website.project.forms import NewProjectForm, NewNodeForm
 from website.models import WatchConfig, Node, Pointer
 from website import settings
 from website.views import _render_nodes
+from website.profile import utils
 
 #azeem's imports
 import CitationParser
@@ -174,7 +177,7 @@ def node_forks(**kwargs):
 def node_setting(**kwargs):
 
     auth = kwargs['auth']
-    node = kwargs.get('node') or kwargs.get('project')
+    node = kwargs['node'] or kwargs['project']
 
     rv = _view_project(node, auth, primary=True)
 
@@ -199,6 +202,10 @@ def node_setting(**kwargs):
     rv['addon_enabled_settings'] = addon_enabled_settings
     rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
 
+    rv['comments'] = {
+        'level': node.comment_level,
+    }
+
     return rv
 
 
@@ -208,6 +215,31 @@ def node_choose_addons(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
     node.config_addons(request.json, auth)
+
+
+@must_be_valid_project
+@must_be_contributor # returns user, project
+def node_contributors(**kwargs):
+
+    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
+
+    rv = _view_project(node, auth)
+    rv['contributors'] = utils.serialize_contributors(node.contributors, node)
+    return rv
+
+
+@must_be_contributor
+def configure_comments(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    comment_level = request.json.get('commentLevel')
+    if not comment_level:
+        node.comment_level = None
+    elif comment_level in ['public', 'private']:
+        node.comment_level = comment_level
+    else:
+        raise HTTPError(http.BAD_REQUEST)
+    node.save()
 
 
 ##############################################################################
@@ -256,14 +288,14 @@ def project_statistics(**kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor
-def project_set_permissions(**kwargs):
+@must_have_permission('admin')
+def project_set_privacy(**kwargs):
 
     auth = kwargs['auth']
     permissions = kwargs['permissions']
     node_to_use = kwargs['node'] or kwargs['project']
 
-    node_to_use.set_permissions(permissions, auth)
+    node_to_use.set_privacy(permissions, auth)
 
     return {
         'status': 'success',
@@ -340,7 +372,7 @@ def togglewatch_post(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+@must_have_permission('admin')
 @must_not_be_registration
 def component_remove(**kwargs):
     """Remove component, and recursively remove its children. If node has a
@@ -454,6 +486,12 @@ def _view_project(node, auth, primary=False):
             'logs': recent_logs,
             'points': node.points,
             'piwik_site_id': node.piwik_site_id,
+
+            'comment_level': node.comment_level,
+            'can_view_comments': node.can_comment(auth),
+            'can_add_comments': node.can_comment(auth, write=True),
+            'has_children': bool(getattr(node, 'commented', False)),
+
         },
         'parent_node': {
             'id': parent._primary_key if parent else '',
@@ -468,9 +506,11 @@ def _view_project(node, auth, primary=False):
             'is_contributor': node.is_contributor(user),
             'can_edit': (node.can_edit(auth)
                                 and not node.is_registration),
+            'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
             'piwik_token': user.piwik_token if user else '',
             'id': user._primary_key if user else None,
+            'username': user.username if user else None,
         },
         # TODO: Namespace with nested dicts
         'addons_enabled': node.get_addon_names(),
@@ -478,6 +518,7 @@ def _view_project(node, auth, primary=False):
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
+
     }
     return data
 
@@ -823,11 +864,13 @@ def fork_pointer(**kwargs):
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 
+
 def abbrev_authors(node):
     rv = node.contributors[0].family_name
     if len(node.contributors) > 1:
         rv += ' et al.'
     return rv
+
 
 @must_be_contributor_or_public
 def get_pointed(**kwargs):
@@ -841,3 +884,4 @@ def get_pointed(**kwargs):
         }
         for each in node.pointed
     ]}
+

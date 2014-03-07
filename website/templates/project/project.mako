@@ -2,7 +2,6 @@
 
 <%def name="title()">Project</%def>
 
-
     <div class="row">
 
         <div class="col-md-6">
@@ -111,8 +110,7 @@
 
         </div>
 
-
-      </div>
+    </div>
 
 <%def name="children()">
 <div class="page-header">

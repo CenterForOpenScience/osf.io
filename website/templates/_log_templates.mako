@@ -28,13 +28,8 @@ to <span data-bind="text: nodeCategory"></span>
 
 <script type="text/html" id="contributor_removed">
 removed
-<span data-bind="if: contributor.registered">
-    <a data-bind="attr: {href: '/' + contributor.id + '/'}, text: contributor.fullname"></a>
-</span>
-<span data-bind="ifnot: contributor.registered">
-    <span data-bind="text: contributor.nr_name"></span>
-</span>
-as a contributor from
+<span data-bind="html: displayContributors"></span>
+as contributor(s) from
 <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
@@ -105,5 +100,23 @@ to <span data-bind="text: nodeCategory"></span>
 <script type="text/html" id="addon_removed">
 removed addon <span data-bind="text: params.addon"></span>
 from <span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="comment_added">
+added a comment
+to <span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="comment_updated">
+updated a comment
+on <span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="comment_removed">
+deleted a comment
+on <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
