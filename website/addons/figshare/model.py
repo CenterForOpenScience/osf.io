@@ -66,6 +66,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         else:
             return figshare_settings.API_OAUTH_URL
 
+    @property
+    def has_auth(self):
+        return self.user_settings and self.user_settings.has_auth
+
     def to_json(self, user):
         rv = super(AddonFigShareNodeSettings, self).to_json(user)
 
