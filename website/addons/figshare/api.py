@@ -181,6 +181,8 @@ class Figshare(object):
 
     def upload_file(self, node, node_settings, article, upload):
         #article_data = self.article(node_settings, article)['items'][0]
+        if not node_settings.figshare_id or not self.project(node_settings, node_settings.figshare_id):
+            return
         filename, filestream = self.create_temp_file(upload)
         filedata = {
             'filedata': (filename, filestream)
@@ -211,12 +213,7 @@ class Figshare(object):
     # OTHER HELPERS
     def get_options(self):
         projects = self._send("http://api.figshare.com/v1/my_data/projects")
-        projects = map(lambda project:
-                       {'label': project['title'], 'value': 'project_' + str(project['id'])}, projects)
-        #articles = self._send('http://api.figshare.com/v1/my_data/articles')
-        #articles = map(lambda article: {
-                       #'label': article['title'], 'value': 'article_' + str(article['article_id'])}, articles['items'])
-        return projects
+        return [{'label': project['title'], 'value': 'project_{0}'.format(project['id'])} for project in projects]
 
     def get_file(self, node_settings, found):
         url = found.get('download_url')

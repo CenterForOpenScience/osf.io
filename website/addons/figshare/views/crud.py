@@ -237,6 +237,10 @@ def figshare_view_file(*args, **kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     connect = Figshare.from_settings(node_settings.user_settings)
+    project = connect.project(node_settings, node_settings.figshare_id)
+
+    if not article_id in str(project):
+        raise HTTPError(http.NOT_FOUND)
 
     article = connect.article(node_settings, article_id)
 
@@ -326,7 +330,7 @@ def get_cache_file(article_id, file_id):
 def figshare_delete_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
+
     figshare = node.get_addon('figshare')
 
     file_id = kwargs.get('fid', '')
@@ -336,7 +340,7 @@ def figshare_delete_file(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     connect = Figshare.from_settings(figshare.user_settings)
-
+    connect.remove_article_from_project(figshare, figshare.figshare_id, article_id)
     return connect.delete_file(node, figshare, article_id, file_id)
 
 
@@ -375,12 +379,12 @@ def figshare_download_file(*args, **kwargs):
         filedata = f.read()
         resp = make_response(filedata)
         resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(name)
-        
+
         # Add binary MIME type if extension missing
         _, ext = os.path.splitext(name)
         if not ext:
             resp.headers['Content-Type'] = 'application/octet-stream'
-            
+
         return resp
 
-        
+

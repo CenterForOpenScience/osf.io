@@ -1,4 +1,4 @@
-this.Manage = (function($, ko, bootbox) {
+this.Manage = (function(window, $, ko, bootbox) {
 
     var contribsEqual = function(a, b) {
         return a.id === b.id && a.permission === b.permission;
@@ -47,7 +47,7 @@ this.Manage = (function($, ko, bootbox) {
     var ContributorsViewModel = function(contributors) {
 
         var self = this;
-        self.original = contributors;
+        self.original = ko.observableArray(contributors);
 
         self.contributors = ko.observableArray();
 
@@ -78,7 +78,7 @@ this.Manage = (function($, ko, bootbox) {
             var contributorData = ko.utils.arrayMap(self.contributors(), function(item) {
                 return item.serialize();
             });
-            return !arraysEqual(contributorData, self.original);
+            return !arraysEqual(contributorData, self.original());
         });
         self.valid = ko.computed(function() {
             var admins = ko.utils.arrayFilter(self.contributors(), function(item) {
@@ -88,6 +88,9 @@ this.Manage = (function($, ko, bootbox) {
         });
         self.canSubmit = ko.computed(function() {
             return self.changed() && self.valid();
+        });
+        self.changed.subscribe(function() {
+            self.messageText('');
         });
         self.valid.subscribe(function(value) {
             if (!value) {
@@ -100,12 +103,23 @@ this.Manage = (function($, ko, bootbox) {
 
         self.init = function() {
             self.messageText('');
-            self.contributors(self.original.map(function(item) {
+            self.contributors(self.original().map(function(item) {
                 return new ContributorModel(item);
             }));
         };
 
+        self.initListeners = function() {
+            var self = this;
+            $(window).on('beforeunload', function() {
+                if (self.changed()) {
+                    return 'There are unsaved changes to your contributor '
+                        'settings. Are you sure you want to leave this page?'
+                }
+            });
+        };
+
         self.init();
+        self.initListeners();
 
         self.setupEditable = function(elm, data) {
             var $elm = $(elm);
@@ -177,6 +191,9 @@ this.Manage = (function($, ko, bootbox) {
                         nodeApiUrl + 'contributors/manage/',
                         {contributors: self.serialize()},
                         function() {
+                            self.original(ko.utils.arrayMap(self.contributors(), function(item) {
+                                return item.serialize();
+                            }));
                             self.messageText('Submission successful');
                             self.messageType('success');
                         }
@@ -196,4 +213,4 @@ this.Manage = (function($, ko, bootbox) {
         ViewModel: ContributorsViewModel
     }
 
-})($, ko, bootbox);
+})(window, $, ko, bootbox);

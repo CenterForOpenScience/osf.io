@@ -25,6 +25,7 @@ app = website.app.init_app(
 
 figshare_mock = create_mock_figshare(project=436)
 
+
 class TestViewsConfig(DbTestCase):
 
     def setUp(self):
@@ -47,6 +48,9 @@ class TestViewsConfig(DbTestCase):
         self.project.creator.add_addon('figshare')
         self.node_settings = self.project.get_addon('figshare')
         self.user_settings = self.project.creator.get_addon('figshare')
+        self.user_settings.oauth_access_token = 'legittoken'
+        self.user_settings.oauth_access_token_secret = 'legittoken'
+        self.user_settings.save()
         self.node_settings.user_settings = self.user_settings
         self.node_settings.figshare_id = '123456'
         self.node_settings.figshare_type = 'project'
@@ -54,11 +58,12 @@ class TestViewsConfig(DbTestCase):
         self.node_settings.save()
 
         self.figshare = create_mock_figshare('test')
-        
+
     def test_config_no_change(self):
         num = len(self.project.logs)
         url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
-        rv = self.app.post_json(url, {'figshare_value': 'project_123456', 'figshare_title': 'OVER9000'}, auth=self.user.auth)
+        rv = self.app.post_json(
+            url, {'figshare_value': 'project_123456', 'figshare_title': 'OVER9000'}, auth=self.user.auth)
         self.project.reload()
 
         assert_equal(rv.status_int, 200)
@@ -67,7 +72,8 @@ class TestViewsConfig(DbTestCase):
     def test_config_change(self):
         num = len(self.project.logs)
         url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
-        rv = self.app.post_json(url, {'figshare_value': 'project_9001', 'figshare_title': 'IchangedbecauseIcan'}, auth=self.user.auth)
+        rv = self.app.post_json(
+            url, {'figshare_value': 'project_9001', 'figshare_title': 'IchangedbecauseIcan'}, auth=self.user.auth)
         self.project.reload()
         self.node_settings.reload()
 
@@ -100,6 +106,7 @@ class TestViewsConfig(DbTestCase):
 
 
 class TestUtils(DbTestCase):
+
     def setUp(self):
         super(TestUtils, self).setUp()
 
@@ -119,41 +126,56 @@ class TestUtils(DbTestCase):
         self.project.creator.add_addon('figshare')
         self.node_settings = self.project.get_addon('figshare')
         self.user_settings = self.project.creator.get_addon('figshare')
+        self.user_settings.oauth_access_token = 'legittoken'
+        self.user_settings.oauth_access_token_secret = 'legittoken'
+        self.user_settings.save()
         self.node_settings.user_settings = self.user_settings
         self.node_settings.figshare_id = '436'
         self.node_settings.figshare_type = 'project'
         self.node_settings.save()
-        
+
     @mock.patch('website.addons.figshare.api.Figshare.project')
     def test_project_to_hgrid(self, *args, **kwargs):
         project = figshare_mock.project.return_value
-        hgrid = utils.project_to_hgrid(self.project, project, True)        
+        hgrid = utils.project_to_hgrid(self.project, project, True)
 
         assert_equals(len(hgrid), len(project['articles']))
-        folders_in_project = len([a for a in project['articles'] if a['defined_type']=='fileset'])
+        folders_in_project = len(
+            [a for a in project['articles'] if a['defined_type'] == 'fileset'])
         folders_in_hgrid = len([h for h in hgrid if type(h) is list])
 
         assert_equals(folders_in_project, folders_in_hgrid)
         files_in_project = 0
         files_in_hgrid = 0
         for a in project['articles']:
-            if a['defined_type']=='fileset':
+            if a['defined_type'] == 'fileset':
                 files_in_project = files_in_project + len(a['files'])
             else:
                 files_in_project = files_in_project + 1
 
         for a in hgrid:
             if type(a) is list:
-                assert_equals(a[0]['kind'], 'file')          
+                assert_equals(a[0]['kind'], 'file')
                 files_in_hgrid = files_in_hgrid + len(a)
             else:
                 assert_equals(a['kind'], 'file')
                 files_in_hgrid = files_in_hgrid + 1
-                
-        assert_equals(files_in_hgrid,files_in_project)
+
+        assert_equals(files_in_hgrid, files_in_project)
+
+    def test_project_to_hgrid_no_auth(self):
+        self.node_settings.user_settings = None
+        ref = views.hgrid.figshare_hgrid_data(self.node_settings, self.auth)
+        assert_equal(ref, None)
+
+    def test_project_to_hgrid_no_id(self):
+        self.node_settings.figshare_id = None
+        ref = views.hgrid.figshare_hgrid_data(self.node_settings, self.auth)
+        assert_equal(ref, None)
 
 
 class TestViewsCrud(DbTestCase):
+
     def setUp(self):
         super(TestViewsCrud, self).setUp()
 
@@ -173,11 +195,14 @@ class TestViewsCrud(DbTestCase):
         self.project.creator.add_addon('figshare')
         self.node_settings = self.project.get_addon('figshare')
         self.user_settings = self.project.creator.get_addon('figshare')
+        self.user_settings.oauth_access_token = 'legittoken'
+        self.user_settings.oauth_access_token_secret = 'legittoken'
+        self.user_settings.save()
         self.node_settings.user_settings = self.user_settings
         self.node_settings.figshare_id = '436'
         self.node_settings.figshare_type = 'project'
         self.node_settings.save()
-        
+
         self.figshare = create_mock_figshare('test')
 
     def test_publish_no_category(self):
@@ -195,18 +220,19 @@ class TestViewsCrud(DbTestCase):
         rv = self.app.get(url, auth=self.user.auth, expect_errors=True).maybe_follow()
         assert_equal(rv.status_int, 404)
 
-    #TODO Fix me, not logged in?
+    # TODO Fix me, not logged in?
     @mock.patch('website.addons.figshare.api.Figshare.from_settings')
     def test_view_private(self, mock_fig):
         mock_fig.return_value = self.figshare
         url = '/project/{0}/figshare/article/564/file/1348803/'.format(self.project._id)
         rv = self.app.get(url, auth=self.user.auth).maybe_follow()
-        #rv.showbrowser()
+        # rv.showbrowser()
         assert_equal(rv.status_int, 200)
         assert_true('file is unpublished we cannot render it.' in rv.body)
-    
-        
+
+
 class TestViewsAuth(DbTestCase):
+
     def setUp(self):
         super(TestViewsAuth, self).setUp()
 
@@ -230,8 +256,6 @@ class TestViewsAuth(DbTestCase):
         self.node_settings.figshare_id = '436'
         self.node_settings.figshare_type = 'project'
         self.node_settings.save()
-    
+
     def test_oauth_start(self):
         pass
-
-
