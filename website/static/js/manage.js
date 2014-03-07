@@ -47,7 +47,7 @@ this.Manage = (function($, ko, bootbox) {
     var ContributorsViewModel = function(contributors) {
 
         var self = this;
-        self.original = contributors;
+        self.original = ko.observableArray(contributors);
 
         self.contributors = ko.observableArray();
 
@@ -78,7 +78,7 @@ this.Manage = (function($, ko, bootbox) {
             var contributorData = ko.utils.arrayMap(self.contributors(), function(item) {
                 return item.serialize();
             });
-            return !arraysEqual(contributorData, self.original);
+            return !arraysEqual(contributorData, self.original());
         });
         self.valid = ko.computed(function() {
             var admins = ko.utils.arrayFilter(self.contributors(), function(item) {
@@ -88,6 +88,9 @@ this.Manage = (function($, ko, bootbox) {
         });
         self.canSubmit = ko.computed(function() {
             return self.changed() && self.valid();
+        });
+        self.changed.subscribe(function() {
+            self.messageText('');
         });
         self.valid.subscribe(function(value) {
             if (!value) {
@@ -100,7 +103,7 @@ this.Manage = (function($, ko, bootbox) {
 
         self.init = function() {
             self.messageText('');
-            self.contributors(self.original.map(function(item) {
+            self.contributors(self.original().map(function(item) {
                 return new ContributorModel(item);
             }));
         };
@@ -177,6 +180,9 @@ this.Manage = (function($, ko, bootbox) {
                         nodeApiUrl + 'contributors/manage/',
                         {contributors: self.serialize()},
                         function() {
+                            self.original(ko.utils.arrayMap(self.contributors(), function(item) {
+                                return item.serialize();
+                            }));
                             self.messageText('Submission successful');
                             self.messageType('success');
                         }

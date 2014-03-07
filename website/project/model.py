@@ -249,6 +249,8 @@ class NodeLog(StoredObject):
     WIKI_UPDATED = 'wiki_updated'
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
+    CONTRIB_REORDERED = 'contributors_reordered'
+    PERMISSIONS_UPDATED = 'permissions_updated'
     MADE_PUBLIC = 'made_public'
     MADE_PRIVATE = 'made_private'
     TAG_ADDED = 'tag_added'
@@ -1724,6 +1726,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         users = []
+        permissions_changed = {}
         for user_dict in user_dicts:
             user = User.load(user_dict['id'])
             if user is None:
@@ -1735,6 +1738,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             permissions = expand_permissions(user_dict['permission'])
             if set(permissions) != set(self.get_permissions(user)):
                 self.set_permissions(user, permissions, save=False)
+                permissions_changed[user._id] = permissions
             users.append(user)
 
         self.contributors = users
@@ -1752,8 +1756,34 @@ class Node(GuidStoredObject, AddonModelMixin):
             if user not in users
         ]
 
+        self.add_log(
+            action=NodeLog.CONTRIB_REORDERED,
+            params={
+                'project': self.parent_id,
+                'node': self._id,
+                'contributors': [
+                    user._id
+                    for user in users
+                ],
+            },
+            auth=auth,
+            save=save,
+        )
+
         if to_remove:
             self.remove_contributors(to_remove, auth=auth, save=False)
+
+        if permissions_changed:
+            self.add_log(
+                action=NodeLog.PERMISSIONS_UPDATED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._id,
+                    'contributors': permissions_changed,
+                },
+                auth=auth,
+                save=save,
+            )
 
         if save:
             self.save()
