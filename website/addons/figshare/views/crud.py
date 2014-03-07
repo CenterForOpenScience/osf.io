@@ -237,6 +237,10 @@ def figshare_view_file(*args, **kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     connect = Figshare.from_settings(node_settings.user_settings)
+    project = connect.project(node_settings, node_settings.figshare_id)
+
+    if not article_id in str(project):
+        raise HTTPError(http.NOT_FOUND)
 
     article = connect.article(node_settings, article_id)
 
