@@ -723,38 +723,66 @@ class TestClaimViews(DbTestCase):
         )
         self.project.save()
 
-    def test_claim_user_post_with_registered_user_id(self):
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_claim_user_post_with_registered_user_id(self, send_mail):
+        # registered user who is attempting to claim the unclaimed contributor
         reg_user = UserFactory()
         payload = {
             # pk of unreg user record
             'pk': self.user._primary_key,
             'claimerId': reg_user._primary_key
         }
-        # post payload...
-        # reg_user is emailed
-        assert 0, 'finish me'
+        url = '/api/v1/user/{uid}/{pid}/claim/verify/'.format(
+            uid=self.user._primary_key,
+            pid=self.project._primary_key,
+        )
+
+        res = self.app.post_json(url,
+            payload,
+            auth=Auth(user=reg_user)
+        )
+
+        # mail was sent
+        assert_true(send_mail.called)
+        # ... to the correct address
+        assert_true(send_mail.called_with(to_addr=self.given_email))
+
+        # view returns the correct JSON
+        assert_equal(res.json, {
+            'status': 'success',
+            'email': reg_user.username,
+            'fullname': self.given_name,
+        })
 
     def test_claim_user_form_redirects_to_password_confirm_page_if_user_is_logged_in(self):
+        reg_user = UserFactory()
         url = self.user.get_claim_url(self.project._primary_key)
-        reg_user = AuthUserFactory()
-        # get url
-        # should be a redirect to web_url_for('claim_user_registered'...)
-        assert 0, 'finish me'
+        res = self.app.get(url, auth=Auth(user=reg_user))
+
+        # verify that the "Claim Account" form is returned
+        assert_in('Claim Account', res.body)
 
     def test_claim_user_registered_with_correct_password(self):
-        reg_user = AuthUserFactory()
+        reg_user = UserFactory()
         reg_user.set_password('killerqueen')
         reg_user.save()
-        url = self.get_claim_url(self.project._primary_key)
-        res = self.app.get(url, auth=reg_user.auth).follow() # Follow to password re-enter page
-        assert 0, 'finish me'
-        # registered claimer re-enters their password correctly
-        # post correct password in form
-        form = ...
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(url, auth=Auth(user=reg_user)) # Follow to password re-enter page
+
+        # verify that the "Claim Account" form is returned
+        assert_in('Claim Account', res.body)
+
+        form = res.forms['setPasswordForm']
         form['password'] = 'killerqueen'
-        res = form.submit()
+        form['password2'] = 'killerqueen'
+        res = form.submit().follow()
+
         # user is now a contributor to the project
+        assert_in(reg_user._primary_key, self.project.contributors)
+
         # the unregistered user (self.user) is removed as a contributor, and their
+        assert_not_in(self.user._primary_key, self.project.contributors)
+
         # unclaimed record for the project has been deleted
         assert_not_in(self.project._primary_key, self.user.unclaimed_records)
 
