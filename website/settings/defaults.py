@@ -126,8 +126,7 @@ CELERY_IMPORTS = (
 
 ADDONS_REQUESTED = [
     'wiki', 'osffiles',
-    'github', 'figshare'
-    #'bitbucket',
+    'github', 's3', 'figshare',
 ]
 
 ADDON_CATEGORIES = [
