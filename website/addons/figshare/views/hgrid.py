@@ -26,9 +26,10 @@ def figshare_hgrid_data_contents(*args, **kwargs):
 
 
 def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
+
     node = node_settings.owner
     project = Figshare.from_settings(node_settings.user_settings).project(node_settings, node_settings.figshare_id)
-    if not node_settings.figshare_id or not node_settings.has_auth or not project:
+    if not node_settings.figshare_id or not node_settings.has_auth:
         return
     node_settings.figshare_title = project['title']
     node_settings.save()
@@ -48,7 +49,6 @@ def figshare_dummy_folder(node_settings, auth, parent=None, **kwargs):
     data = request.args.to_dict()
 
     parent = data.pop('parent', 'null')
-
     return figshare_hgrid_data(node_settings, auth, None, contents=False, **data)
 
 #TODO Finish me

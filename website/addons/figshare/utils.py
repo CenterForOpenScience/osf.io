@@ -1,5 +1,7 @@
 def project_to_hgrid(node, project, expand=False):
     if project:
+        if not project.get('articles') or len(project['articles']) == 0:
+            return []
         return [article_to_hgrid(node, article, expand) for article in project['articles']]
     return []
 
