@@ -216,6 +216,30 @@ class Comment(GuidStoredObject):
         if save:
             self.save()
 
+    def _clone(self, node, target):
+        """Recursively clone comments to new root and parent.
+
+        :param Node node: Comment root
+        :param GuidStoredObject target: Comment parent
+
+        """
+        # Clone non-foreign fields
+        cloned = self.clone()
+
+        # Copy user references
+        cloned.user = self.user
+
+        # Set new references
+        cloned.node = node
+        cloned.target = target
+
+        # Must save comment for foreign references
+        cloned.save()
+
+        # Recursively copy child comments
+        for comment in getattr(self, 'commented', []):
+            comment._clone(node, cloned)
+
 
 class ApiKey(StoredObject):
 
@@ -1122,6 +1146,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         registered.tags = self.tags
 
         registered.save()
+
+        # Clone comments
+        for comment in getattr(self, 'commented', []):
+            comment._clone(node=registered, target=registered)
 
         # After register callback
         for addon in original.get_addons():
