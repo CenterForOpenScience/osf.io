@@ -39,7 +39,6 @@ function attrMap(list, attr) {
     });
 }
 
-
 var AddPointerViewModel = function(nodeTitle) {
 
     var self = this;

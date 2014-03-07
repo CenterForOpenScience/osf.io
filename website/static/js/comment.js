@@ -1,4 +1,4 @@
-this.Comment = (function(window, $, ko, bootbox) {
+this.Comment = (function(window, $, ko) {
 
     'use strict';
 
@@ -13,8 +13,15 @@ this.Comment = (function(window, $, ko, bootbox) {
         violence: 'Violence or harmful behavior'
     };
 
+    /*
+     * Format UTC datetime relative to current datetime, ensuring that time
+     * is in the past.
+     */
     var relativeDate = function(datetime) {
-        return moment.utc(datetime, 'MM/DD/YY HH:mm:ss').fromNow();
+        var now = moment.utc();
+        var then = moment.utc(datetime, 'MM/DD/YY HH:mm:ss');
+        then = then > now ? now : then;
+        return then.fromNow();
     };
 
     var exclusify = function(subscriber, subscribees) {
@@ -138,6 +145,12 @@ this.Comment = (function(window, $, ko, bootbox) {
                     self.hasChildren(true);
                 }
                 self.replyErrorMessage('');
+                // Update discussion in case we aren't already in it
+                // TODO: This can lead to unnecessary API calls; fix this
+                if (!self.$root.commented()) {
+                    self.$root.fetchDiscussion();
+                    self.$root.commented(true);
+                }
                 self.onSubmitSuccess(response);
             }
         );
@@ -318,17 +331,23 @@ this.Comment = (function(window, $, ko, bootbox) {
 
         BaseComment.prototype.constructor.call(this);
 
-        this.$root = this;
+        var self = this;
 
-        this.editors = 0
+        self.$root = self;
 
-        this.userName = ko.observable(userName);
-        this.canComment = ko.observable(canComment);
-        this.hasChildren = ko.observable(hasChildren);
-        this.discussion = ko.observableArray();
+        self.editors = 0;
+        self.commented = ko.observable(false);
+        self.userName = ko.observable(userName);
+        self.canComment = ko.observable(canComment);
+        self.hasChildren = ko.observable(hasChildren);
+        self.discussion = ko.observableArray();
 
-        this.fetch();
-        this.fetchDiscussion();
+        self.replyNotEmpty = ko.computed(function() {
+            return !!self.replyContent();
+        });
+
+        self.fetch();
+        self.fetchDiscussion();
 
     };
 
@@ -370,4 +389,4 @@ this.Comment = (function(window, $, ko, bootbox) {
         init: init
     }
 
-})(window, $, ko, bootbox);
+})(window, $, ko);

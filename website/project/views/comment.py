@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-import httplib as http
 import logging
+import collections
+import httplib as http
 
 from framework import request
 from framework.exceptions import HTTPError
@@ -28,10 +29,10 @@ def resolve_target(node, guid):
 
 def collect_discussion(target, users=None):
 
-    users = users or []
+    users = users or collections.defaultdict(list)
     for comment in getattr(target, 'commented', []):
-        if not comment.is_deleted and comment.user not in users:
-            users.append(comment.user)
+        if not comment.is_deleted:
+            users[comment.user].append(comment)
         collect_discussion(comment, users=users)
     return users
 
@@ -40,9 +41,17 @@ def collect_discussion(target, users=None):
 def comment_discussion(**kwargs):
     node = kwargs['node'] or kwargs['project']
     users = collect_discussion(node)
+    # Sort users by comment frequency
+    # TODO: Allow sorting by recency, combination of frequency and recency
+    sorted_users = sorted(
+        users.keys(),
+        key=lambda item: len(users[item]),
+        reverse=True,
+    )
     return {
         'discussion': [
             {
+                'id': user._id,
                 'url': user.url,
                 'fullname': user.fullname,
                 'isContributor': node.is_contributor(user),
@@ -52,7 +61,7 @@ def comment_discussion(**kwargs):
                 ),
 
             }
-            for user in users
+            for user in sorted_users
         ]
     }
 

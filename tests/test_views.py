@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 '''Views tests for the OSF.'''
 from __future__ import absolute_import
-import json
 import unittest
+import json
 import datetime as dt
 import mock
+import hashlib
 import httplib as http
 
 from nose.tools import *  # PEP8 asserts
@@ -102,15 +103,87 @@ class TestProjectViews(DbTestCase):
         user2 = UserFactory()
         user3 = UserFactory()
         url = "/api/v1/project/{0}/contributors/".format(project._id)
-        payload =  {"users": [_add_contributor_json(user2),
-            _add_contributor_json(user3)]}
-        res = self.app.post_json(url, payload,
-                            auth=self.auth).maybe_follow()
+
+        dict2 = _add_contributor_json(user2)
+        dict3 = _add_contributor_json(user3)
+        dict2['permission'] = 'admin'
+        dict3['permission'] = 'write'
+
+        self.app.post_json(
+            url,
+            {
+                'users': [dict2, dict3],
+                'node_ids': [project._id],
+            },
+            content_type="application/json",
+            auth=self.auth,
+        ).maybe_follow()
         project.reload()
         assert_in(user2._id, project.contributors)
         # A log event was added
         assert_equal(project.logs[-1].action, "contributor_added")
         assert_equal(len(project.contributors), 3)
+        assert_in(user2._id, project.permissions)
+        assert_in(user3._id, project.permissions)
+        assert_equal(project.permissions[user2._id], ['read', 'write', 'admin'])
+        assert_equal(project.permissions[user3._id], ['read', 'write'])
+
+    def test_manage_permissions(self):
+
+        url = self.project.api_url + 'contributors/manage/'
+        self.app.post_json(
+            url,
+            {
+                'contributors': [
+                    {'id': self.project.creator._id, 'permission': 'admin', 'registered': True},
+                    {'id': self.user1._id, 'permission': 'read', 'registered': True},
+                    {'id': self.user2._id, 'permission': 'admin', 'registered': True},
+                ]
+            },
+            auth=self.auth,
+        )
+
+        self.project.reload()
+
+        assert_equal(self.project.get_permissions(self.user1), ['read'])
+        assert_equal(self.project.get_permissions(self.user2), ['read', 'write', 'admin'])
+
+    def test_contributor_manage_reorder(self):
+
+        # Two users are added as a contributor via a POST request
+        project = ProjectFactory(creator=self.user1, is_public=True)
+        reg_user1, reg_user2 = UserFactory(), UserFactory()
+        project.add_contributors([
+            {'user': reg_user1, 'permissions': ['read', 'write', 'admin']},
+            {'user': reg_user2, 'permissions': ['read', 'write', 'admin']},
+        ])
+        # Add a non-registered user
+        unregistered_user = project.add_unregistered_contributor(
+            fullname=fake.name(), email=fake.email(),
+            auth=self.consolidate_auth1,
+        )
+
+        url = project.api_url + 'contributors/manage/'
+        self.app.post_json(
+            url,
+            {
+                'contributors': [
+                    {'id': project.creator._id, 'permission': 'admin', 'registered': True},
+                    {'id': reg_user1._id, 'permission': 'admin', 'registered': True},
+                    {'id': unregistered_user._id, 'permission': 'admin', 'registered': False},
+                    {'id': reg_user2._id, 'permission': 'admin', 'registered': True},
+                ]
+            },
+            auth=self.auth,
+        )
+
+        project.reload()
+
+        assert_equal(
+            # Note: Cast ForeignList to list for comparison
+            list(project.contributors),
+            [project.creator, reg_user1, unregistered_user, reg_user2]
+        )
 
     def test_project_remove_contributor(self):
         url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
@@ -348,19 +421,22 @@ class TestAddingContributorViews(DbTestCase):
             serialize_unregistered(fake.name(), unreg.username),
             unreg_no_record
         ]
+        contrib_data[0]['permission'] = 'admin'
+        contrib_data[1]['permission'] = 'write'
+        contrib_data[2]['permission'] = 'read'
         res = deserialize_contributors(
             self.project,
             contrib_data,
             auth=Auth(self.creator),
             email_unregistered=True)
         assert_equal(len(res), len(contrib_data))
-        assert_true(res[0].is_registered)
+        assert_true(res[0]['user'].is_registered)
 
-        assert_false(res[1].is_registered)
-        assert_true(res[1]._primary_key)
+        assert_false(res[1]['user'].is_registered)
+        assert_true(res[1]['user']._id)
 
-        assert_false(res[2].is_registered)
-        assert_true(res[2]._primary_key)
+        assert_false(res[2]['user'].is_registered)
+        assert_true(res[2]['user']._id)
 
     def test_serialize_unregistered_with_record(self):
         name, email = fake.name(), fake.email()
@@ -382,15 +458,24 @@ class TestAddingContributorViews(DbTestCase):
         n_contributors_pre = len(self.project.contributors)
         reg_user = UserFactory()
         name, email = fake.name(), fake.email()
-        pseudouser = {'id': None, 'registered': False, 'fullname': name,
-                        'email': email}
+        pseudouser = {
+            'id': None,
+            'registered': False,
+            'fullname': name,
+            'email': email,
+            'permission': 'admin',
+        }
+        reg_dict = _add_contributor_json(reg_user)
+        reg_dict['permission'] = 'admin'
         payload = {
-            'users': [_add_contributor_json(reg_user), pseudouser],
+            'users': [reg_dict, pseudouser],
             'node_ids': []
         }
         with app.test_request_context():
-            url = api_url_for('project_contributors_post',
-                pid=self.project._primary_key)
+            url = api_url_for(
+                'project_contributors_post',
+                pid=self.project._primary_key
+            )
         self.app.post_json(url, payload).maybe_follow()
         self.project.reload()
         assert_equal(len(self.project.contributors),
@@ -408,8 +493,13 @@ class TestAddingContributorViews(DbTestCase):
     @mock.patch('website.project.views.contributor.send_claim_email')
     def test_email_sent_when_unreg_user_is_added(self, send_mail):
         name, email = fake.name(), fake.email()
-        pseudouser = {'id': None, 'registered': False, 'fullname': name,
-                        'email': email}
+        pseudouser = {
+            'id': None,
+            'registered': False,
+            'fullname': name,
+            'email': email,
+            'permission': 'admin',
+        }
         payload = {
             'users': [pseudouser],
             'node_ids': []
@@ -425,10 +515,17 @@ class TestAddingContributorViews(DbTestCase):
         n_logs_pre = len(self.project.logs)
         reg_user = UserFactory()
         name, email = fake.name(), fake.email()
-        pseudouser = {'id': None, 'registered': False, 'fullname': name,
-                        'email': fake.email()}
+        pseudouser = {
+            'id': None,
+            'registered': False,
+            'fullname': name,
+            'email': fake.email(),
+            'permission': 'write',
+        }
+        reg_dict = _add_contributor_json(reg_user)
+        reg_dict['permission'] = 'admin'
         payload = {
-            'users': [_add_contributor_json(reg_user), pseudouser],
+            'users': [reg_dict, pseudouser],
             'node_ids': []
         }
         with app.test_request_context():
@@ -443,10 +540,17 @@ class TestAddingContributorViews(DbTestCase):
         n_contributors_pre = len(child.contributors)
         reg_user = UserFactory()
         name, email = fake.name(), fake.email()
-        pseudouser = {'id': None, 'registered': False, 'fullname': name,
-                        'email': email}
+        pseudouser = {
+            'id': None,
+            'registered': False,
+            'fullname': name,
+            'email': email,
+            'permission': 'admin',
+        }
+        reg_dict = _add_contributor_json(reg_user)
+        reg_dict['permission'] = 'admin'
         payload = {
-            'users': [_add_contributor_json(reg_user), pseudouser],
+            'users': [reg_dict, pseudouser],
             'node_ids': [self.project._primary_key, child._primary_key]
         }
         url = "/api/v1/project/{0}/contributors/".format(self.project._id)
@@ -1394,6 +1498,27 @@ class TestComments(DbTestCase):
         res = self.app.get(url)
 
         assert_equal(len(res.json['discussion']), 1)
+
+    def test_discussion_sort(self):
+
+        self._configure_project(self.project, 'public')
+
+        user1 = UserFactory()
+        user2 = UserFactory()
+
+        CommentFactory(node=self.project)
+        for _ in range(3):
+            CommentFactory(node=self.project, user=user1)
+        for _ in range(2):
+            CommentFactory(node=self.project, user=user2)
+
+        url = self.project.api_url + 'comments/discussion/'
+        res = self.app.get(url)
+
+        assert_equal(len(res.json['discussion']), 3)
+        observed = [user['id'] for user in res.json['discussion']]
+        expected = [user1._id, user2._id, self.project.creator._id]
+        assert_equal(observed, expected)
 
 
 class TestSearchViews(DbTestCase):

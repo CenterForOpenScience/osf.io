@@ -8,15 +8,19 @@ import datetime
 from flask import Flask
 from werkzeug.wrappers import BaseResponse
 from webtest_plus import TestApp
+import httplib as http
 
+from framework.exceptions import HTTPError
 import framework.auth as auth
 from tests.base import DbTestCase
-from tests.factories import UserFactory, UnregUserFactory, AuthFactory
+from tests.factories import UserFactory, UnregUserFactory, AuthFactory, ProjectFactory
 
 from framework import Q
 from framework import app
 from framework.auth.model import User
 from framework.auth.decorators import must_be_logged_in, Auth
+
+from website.project.decorators import must_have_permission
 
 class TestAuthUtils(DbTestCase):
 
@@ -104,45 +108,58 @@ class TestAuthObject(DbTestCase):
 # Flask app for testing view decorators
 app = Flask(__name__)
 
-@app.route('/login/')
-def login():
-    return 'The login page'
-
-@app.route('/protected/')
 @must_be_logged_in
 def protected(**kwargs):
     return 'open sesame'
 
+@must_have_permission('dance')
+def thriller(**kwargs):
+    return 'chiller'
+
 class TestDecorators(DbTestCase):
 
     def setUp(self):
-        self.app = TestApp(app)
+        self.ctx = app.test_request_context()
+        self.ctx.push()
 
-    @mock.patch('framework.auth.decorators.get_current_user')
-    def test_must_be_logged_in_decorator_with_user(self, mock_get_current_user):
+    def tearDown(self):
+        self.ctx.pop()
+
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    def test_must_be_logged_in_decorator_with_user(self, mock_from_kwargs):
         user = UserFactory()
-        mock_get_current_user.return_value = user
-        # Make all params (except for user) truthy values so don't have to mock out
-        # session (get_api_key, etc)
-        res = self.app.get('/protected/', params={
-            'api_key': 'blah',
-            'api_node': '1234',
-            'key': '12345'
-        })
-        assert_equal(res.status_code, 200)
+        mock_from_kwargs.return_value = Auth(user=user)
+        protected()
 
-    @mock.patch('framework.auth.decorators.get_current_user')
-    def test_must_be_logged_in_decorator_with_no_user_redirects_to_login_page(self,
-        mock_get_current_user):
-        mock_get_current_user.return_value = None
-        res = self.app.get('/protected/', params={
-            'api_key': 'blah',
-            'api_node': '1234',
-            'key': '12345'
-        })
-        assert_equal(res.status_code, 302, 'redirect request')
-        res = res.follow()  # Follow the redirect
-        assert_equal(res.request.path, '/login/', 'at the login page')
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    def test_must_be_logged_in_decorator_with_no_user(self, mock_from_kwargs):
+        mock_from_kwargs.return_value = Auth()
+        resp = protected()
+        assert_true(isinstance(resp, BaseResponse))
+        assert_in('/login/', resp.headers.get('location'))
+
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    def test_must_have_permission_true(self, mock_from_kwargs):
+        project = ProjectFactory()
+        project.add_permission(project.creator, 'dance')
+        mock_from_kwargs.return_value = Auth(user=project.creator)
+        thriller(node=project)
+
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    def test_must_have_permission_false(self, mock_from_kwargs):
+        project = ProjectFactory()
+        mock_from_kwargs.return_value = Auth(user=project.creator)
+        with assert_raises(HTTPError) as ctx:
+            thriller(node=project)
+        assert_equal(ctx.exception.code, http.FORBIDDEN)
+
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    def test_must_have_permission_not_logged_in(self, mock_from_kwargs):
+        project = ProjectFactory()
+        mock_from_kwargs.return_value = Auth()
+        with assert_raises(HTTPError) as ctx:
+            thriller(node=project)
+        assert_equal(ctx.exception.code, http.UNAUTHORIZED)
 
 
 if __name__ == '__main__':

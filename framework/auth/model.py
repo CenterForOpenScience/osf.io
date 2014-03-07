@@ -358,10 +358,10 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def gravatar_url(self):
         return filters.gravatar(
-                    self,
-                    use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
-                )
+            self,
+            use_ssl=True,
+            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+        )
 
     @property
     def activity_points(self):
