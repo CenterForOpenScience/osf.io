@@ -141,13 +141,13 @@ class TestUtils(DbTestCase):
 
         assert_equals(len(hgrid), len(project['articles']))
         folders_in_project = len(
-            [a for a in project['articles'] if a['defined_type'] == 'fileset'])
+            [a for a in project.get('articles') or [] if a['defined_type'] == 'fileset'])
         folders_in_hgrid = len([h for h in hgrid if type(h) is list])
 
         assert_equals(folders_in_project, folders_in_hgrid)
         files_in_project = 0
         files_in_hgrid = 0
-        for a in project['articles']:
+        for a in project.get('articles') or []:
             if a['defined_type'] == 'fileset':
                 files_in_project = files_in_project + len(a['files'])
             else:
