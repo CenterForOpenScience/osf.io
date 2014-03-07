@@ -1444,7 +1444,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         property is named `parent_node` rather than `parent` to avoid a
         conflict with the `parent` back-reference created by the `nodes`
         field on this schema.
-        
+
         """
         try:
             if not self.node__parent[0].is_deleted:
@@ -1552,6 +1552,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         for node in self.nodes:
             pointers.extend(node.get_pointers())
         return pointers
+
+    def replace_contributor(self, old, new):
+        for i, contrib in enumerate(self.contributors):
+            if contrib._primary_key == old._primary_key:
+                self.contributors[i] = new
+                return True
+        return False
 
     def remove_contributor(self, contributor, auth, log=True):
         """Remove a contributor from this node.

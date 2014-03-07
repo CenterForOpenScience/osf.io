@@ -143,6 +143,10 @@ class SignInForm(Form):
     password = password_field
 
 
+class PasswordForm(Form):
+    password = password_field
+
+
 class ForgotPasswordForm(Form):
     email = email_field
 
