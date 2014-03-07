@@ -1,6 +1,7 @@
 def project_to_hgrid(node, project, expand=False):
-    return [article_to_hgrid(node, article, expand) for article in project['articles']]
-
+    if project:
+        return [article_to_hgrid(node, article, expand) for article in project['articles']]
+    return []
 
 def article_to_hgrid(node, article, expand=False):
     if article['defined_type'] == 'fileset':
