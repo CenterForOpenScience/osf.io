@@ -86,7 +86,7 @@ def _add_contributor_json(user):
         'id': user._primary_key,
         'registered': user.is_registered,
         'active': user.is_active(),
-        'gravatar': gravatar(
+        'gravatar_url': gravatar(
             user, use_ssl=True,
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
         ),
