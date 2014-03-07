@@ -74,11 +74,11 @@ ${next.body()}
     });
 
     // Make unregistered contributors claimable
-    if (!userId) { // If no user logged in, allow user claiming
-        $script(['/static/js/accountClaimer.js'], function() {
-            var accountClaimer = new OSFAccountClaimer('.contributor-unregistered');
-        });
-    }
+    % if not user.get('is_contributor'):
+    $script(['/static/js/accountClaimer.js'], function() {
+        var accountClaimer = new OSFAccountClaimer('.contributor-unregistered');
+    });
+    % endif
 
 </script>
 % if node.get('is_public') and node.get('piwik_site_id'):
