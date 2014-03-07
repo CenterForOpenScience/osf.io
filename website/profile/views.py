@@ -1,5 +1,6 @@
 import json
 import httplib as http
+import bleach
 
 from framework import (
     get_user,
@@ -276,9 +277,9 @@ def parse_names(**kwargs):
 @must_be_logged_in
 def post_names(**kwargs):
     user = kwargs['auth'].user
-    user.fullname = request.json['fullname']
-    user.given_name = request.json['given_name']
-    user.middle_names = request.json['middle_names']
-    user.family_name = request.json['family_name']
-    user.suffix = request.json['suffix']
+    user.fullname = bleach.clean(request.json['fullname'], strip=True, tags=[], attributes=[], styles=[])
+    user.given_name = bleach.clean(request.json['given_name'], strip=True, tags=[], attributes=[], styles=[])
+    user.middle_names = bleach.clean(request.json['middle_names'], strip=True, tags=[], attributes=[], styles=[])
+    user.family_name = bleach.clean(request.json['family_name'], strip=True, tags=[], attributes=[], styles=[])
+    user.suffix = bleach.clean(request.json['suffix'], strip=True, tags=[], attributes=[], styles=[])
     user.save()
