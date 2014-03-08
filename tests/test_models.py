@@ -2170,26 +2170,6 @@ class TestComments(DbTestCase):
         with assert_raises(ValidationValueError):
             self.comment.save()
 
-    def test_comments_cloned_by_registration(self):
-        project = ProjectFactory()
-        comment1 = CommentFactory(node=project, content='foo')
-        comment2 = CommentFactory(node=project, target=comment1, content='bar')
-        comment3 = CommentFactory(node=project, target=comment2, content='baz')
-        registration = RegistrationFactory(project=project)
-        reg_comment1 = registration.commented[0]
-        reg_comment2 = reg_comment1.commented[0]
-        reg_comment3 = reg_comment2.commented[0]
-        assert_equal(reg_comment1.content, 'foo')
-        assert_equal(reg_comment2.content, 'bar')
-        assert_equal(reg_comment3.content, 'baz')
-
-    def test_comments_not_cloned_by_fork(self):
-        project = ProjectFactory()
-        comment = CommentFactory(node=project, content='foo')
-        fork = project.fork_node(auth=Auth(user=project.creator))
-        fork_comments = getattr(fork, 'commented', [])
-        assert_false(fork_comments)
-
 
 if __name__ == '__main__':
     unittest.main()

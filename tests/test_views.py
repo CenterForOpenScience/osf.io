@@ -1778,7 +1778,7 @@ class TestComments(DbTestCase):
         assert_equal(len(res.json['discussion']), 2)
         observed = [user['id'] for user in res.json['discussion']]
         expected = [self.project.creator._id, user2._id]
-        assert_equal(observed, expected)
+        assert_equal(set(observed), set(expected))
 
 
 class TestSearchViews(DbTestCase):
