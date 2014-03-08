@@ -8,12 +8,14 @@
 
     <div id="comments" class="cp-sidebar">
 
-        <h4>Discussion</h4>
-        <div data-bind="foreach: {data: discussion, afterAdd: setupToolTips}">
-            <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}">
-                <img data-bind="attr: {src: gravatarUrl}"/>
-            </a>
-        </div>
+        <h4>
+            <span>Discussion</span>
+            <span data-bind="foreach: {data: discussion, afterAdd: setupToolTips}" class="pull-right">
+                <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
+                    <img data-bind="attr: {src: gravatarUrl}"/>
+                </a>
+            </span>
+        </h4>
 
         <div data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
         <div data-bind="if: canComment" style="margin-top: 20px">
