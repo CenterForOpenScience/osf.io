@@ -758,20 +758,28 @@ class TestClaimViews(DbTestCase):
         })
 
     def test_user_can_log_in_with_a_different_account(self):
-
+        right_user = AuthUserFactory(fullname="Right User")
         # User goes to the claim page, but a different user (lab_user) is logged in
         lab_user = AuthUserFactory(fullname="Lab Comp")
 
         url = self.user.get_claim_url(self.project._primary_key)
-        res = self.app.get(url, auth=lab_user)
+        res = self.app.get(url, auth=lab_user.auth).follow(auth=lab_user.auth)
 
-        assert 0, 'finish me'
+        # verify that the "Claim Account" form is returned
+        assert_in('Claim Contributor', res.body)
         # Clicks "I am not Lab Comp"
         # Taken to login/register page
         # Fills in log in form
         # submits
+        res2 = res.click(href="/claim/login").follow(auth=right_user.auth).follow(auth=right_user.auth)
+        self.project.reload()
+        self.user.reload()
         # taken to dashboard
+        assert_in("Dashboard", res2.body)
         # user is now a contributor to self.project
+        assert_in(right_user._primary_key, self.project.contributors)
+        # lab user is not a contributor
+        assert_not_in(lab_user._primary_key, self.project.contributors)
 
     def test_claim_user_form_redirects_to_password_confirm_page_if_user_is_logged_in(self):
         reg_user = UserFactory()
