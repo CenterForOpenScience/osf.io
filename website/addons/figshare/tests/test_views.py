@@ -282,5 +282,8 @@ class TestViewsAuth(DbTestCase):
         self.node_settings.figshare_type = 'project'
         self.node_settings.save()
 
-    def test_oauth_start(self):
+    #TODO Finish me, would require a lot of mocking it seems.
+    def test_oauth_fail(self):
+        url = '/api/v1/project/{0}/figshare/oauth'.format(self.project._id)
+        rv = self.app.get(url, auth=self.user.auth).maybe_follow()
         pass
