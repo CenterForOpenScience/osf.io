@@ -710,19 +710,6 @@ class TestClaiming(DbTestCase):
         self.referrer = AuthUserFactory()
         self.project = ProjectFactory(creator=self.referrer, is_public=True)
 
-
-
-    def test_user_with_claim_url_registers_new_account(self):
-        assert 0, 'finish me'
-        # User goes to the claim page, but a different user (lab_user) is logged in
-        lab_user = AuthUserFactory(fullname="Lab Comp")
-        # Clicks "I am not Lab Comp"
-        # Taken to login/register page
-        # Fills in Register form
-        # submits
-        # Confirms their email address
-        # user is now a contributor to self.project
-
     def test_correct_name_shows_in_contributor_list(self):
         name1, email = fake.name(), fake.email()
         UnregUserFactory(fullname=name1, email=email)
