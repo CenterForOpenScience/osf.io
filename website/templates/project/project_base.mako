@@ -36,7 +36,7 @@ ${next.body()}
     // Mako variables accessible globally
     window.contextVars = {
         currentUser: {
-            username: '${user["username"]}'
+            username: '${user.get("username")}'
         }
     }
 
