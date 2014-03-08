@@ -66,6 +66,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         else:
             return figshare_settings.API_OAUTH_URL
 
+    @property
+    def has_auth(self):
+        return self.user_settings and self.user_settings.has_auth
+
     def to_json(self, user):
         rv = super(AddonFigShareNodeSettings, self).to_json(user)
 
@@ -77,7 +81,8 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             'figshare_title': self.figshare_title or '',
             'node_has_auth': self.user_settings and self.user_settings.has_auth,
             'user_has_auth': figshare_user and figshare_user.has_auth,
-            'figshare_options': []
+            'figshare_options': [],
+            'is_registration': self.owner.is_registration,
         })
 
         if self.user_settings and self.user_settings.has_auth:
@@ -207,42 +212,6 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 )
             return AddonFigShareNodeSettings(), message
 
-        if save:
-            clone.save()
-
-        return clone, message
-
-    def before_register(self, node, user):
-        """
-
-        :param Node node:
-        :param User user:
-        :return str: Alert message
-
-        """
-        if self.user_settings:
-            return messages.BEFORE_REGISTER.format(
-                category=node.project_or_component,
-                )
-
-    def after_register(self, node, registration, user, save=True):
-        """
-
-        :param Node node: Original node
-        :param Node registration: Registered node
-        :param User user: User creating registration
-
-        :return tuple: Tuple of cloned settings and alert message
-
-        """
-        clone, message = super(AddonFigShareNodeSettings, self).after_register(
-            node, registration, user, save=False
-            )
-
-        # Copy foreign fields from current add-on
-        clone.user_settings = self.user_settings
-
-        # TODO handle registration
         if save:
             clone.save()
 

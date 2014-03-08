@@ -207,7 +207,7 @@ def make_url_map(app):
                 '/project/<pid>/comment/<cid>/',
                 '/project/<pid>/node/<nid>/comment/<cid>/',
             ],
-            'post',
+            'put',
             project_views.comment.edit_comment,
             json_renderer,
         ),
@@ -224,11 +224,31 @@ def make_url_map(app):
 
         Rule(
             [
+                '/project/<pid>/comment/<cid>/undelete/',
+                '/project/<pid>/node/<nid>/comment/<cid>/undelete/',
+            ],
+            'put',
+            project_views.comment.undelete_comment,
+            json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/comment/<cid>/report/',
                 '/project/<pid>/node/<nid>/comment/<cid>/report/',
             ],
             'post',
             project_views.comment.report_abuse,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/comment/<cid>/unreport/',
+                '/project/<pid>/node/<nid>/comment/<cid>/unreport/',
+            ],
+            'post',
+            project_views.comment.unreport_abuse,
             json_renderer,
         ),
 

@@ -151,7 +151,7 @@ class Comment(GuidStoredObject):
             return True
         if auth.user and auth.user == self.user:
             return True
-        return node.can_edit(auth)
+        return node.is_contributor(auth)
 
     def edit(self, content, is_public, auth, save=False):
         self.content = content
@@ -201,9 +201,60 @@ class Comment(GuidStoredObject):
             self.save()
 
     def report_abuse(self, user, save=False, **kwargs):
+        """Report that a comment is abuse.
+
+        :param User user: User submitting the report
+        :param bool save: Save changes
+        :param dict kwargs: Report details
+        :raises: ValueError if the user submitting abuse is the same as the
+            user who posted the comment
+
+        """
+        if user == self.user:
+            raise ValueError
         self.reports[user._id] = kwargs
         if save:
             self.save()
+
+    def unreport_abuse(self, user, save=False):
+        """Revoke report of abuse.
+
+        :param User user: User who submitted the report
+        :param bool save: Save changes
+        :raises: ValueError if user has not reported comment as abuse
+
+        """
+        try:
+            self.reports.pop(user._id)
+        except KeyError:
+            raise ValueError('User has not reported comment as abuse')
+
+        if save:
+            self.save()
+
+    def _clone(self, node, target):
+        """Recursively clone comments to new root and parent.
+
+        :param Node node: Comment root
+        :param GuidStoredObject target: Comment parent
+
+        """
+        # Clone non-foreign fields
+        cloned = self.clone()
+
+        # Copy user references
+        cloned.user = self.user
+
+        # Set new references
+        cloned.node = node
+        cloned.target = target
+
+        # Must save comment for foreign references
+        cloned.save()
+
+        # Recursively copy child comments
+        for comment in getattr(self, 'commented', []):
+            comment._clone(node, cloned)
 
 
 class ApiKey(StoredObject):
@@ -475,7 +526,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             for permission in settings.CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
 
-
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).
@@ -495,12 +545,15 @@ class Node(GuidStoredObject, AddonModelMixin):
         else:
             is_api_node = False
         return (
-            self.is_contributor(user)
+            (user and self.has_permission(user, 'write'))
             or is_api_node
         )
 
     def can_view(self, auth):
-        return self.is_public or self.can_edit(auth)
+        return (
+            self.is_public or
+            auth.user and self.has_permission(auth.user, 'read')
+        )
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
@@ -1112,6 +1165,10 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         registered.save()
 
+        # Clone comments
+        for comment in getattr(self, 'commented', []):
+            comment._clone(node=registered, target=registered)
+
         # After register callback
         for addon in original.get_addons():
             _, message = addon.after_register(original, registered, auth.user)
@@ -1659,37 +1716,44 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param contributor: User object, the contributor to be removed
         :param auth: All the auth informtion including user, API key.
+
         """
-        if not auth.user._id == contributor._id:
-            # remove unclaimed record if necessary
-            if self._primary_key in contributor.unclaimed_records:
-                del contributor.unclaimed_records[self._primary_key]
-            self.contributors.remove(contributor._id)
+        # remove unclaimed record if necessary
+        if self._primary_key in contributor.unclaimed_records:
+            del contributor.unclaimed_records[self._primary_key]
+        self.contributors.remove(contributor._id)
 
-            # Clear permissions for removed user
-            self.permissions.pop(contributor._id, None)
+        # Node must have at least one admin user
+        admins = [
+            user for user in self.contributors
+            if self.has_permission(user, 'admin')
+        ]
+        if not admins:
+            return False
 
-            self.save()
+        # Clear permissions for removed user
+        self.permissions.pop(contributor._id, None)
 
-            # After remove callback
-            for addon in self.get_addons():
-                message = addon.after_remove_contributor(self, contributor)
-                if message:
-                    status.push_status_message(message)
+        self.save()
 
-            if log:
-                self.add_log(
-                    action=NodeLog.CONTRIB_REMOVED,
-                    params={
-                        'project': self.parent_id,
-                        'node': self._primary_key,
-                        'contributor': contributor._id,
-                    },
-                    auth=auth,
-                )
-            return True
+        # After remove callback
+        for addon in self.get_addons():
+            message = addon.after_remove_contributor(self, contributor)
+            if message:
+                status.push_status_message(message)
 
-        return False
+        if log:
+            self.add_log(
+                action=NodeLog.CONTRIB_REMOVED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'contributor': contributor._id,
+                },
+                auth=auth,
+            )
+
+        return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
 

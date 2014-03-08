@@ -24,6 +24,10 @@ this.Comment = (function(window, $, ko) {
         return then.fromNow();
     };
 
+    var notEmpty = function(value) {
+        return !!$.trim(value);
+    }
+
     var exclusify = function(subscriber, subscribees) {
         subscriber.subscribe(function(value) {
             if (value) {
@@ -65,10 +69,9 @@ this.Comment = (function(window, $, ko) {
         self.replyPublic = ko.observable('public');
 
         self.comments = ko.observableArray();
-        self.displayComments = ko.computed(function() {
-            return ko.utils.arrayFilter(self.comments(), function(comment) {
-                return !comment.isAbuse();
-            });
+
+        self.replyNotEmpty = ko.computed(function() {
+            return notEmpty(self.replyContent());
         });
 
     };
@@ -185,13 +188,27 @@ this.Comment = (function(window, $, ko) {
 
         self.reporting = ko.observable(false);
         self.deleting = ko.observable(false);
+        self.unreporting = ko.observable(false);
+        self.undeleting = ko.observable(false);
+
         self.abuseCategory = ko.observable('spam');
         self.abuseText = ko.observable();
 
         self.editing = ko.observable(false);
         self.editVerb = self.modified ? 'edited' : 'posted';
         
-        exclusifyGroup(self.editing, self.replying, self.reporting, self.deleting);
+        exclusifyGroup(
+            self.editing, self.replying, self.reporting, self.deleting,
+            self.unreporting, self.undeleting
+        );
+
+        self.isVisible = ko.computed(function() {
+            return !self.isDeleted() && !self.isAbuse();
+        });
+
+        self.editNotEmpty = ko.computed(function() {
+            return notEmpty(self.content());
+        });
 
         self.showPrivateIcon = ko.computed(function() {
             return self.isPublic() === 'private';
@@ -201,6 +218,9 @@ this.Comment = (function(window, $, ko) {
         });
         self.editHighlight = ko.computed(function() {
             return self.canEdit() && self.hoverContent();
+        });
+        self.canReport = ko.computed(function() {
+            return self.$root.canComment() && !self.canEdit();
         });
 
     };
@@ -238,7 +258,7 @@ this.Comment = (function(window, $, ko) {
             self.editErrorMessage('Please enter a comment');
             return
         }
-        $.osf.postJSON(
+        $.osf.putJSON(
             nodeApiUrl + 'comment/' + self.id() + '/',
             {
                 content: self.content(),
@@ -293,9 +313,8 @@ this.Comment = (function(window, $, ko) {
             type: 'DELETE',
             url: nodeApiUrl + 'comment/' + self.id() + '/',
             success: function(response) {
-                var siblings = self.$parent.comments;
-                siblings.splice(siblings.indexOf(self), 1);
-                self.deleting(true);
+                self.isDeleted(true);
+                self.deleting(false);
             },
             error: function() {
                 self.deleting(false);
@@ -305,6 +324,54 @@ this.Comment = (function(window, $, ko) {
 
     CommentModel.prototype.cancelDelete = function() {
         this.deleting(false);
+    };
+
+    CommentModel.prototype.startUndelete = function() {
+        this.undeleting(true);
+    };
+
+    CommentModel.prototype.submitUndelete = function() {
+        var self = this;
+        $.ajax({
+            type: 'PUT',
+            url: nodeApiUrl + 'comment/' + self.id() + '/undelete/',
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function(response) {
+                self.isDeleted(false);
+            },
+            complete: function() {
+                self.undeleting(false);
+            }
+        });
+    };
+
+    CommentModel.prototype.cancelUndelete = function() {
+        this.undeleting(false);
+    };
+
+    CommentModel.prototype.startUnreportAbuse = function() {
+        this.unreporting(true);
+    };
+
+    CommentModel.prototype.submitUnreportAbuse = function() {
+        var self = this;
+        $.ajax({
+            type: 'POST',
+            url: nodeApiUrl + 'comment/' + self.id() + '/unreport/',
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function(response) {
+                self.isAbuse(false);
+            },
+            complete: function() {
+                self.unreporting(false);
+            }
+        });
+    };
+
+    CommentModel.prototype.cancelUnreportSpam = function() {
+        this.unreporting(false);
     };
 
     CommentModel.prototype.startHoverContent = function() {
@@ -341,10 +408,6 @@ this.Comment = (function(window, $, ko) {
         self.canComment = ko.observable(canComment);
         self.hasChildren = ko.observable(hasChildren);
         self.discussion = ko.observableArray();
-
-        self.replyNotEmpty = ko.computed(function() {
-            return !!self.replyContent();
-        });
 
         self.fetch();
         self.fetchDiscussion();

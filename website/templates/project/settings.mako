@@ -15,11 +15,13 @@
     <div class="col-md-3">
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
-                % if 'admin' in user['permissions']:
+                % if 'admin' in user['permissions'] and not node['is_registration']:
                     <li><a href="#configureNode">Configure ${node['category'].capitalize()}</a></li>
                 % endif
                 <li><a href="#configureCommenting">Configure Commenting</a></li>
-                <li><a href="#selectAddons">Select Add-ons</a></li>
+                % if not node['is_registration']:
+                    <li><a href="#selectAddons">Select Add-ons</a></li>
+                % endif
                 % if addon_enabled_settings:
                     <li><a href="#configureAddons">Configure Add-ons</a></li>
                 % endif
@@ -28,7 +30,7 @@
     </div>
     <div class="col-md-6">
 
-        % if 'admin' in user['permissions']:
+        % if 'admin' in user['permissions'] and not node['is_registration']:
 
             <div id="configureNode" class="panel panel-default">
 

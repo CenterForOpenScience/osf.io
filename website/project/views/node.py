@@ -29,7 +29,7 @@ from .log import _get_logs
 logger = logging.getLogger(__name__)
 
 @must_be_valid_project  # returns project
-@must_be_contributor  # returns user, project
+@must_have_permission('write')
 @must_not_be_registration
 def edit_node(**kwargs):
     project = kwargs['project']
@@ -78,7 +78,7 @@ def project_new_post(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+@must_have_permission('write')
 @must_not_be_registration
 def project_new_node(**kwargs):
     form = NewNodeForm(request.form)
@@ -166,8 +166,7 @@ def node_forks(**kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor # returns user, project
-@must_not_be_registration
+@must_have_permission('write')
 def node_setting(**kwargs):
 
     auth = kwargs['auth']
@@ -203,7 +202,7 @@ def node_setting(**kwargs):
     return rv
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_not_be_registration
 def node_choose_addons(**kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -212,7 +211,7 @@ def node_choose_addons(**kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor # returns user, project
+@must_have_permission('admin')
 def node_contributors(**kwargs):
 
     auth = kwargs['auth']
@@ -223,7 +222,7 @@ def node_contributors(**kwargs):
     return rv
 
 
-@must_be_contributor
+@must_have_permission('write')
 def configure_comments(**kwargs):
     node = kwargs['node'] or kwargs['project']
     comment_level = request.json.get('commentLevel')
@@ -243,7 +242,7 @@ def configure_comments(**kwargs):
 
 @must_be_valid_project
 @must_not_be_registration
-@must_be_contributor # returns user, project
+@must_have_permission('write')
 def project_reorder_components(**kwargs):
 
     project = kwargs['project']
@@ -748,7 +747,7 @@ def _add_pointers(node, pointers, auth):
         node.save()
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_not_be_registration
 def add_pointers(**kwargs):
     """Add pointers to a node.
@@ -771,7 +770,7 @@ def add_pointers(**kwargs):
     return {}
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_not_be_registration
 def remove_pointer(**kwargs):
     """Remove a pointer from a node, raising a 400 if the pointer is not
@@ -798,7 +797,7 @@ def remove_pointer(**kwargs):
     node.save()
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_not_be_registration
 def fork_pointer(**kwargs):
     """Fork a pointer. Raises BAD_REQUEST if pointer not provided, not found,

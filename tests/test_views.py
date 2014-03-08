@@ -496,7 +496,7 @@ class TestAddingContributorViews(DbTestCase):
         assert_false(res['active'])
         assert_false(res['registered'])
         assert_equal(res['id'], user._primary_key)
-        assert_true(res['gravatar'])
+        assert_true(res['gravatar_url'])
         assert_equal(res['fullname'], name)
         assert_equal(res['email'], email)
 
@@ -674,7 +674,7 @@ class TestUserInviteViews(DbTestCase):
         res = self.app.post_json(self.invite_url,
             {'email': 'brian@queen.com', 'fullname': ''}, auth=self.user.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_send_claim_email_to_given_email(self, send_mail):
@@ -907,7 +907,7 @@ class TestWatchViews(DbTestCase):
                             params={},
                             auth=self.auth,
                             expect_errors=True)
-        assert_equal(res2.status_code, 400)
+        assert_equal(res2.status_code, http.BAD_REQUEST)
 
     def test_unwatching_a_project_removes_from_watched_list(self):
         # The user has already watched a project
@@ -1207,7 +1207,7 @@ class TestAuthViews(DbTestCase):
         user.confirm_email(token)
         user.save()
         res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_change_names(self):
         self.app.post(
@@ -1281,7 +1281,7 @@ class TestFileViews(DbTestCase):
     def test_files_get(self):
         url = '/api/v1/{0}/files/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, http.OK)
         expected = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res.json['node'], expected['node'])
         assert_in('tree_js', res.json)
@@ -1290,7 +1290,7 @@ class TestFileViews(DbTestCase):
     def test_grid_data(self):
         url = '/api/v1/{0}/files/grid/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, http.OK)
         expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))
         data = res.json['data']
         assert_equal(len(data), len(expected))
@@ -1309,13 +1309,14 @@ class TestComments(DbTestCase):
         project.comment_level = comment_level
         project.save()
 
-    def _add_comment(self, project, **kwargs):
+    def _add_comment(self, project, content=None, **kwargs):
 
+        content = content if content is not None else 'hammer to fall'
         url = project.api_url + 'comment/'
         return self.app.post_json(
             url,
             {
-                'content': 'hammer to fall',
+                'content': content,
                 'isPublic': 'public',
             },
             **kwargs
@@ -1334,8 +1335,7 @@ class TestComments(DbTestCase):
         assert_equal(
             res.json['comment'],
             serialize_comment(
-                self.project.commented[0], self.project,
-                self.consolidated_auth
+                self.project.commented[0], self.consolidated_auth
             )
         )
 
@@ -1352,8 +1352,7 @@ class TestComments(DbTestCase):
         assert_equal(
             res.json['comment'],
             serialize_comment(
-                self.project.commented[0], self.project,
-                Auth(user=self.non_contributor)
+                self.project.commented[0], Auth(user=self.non_contributor)
             )
         )
 
@@ -1370,8 +1369,7 @@ class TestComments(DbTestCase):
         assert_equal(
             res.json['comment'],
             serialize_comment(
-                self.project.commented[0], self.project,
-                self.consolidated_auth
+                self.project.commented[0], self.consolidated_auth
             )
         )
 
@@ -1399,7 +1397,27 @@ class TestComments(DbTestCase):
             self.project, auth=self.project.creator.auth, expect_errors=True,
         )
 
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    def test_add_comment_empty(self):
+        self._configure_project(self.project, 'public')
+        res = self._add_comment(
+            self.project, content='',
+            auth=self.project.creator.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_false(getattr(self.project, 'commented', []))
+
+    def test_add_comment_whitespace(self):
+        self._configure_project(self.project, 'public')
+        res = self._add_comment(
+            self.project, content='  ',
+            auth=self.project.creator.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_false(getattr(self.project, 'commented', []))
 
     def test_edit_comment(self):
 
@@ -1407,7 +1425,7 @@ class TestComments(DbTestCase):
         comment = CommentFactory(node=self.project)
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.post_json(
+        res = self.app.put_json(
             url,
             {
                 'content': 'edited',
@@ -1432,7 +1450,7 @@ class TestComments(DbTestCase):
         self.project.add_contributor(non_author, auth=self.consolidated_auth)
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.post_json(
+        res = self.app.put_json(
             url,
             {
                 'content': 'edited',
@@ -1450,7 +1468,7 @@ class TestComments(DbTestCase):
         comment = CommentFactory(node=self.project)
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.post_json(
+        res = self.app.put_json(
             url,
             {
                 'content': 'edited',
@@ -1495,10 +1513,11 @@ class TestComments(DbTestCase):
 
         assert_false(comment.is_deleted)
 
-    def test_report_spam(self):
+    def test_report_abuse(self):
 
         self._configure_project(self.project, 'public')
         comment = CommentFactory(node=self.project)
+        reporter = AuthUserFactory()
 
         url = self.project.api_url + 'comment/{0}/report/'.format(comment._id)
 
@@ -1508,27 +1527,15 @@ class TestComments(DbTestCase):
                 'category': 'spam',
                 'text': 'ads',
             },
-            auth=self.project.creator.auth,
+            auth=reporter.auth,
         )
 
         comment.reload()
-        assert_in(self.project.creator._id, comment.reports)
+        assert_in(reporter._id, comment.reports)
         assert_equal(
-            comment.reports[self.project.creator._id],
+            comment.reports[reporter._id],
             {'category': 'spam', 'text': 'ads'}
         )
-
-    def test_cannot_view_deleted_comments(self):
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
-        deleted_comment = CommentFactory(node=self.project)
-        deleted_comment.delete(auth=self.consolidated_auth, save=True)
-
-        url = self.project.api_url + 'comments/'
-        res = self.app.get(url)
-
-        assert_equal(len(res.json['comments']), 1)
-        assert_equal(res.json['comments'][0]['content'], comment.content)
 
     def test_can_view_private_comments_if_contributor(self):
 
@@ -1599,6 +1606,25 @@ class TestComments(DbTestCase):
         assert_equal(len(res.json['discussion']), 3)
         observed = [user['id'] for user in res.json['discussion']]
         expected = [user1._id, user2._id, self.project.creator._id]
+        assert_equal(observed, expected)
+
+    def test_discussion_no_private_if_not_contributor(self):
+
+        self._configure_project(self.project, 'private')
+
+        user1 = AuthUserFactory()
+        user2 = AuthUserFactory()
+
+        CommentFactory(node=self.project)
+        CommentFactory(node=self.project, user=user1, is_public=False)
+        CommentFactory(node=self.project, user=user2, is_public=False)
+
+        url = self.project.api_url + 'comments/discussion/'
+        res = self.app.get(url, auth=user2.auth).maybe_follow()
+
+        assert_equal(len(res.json['discussion']), 2)
+        observed = [user['id'] for user in res.json['discussion']]
+        expected = [self.project.creator._id, user2._id]
         assert_equal(observed, expected)
 
 

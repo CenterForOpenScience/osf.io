@@ -1,4 +1,4 @@
-this.Manage = (function($, ko, bootbox) {
+this.Manage = (function(window, $, ko, bootbox) {
 
     var contribsEqual = function(a, b) {
         return a.id === b.id && a.permission === b.permission;
@@ -108,7 +108,18 @@ this.Manage = (function($, ko, bootbox) {
             }));
         };
 
+        self.initListeners = function() {
+            var self = this;
+            $(window).on('beforeunload', function() {
+                if (self.changed()) {
+                    return 'There are unsaved changes to your contributor '
+                        'settings. Are you sure you want to leave this page?'
+                }
+            });
+        };
+
         self.init();
+        self.initListeners();
 
         self.setupEditable = function(elm, data) {
             var $elm = $(elm);
@@ -202,4 +213,4 @@ this.Manage = (function($, ko, bootbox) {
         ViewModel: ContributorsViewModel
     }
 
-})($, ko, bootbox);
+})(window, $, ko, bootbox);

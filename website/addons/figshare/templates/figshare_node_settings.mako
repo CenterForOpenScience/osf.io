@@ -5,8 +5,8 @@
 
 % if node_has_auth:
 
-    <input type="hidden" id="figshareId" name="figshare_value" value="${figshare_id}">
-    <input type="hidden" id="figshareTitle" name="figshare_title" value="${figshare_type}">
+    <input type="hidden" id="figshareId" name="figshare_value" value="${figshare_type + '_' + figshare_id}">
+    <input type="hidden" id="figshareTitle" name="figshare_title" value="${figshare_title}">
 
     <div class="well well-sm">
         <span>Authorized by <a href="${owner_url}">${authorized_user}</a></span>
@@ -18,17 +18,25 @@
 
     <div class="row">
             <div class="col-md-6">
-                <select id="figshareSelectProject" class="form-control" ${'' if is_owner else 'disabled'}>
+                <select id="figshareSelectProject" class="form-control" ${'' if is_owner and not is_registration else 'disabled'}>
                     <option>-----</option>
                     %if is_owner:
                         % for project in figshare_options:
                             <option value="${project['value']}" ${'selected' if project['label'] == figshare_title else ''}>${project['label']}</option>
                         % endfor
                     %else:
-                        <option selected>${figshare_title}</option>>
+                        <option value="${figshare_type + '_' + figshare_id}" selected>${figshare_title}</option>>
                     %endif
                 </select>
             </div>
+
+        % if is_owner and not is_registration:
+            <div class="col-md-6">
+                <a id="figshareCreateProject" class="btn btn-default">Create Project</a>
+            </div>
+        % endif
+
+
     </div>
 
 

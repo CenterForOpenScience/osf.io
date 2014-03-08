@@ -12,7 +12,7 @@ from framework import redirect, Q
 from website.addons.base.views import check_file_guid
 
 from website.project import decorators
-from website.project.decorators import must_be_contributor_or_public
+from website.project.decorators import must_be_contributor_or_public, must_be_contributor
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
@@ -28,35 +28,35 @@ from website.addons.figshare import messages
 
 # ----------------- PROJECTS ---------------
 # PROJECTS: C
-@decorators.must_be_contributor
+@decorators.must_have_permission('write')
 @decorators.must_have_addon('figshare', 'node')
-def figshare_create_project(*args, **kwargs):
+def figshare_create_project(**kwargs):
     # TODO implement me
     pass
 
 # PROJECTS: R
 
 
-@decorators.must_be_contributor
+@decorators.must_have_permission('write')
 @decorators.must_have_addon('figshare', 'node')
-def figshare_get_project(*args, **kwargs):
+def figshare_get_project(**kwargs):
     # TODO implement me
     pass
 
 # PROJECTS: U
 
 
-@decorators.must_be_contributor
+@decorators.must_have_permission('write')
 @decorators.must_have_addon('figshare', 'node')
-def figshare_add_article_to_project(*args, **kwargs):
+def figshare_add_article_to_project(**kwargs):
     node = kwargs['node'] or kwargs['project']
     figshare = node.get_addon('figshare')
 
-    project_id = kwargs.get('project_id') or None
+    project_id = kwargs.get('project_id')
     if project_id is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    article_id = kwargs.get('aid') or None
+    article_id = kwargs.get('aid')
 
     article = None
     connect = Figshare.from_settings(figshare.user_settings)
@@ -68,7 +68,7 @@ def figshare_add_article_to_project(*args, **kwargs):
 # PROJECTS: D
 
 
-@decorators.must_be_contributor
+@decorators.must_have_permission('write')
 @decorators.must_have_addon('figshare', 'node')
 def figshare_remove_article_from_project(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -137,7 +137,7 @@ def figshare_upload_file_as_article(*args, **kwargs):
         raise HTTPError(http.INTERNAL_SERVER_ERROR)  # TODO better error?
 
 
-@decorators.must_be_contributor
+@decorators.must_have_permission('write')
 @decorators.must_have_addon('figshare', 'node')
 def figshare_publish_article(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -237,6 +237,10 @@ def figshare_view_file(*args, **kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     connect = Figshare.from_settings(node_settings.user_settings)
+    project = connect.project(node_settings, node_settings.figshare_id)
+
+    if not article_id in str(project):
+        raise HTTPError(http.NOT_FOUND)
 
     article = connect.article(node_settings, article_id)
 
@@ -326,7 +330,7 @@ def get_cache_file(article_id, file_id):
 def figshare_delete_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    user = kwargs['user']
+
     figshare = node.get_addon('figshare')
 
     file_id = kwargs.get('fid', '')
@@ -336,7 +340,7 @@ def figshare_delete_file(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     connect = Figshare.from_settings(figshare.user_settings)
-
+    connect.remove_article_from_project(figshare, figshare.figshare_id, article_id)
     return connect.delete_file(node, figshare, article_id, file_id)
 
 
@@ -375,12 +379,24 @@ def figshare_download_file(*args, **kwargs):
         filedata = f.read()
         resp = make_response(filedata)
         resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(name)
-        
+
         # Add binary MIME type if extension missing
         _, ext = os.path.splitext(name)
         if not ext:
             resp.headers['Content-Type'] = 'application/octet-stream'
-            
+
         return resp
 
-        
+
+@must_be_contributor
+@must_have_addon('figshare', 'node')
+def figshare_create_project(*args, **kwargs):
+    node_settings = kwargs['node_addon']
+    project_name = request.json.get('project')
+    if not node_settings or not node_settings.has_auth or not project_name:
+        raise HTTPError(http.BAD_REQUEST)
+    resp = Figshare.from_settings(node_settings.user_settings).create_project(node_settings, project_name)
+    if resp:
+        return resp
+    else:
+        raise HTTPError(http.BAD_REQUEST)
