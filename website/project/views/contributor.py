@@ -342,6 +342,13 @@ def project_manage_contributors(**kwargs):
     except ValueError as error:
         raise HTTPError(http.BAD_REQUEST, data={'message_long': error.message})
 
+    # Must redirect user if revoked own access
+    if not node.is_contributor(auth.user):
+        return {'redirectUrl': node.url}
+    if not node.has_permission(auth.user, 'admin'):
+        return {'redirectUrl': '/dashboard/'}
+    return {}
+
 
 def get_timestamp():
     return int(time.time())

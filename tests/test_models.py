@@ -1167,6 +1167,22 @@ class TestProject(DbTestCase):
                 users, auth=self.consolidate_auth, save=True,
             )
 
+    def test_manage_contributors_no_registered_admins(self):
+        unregistered = UnregUserFactory()
+        self.project.add_contributor(
+            unregistered,
+            permissions=['read', 'write', 'admin'],
+            save=True
+        )
+        users = [
+            {'id': self.project.creator._id, 'permission': 'read'},
+            {'id': unregistered._id, 'permission': 'admin'},
+        ]
+        with assert_raises(ValueError):
+            self.project.manage_contributors(
+                users, auth=self.consolidate_auth, save=True,
+            )
+
     def test_set_title(self):
         proj = ProjectFactory(title='That Was Then', creator=self.user)
         proj.set_title('This is now', auth=self.consolidate_auth)
