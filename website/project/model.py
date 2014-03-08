@@ -151,7 +151,7 @@ class Comment(GuidStoredObject):
             return True
         if auth.user and auth.user == self.user:
             return True
-        return node.can_edit(auth)
+        return node.is_contributor(auth)
 
     def edit(self, content, is_public, auth, save=False):
         self.content = content

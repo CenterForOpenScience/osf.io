@@ -1552,6 +1552,25 @@ class TestComments(DbTestCase):
         expected = [user1._id, user2._id, self.project.creator._id]
         assert_equal(observed, expected)
 
+    def test_discussion_no_private_if_not_contributor(self):
+
+        self._configure_project(self.project, 'private')
+
+        user1 = AuthUserFactory()
+        user2 = AuthUserFactory()
+
+        CommentFactory(node=self.project)
+        CommentFactory(node=self.project, user=user1, is_public=False)
+        CommentFactory(node=self.project, user=user2, is_public=False)
+
+        url = self.project.api_url + 'comments/discussion/'
+        res = self.app.get(url, auth=user2.auth).maybe_follow()
+
+        assert_equal(len(res.json['discussion']), 2)
+        observed = [user['id'] for user in res.json['discussion']]
+        expected = [self.project.creator._id, user2._id]
+        assert_equal(observed, expected)
+
 
 class TestSearchViews(DbTestCase):
 
