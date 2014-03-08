@@ -315,6 +315,7 @@ def project_manage_contributors(**kwargs):
     except ValueError as error:
         raise HTTPError(http.BAD_REQUEST, data={'message_long': error.message})
 
+
 def get_timestamp():
     return int(time.time())
 

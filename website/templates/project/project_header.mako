@@ -138,7 +138,7 @@
                     <li><a href="${node['url']}registrations/">Registrations</a></li>
                 % endif
                 <li><a href="${node['url']}forks/">Forks</a></li>
-                % if user['is_contributor'] and not node['is_registration']:
+                % if 'admin' in user['permissions'] and not node['is_registration']:
                 <li><a href="${node['url']}contributors/">Contributors</a></li>
                 %endif
                 % if user['is_contributor'] and not node['is_registration']:

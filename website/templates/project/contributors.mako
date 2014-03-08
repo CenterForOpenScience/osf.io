@@ -70,11 +70,11 @@
     ${parent.javascript_bottom()}
     <script src="/static/js/manage.js"></script>
     <script type="text/javascript">
-##        (function($) {
+        (function($) {
             var $manageElm = $('#manageContributors');
             var contributorsViewModel = new Manage.ViewModel(contributors);
             ko.applyBindings(contributorsViewModel, $manageElm[0]);
             $manageElm.show();
-##        })($);
+        })($);
     </script>
 </%def>
