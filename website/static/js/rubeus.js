@@ -78,14 +78,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
 		    cssClass: 'btn btn-primary btn-mini'
 		});
 	    }
-	    if (item.permissions.edit) {
-		buttonDefs.push({
-		    text: '&nbsp;<i class="icon-remove"></i>',
-		    action: 'delete',
-		    cssClass: 'btn btn-link btn-mini btn-delete'
-		});
-	    }
-            if (item.permissions.edit) {
+        if (item.permissions.edit) {
 		var deleteTip = genTooltipMarkup('Delete ' + item.name);
 		buttonDefs.push({
 		    text: '&nbsp;<i class="icon-remove"' + deleteTip + '></i>',
