@@ -2062,58 +2062,12 @@ class TestComments(DbTestCase):
         assert_equal(len(comment.node.logs), 2)
         assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
 
-    def test_can_view_public_contributor(self):
-        self.comment.is_public = True
-        assert_true(
-            self.comment.can_view(
-                self.comment.node, self.consolidated_auth
-            )
-        )
-
-    def test_can_view_public_non_contributor(self):
-        self.comment.is_public = True
-        user = UserFactory()
-        assert_true(
-            self.comment.can_view(
-                self.comment.node, Auth(user=user)
-            )
-        )
-
-    def test_can_view_private_contributor(self):
-        self.comment.is_public = False
-        assert_true(
-            self.comment.can_view(
-                self.comment.node, self.consolidated_auth
-            )
-        )
-
-    def test_can_view_private_non_contributor(self):
-        self.comment.is_public = False
-        user = UserFactory()
-        assert_false(
-            self.comment.can_view(
-                self.comment.node, Auth(user=user)
-            )
-        )
-
-    def test_can_view_private_author_non_contributor(self):
-        user = UserFactory()
-        comment = CommentFactory(
-            node=self.comment.node, user=user, is_public=False
-        )
-        assert_true(
-            self.comment.can_view(
-                self.comment.node, Auth(user=user)
-            )
-        )
-
     def test_edit(self):
         self.comment.edit(
             auth=self.consolidated_auth,
-            content='edited', is_public=False
+            content='edited'
         )
         assert_equal(self.comment.content, 'edited')
-        assert_equal(self.comment.is_public, False)
         assert_true(self.comment.modified)
         assert_equal(len(self.comment.node.logs), 2)
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_UPDATED)
