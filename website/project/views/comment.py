@@ -257,3 +257,13 @@ def unreport_abuse(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     return {}
+
+
+#Place holder for later
+#TODO Server side checking
+def get_privacy_options(node_public):
+    if node_public:
+        return ['public', 'private']
+    else:
+        return ['private']
+    pass

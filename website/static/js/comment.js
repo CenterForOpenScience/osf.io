@@ -190,6 +190,11 @@ this.Comment = (function(window, $, ko) {
         self.editing = ko.observable(false);
         self.editVerb = self.modified ? 'edited' : 'posted';
 
+        if(self.$parent != self.$root)
+            self.privacyOptions = self.$parent.isPublic() === 'public' ? Object.keys(PRIVACY_MAP) : ['private'];
+
+        self.contextPrivacyOptions = self.isPublic() === 'public' ? Object.keys(PRIVACY_MAP) : ['private'];
+
         exclusifyGroup(
             self.editing, self.replying, self.reporting, self.deleting,
             self.unreporting, self.undeleting
@@ -227,9 +232,8 @@ this.Comment = (function(window, $, ko) {
     };
 
     CommentModel.prototype.togglePrivacy = function(data) {
-        if(this.canEdit()) {
+        if(this.canEdit() && this.privacyOptions.length > 1) {
             this.isPublic() === 'private' ? this.isPublic('public') : this.isPublic('private');
-            this._isPublic = this.isPublic();
             $.osf.putJSON(
                 nodeApiUrl + 'comment/' + this.id() + '/',
                 {

@@ -176,7 +176,7 @@
                         <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent"></textarea>
                     </div>
                     <div class="form-inline">
-                        <select class="form-control" data-bind="options: privacyOptions, optionsText: privacyLabel, value: replyPublic"></select>
+                        <select class="form-control" data-bind="options: contextPrivacyOptions, optionsText: privacyLabel, value: replyPublic"></select>
                         <a class="btn btn-default btn-default" data-bind="click: submitReply"><i class="icon-check"></i> Save</a>
                         <a class="btn btn-default btn-default" data-bind="click: cancelReply"><i class="icon-undo"></i> Cancel</a>
                         <span data-bind="text: replyErrorMessage" class="comment-error"></span>
