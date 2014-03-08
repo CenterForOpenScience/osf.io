@@ -315,13 +315,7 @@ def make_url_map(app):
         Rule(['/user/<uid>/<pid>/claim/verify/<token>/'], ['get', 'post'],
             project_views.contributor.claim_user_registered, OsfWebRenderer('claim_account_registered.mako')),
         Rule(['/user/<uid>/<pid>/claim/login/'], ['get', 'post'],
-            project_views.contributor.claim_user_registered_login, OsfWebRenderer('public/login.mako')),
-        # TODO(sloria): Make an API route?
-        Rule([
-            '/project/<pid>/contributors/replace/<old_uid>/<new_uid>/',
-            '/project/<pid>/node/<nid>/contributors/replace/<old_uid>/<new_uid>/',
-        ], 'post', project_views.contributor.replace_contributor, notemplate),
-
+            project_views.contributor.claim_user_registered_login, OsfWebRenderer('public/login.mako'))
     ])
 
     # API

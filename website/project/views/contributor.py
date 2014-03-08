@@ -10,7 +10,7 @@ from framework import request, User, status
 from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
 from framework import forms
-from framework.auth.forms import SetEmailAndPasswordForm, SignInForm, PasswordForm
+from framework.auth.forms import SetEmailAndPasswordForm, PasswordForm
 
 from website import settings, mails, language
 from website.project.model import unreg_contributor_added
@@ -412,16 +412,6 @@ def claim_user_registered_login(**kwargs):
     ref = request.referrer or request.args.get('next')
     return framework.redirect('/account/?next={0}'.format(ref))
 
-@must_be_valid_project
-def replace_contributor(**kwargs):
-    node = kwargs['project'] or kwargs['node']
-    unreg_user = User.load(kwargs['old_uid'])
-    new_user = User.load(kwargs['new_uid'])
-    node.replace_contributor(old=unreg_user, new=new_user)
-    node.save()
-    status.push_status_message('Success. You are now a contributor to this project.', 'warning')
-    return framework.redirect(node.url)
-
 # TODO(sloria): Move to framework
 def is_json_request():
     return request.content_type == 'application/json'
@@ -440,33 +430,39 @@ def claim_user_registered(**kwargs):
     unreg_user = User.load(uid)
     if not verify_claim_token(unreg_user, token, pid=node._primary_key):
         raise HTTPError(http.BAD_REQUEST)
-    if current_user:
-        form = PasswordForm(request.form)
-        if request.method == 'POST':
-            if form.validate():
-                if current_user.check_password(form.password.data):
-                    node.replace_contributor(old=unreg_user, new=current_user)
-                    node.save()
-                    status.push_status_message(
-                        'Success. You are now a contributor to this project.',
-                        'success')
-                    return framework.redirect(node.url)
-                else:
-                    status.push_status_message(language.LOGIN_FAILED, 'warning')
-            else:
-                forms.push_errors_to_status(form.errors)
-        return {
-            'form': forms.utils.jsonify(form) if is_json_request() else form,
-            'user': utils.serialize_user(current_user, full=False)
-                if is_json_request() else current_user,
-            'signoutURL': web_url_for('claim_user_registered_login',
-                uid=uid, pid=pid)
-        }
-    else:
+
+    if not current_user:
         next_url = web_url_for('claim_user_registered', pid=pid, uid=uid, token=token, _external=True)
         response = framework.redirect(web_url_for('claim_user_registered_login',
-                        uid=uid, pid=pid , next=next_url))
+                        uid=uid, pid=pid, next=next_url))
         return response
+
+    form = PasswordForm(request.form)
+    if request.method == 'POST':
+        if form.validate():
+            if current_user.check_password(form.password.data):
+                node.replace_contributor(old=unreg_user, new=current_user)
+                node.save()
+                status.push_status_message(
+                    'Success. You are now a contributor to this project.',
+                    'success')
+                return framework.redirect(node.url)
+            else:
+                status.push_status_message(language.LOGIN_FAILED, 'warning')
+        else:
+            forms.push_errors_to_status(form.errors)
+    if is_json_request():
+        form_ret = forms.utils.jsonify(form)
+        user_ret = utils.serialize_user(current_user, full=False)
+    else:
+        form_ret = form
+        user_ret = current_user
+    return {
+        'form': form_ret,
+        'user': user_ret,
+        'signoutURL': web_url_for('claim_user_registered_login',
+            uid=uid, pid=pid)
+    }
 
 
 def claim_user_form(**kwargs):
@@ -520,7 +516,7 @@ def claim_user_form(**kwargs):
         'form': forms.utils.jsonify(form) if is_json_request else form,
     }
 
-
+# TODO(sloria): Move to utils
 def serialize_unregistered(fullname, email):
     """Serializes an unregistered user.
     """
