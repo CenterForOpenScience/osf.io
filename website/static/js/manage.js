@@ -97,6 +97,10 @@ this.Manage = (function(window, $, ko, bootbox) {
             return self.messageType() === 'success' ? 'text-success' : 'text-danger';
         });
 
+        // Hack: Ignore beforeunload when submitting
+        // TODO: Single-page-ify and remove this
+        self.forceSubmit = ko.observable(false);
+
         self.sortKeys = Object.keys(sortMap);
         self.sortKey = ko.observable(self.sortKeys[0]);
         self.sortOrder = ko.observable(0);
@@ -125,7 +129,8 @@ this.Manage = (function(window, $, ko, bootbox) {
                 return !item.deleteStaged();
             });
             var admins = ko.utils.arrayFilter(contributors, function(item) {
-                return item.permission() === 'admin';
+                return item.permission() === 'admin' &&
+                    item.registered;
             });
             return !!admins.length;
         });
@@ -137,7 +142,7 @@ this.Manage = (function(window, $, ko, bootbox) {
         });
         self.valid.subscribe(function(value) {
             if (!value) {
-                self.messageText('Must have at least one admin contributor');
+                self.messageText('Must have at least one registered admin contributor');
                 self.messageType('error');
             } else {
                 self.messageText('');
@@ -154,7 +159,7 @@ this.Manage = (function(window, $, ko, bootbox) {
         self.initListeners = function() {
             var self = this;
             $(window).on('beforeunload', function() {
-                if (self.changed()) {
+                if (self.changed() && !self.forceSubmit()) {
                     return 'There are unsaved changes to your contributor '
                         'settings. Are you sure you want to leave this page?'
                 }
@@ -204,26 +209,34 @@ this.Manage = (function(window, $, ko, bootbox) {
 
         self.submit = function() {
             self.messageText('');
+            self.forceSubmit(true);
             bootbox.confirm('Are you sure you want to save these changes?', function(result) {
                 if (result) {
                     $.osf.postJSON(
                         nodeApiUrl + 'contributors/manage/',
                         {contributors: self.serialize()},
-                        function() {
-                            self.contributors(ko.utils.arrayFilter(self.contributors(), function(item) {
-                                return !item.deleteStaged();
-                            }));
-                            self.original(ko.utils.arrayMap(self.contributors(), function(item) {
-                                return item.serialize();
-                            }));
-                            self.messageText('Submission successful');
-                            self.messageType('success');
+                        function(response) {
+                            // TODO: Don't reload the page here; instead use code below
+                            if (response.redirectUrl) {
+                                window.location.href = response.redirectUrl;
+                            } else {
+                                window.location.reload();
+                            }
+//                            self.contributors(ko.utils.arrayFilter(self.contributors(), function(item) {
+//                                return !item.deleteStaged();
+//                            }));
+//                            self.original(ko.utils.arrayMap(self.contributors(), function(item) {
+//                                return item.serialize();
+//                            }));
+//                            self.messageText('Submission successful');
+//                            self.messageType('success');
                         }
                     ).fail(function(xhr) {
                         self.init();
                         var response = JSON.parse(xhr.responseText);
                         self.messageText('Submission failed: ' + response.message_long);
                         self.messageType('error');
+                        self.forceSubmit(false);
                     });
                 }
             });

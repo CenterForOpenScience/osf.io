@@ -1723,10 +1723,12 @@ class Node(GuidStoredObject, AddonModelMixin):
             del contributor.unclaimed_records[self._primary_key]
         self.contributors.remove(contributor._id)
 
-        # Node must have at least one admin user
+        # Node must have at least one registered admin user
+        # TODO: Move to validator or helper
         admins = [
             user for user in self.contributors
             if self.has_permission(user, 'admin')
+                and user.is_registered
         ]
         if not admins:
             return False
@@ -1814,12 +1816,16 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         self.contributors = users
 
+        # TODO: Move to validator or helper
         admins = [
             user for user in users
             if self.has_permission(user, 'admin')
+                and user.is_registered
         ]
         if users is None or not admins:
-            raise ValueError('Must have at least one admin contributor')
+            raise ValueError(
+                'Must have at least one registered admin contributor'
+            )
 
         to_remove = [
             user
