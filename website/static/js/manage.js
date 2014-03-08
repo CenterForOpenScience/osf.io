@@ -158,6 +158,18 @@ this.Manage = (function(window, $, ko, bootbox) {
 
         self.initListeners = function() {
             var self = this;
+            // Warn on add contributors if pending changes
+            $('[href="#addContributors"]').on('click', function() {
+                if (self.changed()) {
+                    bootbox.alert(
+                        'Your contributor list has unsaved changes. Please ' +
+                        'save or cancel your changes before adding ' +
+                        'contributors.'
+                    );
+                    return false;
+                }
+            });
+            // Warn on URL change if pending changes
             $(window).on('beforeunload', function() {
                 if (self.changed() && !self.forceSubmit()) {
                     return 'There are unsaved changes to your contributor '

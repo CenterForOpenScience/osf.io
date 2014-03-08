@@ -10,7 +10,15 @@
     <table class="table">
         <thead>
             <th>Name</th>
-            <th>Permissions</th>
+            <th>
+                Permissions
+                <i class="icon-question-sign permission-info"
+                        data-toggle="popover"
+                        data-title="Permission Information"
+                        data-container="body"
+                        data-html="true"
+                    ></i>
+            </th>
             <th></th>
         </thead>
         <tr>

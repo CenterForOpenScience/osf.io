@@ -1131,6 +1131,11 @@ li.contributor-list-item a.name {
     margin-left:30px;
 }
 
+/* Handle popovers inside modals */
+.popover {
+    z-index: 999999;
+}
+
 .add-contributor {
     padding: 6px 18px;
 }
