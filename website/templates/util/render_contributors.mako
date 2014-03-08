@@ -3,7 +3,11 @@
             class="contributor
                 ${'contributor-registered' if contributor['registered'] else 'contributor-unregistered'}
                 ${'contributor-self' if user['id'] == contributor['id'] else ''}">
+        % if contributor['registered']:
         <a href="/${contributor['id']}/">${contributor['fullname']}</a>
+        % else:
+        <span>${contributor['fullname']}</span>
+        %endif
         % if ('admin' in user['permissions'] or user['id'] == contributor['id']) and not node['is_registration']:
             <span
                     class="btn-remove"

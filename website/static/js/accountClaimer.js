@@ -16,7 +16,7 @@ this.OSFAccountClaimer = (function($, global, bootbox) {
     function getClaimUrl() {
         var uid = $(this).data('pk');
         var pid = global.nodeId;
-        return '/api/v1/user/' + uid + '/' + pid +  '/claim/verify/';
+        return '/api/v1/user/' + uid + '/' + pid +  '/claim/email/';
     }
 
     function alertFinished(email) {
@@ -35,7 +35,7 @@ this.OSFAccountClaimer = (function($, global, bootbox) {
                     var pk = $(this).data('pk');
                     if (pk !== global.userId) {
                         bootbox.confirm({
-                            title: 'Claim as ' + global.contextVars.currentUser.username,
+                            title: 'Claim account?',
                             message: 'If you claim this account, a contributor of this project ' +
                                     'will be emailed to confirm your identity.',
                             callback: function(confirmed) {
