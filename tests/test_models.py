@@ -1368,7 +1368,12 @@ class TestProject(DbTestCase):
         assert_equal(old_length, new_length)
 
         # test unclaimed_records is removed
-        assert_equal(0, 'finish me')
+        assert_not_in(
+            self.project._primary_key,
+            contrib.unclaimed_records.keys()
+        )
+
+
 class TestForkNode(DbTestCase):
 
     def setUp(self):
