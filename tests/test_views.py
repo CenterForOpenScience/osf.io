@@ -1246,7 +1246,7 @@ class TestFileViews(DbTestCase):
     def test_files_get(self):
         url = '/api/v1/{0}/files/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, http.OK)
         expected = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res.json['node'], expected['node'])
         assert_in('tree_js', res.json)
@@ -1255,7 +1255,7 @@ class TestFileViews(DbTestCase):
     def test_grid_data(self):
         url = '/api/v1/{0}/files/grid/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, http.OK)
         expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))
         data = res.json['data']
         assert_equal(len(data), len(expected))

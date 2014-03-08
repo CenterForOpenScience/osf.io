@@ -63,7 +63,6 @@ this.NodeControl = (function(ko, $, global) {
             id: userid,
             name: name
         };
-        console.log(payload);
         $.osf.postJSON(
             nodeApiUrl + 'beforeremovecontributors/',
             payload,

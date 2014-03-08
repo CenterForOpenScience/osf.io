@@ -545,12 +545,15 @@ class Node(GuidStoredObject, AddonModelMixin):
         else:
             is_api_node = False
         return (
-            self.has_permission(user, 'write')#self.is_contributor(user)
+            (user and self.has_permission(user, 'write'))
             or is_api_node
         )
 
     def can_view(self, auth):
-        return self.is_public or self.has_permission(auth.user, 'read')
+        return (
+            self.is_public or
+            auth.user and self.has_permission(auth.user, 'read')
+        )
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.

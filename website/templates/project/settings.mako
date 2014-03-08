@@ -30,7 +30,7 @@
     </div>
     <div class="col-md-6">
 
-        % if 'admin' in user['permissions']:
+        % if 'admin' in user['permissions'] and not node['is_registration']:
 
             <div id="configureNode" class="panel panel-default">
 
