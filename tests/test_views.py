@@ -756,6 +756,34 @@ class TestClaimViews(DbTestCase):
             'email': reg_user.username,
             'fullname': self.given_name,
         })
+    def test_user_with_removed_unclaimed_url_claiming(self):
+        reg_user = AuthUserFactory()
+        url = self.user.get_claim_url(self.project._primary_key)
+        self.unclaimed_records(self.project._primary_key)= None
+        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
+        assert_in('Create an Account or Sign-In', res.body)
+
+    def test_user_with_claim_url_cannot_claim_twice(self):
+        reg_user = AuthUserFactory()
+        reg_user.set_password('killerqueen')
+        reg_user.save()
+        url = self.user.get_claim_url(self.project._primary_key)
+        # Follow to password re-enter page
+        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
+
+        # verify that the "Claim Account" form is returned
+        assert_in('Claim Contributor', res.body)
+
+        form = res.forms['claimContributorForm']
+        form['password'] = 'killerqueen'
+        res = form.submit(auth=reg_user.auth).follow(auth=reg_user.auth)
+
+        assert_in("Dashboard", res.body)
+
+        #reclick the link
+        res3 = self.app.get(url).follow(auth=reg_user.auth)
+
+        assert_in("User has already been claimed.", res3.body)
 
 
     def test_user_with_claim_url_registers_new_account(self):
