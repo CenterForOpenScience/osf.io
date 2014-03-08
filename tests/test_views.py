@@ -126,7 +126,7 @@ class TestProjectViews(DbTestCase):
         assert_in(user2._id, project.permissions)
         assert_in(user3._id, project.permissions)
         assert_equal(project.permissions[user2._id], ['read', 'write', 'admin'])
-        assert_equal(project.permissions[user3._id], ['read', 'write'])
+        assert_equal(project.permissions[user3.f_id], ['read', 'write'])
 
     def test_manage_permissions(self):
 
@@ -756,22 +756,104 @@ class TestClaimViews(DbTestCase):
             'email': reg_user.username,
             'fullname': self.given_name,
         })
+    def test_user_with_removed_unclaimed_url_claiming(self):
+        reg_user = AuthUserFactory()
+        url = self.user.get_claim_url(self.project._primary_key)
+        self.unclaimed_records(self.project._primary_key)= None
+        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
+        assert_in('Create an Account or Sign-In', res.body)
 
-    def test_user_can_log_in_with_a_different_account(self):
+    def test_user_with_claim_url_cannot_claim_twice(self):
+        reg_user = AuthUserFactory()
+        reg_user.set_password('killerqueen')
+        reg_user.save()
+        url = self.user.get_claim_url(self.project._primary_key)
+        # Follow to password re-enter page
+        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
+
+        # verify that the "Claim Account" form is returned
+        assert_in('Claim Contributor', res.body)
+
+        form = res.forms['claimContributorForm']
+        form['password'] = 'killerqueen'
+        res = form.submit(auth=reg_user.auth).follow(auth=reg_user.auth)
+
+        assert_in("Dashboard", res.body)
+
+        #reclick the link
+        res3 = self.app.get(url).follow(auth=reg_user.auth)
+
+        assert_in("User has already been claimed.", res3.body)
+
+
+    def test_user_with_claim_url_registers_new_account(self):
 
         # User goes to the claim page, but a different user (lab_user) is logged in
         lab_user = AuthUserFactory(fullname="Lab Comp")
 
         url = self.user.get_claim_url(self.project._primary_key)
-        res = self.app.get(url, auth=lab_user)
+        res = self.app.get(url, auth=lab_user.auth).follow(auth=lab_user.auth)
 
-        assert 0, 'finish me'
+        # verify that the "Claim Account" form is returned
+        assert_in('Claim Contributor', res.body)
+
         # Clicks "I am not Lab Comp"
         # Taken to login/register page
-        # Fills in log in form
+        res2 = res.click(href="/claim/login").follow()
+        # Fills in Register form
+        form = res2.forms['registerForm']
+        form['register-fullname'] = 'tester'
+        form['register-username'] = 'test@test.com'
+        form['register-username2'] = 'test@test.com'
+        form['register-password'] = 'testing'
+        form['register-password2'] = 'testing'
+        new_user = AuthUserFactory(fullname="tester", username='test@test.com', password='testing')
         # submits
-        # taken to dashboard
+        res3 = form.submit(auth=new_user.auth).follow(auth=new_user.auth)
+        # Confirms their email address
         # user is now a contributor to self.project
+        self.project.reload()
+        new_user.reload()
+        self.user.reload()
+        # taken to dashboard
+        assert_in("Dashboard", res3.body)
+
+        # user is now a contributor to self.project
+        assert_in(new_user._primary_key, self.project.contributors)
+
+    def test_user_can_log_in_with_a_different_account(self):
+        right_user = AuthUserFactory(fullname="Right User")
+        # User goes to the claim page, but a different user (lab_user) is logged in
+        lab_user = AuthUserFactory(fullname="Lab Comp")
+
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(url, auth=lab_user.auth).follow(auth=lab_user.auth)
+
+        # verify that the "Claim Account" form is returned
+        assert_in('Claim Contributor', res.body)
+
+        # Clicks "I am not Lab Comp"
+        # Taken to login/register page
+
+        res2 = res.click(href="/claim/login").follow()
+        # Fills in log in form
+        form = res2.forms['signinForm']
+        form['username'] = right_user.username
+        form['password'] = right_user.password
+        # submits
+        res3 = form.submit(auth=right_user.auth).follow(auth=right_user.auth)
+
+        self.project.reload()
+        right_user.reload()
+        self.user.reload()
+        # taken to dashboard
+        assert_in("Dashboard", res3.body)
+
+        # user is now a contributor to self.project
+        assert_in(right_user._primary_key, self.project.contributors)
+
+        # lab user is not a contributor
+        assert_not_in(lab_user._primary_key, self.project.contributors)
 
     def test_claim_user_form_redirects_to_password_confirm_page_if_user_is_logged_in(self):
         reg_user = UserFactory()
