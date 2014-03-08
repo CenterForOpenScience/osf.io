@@ -162,15 +162,21 @@ def get_recently_added_contributors(**kwargs):
 
 
 @must_be_valid_project  # returns project
-@must_have_permission('admin')
+@must_be_contributor
 @must_not_be_registration
 def project_before_remove_contributor(**kwargs):
 
     auth = kwargs['auth']
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
 
     contributor = User.load(request.json.get('id'))
-    prompts = node_to_use.callback(
+
+    # Forbidden unless user is removing herself
+    if not node.has_permission(auth.user, 'admin'):
+        if auth.user != contributor:
+            raise HTTPError(http.FORBIDDEN)
+
+    prompts = node.callback(
         'before_remove_contributor', removed=contributor,
     )
 
@@ -184,7 +190,7 @@ def project_before_remove_contributor(**kwargs):
 
 
 @must_be_valid_project  # returns project
-@must_have_permission('admin')
+@must_be_contributor
 @must_not_be_registration
 def project_removecontributor(**kwargs):
 
@@ -194,6 +200,11 @@ def project_removecontributor(**kwargs):
     contributor = User.load(request.json['id'])
     if contributor is None:
         raise HTTPError(http.BAD_REQUEST)
+
+    # Forbidden unless user is removing herself
+    if not node.has_permission(auth.user, 'admin'):
+        if auth.user != contributor:
+            raise HTTPError(http.FORBIDDEN)
 
     outcome = node.remove_contributor(
         contributor=contributor, auth=auth,

@@ -526,7 +526,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             for permission in settings.CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
 
-
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).
@@ -546,12 +545,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         else:
             is_api_node = False
         return (
-            self.is_contributor(user)
+            self.has_permission(user, 'write')#self.is_contributor(user)
             or is_api_node
         )
 
     def can_view(self, auth):
-        return self.is_public or self.can_edit(auth)
+        return self.is_public or self.has_permission(auth.user, 'read')
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
