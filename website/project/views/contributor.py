@@ -7,6 +7,7 @@ import time
 from modularodm.exceptions import ValidationValueError
 import framework
 from framework import request, User, status
+from framework.flask import redirect
 from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
 from framework import forms
@@ -165,12 +166,19 @@ def get_recently_added_contributors(**kwargs):
 @must_not_be_registration
 def project_before_remove_contributor(**kwargs):
 
+    auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
 
     contributor = User.load(request.json.get('id'))
     prompts = node_to_use.callback(
         'before_remove_contributor', removed=contributor,
     )
+
+    if auth.user == contributor:
+        prompts.insert(
+            0,
+            'Are you sure you want to remove yourself from this project?'
+        )
 
     return {'prompts': prompts}
 
@@ -180,25 +188,35 @@ def project_before_remove_contributor(**kwargs):
 @must_not_be_registration
 def project_removecontributor(**kwargs):
 
-    node_to_use = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
 
-    if request.json['id'].startswith('nr-'):
-        outcome = node_to_use.remove_nonregistered_contributor(
-            auth, request.json['name'],
-            request.json['id'].replace('nr-', '')
-        )
-    else:
-        contributor = User.load(request.json['id'])
-        if contributor is None:
-            raise HTTPError(http.BAD_REQUEST)
-        outcome = node_to_use.remove_contributor(
-            contributor=contributor, auth=auth,
-        )
+    contributor = User.load(request.json['id'])
+    if contributor is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    outcome = node.remove_contributor(
+        contributor=contributor, auth=auth,
+    )
+
     if outcome:
+        if auth.user == contributor:
+            framework.status.push_status_message('Removed self from project', 'info')
+            return {'redirectUrl': '/dashboard/'}
         framework.status.push_status_message('Contributor removed', 'info')
-        return {'status': 'success'}
-    raise HTTPError(http.BAD_REQUEST)
+        return {}
+
+    raise HTTPError(
+        http.BAD_REQUEST,
+        data={
+            'message_long': (
+                '{0} must have at least one contributor with admin '
+                'rights'.format(
+                    node.project_or_component.capitalize()
+                )
+            )
+        }
+    )
 
 # TODO: TEST ME
 def deserialize_contributors(node, user_dicts, auth, email_unregistered=True):

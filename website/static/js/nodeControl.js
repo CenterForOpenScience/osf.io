@@ -58,7 +58,7 @@ this.NodeControl = (function(ko, $, global) {
         });
     }
 
-    function removeUser(userid, name) {
+    var removeUser = function(userid, name) {
         var payload = {
             id: userid,
             name: name
@@ -70,8 +70,19 @@ this.NodeControl = (function(ko, $, global) {
                 message: prompt,
                 callback: function(result) {
                     if (result) {
-                        $.osf.postJSON(nodeApiUrl + 'removecontributors/', payload, function() {
-                            window.location.reload();
+                        $.osf.postJSON(
+                            nodeApiUrl + 'removecontributors/',
+                            payload,
+                            function(response) {
+                                if (response.redirectUrl) {
+                                    window.location.href = response.redirectUrl;
+                                } else {
+                                    window.location.reload();
+                                }
+                            }
+                        ).fail(function(xhr) {
+                            var response = JSON.parse(xhr.responseText);
+                            bootbox.alert('Error: ' + response.message_long);
                         });
                     }
                 }
@@ -212,21 +223,25 @@ this.NodeControl = (function(ko, $, global) {
 
     NodeControl.prototype._initRemoveLinks = function () {
         var self = this;
-        self.$removeElem = $('<span class="btn-remove-contrib"><i class="icon-remove"></i></span>');
-        $(self.options.removeCss).hover(
-            function(){
-                var me = $(this);
-                self.$removeElem.click(function(){
-                    // TODO: remove hardcoded attributes
-                    removeUser(me.attr('data-userid'), me.attr('data-fullname'));
-                    return false;
-                });
-                $(this).append(self.$removeElem);
-            },
-            function(){
-                self.$removeElem.remove();
-            }
-        );
+        $('.btn-remove').on('click', function() {
+            var $this = $(this);
+            removeUser($this.attr('data-userid'), $this.attr('data-fullname'));
+        });
+//        self.$removeElem = $('<span class="btn-remove-contrib"><i class="icon-remove"></i></span>');
+//        $(self.options.removeCss).hover(
+//            function(){
+//                var me = $(this);
+//                self.$removeElem.click(function(){
+//                    // TODO: remove hardcoded attributes
+//                    removeUser(me.attr('data-userid'), me.attr('data-fullname'));
+//                    return false;
+//                });
+//                $(this).append(self.$removeElem);
+//            },
+//            function(){
+//                self.$removeElem.remove();
+//            }
+//        );
     };
 
     return NodeControl;

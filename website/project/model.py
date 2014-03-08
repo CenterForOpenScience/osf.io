@@ -1707,37 +1707,44 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param contributor: User object, the contributor to be removed
         :param auth: All the auth informtion including user, API key.
+
         """
-        if not auth.user._id == contributor._id:
-            # remove unclaimed record if necessary
-            if self._primary_key in contributor.unclaimed_records:
-                del contributor.unclaimed_records[self._primary_key]
-            self.contributors.remove(contributor._id)
+        # remove unclaimed record if necessary
+        if self._primary_key in contributor.unclaimed_records:
+            del contributor.unclaimed_records[self._primary_key]
+        self.contributors.remove(contributor._id)
 
-            # Clear permissions for removed user
-            self.permissions.pop(contributor._id, None)
+        # Node must have at least one admin user
+        admins = [
+            user for user in self.contributors
+            if self.has_permission(user, 'admin')
+        ]
+        if not admins:
+            return False
 
-            self.save()
+        # Clear permissions for removed user
+        self.permissions.pop(contributor._id, None)
 
-            # After remove callback
-            for addon in self.get_addons():
-                message = addon.after_remove_contributor(self, contributor)
-                if message:
-                    status.push_status_message(message)
+        self.save()
 
-            if log:
-                self.add_log(
-                    action=NodeLog.CONTRIB_REMOVED,
-                    params={
-                        'project': self.parent_id,
-                        'node': self._primary_key,
-                        'contributor': contributor._id,
-                    },
-                    auth=auth,
-                )
-            return True
+        # After remove callback
+        for addon in self.get_addons():
+            message = addon.after_remove_contributor(self, contributor)
+            if message:
+                status.push_status_message(message)
 
-        return False
+        if log:
+            self.add_log(
+                action=NodeLog.CONTRIB_REMOVED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'contributor': contributor._id,
+                },
+                auth=auth,
+            )
+
+        return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
 
