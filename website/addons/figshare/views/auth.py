@@ -109,6 +109,8 @@ def figshare_oauth_callback(*args, **kwargs):
         figshare_user.oauth_request_token_secret,
         verifier
     )
+    if not access_token or not access_token_secret:
+        return redirect('/settings/')
 
     figshare_user.oauth_request_token = None
     figshare_user.oauth_request_token_secret = None
