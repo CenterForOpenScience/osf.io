@@ -72,19 +72,19 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
 	var buttonDefs = [];
 	if(item.permissions){
 	    if(item.permissions.download !== false){
-		buttonDefs.push({
-		    text: '<i class="icon-download-alt icon-white"></i>',
-		    action: 'download',
-		    cssClass: 'btn btn-primary btn-mini'
-		});
+        	buttonDefs.push({
+        	    text: '<i class="icon-download-alt icon-white"></i>',
+        	    action: 'download',
+        	    cssClass: 'btn btn-primary btn-mini'
+        	});
 	    }
         if (item.permissions.edit) {
-		var deleteTip = genTooltipMarkup('Delete ' + item.name);
-		buttonDefs.push({
-		    text: '&nbsp;<i class="icon-remove"' + deleteTip + '></i>',
-		    action: 'delete',
-		    cssClass: 'btn btn-link btn-mini btn-delete'
-		});
+    		var deleteTip = genTooltipMarkup('Delete ' + item.name);
+    		buttonDefs.push({
+    		    text: '&nbsp;<i class="icon-remove"' + deleteTip + '></i>',
+    		    action: 'delete',
+    		    cssClass: 'btn btn-link btn-mini btn-delete'
+    		});
 	    }
 	}
 	return ['<span class="rubeus-buttons">', HGrid.Fmt.buttons(buttonDefs),
