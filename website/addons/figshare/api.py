@@ -106,14 +106,17 @@ class Figshare(object):
         return res
 
     def project(self, node_settings, project_id):
+        if not project_id:
+            return
         project = self._send(os.path.join(node_settings.api_url, 'projects', project_id))
+        if not project:
+            return 
         articles = self._send(
             os.path.join(node_settings.api_url, 'projects', "{0}".format(project_id), 'articles'))
-
+        project['articles'] = []
         if(articles):
             project['articles'] = [self.article(node_settings, article['id'])['items'][0] for article in articles]
-            return project
-        return []
+        return project    
 
     def create_project(self, node_settings, project, description=''):
         data = json.dumps({"title": project, "description": description})

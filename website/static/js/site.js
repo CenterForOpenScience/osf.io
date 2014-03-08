@@ -28,6 +28,27 @@
         return $.ajax(ajaxOpts);
     };
 
+    /**
+     * Puts JSON data.
+     *
+     * Example:
+     *     $.osf.putJSON('/foo', {'email': 'bar@baz.com'}, function(data) {...})
+     *
+     * @param  {String} url  The url to put to
+     * @param  {Object} data JSON data to send to the endpoint
+     * @param  {Function} done Success callback. Takes returned data as its first argument
+     * @return {jQuery xhr}
+     */
+    $.osf.putJSON = function(url, data, done) {
+        var ajaxOpts = {
+            url: url, type: 'put',
+            data: JSON.stringify(data),
+            success: done,
+            contentType: 'application/json', dataType: 'json'
+        };
+        return $.ajax(ajaxOpts);
+    };
+
     $.osf.block = function() {
         $.blockUI({
             css: {

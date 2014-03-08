@@ -2123,6 +2123,20 @@ class TestComments(DbTestCase):
                 self.comment.user, category='spam', text='ads', save=True
             )
 
+    def test_unreport_abuse(self):
+        user = UserFactory()
+        self.comment.report_abuse(user, category='spam', text='ads', save=True)
+        self.comment.unreport_abuse(user, save=True)
+        assert_not_in(user._id, self.comment.reports)
+
+    def test_unreport_abuse_not_reporter(self):
+        reporter = UserFactory()
+        non_reporter = UserFactory()
+        self.comment.report_abuse(reporter, category='spam', text='ads', save=True)
+        with assert_raises(ValueError):
+            self.comment.unreport_abuse(non_reporter, save=True)
+        assert_in(reporter._id, self.comment.reports)
+
     def test_validate_reports_bad_key(self):
         self.comment.reports[None] = {'category': 'spam', 'text': 'ads'}
         with assert_raises(ValidationValueError):
