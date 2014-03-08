@@ -12,7 +12,7 @@ from framework import redirect, Q
 from website.addons.base.views import check_file_guid
 
 from website.project import decorators
-from website.project.decorators import must_be_contributor_or_public
+from website.project.decorators import must_be_contributor_or_public, must_be_contributor
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
@@ -388,3 +388,15 @@ def figshare_download_file(*args, **kwargs):
         return resp
 
 
+@must_be_contributor
+@must_have_addon('figshare', 'node')
+def figshare_create_project(*args, **kwargs):
+    node_settings = kwargs['node_addon']
+    project_name = request.json.get('project')
+    if not node_settings or not node_settings.has_auth or not project_name:
+        raise HTTPError(http.BAD_REQUEST)
+    resp = Figshare.from_settings(node_settings.user_settings).create_project(node_settings, project_name)
+    if resp:
+        return resp
+    else:
+        raise HTTPError(http.BAD_REQUEST)

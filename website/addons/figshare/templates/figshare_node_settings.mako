@@ -29,6 +29,14 @@
                     %endif
                 </select>
             </div>
+
+        % if is_owner:
+            <div class="col-md-6">
+                <a id="figshareCreateProject" class="btn btn-default">Create Project</a>
+            </div>
+        % endif
+
+
     </div>
 
 

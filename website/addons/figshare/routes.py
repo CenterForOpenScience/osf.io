@@ -80,6 +80,10 @@ settings_routes = {
             '/addons/figshare/callback/<uid>/',
             '/addons/figshare/callback/<uid>/<nid>/',
         ], 'get', views.auth.figshare_oauth_callback, json_renderer),
+        Rule([
+            '/project/<pid>/figshare/new/project/',
+            '/project/<pid>/node/<nid>/figshare/new/project/',
+        ], 'post', views.crud.figshare_create_project, json_renderer)
     ],
     'prefix': '/api/v1',
 }
