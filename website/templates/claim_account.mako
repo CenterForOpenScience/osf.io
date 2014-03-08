@@ -26,7 +26,7 @@
         </form>
 
         <div class='help-block'>
-            <p>If you are not ${fullname}, please contact <a href="mailto:contact@centerforopenscience.org">contact@centerforopenscience.org</a>
+            <p>If you are not ${fullname}, or if you were erroneously added as a contributor to the project described in the email invitation, please email <a href="mailto:contact@osf.io">contact@osf.io</a>
             </p>
         </div>
     </div>
