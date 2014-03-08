@@ -139,13 +139,9 @@ this.Manage = (function(window, $, ko, bootbox) {
         };
 
         self.remove = function(data) {
-            bootbox.confirm('Are you sure you want to remove ' + data.fullname + ' from this project?', function(result) {
-                if (result) {
-                    self.contributors.splice(
-                        self.contributors.indexOf(data), 1
-                    );
-                }
-            });
+            self.contributors.splice(
+                self.contributors.indexOf(data), 1
+            );
         };
 
         self.sort = function() {
@@ -176,11 +172,7 @@ this.Manage = (function(window, $, ko, bootbox) {
         };
 
         self.cancel = function() {
-            bootbox.confirm('Are you sure you want to discard these changes?', function(result) {
-                if (result) {
-                    self.init();
-                }
-            });
+            self.init();
         };
 
         self.submit = function() {

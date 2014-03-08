@@ -24,7 +24,7 @@
 .cp-bar {
     width: 10px; /* Note: Should be the same as .cp-sidebar:margin-left */
     height: 100%;
-    background-color: #aaaaaa;
+    background-color: #3C87C8;
     position: absolute;
     margin-top: -50px;
     cursor: ew-resize;
@@ -34,7 +34,7 @@
     height: 100%;
     margin-top: -50px;
     margin-left: 10px; /* Note: Should be the same as .cp-bar:width */
-    background-color: #cccccc;
+    background-color: #ddd;
     padding: 10px;
     overflow-y: auto;
 }

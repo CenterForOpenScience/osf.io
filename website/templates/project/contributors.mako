@@ -3,11 +3,13 @@
 
 <% import json %>
 
-<div id="manageContributors" class="col-md-8" style="display: none;">
+<div id="manageContributors" class="col-md-12" style="display: none;">
 
-    % if len(contributors) > 5:
-        ${buttonGroup()}
-    % endif
+<h2>Contributors</h2>
+
+    ##% if len(contributors) > 5:
+      ##  ${buttonGroup()}
+    ##% endif
 
     <table class="table">
         <thead>
@@ -15,11 +17,21 @@
             <th>Name</th>
             <th>Permissions</th>
         </thead>
+        <tr>
+            <td>
+                <a class="btn btn-default btn-mini add-contributor contrib-button" href="#addContributors" data-toggle="modal">
+                    +
+                </a>
+            </td>
+            <td>
+                Click to the left to add a contributor
+            </td>
+        </tr>
         <tbody data-bind="sortable: {data: contributors, as: 'contributor', afterRender: setupEditable, options: {containment: '#manageContributors'}}">
             <tr>
                 <td>
                     <a
-                            class="btn btn-default contrib-button btn-mini"
+                            class="btn btn-danger contrib-button btn-mini"
                             data-bind="click: $root.remove"
                             rel="tooltip"
                             title="Remove contributor"
@@ -52,13 +64,6 @@
 
 <%def name="buttonGroup()">
     % if 'admin' in user['permissions']:
-        <a class="add-contributor btn btn-default contrib-button" href="#addContributors" data-toggle="modal">
-            Add Contributors
-        </a>
-        <a class="btn btn-default" data-bind="click: sort">
-            Sort by Surname
-            <i data-bind="css: sortClass"></i>
-        </a>
         <a class="btn btn-danger contrib-button" data-bind="click: cancel, visible: changed">Discard Changes</a>
         <a class="btn btn-success contrib-button" data-bind="click: submit, visible: canSubmit">Save Changes</a>
         <br /><br />
