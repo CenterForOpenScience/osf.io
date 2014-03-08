@@ -11,7 +11,7 @@ from framework.flask import redirect
 from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
 from framework import forms
-from framework.auth.forms import SetEmailAndPasswordForm, SignInForm, PasswordForm
+from framework.auth.forms import SetEmailAndPasswordForm, PasswordForm
 
 from website import settings, mails, language
 from website.project.model import unreg_contributor_added
@@ -162,15 +162,21 @@ def get_recently_added_contributors(**kwargs):
 
 
 @must_be_valid_project  # returns project
-@must_have_permission('admin')
+@must_be_contributor
 @must_not_be_registration
 def project_before_remove_contributor(**kwargs):
 
     auth = kwargs['auth']
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
 
     contributor = User.load(request.json.get('id'))
-    prompts = node_to_use.callback(
+
+    # Forbidden unless user is removing herself
+    if not node.has_permission(auth.user, 'admin'):
+        if auth.user != contributor:
+            raise HTTPError(http.FORBIDDEN)
+
+    prompts = node.callback(
         'before_remove_contributor', removed=contributor,
     )
 
@@ -184,7 +190,7 @@ def project_before_remove_contributor(**kwargs):
 
 
 @must_be_valid_project  # returns project
-@must_have_permission('admin')
+@must_be_contributor
 @must_not_be_registration
 def project_removecontributor(**kwargs):
 
@@ -194,6 +200,11 @@ def project_removecontributor(**kwargs):
     contributor = User.load(request.json['id'])
     if contributor is None:
         raise HTTPError(http.BAD_REQUEST)
+
+    # Forbidden unless user is removing herself
+    if not node.has_permission(auth.user, 'admin'):
+        if auth.user != contributor:
+            raise HTTPError(http.FORBIDDEN)
 
     outcome = node.remove_contributor(
         contributor=contributor, auth=auth,
@@ -331,15 +342,26 @@ def project_manage_contributors(**kwargs):
     except ValueError as error:
         raise HTTPError(http.BAD_REQUEST, data={'message_long': error.message})
 
+    # Must redirect user if revoked own access
+    if not node.is_contributor(auth.user):
+        return {'redirectUrl': node.url}
+    if not node.has_permission(auth.user, 'admin'):
+        return {'redirectUrl': '/dashboard/'}
+    return {}
+
 
 def get_timestamp():
     return int(time.time())
 
-
+# TODO: Use throttle
 def send_claim_registered_email(claimer, unreg_user, node, throttle=0):
     unclaimed_record = unreg_user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
-    claim_url = unreg_user.get_claim_url(node._primary_key, external=True)
+    claim_url = web_url_for('claim_user_registered',
+            uid=unreg_user._primary_key,
+            pid=node._primary_key,
+            token=unclaimed_record['token'],
+            _external=True)
     # Send mail to referrer, telling them to forward verification link to claimer
     mails.send_mail(referrer.username, mails.FORWARD_INVITE_REGiSTERED,
         user=unreg_user,
@@ -420,19 +442,10 @@ def verify_claim_token(user, token, pid):
     return True
 
 def claim_user_registered_login(**kwargs):
-    framework.auth.logout()
-    ref = request.referrer
+    if framework.auth.get_current_user():
+        framework.auth.logout()
+    ref = request.referrer or request.args.get('next')
     return framework.redirect('/account/?next={0}'.format(ref))
-
-@must_be_valid_project
-def replace_contributor(**kwargs):
-    node = kwargs['project'] or kwargs['node']
-    unreg_user = User.load(kwargs['old_uid'])
-    new_user = User.load(kwargs['new_uid'])
-    node.replace_contributor(old=unreg_user, new=new_user)
-    node.save()
-    status.push_status_message('Success. You are now a contributor to this project.', 'warning')
-    return framework.redirect(node.url)
 
 # TODO(sloria): Move to framework
 def is_json_request():
@@ -450,30 +463,41 @@ def claim_user_registered(**kwargs):
     current_user = framework.auth.get_current_user()
     uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
     unreg_user = User.load(uid)
-    if current_user:
-        form = PasswordForm(request.form)
-        if request.method == 'POST':
-            if form.validate():
-                if current_user.check_password(form.password.data):
-                    node.replace_contributor(old=unreg_user, new=current_user)
-                    node.save()
-                    status.push_status_message(
-                        'Success. You are now a contributor to this project.',
-                        'success')
-                    return framework.redirect(node.url)
-                else:
-                    status.push_status_message(language.LOGIN_FAILED, 'warning')
+    if not verify_claim_token(unreg_user, token, pid=node._primary_key):
+        raise HTTPError(http.BAD_REQUEST)
+
+    if not current_user:
+        next_url = web_url_for('claim_user_registered', pid=pid, uid=uid, token=token, _external=True)
+        response = framework.redirect(web_url_for('claim_user_registered_login',
+                        uid=uid, pid=pid, next=next_url))
+        return response
+
+    form = PasswordForm(request.form)
+    if request.method == 'POST':
+        if form.validate():
+            if current_user.check_password(form.password.data):
+                node.replace_contributor(old=unreg_user, new=current_user)
+                node.save()
+                status.push_status_message(
+                    'Success. You are now a contributor to this project.',
+                    'success')
+                return framework.redirect(node.url)
             else:
-                forms.push_errors_to_status(form.errors)
-        return {
-            'form': forms.utils.jsonify(form) if is_json_request() else form,
-            'user': utils.serialize_user(current_user, full=False)
-                if is_json_request() else current_user,
-            'signoutURL': web_url_for('claim_user_registered_login',
-                uid=uid, pid=pid)
-        }
+                status.push_status_message(language.LOGIN_FAILED, 'warning')
+        else:
+            forms.push_errors_to_status(form.errors)
+    if is_json_request():
+        form_ret = forms.utils.jsonify(form)
+        user_ret = utils.serialize_user(current_user, full=False)
     else:
-        return framework.redirect('/account/')
+        form_ret = form
+        user_ret = current_user
+    return {
+        'form': form_ret,
+        'user': user_ret,
+        'signoutURL': web_url_for('claim_user_registered_login',
+            uid=uid, pid=pid)
+    }
 
 
 def claim_user_form(**kwargs):
@@ -522,12 +546,12 @@ def claim_user_form(**kwargs):
     is_json_request = request.content_type == 'application/json'
     return {
         'firstname': user.given_name,
-        'email': email,
+        'email': email if email else '',
         'fullname': user.fullname,
         'form': forms.utils.jsonify(form) if is_json_request else form,
     }
 
-
+# TODO(sloria): Move to utils
 def serialize_unregistered(fullname, email):
     """Serializes an unregistered user.
     """

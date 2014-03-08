@@ -1113,6 +1113,10 @@ h1.unavailable {
     cursor: pointer;
 }
 
+.contributor-delete-staged {
+    background-color: #eeeeee;
+}
+
 li.contributor-list-item a.remove-contributor {
     margin-top:23px;
     margin-right:20px;

@@ -518,7 +518,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             for permission in settings.CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
 
-
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).
@@ -538,12 +537,15 @@ class Node(GuidStoredObject, AddonModelMixin):
         else:
             is_api_node = False
         return (
-            self.is_contributor(user)
+            (user and self.has_permission(user, 'write'))
             or is_api_node
         )
 
     def can_view(self, auth):
-        return self.is_public or self.can_edit(auth)
+        return (
+            self.is_public or
+            auth.user and self.has_permission(auth.user, 'read')
+        )
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
@@ -1687,6 +1689,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         for i, contrib in enumerate(self.contributors):
             if contrib._primary_key == old._primary_key:
                 self.contributors[i] = new
+                # Remove unclaimed record for the project
+                if self._primary_key in old.unclaimed_records:
+                    del old.unclaimed_records[self._primary_key]
+                    old.save()
+                for permission in self.get_permissions(old):
+                    self.add_permission(new, permission)
+                self.permissions.pop(old._id)
                 return True
         return False
 
@@ -1702,10 +1711,12 @@ class Node(GuidStoredObject, AddonModelMixin):
             del contributor.unclaimed_records[self._primary_key]
         self.contributors.remove(contributor._id)
 
-        # Node must have at least one admin user
+        # Node must have at least one registered admin user
+        # TODO: Move to validator or helper
         admins = [
             user for user in self.contributors
             if self.has_permission(user, 'admin')
+                and user.is_registered
         ]
         if not admins:
             return False
@@ -1791,37 +1802,47 @@ class Node(GuidStoredObject, AddonModelMixin):
                 permissions_changed[user._id] = permissions
             users.append(user)
 
-        self.contributors = users
-
-        admins = [
-            user for user in users
-            if self.has_permission(user, 'admin')
+        to_retain = [
+            user for user in self.contributors
+            if user in users
         ]
-        if users is None or not admins:
-            raise ValueError('Must have at least one admin contributor')
-
         to_remove = [
-            user
-            for user in self.contributors
+            user for user in self.contributors
             if user not in users
         ]
 
-        self.add_log(
-            action=NodeLog.CONTRIB_REORDERED,
-            params={
-                'project': self.parent_id,
-                'node': self._id,
-                'contributors': [
-                    user._id
-                    for user in users
-                ],
-            },
-            auth=auth,
-            save=save,
-        )
+        # TODO: Move to validator or helper @jmcarp
+        # TODO: Test me @jmcarp
+        admins = [
+            user for user in users
+            if self.has_permission(user, 'admin')
+                and user.is_registered
+        ]
+        if users is None or not admins:
+            raise ValueError(
+                'Must have at least one registered admin contributor'
+            )
+
+        # TODO: Test me @jmcarp
+        if to_retain != users:
+            self.add_log(
+                action=NodeLog.CONTRIB_REORDERED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._id,
+                    'contributors': [
+                        user._id
+                        for user in users
+                    ],
+                },
+                auth=auth,
+                save=save,
+            )
 
         if to_remove:
             self.remove_contributors(to_remove, auth=auth, save=False)
+
+        self.contributors = users
 
         if permissions_changed:
             self.add_log(

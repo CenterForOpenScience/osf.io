@@ -321,7 +321,6 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
-
         Rule('/profile/', 'get', profile_views.profile_view, OsfWebRenderer('profile.mako')),
         Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, OsfWebRenderer('profile.mako')),
         Rule('/settings/', 'get', profile_views.profile_settings, OsfWebRenderer('settings.mako')),
@@ -335,13 +334,7 @@ def make_url_map(app):
         Rule(['/user/<uid>/<pid>/claim/verify/<token>/'], ['get', 'post'],
             project_views.contributor.claim_user_registered, OsfWebRenderer('claim_account_registered.mako')),
         Rule(['/user/<uid>/<pid>/claim/login/'], ['get', 'post'],
-            project_views.contributor.claim_user_registered_login, OsfWebRenderer('public/login.mako')),
-        # TODO(sloria): Make an API route?
-        Rule([
-            '/project/<pid>/contributors/replace/<old_uid>/<new_uid>/',
-            '/project/<pid>/node/<nid>/contributors/replace/<old_uid>/<new_uid>/',
-        ], 'post', project_views.contributor.replace_contributor, notemplate),
-
+            project_views.contributor.claim_user_registered_login, OsfWebRenderer('public/login.mako'))
     ])
 
     # API
@@ -366,7 +359,7 @@ def make_url_map(app):
         Rule('/settings/names/', 'post', profile_views.post_names, json_renderer),
 
         Rule('/profile/<user_id>/summary/', 'get', profile_views.get_profile_summary, json_renderer),
-        Rule('/user/<uid>/<pid>/claim/verify/', 'post', project_views.contributor.claim_user_post, json_renderer),
+        Rule('/user/<uid>/<pid>/claim/email/', 'post', project_views.contributor.claim_user_post, json_renderer),
 
     ], prefix='/api/v1',)
 

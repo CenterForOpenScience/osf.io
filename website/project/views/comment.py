@@ -39,8 +39,12 @@ def collect_discussion(target, users=None):
 
 @must_be_contributor_or_public
 def comment_discussion(**kwargs):
+
+    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
+
     users = collect_discussion(node)
+
     # Sort users by comment frequency
     # TODO: Allow sorting by recency, combination of frequency and recency
     sorted_users = sorted(
@@ -48,6 +52,7 @@ def comment_discussion(**kwargs):
         key=lambda item: len(users[item]),
         reverse=True,
     )
+
     return {
         'discussion': [
             {
@@ -67,7 +72,6 @@ def comment_discussion(**kwargs):
 
 
 def serialize_comment(comment, auth):
-
     return {
         'id': comment._id,
         'author': {
@@ -78,8 +82,8 @@ def serialize_comment(comment, auth):
                     comment.user, use_ssl=True,
                     size=settings.GRAVATAR_SIZE_DISCUSSION),
         },
-        'dateCreated': comment.date_created.strftime('%x %X'),
-        'dateModified': comment.date_modified.strftime('%x %X'),
+        'dateCreated': comment.date_created.strftime('%m/%d/%y %H:%M:%S'),
+        'dateModified': comment.date_modified.strftime('%m/%d/%y %H:%M:%S'),
         'content': comment.content,
         'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user,
@@ -127,10 +131,10 @@ def add_comment(**kwargs):
     guid = request.json.get('target')
     target = resolve_target(node, guid)
 
-    content = request.json.get('content')
-    if content is None:
-        raise HTTPError(http.BAD_REQUEST)
+    content = request.json.get('content').strip()
     content = sanitize(content)
+    if not content:
+        raise HTTPError(http.BAD_REQUEST)
 
     comment = Comment.create(
         auth=auth,
@@ -165,16 +169,16 @@ def list_comments(**kwargs):
 def edit_comment(**kwargs):
 
     auth = kwargs['auth']
-    node = kwargs['node'] or kwargs['project']
 
     comment = kwargs_to_comment(kwargs, owner=True)
 
-    content = request.json.get('content')
-    if content is None:
+    content = request.json.get('content').strip()
+    content = sanitize(content)
+    if not content:
         raise HTTPError(http.BAD_REQUEST)
 
     comment.edit(
-        content=sanitize(content),
+        content=content,
         auth=auth,
         save=True
     )

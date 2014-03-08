@@ -63,31 +63,35 @@ this.NodeControl = (function(ko, $, global) {
             id: userid,
             name: name
         };
-        $.osf.postJSON(nodeApiUrl + 'beforeremovecontributors/', {}, function(response) {
-            var prompt = $.osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
-            bootbox.confirm({
-                title: 'Delete Contributor?',
-                message: prompt,
-                callback: function(result) {
-                    if (result) {
-                        $.osf.postJSON(
-                            nodeApiUrl + 'removecontributors/',
-                            payload,
-                            function(response) {
-                                if (response.redirectUrl) {
-                                    window.location.href = response.redirectUrl;
-                                } else {
-                                    window.location.reload();
+        $.osf.postJSON(
+            nodeApiUrl + 'beforeremovecontributors/',
+            payload,
+            function(response) {
+                var prompt = $.osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
+                bootbox.confirm({
+                    title: 'Delete Contributor?',
+                    message: prompt,
+                    callback: function(result) {
+                        if (result) {
+                            $.osf.postJSON(
+                                nodeApiUrl + 'removecontributors/',
+                                payload,
+                                function(response) {
+                                    if (response.redirectUrl) {
+                                        window.location.href = response.redirectUrl;
+                                    } else {
+                                        window.location.reload();
+                                    }
                                 }
-                            }
-                        ).fail(function(xhr) {
-                            var response = JSON.parse(xhr.responseText);
-                            bootbox.alert('Error: ' + response.message_long);
-                        });
+                            ).fail(function(xhr) {
+                                var response = JSON.parse(xhr.responseText);
+                                bootbox.alert('Error: ' + response.message_long);
+                            });
+                        }
                     }
-                }
-            });
-        });
+                });
+            }
+        );
         return false;
     };
 

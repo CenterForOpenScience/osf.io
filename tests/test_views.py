@@ -674,7 +674,7 @@ class TestUserInviteViews(DbTestCase):
         res = self.app.post_json(self.invite_url,
             {'email': 'brian@queen.com', 'fullname': ''}, auth=self.user.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_send_claim_email_to_given_email(self, send_mail):
@@ -725,6 +725,194 @@ class TestClaimViews(DbTestCase):
             auth=Auth(user=self.referrer)
         )
         self.project.save()
+
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_claim_user_post_with_registered_user_id(self, send_mail):
+        # registered user who is attempting to claim the unclaimed contributor
+        reg_user = UserFactory()
+        payload = {
+            # pk of unreg user record
+            'pk': self.user._primary_key,
+            'claimerId': reg_user._primary_key
+        }
+        url = '/api/v1/user/{uid}/{pid}/claim/verify/'.format(
+            uid=self.user._primary_key,
+            pid=self.project._primary_key,
+        )
+
+        res = self.app.post_json(url,
+            payload,
+            auth=Auth(user=reg_user)
+        )
+
+        # mail was sent
+        assert_true(send_mail.called)
+        # ... to the correct address
+        assert_true(send_mail.called_with(to_addr=self.given_email))
+
+        # view returns the correct JSON
+        assert_equal(res.json, {
+            'status': 'success',
+            'email': reg_user.username,
+            'fullname': self.given_name,
+        })
+    def test_user_with_removed_unclaimed_url_claiming(self):
+        """ Tests that when an unclaimed user is removed from a project, the
+        unregistered user object does not retain the token.
+        """
+        self.project.remove_contributor(self.user, Auth(user=self.referrer))
+
+        assert_not_in(
+            self.project._primary_key,
+            self.user.unclaimed_records.keys()
+        )
+
+
+    def test_user_with_claim_url_cannot_claim_twice(self):
+        """ Tests that when an unclaimed user is replaced on a project with a
+        claimed user, the unregistered user object does not retain the token.
+        """
+        reg_user = AuthUserFactory()
+
+        self.project.replace_contributor(self.user, reg_user)
+
+        assert_not_in(
+            self.project._primary_key,
+            self.user.unclaimed_records.keys()
+        )
+
+
+    @unittest.skip('Incomplete')
+    def test_user_with_claim_url_registers_new_account(self):
+
+        # User goes to the claim page, but a different user (lab_user) is logged in
+        lab_user = AuthUserFactory(fullname="Lab Comp")
+
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(url, auth=lab_user.auth).follow(auth=lab_user.auth)
+
+        # verify that the "Claim Account" form is returned
+        assert_in('Claim Contributor', res.body)
+
+        # Clicks "I am not Lab Comp"
+        # Taken to login/register page
+        res2 = res.click(href="/claim/login").follow()
+        # Fills in Register form
+        form = res2.forms['registerForm']
+        form['register-fullname'] = 'tester'
+        form['register-username'] = 'test@test.com'
+        form['register-username2'] = 'test@test.com'
+        form['register-password'] = 'testing'
+        form['register-password2'] = 'testing'
+        #new_user = AuthUserFactory(fullname="tester", username='test@test.com', password='testing')
+
+        # At this point, the form submission cannot be processed using WebTests.
+        # A session is in place beginning on the user's load of the login page.
+        # Since the user is not logged in, and we're emulating session elsewhere
+        # by passing in HTTP auth credentials, we have no means of persisting
+        # the session. We can register a user, but the session stores the info
+        # necessary for the OSF to then add that user as a contributor.
+        # Code below this comment is included for future reference only.
+
+        # submits
+        # res3 = form.submit()
+        #
+        # assert_in('Registration successful.', res3.body)
+        # assert_in('Successfully claimed contributor', res3.body)
+        #
+        # u = User.find(Q('username', 'eq', 'test@test.com'))[0]
+        # key = ApiKeyFactory()
+        # u.api_keys.append(key)
+        # u.save()
+        # u.auth = ('test', key._primary_key)
+        #
+        # res4 = self.app.get(u.get_confirmation_url('test@test.com')).follow(auth=u.auth)
+        #
+        # assert_in('Dashboard', res4.body)
+        #
+        # # Confirms their email address
+        # # user is now a contributor to self.project
+        # self.project.reload()
+        # #new_user.reload()
+        # self.user.reload()
+        # u.reload()
+        # # taken to dashboard
+        # #assert_in("Dashboard", res3.body)
+
+
+        # assert_not_in(self.user._primary_key, self.project.contributors)
+        # assert_equal(2, len(self.project.contributors))
+        # # user is now a contributor to self.project
+        # assert_in(u._primary_key, self.project.contributors)
+
+    def test_user_can_log_in_with_a_different_account(self):
+        right_user = AuthUserFactory(fullname="Right User")
+        # User goes to the claim page, but a different user (lab_user) is logged in
+        lab_user = AuthUserFactory(fullname="Lab Comp")
+
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(url, auth=lab_user.auth).follow(auth=lab_user.auth)
+
+        # verify that the "Claim Account" form is returned
+        assert_in('Claim Contributor', res.body)
+
+        # Clicks "I am not Lab Comp"
+        # Taken to login/register page
+
+        res2 = res.click(href="/claim/login").follow()
+        # Fills in log in form
+        form = res2.forms['signinForm']
+        form['username'] = right_user.username
+        form['password'] = right_user.password
+        # submits
+        res3 = form.submit(auth=right_user.auth).follow(auth=right_user.auth)
+
+        self.project.reload()
+        right_user.reload()
+        self.user.reload()
+        # taken to dashboard
+        assert_in("Dashboard", res3.body)
+
+        # user is now a contributor to self.project
+        assert_in(right_user._primary_key, self.project.contributors)
+
+        # lab user is not a contributor
+        assert_not_in(lab_user._primary_key, self.project.contributors)
+
+    def test_claim_user_form_redirects_to_password_confirm_page_if_user_is_logged_in(self):
+        reg_user = UserFactory()
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(url, auth=Auth(user=reg_user))
+
+        # verify that the "Claim Account" form is returned
+        assert_in('Claim Account', res.body)
+
+    def test_claim_user_registered_with_correct_password(self):
+        reg_user = AuthUserFactory()
+        reg_user.set_password('killerqueen')
+        reg_user.save()
+        url = self.user.get_claim_url(self.project._primary_key)
+        # Follow to password re-enter page
+        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
+
+        # verify that the "Claim Account" form is returned
+        assert_in('Claim Contributor', res.body)
+
+        form = res.forms['claimContributorForm']
+        form['password'] = 'killerqueen'
+        res = form.submit(auth=reg_user.auth).follow(auth=reg_user.auth)
+
+
+        self.project.reload()
+        self.user.reload()
+        # user is now a contributor to the project
+        assert_in(reg_user._primary_key, self.project.contributors)
+
+        # the unregistered user (self.user) is removed as a contributor, and their
+        assert_not_in(self.user._primary_key, self.project.contributors)
+
+        # unclaimed record for the project has been deleted
+        assert_not_in(self.project._primary_key, self.user.unclaimed_records)
 
     def test_get_valid_form(self):
         url = self.user.get_claim_url(self.project._primary_key)
@@ -872,7 +1060,7 @@ class TestWatchViews(DbTestCase):
                             params={},
                             auth=self.auth,
                             expect_errors=True)
-        assert_equal(res2.status_code, 400)
+        assert_equal(res2.status_code, http.BAD_REQUEST)
 
     def test_unwatching_a_project_removes_from_watched_list(self):
         # The user has already watched a project
@@ -1172,7 +1360,7 @@ class TestAuthViews(DbTestCase):
         user.confirm_email(token)
         user.save()
         res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_change_names(self):
         self.app.post(
@@ -1246,7 +1434,7 @@ class TestFileViews(DbTestCase):
     def test_files_get(self):
         url = '/api/v1/{0}/files/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, http.OK)
         expected = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res.json['node'], expected['node'])
         assert_in('tree_js', res.json)
@@ -1255,7 +1443,7 @@ class TestFileViews(DbTestCase):
     def test_grid_data(self):
         url = '/api/v1/{0}/files/grid/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, http.OK)
         expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))
         data = res.json['data']
         assert_equal(len(data), len(expected))
@@ -1274,13 +1462,14 @@ class TestComments(DbTestCase):
         project.comment_level = comment_level
         project.save()
 
-    def _add_comment(self, project, **kwargs):
+    def _add_comment(self, project, content=None, **kwargs):
 
+        content = content if content is not None else 'hammer to fall'
         url = project.api_url + 'comment/'
         return self.app.post_json(
             url,
             {
-                'content': 'hammer to fall',
+                'content': content,
                 'isPublic': 'public',
             },
             **kwargs
@@ -1361,7 +1550,27 @@ class TestComments(DbTestCase):
             self.project, auth=self.project.creator.auth, expect_errors=True,
         )
 
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    def test_add_comment_empty(self):
+        self._configure_project(self.project, 'public')
+        res = self._add_comment(
+            self.project, content='',
+            auth=self.project.creator.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_false(getattr(self.project, 'commented', []))
+
+    def test_add_comment_whitespace(self):
+        self._configure_project(self.project, 'public')
+        res = self._add_comment(
+            self.project, content='  ',
+            auth=self.project.creator.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_false(getattr(self.project, 'commented', []))
 
     def test_edit_comment(self):
 
@@ -1550,6 +1759,25 @@ class TestComments(DbTestCase):
         assert_equal(len(res.json['discussion']), 3)
         observed = [user['id'] for user in res.json['discussion']]
         expected = [user1._id, user2._id, self.project.creator._id]
+        assert_equal(observed, expected)
+
+    def test_discussion_no_private_if_not_contributor(self):
+
+        self._configure_project(self.project, 'private')
+
+        user1 = AuthUserFactory()
+        user2 = AuthUserFactory()
+
+        CommentFactory(node=self.project)
+        CommentFactory(node=self.project, user=user1, is_public=False)
+        CommentFactory(node=self.project, user=user2, is_public=False)
+
+        url = self.project.api_url + 'comments/discussion/'
+        res = self.app.get(url, auth=user2.auth).maybe_follow()
+
+        assert_equal(len(res.json['discussion']), 2)
+        observed = [user['id'] for user in res.json['discussion']]
+        expected = [self.project.creator._id, user2._id]
         assert_equal(observed, expected)
 
 

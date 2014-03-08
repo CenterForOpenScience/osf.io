@@ -106,7 +106,7 @@
                                 <textarea class="form-control" data-bind="value: content"></textarea>
                             </div>
                             <div class="form-inline">
-                                <a class="btn btn-default btn-default" data-bind="click: submitEdit"><i class="icon-check"></i> Save</a>
+                                <a class="btn btn-default btn-default" data-bind="click: submitEdit, visible: editNotEmpty"><i class="icon-check"></i> Save</a>
                                 <a class="btn btn-default btn-default" data-bind="click: cancelEdit"><i class="icon-undo"></i> Cancel</a>
                                 <span data-bind="text: editErrorMessage" class="comment-error"></span>
                             </div>
@@ -164,10 +164,10 @@
 
                 <div>
                     <div class="form-group" style="padding-top: 10px">
-                        <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent"></textarea>
+                        <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input'"></textarea>
                     </div>
                     <div>
-                        <a class="btn btn-default btn-default" data-bind="click: submitReply"><i class="icon-check"></i> Save</a>
+                        <a class="btn btn-default btn-default" data-bind="click: submitReply, visible: replyNotEmpty"><i class="icon-check"></i> Save</a>
                         <a class="btn btn-default btn-default" data-bind="click: cancelReply"><i class="icon-undo"></i> Cancel</a>
                         <span data-bind="text: replyErrorMessage" class="comment-error"></span>
                     </div>

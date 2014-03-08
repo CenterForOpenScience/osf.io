@@ -311,10 +311,8 @@ class TestRegistrations(DbTestCase):
 
     def test_cant_be_deleted(self):
         # Goes to project's page
-        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
-        # Settings is not in the project navigation bar
-        subnav = res.html.select('#projectSubnav')[0]
-        assert_not_in('Settings', subnav.text)
+        res = self.app.get(self.project.url + 'settings/', auth=self.auth).maybe_follow()
+        assert_not_in('Delete project', res)
 
     def test_cant_see_contributor(self):
         # Goes to project's page

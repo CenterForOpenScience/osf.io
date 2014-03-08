@@ -18,7 +18,7 @@
 
     <div class="row">
             <div class="col-md-6">
-                <select id="figshareSelectProject" class="form-control" ${'' if is_owner else 'disabled'}>
+                <select id="figshareSelectProject" class="form-control" ${'' if is_owner and not is_registration else 'disabled'}>
                     <option>-----</option>
                     %if is_owner:
                         % for project in figshare_options:
@@ -30,7 +30,7 @@
                 </select>
             </div>
 
-        % if is_owner:
+        % if is_owner and not is_registration:
             <div class="col-md-6">
                 <a id="figshareCreateProject" class="btn btn-default">Create Project</a>
             </div>

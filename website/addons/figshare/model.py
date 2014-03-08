@@ -81,7 +81,8 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             'figshare_title': self.figshare_title or '',
             'node_has_auth': self.user_settings and self.user_settings.has_auth,
             'user_has_auth': figshare_user and figshare_user.has_auth,
-            'figshare_options': []
+            'figshare_options': [],
+            'is_registration': self.owner.is_registration,
         })
 
         if self.user_settings and self.user_settings.has_auth:

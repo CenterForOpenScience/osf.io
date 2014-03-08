@@ -17,8 +17,8 @@ def github_set_user_config(**kwargs):
 
 
 @must_have_permission('write')
-@must_not_be_registration
 @must_have_addon('github', 'node')
+@must_not_be_registration
 def github_set_config(**kwargs):
 
     auth = kwargs['auth']

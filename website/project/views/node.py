@@ -167,7 +167,6 @@ def node_forks(**kwargs):
 
 @must_be_valid_project
 @must_have_permission('write')
-@must_not_be_registration
 def node_setting(**kwargs):
 
     auth = kwargs['auth']
