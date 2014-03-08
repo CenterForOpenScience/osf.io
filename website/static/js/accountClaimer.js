@@ -9,7 +9,8 @@ this.OSFAccountClaimer = (function($, global, bootbox) {
 
     function AccountClaimer (selector) {
         this.selector = selector;
-        this.element = $(selector);
+        this.element = $(selector);  // Should select all span elements for
+                                    // unreg contributor names
         this.init();
     }
 
@@ -26,31 +27,36 @@ this.OSFAccountClaimer = (function($, global, bootbox) {
         });
     }
 
+    function onClickIfLoggedIn() {
+        var pk = $(this).data('pk');
+        if (pk !== global.userId) {
+            bootbox.confirm({
+                title: 'Claim as ' + global.contextVars.currentUser.username + '?',
+                message: 'If you claim this account, a contributor of this project ' +
+                        'will be emailed to confirm your identity.',
+                callback: function(confirmed) {
+                    if (confirmed) {
+                        $.osf.postJSON(getClaimUrl(), {
+                            claimerId: global.userId,
+                            pk: pk
+                        }, function(response) {
+                            alertFinished(response.email);
+                        });
+                    }
+                }
+            });
+        }
+    }
+
     AccountClaimer.prototype = {
         constructor: AccountClaimer,
         init: function() {
             var self = this;
+            self.element.tooltip({
+                title: 'Is this you? Click to claim'
+            });
             if (global.userId.length) { // If user is logged in, ask for confirmation
-                self.element.on('click', function() {
-                    var pk = $(this).data('pk');
-                    if (pk !== global.userId) {
-                        bootbox.confirm({
-                            title: 'Claim as ' + global.contextVars.currentUser.username,
-                            message: 'If you claim this account, a contributor of this project ' +
-                                    'will be emailed to confirm your identity.',
-                            callback: function(confirmed) {
-                                if (confirmed) {
-                                    $.osf.postJSON(getClaimUrl(), {
-                                        claimerId: global.userId,
-                                        pk: pk
-                                    }, function(response) {
-                                        alertFinished(response.email);
-                                    });
-                                }
-                            }
-                        });
-                    }
-                });
+                self.element.on('click', onClickIfLoggedIn);
             } else {
                 self.element.editable({
                     type: 'text',
