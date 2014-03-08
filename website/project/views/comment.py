@@ -27,12 +27,17 @@ def resolve_target(node, guid):
     return target.referent
 
 
-def collect_discussion(target, users=None):
+def collect_discussion(target, users=None, node=None, auth=None):
+
+    # todo does node comment status matter? probably optimal to check that first before checking each comment
+    
+    is_contributor = True if auth and auth.user in node.contributors else False
 
     users = users or collections.defaultdict(list)
     for comment in getattr(target, 'commented', []):
-        if not comment.is_deleted:
+        if not comment.is_deleted and (is_contributor or comment.is_public):
             users[comment.user].append(comment)
+
         collect_discussion(comment, users=users)
     return users
 
@@ -40,7 +45,8 @@ def collect_discussion(target, users=None):
 @must_be_contributor_or_public
 def comment_discussion(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    users = collect_discussion(node)
+    auth = kwargs['auth'] if 'auth' in kwargs else None
+    users = collect_discussion(node, node=node, auth=auth)
     # Sort users by comment frequency
     # TODO: Allow sorting by recency, combination of frequency and recency
     sorted_users = sorted(
