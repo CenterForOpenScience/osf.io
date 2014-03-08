@@ -119,6 +119,9 @@ font-weight: bold;
     color: #999999;
 }
 
+.comment-date {
+    color: #999999;
+}
 .edit-comment {
     background-color: #F3F3F3;
     cursor: pointer;
