@@ -1,7 +1,8 @@
 this.Manage = (function(window, $, ko, bootbox) {
 
     var contribsEqual = function(a, b) {
-        return a.id === b.id && a.permission === b.permission;
+        return a.id === b.id && a.permission === b.permission &&
+            a.deleteStaged === b.deleteStaged;
     };
 
     // Modified from http://stackoverflow.com/questions/7837456/comparing-two-arrays-in-javascript
@@ -31,22 +32,61 @@ this.Manage = (function(window, $, ko, bootbox) {
         }
     };
 
+    var setupEditable = function(elm, data) {
+        var $elm = $(elm);
+        var $editable = $elm.find('.permission-editable');
+        $editable.editable({
+            showbuttons: false,
+            value: data.permission(),
+            source: [
+                {value: 'read', text: 'Read'},
+                {value: 'write', text: 'Write'},
+                {value: 'admin', text: 'Admin'}
+            ],
+            success: function(response, value) {
+                data.permission(value);
+            }
+        });
+    };
+
     var ContributorModel = function(contributor) {
 
         var self = this;
 
         $.extend(self, contributor);
         self.permission = ko.observable(contributor.permission);
+        self.deleteStaged = ko.observable(contributor.deleteStaged);
 
         self.serialize = function() {
             return ko.toJS(self);
         };
+
+        self.remove = function() {
+            self.deleteStaged(true);
+        };
+        self.unremove = function(data, event) {
+            $target = $(event.target);
+            if (!$target.hasClass('contrib-button')) {
+                self.deleteStaged(false);
+            }
+        };
+
+        self.notDeleteStaged = ko.computed(function() {
+            return !self.deleteStaged();
+        });
+        self.formatPermission = ko.computed(function() {
+            var permission = self.permission();
+            return permission.charAt(0).toUpperCase() + permission.slice(1);
+        });
 
     };
 
     var ContributorsViewModel = function(contributors) {
 
         var self = this;
+        for (var i=0; i<contributors.length; i++) {
+            contributors[i].deleteStaged = false;
+        }
         self.original = ko.observableArray(contributors);
 
         self.contributors = ko.observableArray();
@@ -81,7 +121,10 @@ this.Manage = (function(window, $, ko, bootbox) {
             return !arraysEqual(contributorData, self.original());
         });
         self.valid = ko.computed(function() {
-            var admins = ko.utils.arrayFilter(self.contributors(), function(item) {
+            var contributors = ko.utils.arrayFilter(self.contributors(), function(item) {
+                return !item.deleteStaged();
+            });
+            var admins = ko.utils.arrayFilter(contributors, function(item) {
                 return item.permission() === 'admin';
             });
             return !!admins.length;
@@ -122,26 +165,7 @@ this.Manage = (function(window, $, ko, bootbox) {
         self.initListeners();
 
         self.setupEditable = function(elm, data) {
-            var $elm = $(elm);
-            var $editable = $elm.find('.permission-editable');
-            $editable.editable({
-                showbuttons: false,
-                value: data.permission(),
-                source: [
-                    {value: 'read', text: 'Read'},
-                    {value: 'write', text: 'Write'},
-                    {value: 'admin', text: 'Admin'}
-                ],
-                success: function(response, value) {
-                    data.permission(value);
-                }
-            });
-        };
-
-        self.remove = function(data) {
-            self.contributors.splice(
-                self.contributors.indexOf(data), 1
-            );
+            setupEditable(elm, data);
         };
 
         self.sort = function() {
@@ -166,7 +190,10 @@ this.Manage = (function(window, $, ko, bootbox) {
         };
 
         self.serialize = function() {
-            return self.contributors().map(function(item) {
+            toSubmit = ko.utils.arrayFilter(self.contributors(), function(item) {
+                return !item.deleteStaged();
+            });
+            return ko.utils.arrayMap(toSubmit, function(item) {
                 return item.serialize();
             });
         };
@@ -183,6 +210,9 @@ this.Manage = (function(window, $, ko, bootbox) {
                         nodeApiUrl + 'contributors/manage/',
                         {contributors: self.serialize()},
                         function() {
+                            self.contributors(ko.utils.arrayFilter(self.contributors(), function(item) {
+                                return !item.deleteStaged();
+                            }));
                             self.original(ko.utils.arrayMap(self.contributors(), function(item) {
                                 return item.serialize();
                             }));

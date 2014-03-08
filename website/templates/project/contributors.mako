@@ -7,36 +7,21 @@
 
 <h2>Contributors</h2>
 
-    ##% if len(contributors) > 5:
-      ##  ${buttonGroup()}
-    ##% endif
-
     <table class="table">
         <thead>
-            <th></th>
             <th>Name</th>
             <th>Permissions</th>
+            <th></th>
         </thead>
         <tr>
             <td>
-                <a class="btn btn-default btn-mini add-contributor contrib-button" href="#addContributors" data-toggle="modal">
-                    +
+                <a href="#addContributors" data-toggle="modal">
+                    Click to add a contributor
                 </a>
-            </td>
-            <td>
-                Click to the left to add a contributor
             </td>
         </tr>
         <tbody data-bind="sortable: {data: contributors, as: 'contributor', afterRender: setupEditable, options: {containment: '#manageContributors'}}">
-            <tr>
-                <td>
-                    <a
-                            class="btn btn-danger contrib-button btn-mini"
-                            data-bind="click: $root.remove"
-                            rel="tooltip"
-                            title="Remove contributor"
-                        >-</a>
-                </td>
+            <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
                 <td>
                     <img data-bind="attr: {src: contributor.gravatar_url}" />
                     <span data-bind="text: contributor.fullname"></span>
@@ -45,7 +30,25 @@
 ##                    <span data-bind="text: contributor.contributions"></span>
 ##                </td>
                 <td>
-                    <a href="#" class="permission-editable" data-type="select"></a>
+                    <span data-bind="visible: notDeleteStaged">
+                        <a href="#" class="permission-editable" data-type="select"></a>
+                    </span>
+                    <span data-bind="visible: deleteStaged">
+                        <span data-bind="text: formatPermission"></span>
+                    </span>
+                </td>
+                <td>
+                    <!-- ko ifnot: deleteStaged -->
+                        <a
+                                class="btn btn-danger contrib-button btn-mini"
+                                data-bind="click: remove"
+                                rel="tooltip"
+                                title="Remove contributor"
+                            >-</a>
+                    <!-- /ko -->
+                    <!-- ko if: deleteStaged -->
+                        Removed
+                    <!-- /ko -->
                 </td>
             </tr>
         </tbody>
