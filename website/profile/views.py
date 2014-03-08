@@ -1,5 +1,6 @@
 import json
 import httplib as http
+import bleach
 
 from framework import (
     get_user,
@@ -273,12 +274,16 @@ def parse_names(**kwargs):
     return parse_name(name)
 
 
+NAME_FIELDS = [
+    'fullname', 'given_name', 'middle_names', 'family_name', 'suffix'
+]
+def scrub_html(value):
+    return bleach.clean(value, strip=True, tags=[], attributes=[], styles=[])
+
+
 @must_be_logged_in
 def post_names(**kwargs):
     user = kwargs['auth'].user
-    user.fullname = request.json['fullname']
-    user.given_name = request.json['given_name']
-    user.middle_names = request.json['middle_names']
-    user.family_name = request.json['family_name']
-    user.suffix = request.json['suffix']
+    for field in NAME_FIELDS:
+        setattr(user, field, scrub_html(request.json[field]))
     user.save()
