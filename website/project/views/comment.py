@@ -27,13 +27,11 @@ def resolve_target(node, guid):
     return target.referent
 
 
-def collect_discussion(target, users=None, node=None, auth=None):
-
-    # todo does node comment status matter? probably optimal to check that first before checking each comment
+def collect_discussion(target, users=None):
 
     users = users or collections.defaultdict(list)
     for comment in getattr(target, 'commented', []):
-        if not comment.is_deleted and comment.can_view(node, auth):
+        if not comment.is_deleted:
             users[comment.user].append(comment)
         collect_discussion(comment, users=users)
     return users
@@ -45,7 +43,7 @@ def comment_discussion(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
-    users = collect_discussion(node, node=node, auth=auth)
+    users = collect_discussion(node)
 
     # Sort users by comment frequency
     # TODO: Allow sorting by recency, combination of frequency and recency
@@ -74,18 +72,19 @@ def comment_discussion(**kwargs):
 
 
 def serialize_comment(comment, auth):
-
     return {
         'id': comment._id,
         'author': {
             'id': comment.user._id,
             'url': comment.user.url,
             'name': comment.user.fullname,
+            'gravatarUrl': gravatar(
+                    comment.user, use_ssl=True,
+                    size=settings.GRAVATAR_SIZE_DISCUSSION),
         },
-        'dateCreated': comment.date_created.strftime('%x %X'),
-        'dateModified': comment.date_modified.strftime('%x %X'),
+        'dateCreated': comment.date_created.strftime('%m/%d/%y %H:%M:%S'),
+        'dateModified': comment.date_modified.strftime('%m/%d/%y %H:%M:%S'),
         'content': comment.content,
-        'isPublic': 'public' if comment.is_public else 'private',
         'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user,
         'modified': comment.modified,
@@ -93,12 +92,12 @@ def serialize_comment(comment, auth):
         'isAbuse': auth.user and auth.user._id in comment.reports,
     }
 
-def serialize_comments(record, node, auth):
+
+def serialize_comments(record, auth):
 
     return [
         serialize_comment(comment, auth)
         for comment in getattr(record, 'commented', [])
-        if comment.can_view(node, auth)
     ]
 
 
@@ -137,17 +136,11 @@ def add_comment(**kwargs):
     if not content:
         raise HTTPError(http.BAD_REQUEST)
 
-    is_public_string = request.json.get('isPublic')
-    if is_public_string not in ['public', 'private']:
-        raise HTTPError(http.BAD_REQUEST)
-    is_public = is_public_string == 'public'
-
     comment = Comment.create(
         auth=auth,
         node=node,
         target=target,
         user=auth.user,
-        is_public=is_public,
         content=content,
     )
     comment.save()
@@ -163,14 +156,11 @@ def list_comments(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
-    if not node.can_comment(auth):
-        return {'comments': []}
-
     guid = request.args.get('target')
     target = resolve_target(node, guid)
 
     return {
-        'comments': serialize_comments(target, node, auth),
+        'comments': serialize_comments(target, auth),
     }
 
 
@@ -187,14 +177,8 @@ def edit_comment(**kwargs):
     if not content:
         raise HTTPError(http.BAD_REQUEST)
 
-    is_public_string = request.json.get('isPublic')
-    if is_public_string not in ['public', 'private']:
-        raise HTTPError(http.BAD_REQUEST)
-    is_public = is_public_string == 'public'
-
     comment.edit(
         content=content,
-        is_public=is_public,
         auth=auth,
         save=True
     )
