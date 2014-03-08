@@ -4,7 +4,7 @@ from framework import request
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
-from website.project.decorators import must_be_contributor
+from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
@@ -16,7 +16,7 @@ def github_set_user_config(**kwargs):
     return {}
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('github', 'node')
 def github_set_config(**kwargs):
@@ -92,7 +92,7 @@ def github_set_config(**kwargs):
     return {}
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_have_addon('github', 'node')
 def github_set_privacy(**kwargs):
 

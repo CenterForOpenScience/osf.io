@@ -5,7 +5,7 @@ from framework.exceptions import HTTPError
 from framework.status import push_status_message
 from framework.auth.decorators import must_be_logged_in
 
-from website.project.decorators import must_be_contributor
+from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
@@ -50,7 +50,7 @@ def s3_authorize_user(**kwargs):
     return {}
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_have_addon('s3', 'node')
 def s3_authorize_node(**kwargs):
 
@@ -75,7 +75,7 @@ def s3_authorize_node(**kwargs):
     return {}
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('s3', 'node')
 def s3_node_settings(**kwargs):
@@ -129,7 +129,7 @@ def s3_node_settings(**kwargs):
         adjust_cors(S3Wrapper.from_addon(node_settings))
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_have_addon('s3', 'node')
 def s3_remove_node_settings(**kwargs):
 

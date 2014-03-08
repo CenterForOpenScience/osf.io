@@ -7,12 +7,10 @@ from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
 from website import models
-from website.project.decorators import must_be_contributor
+from website.project.decorators import must_have_permission
 from website.project.decorators import must_have_addon
 
-from ..api import Figshare
 from ..auth import oauth_start_url, oauth_get_token
-from ..settings import API_URL, API_OAUTH_URL
 
 @must_be_logged_in
 def figshare_oauth_start(*args, **kwargs):
@@ -42,7 +40,7 @@ def figshare_oauth_start(*args, **kwargs):
     return redirect(authorization_url)
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_have_addon('figshare', 'node')
 def figshare_oauth_delete_node(*args, **kwargs):
 
@@ -129,7 +127,7 @@ def figshare_oauth_callback(*args, **kwargs):
     return redirect('/settings/')
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_have_addon('figshare', 'node')
 def figshare_add_user_auth(*args, **kwargs):
 

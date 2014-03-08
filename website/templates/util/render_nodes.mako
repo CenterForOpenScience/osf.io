@@ -1,4 +1,4 @@
-<ul class="list-group ${'sortable' if sortable and user['can_edit'] else ''}">
+<ul class="list-group ${'sortable' if sortable and 'write' in user['permissions'] else ''}">
     % for each in nodes:
         <div mod-meta='{
                 "tpl": "util/render_node.mako",
@@ -18,7 +18,7 @@
 
 <script>
 
-    % if sortable and user['can_edit']:
+    % if sortable and 'write' in user['permissions']:
 
         $(function(){
             $('.sortable').sortable({

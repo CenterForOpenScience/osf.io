@@ -162,10 +162,9 @@ def must_have_permission(permission):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
 
-            # Keywords must include `node`
+            # Ensure `project` and `node` kwargs
+            kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
             node = kwargs['node'] or kwargs['project']
-            if node is None:
-                raise HTTPError(http.BAD_REQUEST)
 
             kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
             user = kwargs['auth'].user
