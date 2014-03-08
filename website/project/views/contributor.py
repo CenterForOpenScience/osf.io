@@ -511,7 +511,7 @@ def claim_user_form(**kwargs):
     is_json_request = request.content_type == 'application/json'
     return {
         'firstname': user.given_name,
-        'email': email,
+        'email': email if email else '',
         'fullname': user.fullname,
         'form': forms.utils.jsonify(form) if is_json_request else form,
     }

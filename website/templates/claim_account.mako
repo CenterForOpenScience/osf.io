@@ -13,7 +13,7 @@
                 ${form.username(placeholder='Email', value=email)}
             </div>
             <div class='form-group'>
-                ${form.password(placeholder='New password', autofocus=True)}
+                ${form.password(placeholder='New password')}
             </div>
             <div class='form-group'>
                 ${form.password2(placeholder='New password again')}
