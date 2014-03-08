@@ -132,10 +132,10 @@ def add_comment(**kwargs):
     guid = request.json.get('target')
     target = resolve_target(node, guid)
 
-    content = request.json.get('content')
-    if content is None:
-        raise HTTPError(http.BAD_REQUEST)
+    content = request.json.get('content').strip()
     content = sanitize(content)
+    if not content:
+        raise HTTPError(http.BAD_REQUEST)
 
     is_public_string = request.json.get('isPublic')
     if is_public_string not in ['public', 'private']:
@@ -179,12 +179,12 @@ def list_comments(**kwargs):
 def edit_comment(**kwargs):
 
     auth = kwargs['auth']
-    node = kwargs['node'] or kwargs['project']
 
     comment = kwargs_to_comment(kwargs, owner=True)
 
-    content = request.json.get('content')
-    if content is None:
+    content = request.json.get('content').strip()
+    content = sanitize(content)
+    if not content:
         raise HTTPError(http.BAD_REQUEST)
 
     is_public_string = request.json.get('isPublic')
@@ -193,7 +193,7 @@ def edit_comment(**kwargs):
     is_public = is_public_string == 'public'
 
     comment.edit(
-        content=sanitize(content),
+        content=content,
         is_public=is_public,
         auth=auth,
         save=True

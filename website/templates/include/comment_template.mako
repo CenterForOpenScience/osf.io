@@ -111,10 +111,10 @@
                         -->
                         <div data-bind="template {if: editing, afterRender: autosizeText}">
                             <div class="form-group">
-                                <textarea class="form-control" data-bind="value: content"></textarea>
+                                <textarea class="form-control" data-bind="value: content, valueUpdate: 'input'"></textarea>
                             </div>
                             <div>
-                                <a class="btn btn-default btn-default" data-bind="click: submitEdit"><i class="icon-check"></i> Save</a>
+                                <a class="btn btn-default btn-default" data-bind="click: submitEdit, visible: editNotEmpty"><i class="icon-check"></i> Save</a>
                                 <a class="btn btn-default btn-default" data-bind="click: cancelEdit"><i class="icon-undo"></i> Cancel</a>
                                 <span data-bind="text: editErrorMessage" class="comment-error"></span>
                             </div>
@@ -174,10 +174,10 @@
                 </form>
                 <div>
                     <div class="form-group">
-                        <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent"></textarea>
+                        <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input'"></textarea>
                     </div>
                     <div>
-                        <a class="btn btn-default btn-default" data-bind="click: submitReply"><i class="icon-check"></i> Save</a>
+                        <a class="btn btn-default btn-default" data-bind="click: submitReply, visible: replyNotEmpty"><i class="icon-check"></i> Save</a>
                         <a class="btn btn-default btn-default" data-bind="click: cancelReply"><i class="icon-undo"></i> Cancel</a>
                         <span data-bind="text: replyErrorMessage" class="comment-error"></span>
                     </div>

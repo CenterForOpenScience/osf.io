@@ -674,7 +674,7 @@ class TestUserInviteViews(DbTestCase):
         res = self.app.post_json(self.invite_url,
             {'email': 'brian@queen.com', 'fullname': ''}, auth=self.user.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_send_claim_email_to_given_email(self, send_mail):
@@ -872,7 +872,7 @@ class TestWatchViews(DbTestCase):
                             params={},
                             auth=self.auth,
                             expect_errors=True)
-        assert_equal(res2.status_code, 400)
+        assert_equal(res2.status_code, http.BAD_REQUEST)
 
     def test_unwatching_a_project_removes_from_watched_list(self):
         # The user has already watched a project
@@ -1172,7 +1172,7 @@ class TestAuthViews(DbTestCase):
         user.confirm_email(token)
         user.save()
         res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_change_names(self):
         self.app.post(
@@ -1274,13 +1274,14 @@ class TestComments(DbTestCase):
         project.comment_level = comment_level
         project.save()
 
-    def _add_comment(self, project, **kwargs):
+    def _add_comment(self, project, content=None, **kwargs):
 
+        content = content if content is not None else 'hammer to fall'
         url = project.api_url + 'comment/'
         return self.app.post_json(
             url,
             {
-                'content': 'hammer to fall',
+                'content': content,
                 'isPublic': 'public',
             },
             **kwargs
@@ -1361,7 +1362,27 @@ class TestComments(DbTestCase):
             self.project, auth=self.project.creator.auth, expect_errors=True,
         )
 
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    def test_add_comment_empty(self):
+        self._configure_project(self.project, 'public')
+        res = self._add_comment(
+            self.project, content='',
+            auth=self.project.creator.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_false(getattr(self.project, 'commented', []))
+
+    def test_add_comment_whitespace(self):
+        self._configure_project(self.project, 'public')
+        res = self._add_comment(
+            self.project, content='  ',
+            auth=self.project.creator.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_false(getattr(self.project, 'commented', []))
 
     def test_edit_comment(self):
 

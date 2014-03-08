@@ -24,6 +24,10 @@ this.Comment = (function(window, $, ko) {
         return then.fromNow();
     };
 
+    var notEmpty = function(value) {
+        return !!$.trim(value);
+    }
+
     var exclusify = function(subscriber, subscribees) {
         subscriber.subscribe(function(value) {
             if (value) {
@@ -65,6 +69,10 @@ this.Comment = (function(window, $, ko) {
         self.replyPublic = ko.observable('public');
 
         self.comments = ko.observableArray();
+
+        self.replyNotEmpty = ko.computed(function() {
+            return notEmpty(self.replyContent());
+        });
 
     };
 
@@ -196,6 +204,10 @@ this.Comment = (function(window, $, ko) {
 
         self.isVisible = ko.computed(function() {
             return !self.isDeleted() && !self.isAbuse();
+        });
+
+        self.editNotEmpty = ko.computed(function() {
+            return notEmpty(self.content());
         });
 
         self.showPrivateIcon = ko.computed(function() {
@@ -396,10 +408,6 @@ this.Comment = (function(window, $, ko) {
         self.canComment = ko.observable(canComment);
         self.hasChildren = ko.observable(hasChildren);
         self.discussion = ko.observableArray();
-
-        self.replyNotEmpty = ko.computed(function() {
-            return !!self.replyContent();
-        });
 
         self.fetch();
         self.fetchDiscussion();
