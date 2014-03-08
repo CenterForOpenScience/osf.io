@@ -17,7 +17,7 @@ this.OSFAccountClaimer = (function($, global, bootbox) {
     function getClaimUrl() {
         var uid = $(this).data('pk');
         var pid = global.nodeId;
-        return '/api/v1/user/' + uid + '/' + pid +  '/claim/verify/';
+        return '/api/v1/user/' + uid + '/' + pid +  '/claim/email/';
     }
 
     function alertFinished(email) {
