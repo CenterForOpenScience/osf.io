@@ -81,7 +81,6 @@ def serialize_comment(comment, auth):
         'dateCreated': comment.date_created.strftime('%x %X'),
         'dateModified': comment.date_modified.strftime('%x %X'),
         'content': comment.content,
-        'isPublic': 'public' if comment.is_public else 'private',
         'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user,
         'modified': comment.modified,
@@ -89,12 +88,12 @@ def serialize_comment(comment, auth):
         'isAbuse': auth.user and auth.user._id in comment.reports,
     }
 
-def serialize_comments(record, node, auth):
+
+def serialize_comments(record, auth):
 
     return [
         serialize_comment(comment, auth)
         for comment in getattr(record, 'commented', [])
-        if comment.can_view(node, auth)
     ]
 
 
@@ -133,17 +132,11 @@ def add_comment(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
     content = sanitize(content)
 
-    is_public_string = request.json.get('isPublic')
-    if is_public_string not in ['public', 'private']:
-        raise HTTPError(http.BAD_REQUEST)
-    is_public = is_public_string == 'public'
-
     comment = Comment.create(
         auth=auth,
         node=node,
         target=target,
         user=auth.user,
-        is_public=is_public,
         content=content,
     )
     comment.save()
@@ -159,14 +152,11 @@ def list_comments(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
-    if not node.can_comment(auth):
-        return {'comments': []}
-
     guid = request.args.get('target')
     target = resolve_target(node, guid)
 
     return {
-        'comments': serialize_comments(target, node, auth),
+        'comments': serialize_comments(target, auth),
     }
 
 
@@ -183,14 +173,8 @@ def edit_comment(**kwargs):
     if content is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    is_public_string = request.json.get('isPublic')
-    if is_public_string not in ['public', 'private']:
-        raise HTTPError(http.BAD_REQUEST)
-    is_public = is_public_string == 'public'
-
     comment.edit(
         content=sanitize(content),
-        is_public=is_public,
         auth=auth,
         save=True
     )
@@ -257,13 +241,3 @@ def unreport_abuse(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     return {}
-
-
-#Place holder for later
-#TODO Server side checking
-def get_privacy_options(node_public):
-    if node_public:
-        return ['public', 'private']
-    else:
-        return ['private']
-    pass

@@ -69,12 +69,6 @@
                             Private: Only contributors can comment
                         </label>
                     </div>
-                    <div class="radio">
-                        <label>
-                            <input type="radio" name="commentLevel" value="" ${'checked' if not comments['level'] else ''}>
-                            Off: Commenting disabled
-                        </label>
-                    </div>
 
                     <button class="btn btn-success">Submit</button>
 
