@@ -76,8 +76,8 @@ def s3_authorize_node(**kwargs):
 
 
 @must_have_permission('write')
-@must_not_be_registration
 @must_have_addon('s3', 'node')
+@must_not_be_registration
 def s3_node_settings(**kwargs):
 
     auth = kwargs['auth']
