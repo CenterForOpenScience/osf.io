@@ -163,12 +163,16 @@ class TestUtils(DbTestCase):
 
         assert_equals(files_in_hgrid, files_in_project)
 
-    def test_project_to_hgrid_no_auth(self):
+    @mock.patch('website.addons.figshare.api.Figshare.project')
+    def test_project_to_hgrid_no_auth(self, project):
+        project.return_value = 'notNone'
         self.node_settings.user_settings = None
         ref = views.hgrid.figshare_hgrid_data(self.node_settings, self.auth)
         assert_equal(ref, None)
 
-    def test_project_to_hgrid_no_id(self):
+    @mock.patch('website.addons.figshare.api.Figshare.project')
+    def test_project_to_hgrid_no_id(self, project):
+        project.return_value = 'not none'
         self.node_settings.figshare_id = None
         ref = views.hgrid.figshare_hgrid_data(self.node_settings, self.auth)
         assert_equal(ref, None)
@@ -219,6 +223,27 @@ class TestViewsCrud(DbTestCase):
         url = '/project/{0}/figshare/article/564/file/854280423/'.format(self.project._id)
         rv = self.app.get(url, auth=self.user.auth, expect_errors=True).maybe_follow()
         assert_equal(rv.status_int, 404)
+
+    @mock.patch('website.addons.figshare.api.Figshare.create_project')
+    def test_create_project_fail(self, faux_ject):
+        faux_ject.return_value = False
+        url = '/api/v1/project/{0}/figshare/new/project/'.format(self.project._id)
+        rv = self.app.post_json(url, {'project': 'testme'}, auth=self.user.auth, expect_errors=True)
+        assert_equal(rv.status_int, 400)
+
+    @mock.patch('website.addons.figshare.api.Figshare.create_project')
+    def test_create_project_no_name(self, faux_ject):
+        faux_ject.return_value = False
+        url = '/api/v1/project/{0}/figshare/new/project/'.format(self.project._id)
+        rv = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
+        assert_equal(rv.status_int, 400)
+
+    @mock.patch('website.addons.figshare.api.Figshare.create_project')
+    def test_create_project_empty_name(self, faux_ject):
+        faux_ject.return_value = False
+        url = '/api/v1/project/{0}/figshare/new/project/'.format(self.project._id)
+        rv = self.app.post_json(url, {'project': ''}, auth=self.user.auth, expect_errors=True)
+        assert_equal(rv.status_int, 400)
 
     # TODO Fix me, not logged in?
     @mock.patch('website.addons.figshare.api.Figshare.from_settings')

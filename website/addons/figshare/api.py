@@ -115,8 +115,8 @@ class Figshare(object):
             return project
         return []
 
-    def create_project(self, node_settings, project):
-        data = {"title": project['title'], "description": project['description']}
+    def create_project(self, node_settings, project, description=''):
+        data = json.dumps({"title": project, "description": description})
         return self._send(os.path.join(node_settings.api_url, 'projects'), data=data, method='post')
 
     def delete_project(self, node_settings, project):
