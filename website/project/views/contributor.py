@@ -141,7 +141,7 @@ def get_contributors_from_parent(**kwargs):
     return {'contributors': contribs}
 
 
-@must_be_contributor
+@must_have_permission('admin')
 def get_recently_added_contributors(**kwargs):
 
     auth = kwargs.get('auth')
@@ -260,8 +260,6 @@ def finalize_invitation(node, contributor, auth):
 
 @must_be_valid_project
 @must_have_permission('admin')
-@must_be_valid_project # returns project
-@must_be_contributor  # returns user, project
 @must_not_be_registration
 def project_contributors_post(**kwargs):
     """ Add contributors to a node. """

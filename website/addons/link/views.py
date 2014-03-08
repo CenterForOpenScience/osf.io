@@ -7,7 +7,7 @@ from website.project import decorators
 from website.project.views.node import _view_project
 
 
-@decorators.must_be_contributor
+@decorators.must_have_permission('write')
 @decorators.must_have_addon('link', 'node')
 def link_set_config(*args, **kwargs):
     # TODO: Validate

@@ -9,9 +9,10 @@ from framework.flask import secure_filename
 from framework.exceptions import HTTPError
 
 from website import models
-from website.project.decorators import must_be_contributor_or_public
-from website.project.decorators import must_not_be_registration
-from website.project.decorators import must_have_addon
+from website.project.decorators import (
+    must_be_contributor_or_public, must_have_permission, must_have_addon,
+    must_not_be_registration
+)
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
 from website.addons.base.views import check_file_guid
@@ -170,7 +171,7 @@ def github_view_file(**kwargs):
     return rv
 
 
-@must_be_contributor_or_public
+@must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('github', 'node')
 def github_upload_file(**kwargs):
@@ -304,7 +305,7 @@ def github_upload_file(**kwargs):
 
     raise HTTPError(http.BAD_REQUEST)
 
-@must_be_contributor_or_public
+@must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('github', 'node')
 def github_delete_file(**kwargs):

@@ -130,7 +130,7 @@ this.NodeControl = (function(ko, $, global) {
             // TODO: Remove hardcoded selectors.
             $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
                 name:  'title',
-                title: 'Edit Title',
+                title: 'Edit Title'
             }));
             $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
                 name:  'description',

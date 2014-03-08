@@ -58,7 +58,7 @@
                         </a>
                         <button
                             class='btn btn-default node-fork-btn'
-                            data-bind="enable: !isRegistration && category === 'project' && user.id,
+                            data-bind="enable: !isRegistration && category === 'project' && user.id && user.permissions.indexOf('write') !== -1,
                                         click: forkNode"
                             rel="tooltip"
                             title="Number of times this ${node['category']} has been forked (copied)"
@@ -109,7 +109,7 @@
                    class="date node-last-modified-date"></span>
             % if parent_node['id']:
                 <br />Category: <span class="node-category">${node['category']}</span>
-            % elif node['description'] or user['can_edit']:
+            % elif node['description'] or 'write' in user['permissions']:
                  <br />Description: <span id="nodeDescriptionEditable" class="node-description">${node['description']}</span>
             % endif
         </p>
