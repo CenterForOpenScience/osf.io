@@ -757,35 +757,32 @@ class TestClaimViews(DbTestCase):
             'fullname': self.given_name,
         })
     def test_user_with_removed_unclaimed_url_claiming(self):
-        reg_user = AuthUserFactory()
-        url = self.user.get_claim_url(self.project._primary_key)
-        self.unclaimed_records(self.project._primary_key)= None
-        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
-        assert_in('Create an Account or Sign-In', res.body)
+        """ Tests that when an unclaimed user is removed from a project, the
+        unregistered user object does not retain the token.
+        """
+        self.project.remove_contributor(self.user, Auth(user=self.referrer))
+
+        assert_not_in(
+            self.project._primary_key,
+            self.user.unclaimed_records.keys()
+        )
+
 
     def test_user_with_claim_url_cannot_claim_twice(self):
+        """ Tests that when an unclaimed user is replaced on a project with a
+        claimed user, the unregistered user object does not retain the token.
+        """
         reg_user = AuthUserFactory()
-        reg_user.set_password('killerqueen')
-        reg_user.save()
-        url = self.user.get_claim_url(self.project._primary_key)
-        # Follow to password re-enter page
-        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
 
-        # verify that the "Claim Account" form is returned
-        assert_in('Claim Contributor', res.body)
+        self.project.replace_contributor(self.user, reg_user)
 
-        form = res.forms['claimContributorForm']
-        form['password'] = 'killerqueen'
-        res = form.submit(auth=reg_user.auth).follow(auth=reg_user.auth)
-
-        assert_in("Dashboard", res.body)
-
-        #reclick the link
-        res3 = self.app.get(url).follow(auth=reg_user.auth)
-
-        assert_in("User has already been claimed.", res3.body)
+        assert_not_in(
+            self.project._primary_key,
+            self.user.unclaimed_records.keys()
+        )
 
 
+    @unittest.skip('Incomplete')
     def test_user_with_claim_url_registers_new_account(self):
 
         # User goes to the claim page, but a different user (lab_user) is logged in
@@ -807,19 +804,46 @@ class TestClaimViews(DbTestCase):
         form['register-username2'] = 'test@test.com'
         form['register-password'] = 'testing'
         form['register-password2'] = 'testing'
-        new_user = AuthUserFactory(fullname="tester", username='test@test.com', password='testing')
-        # submits
-        res3 = form.submit(auth=new_user.auth).follow(auth=new_user.auth)
-        # Confirms their email address
-        # user is now a contributor to self.project
-        self.project.reload()
-        new_user.reload()
-        self.user.reload()
-        # taken to dashboard
-        assert_in("Dashboard", res3.body)
+        #new_user = AuthUserFactory(fullname="tester", username='test@test.com', password='testing')
 
-        # user is now a contributor to self.project
-        assert_in(new_user._primary_key, self.project.contributors)
+        # At this point, the form submission cannot be processed using WebTests.
+        # A session is in place beginning on the user's load of the login page.
+        # Since the user is not logged in, and we're emulating session elsewhere
+        # by passing in HTTP auth credentials, we have no means of persisting
+        # the session. We can register a user, but the session stores the info
+        # necessary for the OSF to then add that user as a contributor.
+        # Code below this comment is included for future reference only.
+
+        # submits
+        # res3 = form.submit()
+        #
+        # assert_in('Registration successful.', res3.body)
+        # assert_in('Successfully claimed contributor', res3.body)
+        #
+        # u = User.find(Q('username', 'eq', 'test@test.com'))[0]
+        # key = ApiKeyFactory()
+        # u.api_keys.append(key)
+        # u.save()
+        # u.auth = ('test', key._primary_key)
+        #
+        # res4 = self.app.get(u.get_confirmation_url('test@test.com')).follow(auth=u.auth)
+        #
+        # assert_in('Dashboard', res4.body)
+        #
+        # # Confirms their email address
+        # # user is now a contributor to self.project
+        # self.project.reload()
+        # #new_user.reload()
+        # self.user.reload()
+        # u.reload()
+        # # taken to dashboard
+        # #assert_in("Dashboard", res3.body)
+
+
+        # assert_not_in(self.user._primary_key, self.project.contributors)
+        # assert_equal(2, len(self.project.contributors))
+        # # user is now a contributor to self.project
+        # assert_in(u._primary_key, self.project.contributors)
 
     def test_user_can_log_in_with_a_different_account(self):
         right_user = AuthUserFactory(fullname="Right User")
