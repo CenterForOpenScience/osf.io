@@ -73,7 +73,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
 	if(item.permissions){
 	    if(item.permissions.download !== false){
         	buttonDefs.push({
-        	    text: '<i class="icon-download-alt icon-white"></i>',
+        	    text: '<i class="icon-download-alt icon-white" title="" data-placement="right" data-toggle="tooltip" data-original-title="Download ' + item.name + '"></i>',
         	    action: 'download',
         	    cssClass: 'btn btn-primary btn-mini'
         	});
