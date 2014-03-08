@@ -126,7 +126,7 @@ class TestProjectViews(DbTestCase):
         assert_in(user2._id, project.permissions)
         assert_in(user3._id, project.permissions)
         assert_equal(project.permissions[user2._id], ['read', 'write', 'admin'])
-        assert_equal(project.permissions[user3.f_id], ['read', 'write'])
+        assert_equal(project.permissions[user3._id], ['read', 'write'])
 
     def test_manage_permissions(self):
 
