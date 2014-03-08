@@ -77,6 +77,7 @@ this.Comment = (function(window, $, ko) {
     };
 
     BaseComment.prototype.showReply = function() {
+        this.replyPublic(this.isPublic());
         this.replying(true);
     };
 
@@ -188,7 +189,7 @@ this.Comment = (function(window, $, ko) {
 
         self.editing = ko.observable(false);
         self.editVerb = self.modified ? 'edited' : 'posted';
-        
+
         exclusifyGroup(
             self.editing, self.replying, self.reporting, self.deleting,
             self.unreporting, self.undeleting
@@ -198,9 +199,10 @@ this.Comment = (function(window, $, ko) {
             return !self.isDeleted() && !self.isAbuse();
         });
 
-        self.showPrivateIcon = ko.computed(function() {
+        self.showPrivate = ko.computed(function() {
             return self.isPublic() === 'private';
         });
+
         self.toggleIcon = ko.computed(function() {
             return self.showChildren() ? 'icon-collapse-alt' : 'icon-expand-alt';
         });
@@ -221,6 +223,20 @@ this.Comment = (function(window, $, ko) {
             this._isPublic = this.isPublic();
             this.editing(true);
             this.$root.editors += 1;
+        }
+    };
+
+    CommentModel.prototype.togglePrivacy = function(data) {
+        if(this.canEdit()) {
+            this.isPublic() === 'private' ? this.isPublic('public') : this.isPublic('private');
+            this._isPublic = this.isPublic();
+            $.osf.putJSON(
+                nodeApiUrl + 'comment/' + this.id() + '/',
+                {
+                    content: this.content(),
+                    isPublic: this.isPublic()
+                }
+            )
         }
     };
 

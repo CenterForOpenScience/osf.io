@@ -16,18 +16,14 @@
         </div>
 
         <div data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
-        <div data-bind="if: canComment">
-            <form class="form-inline">
-                <div class="form-group">
-                    <select class="form-control" data-bind="options: privacyOptions, optionsText: privacyLabel, value: replyPublic"></select>
-                    <span class="comment-author">{{userName}}</span>
-                </div>
-            </form>
+        <div data-bind="if: canComment" style="margin-top: 20px">
+
             <form class="form">
                 <div class="form-group">
                     <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input'"></textarea>
                 </div>
-                <div data-bind="if: replyNotEmpty">
+                <div data-bind="if: replyNotEmpty" class="form-inline">
+                    <select class="form-control" data-bind="options: privacyOptions, optionsText: privacyLabel, value: replyPublic"></select>
                     <a class="btn btn-default btn-default" data-bind="click: submitReply"><i class="icon-check"></i> Save</a>
                     <a class="btn btn-default btn-default" data-bind="click: cancelReply"><i class="icon-undo"></i> Cancel</a>
                     <a data-bind="text: replyErrorMessage" class="comment-error"></a>
@@ -78,12 +74,7 @@
 
                 <div class="comment-info">
                     <form class="form-inline">
-                        <span data-bind="if: editing">
-                            <select class="form-control" data-bind="options: privacyOptions, optionsText: privacyLabel, value: isPublic"></select>
-                        </span>
-                        <span data-bind="ifnot: editing">
-                            <i data-bind="visible: showPrivateIcon" class="icon-lock"></i>
-                        </span>
+                        <img data-bind="attr: {src: author.gravatarUrl}"/>
                         <a class="comment-author" data-bind="text: author.name, attr: {href: author.url}"></a>
                         <span class="comment-date pull-right">
                             <span data-bind="template: {if: modified, afterRender: setupToolTips}">
@@ -110,10 +101,11 @@
                             binding to get access to afterRender
                         -->
                         <div data-bind="template {if: editing, afterRender: autosizeText}">
-                            <div class="form-group">
+                            <div class="form-group" style="padding-top: 10px">
                                 <textarea class="form-control" data-bind="value: content"></textarea>
                             </div>
-                            <div>
+                            <div class="form-inline">
+                                <select class="form-control" data-bind="options: privacyOptions, optionsText: privacyLabel, value: isPublic"></select>
                                 <a class="btn btn-default btn-default" data-bind="click: submitEdit"><i class="icon-check"></i> Save</a>
                                 <a class="btn btn-default btn-default" data-bind="click: cancelEdit"><i class="icon-undo"></i> Cancel</a>
                                 <span data-bind="text: editErrorMessage" class="comment-error"></span>
@@ -123,9 +115,16 @@
                     </div>
 
                     <div class="comment-actions">
-
+                        <span data-bind="ifnot: editing">
+                            <!-- ko if: showPrivate -->
+                                <span data-bind="click: togglePrivacy" class="label label-danger" style="cursor: pointer">Private</span>
+                            <!-- /ko -->
+                            <!-- ko ifnot: showPrivate -->
+                                <span data-bind="click: togglePrivacy" class="label label-success" style="cursor: pointer">Public</span>
+                            <!-- /ko -->
+                        </span>
                         <!-- Action bar -->
-                        <div data-bind="ifnot: editing" class="comment-actions">
+                        <div data-bind="ifnot: editing" class="comment-actions pull-right">
                             <span data-bind="if: $root.canComment, click: showReply">
                                 <i class="icon-reply"></i>
                             </span>
@@ -135,6 +134,7 @@
                             <span data-bind="if: canEdit, click: startDelete">
                                 <i class="icon-trash"></i>
                             </span>
+
                         </div>
 
                     </div>
@@ -168,20 +168,19 @@
             <!-- /ko -->
 
             <!-- ko if: replying -->
-                <form class="form-inline">
-                    <select class="form-control" data-bind="options: privacyOptions, optionsText: privacyLabel, value: replyPublic"></select>
-                    <span class="comment-author">{{userName}}</span>
-                </form>
+
                 <div>
-                    <div class="form-group">
+                    <div class="form-group" style="padding-top: 10px">
                         <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent"></textarea>
                     </div>
-                    <div>
+                    <div class="form-inline">
+                        <select class="form-control" data-bind="options: privacyOptions, optionsText: privacyLabel, value: replyPublic"></select>
                         <a class="btn btn-default btn-default" data-bind="click: submitReply"><i class="icon-check"></i> Save</a>
                         <a class="btn btn-default btn-default" data-bind="click: cancelReply"><i class="icon-undo"></i> Cancel</a>
                         <span data-bind="text: replyErrorMessage" class="comment-error"></span>
                     </div>
                 </div>
+
             <!-- /ko -->
 
         </ul>

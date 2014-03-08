@@ -74,6 +74,9 @@ def serialize_comment(comment, auth):
             'id': comment.user._id,
             'url': comment.user.url,
             'name': comment.user.fullname,
+            'gravatarUrl': gravatar(
+                    comment.user, use_ssl=True,
+                    size=settings.GRAVATAR_SIZE_DISCUSSION),
         },
         'dateCreated': comment.date_created.strftime('%x %X'),
         'dateModified': comment.date_modified.strftime('%x %X'),
