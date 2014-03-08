@@ -735,7 +735,7 @@ class TestClaimViews(DbTestCase):
             'pk': self.user._primary_key,
             'claimerId': reg_user._primary_key
         }
-        url = '/api/v1/user/{uid}/{pid}/claim/verify/'.format(
+        url = '/api/v1/user/{uid}/{pid}/claim/email/'.format(
             uid=self.user._primary_key,
             pid=self.project._primary_key,
         )
@@ -845,6 +845,7 @@ class TestClaimViews(DbTestCase):
         # # user is now a contributor to self.project
         # assert_in(u._primary_key, self.project.contributors)
 
+    @unittest.skip('Incomplete')
     def test_user_can_log_in_with_a_different_account(self):
         right_user = AuthUserFactory(fullname="Right User")
         # User goes to the claim page, but a different user (lab_user) is logged in
@@ -867,17 +868,26 @@ class TestClaimViews(DbTestCase):
         # submits
         res3 = form.submit(auth=right_user.auth).follow(auth=right_user.auth)
 
-        self.project.reload()
-        right_user.reload()
-        self.user.reload()
-        # taken to dashboard
-        assert_in("Dashboard", res3.body)
+        # At this point, the form submission cannot be processed using WebTests.
+        # A session is in place beginning on the user's load of the login page.
+        # Since the user is not logged in, and we're emulating session elsewhere
+        # by passing in HTTP auth credentials, we have no means of persisting
+        # the session. We can register a user, but the session stores the info
+        # necessary for the OSF to then add that user as a contributor.
+        # Code below this comment is included for future reference only.
 
-        # user is now a contributor to self.project
-        assert_in(right_user._primary_key, self.project.contributors)
 
-        # lab user is not a contributor
-        assert_not_in(lab_user._primary_key, self.project.contributors)
+        # self.project.reload()
+        # right_user.reload()
+        # self.user.reload()
+        # # taken to dashboard
+        # assert_in("Dashboard", res3.body)
+        #
+        # # user is now a contributor to self.project
+        # assert_in(right_user._primary_key, self.project.contributors)
+        #
+        # # lab user is not a contributor
+        # assert_not_in(lab_user._primary_key, self.project.contributors)
 
     def test_claim_user_form_redirects_to_password_confirm_page_if_user_is_logged_in(self):
         reg_user = UserFactory()
@@ -982,7 +992,7 @@ class TestClaimViews(DbTestCase):
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_claim_user_post_returns_fullname(self, send_mail):
-        url = '/api/v1/user/{0}/{1}/claim/verify/'.format(self.user._primary_key,
+        url = '/api/v1/user/{0}/{1}/claim/email/'.format(self.user._primary_key,
             self.project._primary_key)
         res = self.app.post_json(url,
             {'value': self.given_email, 'pk': self.user._primary_key},
@@ -994,7 +1004,7 @@ class TestClaimViews(DbTestCase):
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_claim_user_post_if_email_is_different_from_given_email(self, send_mail):
         email = fake.email()  # email that is different from the one the referrer gave
-        url = '/api/v1/user/{0}/{1}/claim/verify/'.format(self.user._primary_key,
+        url = '/api/v1/user/{0}/{1}/claim/email/'.format(self.user._primary_key,
             self.project._primary_key)
         res = self.app.post_json(url,
             {'value': email, 'pk': self.user._primary_key}
