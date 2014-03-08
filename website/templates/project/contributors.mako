@@ -32,7 +32,7 @@
 ##                <td>
 ##                    <span data-bind="text: contributor.contributions"></span>
 ##                </td>
-                <td data-bind="if: registered">
+                <td>
                     <a href="#" class="permission-editable" data-type="select"></a>
                 </td>
             </tr>

@@ -44,8 +44,7 @@ def serialize_user(user, node=None, full=False):
         rv.update({
             'permission': reduce_permissions(node.get_permissions(user)),
             'contributions': len([
-                log
-                for log in node.logs
+                log for log in node.logs
                 if log and log.user == user
             ])
         })
