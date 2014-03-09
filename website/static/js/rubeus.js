@@ -72,21 +72,16 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
 	var buttonDefs = [];
 	if(item.permissions){
 	    if(item.permissions.download !== false){
-            if(item.name.length>12){
-                var tooltipTitle = item.name.substring(0,12)+"..."
-            }else{
-                var tooltipTitle = item.name
-            }
         	buttonDefs.push({
-        	    text: '<i class="icon-download-alt icon-white" title="" data-placement="right" data-toggle="tooltip" data-original-title="Download ' + tooltipTitle + '"></i>',
+        	    text: '<i class="icon-download-alt icon-white" title="" data-placement="right" data-toggle="tooltip" data-original-title="Download"></i>',
         	    action: 'download',
         	    cssClass: 'btn btn-primary btn-mini'
         	});
 	    }
         if (item.permissions.edit) {
-    		var deleteTip = genTooltipMarkup('Delete ' + item.name);
+//    		var deleteTip = genTooltipMarkup('Delete ' + item.name);
     		buttonDefs.push({
-    		    text: '&nbsp;<i class="icon-remove"' + deleteTip + '></i>',
+    		    text: '&nbsp;<i class="icon-remove"title="" data-placement="right" data-toggle="tooltip" data-original-title="Delete"></i>',
     		    action: 'delete',
     		    cssClass: 'btn btn-link btn-mini btn-delete'
     		});
