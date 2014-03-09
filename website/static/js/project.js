@@ -175,6 +175,7 @@ window.FileRenderer = {
      }
 };
 
+$script(['/static/js/logFeed.js'], 'logFeed');
 /*
 Display recent logs for for a node on the project view page.
 */
@@ -186,9 +187,9 @@ NodeActions.openCloseNode = function(nodeId){
                 $logs.attr('data-uri'),
                 {count: 3},
                 function(response) {
-                    var logModelObjects = createLogs(response.logs);
-                    var logsVM = new LogsViewModel(logModelObjects);
-                    ko.applyBindings(logsVM, $logs[0]);
+                    $script.ready('logFeed', function() {
+                        var logFeed = new LogFeed($logs, response.logs);
+                    });
                     $logs.addClass('served');
                 }
             );
