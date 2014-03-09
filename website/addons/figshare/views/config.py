@@ -5,9 +5,11 @@ from framework.exceptions import HTTPError
 
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_have_addon
+from website.project.decorators import must_not_be_registration
 
 
 @must_have_permission('write')
+@must_not_be_registration
 @must_have_addon('figshare', 'node')
 def figshare_set_config(*args, **kwargs):
 
@@ -60,6 +62,7 @@ def figshare_set_config(*args, **kwargs):
 
 
 @must_have_permission('write')
+@must_not_be_registration
 @must_have_addon('figshare', 'node')
 def figshare_unlink(*args, **kwargs):
     auth = kwargs['auth']
