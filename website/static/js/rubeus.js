@@ -79,7 +79,6 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         	});
 	    }
         if (item.permissions.edit) {
-//    		var deleteTip = genTooltipMarkup('Delete ' + item.name);
     		buttonDefs.push({
     		    text: '&nbsp;<i class="icon-remove"title="" data-placement="right" data-toggle="tooltip" data-original-title="Delete"></i>',
     		    action: 'delete',
