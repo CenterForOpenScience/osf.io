@@ -381,6 +381,9 @@ class Pointer(StoredObject):
     def register_node(self, *args, **kwargs):
         return self._clone()
 
+    def resolve(self):
+        return self.node
+
     def __getattr__(self, item):
         """Delegate attribute access to the node being pointed to.
         """
@@ -773,6 +776,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def points(self):
         return len(self.pointed)
+
+    def resolve(self):
+        return self
 
     def fork_pointer(self, pointer, auth, save=True):
         """Replace a pointer with a fork. If the pointer points to a project,
