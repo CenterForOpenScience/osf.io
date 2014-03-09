@@ -313,6 +313,10 @@ this.ContribAdder = (function($, global, undefined) {
     ContribAdder.prototype.init = function() {
         var self = this;
         ko.applyBindings(self.viewModel, self.$element[0]);
+        // Clear popovers on dismiss start
+        self.$element.on('hide.bs.modal', function() {
+            self.$element.find('.popover').popover('hide');
+        });
         // Clear user search modal when dismissed; catches dismiss by escape key
         // or cancel button.
         self.$element.on('hidden.bs.modal', function() {
