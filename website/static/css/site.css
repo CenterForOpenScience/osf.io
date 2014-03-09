@@ -105,9 +105,47 @@ font-weight: bold;
     overflow-x: hidden;
 }
 
+.comment-container {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.comment-body {
+    padding: 5px;
+    background-color: white;
+}
+
+.comment-author {
+    color: #999999;
+}
+
+.comment-date {
+    color: #999999;
+}
+.edit-comment {
+    background-color: #F3F3F3;
+    cursor: pointer;
+}
+
+.comment-body i {
+    cursor: pointer;
+    padding-right: 5px;
+}
+
+.comment-handle-icon {
+    color: white;
+    vertical-align: middle;
+    line-height: 50px;
+    cursor: pointer;
+}
+
 /* Make embedded iframes responsive */
 .addon-widget-container iframe {
     max-width: 100%;
+}
+
+.comment-error {
+    color: #a94442;
 }
 
 .addon-widget-container:first-of-type h1,
@@ -813,6 +851,10 @@ form.form-horizontal.form-horizontal-narrow .control-group {
     border-spacing: 5px;
 }
 
+table#manageContributors td {
+    vertical-align: middle;
+}
+
 #addContributors .error {
     color: red;
 }
@@ -1056,6 +1098,72 @@ h1.unavailable {
     width:100%;
 }
 
+/* Contributor page */
+
+.contributor-self {
+    font-weight: bold;
+}
+.contributor .btn-remove {
+    display: none;
+    cursor: pointer;
+}
+.contributor:hover .btn-remove,
+.contributor-self .btn-remove {
+    display: inline;
+    cursor: pointer;
+}
+
+.contributor-delete-staged {
+    background-color: #eeeeee;
+}
+
+li.contributor-list-item a.remove-contributor {
+    margin-top:23px;
+    margin-right:20px;
+    float:right;
+}
+
+li.contributor-list-item img {
+    margin-left:25px;
+}
+
+li.contributor-list-item a.name {
+    margin-left:30px;
+}
+
+/* Handle popovers inside modals */
+.popover {
+    z-index: 999999;
+}
+
+.add-contributor {
+    padding: 6px 18px;
+}
+
+.contributorTitle {
+    font-size:150%;
+}
+
+.selectControl {
+    font-size:95%;
+}
+
+.break {
+    margin-bottom:20px;
+}
+
+button.sort {
+    margin-left: 6%;
+}
+
+button.cancel {
+    margin-left: 5%;
+}
+
+button.save {
+    padding: 6px 17px;
+}
+
 /* Modular File Renderer */
 .mfr-slickgrid {
     width: 750px;
@@ -1100,4 +1208,16 @@ h1.unavailable {
 
 a {
   cursor: pointer;
+}
+
+.btn-remove-contrib {
+  cursor: pointer;
+}
+
+.contributor-unregistered {
+  cursor: pointer;
+}
+
+.contributor-unregistered:hover{
+  background-color: #F3F3F3;
 }

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class AddonFilesNodeSettings(AddonNodeSettingsBase):
 
     def to_json(self, user):
-        return{}
+        return {}
 
 
 class OsfGuidFile(GuidFile):

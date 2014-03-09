@@ -6,15 +6,14 @@
 <div class="row">
     ## Center the form
     <div class="col-md-6 col-md-offset-3">
-    <p>Hello ${firstname}! Welcome to the Open Science Framework. Please set a password to claim your account.</p>
+    <p>Hello ${firstname}! Please set a password to claim your account.</p>
 
         <form method="POST" id='setPasswordForm' role='form'>
             <div class='form-group'>
-                ${form.username.label}
-                ${form.username(value=email)}
+                ${form.username(placeholder='Email', value=email)}
             </div>
             <div class='form-group'>
-                ${form.password(placeholder='New password', autofocus=True)}
+                ${form.password(placeholder='New password')}
             </div>
             <div class='form-group'>
                 ${form.password2(placeholder='New password again')}
@@ -27,7 +26,7 @@
         </form>
 
         <div class='help-block'>
-            <p>If you are not ${fullname}, please contact <a href="mailto:contact@centerforopenscience.org">contact@centerforopenscience.org</a>
+            <p>If you are not ${fullname}, or if you were erroneously added as a contributor to the project described in the email invitation, please email <a href="mailto:contact@osf.io">contact@osf.io</a>
             </p>
         </div>
     </div>

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
-from collections import defaultdict
-
+import framework
 from . import rubeus
 
 
-def groupby(iterable, key):
-    res = defaultdict(list)
-    for each in iterable:
-        group = key(each)
-        res[group].append(each)
-    return res
+
+def api_url_for(view_name, *args, **kwargs):
+    return framework.url_for('JSONRenderer__{0}'.format(view_name),
+        *args, **kwargs)
+
+
+def web_url_for(view_name, *args, **kwargs):
+    return framework.url_for('OsfWebRenderer__{0}'.format(view_name),
+        *args, **kwargs)

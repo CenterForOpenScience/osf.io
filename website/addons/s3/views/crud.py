@@ -5,7 +5,7 @@ import httplib as http
 from framework import request, redirect, Q
 from framework.exceptions import HTTPError
 
-from website.project.decorators import must_be_contributor
+from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
@@ -42,7 +42,7 @@ def s3_download(**kwargs):
     return redirect(connect.download_file_URL(key_name, vid))
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('s3', 'node')
 def s3_delete(**kwargs):
@@ -149,7 +149,7 @@ def ping_render(**kwargs):
     return get_cache_content(node_settings, cache_file)
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('s3', 'node')
 def s3_upload(**kwargs):

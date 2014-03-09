@@ -39,7 +39,6 @@ function attrMap(list, attr) {
     });
 }
 
-
 var AddPointerViewModel = function(nodeTitle) {
 
     var self = this;
@@ -186,4 +185,4 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
 
     } catch(err) { return false; }
     return true;
-}
+};

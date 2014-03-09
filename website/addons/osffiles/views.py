@@ -15,8 +15,10 @@ from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
 from website.project.views.node import _view_project
-from website.project.decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public, must_have_addon
+from website.project.decorators import (
+    must_not_be_registration, must_be_valid_project,
+    must_be_contributor_or_public, must_have_addon, must_have_permission
+)
 from website.project.views.file import get_cache_content, prepare_file
 from website.addons.base.views import check_file_guid
 from website import settings
@@ -35,7 +37,7 @@ def _clean_file_name(name):
     return encoded
 
 
-def get_osffiles(node_settings, auth, **kwargs):
+def get_osffiles_hgrid(node_settings, auth, **kwargs):
 
     node = node_settings.owner
 
@@ -83,6 +85,30 @@ def get_osffiles(node_settings, auth, **kwargs):
 
     return info
 
+@must_be_contributor_or_public
+@must_have_addon('osffiles', 'node')
+def get_osffiles(**kwargs):
+
+    node_settings = kwargs['node_addon']
+    node = node_settings.owner
+    auth = kwargs['auth']
+    can_view = node.can_view(auth)
+
+    info = []
+
+    if can_view:
+        for name, fid in node.files_current.iteritems():
+            fobj = NodeFile.load(fid)
+            item = {
+                'name': _clean_file_name(fobj.path),
+                'download': fobj.download_url(node),
+                'size': rubeus.format_filesize(fobj.size),
+                'date_modified': fobj.date_modified.strftime('%Y/%m/%d %I:%M %p'),
+                'versions': node.files_versions[name]
+            }
+            info.append(item)
+
+    return info
 
 @must_be_contributor_or_public
 @must_have_addon('osffiles', 'node')
@@ -90,7 +116,7 @@ def get_osffiles_public(**kwargs):
 
     node_settings = kwargs['node_addon']
     auth = kwargs['auth']
-    return get_osffiles(node_settings, auth)
+    return get_osffiles_hgrid(node_settings, auth)
 
 
 @must_be_valid_project # returns project
@@ -107,7 +133,7 @@ def list_file_paths(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor  # returns user, project
+@must_have_permission('write')  # returns user, project
 @must_not_be_registration
 @must_have_addon('osffiles', 'node')
 def upload_file_public(**kwargs):
@@ -336,7 +362,7 @@ def download_file_by_version(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+@must_have_permission('write') # returns user, project
 @must_not_be_registration
 def delete_file(**kwargs):
 

@@ -17,7 +17,6 @@ from framework.addons import AddonModelMixin
 from framework.auth import utils
 from website import settings, filters, security
 from framework.exceptions import PermissionsError
-from framework.auth.exceptions import DuplicateEmailError
 
 
 name_formatters = {
@@ -60,7 +59,8 @@ class User(GuidStoredObject, AddonModelMixin):
     #       'name': <name that referrer provided>,
     #       'referrer_id': <user ID of referrer>,
     #       'token': <token used for verification urls>,
-    #       'email': <email the referrer provided or None>
+    #       'email': <email the referrer provided or None>,
+    #       'last_sent': <timestamp of last email sent to referrer or None>
     #   }
     #   ...
     # }
@@ -111,13 +111,11 @@ class User(GuidStoredObject, AddonModelMixin):
         :raises: DuplicateEmailError if a user with the given email address
             is already in the database.
         """
-        parsed = utils.parse_name(fullname)
         user = cls(
             username=email,
             fullname=fullname,
-            **parsed
         )
-        # Make sure user isn't already in database
+        user.update_guessed_names()
         if email:
             user.emails.append(email)
         user.is_registered = False
@@ -128,16 +126,24 @@ class User(GuidStoredObject, AddonModelMixin):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
         """
-        parsed = utils.parse_name(fullname)
         user = cls(
             username=username,
             fullname=fullname,
-            **parsed
         )
+        user.update_guessed_names()
         user.set_password(password)
         user.add_email_verification(username)
         user.is_registered = False
         return user
+
+    def update_guessed_names(self):
+        """Updates the CSL name fields inferred from the the full name.
+        """
+        parsed = utils.parse_name(self.fullname)
+        self.given_name = parsed['given_name']
+        self.middle_names = parsed['middle_names']
+        self.family_name = parsed['family_name']
+        self.suffix = parsed['suffix']
 
     def register(self, username, password=None):
         """Registers the user.
@@ -352,10 +358,10 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def gravatar_url(self):
         return filters.gravatar(
-                    self,
-                    use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
-                )
+            self,
+            use_ssl=True,
+            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+        )
 
     @property
     def activity_points(self):
@@ -376,12 +382,14 @@ class User(GuidStoredObject, AddonModelMixin):
             'user_fullname': self.fullname,
             'user_profile_url': self.profile_url,
             'user_display_name': name_formatters[formatter](self),
+            'user_is_claimed': self.is_claimed
         }
 
     def save(self, *args, **kwargs):
         self.username = self.username.lower().strip() if self.username else None
         rv = super(User, self).save(*args, **kwargs)
-        self.update_solr()
+        if self.is_active():
+            self.update_solr()
         if settings.PIWIK_HOST and not self.piwik_token:
             try:
                 piwik.create_user(self)

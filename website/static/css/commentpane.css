@@ -1,0 +1,49 @@
+#commentPane {
+    position: fixed;
+    z-index: 999; /* Note: Must be lower than Bootstrap modals, BlockUI */
+    width: 0;
+    top: 0;
+    right: 0;
+    height: 100%;
+    padding-bottom: 51px; /* Note: Must be the same as .cp-handle:margin-top */
+    margin-right: 5px;
+}
+
+.cp-handle {
+    /* Handle starts under Bootstrap header */
+    /* Note: Must be the same as #commentPane:padding-bottom */
+    margin-top: 51px;
+    width: 50px;
+    height: 50px;
+    background-color:#3C87C8;
+    margin-left: -50px;
+    text-align: center;
+    border-bottom-left-radius: 15px;
+}
+
+.cp-bar {
+    width: 5px; /* Note: Should be the same as .cp-sidebar:margin-left */
+    height: 100%;
+    background-color: #3C87C8;
+    position: absolute;
+    margin-top: -50px;
+    cursor: ew-resize;
+}
+
+.cp-sidebar {
+    height: 100%;
+    margin-top: -50px;
+    margin-left: 5px; /* Note: Should be the same as .cp-bar:width */
+    background-color: #ddd;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+.unselectable {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}

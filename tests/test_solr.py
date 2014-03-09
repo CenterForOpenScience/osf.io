@@ -122,7 +122,7 @@ class TestProject(SolrTestCase):
     def test_make_public(self):
         """Make project public, and verify that it is present in Solr.
         """
-        self.project.set_permissions('public')
+        self.project.set_privacy('public')
         docs = query(self.project.title)
         assert_equal(len(docs), 1)
 
@@ -142,7 +142,7 @@ class TestPublicProject(SolrTestCase):
         """Make project public, then private, and verify that it is not present
         in Solr.
         """
-        self.project.set_permissions('private')
+        self.project.set_privacy('private')
         docs = query(self.project.title)
         assert_equal(len(docs), 0)
 

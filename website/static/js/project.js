@@ -42,6 +42,7 @@ NodeActions.addonFileRedirect = function(item) {
 };
 
 $(function(){
+
     $('#newComponent form').on('submit', function(e) {
 
           $("#add-component-submit")
@@ -200,8 +201,19 @@ NodeActions.openCloseNode = function(nodeId){
     NodeActions._openCloseNode(nodeId);
 };
 
-
 $(document).ready(function() {
+
+    ko.punches.enableAll();
+
+    var permissionInfoHtml = '<ul>' +
+            '<li><strong>Read</strong>: View project content</li>' +
+            '<li><strong>Read + Write</strong>: Read privileges; add and configure components; add and edit content</li>' +
+            '<li><strong>Administrator</strong>: Read and write privileges; manage contributors; delete project; register project</li>' +
+        '</ul>';
+
+    $('.permission-info').attr(
+        'data-content', permissionInfoHtml
+    ).popover();
 
     ////////////////////
     // Event Handlers //

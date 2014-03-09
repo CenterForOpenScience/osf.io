@@ -57,8 +57,9 @@ def _profile_view(uid=None):
         return {
             'profile': profile_user_data,
             'user': {
-                "can_edit": None,  # necessary for rendering nodes
-                "is_profile": user == profile,
+                'is_profile': user == profile,
+                'can_edit': None,  # necessary for rendering nodes
+                'permissions': [], # necessary for rendering nodes
             },
         }
 
@@ -80,7 +81,7 @@ def edit_profile(**kwargs):
 
     form = request.form
 
-    response_data = {'response' : 'success'}
+    response_data = {'response': 'success'}
     if form.get('name') == 'fullname' and form.get('value', '').strip():
         user.fullname = sanitize(form['value'])
         user.save()

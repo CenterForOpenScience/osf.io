@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
 import hashlib
+from nameparser import HumanName
 
+from website.models import User
+from website.util.permissions import reduce_permissions
+
+import logging
+logger = logging.getLogger(__name__)
 
 def get_projects(user):
     '''Return a list of user's projects, excluding registrations.'''
@@ -18,7 +24,7 @@ def get_public_projects(user):
     return [p for p in get_projects(user) if p.is_public]
 
 
-def serialize_user(user, full=False):
+def serialize_user(user, node=None, full=False):
     """Return a dictionary representation of a registered user.
 
     :param User user: A User object
@@ -29,9 +35,19 @@ def serialize_user(user, full=False):
         'id': str(user._primary_key),
         'registered': user.is_registered,
         'username': user.username,
+        'surname': user.family_name,
         'fullname': user.fullname,
+        'gravatar_url': user.gravatar_url,
         'active': user.is_active(),
     }
+    if node is not None:
+        rv.update({
+            'permission': reduce_permissions(node.get_permissions(user)),
+            'contributions': len([
+                log for log in node.logs
+                if log and log.user == user
+            ])
+        })
     if user.is_registered:
         rv.update({
             'url': user.url,
@@ -62,13 +78,9 @@ def serialize_user(user, full=False):
     return rv
 
 
-def serialize_unreg_user(user):
-    '''Return a formatted dictionary representation of a an unregistered user.
+def serialize_contributors(contribs, node):
 
-    :param dict user: An unregistered user object
-    '''
-    return {
-        'id': hashlib.md5(user['nr_email']).hexdigest(),
-        'fullname': user['nr_name'],
-        'registered': False,
-    }
+    return [
+        serialize_user(contrib, node)
+        for contrib in contribs
+    ]

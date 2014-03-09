@@ -15,23 +15,22 @@
         % endif
     </div>
 
-
     <div class="row">
 
-        % if is_owner:
-            <div class="col-md-6">
-                <select id="githubSelectRepo" class="form-control">
-                    <option>-----</option>
-                    % for repo_name in repo_names:
-                        <option value="${repo_name}" ${'selected' if repo_name == github_repo_full_name else ''}>${repo_name}</option>
-                    % endfor
-                </select>
-            </div>
-        % else:
-            <div>${github_repo_full_name}</div>
-        % endif
+        <div class="col-md-6">
+            <select id="githubSelectRepo" class="form-control" ${'disabled' if not is_owner or is_registration else ''}>
+                <option>-----</option>
+                    % if is_owner:
+                        % for repo_name in repo_names:
+                            <option value="${repo_name}" ${'selected' if repo_name == github_repo_full_name else ''}>${repo_name}</option>
+                        % endfor
+                    % else:
+                        <option selected>${github_repo_full_name}</option>
+                    % endif
+            </select>
+        </div>
 
-        % if is_owner:
+        % if is_owner and not is_registration:
             <div class="col-md-6">
                 <a id="githubCreateRepo" class="btn btn-default">Create Repo</a>
             </div>

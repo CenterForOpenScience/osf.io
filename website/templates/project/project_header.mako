@@ -35,11 +35,11 @@
                     <div class="btn-group">
                     %if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
-                        % if user["is_contributor"]:
+                        % if 'admin' in user['permissions']:
                             <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
                         % endif
                     %else:
-                        % if user["is_contributor"]:
+                        % if 'admin' in user['permissions']:
                             <a class="btn btn-default" data-bind="click: makePrivate">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
@@ -58,7 +58,7 @@
                         </a>
                         <button
                             class='btn btn-default node-fork-btn'
-                            data-bind="enable: !isRegistration && category === 'project' && user.id,
+                            data-bind="enable: !isRegistration && category === 'project' && user.id && user.permissions.indexOf('write') !== -1,
                                         click: forkNode"
                             rel="tooltip"
                             title="Number of times this ${node['category']} has been forked (copied)"
@@ -86,11 +86,11 @@
 
 
         <p id="contributors">Contributors:
-            <div mod-meta='{
+            <span id="contributorsview"><div mod-meta='{
                     "tpl": "util/render_contributors.mako",
                     "uri": "${node["api_url"]}get_contributors/",
                     "replace": true
-                }'></div>
+                }'></div></span>
             % if node['is_fork']:
                 <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
                 <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
@@ -109,7 +109,7 @@
                    class="date node-last-modified-date"></span>
             % if parent_node['id']:
                 <br />Category: <span class="node-category">${node['category']}</span>
-            % else:
+            % elif node['description'] or 'write' in user['permissions']:
                  <br />Description: <span id="nodeDescriptionEditable" class="node-description">${node['description']}</span>
             % endif
         </p>
@@ -137,10 +137,13 @@
                 % if not node['is_registration']:
                     <li><a href="${node['url']}registrations/">Registrations</a></li>
                 % endif
-                    <li><a href="${node['url']}forks/">Forks</a></li>
-                % if user['can_edit']:
-                    <li><a href="${node['url']}settings/">Settings</a></li>
+                <li><a href="${node['url']}forks/">Forks</a></li>
+                % if 'admin' in user['permissions'] and not node['is_registration']:
+                <li><a href="${node['url']}contributors/">Contributors</a></li>
                 %endif
+                % if 'write' in user['permissions']:
+                <li><a href="${node['url']}settings/">Settings</a></li>
+                % endif
             </ul>
         </nav>
     </header>

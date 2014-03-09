@@ -27,6 +27,8 @@
     <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
     <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
     <script>window.ko || document.write('<script src="/static/vendor/knockout/knockout-3.0.0.min.js">\x3C/script>')</script>
+    <script src="/static/vendor/knockout-mapping/knockout.mapping.js"></script>
+    <script src="/static/vendor/knockout-punches/knockout.punches.min.js"></script>
     % for url in js_all:
     <script src="${url}"></script>
     % endfor
@@ -113,7 +115,7 @@
                         cvars.push([2, "User Name", "${ user_full_name }", "visit"])
                     % endif
                     % if node:
-                        <% parent_project = parent.get('id') or node.get('id') %>
+                        <% parent_project = parent_node.get('id') or node.get('id') %>
                         cvars.push([2, "Project ID", "${ parent_project }", "page"]);
                         cvars.push([3, "Node ID", "${ node.get('id') }", "page"]);
                         cvars.push([4, "Tags", ${ json.dumps(','.join(node.get('tags', []))) }, "page"]);
