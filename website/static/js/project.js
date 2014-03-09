@@ -205,6 +205,16 @@ $(document).ready(function() {
 
     ko.punches.enableAll();
 
+    var permissionInfoHtml = '<ul>' +
+            '<li><strong>Read</strong>: View project content and comment</li>' +
+            '<li><strong>Read + Write</strong>: Read privileges plus add and configure components; add and edit content</li>' +
+            '<li><strong>Administrator</strong>: Read and write privileges; manage contributors; delete and register project; public-private settings</li>' +
+        '</ul>';
+
+    $('.permission-info').attr(
+        'data-content', permissionInfoHtml
+    ).popover();
+
     ////////////////////
     // Event Handlers //
     ////////////////////

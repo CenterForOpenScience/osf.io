@@ -1384,7 +1384,12 @@ class TestProject(DbTestCase):
         assert_equal(old_length, new_length)
 
         # test unclaimed_records is removed
-        assert_equal(0, 'finish me')
+        assert_not_in(
+            self.project._primary_key,
+            contrib.unclaimed_records.keys()
+        )
+
+
 class TestForkNode(DbTestCase):
 
     def setUp(self):
@@ -2057,58 +2062,12 @@ class TestComments(DbTestCase):
         assert_equal(len(comment.node.logs), 2)
         assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
 
-    def test_can_view_public_contributor(self):
-        self.comment.is_public = True
-        assert_true(
-            self.comment.can_view(
-                self.comment.node, self.consolidated_auth
-            )
-        )
-
-    def test_can_view_public_non_contributor(self):
-        self.comment.is_public = True
-        user = UserFactory()
-        assert_true(
-            self.comment.can_view(
-                self.comment.node, Auth(user=user)
-            )
-        )
-
-    def test_can_view_private_contributor(self):
-        self.comment.is_public = False
-        assert_true(
-            self.comment.can_view(
-                self.comment.node, self.consolidated_auth
-            )
-        )
-
-    def test_can_view_private_non_contributor(self):
-        self.comment.is_public = False
-        user = UserFactory()
-        assert_false(
-            self.comment.can_view(
-                self.comment.node, Auth(user=user)
-            )
-        )
-
-    def test_can_view_private_author_non_contributor(self):
-        user = UserFactory()
-        comment = CommentFactory(
-            node=self.comment.node, user=user, is_public=False
-        )
-        assert_true(
-            self.comment.can_view(
-                self.comment.node, Auth(user=user)
-            )
-        )
-
     def test_edit(self):
         self.comment.edit(
             auth=self.consolidated_auth,
-            content='edited', is_public=False
+            content='edited'
         )
         assert_equal(self.comment.content, 'edited')
-        assert_equal(self.comment.is_public, False)
         assert_true(self.comment.modified)
         assert_equal(len(self.comment.node.logs), 2)
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_UPDATED)
@@ -2169,26 +2128,6 @@ class TestComments(DbTestCase):
         self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
         with assert_raises(ValidationValueError):
             self.comment.save()
-
-    def test_comments_cloned_by_registration(self):
-        project = ProjectFactory()
-        comment1 = CommentFactory(node=project, content='foo')
-        comment2 = CommentFactory(node=project, target=comment1, content='bar')
-        comment3 = CommentFactory(node=project, target=comment2, content='baz')
-        registration = RegistrationFactory(project=project)
-        reg_comment1 = registration.commented[0]
-        reg_comment2 = reg_comment1.commented[0]
-        reg_comment3 = reg_comment2.commented[0]
-        assert_equal(reg_comment1.content, 'foo')
-        assert_equal(reg_comment2.content, 'bar')
-        assert_equal(reg_comment3.content, 'baz')
-
-    def test_comments_not_cloned_by_fork(self):
-        project = ProjectFactory()
-        comment = CommentFactory(node=project, content='foo')
-        fork = project.fork_node(auth=Auth(user=project.creator))
-        fork_comments = getattr(fork, 'commented', [])
-        assert_false(fork_comments)
 
 
 if __name__ == '__main__':

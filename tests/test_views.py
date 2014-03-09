@@ -735,7 +735,7 @@ class TestClaimViews(DbTestCase):
             'pk': self.user._primary_key,
             'claimerId': reg_user._primary_key
         }
-        url = '/api/v1/user/{uid}/{pid}/claim/verify/'.format(
+        url = '/api/v1/user/{uid}/{pid}/claim/email/'.format(
             uid=self.user._primary_key,
             pid=self.project._primary_key,
         )
@@ -845,6 +845,7 @@ class TestClaimViews(DbTestCase):
         # # user is now a contributor to self.project
         # assert_in(u._primary_key, self.project.contributors)
 
+    @unittest.skip('Incomplete')
     def test_user_can_log_in_with_a_different_account(self):
         right_user = AuthUserFactory(fullname="Right User")
         # User goes to the claim page, but a different user (lab_user) is logged in
@@ -867,17 +868,26 @@ class TestClaimViews(DbTestCase):
         # submits
         res3 = form.submit(auth=right_user.auth).follow(auth=right_user.auth)
 
-        self.project.reload()
-        right_user.reload()
-        self.user.reload()
-        # taken to dashboard
-        assert_in("Dashboard", res3.body)
+        # At this point, the form submission cannot be processed using WebTests.
+        # A session is in place beginning on the user's load of the login page.
+        # Since the user is not logged in, and we're emulating session elsewhere
+        # by passing in HTTP auth credentials, we have no means of persisting
+        # the session. We can register a user, but the session stores the info
+        # necessary for the OSF to then add that user as a contributor.
+        # Code below this comment is included for future reference only.
 
-        # user is now a contributor to self.project
-        assert_in(right_user._primary_key, self.project.contributors)
 
-        # lab user is not a contributor
-        assert_not_in(lab_user._primary_key, self.project.contributors)
+        # self.project.reload()
+        # right_user.reload()
+        # self.user.reload()
+        # # taken to dashboard
+        # assert_in("Dashboard", res3.body)
+        #
+        # # user is now a contributor to self.project
+        # assert_in(right_user._primary_key, self.project.contributors)
+        #
+        # # lab user is not a contributor
+        # assert_not_in(lab_user._primary_key, self.project.contributors)
 
     def test_claim_user_form_redirects_to_password_confirm_page_if_user_is_logged_in(self):
         reg_user = UserFactory()
@@ -982,7 +992,7 @@ class TestClaimViews(DbTestCase):
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_claim_user_post_returns_fullname(self, send_mail):
-        url = '/api/v1/user/{0}/{1}/claim/verify/'.format(self.user._primary_key,
+        url = '/api/v1/user/{0}/{1}/claim/email/'.format(self.user._primary_key,
             self.project._primary_key)
         res = self.app.post_json(url,
             {'value': self.given_email, 'pk': self.user._primary_key},
@@ -994,7 +1004,7 @@ class TestClaimViews(DbTestCase):
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_claim_user_post_if_email_is_different_from_given_email(self, send_mail):
         email = fake.email()  # email that is different from the one the referrer gave
-        url = '/api/v1/user/{0}/{1}/claim/verify/'.format(self.user._primary_key,
+        url = '/api/v1/user/{0}/{1}/claim/email/'.format(self.user._primary_key,
             self.project._primary_key)
         res = self.app.post_json(url,
             {'value': email, 'pk': self.user._primary_key}
@@ -1590,10 +1600,8 @@ class TestComments(DbTestCase):
         comment.reload()
 
         assert_equal(res.json['content'], 'edited')
-        assert_equal(res.json['isPublic'], 'private')
 
         assert_equal(comment.content, 'edited')
-        assert_false(comment.is_public)
 
     def test_edit_comment_non_author(self):
         "Contributors who are not the comment author cannot edit."
@@ -1700,18 +1708,6 @@ class TestComments(DbTestCase):
 
         assert_equal(len(res.json['comments']), 1)
 
-
-    def test_cannot_view_private_comments_if_not_contributor(self):
-
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(is_public=False)
-
-        user = AuthUserFactory()
-        url = self.project.api_url + 'comments/'
-        res = self.app.get(url, auth=user.auth)
-
-        assert_equal(len(res.json['comments']), 0)
-
     def test_discussion_recursive(self):
 
         self._configure_project(self.project, 'public')
@@ -1759,25 +1755,6 @@ class TestComments(DbTestCase):
         assert_equal(len(res.json['discussion']), 3)
         observed = [user['id'] for user in res.json['discussion']]
         expected = [user1._id, user2._id, self.project.creator._id]
-        assert_equal(observed, expected)
-
-    def test_discussion_no_private_if_not_contributor(self):
-
-        self._configure_project(self.project, 'private')
-
-        user1 = AuthUserFactory()
-        user2 = AuthUserFactory()
-
-        CommentFactory(node=self.project)
-        CommentFactory(node=self.project, user=user1, is_public=False)
-        CommentFactory(node=self.project, user=user2, is_public=False)
-
-        url = self.project.api_url + 'comments/discussion/'
-        res = self.app.get(url, auth=user2.auth).maybe_follow()
-
-        assert_equal(len(res.json['discussion']), 2)
-        observed = [user['id'] for user in res.json['discussion']]
-        expected = [self.project.creator._id, user2._id]
         assert_equal(observed, expected)
 
 

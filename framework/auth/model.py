@@ -382,6 +382,7 @@ class User(GuidStoredObject, AddonModelMixin):
             'user_fullname': self.fullname,
             'user_profile_url': self.profile_url,
             'user_display_name': name_formatters[formatter](self),
+            'user_is_claimed': self.is_claimed
         }
 
     def save(self, *args, **kwargs):

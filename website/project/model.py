@@ -116,7 +116,6 @@ class Comment(GuidStoredObject):
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
     modified = fields.BooleanField()
 
-    is_public = fields.BooleanField(required=True)
     is_deleted = fields.BooleanField(default=False)
     content = fields.StringField()
 
@@ -146,16 +145,8 @@ class Comment(GuidStoredObject):
 
         return comment
 
-    def can_view(self, node, auth):
-        if self.is_public:
-            return True
-        if auth.user and auth.user == self.user:
-            return True
-        return node.is_contributor(auth)
-
-    def edit(self, content, is_public, auth, save=False):
+    def edit(self, content, auth, save=False):
         self.content = content
-        self.is_public = is_public
         self.modified = True
         self.node.add_log(
             NodeLog.COMMENT_UPDATED,
@@ -231,30 +222,6 @@ class Comment(GuidStoredObject):
 
         if save:
             self.save()
-
-    def _clone(self, node, target):
-        """Recursively clone comments to new root and parent.
-
-        :param Node node: Comment root
-        :param GuidStoredObject target: Comment parent
-
-        """
-        # Clone non-foreign fields
-        cloned = self.clone()
-
-        # Copy user references
-        cloned.user = self.user
-
-        # Set new references
-        cloned.node = node
-        cloned.target = target
-
-        # Must save comment for foreign references
-        cloned.save()
-
-        # Recursively copy child comments
-        for comment in getattr(self, 'commented', []):
-            comment._clone(node, cloned)
 
 
 class ApiKey(StoredObject):
@@ -414,6 +381,9 @@ class Pointer(StoredObject):
     def register_node(self, *args, **kwargs):
         return self._clone()
 
+    def resolve(self):
+        return self.node
+
     def __getattr__(self, item):
         """Delegate attribute access to the node being pointed to.
         """
@@ -480,8 +450,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
 
-    # One of 'public', 'private', or None
-    comment_level = fields.StringField()
+    # One of 'public', 'private'
+    # TODO: Add validator
+    comment_level = fields.StringField(default='private')
 
     # TODO: move these to NodeFile
     files_current = fields.DictionaryField()
@@ -492,6 +463,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     creator = fields.ForeignField('user', backref='created')
     contributors = fields.ForeignField('user', list=True, backref='contributed')
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
+
+    # TODO: Remove me; only included for migration purposes
+    contributor_list = fields.DictionaryField(list=True)
 
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
     tags = fields.ForeignField('tag', list=True, backref='tagged')
@@ -622,14 +596,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             if key not in self.contributors:
                 self.permissions.pop(key)
 
-    def can_comment(self, auth, write=False):
-        if write and not auth.logged_in:
-            return False
+    def can_comment(self, auth):
         if self.comment_level == 'public':
-            return self.can_view(auth)
-        if self.comment_level == 'private':
-            return self.can_edit(auth)
-        return False
+            return auth.logged_in and self.can_view(auth)
+        return self.can_edit(auth)
 
     def save(self, *args, **kwargs):
 
@@ -806,6 +776,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def points(self):
         return len(self.pointed)
+
+    def resolve(self):
+        return self
 
     def fork_pointer(self, pointer, auth, save=True):
         """Replace a pointer with a fork. If the pointer points to a project,
@@ -1164,10 +1137,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         registered.tags = self.tags
 
         registered.save()
-
-        # Clone comments
-        for comment in getattr(self, 'commented', []):
-            comment._clone(node=registered, target=registered)
 
         # After register callback
         for addon in original.get_addons():

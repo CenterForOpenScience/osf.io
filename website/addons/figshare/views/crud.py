@@ -30,6 +30,7 @@ from website.addons.figshare import messages
 # PROJECTS: C
 @decorators.must_have_permission('write')
 @decorators.must_have_addon('figshare', 'node')
+@decorators.must_not_be_registration
 def figshare_create_project(**kwargs):
     # TODO implement me
     pass
@@ -39,6 +40,7 @@ def figshare_create_project(**kwargs):
 
 @decorators.must_have_permission('write')
 @decorators.must_have_addon('figshare', 'node')
+@decorators.must_not_be_registration
 def figshare_get_project(**kwargs):
     # TODO implement me
     pass
@@ -48,6 +50,7 @@ def figshare_get_project(**kwargs):
 
 @decorators.must_have_permission('write')
 @decorators.must_have_addon('figshare', 'node')
+@decorators.must_not_be_registration
 def figshare_add_article_to_project(**kwargs):
     node = kwargs['node'] or kwargs['project']
     figshare = node.get_addon('figshare')
@@ -70,6 +73,7 @@ def figshare_add_article_to_project(**kwargs):
 
 @decorators.must_have_permission('write')
 @decorators.must_have_addon('figshare', 'node')
+@decorators.must_not_be_registration
 def figshare_remove_article_from_project(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     figshare = node.get_addon('figshare')
@@ -99,6 +103,8 @@ def file_as_article(figshare):
 
 @decorators.must_be_contributor_or_public
 @decorators.must_have_addon('figshare', 'node')
+@decorators.must_have_permission('write')
+@decorators.must_not_be_registration
 def figshare_upload_file_as_article(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     figshare = node.get_addon('figshare')
@@ -139,6 +145,7 @@ def figshare_upload_file_as_article(*args, **kwargs):
 
 @decorators.must_have_permission('write')
 @decorators.must_have_addon('figshare', 'node')
+@decorators.must_not_be_registration
 def figshare_publish_article(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
 
@@ -176,6 +183,8 @@ def figshare_delete_article(*args, **kwargs):
 
 @decorators.must_be_contributor_or_public
 @decorators.must_have_addon('figshare', 'node')
+@decorators.must_have_permission('write')
+@decorators.must_not_be_registration
 def figshare_upload_file_to_article(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -327,6 +336,8 @@ def get_cache_file(article_id, file_id):
 
 @decorators.must_be_contributor_or_public
 @decorators.must_have_addon('figshare', 'node')
+@decorators.must_have_permission('write')
+@decorators.must_not_be_registration
 def figshare_delete_file(*args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']

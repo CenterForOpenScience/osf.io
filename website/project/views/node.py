@@ -486,8 +486,7 @@ def _view_project(node, auth, primary=False):
             'piwik_site_id': node.piwik_site_id,
 
             'comment_level': node.comment_level,
-            'can_view_comments': node.can_comment(auth),
-            'can_add_comments': node.can_comment(auth, write=True),
+            'has_comments': bool(getattr(node, 'commented', [])),
             'has_children': bool(getattr(node, 'commented', False)),
 
         },
@@ -507,8 +506,9 @@ def _view_project(node, auth, primary=False):
             'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
             'piwik_token': user.piwik_token if user else '',
-            'id': user._primary_key if user else None,
+            'id': user._id if user else None,
             'username': user.username if user else None,
+            'can_comment': node.can_comment(auth),
         },
         # TODO: Namespace with nested dicts
         'addons_enabled': node.get_addon_names(),

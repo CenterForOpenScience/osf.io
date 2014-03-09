@@ -8,7 +8,7 @@
 ${next.body()}
 
 
-% if node['can_view_comments']:
+% if user['can_comment'] or node['has_comments']:
     <%include file="../include/comment_template.mako" />
 % endif
 <%include file="modal_add_contributor.mako"/>
@@ -38,7 +38,7 @@ ${next.body()}
         currentUser: {
             username: '${user.get("username")}'
         }
-    }
+    };
 
     $(function() {
 
@@ -104,7 +104,7 @@ ${next.body()}
 
     var $comments = $('#comments');
     var userName = '${user_full_name}';
-    var canComment = ${'true' if node['can_add_comments'] else 'false'};
+    var canComment = ${'true' if user['can_comment'] else 'false'};
     var hasChildren = ${'true' if node['has_children'] else 'false'};
 
     if ($comments.length) {
