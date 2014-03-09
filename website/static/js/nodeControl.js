@@ -30,7 +30,14 @@ this.NodeControl = (function(ko, $, global) {
             url: url,
             contentType: 'application/json'
         }).success(function(response) {
-
+            bootbox.confirm(
+                 $.osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
+                 function(result) {
+                     if (result) {
+                         done && done();
+                     }
+                 }
+             )
         });
     }
 
