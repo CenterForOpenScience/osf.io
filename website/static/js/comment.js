@@ -209,6 +209,10 @@ this.Comment = (function(window, $, ko) {
             return self.$root.canComment() && !self.canEdit();
         });
 
+        self.shouldShow = ko.computed(function() {
+            return !self.isDeleted() || self.hasChildren() || self.canEdit();
+        });
+
     };
 
     CommentModel.prototype = new BaseComment();

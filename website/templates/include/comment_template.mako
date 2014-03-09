@@ -36,8 +36,7 @@
 </div>
 
 <script type="text/html" id="commentTemplate">
-
-    <div class="comment-container">
+    <div class="comment-container" data-bind="if: shouldShow">
 
         <div class="comment-body">
 
