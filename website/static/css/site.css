@@ -1098,15 +1098,12 @@ h1.unavailable {
     width:100%;
 }
 
-<<<<<<< HEAD
+
 
 div#logScope a.moreLogs{
     margin-left:50px;
 }
 
-/* COntributor page */
-li.contributor-list-item a.remove-contributor{
-=======
 /* Contributor page */
 
 .contributor-self {
@@ -1127,7 +1124,6 @@ li.contributor-list-item a.remove-contributor{
 }
 
 li.contributor-list-item a.remove-contributor {
->>>>>>> 94f2adff5ee804ceed9b69169f2ca54257b85c35
     margin-top:23px;
     margin-right:20px;
     float:right;
