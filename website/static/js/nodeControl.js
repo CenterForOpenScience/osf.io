@@ -2,6 +2,7 @@
  * Controls the actions in the project header (make public/private, watch button,
  * forking, etc.)
  */
+
 this.NodeControl = (function(ko, $, global) {
     'use strict';
 
@@ -30,15 +31,18 @@ this.NodeControl = (function(ko, $, global) {
             contentType: 'application/json'
         }).success(function(response) {
             bootbox.confirm(
-                $.osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
-                function(result) {
-                    if (result) {
-                        done && done();
-                    }
-                }
-            )
+                 $.osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
+                 function(result) {
+                     if (result) {
+                         done && done();
+                     }
+                 }
+             )
         });
     }
+
+
+
 
     function setPermissions(permissions) {
         var msgKey = permissions === PUBLIC ? 'makePublicWarning' : 'makePrivateWarning';
