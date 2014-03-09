@@ -58,8 +58,10 @@ def oauth_get_token(owner_key, owner_secret, verifier):
         resource_owner_secret=owner_secret,
         verifier=verifier,
     )
-
-    access_tokens = session.fetch_access_token(OAUTH_ACCESS_TOKEN_URL)
+    try:
+        access_tokens = session.fetch_access_token(OAUTH_ACCESS_TOKEN_URL)
+    except:
+        return (None, None)
     access_token = access_tokens.get('oauth_token')
     access_token_secret = access_tokens.get('oauth_token_secret')
 

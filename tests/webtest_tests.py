@@ -311,10 +311,8 @@ class TestRegistrations(DbTestCase):
 
     def test_cant_be_deleted(self):
         # Goes to project's page
-        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
-        # Settings is not in the project navigation bar
-        subnav = res.html.select('#projectSubnav')[0]
-        assert_not_in('Settings', subnav.text)
+        res = self.app.get(self.project.url + 'settings/', auth=self.auth).maybe_follow()
+        assert_not_in('Delete project', res)
 
     def test_cant_see_contributor(self):
         # Goes to project's page
@@ -759,7 +757,7 @@ class TestClaiming(DbTestCase):
         claim_url = new_user.get_claim_url(self.project._primary_key)
         # a user is already logged in
         res = self.app.get(claim_url, auth=existing.auth, expect_errors=True)
-        assert_in('already logged in', res)
+        assert_equal(res.status_code, 302)
 
     def test_unregistered_users_names_are_project_specific(self):
         name1, name2, email = fake.name(), fake.name(), fake.email()

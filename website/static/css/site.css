@@ -119,6 +119,9 @@ font-weight: bold;
     color: #999999;
 }
 
+.comment-date {
+    color: #999999;
+}
 .edit-comment {
     background-color: #F3F3F3;
     cursor: pointer;
@@ -1095,6 +1098,7 @@ h1.unavailable {
     width:100%;
 }
 
+<<<<<<< HEAD
 
 div#logScope a.moreLogs{
     margin-left:50px;
@@ -1102,44 +1106,71 @@ div#logScope a.moreLogs{
 
 /* COntributor page */
 li.contributor-list-item a.remove-contributor{
+=======
+/* Contributor page */
+
+.contributor-self {
+    font-weight: bold;
+}
+.contributor .btn-remove {
+    display: none;
+    cursor: pointer;
+}
+.contributor:hover .btn-remove,
+.contributor-self .btn-remove {
+    display: inline;
+    cursor: pointer;
+}
+
+.contributor-delete-staged {
+    background-color: #eeeeee;
+}
+
+li.contributor-list-item a.remove-contributor {
+>>>>>>> 94f2adff5ee804ceed9b69169f2ca54257b85c35
     margin-top:23px;
     margin-right:20px;
     float:right;
 }
 
-li.contributor-list-item img{
+li.contributor-list-item img {
     margin-left:25px;
 }
 
-li.contributor-list-item a.name{
+li.contributor-list-item a.name {
     margin-left:30px;
 }
 
-.add-contributor{
+/* Handle popovers inside modals */
+.popover {
+    z-index: 999999;
+}
+
+.add-contributor {
     padding: 6px 18px;
 }
 
-.contributorTitle{
+.contributorTitle {
     font-size:150%;
 }
 
-.selectControl{
+.selectControl {
     font-size:95%;
 }
 
-.break{
+.break {
     margin-bottom:20px;
 }
 
-button.sort{
+button.sort {
     margin-left: 6%;
 }
 
-button.cancel{
+button.cancel {
     margin-left: 5%;
 }
 
-button.save{
+button.save {
     padding: 6px 17px;
 }
 
@@ -1193,5 +1224,13 @@ a {
 
 .btn-remove-contrib {
   cursor: pointer;
+}
+
+.contributor-unregistered {
+  cursor: pointer;
+}
+
+.contributor-unregistered:hover{
+  background-color: #F3F3F3;
 }
 

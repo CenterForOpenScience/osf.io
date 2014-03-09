@@ -6,7 +6,7 @@
     right: 0;
     height: 100%;
     padding-bottom: 51px; /* Note: Must be the same as .cp-handle:margin-top */
-    margin-right: 10px;
+    margin-right: 5px;
 }
 
 .cp-handle {
@@ -22,9 +22,9 @@
 }
 
 .cp-bar {
-    width: 10px; /* Note: Should be the same as .cp-sidebar:margin-left */
+    width: 5px; /* Note: Should be the same as .cp-sidebar:margin-left */
     height: 100%;
-    background-color: #aaaaaa;
+    background-color: #3C87C8;
     position: absolute;
     margin-top: -50px;
     cursor: ew-resize;
@@ -33,8 +33,8 @@
 .cp-sidebar {
     height: 100%;
     margin-top: -50px;
-    margin-left: 10px; /* Note: Should be the same as .cp-bar:width */
-    background-color: #cccccc;
+    margin-left: 5px; /* Note: Should be the same as .cp-bar:width */
+    background-color: #ddd;
     padding: 10px;
     overflow-y: auto;
 }

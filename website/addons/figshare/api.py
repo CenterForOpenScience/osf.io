@@ -106,17 +106,20 @@ class Figshare(object):
         return res
 
     def project(self, node_settings, project_id):
+        if not project_id:
+            return
         project = self._send(os.path.join(node_settings.api_url, 'projects', project_id))
+        if not project:
+            return 
         articles = self._send(
             os.path.join(node_settings.api_url, 'projects', "{0}".format(project_id), 'articles'))
-
+        project['articles'] = []
         if(articles):
             project['articles'] = [self.article(node_settings, article['id'])['items'][0] for article in articles]
-            return project
-        return []
+        return project    
 
-    def create_project(self, node_settings, project):
-        data = {"title": project['title'], "description": project['description']}
+    def create_project(self, node_settings, project, description=''):
+        data = json.dumps({"title": project, "description": description})
         return self._send(os.path.join(node_settings.api_url, 'projects'), data=data, method='post')
 
     def delete_project(self, node_settings, project):
@@ -181,6 +184,8 @@ class Figshare(object):
 
     def upload_file(self, node, node_settings, article, upload):
         #article_data = self.article(node_settings, article)['items'][0]
+        if not node_settings.figshare_id or not self.project(node_settings, node_settings.figshare_id):
+            return
         filename, filestream = self.create_temp_file(upload)
         filedata = {
             'filedata': (filename, filestream)
@@ -211,12 +216,7 @@ class Figshare(object):
     # OTHER HELPERS
     def get_options(self):
         projects = self._send("http://api.figshare.com/v1/my_data/projects")
-        projects = map(lambda project:
-                       {'label': project['title'], 'value': 'project_' + str(project['id'])}, projects)
-        #articles = self._send('http://api.figshare.com/v1/my_data/articles')
-        #articles = map(lambda article: {
-                       #'label': article['title'], 'value': 'article_' + str(article['article_id'])}, articles['items'])
-        return projects
+        return [{'label': project['title'], 'value': 'project_{0}'.format(project['id'])} for project in projects]
 
     def get_file(self, node_settings, found):
         url = found.get('download_url')

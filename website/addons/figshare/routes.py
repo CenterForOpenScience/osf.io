@@ -45,8 +45,8 @@ settings_routes = {
             '/project/<pid>/node/<nid>/figshare/<aid>/',
         ],  'post', views.crud.figshare_upload_file_to_article, json_renderer),
         Rule([
-            '/project/<pid>/figshare/article/<aid>/file/<fid>/delete',
-            '/project/<pid>/node/<nid>/figshare/article/<aid>/file/<fid>/delete',
+            '/project/<pid>/figshare/article/<aid>/file/<fid>/',
+            '/project/<pid>/node/<nid>/figshare/article/<aid>/file/<fid>/',
         ],  'delete', views.crud.figshare_delete_file, json_renderer),
         Rule([
             '/project/<pid>/figshare/',
@@ -80,6 +80,10 @@ settings_routes = {
             '/addons/figshare/callback/<uid>/',
             '/addons/figshare/callback/<uid>/<nid>/',
         ], 'get', views.auth.figshare_oauth_callback, json_renderer),
+        Rule([
+            '/project/<pid>/figshare/new/project/',
+            '/project/<pid>/node/<nid>/figshare/new/project/',
+        ], 'post', views.crud.figshare_create_project, json_renderer)
     ],
     'prefix': '/api/v1',
 }

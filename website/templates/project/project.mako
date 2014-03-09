@@ -96,7 +96,7 @@
 <div class="page-header">
     % if node['category'] == 'project':
         <div class="pull-right btn-group">
-            % if user['can_edit']:
+            % if 'write' in user['permissions']:
                 <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
                 <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
             % else:
@@ -171,7 +171,7 @@ ${parent.javascript_bottom()}
         });
 
         // Remove delete UI if not contributor
-        % if not user['can_edit']:
+        % if 'write' not in user['permissions']:
             $('a[title="Removing tag"]').remove();
             $('span.tag span').each(function(idx, elm) {
                 $(elm).text($(elm).text().replace(/\s*$/, ''))

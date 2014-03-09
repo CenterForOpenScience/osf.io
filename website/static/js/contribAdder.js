@@ -130,7 +130,7 @@ this.ContribAdder = (function($, global, undefined) {
             var $editable = $elm.find('.permission-editable');
             $editable.editable({
                 showbuttons: false,
-                value: 'write',
+                value: 'admin',
                 source: [
                     {value: 'read', text: 'Read'},
                     {value: 'write', text: 'Write'},
@@ -207,7 +207,7 @@ this.ContribAdder = (function($, global, undefined) {
         };
 
         self.add = function(data) {
-            data.permission = ko.observable('write');
+            data.permission = ko.observable('admin');
             self.selection.push(data);
             // Hack: Hide and refresh tooltips
             $('.tooltip').hide();
@@ -313,6 +313,10 @@ this.ContribAdder = (function($, global, undefined) {
     ContribAdder.prototype.init = function() {
         var self = this;
         ko.applyBindings(self.viewModel, self.$element[0]);
+        // Clear popovers on dismiss start
+        self.$element.on('hide.bs.modal', function() {
+            self.$element.find('.popover').popover('hide');
+        });
         // Clear user search modal when dismissed; catches dismiss by escape key
         // or cancel button.
         self.$element.on('hidden.bs.modal', function() {

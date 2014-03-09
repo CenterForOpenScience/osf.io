@@ -37,20 +37,20 @@ class TestCallbacks(DbTestCase):
     @mock.patch('website.addons.s3.model.get_bucket_drop_down')
     def test_node_settings_empty_bucket(self, mock_drop):
         mock_drop.return_value = ''
-        s3 = AddonS3NodeSettings()
+        s3 = AddonS3NodeSettings(owner=self.project)
         assert_equals(s3.to_json(self.project.creator)['has_bucket'], 0)
 
     @mock.patch('website.addons.s3.model.get_bucket_drop_down')
     def test_node_settings_full_bucket(self, mock_drop):
         mock_drop.return_value = ''
-        s3 = AddonS3NodeSettings()
+        s3 = AddonS3NodeSettings(owner=self.project)
         s3.bucket = 'bucket'
         assert_equals(s3.to_json(self.project.creator)['has_bucket'], 1)
 
     @mock.patch('website.addons.s3.model.get_bucket_drop_down')
     def test_node_settings_user_auth(self, mock_drop):
         mock_drop.return_value = ''
-        s3 = AddonS3NodeSettings()
+        s3 = AddonS3NodeSettings(owner=self.project)
         assert_equals(s3.to_json(self.project.creator)['user_has_auth'], 1)
 
     @mock.patch('website.addons.s3.model.get_bucket_drop_down')
@@ -60,7 +60,7 @@ class TestCallbacks(DbTestCase):
             self.project.creator)['user_has_auth'], 1)
 
     def test_user_settings(self):
-        s3 = AddonS3UserSettings()
+        s3 = AddonS3UserSettings(owner=self.project)
         s3.access_key = "Sherlock"
         s3.secret_key = "lives"
         assert_equals(s3.to_json(self.project.creator)['has_auth'], 1)

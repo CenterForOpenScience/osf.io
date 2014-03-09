@@ -51,4 +51,38 @@
                 return false;
             }
         });
+
+        $('#figshareCreateProject').on('click',function() {
+            createProject();
+        });
+
     });
+
+    // var createProject = function() {
+
+    //     var $elm = $('#addonSettingsFigshare');
+    //     var $select = $elm.find('select');
+
+    //     bootbox.prompt('Name your new project', function(projectName) {
+    //         $.ajax({
+    //             type: 'POST',
+    //             url: nodeApiUrl + 'figshare/new/project/',
+    //             contentType: 'application/json',
+    //             dataType: 'json',
+    //             data: JSON.stringify({project: projectName}),
+    //             success: function(response) {
+    //                 response.project_id = 'project_' + response.project_id;
+    //                 $select.append('<option value="' + response.project_id + '">' + projectName + '</option>');
+    //                 $select.val(response.project_id);
+    //                 $('#figshareId').val(response.project_id)
+    //                 $('#figshareTitle').val(projectName)
+    //             },
+    //             error: function() {
+    //                 $('#addonSettingsFigshare').find('.addon-settings-message')
+    //                     .text('Could not create project')
+    //                     .removeClass('text-success').addClass('text-danger')
+    //                     .fadeOut(100).fadeIn();
+    //             }
+    //         });
+    //     });
+    //};

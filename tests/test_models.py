@@ -1134,6 +1134,55 @@ class TestProject(DbTestCase):
         self.project.save()
         assert_not_in(self.project._primary_key, new_user.unclaimed_records)
 
+    def test_manage_contributors_new_contributor(self):
+        user = UserFactory()
+        users = [
+            {'id': self.project.creator._id, 'permission': 'read'},
+            {'id': user._id, 'permission': 'read'},
+        ]
+        with assert_raises(ValueError):
+            self.project.manage_contributors(
+                users, auth=self.consolidate_auth, save=True
+            )
+
+    def test_manage_contributors_no_contributors(self):
+        with assert_raises(ValueError):
+            self.project.manage_contributors(
+                [], auth=self.consolidate_auth, save=True,
+            )
+
+    def test_manage_contributors_no_admins(self):
+        user = UserFactory()
+        self.project.add_contributor(
+            user,
+            permissions=['read', 'write', 'admin'],
+            save=True
+        )
+        users = [
+            {'id': self.project.creator._id, 'permission': 'read'},
+            {'id': user._id, 'permission': 'read'},
+        ]
+        with assert_raises(ValueError):
+            self.project.manage_contributors(
+                users, auth=self.consolidate_auth, save=True,
+            )
+
+    def test_manage_contributors_no_registered_admins(self):
+        unregistered = UnregUserFactory()
+        self.project.add_contributor(
+            unregistered,
+            permissions=['read', 'write', 'admin'],
+            save=True
+        )
+        users = [
+            {'id': self.project.creator._id, 'permission': 'read'},
+            {'id': unregistered._id, 'permission': 'admin'},
+        ]
+        with assert_raises(ValueError):
+            self.project.manage_contributors(
+                users, auth=self.consolidate_auth, save=True,
+            )
+
     def test_set_title(self):
         proj = ProjectFactory(title='That Was Then', creator=self.user)
         proj.set_title('This is now', auth=self.consolidate_auth)
@@ -1318,6 +1367,27 @@ class TestProject(DbTestCase):
         self.project.logs.append(NodeLogFactory())
         assert_equal(self.project.date_modified, self.project.logs[-1].date)
         assert_not_equal(self.project.date_modified, self.project.date_created)
+
+
+    def test_replace_contributor(self):
+        contrib = UserFactory()
+        self.project.add_contributor(contrib, auth=Auth(self.project.creator))
+        self.project.save()
+        assert_in(contrib, self.project.contributors)  # sanity check
+        replacer = UserFactory()
+        old_length = len(self.project.contributors)
+        self.project.replace_contributor(contrib, replacer)
+        self.project.save()
+        new_length = len(self.project.contributors)
+        assert_not_in(contrib, self.project.contributors)
+        assert_in(replacer, self.project.contributors)
+        assert_equal(old_length, new_length)
+
+        # test unclaimed_records is removed
+        assert_not_in(
+            self.project._primary_key,
+            contrib.unclaimed_records.keys()
+        )
 
 
 class TestForkNode(DbTestCase):
@@ -1992,58 +2062,12 @@ class TestComments(DbTestCase):
         assert_equal(len(comment.node.logs), 2)
         assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
 
-    def test_can_view_public_contributor(self):
-        self.comment.is_public = True
-        assert_true(
-            self.comment.can_view(
-                self.comment.node, self.consolidated_auth
-            )
-        )
-
-    def test_can_view_public_non_contributor(self):
-        self.comment.is_public = True
-        user = UserFactory()
-        assert_true(
-            self.comment.can_view(
-                self.comment.node, Auth(user=user)
-            )
-        )
-
-    def test_can_view_private_contributor(self):
-        self.comment.is_public = False
-        assert_true(
-            self.comment.can_view(
-                self.comment.node, self.consolidated_auth
-            )
-        )
-
-    def test_can_view_private_non_contributor(self):
-        self.comment.is_public = False
-        user = UserFactory()
-        assert_false(
-            self.comment.can_view(
-                self.comment.node, Auth(user=user)
-            )
-        )
-
-    def test_can_view_private_author_non_contributor(self):
-        user = UserFactory()
-        comment = CommentFactory(
-            node=self.comment.node, user=user, is_public=False
-        )
-        assert_true(
-            self.comment.can_view(
-                self.comment.node, Auth(user=user)
-            )
-        )
-
     def test_edit(self):
         self.comment.edit(
             auth=self.consolidated_auth,
-            content='edited', is_public=False
+            content='edited'
         )
         assert_equal(self.comment.content, 'edited')
-        assert_equal(self.comment.is_public, False)
         assert_true(self.comment.modified)
         assert_equal(len(self.comment.node.logs), 2)
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_UPDATED)
@@ -2062,12 +2086,33 @@ class TestComments(DbTestCase):
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
 
     def test_report_abuse(self):
-        self.comment.report_abuse(self.comment.user, category='spam', text='ads')
-        assert_in(self.comment.user._id, self.comment.reports)
+        user = UserFactory()
+        self.comment.report_abuse(user, category='spam', text='ads', save=True)
+        assert_in(user._id, self.comment.reports)
         assert_equal(
-            self.comment.reports[self.comment.user._id],
+            self.comment.reports[user._id],
             {'category': 'spam', 'text': 'ads'}
         )
+
+    def test_report_abuse_own_comment(self):
+        with assert_raises(ValueError):
+            self.comment.report_abuse(
+                self.comment.user, category='spam', text='ads', save=True
+            )
+
+    def test_unreport_abuse(self):
+        user = UserFactory()
+        self.comment.report_abuse(user, category='spam', text='ads', save=True)
+        self.comment.unreport_abuse(user, save=True)
+        assert_not_in(user._id, self.comment.reports)
+
+    def test_unreport_abuse_not_reporter(self):
+        reporter = UserFactory()
+        non_reporter = UserFactory()
+        self.comment.report_abuse(reporter, category='spam', text='ads', save=True)
+        with assert_raises(ValueError):
+            self.comment.unreport_abuse(non_reporter, save=True)
+        assert_in(reporter._id, self.comment.reports)
 
     def test_validate_reports_bad_key(self):
         self.comment.reports[None] = {'category': 'spam', 'text': 'ads'}
@@ -2083,6 +2128,7 @@ class TestComments(DbTestCase):
         self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
         with assert_raises(ValidationValueError):
             self.comment.save()
+
 
 if __name__ == '__main__':
     unittest.main()

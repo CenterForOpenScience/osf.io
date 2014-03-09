@@ -1,46 +1,62 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">Contributors</%def>
 
-##<%def name="content()">
-
-##<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
-
 <% import json %>
 
-<div id="manageContributors" class="col-md-8">
+<div id="manageContributors" class="col-md-12" style="display: none;">
 
-    % if len(contributors) > 5:
-        ${buttonGroup()}
-    % endif
+<h2>Contributors</h2>
 
-    <table class="table" id="manageContributors">
+    <table class="table">
         <thead>
-            <th></th>
-            <th>Gravatar</th>
             <th>Name</th>
-            <th>Permissions</th>
+            <th>
+                Permissions
+                <i class="icon-question-sign permission-info"
+                        data-toggle="popover"
+                        data-title="Permission Information"
+                        data-container="body"
+                        data-html="true"
+                    ></i>
+            </th>
+            <th></th>
         </thead>
+        <tr>
+            <td>
+                <a href="#addContributors" data-toggle="modal">
+                    Click to add a contributor
+                </a>
+            </td>
+        </tr>
         <tbody data-bind="sortable: {data: contributors, as: 'contributor', afterRender: setupEditable, options: {containment: '#manageContributors'}}">
-            <tr>
-                <td>
-                    <a
-                            class="btn btn-default contrib-button btn-mini"
-                            data-bind="click: $root.remove"
-                            rel="tooltip"
-                            title="Remove contributor"
-                        >-</a>
-                </td>
+            <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
                 <td>
                     <img data-bind="attr: {src: contributor.gravatar_url}" />
-                </td>
-                <td>
                     <span data-bind="text: contributor.fullname"></span>
                 </td>
 ##                <td>
 ##                    <span data-bind="text: contributor.contributions"></span>
 ##                </td>
-                <td data-bind="if: registered">
-                    <a href="#" class="permission-editable" data-type="select"></a>
+                <td>
+                    <span data-bind="visible: notDeleteStaged">
+                        <a href="#" class="permission-editable" data-type="select"></a>
+                    </span>
+                    <span data-bind="visible: deleteStaged">
+                        <span data-bind="text: formatPermission"></span>
+                    </span>
+                </td>
+                <td>
+                    <!-- ko ifnot: deleteStaged -->
+                        <a
+                                class="btn btn-danger contrib-button btn-mini"
+                                data-bind="click: remove"
+                                rel="tooltip"
+                                title="Remove contributor"
+                            >-</a>
+                    <!-- /ko -->
+                    <!-- ko if: deleteStaged -->
+                        Removed
+                    <!-- /ko -->
                 </td>
             </tr>
         </tbody>
@@ -54,22 +70,15 @@
     var contributors = ${json.dumps(contributors)};
 </script>
 
-##</%def>
-
 <%def name="javascript()">
 </%def>
 
 <%def name="buttonGroup()">
     % if 'admin' in user['permissions']:
-        <a class="add-contributor btn btn-default contrib-button" href="#addContributors" data-toggle="modal">
-            Add Contributors
-        </a>
-        <a class="btn btn-default" data-bind="click: sort">
-            Sort by Surname
-            <i data-bind="css: sortClass"></i>
-        </a>
-        <a class="btn btn-danger contrib-button" data-bind="click: cancel">Discard Changes</a>
-        <a class="btn btn-success contrib-button" data-bind="click: submit">Save Changes</a>
+        <a class="btn btn-danger contrib-button" data-bind="click: cancel, visible: changed">Discard Changes</a>
+        <a class="btn btn-success contrib-button" data-bind="click: submit, visible: canSubmit">Save Changes</a>
+        <br /><br />
+        <div data-bind="text: messageText, css: messageClass"></div>
     % endif
 </%def>
 
@@ -77,10 +86,11 @@
     ${parent.javascript_bottom()}
     <script src="/static/js/manage.js"></script>
     <script type="text/javascript">
-##        (function($) {
-            var manageElm = $('#manageContributors')[0];
+        (function($) {
+            var $manageElm = $('#manageContributors');
             var contributorsViewModel = new Manage.ViewModel(contributors);
-            ko.applyBindings(contributorsViewModel, manageElm);
-##        })($);
+            ko.applyBindings(contributorsViewModel, $manageElm[0]);
+            $manageElm.show();
+        })($);
     </script>
 </%def>
