@@ -7,33 +7,34 @@
 
 window.NodeActions = {};  // Namespace for NodeActions
 
+
 // TODO: move me to the NodeControl or separate
-NodeActions.forkPointer = function(pointerId, nodeId) {
+    NodeActions.forkPointer = function(pointerId, nodeId) {
+        bootbox.confirm('Are you sure you want to fork this project?',
+                function(result) {
+                    if (result) {
+                        // Block page
+                        $.osf.block();
 
-    beforeForkNode('/api/v1/' + nodeId + '/fork/before/', function() {
-
-        // Block page
-        $.osf.block();
-
-        // Fork pointer
-        $.ajax({
-            type: 'post',
-            url: nodeApiUrl + 'pointer/fork/',
-            data: JSON.stringify({'pointerId': pointerId}),
-            contentType: 'application/json',
-            dataType: 'json',
-            success: function(response) {
-                window.location.reload();
-            },
-            error: function() {
-                $.osf.unblock();
-                bootbox.alert('Could not fork link.');
-            }
-        });
-
-    });
-
-};
+                        // Fork pointer
+                        $.ajax({
+                            type: 'post',
+                            url: nodeApiUrl + 'pointer/fork/',
+                            data: JSON.stringify({'pointerId': pointerId}),
+                            contentType: 'application/json',
+                            dataType: 'json',
+                            success: function(response) {
+                                window.location.reload();
+                            },
+                            error: function() {
+                                $.osf.unblock();
+                                bootbox.alert('Could not fork link.');
+                            }
+                        });
+                    }
+                }
+        )
+    };
 
 
 NodeActions.addonFileRedirect = function(item) {
