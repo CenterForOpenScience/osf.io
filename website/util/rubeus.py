@@ -132,8 +132,8 @@ class NodeFileCollector(object):
     def _collect_components(self, node, visited):
         rv = []
         for child in node.nodes:
-            if child.resolve() not in visited and not child.is_deleted and node.can_view(self.auth):
-                visited.append(child.resolve())
+            if child.resolve()._id not in visited and not child.is_deleted and node.can_view(self.auth):
+                visited.append(child.resolve()._id)
                 rv.append(self._serialize_node(child, visited=visited))
         return rv
 
@@ -141,7 +141,7 @@ class NodeFileCollector(object):
         """Returns the rubeus representation of a node folder.
         """
         visited = visited or []
-        visited.append(node.resolve())
+        visited.append(node.resolve()._id)
         can_edit = node.can_edit(auth=self.auth) and not node.is_registration
         can_view = node.can_view(auth=self.auth)
         if can_view:
