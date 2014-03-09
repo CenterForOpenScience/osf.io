@@ -58,13 +58,8 @@
                         </a>
                         <button
                             class='btn btn-default node-fork-btn'
-                            % if user_name and node['is_public']:
-                                data-bind="enable: true,
-                                           click:forkNode"
-                            %else:
-                                data-bind="enable: !isRegistration && category === 'project' && user.id && user.permissions.indexOf('write') !== -1,
+                                data-bind="enable: !isRegistration && category === 'project' && user.id,
                                             click: forkNode"
-                            % endif
                             rel="tooltip"
                             title="Number of times this ${node['category']} has been forked (copied)"
                         >
