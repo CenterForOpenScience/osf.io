@@ -68,14 +68,14 @@
 
                     <div class="radio">
                         <label>
-                            <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
-                            Public: Anyone who can view this ${node['category']} can comment
+                            <input type="radio" name="commentLevel" value="private" ${'checked' if comments['level'] == 'private' else ''}>
+                            Private: Only contributors can comment
                         </label>
                     </div>
                     <div class="radio">
                         <label>
-                            <input type="radio" name="commentLevel" value="private" ${'checked' if comments['level'] == 'private' else ''}>
-                            Private: Only contributors can comment
+                            <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
+                            Public: Any OSF user can comment
                         </label>
                     </div>
 

@@ -1600,10 +1600,8 @@ class TestComments(DbTestCase):
         comment.reload()
 
         assert_equal(res.json['content'], 'edited')
-        assert_equal(res.json['isPublic'], 'private')
 
         assert_equal(comment.content, 'edited')
-        assert_false(comment.is_public)
 
     def test_edit_comment_non_author(self):
         "Contributors who are not the comment author cannot edit."
@@ -1710,18 +1708,6 @@ class TestComments(DbTestCase):
 
         assert_equal(len(res.json['comments']), 1)
 
-
-    def test_cannot_view_private_comments_if_not_contributor(self):
-
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(is_public=False)
-
-        user = AuthUserFactory()
-        url = self.project.api_url + 'comments/'
-        res = self.app.get(url, auth=user.auth)
-
-        assert_equal(len(res.json['comments']), 0)
-
     def test_discussion_recursive(self):
 
         self._configure_project(self.project, 'public')
@@ -1770,25 +1756,6 @@ class TestComments(DbTestCase):
         observed = [user['id'] for user in res.json['discussion']]
         expected = [user1._id, user2._id, self.project.creator._id]
         assert_equal(observed, expected)
-
-    def test_discussion_no_private_if_not_contributor(self):
-
-        self._configure_project(self.project, 'private')
-
-        user1 = AuthUserFactory()
-        user2 = AuthUserFactory()
-
-        CommentFactory(node=self.project)
-        CommentFactory(node=self.project, user=user1, is_public=False)
-        CommentFactory(node=self.project, user=user2, is_public=False)
-
-        url = self.project.api_url + 'comments/discussion/'
-        res = self.app.get(url, auth=user2.auth).maybe_follow()
-
-        assert_equal(len(res.json['discussion']), 2)
-        observed = [user['id'] for user in res.json['discussion']]
-        expected = [self.project.creator._id, user2._id]
-        assert_equal(set(observed), set(expected))
 
 
 class TestSearchViews(DbTestCase):
