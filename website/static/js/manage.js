@@ -22,13 +22,6 @@ this.Manage = (function(window, $, ko, bootbox) {
             func: function(item) {
                 return item.surname;
             }
-        },
-        contributions: {
-            label: 'Contributions',
-            order: -1,
-            func: function(item) {
-                return item.contributions;
-            }
         }
     };
 
