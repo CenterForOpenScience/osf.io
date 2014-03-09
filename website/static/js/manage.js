@@ -40,8 +40,8 @@ this.Manage = (function(window, $, ko, bootbox) {
             value: data.permission(),
             source: [
                 {value: 'read', text: 'Read'},
-                {value: 'write', text: 'Write'},
-                {value: 'admin', text: 'Admin'}
+                {value: 'write', text: 'Read + Write'},
+                {value: 'admin', text: 'Administrator'}
             ],
             success: function(response, value) {
                 data.permission(value);
