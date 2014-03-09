@@ -12,7 +12,6 @@ env = Environment(settings.STATIC_FOLDER, settings.STATIC_URL_PATH)
 css = Bundle(
         # Vendorized libraries
          Bundle(
-            # 'vendor/jquery-ui/css/jquery-ui.css',
             'vendor/jquery-tagit/css/jquery.tagit.css',
             'vendor/jquery-tagsinput/css/jquery.tagsinput.css',
             'vendor/jquery-tagit/css/tagit.ui-zendesk.css',
@@ -53,7 +52,6 @@ js_bottom = Bundle(
     'vendor/knockout-sortable/knockout-sortable.js',
     'vendor/dropzone/dropzone.js',
     'vendor/hgrid/hgrid.js',
-    "vendor/knockout-punches/knockout.punches.min.js",
     'vendor/autosize/jquery.autosize.min.js',
     # Site-specific JS
     Bundle('js/site.js',
