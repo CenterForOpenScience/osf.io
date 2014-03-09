@@ -72,8 +72,8 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
 	var buttonDefs = [];
 	if(item.permissions){
 	    if(item.permissions.download !== false){
-            if(item.name.length>17){
-                var tooltipTitle = item.name.substring(0,17)+"..."
+            if(item.name.length>12){
+                var tooltipTitle = item.name.substring(0,12)+"..."
             }else{
                 var tooltipTitle = item.name
             }
