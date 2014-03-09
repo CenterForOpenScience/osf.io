@@ -66,7 +66,7 @@
                         </a>
                         <button
                             class='btn btn-default node-fork-btn'
-                            data-bind="enable: !isRegistration && category === 'project' && user.id,
+                            data-bind="enable: !isRegistration && category === 'project' && user.id && user.permissions.indexOf('write') !== -1,
                                         click: forkNode"
                             rel="tooltip"
                             title="Number of times this ${node['category']} has been forked (copied)"
@@ -118,7 +118,7 @@
                    class="date node-last-modified-date"></span>
             % if parent_node['id']:
                 <br />Category: <span class="node-category">${node['category']}</span>
-            % elif node['description'] or user['can_edit']:
+            % elif node['description'] or 'write' in user['permissions']:
                  <br />Description: <span id="nodeDescriptionEditable" class="node-description">${node['description']}</span>
             % endif
         </p>
@@ -151,12 +151,14 @@
                 % endif
                 <li><a href="${node['url']}forks/">Forks</a></li>
 
-                % if user['is_contributor'] and not node['is_registration']:
+                % if 'admin' in user['permissions'] and not node['is_registration']:
+
                 <li><a href="${node['url']}contributors/">Contributors</a></li>
                 %endif
-                % if user['is_contributor'] and not node['is_registration']:
+                % if 'write' in user['permissions']:
                 <li><a href="${node['url']}settings/">Settings</a></li>
-                %endif
+
+                % endif
 
             </ul>
         </nav>

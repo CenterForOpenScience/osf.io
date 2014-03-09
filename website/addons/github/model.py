@@ -128,6 +128,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         user_settings = user.get_addon('github')
         rv.update({
             'user_has_auth': user_settings and user_settings.has_auth,
+            'is_registration': self.owner.is_registration,
         })
         if self.user_settings and self.user_settings.has_auth:
             owner = self.user_settings.owner

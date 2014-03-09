@@ -65,14 +65,6 @@ def goodbye(**kwargs):
     return {}
 
 
-def api_url_for(view_name, *args, **kwargs):
-    return framework.url_for('JSONRenderer__{0}'.format(view_name),
-        *args, **kwargs)
-
-
-def web_url_for(view_name, *args, **kwargs):
-    return framework.url_for('OsfWebRenderer__{0}'.format(view_name),
-        *args, **kwargs)
 
 
 def make_url_map(app):
@@ -215,7 +207,7 @@ def make_url_map(app):
                 '/project/<pid>/comment/<cid>/',
                 '/project/<pid>/node/<nid>/comment/<cid>/',
             ],
-            'post',
+            'put',
             project_views.comment.edit_comment,
             json_renderer,
         ),
@@ -232,11 +224,31 @@ def make_url_map(app):
 
         Rule(
             [
+                '/project/<pid>/comment/<cid>/undelete/',
+                '/project/<pid>/node/<nid>/comment/<cid>/undelete/',
+            ],
+            'put',
+            project_views.comment.undelete_comment,
+            json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/comment/<cid>/report/',
                 '/project/<pid>/node/<nid>/comment/<cid>/report/',
             ],
             'post',
             project_views.comment.report_abuse,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/comment/<cid>/unreport/',
+                '/project/<pid>/node/<nid>/comment/<cid>/unreport/',
+            ],
+            'post',
+            project_views.comment.unreport_abuse,
             json_renderer,
         ),
 
@@ -309,7 +321,6 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
-
         Rule('/profile/', 'get', profile_views.profile_view, OsfWebRenderer('profile.mako')),
         Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, OsfWebRenderer('profile.mako')),
         Rule('/settings/', 'get', profile_views.profile_settings, OsfWebRenderer('settings.mako')),
@@ -318,7 +329,12 @@ def make_url_map(app):
         Rule(["/user/merge/"], 'get', auth_views.merge_user_get, OsfWebRenderer("merge_accounts.mako")),
         Rule(["/user/merge/"], 'post', auth_views.merge_user_post, OsfWebRenderer("merge_accounts.mako")),
         # Route for claiming and setting email and password. Verification token must be querystring argument
-        Rule(['/user/<uid>/<pid>/claim/'], ['get', 'post'], project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
+        Rule(['/user/<uid>/<pid>/claim/'], ['get', 'post'],
+            project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
+        Rule(['/user/<uid>/<pid>/claim/verify/<token>/'], ['get', 'post'],
+            project_views.contributor.claim_user_registered, OsfWebRenderer('claim_account_registered.mako')),
+        Rule(['/user/<uid>/<pid>/claim/login/'], ['get', 'post'],
+            project_views.contributor.claim_user_registered_login, OsfWebRenderer('public/login.mako'))
     ])
 
     # API
@@ -343,7 +359,7 @@ def make_url_map(app):
         Rule('/settings/names/', 'post', profile_views.post_names, json_renderer),
 
         Rule('/profile/<user_id>/summary/', 'get', profile_views.get_profile_summary, json_renderer),
-        Rule('/user/<uid>/<pid>/claim/verify/', 'post', project_views.contributor.claim_user_post, json_renderer),
+        Rule('/user/<uid>/<pid>/claim/email/', 'post', project_views.contributor.claim_user_post, json_renderer),
 
     ], prefix='/api/v1',)
 
@@ -658,6 +674,7 @@ def make_url_map(app):
             '/project/<pid>/beforeremovecontributors/',
             '/project/<pid>/node/<nid>/beforeremovecontributors/',
         ], 'post', project_views.contributor.project_before_remove_contributor, json_renderer),
+        # TODO(sloria): should be a delete request to /contributors/
         Rule([
             '/project/<pid>/removecontributors/',
             '/project/<pid>/node/<nid>/removecontributors/',

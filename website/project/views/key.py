@@ -1,26 +1,29 @@
+import httplib as http
+
 from framework import request
-from framework.auth import get_current_user
-from ..decorators import must_be_valid_project, must_be_contributor
+from website.project.decorators import (
+    must_be_valid_project, must_have_permission
+)
 from ..model import ApiKey
 from .node import _view_project
 
 
 @must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+@must_have_permission('admin')
 def get_node_keys(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     return {
         'keys' : [
             {
-                'key' : key._id,
-                'label' : key.label,
+                'key': key._id,
+                'label': key.label,
             }
             for key in node_to_use.api_keys
         ]
     }
 
 @must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+@must_have_permission('admin')
 def create_node_key(**kwargs):
 
     # Generate key
@@ -33,10 +36,10 @@ def create_node_key(**kwargs):
     node_to_use.save()
 
     # Return response
-    return {'response' : 'success'}, 201
+    return {'response': 'success'}, http.CREATED
 
 @must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+@must_have_permission('admin')
 def revoke_node_key(**kwargs):
 
     # Load key
@@ -48,10 +51,10 @@ def revoke_node_key(**kwargs):
     node_to_use.save()
 
     # Send response
-    return {'response' : 'success'}
+    return {'response': 'success'}
 
 @must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+@must_have_permission('admin')
 def node_key_history(**kwargs):
 
     api_key = ApiKey.load(kwargs['kid'])
@@ -59,14 +62,14 @@ def node_key_history(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
 
     rv = {
-        'key' : api_key._id,
-        'label' : api_key.label,
-        'route' : '/settings',
-        'logs' : [
+        'key': api_key._id,
+        'label': api_key.label,
+        'route': '/settings',
+        'logs': [
             {
-                'lid' : log._id,
-                'nid' : log.node__logged[0]._id,
-                'route' : log.node__logged[0].url,
+                'lid': log._id,
+                'nid': log.node__logged[0]._id,
+                'route': log.node__logged[0].url,
             }
             for log in api_key.nodelog__created
         ]

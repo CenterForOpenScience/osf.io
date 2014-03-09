@@ -16,11 +16,13 @@
     <div class="col-md-3">
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
-                % if 'admin' in user['permissions']:
+                % if 'admin' in user['permissions'] and not node['is_registration']:
                     <li><a href="#configureNode">Configure ${node['category'].capitalize()}</a></li>
                 % endif
                 <li><a href="#configureCommenting">Configure Commenting</a></li>
-                <li><a href="#selectAddons">Select Add-ons</a></li>
+                % if not node['is_registration']:
+                    <li><a href="#selectAddons">Select Add-ons</a></li>
+                % endif
                 % if addon_enabled_settings:
                     <li><a href="#configureAddons">Configure Add-ons</a></li>
                 % endif
@@ -33,18 +35,8 @@
         % if not node['is_registration']:
             <div id="configureNode" class="panel panel-default">
 
-<<<<<<< HEAD
-                <div class="panel-heading">
-                    <h3 class="panel-title">Configure ${node['category'].capitalize()}</h3>
-                </div>
 
-                <div class="panel-body">
-
-                    <!-- Delete node -->
-                    <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
-
-=======
-        % if 'admin' in user['permissions']:
+        % if 'admin' in user['permissions'] and not node['is_registration']:
 
             <div id="configureNode" class="panel panel-default">
 
@@ -57,16 +49,12 @@
                     <!-- Delete node -->
                     <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
 
->>>>>>> bdc338d7dd597811a407bdc5a47b7aa57d40c95d
                 </div>
 
             </div>
 
-<<<<<<< HEAD
-            <div id="selectAddons" class="panel panel-default">
-=======
         % endif
->>>>>>> bdc338d7dd597811a407bdc5a47b7aa57d40c95d
+
 
         <div id="configureCommenting" class="panel panel-default">
 
@@ -88,12 +76,6 @@
                         <label>
                             <input type="radio" name="commentLevel" value="private" ${'checked' if comments['level'] == 'private' else ''}>
                             Private: Only contributors can comment
-                        </label>
-                    </div>
-                    <div class="radio">
-                        <label>
-                            <input type="radio" name="commentLevel" value="" ${'checked' if not comments['level'] else ''}>
-                            Off: Commenting disabled
                         </label>
                     </div>
 

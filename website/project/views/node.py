@@ -30,7 +30,7 @@ from .log import _get_logs
 logger = logging.getLogger(__name__)
 
 @must_be_valid_project  # returns project
-@must_be_contributor  # returns user, project
+@must_have_permission('write')
 @must_not_be_registration
 def edit_node(**kwargs):
     project = kwargs['project']
@@ -79,7 +79,7 @@ def project_new_post(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+@must_have_permission('write')
 @must_not_be_registration
 def project_new_node(**kwargs):
     form = NewNodeForm(request.form)
@@ -168,7 +168,7 @@ def node_forks(**kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor # returns user, project
+@must_have_permission('write')
 def node_setting(**kwargs):
 
     auth = kwargs['auth']
@@ -207,7 +207,7 @@ def node_setting(**kwargs):
     return rv
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_not_be_registration
 def node_choose_addons(**kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -216,7 +216,7 @@ def node_choose_addons(**kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor # returns user, project
+@must_have_permission('admin')
 def node_contributors(**kwargs):
 
     auth = kwargs['auth']
@@ -227,7 +227,7 @@ def node_contributors(**kwargs):
     return rv
 
 
-@must_be_contributor
+@must_have_permission('write')
 def configure_comments(**kwargs):
     node = kwargs['node'] or kwargs['project']
     comment_level = request.json.get('commentLevel')
@@ -247,7 +247,7 @@ def configure_comments(**kwargs):
 
 @must_be_valid_project
 @must_not_be_registration
-@must_be_contributor # returns user, project
+@must_have_permission('write')
 def project_reorder_components(**kwargs):
 
     project = kwargs['project']
@@ -505,8 +505,7 @@ def _view_project(node, auth, primary=False):
             'piwik_site_id': node.piwik_site_id,
 
             'comment_level': node.comment_level,
-            'can_view_comments': node.can_comment(auth),
-            'can_add_comments': node.can_comment(auth, write=True),
+            'can_comment': node.can_comment(auth),
             'has_children': bool(getattr(node, 'commented', False)),
 
         },
@@ -526,9 +525,9 @@ def _view_project(node, auth, primary=False):
                                 and not node.is_registration),
             'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
-            'id': user._id if user else '',
             'piwik_token': user.piwik_token if user else '',
             'id': user._primary_key if user else None,
+            'username': user.username if user else None,
         },
         # TODO: Namespace with nested dicts
         'addons_enabled': node.get_addon_names(),
@@ -783,7 +782,7 @@ def _add_pointers(node, pointers, auth):
         node.save()
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_not_be_registration
 def add_pointers(**kwargs):
     """Add pointers to a node.
@@ -806,7 +805,7 @@ def add_pointers(**kwargs):
     return {}
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_not_be_registration
 def remove_pointer(**kwargs):
     """Remove a pointer from a node, raising a 400 if the pointer is not
@@ -833,7 +832,7 @@ def remove_pointer(**kwargs):
     node.save()
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_not_be_registration
 def fork_pointer(**kwargs):
     """Fork a pointer. Raises BAD_REQUEST if pointer not provided, not found,

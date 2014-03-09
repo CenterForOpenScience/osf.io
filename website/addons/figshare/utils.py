@@ -1,15 +1,17 @@
 def project_to_hgrid(node, project, expand=False):
     if project:
+        if not project.get('articles') or len(project['articles']) == 0:
+            return []
         return [article_to_hgrid(node, article, expand) for article in project['articles']]
     return []
 
 def article_to_hgrid(node, article, expand=False):
-    if article['defined_type'] == 'fileset':
+    if article['defined_type'] == 'fileset' or not article['files']:
         if expand:
             return [file_to_hgrid(node, article, item) for item in article['files']]
         return {
             'name': article['title'] or article['article_id'],  # Is often blank?
-            'kind': 'folder',  # TODO Change me
+            'kind': 'folder' if article['files'] else 'folder',  # TODO Change me
             #'published': article['published_date'],
             #'tags': ', '.join([tag['name'] for tag in article['tags']]),
             #'description': article['description_nohtml'],
@@ -19,13 +21,13 @@ def article_to_hgrid(node, article, expand=False):
             #'size': str(len(article['files'])),
             'urls':  {
                 'upload': '{base}figshare/{aid}/'.format(base=node.api_url, aid=article['article_id']),
-                'delete': node.api_url + 'figshare/' + str(article['article_id']) + '/file/{id}/delete/',
+                'delete': '' if article['status'] == 'public' else node.api_url + 'figshare/' + str(article['article_id']) + '/file/{id}/delete/',
                 'download': '',
                 'fetch': '{base}figshare/hgrid/article/{aid}/'.format(base=node.api_url, aid=article['article_id']),
                 'view': ''
             },
             'permissions': {
-                'edit': True,#article['status'] == 'Public',  # This needs to be something else
+                'edit': article['status'] != 'Public',  # This needs to be something else
                 'view': True,
                 'download': article['status'] == 'Public'
             }
@@ -35,15 +37,14 @@ def article_to_hgrid(node, article, expand=False):
 
 
 def file_to_hgrid(node, article, item):
-
     urls = {
         'upload': '',
-        'delete': '',
+        'delete': '{base}figshare/article/{aid}/file/{fid}/'.format(base=node.api_url, aid=article['article_id'], fid=item.get('id')),
         'download': item.get('download_url'),
         'view': '/{base}/figshare/article/{aid}/file/{fid}'.format(base=node._id, aid=article['article_id'], fid=item.get('id'))
     }
     permissions = {
-        'edit': False,
+        'edit': article['status'] != 'Public',
         'view': True,
         'download': article['status'] == 'Public'
     }

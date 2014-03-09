@@ -1,10 +1,10 @@
 Hello ${fullname},
 
-We received your request to claim an OSF account and become a contributor for "${node.title}". 
+We received your request to become a contributor for "${node.title}".
 
 To confirm your identity, ${referrer.fullname} has been sent an email to forward to you with your confirmation link.
 
-This link will allow you to complete your registration.
+This link will allow you to contribute to "${node.title}".
 
 Thank you for your patience.
 

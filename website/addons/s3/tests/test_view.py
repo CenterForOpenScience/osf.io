@@ -2,6 +2,7 @@ import mock
 from nose.tools import *
 from webtest_plus import TestApp
 
+import httplib as http
 from boto.exception import S3ResponseError
 
 from framework.auth.decorators import Auth
@@ -73,27 +74,25 @@ class TestS3ViewsConfig(DbTestCase):
     def test_s3_set_bucket_no_settings(self):
 
         user = AuthUserFactory()
-        self.project.contributors.append(user)
-        self.project.save()
+        self.project.add_contributor(user, save=True)
         url = self.project.api_url + 's3/settings/'
         res = self.app.post_json(
             url, {'s3_bucket': 'hammertofall'}, auth=user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_s3_set_bucket_no_auth(self):
 
         user = AuthUserFactory()
         user.add_addon('s3')
-        self.project.contributors.append(user)
-        self.project.save()
+        self.project.add_contributor(user, save=True)
         url = self.project.api_url + 's3/settings/'
         res = self.app.post_json(
             url, {'s3_bucket': 'hammertofall'}, auth=user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_s3_set_bucket_already_authed(self):
 
@@ -103,14 +102,13 @@ class TestS3ViewsConfig(DbTestCase):
         user_settings.access_key = 'foo'
         user_settings.secret_key = 'bar'
         user_settings.save()
-        self.project.contributors.append(user)
-        self.project.save()
+        self.project.add_contributor(user, save=True)
         url = self.project.api_url + 's3/settings/'
         res = self.app.post_json(
             url, {'s3_bucket': 'hammertofall'}, auth=user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
 
     @mock.patch('website.addons.s3.api.S3Wrapper.get_wrapped_key')
@@ -130,7 +128,7 @@ class TestS3ViewsConfig(DbTestCase):
             expect_errors=True,
         )
 
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     @mock.patch('website.addons.s3.views.config.has_access')
     @mock.patch('website.addons.s3.views.config.create_osf_user')
@@ -172,7 +170,7 @@ class TestS3ViewsConfig(DbTestCase):
         mock_access.return_value = False
         url = '/api/v1/settings/s3/'
         rv = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
-        assert_equals(rv.status_int, 400)
+        assert_equals(rv.status_int, http.BAD_REQUEST)
 
     @mock.patch('website.addons.s3.api.S3Wrapper.get_wrapped_key')
     @mock.patch('website.addons.s3.api.S3Wrapper.from_addon')
@@ -275,21 +273,21 @@ class TestS3ViewsCRUD(DbTestCase):
         mock_from_addon.return_value.get_wrapped_key.return_value = None
         url = '/project/{0}/s3/view/faux.sho/'.format(self.project._id)
         rv = self.app.get(url, auth=self.user.auth, expect_errors=True).maybe_follow()
-        assert_equals(rv.status_int, 404)
+        assert_equals(rv.status_int, http.NOT_FOUND)
 
     @mock.patch('website.addons.s3.views.crud.S3Wrapper.from_addon')
     def test_view_upload_url(self, mock_from_addon):
         mock_from_addon.return_value = mock.Mock()
         mock_from_addon.return_value.does_key_exist.return_value = False
         rv = self.app.post_json(self.node_url + 's3/', {'name': 'faux.sho'}, auth=self.user.auth)
-        assert_true('faux.sho' in rv.body and self.node_settings.bucket in rv.body and rv.status_int == 200)
+        assert_true('faux.sho' in rv.body and self.node_settings.bucket in rv.body and rv.status_int == http.OK)
 
     @mock.patch('website.addons.s3.views.crud.S3Wrapper.from_addon')
     def test_download_file_faux_file(self, mock_from_addon):
         mock_from_addon.return_value = mock.Mock()
         mock_from_addon.return_value.does_key_exist.return_value = False
         rv = self.app.post_json(self.node_url + 's3/download/', {'path': 'faux.show'}, expect_errors=True)
-        assert_equals(rv.status_int, 404)
+        assert_equals(rv.status_int, http.NOT_FOUND)
 
 
 class TestS3ViewsHgrid(DbTestCase):
@@ -319,7 +317,7 @@ class TestS3ViewsHgrid(DbTestCase):
         self.node_settings.save()
         url = "/api/v1/project/{0}/s3/hgrid/".format(self.project._id)
         rv = self.app.get(url, expect_errors=True, auth=self.user.auth)
-        assert_equals(rv.status_int, 400)
+        assert_equals(rv.status_int, http.BAD_REQUEST)
 
     def test_dummy_folder(self):
         url = "/api/v1/project/{0}/s3/hgrid/dummy/".format(self.project._id)
@@ -384,7 +382,7 @@ class TestCreateBucket(DbTestCase):
         url = "/api/v1/project/{0}/s3/newbucket/".format(self.project._id)
         rv = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
-        assert_equals(rv.status_int, 200)
+        assert_equals(rv.status_int, http.OK)
 
     @mock.patch('website.addons.s3.views.utils.create_bucket')
     def test_create_bucket_fail(self, mock_make):

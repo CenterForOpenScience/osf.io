@@ -15,8 +15,10 @@ from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
 from website.project.views.node import _view_project
-from website.project.decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public, must_have_addon
+from website.project.decorators import (
+    must_not_be_registration, must_be_valid_project,
+    must_be_contributor_or_public, must_have_addon, must_have_permission
+)
 from website.project.views.file import get_cache_content, prepare_file
 from website.addons.base.views import check_file_guid
 from website import settings
@@ -142,7 +144,7 @@ def list_file_paths(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor  # returns user, project
+@must_have_permission('write')  # returns user, project
 @must_not_be_registration
 @must_have_addon('osffiles', 'node')
 def upload_file_public(**kwargs):
@@ -373,7 +375,7 @@ def download_file_by_version(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+@must_have_permission('write') # returns user, project
 @must_not_be_registration
 def delete_file(**kwargs):
 

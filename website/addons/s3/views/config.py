@@ -5,7 +5,7 @@ from framework.exceptions import HTTPError
 from framework.status import push_status_message
 from framework.auth.decorators import must_be_logged_in
 
-from website.project.decorators import must_be_contributor
+from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
@@ -18,7 +18,7 @@ from website.addons.s3.utils import adjust_cors, create_osf_user
 def add_s3_auth(access_key, secret_key, user_settings):
 
     if not has_access(access_key, secret_key):
-        return {'message': 'Incorrect credentials'}, http.BAD_REQUEST
+        return False
 
     user_name, access_key = create_osf_user(
         access_key, secret_key, user_settings.owner.family_name
@@ -29,6 +29,7 @@ def add_s3_auth(access_key, secret_key, user_settings):
     user_settings.secret_key = access_key['secret_access_key']
 
     user_settings.save()
+    return True
 
 
 @must_be_logged_in
@@ -45,12 +46,12 @@ def s3_authorize_user(**kwargs):
     if not s3_access_key or not s3_secret_key:
         raise HTTPError(http.BAD_REQUEST)
 
-    add_s3_auth(s3_access_key, s3_secret_key, user_settings)
-
+    if not add_s3_auth(s3_access_key, s3_secret_key, user_settings):
+        return {'message': 'Incorrect credentials'}, 400
     return {}
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_have_addon('s3', 'node')
 def s3_authorize_node(**kwargs):
 
@@ -67,7 +68,8 @@ def s3_authorize_node(**kwargs):
         user.add_addon('s3')
         user_settings = user.get_addon('s3')
 
-    add_s3_auth(s3_access_key, s3_secret_key, user_settings)
+    if not add_s3_auth(s3_access_key, s3_secret_key, user_settings):
+        return {'message': 'Incorrect credentials'}, 400
 
     node_settings.user_settings = user_settings
     node_settings.save()
@@ -75,9 +77,9 @@ def s3_authorize_node(**kwargs):
     return {}
 
 
-@must_be_contributor
-@must_not_be_registration
+@must_have_permission('write')
 @must_have_addon('s3', 'node')
+@must_not_be_registration
 def s3_node_settings(**kwargs):
 
     auth = kwargs['auth']
@@ -129,7 +131,7 @@ def s3_node_settings(**kwargs):
         adjust_cors(S3Wrapper.from_addon(node_settings))
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_have_addon('s3', 'node')
 def s3_remove_node_settings(**kwargs):
 

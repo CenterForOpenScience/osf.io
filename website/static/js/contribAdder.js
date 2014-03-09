@@ -130,7 +130,7 @@ this.ContribAdder = (function($, global, undefined) {
             var $editable = $elm.find('.permission-editable');
             $editable.editable({
                 showbuttons: false,
-                value: 'write',
+                value: 'admin',
                 source: [
                     {value: 'read', text: 'Read'},
                     {value: 'write', text: 'Write'},
@@ -207,7 +207,7 @@ this.ContribAdder = (function($, global, undefined) {
         };
 
         self.add = function(data) {
-            data.permission = ko.observable('write');
+            data.permission = ko.observable('admin');
             self.selection.push(data);
             // Hack: Hide and refresh tooltips
             $('.tooltip').hide();

@@ -15,12 +15,9 @@ from HTMLParser import HTMLParser
 import pytz
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
-from modularodm.exceptions import ValidationValueError
 import blinker
 
 from modularodm.exceptions import ValidationValueError, ValidationTypeError
-
-from modularodm.exceptions import ValidationError
 
 from framework import status
 from framework.mongo import ObjectId
@@ -35,7 +32,10 @@ from framework import StoredObject, fields, utils
 from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
+
 from framework import session
+from website.util.permissions import expand_permissions
+
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
 
@@ -118,7 +118,6 @@ class Comment(GuidStoredObject):
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
     modified = fields.BooleanField()
 
-    is_public = fields.BooleanField(required=True)
     is_deleted = fields.BooleanField(default=False)
     content = fields.StringField()
 
@@ -148,16 +147,8 @@ class Comment(GuidStoredObject):
 
         return comment
 
-    def can_view(self, node, auth):
-        if self.is_public:
-            return True
-        if auth.user and auth.user == self.user:
-            return True
-        return node.can_edit(auth)
-
-    def edit(self, content, is_public, auth, save=False):
+    def edit(self, content, auth, save=False):
         self.content = content
-        self.is_public = is_public
         self.modified = True
         self.node.add_log(
             NodeLog.COMMENT_UPDATED,
@@ -203,7 +194,34 @@ class Comment(GuidStoredObject):
             self.save()
 
     def report_abuse(self, user, save=False, **kwargs):
+        """Report that a comment is abuse.
+
+        :param User user: User submitting the report
+        :param bool save: Save changes
+        :param dict kwargs: Report details
+        :raises: ValueError if the user submitting abuse is the same as the
+            user who posted the comment
+
+        """
+        if user == self.user:
+            raise ValueError
         self.reports[user._id] = kwargs
+        if save:
+            self.save()
+
+    def unreport_abuse(self, user, save=False):
+        """Revoke report of abuse.
+
+        :param User user: User who submitted the report
+        :param bool save: Save changes
+        :raises: ValueError if user has not reported comment as abuse
+
+        """
+        try:
+            self.reports.pop(user._id)
+        except KeyError:
+            raise ValueError('User has not reported comment as abuse')
+
         if save:
             self.save()
 
@@ -251,6 +269,8 @@ class NodeLog(StoredObject):
     WIKI_UPDATED = 'wiki_updated'
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
+    CONTRIB_REORDERED = 'contributors_reordered'
+    PERMISSIONS_UPDATED = 'permissions_updated'
     MADE_PUBLIC = 'made_public'
     MADE_PRIVATE = 'made_private'
     TAG_ADDED = 'tag_added'
@@ -430,8 +450,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     fork_list = fields.StringField(list=True)
     private_links = fields.StringField(list=True)
 
-    # One of 'public', 'private', or None
-    comment_level = fields.StringField()
+    # One of 'public', 'private'
+    # TODO: Add validator
+    comment_level = fields.StringField(default='private')
 
     # TODO: move these to NodeFile
     files_current = fields.DictionaryField()
@@ -476,7 +497,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             for permission in settings.CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
 
-
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).
@@ -496,18 +516,21 @@ class Node(GuidStoredObject, AddonModelMixin):
         else:
             is_api_node = False
         return (
-            self.is_contributor(user)
+            (user and self.has_permission(user, 'write'))
             or is_api_node
         )
 
     def can_view(self, auth):
         if session:
             key_ring = set(session.data['key'])
-            return self.is_public or self.can_edit(auth) \
+            return self.is_public or auth.user \
+                and self.has_permission(auth.user, 'read') \
                 or not key_ring.isdisjoint(self.private_links)
         else:
-            return self.is_public or self.can_edit(auth) \
+            return self.is_public or auth.user \
+                and self.has_permission(auth.user, 'read') \
                 or auth.private_key in self.private_links
+
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
@@ -576,14 +599,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             if key not in self.contributors:
                 self.permissions.pop(key)
 
-    def can_comment(self, auth, write=False):
-        if write and not auth.logged_in:
-            return False
+    def can_comment(self, auth):
         if self.comment_level == 'public':
-            return self.can_view(auth)
-        if self.comment_level == 'private':
-            return self.can_edit(auth)
-        return False
+            return auth.logged_in and self.can_view(auth)
+        return self.can_edit(auth)
 
     def save(self, *args, **kwargs):
 
@@ -1558,7 +1577,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         property is named `parent_node` rather than `parent` to avoid a
         conflict with the `parent` back-reference created by the `nodes`
         field on this schema.
-        
+
         """
         try:
             if not self.node__parent[0].is_deleted:
@@ -1667,42 +1686,65 @@ class Node(GuidStoredObject, AddonModelMixin):
             pointers.extend(node.get_pointers())
         return pointers
 
+    def replace_contributor(self, old, new):
+        for i, contrib in enumerate(self.contributors):
+            if contrib._primary_key == old._primary_key:
+                self.contributors[i] = new
+                # Remove unclaimed record for the project
+                if self._primary_key in old.unclaimed_records:
+                    del old.unclaimed_records[self._primary_key]
+                    old.save()
+                for permission in self.get_permissions(old):
+                    self.add_permission(new, permission)
+                self.permissions.pop(old._id)
+                return True
+        return False
+
     def remove_contributor(self, contributor, auth, log=True):
         """Remove a contributor from this node.
 
         :param contributor: User object, the contributor to be removed
         :param auth: All the auth informtion including user, API key.
+
         """
-        if not auth.user._id == contributor._id:
-            # remove unclaimed record if necessary
-            if self._primary_key in contributor.unclaimed_records:
-                del contributor.unclaimed_records[self._primary_key]
-            self.contributors.remove(contributor._id)
+        # remove unclaimed record if necessary
+        if self._primary_key in contributor.unclaimed_records:
+            del contributor.unclaimed_records[self._primary_key]
+        self.contributors.remove(contributor._id)
 
-            # Clear permissions for removed user
-            self.permissions.pop(contributor._id, None)
+        # Node must have at least one registered admin user
+        # TODO: Move to validator or helper
+        admins = [
+            user for user in self.contributors
+            if self.has_permission(user, 'admin')
+                and user.is_registered
+        ]
+        if not admins:
+            return False
 
-            self.save()
+        # Clear permissions for removed user
+        self.permissions.pop(contributor._id, None)
 
-            # After remove callback
-            for addon in self.get_addons():
-                message = addon.after_remove_contributor(self, contributor)
-                if message:
-                    status.push_status_message(message)
+        self.save()
 
-            if log:
-                self.add_log(
-                    action=NodeLog.CONTRIB_REMOVED,
-                    params={
-                        'project': self.parent_id,
-                        'node': self._primary_key,
-                        'contributor': contributor._id,
-                    },
-                    auth=auth,
-                )
-            return True
+        # After remove callback
+        for addon in self.get_addons():
+            message = addon.after_remove_contributor(self, contributor)
+            if message:
+                status.push_status_message(message)
 
-        return False
+        if log:
+            self.add_log(
+                action=NodeLog.CONTRIB_REMOVED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'contributor': contributor._id,
+                },
+                auth=auth,
+            )
+
+        return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
 
@@ -1735,6 +1777,88 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return True
 
+    def manage_contributors(self, user_dicts, auth, save=False):
+        """Reorder and remove contributors.
+
+        :param list user_dicts: Ordered list of contributors
+        :param Auth auth: Consolidated authentication information
+        :param bool save: Save changes
+        :raises: ValueError if any users in `users` not in contributors or if
+            no admin contributors remaining
+
+        """
+        users = []
+        permissions_changed = {}
+        for user_dict in user_dicts:
+            user = User.load(user_dict['id'])
+            if user is None:
+                raise ValueError('User not found')
+            if user not in self.contributors:
+                raise ValueError(
+                    'User {0} not in contributors'.format(user.fullname)
+                )
+            permissions = expand_permissions(user_dict['permission'])
+            if set(permissions) != set(self.get_permissions(user)):
+                self.set_permissions(user, permissions, save=False)
+                permissions_changed[user._id] = permissions
+            users.append(user)
+
+        to_retain = [
+            user for user in self.contributors
+            if user in users
+        ]
+        to_remove = [
+            user for user in self.contributors
+            if user not in users
+        ]
+
+        # TODO: Move to validator or helper @jmcarp
+        # TODO: Test me @jmcarp
+        admins = [
+            user for user in users
+            if self.has_permission(user, 'admin')
+                and user.is_registered
+        ]
+        if users is None or not admins:
+            raise ValueError(
+                'Must have at least one registered admin contributor'
+            )
+
+        # TODO: Test me @jmcarp
+        if to_retain != users:
+            self.add_log(
+                action=NodeLog.CONTRIB_REORDERED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._id,
+                    'contributors': [
+                        user._id
+                        for user in users
+                    ],
+                },
+                auth=auth,
+                save=save,
+            )
+
+        if to_remove:
+            self.remove_contributors(to_remove, auth=auth, save=False)
+
+        self.contributors = users
+
+        if permissions_changed:
+            self.add_log(
+                action=NodeLog.PERMISSIONS_UPDATED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._id,
+                    'contributors': permissions_changed,
+                },
+                auth=auth,
+                save=save,
+            )
+
+        if save:
+            self.save()
 
     def add_contributor(self, contributor, permissions=None, auth=None,
                         log=True, save=False):
