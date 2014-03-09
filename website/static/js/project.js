@@ -175,7 +175,7 @@ window.FileRenderer = {
      }
 };
 
-$script(['/static/js/logFeed.js'], 'logFeed');
+
 /*
 Display recent logs for for a node on the project view page.
 */
@@ -187,8 +187,8 @@ NodeActions.openCloseNode = function(nodeId){
                 $logs.attr('data-uri'),
                 {count: 3},
                 function(response) {
-                    $script.ready('logFeed', function() {
-                        var logFeed = new LogFeed($logs, response.logs);
+                    $script(['/static/js/logFeed.js'], function() {
+                        var log = new LogFeed($logs, response.logs);
                     });
                     $logs.addClass('served');
                 }
