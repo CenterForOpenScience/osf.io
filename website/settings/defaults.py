@@ -74,6 +74,9 @@ CANONICAL_DOMAIN = 'openscienceframework.org'
 COOKIE_DOMAIN = '.openscienceframework.org' # Beaker
 SHORT_DOMAIN = 'osf.io'
 
+# TODO: Combine Python and JavaScript config
+COMMENT_MAXLENGTH = 500
+
 # Gravatar options
 GRAVATAR_SIZE_PROFILE = 120
 GRAVATAR_SIZE_ADD_CONTRIBUTOR = 40
