@@ -2,7 +2,6 @@
 import httplib as http
 import logging
 import datetime
-import re
 
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 import framework
@@ -10,13 +9,13 @@ from framework import set_previous_url, request
 from framework import status, exceptions
 import framework.forms as forms
 from framework import auth
+from framework.sessions import session
 from framework.auth import login, logout, DuplicateEmailError, get_user, get_current_user
 from framework.auth.forms import (RegistrationForm, SignInForm,
     ForgotPasswordForm, ResetPasswordForm, MergeAccountForm, ResendConfirmationForm)
 
 import website.settings
 from website import security, mails, language
-from website.project.views.contributor import verify_claim_token
 from website.project.model import Node
 
 
@@ -89,7 +88,9 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
 
     """
     if get_current_user():
-        return framework.redirect('/dashboard/')
+        if not request.args.get('logout'):
+            return framework.redirect('/dashboard/')
+        logout()
     direct_call = registration_form or forgot_password_form
     if framework.request.method == 'POST' and not direct_call:
         form = SignInForm(framework.request.form)
@@ -180,22 +181,19 @@ def auth_register_post():
                 form.username.data,
                 form.password.data,
                 form.fullname.data)
-            matched = re.match(
-                '^.*?/\?next=.*?/user/(.*)/(.*)/claim/verify/(.*)/$',
-                request.referrer if request.referrer else '')
-            if matched:
+            unreg_user_info = session.data.get('unreg_user')
+            if unreg_user_info:
                 # The user wants to claim a contributor using the new account
                 # Parse the "next" query param, and replace the existing
                 # unregistered user on the project with the new
                 # registered (but with email unconfirmed) user
-                uid, pid, token = matched.groups()
-                unreg_user = User.load(uid)
-                if verify_claim_token(unreg_user, token, pid):
-                    node = Node.load(pid)
-                    node.replace_contributor(old=unreg_user, new=u)
-                    node.save()
-                    status.push_status_message(
-                        'Successfully claimed contributor.', 'success')
+                unreg_user = User.load(unreg_user_info['uid'])
+                pid, token = unreg_user_info['pid'], unreg_user_info['token']
+                node = Node.load(pid)
+                node.replace_contributor(old=unreg_user, new=u)
+                node.save()
+                status.push_status_message(
+                    'Successfully claimed contributor.', 'success')
         except (ValidationValueError, DuplicateEmailError):
             status.push_status_message(
                 language.ALREADY_REGISTERED.format(email=form.username.data))

@@ -7,11 +7,11 @@ import time
 from modularodm.exceptions import ValidationValueError
 import framework
 from framework import request, User, status
-from framework.flask import redirect
 from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
 from framework import forms
 from framework.auth.forms import SetEmailAndPasswordForm, PasswordForm
+from framework.sessions import session
 
 from website import settings, mails, language
 from website.project.model import unreg_contributor_added
@@ -441,11 +441,6 @@ def verify_claim_token(user, token, pid):
             return False
     return True
 
-def claim_user_registered_login(**kwargs):
-    if framework.auth.get_current_user():
-        framework.auth.logout()
-    ref = request.referrer or request.args.get('next')
-    return framework.redirect('/account/?next={0}'.format(ref))
 
 # TODO(sloria): Move to framework
 def is_json_request():
@@ -465,6 +460,10 @@ def claim_user_registered(**kwargs):
     unreg_user = User.load(uid)
     if not verify_claim_token(unreg_user, token, pid=node._primary_key):
         raise HTTPError(http.BAD_REQUEST)
+
+    session.data['unreg_user'] = {
+        'uid': uid, 'pid': pid, 'token': token
+    }
 
     if not current_user:
         next_url = web_url_for('claim_user_registered', pid=pid, uid=uid, token=token, _external=True)
@@ -495,8 +494,6 @@ def claim_user_registered(**kwargs):
     return {
         'form': form_ret,
         'user': user_ret,
-        'signoutURL': web_url_for('claim_user_registered_login',
-            uid=uid, pid=pid)
     }
 
 

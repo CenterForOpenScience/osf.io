@@ -4,9 +4,6 @@ import logging
 from mako.template import Template
 from framework import session, create_session
 from framework import goback
-from framework import status
-from framework.auth.utils import parse_name
-import framework.flask as web
 import framework.bcrypt as bcrypt
 from framework.email.tasks import send_email
 from modularodm.query.querydialect import DefaultQueryDialect as Q
@@ -14,7 +11,6 @@ from framework.auth.exceptions import (DuplicateEmailError, LoginNotAllowedError
                                         PasswordIncorrectError)
 
 import website
-from website import security
 from model import User
 
 
