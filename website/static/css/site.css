@@ -1,7 +1,26 @@
 /* Body and structure
 -------------------------------------------------- */
 
+/*News page*/
+.spacer {
+    height: 20px;
+}
+.table-month {
+    padding: 20px 20px 20px 20px;
+    height: 100px;
+    width: 150px;
+    background-color:#D9E8F4 ;
+    font-family: 'Carrois Gothic', Helvetica;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.table-description{
+    padding-left: 50px;
+}
 /*CSS Johanna added for front page*/
+
+
 
 .hpLink:hover{
     text-decoration: none;
@@ -28,9 +47,9 @@
 
 }
 #hpContainerThree {
-    height: 500px;
+    height: 700px;
     margin-top: 25px;
-    margin-bottom: 100px;
+    margin-bottom: 25px;
 }
 #containerOneHeader {
     float: left;
@@ -103,14 +122,9 @@
     font-family: 'Carrois Gothic', sans-serif;
 }
 
-.featureDescriptions .col-md-4 .col-md-10{
-    background: #D9EDF7;
-}
-
 .featureDescriptions .featureInfo {
     font-family: 'Inika', serif;
     font-size: 16px;
-    /*display: none;*/
 }
 .steps {
     padding-bottom: 20px;
@@ -126,6 +140,7 @@
     padding-top: 20px;
     padding-bottom: 20px;
 }
+
 
 .verticalline {
 border-left:  thin solid #D9E8F4;

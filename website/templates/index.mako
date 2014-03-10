@@ -2,26 +2,13 @@
 <%def name="title()">Home</%def>
 <%def name="content()">
     <link href='http://fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
-##    <script>
-##        $(function() {
-##            $('.subHeadTwo')
-##                    .on('click', function(e)
-##                    {
-##                        $(e.target)
-##                                .parents('.col-md-4')
-##                                .children('.featureInfo')[0].style.display="block";
-##                    }
-##
-##            );
-##        });
-##    </script>
 
     <div class="hp-banner"></div>
     <div id="hpContainerOne">
         <div id="containerOneHeader">
-            <p class ="headOne">Project management with collaborators,<br> project sharing with the public</p>
+            <p class ="headOne"><a href="/news">Project</a> management with collaborators,<br> project sharing with the public</p>
             <br>
-            <p class ="subHeadOne">The OSF organizes materials and data across the research lifecycle and between researchers. </p>
+            <p class ="subHeadOne">The Open Science Framework (OSF) supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery. </p>
         </div>
         <div class="sign-up img-rounded">
             <div>
@@ -42,7 +29,7 @@
                 <img id="connect" src="/static/img/connect.gif">
                 <div class="subHeadTwo center">CONNECTIONS</div>
                 <p>with the services you already use</p><br>
-                <div class="featureInfo">The OSF links services together to simplify transitions and facilitate interactions.  For example, connect GitHub and Amazon Simple Storage Service repositories to an OSF project and get the benefits of both in one place.</div>
+                <div class="featureInfo">Link services to simplify transitions and facilitate interactions; e.g., connect OSF to your GitHub and Amazon S3 repositories and all three work together!</div>
 
             </div>
 
@@ -50,14 +37,14 @@
                 $(document).ready(function()
                 {
                     $('.connect').hover(
-                        function()
-                        {
-                            $("#connect").attr("src", "/static/img/connect-motion.gif");
-                        },
                             function()
-                        {
-                            $("#connect").attr("src", "/static/img/connect.gif");
-                        }
+                            {
+                                $("#connect").attr("src", "/static/img/connect-motion.gif");
+                            },
+                            function()
+                            {
+                                $("#connect").attr("src", "/static/img/connect.gif");
+                            }
                     );
                 });
             </script>
@@ -66,20 +53,20 @@
                 <img id="archive" src="/static/img/archive.gif"><br>
                 <div class="subHeadTwo center">ARCHIVING</div>
                 <p>and management of research and collaborations</p>
-                <div class="featureInfo">The OSF helps you spend more time doing your research and less time keeping track of it. Our file saving system means no more lost data from crashed drives, disappearing collaborators, or failing memories.</div>
+                <div class="featureInfo">Spend more time doing your research and less time keeping track of it. No more lost data from crashed drives, disappearing collaborators, or failing memories.</div>
             </div>
             <script>
                 $(document).ready(function()
                 {
                     $('.archive').hover(
-                        function()
-                        {
-                            $("#archive").attr("src", "/static/img/archive-motion.gif");
-                        },
                             function()
-                        {
-                            $("#archive").attr("src", "/static/img/archive.gif");
-                        }
+                            {
+                                $("#archive").attr("src", "/static/img/archive-motion.gif");
+                            },
+                            function()
+                            {
+                                $("#archive").attr("src", "/static/img/archive.gif");
+                            }
                     );
                 });
             </script>
@@ -88,24 +75,23 @@
                 <img id="integrate" src="/static/img/open.gif">
                 <div class="subHeadTwo">INTEGRATION</div>
                 <p>of private and public workflows</p><br>
-                <div class="featureInfo">Work privately among collaborators and, when you wish, make some or all of your research materials public so that others can download or cite it. As of February 2014, there have been 30,000 downloads from the OSF!</div>
+                <div class="featureInfo">Work privately among collaborators and, when you wish, make some or all of your research materials public for others to use and cite.</div>
             </div>
             <script>
                 $(document).ready(function()
                 {
                     $('.integrate').hover(
-                        function()
-                        {
-                            $("#integrate").attr("src", "/static/img/sign-motion.gif");
-                        },
                             function()
-                        {
-                            $("#integrate").attr("src", "/static/img/open.gif");
-                        }
+                            {
+                                $("#integrate").attr("src", "/static/img/sign-motion.gif");
+                            },
+                            function()
+                            {
+                                $("#integrate").attr("src", "/static/img/open.gif");
+                            }
                     );
                 });
             </script>
-
         </div>
     </div>
     <div id="hpContainerThree">

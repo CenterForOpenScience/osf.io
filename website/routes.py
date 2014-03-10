@@ -152,6 +152,8 @@ def make_url_map(app):
             view_kwargs={'tag': 'asb2014'}, endpoint_suffix='__asb2014__plain',
         ),
 
+        Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
+
     ])
 
     process_rules(app, [
