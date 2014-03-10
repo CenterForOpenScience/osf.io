@@ -10,7 +10,7 @@ def article_to_hgrid(node, article, expand=False):
         if expand:
             return [file_to_hgrid(node, article, item) for item in article['files']]
         return {
-            'name': article['title'] or article['article_id'],  # Is often blank?
+            'name': '{0}:{1}'.format(article['title'] or 'Unnamed', article['article_id']),  # Is often blank?
             'kind': 'folder' if article['files'] else 'folder',  # TODO Change me
             #'published': article['published_date'],
             #'tags': ', '.join([tag['name'] for tag in article['tags']]),

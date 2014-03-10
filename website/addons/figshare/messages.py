@@ -18,7 +18,7 @@ BEFORE_FORK_OWNER = 'Because you have authenticated the '+FIGSHARE+' add-on for 
 BEFORE_FORK_NOT_OWNER = 'Because this '+FIGSHARE+' add-on has been authenticated by a different user, forking it will not transfer authentication to the forked {category}.'
 
 AFTER_FORK_OWNER = ''+FIGSHARE+' authorization copied to forked {category}.'
-               
+
 AFTER_FORK_NOT_OWNER = ''+FIGSHARE+' authorization not copied to forked {category}. You may authorize this fork on the <a href={url}>Settings</a> page.'
 
 BEFORE_REGISTER =  'Registering this {category} will copy the authentication for its '+FIGSHARE+' add-on to the registered {category}.'
@@ -30,9 +30,9 @@ FIGSHARE_VIEW_FILE_PRIVATE = 'Since this '+FIGSHARE+' file is unpublished we can
 FIGSHARE_VIEW_FILE_OVERSIZED = 'This '+FIGSHARE+' file is too large to render; <a href="{url}">download file</a> to view it.'
 
 '''
-Publishing this article is an irreversible operation. Once a FigShare article is published it can never be deleted. Proceed with caution. 
+Publishing this article is an irreversible operation. Once a FigShare article is published it can never be deleted. Proceed with caution.
 <br /><br />
-Also, FigShare requires some additional info before this article can be published: <br /> 
+Also, FigShare requires some additional info before this article can be published: <br />
 <form id='figsharePublishForm' action='${nodeApiUrl}figshare/publish/article/${parent_id}/'>
     <h3><label><Title></label></h3>
     <input name='title' type='text' value='${figshare_title}'>
@@ -44,4 +44,7 @@ Also, FigShare requires some additional info before this article can be publishe
     <textarea name='description' placeholder='Please type a description of this file here'>${figshare_desc}</textarea>
 </form>
 '''
+
+OAUTH_INVALID = 'Your OAuth key for FigSahre is no longer valid. Please re-authenticate.'
+
 # END MFR MESSAGES

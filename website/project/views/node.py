@@ -101,7 +101,6 @@ def project_new_node(**kwargs):
 
 @must_be_logged_in
 @must_be_valid_project  # returns project
-@must_not_be_registration
 def project_before_fork(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -129,7 +128,6 @@ def node_fork_page(**kwargs):
 
     if node:
         node_to_use = node
-        status.push_status_message('At this time, only projects can be forked; however, this behavior is coming soon.')
         raise HTTPError(
             http.FORBIDDEN,
             message='At this time, only projects can be forked; however, this behavior is coming soon.',
@@ -137,9 +135,6 @@ def node_fork_page(**kwargs):
         )
     else:
         node_to_use = project
-
-    if node_to_use.is_registration:
-        raise HTTPError(http.FORBIDDEN)
 
     fork = node_to_use.fork_node(auth)
 
