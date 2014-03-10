@@ -9,14 +9,12 @@ from framework import set_previous_url, request
 from framework import status, exceptions
 import framework.forms as forms
 from framework import auth
-from framework.sessions import session
 from framework.auth import login, logout, DuplicateEmailError, get_user, get_current_user
 from framework.auth.forms import (RegistrationForm, SignInForm,
     ForgotPasswordForm, ResetPasswordForm, MergeAccountForm, ResendConfirmationForm)
 
 import website.settings
 from website import security, mails, language
-from website.project.model import Node
 
 
 Q = framework.Q
@@ -181,19 +179,6 @@ def auth_register_post():
                 form.username.data,
                 form.password.data,
                 form.fullname.data)
-            unreg_user_info = session.data.get('unreg_user')
-            if unreg_user_info:
-                # The user wants to claim a contributor using the new account
-                # Get the node and user id from the session and replace the existing
-                # unregistered user on the project with the new
-                # registered (but with email unconfirmed) user
-                unreg_user = User.load(unreg_user_info['uid'])
-                pid, token = unreg_user_info['pid'], unreg_user_info['token']
-                node = Node.load(pid)
-                node.replace_contributor(old=unreg_user, new=u)
-                node.save()
-                status.push_status_message(
-                    'Successfully claimed contributor.', 'success')
         except (ValidationValueError, DuplicateEmailError):
             status.push_status_message(
                 language.ALREADY_REGISTERED.format(email=form.username.data))

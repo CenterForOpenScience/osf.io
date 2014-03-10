@@ -10,6 +10,7 @@ from framework import request, User, status
 from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
 from framework import forms
+from framework.auth import user_registered
 from framework.auth.forms import SetEmailAndPasswordForm, PasswordForm
 from framework.sessions import session
 
@@ -500,6 +501,23 @@ def claim_user_registered(**kwargs):
         'user': user_ret,
         'signOutUrl': sign_out_url
     }
+
+
+@user_registered.connect
+def replace_unclaimed_user_with_registered(user):
+    unreg_user_info = session.data.get('unreg_user')
+    if unreg_user_info:
+        # The user wants to claim a contributor using the new account
+        # Get the node and user id from the session and replace the existing
+        # unregistered user on the project with the new
+        # registered (but with email unconfirmed) user
+        unreg_user = User.load(unreg_user_info['uid'])
+        pid, token = unreg_user_info['pid'], unreg_user_info['token']
+        node = Node.load(pid)
+        node.replace_contributor(old=unreg_user, new=user)
+        node.save()
+        status.push_status_message(
+            'Successfully claimed contributor.', 'success')
 
 
 def claim_user_form(**kwargs):

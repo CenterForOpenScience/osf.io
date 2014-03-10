@@ -2,6 +2,8 @@
 import logging
 
 from mako.template import Template
+import blinker
+
 from framework import session, create_session
 from framework import goback
 import framework.bcrypt as bcrypt
@@ -13,6 +15,9 @@ from framework.auth.exceptions import (DuplicateEmailError, LoginNotAllowedError
 import website
 from model import User
 
+
+signals = blinker.Namespace()
+user_registered = signals.signal('user-registered')
 
 logger = logging.getLogger(__name__)
 
@@ -190,13 +195,13 @@ def register_unconfirmed(username, password, fullname):
             password=password,
             fullname=fullname)
         user.save()
-        return user
     elif not user.is_registered: # User is in db but not registered
         user.add_email_verification(username)
         user.save()
-        return user
     else:
         raise DuplicateEmailError('User {0!r} already exists'.format(username))
+    user_registered.send(user)
+    return user
 
 def register(username, password, fullname):
     user = get_user(username=username)
