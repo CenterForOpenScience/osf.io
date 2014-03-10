@@ -264,7 +264,7 @@ class TestUser(DbTestCase):
         d = serialize_user(user)
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
-        assert_equal(d['username'], user.username)
+        assert_equal(d.get('username', None), None)
         assert_equal(d['fullname'], user.fullname)
         assert_equal(d['registered'], user.is_registered)
         assert_equal(d['absolute_url'], user.absolute_url)
@@ -278,7 +278,7 @@ class TestUser(DbTestCase):
         d = serialize_user(user, full=True)
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
-        assert_equal(d['username'], user.username)
+        assert_equal(d.get('username'), None)
         assert_equal(d['fullname'], user.fullname)
         assert_equal(d['registered'], user.is_registered)
         assert_equal(d['gravatar_url'], user.gravatar_url)
@@ -1579,6 +1579,19 @@ class TestForkNode(DbTestCase):
         user2_auth = Auth(user=user2)
         fork = self.project.fork_node(user2_auth)
         assert_true(fork)
+
+    def test_fork_registration(self):
+        self.registration = RegistrationFactory(project=self.project)
+        fork = self.registration.fork_node(self.consolidate_auth)
+
+        # fork should not be a registration
+        assert_false(fork.is_registration)
+
+        # Compare fork to original
+        self._cmp_fork_original(self.user,
+                                datetime.datetime.utcnow(),
+                                fork,
+                                self.registration)
 
 
 class TestRegisterNode(DbTestCase):

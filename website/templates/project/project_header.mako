@@ -58,7 +58,7 @@
                         </a>
                         <button
                             class='btn btn-default node-fork-btn'
-                                data-bind="enable: !isRegistration && category === 'project' && user.id,
+                                data-bind="enable: category === 'project' && user.id,
                                             click: forkNode"
                             rel="tooltip"
                             title="Number of times this ${node['category']} has been forked (copied)"
