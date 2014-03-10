@@ -1219,3 +1219,6 @@ a {
 .contributor-unregistered:hover{
   background-color: #F3F3F3;
 }
+
+/* jQuery UI Autocomplete (WTForms Widget) */
+.ui-autocomplete-category { font-weight: bold }

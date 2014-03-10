@@ -3,7 +3,7 @@ from framework import Form, SelectField, TextField, TextAreaField, validators
 from framework.forms import (
     BootstrapTextArea,
     BootstrapTextInput,
-    JqueryAutocomplete2,
+    JqueryAutocomplete,
 )
 
 ###############################################################################
@@ -19,7 +19,7 @@ class NewProjectForm(Form):
     description    = TextAreaField('Description', widget=BootstrapTextArea())
     template = TextField(
         'Template',
-        widget=JqueryAutocomplete2(),
+        widget=JqueryAutocomplete(),
     )
 
 class NewNodeForm(Form):
