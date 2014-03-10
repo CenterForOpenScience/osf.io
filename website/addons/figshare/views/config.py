@@ -29,7 +29,7 @@ def figshare_set_config(*args, **kwargs):
     except:
         raise HTTPError(http.BAD_REQUEST)
 
-    if not figshare_id and not (figshare_type == 'project' or figshare_type == 'fileset'):
+    if not figshare_id or not (figshare_type == 'project' or figshare_type == 'fileset'):
         raise HTTPError(http.BAD_REQUEST)
 
     changed = (
