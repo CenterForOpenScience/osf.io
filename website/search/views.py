@@ -72,9 +72,10 @@ def search_projects_by_title(*args, **kwargs):
 
 
     results = Node.find(
-        Q('title', 'startswith', term) &
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) & (
+        Q('title', 'istartswith', term) &  # search term (case insensitive)
+        Q('category', 'eq', 'project') &  # is a project
+        Q('is_deleted', 'eq', False) & (  # isn't deleted
+            # is either public, or the current user can view
             Q('is_public', 'eq', True) |
             Q('contributors', 'contains', user._id))
     )

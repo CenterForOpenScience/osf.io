@@ -21,11 +21,16 @@
         </div>
     </div>
 </div><!-- end row -->
+<style>
+    .ui-autocomplete-category {
+    font-weight: bold;
+  }
+</style>
 <script>
 $(function() {
 
-    var old_elem = $('#template');
-    var id = old_elem.attr('id');
+    var id = 'template';
+    var old_elem = $('#' + id);
 
     var replace_with = function(el) {
         old_elem.hide()
@@ -58,7 +63,7 @@ $(function() {
             }]
         };
 
-        input.find('input.form-control').autocomplete({
+        input.find('input.form-control').catcomplete({
                 source: function(request, response) {
                     if(request.term in cache) {
                         response(cache[request.term]);
@@ -93,7 +98,7 @@ $(function() {
         input.find('.btn-default').on('click', function(e) {
             e.preventDefault();
             var elem = input.find('input.form-control');
-            elem.autocomplete( elem.data('autocomplete-open') ? 'close' : 'search' );
+            elem.catcomplete( elem.data('autocomplete-open') ? 'close' : 'search' );
 
         })
     }

@@ -80,6 +80,20 @@
         this.utc = moment.utc(date).format(UTC_DATEFORMAT);
     }
 
+    $.widget( "custom.catcomplete", $.ui.autocomplete, {
+        _renderMenu: function( ul, items ) {
+            var that = this;
+            var currentCategory = "";
+            $.each( items, function( index, item ) {
+                if ( item.category != currentCategory ) {
+                    ul.append( "<li class='ui-autocomplete-category'>" + item.category + "</li>" );
+                    currentCategory = item.category;
+                }
+            that._renderItemData( ul, item );
+            });
+        }
+    });
+
 
     // TODO: move me to appropriate page-specific module
     $(document).ready(function(){

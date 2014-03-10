@@ -90,11 +90,11 @@ def project_new_post(**kwargs):
 @must_be_valid_project
 def project_new_from_template(*args, **kwargs):
     original_node = kwargs.get('node')
-    original_node.use_as_template(
+    new_node = original_node.use_as_template(
         auth=kwargs['auth'],
         changes=dict(),
     )
-    return {'url': original_node.url}, http.CREATED, None
+    return {'url': new_node.url}, http.CREATED, None
 
 
 ##############################################################################

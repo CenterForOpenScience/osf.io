@@ -501,12 +501,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         except (AttributeError, KeyError):
             attributes = dict()
 
-        # Handle Pointer objects
-        if isinstance(self, Pointer):
-            new = Pointer(node=self.node)
-            new.save()
-            return new
-
         new = self.clone()
 
         # set attributes which may be overridden by `changes`
