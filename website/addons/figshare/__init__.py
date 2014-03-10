@@ -1,21 +1,25 @@
-from .model import AddonFigShareNodeSettings
-from .routes import settings_routes
+from . import routes, views, model
 
-MODELS = [AddonFigShareNodeSettings]
-NODE_SETTINGS_MODEL = AddonFigShareNodeSettings
+MODELS = [
+    model.AddonFigShareUserSettings,
+    model.AddonFigShareNodeSettings,
+    model.FigShareGuidFile
+]
+USER_SETTINGS_MODEL = model.AddonFigShareUserSettings
+NODE_SETTINGS_MODEL = model.AddonFigShareNodeSettings
 
-ROUTES = [settings_routes]
+ROUTES = [routes.settings_routes, routes.page_routes, routes.api_routes]
 
 SHORT_NAME = 'figshare'
 FULL_NAME = 'FigShare'
 
-OWNERS = ['node']
+OWNERS = ['user', 'node']
 
 ADDED_DEFAULT = []
 ADDED_MANDATORY = []
 
-VIEWS = ['widget']
-CONFIGS = ['node']
+VIEWS = []
+CONFIGS = ['user', 'node']
 
 CATEGORIES = ['storage']
 
@@ -26,7 +30,12 @@ INCLUDE_JS = {
 
 INCLUDE_CSS = {
     'widget': [],
-    'page': [],
+    'page': ['/static/css/hgrid-base.css']
 }
 
 WIDGET_HELP = 'FigShare Add-on Alpha'
+
+HAS_HGRID_FILES = True
+GET_HGRID_DATA = views.hgrid.figshare_hgrid_data
+GET_HGRID_URLS = views.hgrid.figshare_hgrid_urls
+

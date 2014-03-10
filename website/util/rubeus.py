@@ -120,7 +120,7 @@ class NodeFileCollector(object):
         self.auth = auth
         self.extra = kwargs
         self.can_view = node.can_view(auth)
-        self.can_edit = node.can_edit(auth) if self.can_view else False
+        self.can_edit = node.can_edit(auth) and not node.is_registration
 
     def to_hgrid(self):
         """Return the Rubeus.JS representation of the node's file data, including
@@ -129,20 +129,23 @@ class NodeFileCollector(object):
         root = self._serialize_node(self.node)
         return [root]
 
-    def _collect_components(self, node):
+    def _collect_components(self, node, visited):
         rv = []
         for child in node.nodes:
-            if not child.is_deleted and node.can_view(self.auth):
-                rv.append(self._serialize_node(child))
+            if child.resolve()._id not in visited and not child.is_deleted and node.can_view(self.auth):
+                visited.append(child.resolve()._id)
+                rv.append(self._serialize_node(child, visited=visited))
         return rv
 
-    def _serialize_node(self, node):
+    def _serialize_node(self, node, visited=None):
         """Returns the rubeus representation of a node folder.
         """
-        can_edit = node.can_edit(auth=self.auth)
+        visited = visited or []
+        visited.append(node.resolve()._id)
+        can_edit = node.can_edit(auth=self.auth) and not node.is_registration
         can_view = node.can_view(auth=self.auth)
         if can_view:
-            children = self._collect_addons(node) + self._collect_components(node)
+            children = self._collect_addons(node) + self._collect_components(node, visited)
         else:
             children = []
         return {
@@ -152,7 +155,7 @@ class NodeFileCollector(object):
             'kind': FOLDER,
             'permissions': {
                 'edit': can_edit,
-                'view': can_view
+                'view': can_view,
             },
             'urls': {
                 'upload': os.path.join(node.api_url, 'osffiles') + '/',

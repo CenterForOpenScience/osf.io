@@ -282,7 +282,7 @@ def _search_contributor(query):
                 'fullname': doc['user'],
                 'email': user.username,
                 'id': doc['id'],
-                'gravatar': gravatar(
+                'gravatar_url': gravatar(
                     user,
                     use_ssl=True,
                     size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,

@@ -2,6 +2,7 @@
  * Controls the actions in the project header (make public/private, watch button,
  * forking, etc.)
  */
+
 this.NodeControl = (function(ko, $, global) {
     'use strict';
 
@@ -30,15 +31,18 @@ this.NodeControl = (function(ko, $, global) {
             contentType: 'application/json'
         }).success(function(response) {
             bootbox.confirm(
-                $.osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
-                function(result) {
-                    if (result) {
-                        done && done();
-                    }
-                }
-            )
+                 $.osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
+                 function(result) {
+                     if (result) {
+                         done && done();
+                     }
+                 }
+             )
         });
     }
+
+
+
 
     function setPermissions(permissions) {
         var msgKey = permissions === PUBLIC ? 'makePublicWarning' : 'makePrivateWarning';
@@ -58,25 +62,40 @@ this.NodeControl = (function(ko, $, global) {
         });
     }
 
-    function removeUser(userid, name) {
+    var removeUser = function(userid, name) {
         var payload = {
             id: userid,
             name: name
         };
-        $.osf.postJSON(nodeApiUrl + 'beforeremovecontributors/', {}, function(response) {
-            var prompt = $.osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
-            bootbox.confirm({
-                title: 'Delete Contributor?',
-                message: prompt,
-                callback: function(result) {
-                    if (result) {
-                        $.osf.postJSON(nodeApiUrl + 'removecontributors/', payload, function() {
-                            window.location.reload();
-                        });
+        $.osf.postJSON(
+            nodeApiUrl + 'beforeremovecontributors/',
+            payload,
+            function(response) {
+                var prompt = $.osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
+                bootbox.confirm({
+                    title: 'Delete Contributor?',
+                    message: prompt,
+                    callback: function(result) {
+                        if (result) {
+                            $.osf.postJSON(
+                                nodeApiUrl + 'removecontributors/',
+                                payload,
+                                function(response) {
+                                    if (response.redirectUrl) {
+                                        window.location.href = response.redirectUrl;
+                                    } else {
+                                        window.location.reload();
+                                    }
+                                }
+                            ).fail(function(xhr) {
+                                var response = JSON.parse(xhr.responseText);
+                                bootbox.alert('Error: ' + response.message_long);
+                            });
+                        }
                     }
-                }
-            });
-        });
+                });
+            }
+        );
         return false;
     };
 
@@ -131,7 +150,7 @@ this.NodeControl = (function(ko, $, global) {
             // TODO: Remove hardcoded selectors.
             $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
                 name:  'title',
-                title: 'Edit Title',
+                title: 'Edit Title'
             }));
             $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
                 name:  'description',
@@ -213,22 +232,26 @@ this.NodeControl = (function(ko, $, global) {
 
     NodeControl.prototype._initRemoveLinks = function () {
         var self = this;
-        $(self.options.removeCss).hover(
-            function(){
-                var me = $(this);
-                var el = $('<span class="btn-remove-contrib"><i class="icon-remove"></i></span>');
-                el.click(function(){
-                    // TODO: remove hardcoded attributes
-                    removeUser(me.attr('data-userid'), me.attr('data-fullname'));
-                    return false;
-                });
-                $(this).append(el);
-            },
-            function(){
-                $(this).find('i').remove();
-            }
-        );
-    }
+        $('.btn-remove').on('click', function() {
+            var $this = $(this);
+            removeUser($this.attr('data-userid'), $this.attr('data-fullname'));
+        });
+//        self.$removeElem = $('<span class="btn-remove-contrib"><i class="icon-remove"></i></span>');
+//        $(self.options.removeCss).hover(
+//            function(){
+//                var me = $(this);
+//                self.$removeElem.click(function(){
+//                    // TODO: remove hardcoded attributes
+//                    removeUser(me.attr('data-userid'), me.attr('data-fullname'));
+//                    return false;
+//                });
+//                $(this).append(self.$removeElem);
+//            },
+//            function(){
+//                self.$removeElem.remove();
+//            }
+//        );
+    };
 
     return NodeControl;
 

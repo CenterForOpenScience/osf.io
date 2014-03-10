@@ -1,6 +1,6 @@
 Hello ${fullname},
 
-We received your request to claim an OSF account and become a contributor for "${node.title}". You used a different email address than the one provided by ${referrer.fullname}.
+We received your request to claim an OSF account and become a contributor for "${node.title}". 
 
 To confirm your identity, ${referrer.fullname} has been sent an email to forward to you with your confirmation link.
 

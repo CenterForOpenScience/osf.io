@@ -17,7 +17,7 @@
 
             <div class="col-md-6">
 
-                <select class="form-control" id="s3_bucket" name="s3_bucket" ${'' if user_has_auth and (owner is None or is_owner) else 'disabled'}>
+                <select class="form-control" id="s3_bucket" name="s3_bucket" ${'' if user_has_auth and (owner is None or is_owner) and not is_registration else 'disabled'}>
                     <option value="">-----</option>
                     % for bucket_name in bucket_list or []:
                         <option value="${bucket_name}" ${'selected' if bucket_name == bucket else ''}>${bucket_name}</option>
@@ -26,7 +26,7 @@
 
             </div>
 
-            % if user_has_auth and (owner is None or is_owner):
+            % if user_has_auth and (owner is None or is_owner) and not is_registration:
                 <div class="col-md-6">
                     <a class="btn btn-default" id="newBucket">Create Bucket</a>
                 </div>

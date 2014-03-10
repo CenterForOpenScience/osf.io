@@ -7,33 +7,34 @@
 
 window.NodeActions = {};  // Namespace for NodeActions
 
+
 // TODO: move me to the NodeControl or separate
-NodeActions.forkPointer = function(pointerId, nodeId) {
+    NodeActions.forkPointer = function(pointerId, nodeId) {
+        bootbox.confirm('Are you sure you want to fork this project?',
+                function(result) {
+                    if (result) {
+                        // Block page
+                        $.osf.block();
 
-    beforeForkNode('/api/v1/' + nodeId + '/fork/before/', function() {
-
-        // Block page
-        $.osf.block();
-
-        // Fork pointer
-        $.ajax({
-            type: 'post',
-            url: nodeApiUrl + 'pointer/fork/',
-            data: JSON.stringify({'pointerId': pointerId}),
-            contentType: 'application/json',
-            dataType: 'json',
-            success: function(response) {
-                window.location.reload();
-            },
-            error: function() {
-                $.osf.unblock();
-                bootbox.alert('Could not fork link.');
-            }
-        });
-
-    });
-
-};
+                        // Fork pointer
+                        $.ajax({
+                            type: 'post',
+                            url: nodeApiUrl + 'pointer/fork/',
+                            data: JSON.stringify({'pointerId': pointerId}),
+                            contentType: 'application/json',
+                            dataType: 'json',
+                            success: function(response) {
+                                window.location.reload();
+                            },
+                            error: function() {
+                                $.osf.unblock();
+                                bootbox.alert('Could not fork link.');
+                            }
+                        });
+                    }
+                }
+        )
+    };
 
 NodeActions.addonFileRedirect = function(item) {
     window.location.href = item.params.urls.view;
@@ -58,6 +59,7 @@ NodeActions.useAsTemplate = function() {
 }
 
 $(function(){
+
     $('#newComponent form').on('submit', function(e) {
 
           $("#add-component-submit")
@@ -190,6 +192,7 @@ window.FileRenderer = {
      }
 };
 
+
 /*
 Display recent logs for for a node on the project view page.
 */
@@ -201,9 +204,9 @@ NodeActions.openCloseNode = function(nodeId){
                 $logs.attr('data-uri'),
                 {count: 3},
                 function(response) {
-                    var logModelObjects = createLogs(response.logs);
-                    var logsVM = new LogsViewModel(logModelObjects);
-                    ko.applyBindings(logsVM, $logs[0]);
+                    $script(['/static/js/logFeed.js'], function() {
+                        var log = new LogFeed($logs, response.logs);
+                    });
                     $logs.addClass('served');
                 }
             );
@@ -216,8 +219,19 @@ NodeActions.openCloseNode = function(nodeId){
     NodeActions._openCloseNode(nodeId);
 };
 
-
 $(document).ready(function() {
+
+    ko.punches.enableAll();
+
+    var permissionInfoHtml = '<ul>' +
+            '<li><strong>Read</strong>: View project content and comment</li>' +
+            '<li><strong>Read + Write</strong>: Read privileges plus add and configure components; add and edit content</li>' +
+            '<li><strong>Administrator</strong>: Read and write privileges; manage contributors; delete and register project; public-private settings</li>' +
+        '</ul>';
+
+    $('.permission-info').attr(
+        'data-content', permissionInfoHtml
+    ).popover();
 
     ////////////////////
     // Event Handlers //

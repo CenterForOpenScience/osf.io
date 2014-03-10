@@ -52,7 +52,7 @@ this.LogFeed = (function(ko, $, global, moment) {
                 if (person.registered)
                     ret += self._asContribLink(person);
                 else
-                    ret += '<span>' + person.nr_name + '</span>';
+                    ret += '<span>' + person.fullname + '</span>';
                 if (i < self.contributors.length - 1 && self.contributors.length > 2){
                     ret += ", ";
                 } else if (i < self.contributors.length - 1 && self.contributors.length == 2){
@@ -137,7 +137,7 @@ this.LogFeed = (function(ko, $, global, moment) {
                 self.init();
             });
         }
-    };
+    }
 
     LogFeed.prototype.init = function() {
         var self = this;

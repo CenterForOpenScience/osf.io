@@ -76,7 +76,8 @@ SHORT_DOMAIN = 'osf.io'
 
 # Gravatar options
 GRAVATAR_SIZE_PROFILE = 120
-GRAVATAR_SIZE_ADD_CONTRIBUTOR = 60
+GRAVATAR_SIZE_ADD_CONTRIBUTOR = 40
+GRAVATAR_SIZE_DISCUSSION = 20
 
 # User activity style
 USER_ACTIVITY_MAX_WIDTH = 325
@@ -106,6 +107,10 @@ WIKI_WHITELIST = {
     ]
 }
 
+# Permissions
+PERMISSIONS = ['read', 'write', 'admin']
+CREATOR_PERMISSIONS = ['read', 'write', 'admin']
+CONTRIBUTOR_PERMISSIONS = ['read', 'write', 'admin']
 
 ##### Celery #####
 ## Default RabbitMQ broker
@@ -125,9 +130,7 @@ CELERY_IMPORTS = (
 
 ADDONS_REQUESTED = [
     'wiki', 'osffiles',
-    'github', 's3'
-    #'bitbucket', 'figshare', 's3',
-    #'zotero',
+    'github', 's3', 'figshare',
 ]
 
 ADDON_CATEGORIES = [

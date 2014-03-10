@@ -10,7 +10,7 @@ from framework.auth.decorators import must_be_logged_in
 from website.project import decorators
 
 
-@decorators.must_be_contributor
+@decorators.must_have_permission('write')
 @decorators.must_not_be_registration
 def disable_addon(**kwargs):
 

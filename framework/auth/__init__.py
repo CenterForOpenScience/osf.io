@@ -131,7 +131,10 @@ def login(username, password):
 def logout():
     for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname']:
         # todo leave username so login page can persist probable id
-        del session.data[key]
+        try:
+            del session.data[key]
+        except KeyError:
+            pass
     return True
 
 # TODO: verify that this is unused and remove

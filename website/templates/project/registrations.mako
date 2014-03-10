@@ -3,7 +3,7 @@
 
 <div class="page-header">
     <div class="pull-right">
-    % if user['can_edit'] and node['category'] == 'project':
+    % if 'admin' in user['permissions'] and node['category'] == 'project':
         <a href="${node['url']}register" class="btn btn-default" type="button">New Registration</a>
     % else:
         <a class="btn btn-default disabled" type="button">New Registration</a>
