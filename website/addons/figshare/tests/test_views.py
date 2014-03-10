@@ -177,6 +177,12 @@ class TestUtils(DbTestCase):
         ref = views.hgrid.figshare_hgrid_data(self.node_settings, self.auth)
         assert_equal(ref, None)
 
+    @mock.patch('website.addons.figshare.api.Figshare.project')
+    def test_hgrid_deleted_project(self, project):
+        project.return_value = None
+        ref = views.hgrid.figshare_hgrid_data(self.node_settings, self.auth)
+        assert_equal(ref, None)
+
 
 class TestViewsCrud(DbTestCase):
 
