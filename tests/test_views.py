@@ -6,14 +6,15 @@ import unittest
 import json
 import datetime as dt
 import mock
-import hashlib
 import httplib as http
 
+import bson
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 from webtest.app import AppError
 from framework import Q, auth
 from framework.auth.model import User
+from framework.sessions.model import Session
 
 import website.app
 from website.models import Node, Pointer, NodeLog
@@ -606,7 +607,6 @@ class TestAddingContributorViews(DbTestCase):
             n_contributors_pre + len(payload['users']))
 
 
-@unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
 class TestUserInviteViews(DbTestCase):
 
     def setUp(self):
@@ -756,6 +756,7 @@ class TestClaimViews(DbTestCase):
             'email': reg_user.username,
             'fullname': self.given_name,
         })
+
     def test_user_with_removed_unclaimed_url_claiming(self):
         """ Tests that when an unclaimed user is removed from a project, the
         unregistered user object does not retain the token.
@@ -781,148 +782,28 @@ class TestClaimViews(DbTestCase):
             self.user.unclaimed_records.keys()
         )
 
+    @mock.patch('framework.sessions.get_session')
+    def test_claim_endpoint_sets_unreg_session_data_if_token_is_valid(self,
+            mock_get_session):
 
-    @unittest.skip('Incomplete')
-    def test_user_with_claim_url_registers_new_account(self):
-
-        # User goes to the claim page, but a different user (lab_user) is logged in
-        lab_user = AuthUserFactory(fullname="Lab Comp")
-
+        test_session = Session(_id=str(bson.objectid.ObjectId()), data={})
+        mock_get_session.return_value = test_session
         url = self.user.get_claim_url(self.project._primary_key)
-        res = self.app.get(url, auth=lab_user.auth).follow(auth=lab_user.auth)
-
-        # verify that the "Claim Account" form is returned
-        assert_in('Claim Contributor', res.body)
-
-        # Clicks "I am not Lab Comp"
-        # Taken to login/register page
-        res2 = res.click(href="/claim/login").follow()
-        # Fills in Register form
-        form = res2.forms['registerForm']
-        form['register-fullname'] = 'tester'
-        form['register-username'] = 'test@test.com'
-        form['register-username2'] = 'test@test.com'
-        form['register-password'] = 'testing'
-        form['register-password2'] = 'testing'
-        #new_user = AuthUserFactory(fullname="tester", username='test@test.com', password='testing')
-
-        # At this point, the form submission cannot be processed using WebTests.
-        # A session is in place beginning on the user's load of the login page.
-        # Since the user is not logged in, and we're emulating session elsewhere
-        # by passing in HTTP auth credentials, we have no means of persisting
-        # the session. We can register a user, but the session stores the info
-        # necessary for the OSF to then add that user as a contributor.
-        # Code below this comment is included for future reference only.
-
-        # submits
-        # res3 = form.submit()
-        #
-        # assert_in('Registration successful.', res3.body)
-        # assert_in('Successfully claimed contributor', res3.body)
-        #
-        # u = User.find(Q('username', 'eq', 'test@test.com'))[0]
-        # key = ApiKeyFactory()
-        # u.api_keys.append(key)
-        # u.save()
-        # u.auth = ('test', key._primary_key)
-        #
-        # res4 = self.app.get(u.get_confirmation_url('test@test.com')).follow(auth=u.auth)
-        #
-        # assert_in('Dashboard', res4.body)
-        #
-        # # Confirms their email address
-        # # user is now a contributor to self.project
-        # self.project.reload()
-        # #new_user.reload()
-        # self.user.reload()
-        # u.reload()
-        # # taken to dashboard
-        # #assert_in("Dashboard", res3.body)
-
-
-        # assert_not_in(self.user._primary_key, self.project.contributors)
-        # assert_equal(2, len(self.project.contributors))
-        # # user is now a contributor to self.project
-        # assert_in(u._primary_key, self.project.contributors)
-
-    @unittest.skip('Incomplete')
-    def test_user_can_log_in_with_a_different_account(self):
-        right_user = AuthUserFactory(fullname="Right User")
-        # User goes to the claim page, but a different user (lab_user) is logged in
-        lab_user = AuthUserFactory(fullname="Lab Comp")
-
-        url = self.user.get_claim_url(self.project._primary_key)
-        res = self.app.get(url, auth=lab_user.auth).follow(auth=lab_user.auth)
-
-        # verify that the "Claim Account" form is returned
-        assert_in('Claim Contributor', res.body)
-
-        # Clicks "I am not Lab Comp"
-        # Taken to login/register page
-
-        res2 = res.click(href="/claim/login").follow()
-        # Fills in log in form
-        form = res2.forms['signinForm']
-        form['username'] = right_user.username
-        form['password'] = right_user.password
-        # submits
-        res3 = form.submit(auth=right_user.auth).follow(auth=right_user.auth)
-
-        # At this point, the form submission cannot be processed using WebTests.
-        # A session is in place beginning on the user's load of the login page.
-        # Since the user is not logged in, and we're emulating session elsewhere
-        # by passing in HTTP auth credentials, we have no means of persisting
-        # the session. We can register a user, but the session stores the info
-        # necessary for the OSF to then add that user as a contributor.
-        # Code below this comment is included for future reference only.
-
-
-        # self.project.reload()
-        # right_user.reload()
-        # self.user.reload()
-        # # taken to dashboard
-        # assert_in("Dashboard", res3.body)
-        #
-        # # user is now a contributor to self.project
-        # assert_in(right_user._primary_key, self.project.contributors)
-        #
-        # # lab user is not a contributor
-        # assert_not_in(lab_user._primary_key, self.project.contributors)
+        self.app.get(url)
+        assert_in('unreg_user', test_session.data)
 
     def test_claim_user_form_redirects_to_password_confirm_page_if_user_is_logged_in(self):
-        reg_user = UserFactory()
-        url = self.user.get_claim_url(self.project._primary_key)
-        res = self.app.get(url, auth=Auth(user=reg_user))
-
-        # verify that the "Claim Account" form is returned
-        assert_in('Claim Account', res.body)
-
-    def test_claim_user_registered_with_correct_password(self):
         reg_user = AuthUserFactory()
-        reg_user.set_password('killerqueen')
-        reg_user.save()
         url = self.user.get_claim_url(self.project._primary_key)
-        # Follow to password re-enter page
-        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
-
-        # verify that the "Claim Account" form is returned
-        assert_in('Claim Contributor', res.body)
-
-        form = res.forms['claimContributorForm']
-        form['password'] = 'killerqueen'
-        res = form.submit(auth=reg_user.auth).follow(auth=reg_user.auth)
-
-
-        self.project.reload()
-        self.user.reload()
-        # user is now a contributor to the project
-        assert_in(reg_user._primary_key, self.project.contributors)
-
-        # the unregistered user (self.user) is removed as a contributor, and their
-        assert_not_in(self.user._primary_key, self.project.contributors)
-
-        # unclaimed record for the project has been deleted
-        assert_not_in(self.project._primary_key, self.user.unclaimed_records)
+        res = self.app.get(url, auth=reg_user.auth)
+        assert_equal(res.status_code, 302)
+        res = res.follow()
+        token = self.user.get_unclaimed_record(self.project._primary_key)['token']
+        with app.test_request_context():
+            expected = web_url_for('claim_user_registered',
+                pid=self.project._primary_key, uid=self.user._primary_key,
+                token=token)
+            assert_equal(res.request.path, expected)
 
     def test_get_valid_form(self):
         url = self.user.get_claim_url(self.project._primary_key)
