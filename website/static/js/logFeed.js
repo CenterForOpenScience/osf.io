@@ -156,7 +156,6 @@ this.LogFeed = (function(ko, $, global, moment) {
      * A log list feed.
      * @param {string} selector
      * @param {string or Array} data
-     * @param {url} url
      * @param {object} options
      */
 
