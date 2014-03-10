@@ -1580,6 +1580,19 @@ class TestForkNode(DbTestCase):
         fork = self.project.fork_node(user2_auth)
         assert_true(fork)
 
+    def test_fork_registration(self):
+        self.registration = RegistrationFactory(project=self.project)
+        fork = self.registration.fork_node(self.consolidate_auth)
+
+        # fork should not be a registration
+        assert_false(fork.is_registration)
+
+        # Compare fork to original
+        self._cmp_fork_original(self.user,
+                                datetime.datetime.utcnow(),
+                                fork,
+                                self.registration)
+
 
 class TestRegisterNode(DbTestCase):
 

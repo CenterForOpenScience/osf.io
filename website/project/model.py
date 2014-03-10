@@ -1053,6 +1053,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         forked.title = title + forked.title
         forked.is_fork = True
+        forked.is_registration = False
         forked.forked_date = when
         forked.forked_from = original
         forked.creator = user
