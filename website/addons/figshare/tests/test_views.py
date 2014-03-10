@@ -320,3 +320,8 @@ class TestViewsAuth(DbTestCase):
         url = '/api/v1/project/{0}/figshare/oauth'.format(self.project._id)
         rv = self.app.get(url, auth=self.user.auth).maybe_follow()
         pass
+
+
+    #TODO Finish me
+    def test_oauth_bad_token(self):
+        pass

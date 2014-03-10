@@ -2,7 +2,7 @@
 
 
         $('#figshareAddKey').on('click', function() {
-            if($(this)[0].outerText == 'Authorize: Create Access Token')
+            if ($(this)[0].outerText == 'Authorize: Create Access Token')
                 window.location.href = nodeApiUrl + 'figshare/oauth/';
             $.ajax({
                 type: 'POST',
@@ -52,7 +52,7 @@
             }
         });
 
-        $('#figshareCreateFileSet').on('click',function() {
+        $('#figshareCreateFileSet').on('click', function() {
             createFileSet();
         });
 
@@ -64,25 +64,29 @@
         var $select = $elm.find('select');
 
         bootbox.prompt('Name your new file set', function(filesetName) {
-            $.ajax({
-                type: 'POST',
-                url: nodeApiUrl + 'figshare/new/fileset/',
-                contentType: 'application/json',
-                dataType: 'json',
-                data: JSON.stringify({name: filesetName}),
-                success: function(response) {
-                    response.article_id = 'fileset_' + response.items[0].article_id;
-                    $select.append('<option value="' + response.article_id + '">' + filesetName + ':' + response.items[0].article_id + '</option>');
-                    $select.val(response.article_id);
-                    $('#figshareId').val(response.article_id)
-                    $('#figshareTitle').val(filesetName)
-                },
-                error: function() {
-                    $('#addonSettingsFigshare').find('.addon-settings-message')
-                        .text('Could not create file set')
-                        .removeClass('text-success').addClass('text-danger')
-                        .fadeOut(100).fadeIn();
-                }
-            });
+            if (filesetName && filesetName.trim() != '') {
+                $.ajax({
+                    type: 'POST',
+                    url: nodeApiUrl + 'figshare/new/fileset/',
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    data: JSON.stringify({
+                        name: filesetName
+                    }),
+                    success: function(response) {
+                        response.article_id = 'fileset_' + response.items[0].article_id;
+                        $select.append('<option value="' + response.article_id + '">' + filesetName + ':' + response.items[0].article_id + '</option>');
+                        $select.val(response.article_id);
+                        $('#figshareId').val(response.article_id)
+                        $('#figshareTitle').val(filesetName)
+                    },
+                    error: function() {
+                        $('#addonSettingsFigshare').find('.addon-settings-message')
+                            .text('Could not create file set')
+                            .removeClass('text-success').addClass('text-danger')
+                            .fadeOut(100).fadeIn();
+                    }
+                });
+            }
         });
     };

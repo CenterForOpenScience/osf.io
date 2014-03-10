@@ -24,11 +24,17 @@ $('#figsharePublishArticle').on('click', function(){
 % endif
 <h3>Versions: ${file_version} </h3>
 <a href="${version_url}">Version History</a><br />
+
 %if download_url:
     <a href="${download_url}">Download</a><br />
 %endif
+
 %if figshare_url:
     <a href="${figshare_url}">View on FigShare</a><br />
+%endif
+
+%if file_status == 'Public':
+    FigShare given DOI: <a href="${doi}">${doi}</a><br />
 %endif
 </%def>
 

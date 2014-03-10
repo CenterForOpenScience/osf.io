@@ -100,6 +100,7 @@ def file_as_article(figshare):
     }
     return article
 
+
 @decorators.must_be_contributor_or_public
 @decorators.must_have_addon('figshare', 'node')
 @decorators.must_have_permission('write')
@@ -118,6 +119,9 @@ def figshare_upload(*args, **kwargs):
         item = connect.create_article(figshare, file_as_article(upload))
     else:
         item = connect.article(figshare, fs_id)
+
+    if not item:
+        raise HTTPError(http.BAD_REQUEST)
 
     resp = connect.upload_file(node, figshare, item['items'][0], upload)
     #TODO Clean me up
@@ -298,10 +302,10 @@ def figshare_view_file(*args, **kwargs):
         item = connect.project(node_settings, node_settings.figshare_id)
     else:
         item = connect.article(node_settings, node_settings.figshare_id)
+    import pdb; pdb.set_trace()
 
     if not article_id in str(item):
         raise HTTPError(http.NOT_FOUND)
-
     article = connect.article(node_settings, article_id)
 
     found = False
@@ -374,6 +378,7 @@ def figshare_view_file(*args, **kwargs):
         'download_url': found.get('download_url'),
         'file_status': article['items'][0]['status'],
         'file_version': article['items'][0]['version'],
+        'doi': 'http://dx.doi.org/10.6084/m9.figshare.{0}'.format(article['items'][0]['article_id']),
         'version_url': version_url,
         'figshare_url': figshare_url,
         'parent_type': 'fileset' if article['items'][0]['defined_type'] == 'fileset' else 'singlefile',
@@ -409,7 +414,7 @@ def figshare_delete_file(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     connect = Figshare.from_settings(figshare.user_settings)
-    connect.remove_article_from_project(figshare, figshare.figshare_id, article_id)
+    #connect.remove_article_from_project(figshare, figshare.figshare_id, article_id)
     return connect.delete_file(node, figshare, article_id, file_id)
 
 
