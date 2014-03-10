@@ -302,7 +302,6 @@ def figshare_view_file(*args, **kwargs):
         item = connect.project(node_settings, node_settings.figshare_id)
     else:
         item = connect.article(node_settings, node_settings.figshare_id)
-    import pdb; pdb.set_trace()
 
     if not article_id in str(item):
         raise HTTPError(http.NOT_FOUND)
