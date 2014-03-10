@@ -465,10 +465,9 @@ def claim_user_registered(**kwargs):
         'uid': uid, 'pid': pid, 'token': token
     }
 
+    sign_out_url = '/account/?logout=1&next={0}'.format(request.path)
     if not current_user:
-        next_url = web_url_for('claim_user_registered', pid=pid, uid=uid, token=token, _external=True)
-        response = framework.redirect(web_url_for('claim_user_registered_login',
-                        uid=uid, pid=pid, next=next_url))
+        response = framework.redirect(sign_out_url)
         return response
 
     form = PasswordForm(request.form)
@@ -494,7 +493,7 @@ def claim_user_registered(**kwargs):
     return {
         'form': form_ret,
         'user': user_ret,
-        'signOutUrl': '/account/?logout=1&next={0}'.format(request.path)
+        'signOutUrl': sign_out_url
     }
 
 
