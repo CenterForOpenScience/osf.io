@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from mako.template import Template
 import blinker
 
 from framework import session, create_session
 from framework import goback
 import framework.bcrypt as bcrypt
-from framework.email.tasks import send_email
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 from framework.auth.exceptions import (DuplicateEmailError, LoginNotAllowedError,
                                         PasswordIncorrectError)
 
-import website
 from model import User
 
 
@@ -138,55 +135,6 @@ def logout():
             pass
     return True
 
-# TODO: verify that this is unused and remove
-def add_unclaimed_user(email, fullname):
-    email = email.strip().lower()
-    fullname = fullname.strip()
-
-    user = get_user(username=email)
-    if user:
-        return user
-    else:
-        user_based_on_email = User.find_one(
-            Q('emails', 'eq', email)
-        )
-        if user_based_on_email:
-            return user_based_on_email
-        newUser = User(
-            fullname = fullname,
-            emails = [email],
-        )
-        newUser._optimistic_insert()
-        newUser.save()
-        return newUser
-
-
-# TODO: Use mails.py interface
-WELCOME_EMAIL_SUBJECT = 'Welcome to the Open Science Framework'
-WELCOME_EMAIL_TEMPLATE = Template('''
-Hello ${fullname},
-
-Welcome to the Open Science Framework! To learn more about the OSF, check out our Getting Started guide [ https://osf.io/getting-started/ ] and our frequently asked questions [ https://osf.io/faq/ ].
-
-If you have any questions or comments about the OSF, please let us know at [ contact@osf.io ]!
-
-Follow OSF at @OSFramework on Twitter [ https://twitter.com/OSFramework ]
-Like us on Facebook [ https://www.facebook.com/OpenScienceFramework ]
-
-From the Open Science Framework Robot
-''')
-
-
-def send_welcome_email(user):
-    send_email.delay(
-        from_addr=website.settings.FROM_EMAIL,
-        to_addr=user.username,
-        subject=WELCOME_EMAIL_SUBJECT,
-        message=WELCOME_EMAIL_TEMPLATE.render(
-            fullname=user.fullname,
-        ),
-        mimetype='plain',
-    )
 
 def register_unconfirmed(username, password, fullname):
     user = get_user(username=username)
@@ -213,4 +161,5 @@ def register(username, password, fullname):
     user.date_confirmed = user.date_registered
     user.emails.append(username)
     user.save()
+    user_registered.send(user)
     return user
