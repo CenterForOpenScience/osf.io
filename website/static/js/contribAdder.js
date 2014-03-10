@@ -133,8 +133,8 @@ this.ContribAdder = (function($, global, undefined) {
                 value: 'admin',
                 source: [
                     {value: 'read', text: 'Read'},
-                    {value: 'write', text: 'Write'},
-                    {value: 'admin', text: 'Admin'}
+                    {value: 'write', text: 'Read + Write'},
+                    {value: 'admin', text: 'Administrator'}
                 ],
                 success: function(response, value) {
                     data.permission(value);

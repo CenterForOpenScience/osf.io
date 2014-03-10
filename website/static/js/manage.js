@@ -22,13 +22,6 @@ this.Manage = (function(window, $, ko, bootbox) {
             func: function(item) {
                 return item.surname;
             }
-        },
-        contributions: {
-            label: 'Contributions',
-            order: -1,
-            func: function(item) {
-                return item.contributions;
-            }
         }
     };
 
@@ -40,8 +33,8 @@ this.Manage = (function(window, $, ko, bootbox) {
             value: data.permission(),
             source: [
                 {value: 'read', text: 'Read'},
-                {value: 'write', text: 'Write'},
-                {value: 'admin', text: 'Admin'}
+                {value: 'write', text: 'Read + Write'},
+                {value: 'admin', text: 'Administrator'}
             ],
             success: function(response, value) {
                 data.permission(value);

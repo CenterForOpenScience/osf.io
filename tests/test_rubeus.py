@@ -215,7 +215,7 @@ class TestRubeus(DbTestCase):
         collector = rubeus.NodeFileCollector(
             self.project, Auth(user=UserFactory())
         )
-        nodes = collector._collect_components(self.project)
+        nodes = collector._collect_components(self.project, visited=[])
         assert_equal(len(nodes), 0)
 
     def test_serialized_pointer_has_flag_indicating_its_a_pointer(self):
