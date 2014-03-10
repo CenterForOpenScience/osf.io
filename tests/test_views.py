@@ -1572,6 +1572,16 @@ class TestComments(DbTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_false(getattr(self.project, 'commented', []))
 
+    def test_add_comment_toolong(self):
+        self._configure_project(self.project, 'public')
+        res = self._add_comment(
+            self.project, content='toolong' * 500,
+            auth=self.project.creator.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_false(getattr(self.project, 'commented', []))
+
     def test_add_comment_whitespace(self):
         self._configure_project(self.project, 'public')
         res = self._add_comment(
@@ -1602,6 +1612,41 @@ class TestComments(DbTestCase):
         assert_equal(res.json['content'], 'edited')
 
         assert_equal(comment.content, 'edited')
+
+    def test_edit_comment_short(self):
+        self._configure_project(self.project, 'public')
+        comment = CommentFactory(node=self.project, content='short')
+        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
+        res = self.app.put_json(
+            url,
+            {
+                'content': '',
+                'isPublic': 'private',
+            },
+            auth=self.project.creator.auth,
+            expect_errors=True,
+        )
+        comment.reload()
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(comment.content, 'short')
+
+
+    def test_edit_comment_toolong(self):
+        self._configure_project(self.project, 'public')
+        comment = CommentFactory(node=self.project, content='short')
+        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
+        res = self.app.put_json(
+            url,
+            {
+                'content': 'toolong' * 500,
+                'isPublic': 'private',
+            },
+            auth=self.project.creator.auth,
+            expect_errors=True,
+        )
+        comment.reload()
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(comment.content, 'short')
 
     def test_edit_comment_non_author(self):
         "Contributors who are not the comment author cannot edit."
