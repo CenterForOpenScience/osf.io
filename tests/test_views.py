@@ -24,7 +24,7 @@ from website.project.views.contributor import (
     _add_contributor_json, send_claim_email,
     serialize_unregistered, deserialize_contributors
 )
-from website.util import api_url_for
+from website.util import api_url_for, web_url_for
 from website import settings, mails
 from website.util import rubeus
 from website.project.views.node import _view_project
@@ -782,26 +782,17 @@ class TestClaimViews(DbTestCase):
             self.user.unclaimed_records.keys()
         )
 
-    @mock.patch('framework.sessions.get_session')
-    def test_claim_endpoint_sets_unreg_session_data_if_token_is_valid(self,
-            mock_get_session):
-
-        test_session = Session(_id=str(bson.objectid.ObjectId()), data={})
-        mock_get_session.return_value = test_session
-        url = self.user.get_claim_url(self.project._primary_key)
-        self.app.get(url)
-        assert_in('unreg_user', test_session.data)
-
     def test_claim_user_form_redirects_to_password_confirm_page_if_user_is_logged_in(self):
         reg_user = AuthUserFactory()
         url = self.user.get_claim_url(self.project._primary_key)
         res = self.app.get(url, auth=reg_user.auth)
         assert_equal(res.status_code, 302)
-        res = res.follow()
-        token = self.user.get_unclaimed_record(self.project._primary_key)['token']
         with app.test_request_context():
+            res = res.follow(auth=reg_user.auth)
+            token = self.user.get_unclaimed_record(self.project._primary_key)['token']
             expected = web_url_for('claim_user_registered',
-                pid=self.project._primary_key, uid=self.user._primary_key,
+                pid=self.project._primary_key,
+                uid=self.user._primary_key,
                 token=token)
             assert_equal(res.request.path, expected)
 
@@ -1703,7 +1694,7 @@ class TestSearchViews(DbTestCase):
         assert_equal(freddie['fullname'], self.contrib1.fullname)
         #TODO Should I be passing?
         assert_equal(freddie['email'], self.contrib1.username)
-        assert_in('gravatar', freddie)
+        assert_in('gravatar_url', freddie)
         assert_equal(freddie['registered'], self.contrib1.is_registered)
         assert_equal(freddie['active'], self.contrib1.is_active())
 
