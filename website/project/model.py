@@ -712,6 +712,9 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         new = self.clone()
 
+        # clear permissions, which are not cleared by the clone method
+        new.permissions = {}
+
         # set attributes which may be overridden by `changes`
         new.is_public = False
 
