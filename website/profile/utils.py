@@ -34,7 +34,6 @@ def serialize_user(user, node=None, full=False):
     rv = {
         'id': str(user._primary_key),
         'registered': user.is_registered,
-        'username': user.username,
         'surname': user.family_name,
         'fullname': user.fullname,
         'gravatar_url': user.gravatar_url,

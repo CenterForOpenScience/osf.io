@@ -29,8 +29,7 @@ def figshare_set_config(*args, **kwargs):
     except:
         raise HTTPError(http.BAD_REQUEST)
 
-    #Limit to projects only
-    if not figshare_id or not figshare_title or figshare_type != 'project':
+    if not figshare_id or not (figshare_type == 'project' or figshare_type == 'fileset'):
         raise HTTPError(http.BAD_REQUEST)
 
     changed = (
@@ -38,7 +37,6 @@ def figshare_set_config(*args, **kwargs):
         figshare_type != node_settings.figshare_type or
         figshare_title != node_settings.figshare_title
     )
-
     if changed:
         node_settings.figshare_id = figshare_id
         node_settings.figshare_type = figshare_type

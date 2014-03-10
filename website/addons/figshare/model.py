@@ -6,6 +6,7 @@ import json
 from framework import fields
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import GuidFile
+from framework.status import push_status_message
 
 from .api import Figshare
 from . import settings as figshare_settings
@@ -34,6 +35,10 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
     @property
     def has_auth(self):
         return self.oauth_access_token is not None
+
+    def remove_auth(self):
+        self.oauth_access_token = None
+        self.oauth_access_token_secret = None
 
     def to_json(self, user):
         rv = super(AddonFigShareUserSettings, self).to_json(user)
@@ -75,6 +80,13 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
         figshare_user = user.get_addon('figshare')
 
+        if self.has_auth:
+            ops = Figshare.from_settings(self.user_settings).get_options()
+
+            if ops == 401:
+                self.user_settings.remove_auth()
+                push_status_message(messages.OAUTH_INVALID)
+
         rv.update({
             'figshare_id': self.figshare_id or '',
             'figshare_type': self.figshare_type or '',
@@ -90,8 +102,9 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 'authorized_user': self.user_settings.owner.fullname,
                 'owner_url': self.user_settings.owner.url,
                 'is_owner': user == self.user_settings.owner,
-                'figshare_options': Figshare.from_settings(self.user_settings).get_options(),
+                'figshare_options': ops,
             })
+
         return rv
 
     #############

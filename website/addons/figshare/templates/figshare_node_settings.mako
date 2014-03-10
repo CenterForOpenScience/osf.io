@@ -21,20 +21,26 @@
                 <select id="figshareSelectProject" class="form-control" ${'' if is_owner and not is_registration else 'disabled'}>
                     <option>-----</option>
                     %if is_owner:
+                        ##TODO Better naming scheme and remove the spilt?
                         % for project in figshare_options:
-                            <option value="${project['value']}" ${'selected' if project['label'] == figshare_title else ''}>${project['label']}</option>
+                            <option value="${project['value']}" ${'selected' if project['label'] == figshare_title else ''}>
+                            ${'{0}:{1}'.format(project['label'] or 'Unnamed', project['value'].split('_')[1])}
+                            ${' (project)' if 'project' in project['value'] else ''}
+                            </option>
                         % endfor
                     %else:
-                        <option value="${figshare_type + '_' + figshare_id}" selected>${figshare_title}</option>>
+                        <option value="${figshare_type + '_' + figshare_id}" selected>
+                            ${'{0}:{1}'.format(figshare_title or 'Unnamed', figshare_id)}
+                            </option>>
                     %endif
                 </select>
             </div>
 
-        ##% if is_owner and not is_registration:
-          ##  <div class="col-md-6">
-            ##    <a id="figshareCreateProject" class="btn btn-default">Create Project</a>
-            ##/div>
-        ##% endif
+        % if is_owner and not is_registration:
+            <div class="col-md-6">
+                <a id="figshareCreateFileSet" class="btn btn-default">Create File Set</a>
+            </div>
+        % endif
 
 
     </div>
