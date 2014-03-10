@@ -70,13 +70,12 @@ this.LogFeed = (function(ko, $, global, moment) {
      */
     var LogsViewModel = function(logs, url) {
         if (logs.length<10){
-            $(".moreLogs").css("display",'none');
+            $(".moreLogs").hide();
         }
         var self = this;
         self.logs = ko.observableArray(logs);
         var page_num=  0;
         self.url = url;
-        self.test = 'foo';
 
         //send request to get more logs when the more button is clicked
         self.moreLogs = function(){
@@ -92,7 +91,7 @@ this.LogFeed = (function(ko, $, global, moment) {
                     // Initialize LogViewModel
                     var logs = response['logs'];
                     if (logs.length<10){
-                        $(".moreLogs").css("display",'none');
+                        $(".moreLogs").hide();
                     }
                     var logModelObjects = createLogs(logs);  // Array of Log model objects
                     for(var i=0;i<logModelObjects.length;i++)
@@ -107,7 +106,7 @@ this.LogFeed = (function(ko, $, global, moment) {
             var logs = self.logs();
             if (logs.length) {
                 var tz =  moment(logs[0].date).format('ZZ');
-                    return tz;
+                return tz;
             }
             return '';
         });
@@ -154,23 +153,24 @@ this.LogFeed = (function(ko, $, global, moment) {
      * @param {url} url
      * @param {object} options
      */
+    var initVielModel = function(self,logs,url){
+        self.logs = createLogs(logs);
+        self.viewModel = new LogsViewModel(self.logs, url);
+        self.init();
+    }
+
     function LogFeed(selector, data, url, options) {
         var self = this;
         self.selector = selector;
         self.$element = $(selector);
-        self.url = url
+        self.url=url;
         self.options = $.extend({}, defaults, options);
         self.$progBar = $(self.options.progBar);
         if (Array.isArray(data)) { // data is an array of log object from server
-            self.logs = createLogs(data);
-            self.viewModel = new LogsViewModel(self.logs, self.url);
-            self.init();
+            initVielModel(self,data,self.url);
         } else { // data is a URL
             $.getJSON(data, function(response) {
-                var logs = response.logs;
-                self.logs = createLogs(logs);
-                self.viewModel = new LogsViewModel(self.logs, data);
-                self.init();
+                  initVielModel(self,response.logs,data);
             });
         }
     }

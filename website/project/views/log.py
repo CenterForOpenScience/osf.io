@@ -39,7 +39,7 @@ def _get_logs(node, count, auth, offset=0):
     """
     logs = []
 
-    for log in list(reversed(node.logs))[offset:]:
+    for log in (x for idx, x in enumerate(reversed(node.logs)) if idx >= offset):
         if log and log.node__logged and log.node__logged[0].can_view(auth):
             logs.append(log.serialize())
         if len(logs) >= count:
