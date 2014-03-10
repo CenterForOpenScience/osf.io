@@ -357,7 +357,7 @@ def figshare_view_file(*args, **kwargs):
         filename, size, filedata = connect.get_file(node_settings, found)
 
         if figshare_settings.MAX_RENDER_SIZE is not None and size > figshare_settings.MAX_RENDER_SIZE:
-            rendered = messages.FIGSHARE_VIEW_FILE_OVERSIZE.format(
+            rendered = messages.FIGSHARE_VIEW_FILE_OVERSIZED.format(
                 url=found.get('download_url'))
         else:
             rendered = get_cache_content(
