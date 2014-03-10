@@ -294,9 +294,12 @@ def figshare_view_file(*args, **kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     connect = Figshare.from_settings(node_settings.user_settings)
-    project = connect.project(node_settings, node_settings.figshare_id)
+    if node_settings.figshare_type == 'project':
+        item = connect.project(node_settings, node_settings.figshare_id)
+    else:
+        item = connect.article(node_settings, node_settings.figshare_id)
 
-    if not article_id in str(project):
+    if not article_id in str(item):
         raise HTTPError(http.NOT_FOUND)
 
     article = connect.article(node_settings, article_id)
@@ -327,6 +330,12 @@ def figshare_view_file(*args, **kwargs):
         return redirect(redirect_url)
 
     private = not(article['items'][0]['status'] == 'Public')
+
+    figshare_url = 'http://figshare.com/'
+    if private:
+        figshare_url += 'preview/_preview/{0}'.format(article['items'][0]['article_id'])
+    else:
+        figshare_url += 'articles/{0}/{1}'.format(article['items'][0]['title'].replace(' ', '_'),article['items'][0]['article_id'])
 
     version_url = "http://figshare.com/articles/{filename}/{file_id}".format(
         filename=article['items'][0]['title'], file_id=article['items'][0]['article_id'])
@@ -366,6 +375,7 @@ def figshare_view_file(*args, **kwargs):
         'file_status': article['items'][0]['status'],
         'file_version': article['items'][0]['version'],
         'version_url': version_url,
+        'figshare_url': figshare_url,
         'parent_type': 'fileset' if article['items'][0]['defined_type'] == 'fileset' else 'singlefile',
         'parent_id': article['items'][0]['article_id'],
         'figshare_categories': categories,

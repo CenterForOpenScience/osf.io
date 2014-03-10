@@ -25,6 +25,7 @@
                         % for project in figshare_options:
                             <option value="${project['value']}" ${'selected' if project['label'] == figshare_title else ''}>
                             ${'{0}:{1}'.format(project['label'] or 'Unnamed', project['value'].split('_')[1])}
+                            ${' (project)' if 'project' in project['value'] else ''}
                             </option>
                         % endfor
                     %else:
