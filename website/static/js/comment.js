@@ -2,6 +2,8 @@ this.Comment = (function(window, $, ko) {
 
     'use strict';
 
+    // Maximum length for comments, in characters
+    var MAXLENGTH = 500;
 
     var ABUSE_CATEGORIES = {
         spam: 'Spam or advertising',
@@ -22,7 +24,7 @@ this.Comment = (function(window, $, ko) {
 
     var notEmpty = function(value) {
         return !!$.trim(value);
-    }
+    };
 
     var exclusify = function(subscriber, subscribees) {
         subscriber.subscribe(function(value) {
@@ -56,16 +58,22 @@ this.Comment = (function(window, $, ko) {
         self._loaded = false;
         self.id = ko.observable();
 
+        self.errorMessage = ko.observable();
         self.editErrorMessage = ko.observable();
         self.replyErrorMessage = ko.observable();
 
         self.replying = ko.observable(false);
         self.replyContent = ko.observable('');
 
+        self.submittingReply = ko.observable(false);
+
         self.comments = ko.observableArray();
 
         self.replyNotEmpty = ko.computed(function() {
             return notEmpty(self.replyContent());
+        });
+        self.saveButtonText = ko.computed(function() {
+            return self.submittingReply() ? 'Saving' : 'Save';
         });
 
     };
@@ -81,6 +89,7 @@ this.Comment = (function(window, $, ko) {
     BaseComment.prototype.cancelReply = function() {
         this.replyContent('');
         this.replying(false);
+        this.submittingReply(false);
         this.replyErrorMessage('');
     };
 
@@ -123,6 +132,11 @@ this.Comment = (function(window, $, ko) {
             self.replyErrorMessage('Please enter a comment');
             return
         }
+        // Quit if already submitting reply
+        if (self.submittingReply()) {
+            return;
+        }
+        self.submittingReply(true);
         $.osf.postJSON(
             nodeApiUrl + 'comment/',
             {
@@ -145,7 +159,10 @@ this.Comment = (function(window, $, ko) {
                 }
                 self.onSubmitSuccess(response);
             }
-        );
+        ).fail(function(xhr) {
+            self.cancelReply();
+            self.errorMessage('Could not submit comment');
+        });
     };
 
     /*
@@ -243,7 +260,7 @@ this.Comment = (function(window, $, ko) {
             .closest('.comment-container')
             .find('[data-toggle="tooltip"]');
         if (!self.content()) {
-            self.editErrorMessage('Please enter a comment');
+            self.errorMessage('Please enter a comment');
             return
         }
         $.osf.putJSON(
@@ -263,6 +280,7 @@ this.Comment = (function(window, $, ko) {
             }
         ).fail(function() {
             self.cancelEdit();
+            self.errorMessage('Could not submit comment');
         });
     };
 
@@ -388,6 +406,7 @@ this.Comment = (function(window, $, ko) {
         var self = this;
 
         self.$root = self;
+        self.MAXLENGTH = MAXLENGTH;
 
         self.editors = 0;
         self.commented = ko.observable(false);
@@ -427,6 +446,7 @@ this.Comment = (function(window, $, ko) {
 
     var init = function(selector, userName, canComment, hasChildren) {
         var viewModel = new CommentListModel(userName, canComment, hasChildren);
+        window.viewModel = viewModel;
         var $elm = $(selector);
         if (!$elm.length) {
             throw('No results found for selector');
