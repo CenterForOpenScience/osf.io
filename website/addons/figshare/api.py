@@ -35,6 +35,7 @@ class Figshare(object):
                 resource_owner_secret=owner_secret,
                 signature_type='auth_header'
             )
+        self.last_error = None
 
     @classmethod
     def from_settings(cls, settings):
@@ -47,6 +48,11 @@ class Figshare(object):
                 owner_token=settings.oauth_access_token,
                 owner_secret=settings.oauth_access_token_secret,
             )
+
+    def _get_last_error(self):
+        e = self.last_error
+        self.last_error = None
+        return e
 
     def _send(self, url, method='get', output='json', cache=True, **kwargs):
         """
@@ -68,6 +74,7 @@ class Figshare(object):
                     rv = rv()
             return rv
         else:
+            self.last_error = req.status_code
             return False
 
     def _send_with_data(self, url, method='post', output='json', **kwargs):
@@ -213,6 +220,8 @@ class Figshare(object):
     def get_options(self):
         projects = self._send("http://api.figshare.com/v1/my_data/projects")
         articles = self._send("http://api.figshare.com/v1/my_data/articles")
+        if not projects or not articles:
+            return self._get_last_error()
         return [{'label': project['title'], 'value': 'project_{0}'.format(project['id'])} for project in projects] + [{'label': article['title'], 'value': 'fileset_{0}'.format(article['article_id'])} for article in articles['items'] if article['defined_type']=='fileset']
 
     def get_file(self, node_settings, found):
