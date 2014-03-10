@@ -186,30 +186,39 @@ def collect_addon_assets(node):
     }
 
 
-def collect_addon_js(node):
+# TODO: Abstract static collectors
+def collect_addon_js(node, visited=None):
     """Collect JavaScript includes for all add-ons implementing HGrid views.
 
     :return list: List of JavaScript include paths
 
     """
     # NOTE: must coerce to list so it is JSON-serializable
+    visited = visited or []
+    visited.append(node._id)
     js = set()
     for addon in node.get_addons():
         js = js.union(addon.config.include_js.get('files', []))
     for each in node.nodes:
-        js = js.union(collect_addon_js(each))
+        if each._id not in visited:
+            visited.append(each._id)
+            js = js.union(collect_addon_js(each, visited=visited))
     return js
 
 
-def collect_addon_css(node):
+def collect_addon_css(node, visited=None):
     """Collect CSS includes for all addons-ons implementing Hgrid views.
 
     :return list: List of CSS include paths
 
     """
+    visited = visited or []
+    visited.append(node._id)
     css = set()
     for addon in node.get_addons():
         css = css.union(addon.config.include_css.get('files', []))
     for each in node.nodes:
-        css = css.union(collect_addon_css(each))
+        if each._id not in visited:
+            visited.append(each._id)
+            css = css.union(collect_addon_css(each, visited=visited))
     return css
