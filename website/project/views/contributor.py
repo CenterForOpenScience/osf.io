@@ -456,6 +456,16 @@ def claim_user_registered(**kwargs):
     """
     node = kwargs['node'] or kwargs['project']
     current_user = framework.auth.get_current_user()
+    sign_out_url = web_url_for('auth_login', logout=True, next=request.path)
+    if not current_user:
+        response = framework.redirect(sign_out_url)
+        return response
+    # Logged in user should not be a contributor the project
+    if node.is_contributor(current_user):
+        data = {'message_short': 'Already a contributor',
+                'message_long': 'The logged-in user is already a contributor to '
+                'this project. Would you like to <a href="/logout/">log out</a>?'}
+        raise HTTPError(http.BAD_REQUEST, data=data)
     uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
     unreg_user = User.load(uid)
     if not verify_claim_token(unreg_user, token, pid=node._primary_key):
@@ -464,10 +474,6 @@ def claim_user_registered(**kwargs):
     session.data['unreg_user'] = {
         'uid': uid, 'pid': pid, 'token': token
     }
-    sign_out_url = web_url_for('auth_login', logout=True, next=request.path)
-    if not current_user:
-        response = framework.redirect(sign_out_url)
-        return response
 
     form = PasswordForm(request.form)
     if request.method == 'POST':

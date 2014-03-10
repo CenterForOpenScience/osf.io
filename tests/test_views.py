@@ -896,10 +896,22 @@ class TestClaimViews(DbTestCase):
         with app.test_request_context():
             token = self.user.get_unclaimed_record(self.project._primary_key)['token']
             url = web_url_for('claim_user_registered', uid=self.user._primary_key,
-                pid=self.project._primary_key, token='123')
+                pid=self.project._primary_key, token='badtoken')
         res = self.app.get(url, expect_errors=400)
         assert_equal(res.status_code, 400)
 
+    def test_cannot_claim_user_with_user_who_is_already_contributor(self):
+        # user who is already a contirbutor to the project
+        contrib = AuthUserFactory.build()
+        contrib.set_password('underpressure')
+        contrib.save()
+        self.project.add_contributor(contrib, auth=Auth(self.project.creator))
+        self.project.save()
+        # Claiming user goes to claim url, but contrib is already logged in
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(url, auth=contrib.auth).follow(auth=contrib.auth, expect_errors=True)
+        # Response is a 400
+        assert_equal(res.status_code, 400)
 
 class TestWatchViews(DbTestCase):
 
