@@ -494,6 +494,7 @@ def claim_user_registered(**kwargs):
     return {
         'form': form_ret,
         'user': user_ret,
+        'signOutUrl': '/account/?logout=1&next={0}'.format(request.path)
     }
 
 
