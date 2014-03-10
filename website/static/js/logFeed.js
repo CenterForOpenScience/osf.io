@@ -146,6 +146,12 @@ this.LogFeed = (function(ko, $, global, moment) {
         progBar: '#logProgressBar'
     };
 
+
+    var initViewModel = function(self, logs, url){
+        self.logs = createLogs(logs);
+        self.viewModel = new LogsViewModel(self.logs, url);
+        self.init();
+    }
     /**
      * A log list feed.
      * @param {string} selector
@@ -153,24 +159,18 @@ this.LogFeed = (function(ko, $, global, moment) {
      * @param {url} url
      * @param {object} options
      */
-    var initVielModel = function(self,logs,url){
-        self.logs = createLogs(logs);
-        self.viewModel = new LogsViewModel(self.logs, url);
-        self.init();
-    }
 
-    function LogFeed(selector, data, url, options) {
+    function LogFeed(selector, data, options) {
         var self = this;
         self.selector = selector;
         self.$element = $(selector);
-        self.url=url;
         self.options = $.extend({}, defaults, options);
         self.$progBar = $(self.options.progBar);
         if (Array.isArray(data)) { // data is an array of log object from server
-            initVielModel(self,data,self.url);
+            initViewModel(self,data, self.options.url);
         } else { // data is a URL
             $.getJSON(data, function(response) {
-                  initVielModel(self,response.logs,data);
+                  initViewModel(self,response.logs,data);
             });
         }
     }

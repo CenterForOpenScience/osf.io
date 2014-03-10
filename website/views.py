@@ -116,10 +116,8 @@ def watched_logs_get(**kwargs):
     page_size = 10
     offset = page_num * page_size
     recent_log_ids = list(user.get_recent_log_ids())[offset:][:page_size]
-    logs = [model.NodeLog.load(id) for id in recent_log_ids]
-    return {
-        "logs": [log.serialize() for log in logs]
-    }
+    logs = (model.NodeLog.load(id) for id in recent_log_ids)
+    return {"logs": [log.serialize() for log in logs]}
 
 
 def reproducibility():
