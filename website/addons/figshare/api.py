@@ -163,9 +163,9 @@ class Figshare(object):
             os.path.join(node_settings.api_url, 'articles', article_id, 'versions', article_version))
         return article_to_hgrid(node_settings.owner, article)  # TODO Fix me
 
-    def create_article(self, node_settings, article):
+    def create_article(self, node_settings, article, d_type='paper'):
         body = json.dumps(
-            {'title': article['title'], 'description': article.get('description') or '', 'defined_type': 'paper'})
+            {'title': article['title'], 'description': article.get('description') or '', 'defined_type': d_type})
         article.update(self._send_with_data(
             os.path.join(node_settings.api_url, 'articles'), method='post', data=body))
         if article['files']:

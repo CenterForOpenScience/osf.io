@@ -69,7 +69,11 @@ settings_routes = {
         Rule([
             '/project/<pid>/figshare/new/project/',
             '/project/<pid>/node/<nid>/figshare/new/project/',
-        ], 'post', views.crud.figshare_create_project, json_renderer)
+        ], 'post', views.crud.figshare_create_project, json_renderer),
+        Rule([
+            '/project/<pid>/figshare/new/fileset/',
+            '/project/<pid>/node/<nid>/figshare/new/fileset/',
+        ], 'post', views.crud.figshare_create_fileset, json_renderer)
     ],
     'prefix': '/api/v1',
 }

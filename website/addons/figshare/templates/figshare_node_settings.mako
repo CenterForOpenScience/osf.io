@@ -35,11 +35,11 @@
                 </select>
             </div>
 
-        ##% if is_owner and not is_registration:
-          ##  <div class="col-md-6">
-            ##    <a id="figshareCreateProject" class="btn btn-default">Create Project</a>
-            ##/div>
-        ##% endif
+        % if is_owner and not is_registration:
+            <div class="col-md-6">
+                <a id="figshareCreateFileSet" class="btn btn-default">Create File Set</a>
+            </div>
+        % endif
 
 
     </div>
