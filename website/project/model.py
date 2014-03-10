@@ -564,7 +564,19 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.save()
 
     def set_permissions(self, user, permissions, save=False):
+        """Set permissions for a user.
+
+        :param User user: User whose permissions to set
+        :param list permissions: List of permissions
+        :param bool save: Save changes
+
+        """
         self.permissions[user._id] = permissions
+        # Trigger callback
+        self.callback(
+            'after_set_permissions',
+            user=user, permissions=permissions
+        )
         if save:
             self.save()
 
@@ -1888,6 +1900,13 @@ class Node(GuidStoredObject, AddonModelMixin):
                 self.save()
 
             contributor_added.send(self, contributor=contributor, auth=auth)
+
+            # After add callback
+            for addon in self.get_addons():
+                message = addon.after_add_contributor(self, contributor)
+                if message:
+                    status.push_status_message(message)
+
             return True
         else:
             return False

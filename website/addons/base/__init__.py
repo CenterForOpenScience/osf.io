@@ -21,7 +21,8 @@ lookup = TemplateLookup(
     ]
 )
 
-class AddonError(Exception): pass
+class AddonError(Exception):
+    pass
 
 
 def _is_image(filename):
@@ -200,6 +201,18 @@ class AddonSettingsBase(StoredObject):
             'addon_full_name': self.config.full_name,
         }
 
+    #############
+    # Callbacks #
+    #############
+
+    def after_add_addon(self, owner):
+        """
+
+        :param owner:
+
+        """
+        pass
+
 
 class AddonUserSettingsBase(AddonSettingsBase):
 
@@ -239,6 +252,26 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
         :param User user:
         :param Node node:
+
+        """
+        pass
+
+    def after_add_contributor(self, node, added):
+        """
+
+        :param Node node:
+        :param User added:
+
+        """
+        pass
+
+
+    def after_set_permissions(self, node, user, permissions):
+        """
+
+        :param Node node:
+        :param User user:
+        :param list permissions:
 
         """
         pass
