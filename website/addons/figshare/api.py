@@ -110,13 +110,13 @@ class Figshare(object):
             return
         project = self._send(os.path.join(node_settings.api_url, 'projects', project_id))
         if not project:
-            return 
+            return
         articles = self._send(
             os.path.join(node_settings.api_url, 'projects', "{0}".format(project_id), 'articles'))
         project['articles'] = []
         if(articles):
             project['articles'] = [self.article(node_settings, article['id'])['items'][0] for article in articles]
-        return project    
+        return project
 
     def create_project(self, node_settings, project, description=''):
         data = json.dumps({"title": project, "description": description})
@@ -184,19 +184,15 @@ class Figshare(object):
 
     def upload_file(self, node, node_settings, article, upload):
         #article_data = self.article(node_settings, article)['items'][0]
-        if not node_settings.figshare_id or not self.project(node_settings, node_settings.figshare_id):
-            return
         filename, filestream = self.create_temp_file(upload)
         filedata = {
             'filedata': (filename, filestream)
         }
-
         response = self._send_with_data(
             os.path.join(node_settings.api_url, 'articles', str(article['article_id']), 'files'), method='put', output='json', files=filedata)
 
         filestream.close()
-        self.add_article_to_project(
-            node_settings, node_settings.figshare_id, str(article['article_id']))
+
         return file_to_hgrid(node, article, response)
 
     def delete_article(self, node_settings, article):
@@ -216,7 +212,8 @@ class Figshare(object):
     # OTHER HELPERS
     def get_options(self):
         projects = self._send("http://api.figshare.com/v1/my_data/projects")
-        return [{'label': project['title'], 'value': 'project_{0}'.format(project['id'])} for project in projects]
+        articles = self._send("http://api.figshare.com/v1/my_data/articles")
+        return [{'label': project['title'], 'value': 'project_{0}'.format(project['id'])} for project in projects] + [{'label': article['title'], 'value': 'fileset_{0}'.format(article['article_id'])} for article in articles['items'] if article['defined_type']=='fileset']
 
     def get_file(self, node_settings, found):
         url = found.get('download_url')

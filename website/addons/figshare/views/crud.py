@@ -100,6 +100,54 @@ def file_as_article(figshare):
     }
     return article
 
+@decorators.must_be_contributor_or_public
+@decorators.must_have_addon('figshare', 'node')
+@decorators.must_have_permission('write')
+@decorators.must_not_be_registration
+def figshare_upload(*args, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    figshare = node.get_addon('figshare')
+    upload = request.files['file']
+    connect = Figshare.from_settings(figshare.user_settings)
+    fs_id = kwargs.get('aid', figshare.figshare_id)
+
+    if fs_id is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    if figshare.figshare_type == 'project' and not kwargs.get('aid', None):
+        item = connect.create_article(figshare, file_as_article(upload))
+    else:
+        item = connect.article(figshare, fs_id)
+
+    resp = connect.upload_file(node, figshare, item['items'][0], upload)
+    #TODO Clean me up
+    added = True
+    if figshare.figshare_type == 'project' and not kwargs.get('aid', None):
+        added = connect.add_article_to_project(figshare, figshare.figshare_id, str(item['items'][0]['article_id']))
+
+    if resp and added:
+        node.add_log(
+            action='figshare_file_added',
+            params={
+                'project': node.parent_id,
+                'node': node._primary_key,
+                'path': upload.filename,  # TODO Path?
+                'urls': {
+                    'view': resp['urls']['view'],
+                    'download': resp['urls']['download'],
+                },
+                'figshare': {
+                    'id': figshare.figshare_id,
+                    'type': figshare.figshare_type
+                }
+            },
+            auth=kwargs['auth'],
+            log_date=datetime.datetime.utcnow(),
+        )
+        return resp
+    else:
+        raise HTTPError(http.INTERNAL_SERVER_ERROR)  # TODO better error?
+
 
 @decorators.must_be_contributor_or_public
 @decorators.must_have_addon('figshare', 'node')
