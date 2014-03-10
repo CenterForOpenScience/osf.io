@@ -464,8 +464,7 @@ def claim_user_registered(**kwargs):
     session.data['unreg_user'] = {
         'uid': uid, 'pid': pid, 'token': token
     }
-
-    sign_out_url = '/account/?logout=1&next={0}'.format(request.path)
+    sign_out_url = web_url_for('auth_login', logout=True, next=request.path)
     if not current_user:
         response = framework.redirect(sign_out_url)
         return response

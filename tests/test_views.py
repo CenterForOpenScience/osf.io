@@ -892,6 +892,15 @@ class TestClaimViews(DbTestCase):
             to_addr=self.given_email
         ))
 
+    def test_claim_url_with_bad_token_returns_400(self):
+        with app.test_request_context():
+            token = self.user.get_unclaimed_record(self.project._primary_key)['token']
+            url = web_url_for('claim_user_registered', uid=self.user._primary_key,
+                pid=self.project._primary_key, token='123')
+        res = self.app.get(url, expect_errors=400)
+        assert_equal(res.status_code, 400)
+
+
 class TestWatchViews(DbTestCase):
 
     def setUp(self):

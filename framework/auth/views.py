@@ -184,7 +184,7 @@ def auth_register_post():
             unreg_user_info = session.data.get('unreg_user')
             if unreg_user_info:
                 # The user wants to claim a contributor using the new account
-                # Parse the "next" query param, and replace the existing
+                # Get the node and user id from the session and replace the existing
                 # unregistered user on the project with the new
                 # registered (but with email unconfirmed) user
                 unreg_user = User.load(unreg_user_info['uid'])
