@@ -82,11 +82,6 @@ def project_new_post(**kwargs):
             project = new_node(
                 'project', form.title.data, user, form.description.data
             )
-            status.push_status_message(
-                'Welcome to your new {category}! Please select and configure your add-ons below.'.format(
-                    category=project.project_or_component,
-                )
-            )
         return {}, 201, None, project.url + 'settings/'
     else:
         push_errors_to_status(form.errors)
