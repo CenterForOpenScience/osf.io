@@ -65,7 +65,7 @@ def search_search():
 
 
 @must_be_logged_in
-def search_projects_by_title(*args, **kwargs):
+def search_projects_by_title(**kwargs):
     term = request.args.get('term')
     user = kwargs['auth'].user
 
@@ -103,9 +103,6 @@ def search_projects_by_title(*args, **kwargs):
         })
 
     return rv
-
-
-
 
 
 def create_result(highlights, results):
