@@ -42,7 +42,7 @@ this.Manage = (function(window, $, ko, bootbox) {
         });
     };
 
-    var ContributorModel = function(contributor) {
+    var ContributorModel = function(contributor, pageOwner) {
 
         var self = this;
 
@@ -50,6 +50,7 @@ this.Manage = (function(window, $, ko, bootbox) {
         self.permission = ko.observable(contributor.permission);
         self.deleteStaged = ko.observable(contributor.deleteStaged);
 
+        self.pageOwner = pageOwner;
         self.serialize = function() {
             return ko.toJS(self);
         };
@@ -70,6 +71,10 @@ this.Manage = (function(window, $, ko, bootbox) {
         self.formatPermission = ko.computed(function() {
             var permission = self.permission();
             return permission.charAt(0).toUpperCase() + permission.slice(1);
+        });
+
+        self.contributorIsUser = ko.computed(function() {
+            return self.id === pageOwner['id'];
         });
 
     };
@@ -148,7 +153,7 @@ this.Manage = (function(window, $, ko, bootbox) {
         self.init = function() {
             self.messageText('');
             self.contributors(self.original().map(function(item) {
-                return new ContributorModel(item);
+                return new ContributorModel(item, self.user());
             }));
         };
 

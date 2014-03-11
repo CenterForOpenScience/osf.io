@@ -88,7 +88,13 @@
                     <span data-bind="text: contributor.fullname"></span>
                 </td>
                 <td>
+                    <!-- ko if: contributorIsUser -->
                     <a href="#" class="permission-editable" data-type="select"></a>
+                    <!-- /ko -->
+                    <!-- ko ifnot: contributorIsUser -->
+                    <p data-bind="text: contributor.formatPermission()"></p>
+                    <!-- /ko -->
+
                 </td>
             </tr>
         </tbody>
