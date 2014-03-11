@@ -110,11 +110,6 @@ WIKI_WHITELIST = {
     ]
 }
 
-# Permissions
-# NOTE: Ordered from most-restrictive to most permissive
-PERMISSIONS = ['read', 'write', 'admin']
-CREATOR_PERMISSIONS = ['read', 'write', 'admin']
-
 ##### Celery #####
 ## Default RabbitMQ broker
 BROKER_URL = 'amqp://'
