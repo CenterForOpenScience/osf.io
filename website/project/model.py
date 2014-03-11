@@ -1843,7 +1843,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         if save:
             self.save()
 
-    def add_contributor(self, contributor, permissions, auth=None,
+    def add_contributor(self, contributor, permissions=None, auth=None,
                         log=True, save=False):
         """Add a contributor to the project.
 
@@ -1863,7 +1863,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributors.append(contrib_to_add)
 
             # Add default contributor permissions
-            permissions = permissions
+            permissions = permissions or settings.CONTRIBUTOR_PERMISSIONS
             for permission in permissions:
                 self.add_permission(contrib_to_add, permission, save=False)
 
