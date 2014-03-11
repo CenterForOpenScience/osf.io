@@ -82,19 +82,26 @@
             <th></th>
         </thead>
         <tbody data-bind="foreach: {data: contributors, as: 'contributor', afterRender: setupEditable, options: {containment: '#manageContributors'}}">
-            <tr>
+            <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
                 <td>
                     <img data-bind="attr: {src: contributor.gravatar_url}" />
                     <span data-bind="text: contributor.fullname"></span>
                 </td>
                 <td>
-                    <!-- ko if: contributorIsUser -->
-                    <a href="#" class="permission-editable" data-type="select"></a>
+                    <span data-bind="text: formatPermission"></span>
+                </td>
+                <td>
+                    <!-- ko ifnot: deleteStaged -->
+                        <a
+                                class="btn btn-danger contrib-button btn-mini"
+                                data-bind="click: remove"
+                                rel="tooltip"
+                                title="Remove contributor"
+                            >-</a>
                     <!-- /ko -->
-                    <!-- ko ifnot: contributorIsUser -->
-                    <p data-bind="text: contributor.formatPermission()"></p>
+                    <!-- ko if: deleteStaged -->
+                        Removed
                     <!-- /ko -->
-
                 </td>
             </tr>
         </tbody>
