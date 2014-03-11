@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 import logging
-import hashlib
 import time
 
 from modularodm.exceptions import ValidationValueError
@@ -292,12 +291,6 @@ def project_contributors_post(**kwargs):
         child.save()
 
     return {'status': 'success'}, 201
-
-
-def find_contributor_by_id(node, _id):
-    for contributor in node.contributor_list:
-        if 'nr_email' in contributor and hashlib.md5(contributor['nr_email']).hexdigest() == _id:
-            return contributor
 
 
 @must_be_valid_project # returns project
