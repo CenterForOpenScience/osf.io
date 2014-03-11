@@ -13,7 +13,7 @@ def scrub_html(value):
 
 
 def clean_tag(data):
-    return clean(data).replace('"', '').replace("'", '')
+    return clean(data).replace('"', '&quot;').replace("'", '')
 
 
 def _deep_clean(data, cleaner=bleach.clean):
