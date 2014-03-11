@@ -387,6 +387,7 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/search/', 'get', search_views.search_search, json_renderer),
+        Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
 
     ], prefix='/api/v1')
 
@@ -610,6 +611,11 @@ def make_url_map(app):
             project_views.node.project_new_node,
             json_renderer,
         ),
+
+        # Create, using existing project as a template
+        Rule([
+            '/project/new/<nid>/',
+        ], 'post', project_views.node.project_new_from_template, json_renderer),
 
         # Remove
         Rule(

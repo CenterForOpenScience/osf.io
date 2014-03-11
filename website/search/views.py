@@ -3,11 +3,13 @@ import time
 from urllib2 import HTTPError
 import logging
 
-from framework import request, status
+from framework import must_be_logged_in, request, status
 from website.search.solr_search import search_solr
 from website import settings
 from website.filters import gravatar
-from website.models import User
+from website.models import User, Node
+from website.project.views.contributor import get_node_contributors_abbrev
+from modularodm.storage.mongostorage import RawQuery as Q
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('search.routes')
@@ -60,6 +62,50 @@ def search_search():
         'tags': tags,
         'searching_users': searching_users
     }
+
+
+@must_be_logged_in
+def search_projects_by_title(*args, **kwargs):
+    term = request.args.get('term')
+    user = kwargs['auth'].user
+
+
+
+    results = Node.find(
+        Q('title', 'istartswith', term) &  # search term (case insensitive)
+        Q('category', 'eq', 'project') &  # is a project
+        Q('is_deleted', 'eq', False) & (  # isn't deleted
+            # is either public, or the current user can view
+            Q('is_public', 'eq', True) |
+            Q('contributors', 'contains', user._id))
+    ).limit(20)
+
+    rv = []
+
+    for project in results:
+        authors = get_node_contributors_abbrev(project=project, auth=kwargs['auth'])
+        authors_list = []
+        for author in authors['contributors']:
+            a = User.load(author['user_id'])
+            authors_list.append(
+                '<a href="%s">%s</a>' % (a.url, a.fullname)
+            )
+            authors_list.append(author['separator'])
+        authors_list.append(authors['others_count'])
+        authors_list.append(authors['others_suffix'])
+
+        rv.append({
+            'id': project._id,
+            'label': project.title,
+            'value': project.title,
+            'category': 'My Projects' if user in project.contributors else 'Public Projects',
+            'authors': ' '.join(authors_list).strip(),
+        })
+
+    return rv
+
+
+
 
 
 def create_result(highlights, results):

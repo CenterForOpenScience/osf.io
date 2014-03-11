@@ -258,28 +258,40 @@ class NodeLog(StoredObject):
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
     # Log action constants
+    CREATED_FROM = 'created_from'
+
     PROJECT_CREATED = 'project_created'
+    PROJECT_REGISTERED = 'project_registered'
+
     NODE_CREATED = 'node_created'
+    NODE_FORKED = 'node_forked'
     NODE_REMOVED = 'node_removed'
+
     POINTER_CREATED = 'pointer_created'
-    POINTER_REMOVED = 'pointer_removed'
     POINTER_FORKED = 'pointer_forked'
+    POINTER_REMOVED = 'pointer_removed'
+
     WIKI_UPDATED = 'wiki_updated'
+
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
     CONTRIB_REORDERED = 'contributors_reordered'
+
     PERMISSIONS_UPDATED = 'permissions_updated'
-    MADE_PUBLIC = 'made_public'
+
     MADE_PRIVATE = 'made_private'
+    MADE_PUBLIC = 'made_public'
+
     TAG_ADDED = 'tag_added'
     TAG_REMOVED = 'tag_removed'
+
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
-    PROJECT_REGISTERED = 'project_registered'
+
     FILE_ADDED = 'file_added'
     FILE_REMOVED = 'file_removed'
     FILE_UPDATED = 'file_updated'
-    NODE_FORKED = 'node_forked'
+
     ADDON_ADDED = 'addon_added'
     ADDON_REMOVED = 'addon_removed'
     COMMENT_ADDED = 'comment_added'
@@ -381,6 +393,9 @@ class Pointer(StoredObject):
     def register_node(self, *args, **kwargs):
         return self._clone()
 
+    def use_as_template(self, auth, changes=None):
+        return self._clone()
+
     def resolve(self):
         return self.node
 
@@ -474,6 +489,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     nodes = fields.AbstractForeignField(list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked')
     registered_from = fields.ForeignField('node', backref='registrations')
+
+    # The node (if any) used as a template for this node's creation
+    template_node = fields.ForeignField('node', backref='template_node')
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
@@ -607,10 +625,15 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         first_save = not self._is_loaded
         is_original = not self.is_registration and not self.is_fork
+        if 'suppress_log' in kwargs.keys():
+            suppress_log = kwargs['suppress_log']
+            del kwargs['suppress_log']
+        else:
+            suppress_log = False
 
         saved_fields = super(Node, self).save(*args, **kwargs)
 
-        if first_save and is_original:
+        if first_save and is_original and not suppress_log:
 
             #
             for addon in settings.ADDONS_AVAILABLE:
@@ -663,6 +686,77 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # Return expected value for StoredObject::save
         return saved_fields
+
+    ######################################
+    # Methods that return a new instance #
+    ######################################
+
+    def use_as_template(self, auth, changes=None):
+        """Create a new project, using an existing project as a template.
+
+        :param auth: The user to be assigned as creator
+        :param changes: A dictionary of changes, keyed by node id, which
+                        override the attributes of the template project or its
+                        children.
+        :return: The `Node` instance created.
+        """
+
+        changes = changes or dict()
+
+        # build the dict of attributes to change for the new node
+        try:
+            attributes = changes[self._id]
+            # TODO: explicitly define attributes which may be changed.
+        except (AttributeError, KeyError):
+            attributes = dict()
+
+        new = self.clone()
+
+        # clear permissions, which are not cleared by the clone method
+        new.permissions = {}
+
+        # set attributes which may be overridden by `changes`
+        new.is_public = False
+
+        # apply `changes`
+        for attr, val in attributes.iteritems():
+            setattr(new, attr, val)
+
+        # set attributes which may NOT be overridden by `changes`
+        new.creator = auth.user
+        new.add_contributor(contributor=auth.user, log=False, save=False)
+        new.template_node = self
+        new.is_fork = False
+
+        # Slight hack - date_created is a read-only field.
+        new._fields['date_created'].__set__(
+            new,
+            datetime.datetime.utcnow(),
+            safe=True
+        )
+
+        new.save(suppress_log=True)
+
+        # Log the creation
+        new.add_log(
+            NodeLog.CREATED_FROM,
+            params={
+                'node': new._primary_key,
+                'template_node': {
+                    'id': self._primary_key,
+                    'url': self.url,
+                },
+            },
+            auth=auth,
+            log_date=new.date_created,
+            save=False,
+        )
+
+        # deal with the children of the node, if any
+        new.nodes = [x.use_as_template(auth, changes) for x in self.nodes]
+
+        new.save()
+        return new
 
     ############
     # Pointers #
@@ -1524,6 +1618,14 @@ class Node(GuidStoredObject, AddonModelMixin):
             and_delim,
             author_names[-1]
         )
+
+    @property
+    def templated_list(self):
+        return [
+            x
+            for x in self.node__template_node
+            if not x.is_deleted
+        ]
 
     @property
     def citation_apa(self):
