@@ -19,7 +19,7 @@ from website.project.model import unreg_contributor_added
 from website.filters import gravatar
 from website.models import Node
 from website.profile import utils
-from website.util import web_url_for
+from website.util import web_url_for, is_json_request
 from website.util.permissions import expand_permissions
 
 from website.project.decorators import (
@@ -354,7 +354,7 @@ def project_manage_contributors(**kwargs):
 def get_timestamp():
     return int(time.time())
 
-# TODO: Use throttle
+# TODO: Use throttle?
 def send_claim_registered_email(claimer, unreg_user, node, throttle=0):
     unclaimed_record = unreg_user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
@@ -441,11 +441,6 @@ def verify_claim_token(user, token, pid):
         else:
             return False
     return True
-
-
-# TODO(sloria): Move to framework
-def is_json_request():
-    return request.content_type == 'application/json'
 
 
 @must_be_valid_project
@@ -567,12 +562,11 @@ def claim_user_form(**kwargs):
             return framework.auth.authenticate(user, response)
         else:
             forms.push_errors_to_status(form.errors)
-    is_json_request = request.content_type == 'application/json'
     return {
         'firstname': user.given_name,
         'email': email if email else '',
         'fullname': user.fullname,
-        'form': forms.utils.jsonify(form) if is_json_request else form,
+        'form': forms.utils.jsonify(form) if is_json_request() else form,
     }
 
 # TODO(sloria): Move to utils
