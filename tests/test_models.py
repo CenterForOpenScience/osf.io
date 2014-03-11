@@ -1492,6 +1492,64 @@ class TestTemplateNode(DbTestCase):
                 )
 
 
+    def test_template_security(self):
+        """Create a templated node from a node with public and private children
+
+        Children for which the user has no access should not be copied
+        """
+        other_user = UserFactory()
+        other_user_auth = Auth(user=other_user)
+
+        self._create_complex()
+
+        # set two projects to public - leaving self.component as private
+        self.project.is_public = True
+        self.project.save()
+        self.subproject.is_public = True
+        self.subproject.save()
+
+        # add new children, for which the user has each level of access
+        self.read = NodeFactory(creator=self.user, project=self.project)
+        self.read.add_contributor(other_user, permissions=['read', ])
+        self.read.save()
+
+        self.write = NodeFactory(creator=self.user, project=self.project)
+        self.write.add_contributor(other_user, permissions=['read', 'write', ])
+        self.write.save()
+
+        self.admin = NodeFactory(creator=self.user, project=self.project)
+        self.admin.add_contributor(other_user)
+        self.admin.save()
+
+        # filter down self.nodes to only include projects the user can see
+        visible_nodes = filter(
+            lambda x: x.can_view(other_user_auth),
+            self.project.nodes
+        )
+
+        # create templated node
+        new = self.project.use_as_template(auth=other_user_auth)
+
+        assert_equal(new.title, self.project.title)
+
+        # check that all children were copied
+        assert_equal(
+            [x.title for x in new.nodes],
+            [x.title for x in visible_nodes]
+        )
+        # ensure all child nodes were actually copied, instead of moved
+        assert_true({x._primary_key for x in new.nodes}.isdisjoint(
+            {x._primary_key for x in self.project.nodes}
+        ))
+
+        # ensure that the creator is admin for each node copied
+        for node in new.nodes:
+            assert_equal(
+                node.permissions.get(other_user._id),
+                ['read', 'write', 'admin'],
+            )
+
+
 class TestForkNode(DbTestCase):
     def setUp(self):
         self.user = UserFactory()
