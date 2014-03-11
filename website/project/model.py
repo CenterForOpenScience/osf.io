@@ -1761,7 +1761,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     def manage_contributors(self, user_dicts, auth, save=False):
         """Reorder and remove contributors.
 
-        :param list user_dicts: Ordered list of contributors
+        :param list user_dicts: Ordered list of contributors represented as
+            dictionaries of the form:
+            {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>}
         :param Auth auth: Consolidated authentication information
         :param bool save: Save changes
         :raises: ValueError if any users in `users` not in contributors or if
@@ -1841,7 +1843,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         if save:
             self.save()
 
-    def add_contributor(self, contributor, permissions=None, auth=None,
+    def add_contributor(self, contributor, permissions, auth=None,
                         log=True, save=False):
         """Add a contributor to the project.
 
@@ -1861,7 +1863,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributors.append(contrib_to_add)
 
             # Add default contributor permissions
-            permissions = permissions or settings.CONTRIBUTOR_PERMISSIONS
+            permissions = permissions
             for permission in permissions:
                 self.add_permission(contrib_to_add, permission, save=False)
 
