@@ -896,7 +896,7 @@ class TestClaimViews(DbTestCase):
         with app.test_request_context():
             url = web_url_for('claim_user_registered', uid=self.user._primary_key,
                 pid=self.project._primary_key, token='badtoken')
-        res = self.app.get(url, expect_errors=400)
+        res = self.app.get(url, auth=self.referrer.auth, expect_errors=400)
         assert_equal(res.status_code, 400)
 
     def test_cannot_claim_user_with_user_who_is_already_contributor(self):

@@ -949,7 +949,7 @@ class TestClaimingAsARegisteredUser(DbTestCase):
         )
         self.project.save()
 
-    @mock.patch('framework.auth.views.session')
+    @mock.patch('website.project.views.contributor.session')
     def test_user_with_claim_url_registers_new_account(self, mock_session):
         # Assume that the unregistered user data is already stored in the session
         mock_session.data = {
@@ -978,7 +978,7 @@ class TestClaimingAsARegisteredUser(DbTestCase):
         u.api_keys.append(key)
         u.save()
         u.auth = ('test', key._primary_key)
-        res4 = self.app.get(u.get_confirmation_url('test@test.com')).follow(auth=u.auth)
+        self.app.get(u.get_confirmation_url('test@test.com')).follow(auth=u.auth)
         # Confirms their email address
         self.project.reload()
         self.user.reload()
@@ -988,7 +988,7 @@ class TestClaimingAsARegisteredUser(DbTestCase):
         # user is now a contributor to self.project
         assert_in(u._primary_key, self.project.contributors)
 
-    @mock.patch("framework.auth.views.session")
+    @mock.patch('website.project.views.contributor.session')
     def test_user_can_log_in_with_a_different_account(self, mock_session):
         # Assume that the unregistered user data is already stored in the session
         mock_session.data = {
@@ -1027,7 +1027,7 @@ class TestClaimingAsARegisteredUser(DbTestCase):
         # Verifies their password
         form = res3.forms['claimContributorForm']
         form['password'] = 'science'
-        res4 = form.submit()
+        form.submit()
 
         self.project.reload()
         right_user.reload()
