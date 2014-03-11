@@ -247,7 +247,7 @@ def deserialize_contributors(node, user_dicts, auth):
                 auth=auth)
         contribs.append({
             'user': contributor,
-            'permissions': expand_permissions(contrib_dict['permission'])
+            'permissions': expand_permissions(contrib_dict.get('permission'))
         })
     return contribs
 

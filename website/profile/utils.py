@@ -107,7 +107,7 @@ def serialize_unregistered(fullname, email):
             'active': False,
             'gravatar': gravatar(email, use_ssl=True,
                 size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR),
-            'email': email
+            'email': email,
         }
     else:
         serialized = add_contributor_json(user)

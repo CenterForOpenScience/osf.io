@@ -22,7 +22,7 @@ from website.project.views.contributor import (
     send_claim_email,
     deserialize_contributors
 )
-from website.profile.utils import _add_contributor_json, serialize_unregistered
+from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.util import api_url_for, web_url_for
 from website import settings, mails
 from website.util import rubeus
@@ -30,7 +30,7 @@ from website.project.views.node import _view_project
 from website.project.views.comment import serialize_comment
 
 
-from tests.base import DbTestCase, fake
+from tests.base import DbTestCase, fake, capture_signals
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
@@ -104,8 +104,8 @@ class TestProjectViews(DbTestCase):
         user3 = UserFactory()
         url = "/api/v1/project/{0}/contributors/".format(project._id)
 
-        dict2 = _add_contributor_json(user2)
-        dict3 = _add_contributor_json(user3)
+        dict2 = add_contributor_json(user2)
+        dict3 = add_contributor_json(user3)
         dict2['permission'] = 'admin'
         dict3['permission'] = 'write'
 
@@ -463,7 +463,7 @@ class TestAddingContributorViews(DbTestCase):
         name, email = fake.name(), fake.email()
         unreg_no_record = serialize_unregistered(name, email)
         contrib_data = [
-            _add_contributor_json(contrib),
+            add_contributor_json(contrib),
             serialize_unregistered(fake.name(), unreg.username),
             unreg_no_record
         ]
@@ -473,8 +473,7 @@ class TestAddingContributorViews(DbTestCase):
         res = deserialize_contributors(
             self.project,
             contrib_data,
-            auth=Auth(self.creator),
-            email_unregistered=True)
+            auth=Auth(self.creator))
         assert_equal(len(res), len(contrib_data))
         assert_true(res[0]['user'].is_registered)
 
@@ -483,6 +482,15 @@ class TestAddingContributorViews(DbTestCase):
 
         assert_false(res[2]['user'].is_registered)
         assert_true(res[2]['user']._id)
+
+    def test_deserialize_contributors_sends_unreg_contributor_added_signal(self):
+        unreg = UnregUserFactory()
+        from website.project.model import unreg_contributor_added
+        serialized = [serialize_unregistered(fake.name(), unreg.username)]
+        with capture_signals() as mock_signals:
+            deserialize_contributors(self.project, serialized,
+                auth=Auth(self.creator))
+        assert_equal(mock_signals.signals_sent(), set([unreg_contributor_added]))
 
     def test_serialize_unregistered_with_record(self):
         name, email = fake.name(), fake.email()
@@ -511,7 +519,7 @@ class TestAddingContributorViews(DbTestCase):
             'email': email,
             'permission': 'admin',
         }
-        reg_dict = _add_contributor_json(reg_user)
+        reg_dict = add_contributor_json(reg_user)
         reg_dict['permission'] = 'admin'
         payload = {
             'users': [reg_dict, pseudouser],
@@ -568,7 +576,7 @@ class TestAddingContributorViews(DbTestCase):
             'email': fake.email(),
             'permission': 'write',
         }
-        reg_dict = _add_contributor_json(reg_user)
+        reg_dict = add_contributor_json(reg_user)
         reg_dict['permission'] = 'admin'
         payload = {
             'users': [reg_dict, pseudouser],
@@ -593,7 +601,7 @@ class TestAddingContributorViews(DbTestCase):
             'email': email,
             'permission': 'admin',
         }
-        reg_dict = _add_contributor_json(reg_user)
+        reg_dict = add_contributor_json(reg_user)
         reg_dict['permission'] = 'admin'
         payload = {
             'users': [reg_dict, pseudouser],
@@ -633,7 +641,7 @@ class TestUserInviteViews(DbTestCase):
         project2.save()
         res = self.app.post_json(self.invite_url,
             {'fullname': name, 'email': email}, auth=self.user.auth)
-        expected = _add_contributor_json(unreg_user)
+        expected = add_contributor_json(unreg_user)
         expected['fullname'] = name
         expected['email'] = email
         assert_equal(res.json['contributor'], expected)
@@ -1188,12 +1196,8 @@ class TestAuthViews(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.user = UserFactory.build()
-        # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.auth = ('test', api_key._primary_key)
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
 
     def test_merge_user(self):
         dupe = UserFactory(username="copy@cat.com",
@@ -1221,6 +1225,20 @@ class TestAuthViews(DbTestCase):
         assert_true(send_mail.called_with(
             to_addr='fred@queen.com'
         ))
+
+    def test_register_post_sends_user_registered_signal(self):
+        with app.test_request_context():
+            url = web_url_for('auth_register_post')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        with capture_signals() as mock_signals:
+            self.app.post(url, {
+                'register-fullname': name,
+                'register-username': email,
+                'register-password': password,
+                'register-username2': email,
+                'register-password2': password
+            })
+        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered]))
 
     def test_resend_confirmation_get(self):
         res = self.app.get('/resend/')
