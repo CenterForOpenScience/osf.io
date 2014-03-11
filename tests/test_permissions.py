@@ -33,6 +33,10 @@ def test_reduce_permissions_with_unknown_permission_raises_error():
     with assert_raises(ValueError):
         permissions.reduce_permissions(['unknownpermission'])
 
+def test_default_contributor_permissions():
+    assert_equal(permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
+        ['read', 'write', 'admin'])
+
 
 if __name__ == '__main__':
     unittest.main()

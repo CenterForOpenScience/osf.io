@@ -24,6 +24,7 @@ from website import settings, filters
 from website.profile.utils import serialize_user
 from website.project.model import Pointer, ApiKey, NodeLog, Comment, ensure_schemas
 from website.addons.osffiles.model import NodeFile
+from website.util.permissions import CREATOR_PERMISSIONS
 
 from tests.base import DbTestCase, Guid, fake
 from tests.factories import (
@@ -1848,7 +1849,7 @@ class TestPermissions(DbTestCase):
 
     def test_default_creator_permissions(self):
         assert_equal(
-            set(settings.CREATOR_PERMISSIONS),
+            set(CREATOR_PERMISSIONS),
             set(self.project.permissions[self.project.creator._id])
         )
 

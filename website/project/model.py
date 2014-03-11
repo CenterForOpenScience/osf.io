@@ -33,7 +33,10 @@ from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 
-from website.util.permissions import expand_permissions
+from website.util.permissions import (expand_permissions,
+    DEFAULT_CONTRIBUTOR_PERMISSIONS,
+    CREATOR_PERMISSIONS
+)
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
 
@@ -1863,7 +1866,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributors.append(contrib_to_add)
 
             # Add default contributor permissions
-            permissions = permissions or settings.CONTRIBUTOR_PERMISSIONS
+            permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS
             for permission in permissions:
                 self.add_permission(contrib_to_add, permission, save=False)
 
