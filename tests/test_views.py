@@ -8,22 +8,21 @@ import datetime as dt
 import mock
 import httplib as http
 
-import bson
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 from webtest.app import AppError
-from framework import Q, auth
+from framework import auth
 from framework.auth.model import User
-from framework.sessions.model import Session
 
 import website.app
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
 from website.project.views.contributor import (
-    _add_contributor_json, send_claim_email,
-    serialize_unregistered, deserialize_contributors
+    send_claim_email,
+    deserialize_contributors
 )
+from website.profile.utils import _add_contributor_json, serialize_unregistered
 from website.util import api_url_for, web_url_for
 from website import settings, mails
 from website.util import rubeus
