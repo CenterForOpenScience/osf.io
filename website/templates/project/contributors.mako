@@ -65,7 +65,6 @@
 
     <!-- /ko -->
     <!-- ko ifnot: userIsAdmin -->
-    <p>Great Job, Peasant!</p>
 
     <table class="table">
         <thead>
