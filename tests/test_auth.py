@@ -7,7 +7,6 @@ import datetime
 
 from flask import Flask
 from werkzeug.wrappers import BaseResponse
-from webtest_plus import TestApp
 import httplib as http
 
 from framework.exceptions import HTTPError

@@ -1,24 +1,23 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 import logging
-import hashlib
 import time
 
 from modularodm.exceptions import ValidationValueError
 import framework
 from framework import request, User, status
-from framework.flask import redirect
 from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
 from framework import forms
+from framework.auth.signals import user_registered
 from framework.auth.forms import SetEmailAndPasswordForm, PasswordForm
+from framework.sessions import session
 
-from website import settings, mails, language
+from website import mails, language
 from website.project.model import unreg_contributor_added
-from website.filters import gravatar
 from website.models import Node
 from website.profile import utils
-from website.util import web_url_for
+from website.util import web_url_for, is_json_request
 from website.util.permissions import expand_permissions
 
 from website.project.decorators import (
@@ -78,31 +77,6 @@ def get_node_contributors_abbrev(**kwargs):
         'others_suffix': others_suffix,
     }
 
-# TODO: Almost identical to utils.serialize_user. Remove duplication.
-def _add_contributor_json(user):
-
-    return {
-        'fullname': user.fullname,
-        'email': user.username,
-        'id': user._primary_key,
-        'registered': user.is_registered,
-        'active': user.is_active(),
-        'gravatar_url': gravatar(
-            user, use_ssl=True,
-            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
-        ),
-    }
-
-
-def serialized_contributors(node):
-
-    data = []
-    for contrib in node.contributors:
-        serialized = utils.serialize_user(contrib)
-        serialized['fullname'] = contrib.display_full_name(node=node)
-        data.append(serialized)
-    return data
-
 
 @collect_auth
 @must_be_valid_project
@@ -114,7 +88,7 @@ def get_contributors(**kwargs):
     if not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
-    contribs = serialized_contributors(node)
+    contribs = utils.serialize_contributors(node.contributors, node=node)
 
     return {'contributors': contribs}
 
@@ -134,7 +108,7 @@ def get_contributors_from_parent(**kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = [
-        _add_contributor_json(contrib)
+        utils.add_contributor_json(contrib)
         for contrib in parent.contributors
         if contrib not in node_to_use.contributors
     ]
@@ -152,7 +126,7 @@ def get_recently_added_contributors(**kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = [
-        _add_contributor_json(contrib)
+        utils.add_contributor_json(contrib)
         for contrib in auth.user.recently_added
         if contrib.is_active()
         if contrib not in node_to_use.contributors
@@ -229,10 +203,10 @@ def project_removecontributor(**kwargs):
         }
     )
 
-# TODO: TEST ME
-def deserialize_contributors(node, user_dicts, auth, email_unregistered=True):
-    """View helper that adds contributors from a list of serialized users. The
-    users in the list may be registered or unregistered users.
+def deserialize_contributors(node, user_dicts, auth):
+    """View helper that returns a list of User objects from a list of
+    serialized users (dicts). The users in the list may be registered or
+    unregistered users.
 
     e.g. ``[{'id': 'abc123', 'registered': True, 'fullname': ..},
             {'id': None, 'registered': False, 'fullname'...},
@@ -244,8 +218,6 @@ def deserialize_contributors(node, user_dicts, auth, email_unregistered=True):
     :param Node node: The node to add contributors to
     :param list(dict) user_dicts: List of serialized users in the format above.
     :param Auth auth:
-    :param bool email_unregistered: Whether to email the claim email(s)
-        to unregistered users.
     """
 
     # Add the registered contributors
@@ -275,7 +247,7 @@ def deserialize_contributors(node, user_dicts, auth, email_unregistered=True):
                 auth=auth)
         contribs.append({
             'user': contributor,
-            'permissions': expand_permissions(contrib_dict['permission'])
+            'permissions': expand_permissions(contrib_dict.get('permission'))
         })
     return contribs
 
@@ -311,19 +283,12 @@ def project_contributors_post(**kwargs):
         child = Node.load(child_id)
         # Only email unreg users once
         child_contribs = deserialize_contributors(
-            child, user_dicts, auth=auth,
-            email_unregistered=False,
+            child, user_dicts, auth=auth
         )
         child.add_contributors(contributors=child_contribs, auth=auth)
         child.save()
 
     return {'status': 'success'}, 201
-
-
-def find_contributor_by_id(node, _id):
-    for contributor in node.contributor_list:
-        if 'nr_email' in contributor and hashlib.md5(contributor['nr_email']).hexdigest() == _id:
-            return contributor
 
 
 @must_be_valid_project # returns project
@@ -353,7 +318,7 @@ def project_manage_contributors(**kwargs):
 def get_timestamp():
     return int(time.time())
 
-# TODO: Use throttle
+# TODO: Use throttle?
 def send_claim_registered_email(claimer, unreg_user, node, throttle=0):
     unclaimed_record = unreg_user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
@@ -441,16 +406,6 @@ def verify_claim_token(user, token, pid):
             return False
     return True
 
-def claim_user_registered_login(**kwargs):
-    if framework.auth.get_current_user():
-        framework.auth.logout()
-    ref = request.referrer or request.args.get('next')
-    return framework.redirect('/account/?next={0}'.format(ref))
-
-# TODO(sloria): Move to framework
-def is_json_request():
-    return request.content_type == 'application/json'
-
 
 @must_be_valid_project
 def claim_user_registered(**kwargs):
@@ -461,16 +416,26 @@ def claim_user_registered(**kwargs):
     """
     node = kwargs['node'] or kwargs['project']
     current_user = framework.auth.get_current_user()
+    sign_out_url = web_url_for('auth_login', logout=True, next=request.path)
+    if not current_user:
+        response = framework.redirect(sign_out_url)
+        return response
+    # Logged in user should not be a contributor the project
+    if node.is_contributor(current_user):
+        data = {'message_short': 'Already a contributor',
+                'message_long': 'The logged-in user is already a contributor to '
+                'this project. Would you like to <a href="/logout/">log out</a>?'}
+        raise HTTPError(http.BAD_REQUEST, data=data)
     uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
     unreg_user = User.load(uid)
     if not verify_claim_token(unreg_user, token, pid=node._primary_key):
         raise HTTPError(http.BAD_REQUEST)
 
-    if not current_user:
-        next_url = web_url_for('claim_user_registered', pid=pid, uid=uid, token=token, _external=True)
-        response = framework.redirect(web_url_for('claim_user_registered_login',
-                        uid=uid, pid=pid, next=next_url))
-        return response
+    # Store the unreg_user data on the session in case the user registers
+    # a new account
+    session.data['unreg_user'] = {
+        'uid': uid, 'pid': pid, 'token': token
+    }
 
     form = PasswordForm(request.form)
     if request.method == 'POST':
@@ -495,9 +460,27 @@ def claim_user_registered(**kwargs):
     return {
         'form': form_ret,
         'user': user_ret,
-        'signoutURL': web_url_for('claim_user_registered_login',
-            uid=uid, pid=pid)
+        'signOutUrl': sign_out_url
     }
+
+
+@user_registered.connect
+def replace_unclaimed_user_with_registered(user):
+    """Listens for the user_registered signal. If unreg_user is stored in the
+    session, then the current user is trying to claim themselves as a contributor.
+    Replaces the old, unregistered contributor with the newly registered
+    account.
+
+    """
+    unreg_user_info = session.data.get('unreg_user')
+    if unreg_user_info:
+        unreg_user = User.load(unreg_user_info['uid'])
+        pid, token = unreg_user_info['pid'], unreg_user_info['token']
+        node = Node.load(pid)
+        node.replace_contributor(old=unreg_user, new=user)
+        node.save()
+        status.push_status_message(
+            'Successfully claimed contributor.', 'success')
 
 
 def claim_user_form(**kwargs):
@@ -518,7 +501,7 @@ def claim_user_form(**kwargs):
     user = framework.auth.get_user(id=uid)  # The unregistered user
     # user ID is invalid. Unregistered user is not in database
     if not user:
-        raise HTTPError(400)
+        raise HTTPError(http.BAD_REQUEST)
     # If claim token not valid, redirect to registration page
     if not verify_claim_token(user, token, pid):
         return framework.redirect('/account/')
@@ -543,34 +526,12 @@ def claim_user_form(**kwargs):
             return framework.auth.authenticate(user, response)
         else:
             forms.push_errors_to_status(form.errors)
-    is_json_request = request.content_type == 'application/json'
     return {
         'firstname': user.given_name,
         'email': email if email else '',
         'fullname': user.fullname,
-        'form': forms.utils.jsonify(form) if is_json_request else form,
+        'form': forms.utils.jsonify(form) if is_json_request() else form,
     }
-
-# TODO(sloria): Move to utils
-def serialize_unregistered(fullname, email):
-    """Serializes an unregistered user.
-    """
-    user = framework.auth.get_user(username=email)
-    if user is None:
-        serialized = {
-            'fullname': fullname,
-            'id': None,
-            'registered': False,
-            'active': False,
-            'gravatar': gravatar(email, use_ssl=True,
-                size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR),
-            'email': email
-        }
-    else:
-        serialized = _add_contributor_json(user)
-        serialized['fullname'] = fullname
-        serialized['email'] = email
-    return serialized
 
 
 @must_be_valid_project
@@ -597,13 +558,13 @@ def invite_contributor_post(**kwargs):
             msg = 'User with this email address is already a contributor to this project.'
             return {'status': 400, 'message': msg}, 400
         else:
-            serialized = _add_contributor_json(user)
+            serialized = utils.add_contributor_json(user)
             # use correct display name
             serialized['fullname'] = fullname
             serialized['email'] = email
     else:
         # Create a placeholder
-        serialized = serialize_unregistered(fullname, email)
+        serialized = utils.serialize_unregistered(fullname, email)
     return {'status': 'success', 'contributor': serialized}
 
 
