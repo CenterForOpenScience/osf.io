@@ -90,6 +90,7 @@
                     <span data-bind="text: formatPermission"></span>
                 </td>
                 <td>
+                <!-- ko if: contributorIsUser -->
                     <!-- ko ifnot: deleteStaged -->
                         <a
                                 class="btn btn-danger contrib-button btn-mini"
@@ -101,6 +102,7 @@
                     <!-- ko if: deleteStaged -->
                         Removed
                     <!-- /ko -->
+                <!-- /ko -->
                 </td>
             </tr>
         </tbody>
