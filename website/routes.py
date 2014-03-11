@@ -333,8 +333,6 @@ def make_url_map(app):
             project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
         Rule(['/user/<uid>/<pid>/claim/verify/<token>/'], ['get', 'post'],
             project_views.contributor.claim_user_registered, OsfWebRenderer('claim_account_registered.mako')),
-        Rule(['/user/<uid>/<pid>/claim/login/'], ['get', 'post'],
-            project_views.contributor.claim_user_registered_login, OsfWebRenderer('public/login.mako'))
     ])
 
     # API

@@ -33,7 +33,10 @@ from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 
-from website.util.permissions import expand_permissions
+from website.util.permissions import (expand_permissions,
+    DEFAULT_CONTRIBUTOR_PERMISSIONS,
+    CREATOR_PERMISSIONS
+)
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import settings
 
@@ -515,7 +518,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributors.append(self.creator)
 
             # Add default creator permissions
-            for permission in settings.CREATOR_PERMISSIONS:
+            for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
 
     def can_edit(self, auth=None, user=None):
@@ -1863,7 +1866,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     def manage_contributors(self, user_dicts, auth, save=False):
         """Reorder and remove contributors.
 
-        :param list user_dicts: Ordered list of contributors
+        :param list user_dicts: Ordered list of contributors represented as
+            dictionaries of the form:
+            {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>}
         :param Auth auth: Consolidated authentication information
         :param bool save: Save changes
         :raises: ValueError if any users in `users` not in contributors or if
@@ -1963,7 +1968,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributors.append(contrib_to_add)
 
             # Add default contributor permissions
-            permissions = permissions or settings.CONTRIBUTOR_PERMISSIONS
+            permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS
             for permission in permissions:
                 self.add_permission(contrib_to_add, permission, save=False)
 

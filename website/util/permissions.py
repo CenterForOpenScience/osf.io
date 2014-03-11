@@ -1,12 +1,24 @@
-from website import settings
+# -*- coding: utf-8 -*-
+
+# Permissions
+READ = 'read'
+WRITE = 'write'
+ADMIN = 'admin'
+# NOTE: Ordered from most-restrictive to most permissive
+PERMISSIONS = [READ, WRITE, ADMIN]
+CREATOR_PERMISSIONS = [READ, WRITE, ADMIN]
+DEFAULT_CONTRIBUTOR_PERMISSIONS = [READ, WRITE, ADMIN]
+
 
 def expand_permissions(permission):
-    index = settings.PERMISSIONS.index(permission) + 1
-    return settings.PERMISSIONS[:index]
+    if permission is None:
+        return []
+    index = PERMISSIONS.index(permission) + 1
+    return PERMISSIONS[:index]
 
 
 def reduce_permissions(permissions):
-    for permission in settings.PERMISSIONS[::-1]:
+    for permission in PERMISSIONS[::-1]:
         if permission in permissions:
             return permission
     raise ValueError('Permissions not in permissions list')
