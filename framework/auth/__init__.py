@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
 
-import blinker
-
 from framework import session, create_session
 from framework import goback
 import framework.bcrypt as bcrypt
@@ -12,9 +10,6 @@ from framework.auth.exceptions import (DuplicateEmailError, LoginNotAllowedError
 
 from model import User
 
-
-signals = blinker.Namespace()
-user_registered = signals.signal('user-registered')
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +110,6 @@ def login(username, password):
             username=username,
             password=password
         )
-        # TODO: Too much nesting here. Rethink
         if user:
             if not user.is_registered:
                 raise LoginNotAllowedError('User is not registered.')
@@ -148,8 +142,8 @@ def register_unconfirmed(username, password, fullname):
         user.save()
     else:
         raise DuplicateEmailError('User {0!r} already exists'.format(username))
-    user_registered.send(user)
     return user
+
 
 def register(username, password, fullname):
     user = get_user(username=username)
@@ -161,5 +155,4 @@ def register(username, password, fullname):
     user.date_confirmed = user.date_registered
     user.emails.append(username)
     user.save()
-    user_registered.send(user)
     return user

@@ -175,25 +175,25 @@ def auth_register_post():
     # Process form
     if form.validate():
         try:
-            u = auth.register_unconfirmed(
+            user = auth.register_unconfirmed(
                 form.username.data,
                 form.password.data,
                 form.fullname.data)
+            auth.signals.user_registered.send(user)
         except (ValidationValueError, DuplicateEmailError):
             status.push_status_message(
                 language.ALREADY_REGISTERED.format(email=form.username.data))
             return auth_login(registration_form=form)
-        if u:
+        if user:
             if website.settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
-                send_confirm_email(u, email=u.username)
-                message = language.REGISTRATION_SUCCESS.format(email=u.username)
+                send_confirm_email(user, email=user.username)
+                message = language.REGISTRATION_SUCCESS.format(email=user.username)
                 status.push_status_message(message, 'success')
                 return auth_login(registration_form=form)
             else:
                 return framework.redirect('/login/first/')
                 #status.push_status_message('You may now log in')
             return framework.redirect(framework.url_for('OsfWebRenderer__auth_login'))
-
     else:
         forms.push_errors_to_status(form.errors)
         return auth_login(registration_form=form)
