@@ -7,6 +7,8 @@
 
 <h2>Contributors</h2>
 
+    <!-- ko if: userIsAdmin -->
+
     <table class="table">
         <thead>
             <th>Name</th>
@@ -60,6 +62,40 @@
     </table>
 
     ${buttonGroup()}
+
+    <!-- /ko -->
+    <!-- ko ifnot: userIsAdmin -->
+    <p>Great Job, Peasant!</p>
+
+    <table class="table">
+        <thead>
+            <th>Name</th>
+            <th>
+                Permissions
+                <i class="icon-question-sign permission-info"
+                        data-toggle="popover"
+                        data-title="Permission Information"
+                        data-container="body"
+                        data-html="true"
+                    ></i>
+            </th>
+            <th></th>
+        </thead>
+        <tbody data-bind="foreach: {data: contributors, as: 'contributor', afterRender: setupEditable, options: {containment: '#manageContributors'}}">
+            <tr>
+                <td>
+                    <img data-bind="attr: {src: contributor.gravatar_url}" />
+                    <span data-bind="text: contributor.fullname"></span>
+                </td>
+                <td>
+                    <a href="#" class="permission-editable" data-type="select"></a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    ${buttonGroup()}
+    <!-- /ko -->
 
 </div>
 
