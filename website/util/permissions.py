@@ -1,6 +1,8 @@
 from website import settings
 
 def expand_permissions(permission):
+    if permission is None:
+        return []
     index = settings.PERMISSIONS.index(permission) + 1
     return settings.PERMISSIONS[:index]
 
