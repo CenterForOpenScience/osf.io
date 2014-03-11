@@ -206,7 +206,7 @@ def node_choose_addons(**kwargs):
 
 
 @must_be_valid_project
-@must_have_permission('admin')
+@must_have_permission('read')
 def node_contributors(**kwargs):
 
     auth = kwargs['auth']
