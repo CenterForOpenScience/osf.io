@@ -18,7 +18,7 @@ from website.project.model import unreg_contributor_added
 from website.models import Node
 from website.profile import utils
 from website.util import web_url_for, is_json_request
-from website.util.permissions import expand_permissions
+from website.util.permissions import expand_permissions, ADMIN
 
 from website.project.decorators import (
     must_not_be_registration, must_be_valid_project, must_be_contributor,
@@ -116,7 +116,7 @@ def get_contributors_from_parent(**kwargs):
     return {'contributors': contribs}
 
 
-@must_have_permission('admin')
+@must_have_permission(ADMIN)
 def get_recently_added_contributors(**kwargs):
 
     auth = kwargs.get('auth')
@@ -260,7 +260,7 @@ def finalize_invitation(node, contributor, auth):
 
 
 @must_be_valid_project
-@must_have_permission('admin')
+@must_have_permission(ADMIN)
 @must_not_be_registration
 def project_contributors_post(**kwargs):
     """ Add contributors to a node. """
@@ -292,7 +292,7 @@ def project_contributors_post(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_have_permission('admin')
+@must_have_permission(ADMIN)
 @must_not_be_registration
 def project_manage_contributors(**kwargs):
 
@@ -310,7 +310,7 @@ def project_manage_contributors(**kwargs):
     # Must redirect user if revoked own access
     if not node.is_contributor(auth.user):
         return {'redirectUrl': node.url}
-    if not node.has_permission(auth.user, 'admin'):
+    if not node.has_permission(auth.user, ADMIN):
         return {'redirectUrl': '/dashboard/'}
     return {}
 
@@ -535,7 +535,7 @@ def claim_user_form(**kwargs):
 
 
 @must_be_valid_project
-@must_have_permission('admin')
+@must_have_permission(ADMIN)
 @must_not_be_registration
 def invite_contributor_post(**kwargs):
     """API view for inviting an unregistered user.
