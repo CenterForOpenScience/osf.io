@@ -128,8 +128,7 @@
     <script type="text/javascript">
         (function($) {
             var $manageElm = $('#manageContributors');
-            var userIsAdmin = ${ 1 if 'admin' in user['permissions'] else 0 }
-            var contributorsViewModel = new Manage.ViewModel(contributors, userIsAdmin, user);
+            var contributorsViewModel = new Manage.ViewModel(contributors, user);
             ko.applyBindings(contributorsViewModel, $manageElm[0]);
             $manageElm.show();
         })($);
