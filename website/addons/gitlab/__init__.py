@@ -1,11 +1,12 @@
 from . import routes, views, model
 
 MODELS = [
-    model.AddonFilesNodeSettings,
-    model.NodeFile,
-    model.OsfGuidFile,
+    model.AddonGitlabUserSettings,
+    model.AddonGitlabUserSettings,
+    model.GitlabGuidFile,
 ]
-NODE_SETTINGS_MODEL = model.AddonFilesNodeSettings
+USER_SETTINGS_MODEL = model.AddonGitlabUserSettings
+NODE_SETTINGS_MODEL = model.AddonGitlabNodeSettings
 
 ROUTES = [
     routes.settings_routes,
@@ -27,6 +28,6 @@ CONFIGS = []
 CATEGORIES = ['storage']
 
 HAS_HGRID_FILES = True
-GET_HGRID_DATA = views.get_osffiles_hgrid
+GET_HGRID_DATA = views.crud.gitlab_list_files
 
-MAX_FILE_SIZE = 1024 * 1024 * 128
+MAX_FILE_SIZE = 32
