@@ -101,6 +101,7 @@
 
 <script type="text/javascript">
     var contributors = ${json.dumps(contributors)};
+    var user = ${json.dumps(user)}
 </script>
 
 <%def name="javascript()">
@@ -122,7 +123,7 @@
         (function($) {
             var $manageElm = $('#manageContributors');
             var userIsAdmin = ${ 1 if 'admin' in user['permissions'] else 0 }
-            var contributorsViewModel = new Manage.ViewModel(contributors, userIsAdmin);
+            var contributorsViewModel = new Manage.ViewModel(contributors, userIsAdmin, user);
             ko.applyBindings(contributorsViewModel, $manageElm[0]);
             $manageElm.show();
         })($);
