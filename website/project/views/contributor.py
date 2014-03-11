@@ -57,7 +57,7 @@ def get_node_contributors_abbrev(**kwargs):
 
         if index == max_count - 1 and len(users) > max_count:
             separator = ' &'
-            others_count = n_contributors - 3
+            others_count = str(n_contributors - 3)
             others_suffix = 's' if others_count > 1 else ''
         elif index == len(users) - 1:
             separator = ''
