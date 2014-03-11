@@ -74,7 +74,7 @@ this.Manage = (function(window, $, ko, bootbox) {
 
     };
 
-    var ContributorsViewModel = function(contributors) {
+    var ContributorsViewModel = function(contributors, userIsAdmin) {
 
         var self = this;
         for (var i=0; i<contributors.length; i++) {
@@ -83,6 +83,7 @@ this.Manage = (function(window, $, ko, bootbox) {
         self.original = ko.observableArray(contributors);
 
         self.contributors = ko.observableArray();
+        self.userIsAdmin  = ko.observable(userIsAdmin);
 
         self.messageText = ko.observable('');
         self.messageType = ko.observable('');
