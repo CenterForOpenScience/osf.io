@@ -500,7 +500,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributors.append(self.creator)
 
             # Add default creator permissions
-            for permission in settings.CREATOR_PERMISSIONS:
+            for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
 
     def can_edit(self, auth=None, user=None):
