@@ -66,10 +66,9 @@ def search_search():
 
 @must_be_logged_in
 def search_projects_by_title(**kwargs):
+    
     term = request.args.get('term')
     user = kwargs['auth'].user
-
-
 
     results = Node.find(
         Q('title', 'istartswith', term) &  # search term (case insensitive)
@@ -80,7 +79,7 @@ def search_projects_by_title(**kwargs):
             Q('contributors', 'contains', user._id))
     ).limit(20)
 
-    rv = []
+    out = []
 
     for project in results:
         authors = get_node_contributors_abbrev(project=project, auth=kwargs['auth'])
@@ -92,9 +91,10 @@ def search_projects_by_title(**kwargs):
             )
             authors_list.append(author['separator'])
         authors_list.append(authors['others_count'])
-        authors_list.append(authors['others_suffix'])
+        if authors['others_count']:
+            authors_list.append('other' + authors['others_suffix'])
 
-        rv.append({
+        out.append({
             'id': project._id,
             'label': project.title,
             'value': project.title,
@@ -102,7 +102,7 @@ def search_projects_by_title(**kwargs):
             'authors': ' '.join(authors_list).strip(),
         })
 
-    return rv
+    return out
 
 
 def create_result(highlights, results):
