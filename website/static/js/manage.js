@@ -77,6 +77,8 @@ this.Manage = (function(window, $, ko, bootbox) {
             return self.id === pageOwner['id'];
         });
 
+        // TODO: copied-and-pasted from nodeControl. When nodeControl
+        // gets refactored, update this to use global method.
         self.removeSelf = function() {
             var id = self.id,
                 name = self.fullname;
