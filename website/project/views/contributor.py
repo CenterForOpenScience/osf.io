@@ -108,7 +108,7 @@ def get_contributors_from_parent(**kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = [
-        utils._add_contributor_json(contrib)
+        utils.add_contributor_json(contrib)
         for contrib in parent.contributors
         if contrib not in node_to_use.contributors
     ]
@@ -126,7 +126,7 @@ def get_recently_added_contributors(**kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = [
-        utils._add_contributor_json(contrib)
+        utils.add_contributor_json(contrib)
         for contrib in auth.user.recently_added
         if contrib.is_active()
         if contrib not in node_to_use.contributors
@@ -203,7 +203,6 @@ def project_removecontributor(**kwargs):
         }
     )
 
-# TODO: TEST ME
 def deserialize_contributors(node, user_dicts, auth):
     """View helper that returns a list of User objects from a list of
     serialized users (dicts). The users in the list may be registered or
@@ -284,8 +283,7 @@ def project_contributors_post(**kwargs):
         child = Node.load(child_id)
         # Only email unreg users once
         child_contribs = deserialize_contributors(
-            child, user_dicts, auth=auth,
-            email_unregistered=False,
+            child, user_dicts, auth=auth
         )
         child.add_contributors(contributors=child_contribs, auth=auth)
         child.save()
@@ -560,7 +558,7 @@ def invite_contributor_post(**kwargs):
             msg = 'User with this email address is already a contributor to this project.'
             return {'status': 400, 'message': msg}, 400
         else:
-            serialized = utils._add_contributor_json(user)
+            serialized = utils.add_contributor_json(user)
             # use correct display name
             serialized['fullname'] = fullname
             serialized['email'] = email

@@ -254,7 +254,6 @@ def merge_user_post(**kwargs):
     try:
         merged_user = User.find_one(Q("username", "eq", merged_username))
     except NoResultsFound:
-        logger.debug("Failed to find user to merge")
         status.push_status_message("Could not find that user. Please check the username and password.")
         return merge_user_get(**kwargs)
     if master and merged_user:

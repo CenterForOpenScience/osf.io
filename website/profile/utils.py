@@ -82,7 +82,7 @@ def serialize_contributors(contribs, node):
     ]
 
 
-def _add_contributor_json(user):
+def add_contributor_json(user):
     return {
         'fullname': user.fullname,
         'email': user.username,
@@ -110,7 +110,7 @@ def serialize_unregistered(fullname, email):
             'email': email
         }
     else:
-        serialized = _add_contributor_json(user)
+        serialized = add_contributor_json(user)
         serialized['fullname'] = fullname
         serialized['email'] = email
     return serialized
