@@ -94,7 +94,7 @@
                     <!-- ko ifnot: deleteStaged -->
                         <a
                                 class="btn btn-danger contrib-button btn-mini"
-                                data-bind="click: remove"
+                                data-bind="click: removeSelf"
                                 rel="tooltip"
                                 title="Remove contributor"
                             >-</a>

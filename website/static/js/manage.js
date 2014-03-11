@@ -77,6 +77,45 @@ this.Manage = (function(window, $, ko, bootbox) {
             return self.id === pageOwner['id'];
         });
 
+        self.removeSelf = function() {
+            var id = self.id,
+                name = self.fullname;
+            var payload = {
+                id: id,
+                name: self.fullname
+            };
+            $.osf.postJSON(
+                nodeApiUrl + 'beforeremovecontributors/',
+                payload,
+                function(response) {
+                    var prompt = $.osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
+                    bootbox.confirm({
+                        title: 'Delete Contributor?',
+                        message: prompt,
+                        callback: function(result) {
+                            if (result) {
+                                $.osf.postJSON(
+                                    nodeApiUrl + 'removecontributors/',
+                                    payload,
+                                    function(response) {
+                                        if (response.redirectUrl) {
+                                            window.location.href = response.redirectUrl;
+                                        } else {
+                                            window.location.reload();
+                                        }
+                                    }
+                                ).fail(function(xhr) {
+                                    var response = JSON.parse(xhr.responseText);
+                                    bootbox.alert('Error: ' + response.message_long);
+                                });
+                            }
+                        }
+                    });
+                }
+            );
+            return false;
+        };
+
     };
 
     var ContributorsViewModel = function(contributors, user) {
