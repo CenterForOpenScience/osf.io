@@ -318,8 +318,12 @@ def project_manage_contributors(**kwargs):
 def get_timestamp():
     return int(time.time())
 
-# TODO: Use throttle?
-def send_claim_registered_email(claimer, unreg_user, node, throttle=0):
+
+def throttle_period_expired(timestamp, throttle):
+    return timestamp is None or (get_timestamp() - timestamp) > throttle
+
+
+def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
     unclaimed_record = unreg_user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
     claim_url = web_url_for('claim_user_registered',
@@ -327,14 +331,18 @@ def send_claim_registered_email(claimer, unreg_user, node, throttle=0):
             pid=node._primary_key,
             token=unclaimed_record['token'],
             _external=True)
-    # Send mail to referrer, telling them to forward verification link to claimer
-    mails.send_mail(referrer.username, mails.FORWARD_INVITE_REGiSTERED,
-        user=unreg_user,
-        referrer=referrer,
-        node=node,
-        claim_url=claim_url,
-        fullname=unclaimed_record['name']
-    )
+    timestamp = unclaimed_record.get('last_sent')
+    if throttle_period_expired(timestamp, throttle):
+        # Send mail to referrer, telling them to forward verification link to claimer
+        mails.send_mail(referrer.username, mails.FORWARD_INVITE_REGiSTERED,
+            user=unreg_user,
+            referrer=referrer,
+            node=node,
+            claim_url=claim_url,
+            fullname=unclaimed_record['name']
+        )
+        unclaimed_record['last_sent'] = get_timestamp()
+        unreg_user.save()
     # Send mail to claimer, telling them to wait for referrer
     mails.send_mail(claimer.username, mails.PENDING_VERIFICATION_REGISTERED,
         fullname=claimer.fullname,
@@ -343,7 +351,7 @@ def send_claim_registered_email(claimer, unreg_user, node, throttle=0):
     )
 
 
-def send_claim_email(email, user, node, notify=True, throttle=30 * 60):
+def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
     """Send an email for claiming a user account. Either sends to the given email
     or the referrer's email, depending on the email address provided.
 
@@ -352,8 +360,8 @@ def send_claim_email(email, user, node, notify=True, throttle=30 * 60):
     :param Node node: The node where the user claimed their account.
     :param bool notify: If True and an email is sent to the referrer, an email
         will also be sent to the invited user about their pending verification.
-    :param int throttle: Time period after the referrer is emailed during which
-        the referrer will not be emailed again.
+    :param int throttle: Time period (in seconds) after the referrer is
+        emailed during which the referrer will not be emailed again.
 
     """
     invited_email = email.lower().strip()
@@ -374,7 +382,7 @@ def send_claim_email(email, user, node, notify=True, throttle=30 * 60):
                 fullname=unclaimed_record['name'],
                 node=node)
         timestamp = unclaimed_record.get('last_sent')
-        if timestamp is None or (get_timestamp() - timestamp) > throttle:
+        if throttle_period_expired(timestamp, throttle):
             unclaimed_record['last_sent'] = get_timestamp()
             user.save()
         else:  # Don't send the email to the referrer
