@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """Various text used throughout the website, e.g. status messages, errors, etc.
 """
@@ -131,3 +132,7 @@ FORK_DESCRIPTION = """
 The new project will be an exact duplicate of this project's current state,
 with you as the only contributor.</p>
 """
+
+TEMPLATE_DROPDOWN_HELP = """Start typing to search. Selecting project as
+template will duplicate its structure in the new project without importing the
+content of that project."""
