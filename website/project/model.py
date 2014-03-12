@@ -639,6 +639,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         if first_save and is_original and not suppress_log:
 
             #
+            # TODO: This logic also exists in self.use_as_template()
             for addon in settings.ADDONS_AVAILABLE:
                 if 'node' in addon.added_default:
                     self.add_addon(addon.short_name, auth=None, log=False)
@@ -755,6 +756,15 @@ class Node(GuidStoredObject, AddonModelMixin):
             log_date=new.date_created,
             save=False,
         )
+
+        # add mandatory addons
+        # TODO: This logic also exists in self.save()
+        print 'working...'
+        for addon in settings.ADDONS_AVAILABLE:
+            print addon.short_name
+            if 'node' in addon.added_default:
+                print 'adding'
+                new.add_addon(addon.short_name, auth=None, log=False)
 
         # deal with the children of the node, if any
         new.nodes = [
