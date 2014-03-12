@@ -158,7 +158,7 @@
 
 <script type="text/javascript">
 
-
+    // TODO: Move all this to its own module
     function formToObj(form) {
         var rv = {};
         $.each($(form).serializeArray(), function(_, value) {
