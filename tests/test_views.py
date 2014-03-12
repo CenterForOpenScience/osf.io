@@ -6,13 +6,12 @@ import unittest
 import json
 import datetime as dt
 import mock
-import hashlib
 import httplib as http
 
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 from webtest.app import AppError
-from framework import Q, auth
+from framework import auth
 from framework.auth.model import User
 
 import website.app
@@ -20,17 +19,18 @@ from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
 from website.project.views.contributor import (
-    _add_contributor_json, send_claim_email,
-    serialize_unregistered, deserialize_contributors
+    send_claim_email,
+    deserialize_contributors
 )
-from website.util import api_url_for
+from website.profile.utils import add_contributor_json, serialize_unregistered
+from website.util import api_url_for, web_url_for
 from website import settings, mails
 from website.util import rubeus
 from website.project.views.node import _view_project
 from website.project.views.comment import serialize_comment
 
 
-from tests.base import DbTestCase, fake
+from tests.base import DbTestCase, fake, capture_signals
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
@@ -104,8 +104,8 @@ class TestProjectViews(DbTestCase):
         user3 = UserFactory()
         url = "/api/v1/project/{0}/contributors/".format(project._id)
 
-        dict2 = _add_contributor_json(user2)
-        dict3 = _add_contributor_json(user3)
+        dict2 = add_contributor_json(user2)
+        dict3 = add_contributor_json(user3)
         dict2['permission'] = 'admin'
         dict3['permission'] = 'write'
 
@@ -331,6 +331,17 @@ class TestProjectViews(DbTestCase):
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), 10)
 
+    def test_get_more_logs(self):
+        # Add some logs
+        for _ in range(12):
+            self.project.logs.append(NodeLogFactory(user=self.user1,
+                                                    action="file_added",
+                                                    params={"project": self.project._id}))
+        self.project.save()
+        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
+        res = self.app.get(url, {"pageNum": 1}, auth=self.auth)
+        assert_equal(len(res.json['logs']), 4)
+
     def test_logs_private(self):
         """Add logs to a public project, then to its private component. Get
         the ten most recent logs; assert that ten logs are returned and that
@@ -463,7 +474,7 @@ class TestAddingContributorViews(DbTestCase):
         name, email = fake.name(), fake.email()
         unreg_no_record = serialize_unregistered(name, email)
         contrib_data = [
-            _add_contributor_json(contrib),
+            add_contributor_json(contrib),
             serialize_unregistered(fake.name(), unreg.username),
             unreg_no_record
         ]
@@ -473,8 +484,7 @@ class TestAddingContributorViews(DbTestCase):
         res = deserialize_contributors(
             self.project,
             contrib_data,
-            auth=Auth(self.creator),
-            email_unregistered=True)
+            auth=Auth(self.creator))
         assert_equal(len(res), len(contrib_data))
         assert_true(res[0]['user'].is_registered)
 
@@ -483,6 +493,15 @@ class TestAddingContributorViews(DbTestCase):
 
         assert_false(res[2]['user'].is_registered)
         assert_true(res[2]['user']._id)
+
+    def test_deserialize_contributors_sends_unreg_contributor_added_signal(self):
+        unreg = UnregUserFactory()
+        from website.project.model import unreg_contributor_added
+        serialized = [serialize_unregistered(fake.name(), unreg.username)]
+        with capture_signals() as mock_signals:
+            deserialize_contributors(self.project, serialized,
+                auth=Auth(self.creator))
+        assert_equal(mock_signals.signals_sent(), set([unreg_contributor_added]))
 
     def test_serialize_unregistered_with_record(self):
         name, email = fake.name(), fake.email()
@@ -511,7 +530,7 @@ class TestAddingContributorViews(DbTestCase):
             'email': email,
             'permission': 'admin',
         }
-        reg_dict = _add_contributor_json(reg_user)
+        reg_dict = add_contributor_json(reg_user)
         reg_dict['permission'] = 'admin'
         payload = {
             'users': [reg_dict, pseudouser],
@@ -568,7 +587,7 @@ class TestAddingContributorViews(DbTestCase):
             'email': fake.email(),
             'permission': 'write',
         }
-        reg_dict = _add_contributor_json(reg_user)
+        reg_dict = add_contributor_json(reg_user)
         reg_dict['permission'] = 'admin'
         payload = {
             'users': [reg_dict, pseudouser],
@@ -593,7 +612,7 @@ class TestAddingContributorViews(DbTestCase):
             'email': email,
             'permission': 'admin',
         }
-        reg_dict = _add_contributor_json(reg_user)
+        reg_dict = add_contributor_json(reg_user)
         reg_dict['permission'] = 'admin'
         payload = {
             'users': [reg_dict, pseudouser],
@@ -606,7 +625,6 @@ class TestAddingContributorViews(DbTestCase):
             n_contributors_pre + len(payload['users']))
 
 
-@unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
 class TestUserInviteViews(DbTestCase):
 
     def setUp(self):
@@ -634,7 +652,7 @@ class TestUserInviteViews(DbTestCase):
         project2.save()
         res = self.app.post_json(self.invite_url,
             {'fullname': name, 'email': email}, auth=self.user.auth)
-        expected = _add_contributor_json(unreg_user)
+        expected = add_contributor_json(unreg_user)
         expected['fullname'] = name
         expected['email'] = email
         assert_equal(res.json['contributor'], expected)
@@ -756,6 +774,7 @@ class TestClaimViews(DbTestCase):
             'email': reg_user.username,
             'fullname': self.given_name,
         })
+
     def test_user_with_removed_unclaimed_url_claiming(self):
         """ Tests that when an unclaimed user is removed from a project, the
         unregistered user object does not retain the token.
@@ -781,148 +800,19 @@ class TestClaimViews(DbTestCase):
             self.user.unclaimed_records.keys()
         )
 
-
-    @unittest.skip('Incomplete')
-    def test_user_with_claim_url_registers_new_account(self):
-
-        # User goes to the claim page, but a different user (lab_user) is logged in
-        lab_user = AuthUserFactory(fullname="Lab Comp")
-
-        url = self.user.get_claim_url(self.project._primary_key)
-        res = self.app.get(url, auth=lab_user.auth).follow(auth=lab_user.auth)
-
-        # verify that the "Claim Account" form is returned
-        assert_in('Claim Contributor', res.body)
-
-        # Clicks "I am not Lab Comp"
-        # Taken to login/register page
-        res2 = res.click(href="/claim/login").follow()
-        # Fills in Register form
-        form = res2.forms['registerForm']
-        form['register-fullname'] = 'tester'
-        form['register-username'] = 'test@test.com'
-        form['register-username2'] = 'test@test.com'
-        form['register-password'] = 'testing'
-        form['register-password2'] = 'testing'
-        #new_user = AuthUserFactory(fullname="tester", username='test@test.com', password='testing')
-
-        # At this point, the form submission cannot be processed using WebTests.
-        # A session is in place beginning on the user's load of the login page.
-        # Since the user is not logged in, and we're emulating session elsewhere
-        # by passing in HTTP auth credentials, we have no means of persisting
-        # the session. We can register a user, but the session stores the info
-        # necessary for the OSF to then add that user as a contributor.
-        # Code below this comment is included for future reference only.
-
-        # submits
-        # res3 = form.submit()
-        #
-        # assert_in('Registration successful.', res3.body)
-        # assert_in('Successfully claimed contributor', res3.body)
-        #
-        # u = User.find(Q('username', 'eq', 'test@test.com'))[0]
-        # key = ApiKeyFactory()
-        # u.api_keys.append(key)
-        # u.save()
-        # u.auth = ('test', key._primary_key)
-        #
-        # res4 = self.app.get(u.get_confirmation_url('test@test.com')).follow(auth=u.auth)
-        #
-        # assert_in('Dashboard', res4.body)
-        #
-        # # Confirms their email address
-        # # user is now a contributor to self.project
-        # self.project.reload()
-        # #new_user.reload()
-        # self.user.reload()
-        # u.reload()
-        # # taken to dashboard
-        # #assert_in("Dashboard", res3.body)
-
-
-        # assert_not_in(self.user._primary_key, self.project.contributors)
-        # assert_equal(2, len(self.project.contributors))
-        # # user is now a contributor to self.project
-        # assert_in(u._primary_key, self.project.contributors)
-
-    @unittest.skip('Incomplete')
-    def test_user_can_log_in_with_a_different_account(self):
-        right_user = AuthUserFactory(fullname="Right User")
-        # User goes to the claim page, but a different user (lab_user) is logged in
-        lab_user = AuthUserFactory(fullname="Lab Comp")
-
-        url = self.user.get_claim_url(self.project._primary_key)
-        res = self.app.get(url, auth=lab_user.auth).follow(auth=lab_user.auth)
-
-        # verify that the "Claim Account" form is returned
-        assert_in('Claim Contributor', res.body)
-
-        # Clicks "I am not Lab Comp"
-        # Taken to login/register page
-
-        res2 = res.click(href="/claim/login").follow()
-        # Fills in log in form
-        form = res2.forms['signinForm']
-        form['username'] = right_user.username
-        form['password'] = right_user.password
-        # submits
-        res3 = form.submit(auth=right_user.auth).follow(auth=right_user.auth)
-
-        # At this point, the form submission cannot be processed using WebTests.
-        # A session is in place beginning on the user's load of the login page.
-        # Since the user is not logged in, and we're emulating session elsewhere
-        # by passing in HTTP auth credentials, we have no means of persisting
-        # the session. We can register a user, but the session stores the info
-        # necessary for the OSF to then add that user as a contributor.
-        # Code below this comment is included for future reference only.
-
-
-        # self.project.reload()
-        # right_user.reload()
-        # self.user.reload()
-        # # taken to dashboard
-        # assert_in("Dashboard", res3.body)
-        #
-        # # user is now a contributor to self.project
-        # assert_in(right_user._primary_key, self.project.contributors)
-        #
-        # # lab user is not a contributor
-        # assert_not_in(lab_user._primary_key, self.project.contributors)
-
     def test_claim_user_form_redirects_to_password_confirm_page_if_user_is_logged_in(self):
-        reg_user = UserFactory()
-        url = self.user.get_claim_url(self.project._primary_key)
-        res = self.app.get(url, auth=Auth(user=reg_user))
-
-        # verify that the "Claim Account" form is returned
-        assert_in('Claim Account', res.body)
-
-    def test_claim_user_registered_with_correct_password(self):
         reg_user = AuthUserFactory()
-        reg_user.set_password('killerqueen')
-        reg_user.save()
         url = self.user.get_claim_url(self.project._primary_key)
-        # Follow to password re-enter page
-        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
-
-        # verify that the "Claim Account" form is returned
-        assert_in('Claim Contributor', res.body)
-
-        form = res.forms['claimContributorForm']
-        form['password'] = 'killerqueen'
-        res = form.submit(auth=reg_user.auth).follow(auth=reg_user.auth)
-
-
-        self.project.reload()
-        self.user.reload()
-        # user is now a contributor to the project
-        assert_in(reg_user._primary_key, self.project.contributors)
-
-        # the unregistered user (self.user) is removed as a contributor, and their
-        assert_not_in(self.user._primary_key, self.project.contributors)
-
-        # unclaimed record for the project has been deleted
-        assert_not_in(self.project._primary_key, self.user.unclaimed_records)
+        res = self.app.get(url, auth=reg_user.auth)
+        assert_equal(res.status_code, 302)
+        with app.test_request_context():
+            res = res.follow(auth=reg_user.auth)
+            token = self.user.get_unclaimed_record(self.project._primary_key)['token']
+            expected = web_url_for('claim_user_registered',
+                pid=self.project._primary_key,
+                uid=self.user._primary_key,
+                token=token)
+            assert_equal(res.request.path, expected)
 
     def test_get_valid_form(self):
         url = self.user.get_claim_url(self.project._primary_key)
@@ -1019,6 +909,26 @@ class TestClaimViews(DbTestCase):
         assert_true(call_to_referrer.called_with(
             to_addr=self.given_email
         ))
+
+    def test_claim_url_with_bad_token_returns_400(self):
+        with app.test_request_context():
+            url = web_url_for('claim_user_registered', uid=self.user._primary_key,
+                pid=self.project._primary_key, token='badtoken')
+        res = self.app.get(url, auth=self.referrer.auth, expect_errors=400)
+        assert_equal(res.status_code, 400)
+
+    def test_cannot_claim_user_with_user_who_is_already_contributor(self):
+        # user who is already a contirbutor to the project
+        contrib = AuthUserFactory.build()
+        contrib.set_password('underpressure')
+        contrib.save()
+        self.project.add_contributor(contrib, auth=Auth(self.project.creator))
+        self.project.save()
+        # Claiming user goes to claim url, but contrib is already logged in
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(url, auth=contrib.auth).follow(auth=contrib.auth, expect_errors=True)
+        # Response is a 400
+        assert_equal(res.status_code, 400)
 
 class TestWatchViews(DbTestCase):
 
@@ -1123,7 +1033,21 @@ class TestWatchViews(DbTestCase):
         self.user.save()
         url = "/api/v1/watched/logs/"
         res = self.app.get(url, auth=self.auth)
-        assert_equal(len(res.json['logs']), len(project.logs))
+        assert_equal(len(res.json['logs']), 10)
+        assert_equal(res.json['logs'][0]['action'], 'file_added')
+
+    def test_get_more_watched_logs(self):
+        project = ProjectFactory()
+        # Add some logs
+        for _ in range(12):
+            project.logs.append(NodeLogFactory(user=self.user, action="file_added"))
+        project.save()
+        watch_cfg = WatchConfigFactory(node=project)
+        self.user.watch(watch_cfg)
+        self.user.save()
+        url = "/api/v1/watched/logs/"
+        res = self.app.get(url, {"pageNum": 1}, auth=self.auth)
+        assert_equal(len(res.json['logs']), 3)
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
 
@@ -1297,12 +1221,8 @@ class TestAuthViews(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.user = UserFactory.build()
-        # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.auth = ('test', api_key._primary_key)
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
 
     def test_merge_user(self):
         dupe = UserFactory(username="copy@cat.com",
@@ -1330,6 +1250,20 @@ class TestAuthViews(DbTestCase):
         assert_true(send_mail.called_with(
             to_addr='fred@queen.com'
         ))
+
+    def test_register_post_sends_user_registered_signal(self):
+        with app.test_request_context():
+            url = web_url_for('auth_register_post')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        with capture_signals() as mock_signals:
+            self.app.post(url, {
+                'register-fullname': name,
+                'register-username': email,
+                'register-password': password,
+                'register-username2': email,
+                'register-password2': password
+            })
+        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered]))
 
     def test_resend_confirmation_get(self):
         res = self.app.get('/resend/')
@@ -1822,7 +1756,7 @@ class TestSearchViews(DbTestCase):
         assert_equal(freddie['fullname'], self.contrib1.fullname)
         #TODO Should I be passing?
         assert_equal(freddie['email'], self.contrib1.username)
-        assert_in('gravatar', freddie)
+        assert_in('gravatar_url', freddie)
         assert_equal(freddie['registered'], self.contrib1.is_registered)
         assert_equal(freddie['active'], self.contrib1.is_active())
 

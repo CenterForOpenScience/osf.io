@@ -22,8 +22,11 @@ from framework.bcrypt import check_password_hash
 from framework.git.exceptions import FileNotModified
 from website import settings, filters
 from website.profile.utils import serialize_user
-from website.project.model import Pointer, ApiKey, NodeLog, Comment, ensure_schemas
+from website.project.model import (
+    ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas
+)
 from website.addons.osffiles.model import NodeFile
+from website.util.permissions import CREATOR_PERMISSIONS
 
 from tests.base import DbTestCase, Guid, fake
 from tests.factories import (
@@ -1368,7 +1371,6 @@ class TestProject(DbTestCase):
         assert_equal(self.project.date_modified, self.project.logs[-1].date)
         assert_not_equal(self.project.date_modified, self.project.date_created)
 
-
     def test_replace_contributor(self):
         contrib = UserFactory()
         self.project.add_contributor(contrib, auth=Auth(self.project.creator))
@@ -1389,9 +1391,109 @@ class TestProject(DbTestCase):
             contrib.unclaimed_records.keys()
         )
 
+class TestTemplateNode(DbTestCase):
+
+    def setUp(self):
+        self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = ProjectFactory(creator=self.user)
+
+    def _verify_log(self, node):
+        """Tests to see that the "created from" log event is present (alone).
+
+        :param node: A node having been created from a template just prior
+        """
+        assert_equal(len(node.logs), 1)
+        assert_equal(node.logs[0].action, NodeLog.CREATED_FROM)
+
+    def test_simple_template(self):
+        """Create a templated node, with no changes"""
+        # created templated node
+        new = self.project.use_as_template(
+            auth=self.consolidate_auth
+        )
+
+        assert_equal(new.title, self.project.title)
+        assert_not_equal(new.date_created, self.project.date_created)
+        self._verify_log(new)
+
+    def test_simple_template_title_changed(self):
+        """Create a templated node, with the title changed"""
+        changed_title = 'Made from template'
+
+        # create templated node
+        new = self.project.use_as_template(
+            auth=self.consolidate_auth,
+            changes={
+                self.project._primary_key: {
+                    'title': changed_title,
+                }
+            }
+        )
+
+        assert_equal(new.title, changed_title)
+        assert_not_equal(new.date_created, self.project.date_created)
+        self._verify_log(new)
+
+    def _create_complex(self):
+        # create project connected via Pointer
+        self.pointee = ProjectFactory(creator=self.user)
+        self.project.add_pointer(self.pointee, auth=self.consolidate_auth)
+
+        # create direct children
+        self.component = NodeFactory(creator=self.user, project=self.project)
+        self.subproject = ProjectFactory(creator=self.user, project=self.project)
+
+
+    def test_complex_template(self):
+        """Create a templated node from a node with children"""
+        self._create_complex()
+
+        # create templated node
+        new = self.project.use_as_template(auth=self.consolidate_auth)
+
+        assert_equal(new.title, self.project.title)
+        assert_equal(len(new.nodes), len(self.project.nodes))
+        # check that all children were copied
+        assert_equal(
+            [x.title for x in new.nodes],
+            [x.title for x in self.project.nodes]
+        )
+        # ensure all child nodes were actually copied, instead of moved
+        assert {x._primary_key for x in new.nodes}.isdisjoint(
+            {x._primary_key for x in self.project.nodes}
+        )
+
+    def test_complex_template_titles_changed(self):
+        self._create_complex()
+
+        # build changes dict to change each node's title
+        changes = {
+            x._primary_key: {
+                'title': 'New Title ' + str(idx)
+            } for idx, x in enumerate(self.project.nodes)
+        }
+
+        # create templated node
+        new = self.project.use_as_template(
+            auth=self.consolidate_auth,
+            changes=changes
+        )
+
+        for old_node, new_node in zip(self.project.nodes, new.nodes):
+            if isinstance(old_node, Node):
+                assert_equal(
+                    changes[old_node._primary_key]['title'],
+                    new_node.title,
+                )
+            else:
+                assert_equal(
+                    old_node.title,
+                    new_node.title,
+                )
+
 
 class TestForkNode(DbTestCase):
-
     def setUp(self):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
@@ -1848,16 +1950,17 @@ class TestPermissions(DbTestCase):
 
     def test_default_creator_permissions(self):
         assert_equal(
-            set(settings.CREATOR_PERMISSIONS),
+            set(CREATOR_PERMISSIONS),
             set(self.project.permissions[self.project.creator._id])
         )
 
     def test_default_contributor_permissions(self):
         user = UserFactory()
-        self.project.add_contributor(user, auth=Auth(user=self.project.creator))
+        self.project.add_contributor(user, permissions=['read'], auth=Auth(user=self.project.creator))
+        self.project.save()
         assert_equal(
-            set(settings.CONTRIBUTOR_PERMISSIONS),
-            set(self.project.permissions[user._id])
+            set(['read']),
+            set(self.project.get_permissions(user))
         )
 
     def test_adjust_permissions(self):

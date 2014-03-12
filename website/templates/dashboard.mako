@@ -23,6 +23,7 @@
                 </div>
                 <div id="logScope">
                     <%include file="log_list.mako"/>
+                    <a class="moreLogs" data-bind="click: moreLogs">more</a>
                 </div><!-- end #logScope -->
             </div><!-- end #watchFeed -->
         </div>
@@ -36,6 +37,7 @@
     // Initialize the LogFeed
     $script(['/static/js/logFeed.js'], function() {
         var logFeed = new LogFeed("#logScope", "/api/v1/watched/logs/");
+
     });
 </script>
 </%def>
