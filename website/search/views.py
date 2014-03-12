@@ -70,7 +70,7 @@ def search_projects_by_title(**kwargs):
     term = request.args.get('term')
     user = kwargs['auth'].user
 
-    max_results = 20
+    max_results = 10
 
     matching_title = (
         Q('title', 'istartswith', term) &  # search term (case insensitive)
