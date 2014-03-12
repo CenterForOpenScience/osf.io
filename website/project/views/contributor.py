@@ -578,22 +578,25 @@ def claim_user_post(**kwargs):
     node = kwargs['node'] or kwargs['project']
     unclaimed_data = user.get_unclaimed_record(node._primary_key)
     # Submitted through X-editable
-    if 'value' in reqdata:
+    if 'value' in reqdata:  # Submitted email address
         email = reqdata['value'].lower().strip()
-        send_claim_email(email, user, node, notify=True)
-        return {
-            'status': 'success',
-            'fullname': unclaimed_data['name'],
-            'email': email,
-        }
-    elif 'claimerId' in reqdata:
+        claimer = framework.auth.get_user(username=email)
+        if claimer:
+            send_claim_registered_email(claimer=claimer, unreg_user=user,
+                node=node)
+        else:
+            send_claim_email(email, user, node, notify=True)
+    # TODO(sloria): Too many assumptions about the request data. Just use
+    # get_current_user?
+    elif 'claimerId' in reqdata:  # User is logged in and confirmed identity
         claimer_id = reqdata['claimerId']
         claimer = User.load(claimer_id)
         send_claim_registered_email(claimer=claimer, unreg_user=user, node=node)
-        return {
-            'status': 'success',
-            'email': claimer.username,
-            'fullname': unclaimed_data['name']
-        }
+        email = claimer.username
     else:
         raise HTTPError(http.BAD_REQUEST)
+    return {
+        'status': 'success',
+        'email': email,
+        'fullname': unclaimed_data['name']
+    }
