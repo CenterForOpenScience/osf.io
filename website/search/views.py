@@ -73,7 +73,7 @@ def search_projects_by_title(**kwargs):
     max_results = 10
 
     matching_title = (
-        Q('title', 'istartswith', term) &  # search term (case insensitive)
+        Q('title', 'icontains', term) &  # search term (case insensitive)
         Q('category', 'eq', 'project') &  # is a project
         Q('is_deleted', 'eq', False)  # isn't deleted
     )
