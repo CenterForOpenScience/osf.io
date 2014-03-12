@@ -7,8 +7,6 @@
 
 <h2>Contributors</h2>
 
-    <!-- ko if: userIsAdmin -->
-
     <table class="table">
         <thead>
             <th>Name</th>
@@ -24,92 +22,63 @@
             <th></th>
         </thead>
         <tr>
+          <!-- ko if: userIsAdmin -->
             <td>
                 <a href="#addContributors" data-toggle="modal">
                     Click to add a contributor
                 </a>
             </td>
+          <!-- /ko -->
         </tr>
-        <tbody data-bind="sortable: {data: contributors, as: 'contributor', afterRender: setupEditable, options: {containment: '#manageContributors'}}">
+        <tbody data-bind="sortable: {data: contributors, as: 'contributor', isEnabled: userIsAdmin(), afterRender: setupEditable, options: {containment: '#manageContributors'}}">
             <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
                 <td>
                     <img data-bind="attr: {src: contributor.gravatar_url}" />
                     <span data-bind="text: contributor.fullname"></span>
                 </td>
                 <td>
+                  <!-- ko if: $parent.userIsAdmin -->
                     <span data-bind="visible: notDeleteStaged">
                         <a href="#" class="permission-editable" data-type="select"></a>
                     </span>
                     <span data-bind="visible: deleteStaged">
                         <span data-bind="text: formatPermission"></span>
                     </span>
-                </td>
-                <td>
-                    <!-- ko ifnot: deleteStaged -->
-                        <a
-                                class="btn btn-danger contrib-button btn-mini"
-                                data-bind="click: remove"
-                                rel="tooltip"
-                                title="Remove contributor"
-                            >-</a>
-                    <!-- /ko -->
-                    <!-- ko if: deleteStaged -->
-                        Removed
-                    <!-- /ko -->
-                </td>
-            </tr>
-        </tbody>
-    </table>
-
-    ${buttonGroup()}
-
-    <!-- /ko -->
-    <!-- ko ifnot: userIsAdmin -->
-
-    <table class="table">
-        <thead>
-            <th>Name</th>
-            <th>
-                Permissions
-                <i class="icon-question-sign permission-info"
-                        data-toggle="popover"
-                        data-title="Permission Information"
-                        data-container="body"
-                        data-html="true"
-                    ></i>
-            </th>
-            <th></th>
-        </thead>
-        <tbody data-bind="foreach: {data: contributors, as: 'contributor', afterRender: setupEditable, options: {containment: '#manageContributors'}}">
-            <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
-                <td>
-                    <img data-bind="attr: {src: contributor.gravatar_url}" />
-                    <span data-bind="text: contributor.fullname"></span>
-                </td>
-                <td>
+                  <!-- /ko -->
+                  <!-- ko ifnot: $parent.userIsAdmin -->
                     <span data-bind="text: formatPermission"></span>
+                  <!-- /ko -->
                 </td>
                 <td>
-                <!-- ko if: contributorIsUser -->
+                  <!-- ko if: $parent.userIsAdmin -->
                     <!-- ko ifnot: deleteStaged -->
-                        <a
-                                class="btn btn-danger contrib-button btn-mini"
-                                data-bind="click: removeSelf"
-                                rel="tooltip"
-                                title="Remove contributor"
-                            >-</a>
+                      <a
+                          class="btn btn-danger contrib-button btn-mini"
+                          data-bind="click: remove"
+                          rel="tooltip"
+                          title="Remove contributor"
+                        >-</a>
                     <!-- /ko -->
                     <!-- ko if: deleteStaged -->
-                        Removed
+                      Removed
                     <!-- /ko -->
-                <!-- /ko -->
+                  <!-- /ko -->
+                  <!-- ko ifnot: $parent.userIsAdmin -->
+                    <!-- ko if: contributorIsUser -->
+                          <a
+                              class="btn btn-danger contrib-button btn-mini"
+                              data-bind="click: removeSelf"
+                              rel="tooltip"
+                              title="Remove contributor"
+                            >-</a>
+                    <!-- /ko -->
+                  <!-- /ko -->
                 </td>
             </tr>
         </tbody>
     </table>
 
     ${buttonGroup()}
-    <!-- /ko -->
 
 </div>
 
