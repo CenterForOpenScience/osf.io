@@ -66,7 +66,7 @@ def search_search():
 
 @must_be_logged_in
 def search_projects_by_title(**kwargs):
-    
+
     term = request.args.get('term')
     user = kwargs['auth'].user
 
@@ -83,23 +83,21 @@ def search_projects_by_title(**kwargs):
 
     for project in results:
         authors = get_node_contributors_abbrev(project=project, auth=kwargs['auth'])
-        authors_list = []
+        authors_html = ''
         for author in authors['contributors']:
             a = User.load(author['user_id'])
-            authors_list.append(
-                '<a href="%s">%s</a>' % (a.url, a.fullname)
-            )
-            authors_list.append(author['separator'])
-        authors_list.append(authors['others_count'])
+            authors_html += '<a href="%s">%s</a>' % (a.url, a.fullname)
+            authors_html += author['separator'] + ' '
+        authors_html += ' ' + authors['others_count']
         if authors['others_count']:
-            authors_list.append('other' + authors['others_suffix'])
+            authors_html += ' other' + authors['others_suffix']
 
         out.append({
             'id': project._id,
             'label': project.title,
             'value': project.title,
             'category': 'My Projects' if user in project.contributors else 'Public Projects',
-            'authors': ' '.join(authors_list).strip(),
+            'authors': authors_html,
         })
 
     return out

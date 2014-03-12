@@ -161,7 +161,6 @@ var AddPointerViewModel = function(nodeTitle) {
  */
 ko.bindingHandlers.tooltip = {
     init: function(elem, valueAccessor) {
-        console.log('foo');
         $(elem).tooltip(valueAccessor())
     }
 };
