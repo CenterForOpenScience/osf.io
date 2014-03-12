@@ -13,6 +13,7 @@ ${next.body()}
 <%include file="modal_show_links.mako"/>
 % if node['category'] == 'project':
     <%include file="modal_add_component.mako"/>
+    <%include file="modal_duplicate.mako"/>
 % endif
 </%def>
 
@@ -49,7 +50,7 @@ ${next.body()}
                 })
                 .ready('logFeed', function() {
                     if ($logScope.length) { // Render log feed if necessary
-                        var logFeed = new LogFeed('#logScope', data.node.logs);
+                        var logFeed = new LogFeed('#logScope', data.node.logs, {'url':nodeApiUrl+'log/'});
                     }
                 });
                 // If user is a contributor, initialize the contributor modal

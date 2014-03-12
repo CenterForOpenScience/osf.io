@@ -269,18 +269,27 @@ this.ContribAdder = (function($, global, undefined) {
         });
 
         self.submit = function() {
-            $.osf.postJSON(
-                nodeApiUrl + 'contributors/',
-                {
+            $.osf.block();
+            $(".modal").modal('hide');
+            $.ajax({
+                url: nodeApiUrl + 'contributors/',
+                type: "post",
+                contentType: "application/json",
+                dataType: "json",
+                data: JSON.stringify({
                     users: self.selection().map(function(user) {
                         return ko.toJS(user);
                     }),
                     node_ids: self.nodesToChange()
+                }),
+                success: function(response) {
+                        window.location.reload();
                 },
-                function(response) {
-                    window.location.reload();
+                error: function(response){
+                    $.osf.unblock();
+                    bootbox.alert("Add contributor failed.");
                 }
-            );
+            });
         };
 
         self.clear = function() {
