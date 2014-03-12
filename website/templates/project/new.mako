@@ -22,3 +22,7 @@
     </div>
 </div><!-- end row -->
 </%def>
+
+<%def name="stylesheets()">
+<link rel="stylesheet" href="/static/vendor/bower_components/jquery-ui/themes/base/jquery-ui.css">
+</%def>

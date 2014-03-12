@@ -12,7 +12,6 @@ env = Environment(settings.STATIC_FOLDER, settings.STATIC_URL_PATH)
 css = Bundle(
         # Vendorized libraries
          Bundle(
-            'vendor/bower_components/jquery-ui/themes/base/jquery-ui.css',
             'vendor/jquery-tagit/css/jquery.tagit.css',
             'vendor/jquery-tagsinput/css/jquery.tagsinput.css',
             'vendor/jquery-tagit/css/tagit.ui-zendesk.css',
