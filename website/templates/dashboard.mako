@@ -1,8 +1,6 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Dashboard</%def>
 <%def name="content()">
-<div mod-meta='{"tpl": "include/subnav.mako", "replace": true}'></div>
-
 <div class="row">
     <div class="col-md-6">
         <div class="page-header">

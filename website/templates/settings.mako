@@ -1,7 +1,6 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Settings</%def>
 <%def name="content()">
-<div mod-meta='{"tpl": "include/subnav.mako", "replace": true}'></div>
 <h2 class="page-header">Account Settings</h2>
 
 ## TODO: Review and un-comment
