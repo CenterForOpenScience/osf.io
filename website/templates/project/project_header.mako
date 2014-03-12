@@ -107,7 +107,9 @@
         </p>
 
         <nav id="projectSubnav" class="navbar navbar-default ">
-            <ul class="nav navbar-nav">
+            <div class="container-fluid">
+
+            <ul class="nav navbar-nav project-nav">
                 <li><a href="${node['url']}">Dashboard</a></li>
 
                 <li><a href="${node['url']}files/">Files</a></li>
@@ -137,6 +139,7 @@
                 <li><a href="${node['url']}settings/">Settings</a></li>
                 % endif
             </ul>
+            </div>
         </nav>
     </header>
 </div><!-- end projectScope -->
