@@ -63,17 +63,23 @@ this.LogFeed = (function(ko, $, global, moment) {
         })
     };
 
+    var logCheck = function(logs){
+        if (logs.length!=11){
+            $(".moreLogs").hide();
+        }else{
+            logs.pop();
+        }
+        return logs
+    }
     /**
      * View model for a log list.
      * @param {Log[]} logs An array of Log model objects to render.
      * @param url the url ajax request post to
      */
     var LogsViewModel = function(logs, url) {
-        if (logs.length<10){
-            $(".moreLogs").hide();
-        }
+        var newLogs = logCheck(logs);
         var self = this;
-        self.logs = ko.observableArray(logs);
+        self.logs = ko.observableArray(newLogs);
         var page_num=  0;
         self.url = url;
 
@@ -89,10 +95,7 @@ this.LogFeed = (function(ko, $, global, moment) {
                 cache: false,
                 success: function(response){
                     // Initialize LogViewModel
-                    var logs = response['logs'];
-                    if (logs.length<10){
-                        $(".moreLogs").hide();
-                    }
+                    var logs = logCheck(response['logs']);
                     var logModelObjects = createLogs(logs);  // Array of Log model objects
                     for(var i=0;i<logModelObjects.length;i++)
                     {
