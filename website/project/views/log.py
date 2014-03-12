@@ -44,7 +44,7 @@ def _get_logs(node, count, auth, offset=0):
             logs.append(log.serialize())
         if len(logs) >= count:
             break
-
+    print count
     return logs
 
 @collect_auth
@@ -68,7 +68,8 @@ def get_logs(**kwargs):
     else:
         count = 10
     offset = page_num*count
-    count+=1
+    if count==10:
+        count+=1
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
     logs = _get_logs(node_to_use, count, auth, offset)

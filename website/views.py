@@ -115,7 +115,7 @@ def watched_logs_get(**kwargs):
     page_num = int(request.args.get('pageNum', '').strip('/') or 0)
     page_size = 10
     offset = page_num * page_size
-    recent_log_ids = list(user.get_recent_log_ids())[offset:][:page_size]
+    recent_log_ids = list(user.get_recent_log_ids())[offset:][:page_size+1]
     logs = (model.NodeLog.load(id) for id in recent_log_ids)
     return {"logs": [log.serialize() for log in logs]}
 

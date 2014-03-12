@@ -454,7 +454,7 @@ def _view_project(node, auth, primary=False):
     user = auth.user
 
     parent = node.parent_node
-    recent_logs = _get_logs(node, 10, auth)
+    recent_logs = _get_logs(node, 11, auth)
     widgets, configs, js, css = _render_addon(node)
     # Before page load callback; skip if not primary call
     if primary:
