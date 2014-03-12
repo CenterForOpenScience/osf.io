@@ -20,7 +20,7 @@ from framework.auth.decorators import Auth
 from framework import utils
 from framework.bcrypt import check_password_hash
 from framework.git.exceptions import FileNotModified
-from website import settings, filters
+from website import filters, language, settings
 from website.profile.utils import serialize_user
 from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas
@@ -1413,7 +1413,7 @@ class TestTemplateNode(DbTestCase):
             auth=self.consolidate_auth
         )
 
-        assert_equal(new.title, self.project.title)
+        assert_equal(new.title, self._default_title(self.project))
         assert_not_equal(new.date_created, self.project.date_created)
         self._verify_log(new)
 
@@ -1444,6 +1444,12 @@ class TestTemplateNode(DbTestCase):
         self.component = NodeFactory(creator=self.user, project=self.project)
         self.subproject = ProjectFactory(creator=self.user, project=self.project)
 
+    @staticmethod
+    def _default_title(x):
+        if isinstance(x, Node):
+            return str(language.TEMPLATED_FROM_PREFIX + x.title)
+        return str(x.title)
+
 
     def test_complex_template(self):
         """Create a templated node from a node with children"""
@@ -1452,12 +1458,12 @@ class TestTemplateNode(DbTestCase):
         # create templated node
         new = self.project.use_as_template(auth=self.consolidate_auth)
 
-        assert_equal(new.title, self.project.title)
+        assert_equal(new.title, self._default_title(self.project))
         assert_equal(len(new.nodes), len(self.project.nodes))
         # check that all children were copied
         assert_equal(
             [x.title for x in new.nodes],
-            [x.title for x in self.project.nodes]
+            [self._default_title(x) for x in self.project.nodes],
         )
         # ensure all child nodes were actually copied, instead of moved
         assert {x._primary_key for x in new.nodes}.isdisjoint(
@@ -1531,12 +1537,12 @@ class TestTemplateNode(DbTestCase):
         # create templated node
         new = self.project.use_as_template(auth=other_user_auth)
 
-        assert_equal(new.title, self.project.title)
+        assert_equal(new.title, self._default_title(self.project))
 
         # check that all children were copied
         assert_equal(
             [x.title for x in new.nodes],
-            [x.title for x in visible_nodes]
+            [self._default_title(x) for x in visible_nodes]
         )
         # ensure all child nodes were actually copied, instead of moved
         assert_true({x._primary_key for x in new.nodes}.isdisjoint(

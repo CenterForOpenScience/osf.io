@@ -136,3 +136,5 @@ with you as the only contributor.</p>
 TEMPLATE_DROPDOWN_HELP = """Start typing to search. Selecting project as
 template will duplicate its structure in the new project without importing the
 content of that project."""
+
+TEMPLATED_FROM_PREFIX = "Templated from "

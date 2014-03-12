@@ -38,7 +38,7 @@ from website.util.permissions import (expand_permissions,
     CREATOR_PERMISSIONS
 )
 from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website import settings
+from website import language, settings
 
 html_parser = HTMLParser()
 
@@ -732,6 +732,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         new.template_node = self
         new.is_fork = False
         new.is_registration = False
+
+        # If that title hasn't been changed, apply the default prefix (once)
+        if (new.title == self.title and
+                language.TEMPLATED_FROM_PREFIX not in new.title):
+            new.title = ''.join((language.TEMPLATED_FROM_PREFIX, new.title, ))
 
         # Slight hack - date_created is a read-only field.
         new._fields['date_created'].__set__(
