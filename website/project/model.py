@@ -742,6 +742,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         new.add_contributor(contributor=auth.user, log=False, save=False)
         new.template_node = self
         new.is_fork = False
+        new.is_registration = False
 
         # Slight hack - date_created is a read-only field.
         new._fields['date_created'].__set__(
@@ -768,7 +769,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
         # deal with the children of the node, if any
-        new.nodes = [x.use_as_template(auth, changes) for x in self.nodes]
+        new.nodes = [
+            x.use_as_template(auth, changes)
+            for x in self.nodes
+            if x.can_view(auth)
+        ]
 
         new.save()
         return new
