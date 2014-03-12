@@ -44,7 +44,7 @@ def _get_logs(node, count, auth, offset=0):
             logs.append(log.serialize())
         if len(logs) >= count:
             break
-    print count
+
     return logs
 
 @collect_auth

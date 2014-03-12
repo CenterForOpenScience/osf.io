@@ -64,7 +64,6 @@ this.LogFeed = (function(ko, $, global, moment) {
     };
 
     var logCheck = function(logs){
-        console.log(logs.length);
         if (logs.length<11){
             $(".moreLogs").hide();
         }else{
