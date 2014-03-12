@@ -721,6 +721,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # set attributes which may be overridden by `changes`
         new.is_public = False
+        new.description = None
 
         # apply `changes`
         for attr, val in attributes.iteritems():
