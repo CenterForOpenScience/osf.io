@@ -886,6 +886,13 @@ h1.unavailable {
   }
 }
 
+@media (max-width: 992px) {
+  /* Make sidebar static on medium sized screen */
+  .sidebar.affix {
+    position: static;
+  }
+}
+
 /* Logs */
 
 .log-file-link {
