@@ -110,3 +110,24 @@ Registration cannot be undone, and the archived content and files cannot be
 deleted after registration. Please be sure the project is complete and
 comprehensive for what you wish to register.
 '''
+
+# Nodes: forking, templating, linking
+
+LINK_ACTION = 'Link to this Project'
+LINK_DESCRIPTION = """
+<p>Linking to this project will reference it in another project, without
+creating a copy. The link will always point to the most up-to-date version.</p>
+"""
+
+TEMPLATE_ACTION = 'Copy Project Structure'
+TEMPLATE_DESCRIPTION = """
+<p>This option will create a new project, using this project as a template.
+The new project will be structured in the same way, but contain no data.</p>
+"""
+
+FORK_ACTION = 'Fork this Project'
+FORK_DESCRIPTION = """
+<p>Fork this project if you plan to build upon it in your own work.
+The new project will be an exact duplicate of this project's current state,
+with you as the only contributor.</p>
+"""
