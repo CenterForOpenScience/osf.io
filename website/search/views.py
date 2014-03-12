@@ -26,7 +26,7 @@ def search_search():
     query = request.args.get('q')
     # if there is not a query, tell our users to enter a search
     if query == '':
-        status.push_status_message('Enter a search!')
+        status.push_status_message('No search query', 'info')
         return {
             'results': [],
             'tags': [],
