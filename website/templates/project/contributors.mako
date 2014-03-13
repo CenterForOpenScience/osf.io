@@ -4,7 +4,8 @@
 <div class="row">
     <div id="manageContributors" class="col-md-12">
 
-    <h2>Contributors</h2>
+<h2>Contributors</h2>
+<div id="manageContributors" >
 
         <table id="manageContributorsTable" class="table">
             <thead>
@@ -21,7 +22,7 @@
                 <th></th>
             </thead>
             <tr>
-                <td colspan="2">
+                <td colspan="3">
                     <a href="#addContributors" data-toggle="modal">
                         Click to add a contributor
                     </a>
@@ -78,14 +79,11 @@
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <% import json %>
-    <script src="/static/js/manage.js"></script>
+    <script src="/static/js/contribManager.js"></script>
     <script type="text/javascript">
         (function($, global) {
             var contributors = ${json.dumps(contributors)};
-            var $manageElm = $('#manageContributors');
-            var contributorsViewModel = new Manage.ViewModel(contributors);
-            ko.applyBindings(contributorsViewModel, $manageElm[0]);
-            $manageElm.show();
+            var manager = new ContribManager('#manageContributors', contributors);
         })($, window);
     </script>
 </%def>
