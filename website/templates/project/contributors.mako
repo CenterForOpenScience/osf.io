@@ -28,7 +28,8 @@
                     </a>
                 </td>
             </tr>
-            <tbody data-bind="sortable: {template: 'contribTpl', data: contributors, as: 'contributor', afterRender: setupEditable}">
+            <tbody data-bind="sortable: {template: 'contribTpl', data: contributors, as: 'contributor', afterRender: setupEditable,
+                options: {containment: '#manageContributors'}}">
             </tbody>
         </table>
 
