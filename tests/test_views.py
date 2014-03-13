@@ -284,7 +284,7 @@ class TestProjectViews(DbTestCase):
 
     def test_get_logs(self):
         # Add some logs
-        for _ in range(5):
+        for _ in xrange(5):
             self.project.logs.append(
                 NodeLogFactory(
                     user=self.user1,
@@ -298,12 +298,13 @@ class TestProjectViews(DbTestCase):
         self.project.reload()
         data = res.json
         assert_equal(len(data['logs']), len(self.project.logs))
+        assert_false(data['has_more_logs'])
         most_recent = data['logs'][0]
         assert_equal(most_recent['action'], 'file_added')
 
     def test_get_logs_with_count_param(self):
         # Add some logs
-        for _ in range(5):
+        for _ in xrange(5):
             self.project.logs.append(
                 NodeLogFactory(
                     user=self.user1,
@@ -315,10 +316,11 @@ class TestProjectViews(DbTestCase):
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, {'count': 3}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
+        assert_true(res.json['has_more_logs'])
 
     def test_get_logs_defaults_to_ten(self):
         # Add some logs
-        for _ in range(12):
+        for _ in xrange(12):
             self.project.logs.append(
                 NodeLogFactory(
                     user=self.user1,
@@ -330,10 +332,11 @@ class TestProjectViews(DbTestCase):
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), 10)
+        assert_true(res.json['has_more_logs'])
 
     def test_get_more_logs(self):
         # Add some logs
-        for _ in range(12):
+        for _ in xrange(12):
             self.project.logs.append(NodeLogFactory(user=self.user1,
                                                     action="file_added",
                                                     params={"project": self.project._id}))
@@ -341,6 +344,7 @@ class TestProjectViews(DbTestCase):
         url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
         res = self.app.get(url, {"pageNum": 1}, auth=self.auth)
         assert_equal(len(res.json['logs']), 4)
+        assert_false(res.json['has_more_logs'])
 
     def test_logs_private(self):
         """Add logs to a public project, then to its private component. Get
@@ -349,7 +353,7 @@ class TestProjectViews(DbTestCase):
 
         """
         # Add some logs
-        for _ in range(15):
+        for _ in xrange(15):
             self.project.add_log(
                 auth=self.consolidate_auth1,
                 action='file_added',
@@ -358,7 +362,7 @@ class TestProjectViews(DbTestCase):
         self.project.is_public = True
         self.project.save()
         child = NodeFactory(project=self.project)
-        for _ in range(5):
+        for _ in xrange(5):
             child.add_log(
                 auth=self.consolidate_auth1,
                 action='file_added',
@@ -367,6 +371,7 @@ class TestProjectViews(DbTestCase):
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url).maybe_follow()
         assert_equal(len(res.json['logs']), 10)
+        assert_true(res.json['has_more_logs'])
         assert_equal(
             [self.project._id] * 10,
             [
@@ -377,7 +382,7 @@ class TestProjectViews(DbTestCase):
 
     def test_logs_from_api_url(self):
         # Add some logs
-        for _ in range(12):
+        for _ in xrange(12):
             self.project.logs.append(
                 NodeLogFactory(
                     user=self.user1,
@@ -389,6 +394,7 @@ class TestProjectViews(DbTestCase):
         url = "/api/v1/project/{0}/".format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['node']['logs']), 10)
+        assert_true(res.json['node']['has_more_logs'])
 
     def test_remove_project(self):
         url = self.project.api_url
