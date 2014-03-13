@@ -24,6 +24,7 @@ ${next.body()}
     $script(['/static/js/nodeControl.js'], 'nodeControl');
     $script(['/static/js/logFeed.js'], 'logFeed');
     $script(['/static/js/contribAdder.js'], 'contribAdder');
+    $script(['/static/js/pointers.js'], 'pointers');
 
     // TODO: Put these in the contextVars object below
     var nodeId = '${node['id']}';
@@ -34,6 +35,9 @@ ${next.body()}
         currentUser: {
             username: '${user.get("username")}',
             id: '${user_id}'
+        },
+        node: {
+            title: "${node['title']}"
         }
     };
 
@@ -66,17 +70,16 @@ ${next.body()}
                 }
             }
         );
-        // TODO: move AddPointerViewModel to its own module
-        var $addPointer = $('#addPointer');
-        var addPointerVM = new AddPointerViewModel("${node['title']}");
-        ko.applyBindings(addPointerVM, $addPointer[0]);
-        $addPointer.on('hidden.bs.modal', function() {
-            addPointerVM.clear();
-        });
+
+
 
         var linksModal = $('#showLinks')[0];
         var linksVM = new LinksViewModel(linksModal);
         ko.applyBindings(linksVM, linksModal);
+    });
+
+    $script.ready('pointers', function() {
+        var pointerManager = new PointerManager('#addPointer', contextVars.node.title);
     });
 
     // Make unregistered contributors claimable
