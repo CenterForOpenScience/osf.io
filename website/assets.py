@@ -12,14 +12,13 @@ env = Environment(settings.STATIC_FOLDER, settings.STATIC_URL_PATH)
 css = Bundle(
         # Vendorized libraries
          Bundle(
-            'vendor/bower_components/jquery-ui/themes/base/jquery-ui.css',
             'vendor/jquery-tagit/css/jquery.tagit.css',
             'vendor/jquery-tagsinput/css/jquery.tagsinput.css',
             'vendor/jquery-tagit/css/tagit.ui-zendesk.css',
             'vendor/jquery-fileupload/css/jquery.fileupload-ui.css',
             'vendor/pygments.css',
             'vendor/bootstrap3-editable/css/bootstrap-editable.css',
-            'vendor/bootstrap3/css/bootstrap-theme.css',
+            'vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css',
             'vendor/hgrid/hgrid.css',
             filters='cssmin'),
         # Site-specific CSS
@@ -35,7 +34,7 @@ css = Bundle(
 js = Bundle(
     # Vendorized libraries that are already minified
     Bundle(
-        "vendor/bootstrap3/js/bootstrap.min.js",
+        "vendor/bower_components/bootstrap/dist/js/bootstrap.min.js",
         "vendor/bootbox/bootbox.min.js",
         "vendor/script.min.js",
     ),

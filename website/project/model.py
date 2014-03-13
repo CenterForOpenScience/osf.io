@@ -1008,6 +1008,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         as appropriate.
 
         """
+        def solr_bool(value):
+            """Return a string value for a boolean value that solr will
+            correctly serialize.
+            """
+            return 'true' if value is True else 'false'
         if not settings.USE_SOLR:
             return
 
@@ -1046,10 +1051,11 @@ class Node(GuidStoredObject, AddonModelMixin):
                 ],
                 '{}_title'.format(self._id): self.title,
                 '{}_category'.format(self._id): self.category,
-                '{}_public'.format(self._id): self.is_public,
+                '{}_public'.format(self._id): solr_bool(self.is_public),
                 '{}_tags'.format(self._id): [x._id for x in self.tags],
                 '{}_description'.format(self._id): self.description,
                 '{}_url'.format(self._id): self.url,
+                '{}_registeredproject'.format(self._id): solr_bool(self.is_registration),
             }
 
             # TODO: Move to wiki add-on

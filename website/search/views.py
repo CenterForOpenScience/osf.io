@@ -26,7 +26,7 @@ def search_search():
     query = request.args.get('q')
     # if there is not a query, tell our users to enter a search
     if query == '':
-        status.push_status_message('Enter a search!')
+        status.push_status_message('No search query', 'info')
         return {
             'results': [],
             'tags': [],
@@ -198,7 +198,7 @@ def create_result(highlights, results):
                             'highlight': lit or nest.get(split_id)['highlight'] if nest.get(split_id) else None,
                             'wiki_link': wiki_link,
                             'contributors': contributors,
-                            'contributors_url': contributors_url,
+                            'contributors_url': contributors_url
                         }
                         if split_id+'_tags' in result:
                             if split_id not in visited_nests:
@@ -227,6 +227,7 @@ def create_result(highlights, results):
             container['wiki_link'] = main_wiki_link
             # and our nested information
             container['nest'] = nest
+            container['is_registration'] = result[id + '_registeredproject']
             if id+'_tags' in result.keys():
                 # again using sets to create a list without duplicates
                 container['tags'] = result[id+'_tags'] + list(

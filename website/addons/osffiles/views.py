@@ -51,12 +51,6 @@ def get_osffiles_hgrid(node_settings, auth, **kwargs):
         for name, fid in node.files_current.iteritems():
 
             fobj = NodeFile.load(fid)
-            unique, total = get_basic_counters(
-                'download:{0}:{1}'.format(
-                    node_settings.owner._id,
-                    fobj.path.replace('.', '_')
-                )
-            )
             item = {
                 rubeus.KIND: rubeus.FILE,
                 'name': _clean_file_name(fobj.path),
@@ -69,7 +63,7 @@ def get_osffiles_hgrid(node_settings, auth, **kwargs):
                     'view': True,
                     'edit': can_edit,
                 },
-                'downloads': total or 0,
+                'downloads': fobj.download_count(node),
                 'size': [
                     float(fobj.size),
                     rubeus.format_filesize(fobj.size),

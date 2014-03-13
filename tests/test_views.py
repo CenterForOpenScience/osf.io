@@ -759,8 +759,7 @@ class TestClaimViews(DbTestCase):
         )
 
         res = self.app.post_json(url,
-            payload,
-            auth=Auth(user=reg_user)
+            payload
         )
 
         # mail was sent
@@ -774,6 +773,20 @@ class TestClaimViews(DbTestCase):
             'email': reg_user.username,
             'fullname': self.given_name,
         })
+
+    @mock.patch('website.project.views.contributor.send_claim_registered_email')
+    def test_claim_user_post_with_email_already_registered_sends_correct_email(self,
+        send_claim_registered_email):
+        reg_user = UserFactory()
+        payload = {
+            'value': reg_user.username,
+            'pk': self.user._primary_key
+        }
+        with app.test_request_context():
+            url = api_url_for('claim_user_post', uid=self.user._primary_key,
+                pid=self.project._primary_key)
+        res = self.app.post_json(url, payload)
+        assert_true(send_claim_registered_email.called)
 
     def test_user_with_removed_unclaimed_url_claiming(self):
         """ Tests that when an unclaimed user is removed from a project, the
@@ -1736,7 +1749,6 @@ class TestComments(DbTestCase):
         expected = [user1._id, user2._id, self.project.creator._id]
         assert_equal(observed, expected)
 
-
 class TestSearchViews(DbTestCase):
 
     def setUp(self):
@@ -1759,6 +1771,12 @@ class TestSearchViews(DbTestCase):
         assert_in('gravatar_url', freddie)
         assert_equal(freddie['registered'], self.contrib1.is_registered)
         assert_equal(freddie['active'], self.contrib1.is_active())
+
+    def test_search_projects(self):
+        with app.test_request_context():
+            url = web_url_for('search_search')
+        res = self.app.get(url, {'q': self.project.title})
+        assert_equal(res.status_code, 200)
 
 
 if __name__ == '__main__':
