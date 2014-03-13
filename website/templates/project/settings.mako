@@ -1,7 +1,5 @@
-<%inherit file="base.mako"/>
+<%inherit file="project/project_base.mako"/>
 <%def name="title()">Project Settings</%def>
-<%def name="content()">
-<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
 
 ##<!-- Show API key settings -->
 ##<div mod-meta='{
@@ -17,8 +15,13 @@
     <div class="col-md-3">
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
-                <li><a href="#configureNode">Configure ${node['category'].capitalize()}</a></li>
-                <li><a href="#selectAddons">Select Add-ons</a></li>
+                % if 'admin' in user['permissions'] and not node['is_registration']:
+                    <li><a href="#configureNode">Configure ${node['category'].capitalize()}</a></li>
+                % endif
+                <li><a href="#configureCommenting">Configure Commenting</a></li>
+                % if not node['is_registration']:
+                    <li><a href="#selectAddons">Select Add-ons</a></li>
+                % endif
                 % if addon_enabled_settings:
                     <li><a href="#configureAddons">Configure Add-ons</a></li>
                 % endif
@@ -27,16 +30,51 @@
     </div>
     <div class="col-md-6">
 
-        <div id="configureNode" class="panel panel-default">
+        % if 'admin' in user['permissions'] and not node['is_registration']:
+
+            <div id="configureNode" class="panel panel-default">
+
+                <div class="panel-heading">
+                    <h3 class="panel-title">Configure ${node['category'].capitalize()}</h3>
+                </div>
+
+                <div class="panel-body">
+
+                    <!-- Delete node -->
+                    <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
+
+                </div>
+
+            </div>
+
+        % endif
+
+        <div id="configureCommenting" class="panel panel-default">
 
             <div class="panel-heading">
-                <h3 class="panel-title">Configure ${node['category'].capitalize()}</h3>
+                <h3 class="panel-title">Configure Commenting</h3>
             </div>
 
             <div class="panel-body">
 
-                <!-- Delete node -->
-                <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
+                <form class="form" id="commentSettings">
+
+                    <div class="radio">
+                        <label>
+                            <input type="radio" name="commentLevel" value="private" ${'checked' if comments['level'] == 'private' else ''}>
+                            Only contributors can post comments
+                        </label>
+                    </div>
+                    <div class="radio">
+                        <label>
+                            <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
+                            When the ${node['category']} is public, any OSF user can post comments
+                        </label>
+                    </div>
+
+                    <button class="btn btn-success">Submit</button>
+
+                </form>
 
             </div>
 
@@ -135,9 +173,9 @@
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>
 % endfor
 
-</%def>
 
 <%def name="javascript_bottom()">
+${parent.javascript_bottom()}
 
 <script type="text/javascript" src="/static/js/metadata_1.js"></script>
 
@@ -157,6 +195,25 @@
     }
 
     $(document).ready(function() {
+
+        $('#commentSettings').on('submit', function() {
+
+            var $this = $(this);
+            var commentLevel = $this.find('input[name="commentLevel"]:checked').val();
+
+            $.osf.postJSON(
+                nodeApiUrl + 'settings/comments/',
+                {commentLevel: commentLevel},
+                function() {
+                    window.location.reload();
+                }
+            ).fail(function() {
+                bootbox.alert('Could not set commenting configuration. Please try again.');
+            });
+
+            return false;
+
+        });
 
         // Set up submission for addon selection form
         $('#selectAddonsForm').on('submit', function() {
@@ -192,7 +249,7 @@
                     if (result === key) {
                         $.ajax({
                             type: 'DELETE',
-                            url: nodeApiUrl + 'remove/',
+                            url: nodeApiUrl,
                             success: function(response) {
                                 window.location.href = response.url;
                             }

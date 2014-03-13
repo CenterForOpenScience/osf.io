@@ -2,6 +2,8 @@
 '''Base TestCase class for OSF unittests. Uses a temporary MongoDB database.'''
 import unittest
 import logging
+import functools
+import blinker
 
 from pymongo import MongoClient
 from faker import Factory
@@ -11,12 +13,14 @@ from framework.auth.model import User
 from framework.sessions.model import Session
 from framework.guid.model import Guid
 from website.project.model import (ApiKey, Node, NodeLog,
-                                   Tag, WatchConfig, MetaData)
+                                   Tag, WatchConfig)
 from website import settings
 
 from website.addons.osffiles.model import NodeFile
 from website.addons.wiki.model import NodeWikiPage
+
 import website.models
+from website.signals import ALL_SIGNALS
 from website.app import init_app
 
 # Just a simple app without routing set up or backends
@@ -34,7 +38,7 @@ fake = Factory.create()
 
 # All Models
 MODELS = (User, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
-          Tag, WatchConfig, Session, MetaData, Guid)
+          Tag, WatchConfig, Session, Guid)
 
 
 class DbTestCase(unittest.TestCase):
@@ -55,6 +59,7 @@ class DbTestCase(unittest.TestCase):
             website.models.MODELS, storage.MongoStorage,
             addons=settings.ADDONS_AVAILABLE, db=klass.db,
         )
+        klass._client.drop_database(klass.db)
 
     @classmethod
     def tearDownClass(klass):
@@ -73,3 +78,53 @@ class AppTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.ctx.pop()
+
+# From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
+class CaptureSignals(object):
+    """Testing utility for capturing blinker signals.
+
+    Context manager which mocks out selected signals and registers which
+    are `sent` on and what arguments were sent. Instantiate with a list of
+    blinker `NamedSignals` to patch. Each signal has it's `send` mocked out.
+    """
+    def __init__(self, signals):
+        """Patch all given signals and make them available as attributes.
+
+        :param signals: list of signals
+        """
+        self._records = {}
+        self._receivers = {}
+        for signal in signals:
+            self._records[signal] = []
+            self._receivers[signal] = functools.partial(self._record, signal)
+
+    def __getitem__(self, signal):
+        """All captured signals are available via `ctxt[signal]`.
+        """
+        if isinstance(signal, blinker.base.NamedSignal):
+            return self._records[signal]
+        else:
+            super(CaptureSignals, self).__setitem__(signal)
+
+    def _record(self, signal, *args, **kwargs):
+        self._records[signal].append((args, kwargs))
+
+    def __enter__(self):
+        for signal, receiver in self._receivers.items():
+            signal.connect(receiver)
+        return self
+
+    def __exit__(self, type, value, traceback):
+        for signal, receiver in self._receivers.items():
+            signal.disconnect(receiver)
+
+    def signals_sent(self):
+        """Return a set of the signals sent.
+        :rtype: list of blinker `NamedSignals`.
+        """
+        return set([signal for signal, _ in self._records.items() if self._records[signal]])
+
+
+def capture_signals():
+    """Factory method that creates a ``CaptureSignals`` with all OSF signals."""
+    return CaptureSignals(ALL_SIGNALS)

@@ -1,5 +1,3 @@
-<% import json %>
-
 % if node['is_registration']:
     <div class="alert alert-info">This ${node['category']} is a registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node["category"]}</a>; the content of the ${node["category"]} has been frozen and cannot be edited.
     </div>
@@ -16,10 +14,10 @@
         <div class="row">
 
             <div class="col-md-7 cite-container">
-                %if parent['id']:
-                    % if parent['is_public'] or parent['is_contributor']:
+                %if parent_node['id']:
+                    % if parent_node['is_public'] or parent_node['is_contributor']:
                         <h1 class="node-parent-title">
-                            <a href="${parent['url']}">${parent['title']}</a> /
+                            <a href="${parent_node['url']}">${parent_node['title']}</a> /
                         </h1>
                     % else:
                          <h1 class="node-parent-title unavailable">
@@ -37,12 +35,12 @@
                     <div class="btn-group">
                     %if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
-                        % if user["is_contributor"]:
-                            <a class="btn btn-default" id="publicButton" data-target="${node['api_url']}permissions/public/">Make Public</a>
+                        % if 'admin' in user['permissions']:
+                            <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
                         % endif
                     %else:
-                        % if user["is_contributor"]:
-                            <a class="btn btn-default" id="privateButton" data-target="${node['api_url']}permissions/private/">Make Private</a>
+                        % if 'admin' in user['permissions']:
+                            <a class="btn btn-default" data-bind="click: makePrivate">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
                     %endif
@@ -55,23 +53,18 @@
                             <a rel="tooltip" title="Watch" class="btn btn-default disabled" href="#">
                         % endif
                         <i class="icon-eye-open"></i>
-                        <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
+                        <span id="watchCount" data-bind="text: watchButtonDisplay"></span>
 
                         </a>
-
-                        <a
+                        <button
+                            class='btn btn-default node-fork-btn'
+                                data-bind="enable: category === 'project' && user.id,
+                                            click: forkNode"
                             rel="tooltip"
                             title="Number of times this ${node['category']} has been forked (copied)"
-                            % if node["category"] == 'project' and not node['is_registration'] and user_name:
-                                href="#"
-                                class="btn btn-default node-fork-btn"
-                                onclick="NodeActions.forkNode();"
-                            % else:
-                                class="btn btn-default disabled node-fork-btn"
-                            % endif
                         >
                             <i class="icon-code-fork"></i>&nbsp;${node['fork_count']}
-                        </a>
+                        </button>
 ##                        <a
 ##                                rel="tooltip"
 ##                                % if node['points']:
@@ -93,15 +86,14 @@
 
 
         <p id="contributors">Contributors:
-            <div mod-meta='{
+            <span id="contributorsview"><div mod-meta='{
                     "tpl": "util/render_contributors.mako",
                     "uri": "${node["api_url"]}get_contributors/",
                     "replace": true
-                }'></div>
+                }'></div></span>
             % if node['is_fork']:
                 <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
-                <span data-bind="text: dateForked.local,
-                                tooltip: {title: dateForked.utc}"></span>
+                <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
             % endif
             % if node['is_registration'] and node['registered_meta']:
                 <br />Registration Supplement:
@@ -110,16 +102,14 @@
                 % endfor
             % endif
             <br />Date Created:
-                <span data-bind="text: dateCreated.local,
-                                tooltip: {title: dateCreated.utc}"
+                <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"
                      class="date node-date-created"></span>
             | Last Updated:
-            <span data-bind="text: dateModified.local,
-                            tooltip: {title: dateModified.utc}"
+            <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}"
                    class="date node-last-modified-date"></span>
-            % if parent['id']:
+            % if parent_node['id']:
                 <br />Category: <span class="node-category">${node['category']}</span>
-            % else:
+            % elif node['description'] or 'write' in user['permissions']:
                  <br />Description: <span id="nodeDescriptionEditable" class="node-description">${node['description']}</span>
             % endif
         </p>
@@ -147,90 +137,14 @@
                 % if not node['is_registration']:
                     <li><a href="${node['url']}registrations/">Registrations</a></li>
                 % endif
-                    <li><a href="${node['url']}forks/">Forks</a></li>
-                % if user['can_edit']:
-                    <li><a href="${node['url']}settings/">Settings</a></li>
+                <li><a href="${node['url']}forks/">Forks</a></li>
+                % if 'admin' in user['permissions'] and not node['is_registration']:
+                <li><a href="${node['url']}contributors/">Contributors</a></li>
                 %endif
+                % if 'write' in user['permissions']:
+                <li><a href="${node['url']}settings/">Settings</a></li>
+                % endif
             </ul>
         </nav>
     </header>
 </div><!-- end projectScope -->
-<%include file="modal_add_contributor.mako"/>
-<%include file="modal_add_pointer.mako"/>
-<%include file="modal_show_links.mako"/>
-## TODO: Find a better place to put this initialization code
-<script>
-// TODO: pollution! namespace me
-    var userId = '${user_id}';
-    var nodeId = '${node['id']}';
-    var userApiUrl = '${user_api_url}';
-    var nodeApiUrl = '${node['api_url']}';
-
-    $(document).ready(function(){
-
-        $logScope = $('#logScope');
-        if ($logScope.length > 0) {
-            progressBar = $('#logProgressBar')
-            progressBar.show();
-        }
-        // Get project data from the server and initiate the ProjectViewModel
-        $.ajax({
-            type: 'get',
-            url: nodeApiUrl,
-            contentType: 'application/json',
-            dataType: 'json',
-            cache: false,
-            success: function(data){
-                // Initialize ProjectViewModel with returned data
-                ko.applyBindings(new ProjectViewModel(data), $('#projectScope')[0]);
-
-                if (data.user.can_edit) {
-                    // Initiate AddContributorViewModel
-                    var $addContributors = $('#addContributors');
-                    var addContribVM = new AddContributorViewModel(
-                        data.node.title,
-                        data.parent.id,
-                        data.parent.title
-                    );
-                    ko.applyBindings(addContribVM, $addContributors[0]);
-                    // Clear user search modal when dismissed; catches dismiss by escape key
-                    // or cancel button.
-                    $addContributors.on('hidden.bs.modal', function() {
-                        addContribVM.clear();
-                    });
-                }
-
-                // Initialize LogsViewModel when appropriate
-                if ($logScope.length > 0) {
-                    progressBar.hide();
-                    var logs = data['node']['logs'];
-                    // Create an array of Log model objects from the returned log data
-                    var logModelObjects = createLogs(logs);
-                    ko.applyBindings(new LogsViewModel(logModelObjects), $logScope[0]);
-                }
-            }
-        });
-    });
-
-    var $addPointer = $('#addPointer');
-    var addPointerVM = new AddPointerViewModel(${json.dumps(node['title'])});
-    ko.applyBindings(addPointerVM, $addPointer[0]);
-    $addPointer.on('hidden.bs.modal', function() {
-        addPointerVM.clear();
-    });
-
-    var linksModal = $('#showLinks')[0];
-    var linksVM = new LinksViewModel(linksModal);
-    ko.applyBindings(linksVM, linksModal);
-
-
-</script>
-% if node.get('is_public') and node.get('piwik_site_id'):
-<script type="text/javascript">
-    $(function() {
-        // Note: Don't use cookies for global site ID; cookies will accumulate
-        // indefinitely and overflow uwsgi header buffer.
-        trackPiwik('${ piwik_host }', ${ node['piwik_site_id'] });
-    });
-</script>
-% endif

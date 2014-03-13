@@ -14,9 +14,11 @@ def s3_hgrid_data(node_settings, auth, **kwargs):
     if not node_settings.bucket or not node_settings.user_settings or not node_settings.user_settings.has_auth:
         return
 
+    node = node_settings.owner
     return [
         rubeus.build_addon_root(
-            node_settings, node_settings.bucket, permissions=auth
+            node_settings, node_settings.bucket, permissions=auth,
+            nodeUrl=node.url, nodeApiUrl=node.api_url,
         )
     ]
 
@@ -45,8 +47,7 @@ def s3_hgrid_data_contents(**kwargs):
     key_list.extend(s3wrapper.get_wrapped_directories_in_dir(path))
 
     for key in key_list:
-        temp_file = wrapped_key_to_json(
-            key, node)
+        temp_file = wrapped_key_to_json(key, node)
         temp_file['addon'] = 's3'
         temp_file['permissions'] = {
             'edit': can_edit,

@@ -21,7 +21,7 @@ DOMAIN = 'http://localhost:5000/'
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
-ALLOW_CLAIMING = False
+ALLOW_CLAIMING = True
 
 USE_SOLR = False
 SOLR_URI = 'http://localhost:8983/solr/'
@@ -74,9 +74,13 @@ CANONICAL_DOMAIN = 'openscienceframework.org'
 COOKIE_DOMAIN = '.openscienceframework.org' # Beaker
 SHORT_DOMAIN = 'osf.io'
 
+# TODO: Combine Python and JavaScript config
+COMMENT_MAXLENGTH = 500
+
 # Gravatar options
 GRAVATAR_SIZE_PROFILE = 120
-GRAVATAR_SIZE_ADD_CONTRIBUTOR = 80
+GRAVATAR_SIZE_ADD_CONTRIBUTOR = 40
+GRAVATAR_SIZE_DISCUSSION = 20
 
 # User activity style
 USER_ACTIVITY_MAX_WIDTH = 325
@@ -106,7 +110,6 @@ WIKI_WHITELIST = {
     ]
 }
 
-
 ##### Celery #####
 ## Default RabbitMQ broker
 BROKER_URL = 'amqp://'
@@ -125,9 +128,7 @@ CELERY_IMPORTS = (
 
 ADDONS_REQUESTED = [
     'wiki', 'osffiles',
-    'github', 's3'
-    #'bitbucket', 'figshare', 's3',
-    #'zotero',
+    'github', 's3', 'figshare',
 ]
 
 ADDON_CATEGORIES = [

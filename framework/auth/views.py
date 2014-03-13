@@ -3,11 +3,10 @@ import httplib as http
 import logging
 import datetime
 
-from modularodm.exceptions import NoResultsFound
+from modularodm.exceptions import NoResultsFound, ValidationValueError
 import framework
 from framework import set_previous_url, request
-from framework.email.tasks import send_email
-from framework import status
+from framework import status, exceptions
 import framework.forms as forms
 from framework import auth
 from framework.auth import login, logout, DuplicateEmailError, get_user, get_current_user
@@ -22,6 +21,7 @@ Q = framework.Q
 User = framework.auth.model.User
 logger = logging.getLogger(__name__)
 
+
 def reset_password(*args, **kwargs):
 
     verification_key = kwargs['verification_key']
@@ -29,12 +29,12 @@ def reset_password(*args, **kwargs):
 
     user_obj = get_user(verification_key=verification_key)
     if not user_obj:
-        status.push_status_message('Invalid verification key')
-        return {
-            'verification_key': verification_key
-        }
+        error_data = {'message_short': 'Invalid url.',
+            'message_long': 'The verification key in the URL is invalid or '
+            'has expired.'}
+        raise exceptions.HTTPError(400, data=error_data)
 
-    if form.validate():
+    if request.method == 'POST' and form.validate():
         user_obj.verification_key = None
         user_obj.set_password(form.password.data)
         user_obj.save()
@@ -51,30 +51,26 @@ def forgot_password():
     form = ForgotPasswordForm(framework.request.form, prefix='forgot_password')
 
     if form.validate():
-        user_obj = get_user(username=form.email.data)
+        email = form.email.data
+        user_obj = get_user(username=email)
         if user_obj:
             user_obj.verification_key = security.random_string(20)
             user_obj.save()
-            # TODO: Use mails.py interface
-            success = send_email(
-                from_addr=website.settings.FROM_EMAIL,
-                to_addr=form.email.data,
-                subject="Reset Password",
-                message="http://%s%s" % (
-                    framework.request.host,
-                    framework.url_for(
-                        'OsfWebRenderer__reset_password',
-                        verification_key=user_obj.verification_key
-                    )
+            reset_link = "http://{0}{1}".format(
+                framework.request.host,
+                framework.url_for(
+                    'OsfWebRenderer__reset_password',
+                    verification_key=user_obj.verification_key
                 )
             )
-            if success:
-                status.push_status_message('Reset email sent')
-            else:
-                status.push_status_message("Could not send email. Please try again later.")
-            return framework.redirect('/')
+            mails.send_mail(
+                to_addr=email,
+                mail=mails.FORGOT_PASSWORD,
+                reset_link=reset_link
+            )
+            status.push_status_message('Reset email sent to {0}'.format(email))
         else:
-            status.push_status_message('Email {email} not found'.format(email=form.email.data))
+            status.push_status_message('Email {email} not found'.format(email=email))
 
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
@@ -89,12 +85,17 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
     login form passsed; else send forgot password email.
 
     """
+    if get_current_user():
+        if not request.args.get('logout'):
+            return framework.redirect('/dashboard/')
+        logout()
     direct_call = registration_form or forgot_password_form
     if framework.request.method == 'POST' and not direct_call:
         form = SignInForm(framework.request.form)
         if form.validate():
             try:
-                return login(form.username.data, form.password.data)
+                response = login(form.username.data, form.password.data)
+                return response
             except auth.LoginNotAllowedError:
                 status.push_status_message(language.UNCONFIRMED, 'warning')
                 # Don't go anywhere
@@ -168,31 +169,31 @@ def auth_register_post():
     if not website.settings.ALLOW_REGISTRATION:
         status.push_status_message(language.REGISTRATION_UNAVAILABLE)
         return framework.redirect('/')
-
     form = RegistrationForm(framework.request.form, prefix='register')
     set_previous_url()
 
     # Process form
     if form.validate():
         try:
-            u = auth.add_unconfirmed_user(
+            user = auth.register_unconfirmed(
                 form.username.data,
                 form.password.data,
                 form.fullname.data)
-        except DuplicateEmailError:
-            status.push_status_message(language.ALREADY_REGISTERED.format(email=form.username.data))
+            auth.signals.user_registered.send(user)
+        except (ValidationValueError, DuplicateEmailError):
+            status.push_status_message(
+                language.ALREADY_REGISTERED.format(email=form.username.data))
             return auth_login(registration_form=form)
-        if u:
+        if user:
             if website.settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
-                send_confirm_email(u, email=u.username)
-                message = language.REGISTRATION_SUCCESS.format(email=u.username)
+                send_confirm_email(user, email=user.username)
+                message = language.REGISTRATION_SUCCESS.format(email=user.username)
                 status.push_status_message(message, 'success')
                 return auth_login(registration_form=form)
             else:
                 return framework.redirect('/login/first/')
                 #status.push_status_message('You may now log in')
             return framework.redirect(framework.url_for('OsfWebRenderer__auth_login'))
-
     else:
         forms.push_errors_to_status(form.errors)
         return auth_login(registration_form=form)
@@ -203,28 +204,23 @@ def resend_confirmation():
     form = ResendConfirmationForm(framework.request.form)
     if request.method == 'POST':
         if form.validate():
-            clean_email = form.email.data.lower().strip()
-            # TODO: This pattern (validate form then get user, then validate user) is
-            # repeated many times. This logic (checking that a user exists) should
-            # be added to form validation
+            clean_email = form.email.data
             user = get_user(username=clean_email)
-            if user:
-                try:
-                    send_confirm_email(user, clean_email)
-                except KeyError:  # already confirmed, redirect to dashboard
-                    status_message = 'Email has already been confirmed.'
-                    type_ = 'warning'
-                else:
-                    status_message = 'Resent email to <em>{0}</em>'.format(clean_email)
-                    type_ = 'success'
-                status.push_status_message(status_message, type_)
+            if not user:
+                return {'form': form}
+            try:
+                send_confirm_email(user, clean_email)
+            except KeyError:  # already confirmed, redirect to dashboard
+                status_message = 'Email has already been confirmed.'
+                type_ = 'warning'
             else:
-                msg = language.EMAIL_NOT_FOUND.format(email=clean_email)
-                status.push_status_message(msg, 'error')
+                status_message = 'Resent email to <em>{0}</em>'.format(clean_email)
+                type_ = 'success'
+            status.push_status_message(status_message, type_)
         else:
             forms.push_errors_to_status(form.errors)
     # Don't go anywhere
-    return forms.utils.jsonify(form)
+    return {'form': form}
 
 
 def merge_user_get(**kwargs):
@@ -233,6 +229,7 @@ def merge_user_get(**kwargs):
     return forms.utils.jsonify(MergeAccountForm())
 
 
+# TODO: shrink me
 def merge_user_post(**kwargs):
     '''View for merging an account. Takes either JSON or form data.
 
@@ -257,7 +254,6 @@ def merge_user_post(**kwargs):
     try:
         merged_user = User.find_one(Q("username", "eq", merged_username))
     except NoResultsFound:
-        logger.debug("Failed to find user to merge")
         status.push_status_message("Could not find that user. Please check the username and password.")
         return merge_user_get(**kwargs)
     if master and merged_user:

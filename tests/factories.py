@@ -21,7 +21,7 @@ from framework.auth import User, Q
 from framework.auth.decorators import Auth
 from framework.auth.utils import parse_name
 from website.project.model import (
-    ApiKey, Node, NodeLog, WatchConfig, MetaData, Tag, MetaSchema, Pointer,
+    ApiKey, Node, NodeLog, WatchConfig, Tag, MetaSchema, Pointer, Comment
 )
 
 from website.addons.wiki.model import NodeWikiPage
@@ -166,10 +166,6 @@ class WatchConfigFactory(ModularOdmFactory):
     node = SubFactory(NodeFactory)
 
 
-class MetaDataFactory(ModularOdmFactory):
-    FACTORY_FOR = MetaData
-
-
 class NodeWikiFactory(ModularOdmFactory):
     FACTORY_FOR = NodeWikiPage
 
@@ -197,6 +193,31 @@ class UnregUserFactory(ModularOdmFactory):
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
         instance = target_class.create_unregistered(*args, **kwargs)
+        instance.save()
+        return instance
+
+class UnconfirmedUserFactory(ModularOdmFactory):
+    """Factory for a user that has not yet confirmed their primary email
+    address (username).
+    """
+
+    FACTORY_FOR = User
+    username = Sequence(lambda n: 'roger{0}@queen.com'.format(n))
+    fullname = Sequence(lambda n: 'Roger Taylor{0}'.format(n))
+    password = 'killerqueen'
+
+    @classmethod
+    def _build(cls, target_class, username, password, fullname):
+        '''Build an object without saving it.'''
+        return target_class.create_unconfirmed(
+            username=username, password=password, fullname=fullname
+        )
+
+    @classmethod
+    def _create(cls, target_class, username, password, fullname):
+        instance = target_class.create_unconfirmed(
+            username=username, password=password, fullname=fullname
+        )
         instance.save()
         return instance
 
@@ -233,5 +254,72 @@ class ProjectWithAddonFactory(ProjectFactory):
         auth = Auth(user=instance.creator)
         instance.add_addon(addon, auth)
         instance.creator.add_addon(addon)
+        instance.save()
+        return instance
+
+# Deprecated unregistered user factory, used mainly for testing migration
+
+class DeprecatedUnregUser(object):
+    '''A dummy "model" for an unregistered user.'''
+    def __init__(self, nr_name, nr_email):
+        self.nr_name = nr_name
+        self.nr_email = nr_email
+
+    def to_dict(self):
+        return {"nr_name": self.nr_name, "nr_email": self.nr_email}
+
+
+class DeprecatedUnregUserFactory(base.Factory):
+    """Generates a dictonary represenation of an unregistered user, in the
+    format expected by the OSF.
+    ::
+
+        >>> from tests.factories import UnregUserFactory
+        >>> UnregUserFactory()
+        {'nr_name': 'Tom Jones0', 'nr_email': 'tom0@example.com'}
+        >>> UnregUserFactory()
+        {'nr_name': 'Tom Jones1', 'nr_email': 'tom1@example.com'}
+    """
+    FACTORY_FOR = DeprecatedUnregUser
+
+    nr_name = Sequence(lambda n: "Tom Jones{0}".format(n))
+    nr_email = Sequence(lambda n: "tom{0}@example.com".format(n))
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        return target_class(*args, **kwargs).to_dict()
+
+    _build = _create
+
+class CommentFactory(ModularOdmFactory):
+
+    FACTORY_FOR = Comment
+    content = Sequence(lambda n: 'Comment {0}'.format(n))
+    is_public = True
+
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        node = kwargs.pop('node', None) or NodeFactory()
+        user = kwargs.pop('user', None) or node.creator
+        target = kwargs.pop('target', None) or node
+        instance = target_class(
+            node=node,
+            user=user,
+            target=target,
+            *args, **kwargs
+        )
+        return instance
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        node = kwargs.pop('node', None) or NodeFactory()
+        user = kwargs.pop('user', None) or node.creator
+        target = kwargs.pop('target', None) or node
+        instance = target_class(
+            node=node,
+            user=user,
+            target=target,
+            *args, **kwargs
+        )
         instance.save()
         return instance

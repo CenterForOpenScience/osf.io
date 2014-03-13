@@ -6,18 +6,17 @@
 
     <link rel="stylesheet" href="/static/vendor/bootstrap3/css/bootstrap-custom.css">
     <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
-
     % for url in css_all:
-        <link rel="stylesheet" href="${url}">
+    <link rel="stylesheet" href="${url}">
     % endfor
 
-    % for url in js_all:
+    <script src="//ajax.aspnetcdn.com/ajax/jquery/jquery-2.1.0.min.js"></script>
+    <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
+    <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
+    <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
+    % for url in js_all + js_bottom:
         <script src="${url}"></script>
     % endfor
-
-    <script src="/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js"></script>
-    <script src="/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js"></script>
-    <script src="/static/vendor/hgrid/hgrid.js"></script>
 
 </head>
 

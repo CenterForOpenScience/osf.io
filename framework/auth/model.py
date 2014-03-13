@@ -15,7 +15,7 @@ from framework.guid.model import GuidStoredObject
 from framework.search import solr
 from framework.addons import AddonModelMixin
 from framework.auth import utils
-from website import settings, filters, security, hmac
+from website import settings, filters, security
 from framework.exceptions import PermissionsError
 
 
@@ -30,8 +30,12 @@ name_formatters = {
 
 logger = logging.getLogger(__name__)
 
-
+# Hide implementation of token generation
 def generate_confirm_token():
+    return security.random_string(30)
+
+
+def generate_claim_token():
     return security.random_string(30)
 
 
@@ -42,7 +46,8 @@ class User(GuidStoredObject, AddonModelMixin):
     _id = fields.StringField(primary=True)
 
     # NOTE: In the OSF, username is an email
-    username = fields.StringField(required=True)
+    # May be None for unregistered contributors
+    username = fields.StringField(required=False, unique=True, index=True)
     password = fields.StringField()
     fullname = fields.StringField(required=True)
     is_registered = fields.BooleanField()
@@ -53,7 +58,9 @@ class User(GuidStoredObject, AddonModelMixin):
     #   <project_id>: {
     #       'name': <name that referrer provided>,
     #       'referrer_id': <user ID of referrer>,
-    #       'verification': <token used for verification urls>
+    #       'token': <token used for verification urls>,
+    #       'email': <email the referrer provided or None>,
+    #       'last_sent': <timestamp of last email sent to referrer or None>
     #   }
     #   ...
     # }
@@ -66,7 +73,7 @@ class User(GuidStoredObject, AddonModelMixin):
     emails = fields.StringField(list=True)
     # Email verification tokens
     # Format: {
-    #   <token> : {'email': <email address}
+    #   <token> : {'email': <email address>}
     # }
     # TODO: add timestamp to allow for timed expiration?
     email_verifications = fields.DictionaryField()
@@ -94,16 +101,23 @@ class User(GuidStoredObject, AddonModelMixin):
 
     _meta = {'optimistic' : True}
 
+    def __repr__(self):
+        return '<User {0!r}>'.format(self.username)
+
     @classmethod
-    def create_unregistered(cls, email, fullname):
-        parsed = utils.parse_name(fullname)
+    def create_unregistered(cls, fullname, email=None):
+        """Creates a new unregistered user.
+
+        :raises: DuplicateEmailError if a user with the given email address
+            is already in the database.
+        """
         user = cls(
             username=email,
             fullname=fullname,
-            emails=[email],
-            **parsed
         )
-        user.add_email_verification(email)
+        user.update_guessed_names()
+        if email:
+            user.emails.append(email)
         user.is_registered = False
         return user
 
@@ -112,34 +126,24 @@ class User(GuidStoredObject, AddonModelMixin):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
         """
-        parsed = utils.parse_name(fullname)
         user = cls(
             username=username,
             fullname=fullname,
-            **parsed
         )
+        user.update_guessed_names()
         user.set_password(password)
         user.add_email_verification(username)
         user.is_registered = False
         return user
 
-    @classmethod
-    def parse_claim_signature(cls, signature):
-        """Parses a verification code for claiming a user account.
-
-        :param str signature: The signature (verification key) to parse
-        :raises: itsdangerous.BadSignature if signature is invalid (bad secret)
-        :returns: A dictionary with 'name', 'referrer_id', and 'project_id'
+    def update_guessed_names(self):
+        """Updates the CSL name fields inferred from the the full name.
         """
-        data = hmac.load(signature)
-        pk, project_id, referrer_id, given_name = data.split(':')
-        return {
-            '_id': pk,
-            'name': given_name,
-            'referrer_id': referrer_id,
-            'project_id': project_id
-        }
-
+        parsed = utils.parse_name(self.fullname)
+        self.given_name = parsed['given_name']
+        self.middle_names = parsed['middle_names']
+        self.family_name = parsed['family_name']
+        self.suffix = parsed['suffix']
 
     def register(self, username, password=None):
         """Registers the user.
@@ -151,14 +155,16 @@ class User(GuidStoredObject, AddonModelMixin):
             self.emails.append(username)
         self.is_registered = True
         self.is_claimed = True
+        self.date_confirmed = dt.datetime.utcnow()
         return self
 
-    def add_unclaimed_record(self, node, referrer, given_name):
+    def add_unclaimed_record(self, node, referrer, given_name, email=None):
         """Add a new project entry in the unclaimed records dictionary.
 
         :param Node node: Node this unclaimed user was added to.
         :param User referrer: User who referred this user.
         :param str given_name: The full name that the referrer gave for this user.
+        :param str email: The given email address.
         :returns: The added record
         """
         if not node.can_edit(user=referrer):
@@ -166,14 +172,30 @@ class User(GuidStoredObject, AddonModelMixin):
                 'to project {0}'.format(node._primary_key))
         project_id = node._primary_key
         referrer_id = referrer._primary_key
-        data_to_sign = '{self._primary_key}:{project_id}:{referrer_id}:{given_name}'.format(**locals())
+        if email:
+            clean_email = email.lower().strip()
+        else:
+            clean_email = None
         record = {
             'name': given_name,
             'referrer_id': referrer_id,
-            'verification': hmac.sign(data_to_sign)
+            'token': generate_confirm_token(),
+            'email': clean_email
         }
         self.unclaimed_records[project_id] = record
         return record
+
+    def display_full_name(self, node=None):
+        """Return the full name , as it would display in a contributor list for a
+        given node.
+
+        NOTE: Unclaimed users may have a different name for different nodes.
+        """
+        if node:
+            unclaimed_data = self.unclaimed_records.get(node._primary_key, None)
+            if unclaimed_data:
+                return unclaimed_data['name']
+        return self.fullname
 
     def is_active(self):
         """Returns True if the user is active. The user must have activated
@@ -184,7 +206,18 @@ class User(GuidStoredObject, AddonModelMixin):
                 not self.is_merged and
                 self.is_confirmed())
 
-    def get_claim_url(self, project_id):
+    def get_unclaimed_record(self, project_id):
+        """Get an unclaimed record for a given project_id.
+
+        :raises: ValueError if there is no record for the given project.
+        """
+        try:
+            return self.unclaimed_records[project_id]
+        except KeyError:  # reraise as ValueError
+            raise ValueError('No unclaimed record for user {self._id} on node {project_id}'
+                                .format(**locals()))
+
+    def get_claim_url(self, project_id, external=False):
         """Return the URL that an unclaimed user should use to claim their
         account. Return ``None`` if there is no unclaimed_record for the given
         project ID.
@@ -194,13 +227,12 @@ class User(GuidStoredObject, AddonModelMixin):
         :rtype: dict
         :returns: The unclaimed record for the project
         """
-        unclaimed_record = self.unclaimed_records.get(project_id, None)
-        if unclaimed_record:
-            verification = unclaimed_record['verification']
-        else:
-            raise ValueError('No unclaimed for ')
-        return '{domain}user/claim/{verification}/'.format(domain=settings.DOMAIN,
-            verification=verification)
+        uid = self._primary_key
+        base_url = settings.DOMAIN if external else '/'
+        unclaimed_record = self.get_unclaimed_record(project_id)
+        token = unclaimed_record['token']
+        return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\
+                    .format(**locals())
 
     def set_password(self, raw_password):
         '''Set the password for this user to the hash of ``raw_password``.'''
@@ -212,7 +244,6 @@ class User(GuidStoredObject, AddonModelMixin):
         if not self.password or not raw_password:
             return False
         return check_password_hash(self.password, raw_password)
-
 
     def add_email_verification(self, email):
         """Add an email verification token for a given email."""
@@ -243,6 +274,16 @@ class User(GuidStoredObject, AddonModelMixin):
         """Return whether or not a confirmation token is valid for this user.
         """
         return token in self.email_verifications.keys()
+
+    def verify_claim_token(self, token, project_id):
+        """Return whether or not a claim token is valid for this user for
+        a given node which they were added as a unregistered contributor for.
+        """
+        try:
+            record = self.get_unclaimed_record(project_id)
+        except ValueError:  # No unclaimed record for given pid
+            return False
+        return record['token'] == token
 
     def confirm_email(self, token):
         if self.verify_confirmation_token(token):
@@ -317,10 +358,10 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def gravatar_url(self):
         return filters.gravatar(
-                    self,
-                    use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
-                )
+            self,
+            use_ssl=True,
+            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+        )
 
     @property
     def activity_points(self):
@@ -341,11 +382,14 @@ class User(GuidStoredObject, AddonModelMixin):
             'user_fullname': self.fullname,
             'user_profile_url': self.profile_url,
             'user_display_name': name_formatters[formatter](self),
+            'user_is_claimed': self.is_claimed
         }
 
     def save(self, *args, **kwargs):
+        self.username = self.username.lower().strip() if self.username else None
         rv = super(User, self).save(*args, **kwargs)
-        self.update_solr()
+        if self.is_active():
+            self.update_solr()
         if settings.PIWIK_HOST and not self.piwik_token:
             try:
                 piwik.create_user(self)

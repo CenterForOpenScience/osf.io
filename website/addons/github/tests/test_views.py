@@ -136,7 +136,8 @@ class TestGithubViews(DbTestCase):
             {'id': self.project.creator._id},
             auth=self.user.auth,
         ).maybe_follow()
-        assert_equal(len(res.json['prompts']), 1)
+        # One prompt for transferring auth, one for removing self
+        assert_equal(len(res.json['prompts']), 2)
 
     def test_before_remove_contributor_not_authenticator(self):
         url = self.project.api_url + 'beforeremovecontributors/'

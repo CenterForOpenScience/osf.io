@@ -1,49 +1,17 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from mako.template import Template
 from framework import session, create_session
-from framework.exceptions import FrameworkError
 from framework import goback
-from framework import status
-from framework.auth.utils import parse_name
-import framework.flask as web
 import framework.bcrypt as bcrypt
-from framework.email.tasks import send_email
 from modularodm.query.querydialect import DefaultQueryDialect as Q
+from framework.auth.exceptions import (DuplicateEmailError, LoginNotAllowedError,
+                                        PasswordIncorrectError)
 
-import website
-from website import security
 from model import User
 
-import datetime
 
 logger = logging.getLogger(__name__)
-
-
-class AuthError(FrameworkError):
-    """Base class for auth-related errors."""
-    pass
-
-
-class DuplicateEmailError(AuthError):
-    """Raised if a user tries to register an email that is already in the
-    database.
-    """
-    pass
-
-
-class LoginNotAllowedError(AuthError):
-    """Raised if user login is called for a user that is not registered or
-    is not claimed, etc.
-    """
-    pass
-
-class PasswordIncorrectError(AuthError):
-    """Raised if login is called with an incorrect password attempt.
-    """
-    pass
-
 
 def get_current_username():
     return session.data.get('auth_user_username')
@@ -82,7 +50,7 @@ def get_api_key():
 # check_password(actual_pw_hash, given_password) -> Boolean
 check_password = bcrypt.check_password_hash
 
-
+# TODO: This should be a class method of User
 def get_user(id=None, username=None, password=None, verification_key=None):
     # tag: database
     query_list = []
@@ -98,7 +66,7 @@ def get_user(id=None, username=None, password=None, verification_key=None):
             for query_part in query_list[1:]:
                 query = query & query_part
             user = User.find_one(query)
-        except Exception as err:  # TODO: catch ModularODMError
+        except Exception as err:
             logging.error(err)
             user = None
         if user and not user.check_password(password):
@@ -142,7 +110,6 @@ def login(username, password):
             username=username,
             password=password
         )
-        # TODO: Too much nesting here. Rethink
         if user:
             if not user.is_registered:
                 raise LoginNotAllowedError('User is not registered.')
@@ -156,95 +123,36 @@ def login(username, password):
 def logout():
     for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname']:
         # todo leave username so login page can persist probable id
-        del session.data[key]
+        try:
+            del session.data[key]
+        except KeyError:
+            pass
     return True
 
-def add_unclaimed_user(email, fullname):
-    email = email.strip().lower()
-    fullname = fullname.strip()
 
-    user = get_user(username=email)
-    if user:
-        return user
-    else:
-        user_based_on_email = User.find_one(
-            Q('emails', 'eq', email)
-        )
-        if user_based_on_email:
-            return user_based_on_email
-        newUser = User(
-            fullname = fullname,
-            emails = [email],
-        )
-        newUser._optimistic_insert()
-        newUser.save()
-        return newUser
-
-
-# TODO: Use mails.py interface
-WELCOME_EMAIL_SUBJECT = 'Welcome to the Open Science Framework'
-WELCOME_EMAIL_TEMPLATE = Template('''
-Hello ${fullname},
-
-Welcome to the Open Science Framework! To learn more about the OSF, check out our Getting Started guide [ https://osf.io/getting-started/ ] and our frequently asked questions [ https://osf.io/faq/ ].
-
-If you have any questions or comments about the OSF, please let us know at [ contact@osf.io ]!
-
-Follow OSF at @OSFramework on Twitter [ https://twitter.com/OSFramework ]
-Like us on Facebook [ https://www.facebook.com/OpenScienceFramework ]
-
-From the Open Science Framework Robot
-''')
-
-
-def send_welcome_email(user):
-    send_email.delay(
-        from_addr=website.settings.FROM_EMAIL,
-        to_addr=user.username,
-        subject=WELCOME_EMAIL_SUBJECT,
-        message=WELCOME_EMAIL_TEMPLATE.render(
-            fullname=user.fullname,
-        ),
-        mimetype='plain',
-    )
-
-def add_unconfirmed_user(username, password, fullname):
-    username_clean = username.strip().lower()
-    password_clean = password.strip()
-    fullname_clean = fullname.strip()
-
-    if not get_user(username=username):
-        user = User.create_unconfirmed(username=username_clean,
-            password=password_clean,
-            fullname=fullname_clean)
+def register_unconfirmed(username, password, fullname):
+    user = get_user(username=username)
+    if not user:
+        user = User.create_unconfirmed(username=username,
+            password=password,
+            fullname=fullname)
         user.save()
-        return user
-    else:
-        raise DuplicateEmailError('User {0!r} already exists'.format(username_clean))
-
-
-def register(username, password, fullname, send_welcome=True):
-    username = username.strip().lower()
-    fullname = fullname.strip()
-
-    # TODO: This validation should occur at the database level, not the view
-    if not get_user(username=username):
-        parsed = parse_name(fullname)
-        # TODO: add User.create_registered() class method
-        user = User(
-            username=username,
-            fullname=fullname,
-            is_registered=True,
-            is_claimed=True,
-            verification_key=security.random_string(15),
-            **parsed
-        )
-        # Set the password
-        user.set_password(password.strip())
-        user.emails.append(username.strip())
+    elif not user.is_registered: # User is in db but not registered
+        user.add_email_verification(username)
         user.save()
-        if send_welcome:
-            send_welcome_email(user)
-        return user
     else:
-        raise DuplicateEmailError
+        raise DuplicateEmailError('User {0!r} already exists'.format(username))
+    return user
+
+
+def register(username, password, fullname):
+    user = get_user(username=username)
+    if not user:
+        user = User.create_unconfirmed(
+            username=username, password=password, fullname=fullname
+        )
+    user.registered = True
+    user.date_confirmed = user.date_registered
+    user.emails.append(username)
+    user.save()
+    return user

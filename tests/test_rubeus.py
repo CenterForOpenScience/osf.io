@@ -215,7 +215,7 @@ class TestRubeus(DbTestCase):
         collector = rubeus.NodeFileCollector(
             self.project, Auth(user=UserFactory())
         )
-        nodes = collector._collect_components(self.project)
+        nodes = collector._collect_components(self.project, visited=[])
         assert_equal(len(nodes), 0)
 
     def test_serialized_pointer_has_flag_indicating_its_a_pointer(self):
@@ -271,4 +271,28 @@ class TestSerializingNodeWithAddon(DbTestCase):
                 'fetch': None
             },
             'project root data has no upload or fetch urls'
+        )
+
+    def test_collect_js_recursive(self):
+        self.project.get_addons.return_value[0].config.include_js = {'files': ['foo.js']}
+        node = NodeFactory(project=self.project)
+        mock_node_addon = mock.Mock()
+        mock_node_addon.config.include_js = {'files': ['bar.js', 'baz.js']}
+        node.get_addons = mock.Mock()
+        node.get_addons.return_value = [mock_node_addon]
+        assert_equal(
+            rubeus.collect_addon_js(self.project),
+            {'foo.js', 'bar.js', 'baz.js'}
+        )
+
+    def test_collect_js_unique(self):
+        self.project.get_addons.return_value[0].config.include_js = {'files': ['foo.js']}
+        node = NodeFactory(project=self.project)
+        mock_node_addon = mock.Mock()
+        mock_node_addon.config.include_js = {'files': ['foo.js', 'baz.js']}
+        node.get_addons = mock.Mock()
+        node.get_addons.return_value = [mock_node_addon]
+        assert_equal(
+            rubeus.collect_addon_js(self.project),
+            {'foo.js', 'baz.js'}
         )

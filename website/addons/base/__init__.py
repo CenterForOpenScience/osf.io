@@ -261,7 +261,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
         pass
 
-    def after_set_permissions(self, node, permissions):
+    def after_set_privacy(self, node, permissions):
         """
 
         :param Node node:

@@ -28,6 +28,7 @@ def set_up_storage(schemas, storage_class, prefix='', addons=None, *args, **kwar
         >>> models = [User, ApiKey, Node, Tag]
         >>> set_up_storage(models, MongoStorage, db=db)
     '''
+    # import pdb; pdb.set_trace()
     _schemas = []
     _schemas.extend(schemas)
 

@@ -54,6 +54,12 @@ EMAIL_NOT_FOUND = '''
 <strong>{email}</strong> was not found in our records.
 '''
 
+# Shown after an unregistered user claims an account and is redirected to the
+# settings page
+CLAIMED_CONTRIBUTOR = '''
+<strong>Welcome to the OSF!</strong> Edit your display name below and then check your
+<a href="/dashboard/">dashboard</a> to see projects to which you have been added as a contributor by someone else.
+'''
 
 # Error Pages
 # ###########
@@ -66,23 +72,23 @@ LINK_EXPIRED ='This confirmation link has expired. Please <a href="/login/">log 
 BEFORE_REGISTER_HAS_POINTERS = (
     'This {category} contains links to other projects. Links will be copied '
     'into your registration, but the projects that they link to will not be '
-    'registered. If you wish to register the linked projects, they need to be '
-    'registered from the original project in order to be part of this project.'
+    'registered. If you wish to register the linked projects, you must fork'
+    'them from the original project before registering.'
 )
 
 BEFORE_FORK_HAS_POINTERS = (
     'This {category} contains links to other projects. Links will be copied '
     'into your fork, but the projects that they link to will not be forked. '
     'If you wish to fork the linked projects, they need to be forked from the '
-    'original project in order to be part of this project.'
+    'original project.'
 )
 
 REGISTRATION_INFO = '''
-<p>You can register your project by selecting a registration form, then enter
-information about your project, and then confirming. Registration creates a
-frozen version of the project that can never be edited or deleted. You will be
-able to continue editing the project, and the frozen version with time stamps
-will always be linked to the project.</p>
+<p>Registration creates a frozen version of the project that can never be edited 
+or deleted. You can register your project by selecting a registration form,  entering
+information about your project, and then confirming. You will be
+able to continue editing the original project, however, and the frozen version with 
+time stamps will always be linked to the original.</p>
 
 <ul>
 
@@ -90,10 +96,11 @@ will always be linked to the project.</p>
     public after completing the registration process.</li>
 
     <li>Before initiating a registration, make sure that the project is in the
-    state that you wish to freeze.</li>
+    state that you wish to freeze. Consider turning links into forks.</li>
 
     <li>Start by selecting a registration form from the list below. You can
-    back-up if the selected form is not appropriate for your use.</li>
+    hit your browser's back button if the selected form is not 
+    appropriate for your use.</li>
 
 </ul>
 '''
