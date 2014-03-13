@@ -50,7 +50,7 @@ ${next.body()}
                 })
                 .ready('logFeed', function() {
                     if ($logScope.length) { // Render log feed if necessary
-                        var logFeed = new LogFeed('#logScope', data.node.logs, {'url':nodeApiUrl+'log/', 'has_more_logs': data.node.has_more_logs});
+                        var logFeed = new LogFeed('#logScope', data.node.logs, {'url':nodeApiUrl+'log/', 'hasMoreLogs': data.node.has_more_logs});
                     }
                 });
                 // If user is a contributor, initialize the contributor modal

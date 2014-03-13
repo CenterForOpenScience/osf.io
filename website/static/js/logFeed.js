@@ -162,7 +162,7 @@ this.LogFeed = (function(ko, $, global, moment) {
         self.options = $.extend({}, defaults, options);
         self.$progBar = $(self.options.progBar);
         if (Array.isArray(data)) { // data is an array of log object from server
-            initViewModel(self, data, self.options.has_more_logs, self.options.url);
+            initViewModel(self, data, self.options.hasMoreLogs, self.options.url);
         } else { // data is a URL
             $.getJSON(data, function(response) {
                   initViewModel(self, response.logs, response.has_more_logs,data);
