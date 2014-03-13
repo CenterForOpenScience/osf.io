@@ -284,7 +284,7 @@ class TestProjectViews(DbTestCase):
 
     def test_get_logs(self):
         # Add some logs
-        for _ in xrange(5):
+        for _ in range(5):
             self.project.logs.append(
                 NodeLogFactory(
                     user=self.user1,
@@ -304,7 +304,7 @@ class TestProjectViews(DbTestCase):
 
     def test_get_logs_with_count_param(self):
         # Add some logs
-        for _ in xrange(5):
+        for _ in range(5):
             self.project.logs.append(
                 NodeLogFactory(
                     user=self.user1,
@@ -320,7 +320,7 @@ class TestProjectViews(DbTestCase):
 
     def test_get_logs_defaults_to_ten(self):
         # Add some logs
-        for _ in xrange(12):
+        for _ in range(12):
             self.project.logs.append(
                 NodeLogFactory(
                     user=self.user1,
@@ -336,7 +336,7 @@ class TestProjectViews(DbTestCase):
 
     def test_get_more_logs(self):
         # Add some logs
-        for _ in xrange(12):
+        for _ in range(12):
             self.project.logs.append(NodeLogFactory(user=self.user1,
                                                     action="file_added",
                                                     params={"project": self.project._id}))
@@ -353,7 +353,7 @@ class TestProjectViews(DbTestCase):
 
         """
         # Add some logs
-        for _ in xrange(15):
+        for _ in range(15):
             self.project.add_log(
                 auth=self.consolidate_auth1,
                 action='file_added',
@@ -362,7 +362,7 @@ class TestProjectViews(DbTestCase):
         self.project.is_public = True
         self.project.save()
         child = NodeFactory(project=self.project)
-        for _ in xrange(5):
+        for _ in range(5):
             child.add_log(
                 auth=self.consolidate_auth1,
                 action='file_added',
@@ -382,7 +382,7 @@ class TestProjectViews(DbTestCase):
 
     def test_logs_from_api_url(self):
         # Add some logs
-        for _ in xrange(12):
+        for _ in range(12):
             self.project.logs.append(
                 NodeLogFactory(
                     user=self.user1,
