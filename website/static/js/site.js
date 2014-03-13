@@ -135,6 +135,16 @@
         }
     };
 
+    // Patch sortable binding handler to preserve table row widths on drag.
+    // See https://github.com/rniemeyer/knockout-sortable/pull/46
+    // This can be removed if/when above PR is merged
+    ko.bindingHandlers.sortable.options.helper = function(e, ui) {
+        ui.children().each(function() {
+            $(this).width($(this).width());
+        });
+        return ui;
+    };
+
     var LOCAL_DATEFORMAT = 'l h:mm A';
     var UTC_DATEFORMAT = 'l H:mm UTC';
 
