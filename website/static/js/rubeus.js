@@ -238,6 +238,14 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         }
     }
 
+    // Custom download count column
+    var DownloadCount = {
+        name: 'Downloads',
+        itemView: '{{ downloads }}',
+        folderView: '',
+        width: 20
+    };
+
     ///////////////////
     // HGrid options //
     ///////////////////
@@ -247,7 +255,8 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         /*jshint unused: false */
         columns: [
             HGrid.Col.Name,
-            HGrid.Col.ActionButtons
+            HGrid.Col.ActionButtons,
+            DownloadCount
         ],
         width: '100%',
         height: 900,

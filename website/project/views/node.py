@@ -467,7 +467,7 @@ def _view_project(node, auth, primary=False):
             'id': node._primary_key,
             'title': node.title,
             'category': node.project_or_component,
-            'description': node.description,
+            'description': node.description or '',
             'url': node.url,
             'api_url': node.api_url,
             'absolute_url': node.absolute_url,

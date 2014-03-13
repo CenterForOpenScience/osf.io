@@ -7,7 +7,8 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand hidden-xs" href="/">Open Science Framework<span class="brand-version"> BETA</span></a>
+        <a class="navbar-brand visible-lg visible-md" href="/">Open Science Framework<span class="brand-version"> BETA</span></a>
+        <a class="navbar-brand visible-sm visible-xs" href="/">OSF</a>
       </div><!-- end navbar-header -->
 
       <div class="collapse navbar-collapse navbar-ex1-collapse">
@@ -33,7 +34,7 @@
           </li><!-- end dropdown -->
         </ul><!-- end nav navbar-nav -->
         <!-- Search bar -->
-        <form id="searchBar" class="navbar-form navbar-left" action="/search/" method="get" role="search">
+        <form id="searchBar" class="navbar-form navbar-left hidden-xs" action="/search/" method="get" role="search">
           <div class="form-group">
             <input type="text" class="form-control search-query" placeholder="Search" name="q">
           </div>
