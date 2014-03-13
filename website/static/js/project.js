@@ -252,6 +252,10 @@ $(document).ready(function() {
         )
     });
 
+    $('body').on('click', '.tagsinput .tag > span', function(e) {
+        window.location = "/search/?q=" + $(e.target).text().toString().trim();
+    })
+
     $('.citation-toggle').on('click', function(evt) {
         $(this).closest('.citations').find('.citation-list').slideToggle();
         return false;

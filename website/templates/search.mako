@@ -13,13 +13,11 @@
 ##            for showing tags
             % for i, term in enumerate(components):
 ##              the first is not removable. we need it to query
-                    <span class="label label-success btn-mini" style="margin-right:.5em"> ${term}
+                    <span class="label label-success btn-mini" style="margin-right:.5em">${term}\
                         % if len(components) > 1:
-                        <a href='/search/?q=${'AND'.join((x for x in components if x != term)) | h }' style="color:white">&times;</a>
+                        <a href="/search/?q=${'AND'.join((x for x in components if x != term)) | h }" style="color:white">&times;</a>
                         % endif
-
-                    </span>
-
+<%                %></span>
             % endfor
          <br>
 ##       number of results returned and the time it took
@@ -179,7 +177,7 @@
                             <div class="tags">
                                 % if 'tags' in result:
                                     % for tag in result['tags']:
-                                    <a href=/search/?q=${tag} class="label label-info btn-mini"> ${tag} </a>
+                                    <a href=/search/?q=${tag} class="label label-info btn-mini" style="margin-right:.5em">${tag}</a>
                                     % endfor
                                 % endif
                             </div>
