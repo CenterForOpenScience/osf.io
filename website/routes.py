@@ -385,6 +385,7 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/search/', 'get', search_views.search_search, json_renderer),
+        Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
 
     ], prefix='/api/v1')
 
@@ -439,6 +440,7 @@ def make_url_map(app):
         ### Logs ###
 
         Rule('/log/<log_id>/', 'get', project_views.log.get_log, OsfWebRenderer('util/render_log.mako')),
+
         Rule([
             '/project/<pid>/log/',
             '/project/<pid>/node/<nid>/log/',
@@ -560,6 +562,7 @@ def make_url_map(app):
         ], 'get', project_views.node.get_registrations, json_renderer),
 
         Rule('/log/<log_id>/', 'get', project_views.log.get_log, json_renderer),
+
         Rule([
             '/project/<pid>/log/',
             '/project/<pid>/node/<nid>/log/',
@@ -606,6 +609,11 @@ def make_url_map(app):
             project_views.node.project_new_node,
             json_renderer,
         ),
+
+        # Create, using existing project as a template
+        Rule([
+            '/project/new/<nid>/',
+        ], 'post', project_views.node.project_new_from_template, json_renderer),
 
         # Remove
         Rule(

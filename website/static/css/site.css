@@ -614,12 +614,10 @@ ul#projects-list{
 }
 
 input.ui-autocomplete-input{
-    border: 0px solid;
     outline:0;
     background-color:#ffffff;
     color:#404040;
     text-shadow:none;
-    border:0;
     padding:5px 10px;
     -webkit-box-shadow:none;
     -moz-box-shadow:none;
@@ -1098,6 +1096,12 @@ h1.unavailable {
     width:100%;
 }
 
+
+
+div#logScope a.moreLogs{
+    margin-left:50px;
+}
+
 /* Contributor page */
 
 .contributor-self {
@@ -1195,12 +1199,14 @@ button.save {
     /*background: white;*/
     visibility:hidden;
 }
+
 .mfr-ipynb-body {
   vertical-align: middle;
   display: block;
   max-width: 100%;
   height: auto;
 }
+
 
 .editable {
   cursor: pointer;
@@ -1221,3 +1227,6 @@ a {
 .contributor-unregistered:hover{
   background-color: #F3F3F3;
 }
+
+/* jQuery UI Autocomplete (WTForms Widget) */
+.ui-autocomplete-category { font-weight: bold }
