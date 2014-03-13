@@ -2,7 +2,6 @@
 <%def name="title()">Contributors</%def>
 
 <div class="row">
-    <div id="manageContributors" class="col-md-12">
 
 <h2>Contributors</h2>
 <div id="manageContributors" >
