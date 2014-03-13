@@ -1736,7 +1736,6 @@ class TestComments(DbTestCase):
         expected = [user1._id, user2._id, self.project.creator._id]
         assert_equal(observed, expected)
 
-
 class TestSearchViews(DbTestCase):
 
     def setUp(self):
@@ -1759,6 +1758,12 @@ class TestSearchViews(DbTestCase):
         assert_in('gravatar_url', freddie)
         assert_equal(freddie['registered'], self.contrib1.is_registered)
         assert_equal(freddie['active'], self.contrib1.is_active())
+
+    def test_search_projects(self):
+        with app.test_request_context():
+            url = web_url_for('search_search')
+        res = self.app.get(url, {'q': self.project.title})
+        assert_equal(res.status_code, 200)
 
 
 if __name__ == '__main__':
