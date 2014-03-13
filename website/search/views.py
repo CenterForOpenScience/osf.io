@@ -26,7 +26,7 @@ def search_search():
     query = request.args.get('q')
     # if there is not a query, tell our users to enter a search
     if query == '':
-        status.push_status_message('Enter a search!')
+        status.push_status_message('No search query', 'info')
         return {
             'results': [],
             'tags': [],
@@ -70,14 +70,28 @@ def search_projects_by_title(**kwargs):
     term = request.args.get('term')
     user = kwargs['auth'].user
 
-    results = Node.find(
-        Q('title', 'istartswith', term) &  # search term (case insensitive)
+    max_results = 10
+
+    matching_title = (
+        Q('title', 'icontains', term) &  # search term (case insensitive)
         Q('category', 'eq', 'project') &  # is a project
-        Q('is_deleted', 'eq', False) & (  # isn't deleted
-            # is either public, or the current user can view
-            Q('is_public', 'eq', True) |
-            Q('contributors', 'contains', user._id))
-    ).limit(20)
+        Q('is_deleted', 'eq', False)  # isn't deleted
+    )
+
+    my_projects = Node.find(
+        matching_title &
+        Q('contributors', 'contains', user._id)  # user is a contributor
+    ).limit(max_results)
+
+    if my_projects.count() < max_results:
+        public_projects = Node.find(
+            matching_title &
+            Q('is_public', 'eq', True)  # is public
+        ).limit(max_results - my_projects.count())
+    else:
+        public_projects = []
+
+    results = list(my_projects) + list(public_projects)
 
     out = []
 
@@ -198,7 +212,7 @@ def create_result(highlights, results):
                             'highlight': lit or nest.get(split_id)['highlight'] if nest.get(split_id) else None,
                             'wiki_link': wiki_link,
                             'contributors': contributors,
-                            'contributors_url': contributors_url,
+                            'contributors_url': contributors_url
                         }
                         if split_id+'_tags' in result:
                             if split_id not in visited_nests:
@@ -227,6 +241,7 @@ def create_result(highlights, results):
             container['wiki_link'] = main_wiki_link
             # and our nested information
             container['nest'] = nest
+            container['is_registration'] = result[id + '_registeredproject']
             if id+'_tags' in result.keys():
                 # again using sets to create a list without duplicates
                 container['tags'] = result[id+'_tags'] + list(

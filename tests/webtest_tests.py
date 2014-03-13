@@ -195,8 +195,6 @@ class TestAUser(DbTestCase):
 
     def test_can_create_a_project(self):
         res = self._login(self.user.username, 'science')
-        # Goes to dashboard (already logged in)
-        res = res.click('My Dashboard', index=0)
         # Clicks New Project
         res = res.click('New Project').maybe_follow()
         # Fills out the form

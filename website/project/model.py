@@ -38,7 +38,7 @@ from website.util.permissions import (expand_permissions,
     CREATOR_PERMISSIONS
 )
 from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website import settings
+from website import language, settings
 
 html_parser = HTMLParser()
 
@@ -651,6 +651,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         if first_save and is_original and not suppress_log:
 
             #
+            # TODO: This logic also exists in self.use_as_template()
             for addon in settings.ADDONS_AVAILABLE:
                 if 'node' in addon.added_default:
                     self.add_addon(addon.short_name, auth=None, log=False)
@@ -732,6 +733,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # set attributes which may be overridden by `changes`
         new.is_public = False
+        new.description = None
 
         # apply `changes`
         for attr, val in attributes.iteritems():
@@ -743,6 +745,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         new.template_node = self
         new.is_fork = False
         new.is_registration = False
+
+        # If that title hasn't been changed, apply the default prefix (once)
+        if (new.title == self.title and
+                language.TEMPLATED_FROM_PREFIX not in new.title):
+            new.title = ''.join((language.TEMPLATED_FROM_PREFIX, new.title, ))
 
         # Slight hack - date_created is a read-only field.
         new._fields['date_created'].__set__(
@@ -767,6 +774,15 @@ class Node(GuidStoredObject, AddonModelMixin):
             log_date=new.date_created,
             save=False,
         )
+
+        # add mandatory addons
+        # TODO: This logic also exists in self.save()
+        print 'working...'
+        for addon in settings.ADDONS_AVAILABLE:
+            print addon.short_name
+            if 'node' in addon.added_default:
+                print 'adding'
+                new.add_addon(addon.short_name, auth=None, log=False)
 
         # deal with the children of the node, if any
         new.nodes = [
@@ -1020,6 +1036,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         as appropriate.
 
         """
+        def solr_bool(value):
+            """Return a string value for a boolean value that solr will
+            correctly serialize.
+            """
+            return 'true' if value is True else 'false'
         if not settings.USE_SOLR:
             return
 
@@ -1058,10 +1079,11 @@ class Node(GuidStoredObject, AddonModelMixin):
                 ],
                 '{}_title'.format(self._id): self.title,
                 '{}_category'.format(self._id): self.category,
-                '{}_public'.format(self._id): self.is_public,
+                '{}_public'.format(self._id): solr_bool(self.is_public),
                 '{}_tags'.format(self._id): [x._id for x in self.tags],
                 '{}_description'.format(self._id): self.description,
                 '{}_url'.format(self._id): self.url,
+                '{}_registeredproject'.format(self._id): solr_bool(self.is_registration),
             }
 
             # TODO: Move to wiki add-on
