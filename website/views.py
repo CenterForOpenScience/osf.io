@@ -113,21 +113,21 @@ def dashboard(**kwargs):
 def watched_logs_get(**kwargs):
     user = kwargs['auth'].user
     page_num = int(request.args.get('pageNum', '').strip('/') or 0)
-    offset = page_num * 10
-    recent_log_ids = itertools.islice(user.get_recent_log_ids(), offset, offset+10+1)
+    page_size = 10
+    offset = page_num * page_size
+    recent_log_ids = itertools.islice(user.get_recent_log_ids(), offset, offset + page_size + 1)
     logs = (model.NodeLog.load(id) for id in recent_log_ids)
     watch_logs = []
     more_logs = False
 
     for log in logs:
-        if len(watch_logs) < 10:
+        if len(watch_logs) < page_size:
             watch_logs.append(log.serialize())
         else:
             more_logs =True
             break
 
     return {"logs": watch_logs, "more_logs": more_logs}
-
 
 def reproducibility():
     return framework.redirect('/EZcUj/wiki')
