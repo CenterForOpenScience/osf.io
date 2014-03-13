@@ -6,7 +6,7 @@ from webtest_plus import TestApp
 import website.app
 from tests.base import DbTestCase
 
-from tests.factories import ProjectFactory, AuthUserFactory, UserFactory
+from tests.factories import ProjectFactory, AuthUserFactory
 
 from website.addons.base import AddonError
 from website.addons.figshare.tests.utils import create_mock_figshare
@@ -15,8 +15,6 @@ from website.addons.figshare import utils
 
 from framework.auth.decorators import Auth
 from website.addons.figshare import settings as figshare_settings
-
-from utils import create_mock_figshare
 
 
 app = website.app.init_app(
@@ -177,6 +175,12 @@ class TestUtils(DbTestCase):
         ref = views.hgrid.figshare_hgrid_data(self.node_settings, self.auth)
         assert_equal(ref, None)
 
+    @mock.patch('website.addons.figshare.api.Figshare.project')
+    def test_hgrid_deleted_project(self, project):
+        project.return_value = None
+        ref = views.hgrid.figshare_hgrid_data(self.node_settings, self.auth)
+        assert_equal(ref, None)
+
 
 class TestViewsCrud(DbTestCase):
 
@@ -209,13 +213,13 @@ class TestViewsCrud(DbTestCase):
 
         self.figshare = create_mock_figshare('test')
 
-    def test_publish_no_category(self):
-        url = '/api/v1/project/{0}/figshare/publish/article/9002/'.format(self.project._id)
-        rv = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
-        self.node_settings.reload()
-        self.project.reload()
+    # def test_publish_no_category(self):
+    #     url = '/api/v1/project/{0}/figshare/publish/article/9002/'.format(self.project._id)
+    #     rv = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
+    #     self.node_settings.reload()
+    #     self.project.reload()
 
-        assert_equal(rv.status_int, 400)
+    #     assert_equal(rv.status_int, 400)
 
     @mock.patch('website.addons.figshare.api.Figshare.from_settings')
     def test_view_missing(self, mock_fig):
@@ -238,6 +242,20 @@ class TestViewsCrud(DbTestCase):
         rv = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
         assert_equal(rv.status_int, 400)
 
+    @mock.patch('website.addons.figshare.api.Figshare.create_article')
+    def test_create_fileset_no_name(self, faux_ject):
+        faux_ject.return_value = False
+        url = '/api/v1/project/{0}/figshare/new/fileset/'.format(self.project._id)
+        rv = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
+        assert_equal(rv.status_int, 400)
+
+    @mock.patch('website.addons.figshare.api.Figshare.create_article')
+    def test_create_fileset_no_name(self, faux_ject):
+        faux_ject.return_value = False
+        url = '/api/v1/project/{0}/figshare/new/fileset/'.format(self.project._id)
+        rv = self.app.post_json(url, {'name': ''}, auth=self.user.auth, expect_errors=True)
+        assert_equal(rv.status_int, 400)
+
     @mock.patch('website.addons.figshare.api.Figshare.create_project')
     def test_create_project_empty_name(self, faux_ject):
         faux_ject.return_value = False
@@ -250,11 +268,26 @@ class TestViewsCrud(DbTestCase):
     def test_view_private(self, mock_fig):
         mock_fig.return_value = self.figshare
         url = '/project/{0}/figshare/article/564/file/1348803/'.format(self.project._id)
-        rv = self.app.get(url, auth=self.user.auth).maybe_follow()
-        # rv.showbrowser()
-        assert_equal(rv.status_int, 200)
-        assert_true('file is unpublished we cannot render it.' in rv.body)
+        self.app.auth = self.user.auth
+        resp = self.app.get(url, auth=self.user.auth).maybe_follow()
+        assert_equal(resp.status_int, 200)
+        assert_true('file is unpublished we cannot render it.' in resp.body)
 
+    @mock.patch('website.addons.figshare.api.Figshare.from_settings')
+    def test_view_bad_file(self, mock_fig):
+        mock_fig.return_value = self.figshare
+        url = '/project/{0}/figshare/article/564/file/958351351/'.format(self.project._id)
+        self.app.auth = self.user.auth
+        resp = self.app.get(url, expect_errors=True).maybe_follow()
+        assert_equal(resp.status_int, 404)
+
+    @mock.patch('website.addons.figshare.api.Figshare.from_settings')
+    def test_view_bad_article(self, mock_fig):
+        mock_fig.return_value = self.figshare
+        url = '/project/{0}/figshare/article/543813514/file/9/'.format(self.project._id)
+        self.app.auth = self.user.auth
+        resp = self.app.get(url, expect_errors=True).maybe_follow()
+        assert_equal(resp.status_int, 404)
 
 class TestViewsAuth(DbTestCase):
 
@@ -286,4 +319,9 @@ class TestViewsAuth(DbTestCase):
     def test_oauth_fail(self):
         url = '/api/v1/project/{0}/figshare/oauth'.format(self.project._id)
         rv = self.app.get(url, auth=self.user.auth).maybe_follow()
+        pass
+
+
+    #TODO Finish me
+    def test_oauth_bad_token(self):
         pass

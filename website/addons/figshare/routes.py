@@ -25,33 +25,19 @@ settings_routes = {
         ], 'get', views.widget.figshare_widget, json_renderer),
         # CRUD: Projects
         Rule([
-            '/project/<pid>/figshare/project/<project_id>/article',
-            '/project/<pid>/node/<nid>/figshare/project/<project_id>/article',
-            '/project/<pid>/figshare/project/<project_id>/article/<aid>',
-            '/project/<pid>/node/<nid>/figshare/project/<project_id>/article/<aid>'
-        ],  'post', views.crud.figshare_add_article_to_project, json_renderer),
-        Rule([
             '/project/<pid>/figshare/project/<project_id>/article/<aid>',
             '/project/<pid>/node/<nid>/figshare/project/<project_id>/article/<aid>'
         ],  'delete', views.crud.figshare_remove_article_from_project, json_renderer),
-        # CRUD: Articles
-        Rule([
-            '/project/<pid>/figshare/publish/article/<aid>/',
-            '/project/<pid>/node/<nid>/figshare/publish/article/<aid>/'],
-             'post', views.crud.figshare_publish_article, json_renderer),
-        # CRUD: Files
-        Rule([
-            '/project/<pid>/figshare/<aid>/',
-            '/project/<pid>/node/<nid>/figshare/<aid>/',
-        ],  'post', views.crud.figshare_upload_file_to_article, json_renderer),
         Rule([
             '/project/<pid>/figshare/article/<aid>/file/<fid>/',
             '/project/<pid>/node/<nid>/figshare/article/<aid>/file/<fid>/',
         ],  'delete', views.crud.figshare_delete_file, json_renderer),
         Rule([
             '/project/<pid>/figshare/',
-            'project/<pid>/node/<nid>/figshare/'
-        ], 'post', views.crud.figshare_upload_file_as_article, json_renderer),
+            '/project/<pid>/figshare/<aid>/',
+            'project/<pid>/node/<nid>/figshare/',
+            '/project/<pid>/node/<nid>/figshare/<aid>/',
+        ], 'post', views.crud.figshare_upload, json_renderer),
         # OAuth: Node
         Rule([
             '/project/<pid>/figshare/oauth/',
@@ -83,7 +69,11 @@ settings_routes = {
         Rule([
             '/project/<pid>/figshare/new/project/',
             '/project/<pid>/node/<nid>/figshare/new/project/',
-        ], 'post', views.crud.figshare_create_project, json_renderer)
+        ], 'post', views.crud.figshare_create_project, json_renderer),
+        Rule([
+            '/project/<pid>/figshare/new/fileset/',
+            '/project/<pid>/node/<nid>/figshare/new/fileset/',
+        ], 'post', views.crud.figshare_create_fileset, json_renderer)
     ],
     'prefix': '/api/v1',
 }

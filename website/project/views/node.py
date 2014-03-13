@@ -14,13 +14,16 @@ from framework.mongo.utils import from_mongo
 
 from website import language
 
-from website.project import new_node, clean_template_name
+from website.project import clean_template_name, new_node
 from website.project.decorators import (
-    must_not_be_registration, must_be_valid_project, must_be_contributor,
-    must_be_contributor_or_public, must_have_permission,
+    must_be_contributor,
+    must_be_contributor_or_public,
+    must_be_valid_project,
+    must_have_permission,
+    must_not_be_registration,
 )
 from website.project.forms import NewProjectForm, NewNodeForm
-from website.models import WatchConfig, Node, Pointer
+from website.models import Node, Pointer, WatchConfig
 from website import settings
 from website.views import _render_nodes
 from website.profile import utils
@@ -64,13 +67,36 @@ def project_new_post(**kwargs):
     user = kwargs['auth'].user
     form = NewProjectForm(request.form)
     if form.validate():
-        project = new_node(
-            'project', form.title.data, user, form.description.data
-        )
-        return {}, 201, None, project.url
+        if form.template.data:
+            original_node = Node.load(form.template.data)
+            project = original_node.use_as_template(
+                auth=kwargs['auth'],
+                changes={
+                    form.template.data: {
+                        'title': form.title.data,
+                    }
+                }
+            )
+                # node._fields['date_created'].__set__(new_date, safe=True)
+        else:
+            project = new_node(
+                'project', form.title.data, user, form.description.data
+            )
+        return {}, 201, None, project.url + 'settings/'
     else:
         push_errors_to_status(form.errors)
     return {}, http.BAD_REQUEST
+
+
+@must_be_logged_in
+@must_be_valid_project
+def project_new_from_template(*args, **kwargs):
+    original_node = kwargs.get('node')
+    new_node = original_node.use_as_template(
+        auth=kwargs['auth'],
+        changes=dict(),
+    )
+    return {'url': new_node.url}, http.CREATED, None
 
 
 ##############################################################################
@@ -102,7 +128,6 @@ def project_new_node(**kwargs):
 
 @must_be_logged_in
 @must_be_valid_project  # returns project
-@must_not_be_registration
 def project_before_fork(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -130,7 +155,6 @@ def node_fork_page(**kwargs):
 
     if node:
         node_to_use = node
-        status.push_status_message('At this time, only projects can be forked; however, this behavior is coming soon.')
         raise HTTPError(
             http.FORBIDDEN,
             message='At this time, only projects can be forked; however, this behavior is coming soon.',
@@ -138,9 +162,6 @@ def node_fork_page(**kwargs):
         )
     else:
         node_to_use = project
-
-    if node_to_use.is_registration:
-        raise HTTPError(http.FORBIDDEN)
 
     fork = node_to_use.fork_node(auth)
 
@@ -430,7 +451,6 @@ def _render_addon(node):
     for addon in node.get_addons():
 
         configs[addon.config.short_name] = addon.config.to_json()
-
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
 
@@ -497,6 +517,7 @@ def _view_project(node, auth, primary=False):
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': node.forked_date.strftime('%Y/%m/%d %I:%M %p') if node.is_fork else '',
             'fork_count': len(node.fork_list),
+            'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': node.private_links,
             'link': auth.private_key or request.args.get('key', '').strip('/'),
@@ -505,7 +526,7 @@ def _view_project(node, auth, primary=False):
             'piwik_site_id': node.piwik_site_id,
 
             'comment_level': node.comment_level,
-            'can_comment': node.can_comment(auth),
+            'has_comments': bool(getattr(node, 'commented', [])),
             'has_children': bool(getattr(node, 'commented', False)),
 
         },
@@ -526,8 +547,9 @@ def _view_project(node, auth, primary=False):
             'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
             'piwik_token': user.piwik_token if user else '',
-            'id': user._primary_key if user else None,
+            'id': user._id if user else None,
             'username': user.username if user else None,
+            'can_comment': node.can_comment(auth),
         },
         # TODO: Namespace with nested dicts
         'addons_enabled': node.get_addon_names(),
@@ -866,8 +888,8 @@ def get_pointed(**kwargs):
     node = kwargs['node'] or kwargs['project']
     return {'pointed': [
         {
-            'url': each.url,
-            'title': each.title,
+            'url': each.node__parent[0].url,
+            'title': each.node__parent[0].title,
             'authorShort': abbrev_authors(node),
         }
         for each in node.pointed

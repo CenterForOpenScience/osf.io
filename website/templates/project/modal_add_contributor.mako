@@ -43,7 +43,7 @@
                             </div>
                             <div class="error">{{ errorMsg }}</div>
                             <table>
-                                <thead data-bind="if: foundResults">
+                                <thead data-bind="visible: foundResults">
                                     <th></th>
                                     <th></th>
                                     <th>Name</th>
@@ -91,7 +91,7 @@
 
                             <!-- TODO: Duplication here: Put this in a KO template -->
                             <table>
-                                <thead data-bind="if: selection().length">
+                                <thead data-bind="visible: selection().length">
                                     <th></th>
                                     <th></th>
                                     <th>Name</th>

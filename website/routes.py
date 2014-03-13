@@ -333,8 +333,6 @@ def make_url_map(app):
             project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
         Rule(['/user/<uid>/<pid>/claim/verify/<token>/'], ['get', 'post'],
             project_views.contributor.claim_user_registered, OsfWebRenderer('claim_account_registered.mako')),
-        Rule(['/user/<uid>/<pid>/claim/login/'], ['get', 'post'],
-            project_views.contributor.claim_user_registered_login, OsfWebRenderer('public/login.mako'))
     ])
 
     # API
@@ -387,6 +385,7 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/search/', 'get', search_views.search_search, json_renderer),
+        Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
 
     ], prefix='/api/v1')
 
@@ -441,6 +440,7 @@ def make_url_map(app):
         ### Logs ###
 
         Rule('/log/<log_id>/', 'get', project_views.log.get_log, OsfWebRenderer('util/render_log.mako')),
+
         Rule([
             '/project/<pid>/log/',
             '/project/<pid>/node/<nid>/log/',
@@ -610,7 +610,7 @@ def make_url_map(app):
             json_renderer,
         ),
 
-
+        #Private Link
         Rule([
             '/project/<pid>/generatePrivateLink/',
             '/project/<pid>/node/<nid>/generatePrivateLink/',
@@ -620,6 +620,11 @@ def make_url_map(app):
             '/project/<pid>/removePrivateLink/',
             '/project/<pid>/node/<nid>/removePrivateLink/',
         ], 'post', project_views.node.remove_private_link, json_renderer),
+
+        # Create, using existing project as a template
+        Rule([
+            '/project/new/<nid>/',
+        ], 'post', project_views.node.project_new_from_template, json_renderer),
 
         # Remove
         Rule(

@@ -6,13 +6,12 @@ import httplib as http
 from framework import request
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
-from ..decorators import must_be_contributor_or_public
+from framework.forms.utils import sanitize
 
 from website import settings
 from website.filters import gravatar
-
-from framework.forms.utils import sanitize
 from website.models import Guid, Comment
+from website.project.decorators import must_be_contributor_or_public
 
 
 logger = logging.getLogger(__name__)
@@ -40,7 +39,6 @@ def collect_discussion(target, users=None):
 @must_be_contributor_or_public
 def comment_discussion(**kwargs):
 
-    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
     users = collect_discussion(node)
@@ -135,6 +133,8 @@ def add_comment(**kwargs):
     content = sanitize(content)
     if not content:
         raise HTTPError(http.BAD_REQUEST)
+    if len(content) > settings.COMMENT_MAXLENGTH:
+        raise HTTPError(http.BAD_REQUEST)
 
     comment = Comment.create(
         auth=auth,
@@ -175,6 +175,8 @@ def edit_comment(**kwargs):
     content = request.json.get('content').strip()
     content = sanitize(content)
     if not content:
+        raise HTTPError(http.BAD_REQUEST)
+    if len(content) > settings.COMMENT_MAXLENGTH:
         raise HTTPError(http.BAD_REQUEST)
 
     comment.edit(

@@ -9,7 +9,7 @@
     <div id="comments" class="cp-sidebar">
 
         <h4>
-            <span>Discussion</span>
+            <span>${"Project" if node['category']=='project' else "Component"} ${node['title']} Discussion</span>
             <span data-bind="foreach: {data: discussion, afterAdd: setupToolTips}" class="pull-right">
                 <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
                     <img data-bind="attr: {src: gravatarUrl}"/>
@@ -22,13 +22,14 @@
 
             <form class="form">
                 <div class="form-group">
-                    <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input'"></textarea>
+                    <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                 </div>
                 <div data-bind="if: replyNotEmpty" class="form-inline">
-                    <a class="btn btn-default btn-default" data-bind="click: submitReply"><i class="icon-check"></i> Save</a>
-                    <a class="btn btn-default btn-default" data-bind="click: cancelReply"><i class="icon-undo"></i> Cancel</a>
-                    <a data-bind="text: replyErrorMessage" class="comment-error"></a>
+                    <a class="btn btn-default btn-default" data-bind="click: submitReply, css: {disabled: submittingReply}"><i class="icon-check"></i> {{saveButtonText}}</a>
+                    <a class="btn btn-default btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="icon-undo"></i> Cancel</a>
+                    <span data-bind="text: replyErrorMessage" class="comment-error"></span>
                 </div>
+                <div class="comment-error">{{errorMessage}}</div>
             </form>
         </div>
     </div>
@@ -102,7 +103,7 @@
                         -->
                         <div data-bind="template {if: editing, afterRender: autosizeText}">
                             <div class="form-group" style="padding-top: 10px">
-                                <textarea class="form-control" data-bind="value: content"></textarea>
+                                <textarea class="form-control" data-bind="value: content, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                             </div>
                             <div class="form-inline">
                                 <a class="btn btn-default btn-default" data-bind="click: submitEdit, visible: editNotEmpty"><i class="icon-check"></i> Save</a>
@@ -113,8 +114,12 @@
 
                     </div>
 
-                    <div class="comment-actions">
+                    <div>
+
+                        <span class="comment-error">{{errorMessage}}</span>
+
                         <span>&nbsp;</span>
+
                         <!-- Action bar -->
                         <div data-bind="ifnot: editing" class="comment-actions pull-right">
                             <span data-bind="if: $root.canComment, click: showReply">
@@ -163,11 +168,11 @@
 
                 <div>
                     <div class="form-group" style="padding-top: 10px">
-                        <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input'"></textarea>
+                        <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                     </div>
                     <div>
-                        <a class="btn btn-default btn-default" data-bind="click: submitReply, visible: replyNotEmpty"><i class="icon-check"></i> Save</a>
-                        <a class="btn btn-default btn-default" data-bind="click: cancelReply"><i class="icon-undo"></i> Cancel</a>
+                        <a class="btn btn-default btn-default" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"><i class="icon-check"></i> {{saveButtonText}}</a>
+                        <a class="btn btn-default btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="icon-undo"></i> Cancel</a>
                         <span data-bind="text: replyErrorMessage" class="comment-error"></span>
                     </div>
                 </div>

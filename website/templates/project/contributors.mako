@@ -34,9 +34,6 @@
                     <img data-bind="attr: {src: contributor.gravatar_url}" />
                     <span data-bind="text: contributor.fullname"></span>
                 </td>
-##                <td>
-##                    <span data-bind="text: contributor.contributions"></span>
-##                </td>
                 <td>
                     <span data-bind="visible: notDeleteStaged">
                         <a href="#" class="permission-editable" data-type="select"></a>

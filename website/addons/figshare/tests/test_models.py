@@ -54,6 +54,13 @@ class TestCallbacks(DbTestCase):
         assert_equal(rv.status_int, 400)
         assert_equal(self.node_settings.figshare_id, '123456')
 
+    def test_node_settings_fileset(self):
+        url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
+        rv = self.app.post_json(url, {'figshare_value': 'fileset_9002', 'figshare_title': 'newFeatureYAY'}, expect_errors=True, auth=self.user.auth)
+        self.node_settings.reload()
+        assert_equal(rv.status_int, 200)
+        assert_equal(self.node_settings.figshare_id, '9002')
+
     def test_node_settings_none(self):
         url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
         rv = self.app.post_json(url, {'figshare_id': ''}, expect_errors=True, auth=self.user.auth)

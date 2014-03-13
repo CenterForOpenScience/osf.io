@@ -16,8 +16,7 @@ def figshare_hgrid_data_contents(*args, **kwargs):
     fs_id = kwargs.get('id', node_settings.figshare_id)
 
     connect = Figshare.from_settings(node_settings.user_settings)
-
-    if fs_type == 'article':
+    if fs_type == 'article' or fs_type=='fileset':
         return article_to_hgrid(node, connect.article(node_settings, fs_id)['items'][0], expand=True)
     elif fs_type == 'project':
         return project_to_hgrid(node, connect.project(node_settings, fs_id))
@@ -27,14 +26,19 @@ def figshare_hgrid_data_contents(*args, **kwargs):
 
 def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
     node = node_settings.owner
-    project = Figshare.from_settings(node_settings.user_settings).project(node_settings, node_settings.figshare_id)
-    if not node_settings.figshare_id or not node_settings.has_auth:
+    if node_settings.figshare_type == 'project':
+        item = Figshare.from_settings(node_settings.user_settings).project(node_settings, node_settings.figshare_id)
+    else:
+        item = Figshare.from_settings(node_settings.user_settings).article(node_settings, node_settings.figshare_id)
+    if not node_settings.figshare_id or not node_settings.has_auth or not item:
         return
-    node_settings.figshare_title = project['title']
+    #TODO Test me
+    #Throw error if neither
+    node_settings.figshare_title = item.get('title') or item['items'][0]['title']
     node_settings.save()
     return [
         rubeus.build_addon_root(
-            node_settings, node_settings.figshare_title, permissions=auth,
+            node_settings, '{0}:{1}'.format(node_settings.figshare_title or 'Unnamed', node_settings.figshare_id), permissions=auth,
             nodeUrl=node.url, nodeApiUrl=node.api_url,
         )
     ]
@@ -55,7 +59,7 @@ def figshare_hgrid_urls(node):
     node_settings = node.get_addon('figshare')
     connect = Figshare.from_settings(node_settings.user_settings)
 
-    rv = article_to_hgrid(node, connect.project(node_settings, node_settings.figshare_id))
+    rv = project_to_hgrid(node, connect.project(node_settings, node_settings.figshare_id))
 
     rv = [n['urls']['view'] for n in rv]
 

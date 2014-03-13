@@ -8,13 +8,14 @@
 ${next.body()}
 
 
+
 <%include file="modal_generate_private_link.mako"/>
-<%include file="../include/comment_template.mako" />
 <%include file="modal_add_contributor.mako"/>
 <%include file="modal_add_pointer.mako"/>
 <%include file="modal_show_links.mako"/>
 % if node['category'] == 'project':
     <%include file="modal_add_component.mako"/>
+    <%include file="modal_duplicate.mako"/>
 % endif
 </%def>
 
@@ -37,7 +38,7 @@ ${next.body()}
         currentUser: {
             username: '${user.get("username")}'
         }
-    }
+    };
 
     $(function() {
 
@@ -52,7 +53,7 @@ ${next.body()}
                 })
                 .ready('logFeed', function() {
                     if ($logScope.length) { // Render log feed if necessary
-                        var logFeed = new LogFeed('#logScope', data.node.logs);
+                        var logFeed = new LogFeed('#logScope', data.node.logs, {'url':nodeApiUrl+'log/'});
                     }
                 });
                 // If user is a contributor, initialize the contributor modal
@@ -113,25 +114,5 @@ ${next.body()}
     });
 </script>
 % endif
-
-<script>
-
-    var $comments = $('#comments');
-    var userName = '${user_full_name}';
-    var canComment = ${'true' if node['can_comment'] else 'false'};
-    var hasChildren = ${'true' if node['has_children'] else 'false'};
-
-    if ($comments.length) {
-
-        $script(['/static/js/commentpane.js', '/static/js/comment.js'], 'comments');
-
-        $script.ready('comments', function () {
-            var commentPane = new CommentPane('#commentPane');
-            Comment.init('#comments', userName, canComment, hasChildren);
-        });
-
-    }
-
-</script>
 
 </%def>
