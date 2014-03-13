@@ -7,7 +7,8 @@ from website import settings
 from mfr.renderer import FileRenderer
 import mfr
 import tempfile
-
+from mfr.renderer.exceptions import MFRError
+from mfr.renderer.tabular.exceptions import StataVersionError, BlankOrCorruptTableError
 logger = logging.getLogger(__name__)
 
 
@@ -21,7 +22,23 @@ def ensure_path(path):
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise
+sup = "Contact support@osf.io for further assistance."
 
+MESSAGES = {
+    StataVersionError: 'Version of given Stata file is not 104, 105, 108, 113 (Stata 8/9), 114 (Stata 10/11) or 115 (Stata 12)<p>{0}</p>'.format(sup),
+    BlankOrCorruptTableError: 'Is this a valid instance of this file type?<p>{0}</p>'.format(sup),
+}
+
+# Unable to render. Download the file to view it.
+def render_mfr_error(err):
+    pre = "Unable to render. <a href='{download_path}'>Download</a> file to view it." # move to LANGUAGE
+    msg = MESSAGES.get(type(err), err.message)
+    return """
+           <div class="osf-mfr-error">
+           <p>{pre}</p>
+           <p>{msg}</p>
+           </div>
+        """.format(**locals())
 
 @celery.task(time_limit=settings.MFR_TIMEOUT)
 def _build_rendered_html(file_name, file_content, cache_dir, cache_file_name,
@@ -54,9 +71,10 @@ def _build_rendered_html(file_name, file_content, cache_dir, cache_file_name,
     cache_file_path = os.path.join(cache_dir, cache_file_name)
 
     # Render file
-    rendered = mfr.render(file_pointer, url=download_path)
-    if rendered is None:
-        rendered = 'Unable to render; download file to view it'.format(download_path)
+    try:
+        rendered = mfr.render(file_pointer, url=download_path)
+    except MFRError as err:
+        rendered = render_mfr_error(err).format(download_path=download_path)
 
     # Close read pointer
     file_pointer.close()

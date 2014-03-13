@@ -1,0 +1,2 @@
+class MFRError(Exception):
+    pass
