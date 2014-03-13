@@ -116,43 +116,39 @@
         </p>
 
         <nav id="projectSubnav" class="navbar navbar-default ">
-            <ul class="nav navbar-nav">
-                <li><a href="${node['url']}">Dashboard</a></li>
+            <div class="container-fluid">
+                <ul class="nav navbar-nav project-nav">
+                    <li><a href="${node['url']}">Dashboard</a></li>
 
-                <li><a href="${node['url']}files/">Files</a></li>
+                    <li><a href="${node['url']}files/">Files</a></li>
+                    <!-- Add-on tabs -->
+                    % for addon in addons_enabled:
+                        % if addons[addon]['has_page']:
+                            <li>
+                                <a href="${node['url']}${addons[addon]['short_name']}">
+                                    % if addons[addon]['icon']:
+                                        <img src="${addons[addon]['icon']}" class="addon-logo"/>
+                                    % endif
+                                    ${addons[addon]['full_name']}
+                                </a>
+                            </li>
+                        % endif
+                    % endfor
 
-                <!-- Add-on tabs -->
-                % for addon in addons_enabled:
-                    % if addons[addon]['has_page']:
-                        <li>
-                            <a href="${node['url']}${addons[addon]['short_name']}">
-                                % if addons[addon]['icon']:
-                                    <img src="${addons[addon]['icon']}" class="addon-logo"/>
-                                % endif
-                                ${addons[addon]['full_name']}
-                            </a>
-                        </li>
-                    % endif
-                % endfor
-                % if user['can_edit'] or node['is_public'] or not node['link']:
                     <li><a href="${node['url']}statistics/">Statistics</a></li>
-                % endif
+                    % if not node['is_registration']:
+                        <li><a href="${node['url']}registrations/">Registrations</a></li>
+                    % endif
+                    <li><a href="${node['url']}forks/">Forks</a></li>
+                    % if 'admin' in user['permissions'] and not node['is_registration']:
+                    <li><a href="${node['url']}contributors/">Contributors</a></li>
+                    %endif
+                    % if 'write' in user['permissions']:
+                    <li><a href="${node['url']}settings/">Settings</a></li>
+                    % endif
+                </ul>
+            </div><!-- end container-fluid -->
 
-                % if not node['is_registration']:
-                    <li><a href="${node['url']}registrations/">Registrations</a></li>
-                % endif
-                <li><a href="${node['url']}forks/">Forks</a></li>
-
-                % if 'admin' in user['permissions'] and not node['is_registration']:
-
-                <li><a href="${node['url']}contributors/">Contributors</a></li>
-                %endif
-                % if 'write' in user['permissions']:
-                <li><a href="${node['url']}settings/">Settings</a></li>
-
-                % endif
-
-            </ul>
         </nav>
     </header>
 </div><!-- end projectScope -->

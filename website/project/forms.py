@@ -5,6 +5,7 @@ from framework.forms import (
     BootstrapTextInput,
     JqueryAutocomplete,
 )
+from website import language
 
 ###############################################################################
 # Forms
@@ -20,6 +21,7 @@ class NewProjectForm(Form):
     template = TextField(
         'Template',
         widget=JqueryAutocomplete(),
+        description=language.TEMPLATE_DROPDOWN_HELP,
     )
 
 class NewNodeForm(Form):

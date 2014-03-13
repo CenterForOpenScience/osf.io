@@ -29,14 +29,14 @@ ${next.body()}
     $script(['/static/js/contribAdder.js'], 'contribAdder');
 
     // TODO: Put these in the contextVars object below
-    var userId = '${user_id}';
     var nodeId = '${node['id']}';
     var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
     // Mako variables accessible globally
     window.contextVars = {
         currentUser: {
-            username: '${user.get("username")}'
+            username: '${user.get("username")}',
+            id: '${user_id}'
         }
     };
 

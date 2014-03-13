@@ -7,38 +7,42 @@ from framework.analytics.piwik import PiwikClient
 
 def activity():
 
-    client = PiwikClient(
-        url=settings.PIWIK_HOST,
-        auth_token=settings.PIWIK_ADMIN_TOKEN,
-        site_id=settings.PIWIK_SITE_ID,
-        period='week',
-        date='today',
-    )
-    popular_project_ids = [
-        x for x in client.custom_variables if x.label == 'Project ID'
-    ][0].values
-
     popular_public_projects = []
     popular_public_registrations = []
-    for nid in popular_project_ids:
-        node = Node.load(nid.value)
-        if node is None:
-            continue
-        if node.is_public and not node.is_registration:
-            if len(popular_public_projects) < 10:
-                popular_public_projects.append(node)
-        elif node.is_public and node.is_registration:
-            if len(popular_public_registrations) < 10:
-                popular_public_registrations.append(node)
-        if len(popular_public_projects) >= 10 and len(popular_public_registrations) >= 10:
-            break
+    hits = {}
 
-    hits = {
-        x.value: {
-            'hits': x.actions,
-            'visits': x.visits
-        } for x in popular_project_ids
-    }
+    if settings.PIWIK_HOST:
+        client = PiwikClient(
+            url=settings.PIWIK_HOST,
+            auth_token=settings.PIWIK_ADMIN_TOKEN,
+            site_id=settings.PIWIK_SITE_ID,
+            period='week',
+            date='today',
+        )
+        popular_project_ids = [
+            x for x in client.custom_variables if x.label == 'Project ID'
+        ][0].values
+
+
+        for nid in popular_project_ids:
+            node = Node.load(nid.value)
+            if node is None:
+                continue
+            if node.is_public and not node.is_registration:
+                if len(popular_public_projects) < 10:
+                    popular_public_projects.append(node)
+            elif node.is_public and node.is_registration:
+                if len(popular_public_registrations) < 10:
+                    popular_public_registrations.append(node)
+            if len(popular_public_projects) >= 10 and len(popular_public_registrations) >= 10:
+                break
+
+        hits = {
+            x.value: {
+                'hits': x.actions,
+                'visits': x.visits
+            } for x in popular_project_ids
+        }
 
     # Projects
 
