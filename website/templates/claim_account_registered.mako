@@ -20,7 +20,7 @@
                 <input type='hidden' name='next_url' value='${next_url}'>
             %endif
             <span class='help-text'>
-                <a href='${signoutURL}'>I am <strong>not</strong> <em>${user.fullname}</em>.</a>
+                <a id="signOutLink" href='${signOutUrl}'>I am <strong>not</strong> <em>${user.fullname}</em>.</a>
             </span>
             <button type='submit' class="btn btn-submit btn-primary pull-right">Submit</button>
         </form>

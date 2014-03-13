@@ -13,6 +13,7 @@ ${next.body()}
 <%include file="modal_show_links.mako"/>
 % if node['category'] == 'project':
     <%include file="modal_add_component.mako"/>
+    <%include file="modal_duplicate.mako"/>
 % endif
 </%def>
 
@@ -26,14 +27,14 @@ ${next.body()}
     $script(['/static/js/contribAdder.js'], 'contribAdder');
 
     // TODO: Put these in the contextVars object below
-    var userId = '${user_id}';
     var nodeId = '${node['id']}';
     var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
     // Mako variables accessible globally
     window.contextVars = {
         currentUser: {
-            username: '${user.get("username")}'
+            username: '${user.get("username")}',
+            id: '${user_id}'
         }
     };
 
@@ -49,7 +50,7 @@ ${next.body()}
                 })
                 .ready('logFeed', function() {
                     if ($logScope.length) { // Render log feed if necessary
-                        var logFeed = new LogFeed('#logScope', data.node.logs);
+                        var logFeed = new LogFeed('#logScope', data.node.logs, {'url':nodeApiUrl+'log/'});
                     }
                 });
                 // If user is a contributor, initialize the contributor modal

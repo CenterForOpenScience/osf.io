@@ -8,39 +8,55 @@
 window.NodeActions = {};  // Namespace for NodeActions
 
 
-// TODO: move me to the NodeControl or separate
-    NodeActions.forkPointer = function(pointerId, nodeId) {
-        bootbox.confirm('Are you sure you want to fork this project?',
-                function(result) {
-                    if (result) {
-                        // Block page
-                        $.osf.block();
+// TODO: move me to the NodeControl or separate module
+NodeActions.forkPointer = function(pointerId, nodeId) {
+    bootbox.confirm('Are you sure you want to fork this project?',
+        function(result) {
+            if (result) {
+                // Block page
+                $.osf.block();
 
-                        // Fork pointer
-                        $.ajax({
-                            type: 'post',
-                            url: nodeApiUrl + 'pointer/fork/',
-                            data: JSON.stringify({'pointerId': pointerId}),
-                            contentType: 'application/json',
-                            dataType: 'json',
-                            success: function(response) {
-                                window.location.reload();
-                            },
-                            error: function() {
-                                $.osf.unblock();
-                                bootbox.alert('Could not fork link.');
-                            }
-                        });
+                // Fork pointer
+                $.ajax({
+                    type: 'post',
+                    url: nodeApiUrl + 'pointer/fork/',
+                    data: JSON.stringify({'pointerId': pointerId}),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    success: function(response) {
+                        window.location.reload();
+                    },
+                    error: function() {
+                        $.osf.unblock();
+                        bootbox.alert('Could not fork link.');
                     }
-                }
-        )
-    };
-
+                });
+            }
+        }
+    )
+};
 
 NodeActions.addonFileRedirect = function(item) {
     window.location.href = item.params.urls.view;
     return false;
 };
+
+NodeActions.useAsTemplate = function() {
+    $.osf.block();
+
+    $.ajax({
+        url: '/api/v1/project/new/' + nodeId + '/',
+        type: 'POST',
+        dataType: 'json',
+        success: function(data) {
+            window.location = data['url']
+        },
+        fail: function() {
+            $.osf.unblock();
+            bootbox.alert('Templating failed');
+        }
+    });
+}
 
 $(function(){
 
@@ -236,28 +252,9 @@ $(document).ready(function() {
         )
     });
 
-    $('.citation-toggle').on('click', function() {
+    $('.citation-toggle').on('click', function(evt) {
         $(this).closest('.citations').find('.citation-list').slideToggle();
-    });
-
-    // Widgets
-
-    $('.widget-disable').on('click', function() {
-
-        var $this = $(this);
-
-        $.ajax({
-            url: $this.attr('href'),
-            type: 'POST',
-            contentType: 'application/json',
-            dataType: 'json',
-            complete: function() {
-                window.location = '/' + nodeId + '/';
-            }
-        });
-
         return false;
-
     });
 
 });

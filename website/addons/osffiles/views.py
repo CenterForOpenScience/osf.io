@@ -23,7 +23,7 @@ from website.project.views.file import get_cache_content, prepare_file
 from website.addons.base.views import check_file_guid
 from website import settings
 from website.project.model import NodeLog
-from website.util import rubeus
+from website.util import rubeus, permissions
 
 from .model import NodeFile, OsfGuidFile
 
@@ -51,12 +51,6 @@ def get_osffiles_hgrid(node_settings, auth, **kwargs):
         for name, fid in node.files_current.iteritems():
 
             fobj = NodeFile.load(fid)
-            unique, total = get_basic_counters(
-                'download:{0}:{1}'.format(
-                    node_settings.owner._id,
-                    fobj.path.replace('.', '_')
-                )
-            )
             item = {
                 rubeus.KIND: rubeus.FILE,
                 'name': _clean_file_name(fobj.path),
@@ -69,7 +63,7 @@ def get_osffiles_hgrid(node_settings, auth, **kwargs):
                     'view': True,
                     'edit': can_edit,
                 },
-                'downloads': total or 0,
+                'downloads': fobj.download_count(node),
                 'size': [
                     float(fobj.size),
                     rubeus.format_filesize(fobj.size),
@@ -133,7 +127,7 @@ def list_file_paths(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_have_permission('write')  # returns user, project
+@must_have_permission(permissions.WRITE)  # returns user, project
 @must_not_be_registration
 @must_have_addon('osffiles', 'node')
 def upload_file_public(**kwargs):
@@ -362,7 +356,7 @@ def download_file_by_version(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_have_permission('write') # returns user, project
+@must_have_permission(permissions.WRITE) # returns user, project
 @must_not_be_registration
 def delete_file(**kwargs):
 

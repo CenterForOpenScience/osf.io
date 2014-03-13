@@ -2,7 +2,6 @@
 import httplib as http
 import logging
 import datetime
-import re
 
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 import framework
@@ -16,8 +15,6 @@ from framework.auth.forms import (RegistrationForm, SignInForm,
 
 import website.settings
 from website import security, mails, language
-from website.project.views.contributor import verify_claim_token
-from website.project.model import Node
 
 
 Q = framework.Q
@@ -89,7 +86,9 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
 
     """
     if get_current_user():
-        return framework.redirect('/dashboard/')
+        if not request.args.get('logout'):
+            return framework.redirect('/dashboard/')
+        logout()
     direct_call = registration_form or forgot_password_form
     if framework.request.method == 'POST' and not direct_call:
         form = SignInForm(framework.request.form)
@@ -176,41 +175,25 @@ def auth_register_post():
     # Process form
     if form.validate():
         try:
-            u = auth.register_unconfirmed(
+            user = auth.register_unconfirmed(
                 form.username.data,
                 form.password.data,
                 form.fullname.data)
-            matched = re.match(
-                '^.*?/\?next=.*?/user/(.*)/(.*)/claim/verify/(.*)/$',
-                request.referrer if request.referrer else '')
-            if matched:
-                # The user wants to claim a contributor using the new account
-                # Parse the "next" query param, and replace the existing
-                # unregistered user on the project with the new
-                # registered (but with email unconfirmed) user
-                uid, pid, token = matched.groups()
-                unreg_user = User.load(uid)
-                if verify_claim_token(unreg_user, token, pid):
-                    node = Node.load(pid)
-                    node.replace_contributor(old=unreg_user, new=u)
-                    node.save()
-                    status.push_status_message(
-                        'Successfully claimed contributor.', 'success')
+            auth.signals.user_registered.send(user)
         except (ValidationValueError, DuplicateEmailError):
             status.push_status_message(
                 language.ALREADY_REGISTERED.format(email=form.username.data))
             return auth_login(registration_form=form)
-        if u:
+        if user:
             if website.settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
-                send_confirm_email(u, email=u.username)
-                message = language.REGISTRATION_SUCCESS.format(email=u.username)
+                send_confirm_email(user, email=user.username)
+                message = language.REGISTRATION_SUCCESS.format(email=user.username)
                 status.push_status_message(message, 'success')
                 return auth_login(registration_form=form)
             else:
                 return framework.redirect('/login/first/')
                 #status.push_status_message('You may now log in')
             return framework.redirect(framework.url_for('OsfWebRenderer__auth_login'))
-
     else:
         forms.push_errors_to_status(form.errors)
         return auth_login(registration_form=form)
@@ -271,7 +254,6 @@ def merge_user_post(**kwargs):
     try:
         merged_user = User.find_one(Q("username", "eq", merged_username))
     except NoResultsFound:
-        logger.debug("Failed to find user to merge")
         status.push_status_message("Could not find that user. Please check the username and password.")
         return merge_user_get(**kwargs)
     if master and merged_user:

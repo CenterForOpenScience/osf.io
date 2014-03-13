@@ -33,9 +33,12 @@ from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 
-from website.util.permissions import expand_permissions
+from website.util.permissions import (expand_permissions,
+    DEFAULT_CONTRIBUTOR_PERMISSIONS,
+    CREATOR_PERMISSIONS
+)
 from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website import settings
+from website import language, settings
 
 html_parser = HTMLParser()
 
@@ -258,28 +261,40 @@ class NodeLog(StoredObject):
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
     # Log action constants
+    CREATED_FROM = 'created_from'
+
     PROJECT_CREATED = 'project_created'
+    PROJECT_REGISTERED = 'project_registered'
+
     NODE_CREATED = 'node_created'
+    NODE_FORKED = 'node_forked'
     NODE_REMOVED = 'node_removed'
+
     POINTER_CREATED = 'pointer_created'
-    POINTER_REMOVED = 'pointer_removed'
     POINTER_FORKED = 'pointer_forked'
+    POINTER_REMOVED = 'pointer_removed'
+
     WIKI_UPDATED = 'wiki_updated'
+
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
     CONTRIB_REORDERED = 'contributors_reordered'
+
     PERMISSIONS_UPDATED = 'permissions_updated'
-    MADE_PUBLIC = 'made_public'
+
     MADE_PRIVATE = 'made_private'
+    MADE_PUBLIC = 'made_public'
+
     TAG_ADDED = 'tag_added'
     TAG_REMOVED = 'tag_removed'
+
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
-    PROJECT_REGISTERED = 'project_registered'
+
     FILE_ADDED = 'file_added'
     FILE_REMOVED = 'file_removed'
     FILE_UPDATED = 'file_updated'
-    NODE_FORKED = 'node_forked'
+
     ADDON_ADDED = 'addon_added'
     ADDON_REMOVED = 'addon_removed'
     COMMENT_ADDED = 'comment_added'
@@ -381,6 +396,9 @@ class Pointer(StoredObject):
     def register_node(self, *args, **kwargs):
         return self._clone()
 
+    def use_as_template(self, auth, changes=None):
+        return self._clone()
+
     def resolve(self):
         return self.node
 
@@ -475,6 +493,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     forked_from = fields.ForeignField('node', backref='forked')
     registered_from = fields.ForeignField('node', backref='registrations')
 
+    # The node (if any) used as a template for this node's creation
+    template_node = fields.ForeignField('node', backref='template_node')
+
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
     piwik_site_id = fields.StringField()
@@ -497,7 +518,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributors.append(self.creator)
 
             # Add default creator permissions
-            for permission in settings.CREATOR_PERMISSIONS:
+            for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
 
     def can_edit(self, auth=None, user=None):
@@ -607,12 +628,18 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         first_save = not self._is_loaded
         is_original = not self.is_registration and not self.is_fork
+        if 'suppress_log' in kwargs.keys():
+            suppress_log = kwargs['suppress_log']
+            del kwargs['suppress_log']
+        else:
+            suppress_log = False
 
         saved_fields = super(Node, self).save(*args, **kwargs)
 
-        if first_save and is_original:
+        if first_save and is_original and not suppress_log:
 
             #
+            # TODO: This logic also exists in self.use_as_template()
             for addon in settings.ADDONS_AVAILABLE:
                 if 'node' in addon.added_default:
                     self.add_addon(addon.short_name, auth=None, log=False)
@@ -663,6 +690,97 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # Return expected value for StoredObject::save
         return saved_fields
+
+    ######################################
+    # Methods that return a new instance #
+    ######################################
+
+    def use_as_template(self, auth, changes=None):
+        """Create a new project, using an existing project as a template.
+
+        :param auth: The user to be assigned as creator
+        :param changes: A dictionary of changes, keyed by node id, which
+                        override the attributes of the template project or its
+                        children.
+        :return: The `Node` instance created.
+        """
+
+        changes = changes or dict()
+
+        # build the dict of attributes to change for the new node
+        try:
+            attributes = changes[self._id]
+            # TODO: explicitly define attributes which may be changed.
+        except (AttributeError, KeyError):
+            attributes = dict()
+
+        new = self.clone()
+
+        # clear permissions, which are not cleared by the clone method
+        new.permissions = {}
+
+        # set attributes which may be overridden by `changes`
+        new.is_public = False
+        new.description = None
+
+        # apply `changes`
+        for attr, val in attributes.iteritems():
+            setattr(new, attr, val)
+
+        # set attributes which may NOT be overridden by `changes`
+        new.creator = auth.user
+        new.add_contributor(contributor=auth.user, log=False, save=False)
+        new.template_node = self
+        new.is_fork = False
+        new.is_registration = False
+
+        # If that title hasn't been changed, apply the default prefix (once)
+        if (new.title == self.title and
+                language.TEMPLATED_FROM_PREFIX not in new.title):
+            new.title = ''.join((language.TEMPLATED_FROM_PREFIX, new.title, ))
+
+        # Slight hack - date_created is a read-only field.
+        new._fields['date_created'].__set__(
+            new,
+            datetime.datetime.utcnow(),
+            safe=True
+        )
+
+        new.save(suppress_log=True)
+
+        # Log the creation
+        new.add_log(
+            NodeLog.CREATED_FROM,
+            params={
+                'node': new._primary_key,
+                'template_node': {
+                    'id': self._primary_key,
+                    'url': self.url,
+                },
+            },
+            auth=auth,
+            log_date=new.date_created,
+            save=False,
+        )
+
+        # add mandatory addons
+        # TODO: This logic also exists in self.save()
+        print 'working...'
+        for addon in settings.ADDONS_AVAILABLE:
+            print addon.short_name
+            if 'node' in addon.added_default:
+                print 'adding'
+                new.add_addon(addon.short_name, auth=None, log=False)
+
+        # deal with the children of the node, if any
+        new.nodes = [
+            x.use_as_template(auth, changes)
+            for x in self.nodes
+            if x.can_view(auth)
+        ]
+
+        new.save()
+        return new
 
     ############
     # Pointers #
@@ -906,6 +1024,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         as appropriate.
 
         """
+        def solr_bool(value):
+            """Return a string value for a boolean value that solr will
+            correctly serialize.
+            """
+            return 'true' if value is True else 'false'
         if not settings.USE_SOLR:
             return
 
@@ -944,10 +1067,11 @@ class Node(GuidStoredObject, AddonModelMixin):
                 ],
                 '{}_title'.format(self._id): self.title,
                 '{}_category'.format(self._id): self.category,
-                '{}_public'.format(self._id): self.is_public,
+                '{}_public'.format(self._id): solr_bool(self.is_public),
                 '{}_tags'.format(self._id): [x._id for x in self.tags],
                 '{}_description'.format(self._id): self.description,
                 '{}_url'.format(self._id): self.url,
+                '{}_registeredproject'.format(self._id): solr_bool(self.is_registration),
             }
 
             # TODO: Move to wiki add-on
@@ -1526,6 +1650,14 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     @property
+    def templated_list(self):
+        return [
+            x
+            for x in self.node__template_node
+            if not x.is_deleted
+        ]
+
+    @property
     def citation_apa(self):
         return u'{authors}, ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{url}</a>'.format(
             authors=self.author_list(and_delim='&'),
@@ -1761,7 +1893,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     def manage_contributors(self, user_dicts, auth, save=False):
         """Reorder and remove contributors.
 
-        :param list user_dicts: Ordered list of contributors
+        :param list user_dicts: Ordered list of contributors represented as
+            dictionaries of the form:
+            {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>}
         :param Auth auth: Consolidated authentication information
         :param bool save: Save changes
         :raises: ValueError if any users in `users` not in contributors or if
@@ -1861,7 +1995,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributors.append(contrib_to_add)
 
             # Add default contributor permissions
-            permissions = permissions or settings.CONTRIBUTOR_PERMISSIONS
+            permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS
             for permission in permissions:
                 self.add_permission(contrib_to_add, permission, save=False)
 

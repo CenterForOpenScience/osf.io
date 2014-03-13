@@ -1,3 +1,7 @@
+<%
+    import json
+    is_project = node['category'] == 'project'
+%>
 % if node['is_registration']:
     <div class="alert alert-info">This ${node['category']} is a registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node["category"]}</a>; the content of the ${node["category"]} has been frozen and cannot be edited.
     </div>
@@ -47,35 +51,23 @@
                     </div><!-- end btn-group -->
 
                     <div class="btn-group">
-                        % if user_name and not node['is_registration']:
-                            <a rel="tooltip" title="Watch" class="btn btn-default" href="#" data-bind="click: toggleWatch">
-                        % else:
-                            <a rel="tooltip" title="Watch" class="btn btn-default disabled" href="#">
-                        % endif
-                        <i class="icon-eye-open"></i>
-                        <span id="watchCount" data-bind="text: watchButtonDisplay"></span>
+                        <a
+                            % if user_name and not node['is_registration']:
+                                data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom'}"
+                                class="btn btn-default"
+                            % else:
+                                class="btn btn-default disabled"
+                            % endif
+                            href="#">
+                                <i class="icon-eye-open"></i>
+                                <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
+                            </a>
 
+                        <a rel="tooltip" title="Duplicate"
+                           class="btn btn-default${ '' if is_project else ' disabled'}" href="#"
+                           data-toggle="modal" data-target="#duplicateModal"    >
+                            <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
                         </a>
-                        <button
-                            class='btn btn-default node-fork-btn'
-                                data-bind="enable: category === 'project' && user.id,
-                                            click: forkNode"
-                            rel="tooltip"
-                            title="Number of times this ${node['category']} has been forked (copied)"
-                        >
-                            <i class="icon-code-fork"></i>&nbsp;${node['fork_count']}
-                        </button>
-##                        <a
-##                                rel="tooltip"
-##                                % if node['points']:
-##                                    href="#showLinks"
-##                                    data-toggle="modal"
-##                                % endif
-##                                class="btn btn-default ${'disabled' if node['points'] == 0 else ''}"
-##                                title="Number times this ${node['category']} has been linked"
-##                            >
-##                            <i id="linkCount" class="icon-hand-right">&nbsp;${node['points']}</i>
-##                        </a>
 
                     </div><!-- end btn-grp -->
                 </div><!-- end btn-toolbar -->
@@ -115,36 +107,39 @@
         </p>
 
         <nav id="projectSubnav" class="navbar navbar-default ">
-            <ul class="nav navbar-nav">
-                <li><a href="${node['url']}">Dashboard</a></li>
+            <div class="container-fluid">
+                <ul class="nav navbar-nav project-nav">
+                    <li><a href="${node['url']}">Dashboard</a></li>
 
-                <li><a href="${node['url']}files/">Files</a></li>
-                <!-- Add-on tabs -->
-                % for addon in addons_enabled:
-                    % if addons[addon]['has_page']:
-                        <li>
-                            <a href="${node['url']}${addons[addon]['short_name']}">
-                                % if addons[addon]['icon']:
-                                    <img src="${addons[addon]['icon']}" class="addon-logo"/>
-                                % endif
-                                ${addons[addon]['full_name']}
-                            </a>
-                        </li>
+                    <li><a href="${node['url']}files/">Files</a></li>
+                    <!-- Add-on tabs -->
+                    % for addon in addons_enabled:
+                        % if addons[addon]['has_page']:
+                            <li>
+                                <a href="${node['url']}${addons[addon]['short_name']}">
+                                    % if addons[addon]['icon']:
+                                        <img src="${addons[addon]['icon']}" class="addon-logo"/>
+                                    % endif
+                                    ${addons[addon]['full_name']}
+                                </a>
+                            </li>
+                        % endif
+                    % endfor
+
+                    <li><a href="${node['url']}statistics/">Statistics</a></li>
+                    % if not node['is_registration']:
+                        <li><a href="${node['url']}registrations/">Registrations</a></li>
                     % endif
-                % endfor
-
-                <li><a href="${node['url']}statistics/">Statistics</a></li>
-                % if not node['is_registration']:
-                    <li><a href="${node['url']}registrations/">Registrations</a></li>
-                % endif
-                <li><a href="${node['url']}forks/">Forks</a></li>
-                % if 'admin' in user['permissions'] and not node['is_registration']:
-                <li><a href="${node['url']}contributors/">Contributors</a></li>
-                %endif
-                % if 'write' in user['permissions']:
-                <li><a href="${node['url']}settings/">Settings</a></li>
-                % endif
-            </ul>
+                    <li><a href="${node['url']}forks/">Forks</a></li>
+                    % if 'admin' in user['permissions'] and not node['is_registration']:
+                    <li><a href="${node['url']}contributors/">Contributors</a></li>
+                    %endif
+                    % if 'write' in user['permissions']:
+                    <li><a href="${node['url']}settings/">Settings</a></li>
+                    % endif
+                </ul>
+            </div><!-- end container-fluid -->
         </nav>
     </header>
 </div><!-- end projectScope -->
+
