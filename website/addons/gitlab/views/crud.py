@@ -1,4 +1,5 @@
 import os
+import base64
 import urllib
 import httplib as http
 
@@ -10,6 +11,7 @@ from website.project.decorators import (
     must_be_contributor_or_public, must_not_be_registration,
     must_have_permission, must_have_addon,
 )
+from website.util import rubeus
 from website.models import NodeLog
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
@@ -37,7 +39,8 @@ def ref_or_default(node_settings, kwargs):
     return ref
 
 
-def create_or_update(node_settings, method, action, path, branch, content, auth):
+def create_or_update(node_settings, method, action, filename, branch, content,
+                     auth):
     """
     
     """
@@ -45,13 +48,13 @@ def create_or_update(node_settings, method, action, path, branch, content, auth)
 
     attr = getattr(client, method)
     response = attr(
-        node_settings.project_id, path, branch, content,
-        gitlab_settings.MESSAGES['create']
+        node_settings.project_id, filename, branch, content,
+        gitlab_settings.MESSAGES['add']
     )
 
     if response:
         urls = build_urls(
-            node, {'type': 'blob'}, response['file_name'],
+            node, {'type': 'blob'}, response['file_path'],
             branch=branch
         )
         node_settings.owner.add_log(
@@ -59,7 +62,7 @@ def create_or_update(node_settings, method, action, path, branch, content, auth)
             params={
                 'project': node.parent_id,
                 'node': node._id,
-                'path': response['file_name'],
+                'path': response['file_path'],
                 'urls': urls,
                 'gitlab': {
                     'branch': branch,
@@ -79,11 +82,12 @@ def gitlab_upload_file(**kwargs):
     auth = kwargs['auth']
     node_settings = kwargs['node_addon']
 
-    path = kwargs_to_path(kwargs, required=True)
+    path = kwargs_to_path(kwargs, required=False)
     branch = ref_or_default(node_settings, kwargs)
 
     upload = request.files.get('file')
     content = upload.read()
+    content = base64.b64encode(content)
 
     # Check max file size
     upload.seek(0, os.SEEK_END)
@@ -91,19 +95,42 @@ def gitlab_upload_file(**kwargs):
     if size > node_settings.config.max_file_size * 1024 * 1024:
         raise HTTPError(http.BAD_REQUEST)
 
+    filename = os.path.join(path, upload.filename)
     response = create_or_update(
         node_settings, 'createfile', NodeLog.FILE_ADDED,
-        path, branch, content, auth
+        filename, branch, content, auth
     )
     if not response:
         response = create_or_update(
             node_settings, 'updatefile', NodeLog.FILE_UPDATED,
-            path, branch, content, auth
+            filename, branch, content, auth
         )
 
     if not response:
         # TODO: This should raise an HTTPError
         return {'message': 'Could not upload file'}, http.BAD_REQUEST
+
+
+def gitlib_hgrid_root(node_settings, auth, **kwargs):
+
+    node = node_settings.owner
+    branch = kwargs.get('branch')
+    sha = kwargs.get('sha')
+
+    permissions = {
+        'edit': node.can_edit(auth=auth),
+        'view': True,
+    }
+    urls = build_urls(
+        node, {'type': 'tree'}, path='',
+        branch=branch, sha=sha
+    )
+    return [rubeus.build_addon_root(
+        node_settings,
+        name=None,
+        urls=urls,
+        permissions=permissions,
+    )]
 
 
 @must_be_contributor_or_public
@@ -204,10 +231,12 @@ def gitlab_view_file(**kwargs):
         node_settings.project_id, ref, path
     )
 
+    contents = base64.b64decode(contents)
+
     # Get file URL
     download_url = '/' + guid._id + '/download/' + refs_to_params(branch, sha)
     render_url = os.path.join(
-        node.api_url, 'github', 'file', path, 'render'
+        node.api_url, 'gitlab', 'files', path, 'render'
     ) + '/' + refs_to_params(branch, sha)
 
 
@@ -247,6 +276,8 @@ def gitlab_download_file(**kwargs):
 
     if contents is False:
         raise HTTPError(http.NOT_FOUND)
+
+    contents = base64.b64decode(contents)
 
     # Build response
     resp = make_response(contents)
@@ -288,7 +319,7 @@ def gitlab_delete_file(**kwargs):
 
 
 @must_be_contributor_or_public
-@must_have_addon('github', 'node')
+@must_have_addon('gitlab', 'node')
 def gitlab_get_rendered_file(**kwargs):
     """
 

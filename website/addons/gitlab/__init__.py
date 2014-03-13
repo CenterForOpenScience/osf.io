@@ -2,16 +2,15 @@ from . import routes, views, model
 
 MODELS = [
     model.AddonGitlabUserSettings,
-    model.AddonGitlabUserSettings,
+    model.AddonGitlabNodeSettings,
     model.GitlabGuidFile,
 ]
 USER_SETTINGS_MODEL = model.AddonGitlabUserSettings
 NODE_SETTINGS_MODEL = model.AddonGitlabNodeSettings
 
 ROUTES = [
-    routes.settings_routes,
-    routes.web_routes,
-    routes.api_routes
+    routes.api_routes,
+    routes.page_routes,
 ]
 
 SHORT_NAME = 'gitlab'
@@ -28,6 +27,6 @@ CONFIGS = []
 CATEGORIES = ['storage']
 
 HAS_HGRID_FILES = True
-GET_HGRID_DATA = views.crud.gitlab_list_files
+GET_HGRID_DATA = views.crud.gitlib_hgrid_root
 
 MAX_FILE_SIZE = 32
