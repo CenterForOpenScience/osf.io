@@ -66,7 +66,7 @@ this.LogFeed = (function(ko, $, global, moment) {
     /**
      * View model for a log list.
      * @param {Log[]} logs An array of Log model objects to render.
-     * @param more_logs boolean value if there are more logs or not
+     * @param hasMoreLogs boolean value if there are more logs or not
      * @param url the url ajax request post to
      */
     var LogsViewModel = function(logs, hasMoreLogs, url) {

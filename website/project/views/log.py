@@ -34,7 +34,8 @@ def _get_logs(node, count, auth, offset=0):
     :param Node node:
     :param int count:
     :param auth:
-    :return list: List of serialized logs
+    :return list: List of serialized logs,
+            boolean: if there are more logs
 
     """
     logs = []
