@@ -765,11 +765,8 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # add mandatory addons
         # TODO: This logic also exists in self.save()
-        print 'working...'
         for addon in settings.ADDONS_AVAILABLE:
-            print addon.short_name
             if 'node' in addon.added_default:
-                print 'adding'
                 new.add_addon(addon.short_name, auth=None, log=False)
 
         # deal with the children of the node, if any
