@@ -19,7 +19,6 @@ ${next.body()}
 
 
 <%def name="javascript_bottom()">
-<% import json %>
 <script>
     // Import modules
     $script(['/static/js/nodeControl.js'], 'nodeControl');
@@ -69,7 +68,7 @@ ${next.body()}
         );
         // TODO: move AddPointerViewModel to its own module
         var $addPointer = $('#addPointer');
-        var addPointerVM = new AddPointerViewModel(${json.dumps(node['title'])});
+        var addPointerVM = new AddPointerViewModel("${node['title']}");
         ko.applyBindings(addPointerVM, $addPointer[0]);
         $addPointer.on('hidden.bs.modal', function() {
             addPointerVM.clear();
@@ -93,7 +92,7 @@ ${next.body()}
     $(function() {
         // Note: Don't use cookies for global site ID; cookies will accumulate
         // indefinitely and overflow uwsgi header buffer.
-        trackPiwik('${ piwik_host }', ${ node['piwik_site_id'] });
+        $.osf.trackPiwik('${ piwik_host }', ${ node['piwik_site_id'] });
     });
 </script>
 % endif
