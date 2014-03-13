@@ -71,7 +71,7 @@ this.LogFeed = (function(ko, $, global, moment) {
      */
     var LogsViewModel = function(logs, hasMoreLogs, url) {
         var self = this;
-        self.enableMoreLogs =  ko.observable(hasMoreLogs);
+        self.enableMoreLogs = ko.observable(hasMoreLogs);
         self.logs = ko.observableArray(logs);
         var pageNum=  0;
         self.url = url;
