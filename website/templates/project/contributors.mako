@@ -1,7 +1,6 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">Contributors</%def>
 
-<% import json %>
 
 <div id="manageContributors" class="col-md-12" style="display: none;">
 
@@ -49,7 +48,7 @@
                                 data-bind="click: remove"
                                 rel="tooltip"
                                 title="Remove contributor"
-                            >-</a>
+                            >–</a>
                     <!-- /ko -->
                     <!-- ko if: deleteStaged -->
                         Removed
@@ -63,12 +62,7 @@
 
 </div>
 
-<script type="text/javascript">
-    var contributors = ${json.dumps(contributors)};
-</script>
 
-<%def name="javascript()">
-</%def>
 
 <%def name="buttonGroup()">
     % if 'admin' in user['permissions']:
@@ -81,13 +75,15 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
+    <% import json %>
     <script src="/static/js/manage.js"></script>
     <script type="text/javascript">
-        (function($) {
+        (function($, global) {
+            var contributors = ${json.dumps(contributors)};
             var $manageElm = $('#manageContributors');
             var contributorsViewModel = new Manage.ViewModel(contributors);
             ko.applyBindings(contributorsViewModel, $manageElm[0]);
             $manageElm.show();
-        })($);
+        })($, window);
     </script>
 </%def>

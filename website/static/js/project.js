@@ -36,11 +36,27 @@ NodeActions.forkPointer = function(pointerId, nodeId) {
     )
 };
 
-
 NodeActions.addonFileRedirect = function(item) {
     window.location.href = item.params.urls.view;
     return false;
 };
+
+NodeActions.useAsTemplate = function() {
+    $.osf.block();
+
+    $.ajax({
+        url: '/api/v1/project/new/' + nodeId + '/',
+        type: 'POST',
+        dataType: 'json',
+        success: function(data) {
+            window.location = data['url']
+        },
+        fail: function() {
+            $.osf.unblock();
+            bootbox.alert('Templating failed');
+        }
+    });
+}
 
 $(function(){
 
@@ -236,8 +252,9 @@ $(document).ready(function() {
         )
     });
 
-    $('.citation-toggle').on('click', function() {
+    $('.citation-toggle').on('click', function(evt) {
         $(this).closest('.citations').find('.citation-list').slideToggle();
+        return false;
     });
 
 });

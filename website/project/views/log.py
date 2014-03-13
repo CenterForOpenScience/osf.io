@@ -28,9 +28,9 @@ def get_log(log_id):
     return {'log': log.serialize()}
 
 
-def _get_logs(node, count, auth):
-    """
+def _get_logs(node, count, auth, offset=0):
 
+    """
     :param Node node:
     :param int count:
     :param auth:
@@ -39,7 +39,7 @@ def _get_logs(node, count, auth):
     """
     logs = []
 
-    for log in reversed(node.logs):
+    for log in (x for idx, x in enumerate(reversed(node.logs)) if idx >= offset):
         if log and log.node__logged and log.node__logged[0].can_view(auth):
             logs.append(log.serialize())
         if len(logs) >= count:
@@ -55,6 +55,7 @@ def get_logs(**kwargs):
     """
     auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
+    page_num = int(request.args.get('pageNum', '').strip('/') or 0)
 
     if not node_to_use.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
@@ -66,8 +67,11 @@ def get_logs(**kwargs):
         count = request.json['count']
     else:
         count = 10
+    offset = page_num*count
 
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
-    logs = _get_logs(node_to_use, count, auth)
+    logs = _get_logs(node_to_use, count, auth, offset)
     return {'logs': logs}
+
+

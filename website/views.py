@@ -2,7 +2,7 @@
 import logging
 import httplib as http
 import datetime
-
+import json
 import framework
 from framework import Q, request, redirect
 from framework.exceptions import HTTPError
@@ -112,11 +112,12 @@ def dashboard(**kwargs):
 @must_be_logged_in
 def watched_logs_get(**kwargs):
     user = kwargs['auth'].user
-    recent_log_ids = list(user.get_recent_log_ids())
-    logs = [model.NodeLog.load(id) for id in recent_log_ids]
-    return {
-        "logs": [log.serialize() for log in logs]
-    }
+    page_num = int(request.args.get('pageNum', '').strip('/') or 0)
+    page_size = 10
+    offset = page_num * page_size
+    recent_log_ids = list(user.get_recent_log_ids())[offset:][:page_size]
+    logs = (model.NodeLog.load(id) for id in recent_log_ids)
+    return {"logs": [log.serialize() for log in logs]}
 
 
 def reproducibility():
