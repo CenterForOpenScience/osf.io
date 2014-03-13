@@ -69,31 +69,31 @@ this.LogFeed = (function(ko, $, global, moment) {
      * @param more_logs boolean value if there are more logs or not
      * @param url the url ajax request post to
      */
-    var LogsViewModel = function(logs, more_logs, url) {
+    var LogsViewModel = function(logs, hasMoreLogs, url) {
         var self = this;
-        self.enableMoreLogs =  ko.observable(more_logs);
+        self.enableMoreLogs =  ko.observable(hasMoreLogs);
         self.logs = ko.observableArray(logs);
-        var page_num=  0;
+        var pageNum=  0;
         self.url = url;
 
         //send request to get more logs when the more button is clicked
         self.moreLogs = function(){
-            page_num+=1;
+            pageNum+=1;
             $.ajax({
                 url: self.url,
                 data:{
-                    pageNum:page_num
+                    pageNum:pageNum
                 },
                 type: "get",
                 cache: false,
                 success: function(response){
                     // Initialize LogViewModel
-                    var logModelObjects = createLogs(response['logs']);  // Array of Log model objects
+                    var logModelObjects = createLogs(response.logs);  // Array of Log model objects
                     for(var i=0;i<logModelObjects.length;i++)
                     {
                         self.logs.push(logModelObjects[i]);
                     }
-                    self.enableMoreLogs(response['more_logs']);
+                    self.enableMoreLogs(response.has_more_logs);
                 }
             });
         };
@@ -143,9 +143,9 @@ this.LogFeed = (function(ko, $, global, moment) {
     };
 
 
-    var initViewModel = function(self, logs, more_logs, url){
+    var initViewModel = function(self, logs, hasMoreLogs, url){
         self.logs = createLogs(logs);
-        self.viewModel = new LogsViewModel(self.logs, more_logs, url);
+        self.viewModel = new LogsViewModel(self.logs, hasMoreLogs, url);
         self.init();
     }
     /**
@@ -162,10 +162,10 @@ this.LogFeed = (function(ko, $, global, moment) {
         self.options = $.extend({}, defaults, options);
         self.$progBar = $(self.options.progBar);
         if (Array.isArray(data)) { // data is an array of log object from server
-            initViewModel(self, data, self.options.more_logs, self.options.url);
+            initViewModel(self, data, self.options.has_more_logs, self.options.url);
         } else { // data is a URL
             $.getJSON(data, function(response) {
-                  initViewModel(self, response.logs, response.more_logs,data);
+                  initViewModel(self, response.logs, response.has_more_logs,data);
             });
         }
     }
