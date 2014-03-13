@@ -1749,6 +1749,21 @@ class TestComments(DbTestCase):
         expected = [user1._id, user2._id, self.project.creator._id]
         assert_equal(observed, expected)
 
+
+class TestTagViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
+    def test_tag_get_returns_200(self):
+        with app.test_request_context():
+            url = web_url_for('project_tag', tag='foo')
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+
 class TestSearchViews(DbTestCase):
 
     def setUp(self):

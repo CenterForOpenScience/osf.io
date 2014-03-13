@@ -249,8 +249,9 @@ this.Manage = (function(window, $, ko, bootbox) {
 
     };
 
+    // TODO(sloria): Use consistent export style across knockout modules
     return {
         ViewModel: ContributorsViewModel
-    }
+    };
 
 })(window, $, ko, bootbox);
