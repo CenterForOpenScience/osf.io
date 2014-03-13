@@ -7,6 +7,7 @@
         % for field in form:
             <div class="form-group">
                 ${field['label']}
+                <span class="help-block">${ field['description'] }</span>
                 % if html_replacements and (field['id'] in html_replacements):
                     ${html_replacements[field['id']]}
                 % else:

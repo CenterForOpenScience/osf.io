@@ -70,14 +70,28 @@ def search_projects_by_title(**kwargs):
     term = request.args.get('term')
     user = kwargs['auth'].user
 
-    results = Node.find(
-        Q('title', 'istartswith', term) &  # search term (case insensitive)
+    max_results = 10
+
+    matching_title = (
+        Q('title', 'icontains', term) &  # search term (case insensitive)
         Q('category', 'eq', 'project') &  # is a project
-        Q('is_deleted', 'eq', False) & (  # isn't deleted
-            # is either public, or the current user can view
-            Q('is_public', 'eq', True) |
-            Q('contributors', 'contains', user._id))
-    ).limit(20)
+        Q('is_deleted', 'eq', False)  # isn't deleted
+    )
+
+    my_projects = Node.find(
+        matching_title &
+        Q('contributors', 'contains', user._id)  # user is a contributor
+    ).limit(max_results)
+
+    if my_projects.count() < max_results:
+        public_projects = Node.find(
+            matching_title &
+            Q('is_public', 'eq', True)  # is public
+        ).limit(max_results - my_projects.count())
+    else:
+        public_projects = []
+
+    results = list(my_projects) + list(public_projects)
 
     out = []
 
