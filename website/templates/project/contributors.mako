@@ -2,40 +2,43 @@
 <%def name="title()">Contributors</%def>
 
 <div class="row">
+    <div class="col-md-12">
 
-<h2>Contributors</h2>
-<div id="manageContributors" >
-
-        <table id="manageContributorsTable" class="table">
-            <thead>
-                <th>Name</th>
-                <th>
-                    Permissions
-                    <i class="icon-question-sign permission-info"
-                            data-toggle="popover"
-                            data-title="Permission Information"
-                            data-container="body"
-                            data-html="true"
-                        ></i>
-                </th>
-                <th></th>
-            </thead>
-            <tr>
-                <td colspan="3">
-                    <a href="#addContributors" data-toggle="modal">
-                        Click to add a contributor
-                    </a>
-                </td>
-            </tr>
-            <tbody data-bind="sortable: {template: 'contribTpl', data: contributors, as: 'contributor', afterRender: setupEditable,
-                options: {containment: '#manageContributors'}}">
-            </tbody>
-        </table>
-
-        ${buttonGroup()}
-
-    </div>
-</div>
+    <h2>Contributors</h2>
+        <div id="manageContributors" >
+                <table id="manageContributorsTable" class="table">
+                    <thead>
+                        <tr>
+                        <th class="col-sm-6">Name</th>
+                        <th class="col-sm-5">
+                            Permissions
+                            <i class="icon-question-sign permission-info"
+                                    data-toggle="popover"
+                                    data-title="Permission Information"
+                                    data-container="body"
+                                    data-html="true"
+                                ></i>
+                        </th>
+                        <th class="col-sm-1"></th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td colspan="3">
+                            <a href="#addContributors" data-toggle="modal">
+                                Click to add a contributor
+                            </a>
+                        </td>
+                    </tr>
+                    <tbody data-bind="sortable: {template: 'contribTpl',
+                        data: contributors, as: 'contributor',
+                        afterRender: setupEditable,
+                        options: {containment: '#manageContributors'}}">
+                    </tbody>
+                </table>
+                ${buttonGroup()}
+        </div>
+    </div><!-- end col-md -->
+</div><!-- end row -->
 <script id="contribTpl" type="text/html">
     <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
         <td>
