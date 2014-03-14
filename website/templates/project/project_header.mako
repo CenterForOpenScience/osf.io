@@ -77,18 +77,23 @@
         </div><!-- end row -->
 
 
-        <p id="contributors">
+        <p id="contributors">Contributors:
+            <span id="contributorsview"><div mod-meta='{
+                    "tpl": "util/render_contributors.mako",
+                    "uri": "${node["api_url"]}get_contributors/",
+                    "replace": true
+                }'></div></span>
             % if node['is_fork']:
-                Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
-                <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span><br />
+                <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
+                <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
             % endif
             % if node['is_registration'] and node['registered_meta']:
-                Registration Supplement:
+                <br />Registration Supplement:
                 % for meta in node['registered_meta']:
-                    <a href="${node['url']}register/${meta['name_no_ext']}">${meta['name_clean']}</a><br />
+                    <a href="${node['url']}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
                 % endfor
             % endif
-            Date Created:
+            <br />Date Created:
                 <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"
                      class="date node-date-created"></span>
             | Last Updated:
