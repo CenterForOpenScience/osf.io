@@ -398,13 +398,6 @@ class TestProjectViews(DbTestCase):
         assert_in('url', res.json)
         assert_equal(res.json['url'], '/dashboard/')
 
-    def test_remove_project_with_component(self):
-        node = NodeFactory(project=self.project, creator=self.user1)
-        url = self.project.api_url
-        self.app.delete_json(url, {}, auth=self.auth).maybe_follow()
-        node.reload()
-        assert_equal(node.is_deleted, True)
-
     def test_remove_component(self):
         node = NodeFactory(project=self.project, creator=self.user1)
         url = node.api_url
