@@ -191,7 +191,6 @@ this.NodeControl = (function(ko, $, global) {
     NodeControl.prototype.init = function() {
         var self = this;
         ko.applyBindings(self.viewModel, self.$element[0]);
-        self._initRemoveLinks();
     };
 
     return NodeControl;
