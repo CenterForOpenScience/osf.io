@@ -31,13 +31,6 @@ class AddonGitlabUserSettings(AddonUserSettingsBase):
     username = fields.StringField()
     password = fields.StringField()
 
-    # SSH keys for direct access to GitLab
-    # [
-    #   {'id': 1, 'title': 'public', 'key': 'ssh-rsa...'}
-    #   {'id': 2, 'title': 'public2', 'key': 'ssh-rsa...'}
-    # ]
-    ssh_keys = fields.DictionaryField(list=True)
-
     #############
     # Callbacks #
     #############
@@ -116,6 +109,11 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
         user_settings = removed.get_addon('gitlab')
         client.deleteprojectmember(self.project_id, user_settings.user_id)
 
+    def after_fork(self, node, fork, user, save=True):
+        pass
+
+    def after_register(self, node, registration, user, save=True):
+        pass
 
 class GitlabGuidFile(GuidFile):
 
