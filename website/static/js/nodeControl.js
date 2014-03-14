@@ -62,42 +62,6 @@ this.NodeControl = (function(ko, $, global) {
         });
     }
 
-    var removeUser = function(userid, name) {
-        var payload = {
-            id: userid,
-            name: name
-        };
-        $.osf.postJSON(
-            nodeApiUrl + 'beforeremovecontributors/',
-            payload,
-            function(response) {
-                var prompt = $.osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
-                bootbox.confirm({
-                    title: 'Delete Contributor?',
-                    message: prompt,
-                    callback: function(result) {
-                        if (result) {
-                            $.osf.postJSON(
-                                nodeApiUrl + 'removecontributors/',
-                                payload,
-                                function(response) {
-                                    if (response.redirectUrl) {
-                                        window.location.href = response.redirectUrl;
-                                    } else {
-                                        window.location.reload();
-                                    }
-                                }
-                            ).fail(function(xhr) {
-                                var response = JSON.parse(xhr.responseText);
-                                bootbox.alert('Error: ' + response.message_long);
-                            });
-                        }
-                    }
-                });
-            }
-        );
-        return false;
-    };
 
     /**
      * The ProjectViewModel, scoped to the project header.
@@ -228,29 +192,6 @@ this.NodeControl = (function(ko, $, global) {
         var self = this;
         ko.applyBindings(self.viewModel, self.$element[0]);
         self._initRemoveLinks();
-    };
-
-    NodeControl.prototype._initRemoveLinks = function () {
-        var self = this;
-        $('.btn-remove').on('click', function() {
-            var $this = $(this);
-            removeUser($this.attr('data-userid'), $this.attr('data-fullname'));
-        });
-//        self.$removeElem = $('<span class="btn-remove-contrib"><i class="icon-remove"></i></span>');
-//        $(self.options.removeCss).hover(
-//            function(){
-//                var me = $(this);
-//                self.$removeElem.click(function(){
-//                    // TODO: remove hardcoded attributes
-//                    removeUser(me.attr('data-userid'), me.attr('data-fullname'));
-//                    return false;
-//                });
-//                $(this).append(self.$removeElem);
-//            },
-//            function(){
-//                self.$removeElem.remove();
-//            }
-//        );
     };
 
     return NodeControl;
