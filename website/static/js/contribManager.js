@@ -1,4 +1,4 @@
-this.Manage = (function(window, $, ko, bootbox) {
+this.ContribManager = (function(window, $, ko, bootbox) {
 
     var contribsEqual = function(a, b) {
         return a.id === b.id && a.permission === b.permission &&
@@ -249,8 +249,23 @@ this.Manage = (function(window, $, ko, bootbox) {
 
     };
 
-    return {
-        ViewModel: ContributorsViewModel
+    ////////////////
+    // Public API //
+    ////////////////
+
+    function ContribManager(selector, contributors) {
+        var self = this;
+        self.selector = selector;
+        self.$element = $(selector);
+        self.contributors = contributors;
+        self.viewModel = new ContributorsViewModel(contributors);
+        self.init();
     }
+
+    ContribManager.prototype.init = function() {
+        ko.applyBindings(this.viewModel, this.$element[0]);
+    };
+
+    return ContribManager;
 
 })(window, $, ko, bootbox);

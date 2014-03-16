@@ -15,7 +15,7 @@
         <ul class="nav navbar-nav">
           <li class="visible-xs"><a href="/">Home</a></li>
           %if user_name:
-          <li><a rel="tooltip" title="My Dashboard" href="/dashboard/">Dashboard</a></li>
+          <li><a rel="tooltip" title="My Dashboard" href="${ web_url_for('dashboard') }">Dashboard</a></li>
           %endif
           <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Explore <b class="caret"></b></a>
@@ -34,7 +34,7 @@
           </li><!-- end dropdown -->
         </ul><!-- end nav navbar-nav -->
         <!-- Search bar -->
-        <form id="searchBar" class="navbar-form navbar-left hidden-xs" action="/search/" method="get" role="search">
+        <form id="searchBar" class="navbar-form navbar-left hidden-xs" action="${ web_url_for('search_search') }" method="get" role="search">
           <div class="form-group">
             <input type="text" class="form-control search-query" placeholder="Search" name="q">
           </div>
@@ -42,11 +42,11 @@
         <ul class="nav navbar-nav navbar-right">
           %if user_name and display_name:
           <li><a href="/profile/">${display_name}</a></li>
-          <li><a rel="tooltip" title="Settings" href="/settings/"><span class="icon-cog"></span></a></li>
-          <li><a rel="tooltip" title="Log out" href="/logout/"><span class="icon-signout"></span></a></li>
+          <li><a rel="tooltip" title="Settings" href="${ web_url_for('profile_settings') }"><span class="icon-cog"></span></a></li>
+          <li><a rel="tooltip" title="Log out" href="${ web_url_for('auth_logout') }"><span class="icon-signout"></span></a></li>
           %else:
               %if allow_login:
-              <a class="btn btn-primary navbar-btn" href="/account/">Create an Account or Sign-In</a>
+              <a class="btn btn-primary navbar-btn" href="${ web_url_for('auth_login') }">Create an Account or Sign-In</a>
               %else:
               %endif
           %endif

@@ -556,6 +556,41 @@ class TestAddingContributorViews(DbTestCase):
         assert_equal(rec['email'], email)
 
     @mock.patch('website.project.views.contributor.send_claim_email')
+    def test_add_contributors_post_only_sends_one_email_to_unreg_user(self,
+        mock_send_claim_email):
+        # Project has components
+        comp1, comp2 = NodeFactory(creator=self.creator), NodeFactory(creator=self.creator)
+        self.project.nodes.append(comp1)
+        self.project.nodes.append(comp2)
+        self.project.save()
+
+        # An unreg user is added to the project AND its components
+        unreg_user = {  # dict because user has not previous unreg record
+            'id': None,
+            'registered': False,
+            'fullname': fake.name(),
+            'email': fake.email(),
+            'permission': 'admin',
+        }
+        payload = {
+            'users': [unreg_user],
+            'node_ids': [comp1._primary_key, comp2._primary_key]
+        }
+
+        # send request
+        with app.test_request_context():
+            url = api_url_for(
+                'project_contributors_post',
+                pid=self.project._primary_key
+            )
+        assert self.project.can_edit(user=self.creator)
+        res = self.app.post_json(url, payload, auth=self.creator.auth)
+
+        # finalize_invitation should only have been called once
+        assert_equal(mock_send_claim_email.call_count, 1)
+
+
+    @mock.patch('website.project.views.contributor.send_claim_email')
     def test_email_sent_when_unreg_user_is_added(self, send_mail):
         name, email = fake.name(), fake.email()
         pseudouser = {
@@ -1748,6 +1783,21 @@ class TestComments(DbTestCase):
         observed = [user['id'] for user in res.json['discussion']]
         expected = [user1._id, user2._id, self.project.creator._id]
         assert_equal(observed, expected)
+
+
+class TestTagViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
+    def test_tag_get_returns_200(self):
+        with app.test_request_context():
+            url = web_url_for('project_tag', tag='foo')
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
 
 class TestSearchViews(DbTestCase):
 
