@@ -82,7 +82,7 @@ def project_new_post(**kwargs):
             project = new_node(
                 'project', form.title.data, user, form.description.data
             )
-        return {}, 201, None, project.url + 'settings/'
+        return {}, 201, None, project.url
     else:
         push_errors_to_status(form.errors)
     return {}, http.BAD_REQUEST
