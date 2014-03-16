@@ -1498,6 +1498,36 @@ class TestTemplateNode(DbTestCase):
                     new_node.title,
                 )
 
+    def test_template_files_not_copied(self):
+        self.project.add_file(
+            self.consolidate_auth, 'test.txt', 'test content', 4, 'text/plain'
+        )
+        new = self.project.use_as_template(
+            auth=self.consolidate_auth
+        )
+        assert_equal(
+            len(self.project.files_current),
+            1
+        )
+        assert_equal(
+            len(self.project.files_versions),
+            1
+        )
+        assert_equal(new.files_current, {})
+        assert_equal(new.files_versions, {})
+
+    def test_template_wiki_pages_not_copied(self):
+        self.project.update_node_wiki(
+            'template', 'lol',
+            auth=self.consolidate_auth
+        )
+        new = self.project.use_as_template(
+            auth=self.consolidate_auth
+        )
+        assert_in('template', self.project.wiki_pages_current)
+        assert_in('template', self.project.wiki_pages_versions)
+        assert_equal(new.wiki_pages_current, {})
+        assert_equal(new.wiki_pages_versions, {})
 
     def test_template_security(self):
         """Create a templated node from a node with public and private children

@@ -719,6 +719,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         # clear permissions, which are not cleared by the clone method
         new.permissions = {}
 
+        # Clear quasi-foreign fields
+        new.files_current = {}
+        new.files_versions = {}
+        new.wiki_pages_current = {}
+        new.wiki_pages_versions = {}
+
         # set attributes which may be overridden by `changes`
         new.is_public = False
         new.description = None
