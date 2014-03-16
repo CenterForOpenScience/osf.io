@@ -13,7 +13,7 @@ from framework.auth.decorators import must_be_logged_in, Auth
 from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm,
                                   SetEmailAndPasswordForm)
-
+import itertools
 from website.models import Guid, Node
 from website.project.forms import NewProjectForm
 from website.project import model
@@ -115,10 +115,19 @@ def watched_logs_get(**kwargs):
     page_num = int(request.args.get('pageNum', '').strip('/') or 0)
     page_size = 10
     offset = page_num * page_size
-    recent_log_ids = list(user.get_recent_log_ids())[offset:][:page_size]
+    recent_log_ids = itertools.islice(user.get_recent_log_ids(), offset, offset + page_size + 1)
     logs = (model.NodeLog.load(id) for id in recent_log_ids)
-    return {"logs": [log.serialize() for log in logs]}
+    watch_logs = []
+    has_more_logs = False
 
+    for log in logs:
+        if len(watch_logs) < page_size:
+            watch_logs.append(log.serialize())
+        else:
+            has_more_logs =True
+            break
+
+    return {"logs": watch_logs, "has_more_logs": has_more_logs}
 
 def reproducibility():
     return framework.redirect('/EZcUj/wiki')
