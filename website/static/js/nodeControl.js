@@ -37,18 +37,15 @@ this.NodeControl = (function(ko, $, global) {
                          done && done();
                      }
                  }
-             )
+             );
         });
     }
-
-
-
 
     function setPermissions(permissions) {
         var msgKey = permissions === PUBLIC ? 'makePublicWarning' : 'makePrivateWarning';
         var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
         bootbox.confirm({
-            title: "Warning",
+            title: 'Warning',
             message: MESSAGES[msgKey],
             callback: function(result) {
                 if (result) {
@@ -231,26 +228,10 @@ this.NodeControl = (function(ko, $, global) {
     };
 
     NodeControl.prototype._initRemoveLinks = function () {
-        var self = this;
         $('.btn-remove').on('click', function() {
             var $this = $(this);
             removeUser($this.attr('data-userid'), $this.attr('data-fullname'));
         });
-//        self.$removeElem = $('<span class="btn-remove-contrib"><i class="icon-remove"></i></span>');
-//        $(self.options.removeCss).hover(
-//            function(){
-//                var me = $(this);
-//                self.$removeElem.click(function(){
-//                    // TODO: remove hardcoded attributes
-//                    removeUser(me.attr('data-userid'), me.attr('data-fullname'));
-//                    return false;
-//                });
-//                $(this).append(self.$removeElem);
-//            },
-//            function(){
-//                self.$removeElem.remove();
-//            }
-//        );
     };
 
     return NodeControl;
