@@ -275,9 +275,11 @@ def project_contributors_post(**kwargs):
 
     # Prepare input data for `Node::add_contributors`
     contribs = deserialize_contributors(node, user_dicts, auth=auth)
-
     node.add_contributors(contributors=contribs, auth=auth)
     node.save()
+
+    # Disconnect listener to avoid multiple invite emails
+    unreg_contributor_added.disconnect(finalize_invitation)
 
     for child_id in node_ids:
         child = Node.load(child_id)
@@ -287,7 +289,8 @@ def project_contributors_post(**kwargs):
         )
         child.add_contributors(contributors=child_contribs, auth=auth)
         child.save()
-
+    # Reconnect listener
+    unreg_contributor_added.connect(finalize_invitation)
     return {'status': 'success'}, 201
 
 
