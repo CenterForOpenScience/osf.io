@@ -34,18 +34,20 @@ def _get_logs(node, count, auth, offset=0):
     :param Node node:
     :param int count:
     :param auth:
-    :return list: List of serialized logs
+    :return list: List of serialized logs,
+            boolean: if there are more logs
 
     """
     logs = []
-
+    has_more_logs = False
     for log in (x for idx, x in enumerate(reversed(node.logs)) if idx >= offset):
         if log and log.node__logged and log.node__logged[0].can_view(auth):
-            logs.append(log.serialize())
-        if len(logs) >= count:
-            break
-
-    return logs
+            if len(logs) < count:
+                logs.append(log.serialize())
+            else:
+                has_more_logs =True
+                break
+    return logs, has_more_logs
 
 @collect_auth
 @must_be_valid_project
@@ -71,7 +73,7 @@ def get_logs(**kwargs):
 
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
-    logs = _get_logs(node_to_use, count, auth, offset)
-    return {'logs': logs}
+    logs, has_more_logs = _get_logs(node_to_use, count, auth, offset)
+    return {'logs': logs, 'has_more_logs': has_more_logs}
 
 
