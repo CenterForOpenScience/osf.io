@@ -9,7 +9,7 @@
     <div id="comments" class="cp-sidebar">
 
         <h4>
-            <span>${"Project" if node['category']=='project' else "Component"} ${node['title']} Discussion</span>
+            <span>${node['title']} Discussion</span>
             <span data-bind="foreach: {data: discussion, afterAdd: setupToolTips}" class="pull-right">
                 <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
                     <img data-bind="attr: {src: gravatarUrl}"/>
