@@ -25,22 +25,6 @@ this.NodeControl = (function(ko, $, global) {
     var PUBLIC = 'public';
     var PRIVATE = 'private';
 
-    function beforeForkNode(url, done) {
-        $.ajax({
-            url: url,
-            contentType: 'application/json'
-        }).success(function(response) {
-            bootbox.confirm(
-                 $.osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
-                 function(result) {
-                     if (result) {
-                         done && done();
-                     }
-                 }
-             );
-        });
-    }
-
     function setPermissions(permissions) {
         var msgKey = permissions === PUBLIC ? 'makePublicWarning' : 'makePrivateWarning';
         var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
@@ -85,7 +69,7 @@ this.NodeControl = (function(ko, $, global) {
         });
         self.watchButtonAction = ko.computed(function() {
             return self.userIsWatching() ? "Unwatch" : "Watch"
-        })
+        });
 
         // Editable Title and Description
         if (self.userCanEdit) {
@@ -141,20 +125,7 @@ this.NodeControl = (function(ko, $, global) {
         };
 
         self.forkNode = function() {
-            beforeForkNode(nodeApiUrl + 'fork/before/', function() {
-                // Block page
-                $.osf.block();
-                // Fork node
-                $.ajax({
-                    url: nodeApiUrl + 'fork/',
-                    type: 'POST'
-                }).success(function(response) {
-                    window.location = response;
-                }).error(function() {
-                    $.osf.unblock();
-                    bootbox.alert('Forking failed');
-                });
-            });
+            NodeActions.forkNode();
         };
 
         self.makePublic = function() {

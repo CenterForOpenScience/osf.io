@@ -3,7 +3,7 @@
 """
 
 from framework.routing import Rule, json_renderer
-from website.routes import OsfWebRenderer
+from website.routes import OsfWebRenderer, render_mako_string
 
 from . import views
 
@@ -44,7 +44,7 @@ web_routes = {
                 '/api/v1/project/<pid>/node/<nid>/osffiles/<fid>/',
                 '/api/v1/project/<pid>/files/download/<fid>/',
                 '/api/v1/project/<pid>/node/<nid>/files/download/<fid>/',
-            ], 'get', views.download_file, json_renderer,
+            ], 'get', views.download_file, OsfWebRenderer('', render_mako_string),
         ),
 
         # Download file by version
