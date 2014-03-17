@@ -34,9 +34,13 @@ class DropboxUserSettings(AddonUserSettingsBase):
         self.access_token = None
         return self
 
-    def delete(self, save=True):
-        pass  # TODO Finish me
-
+    def delete(self):
+        super(DropboxUserSettings, self).delete()
+        self.clear_auth()
+        for node_settings in self.dropboxnodesettings__authorized:
+            node_settings.delete(save=False)
+            node_settings.user_settings = None
+            node_settings.save()
 
 class DropboxNodeSettings(AddonNodeSettingsBase):
 

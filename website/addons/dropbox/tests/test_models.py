@@ -43,3 +43,17 @@ class TestUserSettingsModel(DbTestCase):
         user_settings.save()
         assert_false(user_settings.access_token)
         assert_false(user_settings.dropbox_id)
+
+
+    def test_delete(self):
+        user_settings = DropboxUserSettingsFactory()
+        assert_true(user_settings.has_auth)
+        user_settings.delete()
+        user_settings.save()
+        assert_false(user_settings.access_token)
+        assert_false(user_settings.dropbox_id)
+
+# TODO
+class TestDropboxNodeSettingsModel(DbTestCase):
+    pass
+
