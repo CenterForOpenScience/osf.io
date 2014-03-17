@@ -41,7 +41,14 @@
         </form>
         <ul class="nav navbar-nav navbar-right">
           %if user_name and display_name:
-          <li><a href="/profile/">${display_name}</a></li>
+          <li>
+            <a class="hidden-lg" rel="tooltip" title="Profile: ${display_name}" href="/profile/">
+              <span class="icon-user"></span>
+            </a>
+            <a class="visible-lg"href="/profile/">
+              <span>${user_name}</span>
+            </a>
+          </li>
           <li><a rel="tooltip" title="Settings" href="${ web_url_for('profile_settings') }"><span class="icon-cog"></span></a></li>
           <li><a rel="tooltip" title="Log out" href="${ web_url_for('auth_logout') }"><span class="icon-signout"></span></a></li>
           %else:
