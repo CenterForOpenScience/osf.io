@@ -234,7 +234,7 @@ def node_choose_addons(**kwargs):
 
 
 @must_be_valid_project
-@must_have_permission(permissions.READ)
+@must_be_contributor
 def node_contributors(**kwargs):
 
     auth = kwargs['auth']
@@ -278,12 +278,22 @@ def project_reorder_components(**kwargs):
         StoredObject.get_collection(schema).load(key)
         for key, schema in new_list
     ]
-    if len(project.nodes) == len(nodes_new) and set(project.nodes) == set(nodes_new):
-        project.nodes = nodes_new
+
+    visible_nodes = [
+        node for node in project.nodes
+        if not node.is_deleted
+    ]
+    deleted_nodes = [
+        node for node in project.nodes
+        if node.is_deleted
+    ]
+
+    if len(visible_nodes) == len(nodes_new) and set(visible_nodes) == set(nodes_new):
+        project.nodes = nodes_new + deleted_nodes
         project.save()
         return {}
 
-    # todo log impossibility
+    logger.error('Got invalid node list in reorder components')
     raise HTTPError(http.BAD_REQUEST)
 
 
