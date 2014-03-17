@@ -115,7 +115,7 @@ this.Comment = (function(window, $, ko) {
             {target: self.id()},
             function(response) {
                 self.comments(
-                    ko.utils.arrayMap(response.comments, function(comment) {
+                    ko.utils.arrayMap(response.comments.reverse(), function(comment) {
                         return new CommentModel(comment, self, self.$root);
                     })
                 );
