@@ -446,7 +446,6 @@ this.Comment = (function(window, $, ko) {
 
     var init = function(selector, userName, canComment, hasChildren) {
         var viewModel = new CommentListModel(userName, canComment, hasChildren);
-        window.viewModel = viewModel;
         var $elm = $(selector);
         if (!$elm.length) {
             throw('No results found for selector');
