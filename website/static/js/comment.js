@@ -115,7 +115,7 @@ this.Comment = (function(window, $, ko) {
             {target: self.id()},
             function(response) {
                 self.comments(
-                    ko.utils.arrayMap(response.comments, function(comment) {
+                    ko.utils.arrayMap(response.comments.reverse(), function(comment) {
                         return new CommentModel(comment, self, self.$root);
                     })
                 );
@@ -446,7 +446,6 @@ this.Comment = (function(window, $, ko) {
 
     var init = function(selector, userName, canComment, hasChildren) {
         var viewModel = new CommentListModel(userName, canComment, hasChildren);
-        window.viewModel = viewModel;
         var $elm = $(selector);
         if (!$elm.length) {
             throw('No results found for selector');
