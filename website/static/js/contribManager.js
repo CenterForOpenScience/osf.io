@@ -42,7 +42,7 @@ this.ContribManager = (function(window, $, ko, bootbox) {
         });
     };
 
-    var ContributorModel = function(contributor) {
+    var ContributorModel = function(contributor, pageOwner) {
 
         var self = this;
 
@@ -50,6 +50,7 @@ this.ContribManager = (function(window, $, ko, bootbox) {
         self.permission = ko.observable(contributor.permission);
         self.deleteStaged = ko.observable(contributor.deleteStaged);
 
+        self.pageOwner = pageOwner;
         self.serialize = function() {
             return ko.toJS(self);
         };
@@ -72,9 +73,54 @@ this.ContribManager = (function(window, $, ko, bootbox) {
             return permission.charAt(0).toUpperCase() + permission.slice(1);
         });
 
+        self.contributorIsUser = ko.computed(function() {
+            return self.id === pageOwner['id'];
+        });
+
+        // TODO: copied-and-pasted from nodeControl. When nodeControl
+        // gets refactored, update this to use global method.
+        self.removeSelf = function() {
+            var id = self.id,
+                name = self.fullname;
+            var payload = {
+                id: id,
+                name: self.fullname
+            };
+            $.osf.postJSON(
+                nodeApiUrl + 'beforeremovecontributors/',
+                payload,
+                function(response) {
+                    var prompt = $.osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
+                    bootbox.confirm({
+                        title: 'Delete Contributor?',
+                        message: prompt,
+                        callback: function(result) {
+                            if (result) {
+                                $.osf.postJSON(
+                                    nodeApiUrl + 'removecontributors/',
+                                    payload,
+                                    function(response) {
+                                        if (response.redirectUrl) {
+                                            window.location.href = response.redirectUrl;
+                                        } else {
+                                            window.location.reload();
+                                        }
+                                    }
+                                ).fail(function(xhr) {
+                                    var response = JSON.parse(xhr.responseText);
+                                    bootbox.alert('Error: ' + response.message_long);
+                                });
+                            }
+                        }
+                    });
+                }
+            );
+            return false;
+        };
+
     };
 
-    var ContributorsViewModel = function(contributors) {
+    var ContributorsViewModel = function(contributors, user) {
 
         var self = this;
         for (var i=0; i<contributors.length; i++) {
@@ -83,6 +129,9 @@ this.ContribManager = (function(window, $, ko, bootbox) {
         self.original = ko.observableArray(contributors);
 
         self.contributors = ko.observableArray();
+
+        self.user = ko.observable(user);
+        self.userIsAdmin  = ko.observable($.inArray('admin', user.permissions) !== -1);
 
         self.messageText = ko.observable('');
         self.messageType = ko.observable('');
@@ -145,7 +194,7 @@ this.ContribManager = (function(window, $, ko, bootbox) {
         self.init = function() {
             self.messageText('');
             self.contributors(self.original().map(function(item) {
-                return new ContributorModel(item);
+                return new ContributorModel(item, self.user());
             }));
         };
 
@@ -253,17 +302,18 @@ this.ContribManager = (function(window, $, ko, bootbox) {
     // Public API //
     ////////////////
 
-    function ContribManager(selector, contributors) {
+    function ContribManager(selector, contributors, user) {
         var self = this;
         self.selector = selector;
         self.$element = $(selector);
         self.contributors = contributors;
-        self.viewModel = new ContributorsViewModel(contributors);
+        self.viewModel = new ContributorsViewModel(contributors, user);
         self.init();
     }
 
     ContribManager.prototype.init = function() {
         ko.applyBindings(this.viewModel, this.$element[0]);
+        this.$element.show();
     };
 
     return ContribManager;
