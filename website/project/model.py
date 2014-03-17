@@ -726,6 +726,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         new.files_versions = {}
         new.wiki_pages_current = {}
         new.wiki_pages_versions = {}
+        new.fork_list = []
+        new.registration_list = []
 
         # set attributes which may be overridden by `changes`
         new.is_public = False
