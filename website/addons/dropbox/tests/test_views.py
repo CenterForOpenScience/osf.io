@@ -3,7 +3,7 @@
 
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
-
+import mock
 
 import website
 from website.util import api_url_for
@@ -33,7 +33,9 @@ class TestAuthViews(DbTestCase):
         res = self.app.get(url)
         assert_is_redirect(res)
 
-    def test_dropbox_oauth_finish(self):
+    @mock.patch('website.addons.dropbox.views.auth.DropboxOAuth2Flow.finish')
+    def test_dropbox_oauth_finish(self, mock_finish):
+        mock_finish.return_value = ('mytoken123', 'mydropboxid', 'done')
         with app.test_request_context():
             url = api_url_for('dropbox_oauth_finish')
         res = self.app.get(url)
