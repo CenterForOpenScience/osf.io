@@ -1,6 +1,5 @@
-from . import model
-from . import routes
-from . import views
+from website.addons.dropbox import model, routes
+
 
 MODELS = [model.DropboxUserSettings]
 USER_SETTINGS_MODEL = model.DropboxUserSettings

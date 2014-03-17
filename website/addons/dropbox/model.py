@@ -3,6 +3,7 @@ import os
 from framework import fields
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
+
 class DropboxGuidFile(GuidFile):
 
     path = fields.StringField(index=True)
@@ -11,7 +12,7 @@ class DropboxGuidFile(GuidFile):
     def file_url(self):
         if self.path is None:
             raise ValueError('Path field must be defined.')
-        return os.path.join('s3', self.path)
+        return os.path.join('dropbox', self.path)
 
 
 class DropboxUserSettings(AddonUserSettingsBase):
