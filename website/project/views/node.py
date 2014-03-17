@@ -27,6 +27,7 @@ from website.models import Node, Pointer, WatchConfig
 from website import settings
 from website.views import _render_nodes
 from website.profile import utils
+from website.util import permissions
 
 from .log import _get_logs
 
@@ -82,7 +83,7 @@ def project_new_post(**kwargs):
             project = new_node(
                 'project', form.title.data, user, form.description.data
             )
-        return {}, 201, None, project.url + 'settings/'
+        return {}, 201, None, project.url
     else:
         push_errors_to_status(form.errors)
     return {}, http.BAD_REQUEST
@@ -233,7 +234,7 @@ def node_choose_addons(**kwargs):
 
 
 @must_be_valid_project
-@must_have_permission('admin')
+@must_have_permission(permissions.READ)
 def node_contributors(**kwargs):
 
     auth = kwargs['auth']

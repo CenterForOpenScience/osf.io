@@ -5,7 +5,7 @@
     <div class="col-md-12">
 
     <h2>Contributors</h2>
-        <div id="manageContributors" >
+        <div id="manageContributors" style="display: none;">
                 <table id="manageContributorsTable" class="table">
                     <thead>
                         <tr>
@@ -22,7 +22,7 @@
                         <th class="col-sm-1"></th>
                         </tr>
                     </thead>
-                    <tr>
+                    <tr data-bind="if: userIsAdmin">
                         <td colspan="3">
                             <a href="#addContributors" data-toggle="modal">
                                 Click to add a contributor
@@ -31,6 +31,7 @@
                     </tr>
                     <tbody data-bind="sortable: {template: 'contribTpl',
                         data: contributors, as: 'contributor',
+                        isEnabled: userIsAdmin,
                         afterRender: setupEditable,
                         options: {containment: '#manageContributors'}}">
                     </tbody>
@@ -39,6 +40,7 @@
         </div>
     </div><!-- end col-md -->
 </div><!-- end row -->
+
 <script id="contribTpl" type="text/html">
     <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
         <td>
@@ -46,24 +48,42 @@
             <span data-bind="text: contributor.fullname"></span>
         </td>
         <td>
-            <span data-bind="visible: notDeleteStaged">
-                <a href="#" class="permission-editable" data-type="select"></a>
-            </span>
-            <span data-bind="visible: deleteStaged">
+            <!-- ko if: $parent.userIsAdmin -->
+                <span data-bind="visible: notDeleteStaged">
+                    <a href="#" class="permission-editable" data-type="select"></a>
+                </span>
+                <span data-bind="visible: deleteStaged">
+                    <span data-bind="text: formatPermission"></span>
+                </span>
+            <!-- /ko -->
+            <!-- ko ifnot: $parent.userIsAdmin -->
                 <span data-bind="text: formatPermission"></span>
-            </span>
+            <!-- /ko -->
         </td>
         <td>
-            <!-- ko ifnot: deleteStaged -->
-                <a
-                        class="btn btn-danger contrib-button btn-mini"
-                        data-bind="click: remove"
-                        rel="tooltip"
-                        title="Remove contributor"
-                    >–</a>
+            <!-- ko if: $parent.userIsAdmin -->
+
+                <!-- ko ifnot: deleteStaged -->
+                    <a
+                            class="btn btn-danger contrib-button btn-mini"
+                            data-bind="click: remove"
+                            rel="tooltip"
+                            title="Remove contributor"
+                        >–</a>
+                <!-- /ko -->
+                <!-- ko if: deleteStaged -->
+                    Removed
+                <!-- /ko -->
             <!-- /ko -->
-            <!-- ko if: deleteStaged -->
-                Removed
+            <!-- ko ifnot: $parent.userIsAdmin -->
+                <!-- ko if: contributorIsUser -->
+                    <a
+                            class="btn btn-danger contrib-button btn-mini"
+                            data-bind="click: removeSelf"
+                            rel="tooltip"
+                            title="Remove contributor"
+                        >-</a>
+                    <!-- /ko -->
             <!-- /ko -->
         </td>
     </tr>
@@ -84,9 +104,10 @@
     <% import json %>
     <script src="/static/js/contribManager.js"></script>
     <script type="text/javascript">
-        (function($, global) {
+        (function() {
             var contributors = ${json.dumps(contributors)};
-            var manager = new ContribManager('#manageContributors', contributors);
-        })($, window);
+            var user = ${json.dumps(user)};
+            var manager = new ContribManager('#manageContributors', contributors, user);
+        })();
     </script>
 </%def>

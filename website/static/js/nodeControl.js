@@ -59,42 +59,6 @@ this.NodeControl = (function(ko, $, global) {
         });
     }
 
-    var removeUser = function(userid, name) {
-        var payload = {
-            id: userid,
-            name: name
-        };
-        $.osf.postJSON(
-            nodeApiUrl + 'beforeremovecontributors/',
-            payload,
-            function(response) {
-                var prompt = $.osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
-                bootbox.confirm({
-                    title: 'Delete Contributor?',
-                    message: prompt,
-                    callback: function(result) {
-                        if (result) {
-                            $.osf.postJSON(
-                                nodeApiUrl + 'removecontributors/',
-                                payload,
-                                function(response) {
-                                    if (response.redirectUrl) {
-                                        window.location.href = response.redirectUrl;
-                                    } else {
-                                        window.location.reload();
-                                    }
-                                }
-                            ).fail(function(xhr) {
-                                var response = JSON.parse(xhr.responseText);
-                                bootbox.alert('Error: ' + response.message_long);
-                            });
-                        }
-                    }
-                });
-            }
-        );
-        return false;
-    };
 
     /**
      * The ProjectViewModel, scoped to the project header.
@@ -224,14 +188,6 @@ this.NodeControl = (function(ko, $, global) {
     NodeControl.prototype.init = function() {
         var self = this;
         ko.applyBindings(self.viewModel, self.$element[0]);
-        self._initRemoveLinks();
-    };
-
-    NodeControl.prototype._initRemoveLinks = function () {
-        $('.btn-remove').on('click', function() {
-            var $this = $(this);
-            removeUser($this.attr('data-userid'), $this.attr('data-fullname'));
-        });
     };
 
     return NodeControl;
