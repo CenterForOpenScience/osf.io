@@ -146,7 +146,7 @@ this.Comment = (function(window, $, ko) {
             function(response) {
                 self.cancelReply();
                 self.replyContent(null);
-                self.comments.push(new CommentModel(response.comment, self, self.$root));
+                self.comments.unshift(new CommentModel(response.comment, self, self.$root));
                 if (!self.hasChildren()) {
                     self.hasChildren(true);
                 }
