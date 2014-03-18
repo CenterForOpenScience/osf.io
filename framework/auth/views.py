@@ -86,13 +86,16 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
 
     """
     if get_current_user():
-        return framework.redirect('/dashboard/')
+        if not request.args.get('logout'):
+            return framework.redirect('/dashboard/')
+        logout()
     direct_call = registration_form or forgot_password_form
     if framework.request.method == 'POST' and not direct_call:
         form = SignInForm(framework.request.form)
         if form.validate():
             try:
-                return login(form.username.data, form.password.data)
+                response = login(form.username.data, form.password.data)
+                return response
             except auth.LoginNotAllowedError:
                 status.push_status_message(language.UNCONFIRMED, 'warning')
                 # Don't go anywhere
@@ -166,31 +169,31 @@ def auth_register_post():
     if not website.settings.ALLOW_REGISTRATION:
         status.push_status_message(language.REGISTRATION_UNAVAILABLE)
         return framework.redirect('/')
-
     form = RegistrationForm(framework.request.form, prefix='register')
     set_previous_url()
 
     # Process form
     if form.validate():
         try:
-            u = auth.register_unconfirmed(
+            user = auth.register_unconfirmed(
                 form.username.data,
                 form.password.data,
                 form.fullname.data)
+            auth.signals.user_registered.send(user)
         except (ValidationValueError, DuplicateEmailError):
-            status.push_status_message(language.ALREADY_REGISTERED.format(email=form.username.data))
+            status.push_status_message(
+                language.ALREADY_REGISTERED.format(email=form.username.data))
             return auth_login(registration_form=form)
-        if u:
+        if user:
             if website.settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
-                send_confirm_email(u, email=u.username)
-                message = language.REGISTRATION_SUCCESS.format(email=u.username)
+                send_confirm_email(user, email=user.username)
+                message = language.REGISTRATION_SUCCESS.format(email=user.username)
                 status.push_status_message(message, 'success')
                 return auth_login(registration_form=form)
             else:
                 return framework.redirect('/login/first/')
                 #status.push_status_message('You may now log in')
             return framework.redirect(framework.url_for('OsfWebRenderer__auth_login'))
-
     else:
         forms.push_errors_to_status(form.errors)
         return auth_login(registration_form=form)
@@ -251,7 +254,6 @@ def merge_user_post(**kwargs):
     try:
         merged_user = User.find_one(Q("username", "eq", merged_username))
     except NoResultsFound:
-        logger.debug("Failed to find user to merge")
         status.push_status_message("Could not find that user. Please check the username and password.")
         return merge_user_get(**kwargs)
     if master and merged_user:

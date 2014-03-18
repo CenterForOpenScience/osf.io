@@ -21,7 +21,7 @@ from framework.auth import User, Q
 from framework.auth.decorators import Auth
 from framework.auth.utils import parse_name
 from website.project.model import (
-    ApiKey, Node, NodeLog, WatchConfig, MetaData, Tag, MetaSchema, Pointer,
+    ApiKey, Node, NodeLog, WatchConfig, Tag, MetaSchema, Pointer, Comment
 )
 
 from website.addons.wiki.model import NodeWikiPage
@@ -166,10 +166,6 @@ class WatchConfigFactory(ModularOdmFactory):
     node = SubFactory(NodeFactory)
 
 
-class MetaDataFactory(ModularOdmFactory):
-    FACTORY_FOR = MetaData
-
-
 class NodeWikiFactory(ModularOdmFactory):
     FACTORY_FOR = NodeWikiPage
 
@@ -294,3 +290,36 @@ class DeprecatedUnregUserFactory(base.Factory):
         return target_class(*args, **kwargs).to_dict()
 
     _build = _create
+
+class CommentFactory(ModularOdmFactory):
+
+    FACTORY_FOR = Comment
+    content = Sequence(lambda n: 'Comment {0}'.format(n))
+    is_public = True
+
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        node = kwargs.pop('node', None) or NodeFactory()
+        user = kwargs.pop('user', None) or node.creator
+        target = kwargs.pop('target', None) or node
+        instance = target_class(
+            node=node,
+            user=user,
+            target=target,
+            *args, **kwargs
+        )
+        return instance
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        node = kwargs.pop('node', None) or NodeFactory()
+        user = kwargs.pop('user', None) or node.creator
+        target = kwargs.pop('target', None) or node
+        instance = target_class(
+            node=node,
+            user=user,
+            target=target,
+            *args, **kwargs
+        )
+        instance.save()
+        return instance

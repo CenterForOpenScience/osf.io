@@ -148,11 +148,7 @@ def test_module(module=None):
     """
     Helper for running tests.
     """
-    try:
-        __import__('pytest')
-        test_cmd = 'py.test'
-    except ImportError:
-        test_cmd = 'nosetests'
+    test_cmd = 'nosetests'
     # Allow selecting specific submodule
     args = " -s %s" % module
     # Use pty so the process buffers "correctly"

@@ -15,7 +15,7 @@
 
     <!-- Le styles -->
     ## Don't bundle Bootstrap or else Glyphicons won't work
-    <link rel="stylesheet" href="/static/vendor/bootstrap3/css/bootstrap-custom.css">
+    <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
     % for url in css_all:
     <link rel="stylesheet" href="${url}">
@@ -27,6 +27,7 @@
     <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
     <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
     <script>window.ko || document.write('<script src="/static/vendor/knockout/knockout-3.0.0.min.js">\x3C/script>')</script>
+    <script src="/static/vendor/knockout-mapping/knockout.mapping.js"></script>
     <script src="/static/vendor/knockout-punches/knockout.punches.min.js"></script>
     % for url in js_all:
     <script src="${url}"></script>
@@ -122,7 +123,7 @@
                     // Note: Use cookies for global site ID; only one cookie
                     // will be used, so this won't overflow uwsgi header
                     // buffer.
-                    trackPiwik("${ piwik_host }", ${ piwik_site_id }, cvars, true);
+                    $.osf.trackPiwik("${ piwik_host }", ${ piwik_site_id }, cvars, true);
                 });
             </script>
         % endif

@@ -9,6 +9,8 @@ import mock
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
+from framework import Q
+from framework.auth.model import User
 from framework.auth.decorators import Auth
 from tests.base import DbTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
@@ -194,7 +196,7 @@ class TestAUser(DbTestCase):
     def test_can_create_a_project(self):
         res = self._login(self.user.username, 'science')
         # Goes to dashboard (already logged in)
-        res = res.click('My Dashboard', index=0)
+        res = res.click('Dashboard', index=0)
         # Clicks New Project
         res = res.click('New Project').maybe_follow()
         # Fills out the form
@@ -219,14 +221,49 @@ class TestAUser(DbTestCase):
         title = res.html.title.string
         assert_equal('Open Science Framework | Dashboard', title)
 
-    def test_can_see_make_public_button_if_contributor(self):
+    def test_can_see_make_public_button_if_admin(self):
         # User is a contributor on a project
         project = ProjectFactory()
-        project.add_contributor(self.user)
-        project.save()
+        project.add_contributor(
+            self.user,
+            permissions=['read', 'write', 'admin'],
+            save=True)
         # User goes to the project page
         res = self.app.get(project.url, auth=self.auth).maybe_follow()
         assert_in('Make Public', res)
+
+    def test_cant_see_make_public_button_if_not_admin(self):
+        # User is a contributor on a project
+        project = ProjectFactory()
+        project.add_contributor(
+            self.user,
+            permissions=['read', 'write'],
+            save=True)
+        # User goes to the project page
+        res = self.app.get(project.url, auth=self.auth).maybe_follow()
+        assert_not_in('Make Public', res)
+
+    def test_can_see_make_private_button_if_admin(self):
+        # User is a contributor on a project
+        project = ProjectFactory(is_public=True)
+        project.add_contributor(
+            self.user,
+            permissions=['read', 'write', 'admin'],
+            save=True)
+        # User goes to the project page
+        res = self.app.get(project.url, auth=self.auth).maybe_follow()
+        assert_in('Make Private', res)
+
+    def test_cant_see_make_private_button_if_not_admin(self):
+        # User is a contributor on a project
+        project = ProjectFactory(is_public=True)
+        project.add_contributor(
+            self.user,
+            permissions=['read', 'write'],
+            save=True)
+        # User goes to the project page
+        res = self.app.get(project.url, auth=self.auth).maybe_follow()
+        assert_not_in('Make Private', res)
 
     def test_sees_logs_on_a_project(self):
         project = ProjectFactory(is_public=True)
@@ -276,10 +313,15 @@ class TestRegistrations(DbTestCase):
 
     def test_cant_be_deleted(self):
         # Goes to project's page
+        res = self.app.get(self.project.url + 'settings/', auth=self.auth).maybe_follow()
+        assert_not_in('Delete project', res)
+
+    def test_cant_see_contributor(self):
+        # Goes to project's page
         res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
         # Settings is not in the project navigation bar
         subnav = res.html.select('#projectSubnav')[0]
-        assert_not_in('Settings', subnav.text)
+        assert_not_in('Contributors', subnav.text)
 
     def test_sees_registration_templates(self):
 
@@ -327,13 +369,8 @@ class TestComponents(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.user = UserFactory()
-        # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.auth = ('test', api_key._primary_key)
-        self.consolidate_auth = Auth(user=self.user, api_key = api_key)
+        self.user = AuthUserFactory()
+        self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
         self.project.add_contributor(contributor=self.user, auth=self.consolidate_auth)
         # A non-project componenet
@@ -343,23 +380,50 @@ class TestComponents(DbTestCase):
             project=self.project,
         )
         self.component.save()
-        self.component.set_permissions('public', self.consolidate_auth)
-        self.component.set_permissions('private', self.consolidate_auth)
+        self.component.set_privacy('public', self.consolidate_auth)
+        self.component.set_privacy('private', self.consolidate_auth)
         self.project.save()
 
     def test_can_create_component_from_a_project(self):
-        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
+        res = self.app.get(self.project.url, auth=self.user.auth).maybe_follow()
         assert_in('Add Component', res)
 
     def test_cannot_create_component_from_a_component(self):
-        res = self.app.get(self.component.url, auth=self.auth).maybe_follow()
+        res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
         assert_not_in('Add Component', res)
 
     def test_sees_parent(self):
-        res = self.app.get(self.component.url, auth=self.auth).maybe_follow()
+        res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
         parent_title = res.html.find_all('h1', class_='node-parent-title')
         assert_equal(len(parent_title), 1)
         assert_in(self.project.title, parent_title[0].text)
+
+    def test_delete_project(self):
+        res = self.app.get(
+            self.component.url + 'settings/',
+            auth=self.user.auth
+        ).maybe_follow()
+        assert_in(
+            'Delete {0}'.format(self.component.project_or_component),
+            res
+        )
+
+    def test_cant_delete_project_if_not_admin(self):
+        non_admin = AuthUserFactory()
+        self.component.add_contributor(
+            non_admin,
+            permissions=['read', 'write'],
+            auth=self.consolidate_auth,
+            save=True,
+        )
+        res = self.app.get(
+            self.component.url + 'settings/',
+            auth=non_admin.auth
+        ).maybe_follow()
+        assert_not_in(
+            'Delete {0}'.format(self.component.project_or_component),
+            res
+        )
 
 
 class TestMergingAccounts(DbTestCase):
@@ -528,8 +592,8 @@ class TestShortUrls(DbTestCase):
         self.component.save()
         # Hack: Add some logs to component; should be unnecessary pending
         # improvements to factories from @rliebz
-        self.component.set_permissions('public', auth=self.consolidate_auth)
-        self.component.set_permissions('private', auth=self.consolidate_auth)
+        self.component.set_privacy('public', auth=self.consolidate_auth)
+        self.component.set_privacy('private', auth=self.consolidate_auth)
         self.wiki = NodeWikiFactory(user=self.user, node=self.component)
 
     def _url_to_body(self, url):
@@ -627,7 +691,7 @@ class TestPiwik(DbTestCase):
         assert_in('token_auth=anonymous', res)
 
     def test_private_alert(self):
-        self.project.set_permissions('private', auth=self.consolidate_auth)
+        self.project.set_privacy('private', auth=self.consolidate_auth)
         self.project.save()
         res = self.app.get(
             '/{0}/statistics/'.format(self.project._primary_key),
@@ -683,7 +747,7 @@ class TestClaiming(DbTestCase):
         assert_equal(res.request.path, '/settings/')
         assert_in('Welcome to the OSF', res)
 
-    def test_sees_error_message_at_claim_page_if_user_already_logged_in(self):
+    def test_sees_is_redirected_if_user_already_logged_in(self):
         name, email = fake.name(), fake.email()
         new_user = self.project.add_unregistered_contributor(
             email=email,
@@ -695,7 +759,7 @@ class TestClaiming(DbTestCase):
         claim_url = new_user.get_claim_url(self.project._primary_key)
         # a user is already logged in
         res = self.app.get(claim_url, auth=existing.auth, expect_errors=True)
-        assert_in('already logged in', res)
+        assert_equal(res.status_code, 302)
 
     def test_unregistered_users_names_are_project_specific(self):
         name1, name2, email = fake.name(), fake.name(), fake.email()
@@ -870,6 +934,136 @@ class TestConfirmingEmail(DbTestCase):
         res = form.submit()
         # Sees alert message
         assert_in('already been confirmed', res)
+
+class TestClaimingAsARegisteredUser(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.referrer = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.referrer, is_public=True)
+        name, email = fake.name(), fake.email()
+        self.user = self.project.add_unregistered_contributor(
+            fullname=name,
+            email=email,
+            auth=Auth(user=self.referrer)
+        )
+        self.project.save()
+
+    @mock.patch('website.project.views.contributor.session')
+    def test_user_with_claim_url_registers_new_account(self, mock_session):
+        # Assume that the unregistered user data is already stored in the session
+        mock_session.data = {
+            'unreg_user': {
+                'uid': self.user._primary_key,
+                'pid': self.project._primary_key,
+                'token': self.user.get_unclaimed_record(
+                    self.project._primary_key)['token']
+            }
+        }
+        res2 = self.app.get('/account/')
+        # Fills in Register form
+        form = res2.forms['registerForm']
+        form['register-fullname'] = 'tester'
+        form['register-username'] = 'test@test.com'
+        form['register-username2'] = 'test@test.com'
+        form['register-password'] = 'testing'
+        form['register-password2'] = 'testing'
+        res3 = form.submit()
+
+        assert_in('Registration successful.', res3.body)
+        assert_in('Successfully claimed contributor', res3.body)
+
+        u = User.find(Q('username', 'eq', 'test@test.com'))[0]
+        key = ApiKeyFactory()
+        u.api_keys.append(key)
+        u.save()
+        u.auth = ('test', key._primary_key)
+        self.app.get(u.get_confirmation_url('test@test.com')).follow(auth=u.auth)
+        # Confirms their email address
+        self.project.reload()
+        self.user.reload()
+        u.reload()
+        assert_not_in(self.user._primary_key, self.project.contributors)
+        assert_equal(2, len(self.project.contributors))
+        # user is now a contributor to self.project
+        assert_in(u._primary_key, self.project.contributors)
+
+    @mock.patch('website.project.views.contributor.session')
+    def test_user_can_log_in_with_a_different_account(self, mock_session):
+        # Assume that the unregistered user data is already stored in the session
+        mock_session.data = {
+            'unreg_user': {
+                'uid': self.user._primary_key,
+                'pid': self.project._primary_key,
+                'token': self.user.get_unclaimed_record(
+                    self.project._primary_key)['token']
+            }
+        }
+        right_user = AuthUserFactory.build(fullname="Right User")
+        right_user.set_password('science')
+        right_user.save()
+        # User goes to the claim page, but a different user (lab_user) is logged in
+        lab_user = AuthUserFactory(fullname="Lab Comp")
+
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(url, auth=lab_user.auth).follow(auth=lab_user.auth)
+
+        # verify that the "Claim Account" form is returned
+        assert_in('Claim Contributor', res.body)
+
+        # Clicks "I am not Lab Comp"
+        # Taken to login/register page
+
+        res2 = res.click(linkid='signOutLink')
+        # Fills in log in form
+        form = res2.forms['signinForm']
+        form['username'] = right_user.username
+        form['password'] = 'science'
+        # submits
+        res3 = form.submit().follow()
+
+        # Back at claim contributor page
+        assert_in('Claim Contributor', res3)
+        # Verifies their password
+        form = res3.forms['claimContributorForm']
+        form['password'] = 'science'
+        form.submit()
+
+        self.project.reload()
+        right_user.reload()
+        self.user.reload()
+        # user is now a contributor to self.project
+        assert_in(right_user._primary_key, self.project.contributors)
+
+        # lab user is not a contributor
+        assert_not_in(lab_user._primary_key, self.project.contributors)
+
+    def test_claim_user_registered_with_correct_password(self):
+        reg_user = AuthUserFactory()
+        reg_user.set_password('killerqueen')
+        reg_user.save()
+        url = self.user.get_claim_url(self.project._primary_key)
+        # Follow to password re-enter page
+        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
+
+        # verify that the "Claim Account" form is returned
+        assert_in('Claim Contributor', res.body)
+
+        form = res.forms['claimContributorForm']
+        form['password'] = 'killerqueen'
+        res = form.submit(auth=reg_user.auth).follow(auth=reg_user.auth)
+
+
+        self.project.reload()
+        self.user.reload()
+        # user is now a contributor to the project
+        assert_in(reg_user._primary_key, self.project.contributors)
+
+        # the unregistered user (self.user) is removed as a contributor, and their
+        assert_not_in(self.user._primary_key, self.project.contributors)
+
+        # unclaimed record for the project has been deleted
+        assert_not_in(self.project._primary_key, self.user.unclaimed_records)
 
 
 if __name__ == '__main__':

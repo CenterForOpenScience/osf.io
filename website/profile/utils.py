@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
-import hashlib
 
+import logging
+
+import framework
+from website.util.permissions import reduce_permissions
+from website.filters import gravatar
+from website import settings
+
+logger = logging.getLogger(__name__)
 
 def get_projects(user):
     '''Return a list of user's projects, excluding registrations.'''
@@ -18,7 +25,7 @@ def get_public_projects(user):
     return [p for p in get_projects(user) if p.is_public]
 
 
-def serialize_user(user, full=False):
+def serialize_user(user, node=None, full=False):
     """Return a dictionary representation of a registered user.
 
     :param User user: A User object
@@ -28,10 +35,15 @@ def serialize_user(user, full=False):
     rv = {
         'id': str(user._primary_key),
         'registered': user.is_registered,
-        'username': user.username,
-        'fullname': user.fullname,
+        'surname': user.family_name,
+        'fullname': user.display_full_name(node=node),
+        'gravatar_url': user.gravatar_url,
         'active': user.is_active(),
     }
+    if node is not None:
+        rv.update({
+            'permission': reduce_permissions(node.get_permissions(user)),
+        })
     if user.is_registered:
         rv.update({
             'url': user.url,
@@ -62,13 +74,43 @@ def serialize_user(user, full=False):
     return rv
 
 
-def serialize_unreg_user(user):
-    '''Return a formatted dictionary representation of a an unregistered user.
+def serialize_contributors(contribs, node):
 
-    :param dict user: An unregistered user object
-    '''
+    return [
+        serialize_user(contrib, node)
+        for contrib in contribs
+    ]
+
+
+def add_contributor_json(user):
     return {
-        'id': hashlib.md5(user['nr_email']).hexdigest(),
-        'fullname': user['nr_name'],
-        'registered': False,
+        'fullname': user.fullname,
+        'email': user.username,
+        'id': user._primary_key,
+        'registered': user.is_registered,
+        'active': user.is_active(),
+        'gravatar_url': gravatar(
+            user, use_ssl=True,
+            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+        ),
     }
+
+def serialize_unregistered(fullname, email):
+    """Serializes an unregistered user.
+    """
+    user = framework.auth.get_user(username=email)
+    if user is None:
+        serialized = {
+            'fullname': fullname,
+            'id': None,
+            'registered': False,
+            'active': False,
+            'gravatar': gravatar(email, use_ssl=True,
+                size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR),
+            'email': email,
+        }
+    else:
+        serialized = add_contributor_json(user)
+        serialized['fullname'] = fullname
+        serialized['email'] = email
+    return serialized

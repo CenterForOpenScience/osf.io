@@ -10,7 +10,7 @@ import datetime
 import urlparse
 from dateutil import parser
 
-from modularodm.exceptions import ValidationError, ValidationValueError
+from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
@@ -20,21 +20,25 @@ from framework.auth.decorators import Auth
 from framework import utils
 from framework.bcrypt import check_password_hash
 from framework.git.exceptions import FileNotModified
-from website import settings, filters
+from website import filters, language, settings
+from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
-from website.project.model import Pointer, ApiKey, NodeLog, ensure_schemas
+from website.project.model import (
+    ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas
+)
 from website.addons.osffiles.model import NodeFile
+from website.util.permissions import CREATOR_PERMISSIONS
 
 from tests.base import DbTestCase, Guid, fake
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
-    ProjectFactory, NodeLogFactory, WatchConfigFactory, MetaDataFactory,
+    ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, UnregUserFactory, RegistrationFactory, UnregUserFactory,
-    ProjectWithAddonFactory, UnconfirmedUserFactory
+    ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory
 )
 
 
-GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory, MetaDataFactory
+GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
 class TestUser(DbTestCase):
 
@@ -221,13 +225,13 @@ class TestUser(DbTestCase):
         assert_equal(d['url'], self.user.url)
 
     def test_set_password(self):
-        user = User(username='nick@cage.com', fullname='Nick Cage')
+        user = User(username=fake.email(), fullname='Nick Cage')
         user.set_password('ghostrider')
         user.save()
         assert_true(check_password_hash(user.password, 'ghostrider'))
 
     def test_check_password(self):
-        user = User(username='nick@cage.com', fullname='Nick Cage')
+        user = User(username=fake.email(), fullname='Nick Cage')
         user.set_password('ghostrider')
         user.save()
         assert_true(user.check_password('ghostrider'))
@@ -264,7 +268,7 @@ class TestUser(DbTestCase):
         d = serialize_user(user)
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
-        assert_equal(d['username'], user.username)
+        assert_equal(d.get('username', None), None)
         assert_equal(d['fullname'], user.fullname)
         assert_equal(d['registered'], user.is_registered)
         assert_equal(d['absolute_url'], user.absolute_url)
@@ -278,7 +282,7 @@ class TestUser(DbTestCase):
         d = serialize_user(user, full=True)
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
-        assert_equal(d['username'], user.username)
+        assert_equal(d.get('username'), None)
         assert_equal(d['fullname'], user.fullname)
         assert_equal(d['registered'], user.is_registered)
         assert_equal(d['gravatar_url'], user.gravatar_url)
@@ -454,15 +458,6 @@ class TestGUID(DbTestCase):
                 record_guid.referent,
                 record
             )
-
-
-class TestMetaData(DbTestCase):
-
-    def setUp(self):
-        pass
-
-    def test_referent(self):
-        pass
 
 
 class TestNodeFile(DbTestCase):
@@ -667,7 +662,7 @@ class TestNode(DbTestCase):
         # Create project with component
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
-        self.parent = ProjectFactory()
+        self.parent = ProjectFactory(creator=self.user)
         self.node = NodeFactory(creator=self.user, project=self.parent)
 
     def test_node_factory(self):
@@ -763,20 +758,6 @@ class TestNode(DbTestCase):
     def test_cant_add_component_to_component(self):
         with assert_raises(ValueError):
             NodeFactory(project=self.node)
-
-    def test_remove_node(self):
-        # Add some components and delete the project
-        subproject = ProjectFactory(creator=self.user, project=self.parent)
-        subsubproject = ProjectFactory(creator=self.user, project=subproject)
-        component = NodeFactory(creator=self.user, project=subproject)
-        subproject.remove_node(self.consolidate_auth)
-        # The correct nodes were deleted
-        assert_true(component.is_deleted)
-        assert_true(subproject.is_deleted)
-        assert_false(subsubproject.is_deleted)
-        assert_false(self.parent.is_deleted)
-        # A log was saved
-        assert_equal(self.parent.logs[-1].action, 'node_removed')
 
     def test_url(self):
         assert_equal(
@@ -907,6 +888,49 @@ class TestNode(DbTestCase):
         pass
 
 
+class TestRemoveNode(DbTestCase):
+
+    def setUp(self):
+        # Create project with component
+        self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.parent_project = ProjectFactory(creator=self.user)
+        self.project = ProjectFactory(creator=self.user,
+                                      project=self.parent_project)
+
+    def test_remove_project_without_children(self):
+        self.project.remove_node(auth=self.consolidate_auth)
+
+        assert_true(self.project.is_deleted)
+        # parent node should have a log of the event
+        assert_equal(self.parent_project.logs[-1].action, 'node_removed')
+
+    def test_remove_project_with_project_child_fails(self):
+        with assert_raises(NodeStateError):
+            self.parent_project.remove_node(self.consolidate_auth)
+
+    def test_remove_project_with_component_child_fails(self):
+        NodeFactory(creator=self.user, project=self.project)
+
+        with assert_raises(NodeStateError):
+            self.parent_project.remove_node(self.consolidate_auth)
+
+    def test_remove_project_with_pointer_child(self):
+        target = ProjectFactory(creator=self.user)
+        self.project.add_pointer(node=target, auth=self.consolidate_auth)
+
+        assert_equal(len(self.project.nodes), 1)
+
+        self.project.remove_node(auth=self.consolidate_auth)
+
+        assert_true(self.project.is_deleted)
+        # parent node should have a log of the event
+        assert_equal(self.parent_project.logs[-1].action, 'node_removed')
+
+        # target node shouldn't be deleted
+        assert_false(target.is_deleted)
+
+
 class TestAddonCallbacks(DbTestCase):
     """Verify that callback functions are called at the right times, with the
     right arguments.
@@ -914,7 +938,7 @@ class TestAddonCallbacks(DbTestCase):
     """
     callbacks = {
         'after_remove_contributor': None,
-        'after_set_permissions': None,
+        'after_set_privacy': None,
         'after_fork': (None, None),
         'after_register': (None, None),
     }
@@ -950,18 +974,18 @@ class TestAddonCallbacks(DbTestCase):
                 self.node, user2
             )
 
-    def test_set_permissions_callback(self):
+    def test_set_privacy_callback(self):
 
-        self.node.set_permissions('public', self.consolidate_auth)
+        self.node.set_privacy('public', self.consolidate_auth)
         for addon in self.node.addons:
-            callback = addon.after_set_permissions
+            callback = addon.after_set_privacy
             callback.assert_called_with(
                 self.node, 'public',
             )
 
-        self.node.set_permissions('private', self.consolidate_auth)
+        self.node.set_privacy('private', self.consolidate_auth)
         for addon in self.node.addons:
-            callback = addon.after_set_permissions
+            callback = addon.after_set_privacy
             callback.assert_called_with(
                 self.node, 'private'
             )
@@ -1123,7 +1147,11 @@ class TestProject(DbTestCase):
             auth=self.consolidate_auth,
             contributor=user2
         )
+
+        self.project.reload()
+
         assert_not_in(user2, self.project.contributors)
+        assert_not_in(user2._id, self.project.permissions)
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self):
@@ -1138,6 +1166,55 @@ class TestProject(DbTestCase):
         )
         self.project.save()
         assert_not_in(self.project._primary_key, new_user.unclaimed_records)
+
+    def test_manage_contributors_new_contributor(self):
+        user = UserFactory()
+        users = [
+            {'id': self.project.creator._id, 'permission': 'read'},
+            {'id': user._id, 'permission': 'read'},
+        ]
+        with assert_raises(ValueError):
+            self.project.manage_contributors(
+                users, auth=self.consolidate_auth, save=True
+            )
+
+    def test_manage_contributors_no_contributors(self):
+        with assert_raises(ValueError):
+            self.project.manage_contributors(
+                [], auth=self.consolidate_auth, save=True,
+            )
+
+    def test_manage_contributors_no_admins(self):
+        user = UserFactory()
+        self.project.add_contributor(
+            user,
+            permissions=['read', 'write', 'admin'],
+            save=True
+        )
+        users = [
+            {'id': self.project.creator._id, 'permission': 'read'},
+            {'id': user._id, 'permission': 'read'},
+        ]
+        with assert_raises(ValueError):
+            self.project.manage_contributors(
+                users, auth=self.consolidate_auth, save=True,
+            )
+
+    def test_manage_contributors_no_registered_admins(self):
+        unregistered = UnregUserFactory()
+        self.project.add_contributor(
+            unregistered,
+            permissions=['read', 'write', 'admin'],
+            save=True
+        )
+        users = [
+            {'id': self.project.creator._id, 'permission': 'read'},
+            {'id': unregistered._id, 'permission': 'admin'},
+        ]
+        with assert_raises(ValueError):
+            self.project.manage_contributors(
+                users, auth=self.consolidate_auth, save=True,
+            )
 
     def test_set_title(self):
         proj = ProjectFactory(title='That Was Then', creator=self.user)
@@ -1171,7 +1248,7 @@ class TestProject(DbTestCase):
         user1 = UserFactory()
         user1_auth = Auth(user=user1)
         # Change project to public
-        self.project.set_permissions('public')
+        self.project.set_privacy('public')
         self.project.save()
         # Noncontributor can't edit
         assert_false(self.project.can_edit(user1_auth))
@@ -1212,7 +1289,7 @@ class TestProject(DbTestCase):
         self.project.add_contributor(
             contributor=contributor, auth=self.consolidate_auth)
         # Change project to public
-        self.project.set_permissions('public')
+        self.project.set_privacy('public')
         self.project.save()
         # Creator, contributor, and noncontributor can view
         assert_true(self.project.can_view(self.consolidate_auth))
@@ -1259,18 +1336,34 @@ class TestProject(DbTestCase):
     def test_add_contributors(self):
         user1 = UserFactory()
         user2 = UserFactory()
-        self.project.add_contributors([user1, user2], auth=self.consolidate_auth)
+        self.project.add_contributors(
+            [
+                {'user': user1, 'permissions': ['read', 'write', 'admin']},
+                {'user': user2, 'permissions': ['read', 'write']}
+            ],
+            auth=self.consolidate_auth
+        )
         self.project.save()
         assert_equal(len(self.project.contributors), 3)
-        assert_equal(self.project.logs[-1].params['contributors'],
-                        [user1._id, user2._id])
+        assert_equal(
+            self.project.logs[-1].params['contributors'],
+            [user1._id, user2._id]
+        )
+        assert_in(user1._id, self.project.permissions)
+        assert_in(user2._id, self.project.permissions)
+        assert_equal(self.project.permissions[user1._id], ['read', 'write', 'admin'])
+        assert_equal(self.project.permissions[user2._id], ['read', 'write'])
+        assert_equal(
+            self.project.logs[-1].params['contributors'],
+            [user1._id, user2._id]
+        )
 
-    def test_set_permissions(self):
-        self.project.set_permissions('public', auth=self.consolidate_auth)
+    def test_set_privacy(self):
+        self.project.set_privacy('public', auth=self.consolidate_auth)
         self.project.save()
         assert_true(self.project.is_public)
         assert_equal(self.project.logs[-1].action, 'made_public')
-        self.project.set_permissions('private', auth=self.consolidate_auth)
+        self.project.set_privacy('private', auth=self.consolidate_auth)
         self.project.save()
         assert_false(self.project.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.MADE_PRIVATE)
@@ -1308,9 +1401,223 @@ class TestProject(DbTestCase):
         assert_equal(self.project.date_modified, self.project.logs[-1].date)
         assert_not_equal(self.project.date_modified, self.project.date_created)
 
+    def test_replace_contributor(self):
+        contrib = UserFactory()
+        self.project.add_contributor(contrib, auth=Auth(self.project.creator))
+        self.project.save()
+        assert_in(contrib, self.project.contributors)  # sanity check
+        replacer = UserFactory()
+        old_length = len(self.project.contributors)
+        self.project.replace_contributor(contrib, replacer)
+        self.project.save()
+        new_length = len(self.project.contributors)
+        assert_not_in(contrib, self.project.contributors)
+        assert_in(replacer, self.project.contributors)
+        assert_equal(old_length, new_length)
+
+        # test unclaimed_records is removed
+        assert_not_in(
+            self.project._primary_key,
+            contrib.unclaimed_records.keys()
+        )
+
+class TestTemplateNode(DbTestCase):
+
+    def setUp(self):
+        self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = ProjectFactory(creator=self.user)
+
+    def _verify_log(self, node):
+        """Tests to see that the "created from" log event is present (alone).
+
+        :param node: A node having been created from a template just prior
+        """
+        assert_equal(len(node.logs), 1)
+        assert_equal(node.logs[0].action, NodeLog.CREATED_FROM)
+
+    def test_simple_template(self):
+        """Create a templated node, with no changes"""
+        # created templated node
+        new = self.project.use_as_template(
+            auth=self.consolidate_auth
+        )
+
+        assert_equal(new.title, self._default_title(self.project))
+        assert_not_equal(new.date_created, self.project.date_created)
+        self._verify_log(new)
+
+    def test_simple_template_title_changed(self):
+        """Create a templated node, with the title changed"""
+        changed_title = 'Made from template'
+
+        # create templated node
+        new = self.project.use_as_template(
+            auth=self.consolidate_auth,
+            changes={
+                self.project._primary_key: {
+                    'title': changed_title,
+                }
+            }
+        )
+
+        assert_equal(new.title, changed_title)
+        assert_not_equal(new.date_created, self.project.date_created)
+        self._verify_log(new)
+
+    def _create_complex(self):
+        # create project connected via Pointer
+        self.pointee = ProjectFactory(creator=self.user)
+        self.project.add_pointer(self.pointee, auth=self.consolidate_auth)
+
+        # create direct children
+        self.component = NodeFactory(creator=self.user, project=self.project)
+        self.subproject = ProjectFactory(creator=self.user, project=self.project)
+
+    @staticmethod
+    def _default_title(x):
+        if isinstance(x, Node):
+            return str(language.TEMPLATED_FROM_PREFIX + x.title)
+        return str(x.title)
+
+
+    def test_complex_template(self):
+        """Create a templated node from a node with children"""
+        self._create_complex()
+
+        # create templated node
+        new = self.project.use_as_template(auth=self.consolidate_auth)
+
+        assert_equal(new.title, self._default_title(self.project))
+        assert_equal(len(new.nodes), len(self.project.nodes))
+        # check that all children were copied
+        assert_equal(
+            [x.title for x in new.nodes],
+            [self._default_title(x) for x in self.project.nodes],
+        )
+        # ensure all child nodes were actually copied, instead of moved
+        assert {x._primary_key for x in new.nodes}.isdisjoint(
+            {x._primary_key for x in self.project.nodes}
+        )
+
+    def test_complex_template_titles_changed(self):
+        self._create_complex()
+
+        # build changes dict to change each node's title
+        changes = {
+            x._primary_key: {
+                'title': 'New Title ' + str(idx)
+            } for idx, x in enumerate(self.project.nodes)
+        }
+
+        # create templated node
+        new = self.project.use_as_template(
+            auth=self.consolidate_auth,
+            changes=changes
+        )
+
+        for old_node, new_node in zip(self.project.nodes, new.nodes):
+            if isinstance(old_node, Node):
+                assert_equal(
+                    changes[old_node._primary_key]['title'],
+                    new_node.title,
+                )
+            else:
+                assert_equal(
+                    old_node.title,
+                    new_node.title,
+                )
+
+    def test_template_files_not_copied(self):
+        self.project.add_file(
+            self.consolidate_auth, 'test.txt', 'test content', 4, 'text/plain'
+        )
+        new = self.project.use_as_template(
+            auth=self.consolidate_auth
+        )
+        assert_equal(
+            len(self.project.files_current),
+            1
+        )
+        assert_equal(
+            len(self.project.files_versions),
+            1
+        )
+        assert_equal(new.files_current, {})
+        assert_equal(new.files_versions, {})
+
+    def test_template_wiki_pages_not_copied(self):
+        self.project.update_node_wiki(
+            'template', 'lol',
+            auth=self.consolidate_auth
+        )
+        new = self.project.use_as_template(
+            auth=self.consolidate_auth
+        )
+        assert_in('template', self.project.wiki_pages_current)
+        assert_in('template', self.project.wiki_pages_versions)
+        assert_equal(new.wiki_pages_current, {})
+        assert_equal(new.wiki_pages_versions, {})
+
+    def test_template_security(self):
+        """Create a templated node from a node with public and private children
+
+        Children for which the user has no access should not be copied
+        """
+        other_user = UserFactory()
+        other_user_auth = Auth(user=other_user)
+
+        self._create_complex()
+
+        # set two projects to public - leaving self.component as private
+        self.project.is_public = True
+        self.project.save()
+        self.subproject.is_public = True
+        self.subproject.save()
+
+        # add new children, for which the user has each level of access
+        self.read = NodeFactory(creator=self.user, project=self.project)
+        self.read.add_contributor(other_user, permissions=['read', ])
+        self.read.save()
+
+        self.write = NodeFactory(creator=self.user, project=self.project)
+        self.write.add_contributor(other_user, permissions=['read', 'write', ])
+        self.write.save()
+
+        self.admin = NodeFactory(creator=self.user, project=self.project)
+        self.admin.add_contributor(other_user)
+        self.admin.save()
+
+        # filter down self.nodes to only include projects the user can see
+        visible_nodes = filter(
+            lambda x: x.can_view(other_user_auth),
+            self.project.nodes
+        )
+
+        # create templated node
+        new = self.project.use_as_template(auth=other_user_auth)
+
+        assert_equal(new.title, self._default_title(self.project))
+
+        # check that all children were copied
+        assert_equal(
+            [x.title for x in new.nodes],
+            [self._default_title(x) for x in visible_nodes]
+        )
+        # ensure all child nodes were actually copied, instead of moved
+        assert_true({x._primary_key for x in new.nodes}.isdisjoint(
+            {x._primary_key for x in self.project.nodes}
+        ))
+
+        # ensure that the creator is admin for each node copied
+        for node in new.nodes:
+            assert_equal(
+                node.permissions.get(other_user._id),
+                ['read', 'write', 'admin'],
+            )
+
 
 class TestForkNode(DbTestCase):
-
     def setUp(self):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
@@ -1431,7 +1738,7 @@ class TestForkNode(DbTestCase):
 
         """
         # Make project public
-        self.project.set_permissions('public')
+        self.project.set_privacy('public')
         # Make some children
         self.public_component = NodeFactory(
             creator=self.user,
@@ -1475,7 +1782,7 @@ class TestForkNode(DbTestCase):
         assert_not_in('Not Forked', [node.title for node in fork.nodes])
 
     def test_fork_not_public(self):
-        self.project.set_permissions('public')
+        self.project.set_privacy('public')
         fork = self.project.fork_node(self.consolidate_auth)
         assert_false(fork.is_public)
 
@@ -1486,7 +1793,7 @@ class TestForkNode(DbTestCase):
         assert_false(fork)
 
     def test_can_fork_public_node(self):
-        self.project.set_permissions('public')
+        self.project.set_privacy('public')
         user2 = UserFactory()
         user2_auth = Auth(user=user2)
         fork = self.project.fork_node(user2_auth)
@@ -1498,6 +1805,19 @@ class TestForkNode(DbTestCase):
         user2_auth = Auth(user=user2)
         fork = self.project.fork_node(user2_auth)
         assert_true(fork)
+
+    def test_fork_registration(self):
+        self.registration = RegistrationFactory(project=self.project)
+        fork = self.registration.fork_node(self.consolidate_auth)
+
+        # fork should not be a registration
+        assert_false(fork.is_registration)
+
+        # Compare fork to original
+        self._cmp_fork_original(self.user,
+                                datetime.datetime.utcnow(),
+                                fork,
+                                self.registration)
 
 
 class TestRegisterNode(DbTestCase):
@@ -1549,7 +1869,7 @@ class TestRegisterNode(DbTestCase):
 
     def test_permissions(self):
         assert_false(self.registration.is_public)
-        self.project.set_permissions('public')
+        self.project.set_privacy('public')
         registration = RegistrationFactory(project=self.project)
         assert_true(registration.is_public)
 
@@ -1747,6 +2067,62 @@ class TestNodeLog(DbTestCase):
         assert_equal(parsed, self.log.tz_date)
 
 
+class TestPermissions(DbTestCase):
+
+    def setUp(self):
+        self.project = ProjectFactory()
+
+    def test_default_creator_permissions(self):
+        assert_equal(
+            set(CREATOR_PERMISSIONS),
+            set(self.project.permissions[self.project.creator._id])
+        )
+
+    def test_default_contributor_permissions(self):
+        user = UserFactory()
+        self.project.add_contributor(user, permissions=['read'], auth=Auth(user=self.project.creator))
+        self.project.save()
+        assert_equal(
+            set(['read']),
+            set(self.project.get_permissions(user))
+        )
+
+    def test_adjust_permissions(self):
+        self.project.permissions[42] = ['dance']
+        self.project.save()
+        assert_not_in(42, self.project.permissions)
+
+    def test_add_permission(self):
+        self.project.add_permission(self.project.creator, 'dance')
+        assert_in(self.project.creator._id, self.project.permissions)
+        assert_in('dance', self.project.permissions[self.project.creator._id])
+
+    def test_add_permission_already_granted(self):
+        self.project.add_permission(self.project.creator, 'dance')
+        with assert_raises(ValueError):
+            self.project.add_permission(self.project.creator, 'dance')
+
+    def test_remove_permission(self):
+        self.project.add_permission(self.project.creator, 'dance')
+        self.project.remove_permission(self.project.creator, 'dance')
+        assert_not_in('dance', self.project.permissions[self.project.creator._id])
+
+    def test_remove_permission_not_granted(self):
+        with assert_raises(ValueError):
+            self.project.remove_permission(self.project.creator, 'dance')
+
+    def test_has_permission_true(self):
+        self.project.add_permission(self.project.creator, 'dance')
+        assert_true(self.project.has_permission(self.project.creator, 'dance'))
+
+    def test_has_permission_false(self):
+        self.project.add_permission(self.project.creator, 'dance')
+        assert_false(self.project.has_permission(self.project.creator, 'sing'))
+
+    def test_has_permission_not_in_dict(self):
+        assert_false(self.project.has_permission(self.project.creator, 'dance'))
+
+
 class TestPointer(DbTestCase):
 
     def setUp(self):
@@ -1802,9 +2178,6 @@ class TestPointer(DbTestCase):
 
 
 class TestWatchConfig(DbTestCase):
-
-    def tearDown(self):
-        User.remove()
 
     def test_factory(self):
         config = WatchConfigFactory(digest=True, immediate=False)
@@ -1907,6 +2280,95 @@ class TestProjectWithAddons(DbTestCase):
         p = ProjectWithAddonFactory(addon='s3')
         assert_true(p.get_addon('s3'))
         assert_true(p.creator.get_addon('s3'))
+
+
+class TestComments(DbTestCase):
+
+    def setUp(self):
+        self.comment = CommentFactory()
+        self.consolidated_auth = Auth(user=self.comment.user)
+
+    def test_create(self):
+        comment = Comment.create(
+            auth=self.consolidated_auth,
+            user=self.comment.user,
+            node=self.comment.node,
+            target=self.comment.target,
+            is_public=True,
+        )
+        assert_equal(comment.user, self.comment.user)
+        assert_equal(comment.node, self.comment.node)
+        assert_equal(comment.target, self.comment.target)
+        assert_equal(len(comment.node.logs), 2)
+        assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
+
+    def test_edit(self):
+        self.comment.edit(
+            auth=self.consolidated_auth,
+            content='edited'
+        )
+        assert_equal(self.comment.content, 'edited')
+        assert_true(self.comment.modified)
+        assert_equal(len(self.comment.node.logs), 2)
+        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_UPDATED)
+
+    def test_delete(self):
+        self.comment.delete(auth=self.consolidated_auth)
+        assert_equal(self.comment.is_deleted, True)
+        assert_equal(len(self.comment.node.logs), 2)
+        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_REMOVED)
+
+    def test_undelete(self):
+        self.comment.delete(auth=self.consolidated_auth)
+        self.comment.undelete(auth=self.consolidated_auth)
+        assert_equal(self.comment.is_deleted, False)
+        assert_equal(len(self.comment.node.logs), 3)
+        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
+
+    def test_report_abuse(self):
+        user = UserFactory()
+        self.comment.report_abuse(user, category='spam', text='ads', save=True)
+        assert_in(user._id, self.comment.reports)
+        assert_equal(
+            self.comment.reports[user._id],
+            {'category': 'spam', 'text': 'ads'}
+        )
+
+    def test_report_abuse_own_comment(self):
+        with assert_raises(ValueError):
+            self.comment.report_abuse(
+                self.comment.user, category='spam', text='ads', save=True
+            )
+
+    def test_unreport_abuse(self):
+        user = UserFactory()
+        self.comment.report_abuse(user, category='spam', text='ads', save=True)
+        self.comment.unreport_abuse(user, save=True)
+        assert_not_in(user._id, self.comment.reports)
+
+    def test_unreport_abuse_not_reporter(self):
+        reporter = UserFactory()
+        non_reporter = UserFactory()
+        self.comment.report_abuse(reporter, category='spam', text='ads', save=True)
+        with assert_raises(ValueError):
+            self.comment.unreport_abuse(non_reporter, save=True)
+        assert_in(reporter._id, self.comment.reports)
+
+    def test_validate_reports_bad_key(self):
+        self.comment.reports[None] = {'category': 'spam', 'text': 'ads'}
+        with assert_raises(ValidationValueError):
+            self.comment.save()
+
+    def test_validate_reports_bad_type(self):
+        self.comment.reports[self.comment.user._id] = 'not a dict'
+        with assert_raises(ValidationTypeError):
+            self.comment.save()
+
+    def test_validate_reports_bad_value(self):
+        self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
+        with assert_raises(ValidationValueError):
+            self.comment.save()
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -3,11 +3,13 @@ import time
 from urllib2 import HTTPError
 import logging
 
-from framework import request, status
+from framework import must_be_logged_in, request, status
 from website.search.solr_search import search_solr
 from website import settings
 from website.filters import gravatar
-from website.models import User
+from website.models import User, Node
+from website.project.views.contributor import get_node_contributors_abbrev
+from modularodm.storage.mongostorage import RawQuery as Q
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('search.routes')
@@ -24,7 +26,7 @@ def search_search():
     query = request.args.get('q')
     # if there is not a query, tell our users to enter a search
     if query == '':
-        status.push_status_message('Enter a search!')
+        status.push_status_message('No search query', 'info')
         return {
             'results': [],
             'tags': [],
@@ -60,6 +62,59 @@ def search_search():
         'tags': tags,
         'searching_users': searching_users
     }
+
+
+@must_be_logged_in
+def search_projects_by_title(**kwargs):
+
+    term = request.args.get('term')
+    user = kwargs['auth'].user
+
+    max_results = 10
+
+    matching_title = (
+        Q('title', 'icontains', term) &  # search term (case insensitive)
+        Q('category', 'eq', 'project') &  # is a project
+        Q('is_deleted', 'eq', False)  # isn't deleted
+    )
+
+    my_projects = Node.find(
+        matching_title &
+        Q('contributors', 'contains', user._id)  # user is a contributor
+    ).limit(max_results)
+
+    if my_projects.count() < max_results:
+        public_projects = Node.find(
+            matching_title &
+            Q('is_public', 'eq', True)  # is public
+        ).limit(max_results - my_projects.count())
+    else:
+        public_projects = []
+
+    results = list(my_projects) + list(public_projects)
+
+    out = []
+
+    for project in results:
+        authors = get_node_contributors_abbrev(project=project, auth=kwargs['auth'])
+        authors_html = ''
+        for author in authors['contributors']:
+            a = User.load(author['user_id'])
+            authors_html += '<a href="%s">%s</a>' % (a.url, a.fullname)
+            authors_html += author['separator'] + ' '
+        authors_html += ' ' + authors['others_count']
+        if authors['others_count']:
+            authors_html += ' other' + authors['others_suffix']
+
+        out.append({
+            'id': project._id,
+            'label': project.title,
+            'value': project.title,
+            'category': 'My Projects' if user in project.contributors else 'Public Projects',
+            'authors': authors_html,
+        })
+
+    return out
 
 
 def create_result(highlights, results):
@@ -157,7 +212,7 @@ def create_result(highlights, results):
                             'highlight': lit or nest.get(split_id)['highlight'] if nest.get(split_id) else None,
                             'wiki_link': wiki_link,
                             'contributors': contributors,
-                            'contributors_url': contributors_url,
+                            'contributors_url': contributors_url
                         }
                         if split_id+'_tags' in result:
                             if split_id not in visited_nests:
@@ -186,6 +241,7 @@ def create_result(highlights, results):
             container['wiki_link'] = main_wiki_link
             # and our nested information
             container['nest'] = nest
+            container['is_registration'] = result[id + '_registeredproject']
             if id+'_tags' in result.keys():
                 # again using sets to create a list without duplicates
                 container['tags'] = result[id+'_tags'] + list(
@@ -200,7 +256,7 @@ def create_result(highlights, results):
     return result_search, tags
 
 
-def _search_contributor(query):
+def _search_contributor(query, exclude=None):
     """Search for contributors to add to a project using Solr. Request must
     include JSON data with a "query" field.
 
@@ -224,6 +280,9 @@ def _search_contributor(query):
     result, highlight, spellcheck_result = search_solr(q)
     docs = result.get('docs', [])
 
+    if exclude:
+        docs = (x for x in docs if x.get('id') not in exclude)
+
     users = []
     for doc in docs:
         # TODO: use utils.serialize_user
@@ -236,7 +295,7 @@ def _search_contributor(query):
                 'fullname': doc['user'],
                 'email': user.username,
                 'id': doc['id'],
-                'gravatar': gravatar(
+                'gravatar_url': gravatar(
                     user,
                     use_ssl=True,
                     size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,
@@ -248,4 +307,10 @@ def _search_contributor(query):
     return {'users': users}
 
 def search_contributor():
-    return _search_contributor(request.args.get('query', ''))
+    nid = request.args.get('excludeNode')
+    exclude = Node.load(nid).contributors if nid else list()
+
+    return _search_contributor(
+        query=request.args.get('query', ''),
+        exclude=exclude,
+    )

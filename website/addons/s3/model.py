@@ -108,6 +108,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             'user_has_auth': False,
             'owner': None,  # needed?
             'bucket_list': None,
+            'is_registration': self.owner.is_registration,
         })
 
         user_settings = user.get_addon('s3')

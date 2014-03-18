@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
-from framework import Form, TextField, TextAreaField, validators
-from framework.forms import BootstrapTextArea, BootstrapTextInput
+from framework import Form, SelectField, TextField, TextAreaField, validators
+from framework.forms import (
+    BootstrapTextArea,
+    BootstrapTextInput,
+    JqueryAutocomplete,
+)
+from website import language
 
 ###############################################################################
 # Forms
@@ -13,6 +18,11 @@ class NewProjectForm(Form):
         validators.Length(max=200, message=u'Title must contain fewer than 200 characters.')
     ], widget=BootstrapTextInput())
     description    = TextAreaField('Description', widget=BootstrapTextArea())
+    template = TextField(
+        'Template',
+        widget=JqueryAutocomplete(),
+        description=language.TEMPLATE_DROPDOWN_HELP,
+    )
 
 class NewNodeForm(Form):
     title    = TextField('Title', [

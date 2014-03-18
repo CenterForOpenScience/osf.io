@@ -30,7 +30,7 @@
                 <div class="social">
                     <a href="http://twitter.com/OSFramework"><i class="icon-twitter icon-2x"></i></a>
                     <a href="https://www.facebook.com/OpenScienceFramework"><i class="icon-facebook icon-2x"></i></a>
-                    <a href="https://groups.google.com/forum/#!forum/openscienceframework"><i class="icon-google-plus icon-2x"></i></a>
+                    <a href="https://groups.google.com/forum/#!forum/openscienceframework"><i class="icon-group icon-2x"></i></a>
                     <a href="https://www.github.com/centerforopenscience"><i class="icon-github icon-2x"></i></a>
                     <a href="https://plus.google.com/103557785986281627994" rel="publisher"><i class="icon-google-plus-sign icon-2x"></i></a>
                 </div>

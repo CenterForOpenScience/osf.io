@@ -1,24 +1,13 @@
 % for contributor in contributors:
     <span data-pk="${contributor['id']}"
-        class="contributor ${'contributor-registered' if contributor['registered'] else 'contributor-unregistered'}">
+            class="contributor
+                ${'contributor-registered' if contributor['registered'] else 'contributor-unregistered'}
+                ${'contributor-self' if user['id'] == contributor['id'] else ''}">
         % if contributor['registered']:
-            <a href="/${contributor['id']}/"
-                % if user['can_edit']:
-                    class="user-quickedit"
-                    data-userid="${contributor['id']}" data-fullname="${contributor['fullname']}"
-                % endif
-                >${contributor['fullname']}</a>${', ' if not loop.last else ''}
+        <a href="/${contributor['id']}/">${contributor['fullname']}</a>
         % else:
-            <span
-                % if user['can_edit']:
-                    class="user-quickedit"
-                    data-userid="${contributor['id']}" data-fullname="${contributor['fullname']}"
-                % endif
-                >${contributor['fullname']}</span>${', ' if not loop.last else ''}
-        % endif
+        <span>${contributor['fullname']}</span>
+        %endif
     </span>
+    ${'' if loop.last else '|'}
 % endfor
-
-% if user['can_edit']:
-    | <a href="#addContributors" data-toggle="modal">add</a>
-% endif

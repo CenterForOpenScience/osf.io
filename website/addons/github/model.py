@@ -128,25 +128,29 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         user_settings = user.get_addon('github')
         rv.update({
             'user_has_auth': user_settings and user_settings.has_auth,
+            'is_registration': self.owner.is_registration,
         })
         if self.user_settings and self.user_settings.has_auth:
             owner = self.user_settings.owner
-            connection = GitHub.from_settings(user_settings)
-            # TODO: Fetch repo list client-side
-            # Since /user/repos excludes organization repos to which the
-            # current user has push access, we have to make extra requests to
-            # find them
-            repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
-            repo_names = [
-                '{0} / {1}'.format(repo.owner.login, repo.name)
-                for repo in repos
-            ]
+            if user_settings and user_settings.owner == owner:
+                connection = GitHub.from_settings(user_settings)
+                # TODO: Fetch repo list client-side
+                # Since /user/repos excludes organization repos to which the
+                # current user has push access, we have to make extra requests to
+                # find them
+                repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
+                repo_names = [
+                    '{0} / {1}'.format(repo.owner.login, repo.name)
+                    for repo in repos
+                ]
+                rv.update({
+                    'repo_names': repo_names,
+                    })
             rv.update({
                 'node_has_auth': True,
                 'github_user': self.user or '',
                 'github_repo': self.repo or '',
                 'github_repo_full_name': '{0} / {1}'.format(self.user, self.repo),
-                'repo_names': repo_names,
                 'auth_osf_name': owner.fullname,
                 'auth_osf_url': owner.url,
                 'auth_osf_id': owner._id,
@@ -265,7 +269,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 )
             )
 
-    def after_set_permissions(self, node, permissions):
+    def after_set_privacy(self, node, permissions):
         """
 
         :param Node node:

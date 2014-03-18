@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
+import httplib as http
 
 from framework import request
-from ..decorators import must_not_be_registration, must_be_valid_project, must_be_contributor, must_be_contributor_or_public
-from framework.forms.utils import process_payload
+from website.project.decorators import (
+    must_be_valid_project, must_be_contributor_or_public,
+    must_have_permission, must_not_be_registration
+)
+from framework.forms.utils import process_payload, unprocess_payload
 from framework.mongo.utils import to_mongo
 from website import language
 from .node import _view_project
@@ -19,7 +23,7 @@ from .. import clean_template_name
 logger = logging.getLogger(__name__)
 
 @must_be_valid_project
-@must_be_contributor # returns user, project
+@must_have_permission('admin')
 @must_not_be_registration
 def node_register_page(**kwargs):
 
@@ -40,7 +44,7 @@ def node_register_page(**kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor_or_public # returns user, project
+@must_have_permission('admin')
 def node_register_template_page(**kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
@@ -52,6 +56,9 @@ def node_register_template_page(**kwargs):
     if node_to_use.is_registration and node_to_use.registered_meta:
         registered = True
         payload = node_to_use.registered_meta.get(to_mongo(template_name))
+        payload = json.loads(payload)
+        payload = unprocess_payload(payload)
+        payload = json.dumps(payload)
         if node_to_use.registered_schema:
             meta_schema = node_to_use.registered_schema
         else:
@@ -83,7 +90,7 @@ def node_register_template_page(**kwargs):
 
 
 @must_be_valid_project  # returns project
-@must_be_contributor  # returns user, project
+@must_have_permission('admin')
 @must_not_be_registration
 def project_before_register(**kwargs):
 
@@ -104,7 +111,7 @@ def project_before_register(**kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor # returns user, project
+@must_have_permission('admin')
 @must_not_be_registration
 def node_register_template_page_post(**kwargs):
 
@@ -130,4 +137,4 @@ def node_register_template_page_post(**kwargs):
     return {
         'status': 'success',
         'result': register.url,
-    }, 201
+    }, http.CREATED

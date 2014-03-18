@@ -43,6 +43,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
 
+    # Node fields that trigger an update to Solr on save
+    SOLR_UPDATE_FIELDS = {
+        'fullname',
+    }
+
     _id = fields.StringField(primary=True)
 
     # NOTE: In the OSF, username is an email
@@ -358,10 +363,10 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def gravatar_url(self):
         return filters.gravatar(
-                    self,
-                    use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
-                )
+            self,
+            use_ssl=True,
+            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+        )
 
     @property
     def activity_points(self):
@@ -382,13 +387,15 @@ class User(GuidStoredObject, AddonModelMixin):
             'user_fullname': self.fullname,
             'user_profile_url': self.profile_url,
             'user_display_name': name_formatters[formatter](self),
+            'user_is_claimed': self.is_claimed
         }
 
     def save(self, *args, **kwargs):
         self.username = self.username.lower().strip() if self.username else None
         rv = super(User, self).save(*args, **kwargs)
         if self.is_active():
-            self.update_solr()
+            if self.SOLR_UPDATE_FIELDS.intersection(rv):
+                self.update_solr()
         if settings.PIWIK_HOST and not self.piwik_token:
             try:
                 piwik.create_user(self)

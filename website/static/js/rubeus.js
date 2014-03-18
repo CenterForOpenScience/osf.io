@@ -69,21 +69,24 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     }
 
     HGrid.Col.ActionButtons.itemView = function(item) {
-        var downloadTip = genTooltipMarkup('Download ' + item.name);
-        var buttonDefs = [{
-              text: '<i class="icon-download-alt icon-white"' + downloadTip + '></i>',
-              action: 'download',
-              cssClass: 'btn btn-success btn-mini'
-        }];
-        if (item.permissions && item.permissions.edit) {
-            var deleteTip = genTooltipMarkup('Delete ' + item.name);
-            buttonDefs.push({
-              text: '&nbsp;<i class="icon-remove"' + deleteTip + '></i>',
-              action: 'delete',
-              cssClass: 'btn btn-link btn-mini btn-delete'
-            });
-      }
-      return ['<span class="rubeus-buttons">', HGrid.Fmt.buttons(buttonDefs),
+	var buttonDefs = [];
+	if(item.permissions){
+	    if(item.permissions.download !== false){
+        	buttonDefs.push({
+        	    text: '<i class="icon-download-alt icon-white" title="" data-placement="right" data-toggle="tooltip" data-original-title="Download"></i>',
+        	    action: 'download',
+        	    cssClass: 'btn btn-primary btn-mini'
+        	});
+	    }
+        if (item.permissions.edit) {
+    		buttonDefs.push({
+    		    text: '&nbsp;<i class="icon-remove"title="" data-placement="right" data-toggle="tooltip" data-original-title="Delete"></i>',
+    		    action: 'delete',
+    		    cssClass: 'btn btn-link btn-mini btn-delete'
+    		});
+	    }
+	}
+	return ['<span class="rubeus-buttons">', HGrid.Fmt.buttons(buttonDefs),
                 '</span><span data-status></span>'].join('');
     };
 
@@ -235,6 +238,14 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         }
     }
 
+    // Custom download count column
+    var DownloadCount = {
+        name: 'Downloads',
+        itemView: '{{ downloads }}',
+        folderView: '',
+        width: 20
+    };
+
     ///////////////////
     // HGrid options //
     ///////////////////
@@ -244,10 +255,14 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         /*jshint unused: false */
         columns: [
             HGrid.Col.Name,
-            HGrid.Col.ActionButtons
+            HGrid.Col.ActionButtons,
+            DownloadCount
         ],
         width: '100%',
         height: 900,
+        ajaxOptions: {
+            cache: false  // Prevent caching in IE
+        },
         fetchUrl: function(row) {
             return row.urls.fetch || null;
         },

@@ -13,23 +13,33 @@ ${next.body()}
 <%include file="modal_show_links.mako"/>
 % if node['category'] == 'project':
     <%include file="modal_add_component.mako"/>
+    <%include file="modal_duplicate.mako"/>
 % endif
 </%def>
 
 
 <%def name="javascript_bottom()">
-<% import json %>
 <script>
     // Import modules
     $script(['/static/js/nodeControl.js'], 'nodeControl');
     $script(['/static/js/logFeed.js'], 'logFeed');
     $script(['/static/js/contribAdder.js'], 'contribAdder');
+    $script(['/static/js/pointers.js'], 'pointers');
 
-    // TODO: pollution! namespace me
-    var userId = '${user_id}';
+    // TODO: Put these in the contextVars object below
     var nodeId = '${node['id']}';
     var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
+    // Mako variables accessible globally
+    window.contextVars = {
+        currentUser: {
+            username: '${user.get("username")}',
+            id: '${user_id}'
+        },
+        node: {
+            title: "${node['title']}"
+        }
+    };
 
     $(function() {
 
@@ -43,7 +53,7 @@ ${next.body()}
                 })
                 .ready('logFeed', function() {
                     if ($logScope.length) { // Render log feed if necessary
-                        var logFeed = new LogFeed('#logScope', data.node.logs);
+                        var logFeed = new LogFeed('#logScope', data.node.logs, {'url':nodeApiUrl+'log/', 'hasMoreLogs': data.node.has_more_logs});
                     }
                 });
                 // If user is a contributor, initialize the contributor modal
@@ -60,25 +70,24 @@ ${next.body()}
                 }
             }
         );
-        // TODO: move AddPointerViewModel to its own module
-        var $addPointer = $('#addPointer');
-        var addPointerVM = new AddPointerViewModel(${json.dumps(node['title'])});
-        ko.applyBindings(addPointerVM, $addPointer[0]);
-        $addPointer.on('hidden.bs.modal', function() {
-            addPointerVM.clear();
-        });
+
+
 
         var linksModal = $('#showLinks')[0];
         var linksVM = new LinksViewModel(linksModal);
         ko.applyBindings(linksVM, linksModal);
     });
 
+    $script.ready('pointers', function() {
+        var pointerManager = new PointerManager('#addPointer', contextVars.node.title);
+    });
+
     // Make unregistered contributors claimable
-    if (!userId) { // If no user logged in, allow user claiming
-        $script(['/static/js/accountClaimer.js'], function() {
-            var accountClaimer = new OSFAccountClaimer('.contributor-unregistered');
-        });
-    }
+    % if not user.get('is_contributor'):
+    $script(['/static/js/accountClaimer.js'], function() {
+        var accountClaimer = new OSFAccountClaimer('.contributor-unregistered');
+    });
+    % endif
 
 </script>
 % if node.get('is_public') and node.get('piwik_site_id'):
@@ -86,8 +95,9 @@ ${next.body()}
     $(function() {
         // Note: Don't use cookies for global site ID; cookies will accumulate
         // indefinitely and overflow uwsgi header buffer.
-        trackPiwik('${ piwik_host }', ${ node['piwik_site_id'] });
+        $.osf.trackPiwik('${ piwik_host }', ${ node['piwik_site_id'] });
     });
 </script>
 % endif
+
 </%def>

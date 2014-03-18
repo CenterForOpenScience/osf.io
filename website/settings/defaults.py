@@ -74,9 +74,13 @@ CANONICAL_DOMAIN = 'openscienceframework.org'
 COOKIE_DOMAIN = '.openscienceframework.org' # Beaker
 SHORT_DOMAIN = 'osf.io'
 
+# TODO: Combine Python and JavaScript config
+COMMENT_MAXLENGTH = 500
+
 # Gravatar options
 GRAVATAR_SIZE_PROFILE = 120
-GRAVATAR_SIZE_ADD_CONTRIBUTOR = 60
+GRAVATAR_SIZE_ADD_CONTRIBUTOR = 40
+GRAVATAR_SIZE_DISCUSSION = 20
 
 # User activity style
 USER_ACTIVITY_MAX_WIDTH = 325
@@ -106,7 +110,6 @@ WIKI_WHITELIST = {
     ]
 }
 
-
 ##### Celery #####
 ## Default RabbitMQ broker
 BROKER_URL = 'amqp://'
@@ -125,10 +128,8 @@ CELERY_IMPORTS = (
 
 ADDONS_REQUESTED = [
     'wiki', 'osffiles',
-    'github', 's3',
+    'github', 's3', 'figshare',
     'dataverse',
-    #'bitbucket', 'figshare',
-    #'zotero',
 ]
 
 ADDON_CATEGORIES = [

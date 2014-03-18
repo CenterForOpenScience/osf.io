@@ -122,9 +122,9 @@ class TestCallbacks(DbTestCase):
 
     @unittest.skipIf(not github_settings.SET_PRIVACY, 'Setting privacy is disabled.')
     @mock.patch('website.addons.github.api.GitHub.set_privacy')
-    def test_after_set_permissions_private_authenticated(self, mock_set_privacy):
+    def test_after_set_privacy_private_authenticated(self, mock_set_privacy):
         mock_set_privacy.return_value = {}
-        message = self.node_settings.after_set_permissions(
+        message = self.node_settings.after_set_privacy(
             self.project, 'private',
         )
         mock_set_privacy.assert_called_with(
@@ -137,9 +137,9 @@ class TestCallbacks(DbTestCase):
 
     @unittest.skipIf(not github_settings.SET_PRIVACY, 'Setting privacy is disabled.')
     @mock.patch('website.addons.github.api.GitHub.set_privacy')
-    def test_after_set_permissions_public_authenticated(self, mock_set_privacy):
+    def test_after_set_privacy_public_authenticated(self, mock_set_privacy):
         mock_set_privacy.return_value = {}
-        message = self.node_settings.after_set_permissions(
+        message = self.node_settings.after_set_privacy(
             self.project, 'public'
         )
         mock_set_privacy.assert_called_with(
@@ -153,10 +153,10 @@ class TestCallbacks(DbTestCase):
     @unittest.skipIf(not github_settings.SET_PRIVACY, 'Setting privacy is disabled.')
     @mock.patch('website.addons.github.api.GitHub.repo')
     @mock.patch('website.addons.github.api.GitHub.set_privacy')
-    def test_after_set_permissions_not_authenticated(self, mock_set_privacy, mock_repo):
+    def test_after_set_privacy_not_authenticated(self, mock_set_privacy, mock_repo):
         mock_set_privacy.return_value = {'errors': ['it broke']}
         mock_repo.return_value = {'private': True}
-        message = self.node_settings.after_set_permissions(
+        message = self.node_settings.after_set_privacy(
             self.project, 'private',
         )
         mock_set_privacy.assert_called_with(
