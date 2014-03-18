@@ -301,6 +301,9 @@ class User(GuidStoredObject, AddonModelMixin):
             # Revoke token
             del self.email_verifications[token]
             self.save()
+            # Note: We must manually update Solr here because the fullname
+            # field has not changed
+            self.update_solr()
             return True
         else:
             return False
