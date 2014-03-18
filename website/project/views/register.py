@@ -8,7 +8,7 @@ from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
     must_have_permission, must_not_be_registration
 )
-from framework.forms.utils import process_payload
+from framework.forms.utils import process_payload, unprocess_payload
 from framework.mongo.utils import to_mongo
 from website import language
 from .node import _view_project
@@ -56,6 +56,9 @@ def node_register_template_page(**kwargs):
     if node_to_use.is_registration and node_to_use.registered_meta:
         registered = True
         payload = node_to_use.registered_meta.get(to_mongo(template_name))
+        payload = json.loads(payload)
+        payload = unprocess_payload(payload)
+        payload = json.dumps(payload)
         if node_to_use.registered_schema:
             meta_schema = node_to_use.registered_schema
         else:

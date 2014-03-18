@@ -27,12 +27,14 @@ from framework.auth.decorators import Auth
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
 )
+from framework.exceptions import PermissionsError
 from framework.git.exceptions import FileNotModified
 from framework import StoredObject, fields, utils
 from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 
+from website.exceptions import NodeStateError
 from website.util.permissions import (expand_permissions,
     DEFAULT_CONTRIBUTOR_PERMISSIONS,
     CREATOR_PERMISSIONS
@@ -724,6 +726,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         new.files_versions = {}
         new.wiki_pages_current = {}
         new.wiki_pages_versions = {}
+        new.fork_list = []
+        new.registration_list = []
 
         # set attributes which may be overridden by `changes`
         new.is_public = False
@@ -1088,54 +1092,56 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             update_solr(solr_document)
 
-    def remove_node(self, auth, date=None, top=True):
-        """Remove node and recursively remove its children. Does not remove
-        nodes from database; instead, removed nodes are flagged as deleted.
-        Git repos are also not deleted. Adds a log to the parent node if top
-        is True.
+    def remove_node(self, auth, date=None):
+        """Marks a node as deleted.
 
-        :param auth: All the auth informtion including user, API key.
+        TODO: Call a hook on addons
+        Adds a log to the parent node if applicable
+
+        :param auth: an instance of :class:`Auth`.
         :param date: Date node was removed
-        :param top: Is this the first node being removed?
+        :type date: `datetime.datetime` or `None`
 
         """
+        # TODO: rename "date" param - it's shadowing a global
+
+
         if not self.can_edit(auth):
-            return False
+            raise PermissionsError()
 
-        date = date or datetime.datetime.utcnow()
+        if [x for x in self.nodes_primary if not x.is_deleted]:
+            raise NodeStateError("Components list not empty")
 
-        # Remove child nodes
-        for node in self.nodes_primary:
-            if not node.category == 'project':
-                if not node.remove_node(auth, date=date, top=False):
-                    return False
+        log_date = date or datetime.datetime.utcnow()
 
         # Add log to parent
-        if top and self.node__parent:
+        if self.node__parent:
             self.node__parent[0].add_log(
                 NodeLog.NODE_REMOVED,
                 params={
                     'project': self._primary_key,
                 },
                 auth=auth,
-                log_date=datetime.datetime.utcnow(),
+                log_date=log_date,
             )
 
         # Remove self from parent registration list
         if self.is_registration:
             try:
                 self.registered_from.registration_list.remove(self._primary_key)
-                self.registered_from.save()
             except ValueError:
                 pass
+            else:
+                self.registered_from.save()
 
         # Remove self from parent fork list
         if self.is_fork:
             try:
                 self.forked_from.fork_list.remove(self._primary_key)
-                self.forked_from.save()
             except ValueError:
                 pass
+            else:
+                self.forked_from.save()
 
         self.is_deleted = True
         self.deleted_date = date

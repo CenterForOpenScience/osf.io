@@ -21,6 +21,7 @@ from framework import utils
 from framework.bcrypt import check_password_hash
 from framework.git.exceptions import FileNotModified
 from website import filters, language, settings
+from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
 from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas
@@ -661,7 +662,7 @@ class TestNode(DbTestCase):
         # Create project with component
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
-        self.parent = ProjectFactory()
+        self.parent = ProjectFactory(creator=self.user)
         self.node = NodeFactory(creator=self.user, project=self.parent)
 
     def test_node_factory(self):
@@ -757,20 +758,6 @@ class TestNode(DbTestCase):
     def test_cant_add_component_to_component(self):
         with assert_raises(ValueError):
             NodeFactory(project=self.node)
-
-    def test_remove_node(self):
-        # Add some components and delete the project
-        subproject = ProjectFactory(creator=self.user, project=self.parent)
-        subsubproject = ProjectFactory(creator=self.user, project=subproject)
-        component = NodeFactory(creator=self.user, project=subproject)
-        subproject.remove_node(self.consolidate_auth)
-        # The correct nodes were deleted
-        assert_true(component.is_deleted)
-        assert_true(subproject.is_deleted)
-        assert_false(subsubproject.is_deleted)
-        assert_false(self.parent.is_deleted)
-        # A log was saved
-        assert_equal(self.parent.logs[-1].action, 'node_removed')
 
     def test_url(self):
         assert_equal(
@@ -899,6 +886,49 @@ class TestNode(DbTestCase):
     def test_add_file(self):
         #todo Add file series of tests
         pass
+
+
+class TestRemoveNode(DbTestCase):
+
+    def setUp(self):
+        # Create project with component
+        self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.parent_project = ProjectFactory(creator=self.user)
+        self.project = ProjectFactory(creator=self.user,
+                                      project=self.parent_project)
+
+    def test_remove_project_without_children(self):
+        self.project.remove_node(auth=self.consolidate_auth)
+
+        assert_true(self.project.is_deleted)
+        # parent node should have a log of the event
+        assert_equal(self.parent_project.logs[-1].action, 'node_removed')
+
+    def test_remove_project_with_project_child_fails(self):
+        with assert_raises(NodeStateError):
+            self.parent_project.remove_node(self.consolidate_auth)
+
+    def test_remove_project_with_component_child_fails(self):
+        NodeFactory(creator=self.user, project=self.project)
+
+        with assert_raises(NodeStateError):
+            self.parent_project.remove_node(self.consolidate_auth)
+
+    def test_remove_project_with_pointer_child(self):
+        target = ProjectFactory(creator=self.user)
+        self.project.add_pointer(node=target, auth=self.consolidate_auth)
+
+        assert_equal(len(self.project.nodes), 1)
+
+        self.project.remove_node(auth=self.consolidate_auth)
+
+        assert_true(self.project.is_deleted)
+        # parent node should have a log of the event
+        assert_equal(self.parent_project.logs[-1].action, 'node_removed')
+
+        # target node shouldn't be deleted
+        assert_false(target.is_deleted)
 
 
 class TestAddonCallbacks(DbTestCase):
