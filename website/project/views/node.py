@@ -14,6 +14,7 @@ from framework.mongo.utils import from_mongo
 
 from website import language
 
+from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node
 from website.project.decorators import (
     must_be_contributor,
@@ -27,6 +28,7 @@ from website.models import Node, Pointer, WatchConfig
 from website import settings
 from website.views import _render_nodes
 from website.profile import utils
+from website.util import permissions
 
 from .log import _get_logs
 
@@ -82,7 +84,7 @@ def project_new_post(**kwargs):
             project = new_node(
                 'project', form.title.data, user, form.description.data
             )
-        return {}, 201, None, project.url + 'settings/'
+        return {}, 201, None, project.url
     else:
         push_errors_to_status(form.errors)
     return {}, http.BAD_REQUEST
@@ -237,7 +239,7 @@ def node_choose_addons(**kwargs):
 
 
 @must_be_valid_project
-@must_have_permission('admin')
+@must_be_contributor
 def node_contributors(**kwargs):
 
     auth = kwargs['auth']
@@ -281,12 +283,22 @@ def project_reorder_components(**kwargs):
         StoredObject.get_collection(schema).load(key)
         for key, schema in new_list
     ]
-    if len(project.nodes) == len(nodes_new) and set(project.nodes) == set(nodes_new):
-        project.nodes = nodes_new
+
+    visible_nodes = [
+        node for node in project.nodes
+        if not node.is_deleted
+    ]
+    deleted_nodes = [
+        node for node in project.nodes
+        if node.is_deleted
+    ]
+
+    if len(visible_nodes) == len(nodes_new) and set(visible_nodes) == set(nodes_new):
+        project.nodes = nodes_new + deleted_nodes
         project.save()
         return {}
 
-    # todo log impossibility
+    logger.error('Got invalid node list in reorder components')
     raise HTTPError(http.BAD_REQUEST)
 
 
@@ -404,21 +416,29 @@ def component_remove(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
 
-    if node_to_use.remove_node(auth):
-        message = '{} deleted'.format(
-            node_to_use.project_or_component.capitalize()
+    try:
+        node_to_use.remove_node(auth)
+    except NodeStateError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data={
+                'message_long': 'Could not delete component: ' + e.message
+            },
         )
-        status.push_status_message(message)
-        if node_to_use.node__parent:
-            redirect_url = node_to_use.node__parent[0].url
-        else:
-            redirect_url = '/dashboard/'
-        return {
-            'url': redirect_url,
-        }
-    raise HTTPError(
-        http.BAD_REQUEST, message='Could not delete component'
+
+    message = '{} deleted'.format(
+        node_to_use.project_or_component.capitalize()
     )
+    status.push_status_message(message)
+    if node_to_use.node__parent:
+        redirect_url = node_to_use.node__parent[0].url
+    else:
+        redirect_url = '/dashboard/'
+
+    return {
+        'url': redirect_url,
+    }
+
 
 
 @must_be_valid_project
@@ -470,7 +490,7 @@ def _view_project(node, auth, primary=False):
     user = auth.user
 
     parent = node.parent_node
-    recent_logs = _get_logs(node, 10, auth)
+    recent_logs, has_more_logs= _get_logs(node, 10, auth)
     widgets, configs, js, css = _render_addon(node)
     # Before page load callback; skip if not primary call
     if primary:
@@ -522,6 +542,7 @@ def _view_project(node, auth, primary=False):
             'private_links': node.private_links,
             'link': auth.private_key or request.args.get('key', '').strip('/'),
             'logs': recent_logs,
+            'has_more_logs': has_more_logs,
             'points': node.points,
             'piwik_site_id': node.piwik_site_id,
 

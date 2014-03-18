@@ -1,5 +1,6 @@
 import httplib as http
 
+from framework.auth.decorators import collect_auth
 from website.util.sanitize import clean_tag
 from website.project.model import Tag
 from website.project.decorators import (
@@ -7,20 +8,21 @@ from website.project.decorators import (
 )
 
 
-def project_tag(tag):
-    backs = Tag.load(tag).node__tagged
-    if backs:
-        nodes = [obj for obj in backs if obj.is_public]
-    else:
-        nodes = []
+@collect_auth
+def project_tag(tag, **kwargs):
+    auth = kwargs['auth']
+    tag_obj = Tag.load(tag)
+    nodes = tag_obj.node__tagged if tag_obj else []
+    visible_nodes = [obj for obj in nodes if obj.can_view(auth)]
     return {
-        'nodes' : [
+        'nodes': [
             {
                 'title': node.title,
                 'url': node.url,
             }
-            for node in nodes
-        ]
+            for node in visible_nodes
+        ],
+        'tag': tag
     }
 
 

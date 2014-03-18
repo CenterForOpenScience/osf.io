@@ -9,7 +9,7 @@ from framework import (Rule, process_rules,
                        render_mako_string)
 from framework.auth import views as auth_views
 
-from website import settings, language
+from website import settings, language, util
 from website import views as website_routes
 from website.addons.base import views as addon_views
 from website.search import views as search_views
@@ -20,6 +20,10 @@ from website.assets import env as assets_env
 
 
 def get_globals():
+    """Context variables that are available for every template rendered by
+    OSFWebRenderer.
+
+    """
     user = framework.auth.get_current_user()
     return {
         'user_name': user.username if user else '',
@@ -39,6 +43,8 @@ def get_globals():
         'js_bottom': assets_env['js_bottom'].urls(),
         'domain': settings.DOMAIN,
         'language': language,
+        'web_url_for': util.web_url_for,
+        'api_url_for': util.api_url_for
     }
 
 
@@ -411,6 +417,7 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/key_history/<kid>/',
         ], 'get', project_views.key.node_key_history, OsfWebRenderer('project/key_history.mako')),
 
+        # TODO: Add API endpoint for tags
         Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),

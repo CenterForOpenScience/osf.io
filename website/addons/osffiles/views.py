@@ -269,9 +269,14 @@ def view_file(**kwargs):
 
     versions = []
 
-    for idx, version in enumerate(list(reversed(node.files_versions[file_name_clean]))):
+    try:
+        files_versions = node.files_versions[file_name_clean]
+    except KeyError:
+        raise HTTPError(http.NOT_FOUND)
+
+    for idx, version in enumerate(list(reversed(files_versions))):
         node_file = NodeFile.load(version)
-        number = len(node.files_versions[file_name_clean]) - idx
+        number = len(files_versions) - idx
         unique, total = get_basic_counters('download:{}:{}:{}'.format(
             node._primary_key,
             file_name_clean,
@@ -318,7 +323,11 @@ def download_file(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
     link = kwargs['auth'].private_key
-    vid = len(node_to_use.files_versions[filename.replace('.', '_')])
+
+    try:
+        vid = len(node_to_use.files_versions[filename.replace('.', '_')])
+    except KeyError:
+        raise HTTPError(http.NOT_FOUND)
 
     redirect_url = '{url}osffiles/{fid}/version/{vid}/'.format(
         url=node_to_use.url,

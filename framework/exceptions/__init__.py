@@ -65,4 +65,6 @@ class HTTPError(FrameworkError):
 
 
 class PermissionsError(FrameworkError):
+    """Raised if an action cannot be performed due to insufficient permissions
+    """
     pass
