@@ -16,7 +16,7 @@ from website.project.decorators import must_have_addon
 from website.util import api_url_for, web_url_for
 
 from website.addons.dropbox import settings, model
-from website.addons.dropbox.client import get_client, get_client_from_user_settings
+from website.addons.dropbox.client import get_client_from_user_settings
 
 
 def get_auth_flow():
@@ -71,8 +71,9 @@ def dropbox_oauth_finish(**kwargs):
         return redirect(os.path.join(node.url, 'settings'))
     return redirect(web_url_for('profile_settings'))
 
+
 @must_have_addon('dropbox', 'user')
-def dropbox_deauthorize(**kwargs):
+def dropbox_oauth_delete_user(**kwargs):
     user_settings = kwargs['user_addon']
     client = get_client_from_user_settings(user_settings)
     client.disable_access_token()

@@ -23,6 +23,13 @@ settings_routes = {
             json_renderer,
         ),
 
+        Rule(
+            '/settings/dropbox/oauth/',
+            'delete',
+            views.auth.dropbox_oauth_delete_user,
+            json_renderer,
+        )
+
     ],
     'prefix': '/api/v1/'
 }
