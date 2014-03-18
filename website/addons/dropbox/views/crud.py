@@ -8,6 +8,7 @@ from website.project.decorators import must_have_addon
 from framework import request, redirect, Q
 from framework.exceptions import HTTPError
 
+from ..decorators import dropbox_decorator
 
 @must_have_permission('write')
 @must_not_be_registration
@@ -22,17 +23,13 @@ def dropbox_delete_file(**kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 
-@must_have_permission('write')
-@must_not_be_registration
-@must_have_addon('dropbox', 'node')
+@dropbox_decorator
 def dropbox_upload(**kwargs):
-    auth = kwargs.get('auth', None)
     path = kwargs.get('path', None)
-    file = request.files.get('file', None)
-    if path and auth and file:
-        user_setttings = auth.user.get_addon('dropbox')
-        client = DropboxClient(user_setttings.access_token)
-        return client.put(path, file)  # TODO Cast to Hgrid
+    with kwargs['dropbox'] as client:
+        file = request.files.get('file', None)
+        if path and file and client:
+            return client.put(path, file)  # TODO Cast to Hgrid
     raise HTTPError(http.BAD_REQUEST)
 
 
@@ -51,6 +48,7 @@ def dropbox_download(**kwargs):
         else:
             pass  # TODO
     raise HTTPError(http.BAD_REQUEST)
+
 
 def dropbox_create_folder(**kwargs):
     pass

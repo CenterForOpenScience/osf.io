@@ -42,11 +42,19 @@ class DropboxUserSettings(AddonUserSettingsBase):
             node_settings.user_settings = None
             node_settings.save()
 
+
 class DropboxNodeSettings(AddonNodeSettingsBase):
 
     user_settings = fields.ForeignField(
         'dropboxusersettings', backref='authorized'
     )
+
+    folder = fields.StringField()
+
+    @property
+    def has_auth(self):
+        return True  # TODO Fix me
+        #return self.user_setttings and self.user_setttings.has_auth
 
     def delete(self, save=True):
         super(DropboxNodeSettings, self).delete(save=False)
@@ -54,13 +62,14 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             self.save()
 
     def to_json(self, user):
-        rv = super(DropboxNodeSettings, self).to_json(user)
-        return rv
+        ret = super(DropboxNodeSettings, self).to_json(user)
+        ret.update({
+            'folder': self.folder or '',
+            'node_has_auth': self.has_auth,
+            'is_owner': False,
+            'user_has_auth': True,
+            'owner_url': '',
+            'owner': 'JimBob',
+        })
 
-    @property
-    def is_registration(self):
-        pass
-
-    @property
-    def has_auth(self):
-        pass
+        return ret

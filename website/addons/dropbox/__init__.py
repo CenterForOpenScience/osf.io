@@ -1,9 +1,9 @@
 from website.addons.dropbox import model, routes
 
 
-MODELS = [model.DropboxUserSettings]
+MODELS = [model.DropboxUserSettings, model.DropboxNodeSettings]
 USER_SETTINGS_MODEL = model.DropboxUserSettings
-#NODE_SETTINGS_MODEL = model.AddonDropboxNodeSettings
+NODE_SETTINGS_MODEL = model.DropboxNodeSettings
 
 ROUTES = [routes.settings_routes, routes.nonapi_routes, routes.api_routes]
 
@@ -11,13 +11,13 @@ SHORT_NAME = 'dropbox'
 FULL_NAME = 'Dropbox'
 
 
-OWNERS = ['user']
+OWNERS = ['user', 'node']
 
 ADDED_DEFAULT = []
 ADDED_MANDATORY = []
 
 VIEWS = []
-CONFIGS = ['user']
+CONFIGS = ['user', 'node']
 
 CATEGORIES = ['storage']
 
