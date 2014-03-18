@@ -1,9 +1,8 @@
-from . import model
-from . import routes
-from . import views
+from website.addons.dropbox import model, routes
 
-MODELS = [model.AddonDropboxUserSettings] #  TODO Other models needed? , model.AddonDropboxNodeSettings, model.DropboxGuidFile]
-USER_SETTINGS_MODEL = model.AddonDropboxNodeSettings
+
+MODELS = [model.DropboxUserSettings]
+USER_SETTINGS_MODEL = model.DropboxUserSettings
 #NODE_SETTINGS_MODEL = model.AddonDropboxNodeSettings
 
 ROUTES = [routes.settings_routes, routes.nonapi_routes, routes.api_routes]
