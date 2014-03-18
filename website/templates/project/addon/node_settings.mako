@@ -1,5 +1,5 @@
 <%inherit file="settings.mako" />
-        
+
 <span data-owner="node"></span>
 
 ${self.body()}
@@ -22,4 +22,8 @@ ${self.on_submit()}
             $('#addonSettings${addon_short_name.capitalize()}').on('submit', AddonHelper.onSubmitSettings);
         });
     </script>
+</%def>
+
+<%def name="title()">
+    <h4>${addon_full_name}</h4>
 </%def>
