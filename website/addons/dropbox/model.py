@@ -16,17 +16,19 @@ class DropboxGuidFile(GuidFile):
 
 
 class DropboxUserSettings(AddonUserSettingsBase):
+    """Stores user-specific dropbox information, including the Oauth access
+    token.
+    """
 
     dropbox_id = fields.StringField()
     access_token = fields.StringField()
 
-    def to_json(self):
+    # TODO(sloria): The `user` param in unnecessary for AddonUserSettings
+    def to_json(self, user=None):
         """Return a dictionary representation of the user settings.
         The dictionary keys and values will be available as variables in
         dropbox_user_settings.mako.
         """
-        # TODO(sloria): The `user` param in the superclass is unnecessary.
-        # Removed it here; should be removed in other addons
         output = super(DropboxUserSettings, self).to_json(self.owner)
         output['has_auth'] = self.has_auth
         return output
