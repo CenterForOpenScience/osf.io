@@ -62,10 +62,16 @@
                                 <i class="icon-eye-open"></i>
                                 <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                             </a>
-
-                        <a rel="tooltip" title="Duplicate"
-                           class="btn btn-default${ '' if is_project else ' disabled'}" href="#"
-                           data-toggle="modal" data-target="#duplicateModal"    >
+                        
+                        <a
+                           % if user_name and (user['can_edit'] or node['is_public']):
+                               class="btn btn-default${ '' if is_project else ' disabled'}"
+                               data-toggle="modal" data-target="#duplicateModal"
+                           % else:
+                               class="btn btn-default disabled"
+                           % endif
+                           rel="tooltip" title="Duplicate"
+                           href="#">
                             <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
                         </a>
 
