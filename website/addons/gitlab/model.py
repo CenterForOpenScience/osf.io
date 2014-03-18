@@ -110,10 +110,65 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
         client.deleteprojectmember(self.project_id, user_settings.user_id)
 
     def after_fork(self, node, fork, user, save=True):
-        pass
+        """
+
+        """
+        # Call superclass method
+        clone, message = super(AddonGitlabNodeSettings, self).after_fork(
+            node, fork, user, save=False
+        )
+
+        # Get user settings
+        user_settings = user.get_or_add_addon('gitlab')
+
+        # Copy project
+        copy = client.createcopy(
+            self.project_id, user_settings.user_id, fork._id
+        )
+        if copy['id'] is None:
+            raise GitlabError('Could not copy project')
+        clone.project_id = copy['id']
+
+        # Optionally save changes
+        if save:
+            clone.save()
+
+        return clone, message
 
     def after_register(self, node, registration, user, save=True):
-        pass
+        """
+
+        """
+        # Call superclass method
+        clone, message = super(AddonGitlabNodeSettings, self).after_register(
+            node, registration, user, save=False
+        )
+
+        # Get user settings
+        user_settings = user.get_or_add_addon('gitlab')
+
+        # Copy project
+        copy = client.createcopy(
+            self.project_id, user_settings.user_id, registration._id
+        )
+        if copy['id'] is None:
+            raise GitlabError('Could not copy project')
+        clone.project_id = copy['id']
+
+        # Grant all contributors read-only permissions
+        # TODO: Patch Gitlab so this can be done with one API call
+        permission = translate_permissions('read')
+        for contrib in registration.contributors:
+            contrib_settings = contrib.get_or_add_addon('gitlab')
+            client.addprojectmember(
+                self.project_id, contrib_settings.user_id, permission
+            )
+
+        # Optionally save changes
+        if save:
+            clone.save()
+
+        return clone, message
 
 class GitlabGuidFile(GuidFile):
 

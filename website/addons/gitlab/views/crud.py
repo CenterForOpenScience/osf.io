@@ -1,7 +1,9 @@
 import os
+import re
 import base64
 import urllib
 import httplib as http
+from slugify import get_slugify
 
 from framework import Q
 from framework.flask import request, redirect, make_response
@@ -20,7 +22,7 @@ from website.addons.base.views import check_file_guid
 from website.addons.gitlab.api import client
 from website.addons.gitlab.model import GitlabGuidFile
 from website.addons.gitlab.utils import (
-    kwargs_to_path, gitlab_to_hgrid, build_urls, refs_to_params
+    kwargs_to_path, item_to_hgrid, gitlab_to_hgrid, build_urls, refs_to_params
 )
 from website.addons.gitlab import settings as gitlab_settings
 
@@ -39,15 +41,25 @@ def ref_or_default(node_settings, kwargs):
     return ref
 
 
-def create_or_update(node_settings, method, action, filename, branch, content,
-                     auth):
+# Gitlab file names can only contain alphanumeric and [_.-?] and must not end
+# with ".git"
+# See https://github.com/gitlabhq/gitlabhq/blob/master/lib/gitlab/regex.rb#L52
+gitlab_slugify = get_slugify(
+    safe_chars='.',
+    pretranslate=lambda value: re.sub(r'\.git$', '', value)
+)
+
+
+def create_or_update(node_settings, method_name, action, filename, branch,
+                     content, auth):
     """
     
     """
     node = node_settings.owner
 
-    attr = getattr(client, method)
-    response = attr(
+    method = getattr(client, method_name)
+
+    response = method(
         node_settings.project_id, filename, branch, content,
         gitlab_settings.MESSAGES['add']
     )
@@ -80,6 +92,7 @@ def create_or_update(node_settings, method, action, filename, branch, content,
 def gitlab_upload_file(**kwargs):
 
     auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
 
     path = kwargs_to_path(kwargs, required=False)
@@ -96,19 +109,39 @@ def gitlab_upload_file(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     filename = os.path.join(path, upload.filename)
+    slug = gitlab_slugify(filename)
+
     response = create_or_update(
         node_settings, 'createfile', NodeLog.FILE_ADDED,
-        filename, branch, content, auth
+        slug, branch, content, auth
     )
     if not response:
         response = create_or_update(
             node_settings, 'updatefile', NodeLog.FILE_UPDATED,
-            filename, branch, content, auth
+            slug, branch, content, auth
         )
 
-    if not response:
-        # TODO: This should raise an HTTPError
-        return {'message': 'Could not upload file'}, http.BAD_REQUEST
+    # File created or modified
+    if response:
+        head, tail = os.path.split(response['file_path'])
+        grid_data = item_to_hgrid(
+            node,
+            {
+                'type': 'blob',
+                'name': tail,
+            },
+            path=head,
+            permissions={
+                'view': True,
+                'edit': True,
+            },
+            branch=branch
+        )
+        return grid_data, 201
+
+    # File not modified
+    # TODO: Test whether something broke
+    return {'actionTaken': None}
 
 
 def gitlib_hgrid_root(node_settings, auth, **kwargs):
@@ -298,11 +331,12 @@ def gitlab_download_file(**kwargs):
 @must_have_addon('gitlab', 'node')
 def gitlab_delete_file(**kwargs):
 
+    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
 
     path = kwargs_to_path(kwargs, required=True)
     branch = ref_or_default(node_settings, kwargs)
-
 
     success = client.deletefile(
         node_settings.project_id, path, branch,
@@ -312,6 +346,15 @@ def gitlab_delete_file(**kwargs):
     if success:
         node_settings.owner.add_log(
             action='gitlab_' + NodeLog.FILE_REMOVED,
+            params={
+                'project': node.parent_id,
+                'node': node._id,
+                'path': path,
+                'gitlab': {
+                    'branch': branch,
+                }
+            },
+            auth=auth,
         )
     else:
         # TODO: This should raise an HTTPError

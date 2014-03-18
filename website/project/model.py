@@ -1748,10 +1748,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param str addon_name: Name of add-on
         :param Auth auth: Consolidated authorization object
         :param bool log: Add a log after adding the add-on
-        :return bool: Add-on was added
+        :returns: Add-on was added
 
         """
-        rv = super(Node, self).add_addon(addon_name, auth)
+        rv = super(Node, self).add_addon(addon_name)
         if rv and log:
             config = settings.ADDONS_AVAILABLE_DICT[addon_name]
             self.add_log(
@@ -1770,10 +1770,10 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param str addon_name: Name of add-on
         :param Auth auth: Consolidated authorization object
-        :return bool: Add-on was deleted
+        :returns: Add-on was deleted
 
         """
-        rv = super(Node, self).delete_addon(addon_name, auth)
+        rv = super(Node, self).delete_addon(addon_name)
         if rv:
             config = settings.ADDONS_AVAILABLE_DICT[addon_name]
             self.add_log(

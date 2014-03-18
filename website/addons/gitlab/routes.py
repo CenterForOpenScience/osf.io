@@ -35,8 +35,8 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/gitlab/file/<path:path>',
-                '/project/<pid>/node/<nid>/gitlab/file/<path:path>',
+                '/project/<pid>/gitlab/files/<path:path>',
+                '/project/<pid>/node/<nid>/gitlab/files/<path:path>',
             ],
             'delete',
             views.crud.gitlab_delete_file,
