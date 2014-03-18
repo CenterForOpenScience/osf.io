@@ -14,6 +14,7 @@ from framework.mongo.utils import from_mongo
 
 from website import language
 
+from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node
 from website.project.decorators import (
     must_be_contributor,
@@ -234,7 +235,7 @@ def node_choose_addons(**kwargs):
 
 
 @must_be_valid_project
-@must_have_permission(permissions.READ)
+@must_be_contributor
 def node_contributors(**kwargs):
 
     auth = kwargs['auth']
@@ -278,12 +279,22 @@ def project_reorder_components(**kwargs):
         StoredObject.get_collection(schema).load(key)
         for key, schema in new_list
     ]
-    if len(project.nodes) == len(nodes_new) and set(project.nodes) == set(nodes_new):
-        project.nodes = nodes_new
+
+    visible_nodes = [
+        node for node in project.nodes
+        if not node.is_deleted
+    ]
+    deleted_nodes = [
+        node for node in project.nodes
+        if node.is_deleted
+    ]
+
+    if len(visible_nodes) == len(nodes_new) and set(visible_nodes) == set(nodes_new):
+        project.nodes = nodes_new + deleted_nodes
         project.save()
         return {}
 
-    # todo log impossibility
+    logger.error('Got invalid node list in reorder components')
     raise HTTPError(http.BAD_REQUEST)
 
 
@@ -398,21 +409,29 @@ def component_remove(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
 
-    if node_to_use.remove_node(auth):
-        message = '{} deleted'.format(
-            node_to_use.project_or_component.capitalize()
+    try:
+        node_to_use.remove_node(auth)
+    except NodeStateError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data={
+                'message_long': 'Could not delete component: ' + e.message
+            },
         )
-        status.push_status_message(message)
-        if node_to_use.node__parent:
-            redirect_url = node_to_use.node__parent[0].url
-        else:
-            redirect_url = '/dashboard/'
-        return {
-            'url': redirect_url,
-        }
-    raise HTTPError(
-        http.BAD_REQUEST, message='Could not delete component'
+
+    message = '{} deleted'.format(
+        node_to_use.project_or_component.capitalize()
     )
+    status.push_status_message(message)
+    if node_to_use.node__parent:
+        redirect_url = node_to_use.node__parent[0].url
+    else:
+        redirect_url = '/dashboard/'
+
+    return {
+        'url': redirect_url,
+    }
+
 
 
 @must_be_valid_project

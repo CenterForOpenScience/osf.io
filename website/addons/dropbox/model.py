@@ -21,22 +21,27 @@ class DropboxUserSettings(AddonUserSettingsBase):
     access_token = fields.StringField()
 
     def to_json(self, user):
-        rv = super(DropboxUserSettings, self).to_json(user)
-        rv['has_auth'] = self.has_auth
-        return rv
+        output = super(DropboxUserSettings, self).to_json(user)
+        output['has_auth'] = self.has_auth
+        return output
 
     @property
     def has_auth(self):
-        return bool(self.access_key)
+        return bool(self.access_token)
 
-    def revoke_auth(self):
-        pass  # TODO Finish me
+    def clear_auth(self):
+        self.dropbox_id = None
+        self.access_token = None
+        return self
 
-    def delete(self, save=True):
-        pass  # TODO Finish me
+    def delete(self):
+        super(DropboxUserSettings, self).delete()
+        self.clear_auth()
+        for node_settings in self.dropboxnodesettings__authorized:
+            node_settings.delete(save=False)
+            node_settings.user_settings = None
+            node_settings.save()
 
-
-# TODO Am I needed?
 class DropboxNodeSettings(AddonNodeSettingsBase):
 
     user_settings = fields.ForeignField(

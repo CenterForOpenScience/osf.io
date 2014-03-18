@@ -40,3 +40,18 @@ class TestAuthViews(DbTestCase):
             url = api_url_for('dropbox_oauth_finish')
         res = self.app.get(url)
         assert_is_redirect(res)
+
+    @mock.patch('website.addons.dropbox.client.DropboxClient.disable_access_token')
+    def test_dropbox_oauth_delete_user(self, mock_disable_access_token):
+        self.user.add_addon('dropbox')
+        settings = self.user.get_addon('dropbox')
+        settings.access_token = '12345abc'
+        settings.save()
+        assert_true(settings.has_auth)
+        self.user.save()
+        with app.test_request_context():
+            url = api_url_for('dropbox_oauth_delete_user')
+
+        res = self.app.delete(url)
+        settings.reload()
+        assert_false(settings.has_auth)

@@ -62,7 +62,6 @@
         </td>
         <td>
             <!-- ko if: $parent.userIsAdmin -->
-
                 <!-- ko ifnot: deleteStaged -->
                     <a
                             class="btn btn-danger contrib-button btn-mini"

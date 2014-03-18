@@ -5,15 +5,18 @@ import os
 
 from dropbox.client import DropboxOAuth2Flow
 
-from website.util import api_url_for, web_url_for
 from framework.auth import get_current_user
 from framework.exceptions import HTTPError
 from framework.sessions import session
 from framework import redirect, request
 from framework.status import push_status_message as flash
-
+from framework.auth.decorators import must_be_logged_in
 from website.project.model import Node
+from website.project.decorators import must_have_addon
+from website.util import api_url_for, web_url_for
+
 from website.addons.dropbox import settings, model
+from website.addons.dropbox.client import get_client_from_user_settings
 
 
 def get_auth_flow():
@@ -26,12 +29,13 @@ def get_auth_flow():
         csrf_token_session_key=settings.DROPBOX_AUTH_CSRF_TOKEN
     )
 
-
+@must_be_logged_in
 def dropbox_oauth_start(**kwargs):
     user = get_current_user()
     if not user:
         raise HTTPError(http.FORBIDDEN)
     return redirect(get_auth_flow().start())
+
 
 
 def dropbox_oauth_finish(**kwargs):
@@ -66,3 +70,14 @@ def dropbox_oauth_finish(**kwargs):
     if node:
         return redirect(os.path.join(node.url, 'settings'))
     return redirect(web_url_for('profile_settings'))
+
+
+@must_have_addon('dropbox', 'user')
+def dropbox_oauth_delete_user(**kwargs):
+    user_settings = kwargs['user_addon']
+    client = get_client_from_user_settings(user_settings)
+    client.disable_access_token()
+    user_settings.clear_auth()
+    user_settings.save()
+    flash('Removed token', 'info')
+

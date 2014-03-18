@@ -1,0 +1,21 @@
+# -*- coding: utf-8 -*-
+
+from website.addons.base import AddonError
+from dropbox.client import DropboxClient
+
+
+def get_client(user):
+    """Return a :class:`dropbox.client.DropboxClient`, using a user's
+    access token.
+
+    :param User user: The user.
+    :raises: AddonError if user does not have the Dropbox addon enabled.
+    """
+    user_settings = user.get_addon('dropbox')
+    if not user_settings:
+        raise AddonError('User does not have the Dropbox addon enabled.')
+    return DropboxClient(user_settings.access_token)
+
+def get_client_from_user_settings(settings_obj):
+    """Same as get client, except its argument is a DropboxUserSettingsObject."""
+    return get_client(settings_obj.owner)
