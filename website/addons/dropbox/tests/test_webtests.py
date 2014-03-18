@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import unittest
-
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 from website.app import init_app

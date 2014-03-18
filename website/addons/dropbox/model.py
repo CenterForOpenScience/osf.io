@@ -20,8 +20,14 @@ class DropboxUserSettings(AddonUserSettingsBase):
     dropbox_id = fields.StringField()
     access_token = fields.StringField()
 
-    def to_json(self, user):
-        output = super(DropboxUserSettings, self).to_json(user)
+    def to_json(self):
+        """Return a dictionary representation of the user settings.
+        The dictionary keys and values will be available as variables in
+        dropbox_user_settings.mako.
+        """
+        # TODO(sloria): The `user` param in the superclass is unnecessary.
+        # Removed it here; should be removed in other addons
+        output = super(DropboxUserSettings, self).to_json(self.owner)
         output['has_auth'] = self.has_auth
         return output
 
@@ -41,6 +47,7 @@ class DropboxUserSettings(AddonUserSettingsBase):
             node_settings.delete(save=False)
             node_settings.user_settings = None
             node_settings.save()
+
 
 class DropboxNodeSettings(AddonNodeSettingsBase):
 
