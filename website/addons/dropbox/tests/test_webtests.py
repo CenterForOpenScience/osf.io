@@ -45,19 +45,6 @@ class TestDropboxIntegration(DbTestCase):
         # User is logged in
         self.app.authenticate(*self.user.auth)
 
-    def test_user_can_create_access_token_on_settings_page(self):
-        with app.test_request_context():
-            url = web_url_for('profile_settings')
-        res = self.app.get(url)
-
-        assert_not_in('Create Access Token', res)
-        form = res.forms['selectAddonsForm']
-        form['dropbox'] = True
-        res = form.submit()
-        assert_equal(res.status_code, 200)
-
-        assert_in('Create Access Token', res)
-
     def test_cant_start_oauth_if_already_authorized(self):
         # User already has dropbox authorized
         self.user.add_addon('dropbox')
