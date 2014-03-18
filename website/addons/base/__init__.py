@@ -178,7 +178,7 @@ class GuidFile(GuidStoredObject):
 class AddonSettingsBase(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
-    deleted = fields.BooleanField()
+    deleted = fields.BooleanField(default=False)
 
     _meta = {
         'abstract': True,
