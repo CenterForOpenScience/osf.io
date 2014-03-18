@@ -1,12 +1,16 @@
 import nose
 from nose.tools import *
+import mock
 from webtest_plus import TestApp
 
+import httplib as http
 from framework.auth.decorators import Auth
 import website.app
 from tests.base import DbTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
 from website.addons.dataverse.views.crud import scrape_dataverse
+
+from utils import create_mock_connection
 
 app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings'
@@ -38,6 +42,28 @@ class TestDataverseViewsAuth(DbTestCase):
         self.node_settings.study = 'My Study'
         self.node_settings.user = self.user
         self.node_settings.save()
+
+    @mock.patch('website.addons.dataverse.views.auth.connect')
+    def test_authorize(self, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+
+        url = self.project.api_url + 'dataverse/authorize/'
+        self.app.post_json(url, auth=self.user.auth)
+
+        self.node_settings.reload()
+
+        assert_equal(self.node_settings.user, self.user)
+        assert_equal(self.node_settings.user_settings, self.user_settings)
+        assert_equal(self.node_settings.dataverse_username, 'snowman')
+        assert_equal(self.node_settings.dataverse_password, 'frosty')
+
+    @mock.patch('website.addons.dataverse.views.auth.connect')
+    def test_authorize_fail(self, mock_connection):
+        mock_connection.return_value = create_mock_connection('wrong', 'info')
+
+        url = self.project.api_url + 'dataverse/authorize/'
+        res = self.app.post_json(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_unauthorize(self):
         url = self.project.api_url + 'dataverse/unauthorize/'

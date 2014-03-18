@@ -3,7 +3,8 @@ import mock
 
 from tests.base import DbTestCase
 from tests.factories import UserFactory, ProjectFactory
-from website.addons.dataverse.model import AddonDataverseUserSettings, AddonDataverseNodeSettings
+from website.addons.dataverse.model import AddonDataverseUserSettings, \
+    AddonDataverseNodeSettings
 
 class TestCallbacks(DbTestCase):
 

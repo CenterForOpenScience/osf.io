@@ -15,23 +15,23 @@ def authorize(**kwargs):
     node_settings = kwargs['node_addon']
     dataverse_user = user.get_addon('dataverse')
 
-    node_settings.user = user
-    node_settings.user_settings = dataverse_user
-
     username = user.get_addon('dataverse').dataverse_username
     password = user.get_addon('dataverse').dataverse_password
 
-    connection = connect(
-        username, password
-    )
+    connection = connect(username, password)
 
-    if connection is not None:
+    if connection is None:
+        return {'message': 'Incorrect credentials'}, 400
 
-        # Set basic dataverse fields
-        node_settings.dataverse_username = username
-        node_settings.dataverse_password = password
+    # Set user for node settings
+    node_settings.user = user
+    node_settings.user_settings = dataverse_user
 
-        node_settings.save()
+    # Set dataverse username/password
+    node_settings.dataverse_username = username
+    node_settings.dataverse_password = password
+
+    node_settings.save()
 
     return {}
 
