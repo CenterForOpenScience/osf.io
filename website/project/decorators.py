@@ -141,8 +141,8 @@ def _must_be_contributor_factory(include_public):
                     if link not in node.private_links:
                         if not check_can_access(node=node, user=user,
                                 api_node=api_node):
-                            response = redirect(
-                                web_url_for('auth_login', next=request.path))
+                            url = '/login/?next={0}'.format(request.path)
+                            response = redirect(url)
             #for login user
             else:
                 #link first time show up record it in the key ring
@@ -156,8 +156,8 @@ def _must_be_contributor_factory(include_public):
                     if key_ring.isdisjoint(node.private_links):
                         if not check_can_access(node=node, user=user,
                                 api_node=api_node):
-                            response = redirect(
-                                web_url_for('auth_login', next=request.path))
+                            redirect_url = '/login/?next={0}'.format(request.path)
+                            response = redirect(redirect_url)
                         kwargs['auth'].private_key = None
 
                     #has intersection: check if the link is valid if not use other key
@@ -168,7 +168,7 @@ def _must_be_contributor_factory(include_public):
                             auth=kwargs['auth'], api_node=api_node)
                 else:
                     kwargs['auth'].private_key = None
-                return response or func(*args, **kwargs)
+            return response or func(*args, **kwargs)
 
         return wrapped
 
