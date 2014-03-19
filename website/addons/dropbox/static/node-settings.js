@@ -4,7 +4,7 @@ var DropboxConfigHelper = (function() {
 
     $(document).ready(function() {
 
-        stuff = [
+        var options = [
             {text:'Root', value:'/'},
             {text:'TestFolder', value:'/TestFolder/'}
         ];
@@ -12,7 +12,7 @@ var DropboxConfigHelper = (function() {
         bloodhound = new Bloodhound({
             datumTokenizer: Bloodhound.tokenizers.obj.nonword('text'),
             queryTokenizer: Bloodhound.tokenizers.nonword,
-            local: stuff
+            local: options
         });
 
         bloodhound.initialize();

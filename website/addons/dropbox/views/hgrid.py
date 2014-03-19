@@ -48,17 +48,17 @@ def dropbox_addon_folder(node_settings, auth, **kwargs):
     ]
 
 
-#TODO change to URL for
+#TODO Fix to work with components
 #TODO Fix settings naming conflict
 def build_dropbox_urls(item, api_url, nid):
     if item['is_dir']:
         return {
-            'upload': '{0}dropbox{1}/'.format(api_url, item['path']),
-            'fetch':  api_url_for('dropbox_hgrid_data_contents', path=item['path'], pid=nid)  # '{0}dropbox/hgrid{1}/'.format(api_url, item['path']),
+            'upload': api_url_for('dropbox_upload', path=item['path'], pid=nid),
+            'fetch':  api_url_for('dropbox_hgrid_data_contents', path=item['path'], pid=nid)
         }
     else:
         return {
-            'download': '{0}dropbox{1}/'.format(api_url, item['path']),
-            'view': '/{0}/dropbox{1}/'.format(nid, item['path']),
-            'delete': '{0}dropbox{1}/'.format(api_url, item['path']),
+            'download': api_url_for('dropbox_download', path=item['path'], pid=nid),#'{0}dropbox{1}/'.format(api_url, item['path']),
+            'view': '/{0}/dropbox{1}/'.format(nid, item['path']), #TODO Write me
+            'delete': api_url_for('dropbox_download', path=item['path'], pid=nid)
         }
