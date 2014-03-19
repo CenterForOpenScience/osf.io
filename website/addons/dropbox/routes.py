@@ -33,7 +33,8 @@ settings_routes = {
         )
 
     ],
-    'prefix': '/api/v1/'
+    # TODO(sloria): Remove this prefix for oauth routes? Not sure.
+    'prefix': '/api/v1'
 }
 
 api_routes = {
@@ -48,7 +49,7 @@ api_routes = {
             json_renderer
         ),
     ],
-    'prefix': '/api/v1/'
+    'prefix': '/api/v1'
 }
 
 nonapi_routes = {

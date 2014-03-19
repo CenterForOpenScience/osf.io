@@ -53,6 +53,11 @@ class TestUserSettingsModel(DbTestCase):
         assert_false(user_settings.access_token)
         assert_false(user_settings.dropbox_id)
 
+    def test_to_json(self):
+        user_settings = DropboxUserSettingsFactory()
+        result = user_settings.to_json()
+        assert_equal(result['has_auth'], user_settings.has_auth)
+
 # TODO
 class TestDropboxNodeSettingsModel(DbTestCase):
     pass

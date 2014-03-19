@@ -2,6 +2,7 @@
 """OAuth views for the Dropbox addon."""
 import httplib as http
 import os
+import logging
 
 from dropbox.client import DropboxOAuth2Flow
 
@@ -19,6 +20,10 @@ from website.addons.dropbox import settings, model
 from website.addons.dropbox.client import get_client_from_user_settings
 
 
+logger = logging.getLogger(__name__)
+debug = logger.debug
+
+
 def get_auth_flow():
     redirect_uri = api_url_for('dropbox_oauth_finish', _external=True)
     return DropboxOAuth2Flow(
@@ -29,13 +34,17 @@ def get_auth_flow():
         csrf_token_session_key=settings.DROPBOX_AUTH_CSRF_TOKEN
     )
 
+
 @must_be_logged_in
 def dropbox_oauth_start(**kwargs):
     user = get_current_user()
     if not user:
         raise HTTPError(http.FORBIDDEN)
+    # If user has already authorized dropbox, flash error message
+    if user.has_addon('dropbox') and user.get_addon('dropbox').has_auth:
+        flash('You have already authorized Github for this account', 'warning')
+        return redirect(web_url_for('profile_settings'))
     return redirect(get_auth_flow().start())
-
 
 
 def dropbox_oauth_finish(**kwargs):
@@ -60,13 +69,14 @@ def dropbox_oauth_finish(**kwargs):
     except DropboxOAuth2Flow.ProviderException:
         raise HTTPError(http.FORBIDDEN)
 
-    user_settings = model.DropboxUserSettings(
-        owner=user,
-        access_token=access_token,
-        dropbox_id=dropbox_id
-    )
+    user_settings = user.get_addon('dropbox') or model.DropboxUserSettings()
+
+    user_settings.owner = user
+    user_settings.access_token = access_token
+    user_settings.dropbox_id = dropbox_id
     user_settings.save()
 
+    flash('Successfully authenticated with Dropbox', 'success')
     if node:
         return redirect(os.path.join(node.url, 'settings'))
     return redirect(web_url_for('profile_settings'))
@@ -80,4 +90,4 @@ def dropbox_oauth_delete_user(**kwargs):
     user_settings.clear_auth()
     user_settings.save()
     flash('Removed token', 'info')
-
+    return {}
