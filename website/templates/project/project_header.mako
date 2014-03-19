@@ -25,7 +25,7 @@
             <div class="col-md-7 cite-container">
 
                 %if parent_node['id']:
-                    % if parent_node['can_be_viewed'] or parent_node['is_public'] or parent_node['is_contributor']:
+                    % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h1 class="node-parent-title">
                             <a href="${parent_node['url']}">${parent_node['title']}</a> /
 

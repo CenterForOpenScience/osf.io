@@ -559,7 +559,7 @@ def _view_project(node, auth, primary=False):
             'absolute_url':  parent.absolute_url if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
-            'can_be_viewed': (auth.private_key in parent.private_links) if parent else False
+            'can_view': (auth.private_key in parent.private_links) if parent else False
         },
         'user': {
             'is_contributor': node.is_contributor(user),
@@ -735,7 +735,7 @@ def get_registrations(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+@must_have_permission('write')
 def project_generate_private_link_post(*args, **kwargs):
     """ Add contributors to a node. """
 
