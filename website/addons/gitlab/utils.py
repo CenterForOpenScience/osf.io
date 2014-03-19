@@ -1,4 +1,5 @@
 import os
+import uuid
 import urllib
 import urlparse
 import subprocess
@@ -9,10 +10,14 @@ from framework.exceptions import HTTPError
 from website.profile.utils import reduce_permissions
 
 import settings as gitlab_settings
+from api import client
+from exceptions import GitlabError
 
 
 def initialize_repo(node_settings):
+    """
 
+    """
     node = node_settings.owner
     creator_osf_id = node_settings.creator_osf_id
 
@@ -50,6 +55,66 @@ def initialize_repo(node_settings):
 def translate_permissions(permissions):
     osf_permissions = reduce_permissions(permissions)
     return gitlab_settings.ACCESS_LEVELS[osf_permissions]
+
+
+def create_user(user_settings):
+    """
+
+    """
+    # Quit if OSF user is already linked to a Gitlab user
+    if user_settings.user_id:
+        return
+
+    user = user_settings.owner
+    password = str(uuid.uuid4())
+
+    # Create Gitlab user
+    status = client.createuser(
+        name=user.fullname,
+        username=user._id,
+        password=password,
+        email=user.username,
+        projects_limit=gitlab_settings.PROJECTS_LIMIT,
+    )
+
+    # Save changes to settings model
+    if status:
+        user_settings.user_id = status['id']
+        user_settings.username = user.fullname
+        user_settings.password = password
+        user_settings.save()
+    else:
+        raise GitlabError('Could not create user')
+
+
+def create_node(node_settings):
+    """
+
+    """
+    # Quit if OSF node is already linked to a Gitlab project
+    if node_settings.project_id:
+        return
+
+    node = node_settings.owner
+    user_settings = node.creator.get_or_add_addon('gitlab')
+
+    # Create Gitlab project
+    response = client.createprojectuser(
+        user_settings.user_id, node._id
+    )
+    if response:
+        node_settings.creator_osf_id = node.creator._id
+        node_settings.project_id = response['id']
+        initialize_repo(node_settings)
+        node_settings.save()
+
+
+def setup_owner(owner):
+    """
+
+    """
+    owner_settings = owner.get_or_add_addon('gitlab')
+    create_user(owner_settings)
 
 
 type_to_kind = {

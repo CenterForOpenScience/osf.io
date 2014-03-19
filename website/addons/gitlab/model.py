@@ -3,7 +3,6 @@
 """
 
 import os
-import uuid
 import logging
 
 from framework import fields
@@ -15,8 +14,7 @@ from website.util.permissions import READ
 
 from .api import client
 from .exceptions import GitlabError
-from .utils import initialize_repo, translate_permissions
-from . import settings as gitlab_settings
+from .utils import create_user, translate_permissions
 
 
 logger = logging.getLogger(__name__)
@@ -38,21 +36,7 @@ class AddonGitlabUserSettings(AddonUserSettingsBase):
     #############
 
     def after_add_addon(self, user):
-        password = str(uuid.uuid4())
-        status = client.createuser(
-            name=user.fullname,
-            username=user._id,
-            password=password,
-            email=user.username,
-            projects_limit=gitlab_settings.PROJECTS_LIMIT,
-        )
-        if status:
-            self.user_id = status['id']
-            self.username = user.fullname
-            self.password = password
-            self.save()
-        else:
-            raise GitlabError('Could not create user')
+        create_user(self)
 
 
 class AddonGitlabNodeSettings(AddonNodeSettingsBase):
@@ -67,20 +51,6 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
     #############
     # Callbacks #
     #############
-
-    def after_add_addon(self, node):
-        user_settings = node.creator.get_addon('gitlab')
-        if not user_settings:
-            node.creator.add_addon('gitlab')
-            user_settings = node.creator.get_addon('gitlab')
-        response = client.createprojectuser(
-            user_settings.user_id, node._id
-        )
-        if response:
-            self.creator_osf_id = node.creator._id
-            self.project_id = response['id']
-            initialize_repo(self)
-            self.save()
 
     def after_add_contributor(self, node, added):
         """Add new user to GitLab project.

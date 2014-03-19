@@ -23,6 +23,7 @@ from website.addons.base.views import check_file_guid
 from website.addons.gitlab.api import client
 from website.addons.gitlab.model import GitlabGuidFile
 from website.addons.gitlab.utils import (
+    create_node,
     kwargs_to_path, item_to_hgrid, gitlab_to_hgrid, build_urls, refs_to_params
 )
 from website.addons.gitlab import settings as gitlab_settings
@@ -96,6 +97,9 @@ def gitlab_upload_file(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
+
+    # Lazily configure Gitlab project if not already created
+    create_node(node_settings)
 
     path = kwargs_to_path(kwargs, required=False)
     branch = ref_or_default(node_settings, kwargs)
@@ -175,6 +179,10 @@ def gitlab_list_files(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
+
+    # Don't crash if Gitlab project hasn't been created yet
+    if not node_settings.project_id:
+        return []
 
     path = kwargs.get('path', '')
     branch = kwargs.get('branch')
