@@ -1,15 +1,20 @@
-from dropbox.client import DropboxClient
+# -*- coding: utf-8 -*-
+import logging
 import httplib as http
+import os
+
+from dropbox.client import DropboxClient
 
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_be_contributor_or_public
-
 from framework import request, redirect, Q
 from framework.exceptions import HTTPError
 
 from ..client import get_node_addon_client
+
+logger = logging.getLogger(__name__)
 
 @must_have_permission('write')
 @must_not_be_registration
@@ -30,9 +35,10 @@ def dropbox_delete_file(**kwargs):
 def dropbox_upload(**kwargs):
     path = kwargs.get('path', '/')
     client = get_node_addon_client(kwargs['node_addon'])
-    file = request.files.get('file', None)
-    if path and file and client:
-        return client.put_file('{0}/{1}'.format(path, file.name), file)  # TODO Cast to Hgrid
+    file_obj = request.files.get('file', None)
+    if path and file_obj and client:
+        path = os.path.join(path, file_obj.filename)
+        return client.put_file(path, file_obj)  # TODO Cast to Hgrid
     raise HTTPError(http.BAD_REQUEST)
 
 
