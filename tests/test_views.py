@@ -30,7 +30,7 @@ from website.project.views.node import _view_project
 from website.project.views.comment import serialize_comment
 
 
-from tests.base import DbTestCase, fake, capture_signals
+from tests.base import DbTestCase, fake, capture_signals, URLLookup, assert_is_redirect
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
@@ -41,6 +41,63 @@ from tests.factories import (
 app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings',
 )
+
+lookup = URLLookup(app)
+
+class TestViewingProjectWithPrivateLink(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+
+        self.user = AuthUserFactory()  # Is NOT a contributor
+        self.project = ProjectFactory(is_public=False)
+        self.key = self.project.add_private_link()
+        self.project.save()
+
+        self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
+
+    def test_has_private_link_key(self):
+        res = self.app.get(self.project_url,{'key': self.key})
+        assert_equal(res.status_code, 200)
+
+    def test_does_not_have_key(self):
+        res = self.app.get(self.project_url, {'key': None})
+        assert_is_redirect(res)
+
+    def test_logged_in_no_private_key(self):
+        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth,
+            expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+
+    def test_logged_in_has_key(self):
+        res = self.app.get(self.project_url, {'key': self.key}, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    @mock.patch('website.project.decorators.get_key_ring')
+    def test_logged_in_has_key_ring(self, mock_get_key_ring):
+        mock_get_key_ring.return_value = set([self.key])
+        #check if key_ring works
+        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth)
+        assert_is_redirect(res)
+        redirected = res.follow()
+        assert_equal(redirected.request.GET['key'], self.key)
+        assert_equal(redirected.status_code, 200)
+
+    def test_logged_in_with_no_key_ring(self):
+        #check if key_ring works
+        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth,
+            expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+    @mock.patch('website.project.decorators.get_key_ring')
+    def test_logged_in_with_private_key_with_key_ring(self, mock_get_key_ring):
+        mock_get_key_ring.return_value = set([self.key])
+        #check if key_ring works
+        key2 = self.project.add_private_link()
+        res = self.app.get(self.project_url, {'key': key2}, auth=self.user.auth)
+        assert_equal(res.request.GET['key'], key2)
+        assert_equal(res.status_code, 200)
 
 
 class TestProjectViews(DbTestCase):

@@ -1,5 +1,6 @@
 import httplib as http
 import functools
+import logging
 
 from framework import request, redirect
 from framework.exceptions import HTTPError
@@ -9,6 +10,11 @@ from framework import session
 import urllib
 import urlparse
 from website.models import Node
+
+
+logger = logging.getLogger(__name__)
+
+debug = logger.debug
 
 
 def _kwargs_to_nodes(kwargs):
@@ -66,6 +72,9 @@ def must_not_be_registration(func):
     return wrapped
 
 
+def get_key_ring():
+    return set(session.data.get('key', []))
+
 def _must_be_contributor_factory(include_public):
     """Decorator factory for authorization wrappers. Decorators verify whether
     the current user is a contributor on the current project, or optionally
@@ -79,7 +88,6 @@ def _must_be_contributor_factory(include_public):
 
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-
             kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
             node = kwargs['node'] or kwargs['project']
 
@@ -110,7 +118,7 @@ def _must_be_contributor_factory(include_public):
                 #link first time show up record it in the key ring
                 if link not in session.data['key']:
                     session.data['key'].append(link)
-                key_ring = set(session.data['key'])
+                key_ring = get_key_ring()
 
                 #check if the keyring has intersection with node's private link
                 # if no intersction check other privilege
