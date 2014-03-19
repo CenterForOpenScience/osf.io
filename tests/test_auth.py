@@ -19,7 +19,6 @@ from tests.factories import (UserFactory, UnregUserFactory, AuthFactory,
 
 from framework import Q
 from framework import app
-from framework.sessions import session
 from framework.auth.model import User
 from framework.auth.decorators import must_be_logged_in, Auth
 
@@ -171,7 +170,7 @@ class AuthAppTestCase(DbTestCase):
 class TestMustBeContributorDecorator(AuthAppTestCase):
 
     def setUp(self):
-        super(TestPrivateLinkUtils, self).setUp()
+        super(TestMustBeContributorDecorator, self).setUp()
         self.contrib = AuthUserFactory()
         self.project = ProjectFactory()
         self.project.add_contributor(self.contrib, auth=Auth(self.project.creator))
