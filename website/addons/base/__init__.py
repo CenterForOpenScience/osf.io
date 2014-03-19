@@ -158,6 +158,9 @@ class GuidFile(GuidStoredObject):
     _id = fields.StringField(primary=True)
     node = fields.ForeignField('node', index=True)
 
+    download_count = fields.IntegerField()
+    unique_download_count = fields.IntegerField()
+
     _meta = {
         'abstract': True,
     }

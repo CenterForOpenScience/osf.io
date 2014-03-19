@@ -1,8 +1,14 @@
+import os
+from website.settings import BASE_PATH
+
+
 HOST = None
 TOKEN = None
 
 ROOT_NAME = None
 ROOT_PASS = None
+
+PROJECTS_LIMIT = 999999
 
 ACCESS_LEVELS = {
     'admin': 'master',
@@ -17,6 +23,4 @@ MESSAGES = {
     'delete': 'Deleted {0}'.format(MESSAGE_BASE),
 }
 
-import os
-from website.settings import BASE_PATH
 TMP_DIR = os.path.join(BASE_PATH, 'gitlab')

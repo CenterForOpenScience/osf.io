@@ -28,20 +28,20 @@ def initialize_repo(node_settings):
     )
 
     # Clone empty repo to temp
-    subprocess.call(
+    subprocess.check_call(
         ['git', 'clone', url],
         cwd=gitlab_settings.TMP_DIR
     )
     clone_dir = os.path.join(gitlab_settings.TMP_DIR, node._id)
 
     # Add empty commit
-    subprocess.call(
+    subprocess.check_call(
         ['git', 'commit', '--allow-empty', '-m', 'initialize'],
         cwd=clone_dir
     )
 
     # Push to Gitlab
-    subprocess.call(
+    subprocess.check_call(
         ['git', 'push', 'origin', 'master'],
         cwd=clone_dir
     )

@@ -14,6 +14,7 @@ from website.project.decorators import (
     must_have_permission, must_have_addon,
 )
 from website.util import rubeus
+from website.util.permissions import WRITE
 from website.models import NodeLog
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
@@ -44,6 +45,7 @@ def ref_or_default(node_settings, kwargs):
 # Gitlab file names can only contain alphanumeric and [_.-?] and must not end
 # with ".git"
 # See https://github.com/gitlabhq/gitlabhq/blob/master/lib/gitlab/regex.rb#L52
+# TODO: Test me @jmcarp
 gitlab_slugify = get_slugify(
     safe_chars='.',
     pretranslate=lambda value: re.sub(r'\.git$', '', value)
@@ -86,7 +88,7 @@ def create_or_update(node_settings, method_name, action, filename, branch,
     return response
 
 
-@must_have_permission('write')
+@must_have_permission(WRITE)
 @must_not_be_registration
 @must_have_addon('gitlab', 'node')
 def gitlab_upload_file(**kwargs):
@@ -183,7 +185,10 @@ def gitlab_list_files(**kwargs):
     )
     permissions = {
         'view': True,
-        'edit': node.has_permission(auth.user, 'write')
+        'edit': (
+            node.has_permission(auth.user, WRITE)
+            and not node.is_registration
+        )
     }
 
     return gitlab_to_hgrid(node, tree, path, permissions, branch, sha)
@@ -241,24 +246,22 @@ def gitlab_view_file(**kwargs):
     if redirect_url:
         return redirect(redirect_url)
 
-    if node.is_registration:
-        if sha is None:
-            raise ValueError('Must specify SHA for registration files')
-        commit_data = []
-    else:
-        commits = [
-            commit['id'] for commit in
-            client.listrepositorycommits(node_settings.project_id)
-        ]
-        sha = sha or commits[0]
-        commit_data = []
-        for commit in commits:
-            urls = {
-                'sha': commit,
-                'view': '/' + guid._id + '/' + refs_to_params(branch, sha=commit),
-                'download': '/' + guid._id + '/download/' + refs_to_params(sha=commit),
-            }
-            commit_data.append(urls)
+    # Note: For OSF-hosted Gitlab, we don't need to ensure a SHA on
+    # registered files, but for externally-hosted instances, we may want to
+    # include this check
+    commits = [
+        commit['id'] for commit in
+        client.listrepositorycommits(node_settings.project_id)
+    ]
+    sha = sha or commits[0]
+    commit_data = []
+    for commit in commits:
+        urls = {
+            'sha': commit,
+            'view': '/' + guid._id + '/' + refs_to_params(branch, sha=commit),
+            'download': '/' + guid._id + '/download/' + refs_to_params(sha=commit),
+        }
+        commit_data.append(urls)
 
     contents = contents or client.getrawblob(
         node_settings.project_id, ref, path
@@ -326,7 +329,7 @@ def gitlab_download_file(**kwargs):
     return resp
 
 
-@must_have_permission('write')
+@must_have_permission(WRITE)
 @must_not_be_registration
 @must_have_addon('gitlab', 'node')
 def gitlab_delete_file(**kwargs):

@@ -11,10 +11,12 @@ from website.addons.base import (
     AddonUserSettingsBase, AddonNodeSettingsBase,
     GuidFile
 )
+from website.util.permissions import READ
 
 from .api import client
 from .exceptions import GitlabError
 from .utils import initialize_repo, translate_permissions
+from . import settings as gitlab_settings
 
 
 logger = logging.getLogger(__name__)
@@ -42,6 +44,7 @@ class AddonGitlabUserSettings(AddonUserSettingsBase):
             username=user._id,
             password=password,
             email=user.username,
+            projects_limit=gitlab_settings.PROJECTS_LIMIT,
         )
         if status:
             self.user_id = status['id']
@@ -157,11 +160,16 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
 
         # Grant all contributors read-only permissions
         # TODO: Patch Gitlab so this can be done with one API call
-        permission = translate_permissions('read')
+        permission = translate_permissions(READ)
+        client.editprojectmember(
+            clone.project_id, user_settings.user_id, permission
+        )
         for contrib in registration.contributors:
+            if contrib == user:
+                continue
             contrib_settings = contrib.get_or_add_addon('gitlab')
             client.addprojectmember(
-                self.project_id, contrib_settings.user_id, permission
+                clone.project_id, contrib_settings.user_id, permission
             )
 
         # Optionally save changes
