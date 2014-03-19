@@ -1,8 +1,7 @@
 import os
 
 from website.project.decorators import must_be_contributor_or_public, must_have_addon
-from urllib import unquote
-from website.util import rubeus
+from website.util import rubeus, api_url_for
 
 
 from ..client import get_node_client
@@ -49,11 +48,13 @@ def dropbox_addon_folder(node_settings, auth, **kwargs):
     ]
 
 
+#TODO change to URL for
+#TODO Fix settings naming conflict
 def build_dropbox_urls(item, api_url, nid):
     if item['is_dir']:
         return {
             'upload': '{0}dropbox{1}/'.format(api_url, item['path']),
-            'fetch': '{0}dropbox/hgrid{1}/'.format(api_url, item['path']),
+            'fetch':  api_url_for('dropbox_hgrid_data_contents', path=item['path'], pid=nid)  # '{0}dropbox/hgrid{1}/'.format(api_url, item['path']),
         }
     else:
         return {
