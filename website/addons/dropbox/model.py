@@ -68,6 +68,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         if save:
             self.save()
 
+    # TODO
     def to_json(self, user):
         ret = super(DropboxNodeSettings, self).to_json(user)
         if not self.user_settings:

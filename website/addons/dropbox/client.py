@@ -33,4 +33,4 @@ def get_node_addon_client(node_addon):
             return get_client_from_user_settings(node_addon.user_settings)
         else:
             raise AddonError('Node is not authorized')
-    raise AddonError('Node does not have the Dropbox addon enabled')
+    raise AddonError('Node does not have the Dropbox addon enabled.')
