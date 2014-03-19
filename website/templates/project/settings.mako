@@ -167,7 +167,7 @@
             % endif
         % endif
         <div id="linkScope">
-            <button id="generate-private-link" class="private-link" data-toggle="modal" href="#private-link">Generate Private Link</button>
+            <button id="generate-private-link" class="btn btn-default private-link" data-toggle="modal" href="#private-link">Generate Private Link</button>
             % for link in node['private_links']:
                 <li class="list-group-item" >
                     <a class="remove-private-link btn btn-default" data-link="${link}">-</a>

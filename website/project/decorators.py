@@ -8,7 +8,6 @@ from framework.auth import get_current_user, get_api_key
 from framework.auth.decorators import Auth
 from framework.sessions import get_redirect_from_key, session
 from website.models import Node
-from website.util import web_url_for
 
 logger = logging.getLogger(__name__)
 
