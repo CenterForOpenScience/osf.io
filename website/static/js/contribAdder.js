@@ -80,7 +80,10 @@ this.ContribAdder = (function($, global, undefined) {
             if (self.query()) {
                 $.getJSON(
                     '/api/v1/user/search/',
-                    {query: self.query()},
+                    {
+                        query: self.query(),
+                        excludeNode: nodeId,
+                    },
                     function(result) {
                         self.results(result['users']);
                     }
@@ -133,8 +136,8 @@ this.ContribAdder = (function($, global, undefined) {
                 value: 'admin',
                 source: [
                     {value: 'read', text: 'Read'},
-                    {value: 'write', text: 'Write'},
-                    {value: 'admin', text: 'Admin'}
+                    {value: 'write', text: 'Read + Write'},
+                    {value: 'admin', text: 'Administrator'}
                 ],
                 success: function(response, value) {
                     data.permission(value);
@@ -269,18 +272,27 @@ this.ContribAdder = (function($, global, undefined) {
         });
 
         self.submit = function() {
-            $.osf.postJSON(
-                nodeApiUrl + 'contributors/',
-                {
+            $.osf.block();
+            $(".modal").modal('hide');
+            $.ajax({
+                url: nodeApiUrl + 'contributors/',
+                type: "post",
+                contentType: "application/json",
+                dataType: "json",
+                data: JSON.stringify({
                     users: self.selection().map(function(user) {
                         return ko.toJS(user);
                     }),
                     node_ids: self.nodesToChange()
+                }),
+                success: function(response) {
+                        window.location.reload();
                 },
-                function(response) {
-                    window.location.reload();
+                error: function(response){
+                    $.osf.unblock();
+                    bootbox.alert("Add contributor failed.");
                 }
-            );
+            });
         };
 
         self.clear = function() {
@@ -313,10 +325,18 @@ this.ContribAdder = (function($, global, undefined) {
     ContribAdder.prototype.init = function() {
         var self = this;
         ko.applyBindings(self.viewModel, self.$element[0]);
+        // Clear popovers on dismiss start
+        self.$element.on('hide.bs.modal', function() {
+            self.$element.find('.popover').popover('hide');
+        });
         // Clear user search modal when dismissed; catches dismiss by escape key
         // or cancel button.
         self.$element.on('hidden.bs.modal', function() {
             self.viewModel.clear();
+        });
+        // Load recently added contributors every time the modal is activated.
+        self.$element.on('shown.bs.modal', function() {
+            self.viewModel.recentlyAdded();
         });
     };
 

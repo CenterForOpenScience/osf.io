@@ -2,6 +2,7 @@
  * Controls the actions in the project header (make public/private, watch button,
  * forking, etc.)
  */
+
 this.NodeControl = (function(ko, $, global) {
     'use strict';
 
@@ -24,27 +25,11 @@ this.NodeControl = (function(ko, $, global) {
     var PUBLIC = 'public';
     var PRIVATE = 'private';
 
-    function beforeForkNode(url, done) {
-        $.ajax({
-            url: url,
-            contentType: 'application/json'
-        }).success(function(response) {
-            bootbox.confirm(
-                $.osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
-                function(result) {
-                    if (result) {
-                        done && done();
-                    }
-                }
-            )
-        });
-    }
-
     function setPermissions(permissions) {
         var msgKey = permissions === PUBLIC ? 'makePublicWarning' : 'makePrivateWarning';
         var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
         bootbox.confirm({
-            title: "Warning",
+            title: 'Warning',
             message: MESSAGES[msgKey],
             callback: function(result) {
                 if (result) {
@@ -58,27 +43,6 @@ this.NodeControl = (function(ko, $, global) {
         });
     }
 
-    function removeUser(userid, name) {
-        var payload = {
-            id: userid,
-            name: name
-        };
-        $.osf.postJSON(nodeApiUrl + 'beforeremovecontributors/', {}, function(response) {
-            var prompt = $.osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
-            bootbox.confirm({
-                title: 'Delete Contributor?',
-                message: prompt,
-                callback: function(result) {
-                    if (result) {
-                        $.osf.postJSON(nodeApiUrl + 'removecontributors/', payload, function() {
-                            window.location.reload();
-                        });
-                    }
-                }
-            });
-        });
-        return false;
-    };
 
     /**
      * The ProjectViewModel, scoped to the project header.
@@ -101,9 +65,10 @@ this.NodeControl = (function(ko, $, global) {
         self.user = data.user;
         // The button text to display (e.g. "Watch" if not watching)
         self.watchButtonDisplay = ko.computed(function() {
-            var text = self.userIsWatching() ? "Unwatch" : "Watch"
-            var full = text + " " +self.watchedCount().toString();
-            return full;
+            return self.watchedCount().toString();
+        });
+        self.watchButtonAction = ko.computed(function() {
+            return self.userIsWatching() ? "Unwatch" : "Watch"
         });
 
         // Editable Title and Description
@@ -130,7 +95,7 @@ this.NodeControl = (function(ko, $, global) {
             // TODO: Remove hardcoded selectors.
             $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
                 name:  'title',
-                title: 'Edit Title',
+                title: 'Edit Title'
             }));
             $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
                 name:  'description',
@@ -160,20 +125,7 @@ this.NodeControl = (function(ko, $, global) {
         };
 
         self.forkNode = function() {
-            beforeForkNode(nodeApiUrl + 'fork/before/', function() {
-                // Block page
-                $.osf.block();
-                // Fork node
-                $.ajax({
-                    url: nodeApiUrl + 'fork/',
-                    type: 'POST'
-                }).success(function(response) {
-                    window.location = response;
-                }).error(function() {
-                    $.osf.unblock();
-                    bootbox.alert('Forking failed');
-                });
-            });
+            NodeActions.forkNode();
         };
 
         self.makePublic = function() {
@@ -207,26 +159,6 @@ this.NodeControl = (function(ko, $, global) {
     NodeControl.prototype.init = function() {
         var self = this;
         ko.applyBindings(self.viewModel, self.$element[0]);
-        self._initRemoveLinks();
-    };
-
-    NodeControl.prototype._initRemoveLinks = function () {
-        var self = this;
-        self.$removeElem = $('<span class="btn-remove-contrib"><i class="icon-remove"></i></span>');
-        $(self.options.removeCss).hover(
-            function(){
-                var me = $(this);
-                self.$removeElem.click(function(){
-                    // TODO: remove hardcoded attributes
-                    removeUser(me.attr('data-userid'), me.attr('data-fullname'));
-                    return false;
-                });
-                $(this).append(self.$removeElem);
-            },
-            function(){
-                self.$removeElem.remove();
-            }
-        );
     };
 
     return NodeControl;

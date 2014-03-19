@@ -3,6 +3,11 @@ created <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 
+<script type="text/html" id="created_from">
+created <span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> based on <a class="log-node-title-link overflow" data-bind="attr: {href: params.template_node.url}">another <span data-bind="text: nodeCategory"></span></a>
+</script>
+
 <script type="text/html" id="node_created">
 created <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
@@ -30,6 +35,18 @@ to <span data-bind="text: nodeCategory"></span>
 removed
 <span data-bind="html: displayContributors"></span>
 as contributor(s) from
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="contributors_reordered">
+reordered contributors for
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="permissions_updated">
+changed permissions for
 <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>

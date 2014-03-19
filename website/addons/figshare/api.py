@@ -14,7 +14,7 @@ import requests
 from requests_oauthlib import OAuth1Session
 from . import settings as figshare_settings
 from utils import file_to_hgrid, article_to_hgrid
-
+from website.util.sanitize import deep_clean
 
 class Figshare(object):
 
@@ -35,6 +35,7 @@ class Figshare(object):
                 resource_owner_secret=owner_secret,
                 signature_type='auth_header'
             )
+        self.last_error = None
 
     @classmethod
     def from_settings(cls, settings):
@@ -47,6 +48,11 @@ class Figshare(object):
                 owner_token=settings.oauth_access_token,
                 owner_secret=settings.oauth_access_token_secret,
             )
+
+    def _get_last_error(self):
+        e = self.last_error
+        self.last_error = None
+        return e
 
     def _send(self, url, method='get', output='json', cache=True, **kwargs):
         """
@@ -66,8 +72,9 @@ class Figshare(object):
                 rv = getattr(req, output)
                 if callable(rv):
                     rv = rv()
-            return rv
+            return deep_clean(rv)
         else:
+            self.last_error = req.status_code
             return False
 
     def _send_with_data(self, url, method='post', output='json', **kwargs):
@@ -93,9 +100,9 @@ class Figshare(object):
                 return req
             rv = getattr(req, output)
             if mapper:
-                return mapper(rv)
+                return mapper(deep_clean(rv))
             elif callable(rv):
-                return rv()
+                return deep_clean(rv())
             return rv
         else:
             self.handle_error(req)
@@ -106,17 +113,21 @@ class Figshare(object):
         return res
 
     def project(self, node_settings, project_id):
+        if not project_id:
+            return
         project = self._send(os.path.join(node_settings.api_url, 'projects', project_id))
+        if not project:
+            return
         articles = self._send(
             os.path.join(node_settings.api_url, 'projects', "{0}".format(project_id), 'articles'))
-
+        project['articles'] = []
         if(articles):
-            project['articles'] = [self.article(node_settings, article['id'])['items'][0] for article in articles]
-            return project
-        return []
+            project['articles'] = [self.article(node_settings, article['id'])['items'][0]
+                                   for article in articles]
+        return project
 
-    def create_project(self, node_settings, project):
-        data = {"title": project['title'], "description": project['description']}
+    def create_project(self, node_settings, project, description=''):
+        data = json.dumps({"title": project, "description": description})
         return self._send(os.path.join(node_settings.api_url, 'projects'), data=data, method='post')
 
     def delete_project(self, node_settings, project):
@@ -132,7 +143,6 @@ class Figshare(object):
 
     def get_project_collaborators(self, node_settings, project):
         return self._send(os.path.join(node_settings.api_url, 'projects', project, 'collaborators'))
-
 
     # ARTICLE LEVEL API
     def articles(self, node_settings):
@@ -160,9 +170,9 @@ class Figshare(object):
             os.path.join(node_settings.api_url, 'articles', article_id, 'versions', article_version))
         return article_to_hgrid(node_settings.owner, article)  # TODO Fix me
 
-    def create_article(self, node_settings, article):
+    def create_article(self, node_settings, article, d_type='paper'):
         body = json.dumps(
-            {'title': article['title'], 'description': article.get('description') or '', 'defined_type': 'paper'})
+            {'title': article['title'], 'description': article.get('description') or '', 'defined_type': d_type})
         article.update(self._send_with_data(
             os.path.join(node_settings.api_url, 'articles'), method='post', data=body))
         if article['files']:
@@ -177,7 +187,7 @@ class Figshare(object):
         return self.article(node_settings, article['article_id'])
 
     def update_article(self, node_settings, article, params):
-        return self._send(os.path.join(node_settings.api_url, 'articles', article, 'categories'), method='PUT', data=json.dumps(params), headers={'content-type':'application/json'})
+        return self._send(os.path.join(node_settings.api_url, 'articles', article, 'categories'), method='PUT', data=json.dumps(params), headers={'content-type': 'application/json'})
 
     def upload_file(self, node, node_settings, article, upload):
         #article_data = self.article(node_settings, article)['items'][0]
@@ -185,20 +195,19 @@ class Figshare(object):
         filedata = {
             'filedata': (filename, filestream)
         }
-
         response = self._send_with_data(
             os.path.join(node_settings.api_url, 'articles', str(article['article_id']), 'files'), method='put', output='json', files=filedata)
 
         filestream.close()
-        self.add_article_to_project(
-            node_settings, node_settings.figshare_id, str(article['article_id']))
+
         return file_to_hgrid(node, article, response)
 
     def delete_article(self, node_settings, article):
         return self._send(os.path.join(node_settings.api_url, 'articles', article), method='delete')
 
     def publish_article(self, node_settings, article):
-        res = self._send(os.path.join(node_settings.api_url, 'articles', article, 'action', 'make_public'), method='post')
+        res = self._send(os.path.join(node_settings.api_url, 'articles',
+                         article, 'action', 'make_public'), method='post')
         return res
 
     # FILE LEVEL API
@@ -207,16 +216,18 @@ class Figshare(object):
                          article_id, 'files', file_id), method='delete')
         return res
 
-
     # OTHER HELPERS
     def get_options(self):
         projects = self._send("http://api.figshare.com/v1/my_data/projects")
-        projects = map(lambda project:
-                       {'label': project['title'], 'value': 'project_' + str(project['id'])}, projects)
-        #articles = self._send('http://api.figshare.com/v1/my_data/articles')
-        #articles = map(lambda article: {
-                       #'label': article['title'], 'value': 'article_' + str(article['article_id'])}, articles['items'])
-        return projects
+        articles = self._send("http://api.figshare.com/v1/my_data/articles")
+
+        if not projects or not articles:
+            return self._get_last_error()
+
+        return [{'label': project['title'], 'value': 'project_{0}'.format(project['id'])}
+                for project in projects] + \
+            [{'label': article['title'], 'value': 'fileset_{0}'.format(article['article_id'])}
+             for article in articles['items'] if article['defined_type'] == 'fileset']
 
     def get_file(self, node_settings, found):
         url = found.get('download_url')

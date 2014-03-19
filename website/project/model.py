@@ -27,15 +27,20 @@ from framework.auth.decorators import Auth
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
 )
+from framework.exceptions import PermissionsError
 from framework.git.exceptions import FileNotModified
 from framework import StoredObject, fields, utils
 from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 
-from website.util.permissions import expand_permissions
+from website.exceptions import NodeStateError
+from website.util.permissions import (expand_permissions,
+    DEFAULT_CONTRIBUTOR_PERMISSIONS,
+    CREATOR_PERMISSIONS
+)
 from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website import settings
+from website import language, settings
 
 html_parser = HTMLParser()
 
@@ -116,7 +121,6 @@ class Comment(GuidStoredObject):
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
     modified = fields.BooleanField()
 
-    is_public = fields.BooleanField(required=True)
     is_deleted = fields.BooleanField(default=False)
     content = fields.StringField()
 
@@ -146,16 +150,8 @@ class Comment(GuidStoredObject):
 
         return comment
 
-    def can_view(self, node, auth):
-        if self.is_public:
-            return True
-        if auth.user and auth.user == self.user:
-            return True
-        return node.can_edit(auth)
-
-    def edit(self, content, is_public, auth, save=False):
+    def edit(self, content, auth, save=False):
         self.content = content
-        self.is_public = is_public
         self.modified = True
         self.node.add_log(
             NodeLog.COMMENT_UPDATED,
@@ -201,7 +197,34 @@ class Comment(GuidStoredObject):
             self.save()
 
     def report_abuse(self, user, save=False, **kwargs):
+        """Report that a comment is abuse.
+
+        :param User user: User submitting the report
+        :param bool save: Save changes
+        :param dict kwargs: Report details
+        :raises: ValueError if the user submitting abuse is the same as the
+            user who posted the comment
+
+        """
+        if user == self.user:
+            raise ValueError
         self.reports[user._id] = kwargs
+        if save:
+            self.save()
+
+    def unreport_abuse(self, user, save=False):
+        """Revoke report of abuse.
+
+        :param User user: User who submitted the report
+        :param bool save: Save changes
+        :raises: ValueError if user has not reported comment as abuse
+
+        """
+        try:
+            self.reports.pop(user._id)
+        except KeyError:
+            raise ValueError('User has not reported comment as abuse')
+
         if save:
             self.save()
 
@@ -240,26 +263,40 @@ class NodeLog(StoredObject):
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
     # Log action constants
+    CREATED_FROM = 'created_from'
+
     PROJECT_CREATED = 'project_created'
+    PROJECT_REGISTERED = 'project_registered'
+
     NODE_CREATED = 'node_created'
+    NODE_FORKED = 'node_forked'
     NODE_REMOVED = 'node_removed'
+
     POINTER_CREATED = 'pointer_created'
-    POINTER_REMOVED = 'pointer_removed'
     POINTER_FORKED = 'pointer_forked'
+    POINTER_REMOVED = 'pointer_removed'
+
     WIKI_UPDATED = 'wiki_updated'
+
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
-    MADE_PUBLIC = 'made_public'
+    CONTRIB_REORDERED = 'contributors_reordered'
+
+    PERMISSIONS_UPDATED = 'permissions_updated'
+
     MADE_PRIVATE = 'made_private'
+    MADE_PUBLIC = 'made_public'
+
     TAG_ADDED = 'tag_added'
     TAG_REMOVED = 'tag_removed'
+
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
-    PROJECT_REGISTERED = 'project_registered'
+
     FILE_ADDED = 'file_added'
     FILE_REMOVED = 'file_removed'
     FILE_UPDATED = 'file_updated'
-    NODE_FORKED = 'node_forked'
+
     ADDON_ADDED = 'addon_added'
     ADDON_REMOVED = 'addon_removed'
     COMMENT_ADDED = 'comment_added'
@@ -361,6 +398,12 @@ class Pointer(StoredObject):
     def register_node(self, *args, **kwargs):
         return self._clone()
 
+    def use_as_template(self, auth, changes=None):
+        return self._clone()
+
+    def resolve(self):
+        return self.node
+
     def __getattr__(self, item):
         """Delegate attribute access to the node being pointed to.
         """
@@ -427,8 +470,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
 
-    # One of 'public', 'private', or None
-    comment_level = fields.StringField()
+    # One of 'public', 'private'
+    # TODO: Add validator
+    comment_level = fields.StringField(default='private')
 
     # TODO: move these to NodeFile
     files_current = fields.DictionaryField()
@@ -440,6 +484,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     contributors = fields.ForeignField('user', list=True, backref='contributed')
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
 
+    # TODO: Remove me; only included for migration purposes
+    contributor_list = fields.DictionaryField(list=True)
+
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
     tags = fields.ForeignField('tag', list=True, backref='tagged')
     system_tags = fields.StringField(list=True)
@@ -447,6 +494,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     nodes = fields.AbstractForeignField(list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked')
     registered_from = fields.ForeignField('node', backref='registrations')
+
+    # The node (if any) used as a template for this node's creation
+    template_node = fields.ForeignField('node', backref='template_node')
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
@@ -470,9 +520,8 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributors.append(self.creator)
 
             # Add default creator permissions
-            for permission in settings.CREATOR_PERMISSIONS:
+            for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
-
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -493,12 +542,15 @@ class Node(GuidStoredObject, AddonModelMixin):
         else:
             is_api_node = False
         return (
-            self.is_contributor(user)
+            (user and self.has_permission(user, 'write'))
             or is_api_node
         )
 
     def can_view(self, auth):
-        return self.is_public or self.can_edit(auth)
+        return (
+            self.is_public or
+            auth.user and self.has_permission(auth.user, 'read')
+        )
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
@@ -567,14 +619,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             if key not in self.contributors:
                 self.permissions.pop(key)
 
-    def can_comment(self, auth, write=False):
-        if write and not auth.logged_in:
-            return False
+    def can_comment(self, auth):
         if self.comment_level == 'public':
-            return self.can_view(auth)
-        if self.comment_level == 'private':
-            return self.can_edit(auth)
-        return False
+            return auth.logged_in and self.can_view(auth)
+        return self.can_edit(auth)
 
     def save(self, *args, **kwargs):
 
@@ -582,12 +630,18 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         first_save = not self._is_loaded
         is_original = not self.is_registration and not self.is_fork
+        if 'suppress_log' in kwargs.keys():
+            suppress_log = kwargs['suppress_log']
+            del kwargs['suppress_log']
+        else:
+            suppress_log = False
 
         saved_fields = super(Node, self).save(*args, **kwargs)
 
-        if first_save and is_original:
+        if first_save and is_original and not suppress_log:
 
             #
+            # TODO: This logic also exists in self.use_as_template()
             for addon in settings.ADDONS_AVAILABLE:
                 if 'node' in addon.added_default:
                     self.add_addon(addon.short_name, auth=None, log=False)
@@ -638,6 +692,102 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # Return expected value for StoredObject::save
         return saved_fields
+
+    ######################################
+    # Methods that return a new instance #
+    ######################################
+
+    def use_as_template(self, auth, changes=None):
+        """Create a new project, using an existing project as a template.
+
+        :param auth: The user to be assigned as creator
+        :param changes: A dictionary of changes, keyed by node id, which
+                        override the attributes of the template project or its
+                        children.
+        :return: The `Node` instance created.
+        """
+
+        changes = changes or dict()
+
+        # build the dict of attributes to change for the new node
+        try:
+            attributes = changes[self._id]
+            # TODO: explicitly define attributes which may be changed.
+        except (AttributeError, KeyError):
+            attributes = dict()
+
+        new = self.clone()
+
+        # clear permissions, which are not cleared by the clone method
+        new.permissions = {}
+
+        # Clear quasi-foreign fields
+        new.files_current = {}
+        new.files_versions = {}
+        new.wiki_pages_current = {}
+        new.wiki_pages_versions = {}
+        new.fork_list = []
+        new.registration_list = []
+
+        # set attributes which may be overridden by `changes`
+        new.is_public = False
+        new.description = None
+
+        # apply `changes`
+        for attr, val in attributes.iteritems():
+            setattr(new, attr, val)
+
+        # set attributes which may NOT be overridden by `changes`
+        new.creator = auth.user
+        new.add_contributor(contributor=auth.user, log=False, save=False)
+        new.template_node = self
+        new.is_fork = False
+        new.is_registration = False
+
+        # If that title hasn't been changed, apply the default prefix (once)
+        if (new.title == self.title and
+                language.TEMPLATED_FROM_PREFIX not in new.title):
+            new.title = ''.join((language.TEMPLATED_FROM_PREFIX, new.title, ))
+
+        # Slight hack - date_created is a read-only field.
+        new._fields['date_created'].__set__(
+            new,
+            datetime.datetime.utcnow(),
+            safe=True
+        )
+
+        new.save(suppress_log=True)
+
+        # Log the creation
+        new.add_log(
+            NodeLog.CREATED_FROM,
+            params={
+                'node': new._primary_key,
+                'template_node': {
+                    'id': self._primary_key,
+                    'url': self.url,
+                },
+            },
+            auth=auth,
+            log_date=new.date_created,
+            save=False,
+        )
+
+        # add mandatory addons
+        # TODO: This logic also exists in self.save()
+        for addon in settings.ADDONS_AVAILABLE:
+            if 'node' in addon.added_default:
+                new.add_addon(addon.short_name, auth=None, log=False)
+
+        # deal with the children of the node, if any
+        new.nodes = [
+            x.use_as_template(auth, changes)
+            for x in self.nodes
+            if x.can_view(auth)
+        ]
+
+        new.save()
+        return new
 
     ############
     # Pointers #
@@ -751,6 +901,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def points(self):
         return len(self.pointed)
+
+    def resolve(self):
+        return self
 
     def fork_pointer(self, pointer, auth, save=True):
         """Replace a pointer with a fork. If the pointer points to a project,
@@ -878,6 +1031,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         as appropriate.
 
         """
+        def solr_bool(value):
+            """Return a string value for a boolean value that solr will
+            correctly serialize.
+            """
+            return 'true' if value is True else 'false'
         if not settings.USE_SOLR:
             return
 
@@ -916,10 +1074,11 @@ class Node(GuidStoredObject, AddonModelMixin):
                 ],
                 '{}_title'.format(self._id): self.title,
                 '{}_category'.format(self._id): self.category,
-                '{}_public'.format(self._id): self.is_public,
+                '{}_public'.format(self._id): solr_bool(self.is_public),
                 '{}_tags'.format(self._id): [x._id for x in self.tags],
                 '{}_description'.format(self._id): self.description,
                 '{}_url'.format(self._id): self.url,
+                '{}_registeredproject'.format(self._id): solr_bool(self.is_registration),
             }
 
             # TODO: Move to wiki add-on
@@ -933,54 +1092,56 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             update_solr(solr_document)
 
-    def remove_node(self, auth, date=None, top=True):
-        """Remove node and recursively remove its children. Does not remove
-        nodes from database; instead, removed nodes are flagged as deleted.
-        Git repos are also not deleted. Adds a log to the parent node if top
-        is True.
+    def remove_node(self, auth, date=None):
+        """Marks a node as deleted.
 
-        :param auth: All the auth informtion including user, API key.
+        TODO: Call a hook on addons
+        Adds a log to the parent node if applicable
+
+        :param auth: an instance of :class:`Auth`.
         :param date: Date node was removed
-        :param top: Is this the first node being removed?
+        :type date: `datetime.datetime` or `None`
 
         """
+        # TODO: rename "date" param - it's shadowing a global
+
+
         if not self.can_edit(auth):
-            return False
+            raise PermissionsError()
 
-        date = date or datetime.datetime.utcnow()
+        if [x for x in self.nodes_primary if not x.is_deleted]:
+            raise NodeStateError("Components list not empty")
 
-        # Remove child nodes
-        for node in self.nodes_primary:
-            if not node.category == 'project':
-                if not node.remove_node(auth, date=date, top=False):
-                    return False
+        log_date = date or datetime.datetime.utcnow()
 
         # Add log to parent
-        if top and self.node__parent:
+        if self.node__parent:
             self.node__parent[0].add_log(
                 NodeLog.NODE_REMOVED,
                 params={
                     'project': self._primary_key,
                 },
                 auth=auth,
-                log_date=datetime.datetime.utcnow(),
+                log_date=log_date,
             )
 
         # Remove self from parent registration list
         if self.is_registration:
             try:
                 self.registered_from.registration_list.remove(self._primary_key)
-                self.registered_from.save()
             except ValueError:
                 pass
+            else:
+                self.registered_from.save()
 
         # Remove self from parent fork list
         if self.is_fork:
             try:
                 self.forked_from.fork_list.remove(self._primary_key)
-                self.forked_from.save()
             except ValueError:
                 pass
+            else:
+                self.forked_from.save()
 
         self.is_deleted = True
         self.deleted_date = date
@@ -1025,6 +1186,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         forked.title = title + forked.title
         forked.is_fork = True
+        forked.is_registration = False
         forked.forked_date = when
         forked.forked_from = original
         forked.creator = user
@@ -1493,6 +1655,58 @@ class Node(GuidStoredObject, AddonModelMixin):
             "type": "Article",
             "URL": self.display_absolute_url,
         }
+    def author_list(self, and_delim='&'):
+        author_names = [
+            author.biblio_name
+            for author in self.contributors
+            if author
+        ]
+        if len(author_names) < 2:
+            return ' {0} '.format(and_delim).join(author_names)
+        if len(author_names) > 7:
+            author_names = author_names[:7]
+            author_names.append('et al.')
+            return ', '.join(author_names)
+        return u'{0}, {1} {2}'.format(
+            ', '.join(author_names[:-1]),
+            and_delim,
+            author_names[-1]
+        )
+
+    @property
+    def templated_list(self):
+        return [
+            x
+            for x in self.node__template_node
+            if not x.is_deleted
+        ]
+
+    @property
+    def citation_apa(self):
+        return u'{authors}, ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{url}</a>'.format(
+            authors=self.author_list(and_delim='&'),
+            year=self.logs[-1].date.year if self.logs else '?',
+            title=self.title,
+            url=self.display_absolute_url,
+        )
+
+    @property
+    def citation_mla(self):
+        return u'{authors}. "{title}". Open Science Framework, {year}. <a href="{url}">{url}</a>'.format(
+            authors=self.author_list(and_delim='and'),
+            year=self.logs[-1].date.year if self.logs else '?',
+            title=self.title,
+            url=self.display_absolute_url,
+        )
+
+    @property
+    def citation_chicago(self):
+        return u'{authors}. "{title}". Open Science Framework ({year}). <a href="{url}">{url}</a>'.format(
+            authors=self.author_list(and_delim='and'),
+            year=self.logs[-1].date.year if self.logs else '?',
+            title=self.title,
+            url=self.display_absolute_url,
+        )
 
     @property
     def parent_node(self):
@@ -1613,6 +1827,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         for i, contrib in enumerate(self.contributors):
             if contrib._primary_key == old._primary_key:
                 self.contributors[i] = new
+                # Remove unclaimed record for the project
+                if self._primary_key in old.unclaimed_records:
+                    del old.unclaimed_records[self._primary_key]
+                    old.save()
+                for permission in self.get_permissions(old):
+                    self.add_permission(new, permission)
+                self.permissions.pop(old._id)
                 return True
         return False
 
@@ -1621,37 +1842,46 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param contributor: User object, the contributor to be removed
         :param auth: All the auth informtion including user, API key.
+
         """
-        if not auth.user._id == contributor._id:
-            # remove unclaimed record if necessary
-            if self._primary_key in contributor.unclaimed_records:
-                del contributor.unclaimed_records[self._primary_key]
-            self.contributors.remove(contributor._id)
+        # remove unclaimed record if necessary
+        if self._primary_key in contributor.unclaimed_records:
+            del contributor.unclaimed_records[self._primary_key]
+        self.contributors.remove(contributor._id)
 
-            # Clear permissions for removed user
-            self.permissions.pop(contributor._id, None)
+        # Node must have at least one registered admin user
+        # TODO: Move to validator or helper
+        admins = [
+            user for user in self.contributors
+            if self.has_permission(user, 'admin')
+                and user.is_registered
+        ]
+        if not admins:
+            return False
 
-            self.save()
+        # Clear permissions for removed user
+        self.permissions.pop(contributor._id, None)
 
-            # After remove callback
-            for addon in self.get_addons():
-                message = addon.after_remove_contributor(self, contributor)
-                if message:
-                    status.push_status_message(message)
+        self.save()
 
-            if log:
-                self.add_log(
-                    action=NodeLog.CONTRIB_REMOVED,
-                    params={
-                        'project': self.parent_id,
-                        'node': self._primary_key,
-                        'contributor': contributor._id,
-                    },
-                    auth=auth,
-                )
-            return True
+        # After remove callback
+        for addon in self.get_addons():
+            message = addon.after_remove_contributor(self, contributor)
+            if message:
+                status.push_status_message(message)
 
-        return False
+        if log:
+            self.add_log(
+                action=NodeLog.CONTRIB_REMOVED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'contributor': contributor._id,
+                },
+                auth=auth,
+            )
+
+        return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
 
@@ -1687,7 +1917,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     def manage_contributors(self, user_dicts, auth, save=False):
         """Reorder and remove contributors.
 
-        :param list user_dicts: Ordered list of contributors
+        :param list user_dicts: Ordered list of contributors represented as
+            dictionaries of the form:
+            {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>}
         :param Auth auth: Consolidated authentication information
         :param bool save: Save changes
         :raises: ValueError if any users in `users` not in contributors or if
@@ -1695,6 +1927,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         users = []
+        permissions_changed = {}
         for user_dict in user_dicts:
             user = User.load(user_dict['id'])
             if user is None:
@@ -1706,25 +1939,62 @@ class Node(GuidStoredObject, AddonModelMixin):
             permissions = expand_permissions(user_dict['permission'])
             if set(permissions) != set(self.get_permissions(user)):
                 self.set_permissions(user, permissions, save=False)
+                permissions_changed[user._id] = permissions
             users.append(user)
 
-        self.contributors = users
-
-        admins = [
-            user for user in users
-            if self.has_permission(user, 'admin')
+        to_retain = [
+            user for user in self.contributors
+            if user in users
         ]
-        if users is None or not admins:
-            raise ValueError('Must have at least one admin contributor')
-
         to_remove = [
-            user
-            for user in self.contributors
+            user for user in self.contributors
             if user not in users
         ]
 
+        # TODO: Move to validator or helper @jmcarp
+        # TODO: Test me @jmcarp
+        admins = [
+            user for user in users
+            if self.has_permission(user, 'admin')
+                and user.is_registered
+        ]
+        if users is None or not admins:
+            raise ValueError(
+                'Must have at least one registered admin contributor'
+            )
+
+        # TODO: Test me @jmcarp
+        if to_retain != users:
+            self.add_log(
+                action=NodeLog.CONTRIB_REORDERED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._id,
+                    'contributors': [
+                        user._id
+                        for user in users
+                    ],
+                },
+                auth=auth,
+                save=save,
+            )
+
         if to_remove:
             self.remove_contributors(to_remove, auth=auth, save=False)
+
+        self.contributors = users
+
+        if permissions_changed:
+            self.add_log(
+                action=NodeLog.PERMISSIONS_UPDATED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._id,
+                    'contributors': permissions_changed,
+                },
+                auth=auth,
+                save=save,
+            )
 
         if save:
             self.save()
@@ -1749,7 +2019,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.contributors.append(contrib_to_add)
 
             # Add default contributor permissions
-            permissions = permissions or settings.CONTRIBUTOR_PERMISSIONS
+            permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS
             for permission in permissions:
                 self.add_permission(contrib_to_add, permission, save=False)
 

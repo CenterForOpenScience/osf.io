@@ -2,10 +2,8 @@ this.Comment = (function(window, $, ko) {
 
     'use strict';
 
-    var PRIVACY_MAP = {
-        'public': 'Public',
-        'private': 'Private'
-    };
+    // Maximum length for comments, in characters
+    var MAXLENGTH = 500;
 
     var ABUSE_CATEGORIES = {
         spam: 'Spam or advertising',
@@ -22,6 +20,10 @@ this.Comment = (function(window, $, ko) {
         var then = moment.utc(datetime, 'MM/DD/YY HH:mm:ss');
         then = then > now ? now : then;
         return then.fromNow();
+    };
+
+    var notEmpty = function(value) {
+        return !!$.trim(value);
     };
 
     var exclusify = function(subscriber, subscribees) {
@@ -51,30 +53,29 @@ this.Comment = (function(window, $, ko) {
 
         var self = this;
 
-        self.privacyOptions = Object.keys(PRIVACY_MAP);
         self.abuseOptions = Object.keys(ABUSE_CATEGORIES);
 
         self._loaded = false;
         self.id = ko.observable();
 
+        self.errorMessage = ko.observable();
         self.editErrorMessage = ko.observable();
         self.replyErrorMessage = ko.observable();
 
         self.replying = ko.observable(false);
         self.replyContent = ko.observable('');
-        self.replyPublic = ko.observable('public');
+
+        self.submittingReply = ko.observable(false);
 
         self.comments = ko.observableArray();
-        self.displayComments = ko.computed(function() {
-            return ko.utils.arrayFilter(self.comments(), function(comment) {
-                return !comment.isAbuse();
-            });
+
+        self.replyNotEmpty = ko.computed(function() {
+            return notEmpty(self.replyContent());
+        });
+        self.saveButtonText = ko.computed(function() {
+            return self.submittingReply() ? 'Saving' : 'Save';
         });
 
-    };
-
-    BaseComment.prototype.privacyLabel = function(item) {
-        return PRIVACY_MAP[item];
     };
 
     BaseComment.prototype.abuseLabel = function(item) {
@@ -88,6 +89,7 @@ this.Comment = (function(window, $, ko) {
     BaseComment.prototype.cancelReply = function() {
         this.replyContent('');
         this.replying(false);
+        this.submittingReply(false);
         this.replyErrorMessage('');
     };
 
@@ -113,7 +115,7 @@ this.Comment = (function(window, $, ko) {
             {target: self.id()},
             function(response) {
                 self.comments(
-                    ko.utils.arrayMap(response.comments, function(comment) {
+                    ko.utils.arrayMap(response.comments.reverse(), function(comment) {
                         return new CommentModel(comment, self, self.$root);
                     })
                 );
@@ -130,17 +132,21 @@ this.Comment = (function(window, $, ko) {
             self.replyErrorMessage('Please enter a comment');
             return
         }
+        // Quit if already submitting reply
+        if (self.submittingReply()) {
+            return;
+        }
+        self.submittingReply(true);
         $.osf.postJSON(
             nodeApiUrl + 'comment/',
             {
                 target: self.id(),
                 content: self.replyContent(),
-                isPublic: self.replyPublic()
             },
             function(response) {
                 self.cancelReply();
                 self.replyContent(null);
-                self.comments.push(new CommentModel(response.comment, self, self.$root));
+                self.comments.unshift(new CommentModel(response.comment, self, self.$root));
                 if (!self.hasChildren()) {
                     self.hasChildren(true);
                 }
@@ -153,7 +159,10 @@ this.Comment = (function(window, $, ko) {
                 }
                 self.onSubmitSuccess(response);
             }
-        );
+        ).fail(function(xhr) {
+            self.cancelReply();
+            self.errorMessage('Could not submit comment');
+        });
     };
 
     /*
@@ -185,22 +194,40 @@ this.Comment = (function(window, $, ko) {
 
         self.reporting = ko.observable(false);
         self.deleting = ko.observable(false);
+        self.unreporting = ko.observable(false);
+        self.undeleting = ko.observable(false);
+
         self.abuseCategory = ko.observable('spam');
         self.abuseText = ko.observable();
 
         self.editing = ko.observable(false);
         self.editVerb = self.modified ? 'edited' : 'posted';
-        
-        exclusifyGroup(self.editing, self.replying, self.reporting, self.deleting);
 
-        self.showPrivateIcon = ko.computed(function() {
-            return self.isPublic() === 'private';
+        exclusifyGroup(
+            self.editing, self.replying, self.reporting, self.deleting,
+            self.unreporting, self.undeleting
+        );
+
+        self.isVisible = ko.computed(function() {
+            return !self.isDeleted() && !self.isAbuse();
         });
+
+        self.editNotEmpty = ko.computed(function() {
+            return notEmpty(self.content());
+        });
+
         self.toggleIcon = ko.computed(function() {
             return self.showChildren() ? 'icon-collapse-alt' : 'icon-expand-alt';
         });
         self.editHighlight = ko.computed(function() {
             return self.canEdit() && self.hoverContent();
+        });
+        self.canReport = ko.computed(function() {
+            return self.$root.canComment() && !self.canEdit();
+        });
+
+        self.shouldShow = ko.computed(function() {
+            return !self.isDeleted() || self.hasChildren() || self.canEdit();
         });
 
     };
@@ -210,7 +237,6 @@ this.Comment = (function(window, $, ko) {
     CommentModel.prototype.edit = function(data) {
         if (this.canEdit()) {
             this._content = this.content();
-            this._isPublic = this.isPublic();
             this.editing(true);
             this.$root.editors += 1;
         }
@@ -226,7 +252,6 @@ this.Comment = (function(window, $, ko) {
         this.editErrorMessage('');
         this.hoverContent(false);
         this.content(this._content);
-        this.isPublic(this._isPublic);
     };
 
     CommentModel.prototype.submitEdit = function(data, event) {
@@ -235,14 +260,13 @@ this.Comment = (function(window, $, ko) {
             .closest('.comment-container')
             .find('[data-toggle="tooltip"]');
         if (!self.content()) {
-            self.editErrorMessage('Please enter a comment');
+            self.errorMessage('Please enter a comment');
             return
         }
-        $.osf.postJSON(
+        $.osf.putJSON(
             nodeApiUrl + 'comment/' + self.id() + '/',
             {
                 content: self.content(),
-                isPublic: self.isPublic()
             },
             function(response) {
                 self.content(response.content);
@@ -256,6 +280,7 @@ this.Comment = (function(window, $, ko) {
             }
         ).fail(function() {
             self.cancelEdit();
+            self.errorMessage('Could not submit comment');
         });
     };
 
@@ -293,9 +318,8 @@ this.Comment = (function(window, $, ko) {
             type: 'DELETE',
             url: nodeApiUrl + 'comment/' + self.id() + '/',
             success: function(response) {
-                var siblings = self.$parent.comments;
-                siblings.splice(siblings.indexOf(self), 1);
-                self.deleting(true);
+                self.isDeleted(true);
+                self.deleting(false);
             },
             error: function() {
                 self.deleting(false);
@@ -305,6 +329,54 @@ this.Comment = (function(window, $, ko) {
 
     CommentModel.prototype.cancelDelete = function() {
         this.deleting(false);
+    };
+
+    CommentModel.prototype.startUndelete = function() {
+        this.undeleting(true);
+    };
+
+    CommentModel.prototype.submitUndelete = function() {
+        var self = this;
+        $.ajax({
+            type: 'PUT',
+            url: nodeApiUrl + 'comment/' + self.id() + '/undelete/',
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function(response) {
+                self.isDeleted(false);
+            },
+            complete: function() {
+                self.undeleting(false);
+            }
+        });
+    };
+
+    CommentModel.prototype.cancelUndelete = function() {
+        this.undeleting(false);
+    };
+
+    CommentModel.prototype.startUnreportAbuse = function() {
+        this.unreporting(true);
+    };
+
+    CommentModel.prototype.submitUnreportAbuse = function() {
+        var self = this;
+        $.ajax({
+            type: 'POST',
+            url: nodeApiUrl + 'comment/' + self.id() + '/unreport/',
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function(response) {
+                self.isAbuse(false);
+            },
+            complete: function() {
+                self.unreporting(false);
+            }
+        });
+    };
+
+    CommentModel.prototype.cancelUnreportSpam = function() {
+        this.unreporting(false);
     };
 
     CommentModel.prototype.startHoverContent = function() {
@@ -334,6 +406,7 @@ this.Comment = (function(window, $, ko) {
         var self = this;
 
         self.$root = self;
+        self.MAXLENGTH = MAXLENGTH;
 
         self.editors = 0;
         self.commented = ko.observable(false);
@@ -341,10 +414,6 @@ this.Comment = (function(window, $, ko) {
         self.canComment = ko.observable(canComment);
         self.hasChildren = ko.observable(hasChildren);
         self.discussion = ko.observableArray();
-
-        self.replyNotEmpty = ko.computed(function() {
-            return !!self.replyContent();
-        });
 
         self.fetch();
         self.fetchDiscussion();

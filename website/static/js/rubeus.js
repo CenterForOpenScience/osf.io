@@ -72,26 +72,18 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
 	var buttonDefs = [];
 	if(item.permissions){
 	    if(item.permissions.download !== false){
-		buttonDefs.push({
-		    text: '<i class="icon-download-alt icon-white"></i>',
-		    action: 'download',
-		    cssClass: 'btn btn-primary btn-mini'
-		});
+        	buttonDefs.push({
+        	    text: '<i class="icon-download-alt icon-white" title="" data-placement="right" data-toggle="tooltip" data-original-title="Download"></i>',
+        	    action: 'download',
+        	    cssClass: 'btn btn-primary btn-mini'
+        	});
 	    }
-	    if (item.permissions.edit) {
-		buttonDefs.push({
-		    text: '&nbsp;<i class="icon-remove"></i>',
-		    action: 'delete',
-		    cssClass: 'btn btn-link btn-mini btn-delete'
-		});
-	    }
-            if (item.permissions.edit) {
-		var deleteTip = genTooltipMarkup('Delete ' + item.name);
-		buttonDefs.push({
-		    text: '&nbsp;<i class="icon-remove"' + deleteTip + '></i>',
-		    action: 'delete',
-		    cssClass: 'btn btn-link btn-mini btn-delete'
-		});
+        if (item.permissions.edit) {
+    		buttonDefs.push({
+    		    text: '&nbsp;<i class="icon-remove"title="" data-placement="right" data-toggle="tooltip" data-original-title="Delete"></i>',
+    		    action: 'delete',
+    		    cssClass: 'btn btn-link btn-mini btn-delete'
+    		});
 	    }
 	}
 	return ['<span class="rubeus-buttons">', HGrid.Fmt.buttons(buttonDefs),
@@ -246,6 +238,14 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         }
     }
 
+    // Custom download count column
+    var DownloadCount = {
+        name: 'Downloads',
+        itemView: '{{ downloads }}',
+        folderView: '',
+        width: 20
+    };
+
     ///////////////////
     // HGrid options //
     ///////////////////
@@ -255,7 +255,8 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         /*jshint unused: false */
         columns: [
             HGrid.Col.Name,
-            HGrid.Col.ActionButtons
+            HGrid.Col.ActionButtons,
+            DownloadCount
         ],
         width: '100%',
         height: 900,

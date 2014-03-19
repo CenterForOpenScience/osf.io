@@ -1,5 +1,6 @@
 import json
 import httplib as http
+import bleach
 
 from framework import (
     get_user,
@@ -56,8 +57,9 @@ def _profile_view(uid=None):
         return {
             'profile': profile_user_data,
             'user': {
-                "can_edit": None,  # necessary for rendering nodes
-                "is_profile": user == profile,
+                'is_profile': user == profile,
+                'can_edit': None,  # necessary for rendering nodes
+                'permissions': [], # necessary for rendering nodes
             },
         }
 
@@ -79,7 +81,7 @@ def edit_profile(**kwargs):
 
     form = request.form
 
-    response_data = {'response' : 'success'}
+    response_data = {'response': 'success'}
     if form.get('name') == 'fullname' and form.get('value', '').strip():
         user.fullname = sanitize(form['value'])
         user.save()
@@ -273,12 +275,16 @@ def parse_names(**kwargs):
     return parse_name(name)
 
 
+NAME_FIELDS = [
+    'fullname', 'given_name', 'middle_names', 'family_name', 'suffix'
+]
+def scrub_html(value):
+    return bleach.clean(value, strip=True, tags=[], attributes=[], styles=[])
+
+
 @must_be_logged_in
 def post_names(**kwargs):
     user = kwargs['auth'].user
-    user.fullname = request.json['fullname']
-    user.given_name = request.json['given_name']
-    user.middle_names = request.json['middle_names']
-    user.family_name = request.json['family_name']
-    user.suffix = request.json['suffix']
+    for field in NAME_FIELDS:
+        setattr(user, field, scrub_html(request.json[field]))
     user.save()

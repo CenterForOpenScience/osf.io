@@ -7,7 +7,6 @@ import datetime
 
 from flask import Flask
 from werkzeug.wrappers import BaseResponse
-from webtest_plus import TestApp
 import httplib as http
 
 from framework.exceptions import HTTPError
@@ -138,25 +137,31 @@ class TestDecorators(DbTestCase):
         assert_true(isinstance(resp, BaseResponse))
         assert_in('/login/', resp.headers.get('location'))
 
+    @mock.patch('website.project.decorators._kwargs_to_nodes')
     @mock.patch('framework.auth.decorators.Auth.from_kwargs')
-    def test_must_have_permission_true(self, mock_from_kwargs):
+    def test_must_have_permission_true(self, mock_from_kwargs, mock_to_nodes):
         project = ProjectFactory()
         project.add_permission(project.creator, 'dance')
         mock_from_kwargs.return_value = Auth(user=project.creator)
+        mock_to_nodes.return_value = (project, None)
         thriller(node=project)
 
+    @mock.patch('website.project.decorators._kwargs_to_nodes')
     @mock.patch('framework.auth.decorators.Auth.from_kwargs')
-    def test_must_have_permission_false(self, mock_from_kwargs):
+    def test_must_have_permission_false(self, mock_from_kwargs, mock_to_nodes):
         project = ProjectFactory()
         mock_from_kwargs.return_value = Auth(user=project.creator)
+        mock_to_nodes.return_value = (project, None)
         with assert_raises(HTTPError) as ctx:
             thriller(node=project)
         assert_equal(ctx.exception.code, http.FORBIDDEN)
 
+    @mock.patch('website.project.decorators._kwargs_to_nodes')
     @mock.patch('framework.auth.decorators.Auth.from_kwargs')
-    def test_must_have_permission_not_logged_in(self, mock_from_kwargs):
+    def test_must_have_permission_not_logged_in(self, mock_from_kwargs, mock_to_nodes):
         project = ProjectFactory()
         mock_from_kwargs.return_value = Auth()
+        mock_to_nodes.return_value = (project, None)
         with assert_raises(HTTPError) as ctx:
             thriller(node=project)
         assert_equal(ctx.exception.code, http.UNAUTHORIZED)

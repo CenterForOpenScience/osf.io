@@ -15,13 +15,15 @@ from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
 from website.project.views.node import _view_project
-from website.project.decorators import must_not_be_registration, must_be_valid_project, \
-    must_be_contributor, must_be_contributor_or_public, must_have_addon
+from website.project.decorators import (
+    must_not_be_registration, must_be_valid_project,
+    must_be_contributor_or_public, must_have_addon, must_have_permission
+)
 from website.project.views.file import get_cache_content, prepare_file
 from website.addons.base.views import check_file_guid
 from website import settings
 from website.project.model import NodeLog
-from website.util import rubeus
+from website.util import rubeus, permissions
 
 from .model import NodeFile, OsfGuidFile
 
@@ -49,12 +51,6 @@ def get_osffiles_hgrid(node_settings, auth, **kwargs):
         for name, fid in node.files_current.iteritems():
 
             fobj = NodeFile.load(fid)
-            unique, total = get_basic_counters(
-                'download:{0}:{1}'.format(
-                    node_settings.owner._id,
-                    fobj.path.replace('.', '_')
-                )
-            )
             item = {
                 rubeus.KIND: rubeus.FILE,
                 'name': _clean_file_name(fobj.path),
@@ -67,7 +63,7 @@ def get_osffiles_hgrid(node_settings, auth, **kwargs):
                     'view': True,
                     'edit': can_edit,
                 },
-                'downloads': total or 0,
+                'downloads': fobj.download_count(node),
                 'size': [
                     float(fobj.size),
                     rubeus.format_filesize(fobj.size),
@@ -131,7 +127,7 @@ def list_file_paths(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor  # returns user, project
+@must_have_permission(permissions.WRITE)  # returns user, project
 @must_not_be_registration
 @must_have_addon('osffiles', 'node')
 def upload_file_public(**kwargs):
@@ -261,9 +257,14 @@ def view_file(**kwargs):
 
     versions = []
 
-    for idx, version in enumerate(list(reversed(node.files_versions[file_name_clean]))):
+    try:
+        files_versions = node.files_versions[file_name_clean]
+    except KeyError:
+        raise HTTPError(http.NOT_FOUND)
+
+    for idx, version in enumerate(list(reversed(files_versions))):
         node_file = NodeFile.load(version)
-        number = len(node.files_versions[file_name_clean]) - idx
+        number = len(files_versions) - idx
         unique, total = get_basic_counters('download:{}:{}:{}'.format(
             node._primary_key,
             file_name_clean,
@@ -309,7 +310,10 @@ def download_file(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
 
-    vid = len(node_to_use.files_versions[filename.replace('.', '_')])
+    try:
+        vid = len(node_to_use.files_versions[filename.replace('.', '_')])
+    except KeyError:
+        raise HTTPError(http.NOT_FOUND)
 
     return redirect('{url}osffiles/{fid}/version/{vid}/'.format(
         url=node_to_use.url,
@@ -360,7 +364,7 @@ def download_file_by_version(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+@must_have_permission(permissions.WRITE) # returns user, project
 @must_not_be_registration
 def delete_file(**kwargs):
 

@@ -1,6 +1,6 @@
 <div id="addContributors" class="modal fade">
     <div class="modal-dialog">
-        <div id="addContributorsScope" class="modal-content">
+        <div class="modal-content">
             <div class="modal-header">
                 <h3 data-bind="text:pageTitle"></h3>
             </div>
@@ -43,6 +43,11 @@
                             </div>
                             <div class="error">{{ errorMsg }}</div>
                             <table>
+                                <thead data-bind="visible: foundResults">
+                                    <th></th>
+                                    <th></th>
+                                    <th>Name</th>
+                                </thead>
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
                                     <tr data-bind="if:!($root.selected($data))">
                                         <td style="padding-right: 10px;">
@@ -86,6 +91,20 @@
 
                             <!-- TODO: Duplication here: Put this in a KO template -->
                             <table>
+                                <thead data-bind="visible: selection().length">
+                                    <th></th>
+                                    <th></th>
+                                    <th>Name</th>
+                                    <th>
+                                        Permissions
+                                        <i class="icon-question-sign permission-info"
+                                                data-toggle="popover"
+                                                data-title="Permission Information"
+                                                data-container="#addContributors"
+                                                data-html="true"
+                                            ></i>
+                                    </th>
+                                </thead>
                                 <tbody data-bind="sortable: {data: selection, as: 'contributor', afterRender: afterRender, options: {containment: 'parent'}}">
                                     <tr>
                                         <td style="padding-right: 10px;">

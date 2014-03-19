@@ -15,11 +15,13 @@
     <div class="col-md-3">
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
-                % if 'admin' in user['permissions']:
+                % if 'admin' in user['permissions'] and not node['is_registration']:
                     <li><a href="#configureNode">Configure ${node['category'].capitalize()}</a></li>
                 % endif
                 <li><a href="#configureCommenting">Configure Commenting</a></li>
-                <li><a href="#selectAddons">Select Add-ons</a></li>
+                % if not node['is_registration']:
+                    <li><a href="#selectAddons">Select Add-ons</a></li>
+                % endif
                 % if addon_enabled_settings:
                     <li><a href="#configureAddons">Configure Add-ons</a></li>
                 % endif
@@ -28,7 +30,7 @@
     </div>
     <div class="col-md-6">
 
-        % if 'admin' in user['permissions']:
+        % if 'admin' in user['permissions'] and not node['is_registration']:
 
             <div id="configureNode" class="panel panel-default">
 
@@ -59,20 +61,14 @@
 
                     <div class="radio">
                         <label>
-                            <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
-                            Public: Anyone who can view this ${node['category']} can comment
-                        </label>
-                    </div>
-                    <div class="radio">
-                        <label>
                             <input type="radio" name="commentLevel" value="private" ${'checked' if comments['level'] == 'private' else ''}>
-                            Private: Only contributors can comment
+                            Only contributors can post comments
                         </label>
                     </div>
                     <div class="radio">
                         <label>
-                            <input type="radio" name="commentLevel" value="" ${'checked' if not comments['level'] else ''}>
-                            Off: Commenting disabled
+                            <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
+                            When the ${node['category']} is public, any OSF user can post comments
                         </label>
                     </div>
 
@@ -247,16 +243,18 @@ ${parent.javascript_bottom()}
         $('#delete-node').on('click', function() {
             var key = randomString();
             bootbox.prompt(
-                '<div>Delete this ${node['category']} and all non-project children? This is IRREVERSIBLE.</div>' +
+                '<div>Delete this ${node['category']}? This is IRREVERSIBLE.</div>' +
                     '<p style="font-weight: normal; font-size: medium; line-height: normal;">If you want to continue, type <strong>' + key + '</strong> and click OK.</p>',
                 function(result) {
                     if (result === key) {
                         $.ajax({
                             type: 'DELETE',
+                            dataType: 'json',
                             url: nodeApiUrl,
                             success: function(response) {
                                 window.location.href = response.url;
-                            }
+                            },
+                            error: $.osf.handleJSONError
                         });
                     }
                 }

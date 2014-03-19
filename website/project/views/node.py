@@ -13,16 +13,22 @@ from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 
 from website import language
-from website.project import new_node, clean_template_name
+
+from website.exceptions import NodeStateError
+from website.project import clean_template_name, new_node
 from website.project.decorators import (
-    must_not_be_registration, must_be_valid_project, must_be_contributor,
-    must_be_contributor_or_public, must_have_permission,
+    must_be_contributor,
+    must_be_contributor_or_public,
+    must_be_valid_project,
+    must_have_permission,
+    must_not_be_registration,
 )
 from website.project.forms import NewProjectForm, NewNodeForm
-from website.models import WatchConfig, Node, Pointer
+from website.models import Node, Pointer, WatchConfig
 from website import settings
 from website.views import _render_nodes
 from website.profile import utils
+from website.util import permissions
 
 #azeem's imports
 import CitationParser
@@ -35,7 +41,7 @@ from .log import _get_logs
 logger = logging.getLogger(__name__)
 
 @must_be_valid_project  # returns project
-@must_be_contributor  # returns user, project
+@must_have_permission('write')
 @must_not_be_registration
 def edit_node(**kwargs):
     project = kwargs['project']
@@ -69,13 +75,36 @@ def project_new_post(**kwargs):
     user = kwargs['auth'].user
     form = NewProjectForm(request.form)
     if form.validate():
-        project = new_node(
-            'project', form.title.data, user, form.description.data
-        )
+        if form.template.data:
+            original_node = Node.load(form.template.data)
+            project = original_node.use_as_template(
+                auth=kwargs['auth'],
+                changes={
+                    form.template.data: {
+                        'title': form.title.data,
+                    }
+                }
+            )
+                # node._fields['date_created'].__set__(new_date, safe=True)
+        else:
+            project = new_node(
+                'project', form.title.data, user, form.description.data
+            )
         return {}, 201, None, project.url
     else:
         push_errors_to_status(form.errors)
     return {}, http.BAD_REQUEST
+
+
+@must_be_logged_in
+@must_be_valid_project
+def project_new_from_template(*args, **kwargs):
+    original_node = kwargs.get('node')
+    new_node = original_node.use_as_template(
+        auth=kwargs['auth'],
+        changes=dict(),
+    )
+    return {'url': new_node.url}, http.CREATED, None
 
 
 ##############################################################################
@@ -84,7 +113,7 @@ def project_new_post(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor # returns user, project
+@must_have_permission('write')
 @must_not_be_registration
 def project_new_node(**kwargs):
     form = NewNodeForm(request.form)
@@ -107,7 +136,6 @@ def project_new_node(**kwargs):
 
 @must_be_logged_in
 @must_be_valid_project  # returns project
-@must_not_be_registration
 def project_before_fork(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
@@ -135,7 +163,6 @@ def node_fork_page(**kwargs):
 
     if node:
         node_to_use = node
-        status.push_status_message('At this time, only projects can be forked; however, this behavior is coming soon.')
         raise HTTPError(
             http.FORBIDDEN,
             message='At this time, only projects can be forked; however, this behavior is coming soon.',
@@ -143,9 +170,6 @@ def node_fork_page(**kwargs):
         )
     else:
         node_to_use = project
-
-    if node_to_use.is_registration:
-        raise HTTPError(http.FORBIDDEN)
 
     fork = node_to_use.fork_node(auth)
 
@@ -172,8 +196,7 @@ def node_forks(**kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor # returns user, project
-@must_not_be_registration
+@must_have_permission('write')
 def node_setting(**kwargs):
 
     auth = kwargs['auth']
@@ -209,7 +232,7 @@ def node_setting(**kwargs):
     return rv
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_not_be_registration
 def node_choose_addons(**kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -218,7 +241,7 @@ def node_choose_addons(**kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor # returns user, project
+@must_be_contributor
 def node_contributors(**kwargs):
 
     auth = kwargs['auth']
@@ -229,7 +252,7 @@ def node_contributors(**kwargs):
     return rv
 
 
-@must_be_contributor
+@must_have_permission('write')
 def configure_comments(**kwargs):
     node = kwargs['node'] or kwargs['project']
     comment_level = request.json.get('commentLevel')
@@ -249,7 +272,7 @@ def configure_comments(**kwargs):
 
 @must_be_valid_project
 @must_not_be_registration
-@must_be_contributor # returns user, project
+@must_have_permission('write')
 def project_reorder_components(**kwargs):
 
     project = kwargs['project']
@@ -262,12 +285,22 @@ def project_reorder_components(**kwargs):
         StoredObject.get_collection(schema).load(key)
         for key, schema in new_list
     ]
-    if len(project.nodes) == len(nodes_new) and set(project.nodes) == set(nodes_new):
-        project.nodes = nodes_new
+
+    visible_nodes = [
+        node for node in project.nodes
+        if not node.is_deleted
+    ]
+    deleted_nodes = [
+        node for node in project.nodes
+        if node.is_deleted
+    ]
+
+    if len(visible_nodes) == len(nodes_new) and set(visible_nodes) == set(nodes_new):
+        project.nodes = nodes_new + deleted_nodes
         project.save()
         return {}
 
-    # todo log impossibility
+    logger.error('Got invalid node list in reorder components')
     raise HTTPError(http.BAD_REQUEST)
 
 
@@ -382,21 +415,29 @@ def component_remove(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
 
-    if node_to_use.remove_node(auth):
-        message = '{} deleted'.format(
-            node_to_use.project_or_component.capitalize()
+    try:
+        node_to_use.remove_node(auth)
+    except NodeStateError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data={
+                'message_long': 'Could not delete component: ' + e.message
+            },
         )
-        status.push_status_message(message)
-        if node_to_use.node__parent:
-            redirect_url = node_to_use.node__parent[0].url
-        else:
-            redirect_url = '/dashboard/'
-        return {
-            'url': redirect_url,
-        }
-    raise HTTPError(
-        http.BAD_REQUEST, message='Could not delete component'
+
+    message = '{} deleted'.format(
+        node_to_use.project_or_component.capitalize()
     )
+    status.push_status_message(message)
+    if node_to_use.node__parent:
+        redirect_url = node_to_use.node__parent[0].url
+    else:
+        redirect_url = '/dashboard/'
+
+    return {
+        'url': redirect_url,
+    }
+
 
 
 @must_be_valid_project
@@ -421,7 +462,6 @@ def _render_addon(node):
     for addon in node.get_addons():
 
         configs[addon.config.short_name] = addon.config.to_json()
-
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
 
@@ -440,7 +480,7 @@ def _view_project(node, auth, primary=False):
     user = auth.user
 
     parent = node.parent_node
-    recent_logs = _get_logs(node, 10, auth)
+    recent_logs, has_more_logs= _get_logs(node, 10, auth)
     widgets, configs, js, css = _render_addon(node)
     # Before page load callback; skip if not primary call
     if primary:
@@ -453,7 +493,7 @@ def _view_project(node, auth, primary=False):
             'id': node._primary_key,
             'title': node.title,
             'category': node.project_or_component,
-            'description': node.description,
+            'description': node.description or '',
             'url': node.url,
             'api_url': node.api_url,
             'absolute_url': node.absolute_url,
@@ -482,14 +522,15 @@ def _view_project(node, auth, primary=False):
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': node.forked_date.strftime('%Y/%m/%d %I:%M %p') if node.is_fork else '',
             'fork_count': len(node.fork_list),
+            'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'logs': recent_logs,
+            'has_more_logs': has_more_logs,
             'points': node.points,
             'piwik_site_id': node.piwik_site_id,
 
             'comment_level': node.comment_level,
-            'can_view_comments': node.can_comment(auth),
-            'can_add_comments': node.can_comment(auth, write=True),
+            'has_comments': bool(getattr(node, 'commented', [])),
             'has_children': bool(getattr(node, 'commented', False)),
 
         },
@@ -509,8 +550,9 @@ def _view_project(node, auth, primary=False):
             'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
             'piwik_token': user.piwik_token if user else '',
-            'id': user._primary_key if user else None,
+            'id': user._id if user else None,
             'username': user.username if user else None,
+            'can_comment': node.can_comment(auth),
         },
         # TODO: Namespace with nested dicts
         'addons_enabled': node.get_addon_names(),
@@ -794,7 +836,7 @@ def _add_pointers(node, pointers, auth):
         node.save()
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_not_be_registration
 def add_pointers(**kwargs):
     """Add pointers to a node.
@@ -817,7 +859,7 @@ def add_pointers(**kwargs):
     return {}
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_not_be_registration
 def remove_pointer(**kwargs):
     """Remove a pointer from a node, raising a 400 if the pointer is not
@@ -844,7 +886,7 @@ def remove_pointer(**kwargs):
     node.save()
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_not_be_registration
 def fork_pointer(**kwargs):
     """Fork a pointer. Raises BAD_REQUEST if pointer not provided, not found,
@@ -878,8 +920,8 @@ def get_pointed(**kwargs):
     node = kwargs['node'] or kwargs['project']
     return {'pointed': [
         {
-            'url': each.url,
-            'title': each.title,
+            'url': each.node__parent[0].url,
+            'title': each.node__parent[0].title,
             'authorShort': abbrev_authors(node),
         }
         for each in node.pointed

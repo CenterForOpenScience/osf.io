@@ -6,6 +6,7 @@ import json
 from framework import fields
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import GuidFile
+from framework.status import push_status_message
 
 from .api import Figshare
 from . import settings as figshare_settings
@@ -34,6 +35,10 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
     @property
     def has_auth(self):
         return self.oauth_access_token is not None
+
+    def remove_auth(self):
+        self.oauth_access_token = None
+        self.oauth_access_token_secret = None
 
     def to_json(self, user):
         rv = super(AddonFigShareUserSettings, self).to_json(user)
@@ -66,10 +71,21 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         else:
             return figshare_settings.API_OAUTH_URL
 
+    @property
+    def has_auth(self):
+        return self.user_settings and self.user_settings.has_auth
+
     def to_json(self, user):
         rv = super(AddonFigShareNodeSettings, self).to_json(user)
 
         figshare_user = user.get_addon('figshare')
+
+        if self.has_auth:
+            ops = Figshare.from_settings(self.user_settings).get_options()
+
+            if ops == 401:
+                self.user_settings.remove_auth()
+                push_status_message(messages.OAUTH_INVALID)
 
         rv.update({
             'figshare_id': self.figshare_id or '',
@@ -77,7 +93,8 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             'figshare_title': self.figshare_title or '',
             'node_has_auth': self.user_settings and self.user_settings.has_auth,
             'user_has_auth': figshare_user and figshare_user.has_auth,
-            'figshare_options': []
+            'figshare_options': [],
+            'is_registration': self.owner.is_registration,
         })
 
         if self.user_settings and self.user_settings.has_auth:
@@ -85,8 +102,9 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 'authorized_user': self.user_settings.owner.fullname,
                 'owner_url': self.user_settings.owner.url,
                 'is_owner': user == self.user_settings.owner,
-                'figshare_options': Figshare.from_settings(self.user_settings).get_options(),
+                'figshare_options': ops,
             })
+
         return rv
 
     #############
@@ -207,42 +225,6 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 )
             return AddonFigShareNodeSettings(), message
 
-        if save:
-            clone.save()
-
-        return clone, message
-
-    def before_register(self, node, user):
-        """
-
-        :param Node node:
-        :param User user:
-        :return str: Alert message
-
-        """
-        if self.user_settings:
-            return messages.BEFORE_REGISTER.format(
-                category=node.project_or_component,
-                )
-
-    def after_register(self, node, registration, user, save=True):
-        """
-
-        :param Node node: Original node
-        :param Node registration: Registered node
-        :param User user: User creating registration
-
-        :return tuple: Tuple of cloned settings and alert message
-
-        """
-        clone, message = super(AddonFigShareNodeSettings, self).after_register(
-            node, registration, user, save=False
-            )
-
-        # Copy foreign fields from current add-on
-        clone.user_settings = self.user_settings
-
-        # TODO handle registration
         if save:
             clone.save()
 

@@ -9,7 +9,7 @@ from framework import (Rule, process_rules,
                        render_mako_string)
 from framework.auth import views as auth_views
 
-from website import settings, language
+from website import settings, language, util
 from website import views as website_routes
 from website.addons.base import views as addon_views
 from website.search import views as search_views
@@ -20,6 +20,10 @@ from website.assets import env as assets_env
 
 
 def get_globals():
+    """Context variables that are available for every template rendered by
+    OSFWebRenderer.
+
+    """
     user = framework.auth.get_current_user()
     return {
         'user_name': user.username if user else '',
@@ -39,6 +43,8 @@ def get_globals():
         'js_bottom': assets_env['js_bottom'].urls(),
         'domain': settings.DOMAIN,
         'language': language,
+        'web_url_for': util.web_url_for,
+        'api_url_for': util.api_url_for
     }
 
 
@@ -207,7 +213,7 @@ def make_url_map(app):
                 '/project/<pid>/comment/<cid>/',
                 '/project/<pid>/node/<nid>/comment/<cid>/',
             ],
-            'post',
+            'put',
             project_views.comment.edit_comment,
             json_renderer,
         ),
@@ -224,11 +230,31 @@ def make_url_map(app):
 
         Rule(
             [
+                '/project/<pid>/comment/<cid>/undelete/',
+                '/project/<pid>/node/<nid>/comment/<cid>/undelete/',
+            ],
+            'put',
+            project_views.comment.undelete_comment,
+            json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/comment/<cid>/report/',
                 '/project/<pid>/node/<nid>/comment/<cid>/report/',
             ],
             'post',
             project_views.comment.report_abuse,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/comment/<cid>/unreport/',
+                '/project/<pid>/node/<nid>/comment/<cid>/unreport/',
+            ],
+            'post',
+            project_views.comment.unreport_abuse,
             json_renderer,
         ),
 
@@ -301,7 +327,6 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
-
         Rule('/profile/', 'get', profile_views.profile_view, OsfWebRenderer('profile.mako')),
         Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, OsfWebRenderer('profile.mako')),
         Rule('/settings/', 'get', profile_views.profile_settings, OsfWebRenderer('settings.mako')),
@@ -314,14 +339,6 @@ def make_url_map(app):
             project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
         Rule(['/user/<uid>/<pid>/claim/verify/<token>/'], ['get', 'post'],
             project_views.contributor.claim_user_registered, OsfWebRenderer('claim_account_registered.mako')),
-        Rule(['/user/<uid>/<pid>/claim/login/'], ['get', 'post'],
-            project_views.contributor.claim_user_registered_login, OsfWebRenderer('public/login.mako')),
-        # TODO(sloria): Make an API route?
-        Rule([
-            '/project/<pid>/contributors/replace/<old_uid>/<new_uid>/',
-            '/project/<pid>/node/<nid>/contributors/replace/<old_uid>/<new_uid>/',
-        ], 'post', project_views.contributor.replace_contributor, notemplate),
-
     ])
 
     # API
@@ -346,7 +363,7 @@ def make_url_map(app):
         Rule('/settings/names/', 'post', profile_views.post_names, json_renderer),
 
         Rule('/profile/<user_id>/summary/', 'get', profile_views.get_profile_summary, json_renderer),
-        Rule('/user/<uid>/<pid>/claim/verify/', 'post', project_views.contributor.claim_user_post, json_renderer),
+        Rule('/user/<uid>/<pid>/claim/email/', 'post', project_views.contributor.claim_user_post, json_renderer),
 
     ], prefix='/api/v1',)
 
@@ -374,6 +391,7 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/search/', 'get', search_views.search_search, json_renderer),
+        Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
 
     ], prefix='/api/v1')
 
@@ -399,6 +417,7 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/key_history/<kid>/',
         ], 'get', project_views.key.node_key_history, OsfWebRenderer('project/key_history.mako')),
 
+        # TODO: Add API endpoint for tags
         Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
@@ -428,6 +447,7 @@ def make_url_map(app):
         ### Logs ###
 
         Rule('/log/<log_id>/', 'get', project_views.log.get_log, OsfWebRenderer('util/render_log.mako')),
+
         Rule([
             '/project/<pid>/log/',
             '/project/<pid>/node/<nid>/log/',
@@ -549,6 +569,7 @@ def make_url_map(app):
         ], 'get', project_views.node.get_registrations, json_renderer),
 
         Rule('/log/<log_id>/', 'get', project_views.log.get_log, json_renderer),
+
         Rule([
             '/project/<pid>/log/',
             '/project/<pid>/node/<nid>/log/',
@@ -595,6 +616,11 @@ def make_url_map(app):
             project_views.node.project_new_node,
             json_renderer,
         ),
+
+        # Create, using existing project as a template
+        Rule([
+            '/project/new/<nid>/',
+        ], 'post', project_views.node.project_new_from_template, json_renderer),
 
         # Remove
         Rule(

@@ -1,25 +1,32 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
+import httplib as http
 
-from framework import request
-from ..decorators import must_not_be_registration, must_be_valid_project, must_be_contributor, must_be_contributor_or_public
-from framework.forms.utils import process_payload
-from framework.mongo.utils import to_mongo
-from website import language
-from .node import _view_project
-
-from website.project.metadata.schemas import OSF_META_SCHEMAS
-
-from website.models import MetaSchema
 from framework import Q
+from framework import request
+from framework.exceptions import HTTPError
+from framework.forms.utils import process_payload, unprocess_payload
+from framework.mongo.utils import to_mongo
 
+from website.project.decorators import (
+    must_be_valid_project, must_be_contributor_or_public,
+    must_have_permission, must_not_be_registration
+)
+from website.project.metadata.schemas import OSF_META_SCHEMAS
+from website.util.permissions import ADMIN
+from website.models import MetaSchema
+from website import language
+
+from .node import _view_project
 from .. import clean_template_name
+
 
 logger = logging.getLogger(__name__)
 
+
 @must_be_valid_project
-@must_be_contributor # returns user, project
+@must_have_permission(ADMIN)
 @must_not_be_registration
 def node_register_page(**kwargs):
 
@@ -40,26 +47,34 @@ def node_register_page(**kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor_or_public # returns user, project
+@must_be_contributor_or_public
 def node_register_template_page(**kwargs):
 
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
 
     template_name = kwargs['template']\
         .replace(' ', '_')
 
-    if node_to_use.is_registration and node_to_use.registered_meta:
+    if node.is_registration and node.registered_meta:
         registered = True
-        payload = node_to_use.registered_meta.get(to_mongo(template_name))
-        if node_to_use.registered_schema:
-            meta_schema = node_to_use.registered_schema
+        payload = node.registered_meta.get(to_mongo(template_name))
+        payload = json.loads(payload)
+        payload = unprocess_payload(payload)
+        payload = json.dumps(payload)
+        if node.registered_schema:
+            meta_schema = node.registered_schema
         else:
             meta_schema = MetaSchema.find_one(
                 Q('name', 'eq', template_name) &
                 Q('schema_version', 'eq', 1)
             )
     else:
+        # Anyone with view access can see this page if the current node is
+        # registered, but only admins can view the registration page if not
+        # TODO: Test me @jmcarp
+        if not node.has_permission(auth.user, ADMIN):
+            raise HTTPError(http.FORBIDDEN)
         registered = False
         payload = None
         meta_schema = MetaSchema.find(
@@ -78,12 +93,12 @@ def node_register_template_page(**kwargs):
         'registered': registered,
         'payload': payload,
     }
-    rv.update(_view_project(node_to_use, auth, primary=True))
+    rv.update(_view_project(node, auth, primary=True))
     return rv
 
 
 @must_be_valid_project  # returns project
-@must_be_contributor  # returns user, project
+@must_have_permission(ADMIN)
 @must_not_be_registration
 def project_before_register(**kwargs):
 
@@ -104,7 +119,7 @@ def project_before_register(**kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor # returns user, project
+@must_have_permission(ADMIN)
 @must_not_be_registration
 def node_register_template_page_post(**kwargs):
 
@@ -130,4 +145,4 @@ def node_register_template_page_post(**kwargs):
     return {
         'status': 'success',
         'result': register.url,
-    }, 201
+    }, http.CREATED

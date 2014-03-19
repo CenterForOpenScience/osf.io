@@ -8,37 +8,38 @@
 ${next.body()}
 
 
-% if node['can_view_comments']:
-    <%include file="../include/comment_template.mako" />
-% endif
 <%include file="modal_add_contributor.mako"/>
 <%include file="modal_add_pointer.mako"/>
 <%include file="modal_show_links.mako"/>
 % if node['category'] == 'project':
     <%include file="modal_add_component.mako"/>
+    <%include file="modal_duplicate.mako"/>
 % endif
 </%def>
 
 
 <%def name="javascript_bottom()">
-<% import json %>
 <script>
     // Import modules
     $script(['/static/js/nodeControl.js'], 'nodeControl');
     $script(['/static/js/logFeed.js'], 'logFeed');
     $script(['/static/js/contribAdder.js'], 'contribAdder');
+    $script(['/static/js/pointers.js'], 'pointers');
 
     // TODO: Put these in the contextVars object below
-    var userId = '${user_id}';
     var nodeId = '${node['id']}';
     var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
     // Mako variables accessible globally
     window.contextVars = {
         currentUser: {
-            username: '${user["username"]}'
+            username: '${user.get("username")}',
+            id: '${user_id}'
+        },
+        node: {
+            title: "${node['title']}"
         }
-    }
+    };
 
     $(function() {
 
@@ -52,7 +53,7 @@ ${next.body()}
                 })
                 .ready('logFeed', function() {
                     if ($logScope.length) { // Render log feed if necessary
-                        var logFeed = new LogFeed('#logScope', data.node.logs);
+                        var logFeed = new LogFeed('#logScope', data.node.logs, {'url':nodeApiUrl+'log/', 'hasMoreLogs': data.node.has_more_logs});
                     }
                 });
                 // If user is a contributor, initialize the contributor modal
@@ -60,7 +61,7 @@ ${next.body()}
                 if (data.user.can_edit) {
                     $script.ready('contribAdder', function() {
                         var contribAdder = new ContribAdder(
-                            '#addContributorsScope',
+                            '#addContributors',
                             data.node.title,
                             data.parent_node.id,
                             data.parent_node.title
@@ -69,17 +70,16 @@ ${next.body()}
                 }
             }
         );
-        // TODO: move AddPointerViewModel to its own module
-        var $addPointer = $('#addPointer');
-        var addPointerVM = new AddPointerViewModel(${json.dumps(node['title'])});
-        ko.applyBindings(addPointerVM, $addPointer[0]);
-        $addPointer.on('hidden.bs.modal', function() {
-            addPointerVM.clear();
-        });
+
+
 
         var linksModal = $('#showLinks')[0];
         var linksVM = new LinksViewModel(linksModal);
         ko.applyBindings(linksVM, linksModal);
+    });
+
+    $script.ready('pointers', function() {
+        var pointerManager = new PointerManager('#addPointer', contextVars.node.title);
     });
 
     // Make unregistered contributors claimable
@@ -95,29 +95,9 @@ ${next.body()}
     $(function() {
         // Note: Don't use cookies for global site ID; cookies will accumulate
         // indefinitely and overflow uwsgi header buffer.
-        trackPiwik('${ piwik_host }', ${ node['piwik_site_id'] });
+        $.osf.trackPiwik('${ piwik_host }', ${ node['piwik_site_id'] });
     });
 </script>
 % endif
-
-<script>
-
-    var $comments = $('#comments');
-    var userName = '${user_full_name}';
-    var canComment = ${'true' if node['can_add_comments'] else 'false'};
-    var hasChildren = ${'true' if node['has_children'] else 'false'};
-
-    if ($comments.length) {
-
-        $script(['/static/js/commentpane.js', '/static/js/comment.js'], 'comments');
-
-        $script.ready('comments', function () {
-            var commentPane = new CommentPane('#commentPane');
-            Comment.init('#comments', userName, canComment, hasChildren);
-        });
-
-    }
-
-</script>
 
 </%def>

@@ -6,13 +6,12 @@ import unittest
 import json
 import datetime as dt
 import mock
-import hashlib
 import httplib as http
 
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 from webtest.app import AppError
-from framework import Q, auth
+from framework import auth
 from framework.auth.model import User
 
 import website.app
@@ -20,10 +19,11 @@ from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
 from framework.auth.decorators import Auth
 from website.project.views.contributor import (
-    _add_contributor_json, send_claim_email,
-    serialize_unregistered, deserialize_contributors
+    send_claim_email,
+    deserialize_contributors
 )
-from website.util import api_url_for
+from website.profile.utils import add_contributor_json, serialize_unregistered
+from website.util import api_url_for, web_url_for
 from website import settings, mails
 from website.util import rubeus
 from website.project.views.node import _view_project
@@ -33,7 +33,7 @@ from website.project.views.node import human_format_citation
 from website.project.views.node import machine_format_citation
 
 
-from tests.base import DbTestCase, fake
+from tests.base import DbTestCase, fake, capture_signals
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
@@ -284,8 +284,8 @@ class TestProjectViews(DbTestCase):
         user3 = UserFactory()
         url = "/api/v1/project/{0}/contributors/".format(project._id)
 
-        dict2 = _add_contributor_json(user2)
-        dict3 = _add_contributor_json(user3)
+        dict2 = add_contributor_json(user2)
+        dict3 = add_contributor_json(user3)
         dict2['permission'] = 'admin'
         dict3['permission'] = 'write'
 
@@ -478,6 +478,7 @@ class TestProjectViews(DbTestCase):
         self.project.reload()
         data = res.json
         assert_equal(len(data['logs']), len(self.project.logs))
+        assert_false(data['has_more_logs'])
         most_recent = data['logs'][0]
         assert_equal(most_recent['action'], 'file_added')
 
@@ -495,6 +496,7 @@ class TestProjectViews(DbTestCase):
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, {'count': 3}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
+        assert_true(res.json['has_more_logs'])
 
     def test_get_logs_defaults_to_ten(self):
         # Add some logs
@@ -510,6 +512,19 @@ class TestProjectViews(DbTestCase):
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), 10)
+        assert_true(res.json['has_more_logs'])
+
+    def test_get_more_logs(self):
+        # Add some logs
+        for _ in range(12):
+            self.project.logs.append(NodeLogFactory(user=self.user1,
+                                                    action="file_added",
+                                                    params={"project": self.project._id}))
+        self.project.save()
+        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
+        res = self.app.get(url, {"pageNum": 1}, auth=self.auth)
+        assert_equal(len(res.json['logs']), 4)
+        assert_false(res.json['has_more_logs'])
 
     def test_logs_private(self):
         """Add logs to a public project, then to its private component. Get
@@ -536,6 +551,7 @@ class TestProjectViews(DbTestCase):
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url).maybe_follow()
         assert_equal(len(res.json['logs']), 10)
+        assert_true(res.json['has_more_logs'])
         assert_equal(
             [self.project._id] * 10,
             [
@@ -558,6 +574,7 @@ class TestProjectViews(DbTestCase):
         url = "/api/v1/project/{0}/".format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['node']['logs']), 10)
+        assert_true(res.json['node']['has_more_logs'])
 
     def test_remove_project(self):
         url = self.project.api_url
@@ -566,13 +583,6 @@ class TestProjectViews(DbTestCase):
         assert_equal(self.project.is_deleted, True)
         assert_in('url', res.json)
         assert_equal(res.json['url'], '/dashboard/')
-
-    def test_remove_project_with_component(self):
-        node = NodeFactory(project=self.project, creator=self.user1)
-        url = self.project.api_url
-        self.app.delete_json(url, {}, auth=self.auth).maybe_follow()
-        node.reload()
-        assert_equal(node.is_deleted, True)
 
     def test_remove_component(self):
         node = NodeFactory(project=self.project, creator=self.user1)
@@ -643,7 +653,7 @@ class TestAddingContributorViews(DbTestCase):
         name, email = fake.name(), fake.email()
         unreg_no_record = serialize_unregistered(name, email)
         contrib_data = [
-            _add_contributor_json(contrib),
+            add_contributor_json(contrib),
             serialize_unregistered(fake.name(), unreg.username),
             unreg_no_record
         ]
@@ -653,8 +663,7 @@ class TestAddingContributorViews(DbTestCase):
         res = deserialize_contributors(
             self.project,
             contrib_data,
-            auth=Auth(self.creator),
-            email_unregistered=True)
+            auth=Auth(self.creator))
         assert_equal(len(res), len(contrib_data))
         assert_true(res[0]['user'].is_registered)
 
@@ -663,6 +672,15 @@ class TestAddingContributorViews(DbTestCase):
 
         assert_false(res[2]['user'].is_registered)
         assert_true(res[2]['user']._id)
+
+    def test_deserialize_contributors_sends_unreg_contributor_added_signal(self):
+        unreg = UnregUserFactory()
+        from website.project.model import unreg_contributor_added
+        serialized = [serialize_unregistered(fake.name(), unreg.username)]
+        with capture_signals() as mock_signals:
+            deserialize_contributors(self.project, serialized,
+                auth=Auth(self.creator))
+        assert_equal(mock_signals.signals_sent(), set([unreg_contributor_added]))
 
     def test_serialize_unregistered_with_record(self):
         name, email = fake.name(), fake.email()
@@ -676,7 +694,7 @@ class TestAddingContributorViews(DbTestCase):
         assert_false(res['active'])
         assert_false(res['registered'])
         assert_equal(res['id'], user._primary_key)
-        assert_true(res['gravatar'])
+        assert_true(res['gravatar_url'])
         assert_equal(res['fullname'], name)
         assert_equal(res['email'], email)
 
@@ -691,7 +709,7 @@ class TestAddingContributorViews(DbTestCase):
             'email': email,
             'permission': 'admin',
         }
-        reg_dict = _add_contributor_json(reg_user)
+        reg_dict = add_contributor_json(reg_user)
         reg_dict['permission'] = 'admin'
         payload = {
             'users': [reg_dict, pseudouser],
@@ -715,6 +733,41 @@ class TestAddingContributorViews(DbTestCase):
         rec = new_unreg.get_unclaimed_record(self.project._primary_key)
         assert_equal(rec['name'], name)
         assert_equal(rec['email'], email)
+
+    @mock.patch('website.project.views.contributor.send_claim_email')
+    def test_add_contributors_post_only_sends_one_email_to_unreg_user(self,
+        mock_send_claim_email):
+        # Project has components
+        comp1, comp2 = NodeFactory(creator=self.creator), NodeFactory(creator=self.creator)
+        self.project.nodes.append(comp1)
+        self.project.nodes.append(comp2)
+        self.project.save()
+
+        # An unreg user is added to the project AND its components
+        unreg_user = {  # dict because user has not previous unreg record
+            'id': None,
+            'registered': False,
+            'fullname': fake.name(),
+            'email': fake.email(),
+            'permission': 'admin',
+        }
+        payload = {
+            'users': [unreg_user],
+            'node_ids': [comp1._primary_key, comp2._primary_key]
+        }
+
+        # send request
+        with app.test_request_context():
+            url = api_url_for(
+                'project_contributors_post',
+                pid=self.project._primary_key
+            )
+        assert self.project.can_edit(user=self.creator)
+        res = self.app.post_json(url, payload, auth=self.creator.auth)
+
+        # finalize_invitation should only have been called once
+        assert_equal(mock_send_claim_email.call_count, 1)
+
 
     @mock.patch('website.project.views.contributor.send_claim_email')
     def test_email_sent_when_unreg_user_is_added(self, send_mail):
@@ -748,7 +801,7 @@ class TestAddingContributorViews(DbTestCase):
             'email': fake.email(),
             'permission': 'write',
         }
-        reg_dict = _add_contributor_json(reg_user)
+        reg_dict = add_contributor_json(reg_user)
         reg_dict['permission'] = 'admin'
         payload = {
             'users': [reg_dict, pseudouser],
@@ -773,7 +826,7 @@ class TestAddingContributorViews(DbTestCase):
             'email': email,
             'permission': 'admin',
         }
-        reg_dict = _add_contributor_json(reg_user)
+        reg_dict = add_contributor_json(reg_user)
         reg_dict['permission'] = 'admin'
         payload = {
             'users': [reg_dict, pseudouser],
@@ -786,7 +839,6 @@ class TestAddingContributorViews(DbTestCase):
             n_contributors_pre + len(payload['users']))
 
 
-@unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
 class TestUserInviteViews(DbTestCase):
 
     def setUp(self):
@@ -814,7 +866,7 @@ class TestUserInviteViews(DbTestCase):
         project2.save()
         res = self.app.post_json(self.invite_url,
             {'fullname': name, 'email': email}, auth=self.user.auth)
-        expected = _add_contributor_json(unreg_user)
+        expected = add_contributor_json(unreg_user)
         expected['fullname'] = name
         expected['email'] = email
         assert_equal(res.json['contributor'], expected)
@@ -854,7 +906,7 @@ class TestUserInviteViews(DbTestCase):
         res = self.app.post_json(self.invite_url,
             {'email': 'brian@queen.com', 'fullname': ''}, auth=self.user.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_send_claim_email_to_given_email(self, send_mail):
@@ -905,6 +957,89 @@ class TestClaimViews(DbTestCase):
             auth=Auth(user=self.referrer)
         )
         self.project.save()
+
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_claim_user_post_with_registered_user_id(self, send_mail):
+        # registered user who is attempting to claim the unclaimed contributor
+        reg_user = UserFactory()
+        payload = {
+            # pk of unreg user record
+            'pk': self.user._primary_key,
+            'claimerId': reg_user._primary_key
+        }
+        url = '/api/v1/user/{uid}/{pid}/claim/email/'.format(
+            uid=self.user._primary_key,
+            pid=self.project._primary_key,
+        )
+
+        res = self.app.post_json(url,
+            payload
+        )
+
+        # mail was sent
+        assert_true(send_mail.called)
+        # ... to the correct address
+        assert_true(send_mail.called_with(to_addr=self.given_email))
+
+        # view returns the correct JSON
+        assert_equal(res.json, {
+            'status': 'success',
+            'email': reg_user.username,
+            'fullname': self.given_name,
+        })
+
+    @mock.patch('website.project.views.contributor.send_claim_registered_email')
+    def test_claim_user_post_with_email_already_registered_sends_correct_email(self,
+        send_claim_registered_email):
+        reg_user = UserFactory()
+        payload = {
+            'value': reg_user.username,
+            'pk': self.user._primary_key
+        }
+        with app.test_request_context():
+            url = api_url_for('claim_user_post', uid=self.user._primary_key,
+                pid=self.project._primary_key)
+        res = self.app.post_json(url, payload)
+        assert_true(send_claim_registered_email.called)
+
+    def test_user_with_removed_unclaimed_url_claiming(self):
+        """ Tests that when an unclaimed user is removed from a project, the
+        unregistered user object does not retain the token.
+        """
+        self.project.remove_contributor(self.user, Auth(user=self.referrer))
+
+        assert_not_in(
+            self.project._primary_key,
+            self.user.unclaimed_records.keys()
+        )
+
+
+    def test_user_with_claim_url_cannot_claim_twice(self):
+        """ Tests that when an unclaimed user is replaced on a project with a
+        claimed user, the unregistered user object does not retain the token.
+        """
+        reg_user = AuthUserFactory()
+
+        self.project.replace_contributor(self.user, reg_user)
+
+        assert_not_in(
+            self.project._primary_key,
+            self.user.unclaimed_records.keys()
+        )
+
+    def test_claim_user_form_redirects_to_password_confirm_page_if_user_is_logged_in(self):
+        reg_user = AuthUserFactory()
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(url, auth=reg_user.auth)
+        assert_equal(res.status_code, 302)
+        with app.test_request_context():
+            res = res.follow(auth=reg_user.auth)
+            token = self.user.get_unclaimed_record(self.project._primary_key)['token']
+            expected = web_url_for('claim_user_registered',
+                pid=self.project._primary_key,
+                uid=self.user._primary_key,
+                token=token)
+            assert_equal(res.request.path, expected)
 
     def test_get_valid_form(self):
         url = self.user.get_claim_url(self.project._primary_key)
@@ -974,7 +1109,7 @@ class TestClaimViews(DbTestCase):
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_claim_user_post_returns_fullname(self, send_mail):
-        url = '/api/v1/user/{0}/{1}/claim/verify/'.format(self.user._primary_key,
+        url = '/api/v1/user/{0}/{1}/claim/email/'.format(self.user._primary_key,
             self.project._primary_key)
         res = self.app.post_json(url,
             {'value': self.given_email, 'pk': self.user._primary_key},
@@ -986,7 +1121,7 @@ class TestClaimViews(DbTestCase):
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_claim_user_post_if_email_is_different_from_given_email(self, send_mail):
         email = fake.email()  # email that is different from the one the referrer gave
-        url = '/api/v1/user/{0}/{1}/claim/verify/'.format(self.user._primary_key,
+        url = '/api/v1/user/{0}/{1}/claim/email/'.format(self.user._primary_key,
             self.project._primary_key)
         res = self.app.post_json(url,
             {'value': email, 'pk': self.user._primary_key}
@@ -1001,6 +1136,26 @@ class TestClaimViews(DbTestCase):
         assert_true(call_to_referrer.called_with(
             to_addr=self.given_email
         ))
+
+    def test_claim_url_with_bad_token_returns_400(self):
+        with app.test_request_context():
+            url = web_url_for('claim_user_registered', uid=self.user._primary_key,
+                pid=self.project._primary_key, token='badtoken')
+        res = self.app.get(url, auth=self.referrer.auth, expect_errors=400)
+        assert_equal(res.status_code, 400)
+
+    def test_cannot_claim_user_with_user_who_is_already_contributor(self):
+        # user who is already a contirbutor to the project
+        contrib = AuthUserFactory.build()
+        contrib.set_password('underpressure')
+        contrib.save()
+        self.project.add_contributor(contrib, auth=Auth(self.project.creator))
+        self.project.save()
+        # Claiming user goes to claim url, but contrib is already logged in
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(url, auth=contrib.auth).follow(auth=contrib.auth, expect_errors=True)
+        # Response is a 400
+        assert_equal(res.status_code, 400)
 
 class TestWatchViews(DbTestCase):
 
@@ -1052,7 +1207,7 @@ class TestWatchViews(DbTestCase):
                             params={},
                             auth=self.auth,
                             expect_errors=True)
-        assert_equal(res2.status_code, 400)
+        assert_equal(res2.status_code, http.BAD_REQUEST)
 
     def test_unwatching_a_project_removes_from_watched_list(self):
         # The user has already watched a project
@@ -1105,7 +1260,21 @@ class TestWatchViews(DbTestCase):
         self.user.save()
         url = "/api/v1/watched/logs/"
         res = self.app.get(url, auth=self.auth)
-        assert_equal(len(res.json['logs']), len(project.logs))
+        assert_equal(len(res.json['logs']), 10)
+        assert_equal(res.json['logs'][0]['action'], 'file_added')
+
+    def test_get_more_watched_logs(self):
+        project = ProjectFactory()
+        # Add some logs
+        for _ in range(12):
+            project.logs.append(NodeLogFactory(user=self.user, action="file_added"))
+        project.save()
+        watch_cfg = WatchConfigFactory(node=project)
+        self.user.watch(watch_cfg)
+        self.user.save()
+        url = "/api/v1/watched/logs/"
+        res = self.app.get(url, {"pageNum": 1}, auth=self.auth)
+        assert_equal(len(res.json['logs']), 3)
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
 
@@ -1279,12 +1448,8 @@ class TestAuthViews(DbTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
-        self.user = UserFactory.build()
-        # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.auth = ('test', api_key._primary_key)
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
 
     def test_merge_user(self):
         dupe = UserFactory(username="copy@cat.com",
@@ -1312,6 +1477,20 @@ class TestAuthViews(DbTestCase):
         assert_true(send_mail.called_with(
             to_addr='fred@queen.com'
         ))
+
+    def test_register_post_sends_user_registered_signal(self):
+        with app.test_request_context():
+            url = web_url_for('auth_register_post')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        with capture_signals() as mock_signals:
+            self.app.post(url, {
+                'register-fullname': name,
+                'register-username': email,
+                'register-password': password,
+                'register-username2': email,
+                'register-password2': password
+            })
+        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered]))
 
     def test_resend_confirmation_get(self):
         res = self.app.get('/resend/')
@@ -1352,7 +1531,7 @@ class TestAuthViews(DbTestCase):
         user.confirm_email(token)
         user.save()
         res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_change_names(self):
         self.app.post(
@@ -1426,7 +1605,7 @@ class TestFileViews(DbTestCase):
     def test_files_get(self):
         url = '/api/v1/{0}/files/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, http.OK)
         expected = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res.json['node'], expected['node'])
         assert_in('tree_js', res.json)
@@ -1435,7 +1614,7 @@ class TestFileViews(DbTestCase):
     def test_grid_data(self):
         url = '/api/v1/{0}/files/grid/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, http.OK)
         expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))
         data = res.json['data']
         assert_equal(len(data), len(expected))
@@ -1454,13 +1633,14 @@ class TestComments(DbTestCase):
         project.comment_level = comment_level
         project.save()
 
-    def _add_comment(self, project, **kwargs):
+    def _add_comment(self, project, content=None, **kwargs):
 
+        content = content if content is not None else 'hammer to fall'
         url = project.api_url + 'comment/'
         return self.app.post_json(
             url,
             {
-                'content': 'hammer to fall',
+                'content': content,
                 'isPublic': 'public',
             },
             **kwargs
@@ -1479,8 +1659,7 @@ class TestComments(DbTestCase):
         assert_equal(
             res.json['comment'],
             serialize_comment(
-                self.project.commented[0], self.project,
-                self.consolidated_auth
+                self.project.commented[0], self.consolidated_auth
             )
         )
 
@@ -1497,8 +1676,7 @@ class TestComments(DbTestCase):
         assert_equal(
             res.json['comment'],
             serialize_comment(
-                self.project.commented[0], self.project,
-                Auth(user=self.non_contributor)
+                self.project.commented[0], Auth(user=self.non_contributor)
             )
         )
 
@@ -1515,8 +1693,7 @@ class TestComments(DbTestCase):
         assert_equal(
             res.json['comment'],
             serialize_comment(
-                self.project.commented[0], self.project,
-                self.consolidated_auth
+                self.project.commented[0], self.consolidated_auth
             )
         )
 
@@ -1544,7 +1721,37 @@ class TestComments(DbTestCase):
             self.project, auth=self.project.creator.auth, expect_errors=True,
         )
 
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    def test_add_comment_empty(self):
+        self._configure_project(self.project, 'public')
+        res = self._add_comment(
+            self.project, content='',
+            auth=self.project.creator.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_false(getattr(self.project, 'commented', []))
+
+    def test_add_comment_toolong(self):
+        self._configure_project(self.project, 'public')
+        res = self._add_comment(
+            self.project, content='toolong' * 500,
+            auth=self.project.creator.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_false(getattr(self.project, 'commented', []))
+
+    def test_add_comment_whitespace(self):
+        self._configure_project(self.project, 'public')
+        res = self._add_comment(
+            self.project, content='  ',
+            auth=self.project.creator.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_false(getattr(self.project, 'commented', []))
 
     def test_edit_comment(self):
 
@@ -1552,7 +1759,7 @@ class TestComments(DbTestCase):
         comment = CommentFactory(node=self.project)
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.post_json(
+        res = self.app.put_json(
             url,
             {
                 'content': 'edited',
@@ -1564,10 +1771,43 @@ class TestComments(DbTestCase):
         comment.reload()
 
         assert_equal(res.json['content'], 'edited')
-        assert_equal(res.json['isPublic'], 'private')
 
         assert_equal(comment.content, 'edited')
-        assert_false(comment.is_public)
+
+    def test_edit_comment_short(self):
+        self._configure_project(self.project, 'public')
+        comment = CommentFactory(node=self.project, content='short')
+        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
+        res = self.app.put_json(
+            url,
+            {
+                'content': '',
+                'isPublic': 'private',
+            },
+            auth=self.project.creator.auth,
+            expect_errors=True,
+        )
+        comment.reload()
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(comment.content, 'short')
+
+
+    def test_edit_comment_toolong(self):
+        self._configure_project(self.project, 'public')
+        comment = CommentFactory(node=self.project, content='short')
+        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
+        res = self.app.put_json(
+            url,
+            {
+                'content': 'toolong' * 500,
+                'isPublic': 'private',
+            },
+            auth=self.project.creator.auth,
+            expect_errors=True,
+        )
+        comment.reload()
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(comment.content, 'short')
 
     def test_edit_comment_non_author(self):
         "Contributors who are not the comment author cannot edit."
@@ -1577,7 +1817,7 @@ class TestComments(DbTestCase):
         self.project.add_contributor(non_author, auth=self.consolidated_auth)
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.post_json(
+        res = self.app.put_json(
             url,
             {
                 'content': 'edited',
@@ -1595,7 +1835,7 @@ class TestComments(DbTestCase):
         comment = CommentFactory(node=self.project)
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.post_json(
+        res = self.app.put_json(
             url,
             {
                 'content': 'edited',
@@ -1640,10 +1880,11 @@ class TestComments(DbTestCase):
 
         assert_false(comment.is_deleted)
 
-    def test_report_spam(self):
+    def test_report_abuse(self):
 
         self._configure_project(self.project, 'public')
         comment = CommentFactory(node=self.project)
+        reporter = AuthUserFactory()
 
         url = self.project.api_url + 'comment/{0}/report/'.format(comment._id)
 
@@ -1653,27 +1894,15 @@ class TestComments(DbTestCase):
                 'category': 'spam',
                 'text': 'ads',
             },
-            auth=self.project.creator.auth,
+            auth=reporter.auth,
         )
 
         comment.reload()
-        assert_in(self.project.creator._id, comment.reports)
+        assert_in(reporter._id, comment.reports)
         assert_equal(
-            comment.reports[self.project.creator._id],
+            comment.reports[reporter._id],
             {'category': 'spam', 'text': 'ads'}
         )
-
-    def test_cannot_view_deleted_comments(self):
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
-        deleted_comment = CommentFactory(node=self.project)
-        deleted_comment.delete(auth=self.consolidated_auth, save=True)
-
-        url = self.project.api_url + 'comments/'
-        res = self.app.get(url)
-
-        assert_equal(len(res.json['comments']), 1)
-        assert_equal(res.json['comments'][0]['content'], comment.content)
 
     def test_can_view_private_comments_if_contributor(self):
 
@@ -1684,18 +1913,6 @@ class TestComments(DbTestCase):
         res = self.app.get(url, auth=self.project.creator.auth)
 
         assert_equal(len(res.json['comments']), 1)
-
-
-    def test_cannot_view_private_comments_if_not_contributor(self):
-
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(is_public=False)
-
-        user = AuthUserFactory()
-        url = self.project.api_url + 'comments/'
-        res = self.app.get(url, auth=user.auth)
-
-        assert_equal(len(res.json['comments']), 0)
 
     def test_discussion_recursive(self):
 
@@ -1747,6 +1964,20 @@ class TestComments(DbTestCase):
         assert_equal(observed, expected)
 
 
+class TestTagViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
+    def test_tag_get_returns_200(self):
+        with app.test_request_context():
+            url = web_url_for('project_tag', tag='foo')
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+
 class TestSearchViews(DbTestCase):
 
     def setUp(self):
@@ -1764,10 +1995,17 @@ class TestSearchViews(DbTestCase):
         assert_equal(len(result), 1)
         freddie = result[0]
         assert_equal(freddie['fullname'], self.contrib1.fullname)
+        #TODO Should I be passing?
         assert_equal(freddie['email'], self.contrib1.username)
-        assert_in('gravatar', freddie)
+        assert_in('gravatar_url', freddie)
         assert_equal(freddie['registered'], self.contrib1.is_registered)
         assert_equal(freddie['active'], self.contrib1.is_active())
+
+    def test_search_projects(self):
+        with app.test_request_context():
+            url = web_url_for('search_search')
+        res = self.app.get(url, {'q': self.project.title})
+        assert_equal(res.status_code, 200)
 
 
 if __name__ == '__main__':

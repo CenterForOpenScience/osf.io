@@ -10,7 +10,7 @@ from framework.status import push_status_message
 from framework.exceptions import HTTPError
 
 from website import models
-from website.project.decorators import must_be_contributor
+from website.project.decorators import must_have_permission
 from website.project.decorators import must_have_addon
 
 from ..api import GitHub
@@ -20,7 +20,7 @@ from ..auth import oauth_start_url, oauth_get_token
 logger = logging.getLogger(__name__)
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_have_addon('github', 'node')
 def github_add_user_auth(**kwargs):
 
@@ -96,7 +96,7 @@ def github_oauth_delete_user(**kwargs):
     return {}
 
 
-@must_be_contributor
+@must_have_permission('write')
 @must_have_addon('github', 'node')
 def github_oauth_delete_node(**kwargs):
 
@@ -124,7 +124,7 @@ def github_oauth_delete_node(**kwargs):
 
 
 # TODO: Move into remove addon
-@must_be_contributor
+@must_have_permission('write')
 @must_have_addon('github', 'node')
 def github_oauth_delete_node(**kwargs):
 
