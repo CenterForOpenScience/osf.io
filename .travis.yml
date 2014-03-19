@@ -1,6 +1,7 @@
 # Config file for automatic testing at travis-ci.org
 
 language: python
+services: mongodb
 
 python:
   - "2.7"
