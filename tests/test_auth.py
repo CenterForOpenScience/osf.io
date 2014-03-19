@@ -4,22 +4,31 @@ import unittest
 from nose.tools import *  # PEP8 asserts
 import mock
 import datetime
+import httplib as http
 
 from flask import Flask
 from werkzeug.wrappers import BaseResponse
-import httplib as http
+from webtest_plus import TestApp
 
 from framework.exceptions import HTTPError
 import framework.auth as auth
 from tests.base import DbTestCase
-from tests.factories import UserFactory, UnregUserFactory, AuthFactory, ProjectFactory
+from tests.factories import (UserFactory, UnregUserFactory, AuthFactory,
+    ProjectFactory, AuthUserFactory
+)
 
 from framework import Q
 from framework import app
+from framework.sessions import session
 from framework.auth.model import User
 from framework.auth.decorators import must_be_logged_in, Auth
 
-from website.project.decorators import must_have_permission
+from website.project.decorators import must_have_permission, must_be_contributor
+
+
+def assert_is_redirect(response, msg="Response is a redirect."):
+    assert 300 <= response.status_code < 400, msg
+
 
 class TestAuthUtils(DbTestCase):
 
@@ -103,26 +112,110 @@ class TestAuthObject(DbTestCase):
         auth2 = Auth(user=None)
         assert_false(auth2.logged_in)
 
+class TestPrivateLink(DbTestCase):
+
+    def setUp(self):
+        self.flaskapp = Flask('testing_private_links')
+
+        @self.flaskapp.route('/project/<pid>/')
+        @must_be_contributor
+        def project_get(**kwargs):
+            return 'success', 200
+
+        self.app = TestApp(self.flaskapp)
+
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(is_public=False)
+        self.key = self.project.add_private_link()
+        self.project.save()
+
+    @mock.patch('website.project.decorators.get_api_key')
+    @mock.patch('website.project.decorators.Auth.from_kwargs')
+    def test_has_private_link_key(self, mock_from_kwargs, mock_get_api_key):
+        mock_get_api_key.return_value = 'foobar123'
+        mock_from_kwargs.return_value = Auth(user=None)
+        res = self.app.get('/project/{0}'.format(self.project._primary_key),
+            {'key': self.key})
+        res = res.follow()
+        assert_equal(res.status_code, 200)
+        assert_equal(res.body, 'success')
+
+    @mock.patch('website.project.decorators.get_api_key')
+    @mock.patch('website.project.decorators.Auth.from_kwargs')
+    def test_does_not_have_key(self, mock_from_kwargs, mock_get_api_key):
+        mock_get_api_key.return_value = 'foobar123'
+        mock_from_kwargs.return_value = Auth(user=None)
+        res = self.app.get('/project/{0}'.format(self.project._primary_key),
+            {'key': None})
+        assert_is_redirect(res)
+
 
 # Flask app for testing view decorators
-app = Flask(__name__)
+decoratorapp = Flask('decorators')
+
+
+@must_be_contributor
+def view_that_needs_contributor(**kwargs):
+    return kwargs['project'] or kwargs['node']
+
+
+class AuthAppTestCase(DbTestCase):
+
+    def setUp(self):
+        self.ctx = decoratorapp.test_request_context()
+        self.ctx.push()
+
+    def tearDown(self):
+        self.ctx.pop()
+
+class TestMustBeContributorDecorator(AuthAppTestCase):
+
+    def setUp(self):
+        super(TestPrivateLinkUtils, self).setUp()
+        self.contrib = AuthUserFactory()
+        self.project = ProjectFactory()
+        self.project.add_contributor(self.contrib, auth=Auth(self.project.creator))
+        self.project.save()
+
+
+    def test_must_be_contributor_when_user_is_contributor(self):
+        result = view_that_needs_contributor(pid=self.project._primary_key,
+            api_key=self.contrib.auth[1],
+            api_node=self.project,
+            user=self.contrib)
+        assert_equal(result, self.project)
+
+    def test_must_be_contributor_when_user_is_not_contributor_raises_error(self):
+        non_contributor = AuthUserFactory()
+        with assert_raises(HTTPError):
+            view_that_needs_contributor(pid=self.project._primary_key,
+            api_key=non_contributor.auth[1],
+            api_node=non_contributor.auth[1],
+            user=non_contributor)
+
+    def test_must_be_contributor_no_user(self):
+        res = view_that_needs_contributor(
+            pid=self.project._primary_key,
+            user=None,
+            api_key='123',
+            api_node='abc',
+        )
+        assert_is_redirect(res)
+        redirect_url = res.headers['Location']
+        assert_equal(redirect_url, '/login/?next=/')
+
 
 @must_be_logged_in
 def protected(**kwargs):
     return 'open sesame'
 
+
 @must_have_permission('dance')
 def thriller(**kwargs):
     return 'chiller'
 
-class TestDecorators(DbTestCase):
 
-    def setUp(self):
-        self.ctx = app.test_request_context()
-        self.ctx.push()
-
-    def tearDown(self):
-        self.ctx.pop()
+class TestPermissionDecorators(AuthAppTestCase):
 
     @mock.patch('framework.auth.decorators.Auth.from_kwargs')
     def test_must_be_logged_in_decorator_with_user(self, mock_from_kwargs):
