@@ -6,11 +6,9 @@ from framework import request, redirect
 from framework.exceptions import HTTPError
 from framework.auth import get_current_user, get_api_key
 from framework.auth.decorators import Auth
-from framework import session
-import urllib
-import urlparse
+from framework.sessions import get_redirect_from_key, session
 from website.models import Node
-
+from website.util import web_url_for
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +73,40 @@ def must_not_be_registration(func):
 def get_key_ring():
     return set(session.data.get('key', []))
 
+
+def check_can_access(node, user, api_node=None):
+    """View helper that returns whether a given user can access a node.
+    If ``user`` is None, returns False.
+
+    :rtype: boolean
+    :raises: HTTPError (403) if user cannot access the node
+    """
+    if user is None:
+        return False
+    if not node.is_contributor(user) \
+            and api_node != node:
+        raise HTTPError(http.FORBIDDEN)
+    return True
+
+
+def choose_key(key, key_ring, node, auth, api_node=None):
+    """Returns ``None`` if the given key is valid, else return a redirect
+    response to the requested URL with the correct key from the key_ring.
+    """
+    if key in node.private_links:
+        auth.private_key = key
+        response = None
+    else:
+        auth.private_key = key_ring.intersection(
+            node.private_links
+        ).pop()
+        #do a redirect to reappend the key to url only if the user
+        # isn't a contributor
+        if auth.user is None or (not node.is_contributor(auth.user) and api_node != node):
+            response = get_redirect_from_key(auth.private_key)
+    return response
+
+
 def _must_be_contributor_factory(include_public):
     """Decorator factory for authorization wrappers. Decorators verify whether
     the current user is a contributor on the current project, or optionally
@@ -88,6 +120,7 @@ def _must_be_contributor_factory(include_public):
 
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
+            response = None
             kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
             node = kwargs['node'] or kwargs['project']
 
@@ -106,13 +139,10 @@ def _must_be_contributor_factory(include_public):
                 kwargs['auth'].private_key = link
                 if not node.is_public or not include_public:
                     if link not in node.private_links:
-                        if user is None:
-                            return redirect('/login/?next={0}'.format(request.path))
-                        if not node.is_contributor(user) \
-                                and api_node != node:
-                            raise HTTPError(http.FORBIDDEN)
-
-                return func(*args, **kwargs)
+                        if not check_can_access(node=node, user=user,
+                                api_node=api_node):
+                            response = redirect(
+                                web_url_for('auth_login', next=request.path))
             #for login user
             else:
                 #link first time show up record it in the key ring
@@ -124,34 +154,21 @@ def _must_be_contributor_factory(include_public):
                 # if no intersction check other privilege
                 if not node.is_public or not include_public:
                     if key_ring.isdisjoint(node.private_links):
-                        if user is None:
-                            return redirect('/login/?next={0}'.format(request.path))
-                        if not node.is_contributor(user) \
-                                and api_node != node:
-                            raise HTTPError(http.FORBIDDEN)
-                        kwargs['auth'].private_key = ''
+                        if not check_can_access(node=node, user=user,
+                                api_node=api_node):
+                            response = redirect(
+                                web_url_for('auth_login', next=request.path))
+                        kwargs['auth'].private_key = None
 
                     #has intersection: check if the link is valid if not use other key
                     # in the key ring
                     else:
-                        if link in node.private_links:
-                            kwargs['auth'].private_key = link
-                        else:
-                            parsed_path = urlparse.urlparse(request.path)
-                            args = request.args.to_dict()
-                            kwargs['auth'].private_key = key_ring.intersection(
-                                node.private_links
-                            ).pop()
-                            #do a redirect to reappend the key to url only if the user
-                            # isn't a contributor
-                            if user is None or (not node.is_contributor(user) and api_node != node):
-                                args['key'] = kwargs['auth'].private_key
-                                new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
-                                new_path = urlparse.urlunparse(new_parsed_path)
-                                return redirect(new_path)
+                        response = choose_key(
+                            key=link, key_ring=key_ring, node=node,
+                            auth=kwargs['auth'], api_node=api_node)
                 else:
-                    kwargs['auth'].private_key = ''
-                return func(*args, **kwargs)
+                    kwargs['auth'].private_key = None
+                return response or func(*args, **kwargs)
 
         return wrapped
 

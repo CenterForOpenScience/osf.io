@@ -13,6 +13,17 @@ from framework.flask import app, request, redirect
 from .model import Session
 
 
+def get_redirect_from_key(key):
+    """Redirects the user to the requests URL with the given key appended
+    to the query parameters.
+    """
+    parsed_path = urlparse.urlparse(request.path)
+    args = request.args.to_dict()
+    args['key'] = key
+    new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
+    new_path = urlparse.urlunparse(new_parsed_path)
+    return redirect(new_path, code=307)
+
 @app.before_request
 def prepare_private_key():
 
@@ -37,12 +48,8 @@ def prepare_private_key():
 
     # Update URL and redirect
     if key and not session:
-        parsed_path = urlparse.urlparse(request.path)
-        args = request.args.to_dict()
-        args['key'] = key
-        new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
-        new_path = urlparse.urlunparse(new_parsed_path)
-        return redirect(new_path, code=307)
+        response = get_redirect_from_key(key)
+        return response
 
 logger = logging.getLogger(__name__)
 
