@@ -62,7 +62,7 @@
                                 <i class="icon-eye-open"></i>
                                 <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                             </a>
-
+                        
                         <a rel="tooltip" title="Duplicate"
                            class="btn btn-default${ '' if is_project else ' disabled'}" href="#"
                            data-toggle="modal" data-target="#duplicateModal"    >
