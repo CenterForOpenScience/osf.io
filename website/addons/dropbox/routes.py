@@ -4,6 +4,8 @@ from framework.routing import Rule, json_renderer
 
 from website.addons.dropbox import views
 
+from . import views
+
 settings_routes = {
     'rules': [
 
@@ -37,6 +39,46 @@ settings_routes = {
 
 crud_routes = {
     'rules': [
+        Rule(
+            [
+                '/project/<pid>/dropbox/<path:path>/',
+                '/project/<pid>/node/<nid>/dropbox/<path:path>/',
+            ],
+            'delete',
+            views.crud.dropbox_delete_file,
+            json_renderer
+        ),
+        Rule(
+            [
+                '/project/<pid>/dropbox/<path:path>/',
+                '/project/<pid>/node/<nid>/dropbox/<path:path>/',
+            ],
+            'get',
+            views.crud.dropbox_download,
+            json_renderer
+        ),
+        Rule(
+            [
+                '/project/<pid>/dropbox/<path:path>/',
+                '/project/<pid>/node/<nid>/dropbox/<path:path>/',
+                '/project/<pid>/dropbox/',
+                '/project/<pid>/node/<nid>/dropbox/',
+            ],
+            'post',
+            views.crud.dropbox_upload,
+            json_renderer
+        ),
+        Rule(
+            [
+                '/project/<pid>/dropbox/hgrid/',
+                '/project/<pid>/node/<nid>/dropbox/hgrid/',
+                '/project/<pid>/dropbox/hgrid/<path:path>/',
+                '/project/<pid>/node/<nid>/dropbox/hgrid/<path:path>/',
+            ],
+            'get',
+            views.hgrid.dropbox_hgrid_data_contents,
+            json_renderer
+        ),
     ],
     'prefix': '/api/v1'
 }
