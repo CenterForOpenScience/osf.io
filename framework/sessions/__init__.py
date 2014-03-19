@@ -12,6 +12,8 @@ from website import settings
 from framework.flask import app, request, redirect
 from .model import Session
 
+logger = logging.getLogger(__name__)
+debug = logger.debug
 
 def get_redirect_from_key(key):
     """Redirects the user to the requests URL with the given key appended
@@ -50,8 +52,6 @@ def prepare_private_key():
     if key and not session:
         response = get_redirect_from_key(key)
         return response
-
-logger = logging.getLogger(__name__)
 
 
 # todo 2-back page view queue

@@ -1530,9 +1530,10 @@ class TestFileViews(DbTestCase):
 
     def test_files_get(self):
         url = '/api/v1/{0}/files/'.format(self.project._primary_key)
-        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        with app.test_request_context():
+            res = self.app.get(url, auth=self.user.auth).maybe_follow()
+            expected = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res.status_code, http.OK)
-        expected = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res.json['node'], expected['node'])
         assert_in('tree_js', res.json)
         assert_in('tree_css', res.json)

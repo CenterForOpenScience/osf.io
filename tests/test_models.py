@@ -1278,7 +1278,8 @@ class TestProject(DbTestCase):
         assert_true(self.project.can_view(self.consolidate_auth))
         assert_true(self.project.can_view(contributor_auth))
         assert_false(self.project.can_view(other_guy_auth))
-        assert_true(self.project.can_view(other_guy_auth, link))
+        other_guy_auth.private_key = link
+        assert_true(self.project.can_view(other_guy_auth))
 
     def test_creator_cannot_edit_project_if_they_are_removed(self):
         creator = UserFactory()
@@ -1802,7 +1803,7 @@ class TestForkNode(DbTestCase):
 
     def test_not_fork_private_link(self):
         link = self.project.add_private_link()
-        fork = self.project.fork_node(self.user)
+        fork = self.project.fork_node(self.consolidate_auth)
         assert_not_in(link, fork.private_links)
 
     def test_cannot_fork_private_node(self):
@@ -1846,6 +1847,8 @@ class TestRegisterNode(DbTestCase):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
+        self.project.add_private_link()
+        self.project.save()
         self.registration = RegistrationFactory(project=self.project)
 
     def test_factory(self):
@@ -1907,7 +1910,7 @@ class TestRegisterNode(DbTestCase):
     def test_private_links(self):
         assert_not_equal(
             self.registration.private_links,
-            self.project.priavte_links
+            self.project.private_links
         )
 
     def test_creator(self):

@@ -178,7 +178,8 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
 
 
     def test_must_be_contributor_when_user_is_contributor(self):
-        result = view_that_needs_contributor(pid=self.project._primary_key,
+        result = view_that_needs_contributor(
+            pid=self.project._primary_key,
             api_key=self.contrib.auth[1],
             api_node=self.project,
             user=self.contrib)
@@ -187,10 +188,12 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
     def test_must_be_contributor_when_user_is_not_contributor_raises_error(self):
         non_contributor = AuthUserFactory()
         with assert_raises(HTTPError):
-            view_that_needs_contributor(pid=self.project._primary_key,
-            api_key=non_contributor.auth[1],
-            api_node=non_contributor.auth[1],
-            user=non_contributor)
+            view_that_needs_contributor(
+                pid=self.project._primary_key,
+                api_key=non_contributor.auth[1],
+                api_node=non_contributor.auth[1],
+                user=non_contributor
+            )
 
     def test_must_be_contributor_no_user(self):
         res = view_that_needs_contributor(
