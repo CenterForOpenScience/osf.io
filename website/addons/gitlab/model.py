@@ -14,7 +14,7 @@ from website.util.permissions import READ
 
 from .api import client
 from .exceptions import GitlabError
-from .utils import create_user, translate_permissions
+from .utils import create_user, setup_user, translate_permissions
 
 
 logger = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
         """Add new user to GitLab project.
 
         """
-        user_settings = added.get_addon('gitlab')
+        user_settings = setup_user(added)
         permissions = node.get_permissions(added)
         access_level = translate_permissions(permissions)
         client.addprojectmember(
@@ -68,7 +68,7 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
         """Update GitLab permissions.
 
         """
-        user_settings = user.get_addon('gitlab')
+        user_settings = setup_user(user)
         access_level = translate_permissions(permissions)
         client.editprojectmember(
             self.project_id, user_settings.user_id,
@@ -83,7 +83,7 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
         client.deleteprojectmember(self.project_id, user_settings.user_id)
 
     def after_fork(self, node, fork, user, save=True):
-        """
+        """Copy Gitlab project as fork.
 
         """
         # Call superclass method
@@ -109,7 +109,7 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
         return clone, message
 
     def after_register(self, node, registration, user, save=True):
-        """
+        """Copy Gitlab project as fork,
 
         """
         # Call superclass method

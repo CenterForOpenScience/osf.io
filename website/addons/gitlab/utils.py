@@ -87,7 +87,7 @@ def create_user(user_settings):
         raise GitlabError('Could not create user')
 
 
-def create_node(node_settings):
+def create_node(node_settings, initialize=True):
     """
 
     """
@@ -105,16 +105,27 @@ def create_node(node_settings):
     if response:
         node_settings.creator_osf_id = node.creator._id
         node_settings.project_id = response['id']
-        initialize_repo(node_settings)
+        if initialize:
+            initialize_repo(node_settings)
         node_settings.save()
 
 
-def setup_owner(owner):
+def setup_user(user):
     """
 
     """
-    owner_settings = owner.get_or_add_addon('gitlab')
-    create_user(owner_settings)
+    user_settings = user.get_or_add_addon('gitlab')
+    create_user(user_settings)
+    return user_settings
+
+
+def setup_node(node, initialize=True):
+    """
+
+    """
+    node_settings = node.get_or_add_addon('gitlab')
+    create_node(node_settings, initialize=initialize)
+    return node_settings
 
 
 type_to_kind = {
