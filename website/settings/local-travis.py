@@ -7,6 +7,8 @@ NOTE: local.py will not be added to source control.
 
 from . import defaults
 
+DB_PORT = 27017
+
 DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 
