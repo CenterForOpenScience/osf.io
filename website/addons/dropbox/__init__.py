@@ -1,9 +1,9 @@
-from website.addons.dropbox import model, routes
+from website.addons.dropbox import model, routes, views
 
 
-MODELS = [model.DropboxUserSettings]
+MODELS = [model.DropboxUserSettings, model.DropboxNodeSettings]
 USER_SETTINGS_MODEL = model.DropboxUserSettings
-#NODE_SETTINGS_MODEL = model.AddonDropboxNodeSettings
+NODE_SETTINGS_MODEL = model.DropboxNodeSettings
 
 ROUTES = [routes.settings_routes, routes.nonapi_routes, routes.api_routes]
 
@@ -11,13 +11,13 @@ SHORT_NAME = 'dropbox'
 FULL_NAME = 'Dropbox'
 
 
-OWNERS = ['user']
+OWNERS = ['user', 'node']
 
 ADDED_DEFAULT = []
 ADDED_MANDATORY = []
 
 VIEWS = []
-CONFIGS = ['user']
+CONFIGS = ['user', 'node']
 
 CATEGORIES = ['storage']
 
@@ -33,6 +33,6 @@ INCLUDE_CSS = {
 }
 
 HAS_HGRID_FILES = True
-# GET_HGRID_DATA = TODO
+GET_HGRID_DATA = views.hgrid.dropbox_addon_folder
 
 MAX_FILE_SIZE = 5  # MB
