@@ -174,6 +174,13 @@ def test():
     """
     test_osf()
 
+
+@task
+def test_all():
+    test_osf()
+    test_addons()
+
+
 # TODO: user bower once hgrid is released
 @task
 def get_hgrid():
