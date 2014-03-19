@@ -10,7 +10,8 @@ install:
     - pip install invoke
     - invoke requirements
     - invoke addon_requirements
-    - cp website/settings/local-travis.py website/settings/local.py
+    - sudo cp website/settings/local-travis.py website/settings/local.py
+    - ls website/settings
 
 # command to run tests, e.g. python setup.py test
 script: invoke test_all
