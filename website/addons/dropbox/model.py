@@ -61,8 +61,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
 
     @property
     def has_auth(self):
-        return True  # TODO Fix me
-        #return self.user_setttings and self.user_setttings.has_auth
+        return self.user_settings and self.user_settings.has_auth
 
     def delete(self, save=True):
         super(DropboxNodeSettings, self).delete(save=False)
@@ -71,6 +70,10 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
 
     def to_json(self, user):
         ret = super(DropboxNodeSettings, self).to_json(user)
+        if not self.user_settings:
+            self.folder = '/'
+            self.user_settings = user.get_addon('dropbox')
+            self.save()
         ret.update({
             'folder': self.folder or '',
             'node_has_auth': self.has_auth,

@@ -1,4 +1,4 @@
-from website.addons.dropbox import model, routes
+from website.addons.dropbox import model, routes, views
 
 
 MODELS = [model.DropboxUserSettings, model.DropboxNodeSettings]
@@ -33,6 +33,6 @@ INCLUDE_CSS = {
 }
 
 HAS_HGRID_FILES = True
-# GET_HGRID_DATA = TODO
+GET_HGRID_DATA = views.hgrid.dropbox_addon_folder
 
 MAX_FILE_SIZE = 5  # MB
