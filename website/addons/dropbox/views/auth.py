@@ -76,7 +76,7 @@ def dropbox_oauth_finish(**kwargs):
     user_settings.dropbox_id = dropbox_id
     user_settings.save()
 
-    flash('Successfully authenticated with Dropbox', 'success')
+    flash('Successfully authorized Dropbox', 'success')
     if node:
         return redirect(os.path.join(node.url, 'settings'))
     return redirect(web_url_for('profile_settings'))
@@ -89,5 +89,5 @@ def dropbox_oauth_delete_user(**kwargs):
     client.disable_access_token()
     user_settings.clear_auth()
     user_settings.save()
-    flash('Removed token', 'info')
+    flash('Removed Dropbox token', 'info')
     return {}

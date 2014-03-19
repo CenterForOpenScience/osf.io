@@ -35,13 +35,8 @@ settings_routes = {
     'prefix': '/api/v1'
 }
 
-api_routes = {
+crud_routes = {
     'rules': [
     ],
     'prefix': '/api/v1'
-}
-
-nonapi_routes = {
-    'rules': [
-    ]
 }
