@@ -41,11 +41,29 @@ api_routes = {
     'rules': [
         Rule(
             [
-                '/project/<pid>/dropbox/<path:path>/delete/',
-                '/project/<pid>/node/<nid>/dropbox/<path:path>/delete/',
+                '/project/<pid>/dropbox/<path:path>/',
+                '/project/<pid>/node/<nid>/dropbox/<path:path>/',
             ],
             'delete',
             views.crud.dropbox_delete_file,
+            json_renderer
+        ),
+        Rule(
+            [
+                '/project/<pid>/dropbox/<path:path>/',
+                '/project/<pid>/node/<nid>/dropbox/<path:path>/',
+            ],
+            'get',
+            views.crud.dropbox_download,
+            json_renderer
+        ),
+        Rule(
+            [
+                '/project/<pid>/dropbox/<path:path>/',
+                '/project/<pid>/node/<nid>/dropbox/<path:path>/',
+            ],
+            'post',
+            views.crud.dropbox_upload,
             json_renderer
         ),
         Rule(
