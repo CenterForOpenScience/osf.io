@@ -84,3 +84,14 @@ class TestCRUDViews(DropboxAddonTestCase):
         mock_put_file.assert_called_once
         first_argument = mock_put_file.call_args[0][0]
         assert_equal(first_argument, '/rootfile.rst')
+
+    @mock.patch('website.addons.dropbox.views.crud.DropboxClient.file_delete')
+    def test_delete_file(self, mock_file_delete):
+        assert 0, 'finish me'
+
+    @mock.patch('website.addons.dropbox.views.crud.DropboxClient.share')
+    def test_download_file(self, mock_share):
+        assert 0, 'finish me'
+
+    def test_render_file(self):
+        assert 0, 'finish me'
