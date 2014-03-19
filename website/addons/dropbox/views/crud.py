@@ -28,11 +28,11 @@ def dropbox_delete_file(**kwargs):
 @must_not_be_registration
 @must_have_addon('dropbox', 'node')
 def dropbox_upload(**kwargs):
-    path = kwargs.get('path', None)
-    with kwargs['dropbox'] as client:
-        file = request.files.get('file', None)
-        if path and file and client:
-            return client.put(path, file)  # TODO Cast to Hgrid
+    path = kwargs.get('path', '/')
+    client = get_node_addon_client(kwargs['node_addon'])
+    file = request.files.get('file', None)
+    if path and file and client:
+        return client.put_file('{0}/{1}'.format(path, file.name), file)  # TODO Cast to Hgrid
     raise HTTPError(http.BAD_REQUEST)
 
 

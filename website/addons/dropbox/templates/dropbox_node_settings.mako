@@ -3,68 +3,19 @@
 <script src="/static/vendor/bower_components/typeahead.js/dist/typeahead.jquery.js"></script>
 <script src="/static/vendor/bower_components/typeahead.js/dist/bloodhound.min.js"></script>
 <link rel="stylesheet" href="/addons/static/dropbox/node_settings.css">
-
-<script>
-$(document).ready(function() {
-
-//Thanks to http://stackoverflow.com/questions/3463954/jquery-click-through-class-cycle
-$.fn.cycleClasses = function() {
-  var classes, currentClass, nextClass, _this = this;
-  classes = Array.prototype.slice.call(arguments);
-
-  currentClass = $.grep(classes, function(klass) {
-    _this.hasClass(klass);
-  }).pop();
-
-  nextClass = classes[classes.indexOf(currentClass) + 1] || classes[0];
-
-  this.removeClass(currentClass);
-  return this.addClass(nextClass);
-};
-
-    stuff = [
-        {text:'Root', value:'/'},
-        {text:'TestFolder', value:'/TestFolder/'}
-    ];
-
-    var bloodhound = new Bloodhound({
-        datumTokenizer: Bloodhound.tokenizers.obj.nonword('text'),
-        queryTokenizer: Bloodhound.tokenizers.nonword,
-        local: stuff
-    });
-
-    bloodhound.initialize();
+<script src="/addons/static/dropbox/node-settings.js"></script>
 
 
-
-    $('#dropboxFolderSelect').typeahead({
-      highlight: true,
-      minLength: 0
-    },
-    {
-        name: 'projects',
-        displayKey: 'text',
-        source: bloodhound.ttAdapter()
-    });
-    $('#dropboxFolderSelect').on('change paste keyup',function() {
-        if($(this).val() && $(this).val().trim())
-            $('#figshareSubmit').prop('disabled', false);
-        else
-            $('#figshareSubmit').prop('disabled', true);
-    });
-});
-</script>
-
-       <div class="row">
-            <div class="col-md-12">
-                <div class="input-group">
-                    <input class="form-control" id="dropboxFolderSelect" type="text" placeholder="Choose a folder">
-                    <span class="input-group-btn">
-                        <button id="figshareSubmit" type="button" class="btn btn-success" disabled="disabled">Submit</button>
-                    </span>
-                </div>
-            </div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="input-group">
+            <input class="form-control" id="dropboxFolderSelect" type="text" placeholder="Choose a folder">
+            <span class="input-group-btn">
+                <button id="dropboxSubmit" type="button" class="btn btn-primary" disabled="disabled">Create</button>
+            </span>
+        </div>
     </div>
+</div>
 
 <%def name="submit_btn()">
 </%def>

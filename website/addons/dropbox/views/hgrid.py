@@ -52,8 +52,8 @@ def dropbox_addon_folder(node_settings, auth, **kwargs):
 def build_dropbox_urls(item, api_url, nid):
     if item['is_dir']:
         return {
-            'upload': '{0}dropbox{1}'.format(api_url, item['path']),
-            'fetch': '{0}dropbox/hgrid{1}'.format(api_url, item['path']),
+            'upload': '{0}dropbox{1}/'.format(api_url, item['path']),
+            'fetch': '{0}dropbox/hgrid{1}/'.format(api_url, item['path']),
         }
     else:
         return {

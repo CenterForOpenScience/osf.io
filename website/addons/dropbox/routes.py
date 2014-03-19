@@ -61,6 +61,8 @@ api_routes = {
             [
                 '/project/<pid>/dropbox/<path:path>/',
                 '/project/<pid>/node/<nid>/dropbox/<path:path>/',
+                '/project/<pid>/dropbox/',
+                '/project/<pid>/node/<nid>/dropbox/',
             ],
             'post',
             views.crud.dropbox_upload,
