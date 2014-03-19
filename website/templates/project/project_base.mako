@@ -61,7 +61,7 @@ ${next.body()}
                 if (data.user.can_edit) {
                     $script.ready('contribAdder', function() {
                         var contribAdder = new ContribAdder(
-                            '#addContributorsScope',
+                            '#addContributors',
                             data.node.title,
                             data.parent_node.id,
                             data.parent_node.title
