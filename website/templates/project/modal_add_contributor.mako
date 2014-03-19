@@ -1,6 +1,6 @@
 <div id="addContributors" class="modal fade">
     <div class="modal-dialog">
-        <div id="addContributorsScope" class="modal-content">
+        <div class="modal-content">
             <div class="modal-header">
                 <h3 data-bind="text:pageTitle"></h3>
             </div>
