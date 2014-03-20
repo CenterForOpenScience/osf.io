@@ -313,7 +313,7 @@ def download_file(**kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
-    link = kwargs['auth'].private_key
+    key = kwargs['auth'].private_key
 
     try:
         vid = len(node_to_use.files_versions[filename.replace('.', '_')])
@@ -325,7 +325,7 @@ def download_file(**kwargs):
         fid=filename,
         vid=vid,
     )
-    return redirect(add_key_to_url(redirect_url, link))
+    return redirect(add_key_to_url(redirect_url, key))
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
