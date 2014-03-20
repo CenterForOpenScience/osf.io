@@ -43,7 +43,7 @@ def prepare_private_key():
         key = urlparse.parse_qs(
             urlparse.urlparse(request.referrer).query
         ).get('key')
-        if isinstance(key, list):
+        if key:
             key = key[0]
     else:
         key = None
