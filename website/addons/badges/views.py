@@ -47,8 +47,7 @@ def award_badge(*args, **kwargs):
 def get_badge(*args, **kwargs):
     _id = kwargs.get('bid', None)
     if _id:
-        guid = Badge.load(_id)
-        badge = guid.referent
+        badge = Badge.load(_id)
         return badge.to_json()
     raise HTTPError(http.BAD_REQUEST)
 

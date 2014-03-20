@@ -1,3 +1,4 @@
+from website.routes import OsfWebRenderer
 from framework.routing import Rule, json_renderer
 
 from . import views
@@ -26,7 +27,9 @@ guid_urls = {
     'rules': [
         Rule([
             '/badge/<bid>/',
+        ], 'get', views.get_badge, OsfWebRenderer('../addons/badges/templates/view_badge.mako')),
+        Rule([
+            '/badge/<bid>/json/',
         ], 'get', views.get_badge, json_renderer),
-    ],
-    'prefix': '/api/v1',
+    ]
 }

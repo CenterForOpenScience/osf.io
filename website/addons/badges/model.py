@@ -27,7 +27,7 @@ class Badge(GuidStoredObject):
             'image': self.image,
             'criteria': self.criteria,
             'issuer_url': self.issuer_url,
-            'url': '/badges/{0}'.format(self._id),
+            'url': '/{0}'.format(self._id),
         }
 
         if self.alignment:
@@ -39,6 +39,10 @@ class Badge(GuidStoredObject):
 
     @property
     def deep_url(self):
+        return '/badge/{}/'.format(self._id)
+
+    @property
+    def url(self):
         return '/badge/{}/'.format(self._id)
 
 
