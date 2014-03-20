@@ -1051,3 +1051,5 @@ a {
 
 /* jQuery UI Autocomplete (WTForms Widget) */
 .ui-autocomplete-category { font-weight: bold }
+
+.tagsinput .tag span { cursor:pointer; }

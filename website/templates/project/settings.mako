@@ -243,16 +243,18 @@ ${parent.javascript_bottom()}
         $('#delete-node').on('click', function() {
             var key = randomString();
             bootbox.prompt(
-                '<div>Delete this ${node['category']} and all non-project children? This is IRREVERSIBLE.</div>' +
+                '<div>Delete this ${node['category']}? This is IRREVERSIBLE.</div>' +
                     '<p style="font-weight: normal; font-size: medium; line-height: normal;">If you want to continue, type <strong>' + key + '</strong> and click OK.</p>',
                 function(result) {
                     if (result === key) {
                         $.ajax({
                             type: 'DELETE',
+                            dataType: 'json',
                             url: nodeApiUrl,
                             success: function(response) {
                                 window.location.href = response.url;
-                            }
+                            },
+                            error: $.osf.handleJSONError
                         });
                     }
                 }

@@ -62,7 +62,7 @@
                                 <i class="icon-eye-open"></i>
                                 <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                             </a>
-
+                        
                         <a rel="tooltip" title="Duplicate"
                            class="btn btn-default${ '' if is_project else ' disabled'}" href="#"
                            data-toggle="modal" data-target="#duplicateModal"    >
@@ -131,7 +131,7 @@
                         <li><a href="${node['url']}registrations/">Registrations</a></li>
                     % endif
                     <li><a href="${node['url']}forks/">Forks</a></li>
-                    % if 'admin' in user['permissions'] and not node['is_registration']:
+                    % if user['is_contributor'] and not node['is_registration']:
                     <li><a href="${node['url']}contributors/">Contributors</a></li>
                     %endif
                     % if 'write' in user['permissions']:

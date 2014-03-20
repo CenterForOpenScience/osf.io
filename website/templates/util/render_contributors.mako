@@ -8,14 +8,6 @@
         % else:
         <span>${contributor['fullname']}</span>
         %endif
-        % if ('admin' in user['permissions'] or user['id'] == contributor['id']) and not node['is_registration']:
-            <span
-                    class="btn-remove"
-                    data-userid="${contributor['id']}"
-                    data-fullname="${contributor['fullname']}"
-                ><i class="icon-remove"></i>
-            </span>
-        % endif
     </span>
     ${'' if loop.last else '|'}
 % endfor

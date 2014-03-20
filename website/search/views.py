@@ -256,7 +256,7 @@ def create_result(highlights, results):
     return result_search, tags
 
 
-def _search_contributor(query):
+def _search_contributor(query, exclude=None):
     """Search for contributors to add to a project using Solr. Request must
     include JSON data with a "query" field.
 
@@ -279,6 +279,9 @@ def _search_contributor(query):
 
     result, highlight, spellcheck_result = search_solr(q)
     docs = result.get('docs', [])
+
+    if exclude:
+        docs = (x for x in docs if x.get('id') not in exclude)
 
     users = []
     for doc in docs:
@@ -304,4 +307,10 @@ def _search_contributor(query):
     return {'users': users}
 
 def search_contributor():
-    return _search_contributor(request.args.get('query', ''))
+    nid = request.args.get('excludeNode')
+    exclude = Node.load(nid).contributors if nid else list()
+
+    return _search_contributor(
+        query=request.args.get('query', ''),
+        exclude=exclude,
+    )
