@@ -26,7 +26,9 @@
                 % if addon_enabled_settings:
                     <li><a href="#configureAddons">Configure Add-ons</a></li>
                 % endif
-                <li><a href="#linkScope">Private Links</a></li>
+                % if 'write' in user['permissions']:
+                    <li><a href="#linkScope">Private Links</a></li>
+                % endif
             </ul>
         </div><!-- end sidebar -->
     </div>
@@ -168,19 +170,21 @@
 
             % endif
         % endif
-        <div id="linkScope" class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Private Link</h3>
-            </div>
-            <button id="generate-private-link" class="btn btn-success private-link" data-toggle="modal" href="#private-link">Generate Private Link</button>
-            % for link in node['private_links']:
-                <li class="list-group-item" >
-                    <a class="remove-private-link btn btn-danger btn-mini" data-link="${link}">-</a>
-                    <a class="link-name" >${node['absolute_url']}?key=${link}</a>
+        % if 'write' in user['permissions']:
+            <div id="linkScope" class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Private Link</h3>
+                </div>
+                <button id="generate-private-link" class="btn btn-success private-link" data-toggle="modal" href="#private-link">Generate Private Link</button>
+                % for link in node['private_links']:
+                    <li class="list-group-item" >
+                        <a class="remove-private-link btn btn-danger btn-mini" data-link="${link}">-</a>
+                        <a class="link-name" >${node['absolute_url']}?key=${link}</a>
 
-                </li>
-            % endfor
-        </div>
+                    </li>
+                % endfor
+            </div>
+        % endif
 
 
     </div>
