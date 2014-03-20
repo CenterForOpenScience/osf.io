@@ -1,6 +1,4 @@
 this.DropboxConfigHelper = (function(ko, $) {
-
-
     'use strict';
 
     var ViewModel = function(folders) {
@@ -11,7 +9,7 @@ this.DropboxConfigHelper = (function(ko, $) {
         self.submitSettings = function() {
             console.log('Sending data..');
             console.log(self.selected());
-        }
+        };
     };
 
     // Public API
