@@ -3,7 +3,7 @@ import httplib as http
 import urllib
 import urlparse
 import logging
-
+from framework.exceptions import HTTPError
 import bson.objectid
 import itsdangerous
 from werkzeug.local import LocalProxy
@@ -60,10 +60,12 @@ def prepare_private_key():
 def set_previous_url(url=None):
     """Add current URL to session history if not in excluded list; cap history
     at set length.
+    Does nothing if a user is not logged in
 
     """
     if not session:
         return
+
     url = url or request.path
     if any([rule(url) for rule in settings.SESSION_HISTORY_IGNORE_RULES]):
         return

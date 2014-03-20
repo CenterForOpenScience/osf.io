@@ -73,7 +73,7 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
 
     self.submit = function() {
         $.ajax(
-            nodeApiUrl + 'generatePrivateLink/',
+            nodeApiUrl + 'private_link/',
             {
                 type: 'post',
                 data: JSON.stringify({

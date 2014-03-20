@@ -101,8 +101,8 @@ $(function(){
         bootbox.confirm('Are you sure to remove this private link?', function(result) {
             if (result) {
                 $.ajax({
-                    type: "POST",
-                    url: nodeApiUrl + "removePrivateLink/",
+                    type: "delete",
+                    url: nodeApiUrl + "private_link/",
                     contentType: "application/json",
                     dataType: "json",
                     data: JSON.stringify(data_to_send)

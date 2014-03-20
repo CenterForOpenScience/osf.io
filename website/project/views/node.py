@@ -457,7 +457,10 @@ def view_project(**kwargs):
 def remove_private_link(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     link = request.json['private_link']
-    node_to_use.remove_private_link(link)
+    try:
+        node_to_use.remove_private_link(link)
+    except ValueError:
+        raise HTTPError(http.NOT_FOUND)
 
 
 # TODO: Split into separate functions

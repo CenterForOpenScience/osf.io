@@ -1602,10 +1602,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         return link
 
     def remove_private_link(self, link, save=True):
-        try:
-            self.private_links.remove(link)
-        except ValueError:
-            pass
+        self.private_links.remove(link)
         if save:
             self.save()
 
