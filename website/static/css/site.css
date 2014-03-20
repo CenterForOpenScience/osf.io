@@ -917,15 +917,17 @@ h1.unavailable {
     width:100%;
 }
 
+div#logScope a.moreLogs{
+    margin-left:50px;
+}
+
 /* private_link*/
 .link-name{
     margin-left: 10px;
 }
 
-
-
-div#logScope a.moreLogs{
-    margin-left:50px;
+#generate-private-link{
+    margin:20px 20px;
 }
 
 /* Contributor page */

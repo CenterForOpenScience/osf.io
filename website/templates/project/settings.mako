@@ -167,10 +167,13 @@
             % endif
         % endif
         <div id="linkScope" class="panel panel-default">
-            <button id="generate-private-link" class="btn btn-default private-link" data-toggle="modal" href="#private-link">Generate Private Link</button>
+            <div class="panel-heading">
+                <h3 class="panel-title">Private Link</h3>
+            </div>
+            <button id="generate-private-link" class="btn btn-success private-link" data-toggle="modal" href="#private-link">Generate Private Link</button>
             % for link in node['private_links']:
                 <li class="list-group-item" >
-                    <a class="remove-private-link btn btn-default" data-link="${link}">-</a>
+                    <a class="remove-private-link btn btn-danger btn-mini" data-link="${link}">-</a>
                     <a class="link-name" >${node['absolute_url']}?key=${link}</a>
 
                 </li>
