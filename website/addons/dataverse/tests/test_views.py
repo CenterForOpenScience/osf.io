@@ -16,6 +16,7 @@ app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings'
 )
 
+
 class TestDataverseViewsAuth(DbTestCase):
 
     def setUp(self):
@@ -23,7 +24,6 @@ class TestDataverseViewsAuth(DbTestCase):
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
-
 
         self.project.add_addon('dataverse', auth=self.consolidated_auth)
         self.user.add_addon('dataverse')
@@ -104,6 +104,88 @@ class TestDataverseViewsAuth(DbTestCase):
         assert_false(self.node_settings.study_hdl)
         assert_false(self.node_settings.study)
         assert_false(self.node_settings.user)
+
+
+class TestDataverseViewsConfig(DbTestCase):
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.consolidated_auth = Auth(user=self.user)
+        self.project = ProjectFactory(creator=self.user)
+
+        self.project.add_addon('dataverse', auth=self.consolidated_auth)
+        self.user.add_addon('dataverse')
+
+        self.user_settings = self.user.get_addon('dataverse')
+        self.user_settings.dataverse_username = 'snowman'
+        self.user_settings.dataverse_password = 'frosty'
+        self.user_settings.save()
+
+        self.node_settings = self.project.get_addon('dataverse')
+        self.node_settings.user_settings = self.project.creator.get_addon('dataverse')
+        self.node_settings.dataverse_username = self.user_settings.dataverse_username
+        self.node_settings.dataverse_password = self.user_settings.dataverse_password
+        self.node_settings.dataverse_number = 1
+        self.node_settings.study_hdl = 'DVN/12345'
+        self.node_settings.study = 'My Study'
+        self.node_settings.user = self.user
+        self.node_settings.save()
+
+    @mock.patch('website.addons.dataverse.views.config.connect')
+    def test_set_user_config(self, mock_connection):
+
+        mock_connection.return_value = create_mock_connection()
+
+        # Create a user with no settings
+        user = AuthUserFactory()
+        user.add_addon('dataverse')
+        user_settings = user.get_addon('dataverse')
+
+        url = '/api/v1/settings/dataverse/'
+        params = {'dataverse_username': 'snowman',
+                  'dataverse_password': 'frosty'}
+
+        # Post dataverse credentials
+        self.app.post_json(url, params, auth=user.auth)
+        user_settings.reload()
+
+        # User settings have updated correctly
+        assert_equal(user_settings.dataverse_username, 'snowman')
+        assert_equal(user_settings.dataverse_password, 'frosty')
+
+    @mock.patch('website.addons.dataverse.views.config.connect')
+    def test_set_user_config_fail(self, mock_connection):
+
+        mock_connection.return_value = create_mock_connection('wrong', 'info')
+
+        # Create a user with no settings
+        user = AuthUserFactory()
+        user.add_addon('dataverse')
+        user_settings = user.get_addon('dataverse')
+
+        url = '/api/v1/settings/dataverse/'
+        params = {'dataverse_username': 'wrong',
+                  'dataverse_password': 'info'}
+
+        # Post incorrect credentials to existing user
+        res = self.app.post_json(url, params, auth=self.user.auth,
+                                 expect_errors=True)
+        self.user_settings.reload()
+
+        # Original user's info has not changed
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(self.user_settings.dataverse_username, 'snowman')
+        assert_equal(self.user_settings.dataverse_password, 'frosty')
+
+        # Post incorrect credentials to new user
+        res = self.app.post_json(url, params, auth=user.auth,
+                                 expect_errors=True)
+        user_settings.reload()
+
+        # New user's incorrect credentials were not saved
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(user_settings.dataverse_username, None)
+        assert_equal(user_settings.dataverse_password, None)
 
 
 def test_scrape_dataverse():
