@@ -49,8 +49,8 @@ crud_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/dropbox/<path:path>/',
-                '/project/<pid>/node/<nid>/dropbox/<path:path>/',
+                '/project/<pid>/dropbox/files/<path:path>/',
+                '/project/<pid>/node/<nid>/dropbox/files/<path:path>/',
             ],
             'get',
             views.crud.dropbox_download,

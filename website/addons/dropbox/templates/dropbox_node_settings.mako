@@ -1,4 +1,4 @@
-<%inherit file="project/addon/node_settings.mako" />
+<%inherit file="../../project/addon/node_settings.mako" />
 
 <script src="/static/vendor/bower_components/typeahead.js/dist/typeahead.jquery.js"></script>
 <script src="/static/vendor/bower_components/typeahead.js/dist/bloodhound.min.js"></script>
