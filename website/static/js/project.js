@@ -84,9 +84,9 @@ NodeActions.useAsTemplate = function() {
         success: function(data) {
             window.location = data['url']
         },
-        fail: function() {
+        error: function(response) {
             $.osf.unblock();
-            bootbox.alert('Templating failed');
+            $.osf.handleJSONError(response);
         }
     });
 };
