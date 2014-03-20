@@ -133,8 +133,9 @@
                             </li>
                         % endif
                     % endfor
-
-                    <li><a href="${node['url']}statistics/">Statistics</a></li>
+                    % if link and not (node['is_public'] or user['is_contributor']):
+                        <li><a href="${node['url']}statistics/">Statistics</a></li>
+                    % endif
                     % if not node['is_registration']:
                         <li><a href="${node['url']}registrations/">Registrations</a></li>
                     % endif
