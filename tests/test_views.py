@@ -9,6 +9,7 @@ import mock
 import httplib as http
 
 from nose.tools import *  # PEP8 asserts
+from tests.test_features import requires_solr
 from webtest_plus import TestApp
 from webtest.app import AppError
 from framework import auth
@@ -1798,6 +1799,7 @@ class TestTagViews(DbTestCase):
         assert_equal(res.status_code, 200)
 
 
+@requires_solr
 class TestSearchViews(DbTestCase):
 
     def setUp(self):

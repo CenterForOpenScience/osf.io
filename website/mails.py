@@ -23,8 +23,14 @@ import logging
 
 from mako.lookup import TemplateLookup, Template
 
-from framework.email.tasks import send_email as framework_send_email
+from framework.email.tasks import send_email
 from website import settings
+
+framework_send_email = (
+    send_email.delay
+        if settings.USE_CELERY
+        else send_email
+)
 
 logger = logging.getLogger(__name__)
 
@@ -92,8 +98,7 @@ def send_mail(to_addr, mail, mimetype='plain', **context):
     ttls = login = not settings.DEBUG_MODE
     logger.debug('Sending email...')
     logger.debug(u'To: {to_addr}\nSubject: {subject}\nMessage: {message}'.format(**locals()))
-    send_function = framework_send_email.delay if settings.USE_CELERY else framework_send_email
-    return send_function(
+    return framework_send_email(
         from_addr=settings.FROM_EMAIL,
         to_addr=to_addr,
         subject=subject,
