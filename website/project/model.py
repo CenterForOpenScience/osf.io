@@ -550,8 +550,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def can_view(self, auth):
-        if session:
-            key_ring = set(session.data['key'])
+        if auth.private_keys:
+            key_ring = set(auth.private_keys)
             return self.is_public or auth.user \
                 and self.has_permission(auth.user, 'read') \
                 or not key_ring.isdisjoint(self.private_links)

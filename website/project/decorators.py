@@ -69,8 +69,8 @@ def must_not_be_registration(func):
     return wrapped
 
 
-def get_key_ring():
-    return set(session.data.get('key', []))
+def get_key_ring(keys):
+    return set(keys)
 
 
 def check_can_access(node, user, api_node=None):
@@ -146,9 +146,9 @@ def _must_be_contributor_factory(include_public):
             #for login user
             else:
                 #link first time show up record it in the key ring
-                if link not in session.data['key']:
-                    session.data['key'].append(link)
-                key_ring = get_key_ring()
+                if link not in kwargs['auth'].private_keys:
+                    kwargs['auth'].private_keys.append(link)
+                key_ring = get_key_ring(kwargs['auth'].private_keys)
 
                 #check if the keyring has intersection with node's private link
                 # if no intersction check other privilege
