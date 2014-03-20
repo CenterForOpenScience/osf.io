@@ -13,20 +13,20 @@ def migrate_files(source, dest):
     """Clone the source repo to the destionary as a bare repo.
 
     """
-    # # Add remote
-    # subprocess.check_call(
-    #     ['git', 'remote', 'add', REMOTE_NAME, dest],
-    #     cwd=source
-    # )
-    #
-    # # Push contents
-    # subprocess.check_call(
-    #     ['git', 'push', REMOTE_NAME, BRANCH_NAME],
-    #     cwd=source
-    # )
+    # Add remote, catching exception if already added
+    try:
+        subprocess.check_call(
+            ['git', 'remote', 'add', REMOTE_NAME, dest],
+            cwd=source
+        )
+    except subprocess.CalledProcessError as error:
+        if error.returncode != 128:
+            raise
 
+    # Push contents
     subprocess.check_call(
-        ['git', 'clone', '--bare', '--', source, dest]
+        ['git', 'push', REMOTE_NAME, BRANCH_NAME],
+        cwd=source
     )
 
 
