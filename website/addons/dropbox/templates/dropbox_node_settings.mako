@@ -1,9 +1,5 @@
 <%inherit file="../../project/addon/node_settings.mako" />
 
-<script src="/static/vendor/bower_components/typeahead.js/dist/typeahead.jquery.js"></script>
-<script src="/static/vendor/bower_components/typeahead.js/dist/bloodhound.min.js"></script>
-<link rel="stylesheet" href="/addons/static/dropbox/node_settings.css">
-<script src="/addons/static/dropbox/node-settings.js"></script>
 
 
 <div class="row">
@@ -25,7 +21,7 @@
     <h4>
         ${addon_full_name}
         % if node_has_auth:
-        <small> Authorized by <a href="${owner_url}">${owner}</a></small>
+        <small> Authorized by ${owner_info.get('display_name', 'Dropbox user')}</small>
             %if user_has_auth:
                 <small  class="pull-right" >
                     <a id="dropboxDelKey" class="text-danger" style="cursor: pointer">Deauthorize</a>
@@ -34,3 +30,8 @@
         %endif
     </h4>
 </%def>
+
+<script src="/static/vendor/bower_components/typeahead.js/dist/typeahead.jquery.js"></script>
+<script src="/static/vendor/bower_components/typeahead.js/dist/bloodhound.min.js"></script>
+<link rel="stylesheet" href="/addons/static/dropbox/node_settings.css">
+<script src="/addons/static/dropbox/nodeSettings.js"></script>
