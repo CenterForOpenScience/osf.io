@@ -1,68 +1,35 @@
-var DropboxConfigHelper = (function() {
+this.DropboxConfigHelper = (function(ko, $) {
 
-    var bloodhound;
 
-    $(document).ready(function() {
+    'use strict';
 
-        var options = [
-            {text:'Root', value:'/'},
-            {text:'TestFolder', value:'/TestFolder/'}
-        ];
+    var ViewModel = function(folders) {
+        var self = this;
+        self.selected = ko.observable();
+        self.folders = ko.observableArray(folders);
 
-        bloodhound = new Bloodhound({
-            datumTokenizer: Bloodhound.tokenizers.obj.nonword('text'),
-            queryTokenizer: Bloodhound.tokenizers.nonword,
-            local: options
-        });
-
-        bloodhound.initialize();
-
-        $('#dropboxFolderSelect').typeahead({
-          highlight: true,
-          minLength: 0,
-          hint: false
-        },
-        {
-            name: 'projects',
-            displayKey: 'text',
-            source: wrapHound
-        });
-
-        $('#dropboxFolderSelect').on('change paste keyup', enable);
-        $('#dropboxFolderSelect').on('focus', dropDown);
-        $('#dropboxFolderSelect').on('typeahead:autocompleted typeahead:selected', makeSubmit);
-    });
-
-    var enable = function() {
-        if($(this).val() && $(this).val().trim())
-            $('#dropboxSubmit').prop('disabled', false);
-        else {
-            $('#dropboxSubmit').prop('disabled', true);
-            $('#dropboxSubmit').text('Create');
-            $('#dropboxSubmit').removeClass('btn-success');
-            $('#dropboxSubmit').addClass('btn-primary');
+        self.submitSettings = function() {
+            console.log('Sending data..');
+            console.log(self.selected());
         }
+    };
+
+    // Public API
+    function DropboxConfigHelper(selector, folders) {
+        var self = this;
+        self.selector = selector;
+        self.$elem = $(selector);
+        self.viewModel = new ViewModel(folders);
+        this.init();
     }
 
-    var makeSubmit = function(){
-        $('#dropboxSubmit').text('Submit');
-        $('#dropboxSubmit').removeClass('btn-primary');
-        $('#dropboxSubmit').addClass('btn-success');
-    }
+    DropboxConfigHelper.prototype.init = function() {
+        ko.applyBindings(this.viewModel, this.$elem[0]);
+    };
 
-    var wrapHound = function(query, cb) {
-        if (query != '')
-            bloodhound.get(query, cb);
-        else
-            cb(bloodhound.local);
-    }
+    return DropboxConfigHelper;
 
-    var dropDown = function() {
-        //Todo This
-        $(this).update('');
-    }
-
-})();
+})(ko, jQuery);
 
 //TODO Template ify
 //Dropdown all
