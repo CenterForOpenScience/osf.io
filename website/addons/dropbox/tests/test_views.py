@@ -35,9 +35,11 @@ class TestAuthViews(DbTestCase):
         res = self.app.get(url)
         assert_is_redirect(res)
 
+    @mock.patch('website.addons.dropbox.model.DropboxUserSettings.update_account_info')
     @mock.patch('website.addons.dropbox.views.auth.DropboxOAuth2Flow.finish')
-    def test_dropbox_oauth_finish(self, mock_finish):
+    def test_dropbox_oauth_finish(self, mock_finish, mock_account_info):
         mock_finish.return_value = ('mytoken123', 'mydropboxid', 'done')
+        mock_account_info.return_value = {'display_name': 'Foo Bar'}
         with app.test_request_context():
             url = api_url_for('dropbox_oauth_finish')
         res = self.app.get(url)

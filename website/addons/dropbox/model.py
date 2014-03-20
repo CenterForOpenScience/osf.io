@@ -3,6 +3,7 @@ import os
 from framework import fields
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
+from website.addons.dropbox.client import get_client
 
 class DropboxGuidFile(GuidFile):
 
@@ -20,8 +21,9 @@ class DropboxUserSettings(AddonUserSettingsBase):
     token.
     """
 
-    dropbox_id = fields.StringField()
-    access_token = fields.StringField()
+    dropbox_id = fields.StringField(required=False)
+    access_token = fields.StringField(required=False)
+    account_info = fields.DictionaryField(required=False)
 
     # TODO(sloria): The `user` param in unnecessary for AddonUserSettings
     def to_json(self, user=None):
@@ -36,6 +38,14 @@ class DropboxUserSettings(AddonUserSettingsBase):
     @property
     def has_auth(self):
         return bool(self.access_token)
+
+    # TODO(sloria): Perhaps does not belong in model, but in a helper function?
+    def update_account_info(self, client=None):
+        """Update Dropbox account info by fetching data from the Dropbox API.
+        """
+        c = client or get_client(self.owner)
+        self.account_info = c.account_info()
+
 
     def clear_auth(self):
         self.dropbox_id = None
@@ -57,7 +67,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         'dropboxusersettings', backref='authorized'
     )
 
-    folder = fields.StringField()
+    folder = fields.StringField(default='')
 
     @property
     def has_auth(self):
@@ -79,9 +89,10 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             'folder': self.folder or '',
             'node_has_auth': self.has_auth,
             'is_owner': False,
-            'user_has_auth': True,
-            'owner_url': '',
-            'owner': 'JimBob',
+            'user_has_auth': self.user_settings.owner == user,
+            #  TODO
+            # 'owner_url': '',
+            'owner_info': self.user_settings.account_info,
         })
 
         return ret

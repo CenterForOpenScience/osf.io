@@ -4,7 +4,7 @@
 from factory import SubFactory, Sequence
 from tests.factories import ModularOdmFactory, UserFactory
 
-from website.addons.dropbox.model import DropboxUserSettings
+from website.addons.dropbox.model import DropboxUserSettings, DropboxNodeSettings
 
 # TODO(sloria): make an abstract UserSettingsFactory that just includes the owner field
 class DropboxUserSettingsFactory(ModularOdmFactory):
@@ -12,3 +12,10 @@ class DropboxUserSettingsFactory(ModularOdmFactory):
 
     owner = SubFactory(UserFactory)
     access_token = Sequence(lambda n: 'abcdef{0}'.format(n))
+
+
+class DropboxNodeSettingsFactory(ModularOdmFactory):
+    FACTORY_FOR = DropboxNodeSettings
+
+    user_settings = SubFactory(DropboxUserSettingsFactory)
+    folder = 'Camera Uploads'
