@@ -133,21 +133,21 @@ def _must_be_contributor_factory(include_public):
                 api_node = get_api_key()
                 kwargs['api_node'] = api_node
 
-            link = request.args.get('key', '').strip('/')
-            #if not login user check if the link is valid or the other privilege
+            key = request.args.get('key', '').strip('/')
+            #if not login user check if the key is valid or the other privilege
             if not session:
-                kwargs['auth'].private_key = link
+                kwargs['auth'].private_key = key
                 if not node.is_public or not include_public:
-                    if link not in node.private_links:
+                    if key not in node.private_links:
                         if not check_can_access(node=node, user=user,
                                 api_node=api_node):
                             url = '/login/?next={0}'.format(request.path)
                             response = redirect(url)
             #for login user
             else:
-                #link first time show up record it in the key ring
-                if link not in kwargs['auth'].private_keys:
-                    kwargs['auth'].private_keys.append(link)
+                #key first time show up record it in the key ring
+                if key not in kwargs['auth'].private_keys:
+                    kwargs['auth'].private_keys.append(key)
                 key_ring = get_key_ring(kwargs['auth'].private_keys)
 
                 #check if the keyring has intersection with node's private link
@@ -164,7 +164,7 @@ def _must_be_contributor_factory(include_public):
                     # in the key ring
                     else:
                         response = choose_key(
-                            key=link, key_ring=key_ring, node=node,
+                            key=key, key_ring=key_ring, node=node,
                             auth=kwargs['auth'], api_node=api_node)
                 else:
                     kwargs['auth'].private_key = None
