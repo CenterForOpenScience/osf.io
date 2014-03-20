@@ -151,15 +151,7 @@ def make_url_map(app):
             addon_views.disable_addon,
             json_renderer,
         ),
-        Rule(
-            [
-                '/project/<pid>/<addon>/settings/',
-                '/project/<pid>/node/<nid>/<addon>/settings/',
-            ],
-            'get',
-            addon_views.get_addon_config,
-            json_renderer,
-        ),
+
         Rule(
             '/profile/<uid>/<addon>/settings/',
             'get',
