@@ -15,16 +15,16 @@ from .model import Session
 logger = logging.getLogger(__name__)
 debug = logger.debug
 
-def get_redirect_from_key(key):
+def add_key_to_url(url, key):
     """Redirects the user to the requests URL with the given key appended
     to the query parameters.
     """
-    parsed_path = urlparse.urlparse(request.path)
+    parsed_path = urlparse.urlparse(url)
     args = request.args.to_dict()
     args['key'] = key
     new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
     new_path = urlparse.urlunparse(new_parsed_path)
-    return redirect(new_path, code=307)
+    return new_path
 
 @app.before_request
 def prepare_private_key():
@@ -50,8 +50,8 @@ def prepare_private_key():
 
     # Update URL and redirect
     if key and not session:
-        response = get_redirect_from_key(key)
-        return response
+        new_url = add_key_to_url(request.path, key)
+        return redirect(new_url, code=307)
 
 
 # todo 2-back page view queue

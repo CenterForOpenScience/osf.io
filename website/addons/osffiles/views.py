@@ -14,6 +14,7 @@ from framework import request, redirect, send_file, Q
 from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
+from framework.sessions import add_key_to_url
 from website.project.views.node import _view_project
 from website.project.decorators import (
     must_not_be_registration, must_be_valid_project,
@@ -28,16 +29,6 @@ from website.util import rubeus, permissions
 from .model import NodeFile, OsfGuidFile
 
 logger = logging.getLogger(__name__)
-
-
-def url_builder(url, link):
-    if link:
-        if '?' in url:
-            url += '&key={0}'.format(link)
-        else:
-            url += '?key={0}'.format(link)
-    return url
-
 
 def _clean_file_name(name):
     " HTML-escape file name and encode to UTF-8. "
@@ -64,8 +55,8 @@ def get_osffiles_hgrid(node_settings, auth, **kwargs):
                 rubeus.KIND: rubeus.FILE,
                 'name': _clean_file_name(fobj.path),
                 'urls': {
-                    'view': url_builder(fobj.url(node), auth.private_key),
-                    'download': url_builder(fobj.download_url(node), auth.private_key),
+                    'view': add_key_to_url(fobj.url(node), auth.private_key),
+                    'download': add_key_to_url(fobj.download_url(node), auth.private_key),
                     'delete': fobj.api_url(node),
                 },
                 'permissions': {
@@ -334,7 +325,7 @@ def download_file(**kwargs):
         fid=filename,
         vid=vid,
     )
-    return redirect(url_builder(redirect_url, link))
+    return redirect(add_key_to_url(redirect_url, link))
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project

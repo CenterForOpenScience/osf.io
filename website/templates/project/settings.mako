@@ -171,7 +171,7 @@
             % for link in node['private_links']:
                 <li class="list-group-item" >
                     <a class="remove-private-link btn btn-default" data-link="${link}">-</a>
-                    <a class="link-name" >${node['absolute_url']}?key=${link}/</a>
+                    <a class="link-name" >${node['absolute_url']}?key=${link}</a>
 
                 </li>
             % endfor

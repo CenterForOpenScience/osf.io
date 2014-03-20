@@ -6,7 +6,7 @@ from framework import request, redirect
 from framework.exceptions import HTTPError
 from framework.auth import get_current_user, get_api_key
 from framework.auth.decorators import Auth
-from framework.sessions import get_redirect_from_key, session
+from framework.sessions import add_key_to_url, session
 from website.models import Node
 
 logger = logging.getLogger(__name__)
@@ -94,16 +94,17 @@ def choose_key(key, key_ring, node, auth, api_node=None):
     """
     if key in node.private_links:
         auth.private_key = key
-        response = None
-    else:
-        auth.private_key = key_ring.intersection(
-            node.private_links
-        ).pop()
-        #do a redirect to reappend the key to url only if the user
-        # isn't a contributor
-        if auth.user is None or (not node.is_contributor(auth.user) and api_node != node):
-            response = get_redirect_from_key(auth.private_key)
-    return response
+        return
+
+    auth.private_key = key_ring.intersection(
+        node.private_links
+    ).pop()
+    #do a redirect to reappend the key to url only if the user
+    # isn't a contributor
+    if auth.user is None or (not node.is_contributor(auth.user) and api_node != node):
+        new_url = add_key_to_url(request.path, auth.private_key)
+        return redirect(new_url)
+
 
 
 def _must_be_contributor_factory(include_public):
