@@ -24,7 +24,7 @@ class Auth(object):
         api_key = request_args.get('api_key') or kwargs.get('api_key') or get_api_key()
         api_node = request_args.get('api_node') or kwargs.get('api_node') or get_current_node()
         private_key = request_args.get('key')
-        private_keys = request_args.get('private_keys') or kwargs.get('private_keys')
+        private_keys = request_args.get('private_keys') or kwargs.get('private_keys') or []
         return cls(
             user=user,
             api_key=api_key,
