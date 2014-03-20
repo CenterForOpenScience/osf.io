@@ -34,9 +34,6 @@
     </div>
 
     <div class="col-md-6">
-        % if not node['is_registration']:
-            <div id="configureNode" class="panel panel-default">
-
 
         % if 'admin' in user['permissions'] and not node['is_registration']:
 
@@ -169,7 +166,7 @@
                 </div>
 
             % endif
-        % endif
+
         % if 'write' in user['permissions']:
             <div id="linkScope" class="panel panel-default">
                 <div class="panel-heading">
