@@ -1,5 +1,5 @@
 <%inherit file="project/addon/user_settings.mako" />
-
+%if configured:
 <div style="max-height:200px; overflow-y: auto; overflow-x: hidden;">
     <ul class="media-list" id="badgeList">
         %for badge in badges:
@@ -22,8 +22,18 @@
     New Badge
 </button>
 
-<script type="text/javascript">
+%else:
+  <input type="text" name="name" class="form-control" placeholder="Organization name" required> <br />
+  <input type="text" name="email" class="form-control" placeholder="Contact Email" required> <br />
+  <textarea class="form-control" name="description" placeholder="Organization description (Optional)"></textarea> <br />
+  <input type="text" name="url" class="form-control" placeholder="Link to Organization (Optional)"> <br />
+  <input type="text" name="image" class="form-control" placeholder="Image of Organization (Optional)"> <br />
+%endif
 
+
+<script type="text/javascript">
+//TODO Make bootbox into a form? [with submit]
+//TODO Image uploading
     $(document).ready(function() {
         $('#newBadge').click(function(){
             bootbox.dialog({
@@ -99,5 +109,13 @@
 
 </script>
 
-<%def name="submit_btn()"></%def>
-<%def name="on_submit()"></%def>
+<%def name="submit_btn()">
+  %if not configured:
+    ${parent.submit_btn()}
+  %endif
+</%def>
+<%def name="on_submit()">
+  %if not configured:
+    ${parent.on_submit()}
+  %endif
+</%def>

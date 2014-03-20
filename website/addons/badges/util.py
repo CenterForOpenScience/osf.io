@@ -1,4 +1,7 @@
-from model import Badge
+import calendar
+from datetime import datetime
+
+from model import Badge, BadgeAssertion
 
 
 def is_valid_badge(badge):
@@ -8,20 +11,43 @@ def is_valid_badge(badge):
 #TODO Clean with bleach
 def build_badge(issuer, badge):
     new = Badge()
-    new.creator = issuer
+    new.creator = issuer.owner._id
+    new.creator = issuer.name
     new.name = badge['badgeName']
     new.description = badge['description']
     new.image = badge['imageurl']
     new.criteria = badge['criteria']
-    new.issuer_url = issuer.site_url
     #TODO alignment and tags
     new.save()
     return new._id
 
 
-def load_badge(id):
-    pass
+def build_assertion(issuer, badge, node, verify_method='hosted'):
+    assertion = BadgeAssertion()
+    assertion.issued_on = calendar.timegm(datetime.utctimetuple(datetime.utcnow()))  # Todo make an int field?
+    assertion.badge_url = badge._id
+    assertion.recipient = {
+        'type': 'osfProject',
+        'identity': node._id,  # Change to node url
+        'hashed': False,
+    }
+    #TODO Signed and hosted
+    assertion.verify = {
+        'type': 'hosted',
+        'url': ''  # TODO me
+    }
+    assertion.save()
+    return assertion._id
 
 
-def build_assertion(issuer, badge):
+def build_issuer(name, url, extra={}):
+    issuer = {
+        'name': name,
+        'url': url,
+    }
+    issuer.update(extra)
+    return issuer
+
+
+def build_identity():
     pass

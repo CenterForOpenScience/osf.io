@@ -16,9 +16,12 @@ widget_route = {
 
 api_urls = {
     'rules': [
-        Rule(
-            '/badges/new/',
-        'post', views.new_badge, json_renderer),
+        Rule('/badges/new/', 'post', views.create_badge, json_renderer),
+        Rule('/settings/badges/', 'post', views.create_organization, json_renderer),
+        Rule([
+            '/project/<pid>/badges/award/',
+            '/project/<pid>/node/<nid>/badges/award/',
+        ], 'post', views.award_badge, json_renderer),
     ],
     'prefix': '/api/v1',
 }
@@ -30,6 +33,18 @@ guid_urls = {
         ], 'get', views.get_badge, OsfWebRenderer('../addons/badges/templates/view_badge.mako')),
         Rule([
             '/badge/<bid>/json/',
-        ], 'get', views.get_badge, json_renderer),
+        ], 'get', views.get_badge_json, json_renderer),
+        Rule([
+            '/badge/assertions/<aid>/',
+        ], 'get', views.get_assertion, OsfWebRenderer('../addons/badges/templates/view_assertion.mako')),
+        Rule([
+            '/badge/assertions/<aid>/',
+        ], 'get', views.get_assertion, json_renderer),
+        Rule([
+            '/badge/assertions/<aid>/json/',
+        ], 'get', views.get_assertion_json, json_renderer),
+        Rule([
+            '/badge/organization/<uid>/json/',
+        ], 'get', views.get_organization_json, json_renderer),
     ]
 }
