@@ -40,8 +40,8 @@ crud_routes = {
     'rules': [
         Rule(
             [
-                '/project/<pid>/dropbox/<path:path>/',
-                '/project/<pid>/node/<nid>/dropbox/<path:path>/',
+                '/project/<pid>/dropbox/files<path:path>/',
+                '/project/<pid>/node/<nid>/dropbox/files<path:path>/',
             ],
             'delete',
             views.crud.dropbox_delete_file,
@@ -58,10 +58,10 @@ crud_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/dropbox/<path:path>/',
-                '/project/<pid>/node/<nid>/dropbox/<path:path>/',
-                '/project/<pid>/dropbox/',
-                '/project/<pid>/node/<nid>/dropbox/',
+                '/project/<pid>/dropbox/files<path:path>/',
+                '/project/<pid>/node/<nid>/dropbox/files<path:path>/',
+                '/project/<pid>/dropbox/files/',
+                '/project/<pid>/node/<nid>/dropbox/files/',
             ],
             'post',
             views.crud.dropbox_upload,
