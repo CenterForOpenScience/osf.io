@@ -88,7 +88,9 @@
         </div>
 
         <div id="selectAddons" class="panel panel-default">
-
+             <div class="panel-heading">
+                 <h3 class="panel-title">Select Add-ons</h3>
+             </div>
                 <div class="panel-body">
 
                     <form id="selectAddonsForm">
