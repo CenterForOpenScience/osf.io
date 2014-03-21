@@ -225,6 +225,9 @@ class AddonNodeSettingsBase(AddonSettingsBase):
                 'permissions': self.owner.get_permissions(user)
             },
             'node': {
+                'id': self.owner._primary_key,
+                'api_url': self.owner.api_url,
+                'url': self.owner.url,
                 'is_registration': self.owner.is_registration,
             }
         })
