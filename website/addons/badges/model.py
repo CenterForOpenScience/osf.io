@@ -7,6 +7,7 @@ from framework import fields
 from framework import GuidStoredObject
 
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
+from website.settings import DOMAIN
 
 
 class Badge(GuidStoredObject):
@@ -32,9 +33,9 @@ class Badge(GuidStoredObject):
             'description': self.description,
             'image': self.image,
             'criteria': self.criteria,
-            'issuer': '/badge/organization/{0}/'.format(self.creator),
+            'issuer': '{0}badge/organization/{1}/'.format(DOMAIN, self.creator),
             'issuer_name': self.creator_name,
-            'url': '/{0}/'.format(self._id),
+            'url': '{0}{1}/'.format(DOMAIN, self._id),
         }
         if self.alignment:
             ret['alignment'] = self.alignment
@@ -49,8 +50,8 @@ class Badge(GuidStoredObject):
             'description': self.description,
             'image': self.image,
             'criteria': self.criteria,
-            'issuer': '/badge/organization/{0}/'.format(self.creator),
-            'url': '/{0}/'.format(self._id),
+            'issuer': '{0}badge/organization/{1}/json/'.format(DOMAIN, self.creator),
+            'url': '{0}{1}/json/'.format(DOMAIN, self._id)
         }
 
         if self.alignment:
@@ -77,7 +78,7 @@ class BadgeAssertion(GuidStoredObject):
 
     #Required
     recipient = fields.DictionaryField()
-    badge_url = fields.StringField()  # URL to badge json
+    badge_id = fields.StringField()  # URL to badge json
     verify = fields.DictionaryField()
     issued_on = fields.StringField()  # TODO Format
 
@@ -86,16 +87,19 @@ class BadgeAssertion(GuidStoredObject):
     evidence = fields.StringField()
     expires = fields.StringField()
 
+    #Custom fields
+    revoked = fields.BooleanField()
+
     def to_json(self):
         #Mozilla Required Fields
         ret = {
             'uid': self._id,
             'recipient': self.recipient,
-            'badge': self.badge_url,
+            'badge': self.badge_id,
             'verify': self.verify,
             'issued_on': datetime.fromtimestamp(self.issued_on).strftime('%Y/%m/%d')
         }
-        ret.update(Badge.load(self.badge_url).to_json())
+        ret.update(Badge.load(self.badge_id).to_json())
 
         #Optional Fields
         if self.image:
@@ -111,7 +115,7 @@ class BadgeAssertion(GuidStoredObject):
         ret = {
             'uid': self._id,
             'recipient': self.recipient,
-            'badge': self.badge_url,
+            'badge': '{}{}/json/'.format(DOMAIN, self.badge_id),
             'verify': self.verify,
             'issuedOn': self.issued_on
         }
@@ -194,11 +198,7 @@ class BadgesUserSettings(AddonUserSettingsBase):
 
     @property
     def configured(self):
-        configed = (
-            self.name is not None or self.name is not "",
-            self.url is not None or self.url is not "",
-        )
-        return bool(configed)
+        return not (self.name is None  or self.url is None)
 
     def add_badge(self, id, save=True):
         self.badges.append(id)
