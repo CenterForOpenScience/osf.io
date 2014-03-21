@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from framework import request, make_response
-from framework.flask import secure_filename, redirect
+from framework.flask import secure_filename, redirect, send_file
 from framework.exceptions import HTTPError
 
 from website.project.decorators import must_be_contributor_or_public, must_have_addon, must_not_be_registration
@@ -19,6 +19,8 @@ import httplib as http
 
 logger = logging.getLogger(__name__)
 
+session = requests.Session()
+
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
 def dataverse_download_file(**kwargs):
@@ -29,29 +31,27 @@ def dataverse_download_file(**kwargs):
 
     return redirect('http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id))
 
-session = requests.Session()
 
-def scrape_dataverse(file_id):
+@must_be_contributor_or_public
+@must_have_addon('dataverse', 'node')
+def dataverse_download_file_proxy(**kwargs):
 
-    # Go to file url
-    response = session.get('http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id))
+    file_id = kwargs.get('path')
+    if file_id is None:
+        raise HTTPError(http.NOT_FOUND)
 
-    # Agree to terms if necessary
-    if '<title>Account Terms of Use -' in response.content:
+    content = scrape_dataverse(file_id)
 
-        parsed = BeautifulSoup(response.content)
-        view_state = parsed.find(id='javax.faces.ViewState').attrs.get('value')
-        data = {
-            'form1':'form1',
-            'javax.faces.ViewState': view_state,
-            'form1:termsAccepted':'on',
-            'form1:termsButton':'Continue',
-        }
-        session.post('http://{0}/dvn/faces/study/TermsOfUsePage.xhtml'.format(HOST), data=data)
-        response = session.get('http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id))
+    # Build response
+    resp = make_response(content)
+    resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(
+        file_id
+    )
 
-    # return file
-    return response.content
+    resp.headers['Content-Type'] = 'application/octet-stream'
+
+    return resp
+
 
 # TODO: Remove unnecessary API calls
 @must_be_contributor_or_public
@@ -78,6 +78,7 @@ def dataverse_view_file(**kwargs):
     url = os.path.join(node.api_url, 'dataverse', 'file', file_id) + '/'
 
     # Get or create rendered file
+    _, ext = os.path.splitext(file.name)
     cache_file = '{0}.html'.format(file_id)
     rendered = get_cache_content(node_settings, cache_file)
 
@@ -85,14 +86,15 @@ def dataverse_view_file(**kwargs):
         data = scrape_dataverse(file_id)
         rendered = get_cache_content(
             node_settings, cache_file, start_render=True,
-            file_path=file_id, file_content=data, download_path='{}/download/'.format(url),
+            file_path=file_id + ext, file_content=data,
+            download_path='{}proxy/'.format(url),
         )
 
     rv = {
         'file_name': file.name,
         'render_url': '{0}render/'.format(url),
         'rendered': rendered,
-        'download_url': '{0}download/'.format(url),
+        'download_url': '{0}proxy/'.format(url),
     }
     rv.update(_view_project(node, auth))
     return rv
@@ -229,3 +231,26 @@ def dataverse_get_rendered_file(**kwargs):
 
     cache_file = '{0}.html'.format(file_id)
     return get_cache_content(node_settings, cache_file)
+
+
+def scrape_dataverse(file_id):
+
+    # Go to file url
+    response = session.get('http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id))
+
+    # Agree to terms if necessary
+    if '<title>Account Terms of Use -' in response.content:
+
+        parsed = BeautifulSoup(response.content)
+        view_state = parsed.find(id='javax.faces.ViewState').attrs.get('value')
+        data = {
+            'form1':'form1',
+            'javax.faces.ViewState': view_state,
+            'form1:termsAccepted':'on',
+            'form1:termsButton':'Continue',
+        }
+        session.post('http://{0}/dvn/faces/study/TermsOfUsePage.xhtml'.format(HOST), data=data)
+        response = session.get('http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id))
+
+    # return file
+    return response.content
