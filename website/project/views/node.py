@@ -204,9 +204,8 @@ def node_setting(**kwargs):
     for addon in node.get_addons():
 
         addons_enabled.append(addon.config.short_name)
-
         if 'node' in addon.config.configs:
-            addon_enabled_settings.append(addon.config.short_name)
+            addon_enabled_settings.append(addon.to_json(auth.user))
 
     rv['addon_categories'] = settings.ADDON_CATEGORIES
     rv['addons_available'] = [
@@ -224,7 +223,6 @@ def node_setting(**kwargs):
     }
 
     return rv
-
 
 @must_have_permission('write')
 @must_not_be_registration

@@ -144,12 +144,8 @@
 
                 <div class="panel-body">
 
-                    % for name in addon_enabled_settings or []:
-
-                        <div mod-meta='{
-                                "tpl": "../addons/${name}/templates/${name}_node_settings.mako",
-                                "uri": "${node['api_url']}${name}/settings/"
-                            }'></div>
+                    % for node_settings_dict in addon_enabled_settings or []:
+                        ${render_node_settings(node_settings_dict)}
 
                         % if not loop.last:
                             <hr />
@@ -165,6 +161,14 @@
     </div>
 
 </div>
+
+<%def name="render_node_settings(data)">
+    <%
+       template_name = "{name}/templates/{name}_node_settings.mako".format(name=data['addon_short_name'])
+       tpl = context.lookup.get_template(template_name).render(**data)
+    %>
+    ${tpl}
+</%def>
 
 <!-- Include metadata templates -->
 <%include file="metadata/metadata_templates_1.html" />
