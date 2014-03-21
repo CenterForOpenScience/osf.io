@@ -84,9 +84,9 @@ NodeActions.useAsTemplate = function() {
         success: function(data) {
             window.location = data['url']
         },
-        fail: function() {
+        error: function(response) {
             $.osf.unblock();
-            bootbox.alert('Templating failed');
+            $.osf.handleJSONError(response);
         }
     });
 };
@@ -175,8 +175,9 @@ NodeActions.reorderChildren = function(idList, elm) {
         data: JSON.stringify({'new_list': idList}),
         contentType: 'application/json',
         dataType: 'json',
-        fail: function() {
+        error: function(response) {
             $(elm).sortable('cancel');
+            $.osf.handleJSONError(response);
         }
     });
 };
