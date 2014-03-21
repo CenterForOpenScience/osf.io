@@ -36,7 +36,7 @@ class TestUserSettingsModel(DbTestCase):
         assert_true(retrieved.account_info)
         assert_equal(retrieved.account_info['display_name'], self.user.fullname)
 
-    def test_update_account_info(self):
+    def test_get_account_info(self):
         mock_client = mock.Mock()
         name, email = fake.name(), fake.email()
         mock_client.account_info.return_value = {
@@ -45,7 +45,7 @@ class TestUserSettingsModel(DbTestCase):
             'uid': '12345abc'
         }
         settings = DropboxUserSettingsFactory()
-        settings.update_account_info(client=mock_client)
+        settings.get_account_info(client=mock_client)
         settings.save()
         acct_info = settings.account_info
         assert_equal(acct_info['display_name'], name)

@@ -59,6 +59,39 @@ class TestAuthViews(DbTestCase):
         settings.reload()
         assert_false(settings.has_auth)
 
+class TestConfigViews(DropboxAddonTestCase):
+
+    # TODO(sloria): Make a full mock client
+    @mock.patch('website.addons.dropbox.views.crud.DropboxClient.metadata')
+    def test_dropbox_config_get(self, mock_metadata):
+        mock_metadata.return_value = mock_responses['metadata_list']
+        self.user_settings.account_info['display_name'] = 'Foo bar'
+        self.user_settings.save()
+
+        url = lookup('api', 'dropbox_config_get', pid=self.project._primary_key)
+
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        result = res.json['result']
+        expected_folders = [each['path']
+            for each in mock_metadata.return_value['contents']]
+        assert_equal(result['folders'], expected_folders)
+        assert_equal(result['ownerName'],
+            self.node_settings.user_settings.account_info['display_name'])
+
+        assert_equal(result['urls']['config'],
+            lookup('api', 'dropbox_config_put', pid=self.project._primary_key))
+
+
+    def test_dropbox_config_put(self):
+        url = lookup('api', 'dropbox_config_put', pid=self.project._primary_key)
+        # Can set folder through API call
+        res = self.app.put_json(url, {'selected': 'My test folder'},
+            auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.node_settings.reload()
+        assert_equal(self.node_settings.folder, 'My test folder')
+
 
 class TestCRUDViews(DropboxAddonTestCase):
 
