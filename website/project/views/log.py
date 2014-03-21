@@ -13,10 +13,12 @@ from website.project.decorators import must_be_valid_project
 
 logger = logging.getLogger(__name__)
 
+
 def get_log(log_id):
 
     log = NodeLog.load(log_id)
     node_to_use = log.node
+
     auth = Auth(
         user=get_current_user(),
         api_key=get_api_key(),
@@ -25,6 +27,7 @@ def get_log(log_id):
 
     if not node_to_use.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
+
     return {'log': log.serialize()}
 
 
@@ -61,6 +64,7 @@ def get_logs(**kwargs):
 
     if not node_to_use.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
+
     if 'count' in request.args:
         count = int(request.args['count'])
     elif 'count' in kwargs:
@@ -75,5 +79,4 @@ def get_logs(**kwargs):
     # logs that the current user / API key cannot access
     logs, has_more_logs = _get_logs(node_to_use, count, auth, offset)
     return {'logs': logs, 'has_more_logs': has_more_logs}
-
 
