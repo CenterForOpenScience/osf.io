@@ -1611,17 +1611,17 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def web_url_for(self, view_name, *args, **kwargs):
         if self.category == 'project':
-            return web_url_for(view_name, pid=self._primary_key)
+            return web_url_for(view_name, pid=self._primary_key, *args, **kwargs)
         else:
             return web_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key)
+                nid=self._primary_key, *args, **kwargs)
 
     def api_url_for(self, view_name, *args, **kwargs):
         if self.category == 'project':
-            return api_url_for(view_name, pid=self._primary_key)
+            return api_url_for(view_name, pid=self._primary_key, *args, **kwargs)
         else:
             return api_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key)
+                nid=self._primary_key, *args, **kwargs)
 
     @property
     def absolute_url(self):
