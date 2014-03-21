@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import mock
-from nose.tools import *
+
+from nose.tools import *  # PEP8 asserts
+from slugify import slugify
 
 from website.addons.dropbox.model import (
     DropboxUserSettings, DropboxNodeSettings, DropboxFile
@@ -8,7 +10,7 @@ from website.addons.dropbox.model import (
 from website.addons.dropbox.core import init_storage
 from tests.base import DbTestCase, fake, URLLookup
 from tests.factories import UserFactory, ProjectFactory
-
+from website.addons.dropbox.tests.utils import MockDropbox
 from website.addons.dropbox.tests.factories import (
     DropboxUserSettingsFactory, DropboxNodeSettingsFactory,
     DropboxFileFactory
@@ -148,3 +150,15 @@ class TestDropboxGuidFile(DbTestCase):
         url = lookup('api', 'dropbox_view_file',
             pid=project._primary_key, path=file_obj.path)
         assert_equal(url, file_url)
+
+    def test_cache_file_name(self):
+        project = ProjectFactory()
+        path = 'My Project/foo.txt'
+        file_obj = DropboxFile(node=project, path=path)
+        mock_client = MockDropbox()
+        file_obj.update_metadata(client=mock_client)
+        file_obj.save()
+
+        result = file_obj.get_cache_filename()
+        assert_equal(result, "{0}_{1}".format(slugify(file_obj.path),
+            file_obj.metadata['rev']))

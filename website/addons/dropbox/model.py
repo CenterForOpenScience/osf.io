@@ -1,16 +1,26 @@
 # -*- coding: utf-8 -*-
+import os
+import logging
+
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
+from slugify import slugify
 
 from framework import fields
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
-from website.addons.dropbox.client import get_client
+from website.addons.dropbox.client import get_client, get_node_addon_client
+
+logger = logging.getLogger(__name__)
+debug = logger.debug
 
 class DropboxFile(GuidFile):
 
     #: Full path to the file, e.g. 'My Pictures/foo.png'
     path = fields.StringField(required=True, index=True)
+    #: Stored metadata from the dropbox API
+    #: See https://www.dropbox.com/developers/core/docs#metadata
+    metadata =fields.DictionaryField(required=False)
 
     @property
     def api_url(self):
@@ -22,6 +32,29 @@ class DropboxFile(GuidFile):
         """The web url for the file."""
         return self.node.web_url_for('dropbox_view_file', path=self.path)
 
+    @property
+    def file_url(self):
+        if self.path is None:
+            raise ValueError('Path field must be defined.')
+        return os.path.join('dropbox', 'files', self.path)
+
+    # TODO(sloria): TEST ME
+    def update_metadata(self, client=None):
+        cl = client or get_node_addon_client(self.node.get_addon('dropbox'))
+        debug(cl)
+        self.metadata = cl.metadata(self.path, list=False)
+
+    def get_metadata(self, client=None, force=False):
+        """Gets the file metadata from the Dropbox API (cached)."""
+        if force or (not self.metadata):
+            self.update_metadata(client=client)
+            self.save()
+        return self.metadata
+
+    def get_cache_filename(self, client=None):
+        metadata = self.get_metadata(client=client)
+        return "{slug}_{rev}".format(slug=slugify(self.path), rev=metadata['rev'])
+
     @classmethod
     def get_or_create(cls, node, path):
         """Get or create a new file record.
@@ -29,7 +62,7 @@ class DropboxFile(GuidFile):
         """
         try:
             new = cls.find_one(
-                Q('node', 'eq', node),
+                Q('node', 'eq', node) &
                 Q('path', 'eq', path)
             )
             created = False
@@ -75,7 +108,7 @@ class DropboxUserSettings(AddonUserSettingsBase):
         """
         if force or (not self.account_info):
             self.update_account_info(client=client)
-            return self.account_info
+            self.save()
         return self.account_info
 
     def clear_auth(self):
