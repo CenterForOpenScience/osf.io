@@ -3,7 +3,6 @@ import logging
 import httplib as http
 import os
 
-from slugify import slugify
 
 from website.project.utils import serialize_node, get_cache_content
 from website.project.decorators import must_have_permission
@@ -35,8 +34,10 @@ def dropbox_delete_file(path, auth, node_addon, **kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('dropbox', 'node')
-def dropbox_upload(path, node_addon, **kwargs):
-    client = get_node_addon_client(node_addon)
+def dropbox_upload(**kwargs):
+    # Route may or may not have a path
+    path = kwargs.get('path', '/')
+    client = get_node_addon_client(kwargs.get('node_addon'))
     file_obj = request.files.get('file', None)
     if path and file_obj and client:
         path = os.path.join(path, file_obj.filename)

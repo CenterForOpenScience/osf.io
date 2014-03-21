@@ -129,16 +129,6 @@ class TestDropboxNodeSettingsModel(DbTestCase):
 
 class TestDropboxGuidFile(DbTestCase):
 
-    def test_api_url(self):
-        project = ProjectFactory()
-        file_obj = DropboxFile(node=project, path='foo.txt')
-        file_obj.save()
-        with app.test_request_context():
-            file_url = file_obj.api_url
-
-        url = lookup('api', 'dropbox_view_file',
-            pid=project._primary_key, path=file_obj.path)
-        assert_equal(url, file_url)
 
     def test_web_url(self):
         project = ProjectFactory()
@@ -147,7 +137,7 @@ class TestDropboxGuidFile(DbTestCase):
         with app.test_request_context():
             file_url = file_obj.url
 
-        url = lookup('api', 'dropbox_view_file',
+        url = lookup('web', 'dropbox_view_file',
             pid=project._primary_key, path=file_obj.path)
         assert_equal(url, file_url)
 

@@ -97,7 +97,7 @@ class TestConfigViews(DropboxAddonTestCase):
 
 class TestCRUDViews(DropboxAddonTestCase):
 
-    @mock.patch('website.addons.dropbox.views.crud.DropboxClient.put_file')
+    @mock.patch('website.addons.dropbox.client.DropboxClient.put_file')
     def test_upload_file_to_folder(self, mock_put_file):
         mock_put_file.return_value = mock_responses['put_file']
         payload = {'file': Upload('myfile.rst', b'baz','text/x-rst')}
@@ -111,23 +111,23 @@ class TestCRUDViews(DropboxAddonTestCase):
         assert_equal(first_argument, '{0}/{1}'.format('foo', 'myfile.rst'))
         assert_true(isinstance(second_arg, FileStorage))
 
-    @mock.patch('website.addons.dropbox.views.crud.DropboxClient', )
+    @mock.patch('website.addons.dropbox.client.DropboxClient.put_file')
     def test_upload_file_to_root(self, mock_put_file):
         mock_put_file.return_value = mock_responses['put_file']
         payload = {'file': Upload('rootfile.rst', b'baz','text/x-rst')}
-        url = lookup('api', 'dropbox_upload', pid=self.project._primary_key)
+        url = lookup('api', 'dropbox_upload',
+                pid=self.project._primary_key,
+                path='')
         res = self.app.post(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         mock_put_file.assert_called_once
         first_argument = mock_put_file.call_args[0][0]
         assert_equal(first_argument, '/rootfile.rst')
 
-    @mock.patch('website.addons.dropbox.views.crud.DropboxClient.file_delete')
-    def test_delete_file(self, mock_file_delete):
+    def test_delete_file(self):
         assert 0, 'finish me'
 
-    @mock.patch('website.addons.dropbox.views.crud.DropboxClient.share')
-    def test_download_file(self, mock_share):
+    def test_download_file(self):
         assert 0, 'finish me'
 
     def test_render_file(self):
@@ -142,11 +142,8 @@ class TestCRUDViews(DropboxAddonTestCase):
     def test_build_dropbox_urls(self):
         assert 0, 'finish me'
 
-
     def test_dropbox_view_file(self):
-        url = lookup('web', 'dropbox_view_file', pid=self.project._primary_key)
+        url = lookup('web', 'dropbox_view_file', pid=self.project._primary_key,
+            path='foo')
         res = self.app.get(url, auth=self.user.auth)
-
-        json = res.json
         assert 0, 'finish me'
-

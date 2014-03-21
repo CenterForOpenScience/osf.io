@@ -42,8 +42,8 @@ web_routes = {
     'rules': [
         Rule(
             [
-                '/project/<pid>/dropbox/files/<path:path>/view/',
-                '/project/<pid>/node/<nid>/dropbox/files/<path:path>/view/',
+                '/project/<pid>/dropbox/files/<path:path>',
+                '/project/<pid>/node/<nid>/dropbox/files/<path:path>',
             ],
             'get',
             views.crud.dropbox_view_file,
