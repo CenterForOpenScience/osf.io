@@ -89,7 +89,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             rv.update({
                 'connected': True,
                 'authorized': authorized,
-                'dataverses': [d.collection.title for d in dataverses],
+                'dataverses': [d.title for d in dataverses],
                 'dataverse': self.dataverse or '',
                 'dataverse_number': self.dataverse_number,
                 'studies': [s.get_id() for s in studies],

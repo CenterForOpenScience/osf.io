@@ -187,6 +187,22 @@ class TestDataverseViewsConfig(DbTestCase):
         assert_equal(user_settings.dataverse_username, None)
         assert_equal(user_settings.dataverse_password, None)
 
+    @mock.patch('website.addons.dataverse.views.config.connect')
+    def test_set_dataverse_by_dataverse(self, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+
+        url = self.project.api_url + 'dataverse/set/'
+        params = {'dataverse_number': 0,
+                  'study_hdl': None}
+
+        res = self.app.post_json(url, params, auth=self.user.auth)
+        self.node_settings.reload()
+
+        assert_equal(self.node_settings.dataverse_number, 0)
+        assert_equal(self.node_settings.dataverse, 'Dataverse 1')
+        assert_equal(self.node_settings.study, None)
+        assert_equal(self.node_settings.study_hdl, None)
+
 
 def test_scrape_dataverse():
     content = scrape_dataverse(2362170)

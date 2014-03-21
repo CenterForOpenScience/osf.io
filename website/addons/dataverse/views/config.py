@@ -75,10 +75,10 @@ def set_dataverse(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     # Set selected Dataverse
-    node_settings.dataverse_number = request.json.get('dataverse_number') or node_settings.dataverse_number
+    node_settings.dataverse_number = request.json.get('dataverse_number')
     dataverses = connection.get_dataverses() or []
     dataverse = dataverses[int(node_settings.dataverse_number)] if dataverses else None
-    node_settings.dataverse = dataverse.collection.title if dataverse else None
+    node_settings.dataverse = dataverse.title if dataverse else None
 
     # Set selected Study
     hdl = request.json.get('study_hdl')

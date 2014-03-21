@@ -37,6 +37,10 @@ class Dataverse(object):
     def alias(self):
         return self.collection.href.split('/')[-1]
 
+    @property
+    def title(self):
+        return self.collection.title
+
     def add_study(self, study):
         # this creates the study AND generates a deposit receipt
         depositReceipt = self.connection.swordConnection.create(

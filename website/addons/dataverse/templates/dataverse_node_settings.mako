@@ -94,7 +94,8 @@
     });
 
     $("#studyDropDown").change(function() {
-        var sn = '{"study_hdl":"' + $(this).find(":selected").val() + '"}'
+        var sn = '{"dataverse_number":"' + $("#dataverseDropDown").find(":selected").val() +
+                '", "study_hdl":"' + $(this).find(":selected").val() + '"}'
         $.ajax({
             url: nodeApiUrl + 'dataverse/set/',
             data: sn,
