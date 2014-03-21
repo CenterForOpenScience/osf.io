@@ -18,11 +18,12 @@
      * @param  {Function} done Success callback. Takes returned data as its first argument
      * @return {jQuery xhr}
      */
-    $.osf.postJSON = function(url, data, done) {
+    $.osf.postJSON = function(url, data, done, error) {
         var ajaxOpts = {
             url: url, type: 'post',
             data: JSON.stringify(data),
             success: done,
+            error: error,
             contentType: 'application/json', dataType: 'json'
         };
         return $.ajax(ajaxOpts);
@@ -39,11 +40,12 @@
      * @param  {Function} done Success callback. Takes returned data as its first argument
      * @return {jQuery xhr}
      */
-    $.osf.putJSON = function(url, data, done) {
+    $.osf.putJSON = function(url, data, done, error) {
         var ajaxOpts = {
             url: url, type: 'put',
             data: JSON.stringify(data),
             success: done,
+            error: error,
             contentType: 'application/json', dataType: 'json'
         };
         return $.ajax(ajaxOpts);
