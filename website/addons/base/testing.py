@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from framework.auth.decorators import Auth
+from website.addons.base import AddonError
 from tests.base import DbTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 
@@ -61,7 +62,10 @@ class AddonTestCase(DbTestCase):
         self.user_settings.save()
 
         self.project = self.create_project()
-        self.project.add_addon(self.ADDON_SHORT_NAME, auth=Auth(self.user))
+        try:
+            self.project.add_addon(self.ADDON_SHORT_NAME, auth=Auth(self.user))
+        except AddonError:
+            pass
         self.project.save()
         self.node_settings = self.project.get_addon(self.ADDON_SHORT_NAME)
         # User has imported their addon settings to this node

@@ -1,9 +1,7 @@
 import os
-import re
 import base64
 import urllib
 import httplib as http
-from slugify import get_slugify
 from dateutil.parser import parse as parse_date
 
 from framework import Q
@@ -26,7 +24,7 @@ from website.dates import FILE_MODIFIED
 from website.addons.gitlab.api import client
 from website.addons.gitlab.model import GitlabGuidFile
 from website.addons.gitlab.utils import (
-    create_node,
+    create_node, gitlab_slugify,
     kwargs_to_path, item_to_hgrid, gitlab_to_hgrid, build_urls, refs_to_params
 )
 from website.addons.gitlab import settings as gitlab_settings
@@ -55,16 +53,6 @@ def ref_or_default(node_settings, data):
         project = client.getproject(node_settings.project_id)
         return project['default_branch']
     return None
-
-
-# Gitlab file names can only contain alphanumeric and [_.-?] and must not end
-# with ".git"
-# See https://github.com/gitlabhq/gitlabhq/blob/master/lib/gitlab/regex.rb#L52
-# TODO: Test me @jmcarp
-gitlab_slugify = get_slugify(
-    safe_chars='.',
-    pretranslate=lambda value: re.sub(r'\.git$', '', value)
-)
 
 
 def create_or_update(node_settings, user_settings, method_name, action,

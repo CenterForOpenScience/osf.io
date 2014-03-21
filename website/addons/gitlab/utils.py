@@ -1,9 +1,11 @@
 import os
+import re
 import uuid
 import urllib
 import urlparse
 import subprocess
 import httplib as http
+from slugify import get_slugify
 
 from framework.exceptions import HTTPError
 
@@ -162,6 +164,7 @@ def build_urls(node, item, path, branch=None, sha=None):
 
     quote_path = urllib.quote_plus(path)
     params = refs_to_params(branch, sha)
+    branch_params = refs_to_params(branch)
 
     files_url = join_truthy(node.url, 'gitlab', 'files', quote_path)
     files_api_url = join_truthy(node.api_url, 'gitlab', 'files', quote_path)
@@ -169,16 +172,25 @@ def build_urls(node, item, path, branch=None, sha=None):
 
     if item['type'] == 'tree':
         return {
-            'upload': os.path.join(files_api_url) + '/' + params,
-            'fetch': os.path.join(hgrid_url) + '/',
+            'upload': node.api_url_for('gitlab_upload_file', branch=branch, sha=sha),
+            'fetch': node.api_url_for('gitlab_list_files', branch=branch, sha=sha),
         }
     elif item['type'] == 'blob':
         return {
-            'view': os.path.join(files_url) + '/' + params,
-            'download': os.path.join(files_url, 'download') + '/' + params,
-            'delete': os.path.join(files_api_url) + '/' + refs_to_params(branch)
+            'view': node.url_for('gitlab_view_file', branch=branch, sha=sha),
+            'download': node.url_for('gitlab_download_file', branch=branch, sha=sha),
+            'delete': node.api_url_for('gitlab_delete_file', branch=branch),
         }
     raise ValueError('Item must have type "tree" or "blob"')
+
+
+# Gitlab file names can only contain alphanumeric and [_.-?] and must not end
+# with ".git"
+# See https://github.com/gitlabhq/gitlabhq/blob/master/lib/gitlab/regex.rb#L52
+gitlab_slugify = get_slugify(
+    safe_chars='.',
+    pretranslate=lambda value: re.sub(r'\.git$', '', value)
+)
 
 
 def item_to_hgrid(node, item, path, permissions, branch=None, sha=None):
