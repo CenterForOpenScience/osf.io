@@ -83,7 +83,8 @@ def create_or_update(node_settings, user_settings, method_name, action,
 
     response = method(
         node_settings.project_id, filename, branch, content,
-        gitlab_settings.MESSAGES['add'], user_id=user_settings.user_id
+        gitlab_settings.MESSAGES['add'], encoding='base64',
+        user_id=user_settings.user_id
     )
 
     if response:
