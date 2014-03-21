@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
-import konch
-
 import logging
+
+import konch
+from faker import Factory
+
 from framework import Q
 from framework.auth.model import User
 from framework import db
 from website.app import init_app
 from website.project.model import Node
 from website import models
-from faker import Factory
 from tasks import test
+from tests.base import URLLookup
 import requests
 
 konch.logger.setLevel(logging.WARNING)
@@ -17,6 +19,7 @@ konch.logger.setLevel(logging.WARNING)
 fake = Factory.create()
 
 app = init_app()
+lookup = URLLookup(app)
 
 BANNER = """
                      .+yhhys/`
@@ -58,7 +61,8 @@ konch.config({
         'rget': requests.get,
         'rpost': requests.post,
         'rdelete': requests.delete,
-        'rput': requests.put
+        'rput': requests.put,
+        'lookup': lookup
     },
     'banner': BANNER,
     'prompt': '[\\#] (osf) >>> '
