@@ -41,6 +41,7 @@ from website.util.permissions import (expand_permissions,
 )
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import language, settings
+from website.util import web_url_for, api_url_for
 
 html_parser = HTMLParser()
 
@@ -1607,6 +1608,20 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def url(self):
         return '/{}/'.format(self._primary_key)
+
+    def web_url_for(self, view_name, *args, **kwargs):
+        if self.category == 'project':
+            return web_url_for(view_name, pid=self._primary_key, *args, **kwargs)
+        else:
+            return web_url_for(view_name, pid=self.parent_node._primary_key,
+                nid=self._primary_key, *args, **kwargs)
+
+    def api_url_for(self, view_name, *args, **kwargs):
+        if self.category == 'project':
+            return api_url_for(view_name, pid=self._primary_key, *args, **kwargs)
+        else:
+            return api_url_for(view_name, pid=self.parent_node._primary_key,
+                nid=self._primary_key, *args, **kwargs)
 
     @property
     def absolute_url(self):
