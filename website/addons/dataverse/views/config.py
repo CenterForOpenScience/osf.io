@@ -71,7 +71,8 @@ def set_dataverse(*args, **kwargs):
         node_settings.dataverse_password,
     )
 
-    if dataverse_user and dataverse_user.owner != user and connection is not None:
+    # Fail if user doesn't own node_settings OR if no connection is made
+    if dataverse_user and dataverse_user.owner != user or connection is None:
         raise HTTPError(http.BAD_REQUEST)
 
     # Set selected Dataverse
@@ -103,7 +104,7 @@ def set_study(*args, **kwargs):
         node_settings.dataverse_password,
     )
 
-    if dataverse_user and dataverse_user.owner != user and connection is not None:
+    if dataverse_user and dataverse_user.owner != user or connection is None:
         raise HTTPError(http.BAD_REQUEST)
 
     # Get current dataverse

@@ -39,6 +39,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
     dataverse_username = fields.StringField()
     dataverse_password = fields.StringField()
+    #TODO: Replace dataverse number with alias (unique)
     dataverse_number = fields.IntegerField(default=0)
     dataverse = fields.StringField()
     study_hdl = fields.StringField()
