@@ -77,7 +77,7 @@ def set_dataverse(*args, **kwargs):
     # Set selected Dataverse
     node_settings.dataverse_number = request.json.get('dataverse_number')
     dataverses = connection.get_dataverses() or []
-    dataverse = dataverses[int(node_settings.dataverse_number)] if dataverses else None
+    dataverse = dataverses[node_settings.dataverse_number] if dataverses else None
     node_settings.dataverse = dataverse.title if dataverse else None
 
     # Set study to None
@@ -107,7 +107,7 @@ def set_study(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     # Get current dataverse
-    dataverse = connection.get_dataverses()[int(node_settings.dataverse_number)]
+    dataverse = connection.get_dataverses()[node_settings.dataverse_number]
 
     # Set selected Study
     hdl = request.json.get('study_hdl')
@@ -118,36 +118,3 @@ def set_study(*args, **kwargs):
     node_settings.save()
 
     return {}
-
-
-@decorators.must_be_contributor_or_public
-@decorators.must_have_addon('dataverse', 'node')
-def dataverse_widget(*args, **kwargs):
-
-    node = kwargs['node'] or kwargs['project']
-    dataverse = node.get_addon('dataverse')
-    node_settings = kwargs['node_addon']
-
-    rv = {
-        'complete': True,
-        'study': node_settings.study,
-    }
-    rv.update(dataverse.config.to_json())
-    return rv
-
-
-@decorators.must_be_contributor_or_public
-def dataverse_page(**kwargs):
-
-    user = kwargs['auth'].user
-    node = kwargs['node'] or kwargs['project']
-    dataverse = node.get_addon('dataverse')
-
-    data = _view_project(node, user)
-
-    rv = {
-        'complete': True,
-        'dataverse_url': dataverse.dataverse_url,
-    }
-    rv.update(data)
-    return rv

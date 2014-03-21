@@ -10,7 +10,7 @@
                     Dataverse:
                     <select id="dataverseDropDown" class="form-control">
                         % for i, dv in enumerate(dataverses):
-                            % if i == int(dataverse_number):
+                            % if i == dataverse_number:
                                 <option value=${i} selected>${dv}</option>
                             % else:
                                 <option value=${i}>${dv}</option>

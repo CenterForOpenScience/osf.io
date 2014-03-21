@@ -9,7 +9,9 @@ from website.util import rubeus
 import hurry
 
 
-def dataverse_hgrid_data(node_settings, user, contents=False, **kwargs):
+def dataverse_hgrid_data(node_settings, auth=None, **kwargs):
+
+    node = node_settings.owner
 
     # Quit if no study linked
     connection = connect(
@@ -20,7 +22,8 @@ def dataverse_hgrid_data(node_settings, user, contents=False, **kwargs):
     if node_settings.study_hdl is None or connection is None:
         return []
 
-    can_edit = True # TODO: Validate user
+    can_edit = node.can_edit(auth) and not node.is_registration
+    can_view = node.can_view(auth)
 
     # TODO: Expose get contents view function and route
 
@@ -32,7 +35,7 @@ def dataverse_hgrid_data(node_settings, user, contents=False, **kwargs):
 
     permissions = {
         'edit': can_edit,
-        'view': True
+        'view': can_view
     }
 
     urls = {
@@ -57,7 +60,7 @@ def dataverse_root_folder_public(*args, **kwargs):
 
     node_settings = kwargs['node_addon']
 
-    return dataverse_hgrid_data(node_settings)
+    return dataverse_hgrid_data(node_settings, auth=kwargs['auth'])
 
 
 @must_be_contributor_or_public
@@ -65,6 +68,11 @@ def dataverse_root_folder_public(*args, **kwargs):
 def dataverse_hgrid_data_contents(**kwargs):
 
     node_settings = kwargs['node_addon']
+    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
+
+    can_edit = node.can_edit(auth) and not node.is_registration
+    can_view = node.can_view(auth)
 
     connection = connect(
         node_settings.dataverse_username,
@@ -73,7 +81,7 @@ def dataverse_hgrid_data_contents(**kwargs):
 
     info = []
 
-    study = connection.get_dataverses()[int(node_settings.dataverse_number)].get_study_by_hdl(node_settings.study_hdl)
+    study = connection.get_dataverses()[node_settings.dataverse_number].get_study_by_hdl(node_settings.study_hdl)
 
     for f in study.get_files():
 
@@ -88,9 +96,8 @@ def dataverse_hgrid_data_contents(**kwargs):
                 'delete': url,
             },
             'permissions': {
-                'view': True,
-                'edit': True, # TODO: Validate
-
+                'view': can_view,
+                'edit': can_edit,
             },
             'size': [
                     float(0), # TODO: Implement file size (if possible?),

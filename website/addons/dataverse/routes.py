@@ -46,12 +46,6 @@ settings_routes = {
             json_renderer,
         ),
 
-        # Widget Settings
-        Rule([
-            '/project/<pid>/dataverse/widget/',
-            '/project/<pid>/node/<nid>/dataverse/widget/',
-        ], 'get', views.config.dataverse_widget, json_renderer),
-
         # Files
         Rule([
             '/project/<pid>/dataverse/file/',

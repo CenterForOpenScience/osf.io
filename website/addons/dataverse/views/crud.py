@@ -8,7 +8,10 @@ from framework import request, make_response
 from framework.flask import secure_filename, redirect, send_file
 from framework.exceptions import HTTPError
 
-from website.project.decorators import must_be_contributor_or_public, must_have_addon, must_not_be_registration
+from website.project.decorators import must_have_permission
+from website.project.decorators import must_be_contributor_or_public
+from website.project.decorators import must_not_be_registration
+from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
 from website.util import rubeus
@@ -71,7 +74,7 @@ def dataverse_view_file(**kwargs):
         node_settings.dataverse_password
     )
 
-    study = connection.get_dataverses()[int(node_settings.dataverse_number)].get_study_by_hdl(node_settings.study_hdl)
+    study = connection.get_dataverses()[node_settings.dataverse_number].get_study_by_hdl(node_settings.study_hdl)
     file = study.get_file_by_id(file_id)
 
     # Get file URL
@@ -100,8 +103,7 @@ def dataverse_view_file(**kwargs):
     return rv
 
 
-
-@must_be_contributor_or_public
+@must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('dataverse', 'node')
 def dataverse_upload_file(**kwargs):
@@ -113,11 +115,14 @@ def dataverse_upload_file(**kwargs):
 
     path = kwargs.get('path', '')
 
+    can_edit = node.can_edit(auth) and not node.is_registration
+    can_view = node.can_view(auth)
+
     connection = connect(
         node_settings.dataverse_username,
         node_settings.dataverse_password
     )
-    study = connection.get_dataverses()[int(node_settings.dataverse_number)].get_study_by_hdl(node_settings.study_hdl)
+    study = connection.get_dataverses()[node_settings.dataverse_number].get_study_by_hdl(node_settings.study_hdl)
 
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
@@ -164,8 +169,8 @@ def dataverse_upload_file(**kwargs):
                     'delete': url,
             },
             'permissions': {
-                'view': True,
-                'edit': True,
+                'view': can_view,
+                'edit': can_edit,
             },
         }
 
@@ -174,7 +179,7 @@ def dataverse_upload_file(**kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 
-@must_be_contributor_or_public
+@must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('dataverse', 'node')
 def dataverse_delete_file(**kwargs):
@@ -193,7 +198,7 @@ def dataverse_delete_file(**kwargs):
         node_settings.dataverse_username,
         node_settings.dataverse_password
     )
-    study = connection.get_dataverses()[int(node_settings.dataverse_number)].get_study_by_hdl(node_settings.study_hdl)
+    study = connection.get_dataverses()[node_settings.dataverse_number].get_study_by_hdl(node_settings.study_hdl)
 
     study.delete_file(study.get_file_by_id(file_id))
 

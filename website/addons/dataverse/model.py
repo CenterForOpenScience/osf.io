@@ -83,7 +83,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
             # Get list of dataverses and studies
             dataverses = connection.get_dataverses() or []
-            dataverse = dataverses[int(self.dataverse_number)]
+            dataverse = dataverses[self.dataverse_number]
             studies = dataverse.get_studies() if dataverse else []
 
             rv.update({
