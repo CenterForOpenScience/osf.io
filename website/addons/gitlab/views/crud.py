@@ -4,8 +4,10 @@ import base64
 import urllib
 import httplib as http
 from slugify import get_slugify
+from dateutil.parser import parse as parse_date
 
 from framework import Q
+from framework.auth import get_user
 from framework.flask import request, redirect, make_response
 from framework.exceptions import HTTPError
 
@@ -19,6 +21,7 @@ from website.models import NodeLog
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
 from website.addons.base.views import check_file_guid
+from website.dates import FILE_MODIFIED
 
 from website.addons.gitlab.api import client
 from website.addons.gitlab.model import GitlabGuidFile
@@ -35,12 +38,23 @@ def get_cache_file(path, sha):
     )
 
 
-def ref_or_default(node_settings, kwargs):
-    ref = kwargs.get('sha') or kwargs.get('branch')
-    if not ref:
+# TODO: Test me @jmcarp
+def ref_or_default(node_settings, data):
+    """Get the git reference (SHA or branch) from view arguments; return the
+    default reference if none is supplied.
+
+    :param AddonGitlabNodeSettings node_settings: Gitlab node settings
+    :param dict data: View arguments
+    :returns: SHA or branch if reference found, else None
+
+    """
+    ref = data.get('sha') or data.get('branch')
+    if ref:
+        return ref
+    if node_settings.project_id:
         project = client.getproject(node_settings.project_id)
-        ref = project['default_branch']
-    return ref
+        return project['default_branch']
+    return None
 
 
 # Gitlab file names can only contain alphanumeric and [_.-?] and must not end
@@ -53,18 +67,23 @@ gitlab_slugify = get_slugify(
 )
 
 
-def create_or_update(node_settings, method_name, action, filename, branch,
-                     content, auth):
+def create_or_update(node_settings, user_settings, method_name, action,
+                     filename, branch, content, auth):
     """
     
     """
     node = node_settings.owner
 
+    if method_name not in ['createfile', 'updatefile']:
+        raise ValueError(
+            'Argument `method_name` must be one of '
+            '("createfile", "updatefile")'
+        )
     method = getattr(client, method_name)
 
     response = method(
         node_settings.project_id, filename, branch, content,
-        gitlab_settings.MESSAGES['add']
+        gitlab_settings.MESSAGES['add'], user_id=user_settings.user_id
     )
 
     if response:
@@ -100,6 +119,7 @@ def gitlab_upload_file(**kwargs):
 
     # Lazily configure Gitlab project if not already created
     create_node(node_settings)
+    user_settings = auth.user.get_addon('gitlab')
 
     path = kwargs_to_path(kwargs, required=False)
     branch = ref_or_default(node_settings, kwargs)
@@ -118,12 +138,12 @@ def gitlab_upload_file(**kwargs):
     slug = gitlab_slugify(filename)
 
     response = create_or_update(
-        node_settings, 'createfile', NodeLog.FILE_ADDED,
+        node_settings, user_settings, 'createfile', NodeLog.FILE_ADDED,
         slug, branch, content, auth
     )
     if not response:
         response = create_or_update(
-            node_settings, 'updatefile', NodeLog.FILE_UPDATED,
+            node_settings, user_settings, 'updatefile', NodeLog.FILE_UPDATED,
             slug, branch, content, auth
         )
 
@@ -220,7 +240,7 @@ def path_to_guid(node_settings, node, path, ref):
         )
     except:
         # If GUID doesn't exist, check whether file exists before creating
-        contents = client.getrawblob(node_settings.project_id, ref, path)
+        contents = client.getfile(node_settings.project_id, path, ref)
         if contents is False:
             raise HTTPError(http.NOT_FOUND)
         guid = GitlabGuidFile(
@@ -243,10 +263,10 @@ def gitlab_view_file(**kwargs):
     path = kwargs_to_path(kwargs, required=True)
     _, filename = os.path.split(path)
 
-    branch = kwargs.get('branch')
-    sha = kwargs.get('sha')
+    branch = request.args.get('branch')
+    sha = request.args.get('sha')
 
-    ref = ref_or_default(node_settings, kwargs)
+    ref = ref_or_default(node_settings, request.args)
 
     guid, contents = path_to_guid(node_settings, node, path, ref)
 
@@ -254,28 +274,35 @@ def gitlab_view_file(**kwargs):
     if redirect_url:
         return redirect(redirect_url)
 
-    # Note: For OSF-hosted Gitlab, we don't need to ensure a SHA on
-    # registered files, but for externally-hosted instances, we may want to
-    # include this check
-    commits = [
-        commit['id'] for commit in
-        client.listrepositorycommits(node_settings.project_id)
-    ]
-    sha = sha or commits[0]
+    commits = client.listrepositorycommits(
+        node_settings.project_id, ref_name=branch, path=path
+    )
+    sha = sha or commits[0]['id']
     commit_data = []
     for commit in commits:
+
+        committer_user = get_user(username=commit['author_email'])
+        if committer_user:
+            committer_name = committer_user.fullname
+            committer_url = committer_user.url
+        else:
+            committer_name = commit['author_name']
+            committer_url = 'mailto:{0}'.format(commit['author_email'])
         urls = {
-            'sha': commit,
-            'view': '/' + guid._id + '/' + refs_to_params(branch, sha=commit),
-            'download': '/' + guid._id + '/download/' + refs_to_params(sha=commit),
+            'sha': commit['id'],
+            'view': '/' + guid._id + '/' + refs_to_params(branch, sha=commit['id']),
+            'download': '/' + guid._id + '/download/' + refs_to_params(sha=commit['id']),
+            'date': parse_date(commit['created_at']).strftime(FILE_MODIFIED),
+            'committer_name': committer_name,
+            'committer_url': committer_url,
         }
         commit_data.append(urls)
 
-    contents = contents or client.getrawblob(
-        node_settings.project_id, ref, path
+    contents = contents or client.getfile(
+        node_settings.project_id, path, ref
     )
 
-    contents = base64.b64decode(contents)
+    contents = base64.b64decode(contents['content'])
 
     # Get file URL
     download_url = '/' + guid._id + '/download/' + refs_to_params(branch, sha)
@@ -314,14 +341,14 @@ def gitlab_download_file(**kwargs):
     node_settings = kwargs['node_addon']
 
     path = kwargs_to_path(kwargs, required=True)
-    ref = ref_or_default(node_settings, kwargs)
+    ref = ref_or_default(node_settings, request.args)
 
-    contents = client.getrawblob(node_settings.project_id, ref, path)
+    contents = client.getfile(node_settings.project_id, path, ref)
 
     if contents is False:
         raise HTTPError(http.NOT_FOUND)
 
-    contents = base64.b64decode(contents)
+    contents = base64.b64decode(contents['content'])
 
     # Build response
     resp = make_response(contents)
