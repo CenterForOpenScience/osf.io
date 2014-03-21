@@ -82,7 +82,6 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_equal(result['urls']['config'],
             lookup('api', 'dropbox_config_put', pid=self.project._primary_key))
 
-
     def test_dropbox_config_put(self):
         url = lookup('api', 'dropbox_config_put', pid=self.project._primary_key)
         # Can set folder through API call
@@ -130,3 +129,14 @@ class TestCRUDViews(DropboxAddonTestCase):
 
     def test_render_file(self):
         assert 0, 'finish me'
+
+    def test_dropbox_hgrid_addon_folder(self):
+        assert 0, 'finish me'
+
+    def test_dropbox_hgrid_data_contents(self):
+        assert 0, 'finish me'
+
+    def test_build_dropbox_urls(self):
+        assert 0, 'finish me'
+
+
