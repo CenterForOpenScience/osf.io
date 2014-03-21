@@ -175,8 +175,9 @@ NodeActions.reorderChildren = function(idList, elm) {
         data: JSON.stringify({'new_list': idList}),
         contentType: 'application/json',
         dataType: 'json',
-        fail: function() {
+        error: function(response) {
             $(elm).sortable('cancel');
+            $.osf.handleJSONError(response);
         }
     });
 };
