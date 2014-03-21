@@ -1,11 +1,11 @@
 from website.addons.dropbox import model, routes, views
 
 
-MODELS = [model.DropboxUserSettings, model.DropboxNodeSettings]
+MODELS = [model.DropboxUserSettings, model.DropboxNodeSettings, model.DropboxFile]
 USER_SETTINGS_MODEL = model.DropboxUserSettings
 NODE_SETTINGS_MODEL = model.DropboxNodeSettings
 
-ROUTES = [routes.settings_routes, routes.crud_routes, routes.api_routes]
+ROUTES = [routes.auth_routes, routes.api_routes]
 
 SHORT_NAME = 'dropbox'
 FULL_NAME = 'Dropbox'

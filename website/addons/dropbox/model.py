@@ -1,19 +1,44 @@
-import os
+# -*- coding: utf-8 -*-
+from modularodm import Q
+from modularodm.exceptions import ModularOdmException
 
 from framework import fields
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
 from website.addons.dropbox.client import get_client
 
-class DropboxGuidFile(GuidFile):
+class DropboxFile(GuidFile):
 
-    path = fields.StringField(index=True)
+    #: Full path to the file, e.g. 'My Pictures/foo.png'
+    path = fields.StringField(required=True, index=True)
 
     @property
-    def file_url(self):
-        if self.path is None:
-            raise ValueError('Path field must be defined.')
-        return os.path.join('dropbox', self.path)
+    def api_url(self):
+        """The api url for the file."""
+        return self.node.api_url_for('dropbox_view_file', path=self.path)
+
+    @property
+    def url(self):
+        """The web url for the file."""
+        return self.node.web_url_for('dropbox_view_file', path=self.path)
+
+    @classmethod
+    def get_or_create(cls, node, path):
+        """Get or create a new file record.
+        Return a tuple of the form ``obj, created``
+        """
+        try:
+            new = cls.find_one(
+                Q('node', 'eq', node),
+                Q('path', 'eq', path)
+            )
+            created = False
+        except ModularOdmException:
+            # Create new
+            new = cls(node=node, path=path)
+            new.save()
+            created = True
+        return new, created
 
 
 class DropboxUserSettings(AddonUserSettingsBase):

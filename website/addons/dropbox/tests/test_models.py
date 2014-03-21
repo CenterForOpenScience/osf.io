@@ -2,15 +2,21 @@
 import mock
 from nose.tools import *
 
-from website.addons.dropbox.model import DropboxUserSettings, DropboxNodeSettings
+from website.addons.dropbox.model import (
+    DropboxUserSettings, DropboxNodeSettings, DropboxFile
+)
 from website.addons.dropbox.core import init_storage
-from tests.base import DbTestCase, fake
-from tests.factories import UserFactory
+from tests.base import DbTestCase, fake, URLLookup
+from tests.factories import UserFactory, ProjectFactory
 
 from website.addons.dropbox.tests.factories import (
-    DropboxUserSettingsFactory, DropboxNodeSettingsFactory
+    DropboxUserSettingsFactory, DropboxNodeSettingsFactory,
+    DropboxFileFactory
 )
+from website.app import init_app
 
+app = init_app(set_backends=False, routes=True)
+lookup = URLLookup(app)
 init_storage()
 
 
@@ -82,7 +88,6 @@ class TestUserSettingsModel(DbTestCase):
         result = user_settings.to_json()
         assert_equal(result['has_auth'], user_settings.has_auth)
 
-# TODO
 class TestDropboxNodeSettingsModel(DbTestCase):
 
     def setUp(self):
@@ -118,3 +123,28 @@ class TestDropboxNodeSettingsModel(DbTestCase):
         assert_equal(result['node_has_auth'], settings.has_auth)
         assert_equal(result['is_owner'], settings.user_settings.owner == user)
         assert_equal(result['owner_info'], settings.user_settings.account_info)
+
+
+class TestDropboxGuidFile(DbTestCase):
+
+    def test_api_url(self):
+        project = ProjectFactory()
+        file_obj = DropboxFile(node=project, path='foo.txt')
+        file_obj.save()
+        with app.test_request_context():
+            file_url = file_obj.api_url
+
+        url = lookup('api', 'dropbox_view_file',
+            pid=project._primary_key, path=file_obj.path)
+        assert_equal(url, file_url)
+
+    def test_web_url(self):
+        project = ProjectFactory()
+        file_obj = DropboxFile(node=project, path='foo.txt')
+        file_obj.save()
+        with app.test_request_context():
+            file_url = file_obj.url
+
+        url = lookup('api', 'dropbox_view_file',
+            pid=project._primary_key, path=file_obj.path)
+        assert_equal(url, file_url)

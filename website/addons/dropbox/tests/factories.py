@@ -2,9 +2,11 @@
 """Factory boy factories for the Dropbox addon."""
 
 from factory import SubFactory, Sequence
-from tests.factories import ModularOdmFactory, UserFactory
+from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory
 
-from website.addons.dropbox.model import DropboxUserSettings, DropboxNodeSettings
+from website.addons.dropbox.model import (
+    DropboxUserSettings, DropboxNodeSettings, DropboxFile
+)
 
 # TODO(sloria): make an abstract UserSettingsFactory that just includes the owner field
 class DropboxUserSettingsFactory(ModularOdmFactory):
@@ -19,3 +21,9 @@ class DropboxNodeSettingsFactory(ModularOdmFactory):
 
     user_settings = SubFactory(DropboxUserSettingsFactory)
     folder = 'Camera Uploads'
+
+
+class DropboxFileFactory(ModularOdmFactory):
+    FACTORY_FOR = DropboxFile
+
+    node = SubFactory(ProjectFactory)
