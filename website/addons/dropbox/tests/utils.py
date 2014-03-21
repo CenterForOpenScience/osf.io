@@ -71,18 +71,30 @@ mock_responses = {
     }
 }
 
+
 class MockDropbox(object):
 
-    def put_file(full_path, file_obj, overwrite=False, parent_rev=None):
+    def put_file(self, full_path, file_obj, overwrite=False, parent_rev=None):
         return mock_responses['put_file']
 
-    def metadata(path, list=True, file_limit=25000, hash=None, rev=None,
-        include_deleted=False):
+    def metadata(self, path, list=True, file_limit=25000, hash=None, rev=None,
+            include_deleted=False):
         if list:
             return mock_responses['metadata_list']
         else:
-            # TODO(sloria): return non-list response
-            return mock_responses['metadata_list']
+            return {u'bytes': 74,
+                     u'client_mtime': u'Mon, 13 Jan 2014 20:24:15 +0000',
+                     u'icon': u'page_white',
+                     u'is_dir': False,
+                     u'mime_type': u'text/csv',
+                     u'modified': u'Fri, 21 Mar 2014 05:46:36 +0000',
+                     u'path': path,
+                     u'rev': u'a2149fb64',
+                     u'revision': 10,
+                     u'root': u'app_folder',
+                     u'size': u'74 bytes',
+                     u'thumb_exists': False
+                    }
 
     def get_file_and_metadata(*args, **kwargs):
         pass
