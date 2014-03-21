@@ -46,9 +46,10 @@ def dropbox_upload(**kwargs):
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_download(**kwargs):
-    path = kwargs.get('path', None)
+    node_settings = kwargs['node_addon']
+    path = node_settings.folder
     version = kwargs.get('version', None)
-    client = get_node_addon_client(kwargs['node_addon'])
+    client = get_node_addon_client(node_settings)
     if path:
         if not version:
             return redirect(client.share(path)['url'])
@@ -69,5 +70,5 @@ def dropbox_get_versions(**kwargs):
     pass
 
 
-def dropbox_render_file(**kwargs):
+def dropbox_view_file(**kwargs):
     pass

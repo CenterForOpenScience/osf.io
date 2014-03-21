@@ -17,7 +17,7 @@
                 <div class="form-group">
                     <select class="form-control" data-bind="options: folders, value: selected"></select>
                 </div>
-                <input type='submit' value="Submit" class="btn btn-success" />
+                <input type='submit' value="Choose folder" class="btn btn-success" />
 
                 <p data-bind="attr: {class: messageClass}">
                     {{message}}

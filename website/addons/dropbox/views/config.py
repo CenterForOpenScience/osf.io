@@ -1,3 +1,5 @@
+"""Views fo the node settings page."""
+# -*- coding: utf-8 -*-
 import logging
 
 from framework import request
@@ -19,7 +21,7 @@ def dropbox_config_get(**kwargs):
     node_settings = kwargs['node_addon']
     client = get_client(node_settings.user_settings.owner)
     # TODO(sloria): Handle error
-    metadata = client.metadata('/', list=True)
+    metadata = client.metadata('/')
     folders = [each['path'] for each in metadata['contents']]
     return {
         'result': {

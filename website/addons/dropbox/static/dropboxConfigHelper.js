@@ -43,6 +43,7 @@ this.DropboxConfigManager = (function(ko, $) {
                 ko.applyBindings(viewModel, self.$elem[0]);
             },
             error: function(xhr, error, textError) {
+                // TODO(sloria)
                 console.log('an error occurred getting dropbox info');
             }
         });
