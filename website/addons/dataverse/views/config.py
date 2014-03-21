@@ -80,11 +80,40 @@ def set_dataverse(*args, **kwargs):
     dataverse = dataverses[int(node_settings.dataverse_number)] if dataverses else None
     node_settings.dataverse = dataverse.title if dataverse else None
 
+    # Set study to None
+    node_settings.study_hdl = None
+    node_settings.study = None
+
+    node_settings.save()
+
+    return {}
+
+
+@decorators.must_be_contributor
+@decorators.must_have_addon('dataverse', 'node')
+def set_study(*args, **kwargs):
+
+    user = kwargs['auth'].user
+    node_settings = kwargs['node_addon']
+    dataverse_user = node_settings.user_settings
+
+    # Make a connection
+    connection = connect(
+        node_settings.dataverse_username,
+        node_settings.dataverse_password,
+    )
+
+    if dataverse_user and dataverse_user.owner != user and connection is not None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    # Get current dataverse
+    dataverse = connection.get_dataverses()[int(node_settings.dataverse_number)]
+
     # Set selected Study
     hdl = request.json.get('study_hdl')
     node_settings.study_hdl = hdl if hdl != 'None' else None
     node_settings.study = dataverse.get_study_by_hdl(hdl).get_title() \
-        if dataverse and node_settings.study_hdl else None
+        if node_settings.study_hdl else None
 
     node_settings.save()
 

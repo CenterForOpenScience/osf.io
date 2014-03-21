@@ -79,8 +79,7 @@
 <script>
 
     $("#dataverseDropDown").change(function() {
-        var dn = '{"dataverse_number":"' + $(this).find(":selected").val() +
-                '", "study_hdl":"None"}'
+        var dn = '{"dataverse_number":' + $(this).find(":selected").val() + '}'
         $.ajax({
             url: nodeApiUrl + 'dataverse/set/',
             data: dn,
@@ -94,10 +93,9 @@
     });
 
     $("#studyDropDown").change(function() {
-        var sn = '{"dataverse_number":"' + $("#dataverseDropDown").find(":selected").val() +
-                '", "study_hdl":"' + $(this).find(":selected").val() + '"}'
+        var sn = '{"study_hdl":"' + $(this).find(":selected").val() + '"}'
         $.ajax({
-            url: nodeApiUrl + 'dataverse/set/',
+            url: nodeApiUrl + 'dataverse/set/study/',
             data: sn,
             type: 'POST',
             contentType: 'application/json',

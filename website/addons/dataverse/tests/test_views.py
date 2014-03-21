@@ -38,8 +38,9 @@ class TestDataverseViewsAuth(DbTestCase):
         self.node_settings.dataverse_username = self.user_settings.dataverse_username
         self.node_settings.dataverse_password = self.user_settings.dataverse_password
         self.node_settings.dataverse_number = 1
-        self.node_settings.study_hdl = 'DVN/12345'
-        self.node_settings.study = 'My Study'
+        self.node_settings.dataverse = 'Example 2'
+        self.node_settings.study_hdl = 'DVN/00001'
+        self.node_settings.study = 'Example (DVN/00001)'
         self.node_settings.user = self.user
         self.node_settings.save()
 
@@ -126,8 +127,9 @@ class TestDataverseViewsConfig(DbTestCase):
         self.node_settings.dataverse_username = self.user_settings.dataverse_username
         self.node_settings.dataverse_password = self.user_settings.dataverse_password
         self.node_settings.dataverse_number = 1
-        self.node_settings.study_hdl = 'DVN/12345'
-        self.node_settings.study = 'My Study'
+        self.node_settings.dataverse = 'Example 2'
+        self.node_settings.study_hdl = 'DVN/00001'
+        self.node_settings.study = 'Example (DVN/00001)'
         self.node_settings.user = self.user
         self.node_settings.save()
 
@@ -188,18 +190,45 @@ class TestDataverseViewsConfig(DbTestCase):
         assert_equal(user_settings.dataverse_password, None)
 
     @mock.patch('website.addons.dataverse.views.config.connect')
-    def test_set_dataverse_by_dataverse(self, mock_connection):
+    def test_set_dataverse(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
         url = self.project.api_url + 'dataverse/set/'
-        params = {'dataverse_number': 0,
-                  'study_hdl': None}
+        params = {'dataverse_number': 0}
 
-        res = self.app.post_json(url, params, auth=self.user.auth)
+        self.app.post_json(url, params, auth=self.user.auth)
         self.node_settings.reload()
 
         assert_equal(self.node_settings.dataverse_number, 0)
-        assert_equal(self.node_settings.dataverse, 'Dataverse 1')
+        assert_equal(self.node_settings.dataverse, 'Example 1')
+        assert_equal(self.node_settings.study, None)
+        assert_equal(self.node_settings.study_hdl, None)
+
+    @mock.patch('website.addons.dataverse.views.config.connect')
+    def test_set_study(self, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+
+        url = self.project.api_url + 'dataverse/set/study/'
+        params = {'study_hdl': 'DVN/00001'}
+
+        self.app.post_json(url, params, auth=self.user.auth)
+        self.node_settings.reload()
+
+        assert_equal(self.node_settings.dataverse_number, 1)
+        assert_equal(self.node_settings.study, 'Example (DVN/00001)')
+        assert_equal(self.node_settings.study_hdl, 'DVN/00001')
+
+    @mock.patch('website.addons.dataverse.views.config.connect')
+    def test_set_study_to_none(self, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+
+        url = self.project.api_url + 'dataverse/set/study/'
+        params = {'study_hdl': 'None'}
+
+        self.app.post_json(url, params, auth=self.user.auth)
+        self.node_settings.reload()
+
+        assert_equal(self.node_settings.dataverse_number, 1)
         assert_equal(self.node_settings.study, None)
         assert_equal(self.node_settings.study_hdl, None)
 

@@ -20,6 +20,10 @@ settings_routes = {
             '/project/<pid>/node/<nid>/dataverse/set/',
         ], 'post', views.config.set_dataverse, json_renderer),
         Rule([
+            '/project/<pid>/dataverse/set/study/',
+            '/project/<pid>/node/<nid>/dataverse/set/',
+        ], 'post', views.config.set_study, json_renderer),
+        Rule([
             '/project/<pid>/dataverse/authorize/',
             '/project/<pid>/node/<nid>/dataverse/authorize/',
         ], 'post', views.auth.authorize, json_renderer),
