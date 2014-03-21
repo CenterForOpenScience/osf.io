@@ -14,7 +14,7 @@ from framework import request, redirect, send_file, Q
 from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
-from framework.sessions import add_key_to_url
+
 from website.project.views.node import _view_project
 from website.project.decorators import (
     must_not_be_registration, must_be_valid_project,
@@ -55,8 +55,8 @@ def get_osffiles_hgrid(node_settings, auth, **kwargs):
                 rubeus.KIND: rubeus.FILE,
                 'name': _clean_file_name(fobj.path),
                 'urls': {
-                    'view': add_key_to_url(fobj.url(node), auth.private_key),
-                    'download': add_key_to_url(fobj.download_url(node), auth.private_key),
+                    'view': fobj.url(node),
+                    'download': fobj.download_url(node),
                     'delete': fobj.api_url(node),
                 },
                 'permissions': {
@@ -325,7 +325,7 @@ def download_file(**kwargs):
         fid=filename,
         vid=vid,
     )
-    return redirect(add_key_to_url(redirect_url, key))
+    return redirect(redirect_url)
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
