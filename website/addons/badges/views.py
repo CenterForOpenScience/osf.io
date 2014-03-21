@@ -56,7 +56,9 @@ def get_assertion(*args, **kwargs):
     _id = kwargs.get('aid', None)
     if _id:
         assertion = BadgeAssertion.load(_id)
-        return assertion.to_json()
+        data = assertion.to_json()
+        data['batter'] = json.dumps(assertion.to_openbadge())
+        return data
     raise HTTPError(http.BAD_REQUEST)
 
 
@@ -81,7 +83,7 @@ def create_badge(*args, **kwargs):
 
     id = build_badge(awarder, badge_data)
     awarder.add_badge(id)
-    return 200
+    return {'badgeid': id}, 200
 
 
 def get_badge(*args, **kwargs):

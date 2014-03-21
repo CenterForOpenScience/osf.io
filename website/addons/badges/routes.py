@@ -44,6 +44,9 @@ guid_urls = {
             '/badge/assertions/<aid>/json/',
         ], 'get', views.get_assertion_json, json_renderer),
         Rule([
+            '/badge/organization/<uid>/',
+        ], 'get', views.get_organization, json_renderer),
+        Rule([
             '/badge/organization/<uid>/json/',
         ], 'get', views.get_organization_json, json_renderer),
     ]

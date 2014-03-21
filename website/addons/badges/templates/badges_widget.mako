@@ -1,18 +1,22 @@
-<%inherit file="project/addon/widget.mako"/>
+<div class="addon-widget" name="${short_name}">
+%if complete:
 
-%if can_issue and configured:
-<button class="btn btn-success pull-right" id="awardBadge">
-<!-- TODO Change to awesomefont -->
-    <span class="glyphicon glyphicon-plus" />
-</button>
-%endif
+    <h3 class="addon-widget-header">
+        % if can_issue and configured:
+            <button class="pull-right btn btn-success btn-popover">
+                <i class="icon-plus"></i>
+                Award
+            </button>
+        % endif
+          <span>${full_name}</span>
+    </h3>
 
 <div style="max-height:200px; overflow-y: auto; overflow-x: hidden;">
-    <ul class="media-list" id="badgeList" style="columns: 2;-webkit-columns: 2;-moz-columns: 2;">
+    <ul class="two-col" id="badgeList">
         %for assertion in assertions:
-        <li class="media well well-sm">
+        <li>
           <a class="pull-left" href="/${assertion['uid']}/">
-            <img class="media-object" src="${assertion['image']}" width="64px" height="64px">
+            <img src="${assertion['image']}" width="64px" height="64px">
           </a>
             <h5>${assertion['name']}</h5>
             ${assertion['criteria']}
@@ -22,14 +26,64 @@
 </div>
 <script>
 
-$('#awardBadge').click(function() {
-  $.ajax({
-    url: nodeApiUrl + 'badges/award/',
-    method: 'POST',
-    dataType: 'json',
-    contentType: 'application/json',
-    data: JSON.stringify({badgeid: '${badges[2]['id']}'})
-  })
-})
+$(document).ready(function(){
+
+    $('.btn-popover').editable({
+      name:  'title',
+      title: 'Award Badge',
+      display: false,
+      highlight: false,
+      placement: 'right',
+      type: 'select',
+      value: '${badges[0]['id']}',
+      source: [
+        %for badge in badges:
+          {value: '${badge['id']}', text: '${badge['name']}'},
+        %endfor
+      ],
+      ajaxOptions: {
+        'type': 'POST',
+        "dataType": "json",
+        "contentType": "application/json"
+      },
+      url: nodeApiUrl + 'badges/award/',
+      params: function(params){
+        // Send JSON data
+        return JSON.stringify({badgeid: params.value});
+      },
+      success: function(data){
+        document.location.reload(true);
+      },
+      pk: 'newBadge'
+    });
+});
 </script>
 
+<style>
+.two-col {
+    margin: 2px;
+    padding: 2px;
+
+}
+
+.two-col li {
+    display: inline-block;
+    width: 47%;
+    margin: 5px;
+    padding: 10px;
+    background-color: #EEE;
+    border:2px #CCC solid;
+    border-radius:5px;
+    vertical-align:top;
+  }
+</style>
+%else:
+        <div mod-meta='{
+                "tpl": "project/addon/config_error.mako",
+                "kwargs": {
+                    "short_name": "${short_name}",
+                    "full_name": "${full_name}"
+                }
+            }'></div>
+%endif
+</div>

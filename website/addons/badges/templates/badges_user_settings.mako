@@ -1,6 +1,9 @@
 <%inherit file="project/addon/user_settings.mako" />
 %if configured:
-<div style="max-height:200px; overflow-y: auto; overflow-x: hidden;">
+%if len(badges) < 1:
+You have not created any Badges.
+%endif
+  <div style="max-height:200px; overflow-y: auto; overflow-x: hidden;">
     <ul class="media-list" id="badgeList">
         %for badge in badges:
         <li class="media">
@@ -14,20 +17,20 @@
         </li>
         %endfor
     </ul>
-</div>
+  </div>
 
-<br />
+  <br />
 
-<button class="btn btn-success" id="newBadge" type="button">
+  <button class="btn btn-success" id="newBadge" type="button">
     New Badge
-</button>
+  </button>
 
 %else:
   <input type="text" name="name" class="form-control" placeholder="Organization name" required> <br />
-  <input type="text" name="email" class="form-control" placeholder="Contact Email" required> <br />
+  <input type="email" name="email" class="form-control" placeholder="Contact Email" required> <br />
   <textarea class="form-control" name="description" placeholder="Organization description (Optional)"></textarea> <br />
-  <input type="text" name="url" class="form-control" placeholder="Link to Organization (Optional)"> <br />
-  <input type="text" name="image" class="form-control" placeholder="Image of Organization (Optional)"> <br />
+  <input type="url" name="url" class="form-control" placeholder="Link to Organization (Optional)"> <br />
+  <input type="url" name="image" class="form-control" placeholder="Image of Organization (Optional)"> <br />
 %endif
 
 
@@ -40,7 +43,7 @@
               message: '<form id="badgeForm">' +
               '<input type="text" class="form-control" name="badgeName" placeholder="Badge Name"><br>' +
               '<input type="text" class="form-control" name="description" placeholder="Description"><br>' +
-              '<input type="text" class="form-control" name="imageurl" placeholder="Image URL"><br>' +
+              '<input type="url" class="form-control" name="imageurl" placeholder="Image URL" dragable="true"><br>' +
               '<textarea class="form-control" name="criteria" placeholder="Criteria" />' +
               '</form>',
               title: 'Create a New Badge',
@@ -58,7 +61,7 @@
                         contentType: 'application/json',
                         data: JSON.stringify(data),
                         success: function(response) {
-                          $("#badgeList").append(jsonToList(data));
+                          $("#badgeList").append(jsonToList(data, response.badgeid));
                         },
                         error: function(xhr) {
                           alert('Failed: ' + xhr.statusText);
@@ -96,9 +99,9 @@
   };
 
 //todo fetch url from server
-  var jsonToList = function(badge) {
+  var jsonToList = function(badge, id) {
     return '<li class="media">' +
-          '<a class="pull-left" href="#">' +
+          '<a class="pull-left" href="/' + id + '/">' +
             '<img class="media-object" src="' + badge['imageurl'] + '" width="64px" height="64px"> </a>' +
                   '<div class="media-body">' +
                     '<h4 class="media-heading">' + badge['badgeName'] + '<small> ' + badge['description'] + '</small></h4>' +

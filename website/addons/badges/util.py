@@ -1,6 +1,8 @@
 import calendar
 from datetime import datetime
 
+from website.settings import DOMAIN
+
 from model import Badge, BadgeAssertion
 
 
@@ -12,7 +14,7 @@ def is_valid_badge(badge):
 def build_badge(issuer, badge):
     new = Badge()
     new.creator = issuer.owner._id
-    new.creator = issuer.name
+    new.creator_name = issuer.name
     new.name = badge['badgeName']
     new.description = badge['description']
     new.image = badge['imageurl']
@@ -25,16 +27,17 @@ def build_badge(issuer, badge):
 def build_assertion(issuer, badge, node, verify_method='hosted'):
     assertion = BadgeAssertion()
     assertion.issued_on = calendar.timegm(datetime.utctimetuple(datetime.utcnow()))  # Todo make an int field?
-    assertion.badge_url = badge._id
+    assertion.badge_id = badge._id
     assertion.recipient = {
         'type': 'osfProject',
         'identity': node._id,  # Change to node url
         'hashed': False,
     }
+    assertion._ensure_guid()
     #TODO Signed and hosted
     assertion.verify = {
         'type': 'hosted',
-        'url': ''  # TODO me
+        'url': '{}{}/'.format(DOMAIN, assertion._id)  # is so meta even this acronym
     }
     assertion.save()
     return assertion._id
