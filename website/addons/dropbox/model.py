@@ -22,10 +22,6 @@ class DropboxFile(GuidFile):
     #: See https://www.dropbox.com/developers/core/docs#metadata
     metadata =fields.DictionaryField(required=False)
 
-    @property
-    def api_url(self):
-        """The api url for the file."""
-        return self.node.api_url_for('dropbox_view_file', path=self.path)
 
     @property
     def url(self):

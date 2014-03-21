@@ -87,8 +87,8 @@ api_routes = {
         # Delete
         Rule(
             [
-                '/project/<pid>/dropbox/files/<path:path>/',
-                '/project/<pid>/node/<nid>/dropbox/files<path:path>/',
+                '/project/<pid>/dropbox/files/<path:path>',
+                '/project/<pid>/node/<nid>/dropbox/files/<path:path>',
             ],
             'delete',
             views.crud.dropbox_delete_file,
@@ -98,10 +98,10 @@ api_routes = {
         # Upload
         Rule(
             [
-                '/project/<pid>/dropbox/files/<path:path>/',
-                '/project/<pid>/node/<nid>/dropbox/files/<path:path>/',
                 '/project/<pid>/dropbox/files/',
+                '/project/<pid>/dropbox/files/<path:path>',
                 '/project/<pid>/node/<nid>/dropbox/files/',
+                '/project/<pid>/node/<nid>/dropbox/files/<path:path>',
             ],
             'post',
             views.crud.dropbox_upload,
@@ -124,8 +124,8 @@ api_routes = {
             [
                 '/project/<pid>/dropbox/hgrid/',
                 '/project/<pid>/node/<nid>/dropbox/hgrid/',
-                '/project/<pid>/dropbox/hgrid/<path:path>/',
-                '/project/<pid>/node/<nid>/dropbox/hgrid/<path:path>/',
+                '/project/<pid>/dropbox/hgrid/<path:path>',
+                '/project/<pid>/node/<nid>/dropbox/hgrid/<path:path>',
             ],
             'get',
             views.hgrid.dropbox_hgrid_data_contents,
@@ -134,4 +134,3 @@ api_routes = {
     ],
     'prefix': '/api/v1'
 }
-
