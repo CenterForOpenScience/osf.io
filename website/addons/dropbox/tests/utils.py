@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import mock
+from contextlib import contextmanager
 
 from webtest_plus import TestApp
 
@@ -21,6 +23,8 @@ class DropboxAddonTestCase(AddonTestCase):
 
     def set_node_settings(self, settings):
         settings.folder = 'foo'
+
+
 
 mock_responses = {
     'put_file': {
@@ -66,3 +70,35 @@ mock_responses = {
         "revision": 29007
     }
 }
+
+class MockDropbox(object):
+
+    def put_file(full_path, file_obj, overwrite=False, parent_rev=None):
+        return mock_responses['put_file']
+
+    def metadata(path, list=True, file_limit=25000, hash=None, rev=None,
+        include_deleted=False):
+        if list:
+            return mock_responses['metadata_list']
+        else:
+            # TODO(sloria): return non-list response
+            return mock_responses['metadata_list']
+
+    def get_file_and_metadata(*args, **kwargs):
+        pass
+
+
+@contextmanager
+def patch_client(target):
+    """Patches a function that returns a DropboxClient, returning an instance
+    of MockDropbox instead.
+
+    Usage: ::
+
+        with patch_client('website.addons.dropbox.view.config.get_client') as client:
+            # test view that uses the dropbox client.
+    """
+    with mock.patch(target) as client_getter:
+        client = MockDropbox()
+        client_getter.return_value = client
+        yield client

@@ -12,9 +12,14 @@ from website.util import api_url_for
 from tests.base import DbTestCase, URLLookup
 from tests.factories import AuthUserFactory
 
-from website.addons.dropbox.tests.utils import DropboxAddonTestCase, app, mock_responses
+from website.addons.dropbox.tests.utils import (
+    DropboxAddonTestCase, app, mock_responses, MockDropbox, patch_client
+)
+
 
 lookup = URLLookup(app)
+mock_client = MockDropbox()
+
 
 
 def assert_is_redirect(response, msg='Response is a redirect'):
@@ -61,26 +66,24 @@ class TestAuthViews(DbTestCase):
 
 class TestConfigViews(DropboxAddonTestCase):
 
-    # TODO(sloria): Make a full mock client
-    @mock.patch('website.addons.dropbox.views.crud.DropboxClient.metadata')
-    def test_dropbox_config_get(self, mock_metadata):
-        mock_metadata.return_value = mock_responses['metadata_list']
-        self.user_settings.account_info['display_name'] = 'Foo bar'
-        self.user_settings.save()
+    def test_dropbox_config_get(self):
+        with patch_client('website.addons.dropbox.views.config.get_client'):
+            self.user_settings.account_info['display_name'] = 'Foo bar'
+            self.user_settings.save()
 
-        url = lookup('api', 'dropbox_config_get', pid=self.project._primary_key)
+            url = lookup('api', 'dropbox_config_get', pid=self.project._primary_key)
 
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        result = res.json['result']
-        expected_folders = [each['path']
-            for each in mock_metadata.return_value['contents']]
-        assert_equal(result['folders'], expected_folders)
-        assert_equal(result['ownerName'],
-            self.node_settings.user_settings.account_info['display_name'])
+            res = self.app.get(url)
+            assert_equal(res.status_code, 200)
+            result = res.json['result']
+            expected_folders = [each['path']
+                for each in mock_responses['metadata_list']['contents']]
+            assert_equal(result['folders'], expected_folders)
+            assert_equal(result['ownerName'],
+                self.node_settings.user_settings.account_info['display_name'])
 
-        assert_equal(result['urls']['config'],
-            lookup('api', 'dropbox_config_put', pid=self.project._primary_key))
+            assert_equal(result['urls']['config'],
+                lookup('api', 'dropbox_config_put', pid=self.project._primary_key))
 
     def test_dropbox_config_put(self):
         url = lookup('api', 'dropbox_config_put', pid=self.project._primary_key)
@@ -108,7 +111,7 @@ class TestCRUDViews(DropboxAddonTestCase):
         assert_equal(first_argument, '{0}/{1}'.format('foo', 'myfile.rst'))
         assert_true(isinstance(second_arg, FileStorage))
 
-    @mock.patch('website.addons.dropbox.views.crud.DropboxClient.put_file')
+    @mock.patch('website.addons.dropbox.views.crud.DropboxClient', )
     def test_upload_file_to_root(self, mock_put_file):
         mock_put_file.return_value = mock_responses['put_file']
         payload = {'file': Upload('rootfile.rst', b'baz','text/x-rst')}
@@ -139,4 +142,11 @@ class TestCRUDViews(DropboxAddonTestCase):
     def test_build_dropbox_urls(self):
         assert 0, 'finish me'
 
+
+    def test_dropbox_view_file(self):
+        url = lookup('web', 'dropbox_view_file', pid=self.project._primary_key)
+        res = self.app.get(url, auth=self.user.auth)
+
+        json = res.json
+        assert 0, 'finish me'
 
