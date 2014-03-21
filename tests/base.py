@@ -167,3 +167,6 @@ class URLLookup(object):
             return self.web_url_for(view_name, *args, **kwargs)
         else:
             return self.api_url_for(view_name, *args, **kwargs)
+
+def assert_is_redirect(response, msg="Response is a redirect."):
+    assert 300 <= response.status_code < 400, msg
