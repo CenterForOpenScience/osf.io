@@ -19,6 +19,7 @@ class DropboxUserSettingsFactory(ModularOdmFactory):
 class DropboxNodeSettingsFactory(ModularOdmFactory):
     FACTORY_FOR = DropboxNodeSettings
 
+    owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(DropboxUserSettingsFactory)
     folder = 'Camera Uploads'
 
