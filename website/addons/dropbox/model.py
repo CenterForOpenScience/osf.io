@@ -39,13 +39,19 @@ class DropboxUserSettings(AddonUserSettingsBase):
     def has_auth(self):
         return bool(self.access_token)
 
-    # TODO(sloria): Perhaps does not belong in model, but in a helper function?
     def update_account_info(self, client=None):
         """Update Dropbox account info by fetching data from the Dropbox API.
         """
         c = client or get_client(self.owner)
         self.account_info = c.account_info()
 
+    def get_account_info(self, client=None, force=False):
+        """Gets the account info from the Dropbox API (cached).
+        """
+        if force or (not self.account_info):
+            self.update_account_info(client=client)
+            return self.account_info
+        return self.account_info
 
     def clear_auth(self):
         self.dropbox_id = None
