@@ -11,6 +11,10 @@ logger = logging.getLogger(__name__)
 debug = logger.debug
 
 
+def clean_path(path):
+    """Ensure a path is formatted correctly for url_for."""
+    return path.strip('/')
+
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_hgrid_data_contents(**kwargs):
@@ -37,7 +41,7 @@ def dropbox_hgrid_data_contents(**kwargs):
         serialized['name'] = os.path.basename(item['path'])
         serialized['ext'] = os.path.splitext(item['path'])[1]
         serialized[rubeus.KIND] = rubeus.FOLDER if item['is_dir'] else rubeus.FILE
-        serialized['urls'] = build_dropbox_urls(item, node.api_url, node._id)
+        serialized['urls'] = build_dropbox_urls(item, node.api_url, node)
         files.append(serialized)
 
     return files
@@ -57,16 +61,16 @@ def dropbox_addon_folder(node_settings, auth, **kwargs):
 
 
 #TODO Fix to work with components
-#TODO Fix settings naming conflict
-def build_dropbox_urls(item, api_url, nid):
+def build_dropbox_urls(item, api_url, node):
+    path = clean_path(item['path'])  # Strip trailing and leading slashes
     if item['is_dir']:
         return {
-            'upload': api_url_for('dropbox_upload', path=item['path'], pid=nid),
-            'fetch':  api_url_for('dropbox_hgrid_data_contents', path=item['path'], pid=nid)
+            'upload': node.api_url_for('dropbox_upload', path=path),
+            'fetch':  node.api_url_for('dropbox_hgrid_data_contents', path=path)
         }
     else:
         return {
-            'download': api_url_for('dropbox_download', path=item['path'], pid=nid),
-            'view': '/{0}/dropbox{1}/'.format(nid, item['path']), #TODO Write me
-            'delete': api_url_for('dropbox_download', path=item['path'], pid=nid)
+            'download': node.web_url_for('dropbox_download', path=path),
+            'view': node.web_url_for('dropbox_view_file', path=path),
+            'delete': node.api_url_for('dropbox_delete_file', path=path)
         }
