@@ -3,7 +3,7 @@ import os
 import logging
 
 from website.project.decorators import must_be_contributor_or_public, must_have_addon
-from website.util import rubeus, api_url_for
+from website.util import rubeus
 
 from website.addons.dropbox.client import get_node_client
 

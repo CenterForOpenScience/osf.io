@@ -6,7 +6,10 @@ from website.addons.dropbox.client import get_node_addon_client
 
 
 def get_file_name(path):
-    return os.path.split(path.strip('/'))[1]
+    """Given a path, get just the base filename.
+    Handles "/foo/bar/baz.txt/" -> "baz.txt"
+    """
+    return os.path.basename(path.strip('/'))
 
 
 # TODO(sloria): TEST ME
