@@ -3,6 +3,7 @@ import logging
 import httplib as http
 import os
 
+from modularodm import Q
 
 from website.project.utils import serialize_node, get_cache_content
 from website.project.decorators import must_have_permission
@@ -15,8 +16,8 @@ from framework import request, redirect
 from framework.exceptions import HTTPError
 
 from website.addons.dropbox.model import DropboxFile
-
-from ..client import get_node_addon_client
+from website.addons.dropbox.client import get_node_addon_client
+from website.addons.dropbox.utils import render_dropbox_file, get_file_name
 
 logger = logging.getLogger(__name__)
 debug = logger.debug
@@ -49,14 +50,9 @@ def dropbox_upload(**kwargs):
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_download(path, node_addon, **kwargs):
-    path = node_addon.folder
-    version = kwargs.get('version', None)
     client = get_node_addon_client(node_addon)
     if path:
-        if not version:
-            return redirect(client.share(path)['url'])
-        else:
-            pass  # TODO
+        return redirect(client.media(path)['url'])
     raise HTTPError(http.BAD_REQUEST)
 
 
@@ -72,17 +68,6 @@ def dropbox_get_versions(**kwargs):
     pass
 
 
-def get_cache_file_name(file_obj):
-    metadata = file_obj.get_metadata()
-    return "{file}"
-
-# TODO(sloria): TEST ME
-def render_dropbox_file(client):
-    pass
-
-
-
-
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_view_file(path, node_addon, auth, **kwargs):
@@ -96,16 +81,12 @@ def dropbox_view_file(path, node_addon, auth, **kwargs):
     redirect_url = check_file_guid(file_obj)
     if redirect_url:
         return redirect(redirect_url)
-
-
-    download_url = node.web_url_for('dropbox_download', path=path)
-
-    file_name = os.path.split(path)[1]
+    rendered = render_dropbox_file(file_obj, client=client)
     response = {
-        'file_name': file_name,
-        'render_url': node.api_url_for('dropbox_render_file', path=path),
-        'download_url': download_url,
-        'rendered': 'TODO',
+        'file_name': get_file_name(path),
+        'render_url': node.api_url_for('dropbox_render_file', path=path.strip('/')),
+        'download_url': file_obj.download_url,
+        'rendered': rendered,
     }
     response.update(serialize_node(node, auth, primary=True))
     return response
@@ -116,5 +97,7 @@ def dropbox_view_file(path, node_addon, auth, **kwargs):
 @must_have_addon('dropbox', 'node')
 def dropbox_render_file(path, node_addon, auth, **kwargs):
     # TODO(sloria)
-    return 'rendered html'
-
+    file_obj = DropboxFile.find_one(Q('path', 'eq', path))
+    client = get_node_addon_client(node_addon)
+    filename = file_obj.get_cache_filename(client=client)
+    return get_cache_content(node_addon, filename)

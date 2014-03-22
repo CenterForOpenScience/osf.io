@@ -60,7 +60,6 @@ def dropbox_addon_folder(node_settings, auth, **kwargs):
     ]
 
 
-#TODO Fix to work with components
 def build_dropbox_urls(item, api_url, node):
     path = clean_path(item['path'])  # Strip trailing and leading slashes
     if item['is_dir']:
