@@ -4,7 +4,7 @@ this.DropboxConfigManager = (function(ko, $) {
 
     var ViewModel = function(data) {
         var self = this;
-        self.selected = ko.observable();
+        self.selected = ko.observable(data.folder);
         self.folders = ko.observableArray(data.folders);
         self.ownerName = data.ownerName;
         self.urls = data.urls;

@@ -4,7 +4,6 @@
 
 
 <div id="dropboxScope">
-    <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
     <div class="well well-sm">
         Authorized by {{ ownerName }}</a>
         % if user_has_auth:
