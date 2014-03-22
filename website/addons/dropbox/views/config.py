@@ -20,13 +20,13 @@ def dropbox_config_get(**kwargs):
     node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
     client = get_client(node_settings.user_settings.owner)
-    # TODO(sloria): Handle error
+
     metadata = client.metadata('/')
-    folders = [each['path'] for each in metadata['contents']]
+    folders = [each['path'] for each in metadata['contents'] if each['is_dir']]
     return {
         'result': {
             'folders': folders,
-            'folder': node_settings.folder,
+            'folder': node_settings.folder if node_settings.folder else '/',
             'ownerName': node_settings.user_settings.account_info['display_name'],
             'urls': {
                 'config': node.api_url_for('dropbox_config_put')
