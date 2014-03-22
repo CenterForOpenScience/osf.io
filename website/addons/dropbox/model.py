@@ -34,6 +34,10 @@ class DropboxFile(GuidFile):
             raise ValueError('Path field must be defined.')
         return os.path.join('dropbox', 'files', self.path)
 
+    @property
+    def download_url(self):
+        return self.node.web_url_for('dropbox_download', path=self.path)
+
     # TODO(sloria): TEST ME
     def update_metadata(self, client=None):
         cl = client or get_node_addon_client(self.node.get_addon('dropbox'))
@@ -49,7 +53,7 @@ class DropboxFile(GuidFile):
 
     def get_cache_filename(self, client=None):
         metadata = self.get_metadata(client=client)
-        return "{slug}_{rev}".format(slug=slugify(self.path), rev=metadata['rev'])
+        return "{slug}_{rev}.html".format(slug=slugify(self.path), rev=metadata['rev'])
 
     @classmethod
     def get_or_create(cls, node, path):
