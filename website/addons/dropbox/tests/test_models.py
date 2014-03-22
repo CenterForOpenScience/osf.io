@@ -150,7 +150,7 @@ class TestDropboxGuidFile(DbTestCase):
         file_obj.save()
 
         result = file_obj.get_cache_filename()
-        assert_equal(result, "{0}_{1}".format(slugify(file_obj.path),
+        assert_equal(result, "{0}_{1}.html".format(slugify(file_obj.path),
             file_obj.metadata['rev']))
 
     def test_download_url(self):

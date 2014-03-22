@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Views tests for the Dropbox addon."""
-
+import os
 from nose.tools import *  # PEP8 asserts
 import mock
 
@@ -35,8 +35,7 @@ class TestAuthViews(DbTestCase):
         self.app.authenticate(*self.user.auth)
 
     def test_dropbox_oauth_start(self):
-        with app.test_request_context():
-            url = api_url_for('dropbox_oauth_start__user')
+        url = lookup('api', 'dropbox_oauth_start__user')
         res = self.app.get(url)
         assert_is_redirect(res)
 
@@ -58,8 +57,7 @@ class TestAuthViews(DbTestCase):
         settings.save()
         assert_true(settings.has_auth)
         self.user.save()
-        with app.test_request_context():
-            url = api_url_for('dropbox_oauth_delete_user')
+        url = lookup('api', 'dropbox_oauth_delete_user')
         res = self.app.delete(url)
         settings.reload()
         assert_false(settings.has_auth)
@@ -77,7 +75,8 @@ class TestConfigViews(DropboxAddonTestCase):
             assert_equal(res.status_code, 200)
             result = res.json['result']
             expected_folders = [each['path']
-                for each in mock_responses['metadata_list']['contents']]
+                for each in mock_responses['metadata_list']['contents']
+                if each['is_dir']]
             assert_equal(result['folders'], expected_folders)
             assert_equal(result['ownerName'],
                 self.node_settings.user_settings.account_info['display_name'])
@@ -122,7 +121,9 @@ class TestCRUDViews(DropboxAddonTestCase):
         assert_equal(res.status_code, 200)
         mock_put_file.assert_called_once
         first_argument = mock_put_file.call_args[0][0]
-        assert_equal(first_argument, '/rootfile.rst')
+        node_settings = self.project.get_addon('dropbox')
+        expected_path = os.path.join(node_settings.folder, 'rootfile.rst')
+        assert_equal(first_argument, expected_path)
 
     def test_delete_file(self):
         assert 0, 'finish me'

@@ -21,7 +21,7 @@ def dropbox_config_get(**kwargs):
     node_settings = kwargs['node_addon']
     client = get_client(node_settings.user_settings.owner)
 
-    metadata = client.metadata('/')
+    metadata = client.metadata('/', list=True)
     folders = [each['path'] for each in metadata['contents'] if each['is_dir']]
     return {
         'result': {

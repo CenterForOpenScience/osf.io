@@ -65,6 +65,18 @@ mock_responses = {
                 "root": "dropbox",
                 "mime_type": "text/plain",
                 "revision": 220191
+            },
+            {
+                u'bytes': 0,
+                u'icon': u'folder',
+                u'is_dir': True,
+                u'modified': u'Sat, 22 Mar 2014 05:40:29 +0000',
+                u'path': u'/datasets/New Folder',
+                u'rev': u'3fed51f002c12fc',
+                u'revision': 67032351,
+                u'root': u'dropbox',
+                u'size': u'0 bytes',
+                u'thumb_exists': False
             }
         ],
         "revision": 29007
