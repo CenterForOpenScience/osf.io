@@ -85,10 +85,10 @@ def list_dropbox_files(node, files=None, cursor=None, client=None):
 
     has_more = True
 
-    path_prefix = ensure_leading_slash(node_settings.folder)
-
-    debug('PREFIX---')
-    debug(path_prefix)
+    if node_settings.folder:
+        path_prefix = ensure_leading_slash(node_settings.folder)
+    else:
+        path_prefix = None
 
     while has_more:
         result = client.delta(cursor, path_prefix=path_prefix)
